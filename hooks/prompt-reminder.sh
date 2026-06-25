@@ -432,6 +432,35 @@ ${agentmemory_line}"
   fi
 fi
 
+# Token-compression tools (aluminum, rtk, context_mode)
+if [[ -f "$_lib_dir/token-compression-tools-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/token-compression-tools-gate.sh
+  source "$_lib_dir/token-compression-tools-gate.sh"
+  for _tc_tool in aluminum rtk context_mode; do
+    _tc_line="$(sb_token_tool_prompt_reminder_line "$config_file" "$_tc_tool" 2>/dev/null || true)"
+    if [[ -n "$_tc_line" ]]; then
+      msg="${msg}
+
+---
+
+${_tc_line}"
+    fi
+  done
+fi
+
+# Code intelligence synergy (always when graphify + agentmemory enabled)
+if [[ -f "$_lib_dir/recommended-tools.sh" && -f "$_lib_dir/graphify-gate.sh" && -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/recommended-tools.sh
+  source "$_lib_dir/recommended-tools.sh"
+  if [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" && "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]]; then
+    msg="${msg}
+
+---
+
+CODE INTELLIGENCE: save via agentmemory, retrieve via Graphify — every session, every substantive turn. Run graphify query before exploration; capture decisions/defects in agentmemory; never substitute raw grep/read when Graphify is fresh."
+  fi
+fi
+
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
 
 exit 0

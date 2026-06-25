@@ -1,0 +1,9 @@
+## RTK (shell output compression)
+
+When `recommended_tools.rtk.enabled_by_user` is true and RTK is wired, shell commands run through RTK's upstream PreToolUse hook automatically — prefer plain commands (`git status`, `npm test`, etc.) and let RTK rewrite them.
+
+On Codex, RTK savings are primarily via this awareness block in AGENTS.md — there is no live Bash rewrite hook on Codex yet.
+
+Verify install: `rtk --version` (v0.4x from rtk-ai/rtk) and `rtk gain --help`. Wrong binary (`reachingforthejack/rtk`) must be removed before use.
+
+See `docs/RTK.md`.

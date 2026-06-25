@@ -137,6 +137,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#core-files">Core Files</a></li>
         <li><a href="#knowledge-learnings">Knowledge &amp; Learnings</a></li>
         <li><a href="#graphify-retrieval">Graphify Retrieval</a></li>
+        <li><a href="#token-compression">Token Compression (RTK + Context Mode)</a></li>
         <li><a href="#optional-files">Optional Files</a></li>
         <li class="sidebar-section">Rules</li>
         <li><a href="#size-caps">Size Caps</a></li>
@@ -268,6 +269,12 @@ graphify query "task context plus relevant files" --graph graphify-out/graph.jso
       <p>Agents should query with concrete task and file context, then inspect the returned nodes before acting. Broad words can match workflow or documentation nodes first, so the useful query usually names the current file, hook, skill, or artifact type.</p>
       <p>If Graphify is missing, stale, or returns no relevant context, SB falls back to direct reads of <code>docs/knowledge/INDEX.md</code>, the current monthly <code>docs/knowledge/YYYY-MM.md</code>, the current monthly <code>docs/learnings/YYYY-MM.md</code>, and any directly referenced project docs. That fallback is degraded behavior: it preserves correctness, but Graphify remains the required default for SB-activated projects.</p>
       <p><code>graphify-out/</code> and <code>raw/</code> are generated local state and are ignored by default. Full semantic extraction and optional surfaces such as MCP or database-backed storage can be enabled separately when the project has the required keys and services.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="token-compression">Token Compression (RTK + Context Mode)</h2>
+      <p><strong>RTK</strong> (<code>recommended_tools.rtk</code>) compresses shell command output via upstream PreToolUse hooks once <code>rtk-ai/rtk</code> is installed and wired. <strong>Context Mode</strong> (<code>recommended_tools.context_mode</code>) compacts MCP results and recovers session state across compaction; it is ELv2-licensed and highest value with MCP-heavy workflows.</p>
+      <p>Both tools are separate opt-ins from Graphify and agentmemory. SB install gates verify CLI and host wiring; usage rules (when to use <code>ctx_*</code> vs <code>Read</code>) live in <code>silver-bullet.md</code> §2g-ii. Verify with <code>bash scripts/enable-rtk-context-mode.sh</code>. See <code>docs/RTK.md</code> and <code>docs/CONTEXT-MODE.md</code>.</p>
 
       <div class="divider"></div>
 

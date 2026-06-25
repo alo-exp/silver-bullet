@@ -27,7 +27,7 @@ record() {
     fail)
       if [[ "${SB_DIAG_SMOKE:-}" == "1" ]]; then
         case "$check" in
-          graphify-*|agentmemory-*)
+          graphify-*|agentmemory-*|rtk-*|context-mode-*)
             [[ "$FORMAT" == "json" ]] || echo "WARN: $check — $detail"
             (( WARN++ )) || true
             return 0
@@ -134,6 +134,14 @@ main() {
     # shellcheck source=../hooks/lib/agentmemory-gate.sh
     source "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh"
   fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/rtk-gate.sh" ]]; then
+    # shellcheck source=../hooks/lib/rtk-gate.sh
+    source "${REPO_ROOT}/hooks/lib/rtk-gate.sh"
+  fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/context-mode-gate.sh" ]]; then
+    # shellcheck source=../hooks/lib/context-mode-gate.sh
+    source "${REPO_ROOT}/hooks/lib/context-mode-gate.sh"
+  fi
 
   local sb_config="${REPO_ROOT}/.silver-bullet.json"
   local graphify_consent="pending"
@@ -233,6 +241,79 @@ main() {
       record fail "agentmemory-cli" "not on PATH — user opted in; install: npm install -g @agentmemory/agentmemory"
     else
       record warn "agentmemory" "not on PATH — session capture unavailable (consent: ${agentmemory_consent})"
+    fi
+  fi
+
+  local rtk_consent="pending" rtk_suspended="false"
+  local cm_consent="pending" cm_suspended="false"
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_consent >/dev/null 2>&1; then
+    rtk_consent="$(sb_recommended_tool_consent "$sb_config" "rtk")"
+    cm_consent="$(sb_recommended_tool_consent "$sb_config" "context_mode")"
+  fi
+  if [[ -f "$sb_config" ]] && declare -f sb_recommended_tool_enforcement_suspended >/dev/null 2>&1; then
+    sb_recommended_tool_enforcement_suspended "$sb_config" "rtk" && rtk_suspended="true"
+    sb_recommended_tool_enforcement_suspended "$sb_config" "context_mode" && cm_suspended="true"
+  fi
+
+  if declare -f sb_rtk_cli_available >/dev/null 2>&1; then
+    if sb_rtk_cli_path >/dev/null 2>&1 && ! sb_rtk_cli_available 2>/dev/null; then
+      record warn "rtk-wrong-binary" "wrong rtk on PATH (Rust Type Kit?) — install rtk-ai/rtk"
+    elif sb_rtk_cli_available 2>/dev/null; then
+      if [[ "$rtk_consent" == "enabled" && "$rtk_suspended" != "true" ]]; then
+        record pass "rtk-cli" "CLI available (opted in)"
+        if sb_rtk_version_ok "$sb_config" 2>/dev/null; then
+          record pass "rtk-version" "version OK (v0.4x)"
+        else
+          record fail "rtk-version" "version too old — upgrade rtk-ai/rtk"
+        fi
+        local rtk_host
+        rtk_host="$(sb_runtime_host)"
+        if sb_rtk_platform_hook_present "$REPO_ROOT" "$rtk_host" 2>/dev/null; then
+          record pass "rtk-hook" "host hook wired (host=${rtk_host})"
+        else
+          record fail "rtk-hook" "host hook missing — run rtk init for ${rtk_host}"
+        fi
+      else
+        record pass "rtk-cli" "CLI available (consent: ${rtk_consent})"
+      fi
+    else
+      if [[ "$rtk_consent" == "enabled" && "$rtk_suspended" == "true" ]]; then
+        record warn "rtk" "opted in but install failed — enforcement suspended"
+      elif [[ "$rtk_consent" == "enabled" ]]; then
+        record fail "rtk-cli" "not on PATH — user opted in; see docs/RTK.md"
+      else
+        record warn "rtk" "not on PATH (consent: ${rtk_consent})"
+      fi
+    fi
+  fi
+
+  if declare -f sb_context_mode_cli_available >/dev/null 2>&1; then
+    if [[ "$cm_consent" == "enabled" && "$cm_suspended" == "true" ]]; then
+      record warn "context-mode" "opted in but install failed — enforcement suspended"
+    elif [[ "$cm_consent" == "enabled" ]]; then
+      if declare -f sb_context_mode_node_ok >/dev/null 2>&1 && ! sb_context_mode_node_ok "$sb_config" 2>/dev/null; then
+        record fail "context-mode-node" "Node < 22.5 — upgrade before Context Mode"
+      elif sb_context_mode_cli_available 2>/dev/null; then
+        record pass "context-mode-cli" "CLI or plugin present (opted in)"
+        local cm_host
+        cm_host="$(sb_runtime_host)"
+        if sb_context_mode_platform_artifact_present "$REPO_ROOT" "$cm_host" 2>/dev/null; then
+          record pass "context-mode-mcp" "platform wired (host=${cm_host})"
+        else
+          record fail "context-mode-mcp" "MCP/plugin not wired — see docs/CONTEXT-MODE.md"
+        fi
+        if sb_context_mode_instruction_fragment_present "$REPO_ROOT" 2>/dev/null; then
+          record pass "context-mode-fragment" "instruction fragment present"
+        else
+          record warn "context-mode-fragment" "hint fragment missing — run init scaffold"
+        fi
+      else
+        record fail "context-mode-cli" "not installed — npm install -g context-mode"
+      fi
+    elif sb_context_mode_cli_available 2>/dev/null; then
+      record pass "context-mode-cli" "CLI available (consent: ${cm_consent})"
+    else
+      record warn "context-mode" "not installed (consent: ${cm_consent})"
     fi
   fi
 

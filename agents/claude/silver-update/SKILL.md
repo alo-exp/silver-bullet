@@ -252,3 +252,47 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement
 On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
 
 **If `enabled_by_user` is `false`:** no action needed.
+
+### Step 8c: RTK consent and install retry
+
+After Step 8b (agentmemory), check `.silver-bullet.json` for RTK consent and suspension:
+
+```bash
+jq -r '.recommended_tools.rtk.enabled_by_user // "null"' .silver-bullet.json
+jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null`:** run the same consent flow as `/silver:init` §1.1e.
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry install:
+
+1. Install RTK CLI per `docs/RTK.md` (verify `rtk gain --help`)
+2. Run host `rtk init` command from `platform_install_commands`
+3. `bash scripts/enable-rtk-context-mode.sh --tool rtk`
+
+On success, clear suspension. On failure, keep suspension.
+
+**If `enabled_by_user` is `false`:** no action needed.
+
+### Step 8d: Context Mode consent and install retry
+
+Check `.silver-bullet.json` for Context Mode consent and suspension:
+
+```bash
+jq -r '.recommended_tools.context_mode.enabled_by_user // "null"' .silver-bullet.json
+jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null`:** run consent flow from `/silver:init` §1.1f (include ELv2 disclosure).
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry:
+
+1. Verify Node >= 22.5
+2. `npm install -g context-mode` and/or Claude plugin steps per `docs/CONTEXT-MODE.md`
+3. Re-scaffold instruction fragment (`templates/context-mode-hint.md.base`)
+4. Remind user to restart agent
+5. `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+
+On success, clear suspension.
+
+**If `enabled_by_user` is `false`:** no action needed.

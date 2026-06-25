@@ -247,6 +247,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul>
         <li><strong>Graphify</strong> — <code>recommended_tools.graphify.enabled_by_user</code> in <code>.silver-bullet.json</code>; preferred retrieval before planning, editing, review, and release</li>
         <li><strong>agentmemory</strong> — <code>recommended_tools.agentmemory.enabled_by_user</code>; session capture and git-backed memory export. When both are enabled: <strong>save via agentmemory, retrieve via Graphify</strong></li>
+        <li><strong>RTK</strong> — <code>recommended_tools.rtk.enabled_by_user</code>; shell output compression via upstream PreToolUse hooks (<code>docs/RTK.md</code>)</li>
+        <li><strong>Context Mode</strong> — <code>recommended_tools.context_mode.enabled_by_user</code>; MCP compaction and PreCompact recovery (<code>docs/CONTEXT-MODE.md</code>, ELv2 license)</li>
       </ul>
       <p>Consent, install, and enforcement-suspend flows run through <code>/silver:init</code> and <code>/silver:update</code>.</p>
 

@@ -106,5 +106,20 @@ sb_recommended_tool_enforced "$TMP/.silver-bullet.json" agentmemory && pass "age
 am_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"
 printf '%s' "$am_benefits" | grep -q 'Graphify' && pass "agentmemory benefits from config" || fail "agentmemory benefits from config"
 
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":null}}}"
+[[ "$(sb_recommended_tool_consent "$TMP/.silver-bullet.json" rtk)" == "pending" ]] && pass "rtk null consent -> pending" || fail "rtk null consent"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"rtk\":{\"enabled_by_user\":true}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" rtk && pass "rtk enabled enforces" || fail "rtk enabled enforces"
+
+rtk_cmds="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_platform_pre_index_commands "$TMP/.silver-bullet.json" rtk)"
+printf '%s' "$rtk_cmds" | grep -q 'rtk init -g --agent cursor' && pass "rtk cursor platform fallback" || fail "rtk cursor platform fallback"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"context_mode\":{\"enabled_by_user\":true}}}"
+sb_recommended_tool_enforced "$TMP/.silver-bullet.json" context_mode && pass "context_mode enabled enforces" || fail "context_mode enabled enforces"
+
+cm_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" context_mode)"
+printf '%s' "$cm_benefits" | grep -qi 'MCP' && pass "context_mode benefits" || fail "context_mode benefits"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

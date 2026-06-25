@@ -11,6 +11,7 @@ which tier supplied the evidence.
 | 0 | Shell discovery | `rg`, `grep`, `find`, `git log`, file reads, test output | Always available; default fallback |
 | 1 | Graphify retrieval | semantic search, related-file retrieval, session graph queries | When user opted in (`recommended_tools.graphify.enabled_by_user: true`) and Graphify is installed/indexed |
 | 1b | agentmemory capture | session memory, proactive injection, `.agentmemory/` export | When user opted in (`recommended_tools.agentmemory.enabled_by_user: true`) and server/MCP are wired; pairs with tier 1 for save/retrieve synergy |
+| 1c | Token compression (opt-in) | Aluminum CLI usage; RTK shell wiring; Context Mode MCP/fragment | Aluminum: fresh CLI usage before commits when installed. RTK/Context Mode: install+wiring gates only — usage via `silver-bullet.md` §2g-ii (no Read-size blocking) |
 | 2 | Structural graph | call chains, dependency edges, module boundaries, duplicate hotspots | When graph queries return structural evidence |
 | 3 | Live runtime | browser traces, HTTP probes, Playwright, deploy smoke | When a runnable app or environment exists |
 
@@ -45,4 +46,6 @@ Code intelligence tier: 1 (Graphify retrieval) with tier-0 shell fallback for fi
 - `docs/evidence-schema.md` — normalized finding shape
 - `docs/GRAPHIFY.md` — Graphify setup and retrieval patterns
 - `docs/AGENTMEMORY.md` — agentmemory setup, MCP wiring, Graphify synergy
+- `docs/RTK.md` — RTK install, wrong-binary guard, host hook wiring
+- `docs/CONTEXT-MODE.md` — Context Mode install, ELv2 license, instruction fragment
 - `skills/silver-scan/SKILL.md` — session and backlog discovery
