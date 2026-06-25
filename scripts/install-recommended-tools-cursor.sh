@@ -34,5 +34,14 @@ elif command -v context-mode >/dev/null 2>&1; then
   fi
 fi
 
+
+TOKEN_ENFORCE_TPL="${REPO_ROOT}/templates/cursor/token-compression-enforcement.mdc"
+if [[ ! -f "${RULES_DIR}/token-compression-enforcement.mdc" ]] && [[ -f "$TOKEN_ENFORCE_TPL" ]]; then
+  cp "$TOKEN_ENFORCE_TPL" "${RULES_DIR}/token-compression-enforcement.mdc"
+fi
+if [[ -f "${RULES_DIR}/token-compression-enforcement.mdc" ]]; then
+  install_rule token-compression-enforcement.mdc
+fi
+
 printf '\nCursor recommended-tool rules installed under %s\n' "$RULES_DIR"
 printf 'Verify agentmemory MCP in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)\n'
