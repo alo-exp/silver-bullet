@@ -78,6 +78,7 @@ assert_output_contains "diagnostics reports capability tier" "runtime-capability
 
 grep -q 'optimize-score' "$SCRIPT" && pass "diagnostics includes optimize-score" || fail "diagnostics optimize-score"
 grep -q 'stack-optimizer' "$SCRIPT" && pass "diagnostics sources stack-optimizer" || fail "diagnostics stack-optimizer"
+grep -q 'optimize-gitleaks' "$SCRIPT" && pass "diagnostics includes optimize-gitleaks" || fail "diagnostics optimize-gitleaks"
 
 json_out="$(SB_DIAG_FORMAT=json bash "$SCRIPT" 2>&1 || true)"
 if jq -e '.capability_tier' >/dev/null <<<"$json_out"; then

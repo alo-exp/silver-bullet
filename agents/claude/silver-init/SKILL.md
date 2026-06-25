@@ -327,6 +327,13 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
 
+**Step 3e — gitleaks (required with bridge):**
+```bash
+command -v gitleaks || brew install gitleaks   # macOS
+command -v gitleaks && gitleaks version
+```
+The bridge uses regex first, then gitleaks as a second-line scan (JWTs and other patterns regex skips). SB optimizer installs gitleaks and sets `GITLEAKS_PATH` in the bridge launchd plist when `synergy_max` runs.
+
 **On full success**, clear suspension:
 ```bash
 jq '.recommended_tools.agentmemory.enforcement_suspended = false
