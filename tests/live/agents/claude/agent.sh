@@ -88,6 +88,9 @@ agent_invoke() {
         "CLAUDE_INTERACTIVE_READY_DELAY_MS=${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}"
         "SB_E2E_MATRIX_CLEAN_ENV=${SB_E2E_MATRIX_CLEAN_ENV:-0}"
       )
+      if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
+        spawn_env+=("CLAUDE_INTERACTIVE_LOG_FILE=${CLAUDE_INTERACTIVE_LOG_FILE}")
+      fi
       local kv
       while IFS= read -r kv; do
         [[ -n "$kv" ]] && spawn_env+=("$kv")
