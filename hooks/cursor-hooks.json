@@ -105,6 +105,11 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/context-mode-read-deny.sh\"",
+        "timeout": 10,
+        "matcher": "Read|Grep"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh\"",
         "timeout": 10,
         "matcher": "Skill"
