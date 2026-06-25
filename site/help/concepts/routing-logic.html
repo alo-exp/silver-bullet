@@ -327,6 +327,21 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
             <td style="font-family:inherit;font-size:.875rem">silver:clarify → silver:context</td>
           </tr>
           <tr>
+            <td><a href="../workflows/silver-spec.html" style="color:var(--accent-light)">/silver:spec</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"write a spec", "acceptance criteria", "user stories", "formal spec"</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code></td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-ingest.html" style="color:var(--accent-light)">/silver:ingest</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"JIRA", "Figma", "Google Docs", "Confluence", external artifact</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code> (ingest sub-step)</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-validate.html" style="color:var(--accent-light)">/silver:validate</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"validate spec", "validate plan", "gap analysis"</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>VALIDATE</code></td>
+          </tr>
+          <tr>
             <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/silver:feature</a></td>
             <td style="font-family:inherit;font-size:.875rem">"add X", "build X", "implement X", "new feature", "enhance X", "extend X"</td>
             <td style="font-family:inherit;font-size:.875rem">silver:scan / silver:context → silver:clarify as needed</td>
@@ -347,9 +362,24 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
             <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>silver:fast</code> or <code>silver:feature</code></td>
           </tr>
           <tr>
+            <td><a href="../workflows/silver-test.html" style="color:var(--accent-light)">/silver:test</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"write tests", "E2E", "test hardening", "fix tests"</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code></td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-refactor.html" style="color:var(--accent-light)">/silver:refactor</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"refactor", "rename", "split", "extract", behavior-preserving change</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → post-exec gates</td>
+          </tr>
+          <tr>
             <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/silver:devops</a></td>
             <td style="font-family:inherit;font-size:.875rem">"infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "cloud", "ops"</td>
             <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:blast-radius → optional DevOps skill router</td>
+          </tr>
+          <tr>
+            <td><a href="../workflows/silver-deploy.html" style="color:var(--accent-light)">/silver:deploy</a></td>
+            <td style="font-family:inherit;font-size:.875rem">"deploy", "production deploy", "staging deploy", "rollout"</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td>
           </tr>
           <tr>
             <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>
