@@ -53,14 +53,17 @@ sb_stack_profile_knob() {
 }
 
 sb_stack_graphify_hooks_installed() {
+  local repo="${1:-$PWD}"
+  if [[ -d "${repo}/.git/hooks" ]]; then
+    grep -q 'graphify' "${repo}/.git/hooks/post-commit" 2>/dev/null && return 0
+    grep -q 'graphify' "${repo}/.git/hooks/post-checkout" 2>/dev/null && return 0
+  fi
   command -v graphify >/dev/null 2>&1 || return 1
   if graphify hook status >/dev/null 2>&1; then
     graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
     return $?
   fi
-  [[ -d "${1:-$PWD}/.git/hooks" ]] || return 1
-  grep -q 'graphify' "${1:-$PWD}/.git/hooks/post-commit" 2>/dev/null \
-    || grep -q 'graphify' "${1:-$PWD}/.git/hooks/post-checkout" 2>/dev/null
+  return 1
 }
 
 sb_stack_ensure_agentmemory_gitignore() {
@@ -181,7 +184,7 @@ EOF
     am_bin="$(command -v agentmemory)"
     /usr/bin/sed -i.bak "s|${HOME}/.npm-global/bin/agentmemory|${am_bin}|g" "$plist_path" 2>/dev/null \
       || sed -i '' "s|${HOME}/.npm-global/bin/agentmemory|${am_bin}|g" "$plist_path" 2>/dev/null || true
-    rm -f "${plist_path}.bak"
+    rm -f -- "${plist_path}.bak"
   fi
   launchctl bootout "gui/$(id -u)/com.agentmemory.server" 2>/dev/null || true
   launchctl bootstrap "gui/$(id -u)" "$plist_path" 2>/dev/null \
