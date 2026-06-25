@@ -251,10 +251,12 @@ EOF
 ga_launchd_bridge_plist() {
   local repo="${1:-}"
   [[ -n "$repo" ]] || return 0
-  local bridge_script python_path plist_dir plist_path
+  local bridge_script python_path plist_dir plist_path gitleaks_bin path_env
   bridge_script="$(ga_agentmemory_home)/bridge.py"
   [[ -f "$bridge_script" ]] || return 0
   python_path="$(command -v python3 2>/dev/null || printf '%s' /usr/bin/python3)"
+  gitleaks_bin="$(ga_gitleaks_path)"
+  path_env="$(ga_bridge_path_env)"
   plist_dir="${HOME}/Library/LaunchAgents"
   plist_path="${plist_dir}/com.agentmemory.bridge.plist"
   mkdir -p "$plist_dir" "${repo}/.agentmemory"
@@ -278,6 +280,10 @@ ga_launchd_bridge_plist() {
   <dict>
     <key>AGENTMEMORY_REPO_ROOT</key>
     <string>${repo}</string>
+    <key>GITLEAKS_PATH</key>
+    <string>${gitleaks_bin:-gitleaks}</string>
+    <key>PATH</key>
+    <string>${path_env}</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
@@ -308,6 +314,50 @@ ga_agentmemory_server_healthy() {
     && curl -sf "http://localhost:3111/agentmemory/health" >/dev/null 2>&1
 }
 
+ga_gitleaks_path() {
+  command -v gitleaks 2>/dev/null || printf ''
+}
+
+ga_bridge_path_env() {
+  local gitleaks_bin path_prefix gdir
+  gitleaks_bin="$(ga_gitleaks_path)"
+  path_prefix="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+  if [[ -n "$gitleaks_bin" ]]; then
+    gdir="$(dirname "$gitleaks_bin")"
+    if [[ ":${path_prefix}:" != *":${gdir}:"* ]]; then
+      path_prefix="${gdir}:${path_prefix}"
+    fi
+  fi
+  printf '%s' "$path_prefix"
+}
+
+ga_ensure_gitleaks() {
+  if ga_gitleaks_path >/dev/null; then
+    return 0
+  fi
+  if ga_dry_run; then
+    if command -v brew >/dev/null 2>&1; then
+      printf 'DRY-RUN: brew install gitleaks\n'
+    else
+      printf 'DRY-RUN: install gitleaks — brew install gitleaks (macOS) or apt install gitleaks (Linux)\n'
+    fi
+    return 0
+  fi
+  if command -v brew >/dev/null 2>&1; then
+    brew install gitleaks 2>/dev/null || {
+      printf 'WARN: gitleaks brew install failed — bridge regex scan only\n'
+      return 1
+    }
+  elif command -v apt-get >/dev/null 2>&1; then
+    printf 'WARN: install gitleaks — sudo apt-get install gitleaks (Debian/Ubuntu) or GitHub releases\n'
+    return 1
+  else
+    printf 'WARN: gitleaks not installed — brew install gitleaks (macOS) or see docs/AGENTMEMORY.md\n'
+    return 1
+  fi
+  ga_gitleaks_path >/dev/null
+}
+
 ga_graphify_hooks_installed() {
   command -v graphify >/dev/null 2>&1 || return 1
   graphify hook status 2>/dev/null | grep -qiE 'installed|active|enabled'
@@ -331,6 +381,7 @@ ga_apply_shared_agentmemory() {
     ga_run_cmd 'agentmemory init'
   fi
   ga_merge_agentmemory_env "$export_abs"
+  ga_ensure_gitleaks
   if ! ga_skip_host_hooks && command -v launchctl >/dev/null 2>&1; then
     ga_launchd_server_plist "$export_abs"
     ga_launchd_bridge_plist "$repo"
@@ -444,6 +495,12 @@ ga_verify_host() {
     _ga_check pass graphify-hooks "git template hooks installed"
   else
     _ga_check warn graphify-hooks "run graphify hook install"
+  fi
+
+  if ga_gitleaks_path >/dev/null; then
+    _ga_check pass gitleaks "installed ($(ga_gitleaks_path))"
+  else
+    _ga_check warn gitleaks "required for bridge second-line scan — brew install gitleaks"
   fi
 
   if [[ -n "$repo" && -f "${repo}/graphify-out/graph.json" ]]; then

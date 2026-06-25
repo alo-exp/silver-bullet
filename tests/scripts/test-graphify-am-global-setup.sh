@@ -68,10 +68,24 @@ GA_AGENTMEMORY_HOME="$TMP/amhome" ga_merge_agentmemory_env "/tmp/project"
 grep -q 'AGENTMEMORY_INJECT_CONTEXT=true' "$TMP/amhome/.env" && pass "env merge inject_context" || fail "env merge inject_context"
 grep -q 'AGENTMEMORY_EXPORT_ROOT=/tmp/project/.agentmemory' "$TMP/amhome/.env" && pass "env absolute export" || fail "env absolute export"
 
+declare -f ga_ensure_gitleaks >/dev/null 2>&1 && pass "ga_ensure_gitleaks defined" || fail "ga_ensure_gitleaks defined"
+declare -f ga_gitleaks_path >/dev/null 2>&1 && pass "ga_gitleaks_path defined" || fail "ga_gitleaks_path defined"
+
+if ga_gitleaks_path >/dev/null 2>&1; then
+  ga_ensure_gitleaks && pass "ga_ensure_gitleaks when installed"
+else
+  if GA_GLOBAL_DRY_RUN=1 ga_ensure_gitleaks 2>&1 | grep -q 'DRY-RUN.*gitleaks'; then
+    pass "ga_ensure_gitleaks dry-run"
+  else
+    fail "ga_ensure_gitleaks dry-run"
+  fi
+fi
+
 # Verification docs exist
 for host in claude codex opencode goose hermes; do
   doc="${REPO_ROOT}/docs/graphify-am/verification/${host}-verify-graphify-am.md"
   [[ -f "$doc" ]] && pass "verification doc ${host}" || fail "verification doc ${host}"
+  grep -q 'gitleaks' "$doc" && pass "verification doc ${host} gitleaks check" || fail "verification doc ${host} gitleaks check"
 done
 
 [[ -f "${REPO_ROOT}/docs/graphify-am/PLATFORM-MATRIX.md" ]] && pass "platform matrix doc" || fail "platform matrix doc"

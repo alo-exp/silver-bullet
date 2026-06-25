@@ -28,6 +28,16 @@ which agentmemory && agentmemory --version 2>/dev/null | head -1
 
 **Fail:** `npm install -g @agentmemory/agentmemory`
 
+### 1.3 gitleaks
+
+```bash
+which gitleaks && gitleaks version 2>/dev/null | head -1
+```
+
+**Pass:** binary on PATH (bridge second-line secret scan).
+
+**Fail:** `brew install gitleaks` (macOS) or apt/GitHub releases on Linux — `graphify-am-global-setup.sh --apply` attempts install.
+
 ---
 
 ## Phase 2 — Global config artifacts
@@ -65,11 +75,10 @@ jq '.mcpServers | keys[]' ~/.claude.json 2>/dev/null | grep -i agentmemory
 ### 2.4 synergy_max `.env`
 
 ```bash
-grep AGENTMEMORY_INJECT_CONTEXT=true ~/.agentmemory/.env
-grep AGENTMEMORY_EXPORT_ROOT ~/.agentmemory/.env
+test -f ~/.agentmemory/.env && grep -q '^AGENTMEMORY_INJECT_CONTEXT=true' ~/.agentmemory/.env && grep -q '^AGENTMEMORY_EXPORT_ROOT=' ~/.agentmemory/.env && echo OK
 ```
 
-**Pass:** both lines present; export root is absolute.
+**Pass:** `OK` printed; `AGENTMEMORY_EXPORT_ROOT` value is absolute.
 
 **Fail:** `bash scripts/graphify-am-global-setup.sh --host claude --apply`
 
@@ -105,11 +114,17 @@ graphify hook status
 
 1. Open a git repo with code. Optionally pass `--repo` to global setup for export root.
 2. Ask Claude to **save a decision** via agentmemory MCP (e.g. "Remember: we use jq for all JSON in this repo").
-3. Trigger export: `curl -sf -X POST http://localhost:3111/agentmemory/obsidian/export -H 'Content-Type: application/json' -d '{"vaultDir":"'"$(grep AGENTMEMORY_EXPORT_ROOT ~/.agentmemory/.env | cut -d= -f2)"'/memory"}'`
+3. The `com.agentmemory.bridge` launch agent watches `.agentmemory/` and auto-commits memories to git — wait ~30s for the bridge to snapshot and commit, OR trigger a manual export constrained to the global agentmemory home:
+   ```bash
+   curl -sf -X POST http://localhost:3111/agentmemory/obsidian/export \
+     -H 'Content-Type: application/json' \
+     -d '{"vaultDir":"'"$HOME"'/.agentmemory/default-export/memory"}'
+   ```
+   > **API constraint:** `obsidian/export` rejects `vaultDir` outside `~/.agentmemory/`. To get memories into the repo's `.agentmemory/memory/` (the whitelisted git path), rely on the bridge auto-snapshot OR copy from `~/.agentmemory/default-export/memory/` into the repo's `.agentmemory/memory/`.
 4. From repo root: `graphify update . --no-cluster`
-5. `graphify query "jq JSON decision" --budget 2000` — result should include `.agentmemory` nodes.
+5. `graphify query "agentmemory vault" --budget 1500` — result should include `.agentmemory/memory/MOC.md` nodes.
 
-**Pass:** query returns memory-related nodes.
+**Pass:** query returns memory-related nodes (e.g. `agentmemory vault`, `MOC.md`, `Sessions`, `Memories`).
 
 ---
 

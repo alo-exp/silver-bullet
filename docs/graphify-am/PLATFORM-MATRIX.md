@@ -20,11 +20,12 @@
 |------|----------------|-------|
 | Graphify CLI | `uv tool install graphifyy` or `pipx install graphifyy` | Python 3.10+ |
 | agentmemory CLI | `npm install -g @agentmemory/agentmemory` | Node 20+ |
+| **gitleaks** | `brew install gitleaks` (macOS) or `apt install gitleaks` (Linux) | Required for bridge second-line secret scan |
 | synergy_max `.env` | `~/.agentmemory/.env` | Script merges managed block; chmod 600 |
 | Server persistence | macOS: `~/Library/LaunchAgents/com.agentmemory.server.plist` | Linux: systemd user unit (manual) |
 | Git hooks | `graphify hook install` | Global git template — new repos inherit |
 | Export root (default) | `~/.agentmemory/default-export` | Override with `--repo /path/to/project` |
-| Bridge (optional) | `com.agentmemory.bridge` launchd | Only when `--repo` passed and `~/.agentmemory/bridge.py` exists |
+| Bridge (optional) | `com.agentmemory.bridge` launchd | Only when `--repo` passed and `~/.agentmemory/bridge.py` exists; requires gitleaks on PATH |
 
 ## Synergy loop (per project)
 

@@ -32,7 +32,7 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 | `OBSIDIAN_AUTO_EXPORT=true` | Yes | Markdown export for Graphify indexing |
 | `AGENTMEMORY_EXPORT_ROOT` | **Absolute path** | Relative paths resolve to `~/.agentmemory` when cwd ≠ repo [SETUP_REPORT deviation] |
 | Server persistence | launchd (macOS) / systemd (Linux) | `nohup` exits when CLI returns [SETUP_REPORT] |
-| Bridge + gitleaks | Bridge required; gitleaks advisory | Regex scan always; gitleaks second line |
+| Bridge + gitleaks | Bridge required; gitleaks required | Regex scan always; gitleaks second line |
 | BM25 floor | ≥0.9.5 | BM25 fix in 0.9.5+ [agentmemory issues] |
 
 ## Synergy Index Order

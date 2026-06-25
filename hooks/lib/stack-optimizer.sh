@@ -193,10 +193,12 @@ EOF
 
 sb_stack_launchd_bridge_plist() {
   local repo="${1:-$PWD}"
-  local python_path plist_dir plist_path bridge_script
+  local python_path plist_dir plist_path bridge_script gitleaks_bin path_env
   bridge_script="$(sb_stack_agentmemory_home)/bridge.py"
   [[ -f "$bridge_script" ]] || return 0
   python_path="$(command -v python3 2>/dev/null || printf '%s' /usr/bin/python3)"
+  gitleaks_bin="$(sb_stack_gitleaks_path)"
+  path_env="$(sb_stack_bridge_path_env)"
   plist_dir="${HOME}/Library/LaunchAgents"
   plist_path="${plist_dir}/com.agentmemory.bridge.plist"
   mkdir -p "$plist_dir"
@@ -220,6 +222,10 @@ sb_stack_launchd_bridge_plist() {
   <dict>
     <key>AGENTMEMORY_REPO_ROOT</key>
     <string>${repo}</string>
+    <key>GITLEAKS_PATH</key>
+    <string>${gitleaks_bin:-gitleaks}</string>
+    <key>PATH</key>
+    <string>${path_env}</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
@@ -245,6 +251,61 @@ sb_stack_bridge_running() {
     systemctl --user is-active agentmemory-bridge >/dev/null 2>&1 && return 0
   fi
   command -v pgrep >/dev/null 2>&1 && pgrep -f 'bridge.py' >/dev/null 2>&1
+}
+
+sb_stack_gitleaks_path() {
+  command -v gitleaks 2>/dev/null || printf ''
+}
+
+sb_stack_gitleaks_required() {
+  local config_file="${1:-}" profile="${2:-}"
+  profile="${profile:-$(sb_stack_optimization_profile_name "$config_file")}"
+  local req rec
+  req="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory gitleaks_required false)"
+  rec="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory gitleaks_recommended false)"
+  [[ "$req" == "true" || "$rec" == "true" ]]
+}
+
+sb_stack_bridge_path_env() {
+  local gitleaks_bin path_prefix gdir
+  gitleaks_bin="$(sb_stack_gitleaks_path)"
+  path_prefix="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+  if [[ -n "$gitleaks_bin" ]]; then
+    gdir="$(dirname "$gitleaks_bin")"
+    if [[ ":${path_prefix}:" != *":${gdir}:"* ]]; then
+      path_prefix="${gdir}:${path_prefix}"
+    fi
+  fi
+  printf '%s' "$path_prefix"
+}
+
+sb_stack_ensure_gitleaks() {
+  local config_file="${1:-}" profile="${2:-}"
+  profile="${profile:-$(sb_stack_optimization_profile_name "$config_file")}"
+  sb_stack_gitleaks_required "$config_file" "$profile" || return 0
+
+  if sb_stack_gitleaks_path >/dev/null; then
+    return 0
+  fi
+
+  if sb_stack_optimizer_dry_run; then
+    if command -v brew >/dev/null 2>&1; then
+      printf 'DRY-RUN: brew install gitleaks\n'
+    else
+      printf 'DRY-RUN: install gitleaks — brew install gitleaks (macOS) or apt install gitleaks (Linux)\n'
+    fi
+    return 0
+  fi
+
+  if command -v brew >/dev/null 2>&1; then
+    brew install gitleaks 2>/dev/null || printf 'WARN: gitleaks brew install failed — bridge regex scan only\n'
+  elif command -v apt-get >/dev/null 2>&1; then
+    printf 'WARN: install gitleaks — sudo apt-get install gitleaks (Debian/Ubuntu) or download from GitHub releases\n'
+  else
+    printf 'WARN: gitleaks not installed — brew install gitleaks (macOS) or see docs/AGENTMEMORY.md\n'
+  fi
+
+  sb_stack_gitleaks_path >/dev/null
 }
 
 sb_stack_server_persistence_ok() {
@@ -325,22 +386,12 @@ sb_optimize_agentmemory() {
   sb_stack_ensure_agentmemory_gitignore "$repo"
   sb_stack_merge_agentmemory_env "$repo" "$config_file" "$profile"
 
+  sb_stack_ensure_gitleaks "$config_file" "$profile"
+
   persistence="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory server_persistence launchd)"
   if [[ "$persistence" == "launchd" ]] && command -v launchctl >/dev/null 2>&1 && ! sb_stack_skip_host_hooks; then
     sb_stack_launchd_server_plist "$repo" "$config_file"
     sb_stack_launchd_bridge_plist "$repo"
-  fi
-
-  local gitleaks_rec
-  gitleaks_rec="$(sb_stack_profile_knob "$config_file" "$profile" agentmemory gitleaks_recommended true)"
-  if [[ "$gitleaks_rec" == "true" ]] && ! command -v gitleaks >/dev/null 2>&1; then
-    if sb_stack_optimizer_dry_run; then
-      printf 'DRY-RUN: advisory brew install gitleaks\n'
-    elif command -v brew >/dev/null 2>&1; then
-      brew install gitleaks 2>/dev/null || printf 'WARN: gitleaks install failed — regex scan only\n'
-    else
-      printf 'WARN: gitleaks not installed — regex scan only\n'
-    fi
   fi
 
   local cmd
@@ -472,10 +523,16 @@ sb_optimization_score() {
     else
       _sb_score_check warn "agentmemory-bridge" "bridge not running" 10
     fi
-    if command -v gitleaks >/dev/null 2>&1; then
+    if sb_stack_gitleaks_required "$config_file" "$profile"; then
+      if sb_stack_gitleaks_path >/dev/null; then
+        _sb_score_check pass "gitleaks" "installed ($(sb_stack_gitleaks_path))" 5
+      else
+        _sb_score_check warn "gitleaks" "required but missing — brew install gitleaks" 5
+      fi
+    elif sb_stack_gitleaks_path >/dev/null; then
       _sb_score_check pass "gitleaks" "installed" 5
     else
-      _sb_score_check warn "gitleaks" "not installed (advisory)" 5
+      _sb_score_check skip "gitleaks" "not required for profile" 0
     fi
   fi
 
