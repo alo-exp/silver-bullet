@@ -1,5 +1,18 @@
 #!/usr/bin/env bash
 
+# Slash-command prompt for interactive Claude TUI enterprise matrix rows.
+# The expect harness (claude-interactive-invoke.expect) parses leading /route
+# tokens and submits them as native slash commands; [$silver]() text stalls at 0 tokens.
+matrix_route_prompt() {
+  local route="$1"
+  local prompt_card="$2"
+  local evidence_path="$3"
+  local matrix_context="$4"
+
+  printf '%s %s Enterprise E2E matrix validation. %s Use the Silver Bullet orchestrator; parent must not implement product code inline. Create workflow evidence at %s. Stop when the workflow is complete.' \
+    "$route" "$prompt_card" "$matrix_context" "$evidence_path"
+}
+
 skill_prompt() {
   local target_route="$1"
   shift
