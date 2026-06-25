@@ -172,9 +172,27 @@
           "post_index": [
             "graphify cursor install"
           ]
+        },
+        "opencode": {
+          "pre_index": [
+            "graphify install --project --platform opencode"
+          ],
+          "post_index": []
+        },
+        "goose": {
+          "pre_index": [
+            "graphify install --project --platform pi"
+          ],
+          "post_index": []
+        },
+        "hermes": {
+          "pre_index": [
+            "graphify install --project --platform hermes"
+          ],
+          "post_index": []
         }
       },
-      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, Goose (Pi), and Hermes agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_budget": 2000,
@@ -215,6 +233,24 @@
           "pre_index": [],
           "post_index": [
             "Verify agentmemory MCP is configured in $HOME/.codex/mcp.json (see docs/AGENTMEMORY.md)"
+          ]
+        },
+        "opencode": {
+          "pre_index": [],
+          "post_index": [
+            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual — no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
+          ]
+        },
+        "goose": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect pi (manual TS extension copy per integrations/pi.md; Goose uses Pi runtime)"
+          ]
+        },
+        "hermes": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect hermes (manual YAML merge per integrations/hermes.md)"
           ]
         }
       },
