@@ -424,7 +424,7 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or Claude plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, Cursor allow-list, global `~/.cursor/rules/` (see `docs/CONTEXT-MODE.md`)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, Cursor allow-list, global Cursor `rules/` directory (see `docs/CONTEXT-MODE.md`)
 5. **Scaffold instruction fragment** into `silver-bullet.md` and `CLAUDE.md` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
 6. **Cursor:** copy `context-mode.mdc` to `.cursor/rules/` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install

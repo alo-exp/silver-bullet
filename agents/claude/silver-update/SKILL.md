@@ -286,7 +286,7 @@ bash scripts/sb-optimize-stack.sh --verify
 
 Runs on upgrade, version bump, or when retrying `enforcement_suspended` installs. Records `optimization.last_applied_at` / `optimization.score`. See `docs/STACK-OPTIMIZATION.md`.
 
-### Step 8e: Context Mode consent and install retry
+### Step 8e: Context Mode
 
 Check `.silver-bullet.json` for Context Mode consent and suspension:
 
