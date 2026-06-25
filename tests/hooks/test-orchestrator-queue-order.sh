@@ -193,6 +193,14 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+if sb_orchestrator_is_flow_atom silver-handoff; then
+  echo "PASS: silver-handoff is a flow atom"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-handoff not registered as flow atom"
+  FAIL=$((FAIL + 1))
+fi
+
 if printf '%s' "$release_q" | grep -q 'silver-execute'; then
   echo "FAIL: silver-release queue must not include silver-execute"
   FAIL=$((FAIL + 1))
@@ -207,6 +215,22 @@ else
   echo "FAIL: silver-release missing silver-create-release tail (got: $release_q)"
   FAIL=$((FAIL + 1))
 fi
+
+# FLOW-* queue tokens must resolve when the invocable skill completes (not only exact token match).
+orch_test="${SB_RUNTIME_STATE_DIR:-/tmp}/orchestrator-queue-index-$$.json"
+mkdir -p "$(dirname "$orch_test")"
+printf '{"flow_queue":["FLOW-QUALITY-GATE-PRESHIP","silver-plan","silver-execute"],"last_completed_index":-1}' >"$orch_test"
+export SB_RUNTIME_STATE_DIR="$(dirname "$orch_test")"
+mv "$orch_test" "${SB_RUNTIME_STATE_DIR}/orchestrator.json"
+idx="$(sb_orchestrator_queue_index_for_atom silver-quality-gates "${SB_RUNTIME_STATE_DIR}/orchestrator.json" 0 2>/dev/null || true)"
+if [[ "$idx" == "0" ]]; then
+  echo "PASS: silver-quality-gates matches FLOW-QUALITY-GATE-PRESHIP queue token"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: FLOW-QUALITY-GATE-PRESHIP not resolved for silver-quality-gates (idx=$idx)"
+  FAIL=$((FAIL + 1))
+fi
+rm -f "${SB_RUNTIME_STATE_DIR}/orchestrator.json" 2>/dev/null || true
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

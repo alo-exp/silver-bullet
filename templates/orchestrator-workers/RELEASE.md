@@ -10,7 +10,7 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:release`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
+Invoke **`silver:create-release`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 ## Acceptance criteria
 

@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-research|silver-ensure-docs|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-research|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security)
       return 0
       ;;
     *)
@@ -94,24 +94,62 @@ sb_orchestrator_queue_for_composer() {
   printf '%s' "$queue"
 }
 
+sb_orchestrator_flow_label_for_token() {
+  local line="$1"
+  case "$line" in
+    FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|FLOW-DEVOPS-QUALITY-GATE-PRESHIP) line="QUALITY GATE" ;;
+    devops-skill-router) line="DEVOPS SKILL ROUTER" ;;
+    silver-blast-radius) line="BLAST RADIUS" ;;
+    silver-branch-finish) line="BRANCH FINISH" ;;
+    silver-completion-audit) line="COMPLETION AUDIT" ;;
+    silver-validate) line="VALIDATE" ;;
+    silver-quality-gates|devops-quality-gates) line="QUALITY GATE" ;;
+    silver-create-release) line="CREATE RELEASE" ;;
+    security) line="SECURITY" ;;
+    FLOW-DESIGN-HANDOFF|DESIGN-HANDOFF|DESIGN\ HANDOFF|silver-handoff) line="DESIGN HANDOFF" ;;
+    FLOW-DOCUMENT|DOCUMENT|silver-ensure-docs) line="DOCUMENT" ;;
+    silver-*) line="$(printf '%s' "${line#silver-}" | tr '[:lower:]' '[:upper:]')" ;;
+  esac
+  printf '%s' "$line"
+}
+
 sb_orchestrator_flow_csv_for_workflows() {
-  local composer="$1" line out=""
-  while IFS= read -r line; do
+  local composer="$1" repo_root="${2:-}" line out="" queue
+  queue="$(sb_orchestrator_queue_for_composer "$composer" "$repo_root")"
+  local IFS=','
+  read -ra tokens <<< "$queue"
+  for line in "${tokens[@]}"; do
     [[ -z "$line" ]] && continue
-    case "$line" in
-      FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP|FLOW-DEVOPS-QUALITY-GATE-PRESHIP) line="QUALITY GATE" ;;
-      devops-skill-router) line="DEVOPS SKILL ROUTER" ;;
-      silver-blast-radius) line="BLAST RADIUS" ;;
-      silver-branch-finish) line="BRANCH FINISH" ;;
-      silver-completion-audit) line="COMPLETION AUDIT" ;;
-      silver-validate) line="VALIDATE" ;;
-      silver-create-release) line="CREATE RELEASE" ;;
-      security) line="SECURE" ;;
-      silver-*) line="$(printf '%s' "${line#silver-}" | tr '[:lower:]' '[:upper:]')" ;;
-    esac
+    line="$(sb_orchestrator_flow_label_for_token "$line")"
     out="${out:+$out,}$line"
-  done < <(sb_orchestrator_queue_for_composer "$composer" | tr ',' '\n')
+  done
   printf '%s' "$out"
+}
+
+# Resolve queue index for a completed atom skill, matching raw tokens or FLOW-* aliases.
+sb_orchestrator_queue_index_for_atom() {
+  local atom_skill="$1" file="$2" start="${3:-0}"
+  local _lib_dir queue_len i token skill
+  _lib_dir="$(dirname "${BASH_SOURCE[0]}")"
+  if [[ -f "${_lib_dir}/orchestrator-directive.sh" ]]; then
+    # shellcheck source=lib/orchestrator-directive.sh
+    source "${_lib_dir}/orchestrator-directive.sh"
+  fi
+  queue_len="$(jq '.flow_queue | length' "$file" 2>/dev/null || echo 0)"
+  for ((i = start; i < queue_len; i++)); do
+    token="$(jq -r --argjson i "$i" '.flow_queue[$i] // ""' "$file" 2>/dev/null || true)"
+    [[ -z "$token" ]] && continue
+    if [[ "$token" == "$atom_skill" ]]; then
+      printf '%s' "$i"
+      return 0
+    fi
+    skill="$(sb_orchestrator_flow_to_skill "$token" 2>/dev/null || true)"
+    if [[ -n "$skill" && "$skill" == "$atom_skill" ]]; then
+      printf '%s' "$i"
+      return 0
+    fi
+  done
+  return 1
 }
 
 # Detect full-software intent for cross-session queue seeding (Wave 0.7).
@@ -221,7 +259,7 @@ sb_orchestrator_on_composer_start() {
   fi
   [[ -n "$wf_bin" ]] || return 0
 
-  flows_csv="$(sb_orchestrator_flow_csv_for_workflows "$composer_skill")"
+  flows_csv="$(sb_orchestrator_flow_csv_for_workflows "$composer_skill" "$repo_root")"
   wf_id="$("$wf_bin" start "/silver:${composer_skill#silver-}" "${intent:-autonomous route}" "$flows_csv" 2>/dev/null || true)"
   [[ -n "$wf_id" ]] || return 0
 
@@ -268,9 +306,7 @@ sb_orchestrator_advance_on_atom() {
     wf_bin=""
     [[ -x "$repo_root/scripts/workflows.sh" ]] && wf_bin="$repo_root/scripts/workflows.sh"
     if [[ -n "$wf_bin" ]]; then
-      flow_name="${atom_skill#silver-}"
-      flow_name="$(printf '%s' "$flow_name" | tr '[:lower:]' '[:upper:]')"
-      [[ "$atom_skill" == "silver-quality-gates" || "$atom_skill" == "devops-quality-gates" ]] && flow_name="QUALITY GATE"
+      flow_name="$(sb_orchestrator_flow_label_for_token "$atom_skill")"
       "$wf_bin" complete-flow "$wid" "$flow_name" 2>/dev/null || \
         "$wf_bin" complete-flow "$wid" "$atom_skill" 2>/dev/null || true
     fi
@@ -279,17 +315,12 @@ sb_orchestrator_advance_on_atom() {
   local queue_len idx next_idx now last_idx
   queue_len="$(jq '.flow_queue | length' "$file" 2>/dev/null || echo 0)"
   last_idx="$(jq -r '.last_completed_index // -1' "$file" 2>/dev/null || echo -1)"
-  idx="$(jq -r --arg atom "$atom_skill" --argjson start "$((last_idx + 1))" '
-    (.flow_queue | to_entries[] | select(.key >= $start and .value == $atom) | .key) // empty
-  ' "$file" 2>/dev/null || true)"
+  idx="$(sb_orchestrator_queue_index_for_atom "$atom_skill" "$file" "$((last_idx + 1))" 2>/dev/null || true)"
   if [[ -z "$idx" ]]; then
-    idx="$(jq -r --arg atom "$atom_skill" '
-      (.flow_queue | to_entries[] | select(.value == $atom) | .key) // empty
-    ' "$file" 2>/dev/null || true)"
+    # Ignore stale or optional atom completions that are not still pending in
+    # this queue. Rewinding to an earlier match corrupts current_flow.
+    return 0
   fi
-  [[ -n "$idx" ]] || idx="$(jq -r --arg atom "$atom_skill" '
-    (.flow_queue | to_entries[] | select(.value | contains($atom)) | .key) // 0
-  ' "$file" 2>/dev/null || echo 0)"
 
   next_idx=$((idx + 1))
   if [[ "$next_idx" -ge "$queue_len" ]]; then

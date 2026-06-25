@@ -159,7 +159,7 @@ footer a{color:var(--text-secondary);text-decoration:none}footer a:hover{color:v
 
       <h2 id="where-composed">Where it is composed</h2>
       <p><code>WF-SHIP-READINESS</code> is the final segment of the post-execution sequence in delivery workflows:</p>
-      <div class="code-block">… → VERIFY → SECURE → VALIDATE
+      <div class="code-block">… → VERIFY (verify-tests) → SECURE (VALIDATE as needed)
   → QUALITY_GATE (pre-ship)
   → BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
       <p>Parent workflows that include this component:</p>

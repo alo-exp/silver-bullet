@@ -516,7 +516,7 @@ footer a:hover{color:var(--accent-light)}
           <tr><td>BRANCH_FINISH</td><td style="font-family:inherit;font-size:.875rem">branch hygiene</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td>COMPLETION_AUDIT</td><td style="font-family:inherit;font-size:.875rem">completion audit</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td>DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:debug</code>, <code>/silver:forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
-          <tr><td>DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ensure-docs</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 16/17</td></tr>
+          <tr><td>DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ensure-docs</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 17 (+ FLOW 16 design handoff in release)</td></tr>
           <tr><td>RELEASE</td><td style="font-family:inherit;font-size:.875rem">release management</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:release</code>, <code>/silver:create-release</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 18</td></tr>
           <tr><td>BLAST_RADIUS</td><td style="font-family:inherit;font-size:.875rem">blast radius assessment</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:blast-radius</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td>DEVOPS_ROUTE</td><td style="font-family:inherit;font-size:.875rem">devops toolchain routing</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:devops</code> (IaC routing step)</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
@@ -731,8 +731,8 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 <span class="comment"># Something broke during execution</span>
 /silver:debug
 
-<span class="comment"># Verify, review, and prepare final delivery</span>
-/silver:verify -> /silver:review-request -> /silver:review -> /silver:review-triage -> /verify-tests
+<span class="comment"># Review, verify, and prepare final delivery</span>
+/silver:review-request -> /silver:review -> /silver:review-triage -> /silver:verify -> /verify-tests
 
 <span class="comment"># Route trivial changes through the supported fast path</span>
 /silver:fast

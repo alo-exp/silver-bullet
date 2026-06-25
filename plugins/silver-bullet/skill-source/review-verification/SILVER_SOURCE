@@ -15,10 +15,10 @@ PASS/ISSUES_FOUND findings.
 
 ## Loading Rules
 
-This reviewer MUST load:
+This reviewer MUST load the following before executing any review:
 
-- `@skills/artifact-reviewer/rules/reviewer-interface.md`
-- `@skills/artifact-reviewer/rules/review-loop.md`
+- `@skills/artifact-reviewer/rules/reviewer-interface.md` — interface contract (input/output shape, prohibitions)
+- `@skills/artifact-reviewer/rules/review-loop.md` — depth-aware review loop mechanism and audit trail format
 
 ## Quality Criteria
 

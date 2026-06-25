@@ -43,6 +43,8 @@ assert_contains "reference config sample uses current package version" "\"versio
 assert_contains "search index config entry uses current package version" "version ${CURRENT_VERSION}" "$REPO_ROOT/site/help/search.js"
 assert_contains "homepage documents Codex public marketplace package" "public alo-labs/codex-plugins marketplace package|public alo-labs/codex-plugins Codex marketplace package|public alo-labs/codex-plugins" "$REPO_ROOT/site/index.html"
 assert_contains "homepage documents Cursor public marketplace package" "public alo-labs/alo-labs-cursor-marketplace" "$REPO_ROOT/site/index.html"
+assert_contains "homepage workflow table documents verify-tests in post-exec VERIFY" "<code>verify-tests</code>" "$REPO_ROOT/site/index.html"
+assert_contains "homepage workflow table documents VALIDATE as needed in post-exec SECURE" "VALIDATE</code> as needed" "$REPO_ROOT/site/index.html"
 assert_contains "Help Center documents Codex public marketplace package" "public <code>alo-labs/codex-plugins</code> marketplace package" "$REPO_ROOT/site/help/getting-started/index.html"
 assert_contains "Help Center documents Cursor public marketplace package" "public <code>alo-labs/alo-labs-cursor-marketplace</code> marketplace" "$REPO_ROOT/site/help/getting-started/index.html"
 assert_contains "search index documents Codex public marketplace package" "public alo-labs/codex-plugins Codex marketplace package" "$REPO_ROOT/site/help/search.js"

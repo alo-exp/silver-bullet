@@ -112,8 +112,8 @@ First strong match wins after complexity triage and conflict resolution.
 |---------------------|----------|-------|
 | "what if", "I'm thinking about", "not sure how to", "help me think", unclear goal | `silver:clarify` | Fuzzy intent first |
 | "visual mockup", "browser mockup", "show in browser", "visual companion", "compare UI options", "sketch UI" | `silver:clarify` (+ browser evidence per §8.1) | Visual brainstorming; Alumnium preferred, host browser MCP fallback; see `silver-bullet.md §8.1` |
-| "add", "build", "implement", "new feature", "enhance", "extend" | `silver:feature` | Core dev path; SB owns context/plan/execute/verify |
-| "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; SB debug/plan/execute/verify plus TDD |
+| "add", "build", "implement", "new feature", "enhance", "extend" | `silver:feature` | Core dev path; SB owns context/plan/execute/review/verify/secure |
+| "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Bugfix path; SB debug/plan/execute/review/verify/secure plus TDD |
 | "write tests", "add tests", "generate tests", "E2E", "Playwright", "fix tests", "test audit", "mutation", "slow tests", "test performance" | `silver:test` | SB-owned test engineering; feeds `test-health`, `verify-tests`, and `silver:verify` |
 | "refactor", "rename", "split", "extract", "move files", "simplify", "untangle" | `silver:refactor` | Behavior-preserving change path with baseline proof |
 | "worktree", "isolated branch", "branch workspace", "finish worktree", "cleanup worktree" | `silver:worktree` | Git isolation and structured finish path |

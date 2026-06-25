@@ -365,13 +365,11 @@ if [[ -f "$core_rules_file" ]]; then
     # shellcheck source=lib/core-rules-integrity.sh
     source "$_lib_dir/core-rules-integrity.sh"
     _cr_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
-    if [[ -z "$_cr_content" ]] && [[ -f "${script_dir}/core-rules.sha256" ]]; then
+    if [[ -z "$_cr_content" ]]; then
       _cr_content="$(sb_core_rules_integrity_warning)"
-    elif [[ -z "$_cr_content" ]]; then
-      _cr_content="$(cat "$core_rules_file" 2>/dev/null || true)"
     fi
   else
-    _cr_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+    _cr_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
   fi
   if [[ -n "$_cr_content" ]]; then
     combined="${combined:+$combined

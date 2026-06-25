@@ -78,8 +78,8 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-DECIDE|DECIDE|silver-research) printf 'DECIDE' ;;
     FLOW-SPECIFY|SPECIFY|silver-spec|silver-ingest) printf 'SPECIFY' ;;
     devops-skill-router) printf 'DEVOPS-SKILL-ROUTER' ;;
-    silver-review-request) printf 'REVIEW-REQUEST' ;;
-    silver-review-triage) printf 'REVIEW-TRIAGE' ;;
+    FLOW-REVIEW-REQUEST|REVIEW-REQUEST|REVIEW\ REQUEST|silver-review-request) printf 'REVIEW-REQUEST' ;;
+    FLOW-REVIEW-TRIAGE|REVIEW-TRIAGE|REVIEW\ TRIAGE|silver-review-triage) printf 'REVIEW-TRIAGE' ;;
     silver-branch-finish) printf 'BRANCH-FINISH' ;;
     silver-completion-audit) printf 'COMPLETION-AUDIT' ;;
     FLOW-PLAN|PLAN|silver-plan) printf 'PLAN' ;;
@@ -87,11 +87,13 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-EXECUTE|EXECUTE|silver-execute) printf 'EXECUTE' ;;
     FLOW-UI-QUALITY|UI-QUALITY|UI\ QUALITY|silver-ui-review) printf 'UI-QUALITY' ;;
     FLOW-REVIEW|REVIEW|silver-review) printf 'REVIEW' ;;
-    FLOW-SECURE|SECURE|silver-secure|security) printf 'SECURE' ;;
+    security) printf 'SECURITY' ;;
+    FLOW-SECURE|SECURE|silver-secure) printf 'SECURE' ;;
     FLOW-VERIFY|VERIFY|silver-verify) printf 'VERIFY' ;;
     FLOW-QUALITY-GATE|QUALITY-GATE|QUALITY\ GATE|silver-quality-gates|devops-quality-gates) printf 'QUALITY-GATE' ;;
     FLOW-SHIP|SHIP|silver-ship) printf 'SHIP' ;;
     FLOW-DEBUG|DEBUG|silver-debug|silver-forensics) printf 'DEBUG' ;;
+    FLOW-DESIGN-HANDOFF|DESIGN-HANDOFF|DESIGN\ HANDOFF|silver-handoff) printf 'DESIGN-HANDOFF' ;;
     FLOW-DOCUMENT|DOCUMENT|silver-ensure-docs) printf 'DOCUMENT' ;;
     FLOW-RELEASE|RELEASE|silver-release|silver-create-release) printf 'RELEASE' ;;
     silver-blast-radius) printf 'BLAST-RADIUS' ;;

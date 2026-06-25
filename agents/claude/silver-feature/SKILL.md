@@ -1,7 +1,7 @@
 ---
 name: silver:feature
 description: >
-  This skill should be used for full SB-owned feature development workflow: orient → clarify/decide → silver:quality-gates → SB context/plan/execute/verify → ship
+  This skill should be used for full SB-owned feature development workflow: orient → clarify/decide → silver:quality-gates → SB context/plan/execute → review → verify → secure → ship
 argument-hint: "<feature description>"
 version: 0.2.0
 ---

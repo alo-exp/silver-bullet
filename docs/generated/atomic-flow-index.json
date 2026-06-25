@@ -30,7 +30,9 @@
   ],
   "catalog_version": "0.2.0-atomic-flow",
   "runtime_queue_tokens": {
+    "FLOW-DESIGN-HANDOFF": "AF-DOCUMENT",
     "FLOW-DEVOPS-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
+    "FLOW-DOCUMENT": "AF-DOCUMENT",
     "FLOW-QUALITY-GATE": "AF-QUALITY-GATE",
     "FLOW-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
     "ROUTER": "AF-ROUTE",
@@ -46,6 +48,7 @@
     "silver-debug": "AF-DEBUG",
     "silver-ensure-docs": "AF-DOCUMENT",
     "silver-execute": "AF-EXECUTE",
+    "silver-handoff": "AF-DOCUMENT",
     "silver-plan": "AF-PLAN",
     "silver-quality-gates": "AF-QUALITY-GATE",
     "silver-research": "AF-DECIDE",
@@ -59,6 +62,15 @@
     "silver-ui-review": "AF-UI-QUALITY",
     "silver-validate": "AF-VALIDATE",
     "silver-verify": "AF-VERIFY"
+  },
+  "skill_worker_templates": {
+    "AF-DOCUMENT": {
+      "FLOW-DESIGN-HANDOFF": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
+      "silver-handoff": "templates/orchestrator-workers/DESIGN-HANDOFF.md"
+    },
+    "AF-SECURE": {
+      "security": "templates/orchestrator-workers/SECURITY.md"
+    }
   },
   "source_of_truth": "docs/apo-catalog.json",
   "step_to_flows": {
