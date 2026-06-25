@@ -112,6 +112,16 @@ case "$tool_name" in
 esac
 
 # Parent orchestrator: allow delegation tools; block implementation tools on project source.
+# During /silver:init bootstrap the template scaffold may exist before sb_initiated is true.
+_config_file=""
+if declare -f sb_find_project_config >/dev/null 2>&1; then
+  _config_file="$(sb_find_project_config 2>/dev/null || true)"
+fi
+if [[ -n "$_config_file" ]] && declare -f sb_config_marked_initiated >/dev/null 2>&1 \
+  && ! sb_config_marked_initiated "$_config_file"; then
+  exit 0
+fi
+
 if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
   case "$tool_name" in
     Task|Subagent|Agent)

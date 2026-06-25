@@ -22,6 +22,14 @@ sb_project_active_or_exit() {
   sb_project_active "$config_file" || exit 0
 }
 
+# True when .silver-bullet.json exists and sb_initiated is explicitly true.
+sb_config_marked_initiated() {
+  local config_file="${1:-}"
+  [[ -n "$config_file" && -f "$config_file" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  [[ "$(jq -r '.sb_initiated // false' "$config_file" 2>/dev/null || echo false)" == "true" ]]
+}
+
 # Back-compat aliases (Wave 0.1 naming).
 sb_project_is_initiated() {
   sb_project_active "$@"
