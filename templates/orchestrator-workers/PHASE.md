@@ -6,7 +6,7 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:phase`** via the host SB skill channel before Edit/Write/Bash.
+Invoke **`silver:phase`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 ## Planning guard
 

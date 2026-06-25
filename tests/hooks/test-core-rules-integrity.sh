@@ -66,6 +66,13 @@ echo "# tamper" >> "$TMP"
 assert_fail "tampered file fails integrity" sb_core_rules_integrity_ok "$TMP" "$HOOKS_DIR"
 rm -f "$TMP"
 
+TMP_HOOKS_DIR=$(mktemp -d)
+cp "$CORE_RULES" "$TMP_HOOKS_DIR/core-rules.md"
+assert_fail "missing pin fails integrity" sb_core_rules_integrity_ok "$TMP_HOOKS_DIR/core-rules.md" "$TMP_HOOKS_DIR"
+missing_pin_content="$(sb_core_rules_read_verified "$TMP_HOOKS_DIR/core-rules.md" "$TMP_HOOKS_DIR" 2>/dev/null || true)"
+assert_eq "missing pin does not read core rules" "" "$missing_pin_content"
+rm -rf "$TMP_HOOKS_DIR"
+
 content="$(sb_core_rules_read_verified "$CORE_RULES" "$HOOKS_DIR" | head -1)"
 assert_eq "read verified returns content" "# Silver Bullet — Core Enforcement Rules" "$content"
 

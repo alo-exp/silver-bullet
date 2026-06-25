@@ -15,6 +15,38 @@ CONTRACTS_PATH = REPO_ROOT / "docs" / "composable-flows-contracts.md"
 MATRIX_PATH = REPO_ROOT / "docs" / "workflow-composition-matrix.md"
 INDEX_PATH = REPO_ROOT / "docs" / "generated" / "atomic-flow-index.json"
 
+# Legacy FLOW capability labels — must stay aligned with silver-bullet.md § Composable Flows Catalog.
+LEGACY_FLOW_CAPABILITIES = {
+    "FLOW 1": "BOOTSTRAP",
+    "FLOW 2": "ORIENT",
+    "FLOW 3": "CLARIFY",
+    "FLOW 4": "DECIDE",
+    "FLOW 5": "SPECIFY",
+    "FLOW 6": "PLAN",
+    "FLOW 7": "DESIGN CONTRACT",
+    "FLOW 8": "EXECUTE",
+    "FLOW 9": "UI QUALITY",
+    "FLOW 10": "REVIEW",
+    "FLOW 11": "SECURE",
+    "FLOW 12": "VERIFY",
+    "FLOW 13": "QUALITY GATE",
+    "FLOW 14": "SHIP",
+    "FLOW 15": "DEBUG",
+    "FLOW 16": "DESIGN HANDOFF",
+    "FLOW 17": "DOCUMENT",
+    "FLOW 18": "RELEASE",
+}
+
+# Human-readable post-exec lines derived from WF-POST-EXEC-GATES (must match silver-bullet.md).
+POST_EXEC_SEQUENCING_LINES = [
+    "1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected",
+    "2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)",
+    "3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)",
+    "4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)",
+    "5. FLOW 13 (QUALITY GATE, pre-ship)",
+    "6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)",
+]
+
 
 def load_catalog() -> dict:
     return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
@@ -34,6 +66,32 @@ def composition_refs(nodes: list[dict], depth: int = 0) -> list[str]:
         if children:
             lines.extend(composition_refs(children, depth + 1))
     return lines
+
+
+def render_legacy_flow_table(catalog: dict) -> list[str]:
+    legacy_flows = catalog.get("migration_map", {}).get("legacy_flows", {})
+    lines = [
+        "| Legacy FLOW | Canonical Capability | Catalog Entity |",
+        "|-------------|----------------------|----------------|",
+    ]
+    for flow_id in [f"FLOW {index}" for index in range(1, 19)]:
+        entity = legacy_flows.get(flow_id, "")
+        capability = LEGACY_FLOW_CAPABILITIES.get(flow_id, flow_id)
+        lines.append(f"| {flow_id} | {capability} | `{entity}` |")
+    return lines
+
+
+def render_post_exec_sequencing() -> list[str]:
+    return [
+        "## Post-execution sequencing",
+        "",
+        "Flow numbers are stable identifiers — not always runtime order. "
+        "For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, "
+        "the mandatory post-execute order is:",
+        "",
+        *POST_EXEC_SEQUENCING_LINES,
+        "",
+    ]
 
 
 def render_contracts(catalog: dict) -> str:
@@ -56,30 +114,12 @@ def render_contracts(catalog: dict) -> str:
         "",
         "Legacy FLOW 1-18 labels are migration aliases only; canonical execution uses AF-* entities and reusable workflow components from the catalog.",
         "",
-        "| Legacy FLOW | Canonical Capability | Catalog Entity |",
-        "|-------------|----------------------|----------------|",
-        "| FLOW 1 | BOOTSTRAP | `AF-BOOTSTRAP` |",
-        "| FLOW 2 | ORIENT | `AF-ORIENT` |",
-        "| FLOW 3 | CLARIFY | `AF-CLARIFY` |",
-        "| FLOW 4 | DECIDE | `AF-DECIDE` |",
-        "| FLOW 5 | SPECIFY | `AF-SPECIFY` |",
-        "| FLOW 6 | PLAN | `AF-PLAN` |",
-        "| FLOW 7 | DESIGN CONTRACT | `AF-DESIGN-CONTRACT` |",
-        "| FLOW 8 | EXECUTE | `AF-EXECUTE` |",
-        "| FLOW 9 | UI QUALITY | `AF-UI-QUALITY` |",
-        "| FLOW 10 | REVIEW TRIAD | `WF-REVIEW-TRIAD` |",
-        "| FLOW 11 | SECURE | `AF-SECURE` |",
-        "| FLOW 12 | VERIFY | `AF-VERIFY` |",
-        "| FLOW 13 | QUALITY GATE | `AF-QUALITY-GATE` |",
-        "| FLOW 14 | SHIP READINESS | `WF-SHIP-READINESS` |",
-        "| FLOW 15 | DEBUG | `AF-DEBUG` |",
-        "| FLOW 16 | DOCUMENT | `AF-DOCUMENT` |",
-        "| FLOW 17 | DOCUMENT | `AF-DOCUMENT` |",
-        "| FLOW 18 | RELEASE | `AF-RELEASE` |",
+        *render_legacy_flow_table(catalog),
         "",
         "Ship readiness composes `silver:branch-finish` before `silver:completion-audit` before `silver:ship`.",
         "Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and `RELEASE-MILESTONE-AUDIT` for FLOW 18 release readiness.",
         "",
+        *render_post_exec_sequencing(),
         "## Atomic Flow Catalog",
         "",
         "| Atomic Flow | Capability Class | Worker Template | Primary Skills |",
@@ -91,6 +131,24 @@ def render_contracts(catalog: dict) -> str:
             f"| `{flow['id']}` | {flow['capability_class']} | "
             f"`{flow['execution']['worker_template']}` | {skills} |"
         )
+
+    skill_templates: list[tuple[str, str, str]] = []
+    for flow in catalog["atomic_flows"]:
+        for skill, template in sorted(flow.get("execution", {}).get("skill_worker_templates", {}).items()):
+            skill_templates.append((flow["id"], skill, template))
+    if skill_templates:
+        lines.extend([
+            "",
+            "## Skill-Dispatched Worker Templates",
+            "",
+            "Some queue atoms override the default worker template for their atomic flow.",
+            "Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.silver-bullet/orchestrator-workers/`, then plugin mirror.",
+            "",
+            "| Atomic Flow | Queue Atom / Skill | Alternate Worker Template |",
+            "|-------------|--------------------|---------------------------|",
+        ])
+        for flow_id, skill, template in skill_templates:
+            lines.append(f"| `{flow_id}` | `{skill}` | `{template}` |")
 
     lines.extend([
         "",
@@ -183,6 +241,11 @@ def build_index(catalog: dict) -> dict:
         for workflow in catalog.get("workflows", [])
         if workflow.get("enforcement_queue")
     }
+    skill_worker_templates = {
+        flow_id: dict(sorted(flow.get("execution", {}).get("skill_worker_templates", {}).items()))
+        for flow_id, flow in sorted(flow_by_id.items())
+        if flow.get("execution", {}).get("skill_worker_templates")
+    }
     return {
         "source_of_truth": "docs/apo-catalog.json",
         "catalog_version": catalog["catalog_version"],
@@ -191,6 +254,7 @@ def build_index(catalog: dict) -> dict:
             flow_id: flow["execution"]["worker_template"]
             for flow_id, flow in sorted(flow_by_id.items())
         },
+        "skill_worker_templates": skill_worker_templates,
         "runtime_queue_tokens": token_map,
         "workflow_enforcement_queues": workflow_queues,
         "step_to_flows": step_to_flows,

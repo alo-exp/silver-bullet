@@ -173,7 +173,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="when-it-fires">When It Fires</h2>
-      <p>Verification fires before final quality, review, and ship boundaries for every workflow that produces code changes:</p>
+      <p>Verification fires after review and before security, final quality, and ship boundaries for every workflow that produces code changes:</p>
 
       <ul>
         <li><strong>silver:feature</strong> — Step 8: silver:verify (must pass before security review, pre-ship quality gates, and ship)</li>
@@ -195,7 +195,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="example-block">
         <h4>Example 1: silver:feature completes normally</h4>
-        <p>You run <code>/silver:feature Add email notifications for order status changes</code>. The workflow reaches Step 8. <code>silver:verify</code> runs the test suite — all 47 tests pass, including 3 new tests added for the notification feature. Verification produces a VERIFICATION.md file with pass/fail per acceptance criterion. The security review (Step 10) and ship steps are unblocked.</p>
+        <p>You run <code>/silver:feature Add email notifications for order status changes</code>. After the review triad completes, <code>silver:verify</code> runs the test suite — all 47 tests pass, including 3 new tests added for the notification feature. Verification produces a VERIFICATION.md file with pass/fail per acceptance criterion. Security and ship steps are unblocked.</p>
       </div>
 
       <div class="example-block">

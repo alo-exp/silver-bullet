@@ -70,7 +70,51 @@ else
 fi
 
 assert_grep_all "FLOW 3 CLARIFY in atomic tables" 'FLOW 3[[:space:]]*\| CLARIFY|FLOW 3 \| CLARIFY'
+assert_grep_all "FLOW 10 REVIEW in atomic tables" 'FLOW 10[[:space:]]*\| REVIEW|FLOW 10 \| REVIEW'
+assert_grep_all "FLOW 14 SHIP in atomic tables" 'FLOW 14[[:space:]]*\| SHIP|FLOW 14 \| SHIP'
+assert_grep_all "FLOW 16 DESIGN HANDOFF in atomic tables" 'FLOW 16[[:space:]]*\| DESIGN HANDOFF|FLOW 16 \| DESIGN HANDOFF'
+assert_grep_all "FLOW 17 DOCUMENT in atomic tables" 'FLOW 17[[:space:]]*\| DOCUMENT|FLOW 17 \| DOCUMENT'
 assert_grep_all "FLOW 18 RELEASE in atomic tables" 'FLOW 18[[:space:]]*\| RELEASE|FLOW 18 \| RELEASE'
+
+if grep -qE '\| `silver-handoff` \| `AF-DOCUMENT` \|' "$CONTRACTS"; then
+  echo "PASS: silver-handoff runtime queue token in contracts"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: silver-handoff runtime queue token missing in contracts"
+  FAIL=$((FAIL + 1))
+fi
+
+if grep -qE '\| `FLOW-DESIGN-HANDOFF` \| `AF-DOCUMENT` \|' "$CONTRACTS"; then
+  echo "PASS: FLOW-DESIGN-HANDOFF runtime queue token in contracts"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: FLOW-DESIGN-HANDOFF runtime queue token missing in contracts"
+  FAIL=$((FAIL + 1))
+fi
+
+if grep -qE '\| `FLOW-DOCUMENT` \| `AF-DOCUMENT` \|' "$CONTRACTS"; then
+  echo "PASS: FLOW-DOCUMENT runtime queue token in contracts"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: FLOW-DOCUMENT runtime queue token missing in contracts"
+  FAIL=$((FAIL + 1))
+fi
+
+if grep -qE '\| `AF-SECURE` \| `security` \| `templates/orchestrator-workers/SECURITY\.md` \|' "$CONTRACTS"; then
+  echo "PASS: AF-SECURE security skill-dispatched worker template in contracts"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: AF-SECURE security skill-dispatched worker template missing in contracts"
+  FAIL=$((FAIL + 1))
+fi
+
+if grep -qE '\| `AF-DOCUMENT` \| `silver-handoff` \| `templates/orchestrator-workers/DESIGN-HANDOFF\.md` \|' "$CONTRACTS"; then
+  echo "PASS: AF-DOCUMENT handoff skill-dispatched worker template in contracts"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: AF-DOCUMENT handoff skill-dispatched worker template missing in contracts"
+  FAIL=$((FAIL + 1))
+fi
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

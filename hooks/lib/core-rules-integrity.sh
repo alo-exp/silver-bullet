@@ -29,7 +29,7 @@ sb_core_rules_expected_hash() {
   head -1 "$pin_file" 2>/dev/null | tr -d '[:space:]'
 }
 
-# Returns 0 when core-rules.md matches the pinned hash (or pin file absent — grandfather).
+# Returns 0 only when core-rules.md matches the pinned hash.
 sb_core_rules_integrity_ok() {
   local core_rules_file="${1:-}"
   local hooks_dir="${2:-}"
@@ -37,7 +37,7 @@ sb_core_rules_integrity_ok() {
 
   local expected actual
   expected="$(sb_core_rules_expected_hash "$hooks_dir" 2>/dev/null || true)"
-  [[ -n "$expected" ]] || return 0
+  [[ -n "$expected" ]] || return 1
 
   actual="$(sb_core_rules_compute_hash "$core_rules_file" 2>/dev/null || true)"
   [[ -n "$actual" && "$actual" == "$expected" ]]
@@ -56,5 +56,5 @@ sb_core_rules_read_verified() {
 }
 
 sb_core_rules_integrity_warning() {
-  printf '%s' '⚠️ core-rules.md integrity check failed — enforcement rules may be tampered. Run /silver:init or reinstall the Silver Bullet plugin.'
+  printf '%s' '⚠️ core-rules.md integrity check failed or is missing a pin — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin.'
 }

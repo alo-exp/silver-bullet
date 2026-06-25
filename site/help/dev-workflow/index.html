@@ -153,10 +153,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="#quality-gates">Step 4: Quality Gates</a></li>
         <li><a href="#plan">Step 5: Plan</a></li>
         <li><a href="#execute">Step 6: Execute</a></li>
-        <li><a href="#verify">Step 7: Verify</a></li>
-        <li><a href="#code-review">Steps 8–10: Code Review</a></li>
-        <li><a href="#post-review">Steps 11–12: Post-review</a></li>
-        <li><a href="#finalization">Steps 13–16: Finalization</a></li>
+        <li><a href="#code-review">Steps 7–10: Code Review</a></li>
+        <li><a href="#verify">Step 11: Verify</a></li>
+        <li><a href="#post-review">Steps 12–13: Post-review</a></li>
+        <li><a href="#finalization">Steps 14–17: Finalization</a></li>
         <li><a href="#artifact-review-gate">Steps 17a–17b: Review Gates</a></li>
         <li><a href="#deployment">Step 17c: CI/CD</a></li>
         <li><a href="#deploy-check">Deploy Checklist</a></li>
@@ -185,7 +185,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Finalization, deployment, and release</strong> — runs once after all phases are complete</li>
       </ol>
 
-      <p>Within the per-phase loop, every phase follows the same sequence: <strong>Discuss (<code>AF-ORIENT</code>) → Quality Gates (<code>AF-QUALITY-GATE</code>) → Plan (<code>AF-PLAN</code>) → Execute (<code>AF-EXECUTE</code>) → Verify (<code>AF-VERIFY</code>) → Code Review (<code>AF-REVIEW</code> chain)</strong>. Hooks enforce this order — planning cannot start before quality gates pass.</p>
+      <p>Within the per-phase loop, every phase follows the same sequence: <strong>Discuss (<code>AF-ORIENT</code>) → Quality Gates (<code>AF-QUALITY-GATE</code>) → Plan (<code>AF-PLAN</code>) → Execute (<code>AF-EXECUTE</code>) → Code Review (<code>AF-REVIEW</code> chain) → Verify (<code>AF-VERIFY</code>)</strong>. Hooks enforce this order — planning cannot start before quality gates pass.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
@@ -304,23 +304,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="callout-body"><strong>Never bypass SB execution for project work.</strong> External execution helpers can operate outside SB enforcement. Use <code>silver:execute</code> or the active SB workflow so commits, reviews, and verification remain traceable.</div>
       </div>
 
-      <!-- VERIFY -->
-      <div class="phase-header phase-verify" id="verify">Phase: Verify</div>
-
-      <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">7</div>
-        <div>
-          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/silver:forensics</code> or <code>/silver:debug</code> depending on whether the failure is workflow/session-level or an active bug.</p>
-          <div class="step-output">→ Produces: .planning/{phase}-VERIFICATION.md, .planning/{phase}-UAT.md</div>
-        </div>
-      </div>
-
-      <!-- CODE REVIEW -->
+      <!-- CODE REVIEW (runtime post-exec: before VERIFY) -->
       <div class="phase-header" style="background:var(--amber-warn-a10);color:var(--amber)" id="code-review">Phase: Code Review</div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">7</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:review-request</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Frames review scope, changed files, risks, and blockers before review begins.</p>
@@ -328,7 +316,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <div class="step-card required">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Produces the authoritative <code>REVIEW.md</code>. Distinct from goal verification — this reviews the code itself, not whether it achieves the goal.</p>
@@ -344,7 +332,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:review-triage</span><span class="badge badge-sp">SB helper</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Triages all feedback from Step 9. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 11–12).</p>
+          <p class="step-desc">Triages all feedback from Step 8. Each item is explicitly accepted or rejected with reasoning. Accepted items become the input for post-review execution (Steps 12–13).</p>
+        </div>
+      </div>
+
+      <!-- VERIFY (runtime post-exec: after CODE REVIEW) -->
+      <div class="phase-header phase-verify" id="verify">Phase: Verify</div>
+
+      <div class="step-card required">
+        <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">11</div>
+        <div>
+          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Goal-backward verification against requirements and UAT. Asks: "Does what was built actually achieve the phase goal?" — not just "did all tasks complete?" If verification fails: invoke <code>/silver:forensics</code> or <code>/silver:debug</code> depending on whether the failure is workflow/session-level or an active bug.</p>
+          <div class="step-output">→ Produces: .planning/{phase}-VERIFICATION.md, .planning/{phase}-UAT.md</div>
         </div>
       </div>
 
@@ -354,7 +354,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Only runs if items were accepted in Step 10. Otherwise, loop back to Step 3 for the next phase.</p>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">11</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">12</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Creates a plan to address the accepted review items. Same planning rigor as Step 5.</p>
@@ -362,7 +362,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <div class="step-card">
-        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">12</div>
+        <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">13</div>
         <div>
           <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implements the review-driven plan with atomic commits. Same execution model as Step 6.</p>

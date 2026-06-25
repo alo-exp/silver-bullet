@@ -58,6 +58,17 @@ assert_contains() {
   fi
 }
 
+assert_eq() {
+  local name="$1" got="$2" want="$3"
+  if [[ "$got" == "$want" ]]; then
+    echo "PASS: $name"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: $name (got='$got' want='$want')"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
 # shellcheck source=../../hooks/lib/orchestrator-directive.sh
 source "$LIB"
 
@@ -68,6 +79,9 @@ make_repo() {
   echo '# SB' >"$WORK/silver-bullet.md"
   mkdir -p "$WORK/.planning/workflows"
 }
+
+sb_orchestrator_directive_write "security" "security review" "source-order test" true
+assert_eq "directive write loads worker template mapper" "$(jq -r '.next_worker_template // ""' "${SB_TEST_DIR}/orchestrator-directive.json")" "SECURITY"
 
 sb_orchestrator_directive_write "silver-context" "test intent" "unit test" true
 assert_true "directive file exists" test -f "${SB_TEST_DIR}/orchestrator-directive.json"

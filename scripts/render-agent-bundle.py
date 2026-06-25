@@ -260,10 +260,12 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
 
 
 def sanitize_cursor_text(text: str) -> str:
-    updated = text
+    # Preserve cross-host delegation rows — do not rewrite Claude Code host label to Cursor.
+    host_row_token = "__SB_CURSOR_HOST_ROW_CLAUDE_CODE__"
+    updated = text.replace("| **Claude Code** |", f"| **{host_row_token}** |")
     for old, new in CURSOR_REPLACEMENTS:
         updated = updated.replace(old, new)
-    return updated
+    return updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
 
 
 def sanitize_codex_text(text: str) -> str:

@@ -70,6 +70,10 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   printf '%s' "$prompt" >"${SB_STATE_DIR}/orchestrator-intent.txt" 2>/dev/null || true
   sb_outcomes_seed_for_prompt "$prompt"
   if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
+    if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+      # shellcheck source=lib/orchestrator-parent.sh
+      source "$_lib_dir/orchestrator-parent.sh"
+    fi
     # shellcheck source=lib/orchestrator-directive.sh
     source "$_lib_dir/orchestrator-directive.sh"
     if sb_orchestrator_prompt_has_override "$prompt"; then

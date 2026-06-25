@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.48.2] — 2026-06-25
+
+Enterprise readiness ladder run 2: FLOW-16/17 worker split (`DESIGN-HANDOFF.md` / `DOCUMENT.md`), `SECURITY.md` skill-dispatched template, catalog `skill_worker_templates` parity, depth-aware review-loop docs, core-rules hash pin enforcement, Cursor GPT-5.5 ladder slug substitutions, and review-loop safety-cap non-convergence guard.
+
+## Bug Fixes
+- Split `silver-handoff` (FLOW 16) from `silver-ensure-docs` (FLOW 17) worker templates; added `FLOW-DOCUMENT` runtime queue token.
+- Split `security` vs `silver-secure` worker templates (`SECURITY.md` / `SECURE.md`) with distinct flow-log labels.
+- Fixed `RELEASE.md` mandatory skill (`silver:create-release`), `ROUTER.md` colon invoke form, orchestrator flow-label CSV mappings.
+- Lazy-load worker template mapper in `orchestrator-directive.sh` when sourced before `orchestrator-parent.sh`.
+- Core-rules injection requires verified hash pin; missing pin injects warning instead of unpinned content.
+
+## Tests
+- Extended orchestrator handoff, workflow CSV, instruction-flow parity, worker-template parity, and review-fix-ladder coverage.
+
+---
+
 ## [0.48.1] — 2026-06-24
 
 Post-release APO runtime alignment, orchestrator queue fixes, and help-center refresh for the v0.48 catalog model.
