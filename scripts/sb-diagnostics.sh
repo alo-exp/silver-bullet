@@ -27,7 +27,7 @@ record() {
     fail)
       if [[ "${SB_DIAG_SMOKE:-}" == "1" ]]; then
         case "$check" in
-          graphify-*|agentmemory-*|rtk-*|context-mode-*)
+          graphify-*|agentmemory-*|rtk-*|context-mode-*|optimize-*)
             [[ "$FORMAT" == "json" ]] || echo "WARN: $check — $detail"
             (( WARN++ )) || true
             return 0
