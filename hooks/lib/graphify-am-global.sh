@@ -185,7 +185,9 @@ ga_opencode_merge_agentmemory_mcp() {
     return 0
   fi
   if [[ ! -f "$cfg" ]]; then
-    printf '{"$schema":"https://opencode.ai/config.json","mcp":{"agentmemory":{"type":"stdio","command":"npx","args":["-y","@agentmemory/mcp"],"env":{"AGENTMEMORY_URL":"http://localhost:3111"}}}}\n' >"$cfg"
+    cat >"$cfg" <<'JSON'
+{"$schema":"https://opencode.ai/config.json","mcp":{"agentmemory":{"type":"stdio","command":"npx","args":["-y","@agentmemory/mcp"],"env":{"AGENTMEMORY_URL":"http://localhost:3111"}}}}
+JSON
     return 0
   fi
   command -v jq >/dev/null 2>&1 || return 1

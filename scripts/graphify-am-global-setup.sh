@@ -9,7 +9,6 @@ LIB="${REPO_ROOT}/hooks/lib/graphify-am-global.sh"
 MODE="apply"
 HOST=""
 REPO_PATH=""
-DRY_RUN=0
 APPLY_ALL=0
 
 usage() {
@@ -57,7 +56,7 @@ while [[ $# -gt 0 ]]; do
       REPO_PATH="$(cd "$REPO_PATH" 2>/dev/null && pwd || printf '%s' "$REPO_PATH")"
       ;;
     --all) APPLY_ALL=1 ;;
-    --dry-run) DRY_RUN=1; export GA_GLOBAL_DRY_RUN=1 ;;
+    --dry-run) export GA_GLOBAL_DRY_RUN=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
