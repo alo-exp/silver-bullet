@@ -25,7 +25,7 @@ Context Mode is **ELv2** — not OSI-open. Acceptable for personal/internal use.
 | `true` | Install/wiring gate — CLI/plugin, MCP/hooks, instruction fragment |
 | `false` | Advisory only |
 
-**Usage enforcement:** When to use `ctx_*` vs `Read` is **instructional** in `silver-bullet.md` §2g-ii and the scaffolded hint fragment — SB does **not** block Read by file size.
+**Usage enforcement:** When to use `ctx_*` vs `Read` is mandatory in `silver-bullet.md` §2g-ii. When Context Mode is opted in and enforced, SB **`context-mode-read-deny.sh`** (PreToolUse on `Read|Grep`) returns **deny** if the target file exceeds `recommended_tools.context_mode.read_deny_bytes` (default **5120**). Exempt: trivial bypass, SB state/config paths, files at or below the threshold.
 
 **Windows:** Native Windows requires WSL. SB auto-suspends with `install_failure_reason: "Windows requires WSL"`.
 
@@ -93,7 +93,7 @@ Run `bash scripts/optimize-rtk-context-mode.sh` after install when Context Mode 
 
 **Hook ordering:** Place context-mode `preToolUse` **after** RTK `preToolUse` for Shell — RTK rewrites first; CM routes/denies WebFetch and large Read analysis.
 
-**Read deny gap:** Upstream has no `permission: deny` on Read by file size. Enforcement is **cooperative** via `.mdc` rules + SB `context-mode-gate.sh` usage tracking — not a hard hook deny.
+**Read deny:** Upstream context-mode still has no global Read deny. SB adds **`hooks/context-mode-read-deny.sh`** on the plugin PreToolUse manifest (`Read|Grep`) when `context_mode` is enforced. Threshold: `read_deny_bytes` (default 5120). Global `~/.cursor/hooks.json` is unchanged — merge via `/silver:init` docs if you want the same deny outside the plugin bridge.
 
 **Cursor `additional_context` bug:** Hooks accept `additional_context` but Cursor does not surface it to the model ([#155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). Routing must use `.mdc` rules and MCP tool descriptions, not hook-injected context.
 
