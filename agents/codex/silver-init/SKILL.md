@@ -173,7 +173,7 @@ elif [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_
   SB_HOST=codex
 elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
   SB_HOST=codex
-elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ]]; then
   SB_HOST=cursor
 else
   SB_HOST=claude
@@ -407,7 +407,7 @@ Same pattern as Graphify §1.1a Steps 4–5.
 
 ### 1.1f Context Mode (recommended tool — opt-in)
 
-Context Mode compacts MCP results and recovers session state across `context compaction`. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
+Context Mode compacts MCP results and recovers session state across host-supported context compaction. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
 
 **License disclosure (required at consent):** ELv2 — not OSI-open; commercial bundling requires upstream license (`license_note` in config).
 
@@ -855,7 +855,7 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-6 Ensure the reference line** `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` is present at the top of the final project instruction file. If absent, prepend it. Do not duplicate it if already present.
 
   **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no project instruction file section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
-- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers .codex/rules`.
+- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers .cursor/rules`.
 - **3.2.1 Orchestrator surface (parent mode)**: when `orchestrator_mode` is `parent` (default), install mechanical orchestrator artifacts idempotently:
   1. Copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/` (skip existing files).
   2. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.

@@ -92,6 +92,7 @@ git -C "$TMP" init --bare -q "$REMOTE"
 git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
+bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 source_count="$(find "$REPO_ROOT/plugins/silver-bullet/skill-source" -maxdepth 2 -name SILVER_SOURCE | wc -l | tr -d ' ')"
 
 CODEX_MARKETPLACE_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" >/dev/null
