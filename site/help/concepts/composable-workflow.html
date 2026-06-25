@@ -157,7 +157,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, VERIFY, REVIEW, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable flows can.</div>
+        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, REVIEW, VERIFY, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable flows can.</div>
       </div>
 
       <div class="divider"></div>
@@ -225,8 +225,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr><td><code>FLOW 13</code></td><td><code>AF-QUALITY-GATE</code></td></tr>
           <tr><td><code>FLOW 14</code></td><td><code>WF-SHIP-READINESS</code></td></tr>
           <tr><td><code>FLOW 15</code></td><td><code>AF-DEBUG</code></td></tr>
-          <tr><td><code>FLOW 16</code></td><td><code>AF-DOCUMENT</code></td></tr>
-          <tr><td><code>FLOW 17</code></td><td><code>AF-DOCUMENT</code></td></tr>
+          <tr><td><code>FLOW 16</code> (DESIGN HANDOFF)</td><td><code>AF-DOCUMENT</code></td></tr>
+          <tr><td><code>FLOW 17</code> (DOCUMENT)</td><td><code>AF-DOCUMENT</code></td></tr>
           <tr><td><code>FLOW 18</code></td><td><code>AF-RELEASE</code></td></tr>
         </tbody>
       </table>
@@ -238,8 +238,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li><code>UI_QUALITY</code> when UI scope applies</li>
         <li><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></li>
-        <li><code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code></li>
-        <li><code>QUALITY_GATE</code> pre-ship → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></li>
+        <li><code>VERIFY</code> (with <code>verify-tests</code>)</li>
+        <li><code>SECURE</code> (with <code>VALIDATE</code> as needed)</li>
+        <li><code>QUALITY_GATE</code> pre-ship</li>
+        <li><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></li>
       </ol>
       <p>Each child atomic flow must pass its own V-gate before the parent workflow can roll up to final user-intent validation.</p>
 

@@ -183,14 +183,14 @@ var IDX = [
     "url": "/help/workflows/silver-feature.html",
     "anchor": "overview",
     "title": "/silver:feature",
-    "text": "Feature workflow orients in the codebase, clarifies or researches when needed, runs quality gates, performs SB context plan execute verify, reviews and secures the work, then ships."
+    "text": "Feature workflow orients in the codebase, clarifies or researches when needed, runs quality gates, performs SB context plan execute, reviews, verifies, secures the work, then ships."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-bugfix.html",
     "anchor": "overview",
     "title": "/silver:bugfix",
-    "text": "Bugfix workflow is triage-first. It chooses SB debugging or SB forensics depending on the failure type, then adds regression coverage, fixes, verifies, and reviews."
+    "text": "Bugfix workflow is triage-first. It chooses SB debugging or SB forensics depending on the failure type, then adds regression coverage, fixes, reviews, and verifies."
   },
   {
     "page": "Workflows",
@@ -407,7 +407,7 @@ var IDX = [
     "url": "/help/dev-workflow/",
     "anchor": "overview",
     "title": "Software engineering workflow",
-    "text": "WF-SILVER-FEATURE application workflow: AF-ROUTE intent, AF-CLARIFY or AF-SPECIFY when needed, AF-ORIENT and AF-PLAN, AF-EXECUTE in waves, AF-VERIFY AF-REVIEW AF-SECURE from WF-POST-EXEC-GATES, /verify-tests, docs, CI, AF-SHIP, and WF-SILVER-RELEASE milestone publishing."
+    "text": "WF-SILVER-FEATURE application workflow: AF-ROUTE intent, AF-CLARIFY or AF-SPECIFY when needed, AF-ORIENT and AF-PLAN, AF-EXECUTE in waves, AF-REVIEW AF-VERIFY AF-SECURE from WF-POST-EXEC-GATES, /verify-tests, docs, CI, AF-SHIP, and WF-SILVER-RELEASE milestone publishing."
   },
   {
     "page": "DevOps Workflow",

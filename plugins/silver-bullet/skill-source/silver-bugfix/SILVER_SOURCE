@@ -23,6 +23,9 @@ FLOW 2 (ORIENT) [optional] → FLOW 15 (DEBUG) → FLOW 6 (PLAN) → FLOW 8 (EXE
 → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
 ```
 
+Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE → QUALITY GATE
+(pre-ship) → SHIP** (see contracts § Post-execution sequencing).
+
 Single-phase by design — no per-phase loop. FLOW 15 always included.
 
 ## Triage paths (FLOW 15)

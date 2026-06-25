@@ -17,7 +17,7 @@ DESIGN.md reviewer skill. Implements the artifact-reviewer framework interface t
 This reviewer MUST load the following before executing any review:
 
 - `@skills/artifact-reviewer/rules/reviewer-interface.md` — interface contract (input/output shape, prohibitions)
-- `@skills/artifact-reviewer/rules/review-loop.md` — 2-pass loop mechanism and audit trail format
+- `@skills/artifact-reviewer/rules/review-loop.md` — depth-aware review loop mechanism and audit trail format
 
 ## Usage
 

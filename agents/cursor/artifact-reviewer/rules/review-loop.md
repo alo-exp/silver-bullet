@@ -4,7 +4,7 @@
 
 ## Section 1: Review Loop Mechanism (ARFR-02)
 
-The review loop runs until 2 consecutive clean PASS results are produced. A single pass is never sufficient.
+The review loop runs until the configured number of consecutive clean PASS results are produced (`required_passes`; depth-dependent — see artifact-reviewer SKILL.md). A single pass is never sufficient when `required_passes` is 2.
 
 ### Algorithm
 
@@ -36,8 +36,8 @@ while consecutive_passes < required_passes:
   if findings.status == "PASS":
     consecutive_passes += 1
     save_review_state(artifact_path, round, consecutive_passes)  # ARFR-03 — save AFTER status update
-    if consecutive_passes < 2:
-      display "Clean pass {consecutive_passes}/2. Re-reviewing for confirmation..."
+    if consecutive_passes < required_passes:
+      display "Clean pass {consecutive_passes}/{required_passes}. Re-reviewing for confirmation..."
       round += 1
   else:
     consecutive_passes = 0  # Reset on any ISSUE finding
@@ -55,14 +55,14 @@ while consecutive_passes < required_passes:
 
     round += 1
 
-  # Safety cap — surface to user after 5 rounds without 2 consecutive passes
-  if round > 5 and consecutive_passes < 2:
+  # Safety cap — surface to user after 5 rounds without required consecutive passes
+  if round > 5 and consecutive_passes < required_passes:
     display "Review has not converged after 5 rounds. All accumulated findings:"
     display_all_findings(artifact_path)
-    STOP — surface to user for decision
-    break
+    STOP — surface to user for decision and exit review loop without success commit/clear
+    return NON_CONVERGED
 
-display "2 consecutive clean passes achieved. Review complete."
+display "{required_passes} consecutive clean pass(es) achieved. Review complete."
 commit_review_trail(artifact_path)  # Commit REVIEW-ROUNDS.md alongside the artifact
 clear_review_state(artifact_path)
 
@@ -76,11 +76,11 @@ invoke /silver:completion-audit or /silver:verify as appropriate for the artifac
 
 ### Key Rules
 
-- A single clean pass is NOT sufficient — the loop continues until 2 consecutive passes
+- A single clean pass is NOT sufficient when `required_passes` is 2 — the loop continues until `required_passes` consecutive passes
 - Any ISSUE finding resets `consecutive_passes` to 0
 - INFO findings do NOT reset the counter (INFO is advisory)
-- The loop is self-limiting: it terminates after 2 consecutive PASS results
-- If the loop reaches 5 rounds without achieving 2 consecutive passes, surface all accumulated findings to the user
+- The loop is self-limiting: it terminates after `required_passes` consecutive PASS results
+- If the loop reaches 5 rounds without achieving `required_passes` consecutive passes, surface all accumulated findings to the user and stop without committing/clearing review success state
 - After the loop completes, `silver:completion-audit` or `silver:verify` MUST be invoked before the producing step is marked done — no completion claim without fresh verification evidence
 
 ---
@@ -118,7 +118,7 @@ Where `{artifact-hash}` = first 8 chars of SHA256 of the artifact's absolute pat
 
 - `load_review_state(artifact_path)` — Read state file if it exists; return null if not present
 - `save_review_state(artifact_path, round, consecutive_passes)` — Write/update state file after each round
-- `clear_review_state(artifact_path)` — Delete state file after successful 2-pass completion
+- `clear_review_state(artifact_path)` — Delete state file after successful required_passes completion
 
 ### Implementation (Shell)
 
@@ -160,7 +160,7 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
   - {finding.id}: {finding.description} [{finding.severity}]
   - ...
   (or "No issues found" if PASS)
-- **Consecutive clean passes:** {count}/2
+- **Consecutive clean passes:** {count}/{required_passes}
 
 ---
 ```
@@ -170,7 +170,7 @@ After each round completes, append to `REVIEW-ROUNDS.md` in the same directory a
 - REVIEW-ROUNDS.md is **append-only** during a review session — never truncate prior rounds
 - Each artifact gets its own section identified by `## {artifact filename}` header
 - If REVIEW-ROUNDS.md already contains rounds for this artifact from a prior session, append new rounds after the last existing one
-- Commit REVIEW-ROUNDS.md alongside the artifact after the review loop completes (2 clean passes achieved)
+- Commit REVIEW-ROUNDS.md alongside the artifact after the review loop completes (`required_passes` clean passes achieved)
 
 ### Scalability: Rotation at Milestone Completion
 

@@ -490,7 +490,8 @@
       "composition_tree": [
         {
           "kind": "atomic_flow",
-          "ref": "AF-ORIENT"
+          "ref": "AF-ORIENT",
+          "optional": true
         },
         {
           "kind": "atomic_flow",
@@ -2411,6 +2412,9 @@
       "execution": {
         "dispatch_mode": "subagent",
         "worker_template": "templates/orchestrator-workers/SECURE.md",
+        "skill_worker_templates": {
+          "security": "templates/orchestrator-workers/SECURITY.md"
+        },
         "parallelizable": true,
         "dependencies": [
           "catalog-selected upstream refs"
@@ -2956,6 +2960,10 @@
       "execution": {
         "dispatch_mode": "subagent",
         "worker_template": "templates/orchestrator-workers/DOCUMENT.md",
+        "skill_worker_templates": {
+          "silver-handoff": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
+          "FLOW-DESIGN-HANDOFF": "templates/orchestrator-workers/DESIGN-HANDOFF.md"
+        },
         "parallelizable": true,
         "dependencies": [
           "catalog-selected upstream refs"
@@ -10172,6 +10180,8 @@
       "FLOW-QUALITY-GATE": "AF-QUALITY-GATE",
       "FLOW-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
       "FLOW-DEVOPS-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
+      "FLOW-DESIGN-HANDOFF": "AF-DOCUMENT",
+      "FLOW-DOCUMENT": "AF-DOCUMENT",
       "ROUTER": "AF-ROUTE",
       "silver-quality-gates": "AF-QUALITY-GATE",
       "silver-context": "AF-ORIENT",
@@ -10197,7 +10207,8 @@
       "silver-spec": "AF-SPECIFY",
       "silver-clarify": "AF-CLARIFY",
       "silver-research": "AF-DECIDE",
-      "silver-ensure-docs": "AF-DOCUMENT"
+      "silver-ensure-docs": "AF-DOCUMENT",
+      "silver-handoff": "AF-DOCUMENT"
     }
   }
 }

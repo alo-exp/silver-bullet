@@ -2,7 +2,7 @@
 name: "silver:devops"
 title: "DevOps"
 description: >
-  This skill should be used for SB-owned infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → SB plan/execute/verify → review → secure → ship
+  This skill should be used for SB-owned infrastructure/CI-CD workflow: intel → silver:blast-radius → devops-skill-router → devops-quality-gates (7 IaC dims) → SB plan/execute → review → verify → secure → ship
 argument-hint: "<infrastructure or CI/CD change description>"
 version: 0.2.0
 ---

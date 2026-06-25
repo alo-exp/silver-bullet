@@ -23,20 +23,104 @@ sb_orchestrator_flow_to_skill() {
     devops-skill-router|DEVOPS-SKILL-ROUTER)
       printf 'devops-skill-router'
       ;;
+    FLOW-DESIGN-HANDOFF|DESIGN-HANDOFF|DESIGN\ HANDOFF)
+      printf 'silver-handoff'
+      ;;
+    FLOW-BOOTSTRAP|BOOTSTRAP)
+      printf 'silver-init'
+      ;;
+    FLOW-ORIENT|ORIENT)
+      printf 'silver-context'
+      ;;
+    FLOW-CLARIFY|CLARIFY)
+      printf 'silver-clarify'
+      ;;
+    FLOW-DECIDE|DECIDE)
+      printf 'silver-research'
+      ;;
+    FLOW-SPECIFY|SPECIFY)
+      printf 'silver-spec'
+      ;;
+    FLOW-PLAN|PLAN)
+      printf 'silver-plan'
+      ;;
+    FLOW-DESIGN-CONTRACT|DESIGN-CONTRACT|DESIGN\ CONTRACT)
+      printf 'silver-ui-contract'
+      ;;
+    FLOW-EXECUTE|EXECUTE)
+      printf 'silver-execute'
+      ;;
+    FLOW-UI-QUALITY|UI-QUALITY|UI\ QUALITY)
+      printf 'silver-ui-review'
+      ;;
+    FLOW-REVIEW|REVIEW)
+      printf 'silver-review'
+      ;;
+    FLOW-REVIEW-REQUEST|REVIEW-REQUEST|REVIEW\ REQUEST)
+      printf 'silver-review-request'
+      ;;
+    FLOW-REVIEW-TRIAGE|REVIEW-TRIAGE|REVIEW\ TRIAGE)
+      printf 'silver-review-triage'
+      ;;
+    FLOW-VERIFY|VERIFY)
+      printf 'silver-verify'
+      ;;
+    FLOW-SECURE|SECURE)
+      printf 'security'
+      ;;
+    FLOW-SHIP|SHIP)
+      printf 'silver-ship'
+      ;;
+    FLOW-DEBUG|DEBUG)
+      printf 'silver-debug'
+      ;;
+    FLOW-DOCUMENT|DOCUMENT)
+      printf 'silver-ensure-docs'
+      ;;
+    FLOW-RELEASE|RELEASE)
+      printf 'silver-create-release'
+      ;;
+    FLOW-BLAST-RADIUS|BLAST-RADIUS|BLAST\ RADIUS)
+      printf 'silver-blast-radius'
+      ;;
+    FLOW-VALIDATE|VALIDATE)
+      printf 'silver-validate'
+      ;;
     security|SECURITY)
       printf 'security'
       ;;
     silver-*)
       printf '%s' "$flow"
       ;;
+    FLOW-*)
+      local slug="${flow#FLOW-}"
+      slug="$(printf '%s' "$slug" | tr '[:upper:]' '[:lower:]')"
+      case "$slug" in
+        quality-gate|quality-gate-preship) printf 'silver-quality-gates' ;;
+        devops-quality-gate-preship) printf 'devops-quality-gates' ;;
+        design-handoff) printf 'silver-handoff' ;;
+        devops-skill-router) printf 'devops-skill-router' ;;
+        secure) printf 'security' ;;
+        *) printf 'silver-%s' "$slug" ;;
+      esac
+      ;;
+    *-*)
+      printf 'silver-%s' "$flow"
+      ;;
     *)
-      if [[ "$flow" == *-* ]]; then
-        printf 'silver-%s' "$flow"
-      else
-        printf 'silver-%s' "$(printf '%s' "$flow" | tr '[:upper:]' '[:lower:]')"
-      fi
+      printf 'silver-%s' "$(printf '%s' "$flow" | tr '[:upper:]' '[:lower:]')"
       ;;
   esac
+}
+
+sb_orchestrator_ensure_worker_template_mapper() {
+  declare -f sb_orchestrator_worker_template_for_skill >/dev/null 2>&1 && return 0
+  local lib_dir
+  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+  if [[ -n "$lib_dir" && -f "$lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$lib_dir/orchestrator-parent.sh"
+  fi
 }
 
 sb_orchestrator_directive_write() {
@@ -48,6 +132,7 @@ sb_orchestrator_directive_write() {
   [[ -n "$next_skill" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
 
+  [[ -n "$next_worker_template" ]] || sb_orchestrator_ensure_worker_template_mapper
   if [[ -z "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_for_skill >/dev/null 2>&1; then
     next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
   fi

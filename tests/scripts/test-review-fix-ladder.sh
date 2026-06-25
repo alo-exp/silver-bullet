@@ -128,6 +128,29 @@ else
 fi
 assert_jq_true "Cursor fixed starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$cursor_json"
 assert_jq_true "Cursor fixed ends gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh"}' "$cursor_json"
+cursor_text="$(python3 "$RESOLVER" --host cursor)"
+if printf '%s' "$cursor_text" | grep -q 'gpt-5.5-medium'; then
+  fail "Cursor ladder omits rejected gpt-5.5-medium slug"
+else
+  pass "Cursor ladder omits rejected gpt-5.5-medium slug"
+fi
+if printf '%s' "$cursor_text" | grep -q 'gpt-5.5-high'; then
+  fail "Cursor ladder omits rejected gpt-5.5-high slug"
+else
+  pass "Cursor ladder omits rejected gpt-5.5-high slug"
+fi
+if printf '%s' "$cursor_text" | grep -q 'gpt-5.5 / medium (cursor slug: gpt-5.5-extra-high)'; then
+  pass "Cursor ladder substitutes medium with extra-high slug"
+else
+  fail "Cursor ladder substitutes medium with extra-high slug"
+  printf '%s\n' "$cursor_text"
+fi
+if printf '%s' "$cursor_text" | grep -q 'gpt-5.5 / high (cursor slug: gpt-5.5-extra-high)'; then
+  pass "Cursor ladder substitutes high with extra-high slug"
+else
+  fail "Cursor ladder substitutes high with extra-high slug"
+  printf '%s\n' "$cursor_text"
+fi
 
 override_json="$(python3 "$RESOLVER" --host cursor --json)"
 assert_jq_true "Host override without env selects cursor" '.host == "cursor"' "$override_json"

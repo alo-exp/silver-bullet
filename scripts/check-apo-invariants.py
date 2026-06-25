@@ -64,6 +64,9 @@ def derived_views(catalog: dict) -> list[tuple[str, str, str]]:
 
 def worker_template_parity(catalog: dict) -> list[tuple[str, str, str]]:
     workers = {Path(flow["execution"]["worker_template"]).name for flow in catalog["atomic_flows"]}
+    for flow in catalog["atomic_flows"]:
+        for tmpl in flow.get("execution", {}).get("skill_worker_templates", {}).values():
+            workers.add(Path(tmpl).name)
     source = {path.name for path in WORKERS_DIR.glob("*.md")}
     plugin = {path.name for path in PLUGIN_WORKERS_DIR.glob("*.md")}
     return [

@@ -51,6 +51,17 @@ ATOMIC_SPECS = [
     ("AF-FAST-PATH", "FAST_PATH", "bounded_fast_path", "templates/orchestrator-workers/FAST.md", "Minimal safe workflow route for narrow low-risk work."),
 ]
 
+# Skill-dispatched alternate worker templates (runtime resolves via orchestrator-parent.sh).
+SKILL_WORKER_TEMPLATES: dict[str, dict[str, str]] = {
+    "AF-DOCUMENT": {
+        "silver-handoff": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
+        "FLOW-DESIGN-HANDOFF": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
+    },
+    "AF-SECURE": {
+        "security": "templates/orchestrator-workers/SECURITY.md",
+    },
+}
+
 SKILL_TO_FLOW = {
     "silver": "AF-ROUTE",
     "silver-orchestrator": "AF-ROUTE",
@@ -286,6 +297,11 @@ def build_atomic_flows(flow_steps: list[dict], flow_to_steps: dict[str, list[str
             "execution": {
                 "dispatch_mode": "subagent",
                 "worker_template": worker,
+                **(
+                    {"skill_worker_templates": SKILL_WORKER_TEMPLATES[flow_id]}
+                    if flow_id in SKILL_WORKER_TEMPLATES
+                    else {}
+                ),
                 "parallelizable": flow_id not in {"AF-ROUTE", "AF-SHIP", "AF-RELEASE", "AF-BRANCH-FINISH", "AF-COMPLETION-AUDIT"},
                 "dependencies": ["catalog-selected upstream refs"],
                 "mutation_scopes": ["declared artifacts", "scoped repository paths"],
@@ -336,7 +352,7 @@ def build_workflows() -> list[dict]:
         workflow("WF-SHIP-READINESS", "ship-readiness", "reusable_component", [n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP")], reusable=True, triggers=["legacy FLOW 14"], ops=["loop"]),
         workflow("WF-SILVER-UI", "silver-ui", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-ui", triggers=["ui", "frontend"], queue=["FLOW-QUALITY-GATE", "silver-context", "silver-plan", "silver-ui-contract", "silver-validate", "silver-execute", "silver-ui-review"] + feature_queue[5:]),
         workflow("WF-SILVER-DEVOPS", "silver-devops", "precomposed", [n("AF-BLAST-RADIUS"), n("AF-DEVOPS-ROUTE"), n("AF-QUALITY-GATE"), n("AF-SECURE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-devops", triggers=["devops", "infra"], queue=["silver-blast-radius", "devops-skill-router", "devops-quality-gates", "security", "silver-context", "silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:]),
-        workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-ORIENT"), n("AF-DEBUG"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=["silver-debug", "silver-plan", "silver-execute"] + feature_queue[5:]),
+        workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-ORIENT", optional=True), n("AF-DEBUG"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=["silver-debug", "silver-plan", "silver-execute"] + feature_queue[5:]),
         workflow("WF-SILVER-RESEARCH", "silver-research", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-research", triggers=["research", "decide"], queue=["silver-clarify", "silver-research", "silver-ensure-docs", "silver-validate"]),
         workflow("WF-SILVER-FAST", "silver-fast", "precomposed", [n("AF-FAST-PATH"), n("AF-QUALITY-GATE"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-fast", triggers=["fast", "small change"], queue=["FLOW-QUALITY-GATE", "silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
         workflow("WF-SILVER-RELEASE", "silver-release", "precomposed", [n("AF-QUALITY-GATE"), n("AF-REVIEW-REQUEST"), n("AF-REVIEW"), n("AF-REVIEW-TRIAGE"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-VALIDATE"), n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP"), n("AF-RELEASE")], owner="silver-release", triggers=["release"], queue=["FLOW-QUALITY-GATE", "silver-review-request", "silver-review", "silver-review-triage", "silver-verify", "security", "silver-secure", "silver-validate", "silver-branch-finish", "silver-completion-audit", "silver-ship", "silver-create-release"]),
@@ -486,7 +502,9 @@ def build_catalog() -> dict:
             },
             "runtime_queue_tokens": {
                 "FLOW-QUALITY-GATE": "AF-QUALITY-GATE", "FLOW-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
-                "FLOW-DEVOPS-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE", "ROUTER": "AF-ROUTE",
+                "FLOW-DEVOPS-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE", "FLOW-DESIGN-HANDOFF": "AF-DOCUMENT",
+                "FLOW-DOCUMENT": "AF-DOCUMENT",
+                "ROUTER": "AF-ROUTE",
                 "silver-quality-gates": "AF-QUALITY-GATE",
                 "silver-context": "AF-ORIENT", "silver-plan": "AF-PLAN", "silver-validate": "AF-VALIDATE",
                 "silver-execute": "AF-EXECUTE", "silver-review-request": "AF-REVIEW-REQUEST", "silver-review": "AF-REVIEW",
@@ -496,6 +514,7 @@ def build_catalog() -> dict:
                 "silver-ui-contract": "AF-DESIGN-CONTRACT", "silver-ui-review": "AF-UI-QUALITY", "silver-blast-radius": "AF-BLAST-RADIUS",
                 "devops-quality-gates": "AF-QUALITY-GATE", "devops-skill-router": "AF-DEVOPS-ROUTE", "silver-spec": "AF-SPECIFY",
                 "silver-clarify": "AF-CLARIFY", "silver-research": "AF-DECIDE", "silver-ensure-docs": "AF-DOCUMENT",
+                "silver-handoff": "AF-DOCUMENT",
             },
         },
     }

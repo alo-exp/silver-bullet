@@ -87,6 +87,25 @@ run_hook "silver-quality-gates" "$WORK" >/dev/null
 qg_status="$(awk -F'|' '/QUALITY/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${wid}.md" 2>/dev/null || true)"
 assert_contains "quality gate flow row completes" "$qg_status" "complete"
 
+# Special workflow labels with spaces must complete from their atom skills.
+rm -f "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-intent.txt" 2>/dev/null || true
+make_repo
+run_hook "silver-release" "$WORK" >/dev/null
+release_wid="$(find "$WORK/.planning/workflows" -maxdepth 1 -name '*.md' -print | head -1)"
+release_wid="$(basename "$release_wid" .md)"
+run_hook "security" "$WORK" >/dev/null
+secure_status="$(awk -F'|' '/SECURITY/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${release_wid}.md" 2>/dev/null || true)"
+assert_contains "security atom completes SECURITY row" "$secure_status" "complete"
+run_hook "silver-branch-finish" "$WORK" >/dev/null
+branch_status="$(awk -F'|' '/BRANCH FINISH/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${release_wid}.md" 2>/dev/null || true)"
+assert_contains "branch-finish atom completes spaced row" "$branch_status" "complete"
+run_hook "silver-completion-audit" "$WORK" >/dev/null
+completion_status="$(awk -F'|' '/COMPLETION AUDIT/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${release_wid}.md" 2>/dev/null || true)"
+assert_contains "completion-audit atom completes spaced row" "$completion_status" "complete"
+run_hook "silver-create-release" "$WORK" >/dev/null
+release_status="$(awk -F'|' '/CREATE RELEASE/ { gsub(/ /,"",$4); print $4; exit }' "$WORK/.planning/workflows/${release_wid}.md" 2>/dev/null || true)"
+assert_contains "create-release atom completes spaced row" "$release_status" "complete"
+
 # Worker sessions must not re-seed composer queue when re-reading composer skills
 rm -f "${SB_TEST_DIR}/orchestrator.json" "${SB_TEST_DIR}/orchestrator-intent.txt" 2>/dev/null || true
 make_repo

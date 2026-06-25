@@ -25,18 +25,29 @@ Legacy FLOW 1-18 labels are migration aliases only; canonical execution uses AF-
 | FLOW 7 | DESIGN CONTRACT | `AF-DESIGN-CONTRACT` |
 | FLOW 8 | EXECUTE | `AF-EXECUTE` |
 | FLOW 9 | UI QUALITY | `AF-UI-QUALITY` |
-| FLOW 10 | REVIEW TRIAD | `WF-REVIEW-TRIAD` |
+| FLOW 10 | REVIEW | `WF-REVIEW-TRIAD` |
 | FLOW 11 | SECURE | `AF-SECURE` |
 | FLOW 12 | VERIFY | `AF-VERIFY` |
 | FLOW 13 | QUALITY GATE | `AF-QUALITY-GATE` |
-| FLOW 14 | SHIP READINESS | `WF-SHIP-READINESS` |
+| FLOW 14 | SHIP | `WF-SHIP-READINESS` |
 | FLOW 15 | DEBUG | `AF-DEBUG` |
-| FLOW 16 | DOCUMENT | `AF-DOCUMENT` |
+| FLOW 16 | DESIGN HANDOFF | `AF-DOCUMENT` |
 | FLOW 17 | DOCUMENT | `AF-DOCUMENT` |
 | FLOW 18 | RELEASE | `AF-RELEASE` |
 
 Ship readiness composes `silver:branch-finish` before `silver:completion-audit` before `silver:ship`.
 Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and `RELEASE-MILESTONE-AUDIT` for FLOW 18 release readiness.
+
+## Post-execution sequencing
+
+Flow numbers are stable identifiers — not always runtime order. For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the mandatory post-execute order is:
+
+1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected
+2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)
+3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
+4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
+5. FLOW 13 (QUALITY GATE, pre-ship)
+6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)
 
 ## Atomic Flow Catalog
 
@@ -69,6 +80,17 @@ Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and 
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-migrate`, `silver-phase`, `silver-rem` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
+
+## Skill-Dispatched Worker Templates
+
+Some queue atoms override the default worker template for their atomic flow.
+Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.silver-bullet/orchestrator-workers/`, then plugin mirror.
+
+| Atomic Flow | Queue Atom / Skill | Alternate Worker Template |
+|-------------|--------------------|---------------------------|
+| `AF-SECURE` | `security` | `templates/orchestrator-workers/SECURITY.md` |
+| `AF-DOCUMENT` | `FLOW-DESIGN-HANDOFF` | `templates/orchestrator-workers/DESIGN-HANDOFF.md` |
+| `AF-DOCUMENT` | `silver-handoff` | `templates/orchestrator-workers/DESIGN-HANDOFF.md` |
 
 ## Workflow Composition
 
@@ -184,7 +206,7 @@ Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and 
 - Type: `precomposed`
 - Final intent gate: `INTENT-GATE-DEFAULT`
 
-- atomic_flow: `AF-ORIENT`
+- atomic_flow: `AF-ORIENT` optional
 - atomic_flow: `AF-DEBUG`
 - atomic_flow: `AF-PLAN`
 - atomic_flow: `AF-EXECUTE`
@@ -343,7 +365,9 @@ Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and 
 
 | Runtime Token | Catalog Entity |
 |---------------|----------------|
+| `FLOW-DESIGN-HANDOFF` | `AF-DOCUMENT` |
 | `FLOW-DEVOPS-QUALITY-GATE-PRESHIP` | `AF-QUALITY-GATE` |
+| `FLOW-DOCUMENT` | `AF-DOCUMENT` |
 | `FLOW-QUALITY-GATE` | `AF-QUALITY-GATE` |
 | `FLOW-QUALITY-GATE-PRESHIP` | `AF-QUALITY-GATE` |
 | `ROUTER` | `AF-ROUTE` |
@@ -359,6 +383,7 @@ Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and 
 | `silver-debug` | `AF-DEBUG` |
 | `silver-ensure-docs` | `AF-DOCUMENT` |
 | `silver-execute` | `AF-EXECUTE` |
+| `silver-handoff` | `AF-DOCUMENT` |
 | `silver-plan` | `AF-PLAN` |
 | `silver-quality-gates` | `AF-QUALITY-GATE` |
 | `silver-research` | `AF-DECIDE` |

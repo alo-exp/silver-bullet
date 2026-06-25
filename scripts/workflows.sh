@@ -216,16 +216,17 @@ cmd_complete_flow() {
   tmp=$(mktemp "${f}.XXXXXX")
   awk -v flow="$flow" -v now="$now" '
     function norm(s) { gsub(/ /, "", s); return s }
-    BEGIN { FS = "|"; OFS = "|" }
+    BEGIN { FS = "|"; OFS = "|"; completed_match = 0 }
     /^\| [0-9]+ \|/ {
       # Column 3 is the path/skill (after the leading empty + numeric col).
       name = $3
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
-      if (name == flow || norm(name) == norm(flow)) {
+      if (!completed_match && (name == flow || norm(name) == norm(flow))) {
         # Replace status column 4 → " complete " and completed col 6 → " <now> "
-        sub(/\| pending \| - \| - \|$/, "| complete | - | " now " |", $0)
+        changed = sub(/\| pending \| - \| - \|$/, "| complete | - | " now " |", $0)
         # Also handle cases where started has been set but completed is still "-"
-        sub(/\| (pending|in-progress) \| ([^|]+) \| - \|$/, "| complete | \\2 | " now " |", $0)
+        changed += sub(/\| (pending|in-progress) \| ([^|]+) \| - \|$/, "| complete | \\2 | " now " |", $0)
+        if (changed > 0) completed_match = 1
       }
       print
       next

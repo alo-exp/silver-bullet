@@ -33,8 +33,9 @@ CURSOR_TASK_SLUG_MAP: dict[tuple[str, str], str] = {
     ("composer-2.5", "high"): "composer-2.5-fast",
     ("composer-2.5", "xhigh"): "composer-2.5-fast",
     ("gpt-5.5", "low"): "gpt-5.5",
-    ("gpt-5.5", "medium"): "gpt-5.5-medium",
-    ("gpt-5.5", "high"): "gpt-5.5-high",
+    # Host model-lock substitution: gpt-5.5-medium/high are not selectable in Cursor.
+    ("gpt-5.5", "medium"): "gpt-5.5-extra-high",
+    ("gpt-5.5", "high"): "gpt-5.5-extra-high",
     ("gpt-5.5", "xhigh"): "gpt-5.5-extra-high",
 }
 

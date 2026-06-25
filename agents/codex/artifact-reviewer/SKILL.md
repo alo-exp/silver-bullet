@@ -1,7 +1,7 @@
 ---
 name: artifact-reviewer
 title: "Silver: Artifact Reviewer"
-description: This skill should be used for framework for artifact review — defines the standard interface, 2-pass loop, state tracking, and audit trail that all SB artifact reviewers implement
+description: This skill should be used for framework for artifact review — defines the standard interface, depth-aware review loop, state tracking, and audit trail that all SB artifact reviewers implement
 argument-hint: "<artifact-path> [--reviewer <reviewer-skill-name>]"
 user-invocable: false
 version: 0.1.0
@@ -9,11 +9,11 @@ version: 0.1.0
 
 # artifact-reviewer
 
-Orchestrator skill for artifact review. Accepts an artifact path and optional reviewer name, dispatches to the appropriate reviewer skill, runs the 2-consecutive-pass review loop, records per-artifact state, and writes the REVIEW-ROUNDS.md audit trail.
+Orchestrator skill for artifact review. Accepts an artifact path and optional reviewer name, dispatches to the appropriate reviewer skill, runs the depth-aware review loop (`required_passes` per reviewer depth — see `review-loop.md`), records per-artifact state, and writes the REVIEW-ROUNDS.md audit trail.
 
 ## Entry point vs direct review-* skills
 
-**Use `artifact-reviewer` as the hub** for all SB-managed planning artifacts (SPEC, PLAN, ROADMAP, UAT, etc.). It auto-detects the correct `review-*` skill from the artifact filename, runs the shared 2-pass loop, and writes analytics.
+**Use `artifact-reviewer` as the hub** for all SB-managed planning artifacts (SPEC, PLAN, ROADMAP, UAT, etc.). It auto-detects the correct `review-*` skill from the artifact filename, runs the shared depth-aware review loop, and writes analytics.
 
 | Invoke | When |
 |--------|------|

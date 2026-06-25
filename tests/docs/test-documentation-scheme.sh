@@ -101,7 +101,7 @@ fi
 stale_refs=$(grep -rl "KNOWLEDGE\.md" --include="*.md" --include="*.sh" --include="*.json" --include="*.base" \
   --exclude-dir=".claude" --exclude-dir="site" --exclude-dir="specs" --exclude-dir="sessions" \
   --exclude-dir="internal" --exclude-dir="superpowers" --exclude-dir="tests" \
-  --exclude-dir=".planning" . 2>/dev/null | \
+  --exclude-dir=".planning" --exclude-dir="graphify-out" --exclude-dir="raw" . 2>/dev/null | \
   grep -v "CHANGELOG" | grep -v "session-log" | grep -v "skills/silver-init" || true)
 if [[ -z "$stale_refs" ]]; then
   pass "No stale KNOWLEDGE.md references in active source files"
@@ -134,6 +134,9 @@ section "Doc size caps (docs/ files < 500 lines)"
 
 over_cap=0
 for f in docs/*.md; do
+  if grep -q "Generated from" "$f"; then
+    continue
+  fi
   lines=$(wc -l < "$f")
   if (( lines > 500 )); then
     fail "$f has $lines lines (cap: 500)"
@@ -292,6 +295,12 @@ if grep -q "count_lines.*200" skills/artifact-reviewer/rules/review-loop.md; the
   pass "review-loop.md has 200-line rotation cap"
 else
   fail "review-loop.md missing 200-line cap"
+fi
+
+if grep -q "STOP — surface to user for decision and exit review loop without success commit/clear" skills/artifact-reviewer/rules/review-loop.md; then
+  pass "review-loop.md safety cap exits without success path"
+else
+  fail "review-loop.md safety cap can fall through to success path"
 fi
 
 # ─── Section 14: Consolidated docs in audits/ ───

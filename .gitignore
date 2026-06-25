@@ -7,6 +7,9 @@ id_rsa*
 secrets.json
 
 .DS_Store
+__pycache__/
+*.py[cod]
+data/state_store.db/
 site/new/
 *.swp
 *.swo

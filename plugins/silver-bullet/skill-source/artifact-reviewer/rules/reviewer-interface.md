@@ -111,7 +111,7 @@ The orchestrator applies fixes using this contract:
 
 ### `commit_review_trail(artifact_path)`
 
-After the review loop achieves 2 consecutive clean passes:
+After the review loop achieves the required consecutive clean passes (`required_passes` in `review-loop.md` — depth-dependent):
 
 1. Commit `REVIEW-ROUNDS.md` alongside the reviewed artifact
 2. The commit message follows: `docs: review rounds complete for {artifact_filename}`

@@ -329,6 +329,10 @@ fi
 directive_ctx=""
 _od_lib="${_lib_dir}/orchestrator-directive.sh"
 if [[ -f "$_od_lib" ]]; then
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+  fi
   # shellcheck source=lib/orchestrator-directive.sh
   source "$_od_lib"
   if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
@@ -354,13 +358,11 @@ if [[ -f "$core_rules_file" ]]; then
     # shellcheck source=lib/core-rules-integrity.sh
     source "$_cr_lib"
     core_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
-    if [[ -z "$core_content" ]] && [[ -f "${script_dir}/core-rules.sha256" ]]; then
+    if [[ -z "$core_content" ]]; then
       core_content="$(sb_core_rules_integrity_warning)"
-    elif [[ -z "$core_content" ]]; then
-      core_content="$(cat "$core_rules_file" 2>/dev/null || true)"
     fi
   else
-    core_content="$(cat "$core_rules_file" 2>/dev/null || true)"
+    core_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
   fi
   if [[ -n "$core_content" ]]; then
     msg="${core_content}
