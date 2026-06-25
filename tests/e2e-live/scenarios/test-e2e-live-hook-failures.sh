@@ -10,7 +10,7 @@ enable_hook_audit
 refresh_runtime_installation
 ensure_runtime_dependency_access_preflight
 
-target_file="${WORK_DIR}/src/routes/todos.js"
+target_file="${WORK_DIR}/${E2E_PROBE_SOURCE_FILE}"
 plugin_hook_file="$(runtime_plugin_hook_file || true)"
 
 assert_file_exists "fixture source file exists" "$target_file"
@@ -23,21 +23,21 @@ mkdir -p "${WORK_DIR}/.hook-probes"
 echo "--- Case 1: dev-cycle-check denies source edit before planning ---"
 clear_hook_audit_log
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// live hook failure probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// live hook failure probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null
 assert_file_not_modified "dev-cycle-check keeps source unchanged before planning" "$target_file" "$target_digest"
 wait_for_hook_audit_entry "dev-cycle-check deny recorded" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
 
 echo "--- Case 1b: dev-cycle-check denies chmod-based retry before planning ---"
 clear_hook_audit_log
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"set +m; chmod u+w src/routes/todos.js && printf '\\n// live chmod retry probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"set +m; chmod u+w ${E2E_PROBE_SOURCE_FILE} && printf '\\n// live chmod retry probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null
 assert_file_not_modified "dev-cycle-check keeps source unchanged through chmod retry before planning" "$target_file" "$target_digest"
 wait_for_hook_audit_entry "dev-cycle-check chmod retry deny recorded" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
 
 echo "--- Case 1c: dev-cycle-check denies direct python file writes before planning ---"
 clear_hook_audit_log
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`python3 -c \"from pathlib import Path; Path('src/routes/todos.js').open('a', encoding='utf-8').write('\\\\n# live python write probe\\\\n')\"\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`python3 -c \"from pathlib import Path; Path('${E2E_PROBE_SOURCE_FILE}').open('a', encoding='utf-8').write('\\\\n# live python write probe\\\\n')\"\` and do not do anything else." >/dev/null
 assert_file_not_modified "dev-cycle-check keeps source unchanged through direct python write before planning" "$target_file" "$target_digest"
 wait_for_hook_audit_entry "dev-cycle-check python write deny recorded" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
 
@@ -99,7 +99,7 @@ clear_hook_audit_log
 rm -rf "${WORK_DIR}/.planning/workflows"
 printf 'silver-quality-gates\nsilver-context\nsilver-plan\n' > "$STATE_FILE"
 target_digest="$(capture_digest "$target_file")"
-run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> src/routes/todos.js\"\` and do not do anything else." >/dev/null
+run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// planning gate open probe: this comment is intentionally long so the runtime performs a real source mutation.\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null
 wait_for_hook_audit_entry "dev-cycle-check allow recorded" "dev-cycle-check" "allow" 'Planning verified|Implementation edits allowed'
 if [[ "$(capture_digest "$target_file")" != "$target_digest" ]]; then
   echo "PASS: dev-cycle-check allows source edit after planning"

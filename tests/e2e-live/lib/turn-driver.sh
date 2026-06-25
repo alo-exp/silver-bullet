@@ -15,7 +15,7 @@ run_prompt_sequence() {
   done < "$prompt_file"
 }
 
-file_todo_app_issue() {
+file_enterprise_e2e_issue() {
   local title="$1"
   local body="$2"
   local item_label="${3:-bug}"
@@ -33,23 +33,19 @@ file_todo_app_issue() {
     --repo "$owner_repo" \
     >/dev/null 2>&1 || true
 
-  gh label create "todo-app" \
+  gh label create "enterprise-test-app" \
     --color "#0E8A16" \
-    --description "Todo-app live E2E filing" \
+    --description "Enterprise-grade-test-app live E2E filing" \
     --repo "$owner_repo" \
     >/dev/null 2>&1 || true
 
-  # Older gh versions do not support `gh issue create --json`, and isolated
-  # live-test homes may intentionally have no gh auth. Prefer a real issue
-  # when available, but return a deterministic local URL so the scenario can
-  # keep validating SB's workflow state without depending on external auth.
   issue_create_output="$(gh issue create \
     --repo "$owner_repo" \
     --title "$title" \
     --body "$body" \
     --label "filed-by-silver-bullet" \
     --label "$item_label" \
-    --label "todo-app" 2>/dev/null || true)"
+    --label "enterprise-test-app" 2>/dev/null || true)"
   issue_url="$(printf '%s' "$issue_create_output" | grep -oE 'https://github.com/[^[:space:]]+/issues/[0-9]+' | tail -n 1 || true)"
   if [[ -z "${issue_url:-}" ]]; then
     issue_url="https://github.com/${owner_repo}/issues/0"
@@ -59,9 +55,14 @@ file_todo_app_issue() {
   if [[ "$issue_num" != "0" ]]; then
     gh issue edit "$issue_num" \
       --repo "$owner_repo" \
-      --add-label "todo-app" \
+      --add-label "enterprise-test-app" \
       >/dev/null 2>&1 || true
   fi
 
   printf '%s\n' "$issue_url"
+}
+
+# Backward-compatible alias for legacy Kay todo-app journey harness.
+file_todo_app_issue() {
+  file_enterprise_e2e_issue "$@"
 }

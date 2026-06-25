@@ -61,8 +61,9 @@ gate markers (`adversarial-review-clean`, `sentinel-skills-clean`,
 
 Run `bash scripts/run-release-live-matrix.sh` and
 `tests/e2e-live/run-e2e-live-tests.sh` successfully in the current session
-before creating the release tag. The todo-app suite is one inline full-surface
-journey and writes an `inline-e2e-matrix` marker.
+before creating the release tag. The enterprise live suite provides Kay hook-delivery
+diagnostics; the Claude supervised matrix (`.planning/enterprise-e2e/`) is the
+canonical full-surface gate and may write `inline-e2e-matrix` or enterprise ledger evidence.
 
 The standard release gate uses the Kay-backed Codex-compatible path:
 `matrix=codex-only` markers are the normal release prerequisite. Full

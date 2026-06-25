@@ -18,29 +18,26 @@ Run this before any Silver Bullet release to validate the full workflow works en
 ## 1. SETUP
 
 ```bash
-cd /Users/shafqat/projects/todo-app
+cd /Users/shafqat/projects/enterprise-grade-test-app
 npm install
-npm test                    # Verify: 28 tests pass
-node src/server.js &        # Verify: "Todo app running at http://localhost:3456"
-curl localhost:3456/api/todos   # Verify: returns []
-kill %1                     # Stop server
+npm test                    # Verify: health test + ui-stub-ok
 ```
 
 If this app has been tested before, clean up SB artifacts first:
 ```bash
-rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/workflows docs/sessions docs/silver-forensics docs/CHANGELOG.md docs/KNOWLEDGE.md docs/PRD-Overview.md docs/Architecture-and-Design.md docs/Testing-Strategy-and-Plan.md docs/CICD.md
+rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md AGENTS.md docs/workflows docs/sessions docs/silver-forensics
 ```
 
 Initialize git (if not already):
 ```bash
-git init && git add -A && git commit -m "initial: todo app baseline"
+git init && git add -A && git commit -m "initial: enterprise test app baseline"
 ```
 
 ---
 
 ## 2. INITIALIZE SILVER BULLET
 
-In Claude Code (with CWD = `/Users/shafqat/projects/todo-app`):
+In Claude Code (with CWD = `/Users/shafqat/projects/enterprise-grade-test-app`):
 
 ```
 /silver:init
@@ -160,7 +157,7 @@ The SB-generated artifacts (`.planning/`, `.silver-bullet.json`, `silver-bullet.
 
 To fully reset the test app for another run:
 ```bash
-cd /Users/shafqat/projects/todo-app
+cd /Users/shafqat/projects/enterprise-grade-test-app
 rm -rf .planning .silver-bullet.json silver-bullet.md CLAUDE.md docs/ node_modules
 git checkout -- .    # Restore original files
 git clean -fd        # Remove untracked files
