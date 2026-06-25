@@ -66,24 +66,34 @@ agent_invoke() {
 
   sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
   expect_script="${sb_root}/scripts/claude-interactive-invoke.expect"
+  # shellcheck source=scripts/lib/claude-matrix-auth.sh
+  source "${sb_root}/scripts/lib/claude-matrix-auth.sh"
 
   if claude_should_use_interactive "$prompt" && [[ -x "$expect_script" ]] && command -v expect >/dev/null 2>&1; then
     prompt_file="$(mktemp "${TMPDIR:-/tmp}/claude-live-prompt.XXXXXX")"
     printf '%s' "$prompt" >"$prompt_file"
     run_expect() {
-      cd "$WORK_DIR" && \
-        TERM="${TERM:-xterm-256color}" \
-        CLAUDE_BIN="$cli" \
-        CLAUDE_WORK_DIR="$WORK_DIR" \
-        CLAUDE_PROMPT_FILE="$prompt_file" \
-        CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
-        CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
-        CLAUDE_PERMISSION_MODE="$permission_mode" \
-        CLAUDE_CONTINUE="$continue_flag" \
-        CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
-        CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
-        CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}" \
-        expect "$expect_script" 2>&1
+      local -a spawn_env=(
+        "HOME=${HOME}"
+        "TERM=${TERM:-xterm-256color}"
+        "CLAUDE_BIN=${cli}"
+        "CLAUDE_WORK_DIR=${WORK_DIR}"
+        "CLAUDE_PROMPT_FILE=${prompt_file}"
+        "CLAUDE_MODEL=${CLAUDE_MODEL:-sonnet}"
+        "CLAUDE_EFFORT=${CLAUDE_EFFORT:-low}"
+        "CLAUDE_PERMISSION_MODE=${permission_mode}"
+        "CLAUDE_CONTINUE=${continue_flag}"
+        "CLAUDE_INTERACTIVE_TIMEOUT=${timeout_seconds}"
+        "CLAUDE_INTERACTIVE_QUIET_TIMEOUT=${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}"
+        "CLAUDE_INTERACTIVE_READY_DELAY_MS=${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}"
+        "SB_E2E_MATRIX_CLEAN_ENV=${SB_E2E_MATRIX_CLEAN_ENV:-0}"
+      )
+      local kv
+      while IFS= read -r kv; do
+        [[ -n "$kv" ]] && spawn_env+=("$kv")
+      done < <(claude_matrix_auth_env_lines)
+      claude_matrix_export_settings_env
+      cd "$WORK_DIR" && env "${spawn_env[@]}" expect "$expect_script" 2>&1
     }
     if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-0}" == "1" ]]; then
       # Opt-in env -i + bash -c (not -lc) for OAuth/key-conflict isolation only.
@@ -91,8 +101,6 @@ agent_invoke() {
       # keychain/HOME credentials and often yields "Not logged in" in interactive TUI.
       # Also strip ~/.claude/settings.json env keys — Claude reads API keys there
       # even when the shell env is empty, which conflicts with claude.ai OAuth.
-      # shellcheck source=scripts/lib/claude-matrix-auth.sh
-      source "${sb_root}/scripts/lib/claude-matrix-auth.sh"
       claude_matrix_auth_prepare
       trap 'claude_matrix_auth_restore' RETURN
       output=$(
@@ -128,8 +136,10 @@ agent_invoke() {
     return 0
   fi
 
+  claude_matrix_export_settings_env
   output=$(
     cd "$WORK_DIR" && \
+      HOME="${HOME}" \
       CLAUDE_LIVE_CLI="$cli" \
       CLAUDE_LIVE_PROMPT="$prompt" \
       CLAUDE_LIVE_PERMISSION_MODE="$permission_mode" \

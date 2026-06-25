@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Matrix-only Claude auth helpers: strip ~/.claude/settings.json API-key env
-# entries that conflict with claude.ai OAuth during interactive E2E runs.
-# Shell unset / env -i alone is insufficient — Claude reads keys from settings.
+# Matrix Claude auth helpers:
+# - Export ~/.claude/settings.json env for interactive TUI (api_key hosts).
+# - Strip settings API-key env when claude.ai OAuth conflicts (clean-env path).
+# Shell unset / env -i alone is insufficient — interactive TUI needs exported env.
 
 _claude_matrix_auth_backup=""
 _claude_matrix_auth_prepared=0
@@ -20,10 +21,10 @@ claude_matrix_auth_has_api_key_env() {
 }
 
 claude_matrix_auth_has_conflict() {
-  local cli status
+  local cli auth_status_json
   cli="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo claude)}"
-  status="$("$cli" auth status 2>/dev/null || true)"
-  printf '%s' "$status" | jq -e '
+  auth_status_json="$("$cli" auth status 2>/dev/null || true)"
+  printf '%s' "$auth_status_json" | jq -e '
     (.authMethod == "claude.ai")
     and ((.apiKeySource? // "") == "ANTHROPIC_API_KEY")
   ' >/dev/null 2>&1
@@ -76,4 +77,44 @@ claude_matrix_auth_restore() {
   fi
   _claude_matrix_auth_backup=""
   _claude_matrix_auth_prepared=0
+}
+
+# Export ~/.claude/settings.json env into the current shell so interactive Claude
+# matches `claude --print` api_key auth. Project-level settings lack API keys;
+# the TUI does not inject global settings env unless it is exported here.
+claude_matrix_should_export_settings_env() {
+  local settings_file
+  settings_file="$(claude_matrix_settings_path)"
+  [[ -f "$settings_file" ]] || return 1
+  if ! command -v jq >/dev/null 2>&1; then
+    return 1
+  fi
+  if ! claude_matrix_auth_has_api_key_env "$settings_file"; then
+    return 1
+  fi
+  if claude_matrix_auth_has_conflict; then
+    return 1
+  fi
+  return 0
+}
+
+claude_matrix_auth_env_lines() {
+  local settings_file
+  settings_file="$(claude_matrix_settings_path)"
+  if ! claude_matrix_should_export_settings_env; then
+    return 0
+  fi
+  jq -r '.env // {} | to_entries[] | "\(.key)=\(.value)"' "$settings_file"
+}
+
+claude_matrix_export_settings_env() {
+  local line
+  if ! claude_matrix_should_export_settings_env; then
+    return 0
+  fi
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    # shellcheck disable=SC2163
+    export "$line"
+  done < <(claude_matrix_auth_env_lines)
 }
