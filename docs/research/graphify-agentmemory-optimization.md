@@ -47,12 +47,12 @@ Multi-agent teams get the best retrieval/capture loop when **agentmemory exports
 
 ## Platform Matrix
 
-| Surface | Cursor | Claude Code | Codex |
-|---------|--------|-------------|-------|
-| Graphify install | `graphify cursor install` | `graphify install --project` + `graphify claude install --project` | `graphify install --project --platform codex` + `graphify codex install --project` |
-| agentmemory MCP | `~/.cursor/mcp.json` | `agentmemory connect claude-code` | `agentmemory connect codex --with-hooks` |
-| Hook strength | SB graphify-gate + rules | Claude settings hooks + skill | Codex hooks.json |
-| Optimization script | `bash scripts/sb-optimize-stack.sh --apply` | same | same |
+| Surface | Cursor | Claude Code | Codex | OpenCode | Goose (Pi) | Hermes |
+|---------|--------|-------------|-------|----------|------------|--------|
+| Graphify install | `graphify cursor install` | `graphify install --project` + `graphify claude install --project` | `graphify install --project --platform codex` + `graphify codex install --project` | `graphify install --project --platform opencode` | `graphify install --project --platform pi` | `graphify install --project --platform hermes` |
+| agentmemory MCP | `~/.cursor/mcp.json` | `agentmemory connect claude-code` | `agentmemory connect codex --with-hooks` | Manual MCP in `opencode.json` | Manual `connect pi` (TS extension) | Manual `connect hermes` (YAML) |
+| Hook strength | SB graphify-gate + rules | Claude settings hooks + skill | Codex hooks.json | `.opencode/plugins/graphify.js` | Pi extension (manual) | AGENTS.md rules only |
+| Optimization script | `bash scripts/sb-optimize-stack.sh --apply --host <host>` | same | same | same | same | same |
 
 ## gitignore Fix (mandatory)
 

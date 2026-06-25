@@ -37,7 +37,7 @@ trap 'rm -rf "$TMP"' EXIT
 echo "=== graphify platform install contract tests ==="
 
 # Template schema: pre_index / post_index per host
-for host in claude codex cursor; do
+for host in claude codex cursor opencode goose hermes; do
   if jq -e --arg h "$host" '.recommended_tools.graphify.platform_install_commands[$h]' "$TEMPLATE" >/dev/null 2>&1; then
     pass "template has platform_install_commands.${host}"
   else
@@ -53,6 +53,15 @@ claude_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.claud
 
 codex_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex.pre_index[0]' "$TEMPLATE")"
 [[ "$codex_pre" == "graphify install --project --platform codex" ]] && pass "codex pre_index skill install" || fail "codex pre_index"
+
+opencode_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.opencode.pre_index[0]' "$TEMPLATE")"
+[[ "$opencode_pre" == "graphify install --project --platform opencode" ]] && pass "opencode pre_index" || fail "opencode pre_index"
+
+goose_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.goose.pre_index[0]' "$TEMPLATE")"
+[[ "$goose_pre" == "graphify install --project --platform pi" ]] && pass "goose pre_index uses pi platform" || fail "goose pre_index"
+
+hermes_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.hermes.pre_index[0]' "$TEMPLATE")"
+[[ "$hermes_pre" == "graphify install --project --platform hermes" ]] && pass "hermes pre_index" || fail "hermes pre_index"
 
 install_cmds="$(jq -r '.recommended_tools.graphify.install_commands[]' "$TEMPLATE")"
 printf '%s' "$install_cmds" | grep -q 'uv tool install graphifyy' && pass "template CLI uv install" || fail "template CLI uv install"
