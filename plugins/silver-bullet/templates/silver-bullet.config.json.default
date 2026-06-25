@@ -217,22 +217,37 @@
       "usage_state_file": "$HOME/.codex/.silver-bullet/agentmemory-usage",
       "export_root": ".agentmemory"
     },
-    "aluminum": {
+    "alumnium": {
       "enabled_by_user": null,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
       "required_when_enabled": true,
-      "cli_command": "aluminum",
-      "usage_ttl_seconds": 1800,
-      "usage_state_file": "$HOME/.codex/.silver-bullet/aluminum-usage",
-      "install_commands": [],
+      "mcp_server_name": "alumnium",
+      "install_commands": [
+        "npm install -g alumnium"
+      ],
       "platform_install_commands": {
-        "cursor": { "pre_index": [], "post_index": [] },
-        "claude": { "pre_index": [], "post_index": [] },
-        "codex": { "pre_index": [], "post_index": [] }
+        "claude": {
+          "pre_index": [
+            "claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "Merge alumnium MCP into $HOME/.codex/mcp.json per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "Merge [mcp_servers.alumnium] into ~/.codex/config.toml per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        }
       },
-      "benefits_summary": "Aluminum token compression for large context payloads before model calls."
+      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
     },
     "rtk": {
       "enabled_by_user": null,

@@ -85,6 +85,11 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/alumnium-gate.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/rtk-gate.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
@@ -168,6 +173,11 @@
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/agentmemory-gate.sh\"",
+        "matcher": ".*",
+        "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/alumnium-gate.sh\"",
         "matcher": ".*",
         "timeout": 10
       },

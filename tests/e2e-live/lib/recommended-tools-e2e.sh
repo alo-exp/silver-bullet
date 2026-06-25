@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 TEMPLATE="${REPO_ROOT}/templates/silver-bullet.config.json.default"
 
 sb_e2e_recommended_tool_ids() {
-  printf '%s\n' graphify agentmemory aluminum rtk context_mode
+  printf '%s\n' graphify agentmemory alumnium rtk context_mode
 }
 
 # Merge recommended_tools from template into target .silver-bullet.json with all tools enabled.
@@ -25,9 +25,9 @@ sb_e2e_enable_all_recommended_tools() {
     | .recommended_tools.agentmemory.enabled_by_user = true
     | .recommended_tools.agentmemory.install_status = "installed"
     | .recommended_tools.agentmemory.enforcement_suspended = false
-    | .recommended_tools.aluminum.enabled_by_user = true
-    | .recommended_tools.aluminum.install_status = "installed"
-    | .recommended_tools.aluminum.enforcement_suspended = false
+    | .recommended_tools.alumnium.enabled_by_user = true
+    | .recommended_tools.alumnium.install_status = "installed"
+    | .recommended_tools.alumnium.enforcement_suspended = false
     | .recommended_tools.rtk.enabled_by_user = true
     | .recommended_tools.rtk.install_status = "installed"
     | .recommended_tools.rtk.enforcement_suspended = false
