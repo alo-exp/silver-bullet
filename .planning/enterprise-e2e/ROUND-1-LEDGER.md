@@ -328,3 +328,46 @@ Follow-up from [Fix matrix prompt, rerun row 1](b7b598d8-4cd3-48bc-8ddc-dfd89bf5
 1. `jq 'del(.env.ANTHROPIC_API_KEY, .env.ANTHROPIC_BASE_URL)' ~/.claude/settings.json` (or keep keys — harness strips temporarily on oauth conflict only)
 2. `claude auth login` (claude.ai subscription) in a real terminal
 3. Re-run: `SB_E2E_MATRIX_FORCE=1 bash scripts/run-enterprise-e2e-matrix.sh 1`
+
+---
+
+## Interactive TUI validation follow-up (inherit-env retry, 2026-06-26)
+
+Retry after network recovery; harness `12a49cfc` + `16f979c9` (`SB_E2E_MATRIX_CLEAN_ENV=0` default, expect key-strip gated on clean-env). No login/logout performed per operator directive (internet interruption only).
+
+| Step | Pass/Fail | Notes |
+|------|-----------|-------|
+| `claude --print "ok"` sanity | **Pass** | ~21–25s; network reachable for non-interactive CLI |
+| Harness HEAD `16f979c9` / `12a49cfc` | **Pass** | `claude-matrix-auth.sh` present; `SB_E2E_MATRIX_CLEAN_ENV` defaults 0 |
+| Matrix row 1 attempt A (`SB_E2E_MATRIX_CLEAN_ENV=0`) | **Fail** | 343s; TUI `Not logged in · Please run /login`; 0 tokens; quiet timeout |
+| Matrix row 1 attempt B (retry after sanity) | **Fail** | 331s; same TUI `Not logged in`; log: `.e2e-row1-inherit-env4.log` |
+| Evidence `.planning/workflows/router-session.md` | **Fail** | Absent |
+| Routing state `~/.claude/.silver-bullet/state` | **Fail** | No new routing markers |
+
+**Row 1 interactive matrix: FAIL** — inherit-env harness active; non-interactive CLI works; interactive TUI still shows `Not logged in` before prompt submit (0 tokens). Operator attributes prior failures to internet outage; this retry after `--print` sanity pass still fails on interactive session only.
+
+**Evidence paths:**
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-inherit-env4.log`
+
+---
+
+## Interactive TUI validation follow-up (api_key env passthrough, 2026-06-26)
+
+Follow-up from [Fix harness auth passthrough](cad529ac-3ea1-401d-beba-97992bf192b6). Third-party API-key auth only — no login/logout. Harness exports `~/.claude/settings.json` env into interactive spawn; `claude-matrix-auth.sh` strips keys only on claude.ai OAuth conflict (`SB_E2E_MATRIX_CLEAN_ENV=1`).
+
+| Step | Pass/Fail | Notes |
+|------|-----------|-------|
+| Root cause: project cwd lacks API keys; TUI ≠ `--print` | **Pass** | Interactive spawn needs explicit `env` passthrough + `--settings ~/.claude/settings.json` |
+| `claude_matrix_auth_env_lines` + `claude_matrix_export_settings_env` | **Pass** | Skips strip for `authMethod: api_key`; conflict-only strip preserved |
+| `agent.sh` `run_expect` explicit `env` spawn | **Pass** | Passes `ANTHROPIC_*` from settings.json to expect child |
+| `claude-interactive-invoke.expect` `load_claude_settings_env` | **Pass** | Loads settings env when `SB_E2E_MATRIX_CLEAN_ENV=0`; passes `--settings` |
+| Quick interactive probe (`PROBE_NO_LOGIN`) | **Pass** | No `Not logged in`; response received with unset shell keys |
+| `bash tests/scripts/test-claude-matrix-auth.sh` | **Pass** | 5 passed |
+| `bash tests/e2e-live/test-e2e-live-suite.sh` | **Pass** | 96 passed |
+| Matrix row 1 attempt 10 (`SB_E2E_MATRIX_FORCE=1`, `CLEAN_ENV=0`) | **Pass** | Routing skill recorded in `~/.claude/.silver-bullet/state`; log: `.e2e-row1-attempt10.log` |
+| TUI status line during row 1 | **Partial** | Status bar may still flash `Not logged in` (claude.ai OAuth UI string) while API-key routing proceeds |
+
+**Row 1 interactive matrix: PASS** (routing-only criterion via state delta).
+
+**Evidence paths:**
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt10.log`
