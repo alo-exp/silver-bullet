@@ -505,6 +505,19 @@ PY
   fi
 }
 
+# Enterprise matrix runs interactive Claude in-place against the fixture repo
+# (no temp copy). The matrix runner calls this instead of prepare_workspace.
+setup_workspace() {
+  backup_session_state
+  WORK_DIR="$FIXTURE_DIR"
+  agent_preflight
+
+  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+    CLAUDE_PROMPT_COUNT=0
+    bootstrap_claude_dependencies
+  fi
+}
+
 ensure_e2e_recommended_tools_opt_in() {
   [[ -n "${WORK_DIR:-}" && -f "${WORK_DIR}/.silver-bullet.json" ]] || return 0
   [[ -f "$RECOMMENDED_TOOLS_E2E_LIB" ]] || return 0
@@ -528,7 +541,11 @@ cleanup_workspace() {
   APP_SERVER_PID=""
 
   if [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]]; then
-    rm -rf "$WORK_DIR"
+    if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" && "$WORK_DIR" == "$FIXTURE_DIR" ]]; then
+      : # Enterprise matrix runs in-place; never delete the fixture checkout.
+    else
+      rm -rf "$WORK_DIR"
+    fi
   fi
   WORK_DIR=""
 
