@@ -17,6 +17,33 @@ proc type_slow {text delay_ms} {
   }
 }
 
+proc dismiss_claude_splash {} {
+  # Claude "What's new" overlays usually dismiss with Enter; avoid Escape
+  # because it can cancel the active input buffer before prompt submission.
+  send -- "\r"
+  after 500
+}
+
+proc submit_prompt {command_name prompt_body} {
+  if {$command_name ne ""} {
+    send -- "/$command_name"
+    if {[string length $prompt_body] > 0} {
+      send -- " "
+      send -- $prompt_body
+    }
+  } elseif {[string length $prompt_body] > 0} {
+    send -- $prompt_body
+  }
+  if {$command_name ne "" || [string length $prompt_body] > 0} {
+    after 250
+    send -- "\r"
+    after 250
+    send -- "\r"
+    return 1
+  }
+  return 0
+}
+
 set timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_TIMEOUT 900])}]
 set cli [env_or_default CLAUDE_BIN "/Users/shafqat/.local/bin/claude"]
 set work_dir [env_or_default CLAUDE_WORK_DIR ""]
@@ -28,7 +55,7 @@ set continue_flag [env_or_default CLAUDE_CONTINUE "0"]
 set debug_log [env_or_default CLAUDE_INTERACTIVE_LOG_FILE ""]
 set debug_trace [env_or_default CLAUDE_INTERACTIVE_DEBUG "0"]
 set post_prompt_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_DELAY_MS 1000])}]
-set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 20])}]
+set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 60])}]
 set quiet_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_QUIET_TIMEOUT 5])}]
 set type_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TYPE_DELAY_MS 15])}]
 set slash_pause_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_SLASH_PAUSE_MS 250])}]
@@ -52,6 +79,10 @@ if {[string length $prompt] > 0 && [string index $prompt 0] eq "/"} {
 
 cd $work_dir
 
+# Prevent claude.ai OAuth + stored API key conflicts in matrix clean-env runs.
+catch {unset env(ANTHROPIC_API_KEY)}
+catch {unset env(OPENAI_API_KEY)}
+
 if {$debug_log ne ""} {
   log_file -a $debug_log
 }
@@ -70,7 +101,7 @@ spawn -noecho $cli {*}$args
 if {$continue_flag eq "0"} {
   set trust_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_DELAY_MS 2000])}]
   after $trust_delay_ms
-  send -- "\r"
+  dismiss_claude_splash
 } else {
   after 200
 }
@@ -104,22 +135,20 @@ expect {
     send -- "1\r"
     exp_continue
   }
+  -re {What's new|What.s new|Internal infrastructur|/release-notes for more} {
+    dismiss_claude_splash
+    exp_continue
+  }
+  -re {Press (Enter|Return|any key)|Continue to Claude|Got it|Dismiss|Skip intro} {
+    dismiss_claude_splash
+    exp_continue
+  }
   -re {(?s)bypass.*permissions.*on} {
     if {$prompt_submitted == 0} {
-      if {$command_name ne ""} {
-        send -- "/$command_name"
-        if {[string length $prompt_body] > 0} {
-          send -- " "
-          send -- $prompt_body
-        }
-      } elseif {[string length $prompt_body] > 0} {
-        send -- $prompt_body
+      if {[submit_prompt $command_name $prompt_body]} {
+        set prompt_submitted 1
+        set timeout $quiet_timeout
       }
-      if {$command_name ne "" || [string length $prompt_body] > 0} {
-        send -- "\r"
-      }
-      set prompt_submitted 1
-      set timeout $quiet_timeout
     }
     exp_continue
   }
@@ -182,17 +211,20 @@ expect {
     exp_continue
   }
   -re {Which validation library should} {
+    if {$prompt_submitted == 0} { exp_continue }
     # silver:clarify / silver:feature interactive picker — pick first option.
     send -- "1\r"
     set timeout $quiet_timeout
     exp_continue
   }
-  -re {Enter to select|Tab/Arrow keys to navigate|Esc to cancel} {
+  -re {Enter to select.*Tab/Arrow keys to navigate.*Esc to cancel} {
+    if {$prompt_submitted == 0} { exp_continue }
     send -- "1\r"
     set timeout $quiet_timeout
     exp_continue
   }
   -re {Submit.*→|✔.*Submit} {
+    if {$prompt_submitted == 0} { exp_continue }
     send -- "\r"
     set timeout $quiet_timeout
     exp_continue
@@ -204,39 +236,19 @@ expect {
   }
   -re {accept.*edits.*on} {
     if {$prompt_submitted == 0} {
-      if {$command_name ne ""} {
-        send -- "/$command_name"
-        if {[string length $prompt_body] > 0} {
-          send -- " "
-          send -- $prompt_body
-        }
-      } elseif {[string length $prompt_body] > 0} {
-        send -- $prompt_body
+      if {[submit_prompt $command_name $prompt_body]} {
+        set prompt_submitted 1
+        set timeout $quiet_timeout
       }
-      if {$command_name ne "" || [string length $prompt_body] > 0} {
-        send -- "\r"
-      }
-      set prompt_submitted 1
-      set timeout $quiet_timeout
     }
     exp_continue
   }
-  -re {0.*tokens} {
+  -re {[0-9]+[^0-9]{0,40}tokens} {
     if {$prompt_submitted == 0} {
-      if {$command_name ne ""} {
-        send -- "/$command_name"
-        if {[string length $prompt_body] > 0} {
-          send -- " "
-          send -- $prompt_body
-        }
-      } elseif {[string length $prompt_body] > 0} {
-        send -- $prompt_body
+      if {[submit_prompt $command_name $prompt_body]} {
+        set prompt_submitted 1
+        set timeout $quiet_timeout
       }
-      if {$command_name ne "" || [string length $prompt_body] > 0} {
-        send -- "\r"
-      }
-      set prompt_submitted 1
-      set timeout $quiet_timeout
     }
     exp_continue
   }
@@ -245,7 +257,10 @@ expect {
       exp_continue
     }
     if {$prompt_submitted == 0} {
-      exp_continue
+      if {[submit_prompt $command_name $prompt_body]} {
+        set prompt_submitted 1
+        set timeout $quiet_timeout
+      }
     }
     set saw_prompt 1
     set timeout $quiet_timeout
