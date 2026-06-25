@@ -113,7 +113,7 @@ grep -q 'context-mode hook cursor afteragentresponse' "$TEST_HOME/.cursor/hooks.
 
 # 13. Verification docs exist
 for agent in claude codex cursor opencode goose hermes; do
-  doc="$REPO_ROOT/docs/rtk-cm/verification/${agent}-verify-graphify-am.md"
+  doc="$REPO_ROOT/docs/rtk-cm/verification/${agent}-verify-rtk-cm.md"
   [[ -f "$doc" ]] && pass "verification doc ${agent}" || fail "verification doc ${agent}"
 done
 

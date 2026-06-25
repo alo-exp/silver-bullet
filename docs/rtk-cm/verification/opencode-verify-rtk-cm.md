@@ -1,6 +1,8 @@
 # Self-Verification: RTK + Context Mode in OpenCode (Global)
 
-Machine-level audit for **OpenCode** — no Silver Bullet prerequisite. Verifies **RTK + Context Mode** (Graphify/agentmemory optional).
+Machine-level audit for **OpenCode** — no Silver Bullet prerequisite.
+
+**Purpose:** Verify the **RTK + Context Mode** global stack only. This is **not** Graphify+agentmemory verification — see `docs/graphify-am/verification/` for that stack.
 
 **Setup script:** `bash scripts/optimize-rtk-context-mode.sh --host opencode`
 
