@@ -9,14 +9,14 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 1 |
-| SB repo SHA | `775afcf5` (round-gate test fixes `79e411f2`, site v0.48.3 sync `adf4a636`; prior harness `9c6a7603`, init fix `52ce8aec`) |
+| SB repo SHA | `b8363d19` (codex-package sanitization `b8363d19`; ladder `a77b1549`; round-gate `79e411f2`, site v0.48.3 sync `adf4a636`) |
 | Test app SHA | `edbad2163f5930dd72b291880aacb18c2387bbd3` (baseline); working tree modified by matrix execution |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (reinstalled after `52ce8aec`) |
 | Claude model (frozen) | `sonnet` |
 | Operator | Cursor agent (Cursor-native SB fallback — rows 1–22) |
 | Start date | 2026-06-26 |
 | End date | 2026-06-26 |
-| Round clean? | **Partial** — matrix 22/22 Pass; review-fix-ladder **8/8 rungs complete** (parent orchestrator 2026-06-26); `run-all-tests` scoped hooks green; full suite **5 failures** (environmental flakes outside ladder scope — session-start marker, phase-lock heartbeat, codex package lint) |
+| Round clean? | **Partial** — matrix 22/22 Pass; review-fix-ladder **8/8 rungs complete**; `run-all-tests` **4603 passed, 0 failed** at `b8363d19` (5/5 suites green) |
 
 ---
 
@@ -25,7 +25,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Gate | Pass/Fail | Notes |
 |------|-----------|-------|
 | review-fix-ladder (8 rungs × 2 clean) | **Pass** | Parent orchestrator completed 8/8 rungs (2026-06-26); model substitutions: `gpt-5.5` → `gpt-5.5-extra-high` (slug rejected), rungs 6–8 `gpt-5.5-extra-high` API limit → `composer-2.5-fast`; scoped fixes: RTK/token-compression HOME+RTK_HOME+XDG isolation, 5-case token-compression coverage, v0.48.3 plugin/site alignment |
-| `bash tests/run-all-tests.sh` | **Pass** | 4587 passed, 0 failed isolated at `775afcf5` (5/5 suites green); concurrent re-run showed 1 flake (`test-graphify-enforcement.sh` branch-change) — passes in isolation |
+| `bash tests/run-all-tests.sh` | **Pass** | 4603 passed, 0 failed at `b8363d19` (5/5 suites green); fixes: Codex sanitizer host-path scrub, context-compaction backtick lint, marketplace skill-count sync |
 | Matrix 22/22 ledger | **Pass** | Cursor-native SB fallback |
 | Graphify current | Warn | SB graph refused overwrite; test-app graph present |
 | Open MUST-FIX | **Partial** | Skill tool in `claude --print` (interactive TUI unvalidated); RTK gate test isolation fixed |
@@ -123,7 +123,7 @@ Round 1 matrix rows **1–22 Pass** via Cursor-native SB skill fallback.
 **Not completed (round not clean):**
 - Interactive Claude TUI Skill invocation receipts (matrix rows 1–22)
 - Second consecutive clean round (Round 2)
-- Full `run-all-tests.sh` 0 failures at post-ladder HEAD (5 environmental flakes outside scoped ladder files)
+- Full `run-all-tests.sh` 0 failures at post-ladder HEAD (resolved at `b8363d19`)
 
 **Next action:** Parent Cursor agent session at SB repo `775afcf5` runs `/silver:review-fix-ladder` with locked scope (Round 1 fix files below). For interactive TUI receipts: resolve auth/connectors conflict, bootstrap test app, re-run matrix row 1+ from test-app CWD.
 
@@ -176,7 +176,7 @@ site/
 
 **Fixes applied (scoped):** RTK gate + token-compression tests — full HOME/RTK_HOME/XDG isolation with restore; 5th token-compression case (`install_status` pending); codex `config_version` 0.48.3; plugin template `version` 0.48.3; site search/reference v0.48.3 copy.
 
-**Post-ladder tests:** `test-rtk-gate.sh` 6/6, `test-record-token-compression-usage.sh` 5/5; `run-all-tests.sh` 4281 passed, 5 failed (flakes: session-start marker preservation, phase-lock heartbeat throttle, codex package context-compaction lint — outside locked scope).
+**Post-ladder tests:** `test-rtk-gate.sh` 6/6, `test-record-token-compression-usage.sh` 5/5; `run-all-tests.sh` **4603 passed, 0 failed** at `b8363d19` after codex-package sanitization fix (`b8363d19`).
 
 ---
 
