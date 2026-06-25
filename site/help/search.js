@@ -35,7 +35,7 @@ var IDX = [
     "page": "Reference",
     "url": "/help/reference/#migration-notes",
     "anchor": "migration-notes",
-    "title": "v0.48 APO migration",
+    "title": "v0.48.3 APO migration",
     "text": "v0.48.3 APO catalog migration: docs/apo-catalog.json replaces the legacy FLOW 1-18 mental model. Authoritative hierarchy Process Workflow Atomic Flow Flow Step with 27 AF-* atomic flows, 22 workflows, 85 flow steps, V-loop rollups, subagent execution, opted-in tool governance, and generated catalog views."
   },
   {
@@ -470,7 +470,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json version 0.48.3 includes project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, recommended_tools Graphify agentmemory opt-in, and state paths under SB_RUNTIME_HOME_ROOT."
+    "text": "Current .silver-bullet.json config_version 0.48.3 includes project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, recommended_tools Graphify agentmemory RTK Context Mode opt-in, and state paths under SB_RUNTIME_HOME_ROOT."
   },
   {
     "page": "Reference",
