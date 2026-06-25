@@ -31,12 +31,6 @@ For multi-URL fetches or multi-API calls, **always** include `concurrency: N` (1
 
 GitHub API rate-limit: cap at 4 for `gh` calls.
 
-## Large inputs (mandatory thresholds)
-
-- **Files > 5 KB:** use `ctx_execute_file` or `ctx_index` + `ctx_search` — never Read the whole file for analysis.
-- **MCP / tool results > 20 lines:** use `ctx_execute` to process in sandbox; only `console.log()` the answer.
-- **5+ files:** use `ctx_batch_execute` instead of separate reads.
-
 ## Forbidden Actions
 
 - DO NOT use Bash for >20 lines output — use `ctx_execute` or `ctx_batch_execute`.
