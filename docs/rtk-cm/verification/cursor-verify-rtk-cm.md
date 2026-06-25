@@ -1,6 +1,8 @@
 # Self-Verification: RTK + Context Mode in Cursor (Global)
 
-Machine-level audit for **Cursor** — global `~/.cursor/` config only (not project `.cursor/`). Verifies **RTK + Context Mode** (Graphify/agentmemory optional).
+Machine-level audit for **Cursor** — global `~/.cursor/` config only (not project `.cursor/`).
+
+**Purpose:** Verify the **RTK + Context Mode** global stack only. This is **not** Graphify+agentmemory verification — see `docs/graphify-am/verification/` for that stack.
 
 **Setup script:** `bash scripts/optimize-rtk-context-mode.sh --host cursor`
 

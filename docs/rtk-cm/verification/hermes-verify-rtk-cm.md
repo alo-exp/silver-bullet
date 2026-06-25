@@ -1,6 +1,8 @@
 # Self-Verification: RTK + Context Mode in Hermes (Global) — PARTIAL
 
-Machine-level audit for **Hermes Agent** — no Silver Bullet prerequisite. Verifies **RTK + Context Mode** where upstream supports them.
+Machine-level audit for **Hermes Agent** — no Silver Bullet prerequisite.
+
+**Purpose:** Verify the **RTK + Context Mode** global stack only. This is **not** Graphify+agentmemory verification — see `docs/graphify-am/verification/` for that stack.
 
 **Status: PARTIAL** — RTK has an official Python plugin; Context Mode has **no Hermes adapter** (no `configs/hermes/` in npm package). MCP merge is best-effort only.
 

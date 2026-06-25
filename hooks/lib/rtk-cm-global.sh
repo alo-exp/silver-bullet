@@ -68,6 +68,6 @@ rtcm_doctor_platform() {
 
 rtcm_log_unsupported() {
   local host="${1:-}"
-  printf 'SKIP: %s — RTK and Context Mode have no upstream integration (see docs/rtk-cm/verification/%s-verify-graphify-am.md)\n' \
+  printf 'SKIP: %s — RTK and Context Mode have no upstream integration (see docs/rtk-cm/verification/%s-verify-rtk-cm.md)\n' \
     "$host" "$host"
 }

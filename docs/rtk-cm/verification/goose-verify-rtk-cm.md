@@ -2,6 +2,8 @@
 
 Machine-level audit for **Goose** (Block) — documents honest upstream limitations.
 
+**Purpose:** Verify RTK + Context Mode support status only. This is **not** Graphify+agentmemory verification — see `docs/graphify-am/verification/` for that stack.
+
 **Status: UNSUPPORTED** — Neither [rtk-ai/rtk](https://github.com/rtk-ai/rtk) nor [context-mode](https://github.com/mksglu/context-mode) ship Goose integrations as of 2026-06. Do **not** write fake `~/.config/goose/` wiring — Goose will not read it.
 
 **Setup script:** `bash scripts/optimize-rtk-context-mode.sh --host goose` — logs SKIP only.
@@ -43,7 +45,7 @@ If prior sessions wrote such files, remove them to avoid false confidence.
 | Shell discipline | Run `rtk git status` manually in terminal before pasting to Goose |
 | Wait for upstream | File issues on rtk-ai/rtk and mksglu/context-mode for Goose hook/plugin support |
 
-Goose shares Pi paths for Graphify (`graphify pi install`) — see `docs/graphify-am/verification/goose-verify-graphify-am.md`. That is unrelated to RTK/CM.
+For Graphify+agentmemory on Goose, see `docs/graphify-am/verification/goose-verify-graphify-am.md`.
 
 ---
 

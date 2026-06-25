@@ -72,7 +72,7 @@ install_claude_hint() {
 
 install_hermes_note() {
   printf 'Hermes: enable rtk-rewrite in ~/.hermes/config.yaml plugins.enabled\n'
-  printf 'See docs/rtk-cm/verification/hermes-verify-graphify-am.md\n'
+  printf 'See docs/rtk-cm/verification/hermes-verify-rtk-cm.md\n'
 }
 
 install_goose_skip() {
