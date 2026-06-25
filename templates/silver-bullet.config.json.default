@@ -177,7 +177,14 @@
       "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.",
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
-      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query"
+      "query_budget": 2000,
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": null,
+        "last_verified_at": null,
+        "score": null
+      }
     },
     "agentmemory": {
       "enabled_by_user": null,
@@ -215,7 +222,13 @@
       "health_url": "http://localhost:3111/agentmemory/health",
       "usage_ttl_seconds": 1800,
       "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
-      "export_root": ".agentmemory"
+      "export_root": ".agentmemory",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": null,
+        "last_verified_at": null,
+        "score": null
+      }
     },
     "alumnium": {
       "enabled_by_user": null,
@@ -365,6 +378,42 @@
     "chunk_size_bytes": 1024,
     "top_chunks_per_file": 3,
     "debug": false
+  },
+  "optimization_profiles": {
+    "synergy_max": {
+      "graphify": {
+        "query_budget": 2000,
+        "query_ttl_seconds": 1800,
+        "install_git_hooks": true,
+        "reindex_after_agentmemory_export": true,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": true,
+        "auto_compress": false,
+        "obsidian_export": true,
+        "bridge_enabled": true,
+        "gitleaks_recommended": true,
+        "server_persistence": "launchd"
+      },
+      "synergy": {
+        "post_export_graphify_update": true,
+        "verify_graph_refs_agentmemory": true
+      }
+    },
+    "cost_minimized": {
+      "_comment": "Future profile — not applied by optimizer yet",
+      "graphify": {
+        "install_git_hooks": false,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": false,
+        "auto_compress": false,
+        "bridge_enabled": false,
+        "server_persistence": "nohup"
+      }
+    }
   },
   "multi_agent": {
     "identity_tags": [

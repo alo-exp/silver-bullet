@@ -142,6 +142,10 @@ main() {
     # shellcheck source=../hooks/lib/context-mode-gate.sh
     source "${REPO_ROOT}/hooks/lib/context-mode-gate.sh"
   fi
+  if [[ -f "${REPO_ROOT}/hooks/lib/stack-optimizer.sh" ]]; then
+    # shellcheck source=../hooks/lib/stack-optimizer.sh
+    source "${REPO_ROOT}/hooks/lib/stack-optimizer.sh"
+  fi
 
   local sb_config="${REPO_ROOT}/.silver-bullet.json"
   local graphify_consent="pending"
@@ -241,6 +245,47 @@ main() {
       record fail "agentmemory-cli" "not on PATH — user opted in; install: npm install -g @agentmemory/agentmemory"
     else
       record warn "agentmemory" "not on PATH — session capture unavailable (consent: ${agentmemory_consent})"
+    fi
+  fi
+
+  if declare -f sb_optimization_score >/dev/null 2>&1 && [[ -f "$sb_config" ]]; then
+    if [[ "$graphify_consent" == "enabled" || "$agentmemory_consent" == "enabled" ]]; then
+      local opt_score opt_fails
+      opt_score="$(sb_optimization_score "$REPO_ROOT" "$sb_config")"
+      opt_fails="${SB_STACK_SCORE_FAILS:-0}"
+      if [[ "$opt_fails" -eq 0 && "$opt_score" -ge 60 ]]; then
+        record pass "optimize-score" "stack optimization ${opt_score}/100"
+      elif [[ "$opt_fails" -eq 0 ]]; then
+        record warn "optimize-score" "stack optimization ${opt_score}/100 — run sb-optimize-stack.sh --apply"
+      else
+        record fail "optimize-score" "stack optimization ${opt_score}/100 with ${opt_fails} critical gap(s)"
+      fi
+      if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" != "true" ]]; then
+        if declare -f sb_stack_graphify_hooks_installed >/dev/null 2>&1 && sb_stack_graphify_hooks_installed "$REPO_ROOT"; then
+          record pass "optimize-graphify-hooks" "git hooks installed"
+        else
+          record warn "optimize-graphify-hooks" "git hooks missing"
+        fi
+      fi
+      if [[ "$agentmemory_consent" == "enabled" && "$agentmemory_suspended" != "true" ]]; then
+        if declare -f sb_stack_server_persistence_ok >/dev/null 2>&1 && sb_stack_server_persistence_ok "$sb_config"; then
+          record pass "optimize-agentmemory-persistence" "server persistence OK"
+        else
+          record warn "optimize-agentmemory-persistence" "launchd/systemd not detected"
+        fi
+        if declare -f sb_stack_bridge_running >/dev/null 2>&1 && sb_stack_bridge_running; then
+          record pass "optimize-agentmemory-bridge" "bridge running"
+        else
+          record warn "optimize-agentmemory-bridge" "bridge not running"
+        fi
+      fi
+      if [[ "$graphify_consent" == "enabled" && "$agentmemory_consent" == "enabled" ]]; then
+        if declare -f sb_stack_graph_has_agentmemory_refs >/dev/null 2>&1 && sb_stack_graph_has_agentmemory_refs "$REPO_ROOT" "$sb_config"; then
+          record pass "optimize-synergy-index" "graph indexes .agentmemory"
+        else
+          record fail "optimize-synergy-index" "graph missing .agentmemory refs — run sb-optimize-stack.sh --apply"
+        fi
+      fi
     fi
   fi
 
