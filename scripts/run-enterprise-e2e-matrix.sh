@@ -13,6 +13,8 @@ MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
 export CLAUDE_USE_INTERACTIVE=1
+# Avoid shell-level API key env conflicting with claude.ai OAuth in matrix sessions.
+unset ANTHROPIC_API_KEY OPENAI_API_KEY 2>/dev/null || true
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
@@ -226,7 +228,7 @@ run_matrix_row() {
   echo "  launching interactive Claude session..."
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
-    quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-120}"
+    quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
   fi
   output="$(CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" run_prompt "$prompt" 2>&1 || true)"
   if [[ -n "$output" ]]; then
