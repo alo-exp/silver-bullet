@@ -86,6 +86,9 @@ sb_agentmemory_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${HOME}" ;;
+    opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
+    goose) printf '%s/.config/goose/config.yaml' "${HOME}" ;;
+    hermes) printf '%s/.hermes/config.yaml' "${HOME}" ;;
     *) printf '%s/.claude.json' "${HOME}" ;;
   esac
 }

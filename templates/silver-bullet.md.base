@@ -333,9 +333,9 @@ lifts hook blocks until the next init/update retry succeeds.
    substantive work is blocked until the index exists.
 3. After CLI install, run platform registration from the project root in upstream order (detect host via
    `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars):
-   - **Pre-index skill:** Claude `graphify install --project`; Codex `graphify install --project --platform codex`; Cursor skip
+   - **Pre-index skill:** Claude `graphify install --project`; Codex `graphify install --project --platform codex`; OpenCode `graphify install --project --platform opencode`; Goose `graphify install --project --platform pi`; Hermes `graphify install --project --platform hermes`; Cursor skip
    - **Index:** `graphify update . --no-cluster`
-   - **Post-index always-on:** Claude `graphify claude install --project`; Codex `graphify codex install --project`; Cursor `graphify cursor install` (writes `.cursor/rules/graphify.mdc`)
+   - **Post-index always-on:** Claude `graphify claude install --project`; Codex `graphify codex install --project`; Cursor `graphify cursor install` (writes `.cursor/rules/graphify.mdc`); OpenCode/Goose/Hermes use project skill + hooks or `AGENTS.md` (see `docs/GRAPHIFY.md`)
    - **Optional:** `graphify hook install` for auto-rebuild on commit
 
 **When opted out or consent pending:**
