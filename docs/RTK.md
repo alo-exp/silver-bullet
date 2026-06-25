@@ -51,11 +51,16 @@ Native Windows is **not supported**. Use WSL. SB sets `enforcement_suspended: tr
 
 Run from project root after CLI install. SB stores commands in `recommended_tools.rtk.platform_install_commands`.
 
-| Host | Command | Artifact |
-|------|---------|----------|
-| Claude Code | `rtk init -g` | `~/.claude/settings.json` |
-| Cursor | `rtk init -g --agent cursor` | `~/.cursor/hooks.json` (`rtk hook cursor`) |
-| Codex | `rtk init -g --codex` | `~/.codex/AGENTS.md` (awareness layer; no live PreToolUse rewrite on Codex yet) |
+| Host | Command | Artifact | Status |
+|------|---------|----------|--------|
+| Claude Code | `rtk init -g` | `~/.claude/settings.json` | Supported |
+| Cursor | `rtk init -g --agent cursor` | `~/.cursor/hooks.json` (`rtk hook cursor`) | Supported |
+| Codex | `rtk init -g --codex` | `~/.codex/AGENTS.md` (awareness layer; no live PreToolUse rewrite on Codex yet) | Supported (prompt-layer) |
+| OpenCode | `rtk init -g --opencode` | `~/.config/opencode/plugins/rtk.ts` | Supported |
+| Hermes | `rtk init --agent hermes` | `~/.hermes/plugins/rtk-rewrite/` | Partial |
+| Goose | — | — | **Unsupported** upstream |
+
+**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host>` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 ### Cursor allow-list coupling
 
@@ -78,15 +83,23 @@ bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
 
 ## Optimization checklist (research-backed)
 
-Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** Cursor/Claude/Codex wiring. Run after `/silver:init` or `/silver:update` when RTK is opted in:
+Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** global wiring. Run after `/silver:init` or standalone:
 
-| Step | Cursor | Claude | Codex |
-|------|--------|--------|-------|
-| RTK hook | `rtk init -g --agent cursor` | `rtk init -g` | `rtk init -g --codex` (AGENTS.md) |
-| Verify binary | `rtk gain --help` (not Rust Type Kit) | same | same |
-| Allow-list | Merge `scripts/lib/cursor-cli-allowlist.json` → `~/.cursor/cli-config.json` `permissions.allow` | N/A | N/A |
-| Hook rewrite test | `echo '{"tool_name":"Shell","tool_input":{"command":"git status"}}' \| rtk hook cursor` → `updated_input` | `rtk hook claude` | prompt-only |
-| RTK before CM | RTK `preToolUse` matcher `Shell` should run **before** context-mode pretooluse in hook order | plugin order | N/A |
+```bash
+bash scripts/optimize-rtk-context-mode.sh --host auto   # detect from ~/.cursor, ~/.codex, etc.
+bash scripts/optimize-rtk-context-mode.sh --host all    # every host (+ goose SKIP)
+```
+
+| Step | Claude | Cursor | Codex | OpenCode | Hermes | Goose |
+|------|--------|--------|-------|----------|--------|-------|
+| RTK hook | `rtk init -g` | `rtk init -g --agent cursor` | `rtk init -g --codex` | `rtk init -g --opencode` | `rtk init --agent hermes` | SKIP |
+| Verify binary | `rtk gain --help` | same | same | same | same | — |
+| Allow-list | N/A | `~/.cursor/cli-config.json` | N/A | N/A | N/A | — |
+| Hook rewrite test | `rtk hook claude` | `rtk hook cursor` | prompt-only | plugin `tool.execute.before` | `pre_tool_call` plugin | — |
+| CM wiring | Claude plugin | MCP+hooks+rules | MCP+hooks.toml | plugin+MCP | MCP YAML only | SKIP |
+| Doctor | `CONTEXT_MODE_PLATFORM=claude` | `=cursor` | `=codex` | `=opencode` | SKIP | SKIP |
+
+Verification: [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 **Critical Cursor coupling:** `rtk hook cursor` only rewrites commands matching `permissions.allow` in `~/.cursor/cli-config.json`. Missing entries return `{}` and run uncompressed — this is the #1 misconfiguration.
 
