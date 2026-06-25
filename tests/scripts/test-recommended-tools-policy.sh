@@ -150,6 +150,10 @@ assert_grep "CONTEXT-MODE.md exists" \
   "$REPO_ROOT/docs/CONTEXT-MODE.md" \
   "ELv2"
 
+assert_grep "ALUMNIUM.md exists" \
+  "$REPO_ROOT/docs/ALUMNIUM.md" \
+  "alumnium.ai"
+
 assert_grep "silver-bullet 2g-ii token compression" \
   "$REPO_ROOT/templates/silver-bullet.md.base" \
   "### 2g-ii. Token Compression"

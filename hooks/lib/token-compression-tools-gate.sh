@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# Shared usage gate for token-compression recommended tools (aluminum, rtk, context_mode).
+# Shared usage gate for RTK CLI freshness before substantive commits.
 # Active when enabled_by_user=true and install_status=installed.
 
 _sb_token_tool_default_ttl=1800

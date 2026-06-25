@@ -40,7 +40,7 @@ exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_res
 [[ "$exit_code" == "0" ]] || exit 0
 
 tool_id=""
-for tool_id in aluminum rtk context_mode; do
+for tool_id in rtk; do
   sb_token_tool_enforced "$config_file" "$tool_id" || continue
   cli="$(sb_token_tool_cli_command "$config_file" "$tool_id")"
   if sb_token_tool_command_matches "$cmd" "$tool_id" "$cli"; then

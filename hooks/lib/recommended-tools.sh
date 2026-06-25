@@ -90,8 +90,8 @@ sb_recommended_tool_benefits() {
     agentmemory)
       printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
       ;;
-    aluminum)
-      printf '%s' 'Aluminum token compression — shrinks large context payloads before model calls when opted in.'
+    alumnium)
+      printf '%s' 'AI-native browser/visual testing via MCP (do/check/get/wait); preferred for clarify, ui-review, verify. See alumnium.ai.'
       ;;
     rtk)
       printf '%s' '60–99% shell output savings via PreToolUse rewrite — automatic once rtk-ai/rtk is wired (not reachingforthejack/rtk).'
