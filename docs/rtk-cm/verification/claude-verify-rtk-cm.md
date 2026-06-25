@@ -1,6 +1,8 @@
 # Self-Verification: RTK + Context Mode in Claude Code (Global)
 
-Machine-level audit for **Claude Code** — no Silver Bullet prerequisite. Verifies the **RTK + Context Mode global stack** (Graphify/agentmemory optional; see `docs/graphify-am/`).
+Machine-level audit for **Claude Code** — no Silver Bullet prerequisite.
+
+**Purpose:** Verify the **RTK + Context Mode** global stack only. This is **not** Graphify+agentmemory verification — see `docs/graphify-am/verification/` for that stack.
 
 **Setup script:** `bash scripts/optimize-rtk-context-mode.sh --host claude`
 

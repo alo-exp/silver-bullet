@@ -95,7 +95,7 @@ Run `bash scripts/optimize-rtk-context-mode.sh` after install:
 | Rules | `~/.cursor/rules/*.mdc` | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | — | — |
 | Doctor | `CONTEXT_MODE_PLATFORM=cursor` | `/context-mode:ctx-doctor` | `=codex` | `=opencode` | SKIP | SKIP |
 
-Verification: [docs/rtk-cm/README.md](rtk-cm/README.md).
+Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at `docs/rtk-cm/verification/<host>-verify-rtk-cm.md`.
 
 **Hook ordering:** Place context-mode `preToolUse` **after** RTK `preToolUse` for Shell — RTK rewrites first; CM routes/denies WebFetch and large Read analysis.
 
@@ -118,8 +118,8 @@ context-mode doctor       # terminal
 
 - Cursor Context Mode wiring is partly manual (plugin path or MCP + hooks merge)
 - Codex PreToolUse lacks `updatedInput` — capture works; live rewrites limited
-- Goose: **no upstream RTK or Context Mode integration** — see [docs/rtk-cm/verification/goose-verify-graphify-am.md](rtk-cm/verification/goose-verify-graphify-am.md)
-- Hermes: Context Mode MCP merge only (partial) — see [docs/rtk-cm/verification/hermes-verify-graphify-am.md](rtk-cm/verification/hermes-verify-graphify-am.md)
+- Goose: **no upstream RTK or Context Mode integration** — see [docs/rtk-cm/verification/goose-verify-rtk-cm.md](rtk-cm/verification/goose-verify-rtk-cm.md)
+- Hermes: Context Mode MCP merge only (partial) — see [docs/rtk-cm/verification/hermes-verify-rtk-cm.md](rtk-cm/verification/hermes-verify-rtk-cm.md)
 - Pi: RTK via `rtk init --agent pi`; CM via OpenCode-family adapters where applicable
 - Insight dashboard (`context-mode.com/insight`) is optional paid SaaS — out of SB scope
 

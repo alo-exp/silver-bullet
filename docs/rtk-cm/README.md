@@ -33,18 +33,25 @@ Prerequisites: `rtk-ai/rtk` on PATH (`rtk gain --help` must work), Node >= 22.5 
 | **Hermes** | `rtk init --agent hermes` → Python plugin | MCP YAML merge only | **PARTIAL** | `~/.hermes/` |
 | **Goose** | — | — | **UNSUPPORTED** | — |
 
-Filenames use `*-verify-graphify-am.md` for historical parity with the Graphify+agentmemory verification suite; each doc verifies **RTK + Context Mode only**. Graphify/agentmemory cross-refs are optional.
-
 ## Verification docs
+
+Per-host self-verification prompts for the **RTK + Context Mode** stack (`*-verify-rtk-cm.md`). No Silver Bullet required.
 
 | Agent | Doc |
 |-------|-----|
-| Claude Code | [claude-verify-graphify-am.md](verification/claude-verify-graphify-am.md) |
-| Codex | [codex-verify-graphify-am.md](verification/codex-verify-graphify-am.md) |
-| Cursor | [cursor-verify-graphify-am.md](verification/cursor-verify-graphify-am.md) |
-| OpenCode | [opencode-verify-graphify-am.md](verification/opencode-verify-graphify-am.md) |
-| Hermes | [hermes-verify-graphify-am.md](verification/hermes-verify-graphify-am.md) |
-| Goose | [goose-verify-graphify-am.md](verification/goose-verify-graphify-am.md) |
+| Claude Code | [claude-verify-rtk-cm.md](verification/claude-verify-rtk-cm.md) |
+| Codex | [codex-verify-rtk-cm.md](verification/codex-verify-rtk-cm.md) |
+| Cursor | [cursor-verify-rtk-cm.md](verification/cursor-verify-rtk-cm.md) |
+| OpenCode | [opencode-verify-rtk-cm.md](verification/opencode-verify-rtk-cm.md) |
+| Hermes | [hermes-verify-rtk-cm.md](verification/hermes-verify-rtk-cm.md) |
+| Goose | [goose-verify-rtk-cm.md](verification/goose-verify-rtk-cm.md) |
+
+## Related stacks
+
+| Stack | Docs |
+|-------|------|
+| **RTK + Context Mode** (this directory) | [README.md](README.md), `verification/*-verify-rtk-cm.md` |
+| **Graphify + agentmemory** | [docs/graphify-am/](../graphify-am/), `docs/graphify-am/verification/*-verify-graphify-am.md` |
 
 ## Related
 

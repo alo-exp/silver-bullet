@@ -1,5 +1,7 @@
 # Self-Verification Prompt: RTK + Context Mode in Cursor
 
+**Purpose:** RTK + Context Mode verification only — not Graphify+agentmemory (see `docs/graphify-am/verification/`). Concise global audit: [cursor-verify-rtk-cm.md](verification/cursor-verify-rtk-cm.md).
+
 ## Purpose
 
 This prompt tells **Cursor** (the AI code editor) how to **self-verify** that **RTK + Context Mode** are installed and working correctly in the local environment. It produces a pass/fail report per check, plus an overall verdict.

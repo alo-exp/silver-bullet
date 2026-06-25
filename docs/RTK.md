@@ -99,7 +99,7 @@ bash scripts/optimize-rtk-context-mode.sh --host all    # every host (+ goose SK
 | CM wiring | Claude plugin | MCP+hooks+rules | MCP+hooks.toml | plugin+MCP | MCP YAML only | SKIP |
 | Doctor | `CONTEXT_MODE_PLATFORM=claude` | `=cursor` | `=codex` | `=opencode` | SKIP | SKIP |
 
-Verification: [docs/rtk-cm/README.md](rtk-cm/README.md).
+Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at `docs/rtk-cm/verification/<host>-verify-rtk-cm.md`.
 
 **Critical Cursor coupling:** `rtk hook cursor` only rewrites commands matching `permissions.allow` in `~/.cursor/cli-config.json`. Missing entries return `{}` and run uncompressed — this is the #1 misconfiguration.
 
