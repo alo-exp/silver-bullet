@@ -6,7 +6,8 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DEFAULT_TEST_TODO_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/todo-app"
+DEFAULT_TEST_ENTERPRISE_APP_ROOT="$(cd "${SB_ROOT}/../.." && pwd)/enterprise-grade-test-app"
+DEFAULT_TEST_TODO_APP_ROOT="$DEFAULT_TEST_ENTERPRISE_APP_ROOT"
 MAX_BUDGET="1.00"
 PASS=0
 FAIL=0
@@ -177,10 +178,17 @@ PY
     fi
   fi
 
-  # Copy todo-app src into workspace from the sibling fixture repo when available.
-  if [[ -d "${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}/src" ]]; then
-    cp -r "${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_TODO_APP_ROOT}}/src" "${WORK_DIR}/src"
-  else
+  # Copy enterprise fixture app tree into workspace from the sibling repo when available.
+  local fixture_root="${SB_TEST_ENTERPRISE_APP_ROOT:-${SB_TEST_TODO_APP_ROOT:-${DEFAULT_TEST_ENTERPRISE_APP_ROOT}}}"
+  if [[ -d "${fixture_root}/api" ]]; then
+    cp -r "${fixture_root}/api" "${WORK_DIR}/api"
+  fi
+  if [[ -d "${fixture_root}/ui" ]]; then
+    cp -r "${fixture_root}/ui" "${WORK_DIR}/ui"
+  fi
+  if [[ -d "${fixture_root}/src" ]]; then
+    cp -r "${fixture_root}/src" "${WORK_DIR}/src"
+  elif [[ ! -d "${WORK_DIR}/api" ]]; then
     mkdir -p "${WORK_DIR}/src"
     echo "// placeholder" > "${WORK_DIR}/src/index.js"
   fi

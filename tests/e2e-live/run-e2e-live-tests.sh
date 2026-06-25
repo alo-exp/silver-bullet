@@ -27,8 +27,16 @@ HOST_VERIFY_TESTS_BACKUP_FILE=""
 HOST_VERIFY_TESTS_HAD_FILE=false
 SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-hook-failures.sh"
+)
+# Kay inline full-surface journey (todo-app) retired — primary live gate is Claude
+# supervised matrix per enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md.
+# Legacy journey retained at scenarios/test-e2e-live-full-surface-journey.sh for reference.
+LEGACY_SCENARIOS=(
   "${SCENARIO_DIR}/test-e2e-live-full-surface-journey.sh"
 )
+if [[ "${SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY:-0}" == "1" ]]; then
+  SCENARIOS+=("${LEGACY_SCENARIOS[@]}")
+fi
 RUNTIMES=()
 full_matrix_requested=false
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
@@ -84,10 +92,10 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 echo "========================================"
-echo "  Silver Bullet Live Todo-App E2E Suite"
+echo "  Silver Bullet Enterprise Live E2E Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the todo-app fixture."
+echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the enterprise-grade-test-app fixture."
 echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: native config)."
 echo ""
 
@@ -188,6 +196,24 @@ run_hook_preflight() {
   fi
 }
 
+run_recommended_tools_preflight() {
+  local runtime="$1"
+  local provider
+  local model
+  local reasoning
+  provider="$(runtime_model_provider "$runtime")"
+  model="$(runtime_model "$runtime")"
+  reasoning="$(runtime_reasoning_effort)"
+
+  if ! SB_E2E_LIVE_RUNTIME="$runtime" \
+    SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
+    SB_LIVE_CODEX_MODEL="$model" \
+    SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
+    bash "$RECOMMENDED_TOOLS_PREFLIGHT_SCRIPT"; then
+    return 1
+  fi
+}
+
 for runtime in "${RUNTIMES[@]}"; do
   case "$runtime" in
     claude|codex|kay)
@@ -250,6 +276,12 @@ for runtime in "${RUNTIMES[@]}"; do
   if ! run_hook_preflight "$runtime"; then
     echo "ERROR: hook-delivery preflight failed for runtime: $runtime"
     echo "ERROR: live E2E cannot establish Silver Bullet hook enforcement for this runtime."
+    exit 1
+  fi
+
+  if ! run_recommended_tools_preflight "$runtime"; then
+    echo "ERROR: recommended-tools preflight failed for runtime: $runtime"
+    echo "ERROR: live E2E requires all recommended tools opted in and host CLIs/MCP wired."
     exit 1
   fi
 

@@ -471,7 +471,7 @@ Release behavior:
 - `git push`, `gh pr create`, and `gh release create` are blocked when CI is red.
 - `gh release create` can require plugin live matrices and the pre-release
   quality-gate markers when the project release profile opts in.
-- The SB plugin repo requires the shared live matrix, todo-app live E2E marker,
+- The SB plugin repo requires the shared live matrix, enterprise live E2E marker,
   inline full-surface marker, 4-stage pre-release gate, and a fresh full-suite
   rerun before release.
 
