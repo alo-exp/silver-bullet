@@ -85,6 +85,16 @@ out=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks Edit" "$out" "ORCHESTRATOR PARENT"
 
+# Bootstrap scaffold: template copied before sb_initiated is true — parent guard must stay inert
+WORK_BOOT=$(mktemp -d)
+git -C "$WORK_BOOT" init -q
+echo '{"sb_initiated":false,"orchestrator_mode":"parent","state":{"state_file":"'"$TMPSTATE"'"}}' >"$WORK_BOOT/.silver-bullet.json"
+echo '# SB' >"$WORK_BOOT/silver-bullet.md"
+out_boot=$(cd "$WORK_BOOT" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent guard inert during bootstrap when sb_initiated false" "$out_boot"
+rm -rf "$WORK_BOOT" 2>/dev/null || true
+
 out_task=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Task","tool_input":{"description":"worker"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Task" "$out_task"

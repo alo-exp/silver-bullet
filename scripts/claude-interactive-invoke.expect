@@ -81,7 +81,7 @@ set prompt_submitted 0
 set saw_prompt 0
 set final_marker_seen 0
 set require_final_marker 0
-if {$command_name eq "silver-init"} {
+if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
     # Silver init is the longest-running bootstrap path in the live matrix.
@@ -139,7 +139,23 @@ expect {
     exp_continue
   }
   -re {Which project management system should Silver Bullet use when filing issues and backlog items\?} {
-    send -- "b\r"
+    send -- "a\r"
+    exp_continue
+  }
+  -re {Enable Graphify for this project\?} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {Enable agentmemory for this project\?} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {Enable RTK for this project\?} {
+    send -- "a\r"
+    exp_continue
+  }
+  -re {Enable Context Mode for this project\?} {
+    send -- "a\r"
     exp_continue
   }
   -re {Approve composition\? \[Y/n\]} {
