@@ -23,7 +23,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
-| **Live todo-app E2E** | One inline full-surface journey against the standalone sibling `todo-app` repo, including install UX, feature work, bugfixing, issue filing, and release prep | `tests/e2e-live/run-e2e-live-tests.sh` | 10-30 min |
+| **Live enterprise E2E** | Kay hook-delivery diagnostic against the standalone sibling `enterprise-grade-test-app` repo; full workflow matrix via Claude supervised sessions | `tests/e2e-live/run-e2e-live-tests.sh` + `.planning/enterprise-e2e/` | 10-30 min (Kay) / multi-day (Claude matrix) |
 | **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
@@ -38,7 +38,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | `ci-status-check.sh` | failed/passing/missing CI output | 100% (`test-ci-status-check.sh`) |
 | SB Codex packaging | package scope, marketplace registration, dependency bootstrap | 100% (`test-install-codex.sh`, `test-sync-codex-package.sh`) |
 | Live Kay matrix | shared scenarios, isolated Kay adapter, release-gate hook enforcement | 100% (`tests/live/run-live-tests.sh`) |
-| Live todo-app E2E | single inline full-surface journey on the standalone sibling `todo-app` repo with `silver:add` tagging and release prep | 100% (`tests/e2e-live/run-e2e-live-tests.sh`) |
+| Live enterprise E2E | Kay hook-failure diagnostic on `enterprise-grade-test-app`; Claude supervised 22-row matrix is the canonical full-surface gate | Kay: `tests/e2e-live/run-e2e-live-tests.sh`; Claude: `.planning/enterprise-e2e/` |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 
@@ -121,20 +121,18 @@ MiniMax.io + `MiniMax-M3` + low reasoning in isolated envs.
 Claude or native Codex runs are optional diagnostics only when explicitly
 requested.
 
-The live todo-app E2E suite is separate. It uses the standalone sibling
-`todo-app` repo, writes its own `e2e-live-matrix` marker, and now runs one
-inline full-surface journey that proves install UX, feature delivery,
-bugfixing, issue filing, cleanup, and release prep in one real agent session.
-That journey also verifies the installed command surface (`silver:init`,
-`silver:feature`, and the `silver` router) in the agent cache, which is the
-closest reliable proxy we currently have for picker exposure in the
-Codex/Claude hosts. The journey additionally writes `inline-e2e-matrix` so the
-release gate can prove the end-user experience actually ran in this session.
-The default live runners write `matrix=codex-only` markers because SB release
-testing is now defined on the Kay/OpenCode Go/DeepSeek V4 Flash low path. Those
-codex-only markers are the standard release-gate markers. A
-`matrix=full-claude-codex` marker is still accepted when someone explicitly
-runs the broader parity matrix.
+The live enterprise E2E suite is separate. It uses the standalone sibling
+`enterprise-grade-test-app` repo for Kay hook-delivery diagnostics and writes its own
+`e2e-live-matrix` marker. The **canonical full-surface gate** is the Claude supervised
+22-row workflow matrix (`.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md`,
+`enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md`).
+
+The legacy Kay inline todo-app full-surface journey is retired from the default
+scenario list. Set `SB_E2E_LIVE_INCLUDE_LEGACY_JOURNEY=1` to run the archived script.
+
+The Kay diagnostic path verifies hook delivery against `api/src/health.js` in the
+enterprise fixture. Release gates accept either Kay `matrix=codex-only` markers from
+this suite or Claude supervised matrix evidence recorded in round ledgers.
 
 The separate `tests/live/test-silver-init-migration.sh` scenario exercises the
 Step 3.5.5 delegation path where `silver:init` hands docs bootstrap/reconciliation
