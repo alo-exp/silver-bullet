@@ -86,6 +86,13 @@ agent_invoke() {
         expect "$expect_script" 2>&1
     }
     if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-${SB_E2E_ENTERPRISE_MATRIX:-}}" == "1" ]]; then
+      # env -i + bash -c (not -lc) avoids login-shell profile re-exporting keys.
+      # Also strip ~/.claude/settings.json env keys — Claude reads API keys there
+      # even when the shell env is empty, which conflicts with claude.ai OAuth.
+      # shellcheck source=scripts/lib/claude-matrix-auth.sh
+      source "${sb_root}/scripts/lib/claude-matrix-auth.sh"
+      claude_matrix_auth_prepare
+      trap 'claude_matrix_auth_restore' RETURN
       output=$(
         env -i \
           HOME="${HOME}" \
@@ -105,8 +112,11 @@ agent_invoke() {
           CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
           CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
           CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-1000}" \
-          bash -lc "cd \"\$CLAUDE_WORK_DIR\" && expect \"$expect_script\" 2>&1"
+          CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}" \
+          bash -c 'unset ANTHROPIC_API_KEY OPENAI_API_KEY; export ANTHROPIC_API_KEY=; cd "$CLAUDE_WORK_DIR" && expect "$1" 2>&1' _ "$expect_script"
       ) || true
+      claude_matrix_auth_restore
+      trap - RETURN
     else
       output="$(run_expect)" || true
     fi

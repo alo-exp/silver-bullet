@@ -69,7 +69,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback; interactive matrix row 1 **Fail** (3 attempts 2026-06-26 — routing probe OK, `router-session.md` missing; harness `55411814`) | `ceaee970`–`55411814` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback; interactive matrix row 1 **Fail** (harness fixed; Claude CLI 401 auth on host — attempts 4–5) | `ceaee970`–`55411814` + harness fix | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 2 | `silver-research` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 3 | `silver-feature` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; post-exec-gates in workflow md | | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 4 | `silver-bugfix` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; validate-substep in workflow md | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
@@ -263,3 +263,36 @@ Autonomous follow-up from [Clarify TUI driver tooling](8890d756-ef38-4dca-b988-0
 2. Expect harness must dismiss Claude splash (`What's new`) before prompt-ready detection.
 3. Full row 1 workflow must survive multi-step `silver:clarify` menus and write evidence — probe confirms routing only, not artifact completion.
 4. Human terminal or resolved auth (logout + claude.ai-only) likely required for reliable interactive matrix runs.
+
+---
+
+## Interactive TUI validation follow-up (Harness fix subagent, 2026-06-26)
+
+Follow-up from [Commit harness fix, run row 1](e14313d7-45a2-4cce-861c-c7190b693326). Builds on `ceaee970`, `24ebb0b1`, `55411814`, `8f31d5e1`.
+
+| Step | Pass/Fail | Notes |
+|------|-----------|-------|
+| Expect harness: splash dismiss (`What's new`) | **Pass** | `dismiss_claude_splash` on splash patterns only; Enter-only (no Escape before submit) |
+| Expect harness: submit fix | **Pass** | Double-Enter submit; no dismiss before ready-handlers; clarify menus gated on `prompt_submitted` |
+| Expect harness: ready timeout | **Pass** | Default `CLAUDE_INTERACTIVE_READY_TIMEOUT=60` |
+| Agent clean-env auth | **Pass** | `bash -c` (not `-lc`) + `unset ANTHROPIC_API_KEY OPENAI_API_KEY`; expect spawn unsets API keys |
+| Matrix row 1 routing-only prompt + pass criteria | **Pass** | Shorter prompt; accept state delta or session routing markers |
+| Matrix row 1 quiet timeout | **Pass** | Default `SB_E2E_ROW1_QUIET_TIMEOUT=300` (was 120) |
+| Unit tests (matrix routing + e2e-live suite) | **Pass** | `test-enterprise-e2e-matrix-routing.sh`, `test-e2e-live-suite.sh` green |
+| `bash tests/run-all-tests.sh` | **Partial** | 4595 passed, 3 failed (pre-existing Codex package + context compaction) |
+| Matrix row 1 attempt 4 (splash fix, 120s quiet) | **Fail** | Prompt typed but 0 tokens; log: `.e2e-row1-attempt4.log` |
+| Matrix row 1 attempt 5 (360s quiet) | **Fail** | Same; log: `.e2e-row1-attempt5.log` |
+| Manual probe (`env -i`, short `/silver` prompt) | **Fail** | `Not logged in` / `401 Invalid authentication credentials` |
+| Manual probe (inherit env, unset API key) | **Fail** | `401 Invalid authentication credentials`; menu handlers sent spurious `1`/`0` (fixed) |
+| `claude --print "say hello"` (host) | **Fail** | `401 Invalid authentication credentials` — Claude CLI auth broken in this environment |
+
+**Row 1 interactive matrix: FAIL** — harness improvements landed; runtime blocked by Claude CLI 401 auth (not splash/submit logic).
+
+**Evidence paths:**
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt4.log`
+- `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt5.log`
+
+**Remaining blockers:**
+1. **Claude CLI auth 401** — `claude --print` fails on host; matrix cannot generate tokens until `claude login` / valid API key or claude.ai OAuth is restored.
+2. Full row 1 evidence file (`.planning/workflows/router-session.md`) still optional — routing-only pass criteria ready once auth works.
+3. Pre-existing 3 Codex package test failures still block round gate green.

@@ -98,6 +98,13 @@ assert_file_contains "enterprise e2e preserves host verify-tests marker" "${SCRI
 assert_file_contains "live suite treats Kay as Codex-compatible full matrix" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
 assert_file_contains "enterprise e2e treats Kay as Codex-compatible full matrix" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
 assert_file_contains "Claude live agent enforces bounded prompt timeout" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'timed out waiting for Claude prompt to complete'
+assert_file_contains "Claude live agent unsets API keys in clean env" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'unset ANTHROPIC_API_KEY OPENAI_API_KEY'
+assert_file_contains "Claude live agent strips settings.json API keys for matrix" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'claude_matrix_auth_prepare'
+assert_file_contains "Claude matrix auth helper exists" "${REPO_ROOT}/scripts/lib/claude-matrix-auth.sh" 'claude_matrix_auth_restore'
+assert_file_contains "Claude live agent avoids login shell for clean env" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'bash -c'
+assert_file_contains "Claude interactive harness dismisses splash screen" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'dismiss_claude_splash'
+assert_file_contains "Claude interactive harness handles Whats new splash" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" "What's new"
+assert_file_contains "enterprise matrix row 1 accepts routing state fallback" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 'verify_row_routing_state_delta'
 assert_file_contains "live doc scheme uses Claude-native Bash wording" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'Use the Bash tool to run exactly'
 assert_file_contains "live doc scheme has deterministic script fallback" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'bash "\./\.live-doc-step\.sh"'
 if grep -R --exclude='test-e2e-live-suite.sh' 'Use apply_patch' "${REPO_ROOT}/tests/live" "${SCRIPT_DIR}" >/dev/null 2>&1; then
