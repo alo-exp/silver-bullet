@@ -154,6 +154,17 @@
         ]
       },
       {
+        "matcher": "Read|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/context-mode-read-deny.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Skill",
         "hooks": [
           {
