@@ -105,7 +105,22 @@ expect {
     exp_continue
   }
   -re {(?s)bypass.*permissions.*on} {
-    # Main prompt is live and ready for input.
+    if {$prompt_submitted == 0} {
+      if {$command_name ne ""} {
+        send -- "/$command_name"
+        if {[string length $prompt_body] > 0} {
+          send -- " "
+          send -- $prompt_body
+        }
+      } elseif {[string length $prompt_body] > 0} {
+        send -- $prompt_body
+      }
+      if {$command_name ne "" || [string length $prompt_body] > 0} {
+        send -- "\r"
+      }
+      set prompt_submitted 1
+      set timeout $quiet_timeout
+    }
     exp_continue
   }
   -re {Try "how does .* work\?"} {
