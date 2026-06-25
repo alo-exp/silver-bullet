@@ -1697,7 +1697,7 @@ img{max-width:100%;height:auto}
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(20)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(24)</span></button>
       <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(27)</span></button>
     </div>
 
@@ -1724,6 +1724,26 @@ img{max-width:100%;height:auto}
             <td><a href="help/workflows/silver-research.html" style="color:var(--accent-light);text-decoration:none">/silver:research</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"research", "decide"</td>
             <td><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-clarify.html" style="color:var(--accent-light);text-decoration:none">/silver:clarify</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"idea", "fuzzy requirement", "scope"</td>
+            <td><code>CLARIFY</code> → context/plan handoff</td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-spec.html" style="color:var(--accent-light);text-decoration:none">/silver:spec</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"spec", "acceptance criteria", "user stories"</td>
+            <td><code>SPECIFY</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-ingest.html" style="color:var(--accent-light);text-decoration:none">/silver:ingest</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"JIRA", "Figma", "external artifact"</td>
+            <td><code>SPECIFY</code> <span style="font-size:.85rem;color:var(--text-dim)">(ingest sub-step)</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-validate.html" style="color:var(--accent-light);text-decoration:none">/silver:validate</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"validate", "gap analysis"</td>
+            <td><code>VALIDATE</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
@@ -1827,17 +1847,17 @@ img{max-width:100%;height:auto}
             <th>Role</th>
           </tr>
         </thead>
-        <!-- SDLC order: orient → plan/specify → research → execute → verify → review → ship → document/process -->
+        <!-- SDLC order: orient/bootstrap → clarify/research → plan/specify → execute → verify → review → ship → document/process -->
         <tbody>
           <tr><td><code>ROUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">intent classification and workflow composition</td></tr>
           <tr><td><code>BOOTSTRAP</code></td><td style="font-size:.85rem;color:var(--text-secondary)">project bootstrap and enforcement activation</td></tr>
           <tr><td><code>ORIENT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">codebase and planning context orientation</td></tr>
           <tr><td><code>CLARIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">scope clarification and assumption lock</td></tr>
+          <tr><td><code>DECIDE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
           <tr><td><code>SPECIFY</code></td><td style="font-size:.85rem;color:var(--text-secondary)">requirements specification and ingestion</td></tr>
           <tr><td><code>PLAN</code></td><td style="font-size:.85rem;color:var(--text-secondary)">execution planning with phase coverage</td></tr>
           <tr><td><code>DESIGN_CONTRACT</code></td><td style="font-size:.85rem;color:var(--text-secondary)">design contract and interface expectations</td></tr>
           <tr><td><code>VALIDATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
-          <tr><td><code>DECIDE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
           <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
           <tr><td><code>FAST_PATH</code></td><td style="font-size:.85rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
           <tr><td><code>EXECUTE</code></td><td style="font-size:.85rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
