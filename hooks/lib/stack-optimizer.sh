@@ -19,7 +19,7 @@ _sb_stack_default_profile="synergy_max"
 _sb_stack_score_threshold=70
 
 sb_stack_optimizer_dry_run() {
-  [[ "${SB_STACK_OPTIMIZER_DRY_RUN:-0}" == "1" ]] || [[ "${1:-0}" == "1" ]]
+  [[ "${SB_STACK_OPTIMIZER_DRY_RUN:-0}" == "1" ]]
 }
 
 sb_stack_skip_host_hooks() {
@@ -277,7 +277,7 @@ sb_optimize_graphify() {
   fi
 
   if sb_graphify_cli_available; then
-    local pre post cmd
+    local cmd
     while IFS= read -r cmd; do
       [[ -n "$cmd" ]] || continue
       if sb_stack_optimizer_dry_run; then
@@ -398,7 +398,7 @@ sb_stack_graph_has_agentmemory_refs() {
 
 sb_optimization_score() {
   local repo="${1:-$PWD}" config_file="${2:-}"
-  local profile score=0 max=100 fails=0 warns=0
+  local profile score=0 fails=0 warns=0
   local report=""
   profile="$(sb_stack_optimization_profile_name "$config_file")"
 
@@ -485,10 +485,10 @@ sb_optimization_score() {
     fi
   fi
 
-  SB_STACK_SCORE="$score"
-  SB_STACK_SCORE_FAILS="$fails"
-  SB_STACK_SCORE_WARNS="$warns"
-  SB_STACK_SCORE_REPORT="$report"
+  export SB_STACK_SCORE="$score"
+  export SB_STACK_SCORE_FAILS="$fails"
+  export SB_STACK_SCORE_WARNS="$warns"
+  export SB_STACK_SCORE_REPORT="$report"
   printf '%s' "$score"
 }
 
