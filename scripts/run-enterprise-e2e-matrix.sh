@@ -83,6 +83,8 @@ Environment:
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
+  SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 600)
+  SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 600)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for TUI ready before submit (default 60)
 EOF
 }
@@ -239,8 +241,17 @@ run_matrix_row() {
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
+  elif [[ "$row_num" =~ ^[0-9]+$ && "$row_num" -ge 2 && "$row_num" -le 20 ]]; then
+    # Full workflow rows need a wider quiet window than routing-only row 1.
+    # Claude may return to the ❯ prompt between turns while still writing evidence.
+    quiet_timeout="${SB_E2E_WORKFLOW_QUIET_TIMEOUT:-600}"
   fi
-  output="$(CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" run_prompt "$prompt" 2>&1 || true)"
+  local row_log="${SB_ROOT}/.e2e-row${row_num}-attempt.log"
+  output="$(
+    CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
+      CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
+      run_prompt "$prompt" 2>&1 || true
+  )"
   if [[ -n "$output" ]]; then
     printf '%s\n' "$output" | tail -20
   fi
