@@ -429,7 +429,7 @@
         "auto_compress": false,
         "obsidian_export": true,
         "bridge_enabled": true,
-        "gitleaks_recommended": true,
+        "gitleaks_required": true,
         "server_persistence": "launchd"
       },
       "synergy": {
