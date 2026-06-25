@@ -256,6 +256,8 @@
       "install_failure_reason": null,
       "required_when_enabled": true,
       "min_version": "0.42.0",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
       "install_commands": [
         "brew tap rtk-ai/rtk && brew install rtk",
         "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
@@ -271,7 +273,9 @@
           "pre_index": [
             "rtk init -g --agent cursor"
           ],
-          "post_index": []
+          "post_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ]
         },
         "codex": {
           "pre_index": [
@@ -280,7 +284,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
+      "benefits_summary": "60\u201399% shell output savings via PreToolUse rewrite \u2014 automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
     },
     "context_mode": {
       "enabled_by_user": null,
@@ -288,8 +292,11 @@
       "install_status": null,
       "install_failure_reason": null,
       "required_when_enabled": true,
+      "read_deny_bytes": 5120,
       "min_node_version": "22.5",
-      "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
+      "license_note": "ELv2 \u2014 not OSI-open; commercial bundling requires upstream license",
       "install_commands": [
         "npm install -g context-mode"
       ],
@@ -305,9 +312,12 @@
         },
         "cursor": {
           "pre_index": [
-            "Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md"
+            "npm install -g context-mode",
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
           ],
-          "post_index": []
+          "post_index": [
+            "Restart Cursor after MCP/hook merge"
+          ]
         },
         "codex": {
           "pre_index": [
@@ -317,7 +327,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license \u2014 see license_note)."
     }
   },
   "hooks": {
