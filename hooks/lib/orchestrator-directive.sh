@@ -116,7 +116,7 @@ sb_orchestrator_flow_to_skill() {
 sb_orchestrator_ensure_worker_template_mapper() {
   declare -f sb_orchestrator_worker_template_for_skill >/dev/null 2>&1 && return 0
   local lib_dir
-  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || lib_dir=""
   if [[ -n "$lib_dir" && -f "$lib_dir/orchestrator-parent.sh" ]]; then
     # shellcheck source=lib/orchestrator-parent.sh
     source "$lib_dir/orchestrator-parent.sh"

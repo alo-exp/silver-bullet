@@ -82,18 +82,16 @@ if [[ -n "$command_str" ]]; then
   fi
 fi
 
-tool_id=""
-for tool_id in rtk; do
-  sb_token_tool_enforced "$config_file" "$tool_id" || continue
+tool_id="rtk"
+if sb_token_tool_enforced "$config_file" "$tool_id"; then
   if ! sb_token_tool_cli_available "$config_file" "$tool_id"; then
     emit_block "$(sb_token_tool_block_message "$config_file" "$tool_id")"
     exit 0
   fi
-  if sb_token_tool_usage_is_fresh "$config_file" "$tool_id"; then
-    continue
+  if ! sb_token_tool_usage_is_fresh "$config_file" "$tool_id"; then
+    emit_block "$(sb_token_tool_block_message "$config_file" "$tool_id")"
+    exit 0
   fi
-  emit_block "$(sb_token_tool_block_message "$config_file" "$tool_id")"
-  exit 0
-done
+fi
 
 exit 0

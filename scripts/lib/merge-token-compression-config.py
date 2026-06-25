@@ -119,6 +119,34 @@ def context_mode_pkg_root() -> pathlib.Path | None:
     return None
 
 
+def context_mode_cursor_hooks_path(repo_root: pathlib.Path) -> pathlib.Path | None:
+    cm_pkg = context_mode_pkg_root()
+    if cm_pkg:
+        candidate = cm_pkg / "configs" / "cursor" / "hooks.json"
+        if candidate.is_file():
+            return candidate
+    bundled = repo_root / "scripts" / "lib" / "context-mode-cursor-hooks.json"
+    if bundled.is_file():
+        return bundled
+    return None
+
+
+def context_mode_extended_cursor_hooks() -> dict:
+    return {
+        "hooks": {
+            "sessionStart": [
+                {
+                    "command": "context-mode hook cursor sessionstart",
+                    "matcher": "startup|clear|compact",
+                }
+            ],
+            "afterAgentResponse": [
+                {"command": "context-mode hook cursor afteragentresponse"}
+            ],
+        }
+    }
+
+
 def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: bool = False) -> dict:
     cursor_home = pathlib.Path.home() / ".cursor"
     hooks_path = cursor_home / "hooks.json"
@@ -129,24 +157,10 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
 
     cm_pkg = context_mode_pkg_root()
     fragments: list[dict] = []
-    if cm_pkg:
-        cm_hooks = cm_pkg / "configs" / "cursor" / "hooks.json"
-        if cm_hooks.is_file():
-            fragments.append(load_json(cm_hooks))
-        extended = {
-            "hooks": {
-                "sessionStart": [
-                    {
-                        "command": "context-mode hook cursor sessionstart",
-                        "matcher": "startup|clear|compact",
-                    }
-                ],
-                "afterAgentResponse": [
-                    {"command": "context-mode hook cursor afteragentresponse"}
-                ],
-            }
-        }
-        fragments.append(extended)
+    cm_hooks = context_mode_cursor_hooks_path(repo_root)
+    if cm_hooks:
+        fragments.append(load_json(cm_hooks))
+    fragments.append(context_mode_extended_cursor_hooks())
 
     hooks_added = merge_hooks_file(hooks_path, fragments, dry_run) if fragments else 0
 

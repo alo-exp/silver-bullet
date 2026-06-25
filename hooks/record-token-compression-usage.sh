@@ -39,15 +39,14 @@ cmd="$(sb_tool_command_string "$input" 2>/dev/null || printf '%s' "$input" | jq 
 exit_code="$(printf '%s' "$input" | jq -r '.tool_response.exit_code // .tool_response.exitCode // 0' 2>/dev/null || echo 0)"
 [[ "$exit_code" == "0" ]] || exit 0
 
-tool_id=""
-for tool_id in rtk; do
-  sb_token_tool_enforced "$config_file" "$tool_id" || continue
+tool_id="rtk"
+if sb_token_tool_enforced "$config_file" "$tool_id"; then
   cli="$(sb_token_tool_cli_command "$config_file" "$tool_id")"
   if sb_token_tool_command_matches "$cmd" "$tool_id" "$cli"; then
     sb_token_tool_record_usage "$config_file" "$tool_id" && \
       printf '{"hookSpecificOutput":{"message":"✅ %s usage recorded"}}' "$(sb_recommended_tool_display_name "$tool_id")"
     exit 0
   fi
-done
+fi
 
 exit 0

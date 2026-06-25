@@ -1,0 +1,65 @@
+---
+description: Global RTK + Context Mode enforcement — hard requirements for all Cursor workspaces
+alwaysApply: true
+---
+
+# Token compression enforcement (global)
+
+**Authority:** `~/.cursor/rules/` is the global source of truth for RTK + Context Mode. Project `.cursor/rules/context-mode.mdc` is optional duplication — when both exist, follow the stricter requirement.
+
+## What is hook-enforced (automatic)
+
+These fire via `$HOME/.codex/hooks.json` on every workspace. The agent cannot bypass them without disabling global hooks.
+
+| Surface | Mechanism | Effect |
+|---------|-----------|--------|
+| **Shell** | `rtk hook cursor` (PreToolUse) | Rewrites allow-listed commands to compressed form |
+| **WebFetch** | `context-mode hook cursor pretooluse` | **DENY** — use `ctx_fetch_and_index` |
+| **curl / wget in Shell** | context-mode pretooluse | **MODIFY** — command replaced with redirect message |
+| **Inline HTTP in Shell** | context-mode pretooluse | **MODIFY** — redirected to `ctx_execute` |
+| **Build tools (gradle/mvn/sbt)** | context-mode pretooluse | **MODIFY** — redirected to sandbox |
+| **External MCP (non-ctx_)** | context-mode pretooluse | Periodic `agent_message` nudge (every ~10 calls) |
+
+## What is cooperative (rules + MCP — NOT hard deny)
+
+Context-mode **does not** `permission: deny` on `Read` or `Grep` at any file size (upstream threshold for byte accounting is 50 KB; guidance only). Cursor also does **not** reliably surface hook `additional_context` to the model ([forum #155689](https://forum.codex.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). For these surfaces you **MUST** follow `context-mode.mdc` voluntarily:
+
+| Surface | Required alternative | Threshold |
+|---------|---------------------|-----------|
+| **Read for analysis** | `ctx_execute_file` or `ctx_index` + `ctx_search` | Files **> 5 KB** |
+| **Grep for counting/filtering** | `ctx_execute` or `ctx_batch_execute` | Any non-trivial result set |
+| **5+ file reads** | `ctx_batch_execute` | Batch, don't serial Read |
+| **MCP results > 20 lines** | `ctx_execute` to summarize in sandbox | Before returning to user |
+| **Bash > 20 lines output** | `ctx_execute` or `ctx_batch_execute` | Before running |
+
+**Read IS correct** when you are about to **Edit** the same file (Edit needs exact bytes in context).
+
+## RTK global wiring (verify)
+
+- `$HOME/.codex/hooks.json` → `"command": "rtk hook cursor", "matcher": "Shell"`
+- `$HOME/.codex/cli-config.json` → `permissions.allow` lists dev commands (see `docs/RTK.md` in SB repo)
+- Commands **not** allow-listed run uncompressed (`rtk hook cursor` returns `{}`)
+
+## Context Mode global wiring (verify)
+
+- `$HOME/.codex/mcp.json` → `"context-mode": { "command": "context-mode" }`
+- `$HOME/.codex/hooks.json` → context-mode on `preToolUse`, `postToolUse`, `sessionStart`, `stop`, `afterAgentResponse`
+- `context-mode doctor` from any project root
+
+## MUST / MUST NOT summary
+
+- **MUST** use Context Mode MCP (`ctx_*`) for analysis, not raw Read/Grep/Bash dumps.
+- **MUST NOT** use WebFetch — hook denies it globally.
+- **MUST NOT** use curl/wget in Shell for HTTP — hook modifies the command.
+- **MUST NOT** read large files with Read for analysis — no hook deny; compliance is mandatory via this rule.
+- **MUST** run `graphify query` before codebase exploration when Graphify is opted in (project-level SB gate — separate from this file).
+
+## If full Read deny is required
+
+Upstream context-mode v1.0.166 has no `CONTEXT_MODE_READ_DENY_BYTES` or equivalent. Options:
+
+1. **Upstream feature request** — deny Read above N bytes in `routing.mjs`
+2. **SB project gate** — `context-mode-gate.sh` blocks edits when CM usage is stale (project opt-in only)
+3. **Custom pretooluse wrapper** — home-dir shell script that stat's file path and returns `permission: deny` (fragile, must parse hook JSON stdin)
+
+Until upstream adds Read deny, **rules + MCP discipline** are the only global levers.

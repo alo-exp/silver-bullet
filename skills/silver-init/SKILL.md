@@ -344,6 +344,20 @@ If `agentmemory_consent` is `false`: output "agentmemory opted out — enforceme
 
 Same rules as Graphify §1.1a Step 5: re-prompt when `null`; retry when suspended; surface install when `true` and CLI missing.
 
+#### Step 3f — Optimize Graphify + agentmemory stack
+
+When **either** Graphify or agentmemory is opted in (`enabled_by_user: true`), run the synergy optimizer after install steps complete:
+
+```bash
+bash scripts/sb-optimize-stack.sh --apply
+bash scripts/sb-optimize-stack.sh --verify
+```
+
+- Default profile: `synergy_max` (see `optimization_profiles` in config template)
+- On success: records `optimization.last_applied_at` and `optimization.score` in `.silver-bullet.json`
+- On partial failure: do **not** block init — surface score and warnings; user can retry via `/silver:update`
+- See `docs/STACK-OPTIMIZATION.md` and `docs/research/graphify-agentmemory-optimization.md`
+
 ### 1.1e RTK (recommended tool — opt-in)
 
 RTK (`rtk-ai/rtk`) compresses shell output via upstream PreToolUse hooks. Separate consent from Context Mode. Config key: `recommended_tools.rtk.enabled_by_user`.
@@ -409,7 +423,7 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or Claude plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, Cursor allow-list, global `~/.cursor/rules/` (see `docs/CONTEXT-MODE.md`)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, Cursor allow-list, global Cursor `rules/` directory (see `docs/CONTEXT-MODE.md`)
 5. **Scaffold instruction fragment** into `silver-bullet.md` and `CLAUDE.md` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
 6. **Cursor:** copy `context-mode.mdc` to `.cursor/rules/` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install
