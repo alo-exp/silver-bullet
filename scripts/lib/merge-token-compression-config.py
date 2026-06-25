@@ -46,6 +46,27 @@ def merge_hook_entries(existing: list, new_entries: list) -> tuple[list, int]:
     return merged, added
 
 
+def reorder_pretooluse_rtk_before_cm(hooks: dict) -> bool:
+    """Ensure rtk hook cursor runs before context-mode pretooluse on preToolUse."""
+    pretool = hooks.get("preToolUse")
+    if not isinstance(pretool, list):
+        return False
+    rtk_idx = cm_idx = None
+    for idx, entry in enumerate(pretool):
+        cmd = hook_command(entry)
+        if cmd == "rtk hook cursor":
+            rtk_idx = idx
+        elif "context-mode hook cursor pretooluse" in cmd:
+            cm_idx = idx
+    if rtk_idx is None or cm_idx is None or rtk_idx < cm_idx:
+        return False
+    rtk_entry = pretool.pop(rtk_idx)
+    insert_at = cm_idx - 1 if cm_idx > rtk_idx else cm_idx
+    pretool.insert(insert_at, rtk_entry)
+    hooks["preToolUse"] = pretool
+    return True
+
+
 def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool) -> int:
     settings = load_json(target, {"version": 1, "hooks": {}})
     settings.setdefault("version", 1)
@@ -57,6 +78,8 @@ def merge_hooks_file(target: pathlib.Path, fragments: list[dict], dry_run: bool)
             merged, added = merge_hook_entries(event_list, entries)
             hooks[event] = merged
             total_added += added
+    if reorder_pretooluse_rtk_before_cm(hooks):
+        total_added += 0  # reorder only; counted as maintenance
     save_json(target, settings, dry_run)
     return total_added
 
