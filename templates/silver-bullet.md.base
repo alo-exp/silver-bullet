@@ -359,6 +359,18 @@ not suspended, hooks require CLI, running server, MCP wiring, and `.agentmemory/
 When both agentmemory and Graphify are enabled: **save via agentmemory, retrieve via Graphify**.
 See `docs/AGENTMEMORY.md`.
 
+### 2g-ii. Token Compression (Opt-In)
+
+SB recommends **RTK** and **Context Mode** as **separate** opt-in tools (`recommended_tools.rtk` and `recommended_tools.context_mode`). They complement Graphify (retrieval) and agentmemory (capture) — no evidence-tier conflict; see `docs/code-intelligence-contract.md`.
+
+**Aluminum (`recommended_tools.aluminum`):** When opted in and `install_status: installed`, hooks require fresh CLI usage before substantive commits (see token-compression-tools gate).
+
+**RTK (`recommended_tools.rtk`):** When opted in and not suspended, hooks verify rtk-ai/rtk CLI (v0.4x, `rtk gain --help`) and host PreToolUse wiring. Shell compression is **automatic** once wired — SB does not rewrite Bash. Wrong binary (`reachingforthejack/rtk`) is rejected. Codex relies on AGENTS.md awareness; live rewrite requires upstream `updatedInput` support.
+
+**Context Mode (`recommended_tools.context_mode`):** When opted in and not suspended, hooks verify Node >= 22.5, CLI/plugin install, MCP/hooks wiring, and the instruction fragment in project docs. The agent **must** follow the scaffolded hint for files > 5 KB and MCP-heavy results — this is **instructionally mandatory**, not Read-size hook blocking. ELv2 license applies — see `recommended_tools.context_mode.license_note`. **Restart the agent** after plugin/MCP changes.
+
+Install and wiring: `docs/RTK.md`, `docs/CONTEXT-MODE.md`. Verification: `bash scripts/enable-rtk-context-mode.sh`. Cursor always-on rules: `.cursor/rules/recommended-tools.mdc`.
+
 ---
 
 ### 2h. SB Orchestrated Workflows

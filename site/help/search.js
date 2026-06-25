@@ -117,6 +117,13 @@ var IDX = [
   },
   {
     "page": "Core Concepts",
+    "url": "/help/concepts/documentation.html",
+    "anchor": "token-compression",
+    "title": "Token Compression RTK Context Mode",
+    "text": "RTK and Context Mode are separate opt-in recommended tools for shell and MCP token compression. RTK uses rtk-ai/rtk PreToolUse hooks. Context Mode uses MCP compaction and PreCompact recovery with ELv2 license. Install gates verify wiring; usage is instructional in silver-bullet.md section 2g-ii."
+  },
+  {
+    "page": "Core Concepts",
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
@@ -169,7 +176,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "hook-activation",
     "title": "Hook activation guard v0.48.1",
-    "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify and agentmemory are opt-in via recommended_tools in config."
+    "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify, agentmemory, RTK, and Context Mode are opt-in via recommended_tools in config."
   },
   {
     "page": "Workflows",

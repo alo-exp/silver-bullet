@@ -469,7 +469,7 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
   fi
   _rt_cfg="${sb_project_root}/.silver-bullet.json"
   if [[ -f "$_rt_cfg" ]]; then
-    for _rt_tool in graphify agentmemory; do
+    for _rt_tool in graphify agentmemory aluminum rtk context_mode; do
       _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "$_rt_tool" 2>/dev/null || true)"
       if [[ -n "$_rt_ctx" ]]; then
         combined="${combined:+$combined

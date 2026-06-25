@@ -18,6 +18,9 @@
 # Full validation
 bash tests/run-all-tests.sh
 
+# Cursor recommended-tool rules (graphify + agentmemory + umbrella)
+bash scripts/install-recommended-tools-cursor.sh
+
 # Sync physical plugin template mirror after editing templates/
 bash scripts/sync-templates.sh
 
