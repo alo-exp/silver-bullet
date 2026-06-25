@@ -70,7 +70,7 @@ agent_invoke() {
   if claude_should_use_interactive "$prompt" && [[ -x "$expect_script" ]] && command -v expect >/dev/null 2>&1; then
     prompt_file="$(mktemp "${TMPDIR:-/tmp}/claude-live-prompt.XXXXXX")"
     printf '%s' "$prompt" >"$prompt_file"
-    output=$(
+    run_expect() {
       cd "$WORK_DIR" && \
         TERM="${TERM:-xterm-256color}" \
         CLAUDE_BIN="$cli" \
@@ -83,7 +83,31 @@ agent_invoke() {
         CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
         CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
         expect "$expect_script" 2>&1
-    ) || true
+    }
+    if [[ "${SB_E2E_MATRIX_CLEAN_ENV:-${SB_E2E_ENTERPRISE_MATRIX:-}}" == "1" ]]; then
+      output=$(
+        env -i \
+          HOME="${HOME}" \
+          USER="${USER:-}" \
+          LOGNAME="${LOGNAME:-${USER:-}}" \
+          SHELL="${SHELL:-/bin/bash}" \
+          PATH="${PATH:-/usr/bin:/bin:/usr/sbin:/sbin}" \
+          TERM="${TERM:-xterm-256color}" \
+          TMPDIR="${TMPDIR:-/tmp}" \
+          CLAUDE_BIN="$cli" \
+          CLAUDE_WORK_DIR="$WORK_DIR" \
+          CLAUDE_PROMPT_FILE="$prompt_file" \
+          CLAUDE_MODEL="${CLAUDE_MODEL:-sonnet}" \
+          CLAUDE_EFFORT="${CLAUDE_EFFORT:-low}" \
+          CLAUDE_PERMISSION_MODE="$permission_mode" \
+          CLAUDE_CONTINUE="$continue_flag" \
+          CLAUDE_INTERACTIVE_TIMEOUT="$timeout_seconds" \
+          CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-120}" \
+          bash -lc "cd \"\$CLAUDE_WORK_DIR\" && expect \"$expect_script\" 2>&1"
+      ) || true
+    else
+      output="$(run_expect)" || true
+    fi
     rm -f -- "$prompt_file"
     printf '%s' "$output"
     CLAUDE_PROMPT_COUNT=$((CLAUDE_PROMPT_COUNT + 1))
