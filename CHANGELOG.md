@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.48.3] — 2026-06-25
+
+Recommended-tools expansion and global wiring: RTK and Context Mode opt-in gates, Alumnium opt-in, Graphify + agentmemory stack optimizer (synergy_max) across hosts, multi-agent global RTK/Context Mode optimizer, and Context Mode read-deny when enforced. Documentation and site workflow SDLC ordering; enterprise E2E fixture shift; CI/shellcheck and diagnostics fixes. Integrates doc-scheme Graphify exclusion test fix; restores opt-in Graphify gate behavior after mandatory-graphify branch merge.
+
+---
+
 ## [0.48.2] — 2026-06-25
 
 Enterprise readiness ladder run 2: FLOW-16/17 worker split (`DESIGN-HANDOFF.md` / `DOCUMENT.md`), `SECURITY.md` skill-dispatched template, catalog `skill_worker_templates` parity, depth-aware review-loop docs, core-rules hash pin enforcement, Cursor GPT-5.5 ladder slug substitutions, and review-loop safety-cap non-convergence guard.
