@@ -79,9 +79,12 @@ if {[string length $prompt] > 0 && [string index $prompt 0] eq "/"} {
 
 cd $work_dir
 
-# Prevent claude.ai OAuth + stored API key conflicts in matrix clean-env runs.
-catch {unset env(ANTHROPIC_API_KEY)}
-catch {unset env(OPENAI_API_KEY)}
+# Only strip shell API keys in clean-env matrix runs (OAuth/key-conflict isolation).
+set matrix_clean_env [env_or_default SB_E2E_MATRIX_CLEAN_ENV "0"]
+if {$matrix_clean_env eq "1"} {
+  catch {unset env(ANTHROPIC_API_KEY)}
+  catch {unset env(OPENAI_API_KEY)}
+}
 
 if {$debug_log ne ""} {
   log_file -a $debug_log
