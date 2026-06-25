@@ -574,8 +574,8 @@ write_verify_tests_state
 rm -f "$E2E_LIVE_MATRIX_FILE"
 rm -f "$INLINE_E2E_MATRIX_FILE"
 out=$(run_hook "PreToolUse" "gh release create v1.0.0")
-assert_blocks "release blocked without inline todo-app marker" "$out"
-assert_contains "release block mentions inline todo-app journey" "$out" "inline todo-app journey"
+assert_blocks "release blocked without inline enterprise marker" "$out"
+assert_contains "release block mentions enterprise-grade-test-app journey" "$out" "enterprise-grade-test-app journey"
 assert_contains "release block mentions inline-e2e-matrix" "$out" "inline-e2e-matrix"
 teardown
 

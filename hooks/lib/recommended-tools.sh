@@ -90,6 +90,15 @@ sb_recommended_tool_benefits() {
     agentmemory)
       printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
       ;;
+    alumnium)
+      printf '%s' 'AI-native browser/visual testing via MCP (do/check/get/wait); preferred for clarify, ui-review, verify. See alumnium.ai.'
+      ;;
+    rtk)
+      printf '%s' '60–99% shell output savings via PreToolUse rewrite — automatic once rtk-ai/rtk is wired (not reachingforthejack/rtk).'
+      ;;
+    context_mode)
+      printf '%s' 'MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license).'
+      ;;
     *)
       printf '%s' 'Improves SB workflow quality when enabled.'
       ;;
@@ -164,6 +173,25 @@ sb_recommended_tool_platform_pre_index_commands() {
         printf '%s\n' 'codex plugin add agentmemory@agentmemory'
         ;;
     esac
+  elif [[ "$tool_id" == "rtk" ]]; then
+    case "$host" in
+      claude) printf '%s\n' 'rtk init -g' ;;
+      cursor) printf '%s\n' 'rtk init -g --agent cursor' ;;
+      codex) printf '%s\n' 'rtk init -g --codex' ;;
+    esac
+  elif [[ "$tool_id" == "context_mode" ]]; then
+    case "$host" in
+      claude)
+        printf '%s\n' 'claude plugin marketplace add mksglu/context-mode'
+        printf '%s\n' 'claude plugin install context-mode@context-mode'
+        ;;
+      cursor)
+        printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
+        ;;
+      codex)
+        printf '%s\n' 'Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md'
+        ;;
+    esac
   fi
 }
 
@@ -202,6 +230,10 @@ sb_recommended_tool_platform_post_index_commands() {
       claude) printf '%s\n' 'agentmemory connect claude-code' ;;
       codex) printf '%s\n' 'agentmemory connect codex --with-hooks' ;;
     esac
+  elif [[ "$tool_id" == "context_mode" ]]; then
+    case "$host" in
+      claude) printf '%s\n' 'Restart Claude Code after plugin install (hooks load on restart)' ;;
+    esac
   fi
 }
 
@@ -238,6 +270,12 @@ sb_recommended_tool_full_install_lines() {
   fi
   if [[ -z "$cli_lines" && "$tool_id" == "agentmemory" ]]; then
     cli_lines='npm install -g @agentmemory/agentmemory'
+  fi
+  if [[ -z "$cli_lines" && "$tool_id" == "rtk" ]]; then
+    cli_lines=$'brew tap rtk-ai/rtk && brew install rtk\ncurl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh'
+  fi
+  if [[ -z "$cli_lines" && "$tool_id" == "context_mode" ]]; then
+    cli_lines='npm install -g context-mode'
   fi
   platform_lines="$(sb_recommended_tool_platform_install_commands "$config_file" "$tool_id" "$host")"
   if [[ -n "$cli_lines" ]]; then
@@ -327,6 +365,32 @@ EOF
           if ! sb_agentmemory_export_exists "$project_root" "$config_file"; then
             printf '%s\n' "agentmemory enabled — export root missing. Run: mkdir -p ${export_rel}/memory ${export_rel}/snapshots"
           fi
+        fi
+      elif [[ "$tool_id" == "rtk" ]] && declare -f sb_rtk_cli_available >/dev/null 2>&1; then
+        if ! sb_rtk_cli_available; then
+          cat <<EOF
+RTK enabled but CLI missing or wrong binary — install before substantive work (host: ${host}):
+
+${install_lines}
+
+Verify: rtk gain --help (rejects reachingforthejack/rtk). See docs/RTK.md.
+EOF
+        elif ! sb_rtk_platform_hook_present "$(dirname "$config_file")" "$host" 2>/dev/null; then
+          printf '%s\n' "RTK enabled — host hook not wired for ${host}. Run rtk init; hooks block until present."
+        fi
+      elif [[ "$tool_id" == "context_mode" ]] && declare -f sb_context_mode_cli_available >/dev/null 2>&1; then
+        if ! sb_context_mode_node_ok "$config_file" 2>/dev/null; then
+          printf '%s\n' "Context Mode enabled — Node >= 22.5 required before install."
+        elif ! sb_context_mode_cli_available; then
+          cat <<EOF
+Context Mode enabled but not installed (host: ${host}):
+
+${install_lines}
+
+ELv2 license — see recommended_tools.context_mode.license_note. Restart agent after plugin wiring. See docs/CONTEXT-MODE.md.
+EOF
+        elif ! sb_context_mode_instruction_fragment_present "$(dirname "$config_file")" 2>/dev/null; then
+          printf '%s\n' "Context Mode enabled — instruction fragment missing from silver-bullet.md/CLAUDE.md. Run init/update scaffold."
         fi
       fi
       ;;

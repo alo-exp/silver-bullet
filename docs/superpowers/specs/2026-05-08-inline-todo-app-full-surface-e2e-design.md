@@ -1,5 +1,9 @@
 # Silver Bullet Inline Todo-App Full-Surface E2E — Design Spec
 
+> **SUPERSEDED (2026-06-25):** Replaced by enterprise-grade-test-app Claude supervised matrix.
+> See `.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md` and
+> `enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md`.
+
 **Date:** 2026-05-08  
 **Status:** Draft for review  
 **Author:** Brainstorming session (Superpowers:brainstorming)

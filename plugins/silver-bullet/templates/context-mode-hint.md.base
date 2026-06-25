@@ -1,0 +1,13 @@
+<!-- BEGIN context-mode hint (do not edit) -->
+## Context Mode usage
+
+When reading large files, MCP results, or web fetches:
+
+- For files > 5 KB: use Context Mode index + search tools (`ctx_index` / `ctx_search` or host-qualified MCP names) instead of reading the whole file.
+- For Playwright snapshots, web fetches, and other MCP tool results: use `ctx_execute` to run a sandboxed script that processes the result and only returns relevant `console.log` lines.
+- For batch reads (5+ files): use `ctx_batch_execute` instead of N separate reads.
+
+If a call returns "tool not found", run Context Mode doctor in a live session to confirm the exact tool prefix for your host, or use slash commands where available (`/ctx-index`, `/ctx-search` on Claude Code).
+
+For everything else, use your normal tools. RTK handles shell command output automatically when RTK is opted in and wired.
+<!-- END context-mode hint (do not edit) -->

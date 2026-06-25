@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Harness sanity checks for the live todo-app E2E suite.
+# Harness sanity checks for the live enterprise E2E suite.
 #
 # These checks are intentionally cheap: they verify that the suite layout exists
 # before the expensive live Claude/Codex runs are added to CI or release flows.
@@ -83,7 +83,7 @@ assert_executable "suite runner is executable" "${SCRIPT_DIR}/run-e2e-live-tests
 assert_file_contains "suite runner writes inline release marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'matrix=inline-full-surface'
 assert_exists "shared helpers exist" "${SCRIPT_DIR}/helpers.sh"
 assert_file_contains "live suite sets bounded per-turn timeout" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
-assert_file_contains "todo-app e2e suite sets bounded per-turn timeout" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
+assert_file_contains "enterprise e2e suite sets bounded per-turn timeout" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'CODEX_INTERACTIVE_TIMEOUT="\$\{CODEX_INTERACTIVE_TIMEOUT:-300\}"'
 if awk 'NR <= 12 && /SILVER_BULLET_RUNTIME="claude"/ { found=1 } END { exit found ? 0 : 1 }' "${REPO_ROOT}/tests/live/run-live-tests.sh"; then
   echo "FAIL: live suite does not force Claude before runtime-path inference"
   FAIL=$((FAIL + 1))
@@ -92,11 +92,11 @@ else
   PASS=$((PASS + 1))
 fi
 assert_file_contains "live suite writes release marker in host state" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'HOST_RELEASE_LIVE_MATRIX_FILE="\$\{SB_RUNTIME_STATE_DIR\}/release-live-matrix"'
-assert_file_contains "todo-app e2e writes release markers in host state" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'HOST_E2E_LIVE_MATRIX_FILE="\$\{SB_RUNTIME_STATE_DIR\}/e2e-live-matrix"'
+assert_file_contains "enterprise e2e writes release markers in host state" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'HOST_E2E_LIVE_MATRIX_FILE="\$\{SB_RUNTIME_STATE_DIR\}/e2e-live-matrix"'
 assert_file_contains "live suite preserves host verify-tests marker" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'HOST_VERIFY_TESTS_STATE_FILE="\$\{SB_RUNTIME_STATE_DIR\}/verify-tests-state"'
-assert_file_contains "todo-app e2e preserves host verify-tests marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'HOST_VERIFY_TESTS_STATE_FILE="\$\{SB_RUNTIME_STATE_DIR\}/verify-tests-state"'
+assert_file_contains "enterprise e2e preserves host verify-tests marker" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'HOST_VERIFY_TESTS_STATE_FILE="\$\{SB_RUNTIME_STATE_DIR\}/verify-tests-state"'
 assert_file_contains "live suite treats Kay as Codex-compatible full matrix" "${REPO_ROOT}/tests/live/run-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
-assert_file_contains "todo-app e2e treats Kay as Codex-compatible full matrix" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
+assert_file_contains "enterprise e2e treats Kay as Codex-compatible full matrix" "${SCRIPT_DIR}/run-e2e-live-tests.sh" 'runtime" == "codex" \|\| "\$runtime" == "kay"'
 assert_file_contains "Claude live agent enforces bounded prompt timeout" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'timed out waiting for Claude prompt to complete'
 assert_file_contains "live doc scheme uses Claude-native Bash wording" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'Use the Bash tool to run exactly'
 assert_file_contains "live doc scheme has deterministic script fallback" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'bash "\./\.live-doc-step\.sh"'
@@ -198,13 +198,17 @@ while IFS= read -r scenario; do
   [[ -n "$scenario" ]] || continue
   scenario_list+=("$scenario")
 done < <("${SCRIPT_DIR}/run-e2e-live-tests.sh" --list)
-if [[ "${#scenario_list[@]}" -eq 2 \
+if [[ "${#scenario_list[@]}" -eq 1 \
+  && "${scenario_list[0]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-hook-failures.sh" ]]; then
+  echo "PASS: default scenario list is hook-failures only (legacy journey opt-in)"
+  PASS=$((PASS + 1))
+elif [[ "${#scenario_list[@]}" -eq 2 \
   && "${scenario_list[0]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-hook-failures.sh" \
   && "${scenario_list[1]:-}" == "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" ]]; then
-  echo "PASS: hook-failure scenario runs before the full-surface journey"
+  echo "PASS: legacy full-surface journey listed after hook-failures when opt-in enabled"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: hook-failure scenario runs before the full-surface journey"
+  echo "FAIL: unexpected default scenario list"
   printf '  listed scenarios:'
   for scenario in "${scenario_list[@]}"; do
     printf ' %s' "$(basename "$scenario")"

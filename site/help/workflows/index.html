@@ -152,7 +152,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.48.1 runtime order is defined by canonical atomic flow slugs, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
+        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.48.2 runtime order is defined by canonical atomic flow slugs, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
       </div>
 
       <div class="divider"></div>
@@ -241,12 +241,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.48.1)</h2>
-      <p>As of v0.48.1, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
+      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.48.2)</h2>
+      <p>As of v0.48.2, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
       <p><strong>Recommended tools (opt-in):</strong></p>
       <ul>
         <li><strong>Graphify</strong> — <code>recommended_tools.graphify.enabled_by_user</code> in <code>.silver-bullet.json</code>; preferred retrieval before planning, editing, review, and release</li>
         <li><strong>agentmemory</strong> — <code>recommended_tools.agentmemory.enabled_by_user</code>; session capture and git-backed memory export. When both are enabled: <strong>save via agentmemory, retrieve via Graphify</strong></li>
+        <li><strong>RTK</strong> — <code>recommended_tools.rtk.enabled_by_user</code>; shell output compression via upstream PreToolUse hooks (<code>docs/RTK.md</code>)</li>
+        <li><strong>Context Mode</strong> — <code>recommended_tools.context_mode.enabled_by_user</code>; MCP compaction and PreCompact recovery (<code>docs/CONTEXT-MODE.md</code>, ELv2 license)</li>
       </ul>
       <p>Consent, install, and enforcement-suspend flows run through <code>/silver:init</code> and <code>/silver:update</code>.</p>
 

@@ -136,6 +136,21 @@ Observed constraints:
 - `graphify-mcp --transport http` needs the MCP extra (`graphifyy[mcp]`).
 - `graphify label` can exit successfully with placeholder labels when no backend key is available.
 
+## Optimization (synergy_max)
+
+When Graphify is opted in, SB runs `bash scripts/sb-optimize-stack.sh --apply` at init/update (profile `synergy_max`):
+
+| Step | Action |
+|------|--------|
+| Git hooks | `graphify hook install` — auto-rebuild on commit/checkout |
+| Platform always-on | Per-host post-index commands (see Step 2 table) |
+| Index | `graphify update . --no-cluster` when missing or after agentmemory export |
+| Query budget | `--budget 2000` per §2g-i; TTL `query_ttl_seconds: 1800` in config |
+
+Verify: `bash scripts/sb-optimize-stack.sh --verify` or `optimize-graphify-hooks` in diagnostics.
+
+See `docs/STACK-OPTIMIZATION.md` for full contract.
+
 ## agentmemory Synergy
 
 When both Graphify and agentmemory are opted in:
