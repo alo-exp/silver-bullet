@@ -70,6 +70,9 @@ Run from the project root after the CLI is on PATH. SB stores these in
 | Claude Code | `graphify install --project` | `graphify claude install --project` | `.claude/settings.json` |
 | Codex | `graphify install --project --platform codex` | `graphify codex install --project` | `.codex/hooks.json` |
 | Cursor | *(none)* | `graphify cursor install` | `.cursor/rules/graphify.mdc` ([issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
+| OpenCode | `graphify install --project --platform opencode` | *(hooks in `.opencode/plugins/graphify.js`)* | `.opencode/opencode.json` |
+| Goose (Pi) | `graphify install --project --platform pi` | *(skill only)* | `.pi/agent/skills/graphify/SKILL.md` |
+| Hermes | `graphify install --project --platform hermes` | *(AGENTS.md rules — no PreToolUse)* | `AGENTS.md` graphify section |
 
 Codex also needs `multi_agent = true` under `[features]` in `~/.codex/config.toml` for parallel extraction (upstream note).
 
