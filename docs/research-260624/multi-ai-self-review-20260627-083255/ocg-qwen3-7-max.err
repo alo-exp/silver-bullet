@@ -1,0 +1,23 @@
+[0m
+> build · qwen3.7-max
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m✱ [0mGrep "majority-with-uncertain|lowest-of-majors|most-severe|concatenate-all|merge-exact|union-dedup|all-collected"[90m in skills/multi-ai-task · 17 matches[0m
+[0m✱ [0mGrep "consolidated\.html"[90m in skills/multi-ai-task · 3 matches[0m
+[0m✱ [0mGrep "--mode"[90m in skills/multi-ai-task · 15 matches[0m
+[0m✱ [0mGrep "thorough"[90m in skills/multi-ai-task · 4 matches[0m
+[0m✱ [0mGrep "quick|standard|thorough"[90m in skills/multi-ai-task · 7 matches[0m
+[0m✱ [0mGrep "html|HTML"[90m in skills/multi-ai-task · 7 matches[0m
+[0m✱ [0mGrep "timeout"[90m in skills/multi-ai-task · 4 matches[0m

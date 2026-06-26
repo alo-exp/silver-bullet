@@ -117,10 +117,13 @@ for (const row of allRows) {
 
 ### Skip rules
 
-Mark a row's primary key as `aliases[n] = null` to drop it from the registry (don't count as an item):
-- `Silver Bullet (ref)` — the reference, not a candidate
-- `Candidate` — placeholder / broken row from a model
-- Pure scoring-matrix headers (e.g., `Catalog of composable units`)
+Mark a row's primary key as `aliases[n] = null` to drop it from the registry (don't count as an item). Generic skip rules for any task type:
+- **Placeholder rows** (e.g., `Candidate`, `N/A`, `—`, `TBD`) — broken or empty model output
+- **Header rows that were incorrectly parsed as data** (e.g., when a model emits column headers as a separate row)
+- **The reference item itself** (if the task compares candidates against a reference; the reference is what the candidates are compared TO, not a candidate)
+- **Scoring-matrix header rows** (for tasks that include a scoring matrix; the column-dimension names like "Catalog of composable units" might leak into the items table)
+
+Task-type-specific skip entries belong in the alias map for that task's recipe, not in the core rules.
 
 ### Sort the registry
 
@@ -151,15 +154,74 @@ These rules apply when the user doesn't pass a `--schema` with custom rules. The
 | `url` | `most-cited` (highest count) | URL with most citations is likely most authoritative |
 | `date` | `newer` (max date) | Recency wins for maturity fields |
 | `text` (long form) | `longest-with-quote` | Keep the most detailed version with primary quote support |
+| `url_list` | `union-dedup` | Merge all URL lists; dedup by normalized form |
+| `composite key` | `merge-exact` | See schema spec for composite key syntax |
 
 ### `prefer-with-evidence-then-newer-then-strict` (for enumerated strings like category)
 
 In order:
 1. **Quoted primary source wins.** If one model has a primary quote supporting value X, and the others don't, prefer the cited one.
 2. **Newer `last_verified` wins.** Check the source date for the candidate's evidence. Recency > staleness.
-3. **Strict rule for `direct`/`adjacent`/`tangential`:** prefer `direct` only if ≥3 evidence criteria are met. Otherwise downgrade to `adjacent` and document the reason.
-4. **Single-model outlier rule.** If 1 of 6 models says `direct` and 5 say `adjacent`, treat the lone `direct` as an outlier (downgrade).
-5. **Tie-break:** prefer the value with the strongest evidence quote, then prefer the most recent.
+3. **Single-model outlier rule.** If 1 of 6 models says `direct` and 5 say `adjacent`, treat the lone `direct` as an outlier (downgrade).
+4. **Tie-break:** prefer the value with the strongest evidence quote, then prefer the most recent.
+
+### Custom resolution rule library (the "named rules" the examples use)
+
+The following rules are referenced in the example recipes (`rules/examples/`) and in custom `--schema` configurations. **All are implementable algorithms**, not aspirational labels.
+
+#### `most-severe`
+- **Purpose:** pick the most-severe value across models (default for code-review severity, security audit findings).
+- **Input:** List of `(value, severity_order?)` per model. If `severity_order` is declared in the schema, use it. Otherwise default to: `["blocker", "major", "minor", "nit"]`.
+- **Algorithm:** `max(values, key=severity_order.index)`. Ties broken by `majority` among the max-severity tier. If N=0, return `null` (or the schema default).
+- **Edge case:** if 1/N reviewers disagrees with no evidence quote, downgrade the lone max to the next-severity tier (avoids model hallucination of "blocker" with no support).
+
+#### `majority`
+- **Purpose:** pick the most-frequent value.
+- **Input:** List of values per model.
+- **Algorithm:** `Counter(values).most_common(1)[0]`. Ties broken by schema-defined enumeration order (first listed wins). If all values are unique (no majority), return `null` and flag in `conflicts.md` as "no majority".
+- **Edge case:** with 2 models and 2 different values, no majority — return `null`.
+
+#### `majority-with-uncertain`
+- **Purpose:** like `majority`, but require a higher threshold; if not met, return `uncertain` (default for fact-check verdicts).
+- **Input:** List of values per model.
+- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `uncertain`.
+- **Edge case:** with N=1, single vote never reaches the threshold; return `uncertain`.
+
+#### `lowest-of-majors`
+- **Purpose:** when combining verdict + confidence, use the majority verdict but the lowest confidence among the majority voters (default for fact-check).
+- **Input:** List of `(value, confidence)` per model.
+- **Algorithm:** first apply `majority` to get the majority value; then among the models voting for that value, return the lowest confidence (`high > medium > low`).
+- **Edge case:** if only 1 model voted for the majority value, return its confidence unchanged.
+
+#### `longest-with-quote`
+- **Purpose:** keep the most detailed value (default for text fields).
+- **Input:** List of values per model.
+- **Algorithm:** prefer the value with the most words AND at least one inline quote (e.g., `"..."`). Tie-break by recency (model's `last_verified` if present, else the order in the input list).
+- **Edge case:** if no value has an inline quote, fall back to longest by word count.
+
+#### `concatenate-all`
+- **Purpose:** preserve all models' values (default for evidence/quote collection in fact-check).
+- **Input:** List of values per model.
+- **Algorithm:** return all values joined by ` ; ` (or the schema's `separator` field if defined). Order: by model name (alphabetical) for determinism.
+- **Edge case:** empty values are skipped (not included in the join).
+
+#### `all-collected`
+- **Purpose:** like `concatenate-all`, but tag each value with the model that produced it.
+- **Input:** List of values per model.
+- **Algorithm:** return a list of `{model, value}` objects. Preserves provenance for human review.
+- **Edge case:** empty values are skipped.
+
+#### `union-dedup`
+- **Purpose:** merge all values into a single deduplicated set (default for `url_list`).
+- **Input:** List of values per model.
+- **Algorithm:** normalize each value (lowercase, trim, strip trailing slashes for URLs); dedup; return sorted set.
+- **Edge case:** if all models produced empty lists, return empty.
+
+#### `merge-exact`
+- **Purpose:** combine per-field entries with identical primary keys (default for composite-key dedup).
+- **Input:** List of `(primary_key, fields)` per model.
+- **Algorithm:** group by primary key; for each group, union all fields; for fields that conflict across models, apply the schema's per-field resolution rule.
+- **Edge case:** if the primary key is malformed (doesn't match the schema's composite pattern), log and skip the entry.
 
 ### How to document resolutions
 
@@ -168,11 +230,23 @@ For each conflict, write to `conflicts.md`:
 ```markdown
 | Item | Field | Disagreement | Resolution rule | Final value | Confidence |
 |------|-------|-------------|-----------------|-------------|------------|
-| LangGraph | category | mimo=`direct`, 4 others=`adjacent`, qwen=`tangential` | rule 4 (outlier downgrade) | `adjacent` | high |
-| BMAD | maturity | deepseek=`negative-result`, 2 others=`adjacent` | rule 3 (strict) | `adjacent` | medium |
+| LangGraph | category | mimo=`direct`, 4 others=`adjacent`, qwen=`tangential` | outlier downgrade (1 of 6 says `direct` with no evidence quote) | `adjacent` | high |
+| BMAD | maturity | deepseek=`negative-result`, 2 others=`adjacent` | majority (3/3 prefer `adjacent` after outlier downgrade) | `adjacent` | medium |
+| security finding | severity | reviewer-A: blocker, B-D: major | most-severe | `blocker` | high |
+| claim X | verdict | 2 say `true`, 1 says `false` | majority-with-uncertain (threshold not met) | `unverified` | high |
 ```
 
-The user can override the default rules in the schema. For example, for code review, the user might want to use `most-severe` for `severity` (always pick the highest severity across reviewers) rather than `majority`.
+The user can override the default rules in the schema. For example:
+
+```json
+{
+  "conflict_resolution": {
+    "severity": "most-severe",
+    "category": "majority",
+    "verdict": "majority-with-uncertain"
+  }
+}
+```
 
 ### Score conflict resolution
 
@@ -253,23 +327,11 @@ The user can specify these custom strategies in the `--schema` JSON, e.g.:
 
 ## Aliases (canonical resolution table)
 
-Always resolve these on dedup when you encounter them. Add to this table as new aliases surface in future runs.
+**The alias map is task-specific**, not part of this skill's core. For example, the prior-art research run has a 14-entry alias table (AutoGen ↔ AG2, MAF ↔ Microsoft Agent Framework, etc.) that lives in `rules/examples/research-prior-art.md` because it's research-only. A code-review or fact-check run would have a different alias map (or none).
 
-| Alias | Canonical |
-|-------|-----------|
-| AutoGen/AG2, AutoGen (maintenance) | **AutoGen** |
-| MAF, Microsoft Agent Framework (MAF) | **Microsoft Agent Framework** |
-| Camunda, Camunda 8 | **Camunda 8** |
-| Conductor OSS, Conductor-OSS, Conductor (Netflix) | **Conductor** |
-| GitHub Spec Kit | **Spec Kit** |
-| GSD (Get Shit Done) | **GSD** |
-| BMAD Method | **BMAD** |
-| gh-aw, GitHub Agentic Workflows (gh-aw) | **GitHub Agentic Workflows** |
-| OPA, Open Policy Agent, OPM | **OPA** |
-| Claude Code Skills, Claude Code Hooks | **Claude Code** |
-| Lunar | **Earthly Lunar** |
-| Qodo, PR-Agent, Qodo / PR-Agent | **Qodo/PR-Agent** |
-| Windsurf, Devin Desktop | **Windsurf** |
-| Devin (Cognition), Devin (closed) | **Devin** |
+**To use aliases in your run:**
+1. Build the alias map for your task type (or start with no aliases and add as the models surface variants)
+2. Apply the alias map in the `normalize()` step of the dedup algorithm (line 100-116)
+3. Document the alias map in your run's `run-manifest.json → aliases` field so the consolidation is reproducible
 
-(Add task-type-specific aliases as you encounter them. The skill is task-agnostic but the alias map grows over time.)
+**The default behavior** (no aliases) is: normalize = lowercase + strip-punctuation + collapse-whitespace, then exact match. This catches `AutoGen` vs `autogen` and `BMAD Method` vs `BMAD-Method`, but not `AutoGen` vs `AG2` (semantic equivalence). For semantic dedup, you need an alias map.
