@@ -40,6 +40,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/hook-output.sh" ]]; then
+  # shellcheck source=lib/hook-output.sh
+  source "$_lib_dir/hook-output.sh"
+fi
 DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
 DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
 
@@ -226,9 +230,7 @@ if [[ ! -f "$state_file" ]]; then
   # Count totals
   plan_total=0
   for _ in $required_planning; do ((plan_total++)) || true; done
-  printf '{"hookSpecificOutput":{"message":"Silver Bullet: 0 steps | Mode: %s | %s | LIFECYCLE 0/5 | PLANNING 0/%d | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /%s"}}' \
-    "$mode" "$path_progress" "$plan_total" \
-    "$(printf '%s' "$required_planning" | cut -d' ' -f1)"
+  sb_emit_hook_message "PostToolUse" "Silver Bullet: 0 steps | Mode: ${mode} | ${path_progress} | LIFECYCLE 0/5 | PLANNING 0/${plan_total} | REVIEW 0/3 | FINALIZATION 0/4 | RELEASE 0/1 | Next: /$(printf '%s' "$required_planning" | cut -d' ' -f1)"
   exit 0
 fi
 
@@ -329,4 +331,4 @@ if [[ -n "$next_skill" ]]; then
   msg="${msg} | Next: /${next_skill}"
 fi
 
-printf '{"hookSpecificOutput":{"message":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
+sb_emit_hook_message "PostToolUse" "$msg"
