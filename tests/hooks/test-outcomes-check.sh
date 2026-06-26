@@ -184,6 +184,35 @@ fi
 rm -rf "$FAKE_BIN"
 teardown
 
+setup
+# Isolated state dir — preserve pin so runtime-paths.sh does not reset to ~/.claude/.silver-bullet.
+RACE_DIR=$(mktemp -d)
+export SB_RUNTIME_STATE_DIR="$RACE_DIR"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+run_hook "UserPromptSubmit" "atomic write regression" >/dev/null
+source "$REPO_ROOT/hooks/lib/outcomes-gate.sh"
+for _ in $(seq 1 20); do
+  sb_outcomes_auto_evaluate "silver-feature" "${RACE_DIR}/trivial-missing" 2>&1 || true
+done
+if ls "${RACE_DIR}/outcomes-session.json.tmp" >/dev/null 2>&1; then
+  echo "  FAIL: stale outcomes-session.json.tmp left behind after updates"
+  FAIL=$((FAIL + 1))
+else
+  echo "  ok: outcomes updates avoid fixed .tmp mv race"
+  PASS=$((PASS + 1))
+fi
+route_status=$(jq -r '.outcomes[] | select(.id=="route") | .status' "${RACE_DIR}/outcomes-session.json" 2>/dev/null || echo pending)
+if [[ "$route_status" == "done" ]]; then
+  echo "  ok: auto-evaluate still marks route outcome done"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: route outcome should be done after auto-evaluate (got: $route_status)"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$RACE_DIR"
+unset SB_RUNTIME_PRESERVE_STATE_DIR
+teardown
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
