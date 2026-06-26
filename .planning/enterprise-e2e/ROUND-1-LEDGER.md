@@ -9,7 +9,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 1 |
-| SB repo SHA | `d9d9f6d2` (hook test isolation + ledger gate close) |
+| SB repo SHA | `d2114b98` (hook test isolation + ledger gate close) |
 | Test app SHA | `75dd459` on branch `devops-terraform-validation` |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (reinstalled after `52ce8aec`) |
 | Claude model (frozen) | `sonnet` |
