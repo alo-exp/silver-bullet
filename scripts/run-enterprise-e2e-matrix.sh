@@ -35,6 +35,9 @@ export SILVER_BULLET_RUNTIME=claude
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
 claude_matrix_export_settings_env
 
+# shellcheck source=scripts/lib/matrix-quota.sh
+source "${SB_ROOT}/scripts/lib/matrix-quota.sh"
+
 # shellcheck source=tests/e2e-live/helpers.sh
 source "${SB_ROOT}/tests/e2e-live/helpers.sh"
 # shellcheck source=tests/e2e-live/lib/skill-prompt.sh
@@ -84,8 +87,9 @@ Environment:
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
   SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 600)
-  SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 600)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for TUI ready before submit (default 60)
+  SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL  Seconds between 429/Token Plan retries (default 600)
+  SB_E2E_MATRIX_QUOTA_MAX_RETRIES     Max quota retries per row (0 = unlimited, default 0)
 EOF
 }
 
@@ -237,7 +241,6 @@ run_matrix_row() {
   fi
 
   prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num")"
-  echo "  launching interactive Claude session..."
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
@@ -246,32 +249,65 @@ run_matrix_row() {
     # Claude may return to the ❯ prompt between turns while still writing evidence.
     quiet_timeout="${SB_E2E_WORKFLOW_QUIET_TIMEOUT:-600}"
   fi
-  local row_log="${SB_ROOT}/.e2e-row${row_num}-attempt.log"
-  output="$(
-    CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
-      CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
-      run_prompt "$prompt" 2>&1 || true
-  )"
-  if [[ -n "$output" ]]; then
-    printf '%s\n' "$output" | tail -20
-  fi
+  local quota_retry_interval="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-600}"
+  local quota_max_retries="${SB_E2E_MATRIX_QUOTA_MAX_RETRIES:-0}"
+  local attempt=0 quota_retries=0 row_log output
 
-  if verify_row_success "$row_num" "$evidence_path" "$output"; then
-    if verify_row_evidence "$evidence_path"; then
-      echo "  PASS: evidence at ${evidence_path}"
-    elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
-      echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
-    elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
-      echo "  PASS: routing markers in session output (row 1 routing-only criterion)"
+  while true; do
+    attempt=$((attempt + 1))
+    row_log="${SB_ROOT}/.e2e-row${row_num}-attempt${attempt}.log"
+    if [[ "$attempt" -eq 1 ]]; then
+      # Back-compat symlink path for operators tailing .e2e-rowN-attempt.log
+      row_log="${SB_ROOT}/.e2e-row${row_num}-attempt.log"
     fi
-    PASS_ROWS=$((PASS_ROWS + 1))
-  else
+    if [[ "$attempt" -gt 1 ]]; then
+      echo "  retry attempt ${attempt} (quota retry #${quota_retries})..."
+    else
+      echo "  launching interactive Claude session..."
+    fi
+    output="$(
+      CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
+        CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
+        run_prompt "$prompt" 2>&1 || true
+    )"
+    if [[ -n "$output" ]]; then
+      printf '%s\n' "$output" | tail -20
+    fi
+
+    if verify_row_success "$row_num" "$evidence_path" "$output"; then
+      if verify_row_evidence "$evidence_path"; then
+        echo "  PASS: evidence at ${evidence_path}"
+      elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
+        echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
+      elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
+        echo "  PASS: routing markers in session output (row 1 routing-only criterion)"
+      fi
+      if [[ "$quota_retries" -gt 0 ]]; then
+        echo "  PASS: succeeded after ${quota_retries} quota retry(ies)"
+      fi
+      PASS_ROWS=$((PASS_ROWS + 1))
+      break
+    fi
+
+    if is_quota_failure "$output" "$row_log"; then
+      quota_retries=$((quota_retries + 1))
+      if [[ "$quota_max_retries" -gt 0 && "$quota_retries" -gt "$quota_max_retries" ]]; then
+        echo "  FAIL: quota retries exhausted (${quota_max_retries}) — missing evidence at ${evidence_path}"
+        FAIL_ROWS=$((FAIL_ROWS + 1))
+        break
+      fi
+      echo "  QUOTA: API 429 / Token Plan limit — waiting ${quota_retry_interval}s before retry ${quota_retries}..."
+      sleep "$quota_retry_interval"
+      continue
+    fi
+
     echo "  FAIL: missing evidence at ${evidence_path}"
     if [[ "$row_num" == "1" ]]; then
       echo "  FAIL: no routing markers in session output or $(claude_routing_state_file)"
     fi
     FAIL_ROWS=$((FAIL_ROWS + 1))
-  fi
+    break
+  done
 }
 
 main() {
