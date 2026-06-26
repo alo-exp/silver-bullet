@@ -144,6 +144,10 @@ fi
 # reach doc gates without first writing the session mode file that triggers
 # session-log-init.sh, so ensure the marker exists from SessionStart itself.
 session_start_file="${SB_STATE_DIR}/session-start-time"
+session_start_file="${SILVER_BULLET_SESSION_START_FILE:-$session_start_file}"
+if ! sb_runtime_path_is_state_scoped "$session_start_file"; then
+  session_start_file="${SB_STATE_DIR}/session-start-time"
+fi
 session_start_value="$(cat "$session_start_file" 2>/dev/null || true)"
 if ! [[ "$session_start_value" =~ ^[0-9]+$ ]]; then
   sb_guard_nofollow "$session_start_file" 2>/dev/null || true

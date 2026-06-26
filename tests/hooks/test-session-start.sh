@@ -33,7 +33,7 @@ TEST_RUN_ID="$$"
 TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
 TMPBRANCH="${SB_TEST_DIR}/test-branch-${TEST_RUN_ID}"
 TMPTRIVIAL="${SB_TEST_DIR}/trivial"   # trivial still uses default path (config-driven tests below)
-SESSION_START_FILE="${SB_TEST_DIR}/session-start-time"
+SESSION_START_FILE="${SB_TEST_DIR}/session-start-time-${TEST_RUN_ID}"
 RELEASE_LIVE_MATRIX_FILE="${SB_TEST_DIR}/release-live-matrix"
 E2E_LIVE_MATRIX_FILE="${SB_TEST_DIR}/e2e-live-matrix"
 QUALITY_GATE_FILE="${SB_TEST_DIR}/quality-gate-state-${TEST_RUN_ID}"
@@ -42,6 +42,7 @@ export SILVER_BULLET_STATE_FILE="$TMPSTATE"
 export SILVER_BULLET_BRANCH_FILE="$TMPBRANCH"
 export SILVER_BULLET_QUALITY_GATE_STATE_FILE="$QUALITY_GATE_FILE"
 export SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE"
+export SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE"
 
 # Prerequisite probe (Wave 0.2) requires a silver-bullet plugin cache directory.
 # session-start re-sources runtime-paths.sh and resets SB_RUNTIME_PLUGIN_CACHE_ROOT,
@@ -71,6 +72,7 @@ run_hook() {
   ( cd "$workdir" && \
     SILVER_BULLET_STATE_FILE="$TMPSTATE" \
     SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+    SILVER_BULLET_SESSION_START_FILE="$SESSION_START_FILE" \
     SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
     bash "$HOOK" </dev/null 2>/dev/null ) || true
 }
