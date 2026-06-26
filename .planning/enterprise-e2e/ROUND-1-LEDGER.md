@@ -70,7 +70,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback + **interactive matrix row 1 Pass** (routing-only; `--settings` harness `02a33659`; validated attempt 12) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 2 | `silver-research` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 2 | `silver-research` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 2 Pass** (~62m; evidence `docs/ADR-001-runtime.md`; harness `02a33659`) | `02a33659` | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 3 | `silver-feature` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; post-exec-gates in workflow md | | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 4 | `silver-bugfix` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; validate-substep in workflow md | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 5 | `silver-ui` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-ui routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
@@ -372,3 +372,21 @@ Follow-up from [Fix harness auth passthrough](cad529ac-3ea1-401d-beba-97992bf192
 
 **Evidence paths:**
 - `/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-attempt12.log`
+
+---
+
+## Interactive TUI matrix rows 2–22 (in progress, 2026-06-26)
+
+Harness `02a33659`; `SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_CLEAN_ENV=0`; no login/logout. Log: `.e2e-matrix-rows2-22.log`.
+
+| Row | Slug | Interactive | Duration | Evidence | Notes |
+|-----|------|-------------|----------|----------|-------|
+| 2 | `silver-research` | **Pass** | ~62m | `docs/ADR-001-runtime.md` | Full workflow; ADR Postgres vs SQLite |
+| 3 | `silver-feature` | **Fail** | ~14m | — | API 429 Token Plan limit (not harness); retry after quota reset |
+| 4 | `silver-bugfix` | **Aborted** | — | — | Stopped — same 429 blocker expected |
+
+**Interactive pass count:** 2 / 22 (rows 1–2 Pass; row 3+ blocked on API 429)
+
+**Harness fix (committed):** `642e8852` — `SB_E2E_WORKFLOW_QUIET_TIMEOUT=600` for rows 2–20; per-row `.e2e-rowN-attempt.log`
+
+**Blocker:** Third-party API key hit Token Plan usage limit (429) during row 3 retry. Resume with `bash scripts/run-enterprise-e2e-matrix.sh 3 4 … 20` after quota resets.
