@@ -9,18 +9,32 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 1 |
-| SB repo SHA | `b8363d19` (codex-package sanitization `b8363d19`; ladder `a77b1549`; round-gate `79e411f2`, site v0.48.3 sync `adf4a636`) |
-| Test app SHA | `edbad2163f5930dd72b291880aacb18c2387bbd3` (baseline); working tree modified by matrix execution |
+| SB repo SHA | `d9d9f6d2` (hook test isolation + ledger gate close) |
+| Test app SHA | `75dd459` on branch `devops-terraform-validation` |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (reinstalled after `52ce8aec`) |
 | Claude model (frozen) | `sonnet` |
 | Operator | Cursor agent (Cursor-native SB fallback — rows 1–22) |
 | Start date | 2026-06-26 |
-| End date | 2026-06-26 |
-| Round clean? | **Yes** — matrix 22/22 interactive Pass; `run-all-tests` **4322 passed, 0 failed** (5/5 suites green, 2026-06-27 post-matrix) |
+| End date | 2026-06-27 |
+| Round clean? | **Yes** — `run-all-tests` **4344 passed, 0 failed** (5/5 suites green, 2026-06-27 post ENOTFOUND retry) |
 
 ---
 
-## Round gate (2026-06-26)
+## Round gate (2026-06-27 — continuation)
+
+| Gate | Pass/Fail | Notes |
+|------|-----------|-------|
+| Branch-scoped session-start | **Pass** | Test app `devops-terraform-validation`; `SILVER_BULLET_RUNTIME=cursor\|claude` + `SILVER_BULLET_SESSION_SOURCE=startup` from test-app CWD; branch file updated `main` → `devops-terraform-validation`; skill state reset |
+| Matrix dry-run 22/22 | **Pass** | `SB_E2E_MATRIX_DRY_RUN=1 bash scripts/run-enterprise-e2e-matrix.sh` — row 1 evidence `.planning/workflows/router-session.md` added 2026-06-27 |
+| Interactive matrix 22/22 | **Pass** | Prior interactive + resume2 batch (2026-06-26/27); agentmemory `mem_mqtq7oj6_4d6b3c5e110c` |
+| review-fix-ladder (8 rungs × 2 clean) | **Pass** | Completed 2026-06-26 at scoped HEAD; no scoped-file regressions since |
+| `bash tests/run-all-tests.sh` | **Pass** | **4344 passed, 0 failed** (5/5 suites green); hook test isolation: `SILVER_BULLET_SESSION_START_FILE` + per-PID phase heartbeat |
+| Graphify current | **Warn** | `graphify update .` refused overwrite (15860 vs 16098 nodes); existing graph usable |
+| Open MUST-FIX | **Partial** | Skill tool in `claude --print` (interactive TUI unvalidated); round test gate green |
+
+---
+
+## Round gate (2026-06-26 — prior)
 
 | Gate | Pass/Fail | Notes |
 |------|-----------|-------|
@@ -69,7 +83,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback + **interactive matrix row 1 Pass** (routing-only; `--settings` harness `02a33659`; validated attempt 12) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Interactive matrix row 1 Pass (routing-only; attempt 12); evidence `.planning/workflows/router-session.md` (2026-06-27) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 2 | `silver-research` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 2 Pass** (~62m; evidence `docs/ADR-001-runtime.md`; harness `02a33659`) | `02a33659` | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 3 | `silver-feature` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 3 Pass** — attempt 1: 429 Token Plan (~31m); evidence written; attempt 2 retry in progress when harness timed out; `feature-currency.md` verified; quota retry harness `deb32980` | `deb32980` | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 4 | `silver-bugfix` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 4 Pass** (rerun `.e2e-matrix-rows4-22-rerun.log`; evidence `bugfix-health.md`; ~49m); workflow archived to `archive-2026-06-26/` | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
