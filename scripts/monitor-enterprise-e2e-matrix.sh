@@ -139,7 +139,10 @@ row_is_complete() {
   awk -v target="$row" '
     /^=== Row [0-9]+:/ {
       if (cur == target && (pass || skip)) { done = 1 }
-      cur = $3; gsub(/:/, "", cur); pass = 0; skip = 0
+      cur = $3
+      sub(/:$/, "", cur)
+      pass = 0
+      skip = 0
     }
     cur == target && /^  PASS:/ { pass = 1 }
     cur == target && /^  SKIP:/ { skip = 1 }
