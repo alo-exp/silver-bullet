@@ -11,12 +11,19 @@ Take a list of factual claims and verify each one against multiple sources. Outp
 ## The dispatch
 
 ```bash
-PROMPT="Verify each of the following claims. For each, return:
+# Output dir convention
+OUT=./multi-ai-out/$(date +%Y%m%d-%H%M%S)
+mkdir -p "$OUT"
+
+# The prompt with claims to verify.
+# Use a heredoc with single-quoted EOF to avoid shell-metacharacter injection.
+cat > "$OUT/prompt.md" <<'PROMPT'
+Verify each of the following claims. For each, return a markdown table with these columns:
 - claim_id (preserve the input ID)
 - claim (the original text)
 - verdict: true | false | partially-true | unverified
 - confidence: high | medium | low
-- sources (list URLs, prefer official/primary)
+- sources (comma-separated URLs, prefer official/primary)
 - evidence (verbatim quote from a source if available)
 - counter_evidence (if verdict is false or partially-true)
 
@@ -24,51 +31,56 @@ Claims to verify:
 1. [claim 1]
 2. [claim 2]
 3. [claim 3]
-..."
+...
+PROMPT
 
+# Dispatch to N models (use 4-5 for fact-check; majority-with-uncertain needs N>=3)
 for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
+  slug=$(echo "$model" | cut -d/ -f2)
   npx -y opencode-ai run \
     --model "$model" \
-    --title "factcheck-$(date +%s)" \
-    --dangerously-skip-permissions \
-    "$PROMPT" \
-    > "factcheck-${model}.md" 2> "factcheck-${model}.err" &
+    --title "factcheck-${slug}-$(date +%s)" \
+    "$OUT/prompt.md" \
+    > "$OUT/${slug}.md" 2> "$OUT/${slug}.err" &
 done
 wait
+echo "Outputs in $OUT/"
 ```
+
+**Security note:** fact-check is read-only — the models just look up sources and report. The dispatch above does **NOT** pass `--dangerously-skip-permissions`. Per `rules/dispatch-mechanics.md:56`, this is correct for read-only tasks.
 
 ## The schema (passed as --schema)
 
 ```json
 {
   "type": "table",
-  "primary_key": "claim_id",
   "columns": [
-    {"name": "claim_id", "type": "string", "dedup_key": true},
-    {"name": "claim", "type": "text"},
-    {"name": "verdict", "type": "enum", "values": ["true", "false", "partially-true", "unverified"]},
-    {"name": "confidence", "type": "enum", "values": ["high", "medium", "low"]},
-    {"name": "sources", "type": "url_list"},
-    {"name": "evidence", "type": "text", "max_words": 50},
-    {"name": "counter_evidence", "type": "text", "max_words": 50}
+    {"name": "claim_id",        "type": "string", "dedup_key": true, "required": true},
+    {"name": "claim",           "type": "text"},
+    {"name": "verdict",         "type": "enum",   "values": ["true", "false", "partially-true", "unverified"]},
+    {"name": "confidence",      "type": "enum",   "values": ["high", "medium", "low"]},
+    {"name": "sources",         "type": "url_list"},
+    {"name": "evidence",        "type": "text",   "max_words": 50},
+    {"name": "counter_evidence","type": "text",   "max_words": 50}
   ],
   "conflict_resolution": {
-    "verdict": "majority-with-uncertain",
+    "verdict":    "majority-with-uncertain",
     "confidence": "lowest-of-majors"
   }
 }
 ```
 
 Key customization for fact-check:
-- `verdict: "majority-with-uncertain"` — if 2 say true and 1 says false, default to `partially-true` (uncertain) rather than `true`; require ≥3 votes for a clean verdict
+- `verdict: "majority-with-uncertain"` — if 2 say true and 1 says false, default to `unverified` rather than `true`; require ≥ `max(2, ceil(N/2))` models to agree for a clean verdict (so for N=3 you need 2 votes, not 3)
 - `confidence: "lowest-of-majors"` — when in doubt, downconfidence (use the lowest confidence among the majority verdict)
 - `unverified` is a valid output (don't force a true/false judgment when evidence is insufficient)
+- `sources: "url_list"` is now formally defined in the schema spec (was a v2.1.0 gap)
 
 ## The output
 
 After consolidation, `consolidated.md` contains:
 
-- §1 Executive Summary (overall credibility: X% of claims verified true, Y% false, Z% uncertain)
+- §1 Executive Summary (overall credibility: X% of claims verified true, Y% false, Z% unverified)
 - §2 Claims Table (one row per claim with final verdict, confidence, top source)
 - §3 Per-Claim Details (each reviewer's verdict + their evidence quote)
 - §4 Conflicts & Resolutions (where reviewers disagreed; what the tie-break was)
@@ -80,7 +92,7 @@ After consolidation, `consolidated.md` contains:
 
 | Field | Recommended rule | Rationale |
 |-------|-----------------|-----------|
-| verdict | `majority-with-uncertain` | High-stakes: better to flag uncertain than to mis-judge |
+| verdict | `majority-with-uncertain` | High-stakes: better to flag unverified than to mis-judge |
 | confidence | `lowest-of-majors` | When reviewers disagree on confidence, defer to the least confident |
 | evidence | `all-collected` | Concatenate all reviewers' quotes; deduplicate by source |
 | sources | `union-dedup` | All sources from all reviewers; unique URLs only |
@@ -89,11 +101,13 @@ After consolidation, `consolidated.md` contains:
 ## Consensus requirements
 
 For high-stakes fact-checking, set thresholds:
-- **3+ models agree on `true` with high confidence + primary source** → confirmed
-- **3+ models agree on `false` with high confidence + primary counter-source** → debunked
+- **≥ `max(2, ceil(N/2))` models agree on `true` with high confidence + primary source** → confirmed
+- **≥ `max(2, ceil(N/2))` models agree on `false` with high confidence + primary counter-source** → debunked
 - **mixed verdicts or low confidence** → flagged for human review
 - **no model could verify** → `unverified` (do not guess)
 
+For N=3, threshold = 2. For N=5, threshold = 3. For N=7, threshold = 4. The "3+ models" rule in the original draft was a typo; the correct threshold is parameterized.
+
 ## Worked example
 
-Not yet produced. The pattern is identical to the prior-art research example.
+Not yet produced (deferred to v2.2.0). The pattern follows the prior-art research example.

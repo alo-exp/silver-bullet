@@ -1,7 +1,7 @@
 ---
 name: multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
-argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--concurrency parallel|sequential] [--no-auto-inject]"
 user-invocable: false
 version: 2.1.0
 ---
@@ -241,9 +241,11 @@ The skill was first run end-to-end on 2026-06-27 for prior-art research. Inputs 
 - **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); 2 agents produced qualitative comparisons only; 1 produced only the rubric
 - **All category conflicts** resolved and documented in §4 of the report
 
+**Folder-name note:** the run output lives at `docs/research-260624/` — the folder name encodes `2026-06-24` (a pre-existing convention from the docs directory), but the actual run was on **2026-06-27**. The folder name is the path; the run date is in the `timestamp` field of `run-manifest.json` and in the `Proven provenance` section above. Do not rename the folder — it's referenced by 30+ other paths.
+
 See `rules/examples/research-prior-art.md` for how that run was structured. **That run is one example of many possible uses** — the skill is task-agnostic.
 
-A self-review run (also on 2026-06-27) used the skill recursively to review itself. The consolidated review is at `docs/research-260624/multi-ai-self-review-20260627-083255/`.
+A self-review run (also on 2026-06-27) used the skill recursively to review itself. The consolidated review is at `docs/research-260624/multi-ai-self-review-20260627-083255/`. A round-2 self-review (v2.1.0) is at `docs/research-260624/multi-ai-self-review-r2-20260627-093345/`.
 
 ---
 
