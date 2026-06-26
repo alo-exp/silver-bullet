@@ -1,220 +1,222 @@
 # Output Schema — multi-ai-task consolidated report
 
-The exact structure and required fields for the consolidated.md file. Every section is mandatory unless marked optional.
+The structure of `consolidated.md` and the supporting files. Generic — works for any task type.
 
 ---
 
-## File header
+## The two output modes
+
+The skill produces one of two output structures based on whether `--schema` is passed:
+
+### Mode A — Structured (schema provided)
+
+When the user passes `--schema <json>`, the skill renders the consolidated output in the schema's natural form. For example, if the schema declares `type: "table"`, the output is a single markdown table matching the schema columns.
+
+### Mode B — Generic (no schema)
+
+When no schema is passed, the skill uses the default output structure documented below.
+
+---
+
+## File header (both modes)
 
 ```markdown
 # <Task Title> — Cross-Model Consolidated Report
 
 **Date:** YYYY-MM-DD
-**Mode:** quick | standard | deep | ultradeep
+**Mode:** quick | standard | thorough
 **Models:** N total
-**Coverage:** M unique items / P raw mentions / Q scoring matrices available
+**Coverage:** M unique items / P raw mentions / Q aggregations
 **Source reports:**
 - `<model-slug>.md` — <model-id> (size in KB / line count)
 - ...
 
-**Dispatch note:** brief note on the dispatch mechanism used (CLI subprocess, task tool, SDK), and any quirks (e.g., harness rejected custom subagent types; fall back to `--model` flag).
+**Dispatch note:** brief note on the dispatch mechanism used (CLI subprocess, task tool, SDK), and any quirks (e.g., harness rejected custom subagent types; fell back to `--model` flag).
 ```
 
 ---
 
-## §1. Executive Summary (≤300 words)
+## §1. Executive Summary (≤300 words, both modes)
 
-Terse landscape overview. Include:
+Terse overview. Include:
 
-- 1-2 sentence headline (e.g., "No existing tool combines X")
-- Cross-model consensus
-- Closest direct matches (if any)
-- Biggest market gaps
-- The 3-5 most important findings to take away
+- 1-2 sentence headline
+- Cross-model consensus (or the lack thereof)
+- Closest matches (if applicable)
+- Biggest gaps or divergences
+- The 3-5 most important findings
 
-**Do NOT** repeat data here. Point at the table for evidence.
+Do NOT repeat data here. Point at the table for evidence.
 
 ---
 
-## §2. Dedup Table (mandatory, one row per distinct item)
+## §2. Items Table (Mode A — schema-defined table)
 
-```markdown
-| # | Canonical | Mentions | Cats across agents | Primary URL | Top Finding |
-|---|-----------|---------:|--------------------|-------------|-------------|
-| 1 | **LangGraph** | 6 | adjacent, `direct*`, tangential | langchain-ai/langgraph | Most-discussed; mimo classifies as `direct` (outlier) |
-| 2 | **CrewAI** | 6 | adjacent, `direct*`, tangential | crewAIInc/crewAI | mimo only `direct` agent |
+When `--schema` is provided with `type: "table"`, render the consolidated items in a markdown table matching the schema's `columns` definition.
+
+When `--schema` is not provided, use the default items table:
+
+| # | Item | Mentions | Fields per model | Primary Source | Top Finding |
+|---|------|---------:|------------------|----------------|-------------|
+| 1 | <canonical-key> | N | m1: {...}, m2: {...} | <url> | <one-sentence summary> |
+| 2 | ... | | | | |
 | ... |
-```
 
 **Field rules:**
 - `Mentions`: integer count of how many models mentioned this item
-- `Cats across agents`: comma-separated distinct category values across models, with conflict markers as code spans: `` `direct*` `` means at least one model disagreed
-- `Primary URL`: the most-cited URL (typically the official repo/docs)
-- `Top Finding`: one-sentence summary of the most-cited finding; note outliers in parens
+- `Fields per model`: short summary like `m1: {cat: direct, score: 3}; m2: {cat: adjacent, score: 5}` (truncate if verbose)
+- `Primary Source`: the most-cited URL or reference
+- `Top Finding`: one-sentence summary of the most-cited finding
 
 **Conflict marker legend (place at top of section):**
 
-> **Conflict marker:** `` `direct*` `` / `` `negative-result*` `` = category conflict: at least one agent disagreed on the classification. Resolution rules: `direct` only if ≥3 subject-differentiators are evidenced with primary quote; tie-break: source with primary quote wins.
+> **Conflict marker:** `value*` = field conflict: at least one model disagreed. Resolution rules: see §4.
 
-**Use code spans, not bold+asterisk, for the conflict marker.** `**direct***` is fragile markdown that breaks in WYSIWYG viewers; `` `direct*` `` is robust.
-
----
-
-## §3. Per-Row Gaps (compact)
-
-For each item in the dedup table, include a compact bullet:
-
-```markdown
-- **<Canonical>**: gaps_vs_subject = ... ; subject_gaps_vs_them = ...
-```
-
-Be specific. Not "less mature" but "lacks V-model rollup; has BPMN catalog". Not "smaller community" but "1k stars vs SB's 0".
+(Use a code-span like `` `direct*` `` if your viewer is WYSIWYG-strict; bare `*` otherwise.)
 
 ---
 
-## §4. Evidence Blocks (mandatory per row)
+## §2. Items Table (Mode B — generic narrative)
+
+Without a schema, render items as sections:
 
 ```markdown
-### EVIDENCE — <name>
-- source_type: repo | docs | paper | release-notes | issue | demo
-- version_or_date: <tag, commit date, or paper year>
-- quote: "<verbatim ≤50 words from primary source proving the classification claim>"
-- url: <canonical URL or specific deep link>
-```
+### 1. <Canonical Item Name>
+- **Mentions:** 6/6 models
+- **Top source:** https://...
+- **Consensus description:** <the merged body, picking the most detailed version with primary quote support>
+- **Per-model notes:**
+  - m1: <one-line summary of m1's take>
+  - m2: <one-line summary of m2's take>
+  - m3: <one-line summary of m3's take>
+- **Confidence:** high | medium | low
 
-If no qualifying quote can be found, set `confidence: low` and explain what was inferred.
-
-**For consolidated evidence across multiple models**, you may include multiple evidence blocks under the same canonical name — one per model that contributed a distinct quote:
-
-```markdown
-### EVIDENCE — BMAD (deepseek)
-- source_type: repo, version_or_date: v6, 2025
-- quote: "BMad Method (BMM) ... 34+ workflows ... Specialized Agents — 12+ domain experts (PM, Architect, Developer, UX)"
-- url: https://github.com/bmad-code-org/BMAD-METHOD
-
-### EVIDENCE — BMAD (minimax)
-- source_type: docs, version_or_date: 2026
-- quote: "BMAD's TEA module provides risk-based test scoring with per-step validation gates"
-- url: https://docs.bmad-method.org/tea
-```
-
----
-
-## §5. Scoring Matrix (mandatory, deep/ultradeep only)
-
-8 dimensions × N candidates. Each cell = median across models. Last column = range.
-
-```markdown
-| candidate | cat | dyn | v | e | pw | ev | sd | cu | TOTAL (median) | Range |
-|-----------|:---:|:---:|:-:|:-:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **Silver Bullet (reference)** | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | **16** | (all) |
-| **Camunda 8** | 2 | 1 | 1 | 1 | 1 | 1 | 0 | 1 | **7** | 4–8 |
-| **Temporal** | 0 | 0 | 1 | 1 | 2 | 1 | 0 | 0 | **5** | 3–5 |
-| ... | | | | | | | | | | | |
-
-**Column semantics:**
-- `cat` = catalog of composable units (0=none, 1=informal roles, 2=machine-readable catalog)
-- `dyn` = dynamic composition (0=none, 1=replanner, 2=catalog-backed + audit log)
-- `v` = V-loop depth (0=none, 1=end tests, 2=per-step rollup + intent gate)
-- `e` = enforcement (0=honor system, 1=CI only, 2=IDE hooks + delivery blockers)
-- `pw` = parent/worker split (0=no, 1=partial, 2=explicit orchestrator/worker)
-- `ev` = evidence model (0=none, 1=informal, 2=tiered sufficiency + staleness)
-- `sd` = SE+DevOps unified (0=one domain, 1=partial, 2=both in one model)
-- `cu` = team customization (0=none, 1=fork required, 2=overlay packs)
-```
-
-**Top 3 by total** = "closest architectural matches to subject."
-
----
-
-## §6. Top 5 Direct Competitors (ranked, with rationale)
-
-For each:
-
-```markdown
-| Rank | Candidate | Rationale |
-|------|-----------|-----------|
-| **1** | **<Name>** | <one-sentence rationale: what's the closest match, what's missing vs subject> |
-| ... |
-```
-
-If no direct competitors exist (downgraded to adjacent), document that explicitly with rationale: "Across all N models, zero products earned `direct` under the conflict-resolution rules."
-
----
-
-## §7. Top 5 Adjacent Inspirations (what subject could borrow)
-
-```markdown
-| # | Source | What to borrow |
-|---|--------|----------------|
-| **1** | **<Name>** | <one specific pattern: durable execution, hook system, policy DSL, scaffolder model> |
-| ... |
-```
-
----
-
-## §8. Negative Results (categories with no credible finds)
-
-```markdown
-- **<Category name>** — no product found with <required capability>
-- **<Another category>** — <details>
-```
-
-Negative results are valuable. Document them.
-
----
-
-## §9. Open Research Questions (carry-forward)
-
-```markdown
-1. <question 1 — what remains unclear, what follow-up needed>
-2. <question 2>
+### 2. <Next Item>
 ...
 ```
 
 ---
 
-## §10. 1-Page Positioning Memo (deep/ultradeep only, ≤400 words)
+## §3. Per-Item Details (compact, both modes)
 
-Required structure:
+For each item, include a compact bullet:
 
-1. **Where subject sits** (1 paragraph): the unique slot subject occupies vs the landscape
-2. **Three concentric circles of competition** (1 paragraph each):
-   - Inner ring: execution substrates
-   - Middle ring: agentic SDLC methodologies
-   - Outer ring: enforcement / IDE hosts
-3. **Three things only subject has** (1 paragraph): the consensus-different differentiators
-4. **Three things subject lacks** (1 paragraph): honest gaps
-5. **Top 5 threats** (ranked by probability × impact)
-6. **Top 4 opportunities** (ranked by moat strength)
-7. **Strategic posture** (1 paragraph): what to compete on, what to partner with, what to absorb
+```markdown
+- **<Canonical>**: gaps_vs_reference = ... ; reference_gaps_vs_them = ...
+```
+
+Be specific. Not "less mature" but "lacks V-model rollup; has BPMN catalog". Not "smaller community" but "1k stars vs ref's 0".
 
 ---
 
-## Appendix A — Cross-AI Source Map
+## §4. Conflicts & Resolutions (mandatory, both modes)
+
+| Item | Field | Disagreement | Resolution rule | Final value | Confidence |
+|------|-------|-------------|-----------------|-------------|------------|
+| LangGraph | category | m1=`direct`, 4 others=`adjacent`, qwen=`tangential` | rule 4 (outlier downgrade) | `adjacent` | high |
+| BMAD | maturity | deepseek=`negative-result`, 2 others=`adjacent` | rule 3 (strict) | `adjacent` | medium |
+
+Always document the resolution rule used per row.
+
+---
+
+## §5. Aggregated Scores (optional, both modes)
+
+If the user provides a scoring rubric or the models self-score, build a single table:
+
+| item | dim1 | dim2 | ... | TOTAL (median) | Range | N |
+|------|------|------|-----|---------------|-------|---|
+| reference | 2 | 2 | ... | **16** | (all) | N |
+| top candidate | 2 | 1 | ... | **8** | 6-9 | 6 |
+| ... | | | | | | |
+
+**Top N by total** = "best matches."
+
+---
+
+## §6. Negative Results (both modes)
+
+Categories searched with no credible finds. Negative results are valuable — document them.
+
+```markdown
+- **<Category>** — no item found with <required capability>
+- **<Another category>** — <details>
+```
+
+---
+
+## §7. Open Questions (both modes)
+
+What remains unclear after the task. Carry-forward items.
+
+---
+
+## §8. Synthesized Verdict (optional, both modes)
+
+If the user asked for a specific output (e.g., "rank these candidates", "find the bug", "decide between X and Y"), include the synthesized verdict here.
+
+---
+
+## Appendix A — Cross-AI Source Map (both modes)
 
 For each unique item, which model(s) found it:
 
 ```markdown
 | Finding | Discovered by | Verified by | Notes |
 |---------|---------------|-------------|-------|
-| Antigravity Ultimate SDLC | **glm-5.2** | — | unique find; needs deeper validation |
-| XFlow (arXiv) | **qwen3.7-max** | — | unique find; arXiv ID format suggests 2026-06 |
+| <Unique Item 1> | **<model>** | — | unique find; needs deeper validation |
+| <Unique Item 2> | <model1>, <model2> | <model3> | convergent find |
 | ... |
 ```
 
 ---
 
-## Appendix B — Coverage Scoreboard
+## Appendix B — Coverage Scoreboard (both modes)
 
 ```markdown
 | Bucket | Found | Models contributing | Gap |
 |--------|-------|---------------------|-----|
-| Agentic SDLC frameworks | 7 (BMAD, GSD, ...) | all 6 | Loki Mode low-coverage |
-| Multi-agent orchestration | 7 | all 6 | none |
-| ... |
-| **Total unique products** | **36** | — | target ≥15: MET (2.4×) |
-| **Direct or strong-adjacent** | **0 direct, 6 strong-adjacent** | all 6 | target ≥5: MET (adjacent count) |
+| <Bucket 1> | N | all M | <gap description> |
+| <Bucket 2> | ... | | |
+| **Total unique items** | **M** | — | target ≥K: <MET/MISSED> |
+```
+
+---
+
+## Supporting files (always produced, both modes)
+
+### `structured.jsonl`
+
+One JSON per line per (model, item) — the raw extraction before consolidation:
+
+```json
+{"model": "m1", "row_id": 1, "primary_key": "LangGraph", "fields": {"category": "adjacent", "score": 3, "url": "..."}, "source_ref": "line 42-50", "raw_text": "..."}
+```
+
+### `conflicts.md`
+
+Same as §4 but as a standalone file (for tooling that consumes it).
+
+### `run-manifest.json`
+
+```json
+{
+  "timestamp": "2026-06-27T07:30:00Z",
+  "task_prompt": "...",
+  "task_prompt_hash": "sha256:...",
+  "mode": "standard",
+  "schema_provided": true,
+  "schema": {...},
+  "models_dispatched": ["opencode-go/minimax-m3", ...],
+  "models_responded": ["m1", "m2", ...],
+  "models_failed": [],
+  "output_dir": "./multi-ai-out/2026-06-27-0730/",
+  "totals": {
+    "rows_per_model": {"m1": 25, "m2": 30, ...},
+    "unique_items_consolidated": 36,
+    "conflicts_resolved": 8
+  }
+}
 ```
 
 ---
@@ -231,4 +233,4 @@ The consolidated report must be WYSIWYG-safe. Apply these rules:
 6. **Header cells must equal body cell count** for every row.
 7. **Wrap tables in clean code blocks** when rendering for the web; let the viewer's GFM parser handle the rest.
 
-See the proven provenance file `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md` for a fully-compliant example.
+See the worked example at `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md` for a fully-compliant example.

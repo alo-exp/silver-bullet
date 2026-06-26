@@ -1,0 +1,148 @@
+# Example: Prior-Art Research using multi-ai-task
+
+**This is an example use case for the multi-ai-task skill.** It shows how to set up a structured research dispatch and what the consolidation output looks like. The skill itself is task-agnostic — this is one example of many.
+
+---
+
+## The task
+
+Find existing tools, frameworks, methodologies, papers, and products that overlap with or inform the architecture of "subject X" (e.g., a specific framework, methodology, or product). The output is a dedup table, scoring matrix, conflict resolutions, and a positioning memo.
+
+## The dispatch
+
+```bash
+mkdir -p ./multi-ai-out/2026-06-27-0730/
+cd ./multi-ai-out/2026-06-27-0730/
+
+# Same prompt to all 6 models, in parallel via opencode run
+for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/deepseek-v4-pro opencode-go/glm-5.2 opencode-go/kimi-k2.6 opencode-go/mimo-v2.5-pro; do
+  slug=$(echo $model | cut -d/ -f2)
+  npx -y opencode-ai run \
+    --model "$model" \
+    --title "prior-art-${slug}-$(date +%s)" \
+    --dangerously-skip-permissions \
+    "$(cat /path/to/research-prompt.md)" \
+    > "${slug}.md" 2> "${slug}.err" &
+done
+wait
+```
+
+The `research-prompt.md` would contain the user's verbatim task description — section by section:
+
+```
+You are conducting prior-art and adjacent-landscape research — not building anything.
+Your job is to find existing tools, frameworks, methodologies, papers, and products
+that overlap with or inform the architectural approach described below.
+
+## 1. Executive Framing — What SUBJECT Built
+[subject description, table of layers, differentiators, architecture]
+
+## 2. Research Questions
+[2A direct prior art, 2B adjacent categories, 2C dimension-specific probes, 2D gap analysis]
+
+## 3. Disambiguation Rules
+[exclude unless criteria met]
+
+## 4. Required Output Schema
+[name, url, category, composition_model, v_loop_support, enforcement_mechanism, ...]
+
+## 5. Citation Requirements
+[primary sources only, with version/date, prefer quotes]
+
+## 6. Search Strategy Hints
+[query families to use]
+
+## 7. Constraints
+[do NOT propose implementing subject, flag duplicates, etc.]
+
+## 8. Cross-AI Dedup Instructions
+[normalize names, resolve conflicts, scoring rubric]
+
+## 9. Reference Context
+[subject catalog snapshot for calibration]
+```
+
+## The schema (passed as --schema)
+
+```json
+{
+  "type": "table",
+  "primary_key": "name",
+  "columns": [
+    {"name": "name", "type": "string", "dedup_key": true},
+    {"name": "url", "type": "url"},
+    {"name": "category", "type": "enum", "values": ["direct", "adjacent", "tangential", "negative-result"]},
+    {"name": "composition_model", "type": "string", "max_words": 50},
+    {"name": "v_loop_support", "type": "enum", "values": ["none", "end-only", "per-phase", "per-step+rollup", "v-model-explicit"]},
+    {"name": "enforcement_mechanism", "type": "enum", "values": ["honor-system", "prompt-only", "ci-gate", "ide-hook", "policy-engine", "mixed"]},
+    {"name": "se_fit", "type": "enum", "values": ["none", "partial", "strong"]},
+    {"name": "devops_fit", "type": "enum", "values": ["none", "partial", "strong"]},
+    {"name": "parent_worker_split", "type": "enum", "values": ["yes", "partial", "no"]},
+    {"name": "evidence_model", "type": "enum", "values": ["none", "informal", "artifact-based", "tiered-sufficiency"]},
+    {"name": "dynamic_composition", "type": "enum", "values": ["no", "replanner-only", "catalog-backed-audited"]},
+    {"name": "maturity", "type": "string"},
+    {"name": "gaps_vs_sb", "type": "text"},
+    {"name": "sb_gaps_vs_them", "type": "text"},
+    {"name": "confidence", "type": "enum", "values": ["high", "medium", "low"]},
+    {"name": "last_verified", "type": "date"}
+  ],
+  "conflict_resolution": {
+    "category": "prefer-with-evidence-then-newer-then-strict",
+    "maturity": "newer",
+    "confidence": "majority"
+  }
+}
+```
+
+## The scoring rubric (optional, for "closest match" section)
+
+```json
+{
+  "dimensions": [
+    {"name": "catalog",     "levels": ["none", "informal roles", "machine-readable catalog"]},
+    {"name": "dynamic",     "levels": ["none", "replanner", "catalog-backed + audit log"]},
+    {"name": "v_loop",      "levels": ["none", "end tests", "per-step rollup + intent gate"]},
+    {"name": "enforce",     "levels": ["honor system", "CI only", "IDE hooks + delivery blockers"]},
+    {"name": "parent_worker","levels": ["no", "partial", "explicit orchestrator/worker"]},
+    {"name": "evidence",    "levels": ["none", "informal", "tiered sufficiency + staleness"]},
+    {"name": "se_devops",   "levels": ["one domain", "partial", "both in one model"]},
+    {"name": "customization","levels": ["none", "fork required", "overlay packs"]}
+  ],
+  "aggregate": "median",
+  "max_total": 16
+}
+```
+
+## The output
+
+After consolidation, `consolidated.md` contains:
+
+- §1 Executive Summary (cross-model consensus on what exists in the landscape)
+- §2 Items Table (15-30 rows, one per distinct tool/framework/paper)
+- §3 Per-Item Details (compact gap analysis per item)
+- §4 Conflicts & Resolutions (the model disagreements and how they were resolved)
+- §5 Aggregated Scores (median + range across models)
+- §6 Negative Results (categories searched with no credible finds)
+- §7 Open Questions (carry-forward for next research pass)
+- §8 Synthesized Verdict (in research case: "where does SUBJECT sit in the landscape")
+- Appendix A: Cross-AI Source Map (which model found which unique item)
+- Appendix B: Coverage Scoreboard (bucket → found / target / gap)
+
+Plus `consolidated.html` for browser viewing, `conflicts.md` for tooling, and `run-manifest.json` for reproducibility.
+
+## Worked example
+
+See the actual run on 2026-06-27:
+- Inputs: `docs/research-260624/SB_PRIOR_ART_USER_PROMPT.md` (the verbatim research prompt)
+- Schema + scoring rubric: passed via `--schema` (could also be in the prompt)
+- Per-model outputs: `docs/research-260624/prior-art-landscape-*.md` (6 files)
+- Consolidated output: `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`
+- HTML render: `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.html`
+- Conflicts: documented in §4 of the report
+
+## Variations to try
+
+- **Add more models** — 8-10 models captures more unique finds but diminishing returns past 6
+- **Add the deep-research skill per model** — if each model has the `deep-research` skill available, instruct it to use that methodology for the per-model execution phase
+- **Use structured mode with custom conflict rules** — for research, `prefer-with-evidence-then-newer-then-strict` is appropriate; for other tasks, customize
+- **Run the skill in `thorough` mode** — adds cross-source verification and per-claim evidence ledger (deep/ultradeep research-grade rigor)
