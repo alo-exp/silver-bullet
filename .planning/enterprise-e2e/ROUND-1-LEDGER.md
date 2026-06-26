@@ -383,9 +383,9 @@ Harness `02a33659`; `SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_CLEAN_ENV=0`; no login/
 |-----|------|-------------|----------|----------|-------|
 | 2 | `silver-research` | **Pass** | ~62m | `docs/ADR-001-runtime.md` | Full workflow; ADR Postgres vs SQLite |
 | 3 | `silver-feature` | **Pass** | ~31m + retry | `feature-currency.md` | Attempt 1: 429 (log `.e2e-row3-attempt.log`); evidence present before quiet-timeout; harness `deb32980` adds 10min quota retry loop |
-| 4 | `silver-bugfix` | **Pending** | — | — | Resume rows 4–22 |
+| 4 | `silver-bugfix` | **In progress** | — | — | Stale attempt killed (pre-`install-claude.sh`); rerun after `d382165c` hook fix; log `.e2e-matrix-rows4-22-rerun.log` |
 
-**Interactive pass count:** 3 / 22 (rows 1–3 Pass; rows 4–22 pending)
+**Interactive pass count:** 3 / 22 (rows 1–3 Pass; row 4 in progress; rows 5–22 pending)
 
 **Harness fix (committed):** `642e8852` — `SB_E2E_WORKFLOW_QUIET_TIMEOUT=600`; `deb32980` — 429/Token Plan retry every `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600` (0 = unlimited retries)
 
@@ -404,12 +404,12 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 | 1 | info | harness | Status bar flashes `Not logged in` while API-key routing proceeds | Known; ledger notes partial |
 | 1 | annoyance | harness | `[$silver]()` prompt form stalled 0 tokens (fixed → slash `/silver` in `ceaee970`) | **Fixed** |
 | 2 | — | — | *(row 2 log not retained as `.e2e-row2-attempt.log`; ADR evidence only)* | — |
-| 3 | blocker | hook | `PostToolUse:Skill hook error — hookSpecificOutput is missing required field "hookEventName"` (×16 in log) | **Fix** `0020c3e3` — requires `bash scripts/install-claude.sh` to reach active TUI plugin cache |
+| 3 | blocker | hook | `PostToolUse:Skill hook error — hookSpecificOutput is missing required field "hookEventName"` (×16 in log) | **Fix** `d382165c` — requires `bash scripts/install-claude.sh` to reach active TUI plugin cache |
 | 3 | blocker | hook | Same `hookEventName` error on every `PostToolUse:Read` and `ctx_execute` | Same fix; context-mode posttooluse may also need upstream `hookEventName` |
 | 3 | annoyance | orchestrator | ~3m+ parent deliberation: `/silver:feature` vs "use orchestrator; parent must not implement inline" — spawned `silver-orchestrator` Task after confusion | **info** — matrix prompt stacks both directives; consider clarifying row 3 prompt |
 | 3 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden in parent mode` before worker spawn | Expected SB guard; cost ~30s re-route to read-only |
 | 3 | info | quota | `API Error: 429 · Token Plan usage limit reached` | Quota (not SB); harness `deb32980` retries every 10min |
-| 4 | annoyance | hook | `hookEventName` validation errors on Skill invoke (×30+ by 16:13) | Same fix as row 3 |
+| 4 | annoyance | hook | `hookEventName` validation errors on Skill invoke (×30+ by 16:13) | **Fix** `d382165c` + install sync `scripts/install-claude.sh` rsync full `hooks/` tree (was only 2 files) |
 | 4 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden` on first `ls .planning/` | Expected; agent recovered via Read/Glob |
 | 4 | info | API | `API error · Retrying in 1s · attempt 1/10` at session start | Transient; not 429 |
 
@@ -418,7 +418,7 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 2. **Matrix prompt dual-orchestrator ambiguity** — rows 2–20 say both slash skill and "parent must not implement inline"; parent spends tokens reconciling orchestrator vs feature skill.
 3. **Parent-mode Bash deny** — correct enforcement but predictable friction on orient steps; workers should spawn earlier in bugfix/feature flows.
 
-**SB fixes committed this session:** `deb32980` (429 retry), `0020c3e3` (hookEventName on PostToolUse hooks).
+**SB fixes committed this session:** `deb32980` (429 retry), `d382165c` (hookEventName on PostToolUse hooks), install-claude full hook cache sync (pending commit).
 
 **agentmemory:** significant friction captured via `memory_save` (enterprise-e2e UX, hookEventName).
 
