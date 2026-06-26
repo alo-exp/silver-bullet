@@ -1,0 +1,17 @@
+[0m
+> build · mimo-v2.5-pro
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m✱ [0mGlob "skills/multi-ai-task/**/*"[90m 8 matches[0m

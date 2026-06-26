@@ -25,7 +25,7 @@ If a model fails to produce a response (timeout, error, refusal), the failure is
 For each model's response, the skill extracts structured data into `<out-dir>/structured.jsonl`:
 
 ```json
-{"model": "m1", "row_id": 1, "item": "LangGraph", "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "https://github.com/langchain-ai/langgraph"}, "source_refs": ["line 42-50"], "raw_text_ref": "structured.jsonl#L1"}
+{"model": "m1", "row_id": 1, "item": "LangGraph", "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "https://github.com/langchain-ai/langgraph"}, "source_refs": ["minimax-m3.md#L42-50"], "raw_text": "LangGraph is a framework for..."}
 ```
 
 Extraction modes (chosen by whether `--schema` is passed):
@@ -144,6 +144,8 @@ For every field where models disagreed, document:
 
 ### `run-manifest.json`
 
+**The canonical schema lives in `rules/output-schema.md` § `run-manifest.json`.** All other files reference it. Required fields (cross-checked with `SKILL.md`, `methodology.md`, `output-schema.md`, and the failure-modes table):
+
 ```json
 {
   "timestamp": "2026-06-27T07:30:00Z",
@@ -151,10 +153,12 @@ For every field where models disagreed, document:
   "task_prompt_hash": "sha256:...",
   "mode": "standard",
   "schema_provided": true,
+  "schema_auto_injected": true,
   "models_dispatched": ["opencode-go/minimax-m3", "opencode-go/qwen3.7-max", "..."],
   "models_responded": ["m1", "m2", "..."],
   "models_failed": [],
   "output_dir": "./multi-ai-out/2026-06-27-0730/",
+  "aliases": {"AutoGen/AG2": "AutoGen"},
   "totals": {
     "rows_per_model": {"m1": 25, "m2": 30, "m3": 18, "..."},
     "unique_items_consolidated": 36,
@@ -164,9 +168,18 @@ For every field where models disagreed, document:
     "dedup_merges": 12,
     "score_aggregations": 25,
     "unresolved_conflicts": 0
-  }
+  },
+  "phases_completed": [1, 2, 3, 4]
 }
 ```
+
+**Field semantics:**
+- `schema_auto_injected: true|false` — was the schema auto-injected into the dispatch prompt? (v2.1.0+)
+- `aliases` — task-specific alias map applied during dedup (v2.1.0+); empty `{}` if no aliases
+- `phases_completed` — list of phase numbers that produced output (for partial-failure auditing)
+- `models_failed` — list of `{model, stderr_excerpt, exit_code}` per failure
+
+The `task_prompt_hash` is `sha256:` of the prompt bytes; useful for cache lookup and reproducibility audit.
 
 ---
 
