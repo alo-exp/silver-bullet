@@ -32,6 +32,7 @@ source "${REPO_ROOT}/tests/e2e-live/lib/skill-prompt.sh"
 
 row1_prompt="$(matrix_route_prompt '/silver' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '')"
 row2_prompt="$(matrix_route_prompt '/silver:research' 'Should we use Postgres or SQLite for orders?' 'docs/ADR-001-runtime.md' '')"
+row5_prompt="$(matrix_route_prompt '/silver:ui' 'Show API version in the admin UI badge.' 'ui/src/App.jsx' '')"
 
 assert_contains "row 1 prompt starts with /silver slash command" "$row1_prompt" '/silver I need to add order validation'
 assert_contains "row 1 prompt names evidence path" "$row1_prompt" '.planning/workflows/router-session.md'
@@ -39,6 +40,13 @@ assert_not_contains "row 1 prompt avoids legacy skill markdown link form" "$row1
 
 assert_contains "row 2 prompt starts with /silver:research slash command" "$row2_prompt" '/silver:research Should we use Postgres'
 assert_contains "row 2 prompt names evidence path" "$row2_prompt" 'docs/ADR-001-runtime.md'
+
+assert_contains "row 5 prompt starts with /silver:ui slash command" "$row5_prompt" '/silver:ui Show API version'
+assert_contains "row 5 prompt names ui artifact evidence path" "$row5_prompt" 'ui/src/App.jsx'
+assert_not_contains "row 5 prompt avoids stale workflow md evidence" "$row5_prompt" 'ui-version-badge.md'
+
+matrix_row5="$(grep -F "silver-ui" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" | head -1)"
+assert_contains "matrix harness row 5 evidence matches WORKFLOW_E2E_MATRIX.md" "$matrix_row5" 'ui/src/App.jsx'
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

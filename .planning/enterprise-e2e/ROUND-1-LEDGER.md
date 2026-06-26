@@ -413,8 +413,8 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 | 4 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden` on first `ls .planning/` | Expected; agent recovered via Read/Glob |
 | 4 | annoyance | hook | `Stop hook error: mv: outcomes-session.json.tmp: No such file or directory` on Stop (outcomes-check race on fixed `.tmp` path) | **Fix** — `sb_outcomes_jq_update` uses `mktemp` + exists-before-mv in `outcomes-gate.sh` |
 | 4 | info | API | `API error · Retrying in 1s · attempt 1/10` at session start | Transient; not 429 |
-
-**Top UX issues (cumulative):**
+| 5 | blocker | harness | `FAIL: missing evidence at .planning/workflows/ui-version-badge.md` — interactive rerun rows 4–22; workflow delivered `ui/src/App.jsx` per `WORKFLOW_E2E_MATRIX.md` | **Fixed** — row 5 evidence path `ui/src/App.jsx`; dry-run PASS; queue row-5-only retry after batch |
+| 5 | info | orchestrator | Parent spawned `ui-version-badge-worker` and implemented badge in `ui/src/App.jsx` + `version-badge.js`; session ended before workflow md | Workflow succeeded; harness checked wrong artifact |
 1. **Missing `hookEventName` in PostToolUse hook JSON** — spams every Skill/Read/MCP tool; looks like SB failure to operator. Fix: `sb_emit_hook_message` in `compliance-status`, `record-skill`, `flow-advance`, `timeout-check`.
 2. **Matrix prompt dual-orchestrator ambiguity** — rows 2–20 say both slash skill and "parent must not implement inline"; parent spends tokens reconciling orchestrator vs feature skill.
 3. **Parent-mode Bash deny** — correct enforcement but predictable friction on orient steps; workers should spawn earlier in bugfix/feature flows.
