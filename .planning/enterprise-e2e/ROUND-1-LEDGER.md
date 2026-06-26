@@ -71,7 +71,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback + **interactive matrix row 1 Pass** (routing-only; `--settings` harness `02a33659`; validated attempt 12) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 2 | `silver-research` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 2 Pass** (~62m; evidence `docs/ADR-001-runtime.md`; harness `02a33659`) | `02a33659` | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 3 | `silver-feature` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; post-exec-gates in workflow md | | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 3 | `silver-feature` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 3 Pass** — attempt 1: 429 Token Plan (~31m); evidence written; attempt 2 retry in progress when harness timed out; `feature-currency.md` verified; quota retry harness `deb32980` | `deb32980` | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 4 | `silver-bugfix` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; validate-substep in workflow md | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 5 | `silver-ui` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-ui routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 6 | `silver-fast` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; README only | | `graphify query "silver-fast routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
@@ -382,11 +382,13 @@ Harness `02a33659`; `SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_CLEAN_ENV=0`; no login/
 | Row | Slug | Interactive | Duration | Evidence | Notes |
 |-----|------|-------------|----------|----------|-------|
 | 2 | `silver-research` | **Pass** | ~62m | `docs/ADR-001-runtime.md` | Full workflow; ADR Postgres vs SQLite |
-| 3 | `silver-feature` | **Fail** | ~14m | — | API 429 Token Plan limit (not harness); retry after quota reset |
-| 4 | `silver-bugfix` | **Aborted** | — | — | Stopped — same 429 blocker expected |
+| 3 | `silver-feature` | **Pass** | ~31m + retry | `feature-currency.md` | Attempt 1: 429 (log `.e2e-row3-attempt.log`); evidence present before quiet-timeout; harness `deb32980` adds 10min quota retry loop |
+| 4 | `silver-bugfix` | **Pending** | — | — | Resume rows 4–22 |
 
-**Interactive pass count:** 2 / 22 (rows 1–2 Pass; row 3+ blocked on API 429)
+**Interactive pass count:** 3 / 22 (rows 1–3 Pass; rows 4–22 pending)
 
-**Harness fix (committed):** `642e8852` — `SB_E2E_WORKFLOW_QUIET_TIMEOUT=600` for rows 2–20; per-row `.e2e-rowN-attempt.log`
+**Harness fix (committed):** `642e8852` — `SB_E2E_WORKFLOW_QUIET_TIMEOUT=600`; `deb32980` — 429/Token Plan retry every `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600` (0 = unlimited retries)
 
-**Blocker:** Third-party API key hit Token Plan usage limit (429) during row 3 retry. Resume with `bash scripts/run-enterprise-e2e-matrix.sh 3 4 … 20` after quota resets.
+**Policy:** On 429 / Token Plan / rate limit — wait 10min, retry failed row, continue. Stop only on non-quota failure or operator interrupt.
+
+**Resume:** `bash scripts/run-enterprise-e2e-matrix.sh 4 5 … 22` with `SB_E2E_MATRIX_CLEAN_ENV=0` (no login/logout).
