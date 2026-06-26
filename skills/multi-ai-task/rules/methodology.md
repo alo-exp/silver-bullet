@@ -12,11 +12,11 @@ The same `task-prompt` is sent to each of N models in parallel. Each model:
 - Has its own tool/MCP context (e.g., `webfetch`, `ctx_fetch_and_index`, `gh`)
 - Produces a response
 
-**No domain-specific instructions are added by the skill.** The user is responsible for crafting the prompt to elicit the output they want (a table, code, prose, etc.). If the user passes a `--schema`, the prompt should include that schema as a constraint; the skill does NOT auto-append it.
+**Schema auto-injection (default ON):** if the user passes `--schema` and does **not** also pass `--no-auto-inject`, the skill appends a `## Required Output Schema` block (the JSON schema verbatim, plus a one-line instruction: "Return your answer as a markdown table with exactly these columns, and nothing that does not match this schema") to every dispatch prompt. This guarantees the model sees the column structure even if the user forgot to embed it. If the user's prompt already embeds the schema, pass `--no-auto-inject` to avoid duplication. The auto-inject state is recorded in `run-manifest.json → schema_auto_injected: true|false`.
 
 **Output per model:** a single response (could be markdown, code, free-form text, or anything). The skill saves it to `<out-dir>/<model>.md` for capture.
 
-If a model fails to produce a response (timeout, error, refusal), the failure is logged and the model is excluded from the consolidation. The skill does NOT retry, but the run-manifest.json records the failure.
+If a model fails to produce a response (timeout, error, refusal), the failure is logged and the model is excluded from the consolidation. **The skill does NOT retry.** Retry logic lives in the calling agent's runner, not in the skill core — this avoids infinite retry loops in shell wrappers with 2-min default timeouts. Failures are recorded in `run-manifest.json → models_failed` with the stderr reason.
 
 ---
 
@@ -25,29 +25,83 @@ If a model fails to produce a response (timeout, error, refusal), the failure is
 For each model's response, the skill extracts structured data into `<out-dir>/structured.jsonl`:
 
 ```json
-{"model": "m1", "row_id": 1, "item": "LangGraph", "category": "adjacent", "score": 3, "evidence": "...", "url": "...", "raw_text_ref": "line 42-50"}
+{"model": "m1", "row_id": 1, "item": "LangGraph", "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "https://github.com/langchain-ai/langgraph"}, "source_refs": ["line 42-50"], "raw_text_ref": "structured.jsonl#L1"}
 ```
 
 Extraction modes (chosen by whether `--schema` is passed):
 
 ### Mode A — Structured (schema provided)
 
-- Parse the model's response looking for a markdown table with headers matching the schema
-- Map columns by header name (case-insensitive, allow `cat` ↔ `category`, `pw` ↔ `parent_worker`, etc.)
-- Skip rows that don't match the schema shape
-- Each row becomes one JSONL line tagged with the model name
+Pseudocode:
 
-If the model returned a non-table response, the skill:
-- Looks for explicit structured tags like `<structured>...</structured>`
-- Asks the "extractor" model (default: same model) to reformat its answer into the schema
-- Falls back to one-row-per-paragraph if all else fails
+```js
+function extractStructured(response, schema) {
+  // 1. Find a markdown table with headers matching schema.columns
+  //    - Tables may be inside ``` fences; strip fences first
+  //    - Headers may be `| name | cat | ... |` or `name|cat|...` (no fences)
+  //    - Match headers case-insensitively; allow synonyms ("cat" ↔ "category")
+  const tableMatch = findTable(response, schema);
+  if (tableMatch) return parseTableRows(tableMatch, schema);
+
+  // 2. Fallback: explicit structured tags
+  //    - Model may wrap response in <structured>...</structured> if its system prompt asks
+  const tagMatch = extractStructuredTags(response);
+  if (tagMatch) return parseStructuredTags(tagMatch, schema);
+
+  // 3. Fallback: ask the extractor model to reformat
+  //    - "extractor model" = the slowest/highest-capability model from the dispatch
+  //      (NOT the model that produced the response — that model has already failed
+  //      to produce structured output, asking it again is unlikely to help)
+  //    - Prompt: "Reformat this response into the following JSON schema: <schema>.
+  //      Original response: <response>"
+  //    - Parse the extractor's JSON output
+  const extractorOutput = dispatchExtractorModel(response, schema);
+  if (extractorOutput) return parseExtractorOutput(extractorOutput, schema);
+
+  // 4. Final fallback: one-row-per-paragraph (very lossy)
+  //    - Only use if all other paths fail AND the response is paragraph-shaped
+  return fallbackParagraphSplit(response, schema);
+}
+```
+
+If the model returned a non-table response, the skill tries paths 2, 3, 4 in order.
+
+**Row validation:** after extraction, validate each row against the schema:
+- `required: true` fields must be present (drop row if missing; log warning)
+- `type` constraints (`number` in `min..max`, `enum` in `values`, etc.) — drop invalid rows
+- `max_words` for text fields — truncate with `...` marker
 
 ### Mode B — Free-form (no schema)
 
-- Split the response by H2 headings (each section = one item)
-- For each section, extract: title, body text, key claims, any embedded URLs
-- Each section becomes one JSONL line with `item=title, body=text, claims=[...], urls=[...]`
-- Fuzzy dedup applied at the title level (see consolidation-rules.md)
+Pseudocode:
+
+```js
+function extractFreeform(response) {
+  // 1. Split by H2 headings (## ...)
+  //    - Each H2 section = one item
+  //    - H1 (#) is the document title, not an item
+  //    - H3+ are sub-content of the nearest H2
+  const sections = splitByH2(response);
+  if (sections.length >= 2) {
+    return sections.map(s => ({
+      primary_key: s.heading,
+      body: s.body,
+      claims: extractFirstSentences(s.body),
+      urls: extractUrls(s.body)
+    }));
+  }
+
+  // 2. Fallback: paragraphs
+  //    - If response is single-block or has no H2s, split by blank lines
+  //    - Each paragraph = one item
+  //    - First 5 words = primary_key (fragile; flag fuzzy_match:true)
+  return splitByParagraphs(response);
+}
+```
+
+Fuzzy dedup is applied at the title level (see `consolidation-rules.md`).
+
+**Extractor model — clarification:** the "extractor" model is a single designated model used for fallback extraction when a model returns non-structured output. Default: the slowest, highest-capability model from the original dispatch (caches the response, no extra cost). Override via the implementation; not a CLI parameter.
 
 ---
 
