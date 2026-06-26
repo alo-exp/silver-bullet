@@ -269,8 +269,9 @@ sync_silver_bullet_hook_cache() {
   [[ -n "$current_version_dir" ]] || return 0
 
   install -d -m 755 "${current_version_dir}/hooks"
-  install -m 755 "${REPO_ROOT}/hooks/session-start" "${current_version_dir}/hooks/session-start"
-  install -m 755 "${REPO_ROOT}/hooks/spec-session-record.sh" "${current_version_dir}/hooks/spec-session-record.sh"
+  # Sync full local hook tree so PostToolUse fixes (e.g. hookEventName) reach live TUI cache.
+  rsync -a --chmod=Du=rwx,go=rx,Fu=rx,Fgo=rx \
+    "${REPO_ROOT}/hooks/" "${current_version_dir}/hooks/"
 }
 
 sync_silver_bullet_skill_cache() {
