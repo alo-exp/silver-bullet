@@ -48,7 +48,7 @@ declare -a MATRIX_ROWS=(
   '2|silver-research|/silver:research|Should we use Postgres or SQLite for orders?|docs/ADR-001-runtime.md'
   '3|silver-feature|/silver:feature|Add currency field to orders API + tests.|.planning/workflows/feature-currency.md'
   '4|silver-bugfix|/silver:bugfix|Health endpoint returns 500 when version is missing.|.planning/workflows/bugfix-health.md'
-  '5|silver-ui|/silver:ui|Show API version in the admin UI badge.|.planning/workflows/ui-version-badge.md'
+  '5|silver-ui|/silver:ui|Show API version in the admin UI badge.|ui/src/App.jsx'
   '6|silver-fast|/silver:fast|Fix README install instructions only.|.planning/workflows/fast-readme.md'
   '7|silver-test|/silver:test|Add integration test for order creation.|.planning/workflows/test-orders-integration.md'
   '8|silver-refactor|/silver:refactor|Extract order validation into domain/orders/.|.planning/workflows/refactor-order-validation.md'
