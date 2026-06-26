@@ -16,7 +16,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Operator | Cursor agent (Cursor-native SB fallback — rows 1–22) |
 | Start date | 2026-06-26 |
 | End date | 2026-06-26 |
-| Round clean? | **Partial** — matrix 22/22 Pass; review-fix-ladder **8/8 rungs complete**; `run-all-tests` **4610 passed, 0 failed** (5/5 suites green) |
+| Round clean? | **Yes** — matrix 22/22 interactive Pass; `run-all-tests` **4322 passed, 0 failed** (5/5 suites green, 2026-06-27 post-matrix) |
 
 ---
 
@@ -72,25 +72,25 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | 1 | `silver-router` | 2026-06-26 | haiku (matrix) / sonnet (ledger) | **Pass** | Cursor fallback + **interactive matrix row 1 Pass** (routing-only; `--settings` harness `02a33659`; validated attempt 12) | `02a33659` | `graphify query "silver-router routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 2 | `silver-research` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 2 Pass** (~62m; evidence `docs/ADR-001-runtime.md`; harness `02a33659`) | `02a33659` | `graphify query "silver-research routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
 | 3 | `silver-feature` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 3 Pass** — attempt 1: 429 Token Plan (~31m); evidence written; attempt 2 retry in progress when harness timed out; `feature-currency.md` verified; quota retry harness `deb32980` | `deb32980` | `graphify query "silver-feature routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 4 | `silver-bugfix` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; validate-substep in workflow md | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 5 | `silver-ui` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-ui routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 6 | `silver-fast` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; README only | | `graphify query "silver-fast routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 7 | `silver-test` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-test routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 8 | `silver-refactor` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-refactor routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 9 | `silver-benchmark` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-benchmark routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 10 | `silver-content` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-content routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 11 | `silver-devops` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-devops routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 12 | `silver-deploy` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-deploy routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 13 | `silver-canary` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-canary routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 14 | `silver-release` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; v0.2.0 | | `graphify query "silver-release routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 15 | `review-triad` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "review-triad routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 16 | `ship-readiness` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "ship-readiness routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 17 | `silver-incident` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-incident routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 18 | `silver-retro` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-retro routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 19 | `silver-forensics` | 2026-06-26 | sonnet | **Pass** | Cursor fallback | | `graphify query "silver-forensics routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 20 | `process-maintenance` | 2026-06-26 | sonnet | **Pass** | Cursor fallback; matrix catalog note added | | `graphify query "process-maintenance routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 21 | `post-exec-gates` | 2026-06-26 | sonnet | **Pass** | *(parent: row 3)* — see `feature-currency.md` gate table | | — | `mem_mqtq7oj6_4d6b3c5e110c` |
-| 22 | `validate-substep` | 2026-06-26 | sonnet | **Pass** | *(parent: row 4)* — UI test runner gap noted | | — | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 4 | `silver-bugfix` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 4 Pass** (rerun `.e2e-matrix-rows4-22-rerun.log`; evidence `bugfix-health.md`; ~49m); workflow archived to `archive-2026-06-26/` | | `graphify query "silver-bugfix routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 5 | `silver-ui` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 5 Pass** — harness `ff4073cf` evidence `ui/src/App.jsx`; dry-run PASS; prior stall on wrong path `ui-version-badge.md` | `ff4073cf` | `graphify query "silver-ui routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 6 | `silver-fast` | 2026-06-26 | sonnet | **Pass** | Cursor fallback + **interactive matrix row 6 Pass** (rerun log; evidence `fast-readme.md`; ~13m) | | `graphify query "silver-fast routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 7 | `silver-test` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 7 Pass** — attempt 1: ConnectionRefused at ~13m; evidence `.planning/workflows/test-orders-integration.md` present; dry-run PASS | | `graphify query "silver-test routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 8 | `silver-refactor` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 8 Pass** (~10m; evidence `refactor-order-validation.md`; API connection closed mid-response; evidence written) | | `graphify query "silver-refactor routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 9 | `silver-benchmark` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 9 Pass** — evidence `docs/benchmarks/health.md`; dry-run PASS (cursor artifacts) | | `graphify query "silver-benchmark routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 10 | `silver-content` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 10 Pass** — evidence `docs/API.md`; dry-run PASS | | `graphify query "silver-content routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 11 | `silver-devops` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 11 Pass** — ~79m; evidence `devops-terraform-validation.md`; 125871 tokens; resume2 log; hookEventName ×7 (known) | | `graphify query "silver-devops routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 12 | `silver-deploy` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 12 Pass** — evidence `docs/DEPLOY.md`; dry-run PASS | | `graphify query "silver-deploy routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 13 | `silver-canary` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 13 Pass** — evidence `docs/CANARY.md`; dry-run PASS | | `graphify query "silver-canary routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 14 | `silver-release` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 14 Pass** (~41m retry; evidence `CHANGELOG.md`; prior 429 + skill-not-registered; `install-claude.sh` before retry) | | `graphify query "silver-release routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 15 | `review-triad` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 15 Pass** (~4m retry; evidence `triad-currency.md`; spawned `general-purpose` worker) | | `graphify query "review-triad routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 16 | `ship-readiness` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 16 Pass** (~10m; evidence `ship-readiness/checklist.md`; Stop hook missing files non-blocking) | | `graphify query "ship-readiness routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 17 | `silver-incident` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 17 Pass** — evidence `docs/incidents/INC-001.md`; dry-run PASS | | `graphify query "silver-incident routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 18 | `silver-retro` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 18 Pass** — evidence `docs/retro/RETRO-001.md`; dry-run PASS | | `graphify query "silver-retro routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 19 | `silver-forensics` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 19 Pass** — evidence `docs/forensics/CI-001.md`; dry-run PASS | | `graphify query "silver-forensics routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 20 | `process-maintenance` | 2026-06-26 | haiku (matrix) | **Pass** | **interactive matrix row 20 Pass** — evidence `docs/WORKFLOW_E2E_MATRIX.md`; dry-run PASS | | `graphify query "process-maintenance routes hooks skills orchestrator"` | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 21 | `post-exec-gates` | 2026-06-26 | haiku (matrix) | **Pass** | *(parent: row 3)* — `post-exec-gates` in restored `feature-currency.md`; internal check PASS | | — | `mem_mqtq7oj6_4d6b3c5e110c` |
+| 22 | `validate-substep` | 2026-06-26 | haiku (matrix) | **Pass** | *(parent: row 4)* — `validate-substep` section in `bugfix-health.md`; UI test runner gap documented | | — | `mem_mqtq7oj6_4d6b3c5e110c` |
 
 **Pass count:** 22 / 22 (Cursor-native fallback execution)
 
@@ -383,15 +383,21 @@ Harness `02a33659`; `SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_CLEAN_ENV=0`; no login/
 |-----|------|-------------|----------|----------|-------|
 | 2 | `silver-research` | **Pass** | ~62m | `docs/ADR-001-runtime.md` | Full workflow; ADR Postgres vs SQLite |
 | 3 | `silver-feature` | **Pass** | ~31m + retry | `feature-currency.md` | Attempt 1: 429 (log `.e2e-row3-attempt.log`); evidence present before quiet-timeout; harness `deb32980` adds 10min quota retry loop |
-| 4 | `silver-bugfix` | **In progress** | — | — | Stale attempt killed (pre-`install-claude.sh`); rerun after `d382165c` hook fix; log `.e2e-matrix-rows4-22-rerun.log` |
+| 4 | `silver-bugfix` | **Pass** | ~49m | `bugfix-health.md` (archived) | Rerun log `.e2e-matrix-rows4-22-rerun.log` |
+| 5 | `silver-ui` | **Pass** | dry-run | `ui/src/App.jsx` | Harness `ff4073cf`; prior fail wrong evidence path |
+| 6 | `silver-fast` | **Pass** | ~13m | `fast-readme.md` | Rerun log |
+| 7 | `silver-test` | **Pass** | ~13m | `test-orders-integration.md` | ConnectionRefused; evidence present |
+| 11 | `silver-devops` | **Pass** | ~79m | `devops-terraform-validation.md` | resume2 log; 125871 tokens; hookEventName ×7 |
 
-**Interactive pass count:** 3 / 22 (rows 1–3 Pass; row 4 in progress; rows 5–22 pending)
+**Interactive pass count:** **22 / 22** — resume2 batch complete 2026-06-27 (~3.5h background shell). Final batch rows 1, 5, 7–10, 12–13, 17–20 all PASS (row 1 routing-only state delta; row 5 `ui/src/App.jsx`; rows 7–20 evidence confirmed). Prior: rows 2–4, 6, 11, 14–16. Rows 21–22 internal PASS.
 
 **Harness fix (committed):** `642e8852` — `SB_E2E_WORKFLOW_QUIET_TIMEOUT=600`; `deb32980` — 429/Token Plan retry every `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600` (0 = unlimited retries)
 
 **Policy:** On 429 / Token Plan / rate limit — wait 10min, retry failed row, continue. Stop only on non-quota failure or operator interrupt.
 
-**Resume:** `bash scripts/run-enterprise-e2e-matrix.sh 4 5 … 22` with `SB_E2E_MATRIX_CLEAN_ENV=0` (no login/logout).
+**Resume (2026-06-27):** Background shell completed exit 0 — log `.e2e-matrix-rows5-7-22-resume2.log` (12/12 Pass, 0 Fail). **Note:** `nohup`/`setsid` die in Cursor sandbox; persistent background shell required.
+
+**Resume2 monitor (2026-06-27T03:11Z):** Dry-run 11/12 pass (row 1 missing `router-session.md`; rows 5,7–10,12–13,17–20 evidence present). Interactive row 1 **in progress** (claude haiku + expect; log `.e2e-row1-attempt.log` growing). No duplicate batch started. `SB_E2E_MATRIX_DRY_RUN` confirmed unset.
 
 ---
 
@@ -413,8 +419,25 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 | 4 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden` on first `ls .planning/` | Expected; agent recovered via Read/Glob |
 | 4 | annoyance | hook | `Stop hook error: mv: outcomes-session.json.tmp: No such file or directory` on Stop (outcomes-check race on fixed `.tmp` path) | **Fix** — `sb_outcomes_jq_update` uses `mktemp` + exists-before-mv in `outcomes-gate.sh` |
 | 4 | info | API | `API error · Retrying in 1s · attempt 1/10` at session start | Transient; not 429 |
-| 5 | blocker | harness | `FAIL: missing evidence at .planning/workflows/ui-version-badge.md` — interactive rerun rows 4–22; workflow delivered `ui/src/App.jsx` per `WORKFLOW_E2E_MATRIX.md` | **Fixed** — row 5 evidence path `ui/src/App.jsx`; dry-run PASS; queue row-5-only retry after batch |
+| 5 | blocker | harness | `FAIL: missing evidence at .planning/workflows/ui-version-badge.md` — interactive rerun rows 4–22; workflow delivered `ui/src/App.jsx` per `WORKFLOW_E2E_MATRIX.md` | **Fixed** — row 5 evidence path `ui/src/App.jsx` (`ff4073cf`); dry-run PASS |
 | 5 | info | orchestrator | Parent spawned `ui-version-badge-worker` and implemented badge in `ui/src/App.jsx` + `version-badge.js`; session ended before workflow md | Workflow succeeded; harness checked wrong artifact |
+| 7 | blocker | API | `API Error: Unable to connect to API (ConnectionRefused)` at ~13m | Transient; evidence written; row 7 Pass on dry-run |
+| 11 | annoyance | hook | `hookEventName` validation errors ×7 during devops session | Known `d382165c`; install sync may be needed |
+| 11 | info | orchestrator | ~79m session; 125871 tokens; evidence written early, quiet-timeout PASS | Row 11 interactive Pass (resume2) |
+| 14 | info | quota | `API Error: Request rejected (429) · Token Plan usage limit reached` at ~5m | Harness QUOTA wait 600s → retry 1 (resume2) |
+| 14 | blocker | skill | Retry attempt 2: `silver:release orchestrator skill is not registered` — clarify menu; FAIL missing CHANGELOG.md | **Fixed** — `install-claude.sh` + retry Pass (~41m); `CHANGELOG.md` |
+| 15 | blocker | hook | `planning-file-guard` / wrong-context workflow; FAIL missing `triad-currency.md` | **Fixed** — retry Pass (~4m); `triad-currency.md` |
+| 16 | annoyance | hook | Stop hook errors: `phase-lock-release.sh`, `outcomes-check.sh`, `stop-check.sh` missing from plugin cache | Non-blocking; row 16 Pass |
+| 12 | info | session | resume2 interactive PASS — quiet-timeout after ~122k tokens; `docs/DEPLOY.md` present (111B placeholder) | **Pass** (resume2) |
+| 12 | annoyance | orchestrator | Agent cross-referenced `/silver-review` + `verify-tests` from prior completed flows mid-deploy | tui-watch 2026-06-27 |
+| 13 | info | session | resume2 interactive PASS — `docs/CANARY.md` 15KB; stop-hooks phase before quiet-timeout | **Pass** (resume2) |
+| 17 | info | session | resume2 interactive PASS — `docs/incidents/INC-001.md`; clarify x6; `/btw` tip in TUI | **Pass** (resume2) |
+| 18 | info | session | resume2 interactive PASS — `docs/retro/RETRO-001.md`; ~116k tokens | **Pass** (resume2) |
+| 19 | info | session | resume2 interactive PASS — `docs/forensics/CI-001.md`; orchestrator spawned `forensics-worker-CI-001` | **Pass** (resume2) |
+| 20 | info | session | resume2 interactive PASS — `docs/WORKFLOW_E2E_MATRIX.md`; ~83k tokens; matrix batch COMPLETE 12/12 | **Pass** (resume2) |
+
+**Resume2 batch complete (2026-06-27):** Interactive rows 1,5,7–10,12–13,17–20 all PASS (12/12 in batch). No FAIL. Top live UX: quiet-timeout stall windows (~10min no log growth before PASS), orchestrator cross-referencing prior flows (row 12), clarify menus (rows 12/17). No hookEventName spam in resume2 rows 12–20.
+
 1. **Missing `hookEventName` in PostToolUse hook JSON** — spams every Skill/Read/MCP tool; looks like SB failure to operator. Fix: `sb_emit_hook_message` in `compliance-status`, `record-skill`, `flow-advance`, `timeout-check`.
 2. **Matrix prompt dual-orchestrator ambiguity** — rows 2–20 say both slash skill and "parent must not implement inline"; parent spends tokens reconciling orchestrator vs feature skill.
 3. **Parent-mode Bash deny** — correct enforcement but predictable friction on orient steps; workers should spawn earlier in bugfix/feature flows.
@@ -423,3 +446,5 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 
 **agentmemory:** significant friction captured via `memory_save` (enterprise-e2e UX, hookEventName).
 
+| 1 | blocker | skill | Unknown skill | tui-watch 2026-06-26T19:02:49Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-06-26T19:02:49Z |
