@@ -1,6 +1,6 @@
-# Dispatch Mechanics — multi-ai-task
+# Dispatch Mechanics — multi-ai-task (task-agnostic)
 
-How to actually launch N parallel LLM processes. The mechanism depends on your harness.
+How to actually launch N parallel LLM processes. The mechanism depends on your harness, not the task type.
 
 ---
 
@@ -25,7 +25,7 @@ If your harness supports custom subagent types via `task(subagent_type="my-agent
 
 Then in your session: `task(subagent_type="ocg-minimax-m3", description="...", prompt="...")`.
 
-**Limitation (2026-06):** Some OpenCode harnesses hardcode the `task` tool's `subagent_type` enum to default values like `["explore", "general"]`. Custom types are defined in config but unreachable from the tool surface.
+**Limitation (as of 2026-06):** Some OpenCode harnesses hardcode the `task` tool's `subagent_type` enum to default values like `["explore", "general"]`. Custom types are defined in config but unreachable from the tool surface. If you see `Unknown agent type: ...`, fall back to Mechanism 2.
 
 ### Mechanism 2: `opencode run --model <provider/model>` (WORKAROUND, recommended)
 
@@ -88,7 +88,7 @@ results = await asyncio.gather(*[dispatch(m, prompt) for m in models])
 | **Parallel** (concurrent processes) | Fastest wall-time | MCP port collision if multiple share a port; harder to debug | Independent tasks; no shared state; sub-2-min per model |
 | **Sequential** (one at a time) | Predictable; no port issues; clean logs | Slowest wall-time = N × per-model time | Long-running tasks (10+ min each); shared MCPs |
 
-**Recommended default:** sequential for research tasks >5 min per model, parallel for short tasks. For the proven 6-model research run, each took ~2-3 min, so parallel (with 10-min shell timeout) worked.
+**Recommended default:** sequential for tasks >5 min per model, parallel for short tasks. For the proven 6-model run, each took ~2-3 min, so parallel (with 10-min shell timeout) worked.
 
 ---
 
@@ -108,9 +108,9 @@ The model may write its report to disk (via `write` tool) AND emit a CLI stream 
 |---------|--------------|-----|
 | `npx opencode-ai run` returns instantly with no output | Model unavailable, network error, or rate-limited | Check stderr, retry, or substitute model |
 | Subprocess dies after 2 min with no report | Shell tool's 2-min default timeout | Use `timeout` parameter on bash tool, or run sequential |
-| Report partial — only the planning phase | MCP rate-limit blocked mid-research | Pass `queries: [array]` (batched) in prompt; instruct model to use `ctx_batch_execute` |
-| 5/6 models produce reports, 1 missing | One model in permanent rate-limit or API outage | Substitute or skip; flag in consolidated report's coverage scoreboard |
-| All 6 models return same content (no diversity) | Prompt too narrow, or models too similar | Broaden the prompt; add adversarial framing; use diverse provider families |
+| Report partial — only the planning phase | MCP rate-limit blocked mid-task | Pass `queries: [array]` (batched) in prompt; instruct model to use `ctx_batch_execute` |
+| 5/N models produce reports, 1 missing | One model in permanent rate-limit or API outage | Substitute or skip; flag in consolidated report's coverage scoreboard |
+| All N models return same content (no diversity) | Prompt too narrow, or models too similar | Broaden the prompt; add adversarial framing; use diverse provider families |
 
 ---
 
@@ -124,3 +124,17 @@ Each model needs API credentials. For OpenCode Go (`opencode-go/*`) and Anthropi
 - Local Ollama: no auth, just `http://localhost:11434/v1`
 
 Run `opencode providers` to see configured providers and their auth status.
+
+---
+
+## Choosing the right mechanism
+
+| If you have... | Use... |
+|----------------|--------|
+| OpenCode harness with `task` tool that accepts custom subagent_types | Mechanism 1 |
+| OpenCode harness but `task` tool rejects custom types | Mechanism 2 |
+| An OpenCode server running (`opencode serve`) | Mechanism 3 |
+| A different harness entirely (Claude, Codex, Cursor with no OpenCode) | Mechanism 4 |
+| Multiple MCPs that share ports (e.g., agentmemory on 3111) | Mechanism 2 sequential |
+| Time-critical interactive session | Mechanism 2 parallel with `--concurrency 4` |
+| Models from different providers (e.g., OpenAI + Anthropic + local) | Mechanism 4 for cross-provider coverage |
