@@ -79,19 +79,14 @@ function extractRows(content, model) {
 
 ### Alias mapping
 
-Build an alias map from known patterns. Add new aliases as you discover them:
+ Build an alias map for your task type. The default (no aliases) is `lowercase + strip-punctuation + collapse-whitespace + exact match`. For semantic dedup (e.g., `AutoGen` ↔ `AG2`), supply an alias map at run time. The alias map is **task-specific** — see `rules/examples/research-prior-art.md` for a 14-entry research alias map. A code-review or fact-check run would have a different alias map (or none).
+
+Example skeleton (fill in for your task):
 
 ```js
 const aliases = {
-  'AutoGen/AG2': 'AutoGen',
-  'AutoGen (maintenance)': 'AutoGen',
-  'Microsoft Agent Framework (MAF)': 'Microsoft Agent Framework',
-  'MAF': 'Microsoft Agent Framework',
-  'Camunda': 'Camunda 8',
-  'Conductor OSS': 'Conductor',
-  'GitHub Spec Kit': 'Spec Kit',
-  'BMAD Method': 'BMAD',
-  // ... add as discovered
+  // '<alias>': '<canonical>',
+  // Add as you discover variants. Persist to run-manifest.json → aliases.
 };
 ```
 
@@ -171,9 +166,10 @@ The following rules are referenced in the example recipes (`rules/examples/`) an
 
 #### `most-severe`
 - **Purpose:** pick the most-severe value across models (default for code-review severity, security audit findings).
-- **Input:** List of `(value, severity_order?)` per model. If `severity_order` is declared in the schema, use it. Otherwise default to: `["blocker", "major", "minor", "nit"]`.
-- **Algorithm:** `max(values, key=severity_order.index)`. Ties broken by `majority` among the max-severity tier. If N=0, return `null` (or the schema default).
+- **Input:** List of `(value, severity_order?)` per model. If `severity_order` is declared in the schema, use it. Otherwise default to: `["blocker", "major", "minor", "nit"]` (most-severe first).
+- **Algorithm:** `min(values, key=severity_order.index)` — index 0 = most-severe (`blocker`), index N-1 = least-severe. So `min` returns the value with the smallest index, i.e., the most-severe. Ties broken by `majority` among the max-severity tier. If N=0, return `null` (or the schema default).
 - **Edge case:** if 1/N reviewers disagrees with no evidence quote, downgrade the lone max to the next-severity tier (avoids model hallucination of "blocker" with no support).
+- **Implementation note:** if the schema declares `severity_order`, the convention is **most-severe first** (index 0 is the most-severe value). This is the natural reading order ("blocker, major, minor, nit" reads from worst to best). If you reverse the convention, the algorithm needs `max` instead — but don't do that; the rule library assumes most-severe-first ordering everywhere.
 
 #### `majority`
 - **Purpose:** pick the most-frequent value.
@@ -182,10 +178,11 @@ The following rules are referenced in the example recipes (`rules/examples/`) an
 - **Edge case:** with 2 models and 2 different values, no majority — return `null`.
 
 #### `majority-with-uncertain`
-- **Purpose:** like `majority`, but require a higher threshold; if not met, return `uncertain` (default for fact-check verdicts).
+- **Purpose:** like `majority`, but require a higher threshold; if not met, return `unverified` (default for fact-check verdicts).
 - **Input:** List of values per model.
-- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `uncertain`.
-- **Edge case:** with N=1, single vote never reaches the threshold; return `uncertain`.
+- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `unverified`.
+- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`.
+- **Naming consistency:** the rule returns the value `unverified` (matching the schema's `values: ["true", "false", "partially-true", "unverified"]`). If a user schema uses a different name for the "unverified" verdict (e.g., `partially-true`), set `conflict_resolution.verdict_uncertain_value: "partially-true"` to remap. Do NOT change the rule's return value to match the schema — change the schema to match the rule.
 
 #### `lowest-of-majors`
 - **Purpose:** when combining verdict + confidence, use the majority verdict but the lowest confidence among the majority voters (default for fact-check).
@@ -305,7 +302,7 @@ For specific task types, override the defaults:
 | Task type | Custom strategy |
 |-----------|-----------------|
 | **Code review** | Use `most-severe` for `severity` field; dedup by `file:line` (not file alone) |
-| **Fact-check** | Use `majority` for `verdict`; require ≥2 sources for `true` claims; `uncertain` if no consensus |
+| **Fact-check** | Use `majority` for `verdict`; require ≥2 sources for `true` claims; `unverified` if no consensus |
 | **Ideation** | No dedup (every idea is unique); rank by median `feasibility` × `impact` score |
 | **Writing critique** | Use `concatenate` for comments; present all model feedback in parallel sections |
 | **Translation verification** | Use `majority` for `accurate`; flag any disagreements for human review |

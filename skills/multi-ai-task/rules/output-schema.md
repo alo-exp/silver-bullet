@@ -50,7 +50,7 @@ Do NOT repeat data here. Point at the table for evidence.
 
 ---
 
-## §2. Items Table (Mode A — schema-defined table)
+## §2A. Items Table (Mode A — schema-defined table)
 
 When `--schema` is provided with `type: "table"`, render the consolidated items in a markdown table matching the schema's `columns` definition.
 
@@ -76,7 +76,7 @@ When `--schema` is not provided, use the default items table:
 
 ---
 
-## §2. Items Table (Mode B — generic narrative)
+## §2B. Items Table (Mode B — generic narrative)
 
 Without a schema, render items as sections:
 
@@ -197,7 +197,7 @@ For each unique item, which model(s) found it:
 One JSON per line per (model, item) — the raw extraction before consolidation:
 
 ```json
-{"model": "m1", "row_id": 1, "primary_key": "LangGraph", "fields": {"category": "adjacent", "score": 3, "url": "..."}, "source_ref": "line 42-50", "raw_text": "..."}
+{"model": "m1", "row_id": 1, "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "..."}, "source_refs": ["minimax-m3.md#L42-50"], "raw_text": "LangGraph is a framework for..."}
 ```
 
 ### `conflicts.md`
