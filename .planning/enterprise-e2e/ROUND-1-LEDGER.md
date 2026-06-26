@@ -411,6 +411,7 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 | 3 | info | quota | `API Error: 429 · Token Plan usage limit reached` | Quota (not SB); harness `deb32980` retries every 10min |
 | 4 | annoyance | hook | `hookEventName` validation errors on Skill invoke (×30+ by 16:13) | **Fix** `d382165c` + install sync `scripts/install-claude.sh` rsync full `hooks/` tree (was only 2 files) |
 | 4 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden` on first `ls .planning/` | Expected; agent recovered via Read/Glob |
+| 4 | annoyance | hook | `Stop hook error: mv: outcomes-session.json.tmp: No such file or directory` on Stop (outcomes-check race on fixed `.tmp` path) | **Fix** — `sb_outcomes_jq_update` uses `mktemp` + exists-before-mv in `outcomes-gate.sh` |
 | 4 | info | API | `API error · Retrying in 1s · attempt 1/10` at session start | Transient; not 429 |
 
 **Top UX issues (cumulative):**
