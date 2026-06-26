@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-state.sh orchestrator-parent.sh skill-discovery.sh jq-gate.sh hook-output.sh; do
   if [[ -f "$_lib_dir/$_lib" ]]; then
     # shellcheck source=/dev/null
     source "$_lib_dir/$_lib"
@@ -81,5 +81,4 @@ if [[ "$skill" == "silver-ship" && -f "$repo_root/.silver-bullet.json" ]]; then
 fi
 
 [[ -n "$msg" ]] || exit 0
-json_msg="$(printf '%s' "$msg" | jq -Rs '.')"
-printf '{"hookSpecificOutput":{"message":%s}}' "$json_msg"
+sb_emit_hook_message "PostToolUse" "$msg"

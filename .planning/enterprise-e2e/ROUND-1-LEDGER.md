@@ -392,3 +392,33 @@ Harness `02a33659`; `SB_E2E_MATRIX_FORCE=1 SB_E2E_MATRIX_CLEAN_ENV=0`; no login/
 **Policy:** On 429 / Token Plan / rate limit — wait 10min, retry failed row, continue. Stop only on non-quota failure or operator interrupt.
 
 **Resume:** `bash scripts/run-enterprise-e2e-matrix.sh 4 5 … 22` with `SB_E2E_MATRIX_CLEAN_ENV=0` (no login/logout).
+
+---
+
+## UX friction log (interactive matrix monitoring, 2026-06-26)
+
+Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity: **blocker** | **annoyance** | **info**.
+
+| Row | Severity | SB component | Quote / symptom | Status |
+|-----|----------|--------------|-----------------|--------|
+| 1 | info | harness | Status bar flashes `Not logged in` while API-key routing proceeds | Known; ledger notes partial |
+| 1 | annoyance | harness | `[$silver]()` prompt form stalled 0 tokens (fixed → slash `/silver` in `ceaee970`) | **Fixed** |
+| 2 | — | — | *(row 2 log not retained as `.e2e-row2-attempt.log`; ADR evidence only)* | — |
+| 3 | blocker | hook | `PostToolUse:Skill hook error — hookSpecificOutput is missing required field "hookEventName"` (×16 in log) | **Fix** `0020c3e3` — requires `bash scripts/install-claude.sh` to reach active TUI plugin cache |
+| 3 | blocker | hook | Same `hookEventName` error on every `PostToolUse:Read` and `ctx_execute` | Same fix; context-mode posttooluse may also need upstream `hookEventName` |
+| 3 | annoyance | orchestrator | ~3m+ parent deliberation: `/silver:feature` vs "use orchestrator; parent must not implement inline" — spawned `silver-orchestrator` Task after confusion | **info** — matrix prompt stacks both directives; consider clarifying row 3 prompt |
+| 3 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden in parent mode` before worker spawn | Expected SB guard; cost ~30s re-route to read-only |
+| 3 | info | quota | `API Error: 429 · Token Plan usage limit reached` | Quota (not SB); harness `deb32980` retries every 10min |
+| 4 | annoyance | hook | `hookEventName` validation errors on Skill invoke (×30+ by 16:13) | Same fix as row 3 |
+| 4 | annoyance | hook | `ORCHESTRATOR PARENT — Bash is forbidden` on first `ls .planning/` | Expected; agent recovered via Read/Glob |
+| 4 | info | API | `API error · Retrying in 1s · attempt 1/10` at session start | Transient; not 429 |
+
+**Top UX issues (cumulative):**
+1. **Missing `hookEventName` in PostToolUse hook JSON** — spams every Skill/Read/MCP tool; looks like SB failure to operator. Fix: `sb_emit_hook_message` in `compliance-status`, `record-skill`, `flow-advance`, `timeout-check`.
+2. **Matrix prompt dual-orchestrator ambiguity** — rows 2–20 say both slash skill and "parent must not implement inline"; parent spends tokens reconciling orchestrator vs feature skill.
+3. **Parent-mode Bash deny** — correct enforcement but predictable friction on orient steps; workers should spawn earlier in bugfix/feature flows.
+
+**SB fixes committed this session:** `deb32980` (429 retry), `0020c3e3` (hookEventName on PostToolUse hooks).
+
+**agentmemory:** significant friction captured via `memory_save` (enterprise-e2e UX, hookEventName).
+

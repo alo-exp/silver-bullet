@@ -24,6 +24,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   source "$_lib_dir/sb-project-gate.sh"
   sb_project_active_or_exit
 fi
+if [[ -f "$_lib_dir/hook-output.sh" ]]; then
+  # shellcheck source=lib/hook-output.sh
+  source "$_lib_dir/hook-output.sh"
+fi
 
 # PostToolUse hook (matcher: .*, async: false)
 # Two-tier anti-stall protection in autonomous mode:
@@ -140,7 +144,7 @@ if [[ "$tier1_triggered" == true ]]; then
   echo "$count" > "$count_file"
   # Tier 1: Emit on 1st, 6th, 11th... call (count mod 5 == 1)
   if [[ $((count % 5)) -eq 1 ]]; then
-    printf '{"hookSpecificOutput":{"message":"⚠️ Autonomous session running 10+ min. Check for stalls or log a blocker under Needs human review."}}'
+    sb_emit_hook_message "PostToolUse" "⚠️ Autonomous session running 10+ min. Check for stalls or log a blocker under Needs human review."
     exit 0
   fi
 fi
@@ -152,13 +156,18 @@ if [[ "$calls_since_progress" -ge 100 ]]; then
   stall_block_file="$SB_DIR/stall-block"
   sb_guard_nofollow "$stall_block_file"
   printf '%s\n' "$calls_since_progress" >"$stall_block_file"
-  printf '{"hookSpecificOutput":{"message":"🛑 STALL BLOCK — %d tool calls with no workflow progress. Stop hook will block completion until you invoke the next SB skill or clear the stall by recording workflow progress."}}' "$calls_since_progress"
+  sb_emit_hook_message "PostToolUse" "🛑 STALL BLOCK — ${calls_since_progress} tool calls with no workflow progress. Stop hook will block completion until you invoke the next SB skill or clear the stall by recording workflow progress."
   exit 0
 elif [[ "$calls_since_progress" -ge 60 ]] && [[ $((calls_since_progress % 15)) -eq 0 ]]; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ STALL WARNING — %d tool calls since last skill was recorded. Are you stuck?\n\nIf you are not actively working through a skill, stop and:\n  • Identify which workflow skill is next\n  • Invoke it to advance the workflow\n  • Log any blockers under ## Needs human review"}}' "$calls_since_progress"
+  sb_emit_hook_message "PostToolUse" "⚠️ STALL WARNING — ${calls_since_progress} tool calls since last skill was recorded. Are you stuck?
+
+If you are not actively working through a skill, stop and:
+  • Identify which workflow skill is next
+  • Invoke it to advance the workflow
+  • Log any blockers under ## Needs human review"
   exit 0
 elif [[ "$calls_since_progress" -ge 30 ]] && [[ $((calls_since_progress % 10)) -eq 0 ]]; then
-  printf '{"hookSpecificOutput":{"message":"ℹ️ Check-in: %d tool calls since last skill recorded. If you are looping or stuck, invoke the next workflow skill or log a blocker."}}' "$calls_since_progress"
+  sb_emit_hook_message "PostToolUse" "ℹ️ Check-in: ${calls_since_progress} tool calls since last skill recorded. If you are looping or stuck, invoke the next workflow skill or log a blocker."
   exit 0
 fi
 

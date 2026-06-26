@@ -46,6 +46,10 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/hook-output.sh" ]]; then
+  # shellcheck source=lib/hook-output.sh
+  source "$_lib_dir/hook-output.sh"
+fi
 
 # jq is required for JSON parsing
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
@@ -417,8 +421,8 @@ if [[ "$recorded_any" == true ]]; then
       done
     fi
   fi
-  printf '{"hookSpecificOutput":{"message":"✅ Skill recorded"}}'
+  sb_emit_hook_message "PostToolUse" "✅ Skill recorded"
 else
   # No tracked skills inferred from this hook invocation.
-  printf '{"hookSpecificOutput":{"message":"ℹ️ No completed tracked skill invocation found"}}'
+  sb_emit_hook_message "PostToolUse" "ℹ️ No completed tracked skill invocation found"
 fi
