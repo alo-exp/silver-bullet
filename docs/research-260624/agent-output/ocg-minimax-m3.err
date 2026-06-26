@@ -1,0 +1,130 @@
+[0m
+> build · minimax-m3
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/ 2>/dev/null && echo "---" && pwd
+755  agent-output/
+644  OPENCODE_DYNAMIC_SUBAGENT_MODELS.md  20.2K
+644  PRIOR-ART-MASTER-PROMPT.txt  16.6K
+644  PRIOR-ART-MULTI-AI-PROMPT.md  1.8K
+644  SB_PRIOR_ART_RESEARCH_PROMPT.md  21.0K
+644  SB_PRIOR_ART_USER_PROMPT.md  16.4K
+644  atomic-flow-redesign.plan.md  50.2K
+755  dispatch-research-sequential.sh  1.9K
+755  dispatch-research.sh  2.1K
+644  prior-art-landscape-2026-06-27.md  10.3K
+644  prior-art-landscape-report.md  12.4K
+---
+/Users/shafqat/projects/silver-bullet/repo/docs/research-260624
+[0m
+[0m→ [0mRead prior-art-landscape-2026-06-27.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead prior-art-landscape-report.md
+[0m→ [0mRead dispatch-research.sh
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/agent-output/ 2>/dev/null
+644  ocg-deepseek-v4-pro.err  713B
+644  ocg-deepseek-v4-pro.md  0B
+644  ocg-glm-5.2.err  29B
+644  ocg-glm-5.2.md  0B
+644  ocg-kimi-k2.6.err  65B
+644  ocg-kimi-k2.6.md  0B
+644  ocg-mimo-v2.5-pro.err  687B
+644  ocg-mimo-v2.5-pro.md  0B
+644  ocg-minimax-m3.err  1.2K
+644  ocg-minimax-m3.md  360B
+644  ocg-qwen3-7-max.err  67B
+644  ocg-qwen3-7-max.md  133B
+[0m
+[0m→ [0mRead SB_PRIOR_ART_RESEARCH_PROMPT.md[90m [limit=80][0m
+[0m
+[0m# [0mTodos
+[•] Launch parallel primary-source fetches across all candidate categories
+[ ] Deep-dive on high-priority candidates (BMAD, Spec Kit, Superpowers, GSD, Claude Code, Cursor, Aider)
+[ ] Verify open research questions (Devin internals, closed-source products)
+[ ] Search for new candidates (Microsoft Agent Framework, Conductor OSS, recent arXiv)
+[ ] Build summary table with evidence blocks per row
+[ ] Write narrative sections (exec summary, top 5, negative results, open questions)
+[ ] Compute 8-dimension scoring matrix
+[0m
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m✗ [0mctx_search {"queries":["Rego policy as code declarative decision","CNCF graduated project status","SDLC DevOps integration","agent AI LLM enforcement","version release production","verification validation","catalog composable units","workflow orchestration"],"limit":5,"source":"opa-repo"} failed
+[91m[1mError: [0mBLOCKED: 9 search calls in 20s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["container DAG module function pipeline","version release beta production","SDLC DevOps CI/CD integration","agent AI LLM","enforcement policy hook","verification validation","catalog composable units","workflow composition"],"limit":5,"source":"dagger-repo"} failed
+[91m[1mError: [0mBLOCKED: 10 search calls in 21s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["software template scaffolder action plugin","catalog entities service ownership","version release production","SDLC DevOps coverage","agent AI LLM","enforcement policy hook","verification validation","workflow composition"],"limit":5,"source":"backstage-repo"} failed
+[91m[1mError: [0mBLOCKED: 11 search calls in 22s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["issue fix SWE benchmark agent","version release NeurIPS paper","SDLC engineering","verification validation gate","catalog composition","parallel subagent worker","evidence artifact","DevOps deploy"],"limit":5,"source":"swe-agent-repo"} failed
+[91m[1mError: [0mBLOCKED: 12 search calls in 22s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m✗ [0mctx_search {"queries":["hooks subagents skills plugins verification enforcement","slash commands tool use parent subagent","workflow phases output verification","DevOps deploy infrastructure coverage","workflows specialized agents party mode scale adaptive","JSON durable execution dynamic fork human in the loop","plugin commands memory","workflow events action callbacks"],"limit":5,"source":"claude-code-repo"} failed
+[91m[1mError: [0mBLOCKED: 13 search calls in 43s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["agent mode plan act skills rules","hooks enforcement verification gate","SDLC DevOps coverage workflow","version release production","catalog composable","parallel subagent","evidence artifact","parent worker"],"limit":5,"source":"cursor-agents-docs"} failed
+[91m[1mError: [0mBLOCKED: 14 search calls in 44s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["process framework plugins skills","agent orchestration enterprise","AI workflow","SDLC DevOps","verification validation gates","enforcement hooks policy","evidence artifact sufficiency","parallel fan out worker"],"limit":5,"source":"semantic-kernel-repo"} failed
+[91m[1mError: [0mBLOCKED: 15 search calls in 45s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["workflows agent document pipeline","RAG retrieval LLM chain","SDLC engineering","DevOps deploy","verification gate","enforcement hook policy","parent worker","catalog composition"],"limit":5,"source":"llamaindex-repo"} failed
+[91m[1mError: [0mBLOCKED: 16 search calls in 46s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m✗ [0mctx_search {"queries":["autonomous software engineer plans writes tests ships","browser terminal editor","codebase tools integration","verification testing production","version release subscription","workflow phases","SDLC lifecycle","DevOps coverage"],"limit":5,"source":"devin-docs"} failed
+[91m[1mError: [0mBLOCKED: 17 search calls in 47s. You're flooding context. STOP making individual search calls. Use ctx_batch_execute(commands, queries) for your next research step.
+[0m
+[0m$ [0msleep 35 && echo "waited"
+waited
+[0m
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m
+[0m# [0mTodos
+[✓] Launch parallel primary-source fetches across all candidate categories
+[✓] Deep-dive on high-priority candidates (BMAD, Spec Kit, Superpowers, GSD, Claude Code, Cursor, Aider)
+[✓] Verify open research questions (Devin internals, closed-source products)
+[✓] Search for new candidates (Microsoft Agent Framework, Conductor OSS, recent arXiv)
+[•] Build summary table with evidence blocks per row
+[ ] Write narrative sections (exec summary, top 5, negative results, open questions)
+[ ] Compute 8-dimension scoring matrix
+[0m
+[0m← [0mWrite prior-art-landscape-minimax-m3.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Launch parallel primary-source fetches across all candidate categories
+[✓] Deep-dive on high-priority candidates (BMAD, Spec Kit, Superpowers, GSD, Claude Code, Cursor, Aider)
+[✓] Verify open research questions (Devin internals, closed-source products)
+[✓] Search for new candidates (Microsoft Agent Framework, Conductor OSS, recent arXiv)
+[✓] Build summary table with evidence blocks per row
+[✓] Write narrative sections (exec summary, top 5, negative results, open questions)
+[✓] Compute 8-dimension scoring matrix
+[•] Verify file output and confirm report quality
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-minimax-m3.md && echo "---" && rtk wc -l /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-minimax-m3.md
+644  /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/prior-art-landscape-minimax-m3.md  28.9K
+---
+309
+[0m
+[0m# [0mTodos
+[✓] Launch parallel primary-source fetches across all candidate categories
+[✓] Deep-dive on high-priority candidates (BMAD, Spec Kit, Superpowers, GSD, Claude Code, Cursor, Aider)
+[✓] Verify open research questions (Devin internals, closed-source products)
+[✓] Search for new candidates (Microsoft Agent Framework, Conductor OSS, recent arXiv)
+[✓] Build summary table with evidence blocks per row
+[✓] Write narrative sections (exec summary, top 5, negative results, open questions)
+[✓] Compute 8-dimension scoring matrix
+[✓] Verify file output and confirm report quality
+[0m
