@@ -99,13 +99,20 @@ Without a schema, render items as sections:
 
 ## §3. Per-Item Details (compact, both modes)
 
-For each item, include a compact bullet:
+For each item, include a compact bullet. The fields depend on the task type; below is a generic template:
 
 ```markdown
-- **<Canonical>**: gaps_vs_reference = ... ; reference_gaps_vs_them = ...
+- **<Canonical>**: <task-specific per-item analysis fields>
 ```
 
-Be specific. Not "less mature" but "lacks V-model rollup; has BPMN catalog". Not "smaller community" but "1k stars vs ref's 0".
+Examples by task type:
+- **Research / comparative:** `gaps_vs_reference = ... ; reference_gaps_vs_them = ...`
+- **Code review:** `which reviewers flagged it = [model1, model3]; severity = <most-severe>; suggested_fix = ...`
+- **Fact-check:** `verdict_per_model = {m1: true, m2: false, m3: true}; primary_source = <url>; confidence = <lowest-of-majors>`
+- **Ideation:** `feasibility = <median>; impact = <median>; novelty_vs_other_ideas = ...`
+- **Writing critique:** `comments = <concatenated-all>; consistency_notes = ...`
+
+Be specific. Not "less mature" but "lacks V-model rollup; has BPMN catalog". Not "smaller community" but "1k stars vs ref's 0". The format is consistent; the content is task-specific.
 
 ---
 

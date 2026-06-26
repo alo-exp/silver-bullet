@@ -11,20 +11,25 @@ Find existing tools, frameworks, methodologies, papers, and products that overla
 ## The dispatch
 
 ```bash
-mkdir -p ./multi-ai-out/2026-06-27-0730/
-cd ./multi-ai-out/2026-06-27-0730/
+OUT=./multi-ai-out/$(date +%Y%m%d-%H%M%S)
+mkdir -p "$OUT"
+cd "$OUT"
 
 # Same prompt to all 6 models, in parallel via opencode run
+# Substitute the path to the user's research prompt file
+PROMPT="$(cat /path/to/research-prompt.md)"
+
 for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/deepseek-v4-pro opencode-go/glm-5.2 opencode-go/kimi-k2.6 opencode-go/mimo-v2.5-pro; do
-  slug=$(echo $model | cut -d/ -f2)
+  slug=$(echo "$model" | cut -d/ -f2)
   npx -y opencode-ai run \
     --model "$model" \
     --title "prior-art-${slug}-$(date +%s)" \
     --dangerously-skip-permissions \
-    "$(cat /path/to/research-prompt.md)" \
+    "$PROMPT" \
     > "${slug}.md" 2> "${slug}.err" &
 done
 wait
+echo "Outputs in $OUT/"
 ```
 
 The `research-prompt.md` would contain the user's verbatim task description — section by section:
@@ -113,6 +118,37 @@ that overlap with or inform the architectural approach described below.
 }
 ```
 
+## Alias map (research-specific)
+
+The default behavior (no aliases) catches `AutoGen` vs `autogen` and `BMAD Method` vs `BMAD-Method`, but not semantic equivalences like `AutoGen` vs `AG2` or `MAF` vs `Microsoft Agent Framework`. For research, you need this alias map. Save it in your run's `run-manifest.json → aliases` field and apply in the `normalize()` step.
+
+| Alias | Canonical |
+|-------|-----------|
+| AutoGen/AG2, AutoGen (maintenance) | **AutoGen** |
+| MAF, Microsoft Agent Framework (MAF) | **Microsoft Agent Framework** |
+| Camunda, Camunda 8 | **Camunda 8** |
+| Conductor OSS, Conductor-OSS, Conductor (Netflix) | **Conductor** |
+| GitHub Spec Kit | **Spec Kit** |
+| GSD (Get Shit Done) | **GSD** |
+| BMAD Method | **BMAD** |
+| gh-aw, GitHub Agentic Workflows (gh-aw) | **GitHub Agentic Workflows** |
+| OPA, Open Policy Agent, OPM | **OPA** |
+| Claude Code Skills, Claude Code Hooks | **Claude Code** |
+| Lunar | **Earthly Lunar** |
+| Qodo, PR-Agent, Qodo / PR-Agent | **Qodo/PR-Agent** |
+| Windsurf, Devin Desktop | **Windsurf** |
+| Devin (Cognition), Devin (closed) | **Devin** |
+
+Add new aliases to this map as they surface in your runs. After consolidation, audit `consolidated.md` for "missed alias" cases (two near-identical names that should have been merged) and update the map.
+
+## Skip rules (research-specific)
+
+Beyond the generic skip rules in `consolidation-rules.md`, also drop:
+- The reference subject's own name (e.g., "Silver Bullet") if the task compares candidates against it — it's the comparison anchor, not a candidate
+- Pure scoring-matrix header rows if they leak into the items table (e.g., a model writes "Catalog of composable units" as a row)
+
+---
+
 ## The output
 
 After consolidation, `consolidated.md` contains:
@@ -134,15 +170,16 @@ Plus `consolidated.html` for browser viewing, `conflicts.md` for tooling, and `r
 
 See the actual run on 2026-06-27:
 - Inputs: `docs/research-260624/SB_PRIOR_ART_USER_PROMPT.md` (the verbatim research prompt)
-- Schema + scoring rubric: passed via `--schema` (could also be in the prompt)
+- Schema + scoring rubric: passed via `--schema` as a JSON file (the prompt did NOT embed the schema; the skill auto-injected it because `--no-auto-inject` was not passed)
 - Per-model outputs: `docs/research-260624/prior-art-landscape-*.md` (6 files)
 - Consolidated output: `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`
 - HTML render: `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.html`
 - Conflicts: documented in §4 of the report
+- Alias map: 14 entries (now lives in this file under "Alias map" above)
 
 ## Variations to try
 
-- **Add more models** — 8-10 models captures more unique finds but diminishing returns past 6
-- **Add the deep-research skill per model** — if each model has the `deep-research` skill available, instruct it to use that methodology for the per-model execution phase
+- **Add more models** — 8-10 models captures more unique finds but diminishing returns past 6 (this is an empirical observation, not a measured curve — run your own benchmark if you want a hard number)
+- **Use a research methodology per model** — for the per-model prompt, you can either inline an 8-phase research methodology or invoke a host-side skill if available. The skill itself doesn't care which.
 - **Use structured mode with custom conflict rules** — for research, `prefer-with-evidence-then-newer-then-strict` is appropriate; for other tasks, customize
-- **Run the skill in `thorough` mode** — adds cross-source verification and per-claim evidence ledger (deep/ultradeep research-grade rigor)
+- **Run the skill in `thorough` mode** — adds cross-source verification (a verifier model checks each cited source URL against the claim) and per-claim evidence ledger (`evidence-ledger.md`)
