@@ -1,0 +1,64 @@
+[0m
+> build · mimo-v2.5-pro
+[0m
+[0m# [0mTodos
+[•] Gather primary sources for top candidates (BMAD, GSD, LangGraph, CrewAI, AutoGen, Temporal, OPA, Cursor, etc.)
+[ ] Search for V-model + LLM agent papers and process orchestration research
+[ ] Search for IDE agent orchestrators (Cursor hooks, Claude Code, Codex skills, Windsurf, Cline)
+[ ] Search for enterprise workflow engines (Camunda, Temporal, Argo Workflows, Airflow)
+[ ] Search for quality/review automation (CodeRabbit, Qodo, PR-Agent, mutation testing)
+[ ] Classify all findings, score against SB dimensions, write evidence blocks
+[ ] Write final research report with summary table, narrative sections, gap analysis
+[0m
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m
+[0m# [0mTodos
+[✓] Gather primary sources for top candidates (BMAD, GSD, LangGraph, CrewAI, AutoGen, Temporal, OPA, Cursor, etc.)
+[✓] Search for V-model + LLM agent papers and process orchestration research
+[•] Search for IDE agent orchestrators (Cursor hooks, Claude Code, Codex skills, Windsurf, Cline)
+[✓] Search for enterprise workflow engines (Camunda, Temporal, Argo Workflows, Airflow)
+[ ] Search for quality/review automation (CodeRabbit, Qodo, PR-Agent, mutation testing)
+[ ] Classify all findings, score against SB dimensions, write evidence blocks
+[ ] Write final research report with summary table, narrative sections, gap analysis
+[0m
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_search Search Indexed Content
+[0m
+[0m# [0mTodos
+[✓] Gather primary sources for top candidates (BMAD, GSD, LangGraph, CrewAI, AutoGen, Temporal, OPA, Cursor, etc.)
+[✓] Search for V-model + LLM agent papers and process orchestration research
+[✓] Search for IDE agent orchestrators (Cursor hooks, Claude Code, Codex skills, Windsurf, Cline)
+[✓] Search for enterprise workflow engines (Camunda, Temporal, Argo Workflows, Airflow)
+[✓] Search for quality/review automation (CodeRabbit, Qodo, PR-Agent, mutation testing)
+[•] Classify all findings, score against SB dimensions, write evidence blocks
+[ ] Write final research report with summary table, narrative sections, gap analysis
+[0m
+[0m← [0mWrite prior-art-landscape-research.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Gather primary sources for top candidates (BMAD, GSD, LangGraph, CrewAI, AutoGen, Temporal, OPA, Cursor, etc.)
+[✓] Search for V-model + LLM agent papers and process orchestration research
+[✓] Search for IDE agent orchestrators (Cursor hooks, Claude Code, Codex skills, Windsurf, Cline)
+[✓] Search for enterprise workflow engines (Camunda, Temporal, Argo Workflows, Airflow)
+[✓] Search for quality/review automation (CodeRabbit, Qodo, PR-Agent, mutation testing)
+[✓] Classify all findings, score against SB dimensions, write evidence blocks
+[✓] Write final research report with summary table, narrative sections, gap analysis
+[0m

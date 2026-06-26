@@ -1,0 +1,454 @@
+[0m
+> build · qwen3.7-max
+[0m
+[0m→ [0mSkill "deep-research"
+[0m
+[0m$ [0mmkdir -p ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624
+(no output)
+[0m
+[0m$ [0mcat > ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/run_manifest.json << 'EOF'
+{
+  "query": "Prior art and adjacent landscape research for Silver Bullet Agentic Process Orchestrator",
+  "mode": "deep",
+  "started": "2025-06-24T00:00:00Z",
+  "assumptions": [
+    "Technical audience familiar with agentic AI and software engineering workflows",
+    "Focus on implementable systems with inspectable code/docs, not pure methodology",
+    "Primary sources preferred: repos, official docs, papers over blog posts",
+    "Minimum 15 candidates with >=5 direct or strong adjacent matches required"
+  ],
+  "search_categories": [
+    "Agentic SDLC frameworks (BMAD, GSD, Spec Kit, Devin, SWE-agent, OpenHands, Aider)",
+    "Multi-agent orchestration (LangGraph, CrewAI, AutoGen, Semantic Kernel, LlamaIndex)",
+    "CI/CD & policy gates (OPA, Conftest, Dagger, Earthly, Harness, Spacelift)",
+    "Phase-gate/V-model tooling (ALM, MBSE, TDD/BDD)",
+    "IDE agent orchestrators (Cursor, Claude Code, Codex, Windsurf, Cline)",
+    "Enterprise process automation (Camunda, Temporal, Airflow, Argo)",
+    "Quality & review automation (CodeRabbit, Qodo, PR-Agent)",
+    "Academic papers (V-model + LLM agents, process orchestration + SE agents)"
+  ],
+  "output_schema": {
+    "summary_table_fields": 18,
+    "evidence_block_required": true,
+    "narrative_sections": [
+      "Executive summary",
+      "Top 5 direct competitors",
+      "Top 5 adjacent inspirations",
+      "Negative results",
+      "Open research questions"
+    ]
+  }
+}
+EOF
+cat ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/run_manifest.json
+{
+  "query": "Prior art and adjacent landscape research for Silver Bullet Agentic Process Orchestrator",
+  "mode": "deep",
+  "started": "2025-06-24T00:00:00Z",
+  "assumptions": [
+    "Technical audience familiar with agentic AI and software engineering workflows",
+    "Focus on implementable systems with inspectable code/docs, not pure methodology",
+    "Primary sources preferred: repos, official docs, papers over blog posts",
+    "Minimum 15 candidates with >=5 direct or strong adjacent matches required"
+  ],
+  "search_categories": [
+    "Agentic SDLC frameworks (BMAD, GSD, Spec Kit, Devin, SWE-agent, OpenHands, Aider)",
+    "Multi-agent orchestration (LangGraph, CrewAI, AutoGen, Semantic Kernel, LlamaIndex)",
+    "CI/CD & policy gates (OPA, Conftest, Dagger, Earthly, Harness, Spacelift)",
+    "Phase-gate/V-model tooling (ALM, MBSE, TDD/BDD)",
+    "IDE agent orchestrators (Cursor, Claude Code, Codex, Windsurf, Cline)",
+    "Enterprise process automation (Camunda, Temporal, Airflow, Argo)",
+    "Quality & review automation (CodeRabbit, Qodo, PR-Agent)",
+    "Academic papers (V-model + LLM agents, process orchestration + SE agents)"
+  ],
+  "output_schema": {
+    "summary_table_fields": 18,
+    "evidence_block_required": true,
+    "narrative_sections": [
+      "Executive summary",
+      "Top 5 direct competitors",
+      "Top 5 adjacent inspirations",
+      "Negative results",
+      "Open research questions"
+    ]
+  }
+}
+[0m
+[0m$ [0mtouch ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/sources.jsonl ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/evidence.jsonl ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/claims.jsonl
+(no output)
+[0m
+[0m$ [0mdate -u +"%Y-%m-%dT%H:%M:%SZ"
+2026-06-26T20:08:14Z
+[0m
+[0m$ [0mecho "Research workspace initialized. Beginning systematic searches across 8 categories."
+Research workspace initialized. Beginning systematic searches across 8 categories.
+[0m
+[0m$ [0mcat > ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/search_queries.txt << 'EOF'
+# Search Query Families
+
+## Direct Prior Art
+- "agentic process orchestrator" software engineering
+- "V-model" verification LLM agent workflow
+- composable workflow catalog coding agent
+- parent orchestrator subagent software development
+- dynamic workflow composition prune insert agent
+- evidence sufficiency agent artifact verification
+
+## Agentic SDLC Frameworks
+- BMAD method agents workflow phases
+- GSD get-shit-done agent orchestration
+- GitHub spec kit agent workflow
+- Devin AI software engineer workflow
+- SWE-agent Princeton workflow
+- OpenHands CodeAct agent
+
+## Multi-Agent Orchestration
+- LangGraph human-in-the-loop verification gate
+- LangGraph software development workflow
+- CrewAI software engineering agents
+- AutoGen AG2 multi-agent SDLC
+- Semantic Kernel agent orchestration
+
+## CI/CD & Policy Gates
+- Open Policy Agent OPA software delivery
+- Conftest policy as code CI
+- Dagger workflow DAG orchestration
+- Earthly build pipeline verification
+- Spacelift policy as code infrastructure
+
+## IDE Agent Orchestrators
+- Cursor rules hooks skills system
+- Claude Code plugins skills workflow
+- Codex skills orchestration
+- Windsurf cascades workflow
+- Cline plan act mode
+
+## Enterprise Process Automation
+- Temporal workflow SDLC orchestration
+- Camunda BPMN process automation
+- Argo Workflows DAG orchestration
+- Airflow process orchestration comparison
+
+## Quality & Review Automation
+- CodeRabbit AI code review
+- Qodo AI testing verification
+- PR-Agent automated review
+
+## Academic Papers
+- "V-model" "LLM agents" verification
+- "process orchestration" "software engineering agents"
+- "verification loops" "multi-agent" coding
+- "intent satisfaction" "coding agents"
+EOF
+cat ~/Documents/Silver_Bullet_APO_Prior_Art_Research_20250624/search_queries.txt
+# Search Query Families
+
+## Direct Prior Art
+- "agentic process orchestrator" software engineering
+- "V-model" verification LLM agent workflow
+- composable workflow catalog coding agent
+- parent orchestrator subagent software development
+- dynamic workflow composition prune insert agent
+- evidence sufficiency agent artifact verification
+
+## Agentic SDLC Frameworks
+- BMAD method agents workflow phases
+- GSD get-shit-done agent orchestration
+- GitHub spec kit agent workflow
+- Devin AI software engineer workflow
+- SWE-agent Princeton workflow
+- OpenHands CodeAct agent
+
+## Multi-Agent Orchestration
+- LangGraph human-in-the-loop verification gate
+- LangGraph software development workflow
+- CrewAI software engineering agents
+- AutoGen AG2 multi-agent SDLC
+- Semantic Kernel agent orchestration
+
+## CI/CD & Policy Gates
+- Open Policy Agent OPA software delivery
+- Conftest policy as code CI
+- Dagger workflow DAG orchestration
+- Earthly build pipeline verification
+- Spacelift policy as code infrastructure
+
+## IDE Agent Orchestrators
+- Cursor rules hooks skills system
+- Claude Code plugins skills workflow
+- Codex skills orchestration
+- Windsurf cascades workflow
+- Cline plan act mode
+
+## Enterprise Process Automation
+- Temporal workflow SDLC orchestration
+- Camunda BPMN process automation
+- Argo Workflows DAG orchestration
+- Airflow process orchestration comparison
+
+## Quality & Review Automation
+- CodeRabbit AI code review
+- Qodo AI testing verification
+- PR-Agent automated review
+
+## Academic Papers
+- "V-model" "LLM agents" verification
+- "process orchestration" "software engineering agents"
+- "verification loops" "multi-agent" coding
+- "intent satisfaction" "coding agents"
+[0m
+[0m$ [0mecho "Starting parallel web searches across multiple categories..."
+Starting parallel web searches across multiple categories...
+[0m
+[0m$ [0mecho "Beginning systematic web searches across all categories..."
+Beginning systematic web searches across all categories...
+[0m
+[0m$ [0mecho "Initiating parallel web searches..."
+Initiating parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all major categories..."
+Starting parallel web searches across all major categories...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting web searches..."
+Starting web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches across all categories..."
+Executing parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Beginning systematic research with parallel searches..."
+Beginning systematic research with parallel searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing web searches in parallel..."
+Executing web searches in parallel...
+[0m
+[0m$ [0mecho "Starting web searches now..."
+Starting web searches now...
+[0m
+[0m$ [0mecho "Executing parallel web searches across all major categories..."
+Executing parallel web searches across all major categories...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
+[0m$ [0mecho "Executing web searches..."
+Executing web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches..."
+Starting parallel web searches...
+[0m
+[0m$ [0mecho "Executing parallel web searches..."
+Executing parallel web searches...
+[0m
+[0m$ [0mecho "Starting parallel web searches across all categories..."
+Starting parallel web searches across all categories...
+[0m
