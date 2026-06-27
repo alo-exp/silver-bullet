@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
 <title>Terms of Use — Silver Bullet</title>
-<meta name="description" content="Terms of Use for Silver Bullet, the MIT-licensed agentic process orchestrator published by Alo Labs at sb.alolabs.dev.">
+<meta name="description" content="Terms of Use for Silver Bullet, the BUSL 1.1 source-available agentic process orchestrator published by Alo Labs at sb.alolabs.dev.">
 <meta property="og:title" content="Terms of Use — Silver Bullet">
 <meta property="og:url" content="https://sb.alolabs.dev/terms/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,8 +56,8 @@ main a{color:var(--accent-light)}
     <div class="nav-actions">
       <a href="../help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
-        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
-        <span id="icon-moon"><i data-lucide="moon"></i></span>
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
       </button>
       <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
@@ -79,7 +79,7 @@ main a{color:var(--accent-light)}
     <p>These Terms of Use (&ldquo;Terms&rdquo;) govern your access to the Silver Bullet website at <a href="https://sb.alolabs.dev/">sb.alolabs.dev</a> and your use of the Silver Bullet software distributed by Alo Labs (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;Alo Labs&rdquo;). By using the site or installing the plugin, you agree to these Terms.</p>
 
     <h2>1. Software license</h2>
-    <p>Silver Bullet is open-source software released under the <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>. Your rights to copy, modify, and distribute the software are governed by that license, not by these Terms. If the MIT License and these Terms conflict regarding the software itself, the MIT License controls.</p>
+    <p>Silver Bullet is source-available software released under the <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Business Source License 1.1 (BUSL 1.1)</a>, with a Change Date of 2030-06-24 and Change License of Apache License, Version 2.0. Your rights to copy, modify, and distribute the software are governed by that license, not by these Terms. If the BUSL 1.1 license and these Terms conflict regarding the software itself, the BUSL 1.1 license controls.</p>
 
     <h2>2. Website and documentation</h2>
     <p>We provide the website, help center, and documentation for informational purposes. Content may change as the product evolves (Silver Bullet is currently marked <strong>ALPHA</strong>). We do not guarantee uninterrupted availability of the site or that every document reflects the latest release at all times.</p>
