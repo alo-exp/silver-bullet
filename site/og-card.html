@@ -1,67 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
-<title>Silver Bullet Social Preview</title>
+<title>Silver Bullet Social Preview (light)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
+  @font-face{
+    font-family:'D-Din';
+    src:url('fonts/D-DIN-Bold.woff2') format('woff2');
+    font-weight:700;font-style:normal;font-display:swap;
+  }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:1200px;height:630px;overflow:hidden}
   body{
-    background:#060a0e;
-    font-family:'IBM Plex Sans',system-ui,sans-serif;
+    background:linear-gradient(160deg,#eae4da 0%,#eee8de 25%,#f4f0e8 48%,#f6f2ea 62%,#f0ece4 80%,#eae6dc 100%);
+    font-family:'D-Din',system-ui,sans-serif;
     position:relative;
-    color:#e2e8f0;
+    color:#050f08;
   }
 
-  /* subtle grid */
   .grid-bg{
     position:absolute;inset:0;
     background-image:
-      linear-gradient(rgba(0,255,65,.04) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(0,255,65,.04) 1px,transparent 1px);
+      linear-gradient(rgba(0,200,52,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,200,52,.05) 1px,transparent 1px);
     background-size:48px 48px;
     mask-image:radial-gradient(ellipse 80% 70% at 30% 50%,#000 20%,transparent 75%);
     pointer-events:none;
   }
 
   .glow-left{
-    position:absolute;
-    width:520px;height:520px;
-    border-radius:50%;
-    background:radial-gradient(circle,rgba(0,255,65,.09) 0%,transparent 68%);
-    top:50%;left:18%;
-    transform:translate(-50%,-50%);
-    pointer-events:none;
+    position:absolute;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,rgba(160,210,180,.28) 0%,transparent 68%);
+    top:50%;left:18%;transform:translate(-50%,-50%);pointer-events:none;
   }
   .glow-right{
-    position:absolute;
-    width:400px;height:400px;
-    border-radius:50%;
-    background:radial-gradient(circle,rgba(0,111,168,.06) 0%,transparent 70%);
-    bottom:-80px;right:-40px;
-    pointer-events:none;
+    position:absolute;width:400px;height:400px;border-radius:50%;
+    background:radial-gradient(circle,rgba(160,210,180,.18) 0%,transparent 70%);
+    bottom:-80px;right:-40px;pointer-events:none;
   }
 
   .border-top{
     position:absolute;top:0;left:0;right:0;height:3px;
-    background:linear-gradient(90deg,transparent 5%,#00ff41 35%,#39ff66 50%,#00ff41 65%,transparent 95%);
+    background:linear-gradient(90deg,transparent 5%,#00c834 35%,#009a28 50%,#00c834 65%,transparent 95%);
   }
   .border-left{
     position:absolute;top:0;left:0;bottom:0;width:4px;
-    background:linear-gradient(180deg,#00ff41,#006fa8 55%,transparent);
-    opacity:.85;
+    background:linear-gradient(180deg,#00c834,#006fa8 55%,transparent);
+    opacity:.75;
   }
 
   .version-badge{
     position:absolute;top:28px;right:36px;
     font-family:'IBM Plex Mono',monospace;
     font-size:12px;font-weight:600;letter-spacing:.06em;
-    color:#39ff66;
-    background:rgba(0,255,65,.08);
-    border:1px solid rgba(0,255,65,.28);
+    color:#009a28;
+    background:rgba(0,200,52,.10);
+    border:1px solid rgba(0,200,52,.35);
     border-radius:999px;
     padding:6px 14px;
     z-index:2;
@@ -79,86 +76,78 @@
   }
   .bullet{
     width:120px;
-    filter:drop-shadow(0 8px 24px rgba(0,255,65,.18)) drop-shadow(3px 6px 10px rgba(255,255,255,.2));
+    filter:drop-shadow(0 8px 24px rgba(0,200,52,.12)) drop-shadow(3px 6px 10px rgba(0,0,0,.18));
   }
-
-  /* mini flow composition hint */
-  .flow-chain{
-    display:flex;align-items:center;gap:6px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px;font-weight:600;
-    color:#64748b;
-  }
-  .flow-node{
-    width:28px;height:28px;border-radius:8px;
-    display:flex;align-items:center;justify-content:center;
-    background:rgba(0,255,65,.07);
-    border:1px solid rgba(0,255,65,.22);
-    color:#39ff66;
-    font-size:10px;
-  }
-  .flow-node.accent{
-    background:rgba(0,111,168,.12);
-    border-color:rgba(0,111,168,.35);
-    color:#5eb8e8;
-  }
-  .flow-arrow{color:#334155;font-size:12px}
 
   .text-col{
     flex:1;
-    display:flex;flex-direction:column;gap:18px;
+    display:flex;flex-direction:column;gap:16px;
     padding-top:8px;
   }
 
   .label{
-    font-size:12px;font-weight:700;letter-spacing:.24em;
-    color:#39ff66;text-transform:uppercase;
+    display:inline-block;align-self:flex-start;
+    font-size:12px;font-weight:700;letter-spacing:.08em;
+    color:#009a28;
+    background:rgba(0,200,52,.10);
+    border:1px solid rgba(0,200,52,.30);
+    border-radius:999px;padding:6px 14px;
   }
 
   h1{
-    font-size:72px;font-weight:900;line-height:.95;
+    font-size:72px;font-weight:800;line-height:.95;
     letter-spacing:-.04em;
   }
   h1 .silver-bullet{
-    background:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
+    background:linear-gradient(90deg,#2a2a2a 0%,#585858 9%,#383838 18%,#282828 27%,#505050 36%,#444444 43%,#303030 51%,#484848 59%,#343434 68%,#242424 76%,#404040 86%,#1e1e1e 100%);
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
     background-clip:text;
     display:block;
   }
 
+  .tagline-caps{
+    font-size:13px;font-weight:700;letter-spacing:.22em;
+    color:#009a28;text-transform:uppercase;
+  }
+
   .sub-heading{
-    font-size:26px;font-weight:800;letter-spacing:-.03em;
-    color:#f1f5f9;line-height:1.25;
+    font-size:30px;font-weight:800;letter-spacing:-.03em;
+    color:#050f08;line-height:1.2;
   }
   .sub-heading em{
     font-style:normal;
-    color:#39ff66;
+    color:#009a28;
   }
 
   .desc{
-    font-size:16px;line-height:1.65;color:#94a3b8;
+    font-size:16px;line-height:1.65;color:#0d3a1a;
     max-width:680px;
   }
 
   .pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
   .pill{
     font-size:11px;font-weight:600;letter-spacing:.04em;
-    color:#39ff66;
-    background:rgba(0,255,65,.07);
-    border:1px solid rgba(0,255,65,.22);
+    color:#009a28;
+    background:rgba(0,200,52,.08);
+    border:1px solid rgba(0,200,52,.28);
     border-radius:999px;padding:6px 14px;
   }
   .pill.muted{
-    color:#7dd3a0;
-    background:rgba(100,116,139,.12);
-    border-color:rgba(100,116,139,.25);
+    color:#285c38;
+    background:rgba(236,230,220,.65);
+    border-color:rgba(140,196,164,.55);
   }
 
   .footer-url{
     position:absolute;bottom:24px;right:36px;
     font-family:'IBM Plex Mono',monospace;
-    font-size:11px;color:#475569;letter-spacing:.02em;
+    font-size:11px;color:#285c38;letter-spacing:.02em;
+  }
+  .footer-brand{
+    position:absolute;bottom:24px;left:48px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;color:#285c38;letter-spacing:.02em;
   }
 </style>
 </head>
@@ -168,37 +157,28 @@
   <div class="grid-bg"></div>
   <div class="glow-left"></div>
   <div class="glow-right"></div>
-  <div class="version-badge">v0.48.3</div>
+  <div class="version-badge">ALPHA · v0.48.5</div>
 
   <div class="layout">
     <div class="brand-col">
       <img class="bullet" src="silver-bullet.png" alt="">
-      <div class="flow-chain" aria-hidden="true">
-        <span class="flow-node">Sp</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-node">Pl</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-node">Ex</span>
-        <span class="flow-arrow">→</span>
-        <span class="flow-node accent">Sh</span>
-      </div>
     </div>
 
     <div class="text-col">
-      <div class="label">Agentic Process Orchestrator</div>
+      <div class="label">Agentic Process Orchestrator for the AI Era</div>
       <h1><span class="silver-bullet">Silver Bullet</span></h1>
-      <div class="sub-heading"><em>From spec to release</em> · hook-enforced AI-native delivery</div>
-      <p class="desc">APO catalog: 27 <code>AF-*</code> atomic flows, 22 <code>WF-*</code> workflows, 85 flow-step V-loops. <code>/silver</code> composes the smallest safe chain; hooks block commits, PRs, and releases until evidence exists.</p>
+      <div class="tagline-caps">The process layer of AI-driven dev</div>
+      <div class="sub-heading">Maximize AI-driven <em>Dev Process Reliability</em></div>
+      <p class="desc">From spec to release with hook-enforced gates. 27 <code>AF-*</code> atomic flows, 22 <code>WF-*</code> workflows, V-loop evidence — Claude Code, Codex, and Cursor.</p>
       <div class="pills">
-        <span class="pill">27 AF-* Flows</span>
-        <span class="pill">22 WF-* Workflows</span>
-        <span class="pill">V-Loop Evidence</span>
         <span class="pill">Hook Gates</span>
+        <span class="pill">V-Loop Evidence</span>
         <span class="pill muted">Claude · Codex · Cursor</span>
       </div>
     </div>
   </div>
 
+  <div class="footer-brand">Alo Labs</div>
   <div class="footer-url">sb.alolabs.dev</div>
 </body>
 </html>
