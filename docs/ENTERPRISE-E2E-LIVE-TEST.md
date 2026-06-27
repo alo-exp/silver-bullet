@@ -93,8 +93,8 @@ tail -f .e2e-tui-watch-findings.jsonl
 
 ```bash
 cd /Users/shafqat/projects/silver-bullet/repo
-graphify update .
-curl -sf http://localhost:3111/agentmemory/health || nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
+bash scripts/run-enterprise-e2e-live-test.sh --preflight-only
+# or manually:
 bash tests/e2e-live/hook-delivery-preflight.sh
 bash scripts/install-claude.sh
 
@@ -102,6 +102,17 @@ cd /Users/shafqat/projects/enterprise-grade-test-app
 git status
 npm test
 ```
+
+The live entrypoint runs **code-intel preflight** before hook delivery when tools are opted in (`recommended_tools.*.enabled_by_user: true` in each repo's `.silver-bullet.json`):
+
+| Tool | Checks (when opted in) |
+|------|------------------------|
+| **Graphify** | `graphify-out/graph.json` exists (or `graphify update . --no-cluster`); fresh `graphify query` recorded for task context |
+| **agentmemory** | Server health (`/agentmemory/health`), MCP wired, `.agentmemory/` export root per `docs/AGENTMEMORY.md` |
+| **RTK** | `rtk gain --help` succeeds; host PreToolUse hook wired |
+| **Context Mode** | Node ≥ 22.5; ctx MCP available; `context-mode doctor` passes |
+
+Debug escape (not for production rounds): `--skip-code-intel-preflight`.
 
 Record test-app `git rev-parse HEAD` in the round ledger header.
 
@@ -116,8 +127,14 @@ Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / 
 | **Graphify** | `graphify query` before each row; `graphify update .` after SB edits |
 | **agentmemory** | MCP capture; retrieve via Graphify, not raw dumps |
 | **Alumnium** | Browser/visual evidence for UI rows |
-| **RTK** | Shell token compression (`RTK_DISABLED=1` exported in SB scripts) |
+| **RTK** | Shell token compression (see RTK coexistence below) |
 | **Context Mode** | MCP / large-file compression |
+
+### RTK coexistence (`RTK_DISABLED=1`)
+
+RTK transparently rewrites allow-listed agent shell commands via PreToolUse hooks (e.g. `git status` → `rtk git status`) to compress output. That is desirable for **agent** sessions but would distort **SB harness scripts** that parse exact command output or spawn nested git/gh.
+
+SB therefore exports `RTK_DISABLED=1` (via `hooks/lib/rtk-compat.sh`) in hook bridge, matrix runner, install entrypoints, and this live-test script. Upstream RTK honors `RTK_DISABLED=1` and skips rewrite. This is a **coexistence pattern**, not a rejection of RTK — agents still benefit from RTK when hooks are wired; SB bash runs verbatim for deterministic harness behavior.
 
 ---
 
