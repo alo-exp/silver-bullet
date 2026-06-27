@@ -207,6 +207,9 @@ fi
 is_intermediate=false
 is_completion=false
 cmd_first_line=$(printf '%s' "$cmd" | head -1)
+if declare -f sb_shell_command_unwrap_rtk >/dev/null 2>&1; then
+  cmd_first_line="$(sb_shell_command_unwrap_rtk "$cmd_first_line")"
+fi
 
 shell_payload_is_sb_skill_adapter_invocation() {
   local payload="$1"

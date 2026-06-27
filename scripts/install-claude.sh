@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+export SB_RTK_COMPAT_MODE=verbatim
 # shellcheck source=hooks/lib/rtk-compat.sh
 source "${REPO_ROOT}/hooks/lib/rtk-compat.sh"
 PURGE_LEGACY_PLUGINS=0
