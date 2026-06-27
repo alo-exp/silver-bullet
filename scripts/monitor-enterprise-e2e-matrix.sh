@@ -11,6 +11,8 @@
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=hooks/lib/rtk-compat.sh
+source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT"
 
 MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-rows5-7-22-resume2.log}"
