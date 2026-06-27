@@ -250,7 +250,7 @@ body.has-help-subnav .doc-content h3{
 .sidebar-nav li a:hover{background:var(--bg-code);color:var(--text-primary)}
 .sidebar-nav li a.active{background:var(--slate-a10b);color:var(--accent-light);font-weight:600}
 .sidebar-nav .sidebar-section{
-  font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;
   color:var(--text-dim);padding:16px 12px 4px;margin-top:8px;
 }
 .breadcrumb-nav{
