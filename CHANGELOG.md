@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.48.5] — 2026-06-27
+
+Enterprise E2E live test suite, `silver:multi-ai-task` model alignment, and silver-prefix skill exposure.
+
+### Features
+- `feat(e2e)`: opt-in `enterprise-e2e-live-test` suite (`SB_ENTERPRISE_E2E_LIVE=1`) with runbook `docs/ENTERPRISE-E2E-LIVE-TEST.md` and entrypoint `scripts/run-enterprise-e2e-live-test.sh`
+- `feat(skills)`: expose `silver:multi-ai-task` (renamed from `multi-ai-task`) with `scripts/multi-ai-task-models.py` — review-fix-ladder model set @ medium reasoning; OCG plan when OpenCode agents configured
+
+### Tests
+- Structural enterprise E2E live wiring validation (`tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh`)
+- `tests/scripts/test-multi-ai-task-models.sh` for resolver + Claude bundle prefix
+
+---
+
 ## [0.48.4] — 2026-06-27
 
 Enterprise E2E hardening patch: friction fixes #2–#13 (hooks, orchestrator Bash in Task workers, RTK compat, session-start branch scope), turn-level TUI watcher + matrix monitor, interactive 22/22 matrix harness, multi-ai-task v2.1–2.6 doc/sentinel fixes, and test isolation for semantic-compress / plugin-surface gates. `run-all-tests` **4672 passed, 0 failed** at release SHA.
