@@ -29,7 +29,7 @@ body > nav .nav-brand{
 }
 body > nav .nav-bullet{height:26px;width:auto;flex-shrink:0;filter:drop-shadow(2px 4px 8px rgba(0,0,0,.18))}
 body > nav .logo{
-  font-weight:800;font-size:clamp(1.05rem,1.8vw,1.3rem);
+  font-weight:400;font-size:clamp(1.05rem,1.8vw,1.3rem);
   color:var(--text-primary);
   letter-spacing:-.03em;line-height:1.1;
 }
