@@ -6,6 +6,12 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMPAT_LIB="$REPO_ROOT/hooks/lib/rtk-compat.sh"
 PASS=0
 FAIL=0
+MOCK_BIN=""
+
+cleanup() {
+  rm -rf "$MOCK_BIN"
+}
+trap cleanup EXIT
 
 assert_eq() {
   local label="$1" expected="$2" actual="$3"
@@ -17,6 +23,27 @@ assert_eq() {
     printf 'FAIL: %s (expected %q, got %q)\n' "$label" "$expected" "$actual"
   fi
 }
+
+# Hermetic mock: CI runners may not ship RTK; behavior under test is the bypass contract.
+MOCK_BIN="$(mktemp -d)"
+cat >"$MOCK_BIN/rtk" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "hook" && "${2:-}" == "cursor" ]]; then
+  input="$(cat)"
+  if [[ "$input" == *"RTK_DISABLED=1"* ]]; then
+    printf '%s' '{}'
+    exit 0
+  fi
+  printf '%s' '{"updatedInput":{"command":"rtk git status"}}'
+  exit 0
+fi
+if [[ "${1:-}" == "git" ]]; then
+  exec git "${@:2}"
+fi
+exit 1
+EOF
+chmod +x "$MOCK_BIN/rtk"
+export PATH="$MOCK_BIN:$PATH"
 
 unset SILVER_BULLET RTK_DISABLED SB_RTK_COMPAT_ENABLED SILVER_BULLET_HOOK_EXEC 2>/dev/null || true
 # shellcheck source=hooks/lib/rtk-compat.sh
