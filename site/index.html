@@ -452,8 +452,11 @@ section:nth-child(even){background:var(--section-alt)}
 .sb-lifecycle-mini,
 .faq-item,
 .install-block,
-.hero-visual-mocks .enforcement-block,
-.proof-enforcement-grid .enforcement-block{
+.callout,
+.stakes-callout,
+.gaps-callout,
+.cost-stakes,
+.enforcement-block{
   box-shadow:none;
   border:1px solid var(--card-border-faint);
   transition:border-color .3s,box-shadow .3s;
@@ -474,10 +477,11 @@ section:nth-child(even){background:var(--section-alt)}
 .sb-lifecycle-mini:hover,
 .faq-item:hover,
 .install-block:hover,
-.hero-visual-mocks .enforcement-block:hover,
-.proof-enforcement-grid .enforcement-block:hover,
-#cost .cost-card:hover,
-#cost .cost-emotional:hover{
+.callout:hover,
+.stakes-callout:hover,
+.gaps-callout:hover,
+.cost-stakes:hover,
+.enforcement-block:hover{
   border-color:var(--border-hover);
   box-shadow:var(--card-shadow-hover);
   transform:none;
@@ -870,7 +874,7 @@ section:nth-child(even){background:var(--section-alt)}
 .layer-card p{font-size:.963rem;color:var(--text-secondary);line-height:1.6}
 /* ───── ENFORCEMENT BLOCKS (code) ───── */
 .enforcement-block{
-  background:var(--bg-code);border:1px solid var(--border);
+  background:var(--bg-code);
   border-radius:var(--radius);overflow:hidden;
 }
 .enforcement-header{
@@ -1086,10 +1090,9 @@ section:nth-child(even){background:var(--section-alt)}
 /* ───── CALLOUT ───── */
 .callout{
   background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
-  border:1px solid var(--mint-a32);
+  border-color:var(--mint-a32);
   border-radius:var(--radius-lg);padding:40px;
   text-align:center;max-width:700px;margin:0 auto;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 .callout .callout-icon{font-size:2rem;margin-bottom:12px}
 .callout-label{
@@ -1106,7 +1109,6 @@ section:nth-child(even){background:var(--section-alt)}
   margin-top:40px;padding:28px 32px;
   background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
   border-radius:var(--radius-lg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 .stakes-callout .stakes-transition{font-size:.95rem;color:var(--text-secondary);line-height:1.65;margin:20px 0 0;font-style:italic;text-align:center}
 .stakes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px}
@@ -1120,7 +1122,6 @@ section:nth-child(even){background:var(--section-alt)}
   margin-top:32px;padding:24px 28px;text-align:left;max-width:none;
   background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
   border-radius:var(--radius-lg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 .cost-stakes p{font-size:.95rem;color:var(--text-secondary);line-height:1.65;margin:0}
 .cost-stakes strong{color:var(--text-primary)}
@@ -1134,7 +1135,6 @@ section:nth-child(even){background:var(--section-alt)}
   margin:48px auto 40px;padding:28px 32px;text-align:left;max-width:820px;
   background:linear-gradient(135deg,rgba(196,64,96,.08),var(--neutral-a12) 55%,var(--mint-a10));
   border-radius:var(--radius-lg);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
 }
 .gaps-callout h3{font-size:1rem;margin:0 0 10px;color:var(--text-primary)}
 .gaps-callout p{font-size:.92rem;color:var(--text-secondary);line-height:1.65;margin:0}
@@ -1318,7 +1318,7 @@ img{max-width:100%;height:auto}
 }
 </style>
 <link rel="stylesheet" href="neutral-variants.css?v=s3-home-icons">
-<link rel="stylesheet" href="chrome.css?v=site-chrome-10">
+<link rel="stylesheet" href="chrome.css?v=site-chrome-11">
 <link rel="stylesheet" href="tokens.css?v=s3-site-icon-glyph-align5">
 </head>
 <body>
@@ -2571,6 +2571,6 @@ function switchWorkflow(mode) {
 }
 </script>
 
-<script src="chrome.js?v=site-chrome-10"></script>
+<script src="chrome.js?v=site-chrome-11"></script>
 </body>
 </html>

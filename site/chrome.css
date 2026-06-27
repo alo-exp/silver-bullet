@@ -165,7 +165,7 @@ footer .footer-links a{font-size:inherit}
 /* Help Center secondary nav — fixed below site header (shade only, no borders) */
 .help-subnav{
   position:fixed;top:var(--site-header-h);left:0;right:0;z-index:99;
-  background:var(--nav-bg);backdrop-filter:blur(16px);
+  background:var(--help-subnav-bg);backdrop-filter:blur(16px);
   border-top:none;border-bottom:none;
   min-height:var(--help-subnav-h);
   overflow:visible;
