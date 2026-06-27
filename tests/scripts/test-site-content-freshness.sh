@@ -84,6 +84,8 @@ assert_not_contains "Help Center install docs do not advertise retired runtime i
 assert_not_contains "public workflow docs do not route to missing SB-local MultAI skill" "silver:multai" "$REPO_ROOT/site"
 assert_not_contains "package metadata does not advertise stale fixed-step Claude-only workflow" "20-step|24-step|for Claude Code\\." "$REPO_ROOT/package.json"
 
+bash "$REPO_ROOT/tests/scripts/test-site-chrome-regression.sh"
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

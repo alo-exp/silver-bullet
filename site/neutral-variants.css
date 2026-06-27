@@ -82,15 +82,6 @@ html[data-theme="dark"][data-neutral-variant="s3"] .workflow-tab:not(.active){
   box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
 }
 
-html[data-theme="dark"][data-neutral-variant="s3"] .feature-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .devops-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .layer-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .compare-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
-  border-color:#4d6884;
-}
-
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .devops-card,
@@ -105,15 +96,6 @@ html[data-theme="dark"][data-neutral-variant="s3"] .code-block,
 html[data-theme="dark"][data-neutral-variant="s3"] .enforcement-block{
   border:0;
   text-align:left;
-}
-
-html[data-theme="dark"][data-neutral-variant="s3"] .feature-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .ecosystem-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .devops-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .layer-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .compare-card:hover,
-html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
-  border-color:transparent;
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card .feature-icon,
@@ -225,15 +207,6 @@ html[data-neutral-variant="s3"] .enforcement-block{
   text-align:left;
 }
 
-html[data-neutral-variant="s3"] .feature-card:hover,
-html[data-neutral-variant="s3"] .ecosystem-card:hover,
-html[data-neutral-variant="s3"] .devops-card:hover,
-html[data-neutral-variant="s3"] .layer-card:hover,
-html[data-neutral-variant="s3"] .compare-card:hover,
-html[data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
-  border-color:transparent;
-}
-
 html[data-neutral-variant="s3"] .feature-card .feature-icon,
 html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon,
 html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
@@ -271,6 +244,33 @@ html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-ico
 html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon svg{
   margin-left:auto;
   margin-right:auto;
+}
+
+/* Homepage s3 — unified card hover (overrides inset/rest shadows above) */
+html[data-neutral-variant="s3"] .pain-card:hover,
+html[data-neutral-variant="s3"] .cost-card:hover,
+html[data-neutral-variant="s3"] .cost-emotional:hover,
+html[data-neutral-variant="s3"] .future-card:hover,
+html[data-neutral-variant="s3"] .feature-card:hover,
+html[data-neutral-variant="s3"] .mech-card:hover,
+html[data-neutral-variant="s3"] .proof-card:hover,
+html[data-neutral-variant="s3"] .ecosystem-card:hover,
+html[data-neutral-variant="s3"] .devops-card:hover,
+html[data-neutral-variant="s3"] .layer-card:hover,
+html[data-neutral-variant="s3"] .compare-card:hover,
+html[data-neutral-variant="s3"] .sb-lifecycle-benefit:hover,
+html[data-neutral-variant="s3"] .sb-lifecycle-panel:hover,
+html[data-neutral-variant="s3"] .sb-lifecycle-mini:hover,
+html[data-neutral-variant="s3"] .faq-item:hover,
+html[data-neutral-variant="s3"] .install-block:hover,
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout:hover,
+html[data-neutral-variant="s3"] .stakes-callout:hover,
+html[data-neutral-variant="s3"] .gaps-callout:hover,
+html[data-neutral-variant="s3"] .cost-stakes:hover,
+html[data-neutral-variant="s3"] .enforcement-block:hover{
+  border-color:var(--border-hover) !important;
+  box-shadow:var(--card-shadow-hover) !important;
+  transform:none !important;
 }
 
 html[data-neutral-variant="s3"] body:not(.has-help-subnav) *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){

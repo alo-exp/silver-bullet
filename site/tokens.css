@@ -73,6 +73,7 @@
   --card-border-faint:rgba(0,0,0,.07);
   --card-shadow-hover:0 6px 18px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);
   --nav-bg:rgba(246,244,240,.92);
+  --help-subnav-bg:rgba(232,226,216,.97);
   --nav-mobile-bg:rgba(246,244,240,.99);
   --section-alt:rgba(236,230,220,.55);
   --table-row-hover:rgba(0,170,46,.03);
@@ -198,6 +199,7 @@
   --card-border-faint:rgba(255,255,255,.08);
   --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05),0 6px 18px rgba(255,255,255,.07),0 2px 6px rgba(255,255,255,.04);
   --nav-bg:rgba(3,7,12,.94);
+  --help-subnav-bg:rgba(16,28,44,.97);
   --nav-mobile-bg:rgba(3,7,12,.99);
   --section-alt:rgba(9,18,30,.96);
   --table-row-hover:rgba(0,255,65,.02);

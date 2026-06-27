@@ -9,7 +9,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SITE = REPO / "site"
-CHROME_VER = "site-chrome-10"
+CHROME_VER = "site-chrome-11"
 NAV_TMPL = (SITE / "_chrome" / "nav.html").read_text(encoding="utf-8")
 FOOTER_TMPL = (SITE / "_chrome" / "footer.html").read_text(encoding="utf-8")
 HELP_SUBNAV_TMPL = (SITE / "_chrome" / "help-subnav.html").read_text(encoding="utf-8")
