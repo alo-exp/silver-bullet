@@ -9,7 +9,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SITE = REPO / "site"
-CHROME_VER = "site-chrome-9"
+CHROME_VER = "site-chrome-10"
 NAV_TMPL = (SITE / "_chrome" / "nav.html").read_text(encoding="utf-8")
 FOOTER_TMPL = (SITE / "_chrome" / "footer.html").read_text(encoding="utf-8")
 HELP_SUBNAV_TMPL = (SITE / "_chrome" / "help-subnav.html").read_text(encoding="utf-8")
@@ -150,12 +150,14 @@ def build_breadcrumb(path: Path) -> str:
         return "".join(crumbs)
 
     section = parts[0]
-    section_href = link_to_section(path, section)
-    crumbs.extend(["<span class=\"sep\">/</span>", f'<a href="{section_href}">{SECTION_TITLES.get(section, slug_title(section))}</a>'])
+    section_title = SECTION_TITLES.get(section, slug_title(section))
 
     if len(parts) == 2 and parts[1] == "index.html":
-        crumbs.extend(["<span class=\"sep\">/</span>", f'<span class="current">{SECTION_TITLES.get(section, slug_title(section))}</span>'])
+        crumbs.extend(["<span class=\"sep\">/</span>", f'<span class="current">{section_title}</span>'])
         return "".join(crumbs)
+
+    section_href = link_to_section(path, section)
+    crumbs.extend(["<span class=\"sep\">/</span>", f'<a href="{section_href}">{section_title}</a>'])
 
     if len(parts) >= 2 and parts[-1] != "index.html":
         crumbs.extend(["<span class=\"sep\">/</span>", f'<span class="current">{slug_title(parts[-1])}</span>'])
