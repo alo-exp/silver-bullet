@@ -248,7 +248,7 @@ run_hook "$HOOK_WORKDIR" >/dev/null
 assert_file_missing "branch changed -> state file deleted" "$TMPSTATE"
 # branch file should now reflect current branch
 if [[ -f "$TMPBRANCH" ]]; then
-  stored=$(cat "$TMPBRANCH")
+  stored=$(head -1 "$TMPBRANCH" 2>/dev/null | tr -d '\n')
   if [[ "$stored" == "$new_branch" ]]; then
     echo "  PASS: branch file updated to current branch"
     PASS=$((PASS + 1))
@@ -547,7 +547,7 @@ run_hook "$HOOK_WORKDIR" >/dev/null
 # Branch file should now exist and contain the current branch
 assert_file_exists "branch file absent -> branch file created" "$TMPBRANCH"
 if [[ -f "$TMPBRANCH" ]]; then
-  stored=$(cat "$TMPBRANCH")
+  stored=$(head -1 "$TMPBRANCH" 2>/dev/null | tr -d '\n')
   if [[ "$stored" == "$new_branch" ]]; then
     echo "  PASS: branch file contains current branch name"
     PASS=$((PASS + 1))
