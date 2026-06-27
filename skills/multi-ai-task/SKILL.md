@@ -2,7 +2,7 @@
 name: multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
-user-invocable: false
+user-invocable: true
 version: 2.1.0
 ---
 
@@ -125,6 +125,15 @@ Pass a JSON object describing the expected per-row schema:
 | `date` | ISO-8601 date string |
 | `text` | Long-form text (use `max_words` to constrain) |
 
+**Supported top-level schema fields:**
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"table"` (the only currently supported shape) |
+| `primary_key` | Name of the single column that is the dedup key. Convenience alias for putting `dedup_key: true` on one column. For composite keys, omit this and use `dedup_key: true` on multiple columns instead. |
+| `columns` | List of column definitions (see below) |
+| `conflict_resolution` | Map of `{field_name: rule_name}` to override defaults |
+
 **Supported column fields:**
 
 | Field | Description |
@@ -170,6 +179,28 @@ If no schema is provided, the skill uses LLM-assisted extraction:
 ├── evidence-ledger.md        # (thorough mode only) per-claim source URL + verification verdict
 └── verification.md            # (thorough mode only) per-item source verification
 ```
+
+### `thorough`-mode-only file schemas
+
+`evidence-ledger.md` (one row per claim × source pair):
+
+```markdown
+| item | claim | source | verifier | verdict | confidence |
+|------|-------|--------|----------|---------|------------|
+| LangGraph | "Stateful DAG with checkpointers" | https://langchain-ai.github.io/langgraph/concepts/ | minimax-m3 | verified | high |
+| LangGraph | "Per-step rollup + intent gate" | https://langchain-ai.github.io/langgraph/concepts/ | minimax-m3 | wrong | n/a |
+```
+
+`verification.md` (one row per canonical item, per-item rollup):
+
+```markdown
+| item | source_verified | verdicts_by_source | notes |
+|------|------------------|---------------------|-------|
+| LangGraph | partially-verified | 1 verified, 1 wrong | at least one source claim contradicted |
+| BMAD | verified | 3 verified, 0 wrong | all sources support claims |
+```
+
+**Verdict values** for both files: `verified` (the source supports the claim), `wrong` (the source contradicts the claim), or `uncertain` (the verifier couldn't determine).
 
 `consolidated.html` generation: convert `consolidated.md` to HTML using a markdown library (`marked` in Node, `markdown` in Python, `pandoc` for richer output). Embed minimal CSS inline (table styles, conflict-marker color, section anchors). Self-contained — no external resources.
 
