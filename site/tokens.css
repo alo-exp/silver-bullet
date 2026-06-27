@@ -28,6 +28,16 @@
   font-weight:700;font-style:normal;font-display:swap;
 }
 
+/* IBM Plex Mono tuned to D-Din cap/x-height at the same computed font-size */
+@font-face{
+  font-family:'SB Plex Mono';
+  src:local('IBM Plex Mono'),local('IBMPlexMono-Regular'),
+       local('IBM Plex Mono Medium'),local('IBMPlexMono-Medium');
+  font-weight:300 700;
+  font-style:normal;
+  size-adjust:93%;
+}
+
 /* ───── DESIGN TOKENS — LIGHT (default) ───── */
 :root{
   --bg-page:#f6f4f0;
@@ -56,7 +66,8 @@
   --font-heading:'D-Din',system-ui,sans-serif;
   --font-body:'D-Din',system-ui,sans-serif;
   --font-sans:var(--font-body);
-  --font-mono:'IBM Plex Mono',monospace;
+  --font-mono:'SB Plex Mono','IBM Plex Mono',monospace;
+  --mono-glyph-scale:1;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
   --nav-bg:rgba(246,244,240,.92);
@@ -182,6 +193,8 @@
   --border-hover:#4d6884;
   --shadow-lg:0 28px 82px rgba(0,0,0,.84);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --card-border-faint:rgba(255,255,255,.08);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 16px 48px rgba(0,0,0,.55),0 4px 16px rgba(255,255,255,.04);
   --nav-bg:rgba(3,7,12,.94);
   --nav-mobile-bg:rgba(3,7,12,.99);
   --section-alt:rgba(9,18,30,.96);
@@ -226,25 +239,43 @@ body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-b
   transition:background .25s,background-color .25s,border-color .25s,color .25s,box-shadow .25s;
 }
 
+/* ───── Monospace / sans glyph harmonization ───── */
 code,kbd,pre,samp{font-family:var(--font-mono)}
-code,kbd,samp{font-size:1em !important;line-height:inherit}
-
-:where(p,li,td,th,span,strong,em,.subtitle,.section-desc,.callout-body,.step-desc,.card,.help-card,.quick-link,.update-card,.issue-card,.when-card,.benefit-card) :where(code,kbd,samp){
+code,kbd,samp{
   font-size:1em !important;
+  line-height:inherit;
+  vertical-align:baseline;
 }
 
+/* Inline mono in prose — no vertical padding so line boxes stay uniform */
+:where(p,li,td,th,span,strong,em,.subtitle,.section-desc,.callout-body,.step-desc,.card,.help-card,.quick-link,.update-card,.issue-card,.when-card,.benefit-card,.doc-content,.faq-item,.mech-card,.ecosystem-card) :where(code,kbd,samp){
+  font-size:1em !important;
+  padding-block:0 !important;
+  padding-inline:0.35em;
+}
+
+.doc-content :where(code,kbd,samp){
+  background:var(--bg-code);
+  border-radius:4px;
+  color:var(--accent-light);
+}
+
+/* Mono table cells beside sans — inherit cell size; SB Plex Mono matches metrics */
 .ref-table td:first-child,
 .pref-table td:first-child,
 .feat-table td:nth-child(2),
 .cat-table td.score-cell,
 .step-card .step-output,
 .wave-item .wave-num,
-.sb-lifecycle-proof-row strong{
+.sb-lifecycle-proof-row strong,
+.prereq-card .install-cmd,
+.hero-pill,
+.pain-num,
+.faq-item .faq-q::before,
+.faq-item .faq-a::before{
+  font-family:var(--font-mono);
   font-size:inherit !important;
-}
-
-.prereq-card .install-cmd{
-  font-size:.99rem !important;
+  line-height:inherit;
 }
 
 [data-theme="dark"] body{

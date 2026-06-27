@@ -1,0 +1,213 @@
+# Enterprise E2E Live Test — Operator Runbook
+
+Optional live validation of Silver Bullet against the `enterprise-grade-test-app` fixture via **interactive Claude TUI**. Not run in default CI or `bash tests/run-all-tests.sh` unless explicitly opted in.
+
+---
+
+## Opt-in
+
+```bash
+cd /Users/shafqat/projects/silver-bullet/repo
+export SB_ENTERPRISE_E2E_LIVE=1
+bash scripts/run-enterprise-e2e-live-test.sh
+```
+
+Structural wiring only (no Claude sessions):
+
+```bash
+bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh
+```
+
+Included in `run-all-tests.sh` only when `SB_ENTERPRISE_E2E_LIVE=1`.
+
+---
+
+## Paths
+
+| Resource | Path |
+|----------|------|
+| **SB repo (fixes, release)** | `/Users/shafqat/projects/silver-bullet/repo` |
+| **Test app (Claude CWD)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| **Workflow matrix** | `enterprise-grade-test-app/docs/WORKFLOW_E2E_MATRIX.md` |
+| **TUI protocol** | `.planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md` |
+| **Round 1 ledger** | `.planning/enterprise-e2e/ROUND-1-LEDGER.md` |
+| **Round 2 ledger** | `.planning/enterprise-e2e/ROUND-2-LEDGER.md` |
+| **Session prompt (fixture)** | `enterprise-grade-test-app/docs/ENTERPRISE-E2E-SESSION-PROMPT.md` |
+
+---
+
+## Auth — API key only (NO login / NO logout)
+
+Round 1/2 learnings:
+
+- **Third-party API key** in `~/.claude/settings.json` (`ANTHROPIC_API_KEY`, optional `ANTHROPIC_BASE_URL`).
+- Matrix runner exports settings env via `claude_matrix_export_settings_env` so spawned interactive TUI matches manual sessions.
+- **`SB_E2E_MATRIX_CLEAN_ENV=0`** (default) — inherit caller shell auth. Do **not** use `env -i` unless debugging OAuth conflicts.
+- **Never** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
+- Network errors (`ENOTFOUND`, `ConnectionRefused`) are **not** auth failures — retry with backoff; do not re-diagnose auth.
+
+---
+
+## Interactive TUI only — `/silver` slash prompts
+
+- One Claude TUI session per matrix row; **CWD must stay** the test app.
+- Prompts use **`/silver` and `/silver:*` slash commands** (not legacy markdown skill links).
+- Row 1 is routing-only; rows 21–22 run inside parent sessions (rows 3 and 4).
+- **`SB_E2E_MATRIX_DRY_RUN` must be unset** for live runs (evidence-only dry-run is for CI wiring checks, not live).
+
+Quiet timeouts (from Round 2):
+
+| Row class | Env | Default |
+|-----------|-----|---------|
+| Row 1 routing | `SB_E2E_ROW1_QUIET_TIMEOUT` | 300s |
+| Rows 2–20 workflows | `SB_E2E_WORKFLOW_QUIET_TIMEOUT` | 600s |
+| General | `CLAUDE_INTERACTIVE_QUIET_TIMEOUT` | 300s |
+
+---
+
+## Dual-role monitoring (drive + monitor + watch in persistent shells)
+
+Operator model: **dual-role** — drive the matrix in one persistent shell while monitor + watch run in parallel shells.
+
+| Shell | Role | Command |
+|-------|------|---------|
+| **A — Drive** | Matrix batch | `SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh --resume` |
+| **B — Monitor** | Batch health, 429/network restart | `bash scripts/monitor-enterprise-e2e-matrix.sh &` |
+| **C — Watch** | Turn-level TUI findings + monitor recovery | `bash scripts/watch-enterprise-e2e-tui.sh &` |
+
+Tail artifacts:
+
+```bash
+tail -f .e2e-matrix-live.log
+tail -f .e2e-matrix-monitor-status.txt
+tail -f .e2e-tui-watch-findings.jsonl
+```
+
+**Monitor policies:** 429 / Token Plan → wait **600s**; network → **120–300s** random; stall → kill hung `claude` children and restart incomplete rows only.
+
+**Watch recovery:** if monitor dies, `watch-enterprise-e2e-tui.sh` restarts it without duplicating the matrix batch.
+
+---
+
+## Preflight (each round)
+
+```bash
+cd /Users/shafqat/projects/silver-bullet/repo
+graphify update .
+curl -sf http://localhost:3111/agentmemory/health || nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
+bash tests/e2e-live/hook-delivery-preflight.sh
+bash scripts/install-claude.sh
+
+cd /Users/shafqat/projects/enterprise-grade-test-app
+git status
+npm test
+```
+
+Record test-app `git rev-parse HEAD` in the round ledger header.
+
+### Session-start from test app
+
+Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
+
+### Recommended tools (opt in on both repos)
+
+| Tool | Role |
+|------|------|
+| **Graphify** | `graphify query` before each row; `graphify update .` after SB edits |
+| **agentmemory** | MCP capture; retrieve via Graphify, not raw dumps |
+| **Alumnium** | Browser/visual evidence for UI rows |
+| **RTK** | Shell token compression (`RTK_DISABLED=1` exported in SB scripts) |
+| **Context Mode** | MCP / large-file compression |
+
+---
+
+## Session 0 — `/silver:init`
+
+```bash
+cd /Users/shafqat/projects/enterprise-grade-test-app
+claude
+```
+
+In TUI: run **`/silver:init`**, opt in Graphify + agentmemory, `graphify update .`, **do not commit** SB init artifacts.
+
+---
+
+## Matrix rows 1–22
+
+```bash
+# Resume from last PASS/SKIP (never restart at row 1 if row 1 already passed)
+SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh --resume
+
+# Specific failed rows only
+SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh 3 14
+```
+
+Per row: `graphify query "<slug> routes hooks skills orchestrator"` → paste matrix prompt card → update ledger with Pass/Fail + refs.
+
+---
+
+## Failure handling
+
+| Symptom | Action |
+|---------|--------|
+| **429 / Token Plan** | Wait **600s**, retry same row (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL`) |
+| **Network blip** | Wait 120–300s; monitor auto-restarts batch |
+| **Provider change / bad state** | Kill claude children; **provider restart procedure**: stop batch → `install-claude.sh` → resume incomplete rows |
+| **SB hook bug** | SB repo: `/silver:add` label `enterprise-test-app` → fix → commit → **`bash scripts/install-claude.sh`** → re-run **failed row only** |
+| **Branch/worktree drift** | Confirm fixture branch; reset skill state; re-run session-start from test app |
+| **Pause for P1 fix** | Stop batch; fix SB; deploy via `install-claude.sh`; resume with `--resume` |
+
+---
+
+## Round gates (before release)
+
+Minimum **2 consecutive clean rounds**:
+
+1. **22/22 PASS** in ledger (graphify + agentmemory refs)
+2. **`/silver:review-fix-ladder`** — 8 rungs, 2 consecutive clean verify passes each
+3. **`bash tests/run-all-tests.sh`** → 0 failures
+4. **`graphify update .`** in SB repo post-fixes
+5. No open MUST-FIX issues
+
+---
+
+## Fresh-session prompt (paste at Claude TUI start)
+
+Use this in a **new** Claude session with **CWD = test app**:
+
+```
+Enterprise E2E live test — Silver Bullet validation on enterprise-grade-test-app.
+
+Working directory: /Users/shafqat/projects/enterprise-grade-test-app
+SB plugin: install from /Users/shafqat/projects/silver-bullet/repo via bash scripts/install-claude.sh (latest release).
+
+Constraints:
+- API key auth only — do NOT login or logout
+- Use /silver and /silver:* slash commands only (interactive TUI)
+- Opt in Graphify + agentmemory (enabled_by_user: true) if not already
+- Run graphify update . after init when Graphify enabled
+
+If Session 0 not done: run /silver:init now, then stop.
+If resuming matrix: tell me the next row number from ROUND-1-LEDGER.md and paste that row's prompt card from docs/WORKFLOW_E2E_MATRIX.md.
+
+Operator monitors in parallel:
+- SB repo: bash scripts/monitor-enterprise-e2e-matrix.sh
+- SB repo: bash scripts/watch-enterprise-e2e-tui.sh
+- Matrix log: /Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log
+
+On 429/Token Plan: wait 10 minutes and retry. On SB hook fix: reinstall plugin before re-running failed rows.
+```
+
+---
+
+## Related scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/run-enterprise-e2e-live-test.sh` | Opt-in live entrypoint (preflight + monitor + matrix) |
+| `scripts/run-enterprise-e2e-matrix.sh` | Interactive matrix row runner |
+| `scripts/monitor-enterprise-e2e-matrix.sh` | Batch monitor (429/network/stall) |
+| `scripts/watch-enterprise-e2e-tui.sh` | Turn-level TUI watcher + monitor recovery |
+| `scripts/lib/claude-matrix-auth.sh` | Export `~/.claude/settings.json` env for TUI |
+| `scripts/lib/matrix-quota.sh` | 429 / Token Plan detection |
+| `tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh` | Structural validation (default CI-safe) |

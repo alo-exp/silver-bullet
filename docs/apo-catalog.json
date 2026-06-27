@@ -1481,13 +1481,13 @@
         "TP-GRAPHIFY"
       ],
       "owning_skills": [
-        "multi-ai-task",
         "review-research",
+        "silver-multi-ai-task",
         "silver-research"
       ],
       "flow_steps": [
-        "FS-MULTI_AI_TASK",
         "FS-REVIEW_RESEARCH",
+        "FS-SILVER_MULTI_AI_TASK",
         "FS-SILVER_RESEARCH"
       ],
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
@@ -3893,57 +3893,6 @@
       "canonical_catalog_entity": "AF-QUALITY-GATE"
     },
     {
-      "id": "FS-MULTI_AI_TASK",
-      "skill": "multi-ai-task",
-      "purpose": "Execute the multi-ai-task skill as a catalog-backed step in AF-DECIDE.",
-      "hierarchy_level": "flow_step",
-      "classification": "flow-step-skill",
-      "inputs": [
-        "parent atomic-flow input",
-        "current user intent",
-        "relevant artifacts and state"
-      ],
-      "outputs": [
-        "multi-ai-task work product or routing decision",
-        "local step evidence"
-      ],
-      "v_loop": {
-        "id": "VL-FS-MULTI_AI_TASK",
-        "rollup_target": "flow_step",
-        "input_contract": "multi-ai-task receives the parent flow intent and only the artifacts needed for its local responsibility.",
-        "work_product": "multi-ai-task produces its documented skill output and evidence marker.",
-        "verification": {
-          "methods": [
-            "inspection"
-          ],
-          "artifact_refs": [
-            "skills/multi-ai-task/SKILL.md"
-          ]
-        },
-        "validation": {
-          "target": "parent atomic-flow input and current user intent",
-          "methods": [
-            "compare step output to parent flow contract"
-          ]
-        },
-        "repair": {
-          "behavior": "rerun or revise the step until the local V-check passes",
-          "max_attempts": 2
-        },
-        "escalation": {
-          "condition": "step cannot satisfy its local contract with available context",
-          "blocker_artifact": ".planning/BLOCKERS.md"
-        },
-        "evidence_refs": [
-          "EV-FS-MULTI_AI_TASK"
-        ]
-      },
-      "reusable_by_flows": [
-        "AF-DECIDE"
-      ],
-      "canonical_catalog_entity": "AF-DECIDE"
-    },
-    {
       "id": "FS-RELIABILITY",
       "skill": "reliability",
       "purpose": "Execute the reliability skill as a catalog-backed step in AF-QUALITY-GATE.",
@@ -3965,7 +3914,7 @@
         "work_product": "reliability produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/reliability/SKILL.md"
@@ -4016,7 +3965,7 @@
         "work_product": "reusability produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/reusability/SKILL.md"
@@ -4067,7 +4016,7 @@
         "work_product": "review-context produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/review-context/SKILL.md"
@@ -4118,7 +4067,7 @@
         "work_product": "review-cross-artifact produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/review-cross-artifact/SKILL.md"
@@ -4169,7 +4118,7 @@
         "work_product": "review-design produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/review-design/SKILL.md"
@@ -4220,7 +4169,7 @@
         "work_product": "review-ingestion-manifest produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/review-ingestion-manifest/SKILL.md"
@@ -4271,7 +4220,7 @@
         "work_product": "review-plan produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/review-plan/SKILL.md"
@@ -4322,7 +4271,7 @@
         "work_product": "review-requirements produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/review-requirements/SKILL.md"
@@ -4373,7 +4322,7 @@
         "work_product": "review-research produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/review-research/SKILL.md"
@@ -4424,7 +4373,7 @@
         "work_product": "review-roadmap produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/review-roadmap/SKILL.md"
@@ -4475,7 +4424,7 @@
         "work_product": "review-spec produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/review-spec/SKILL.md"
@@ -4526,7 +4475,7 @@
         "work_product": "review-uat produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/review-uat/SKILL.md"
@@ -4577,7 +4526,7 @@
         "work_product": "review-verification produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/review-verification/SKILL.md"
@@ -4628,7 +4577,7 @@
         "work_product": "scalability produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/scalability/SKILL.md"
@@ -4679,7 +4628,7 @@
         "work_product": "security produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/security/SKILL.md"
@@ -4730,7 +4679,7 @@
         "work_product": "silver produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/silver/SKILL.md"
@@ -4781,7 +4730,7 @@
         "work_product": "silver-add produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/silver-add/SKILL.md"
@@ -4832,7 +4781,7 @@
         "work_product": "silver-benchmark produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/silver-benchmark/SKILL.md"
@@ -4883,7 +4832,7 @@
         "work_product": "silver-blast-radius produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/silver-blast-radius/SKILL.md"
@@ -4934,7 +4883,7 @@
         "work_product": "silver-bootstrap-milestone produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/silver-bootstrap-milestone/SKILL.md"
@@ -4985,7 +4934,7 @@
         "work_product": "silver-bootstrap-project produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/silver-bootstrap-project/SKILL.md"
@@ -5036,7 +4985,7 @@
         "work_product": "silver-branch-finish produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/silver-branch-finish/SKILL.md"
@@ -5087,7 +5036,7 @@
         "work_product": "silver-bugfix produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/silver-bugfix/SKILL.md"
@@ -5138,7 +5087,7 @@
         "work_product": "silver-canary produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/silver-canary/SKILL.md"
@@ -5189,7 +5138,7 @@
         "work_product": "silver-clarify produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/silver-clarify/SKILL.md"
@@ -5240,7 +5189,7 @@
         "work_product": "silver-completion-audit produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/silver-completion-audit/SKILL.md"
@@ -5291,7 +5240,7 @@
         "work_product": "silver-content produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/silver-content/SKILL.md"
@@ -5342,7 +5291,7 @@
         "work_product": "silver-context produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/silver-context/SKILL.md"
@@ -5393,7 +5342,7 @@
         "work_product": "silver-create-release produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/silver-create-release/SKILL.md"
@@ -5444,7 +5393,7 @@
         "work_product": "silver-debug produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/silver-debug/SKILL.md"
@@ -5495,7 +5444,7 @@
         "work_product": "silver-deploy produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/silver-deploy/SKILL.md"
@@ -5546,7 +5495,7 @@
         "work_product": "silver-devops produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/silver-devops/SKILL.md"
@@ -5597,7 +5546,7 @@
         "work_product": "silver-domain-audit produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/silver-domain-audit/SKILL.md"
@@ -5648,7 +5597,7 @@
         "work_product": "silver-ensure-docs produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/silver-ensure-docs/SKILL.md"
@@ -5699,7 +5648,7 @@
         "work_product": "silver-execute produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/silver-execute/SKILL.md"
@@ -5750,7 +5699,7 @@
         "work_product": "silver-fast produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/silver-fast/SKILL.md"
@@ -5801,7 +5750,7 @@
         "work_product": "silver-feature produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "demonstration"
+            "analysis"
           ],
           "artifact_refs": [
             "skills/silver-feature/SKILL.md"
@@ -5852,7 +5801,7 @@
         "work_product": "silver-forensics produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "testing"
+            "demonstration"
           ],
           "artifact_refs": [
             "skills/silver-forensics/SKILL.md"
@@ -5903,7 +5852,7 @@
         "work_product": "silver-handoff produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "artifact_review"
+            "testing"
           ],
           "artifact_refs": [
             "skills/silver-handoff/SKILL.md"
@@ -5954,7 +5903,7 @@
         "work_product": "silver-incident produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "command_evidence"
+            "artifact_review"
           ],
           "artifact_refs": [
             "skills/silver-incident/SKILL.md"
@@ -6005,7 +5954,7 @@
         "work_product": "silver-ingest produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "tool_evidence"
+            "command_evidence"
           ],
           "artifact_refs": [
             "skills/silver-ingest/SKILL.md"
@@ -6056,7 +6005,7 @@
         "work_product": "silver-init produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "inspection"
+            "tool_evidence"
           ],
           "artifact_refs": [
             "skills/silver-init/SKILL.md"
@@ -6107,7 +6056,7 @@
         "work_product": "silver-migrate produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
-            "analysis"
+            "inspection"
           ],
           "artifact_refs": [
             "skills/silver-migrate/SKILL.md"
@@ -6135,6 +6084,57 @@
         "AF-PHASE-MANAGE"
       ],
       "canonical_catalog_entity": "AF-PHASE-MANAGE"
+    },
+    {
+      "id": "FS-SILVER_MULTI_AI_TASK",
+      "skill": "silver-multi-ai-task",
+      "purpose": "Execute the silver-multi-ai-task skill as a catalog-backed step in AF-DECIDE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-multi-ai-task work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_MULTI_AI_TASK",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-multi-ai-task receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-multi-ai-task produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "analysis"
+          ],
+          "artifact_refs": [
+            "skills/silver-multi-ai-task/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_MULTI_AI_TASK"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-DECIDE"
+      ],
+      "canonical_catalog_entity": "AF-DECIDE"
     },
     {
       "id": "FS-SILVER_ORCHESTRATOR",
@@ -9210,18 +9210,10 @@
       "satisfies_v_loop_ref": "VL-FS-MODULARITY"
     },
     {
-      "id": "EV-FS-MULTI_AI_TASK",
-      "producer": "FS-MULTI_AI_TASK",
-      "artifact_or_tool_ref": "skills/multi-ai-task/SKILL.md",
-      "sufficiency_class": "inspection",
-      "staleness_key": "catalog-version+entity-contract",
-      "satisfies_v_loop_ref": "VL-FS-MULTI_AI_TASK"
-    },
-    {
       "id": "EV-FS-RELIABILITY",
       "producer": "FS-RELIABILITY",
       "artifact_or_tool_ref": "skills/reliability/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-RELIABILITY"
     },
@@ -9229,7 +9221,7 @@
       "id": "EV-FS-REUSABILITY",
       "producer": "FS-REUSABILITY",
       "artifact_or_tool_ref": "skills/reusability/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REUSABILITY"
     },
@@ -9237,7 +9229,7 @@
       "id": "EV-FS-REVIEW_CONTEXT",
       "producer": "FS-REVIEW_CONTEXT",
       "artifact_or_tool_ref": "skills/review-context/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_CONTEXT"
     },
@@ -9245,7 +9237,7 @@
       "id": "EV-FS-REVIEW_CROSS_ARTIFACT",
       "producer": "FS-REVIEW_CROSS_ARTIFACT",
       "artifact_or_tool_ref": "skills/review-cross-artifact/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_CROSS_ARTIFACT"
     },
@@ -9253,7 +9245,7 @@
       "id": "EV-FS-REVIEW_DESIGN",
       "producer": "FS-REVIEW_DESIGN",
       "artifact_or_tool_ref": "skills/review-design/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_DESIGN"
     },
@@ -9261,7 +9253,7 @@
       "id": "EV-FS-REVIEW_INGESTION_MANIFEST",
       "producer": "FS-REVIEW_INGESTION_MANIFEST",
       "artifact_or_tool_ref": "skills/review-ingestion-manifest/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_INGESTION_MANIFEST"
     },
@@ -9269,7 +9261,7 @@
       "id": "EV-FS-REVIEW_PLAN",
       "producer": "FS-REVIEW_PLAN",
       "artifact_or_tool_ref": "skills/review-plan/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_PLAN"
     },
@@ -9277,7 +9269,7 @@
       "id": "EV-FS-REVIEW_REQUIREMENTS",
       "producer": "FS-REVIEW_REQUIREMENTS",
       "artifact_or_tool_ref": "skills/review-requirements/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_REQUIREMENTS"
     },
@@ -9285,7 +9277,7 @@
       "id": "EV-FS-REVIEW_RESEARCH",
       "producer": "FS-REVIEW_RESEARCH",
       "artifact_or_tool_ref": "skills/review-research/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_RESEARCH"
     },
@@ -9293,7 +9285,7 @@
       "id": "EV-FS-REVIEW_ROADMAP",
       "producer": "FS-REVIEW_ROADMAP",
       "artifact_or_tool_ref": "skills/review-roadmap/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_ROADMAP"
     },
@@ -9301,7 +9293,7 @@
       "id": "EV-FS-REVIEW_SPEC",
       "producer": "FS-REVIEW_SPEC",
       "artifact_or_tool_ref": "skills/review-spec/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_SPEC"
     },
@@ -9309,7 +9301,7 @@
       "id": "EV-FS-REVIEW_UAT",
       "producer": "FS-REVIEW_UAT",
       "artifact_or_tool_ref": "skills/review-uat/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_UAT"
     },
@@ -9317,7 +9309,7 @@
       "id": "EV-FS-REVIEW_VERIFICATION",
       "producer": "FS-REVIEW_VERIFICATION",
       "artifact_or_tool_ref": "skills/review-verification/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-REVIEW_VERIFICATION"
     },
@@ -9325,7 +9317,7 @@
       "id": "EV-FS-SCALABILITY",
       "producer": "FS-SCALABILITY",
       "artifact_or_tool_ref": "skills/scalability/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SCALABILITY"
     },
@@ -9333,7 +9325,7 @@
       "id": "EV-FS-SECURITY",
       "producer": "FS-SECURITY",
       "artifact_or_tool_ref": "skills/security/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SECURITY"
     },
@@ -9341,7 +9333,7 @@
       "id": "EV-FS-SILVER",
       "producer": "FS-SILVER",
       "artifact_or_tool_ref": "skills/silver/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER"
     },
@@ -9349,7 +9341,7 @@
       "id": "EV-FS-SILVER_ADD",
       "producer": "FS-SILVER_ADD",
       "artifact_or_tool_ref": "skills/silver-add/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_ADD"
     },
@@ -9357,7 +9349,7 @@
       "id": "EV-FS-SILVER_BENCHMARK",
       "producer": "FS-SILVER_BENCHMARK",
       "artifact_or_tool_ref": "skills/silver-benchmark/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BENCHMARK"
     },
@@ -9365,7 +9357,7 @@
       "id": "EV-FS-SILVER_BLAST_RADIUS",
       "producer": "FS-SILVER_BLAST_RADIUS",
       "artifact_or_tool_ref": "skills/silver-blast-radius/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BLAST_RADIUS"
     },
@@ -9373,7 +9365,7 @@
       "id": "EV-FS-SILVER_BOOTSTRAP_MILESTONE",
       "producer": "FS-SILVER_BOOTSTRAP_MILESTONE",
       "artifact_or_tool_ref": "skills/silver-bootstrap-milestone/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BOOTSTRAP_MILESTONE"
     },
@@ -9381,7 +9373,7 @@
       "id": "EV-FS-SILVER_BOOTSTRAP_PROJECT",
       "producer": "FS-SILVER_BOOTSTRAP_PROJECT",
       "artifact_or_tool_ref": "skills/silver-bootstrap-project/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BOOTSTRAP_PROJECT"
     },
@@ -9389,7 +9381,7 @@
       "id": "EV-FS-SILVER_BRANCH_FINISH",
       "producer": "FS-SILVER_BRANCH_FINISH",
       "artifact_or_tool_ref": "skills/silver-branch-finish/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BRANCH_FINISH"
     },
@@ -9397,7 +9389,7 @@
       "id": "EV-FS-SILVER_BUGFIX",
       "producer": "FS-SILVER_BUGFIX",
       "artifact_or_tool_ref": "skills/silver-bugfix/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_BUGFIX"
     },
@@ -9405,7 +9397,7 @@
       "id": "EV-FS-SILVER_CANARY",
       "producer": "FS-SILVER_CANARY",
       "artifact_or_tool_ref": "skills/silver-canary/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CANARY"
     },
@@ -9413,7 +9405,7 @@
       "id": "EV-FS-SILVER_CLARIFY",
       "producer": "FS-SILVER_CLARIFY",
       "artifact_or_tool_ref": "skills/silver-clarify/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CLARIFY"
     },
@@ -9421,7 +9413,7 @@
       "id": "EV-FS-SILVER_COMPLETION_AUDIT",
       "producer": "FS-SILVER_COMPLETION_AUDIT",
       "artifact_or_tool_ref": "skills/silver-completion-audit/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_COMPLETION_AUDIT"
     },
@@ -9429,7 +9421,7 @@
       "id": "EV-FS-SILVER_CONTENT",
       "producer": "FS-SILVER_CONTENT",
       "artifact_or_tool_ref": "skills/silver-content/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CONTENT"
     },
@@ -9437,7 +9429,7 @@
       "id": "EV-FS-SILVER_CONTEXT",
       "producer": "FS-SILVER_CONTEXT",
       "artifact_or_tool_ref": "skills/silver-context/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CONTEXT"
     },
@@ -9445,7 +9437,7 @@
       "id": "EV-FS-SILVER_CREATE_RELEASE",
       "producer": "FS-SILVER_CREATE_RELEASE",
       "artifact_or_tool_ref": "skills/silver-create-release/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CREATE_RELEASE"
     },
@@ -9453,7 +9445,7 @@
       "id": "EV-FS-SILVER_DEBUG",
       "producer": "FS-SILVER_DEBUG",
       "artifact_or_tool_ref": "skills/silver-debug/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_DEBUG"
     },
@@ -9461,7 +9453,7 @@
       "id": "EV-FS-SILVER_DEPLOY",
       "producer": "FS-SILVER_DEPLOY",
       "artifact_or_tool_ref": "skills/silver-deploy/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_DEPLOY"
     },
@@ -9469,7 +9461,7 @@
       "id": "EV-FS-SILVER_DEVOPS",
       "producer": "FS-SILVER_DEVOPS",
       "artifact_or_tool_ref": "skills/silver-devops/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_DEVOPS"
     },
@@ -9477,7 +9469,7 @@
       "id": "EV-FS-SILVER_DOMAIN_AUDIT",
       "producer": "FS-SILVER_DOMAIN_AUDIT",
       "artifact_or_tool_ref": "skills/silver-domain-audit/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_DOMAIN_AUDIT"
     },
@@ -9485,7 +9477,7 @@
       "id": "EV-FS-SILVER_ENSURE_DOCS",
       "producer": "FS-SILVER_ENSURE_DOCS",
       "artifact_or_tool_ref": "skills/silver-ensure-docs/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_ENSURE_DOCS"
     },
@@ -9493,7 +9485,7 @@
       "id": "EV-FS-SILVER_EXECUTE",
       "producer": "FS-SILVER_EXECUTE",
       "artifact_or_tool_ref": "skills/silver-execute/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_EXECUTE"
     },
@@ -9501,7 +9493,7 @@
       "id": "EV-FS-SILVER_FAST",
       "producer": "FS-SILVER_FAST",
       "artifact_or_tool_ref": "skills/silver-fast/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_FAST"
     },
@@ -9509,7 +9501,7 @@
       "id": "EV-FS-SILVER_FEATURE",
       "producer": "FS-SILVER_FEATURE",
       "artifact_or_tool_ref": "skills/silver-feature/SKILL.md",
-      "sufficiency_class": "demonstration",
+      "sufficiency_class": "analysis",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_FEATURE"
     },
@@ -9517,7 +9509,7 @@
       "id": "EV-FS-SILVER_FORENSICS",
       "producer": "FS-SILVER_FORENSICS",
       "artifact_or_tool_ref": "skills/silver-forensics/SKILL.md",
-      "sufficiency_class": "testing",
+      "sufficiency_class": "demonstration",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_FORENSICS"
     },
@@ -9525,7 +9517,7 @@
       "id": "EV-FS-SILVER_HANDOFF",
       "producer": "FS-SILVER_HANDOFF",
       "artifact_or_tool_ref": "skills/silver-handoff/SKILL.md",
-      "sufficiency_class": "artifact_review",
+      "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_HANDOFF"
     },
@@ -9533,7 +9525,7 @@
       "id": "EV-FS-SILVER_INCIDENT",
       "producer": "FS-SILVER_INCIDENT",
       "artifact_or_tool_ref": "skills/silver-incident/SKILL.md",
-      "sufficiency_class": "command_evidence",
+      "sufficiency_class": "artifact_review",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_INCIDENT"
     },
@@ -9541,7 +9533,7 @@
       "id": "EV-FS-SILVER_INGEST",
       "producer": "FS-SILVER_INGEST",
       "artifact_or_tool_ref": "skills/silver-ingest/SKILL.md",
-      "sufficiency_class": "tool_evidence",
+      "sufficiency_class": "command_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_INGEST"
     },
@@ -9549,7 +9541,7 @@
       "id": "EV-FS-SILVER_INIT",
       "producer": "FS-SILVER_INIT",
       "artifact_or_tool_ref": "skills/silver-init/SKILL.md",
-      "sufficiency_class": "inspection",
+      "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_INIT"
     },
@@ -9557,9 +9549,17 @@
       "id": "EV-FS-SILVER_MIGRATE",
       "producer": "FS-SILVER_MIGRATE",
       "artifact_or_tool_ref": "skills/silver-migrate/SKILL.md",
-      "sufficiency_class": "analysis",
+      "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_MIGRATE"
+    },
+    {
+      "id": "EV-FS-SILVER_MULTI_AI_TASK",
+      "producer": "FS-SILVER_MULTI_AI_TASK",
+      "artifact_or_tool_ref": "skills/silver-multi-ai-task/SKILL.md",
+      "sufficiency_class": "analysis",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_MULTI_AI_TASK"
     },
     {
       "id": "EV-FS-SILVER_ORCHESTRATOR",
@@ -9907,7 +9907,6 @@
         "VL-FS-DEVOPS_SKILL_ROUTER",
         "VL-FS-EXTENSIBILITY",
         "VL-FS-MODULARITY",
-        "VL-FS-MULTI_AI_TASK",
         "VL-FS-RELIABILITY",
         "VL-FS-REUSABILITY",
         "VL-FS-REVIEW_CONTEXT",
@@ -9951,6 +9950,7 @@
         "VL-FS-SILVER_INGEST",
         "VL-FS-SILVER_INIT",
         "VL-FS-SILVER_MIGRATE",
+        "VL-FS-SILVER_MULTI_AI_TASK",
         "VL-FS-SILVER_ORCHESTRATOR",
         "VL-FS-SILVER_ORIENT",
         "VL-FS-SILVER_PHASE",
@@ -10141,7 +10141,6 @@
       "devops-skill-router": "AF-DEVOPS-ROUTE",
       "extensibility": "AF-QUALITY-GATE",
       "modularity": "AF-QUALITY-GATE",
-      "multi-ai-task": "AF-DECIDE",
       "reliability": "AF-QUALITY-GATE",
       "reusability": "AF-QUALITY-GATE",
       "review-context": "AF-PLAN",
@@ -10185,6 +10184,7 @@
       "silver-ingest": "AF-SPECIFY",
       "silver-init": "AF-BOOTSTRAP",
       "silver-migrate": "AF-PHASE-MANAGE",
+      "silver-multi-ai-task": "AF-DECIDE",
       "silver-orchestrator": "AF-ROUTE",
       "silver-orient": "AF-ORIENT",
       "silver-phase": "AF-PHASE-MANAGE",

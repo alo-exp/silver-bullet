@@ -95,7 +95,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] .compare-card,
 html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-panel,
 html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit,
 html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-mini,
-html[data-theme="dark"][data-neutral-variant="s3"] .callout,
+html[data-theme="dark"][data-neutral-variant="s3"] body:not(.has-help-subnav) .callout,
 html[data-theme="dark"][data-neutral-variant="s3"] .install-block,
 html[data-theme="dark"][data-neutral-variant="s3"] .code-block,
 html[data-theme="dark"][data-neutral-variant="s3"] .enforcement-block{
@@ -113,7 +113,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] .feature-card .feature-icon,
-html[data-theme="dark"][data-neutral-variant="s3"] .callout .callout-icon,
+html[data-theme="dark"][data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon,
 html[data-theme="dark"][data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   margin-left:0;
   margin-right:0;
@@ -174,7 +174,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] .compare-bar-track{
   background:#24374e;
 }
 
-html[data-theme="dark"][data-neutral-variant="s3"] .callout{
+html[data-theme="dark"][data-neutral-variant="s3"] body:not(.has-help-subnav) .callout{
   background:linear-gradient(135deg,rgba(17,31,47,.88),var(--accent-a07) 52%,rgba(38,52,70,.52));
   border-color:rgba(118,140,164,.38);
 }
@@ -188,7 +188,7 @@ html[data-theme="dark"][data-neutral-variant="s3"] footer{
   border-top-color:#26394f;
 }
 
-html[data-theme="dark"][data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
+html[data-theme="dark"][data-neutral-variant="s3"] body:not(.has-help-subnav) *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
   border-width:0 !important;
 }
 
@@ -205,7 +205,7 @@ html[data-neutral-variant="s3"] .compare-card,
 html[data-neutral-variant="s3"] .sb-lifecycle-panel,
 html[data-neutral-variant="s3"] .sb-lifecycle-benefit,
 html[data-neutral-variant="s3"] .sb-lifecycle-mini,
-html[data-neutral-variant="s3"] .callout,
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout,
 html[data-neutral-variant="s3"] .install-block,
 html[data-neutral-variant="s3"] .code-block,
 html[data-neutral-variant="s3"] .enforcement-block{
@@ -223,7 +223,7 @@ html[data-neutral-variant="s3"] .sb-lifecycle-benefit:hover{
 }
 
 html[data-neutral-variant="s3"] .feature-card .feature-icon,
-html[data-neutral-variant="s3"] .callout .callout-icon,
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon,
 html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon{
   margin-left:0;
   margin-right:0;
@@ -247,7 +247,7 @@ html[data-neutral-variant="s3"] .sb-lifecycle-benefit .benefit-icon svg{
   display:block;
 }
 
-html[data-neutral-variant="s3"] .callout .callout-icon{
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon{
   display:flex;
   width:100%;
   justify-content:center;
@@ -256,11 +256,11 @@ html[data-neutral-variant="s3"] .callout .callout-icon{
   margin-right:auto;
 }
 
-html[data-neutral-variant="s3"] .callout .callout-icon svg{
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) .callout .callout-icon svg{
   margin-left:auto;
   margin-right:auto;
 }
 
-html[data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
+html[data-neutral-variant="s3"] body:not(.has-help-subnav) *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
   border-width:0 !important;
 }

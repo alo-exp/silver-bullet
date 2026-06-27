@@ -74,7 +74,7 @@ SKILL_TO_FLOW = {
     "silver-review-stats": "AF-ORIENT",
     "silver-clarify": "AF-CLARIFY",
     "silver-research": "AF-DECIDE",
-    "multi-ai-task": "AF-DECIDE",
+    "silver-multi-ai-task": "AF-DECIDE",
     "review-research": "AF-DECIDE",
     "silver-spec": "AF-SPECIFY",
     "silver-ingest": "AF-SPECIFY",
