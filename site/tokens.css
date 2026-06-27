@@ -454,3 +454,49 @@ body .help-theme-btn svg{
 .doc-content [id]{
   scroll-margin-top:96px;
 }
+
+/* ───── Sitewide thin headings (D-DIN regular / 400) ───── */
+:root{
+  --heading-weight:400;
+}
+
+h1,h2,h3,h4,h5,h6,
+.section-title,
+.subsection-title,
+.section-label,
+.callout-title,
+.hero-headline,
+.hero-subhead,
+.hero-split-title,
+.page-hero h1,
+.hero h1,
+main h2,
+.doc-content h2,
+.doc-content h3,
+.release-header h2,
+.release h3,
+.pain-card h3,
+.future-card h3,
+.feature-card h3,
+.mech-card h3,
+.layer-card h3,
+.sb-lifecycle-panel h3,
+.sb-lifecycle-benefit h3,
+.notfor-item h4,
+.stakes-item h4,
+.gaps-callout h3,
+.plugin-name,
+.step-card-title,
+.phase-header,
+.comparison-table th,
+.help-card h3,
+.sr-heading,
+.sr-title,
+.pnb-title,
+.sidebar-nav .sidebar-section,
+body > nav .logo{
+  font-weight:var(--heading-weight)!important;
+}
+
+/* Tagline accent — intentionally heavy (not a section heading) */
+.hero-tagline-bold{font-weight:900!important;}
