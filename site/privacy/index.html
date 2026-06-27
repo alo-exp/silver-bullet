@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
 <title>Privacy Policy — Silver Bullet</title>
-<meta name="description" content="Privacy Policy for Silver Bullet — MIT plugin by Alo Labs. No telemetry, no account required, local-first enforcement.">
+<meta name="description" content="Privacy Policy for Silver Bullet — BUSL 1.1 source-available plugin by Alo Labs. No telemetry, no account required, local-first enforcement.">
 <meta property="og:title" content="Privacy Policy — Silver Bullet">
 <meta property="og:url" content="https://sb.alolabs.dev/privacy/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,8 +56,8 @@ main a{color:var(--accent-light)}
     <div class="nav-actions">
       <a href="../help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
-        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
-        <span id="icon-moon"><i data-lucide="moon"></i></span>
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
       </button>
       <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
