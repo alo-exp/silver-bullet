@@ -1,0 +1,267 @@
+
+You are conducting **prior-art and adjacent-landscape research** — not building anything. Your job is to find existing tools, frameworks, methodologies, papers, and products that overlap with or inform the architectural approach described below. Be skeptical, cite primary sources, and distinguish marketing from inspectable mechanisms.
+
+---
+
+## 1. Executive Framing — What Silver Bullet Built
+
+**Silver Bullet (SB)** is an open-source **Agentic Process Orchestrator (APO)** for software engineering and DevOps. It is **not** merely an agent that can call tools. Its product model is a **declarative, machine-readable catalog** (`docs/apo-catalog.json`) that defines:
+
+| Level | Description | Example |
+|-------|-------------|---------|
+| **Process** | A team's end-to-end delivery system | `PROC-SB-SE-DEVOPS` — default SE + DevOps process |
+| **Workflow** | Named path inside a process (pre-composed, reusable component, or dynamic route) | `WF-SILVER-FEATURE`, `WF-REVIEW-TRIAD`, `WF-SILVER-ROUTER` |
+| **Atomic flow (`AF-*`)** | Minimal non-redundant capability unit — one subagent work package each | `AF-PLAN`, `AF-EXECUTE`, `AF-VERIFY`, `AF-BLAST-RADIUS` (~27 canonical flows) |
+| **Flow step / skill** | Reusable instruction implementing a step inside one or more atomic flows | `silver-plan`, `silver-verify`, artifact reviewers |
+
+### Core differentiators (search for equivalents)
+
+1. **Hierarchical dynamic composition** — Pre-composed workflows are **defaults**, not mandatory ceremony. At runtime the orchestrator may **prune, insert, or substitute** atomic flows when catalog metadata and context prove a leaner or safer tree — every deviation is **audited** in a `composition_log` with catalog-backed rationale.
+
+2. **One atomic flow = one subagent work package** — Workflows are **dependency DAGs** of atomic flows. Independent flows run in **parallel** (host-native multitask); dependent flows **join on V-gates**. Parent orchestrator **schedules and verifies only**; workers implement.
+
+3. **V-model verification at every level** — Inspired by systems-engineering V-model and SEI "many short V's":
+   - Each **atomic flow** has a V-loop: input/need → work product → verification (building it right) → validation (building the right thing) → repair loop → escalation → evidence.
+   - Each **flow step** has its own per-step V-loop that **rolls up** before the parent flow V-gate may pass.
+   - Composed workflows have **V-loop rollups** plus a final **user-intent validation gate** (material claims from the original prompt checked against artifacts/evidence).
+
+4. **Hook-enforced skill chains** — Runtime hooks block commits, PR creation, deploy, and session stop unless required lifecycle skills have been recorded. Config is authoritative (`templates/silver-bullet.config.json.default`); hooks fail closed on substantive delivery actions.
+
+5. **Evidence tiers and opted-in tool governance** — Once a team opts into tools (Graphify, agentmemory, Alumnium, etc.), they become **mandatory when relevant** to the active atomic flow; tool outputs are **V-model evidence** with sufficiency classes, staleness rules, and failure policies (warn / repair / block / degrade).
+
+6. **No-redundancy invariant** — No duplicate capability classes at atomic-flow, workflow, skill, or docs/runtime level. Catalog is **sole source of truth**; markdown matrices and site pages are **generated or validated views**.
+
+7. **Team process packs** — Teams customize processes (add/remove/reorder workflows, mandate gates) **without forking** atomic flow definitions.
+
+8. **SE + DevOps unified catalog** — Same APO model covers feature delivery (`silver:feature`), UI (`silver:ui`), bugfix, research, release, incident, deploy, canary, blast-radius, DevOps routing, etc.
+
+### Execution architecture
+
+- **Parent orchestrator** (`silver-orchestrator`): reads `orchestrator-directive.json`, spawns **Task workers** from per-flow templates (`.silver-bullet/orchestrator-workers/<TEMPLATE>.md`), advances queue via hooks. Parent **never implements inline**.
+- **Composer skills** (`silver:feature`, `silver:devops`, …): queue builders referencing catalog `workflow.composition_tree` — not inline procedure.
+- **Composition patterns supported:** sequence, conditional branch, parallel join, repair loop, compensation/rollback, workflow-as-component reuse, dynamic prune/insert/substitute.
+
+### What SB explicitly is NOT looking to duplicate
+
+- Generic "LLM agent with tools" demos
+- Unstructured prompt chains with no catalog or gates
+- "Agent says done" without inspectable evidence
+- Hand-maintained workflow prose disconnected from machine-readable contracts
+
+---
+
+## 2. Research Questions
+
+Answer all of the following. If no match exists, say so explicitly — negative results are valuable.
+
+### 2A. Direct prior art (highest priority)
+
+Find systems that combine **≥3** of:
+- Machine-readable workflow/flow **catalog** with stable IDs
+- **Composable** pre-built + runtime-dynamic workflow assembly
+- **Per-unit verification/validation loops** (V-model, phase gates, or equivalent — not just "run tests at end")
+- **Enforced** lifecycle chains (hooks, policy engines, CI gates, or runtime blockers on delivery actions)
+- **Parent/worker or orchestrator/worker** execution split
+- **Evidence registry** or artifact sufficiency model tied to gates
+- Coverage of **both** software engineering lifecycle **and** DevOps/infra paths in one model
+
+### 2B. Adjacent categories (map each find to the closest bucket)
+
+| Category | Examples to investigate (non-exhaustive) |
+|----------|----------------------------------------|
+| **Agentic SDLC frameworks** | BMAD Method, GSD (Get Shit Done), GitHub Spec Kit, Superpowers, Devin / Cognition, SWE-agent, OpenHands, Aider workflows, Continue Dev agents |
+| **Multi-agent orchestration** | LangGraph, CrewAI, AutoGen / AG2, Semantic Kernel, Microsoft Agent Framework, LlamaIndex workflows, Haystack pipelines |
+| **CI/CD & policy gates** | Open Policy Agent (OPA), Conftest, Scorecard, Dagger, Earthly, Harness, Spacelift policy-as-code, Backstage software templates |
+| **Phase-gate / V-model tooling** | Traditional ALM (Jira workflows, Azure DevOps gates), model-based systems engineering (Capella, Cameo), TDD/BDD frameworks with explicit validation tiers |
+| **IDE agent orchestrators** | Cursor rules/hooks/skills, Claude Code plugins, Codex skills, Windsurf cascades, Cline plan/act |
+| **Enterprise process automation** | Camunda, Temporal, Airflow (as process DAG — compare honestly), Argo Workflows |
+| **Quality & review automation** | CodeRabbit, Qodo, PR-Agent, mutation testing gates, SOC2 evidence collectors |
+| **Research / papers** | "V-model" + "LLM agents", "process orchestration" + "software engineering agents", "verification loops" + "multi-agent", "intent satisfaction" + "coding agents" |
+
+### 2C. Dimension-specific probes
+
+For each candidate, determine:
+
+1. **Composition model** — Static graph? Dynamic replanning? Catalog of reusable units? Ad-hoc prompts only?
+2. **Verification model** — End-of-pipeline test only? Per-step gates? V-model left/right arms? User-intent final gate?
+3. **Enforcement mechanism** — Honor system? CI? IDE hooks? Policy engine? Git hooks?
+4. **Parallelism model** — Single agent? Fan-out workers? DAG scheduler? Conflict detection on mutation scope?
+5. **Evidence** — What counts as proof? Tool outputs? Artifact schemas? Staleness on edit?
+6. **SE vs DevOps fit** — Feature dev only? Infra/deploy/incident? Unified or separate products?
+7. **Customization** — Team overlays without forking core definitions?
+8. **Maturity** — Production adoption, version, last release, known limitations, open issues.
+
+### 2D. Gap analysis vs Silver Bullet
+
+For each **direct** match, identify what SB appears to have that they lack, and what they have that SB lacks. Be specific (e.g., "has DAG parallelization but no per-step V-loop rollup" not "less mature").
+
+---
+
+## 3. Disambiguation Rules — EXCLUDE Unless Criteria Met
+
+**Exclude** or downgrade to "tangential" unless the candidate has **composable workflow catalog + verification loops**:
+
+| Pattern | Exclude unless… |
+|---------|------------------|
+| "AI coding assistant with terminal access" | Also has named lifecycle workflows, enforced gates, and auditable composition |
+| "Multi-agent framework" (LangGraph, CrewAI, …) | Also ships or documents **SDLC/DevOps workflow catalogs**, not just generic agent graphs |
+| "Run tests in CI" | Also has **per-work-unit** verification tied to agent outputs before merge/deploy |
+| "Planning mode + agent mode" | Also has machine-readable composition trees and hook/policy enforcement |
+| "BMAD / GSD / Spec Kit" | Treat as **high-priority adjacent** — map which layers they cover (roles, artifacts, gates, orchestration) vs SB's APO catalog |
+| Academic papers | Include only if they describe **implementable** orchestration + verification — not pure methodology without tooling |
+
+When uncertain, include with category `adjacent` and explain the gap.
+
+---
+
+## 4. Required Output Schema
+
+Return results as a **markdown table** plus optional detail sections. **One row per distinct tool/framework/product/paper.**
+
+### 4.1 Summary table (mandatory)
+
+| Field | Required content |
+|-------|------------------|
+| **name** | Tool, framework, product, or paper title |
+| **url** | Primary source (repo, docs, paper PDF, product page) — prefer official over blog summaries |
+| **category** | `direct` \| `adjacent` \| `tangential` \| `negative-result` |
+| **composition_model** | How workflows are defined and composed (1–2 sentences) |
+| **v_loop_support** | `none` \| `end-only` \| `per-phase` \| `per-step+rollup` \| `v-model-explicit` — cite mechanism |
+| **enforcement_mechanism** | `honor-system` \| `prompt-only` \| `ci-gate` \| `ide-hook` \| `policy-engine` \| `mixed` — be specific |
+| **se_fit** | `none` \| `partial` \| `strong` — feature/plan/review/ship lifecycle |
+| **devops_fit** | `none` \| `partial` \| `strong` — deploy/infra/incident/blast-radius |
+| **parent_worker_split** | `yes` \| `partial` \| `no` |
+| **evidence_model** | `none` \| `informal` \| `artifact-based` \| `tiered-sufficiency` |
+| **dynamic_composition** | `no` \| `replanner-only` \| `catalog-backed-audited` |
+| **maturity** | `research` \| `alpha` \| `beta` \| `production` — with date/version |
+| **gaps_vs_sb** | Bullet list: what they lack relative to SB approach |
+| **sb_gaps_vs_them** | Bullet list: what SB may lack relative to them |
+| **confidence** | `high` \| `medium` \| `low` — your certainty this classification is correct |
+| **last_verified** | ISO date you checked the source |
+
+### 4.2 Evidence block (mandatory per row)
+
+Immediately under each table row (or in a linked subsection), provide:
+
+EVIDENCE — <name>
+    source_type: repo | docs | paper | release-notes | issue | demo
+    version_or_date: <tag, commit date, or paper year>
+    quote: "<verbatim ≤50 words from primary source proving composition/gate claim>"
+    url: <same as table or more specific deep link>
+
+If you cannot find a qualifying quote, set `confidence: low` and explain what you inferred.
+
+### 4.3 Narrative sections (mandatory)
+
+1. **Executive summary** (≤300 words) — landscape overview, closest direct matches, biggest gaps in the market.
+2. **Top 5 direct competitors** — ranked with rationale.
+3. **Top 5 adjacent inspirations** — what SB could borrow.
+4. **Negative results** — categories searched where nothing credible was found.
+5. **Open research questions** — what remains unclear after your search.
+
+---
+
+## 5. Citation Requirements
+
+- **Primary sources only** for factual claims: official repos, docs, papers, release notes, RFCs.
+- **No** unsourced assertions. If a blog post is the only source, label `confidence: low`.
+- Include **version or date** for every cited artifact (e.g., `LangGraph 0.2.x`, `BMAD v4`, `paper arXiv:xxxx Jan 2025`).
+- Prefer **quotes** over paraphrase for composition and enforcement claims.
+- For GitHub repos: cite **default branch README or docs/** path, not stale third-party tutorials.
+- If a product is closed-source, cite docs/help center and note `evidence: docs-only`.
+
+---
+
+## 6. Search Strategy Hints
+
+Use these query families (adapt to your search tooling):
+
+  - "agentic process orchestrator" software engineering
+  - "V-model" verification LLM agent workflow
+  - composable workflow catalog coding agent
+  - BMAD method agents workflow phases
+  - GSD get-shit-done agent orchestration
+  - GitHub spec kit agent workflow
+  - LangGraph human-in-the-loop verification gate
+  - parent orchestrator subagent software development
+  - hook enforced skill chain coding agent
+  - dynamic workflow composition prune insert agent
+  - user intent validation gate agent completion
+  - evidence sufficiency agent artifact verification
+  - DevOps agent blast radius deploy orchestration
+  - phase gate LLM software delivery
+  - Temporal vs agent workflow SDLC
+
+Also search: Hacker News, GitHub trending, arXiv (cs.SE, cs.AI), official docs for Cursor/Claude Code/Codex plugin systems, and comparison posts (treat as secondary).
+
+**Minimum coverage target:** ≥15 distinct candidates with ≥5 classified `direct` or strong `adjacent`, unless you document exhaustive negative search.
+
+---
+
+## 7. Constraints on Your Response
+
+- Do **not** propose implementing Silver Bullet.
+- Do **not** conflate "has agents" with "has APO catalog + V-loops."
+- Flag **likely duplicate entries** (e.g., "AutoGen" vs "AG2") — pick canonical name, cross-ref aliases.
+- Flag **deprecated/abandoned** projects with last-commit date.
+- Separate **open-source** vs **commercial** vs **research prototype**.
+- If you lack web access, state limitations and reason from training data with explicit `confidence: low` and `last_verified: training-cutoff`.
+
+---
+
+## 8. Cross-AI Dedup Instructions (for the human merging N responses)
+
+After running this prompt on multiple AIs, merge as follows:
+
+### 8.1 Canonical registry
+
+1. Create a master spreadsheet or markdown file with columns from **Section 4.1**.
+2. **Normalize names:** one row per product (merge aliases in a `aliases` column).
+3. **URL dedup:** same repo/domain → single row; keep the richest evidence block.
+
+### 8.2 Conflict resolution
+
+| Conflict | Resolution rule |
+|----------|-----------------|
+| Different `category` | Prefer `direct` only if **≥3 SB differentiators** are evidenced; else downgrade to `adjacent`. Tie-break: source with primary quote wins. |
+| Different `maturity` | Use **newer** `last_verified` date; confirm against official release page. |
+| Different `v_loop_support` | Require quote proving per-step or per-phase gates; without quote → `end-only` or `none`. |
+| One AI found it, others didn't | Keep if primary source verified; mark `discovered_by: <model>`. |
+
+### 8.3 Scoring for "closest match to SB"
+
+Score each candidate 0–2 on each dimension (max 16):
+
+| Dimension | 0 | 1 | 2 |
+|-----------|---|---|---|
+| Catalog of composable units | None | Informal roles | Machine-readable catalog |
+| Dynamic composition | None | Replanner | Catalog-backed + audit log |
+| V-loop depth | None | End tests | Per-step rollup + intent gate |
+| Enforcement | Honor system | CI only | IDE hooks + delivery blockers |
+| Parent/worker split | No | Partial | Explicit orchestrator/worker |
+| Evidence model | None | Informal | Tiered sufficiency + staleness |
+| SE + DevOps unified | One domain | Partial | Both in one model |
+| Team customization | None | Fork required | Overlay packs |
+
+**Sum scores** — top 3 by total score are "closest architectural matches." Document score disagreements between AIs.
+
+### 8.4 Output artifact
+
+Produce: `PRIOR-ART-MERGED.md` with deduped table, score ranking, unresolved conflicts, and a 1-page "SB positioning" memo.
+
+---
+
+## 9. Reference Context (SB catalog snapshot)
+
+Use this to calibrate search — these are **targets to find analogs for**, not items to research themselves unless comparing forks:
+
+**Sample atomic flows (`AF-*`):** ROUTE, BOOTSTRAP, ORIENT, CLARIFY, DECIDE, SPECIFY, PLAN, DESIGN-CONTRACT, EXECUTE, UI-QUALITY, REVIEW-REQUEST, REVIEW, REVIEW-TRIAGE, VERIFY, SECURE, QUALITY-GATE, SHIP, BRANCH-FINISH, COMPLETION-AUDIT, DEBUG, DOCUMENT, RELEASE, BLAST-RADIUS, DEVOPS-ROUTE, VALIDATE, PHASE-MANAGE, FAST-PATH.
+
+**Sample workflows:** WF-SILVER-ROUTER (dynamic), WF-SILVER-FEATURE (precomposed), WF-POST-EXEC-GATES, WF-REVIEW-TRIAD, WF-SHIP-READINESS (reusable components).
+
+**Catalog entities beyond flows:** `v_loops`, `evidence_records`, `intent_ledgers`, `v_loop_rollups`, `composition_logs`, `tool_policies`, `dynamic_rules`, `process_packs`.
+
+**Enforcement touchpoints:** `completion-audit.sh`, `stop-check.sh`, `workflow-chain-guard.sh`, `orchestrator-directive-guard.sh`, `uat-gate.sh`, required_deploy skill list.
+
+---
+

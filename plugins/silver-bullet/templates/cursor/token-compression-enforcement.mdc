@@ -22,7 +22,7 @@ These fire via `$HOME/.codex/hooks.json` on every workspace. The agent cannot by
 
 ## What is cooperative (rules + MCP — NOT hard deny)
 
-Context-mode **does not** `permission: deny` on `Read` or `Grep` at any file size (upstream threshold for byte accounting is 50 KB; guidance only). Cursor also does **not** reliably surface hook `additional_context` to the model ([forum #155689](https://forum.codex.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). For these surfaces you **MUST** follow `context-mode.mdc` voluntarily:
+Context-mode **does not** `permission: deny` on `Read` or `Grep` at any file size (upstream threshold for byte accounting is 50 KB; guidance only). Cursor also does **not** reliably surface hook `additional_context` to the model ([forum #155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). For these surfaces you **MUST** follow `context-mode.mdc` voluntarily:
 
 | Surface | Required alternative | Threshold |
 |---------|---------------------|-----------|

@@ -95,6 +95,9 @@
     "FS-MODULARITY": [
       "AF-QUALITY-GATE"
     ],
+    "FS-MULTI_AI_TASK": [
+      "AF-DECIDE"
+    ],
     "FS-RELIABILITY": [
       "AF-QUALITY-GATE"
     ],

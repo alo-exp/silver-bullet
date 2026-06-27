@@ -10,7 +10,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 manifest_file="${repo_root}/docs/audits/sentinel-skills/manifest.json"
-expected_count=85
+expected_count=86
 release_tag=""
 
 while [[ $# -gt 0 ]]; do

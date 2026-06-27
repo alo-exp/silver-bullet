@@ -8,7 +8,7 @@ import json, os, pathlib, re, shutil, sys
 
 install_path = sys.argv[1]
 hooks_src = os.path.join(install_path, 'hooks', 'hooks.json')
-settings_path = os.path.join(os.path.expanduser('~'), '.codex', 'settings.json')
+settings_path = os.path.join(os.path.expanduser('~'), '.claude', 'settings.json')
 
 
 def stable_install_path(raw_install_path):
