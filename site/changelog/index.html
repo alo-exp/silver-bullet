@@ -89,6 +89,24 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-48-6">
+      <div class="release-header">
+        <h2>v0.48.6</h2>
+        <time class="release-date" datetime="2026-06-27">2026-06-27</time>
+      </div>
+      <p class="release-summary">Scoped RTK coexistence: full agent RTK when opted in; verbatim harness mode only.</p>
+      <h3>Bug Fixes</h3>
+      <ul>
+        <li><code>fix(rtk)</code>: scope <code>RTK_DISABLED</code> to harness scripts (<code>SB_RTK_COMPAT_MODE=verbatim</code>) and opted-out projects — hook bridge omits disable when <code>recommended_tools.rtk.enabled_by_user</code> is true</li>
+        <li><code>fix(rtk)</code>: unwrap <code>rtk</code> / <code>RTK_DISABLED=1</code> prefixes in <code>completion-audit.sh</code> gate regexes (<code>sb_shell_command_unwrap_rtk</code>)</li>
+      </ul>
+      <h3>Tests</h3>
+      <ul>
+        <li><code>test(rtk)</code>: opted-in / opted-out / verbatim modes in <code>test-rtk-compat.sh</code></li>
+        <li><code>test(hooks)</code>: RTK-wrapped <code>git push</code> classification in <code>test-completion-audit.sh</code></li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-48-5">
       <div class="release-header">
         <h2>v0.48.5</h2>
