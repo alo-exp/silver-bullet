@@ -108,16 +108,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#research-paths">Research paths</a></li>
         <li><a href="#handoff">Handoff to implementation</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
         <li><a href="../reference/">Command Reference</a></li>
       </ul>
     </aside>
@@ -140,7 +140,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:research</code>:</p>
       <ul>
         <li>"how should we" / "which technology" / "compare X vs Y"</li>
@@ -151,7 +151,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -165,7 +165,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Atomic flow execution</h2>
+      <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-CLARIFY</code> — Frame the research question</h3>
       <p>Invoke <code>/silver:clarify</code>. Socratic clarification defines the research question, success criteria, and constraints before evidence gathering begins.</p>
@@ -215,7 +215,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:research Should we use React Query or SWR for server state management?</div>
       <p>Silver Bullet routes to <code>WF-SILVER-RESEARCH</code>. <code>/silver:clarify</code> sharpens the question. Path B (tech selection) runs under <code>AF-DECIDE</code>. Findings are documented under <code>.planning/research/</code>, validated, and synthesized into a decision-ready handoff. Route to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver:plan</code> as needed.</p>
 

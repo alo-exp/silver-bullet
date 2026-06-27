@@ -114,16 +114,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
         <li><a href="#iac-quality-dims">7 IaC quality dimensions</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#blast-radius-levels">Blast radius levels</a></li>
-        <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
         <li><a href="../reference/">Command Reference</a></li>
       </ul>
     </aside>
@@ -147,7 +147,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:devops</code>:</p>
       <ul>
         <li>"infra" / "CI/CD" / "deploy" / "pipeline"</li>
@@ -185,7 +185,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><strong><code>AF-EXECUTE</code></strong> — <code>/silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
       </ul>
 
-      <h3>Post-execution chain (canonical)</h3>
+      <h3>Post-Execution Chain (canonical)</h3>
       <p><code>WF-POST-EXEC-GATES</code>: review triad → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> pre-ship → branch finish → completion audit → <code>AF-SHIP</code>. Optional <code>/silver:deploy</code> / <code>/silver:canary</code> run through ship-readiness when live rollout is in scope.</p>
 
       <div class="divider"></div>
@@ -221,7 +221,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="non-skippable-gates">Non-skippable gates</h2>
+      <h2 id="non-skippable-gates">Non-Skippable Gates</h2>
       <div class="callout callout-warn">
         <div class="callout-icon">🔒</div>
         <div class="callout-body">
@@ -236,7 +236,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:devops Add GitHub Actions CI pipeline for automated testing</div>
       <p>Silver Bullet routes to <code>WF-SILVER-DEVOPS</code>: <code>AF-BLAST-RADIUS</code> (likely LOW/MEDIUM) → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> (no TDD) → <code>WF-POST-EXEC-GATES</code>.</p>
 

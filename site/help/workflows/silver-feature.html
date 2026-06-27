@@ -112,18 +112,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
         <li><a href="#composition">Composable path chain</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
         <li><a href="#complexity-triage">Complexity triage</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
-        <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
         <li><a href="#step-skip-protocol">Step-skip protocol</a></li>
-        <li><a href="#example">Example invocation</a></li>
+        <li><a href="#example">Example Invocation</a></li>
         <li><a href="#preferences">Preferences</a></li>
-        <li class="sidebar-section">See also</li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
         <li><a href="../reference/">Command Reference</a></li>
       </ul>
     </aside>
@@ -164,7 +164,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Use <code>/silver:feature</code> when you want to add, build, implement, enhance, or extend any feature. Entry trigger signals:</p>
       <ul>
         <li>"add X" / "build X" / "implement X"</li>
@@ -227,14 +227,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3><code>AF-EXECUTE</code></h3>
       <p><code>tdd</code> gate for behavior-changing code, then <code>/silver:execute</code>. Per-phase loop: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> for each ROADMAP phase.</p>
 
-      <h3>Post-execution chain (canonical order)</h3>
+      <h3>Post-Execution Chain (canonical order)</h3>
       <p>After <code>AF-EXECUTE</code>: <code>WF-POST-EXEC-GATES</code> runs review, verification, security, validation, pre-ship quality, branch finish, completion audit, and ship.</p>
       <p><code>AF-DEBUG</code> inserts dynamically on execution, test, or CI failure. <code>AF-DOCUMENT</code> runs when <code>docs/doc-scheme.md</code> requires doc gates before ship.</p>
       <p>Per-flow skill steps and exit conditions: <code>docs/composable-flows-contracts.md</code>.</p>
 
       <div class="divider"></div>
 
-      <h2 id="non-skippable-gates">Non-skippable gates</h2>
+      <h2 id="non-skippable-gates">Non-Skippable Gates</h2>
       <div class="callout callout-warn">
         <div class="callout-icon">🔒</div>
         <div class="callout-body">
@@ -259,7 +259,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:feature Add dark mode toggle to the settings panel</div>
       <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips the extra clarification path, proceeds through orientation, quality gates, SB context/plan/execute, TDD where applicable, review, verify, and ship.</p>
 

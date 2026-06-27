@@ -135,9 +135,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#step2">Step 2 — Read project context</a></li>
         <li><a href="#step3">Step 3 — Initialize session state</a></li>
         <li><a href="#step4">Step 4 — Check workflow state</a></li>
-        <li><a href="#step5">Step 5 — Update checks</a></li>
+        <li><a href="#step5">Step 5 — Update Checks</a></li>
         <li><a href="#silver-update">silver:update flow</a></li>
-        <li><a href="#anti-skip">Anti-skip enforcement</a></li>
+        <li><a href="#anti-skip">Anti-Skip Enforcement</a></li>
       </ul>
     </aside>
 
@@ -174,7 +174,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="step4">Step 4 — Check Active Workflow State</h2>
       <p>Silver Bullet checks the active workflow tracker, requested skills, required gates, phase locks, and any stall or timeout state. If a prior composition exists under <code>.planning/workflows/&lt;id&gt;.md</code>, the runtime can resume from the next required step instead of starting over.</p>
 
-      <h2 id="step5">Step 5 — Update checks</h2>
+      <h2 id="step5">Step 5 — Update Checks</h2>
       <p>Before starting project work, the runtime may run version checks for Silver Bullet and selected extension plugins. Each check is independent; a failure in one check does not block the rest of startup.</p>
 
       <div class="update-card">
@@ -255,7 +255,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <div class="callout-body"><strong>Cancel path:</strong> If you cancel at either confirmation, no files are modified and the session continues with the existing version. The cancel path is guarded against unsafe <code>rm</code> operations — partially downloaded files are cleaned up safely.</div>
       </div>
 
-      <h2 id="anti-skip">Anti-skip enforcement</h2>
+      <h2 id="anti-skip">Anti-Skip Enforcement</h2>
       <p>The session startup sequence is enforced by the <strong>UserPromptSubmit reminder hook</strong>, which re-injects the startup rules at the start of every user message. This means even if the runtime loses track of its current state, the rules are re-presented before it can respond to your next instruction.</p>
       <p>In addition, the compliance status hook shows startup and workflow progress on tool use. If project context or workflow state has not been loaded, the status display can flag the gap.</p>
       <p>The anti-skip rule is strict: the runtime is in violation if it produces project work output without evidence of loading the SB contract and relevant project context at session start.</p>

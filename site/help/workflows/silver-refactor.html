@@ -107,13 +107,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#post-exec-gates">Post-execution gates</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#post-exec-gates">Post-Execution Gates</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
         <li><a href="./silver-test.html">/silver:test</a></li>
         <li><a href="./silver-feature.html">/silver:feature</a></li>
       </ul>
@@ -129,7 +129,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
   → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
   → AF-VERIFY → AF-SECURE → AF-VALIDATE
   → AF-QUALITY-GATE → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP</div>
-      <p>The post-execution sequence is the catalog's review, verify, secure, and ship gates — expanded as atomic flows above, not a separate user-facing workflow name. See <a href="./index.html#post-execution">Post-execution sequencing</a>.</p>
+      <p>The post-execution sequence is the catalog's review, verify, secure, and ship gates — expanded as atomic flows above, not a separate user-facing workflow name. See <a href="./index.html#post-execution">Post-Execution Sequencing</a>.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -140,7 +140,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:refactor</code> and <code>refactor</code>:</p>
       <ul>
         <li>Module extraction, package reorganization, or layer boundary cleanup</li>
@@ -151,7 +151,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Phase</th><th>Atomic flows</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -163,7 +163,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="post-exec-gates">Post-execution gates</h2>
+      <h2 id="post-exec-gates">Post-Execution Gates</h2>
       <p>After <code>AF-EXECUTE</code> completes, the refactor workflow expands into the canonical post-execution gate chain shared with <code>/silver:feature</code> and <code>/silver:bugfix</code>:</p>
       <ul>
         <li><strong>Review gates</strong> — <code>AF-REVIEW-REQUEST</code>, <code>AF-REVIEW</code>, <code>AF-REVIEW-TRIAGE</code> for structural change review</li>
@@ -175,7 +175,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:refactor Extract the billing module from monolith core into packages/billing with no API changes</div>
       <p>Silver Bullet routes to <code>WF-SILVER-REFACTOR</code>. Planning documents module boundaries and migration steps. Execution moves code with import updates. Initial verify confirms test parity. Review gates examine structural diff. Ship gates pass and the refactor merges.</p>
 

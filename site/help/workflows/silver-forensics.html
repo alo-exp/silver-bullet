@@ -114,17 +114,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#security">Security boundary</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
         <li><a href="./silver-incident.html">/silver:incident</a></li>
         <li><a href="./silver-bugfix.html">/silver:bugfix</a></li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
 
@@ -146,7 +146,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:forensics</code>:</p>
       <ul>
         <li>Session completed but deliverables are broken or incomplete</li>
@@ -158,7 +158,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -171,7 +171,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Atomic flow execution</h2>
+      <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-DEBUG</code> — Classify and reconstruct</h3>
       <p>Invoke <code>/silver:forensics</code>. Locate project root via <code>.silver-bullet.json</code>. Route by evidence: workflow artifact anomalies, session integrity failures, or general task drift. Allowed shell commands are restricted to <code>git log</code>, <code>git show</code>, <code>git status</code>, <code>git diff</code>, test runners, and report directory creation.</p>
@@ -195,7 +195,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:forensics Last session timed out during phase 3 execution — reconstruct what failed and why verification never ran</div>
       <p>Silver Bullet routes to <code>WF-SILVER-FORENSICS</code>. <code>AF-DEBUG</code> classifies as session forensics, gathers session logs and <code>.planning/phases/</code> artifacts. <code>AF-DOCUMENT</code> writes the report to <code>docs/silver:forensics/</code>. <code>AF-VALIDATE</code> confirms gaps are addressed and recommends resuming via <code>/silver:execute</code> or filing work through <code>/silver:add</code>.</p>
 

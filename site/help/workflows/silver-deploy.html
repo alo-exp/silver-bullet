@@ -107,13 +107,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
         <li><a href="./silver-devops.html">/silver:devops</a></li>
         <li><a href="./silver-canary.html">/silver:canary</a></li>
       </ul>
@@ -137,7 +137,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:deploy</code> and <code>deploy</code>:</p>
       <ul>
         <li>Production or live-environment promotion of a reviewed artifact</li>
@@ -148,7 +148,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -161,7 +161,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Workflow steps</h2>
+      <h2 id="workflow-steps">Workflow Steps</h2>
 
       <h3><code>AF-BLAST-RADIUS</code> — Assess promotion impact</h3>
       <p>Mandatory first step. Documents affected services, data paths, rollback triggers, and operator runbook. HIGH or CRITICAL ratings require explicit approval evidence before proceeding.</p>
@@ -177,7 +177,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:deploy Promote v2.4.1 API container to production after staging sign-off</div>
       <p>Silver Bullet routes to <code>WF-SILVER-DEPLOY</code>. <code>/silver:blast-radius</code> documents multi-service impact. Verification confirms staging parity. Security gate passes. <code>/silver:ship</code> executes the production promotion with rollback evidence on record.</p>
 

@@ -144,7 +144,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
     <article class="doc-content">
 
-      <h2 id="overview">What are Composable Flows?</h2>
+      <h2 id="overview">What Are Composable Flows?</h2>
       <p>Silver Bullet v0.48.3 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
       <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
       <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
@@ -258,7 +258,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="workflow-tracking">Per-instance Workflow Tracker</h2>
+      <h2 id="workflow-tracking">Per-Instance Workflow Tracker</h2>
       <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every path completes.</p>
 
       <h3>What the workflow tracker contains</h3>
