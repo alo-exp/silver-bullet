@@ -167,6 +167,12 @@ if [[ -n "$prompt" ]] && sb_orchestrator_prompt_has_override "$prompt"; then
   exit 0
 fi
 
+# Workers spawned by parent: allow Bash without skill pre-record (delivery ops).
+if declare -f sb_orchestrator_worker_allows_bash >/dev/null 2>&1 \
+  && sb_orchestrator_worker_allows_bash "$tool_name"; then
+  exit 0
+fi
+
 # Directive block takes precedence over edit-without-workflow warnings (P0 before P6)
 if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_blocking; then
   expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"

@@ -205,6 +205,17 @@ sb_orchestrator_state_applies_to_project() {
   return 1
 }
 
+# Orchestrator-spawned workers may use Bash for delivery ops without a prior
+# skill record — parent already routed; workers cannot meaningfully invoke /silver.
+sb_orchestrator_worker_allows_bash() {
+  local tool_name="$1"
+  sb_orchestrator_is_worker_session || return 1
+  case "$tool_name" in
+    Bash|exec_command|Shell) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # Parent-allowed PreToolUse tools (read-only + delegation).
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
