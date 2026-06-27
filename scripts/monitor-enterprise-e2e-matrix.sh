@@ -328,8 +328,10 @@ poll_once() {
   local now_epoch last_growth_epoch last_bytes cur_bytes idle_sec row attempt_log
   now_epoch="$(date +%s)"
   cur_bytes="$(log_bytes "$MATRIX_LOG")"
-  # shellcheck disable=SC1090
-  [[ -f "$STATE_FILE" ]] && source "$STATE_FILE" 2>/dev/null || true
+  if [[ -f "$STATE_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$STATE_FILE" 2>/dev/null || true
+  fi
   last_growth_epoch="${LAST_GROWTH_EPOCH:-0}"
   last_bytes="${LAST_GROWTH_BYTES:-0}"
 
