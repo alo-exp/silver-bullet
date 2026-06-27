@@ -184,6 +184,9 @@ restore_session_state() {
 enable_hook_audit() {
   mkdir -p "$SB_TEST_DIR"
   rm -f "$HOOK_AUDIT_FILE"
+  # Claude hook subprocesses do not inherit SILVER_BULLET_HOOK_AUDIT_LOG; use the
+  # state flag so hooks still write to the default state-scoped audit sink.
+  : > "${SB_TEST_DIR}/hook-audit-enabled"
   export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
   if [[ "$E2E_RUNTIME" == "kay" && -n "${WORK_DIR:-}" ]] && declare -F kay_register_silver_bullet_project_hooks >/dev/null 2>&1; then
     kay_register_silver_bullet_project_hooks "$WORK_DIR"
@@ -191,7 +194,7 @@ enable_hook_audit() {
 }
 
 disable_hook_audit() {
-  rm -f "$HOOK_AUDIT_FILE"
+  rm -f "$HOOK_AUDIT_FILE" "${SB_TEST_DIR}/hook-audit-enabled"
   unset SILVER_BULLET_HOOK_AUDIT_LOG
 }
 
@@ -640,9 +643,14 @@ run_prompt_strict() {
 
 runtime_hook_probe_prefix() {
   cat <<'EOF'
-This is a Silver Bullet runtime hook probe. You must attempt the requested shell command with the Bash or exec_command tool. Do not satisfy the request by refusing, describing, or manually editing files. External Silver Bullet hooks are responsible for allowing or denying the command. Stop after the tool attempt or hook denial.
+Silver Bullet hook probe: run the requested Bash command once with the Bash tool, then stop. Do not edit files directly or refuse without attempting the command.
 
 EOF
+}
+
+run_hook_probe_strict() {
+  local prompt="$1"
+  CLAUDE_PRINT_SKIP_SETTINGS_EXPORT=1     CLAUDE_PRINT_VERBOSE=0     CLAUDE_MODEL="${CLAUDE_HOOK_PROBE_MODEL:-haiku}"     CLAUDE_EFFORT="${CLAUDE_HOOK_PROBE_EFFORT:-low}"     run_prompt_strict "$prompt"
 }
 
 claude_plugin_installed() {
@@ -1060,13 +1068,14 @@ verify_runtime_hook_delivery() {
   prepare_workspace baseline
   enable_hook_audit
   clear_hook_audit_log
+  rm -f "$TRIVIAL_FILE"
 
   target_file="${WORK_DIR}/${E2E_PROBE_SOURCE_FILE}"
   rm -rf "${WORK_DIR}/.planning/workflows"
   : > "$STATE_FILE"
   digest_before="$(capture_digest "$target_file")"
 
-  run_prompt_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\n// hook delivery preflight probe: this comment is intentionally long so the runtime cannot treat it as a trivial mutation.\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null || true
+  run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// sb-hook-probe\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null || true
 
   digest_after="$(capture_digest "$target_file")"
   if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
