@@ -18,8 +18,14 @@ CHROME_LINK = f'<link rel="stylesheet" href="{{root}}chrome.css?v={CHROME_VER}">
 NEUTRAL_LINK = '<link rel="stylesheet" href="{root}neutral-variants.css?v=s3-home-icons">'
 CHROME_SCRIPT = f'<script src="{{root}}chrome.js?v={CHROME_VER}"></script>'
 THEME_BOOT = (
-    '<script>document.documentElement.setAttribute(\'data-theme\','
-    "localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>"
+    "<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')"
+    "||localStorage.getItem('sb-theme');document.documentElement.setAttribute"
+    "('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>"
+)
+OLD_THEME_BOOT_RE = re.compile(
+    r"<script>\s*document\.documentElement\.setAttribute\(\s*['\"]data-theme['\"]\s*,"
+    r"\s*localStorage\.getItem\(['\"]silver-bullet-theme['\"]\)==='dark'\?'dark':'light'\)\s*;"
+    r"\s*</script>"
 )
 LUCIDE = '<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>'
 
@@ -236,6 +242,13 @@ def ensure_head_assets(html: str, root: str, *, help_page: bool = False) -> str:
             html,
             count=1,
         )
+    html = normalize_theme_boot(html)
+    return html
+
+
+def normalize_theme_boot(html: str) -> str:
+    """Ensure early head script defaults to light unless user saved dark."""
+    html = OLD_THEME_BOOT_RE.sub(THEME_BOOT, html)
     if THEME_BOOT not in html and "<head>" in html:
         html = html.replace("<head>", f"<head>\n{THEME_BOOT}", 1)
     return html

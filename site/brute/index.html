@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
 <meta name="description" content="How systemic inefficiency across every layer of modern software infrastructure undermines digital sustainability — a research presentation by Shafqat Ullah, Ālo Labs.">
 <title>The Brute-Force Stack</title>
 <link rel="icon" type="image/png" href="../favicon.png">

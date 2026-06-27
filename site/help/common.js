@@ -1,6 +1,4 @@
 (function () {
-  var sunIcon = '<span id="icon-sun" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>';
-  var moonIcon = '<span id="icon-moon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>';
   function getAnchorOffset() {
     var root = getComputedStyle(document.documentElement);
     var header = parseFloat(root.getPropertyValue('--site-header-h')) || 64;
@@ -9,39 +7,6 @@
       ? (parseFloat(root.getPropertyValue('--help-subnav-h')) || 48)
       : 0;
     return header + subnav + gap;
-  }
-
-  function setIconState(theme) {
-    var sun = document.getElementById('icon-sun');
-    var moon = document.getElementById('icon-moon');
-    if (!sun || !moon) return;
-    sun.style.display = theme === 'dark' ? '' : 'none';
-    moon.style.display = theme === 'dark' ? 'none' : '';
-  }
-
-  function applyTheme(theme) {
-    var next = theme === 'dark' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    try {
-      localStorage.setItem('sb-theme', next);
-    } catch (error) {
-      /* Theme still applies when storage is unavailable. */
-    }
-    setIconState(next);
-  }
-
-  window.toggleTheme = function () {
-    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-  };
-
-  function normalizeThemeButton() {
-    var btn = document.getElementById('theme-btn');
-    if (!btn) return;
-    btn.classList.add('help-theme-btn');
-    btn.setAttribute('type', 'button');
-    btn.setAttribute('aria-label', 'Toggle theme');
-    btn.innerHTML = sunIcon + moonIcon;
-    btn.addEventListener('click', window.toggleTheme);
   }
 
   function scrollToHash(hash, replace) {
@@ -92,14 +57,6 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    normalizeThemeButton();
-    var savedTheme = 'light';
-    try {
-      savedTheme = localStorage.getItem('sb-theme') || 'light';
-    } catch (error) {
-      savedTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    }
-    applyTheme(savedTheme);
     initAnchorScroll();
     initSidebarActiveState();
     if (window.lucide && typeof window.lucide.createIcons === 'function') {

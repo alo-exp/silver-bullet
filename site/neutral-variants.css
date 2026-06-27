@@ -42,6 +42,10 @@ html[data-theme="dark"][data-neutral-variant="s3"] nav{
   border-bottom-color:rgba(43,61,82,.86);
 }
 
+html[data-theme="dark"][data-neutral-variant="s3"] body.has-help-subnav > nav{
+  border-bottom:none;
+}
+
 html[data-theme="dark"][data-neutral-variant="s3"] .hero{
   background:rgba(6,13,21,.92);
 }
@@ -184,8 +188,12 @@ html[data-theme="dark"][data-neutral-variant="s3"] .cta-section{
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] footer{
-  background:#010409;
+  background:linear-gradient(180deg,rgba(14,26,38,.95) 0%,rgba(6,10,16,.98) 55%,#010409 100%);
   border-top-color:#26394f;
+}
+
+html[data-theme="light"][data-neutral-variant="s3"] footer{
+  background:linear-gradient(180deg,var(--mint-a10) 0%,var(--section-alt) 50%,rgba(228,222,212,.92) 100%);
 }
 
 html[data-neutral-variant="s3"] footer{

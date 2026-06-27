@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light" data-neutral-variant="s3">
 <head>
-<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
@@ -100,8 +100,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <div class="nav-actions">
       <a href="../../help/" class="nav-help">Help Center</a>
       <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
-        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
-        <span id="icon-moon"><i data-lucide="moon"></i></span>
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
       </button>
       <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
