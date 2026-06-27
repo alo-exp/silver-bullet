@@ -18,7 +18,7 @@ html[data-theme="dark"][data-neutral-variant="s3"]{
   --nav-mobile-bg:rgba(3,7,12,.99);
   --section-alt:rgba(9,18,30,.96);
   --skill-phase-border:rgba(45,62,82,.92);
-  --shadow-lg:0 28px 82px rgba(0,0,0,.84);
+  --shadow-lg:0 28px 82px rgba(255,255,255,.12);
   --slate-a02:rgba(142,158,180,.04);
   --slate-a07:rgba(142,158,180,.09);
   --slate-a08:rgba(142,158,180,.10);
@@ -186,6 +186,10 @@ html[data-theme="dark"][data-neutral-variant="s3"] .cta-section{
 html[data-theme="dark"][data-neutral-variant="s3"] footer{
   background:#010409;
   border-top-color:#26394f;
+}
+
+html[data-neutral-variant="s3"] footer{
+  border-width:0 !important;
 }
 
 html[data-theme="dark"][data-neutral-variant="s3"] body:not(.has-help-subnav) *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){

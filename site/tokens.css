@@ -191,10 +191,10 @@
   --text-dim:#8190a3;
   --border:#2d4158;
   --border-hover:#4d6884;
-  --shadow-lg:0 28px 82px rgba(0,0,0,.84);
+  --shadow-lg:0 28px 82px rgba(255,255,255,.12);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
   --card-border-faint:rgba(255,255,255,.08);
-  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 16px 48px rgba(0,0,0,.55),0 4px 16px rgba(255,255,255,.04);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(255,255,255,.14),0 8px 20px rgba(255,255,255,.10);
   --nav-bg:rgba(3,7,12,.94);
   --nav-mobile-bg:rgba(3,7,12,.99);
   --section-alt:rgba(9,18,30,.96);
