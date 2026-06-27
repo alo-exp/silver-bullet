@@ -107,13 +107,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
         <li><a href="./silver-refactor.html">/silver:refactor</a></li>
         <li><a href="./silver-validate.html">/silver:validate</a></li>
       </ul>
@@ -137,7 +137,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:test</code>, <code>test</code>, and <code>test hardening</code>:</p>
       <ul>
         <li>Coverage gaps flagged by CI or quality gates</li>
@@ -149,7 +149,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -161,7 +161,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Workflow steps</h2>
+      <h2 id="workflow-steps">Workflow Steps</h2>
 
       <h3><code>AF-PLAN</code> — Map coverage gaps</h3>
       <p>Identifies untested paths from coverage reports, incident postmortems, or spec acceptance criteria. Produces a prioritized test plan with explicit pass/fail targets.</p>
@@ -174,7 +174,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:test Add integration tests for the payment webhook retry path — coverage is at 42%</div>
       <p>Silver Bullet routes to <code>WF-SILVER-TEST</code>. Planning maps the retry path and edge cases. Execution adds integration tests with realistic fixtures. Verification confirms suite pass and coverage above the stated threshold.</p>
 

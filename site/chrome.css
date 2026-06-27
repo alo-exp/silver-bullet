@@ -143,16 +143,19 @@ footer .footer-links{display:flex;gap:24px;justify-self:end;flex-wrap:wrap}
 /* Dark theme — inverted / softened card shadows (shared tokens) */
 :root{
   --card-border-faint:rgba(0,0,0,.07);
-  --card-shadow-hover:0 18px 48px rgba(0,0,0,.14),0 8px 20px rgba(0,0,0,.10);
+  --card-shadow-hover:0 6px 18px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);
 }
 [data-theme="dark"]{
   --card-border-faint:rgba(255,255,255,.08);
-  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(255,255,255,.14),0 8px 20px rgba(255,255,255,.10);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05),0 6px 18px rgba(255,255,255,.07),0 2px 6px rgba(255,255,255,.04);
 }
-[data-theme="dark"] .help-card:hover,
-[data-theme="dark"] .quick-link:hover,
-[data-theme="dark"] .sr-item:hover{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 36px rgba(255,255,255,.12),0 8px 20px rgba(255,255,255,.08),0 0 24px var(--accent-glow);
+.help-card:hover,
+.quick-link:hover,
+.sr-item:hover,
+.step-card:hover,
+.workflow-card:hover{
+  border-color:var(--border-hover);
+  box-shadow:var(--card-shadow-hover);
 }
 [data-theme="dark"] .nav-search-results{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 60px rgba(255,255,255,.12);

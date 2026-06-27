@@ -70,6 +70,8 @@
   --mono-glyph-scale:1;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
+  --card-border-faint:rgba(0,0,0,.07);
+  --card-shadow-hover:0 6px 18px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);
   --nav-bg:rgba(246,244,240,.92);
   --nav-mobile-bg:rgba(246,244,240,.99);
   --section-alt:rgba(236,230,220,.55);
@@ -194,7 +196,7 @@
   --shadow-lg:0 28px 82px rgba(255,255,255,.12);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
   --card-border-faint:rgba(255,255,255,.08);
-  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(255,255,255,.14),0 8px 20px rgba(255,255,255,.10);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05),0 6px 18px rgba(255,255,255,.07),0 2px 6px rgba(255,255,255,.04);
   --nav-bg:rgba(3,7,12,.94);
   --nav-mobile-bg:rgba(3,7,12,.99);
   --section-alt:rgba(9,18,30,.96);
@@ -497,6 +499,8 @@ main h2,
 .plugin-name,
 .step-card-title,
 .phase-header,
+.plugin-role,
+.plugin-learn-more,
 .comparison-table th,
 .help-card h3,
 .sr-heading,
