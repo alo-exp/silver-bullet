@@ -1,0 +1,54 @@
+{
+  "version": "3.0.0",
+  "query": "Best source-available license granting maximum freedom while preventing user monetization",
+  "mode": "ultradeep",
+  "started_at": "2026-06-27T05:52:26.361223+00:00",
+  "finished_at": "2026-06-27T06:01:31.277655+00:00",
+  "assumptions": [
+    "Maximum freedom means the broadest possible set of user rights (use, study, modify, redistribute, fork, create derivative works) absent the monetization restriction.",
+    "No-monetization is the user's primary monetization-related restriction, not specifically an anti-SaaS clause.",
+    "The user wants a single primary recommendation, not a comparative license catalog.",
+    "Licensor is a developer/team choosing a license for their own software (not evaluating a third-party codebase).",
+    "Recommendation must consider U.S. copyright law as the primary enforcement regime.",
+    "Heather Meeker's license family (PolyForm/BUSL/SSPL/Elastic) represents the de facto standard for source-available licensing as of 2026."
+  ],
+  "provider_config": {
+    "primary": "search-cli",
+    "scholarly": null
+  },
+  "report_dir": "/Users/shafqat/projects/silver-bullet/repo/docs/research-260624/license",
+  "artifact_paths": {
+    "sources": "sources.jsonl",
+    "evidence": "evidence.jsonl",
+    "claims": "claims.jsonl",
+    "report": "research_report.md",
+    "html": "research_report.html",
+    "pdf": "research_report.pdf",
+    "scope": "SCOPE.md",
+    "plan": "PLAN.md",
+    "outline": "OUTLINE.md"
+  },
+  "continuation": null,
+  "phases_completed": [
+    "1-scope",
+    "2-plan",
+    "3-retrieve",
+    "4-triangulate",
+    "4.5-outline-refinement",
+    "5-synthesize",
+    "6-critique",
+    "7-refine",
+    "8-package"
+  ],
+  "counts": {
+    "sources": 23,
+    "evidence_rows": 38,
+    "claims": 31,
+    "word_count_report": 9840
+  },
+  "validation": {
+    "validate_report": "passed",
+    "verify_citations": "23/23 verified",
+    "verify_claim_support": "31 verified, 0 unsupported (strict mode)"
+  }
+}

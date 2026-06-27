@@ -82,6 +82,13 @@ run_suite "Script Unit Tests" "$SCRIPT_DIR/scripts"
 run_suite "Integration Scenario Tests" "$SCRIPT_DIR/integration"
 run_suite "E2E Live Harness Tests" "$SCRIPT_DIR/e2e-live"
 
+# Optional enterprise E2E live wiring (interactive Claude TUI — operator-only).
+# Set SB_ENTERPRISE_E2E_LIVE=1 to include structural validation in this runner.
+# Full live matrix: bash scripts/run-enterprise-e2e-live-test.sh (see docs/ENTERPRISE-E2E-LIVE-TEST.md)
+if [[ "${SB_ENTERPRISE_E2E_LIVE:-}" == "1" ]]; then
+  run_suite "Enterprise E2E Live Tests" "$SCRIPT_DIR/enterprise-e2e-live"
+fi
+
 # Run coverage matrix
 printf '\n========================================\n'
 printf '  Coverage Matrix\n'

@@ -1,6 +1,6 @@
 # Multi-AI Task Skill Scenario
 
-## Skill: multi-ai-task
+## Skill: silver-multi-ai-task
 ## Context: Cross-model research consolidation
 
 ### Scenario: Prior-art landscape with 3 models

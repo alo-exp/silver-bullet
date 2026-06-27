@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-neutral-variant="s3">
 <head>
+<script>document.documentElement.setAttribute('data-theme',localStorage.getItem('silver-bullet-theme')==='dark'?'dark':'light');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
 <title>Silver Bullet Help Center</title>
-<meta name="description" content="Silver Bullet v0.48.3 Help Center — APO catalog (docs/apo-catalog.json), Process → Workflow → Atomic Flow → Flow Step, 27 AF-* flows, 22 workflows, hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
+<meta name="description" content="Silver Bullet v0.48.5 Help Center — APO catalog (docs/apo-catalog.json), Process → Workflow → Atomic Flow → Flow Step, 27 AF-* flows, 22 workflows, hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
 <meta property="og:title" content="Silver Bullet Help Center — Composable Atomic Flows">
-<meta property="og:description" content="Docs for Silver Bullet v0.48.3: APO catalog-backed AF-* atomic flows, WF-* workflows, V-loop evidence, hook-enforced delivery gates, and spec-to-release traceability.">
+<meta property="og:description" content="Docs for Silver Bullet v0.48.5: APO catalog-backed AF-* atomic flows, WF-* workflows, V-loop evidence, hook-enforced delivery gates, and spec-to-release traceability.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -22,25 +23,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../chrome.css?v=site-chrome-9">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
 body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
 h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
 .container{max-width:1100px;margin:0 auto;padding:0 24px}
-/* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
-nav .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-logo{font-weight:800;font-size:1rem;color:var(--text-primary);text-decoration:none;letter-spacing:-.02em}
-.nav-breadcrumb{font-size:.85rem;color:var(--text-secondary);display:flex;align-items:center;gap:8px}
-.nav-breadcrumb a{color:var(--text-secondary);text-decoration:none}
-.nav-breadcrumb a:hover{color:var(--accent-light)}
-.nav-breadcrumb .sep{color:var(--text-dim)}
-.nav-right{display:flex;align-items:center;gap:16px}
-.theme-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text-secondary);font-size:.9rem;transition:all .2s}
-.theme-btn:hover{border-color:var(--accent);color:var(--accent-light)}
+/* NAV — chrome.css */
 /* HERO */
-.hero{background:var(--bg-hero);padding:120px 24px 80px;position:relative;overflow:hidden}
+.hero{background:var(--bg-hero);padding-bottom:80px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .hero .container{position:relative;z-index:1;text-align:center}
 .hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--slate-a10b);border:1px solid var(--slate-a25);border-radius:999px;padding:6px 16px;font-size:.9rem;color:var(--accent-light);font-weight:500;margin-bottom:32px}
@@ -84,14 +77,6 @@ section:nth-child(even){background:var(--section-alt)}
 .callout p{font-size:1rem;color:var(--text-secondary);line-height:1.7}
 .callout strong{color:var(--text-primary)}
 /* FOOTER */
-footer{border-top:1px solid var(--border);padding:40px 0;color:var(--text-dim);font-size:.85rem}
-.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
-footer a{color:var(--text-secondary);text-decoration:none}
-footer a:hover{color:var(--accent-light)}
-.footer-brand-group{display:flex;flex-direction:column;gap:4px}
-.footer-credit{font-size:.9rem;color:var(--text-secondary)}
-.footer-links{display:flex;gap:24px}
-@media(max-width:600px){.footer-inner{flex-direction:column;align-items:flex-start;gap:12px}.footer-links{flex-wrap:wrap;gap:16px}}
 /* SEARCH RESULTS */
 svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
 #search-results-section{padding:40px 0}
@@ -105,26 +90,52 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 .sr-heading{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:24px;text-align:center}
 </style>
 </head>
-<body>
+<body class="has-help-subnav">
 
 <nav>
   <div class="nav-inner">
-    <div style="display:flex;align-items:center;gap:16px">
-      <a href="../" class="nav-logo">Silver Bullet</a>
-      <span class="nav-breadcrumb"><span class="sep">/</span> Help Center</span>
-    </div>
-    <div class="nav-right">
-      <button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle theme"></button>
+    <a href="../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../#problem">Problem</a></li>
+      <li><a href="../#future">What If</a></li>
+      <li><a href="../#mechanism">How It Works</a></li>
+      <li><a href="../#workflow">Workflows</a></li>
+      <li><a href="../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun" style="display:none"><i data-lucide="sun"></i></span>
+        <span id="icon-moon"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
     </div>
   </div>
 </nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../">Home</a><span class="sep">/</span><span class="current">Help Center</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="./getting-started/">Start</a><a href="./concepts/">Concepts</a><a href="./workflows/">Workflows</a><a href="./reference/">Reference</a><a href="./troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero">
   <div class="container">
     <div class="badge"><i data-lucide="book-open"></i> Help Center</div>
     <h1>How Can We Help You?</h1>
-    <p>Silver Bullet v0.48.3 documentation for Claude Code, Codex, and Cursor — the APO catalog (<code>docs/apo-catalog.json</code>) defines Process → Workflow → Atomic Flow → Flow Step, with 27 AF-* atomic flows, 22 workflows, 85 flow steps, V-loop evidence, and hook-enforced delivery.</p>
     <div class="search-wrap">
       <span class="search-icon"><i data-lucide="search"></i></span>
       <input type="text" placeholder="Search topics, commands, concepts…" id="search-input" autocomplete="off">
@@ -245,7 +256,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <a href="workflows/" class="help-card" data-keywords="workflows orchestration atomic flows APO catalog WF-SILVER composition silver clarify feature bugfix ui devops research release fast spec ingest validate routing">
         <div class="card-icon"><i data-lucide="git-branch-plus"></i></div>
-        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.48.3</span>
+        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.48.5</span>
         <h3>Orchestration Workflows</h3>
         <p>Named WF-* workflows that <code>/silver</code> composes from the APO catalog — feature, UI, DevOps, bugfix, research, release, fast, and spec pipeline routes.</p>
         <ul class="card-topics">
@@ -289,17 +300,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
 <!-- FOOTER -->
 <footer>
-  <div class="container">
-    <div class="footer-inner">
-      <div class="footer-brand-group">
-        <div><span style="font-weight:700;color:var(--text-secondary)">Silver Bullet</span> Help Center</div>
-        <div class="footer-credit">Innovated at <a href="https://alolabs.dev" target="_blank" style="font-weight:700;text-decoration:none">&#256;lo Labs</a></div>
-      </div>
-      <div class="footer-links">
-        <a href="../">Home</a>
-        <a href="https://github.com/alo-exp/silver-bullet" target="_blank">GitHub</a>
-        <a href="https://github.com/alo-exp/silver-bullet/blob/main/LICENSE" target="_blank">MIT License</a>
-      </div>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../help/">Help</a>
+      <a href="../terms/">Terms of Use</a>
+      <a href="../privacy/">Privacy Policy</a>
     </div>
   </div>
 </footer>
@@ -307,5 +316,6 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
 <script src="search.js"></script>
 <script src="common.js?v=s3-site-common-themefix1"></script>
+<script src="../chrome.js?v=site-chrome-9"></script>
 </body>
 </html>

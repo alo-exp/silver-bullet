@@ -1,12 +1,12 @@
 ---
-name: multi-ai-task
+name: silver:multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
 user-invocable: false
-version: 2.1.0
+version: 2.2.0
 ---
 
-# multi-ai-task
+# /silver:multi-ai-task — Multi-Model Orchestration
 
 Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
 
@@ -54,7 +54,7 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 ## Usage
 
 ```
-/multi-ai-task "<task-prompt>" [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]
+/silver:multi-ai-task "<task-prompt>" [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]
 ```
 
 ### Inputs
@@ -70,7 +70,34 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 
 ### Default model discovery
 
-If `--models` is omitted, the skill queries the local OpenCode config (`~/.config/opencode/opencode.json` + `.jsonc`) and picks a balanced default set of 4-6 models across the available providers. **"Balanced"** means: at least 2 different provider families, no more than 2 models from the same family, with at least one reasoning-capable model if the task is research-like. Override with `--models` to pin a specific set.
+**Step 0 — resolve models (medium reasoning only):**
+
+```bash
+python3 scripts/multi-ai-task-models.py --json
+```
+
+This uses the **same model inventory as `/silver:review-fix-ladder`** for the active host (`claude`, `codex`, or `cursor`) but pins **reasoning effort to `medium` only**. Print `host`, `plan`, and the resolved model list before dispatching.
+
+| Host | Source | Notes |
+|------|--------|-------|
+| **cursor** | Fixed ladder set | Same models as review-fix-ladder; use cursor Task slug when dispatching |
+| **codex** | `models_cache.json` or fallback | Excludes `gpt-5.4-mini`; medium rung per model |
+| **claude** | Fallback chain | `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-8` @ medium |
+
+**OpenCode Go (OCG) plan:** when `~/.config/opencode/opencode.json(c)` defines `agent.*.model` entries under `opencode-go/*`, those models are preferred for parallel dispatch (Mechanism 1 / Mechanism 2). **Prerequisite:** each OCG model needs a pre-defined agent entry — the `task` tool does not accept per-call `model`. Example:
+
+```jsonc
+{
+  "agent": {
+    "ocg-minimax-m3": { "mode": "subagent", "model": "opencode-go/minimax-m3" }
+  },
+  "permission": { "task": { "ocg-*": "allow" } }
+}
+```
+
+See `rules/dispatch-mechanics.md` for Mechanism 1–4 selection.
+
+If `--models` is omitted after Step 0, use the resolver output. Override with `--models` to pin a specific set. When OCG is unavailable, pick 4–6 models across ≥2 provider families from the resolver list.
 
 ### Mode semantics
 
@@ -282,6 +309,6 @@ A self-review run (also on 2026-06-27) used the skill recursively to review itse
 
 ## See also
 
-- `silver-bullet` — for managing the SDLC workflow that may consume `multi-ai-task`'s outputs
+- `silver-bullet` — for managing the SDLC workflow that may consume `silver:multi-ai-task` outputs
 - `find-skills` — to discover other SB skills
 - For a deep 8-phase research methodology (when invoking a per-model prompt for research), use Claude's `deep-research` skill if available, or inline the methodology in the dispatch prompt
