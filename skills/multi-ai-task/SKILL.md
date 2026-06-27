@@ -20,12 +20,12 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 5. Resolves disagreements across models (with documented tie-break rules)
 6. Aggregates scores / votes / ratings when applicable
 7. Produces a consolidated artifact + an HTML preview
+8. **Auto-injects the schema into every dispatch prompt** (by default ON; pass `--no-auto-inject` to opt out — see "The `--schema` parameter" below)
 
 **What this skill does NOT do:**
 - Define the task content (user provides the prompt)
 - Define the output schema (user can pass `--schema`; defaults to LLM-assisted extraction)
 - Replace domain expertise (the models do the actual work; the skill just orchestrates and consolidates)
-- Inject the schema into the prompt unless `--no-auto-inject` is set (default ON — see "The `--schema` parameter" below)
 - Retry failed dispatches (this is the calling agent's responsibility; the skill is fail-soft)
 
 ---
@@ -184,7 +184,7 @@ The full pipeline is documented in `rules/methodology.md`. Quick summary:
 3. **Cross-model consolidation** — dedup by primary key, resolve conflicts by configured rule, aggregate scores by configured aggregator
 4. **Final synthesis** — write `consolidated.md` (per the schema or free-form), render HTML preview, write `conflicts.md` documenting all resolutions
 
-The 4 phases are also tracked in `run-manifest.json → totals.phases_completed` for audit purposes.
+The 4 phases are also tracked in `run-manifest.json → phases_completed` (a top-level array, per the canonical schema in `rules/output-schema.md`) for audit purposes.
 
 ## Dispatch mechanics
 
