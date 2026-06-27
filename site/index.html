@@ -94,7 +94,7 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
   --shadow-glow:0 0 40px rgba(0,170,46,.08);
   --card-border-faint:rgba(0,0,0,.07);
-  --card-shadow-hover:0 18px 48px rgba(0,0,0,.14),0 8px 20px rgba(0,0,0,.10);
+  --card-shadow-hover:0 6px 18px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);
   --nav-bg:rgba(246,244,240,.92);
   --nav-mobile-bg:rgba(246,244,240,.99);
   --section-alt:rgba(236,230,220,.55);
@@ -182,7 +182,7 @@ html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
   --shadow-lg:0 20px 60px rgba(255,255,255,.12);
   --shadow-glow:0 0 40px rgba(0,255,65,.06);
   --card-border-faint:rgba(255,255,255,.08);
-  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.08),0 18px 48px rgba(255,255,255,.14),0 8px 20px rgba(255,255,255,.10);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05),0 6px 18px rgba(255,255,255,.07),0 2px 6px rgba(255,255,255,.04);
   --nav-bg:rgba(8,12,16,.92);
   --nav-mobile-bg:rgba(8,12,16,.99);
   --section-alt:rgba(12,20,16,.7);
@@ -332,10 +332,6 @@ code,kbd,samp{
 }
 [data-theme="dark"] [data-theme="dark"] .hero .brooks-photo{
   box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(255,255,255,.08);
-}
-[data-theme="dark"] .hero-visual-mocks .enforcement-block:hover,
-[data-theme="dark"] .proof-enforcement-grid .enforcement-block:hover{
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 36px rgba(255,255,255,.12),0 8px 20px rgba(255,255,255,.08),0 0 20px var(--accent-glow);
 }
 [data-theme="dark"] #brooks-closing img{
   box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(255,255,255,.08);
@@ -774,7 +770,7 @@ section:nth-child(even){background:var(--section-alt)}
   font-size:1rem;margin-bottom:4px;letter-spacing:-.02em;
 }
 .ecosystem-card .plugin-role{
-  font-size:.908rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  font-size:.908rem;font-weight:400;text-transform:uppercase;letter-spacing:.08em;
   color:var(--accent-light);margin-bottom:14px;
 }
 .ecosystem-card .plugin-desc{
@@ -790,7 +786,7 @@ section:nth-child(even){background:var(--section-alt)}
 }
 .ecosystem-card .plugin-features code{white-space:normal;overflow-wrap:break-word;word-break:normal}
 .ecosystem-card .plugin-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
-.plugin-learn-more{font-size:1.054rem;font-weight:700;letter-spacing:.1em;color:var(--accent-light);text-decoration:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;transition:all .2s;}
+.plugin-learn-more{font-size:1.054rem;font-weight:400;letter-spacing:.06em;color:var(--accent-light);text-decoration:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;transition:all .2s;}
 .plugin-learn-more:hover{color:var(--accent);border-color:var(--accent-light);background:var(--accent-glow);}
 .primary-badge{
   display:inline-flex;align-items:center;gap:5px;
@@ -817,7 +813,7 @@ section:nth-child(even){background:var(--section-alt)}
 .devops-card .plugin-logo{font-size:1.6rem;margin-bottom:10px}
 .devops-card .plugin-name{font-size:.95rem;margin-bottom:3px;letter-spacing:-.02em}
 .devops-card .plugin-role{
-  font-size:1.025rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  font-size:1.025rem;font-weight:400;text-transform:uppercase;letter-spacing:.08em;
   color:var(--cyan);margin-bottom:12px;
 }
 .devops-card .plugin-desc{
@@ -1398,14 +1394,14 @@ img{max-width:100%;height:auto}
               <div class="block-dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
             </div>
             <div class="enforcement-body" style="text-align:left">
-<div class="term-line"><span class="prompt">$</span> <span class="dim">agent &quot;ship rate limiter&quot;</span></div>
+<div class="term-line"><span class="prompt">$</span> <span class="dim">claude &quot;ship rate limiter&quot;</span></div>
 <div class="term-line"><span class="ok">&#10003;</span> <span class="dim">wrote rate_limiter.py + middleware patch</span></div>
 <div class="term-line"><span class="ok">&#10003;</span> <span class="dim">pytest: 4 passed (mocked Redis)</span></div>
 <div class="term-line"><span class="ok">&#10003;</span> <span class="dim">git commit &rarr; PR #847 merged</span></div>
-<div class="term-line"><span class="hook">&#9656;</span> <span class="muted">completion-audit exit 0 — no SB state</span></div>
+<div class="term-line"><span class="warn">&#9888;</span> <span class="dim">skipped spec &mdash; went straight to code</span></div>
 <div class="term-line"><span class="warn">&#9888;</span> <span class="dim">deploy.yml: no canary gate</span></div>
 <div class="term-line"><span class="stop">&#9888;</span> <span class="dim">pager: 429 storm on auth header</span></div>
-<div class="term-line"><span class="muted">postmortem: no SPEC · no UAT · no trace</span></div>
+<div class="term-line"><span class="muted">postmortem: no spec &middot; no UAT &middot; no trace</span></div>
             </div>
           </div>
           <div class="enforcement-block">
@@ -1901,7 +1897,7 @@ img{max-width:100%;height:auto}
           <li><code>silver:verify</code>, <code>silver:review</code>, and <code>silver:ship</code></li>
           <li>Hook-enforced lifecycle markers</li>
         </ul>
-        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1915,7 +1911,7 @@ img{max-width:100%;height:auto}
           <li><code>/silver:completion-audit</code> before delivery</li>
           <li><code>/silver:branch-finish</code> for branch readiness</li>
         </ul>
-        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1929,7 +1925,7 @@ img{max-width:100%;height:auto}
           <li><code>silver:deploy</code> and <code>silver:canary</code> runtime evidence</li>
           <li><code>silver:incident</code> and <code>silver:retro</code> learning loops</li>
         </ul>
-        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1943,7 +1939,7 @@ img{max-width:100%;height:auto}
           <li><code>silver:refactor</code> for behavior-preserving change</li>
           <li><code>silver:benchmark</code> for repeatable agent or approach evals</li>
         </ul>
-        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1957,7 +1953,7 @@ img{max-width:100%;height:auto}
           <li>Accessibility review (WCAG 2.1 AA)</li>
           <li>Design critique and handoff specs</li>
         </ul>
-        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1971,7 +1967,7 @@ img{max-width:100%;height:auto}
           <li>Research synthesis and competitive analysis</li>
           <li>Stakeholder updates and release coordination</li>
         </ul>
-        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
     </div>
@@ -2002,7 +1998,7 @@ img{max-width:100%;height:auto}
           <li>Module &amp; provider scaffolding</li>
           <li>Packer builders &amp; HCP integration</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/hashicorp/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="https://github.com/hashicorp/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
       </div>
 
       <div class="devops-card fade-in">
@@ -2015,7 +2011,7 @@ img{max-width:100%;height:auto}
           <li>Lambda / API Gateway / Step Functions</li>
           <li>RDS, DynamoDB, Aurora selection</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/awslabs/agent-plugins" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="https://github.com/awslabs/agent-plugins" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
       </div>
 
       <div class="devops-card fade-in">
@@ -2028,7 +2024,7 @@ img{max-width:100%;height:auto}
           <li>IaC migration (TF/CDK/CF/ARM &rarr; Pulumi)</li>
           <li>Pulumi ESC for secrets management</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/pulumi/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="https://github.com/pulumi/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
       </div>
 
       <div class="devops-card fade-in">
@@ -2041,7 +2037,7 @@ img{max-width:100%;height:auto}
           <li>CI/CD &amp; GitOps workflows</li>
           <li>Monitoring, observability &amp; cost optimization</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/ahmedasmar/devops-claude-skills" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="https://github.com/ahmedasmar/devops-claude-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
       </div>
 
       <div class="devops-card fade-in">
@@ -2054,7 +2050,7 @@ img{max-width:100%;height:auto}
           <li>GitOps security &amp; RBAC</li>
           <li>Multi-agent team orchestration</li>
         </ul>
-        <div class="plugin-tags"><a href="https://github.com/wshobson/agents" class="plugin-learn-more" target="_blank" rel="noopener">LEARN MORE&hellip;</a></div>
+        <div class="plugin-tags"><a href="https://github.com/wshobson/agents" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
       </div>
 
     </div>

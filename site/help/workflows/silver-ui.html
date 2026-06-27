@@ -105,18 +105,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
         <li><a href="#ui-paths">UI-specific atomic flows</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
         <li><a href="#workflow-steps">Flow execution</a></li>
         <li><a href="#design-contract">Design contract</a></li>
         <li><a href="#ui-visual-audit">UI quality</a></li>
-        <li><a href="#non-skippable-gates">Non-skippable gates</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
         <li><a href="../reference/">Command Reference</a></li>
       </ul>
     </aside>
@@ -129,7 +129,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition (<code>WF-SILVER-UI</code>)</h2>
+      <h2 id="composition">Catalog Composition (<code>WF-SILVER-UI</code>)</h2>
       <p>The default composition chain from <code>docs/apo-catalog.json</code>:</p>
       <div class="code-block">/silver:init (when .planning/ missing) → Orient → Clarify → Decide → Specify
 → Quality gate (pre-plan) → Plan → Design contract → Execute
@@ -168,7 +168,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Use <code>/silver:ui</code> for any of these entry trigger signals:</p>
       <ul>
         <li>"UI" / "frontend" / "component" / "screen"</li>
@@ -199,7 +199,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="non-skippable-gates">Non-skippable gates</h2>
+      <h2 id="non-skippable-gates">Non-Skippable Gates</h2>
       <div class="callout callout-warn">
         <div class="callout-icon">🔒</div>
         <div class="callout-body">
@@ -215,7 +215,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
       <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation and <code>AF-CLARIFY</code> when needed, <code>/silver:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/silver:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
 

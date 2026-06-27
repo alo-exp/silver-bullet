@@ -37,23 +37,49 @@
 
   function initSidebarActiveState() {
     var links = Array.prototype.slice.call(document.querySelectorAll('.sidebar-nav a[href^="#"]'));
-    if (!links.length || !('IntersectionObserver' in window)) return;
-    var byId = {};
+    if (!links.length) return;
+
+    var sections = [];
     links.forEach(function (link) {
-      byId[link.getAttribute('href').slice(1)] = link;
+      var id = link.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      if (el) sections.push({ link: link, el: el });
     });
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        links.forEach(function (link) { link.classList.remove('active'); });
-        var active = byId[entry.target.id];
-        if (active) active.classList.add('active');
+    if (!sections.length) return;
+
+    var clickLock = false;
+    var clickLockTimer = null;
+
+    function setActive(link) {
+      links.forEach(function (l) { l.classList.remove('active'); });
+      if (link) link.classList.add('active');
+    }
+
+    function updateActiveFromScroll() {
+      if (clickLock) return;
+      var pos = window.pageYOffset + getAnchorOffset() + 2;
+      var current = sections[0].link;
+      sections.forEach(function (item) {
+        if (item.el.offsetTop <= pos) current = item.link;
       });
-    }, { rootMargin: '-25% 0px -65% 0px', threshold: 0 });
-    Object.keys(byId).forEach(function (id) {
-      var section = document.getElementById(id);
-      if (section) observer.observe(section);
+      setActive(current);
+    }
+
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest && event.target.closest('.sidebar-nav a[href^="#"]');
+      if (!link) return;
+      setActive(link);
+      clickLock = true;
+      clearTimeout(clickLockTimer);
+      clickLockTimer = setTimeout(function () {
+        clickLock = false;
+        updateActiveFromScroll();
+      }, 700);
     });
+
+    window.addEventListener('scroll', updateActiveFromScroll, { passive: true });
+    window.addEventListener('resize', updateActiveFromScroll);
+    updateActiveFromScroll();
   }
 
   document.addEventListener('DOMContentLoaded', function () {

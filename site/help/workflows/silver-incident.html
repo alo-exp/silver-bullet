@@ -114,17 +114,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <aside class="doc-sidebar">
       <ul class="sidebar-nav">
-        <li class="sidebar-section">On this page</li>
+        <li class="sidebar-section">On This Page</li>
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#when-to-use">When to use</a></li>
-        <li><a href="#composition">Catalog composition</a></li>
-        <li><a href="#workflow-steps">Workflow steps</a></li>
-        <li><a href="#artifacts">Artifacts &amp; exit gate</a></li>
-        <li><a href="#example">Example invocation</a></li>
-        <li class="sidebar-section">See also</li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#artifacts">Artifacts &amp; Exit Gate</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
         <li><a href="./silver-forensics.html">/silver:forensics</a></li>
         <li><a href="./silver-retro.html">/silver:retro</a></li>
-        <li><a href="./index.html">All workflows</a></li>
+        <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
 
@@ -146,7 +146,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="when-to-use">When to use</h2>
+      <h2 id="when-to-use">When to Use</h2>
       <p>Entry trigger signals for <code>/silver:incident</code>:</p>
       <ul>
         <li>Production outage, degraded service, or customer-impacting regression</li>
@@ -158,7 +158,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="composition">Catalog composition</h2>
+      <h2 id="composition">Catalog Composition</h2>
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
@@ -173,7 +173,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="workflow-steps">Atomic flow execution</h2>
+      <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-BLAST-RADIUS</code> — Establish impact before investigation</h3>
       <p>Invoke <code>/silver:blast-radius</code>. Assess severity, affected users/systems, and whether mitigation or rollback is required before investigation continues. Produces <code>ART-BLAST_RADIUS</code> with rollback/risk controls.</p>
@@ -192,7 +192,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="artifacts">Artifacts &amp; exit gate</h2>
+      <h2 id="artifacts">Artifacts &amp; Exit Gate</h2>
       <p><code>.planning/INCIDENT.md</code> must include:</p>
       <ul>
         <li>Impact summary and affected users/systems</li>
@@ -206,7 +206,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <h2 id="example">Example invocation</h2>
+      <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:incident Production API returning 503s after deploy v2.4.1 — assess impact and contain</div>
       <p>Silver Bullet routes to <code>WF-SILVER-INCIDENT</code>. <code>AF-BLAST-RADIUS</code> scopes customer impact and rollback options. <code>AF-DEBUG</code> traces the regression to a config change. <code>AF-SECURE</code> confirms no credential exposure. <code>AF-VERIFY</code> validates recovery on canary. <code>AF-DOCUMENT</code> writes <code>.planning/INCIDENT.md</code> and files follow-up work through <code>/silver:add</code>.</p>
 
