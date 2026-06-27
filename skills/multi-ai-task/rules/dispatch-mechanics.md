@@ -40,9 +40,16 @@ mkdir -p "$OUT"
 # Timeout per model: adjust to your task. 10min for research, 5min for review.
 TIMEOUT=600
 
+# macOS doesn't ship `timeout` by default; use `gtimeout` from coreutils
+# (install via `brew install coreutils`). Linux ships `timeout` in util-linux.
+TIMEOUT_CMD="timeout"
+if [ "$(uname)" = "Darwin" ] && command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
 for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
   slug=$(echo "$model" | cut -d/ -f2)  # sanitize "opencode-go/minimax-m3" → "minimax-m3"
-  timeout "$TIMEOUT" npx -y opencode-ai run \
+  "$TIMEOUT_CMD" "$TIMEOUT" npx -y opencode-ai run \
     --model "$model" \
     --title "multi-ai-task-${slug}-$(date +%s)" \
     --dangerously-skip-permissions \
