@@ -197,14 +197,29 @@ fi
 
 # Detect current git branch (safe: validates characters, falls back to empty)
 current_branch=""
+current_git_toplevel=""
 current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+current_git_toplevel=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)
 if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
   current_branch=""
 fi
 
-# Compare with stored branch
+if [[ -f "$_lib_dir/branch-scope.sh" ]]; then
+  # shellcheck source=lib/branch-scope.sh
+  source "$_lib_dir/branch-scope.sh"
+fi
+
+# Compare with stored branch (+ optional git worktree toplevel)
 stored_branch=""
-[[ -f "$branch_file" ]] && stored_branch=$(cat "$branch_file" 2>/dev/null || true)
+stored_git_toplevel=""
+if declare -f sb_branch_scope_read >/dev/null 2>&1; then
+  if sb_branch_scope_read "$branch_file"; then
+    stored_branch="$SB_BRANCH_SCOPE_STORED_BRANCH"
+    stored_git_toplevel="$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
+  fi
+else
+  [[ -f "$branch_file" ]] && stored_branch=$(head -1 "$branch_file" 2>/dev/null | tr -d '\n' || true)
+fi
 
 # v0.30.0 fix (#87 Bug 1+3): only mutate branch/gate state on `startup` and
 # `clear` events. `resume` and `compact` are benign continuation events. Empty
@@ -220,18 +235,24 @@ if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_fil
   # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
   # without wiping state.
   sb_guard_nofollow "$branch_file" 2>/dev/null || true
-  printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  if declare -f sb_branch_scope_write >/dev/null 2>&1; then
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+  else
+    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  fi
   # v0.30.0 fix (#87 Bug 2): verify the write succeeded; fail-soft (warn-only,
   # do not exit non-zero) so the rest of the hook still runs.
   if [[ ! -s "$branch_file" ]]; then
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
-elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branch" && "$current_branch" != "$stored_branch" ]]; then
-  # Branch changed — full state reset for fresh workflow.
+elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branch" && \
+        ( "$current_branch" != "$stored_branch" || \
+          ( -n "$stored_git_toplevel" && -n "$current_git_toplevel" && "$current_git_toplevel" != "$stored_git_toplevel" ) ) ]]; then
+  # Branch or git worktree changed — full state reset for fresh workflow.
   # NOTE: requires BOTH current_branch AND stored_branch to be non-empty.
   # Empty current_branch (e.g. detached HEAD with rev-parse failure) MUST NOT
   # trigger a wipe — that was the v0.27.x mid-session state-loss path.
-  SB_BRANCH_RESET_BANNER="⚠️ SB: git branch changed (${stored_branch} → ${current_branch}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
+  SB_BRANCH_RESET_BANNER="⚠️ SB: git scope changed (${stored_branch}@${stored_git_toplevel:-?} → ${current_branch}@${current_git_toplevel:-?}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
   sb_safe_write "$state_file"
   rm -f -- "$state_file" 2>/dev/null || true
   rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
@@ -269,7 +290,11 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
     rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
   fi
   sb_guard_nofollow "$branch_file" 2>/dev/null || true
-  printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  if declare -f sb_branch_scope_write >/dev/null 2>&1; then
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+  else
+    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  fi
   if [[ ! -s "$branch_file" ]]; then
     printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
   fi
@@ -485,6 +510,10 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
     done
   fi
 fi
+
+# Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
+sb_guard_nofollow "${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
+date +%s >"${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
 
 # If nothing found, silent no-op
 [[ -z "$combined" ]] && exit 0

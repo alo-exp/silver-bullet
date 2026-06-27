@@ -28,6 +28,11 @@ Context Mode is **ELv2** — not OSI-open. Acceptable for personal/internal use.
 
 **Usage enforcement:** When to use `ctx_*` vs `Read` is mandatory in `silver-bullet.md` §2g-ii. When Context Mode is opted in and enforced, SB **`context-mode-read-deny.sh`** (PreToolUse on `Read|Grep`) returns **deny** if the target file exceeds `recommended_tools.context_mode.read_deny_bytes` (default **5120**). Exempt: trivial bypass, SB state/config paths, files at or below the threshold.
 
+**Bypass / tuning:**
+- Raise threshold: set `read_deny_bytes` in `.silver-bullet.json` (e.g. `65536` for header-only reads).
+- One-time research (e.g. large session transcripts): `CONTEXT_MODE_READ_DENY_BYPASS=1` in the session environment before `Read|Grep`.
+- Prefer `ctx_execute_file` for bounded extraction when the full file must not enter context.
+
 **Windows:** Native Windows requires WSL. SB auto-suspends with `install_failure_reason: "Windows requires WSL"`.
 
 ## Prerequisites
