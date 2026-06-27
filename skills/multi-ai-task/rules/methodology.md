@@ -101,7 +101,7 @@ function extractFreeform(response) {
 
 Fuzzy dedup is applied at the title level (see `consolidation-rules.md`).
 
-**Extractor model — clarification:** the "extractor" model is a single designated model used for fallback extraction when a model returns non-structured output. Default: the slowest, highest-capability model from the original dispatch (caches the response, no extra cost). Override via the implementation; not a CLI parameter.
+**Extractor model — clarification:** the "extractor" model is a single designated model used for fallback extraction when a model returns non-structured output. It's NOT the model that produced the response (that model already failed to produce structured output; asking it again is unlikely to help). The extractor is a *new* LLM call with a prompt containing the original response and the schema. Cost: one additional LLM call per model whose structured extraction failed (paths 1 and 2 in the pseudocode). Default: the slowest/highest-capability model from the original dispatch. Override via the implementation; not a CLI parameter.
 
 ---
 
