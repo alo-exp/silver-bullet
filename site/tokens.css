@@ -2,6 +2,32 @@
    Single source of truth for all CSS custom properties.
    Linked by all site pages to prevent token drift. */
 
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN-Italic.woff2') format('woff2');
+  font-weight:400;font-style:italic;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN-Bold.woff2') format('woff2');
+  font-weight:700;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din Condensed';
+  src:url('fonts/D-DINCondensed.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din Condensed';
+  src:url('fonts/D-DINCondensed-Bold.woff2') format('woff2');
+  font-weight:700;font-style:normal;font-display:swap;
+}
+
 /* ───── DESIGN TOKENS — LIGHT (default) ───── */
 :root{
   --bg-page:#f6f4f0;
@@ -27,8 +53,8 @@
   --radius:12px;
   --radius-lg:20px;
   --radius-sm:8px;
-  --font-heading:'IBM Plex Sans',system-ui,sans-serif;
-  --font-body:'IBM Plex Sans',system-ui,sans-serif;
+  --font-heading:'D-Din',system-ui,sans-serif;
+  --font-body:'D-Din',system-ui,sans-serif;
   --font-sans:var(--font-body);
   --font-mono:'IBM Plex Mono',monospace;
   --shadow-lg:0 20px 60px rgba(0,0,0,.10);
@@ -218,7 +244,7 @@ code,kbd,samp{font-size:1em !important;line-height:inherit}
 }
 
 .prereq-card .install-cmd{
-  font-size:.9rem !important;
+  font-size:.99rem !important;
 }
 
 [data-theme="dark"] body{

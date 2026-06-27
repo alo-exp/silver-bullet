@@ -1,0 +1,694 @@
+[0m
+> build · minimax-m3
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/ /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/
+755  examples/
+644  consolidation-rules.md  16.8K
+644  dispatch-mechanics.md  11.5K
+644  methodology.md  8.5K
+644  output-schema.md  9.8K
+644  code-review.md  5.3K
+644  fact-check.md  4.9K
+644  research-prior-art.md  8.7K
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/ 2>/dev/null | head -30
+agent-output/
+multi-ai-self-review-20260627-083255/
+multi-ai-self-review-r2-20260627-093345/
+multi-ai-self-review-r3-20260627/
+multi-ai-self-review-r3-20260627-095647/
+multi-ai-self-review-r4-20260627-101100/
+multi-ai-self-review-r5-20260627-101831/
+multi-ai-self-review-r6-20260627-104050/
+OPENCODE_DYNAMIC_SUBAGENT_MODELS.md  20.2K
+PRIOR-ART-MASTER-PROMPT.txt  16.6K
+PRIOR-ART-MULTI-AI-PROMPT.md  6.3K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.html  49.5K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.md  31.5K
+SB_PRIOR_ART_RESEARCH_PROMPT.md  21.0K
+SB_PRIOR_ART_USER_PROMPT.md  16.4K
+atomic-flow-redesign.plan.md  50.2K
+dispatch-research-sequential.sh  1.9K
+dispatch-research.sh  2.1K
+goose-ai-agent-research.md  21.4K
+goose-extensibility-research.md  15.5K
+goose-extensibility-verification.md  9.5K
+multi-ai-self-review-r3-20260627-critical.md  37.2K
+opencode-extensibility-research.md  14.4K
+prior-art-landscape-2026-06-27.md  10.3K
+prior-art-landscape-glm-5.2.md  31.5K
+prior-art-landscape-minimax-m3.md  28.9K
+prior-art-landscape-report.md  38.1K
+prior-art-landscape-research.md  32.1K
+prior-art-report.md  28.1K
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+755  rules/
+644  SKILL.md  16.0K
+644  critical-review-r3.md  28.8K
+644  critical-review-r4.md  30.5K
+644  self-review.md  25.9K
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/ -la
+755  rules/
+644  SKILL.md  16.0K
+644  critical-review-r3.md  28.8K
+644  critical-review-r4.md  30.5K
+644  self-review.md  25.9K
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/multi-ai-self-review-r6-20260627-104050/ -la 2>/dev/null | head -40
+644  SELF_REVIEW_PROMPT.md  4.0K
+644  ocg-deepseek-v4-pro.err  956B
+644  ocg-deepseek-v4-pro.md  47B
+644  ocg-glm-5.2.err  948B
+644  ocg-glm-5.2.md  0B
+644  ocg-kimi-k2.6.err  950B
+644  ocg-kimi-k2.6.md  0B
+644  ocg-mimo-v2.5-pro.err  1.3K
+644  ocg-mimo-v2.5-pro.md  65B
+644  ocg-minimax-m3.err  8.6K
+644  ocg-minimax-m3.md  0B
+644  ocg-qwen3-7-max.err  952B
+644  ocg-qwen3-7-max.md  0B
+[0m
+[0m✱ [0mGrep "2\.1\.0|version"[90m in skills/multi-ai-task · 25 matches[0m
+[0m→ [0mRead skills/multi-ai-task/critical-review-r4.md
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/multi-ai-self-review-r3-20260627-095647/ 2>/dev/null | head -20 && echo --- && rtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/multi-ai-self-review-r3-20260627/ 2>/dev/null | head -20
+SELF_REVIEW_PROMPT.md  4.0K
+ocg-deepseek-v4-pro.err  1.0K
+ocg-deepseek-v4-pro.md  1.0K
+ocg-glm-5.2.err  948B
+ocg-glm-5.2.md  34.9K
+ocg-kimi-k2.6.err  950B
+ocg-kimi-k2.6.md  19.7K
+ocg-mimo-v2.5-pro.err  1018B
+ocg-mimo-v2.5-pro.md  24.4K
+ocg-minimax-m3.err  9.4K
+ocg-minimax-m3.md  36.0K
+ocg-qwen3-7-max.err  1.3K
+ocg-qwen3-7-max.md  21.6K
+---
+multi-ai-self-review.md  33.9K
+[0m
+[0m$ [0mecho "=== Check if primary_key is actually used in code or spec ===" && rtk grep -n "primary_key" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md 2>/dev/null | head -20
+=== Check if primary_key is actually used in code or spec ===
+11 matches in 0 files:
+
+[+11 more]
+[0m
+[0m$ [0mecho "=== Check timeout usage in dispatch-mechanics.md ===" && rtk grep -n "TIMEOUT\|timeout\|gtimeout" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/dispatch-mechanics.md | head -20
+=== Check timeout usage in dispatch-mechanics.md ===
+11 matches in 0 files:
+
+[+11 more]
+[0m
+[0m$ [0mecho "=== Check concatenate references ===" && rtk grep -n "concatenate" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md | head -20
+=== Check concatenate references ===
+3 matches in 0 files:
+
+[+3 more]
+[0m
+[0m$ [0mecho "=== check --concurrency flag ===" && rtk grep -n "concurrency" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/*.md 2>/dev/null | head -20
+=== check --concurrency flag ===
+0 matches for 'concurrency'
+[0m
+[0m$ [0mecho "=== run-manifest.json fields mentioned across files ===" && rtk grep -nE "phases_completed|aliases|schema_auto_injected|consolidation" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/*.md 2>/dev/null
+=== run-manifest.json fields mentioned across files ===
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:11:Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:41:| Latency of slowest model + consolidation is OK | Latency is critical (single turn) |
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:46:- **Single model suffices** — adds cost + consolidation time for no benefit
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:48:- **Tool execution varies per model** — consolidation assumes same prompt → comparable outputs
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:49:- **Output is non-textual** (image generation, audio) — current consolidation is text-based
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:87:The skill needs to know how to structure the consolidation. Two modes:
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:144:**Conflict-resolution values:** see the full rule library in `rules/consolidation-rules.md` (named rules: `most-severe`, `majority`, `majority-with-uncertain`, `lowest-of-majors`, `longest-with-quote`, `concatenate-all`, `all-collected`, `union-dedup`, `merge-exact`, `prefer-with-evidence-then-newer-then-strict`).
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:146:**Schema auto-injection (default ON):** by default, the skill appends a `## Required Output Schema` block to each dispatch prompt containing the schema verbatim, plus a one-line instruction. This ensures models know the column structure even if the user didn't embed it. To opt out (because your prompt already embeds the schema, or you want to manage prompt construction yourself), pass `--no-auto-inject`. The auto-inject state is recorded in `run-manifest.json → schema_auto_injected: true|false`.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:169:├── run-manifest.json          # Inputs, models, timing, mode, schema_auto_injected
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:184:3. **Cross-model consolidation** — dedup by primary key, resolve conflicts by configured rule, aggregate scores by configured aggregator
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:187:The 4 phases are also tracked in `run-manifest.json → phases_completed` (a top-level array, per the canonical schema in `rules/output-schema.md`) for audit purposes.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:195:The dedup, conflict-resolution, and aggregation algorithms — see `rules/consolidation-rules.md`. These are the core value of the skill; everything else is plumbing. The named rule library (`most-severe`, `majority-with-uncertain`, `lowest-of-majors`, `concatenate-all`, `union-dedup`, etc.) is now formally defined.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:3:The algorithms for the cross-model consolidation phases. Generic — works for any task type that produces a list of items.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:7:## The minimal contract for consolidation
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:9:For the consolidation step to work, the model responses need to be decomposable into **items**. An item has:
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:82: Build an alias map for your task type. The default (no aliases) is `lowercase + strip-punctuation + collapse-whitespace + exact match`. For semantic dedup (e.g., `AutoGen` ↔ `AG2`), supply an alias map at run time. The alias map is **task-specific** — see `rules/examples/research-prior-art.md` for a 14-entry research alias map. A code-review or fact-check run would have a different alias map (or none).
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:87:const aliases = {
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:89:  // Add as you discover variants. Persist to run-manifest.json → aliases.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:98:  const canonical = normalize(row.primary_key);  // apply aliases
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:115:Mark a row's primary key as `aliases[n] = null` to drop it from the registry (don't count as an item). Generic skip rules for any task type:
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:298:## Custom consolidation strategies
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:329:**To use aliases in your run:**
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:330:1. Build the alias map for your task type (or start with no aliases and add as the models surface variants)
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:332:3. Document the alias map in your run's `run-manifest.json → aliases` field so the consolidation is reproducible
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md:334:**The default behavior** (no aliases) is: normalize = lowercase + strip-punctuation + collapse-whitespace, then exact match. This catches `AutoGen` vs `autogen` and `BMAD Method` vs `BMAD-Method`, but not `AutoGen` vs `AG2` (semantic equivalence). For semantic dedup, you need an alias map.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/dispatch-mechanics.md:129:The skill is **fail-soft**: a model failure is logged, the model is excluded from the consolidation, and the run continues with the models that did respond. The skill does **not retry** (retry policy lives in the calling agent's runner, not in the skill core — this avoids retry loops in shell wrappers with 2-min default timeouts).
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:15:**Schema auto-injection (default ON):** if the user passes `--schema` and does **not** also pass `--no-auto-inject`, the skill appends a `## Required Output Schema` block (the JSON schema verbatim, plus a one-line instruction: "Return your answer as a markdown table with exactly these columns, and nothing that does not match this schema") to every dispatch prompt. This guarantees the model sees the column structure even if the user forgot to embed it. If the user's prompt already embeds the schema, pass `--no-auto-inject` to avoid duplication. The auto-inject state is recorded in `run-manifest.json → schema_auto_injected: true|false`.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:19:If a model fails to produce a response (timeout, error, refusal), the failure is logged and the model is excluded from the consolidation. **The skill does NOT retry.** Retry logic lives in the calling agent's runner, not in the skill core — this avoids infinite retry loops in shell wrappers with 2-min default timeouts. Failures are recorded in `run-manifest.json → models_failed` with the stderr reason.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:102:Fuzzy dedup is applied at the title level (see `consolidation-rules.md`).
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:108:## Phase 3 — Cross-model consolidation
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:170:The user can always re-run with `--schema` to get structured output, or with `--mode quick` to skip consolidation and get raw per-model responses merged.
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:173:The skill can be re-run with the same `task-prompt` and produce a new consolidated output. It does NOT cache across runs by default (each run is fresh), but the `run-manifest.json` from previous runs can be referenced for incremental consolidation (future enhancement).
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:197:One JSON per line per (model, item) — the raw extraction before consolidation:
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:218:  "schema_auto_injected": true,
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:224:  "aliases": {"AutoGen/AG2": "AutoGen"},
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:230:  "consolidation": {
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:235:  "phases_completed": [1, 2, 3, 4]
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:245:- `schema_auto_injected` — was the schema auto-injected into the dispatch prompt? (v2.1.0+)
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:251:- `aliases` — task-specific alias map applied during dedup (v2.1.0+); empty `{}` if no aliases
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:253:- `consolidation` — detailed stats: dedup merges, score aggregations, unresolved conflicts
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:254:- `phases_completed` — list of phase numbers that produced output (for partial-failure auditing)
+[0m
+[0m$ [0mecho "=== Look for 'concatenate' (NOT 'concatenate-all') in consolidation-rules.md ===" && rtk grep -nE "concatenate" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md
+=== Look for 'concatenate' (NOT 'concatenate-all') in consolidation-rules.md ===
+199:#### `concatenate-all`
+206:- **Purpose:** like `concatenate-all`, but tag each value with the model that produced it.
+307:| **Writing critique** | Use `concatenate` for comments; present all model feedback in parallel sections |
+[0m
+[0m$ [0mecho "=== Look for the dispatch bash snippet (npx part) ===" && rtk sed -n '36,60p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/dispatch-mechanics.md
+=== Look for the dispatch bash snippet (npx part) ===
+```bash
+OUT=./out/$(date +%Y%m%d-%H%M%S)
+mkdir -p "$OUT"
+
+# Timeout per model: adjust to your task. 10min for research, 5min for review.
+TIMEOUT=600
+
+# macOS doesn't ship `timeout` by default; use `gtimeout` from coreutils
+# (install via `brew install coreutils`). Linux ships `timeout` in util-linux.
+TIMEOUT_CMD="timeout"
+if [ "$(uname)" = "Darwin" ] && command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
+for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
+  slug=$(echo "$model" | cut -d/ -f2)  # sanitize "opencode-go/minimax-m3" → "minimax-m3"
+  "$TIMEOUT_CMD" "$TIMEOUT" npx -y opencode-ai run \
+    --model "$model" \
+    --title "multi-ai-task-${slug}-$(date +%s)" \
+    --dangerously-skip-permissions \
+    "$PROMPT" \
+    > "$OUT/${slug}.md" 2> "$OUT/${slug}.err" &
+done
+wait
+echo "Outputs in $OUT/"
+[0m
+[0m$ [0mecho "=== Look for the 'argument-hint' line ===" && rtk grep -n "argument-hint\|--concurrency" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/*.md 2>/dev/null
+=== Look for the 'argument-hint' line ===
+1 matches in 0 files:
+
+[+1 more]
+[0m
+[0m$ [0mecho "=== Check research-prior-art.md schema primary_key field ===" && rtk sed -n '70,100p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/research-prior-art.md
+=== Check research-prior-art.md schema primary_key field ===
+## The schema (passed as --schema)
+
+```json
+{
+  "type": "table",
+  "primary_key": "name",
+  "columns": [
+    {"name": "name", "type": "string", "dedup_key": true},
+    {"name": "url", "type": "url"},
+    {"name": "category", "type": "enum", "values": ["direct", "adjacent", "tangential", "negative-result"]},
+    {"name": "composition_model", "type": "string", "max_words": 50},
+    {"name": "v_loop_support", "type": "enum", "values": ["none", "end-only", "per-phase", "per-step+rollup", "v-model-explicit"]},
+    {"name": "enforcement_mechanism", "type": "enum", "values": ["honor-system", "prompt-only", "ci-gate", "ide-hook", "policy-engine", "mixed"]},
+    {"name": "se_fit", "type": "enum", "values": ["none", "partial", "strong"]},
+    {"name": "devops_fit", "type": "enum", "values": ["none", "partial", "strong"]},
+    {"name": "parent_worker_split", "type": "enum", "values": ["yes", "partial", "no"]},
+    {"name": "evidence_model", "type": "enum", "values": ["none", "informal", "artifact-based", "tiered-sufficiency"]},
+    {"name": "dynamic_composition", "type": "enum", "values": ["no", "replanner-only", "catalog-backed-audited"]},
+    {"name": "maturity", "type": "string"},
+    {"name": "gaps_vs_sb", "type": "text"},
+    {"name": "sb_gaps_vs_them", "type": "text"},
+    {"name": "confidence", "type": "enum", "values": ["high", "medium", "low"]},
+    {"name": "last_verified", "type": "date"}
+  ],
+  "conflict_resolution": {
+    "category": "prefer-with-evidence-then-newer-then-strict",
+    "maturity": "newer",
+    "confidence": "majority"
+  }
+}
+```
+[0m
+[0m$ [0mecho "=== Where in the core is 'primary_key' used vs 'dedup_key' ===" && rtk grep -nE "primary_key" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md 2>/dev/null
+=== Where in the core is 'primary_key' used vs 'dedup_key' ===
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:96:  "primary_key": "item",
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:28:{"model": "m1", "row_id": 1, "item": "LangGraph", "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "https://github.com/langchain-ai/langgraph"}, "source_refs": ["minimax-m3.md#L42-50"], "raw_text": "LangGraph is a framework for..."}
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:87:      primary_key: s.heading,
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:97:  //    - First 5 words = primary_key (fragile; flag fuzzy_match:true)
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:110:For each unique item (by `primary_key` from schema or by fuzzy title match in free-form mode):
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:113:2. **Dedup**: items with the same `primary_key` (or fuzzy-matched title) are merged
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md:200:{"model": "m1", "row_id": 1, "primary_key": "LangGraph", "primary_key_raw": "**LangGraph**", "fields": {"category": "adjacent", "score": 3, "url": "..."}, "source_refs": ["minimax-m3.md#L42-50"], "raw_text": "LangGraph is a framework for..."}
+[0m
+[0m$ [0mecho "=== Where in SKILL.md is primary_key defined or referenced ===" && rtk grep -nB1 -A2 "primary_key" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md | head -40
+=== Where in SKILL.md is primary_key defined or referenced ===
+95-  "type": "table",
+96:  "primary_key": "item",
+97-  "columns": [
+98-    {"name": "item",    "type": "string",  "dedup_key": true,                "required": true},
+[0m
+[0m$ [0mecho "=== What fields ARE in the schema spec section ===" && rtk sed -n '115,150p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md
+=== What fields ARE in the schema spec section ===
+**Supported column types:**
+
+| `type` | Description |
+|--------|-------------|
+| `string` | Free-text string |
+| `number` | Numeric (integer or float) |
+| `boolean` | True/false |
+| `enum` | One of the `values` list |
+| `url` | A single URL string |
+| `url_list` | Comma-separated URLs (normalized + deduped on dedup) |
+| `date` | ISO-8601 date string |
+| `text` | Long-form text (use `max_words` to constrain) |
+
+**Supported column fields:**
+
+| Field | Description |
+|-------|-------------|
+| `name` | Column name (required) |
+| `type` | Type (required; see above) |
+| `dedup_key: true` | This column is part of the dedup primary key |
+| `dedup_key: "secondary"` | Tiebreaker after primary key |
+| `required: true` | Row is dropped with warning if this field is missing |
+| `min` / `max` | For numeric: enforce range |
+| `max_words` | For text: enforce word count cap |
+| `values` | For enum: list of allowed values |
+| `separator` | For url_list: separator (default `,`) |
+
+**Composite primary keys:** list multiple columns with `dedup_key: true`. Example: `file` + `line` for code review.
+
+**Conflict-resolution values:** see the full rule library in `rules/consolidation-rules.md` (named rules: `most-severe`, `majority`, `majority-with-uncertain`, `lowest-of-majors`, `longest-with-quote`, `concatenate-all`, `all-collected`, `union-dedup`, `merge-exact`, `prefer-with-evidence-then-newer-then-strict`).
+
+**Schema auto-injection (default ON):** by default, the skill appends a `## Required Output Schema` block to each dispatch prompt containing the schema verbatim, plus a one-line instruction. This ensures models know the column structure even if the user didn't embed it. To opt out (because your prompt already embeds the schema, or you want to manage prompt construction yourself), pass `--no-auto-inject`. The auto-inject state is recorded in `run-manifest.json → schema_auto_injected: true|false`.
+
+**Mode B: free-form (no schema)**
+
+If no schema is provided, the skill uses LLM-assisted extraction:
+[0m
+[0m$ [0mecho "=== Check if the dispatch snippet actually has timeout ===" && rtk sed -n '36,60p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/dispatch-mechanics.md | head -30
+=== Check if the dispatch snippet actually has timeout ===
+```bash
+OUT=./out/$(date +%Y%m%d-%H%M%S)
+mkdir -p "$OUT"
+
+# Timeout per model: adjust to your task. 10min for research, 5min for review.
+TIMEOUT=600
+
+# macOS doesn't ship `timeout` by default; use `gtimeout` from coreutils
+# (install via `brew install coreutils`). Linux ships `timeout` in util-linux.
+TIMEOUT_CMD="timeout"
+if [ "$(uname)" = "Darwin" ] && command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
+for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
+  slug=$(echo "$model" | cut -d/ -f2)  # sanitize "opencode-go/minimax-m3" → "minimax-m3"
+  "$TIMEOUT_CMD" "$TIMEOUT" npx -y opencode-ai run \
+    --model "$model" \
+    --title "multi-ai-task-${slug}-$(date +%s)" \
+    --dangerously-skip-permissions \
+    "$PROMPT" \
+    > "$OUT/${slug}.md" 2> "$OUT/${slug}.err" &
+done
+wait
+echo "Outputs in $OUT/"
+[0m
+[0m$ [0mecho "=== Check arguments section in SKILL.md ===" && rtk sed -n '60,80p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md
+=== Check arguments section in SKILL.md ===
+### Inputs
+
+| Argument | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `task-prompt` | YES | — | The task description sent to every model verbatim. Use `@file.md` to inline a multi-line prompt. |
+| `--models` | NO | Auto-discover (see below) | Comma-separated list of `provider/model` IDs. Recommended: 4-6 models from at least 2 different provider families. |
+| `--out` | NO | `./multi-ai-out/<timestamp>/` | Output directory |
+| `--schema` | NO | LLM-assisted extraction | Optional structured output schema. Either a JSON object (inline) or a path to a `.json` file. Defines columns, types, dedup keys, conflict rules. |
+| `--mode` | NO | `standard` | `quick` (merge raw, no dedup) / `standard` (dedup + conflict resolution) / `thorough` (standard + cross-source verification; see Mode semantics) |
+| `--no-auto-inject` | NO | (schema is auto-injected) | If passed, the skill does NOT append the schema to the dispatch prompt. Use when your prompt already embeds the schema or you want to manage prompt construction yourself. |
+
+### Default model discovery
+
+If `--models` is omitted, the skill queries the local OpenCode config (`~/.config/opencode/opencode.json` + `.jsonc`) and picks a balanced default set of 4-6 models across the available providers. **"Balanced"** means: at least 2 different provider families, no more than 2 models from the same family, with at least one reasoning-capable model if the task is research-like. Override with `--models` to pin a specific set.
+
+### Mode semantics
+
+| Mode | Phase 1 (dispatch) | Phase 2 (extract) | Phase 3 (consolidate) | Phase 4 (synthesize) | Use when |
+|------|--------------------|------------------|----------------------|----------------------|----------|
+| `quick` | Full | Basic (table parse, no fuzzy match) | Dedup only, no conflict resolution | Merged raw output, no `conflicts.md` | Speed-critical, low-stakes |
+| `standard` | Full | Full (fuzzy match, schema-driven) | Dedup + conflict resolution per schema/default rules | Full `consolidated.md` + `conflicts.md` | Default for most tasks |
+[0m
+[0m$ [0mecho "=== Look for argument-hint in SKILL.md ===" && rtk sed -n '1,8p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md
+=== Look for argument-hint in SKILL.md ===
+---
+name: multi-ai-task
+description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
+user-invocable: false
+version: 2.1.0
+---
+[0m
+[0m$ [0mecho "=== Look at what the prior self-reviews found (r3 critical) ===" && rtk sed -n '1,80p' /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/multi-ai-self-review-r3-20260627-critical.md 2>/dev/null
+=== Look at what the prior self-reviews found (r3 critical) ===
+# multi-ai-task v2.1.0 — Critical Self-Review (Round 3)
+
+**Reviewer orchestration:** meta-task — the skill reviewed itself via its own dispatch mechanics.
+**Date:** 2026-06-27
+**Confidence:** high (based on full file read + cross-reference analysis + algorithm walkthrough)
+
+---
+
+## §1. Critical Assessment
+
+### 1. SKILL.md
+
+**What works well:**
+- The when-to-use / when-not-to-use decision table (lines 35-50) is concrete and honest — "Cost of N× compute is acceptable", "You have ≤1 model available" are real tradeoffs, not marketing.
+- The mode semantics table (lines 77-81) clearly defines what each mode skips/adds — quick/skip-conflict, standard/dedup+conflict, thorough/cross-source-verification.
+
+**What is missing or wrong:**
+- **No executable code, not even a reference implementation.** The skill is 255 lines of prose + pseudocode. An agent consuming this skill must re-implement all 4 phases from scratch every time. Given that consolidation rules are described as "the core value of the skill" (line 195: `"These are the core value of the skill; everything else is plumbing"`), they deserve an implementation, not just pseudocode. The `consolidation-rules.md` pseudocode (lines 96-111) isn't runnable — it references `normalize()`, `canonical`, and `fields_per_model` without defining them.
+- **`score-aggregate.md` noted as "planned but not in the contract"** in the failure modes table (line 227: `"Output dir contains score-aggregate.md (planned) but not in the contract"`). This is not a *failure mode* — it's a spec inconsistency documented in the wrong place. It should be a roadmap item or removed.
+- **Version inconsistency:** SKILL.md frontmatter declares `version: 2.1.0` (line 6) but the task framing around this review says v2.0.0. If the intent is 2.1.0, the tag should be consistent across all references. The self-review round-2 output (line 247) claims v2.1.0; if that self-review produced changes, they should be reflected in the version number — but the version was already 2.1.0 *before* round 2, suggesting the round-2 review didn't change anything or the version was pre-bumped incorrectly.
+
+**What is unclear or ambiguous:**
+- **Who is the intended audience?** The SKILL.md reads as a human reference document (argument tables, CLI syntax, "Usage" section) but the pseudocode and dispatch mechanics read as LLM-agent instructions. If this is for both, the dual nature should be explicit. If for agents only, the human-oriented sections (like the mode semantics table) are verbose padding.
+- **HTML generation is underspecified.** Lines 174-175 say `"convert consolidated.md to HTML using a markdown library (marked in Node, markdown in Python, pandoc for richer output)"`. Three different tools, no priority, no CSS specification, no implementation. Which tool does the orchestrator actually use? If Node exists, use `marked`; if Python, use `markdown`; if neither, what's the fallback?
+
+---
+
+### 2. methodology.md
+
+**What works well:**
+- The 4-phase pipeline is well-structured and the phase boundaries are clear.
+- The extraction pseudocode (lines 37-65) is the most concrete algorithm in the entire skill — it covers 4 fallback paths with relative priority.
+
+**What is missing or wrong:**
+- **"Extractor model" selection is undefined.** Lines 52-53: `"extractor model" = the slowest/highest-capability model from the dispatch"`. There is no metric for "highest capability" — is it reasoning score? Parameter count? Benchmarks? The orchestrating agent has no way to compute this. The SKILL.md (line 152) repeats the same phrase without adding specificity. This is a critical dependency — if extraction fails and the extractor model is chosen wrong, the entire pipeline produces garbage.
+- **Fallback path 4 ("one-row-per-paragraph") is "very lossy"** but there's no quality gate — no threshold for when to reject the output entirely vs. produce a degraded result. Line 62: `"Only use if all other paths fail AND the response is paragraph-shaped."` The orchestrator must decide "is this good enough to include?" with zero guidance.
+- **Row validation drops rows silently.** Lines 70-72: `required: true` fields missing → drop row; `type` constraints violated → drop row; `max_words` exceeded → truncate. But these losses are not summarized anywhere in `run-manifest.json` or `consolidated.md`. The user never learns how many rows were dropped or why.
+- **Phase 3 writes `structured.jsonl` in "append mode"** (line 118: `"append mode with model: _consolidated"`). If the orchestrator crashes mid-write, the file is in a corrupt state (half-written JSON line). No atomic write strategy or recovery mechanism.
+- **Disclaimer says "Generic by design. The skill makes ZERO assumptions about the task type"** (line 154). But Phase 2's table-extraction tips (consolidation-rules.md lines 44-49) assume a 10-16 cell summary table starting with `#` or `name`. That's a strong research-task assumption that fails for code-review (file:line composite key) and fact-check (claim_id as primary key).
+
+**What is unclear or ambiguous:**
+- **Phase 1 says models "have their own tool/MCP context"** (line 12: `"Has its own tool/MCP context (e.g., webfetch, ctx_fetch_and_index, gh)"`). Does this mean the orchestrator is responsible for ensuring each model has access to the right tools? Or does the dispatch mechanism handle this automatically? This is implementation-specific and not addressed.
+- **"Caches the response, no extra cost"** for the extractor model (line 104). Caches *where*? The orchestrating agent's session? A file on disk? This is another "trust me" detail that every implementer must figure out independently.
+
+---
+
+### 3. dispatch-mechanics.md
+
+**What works well:**
+- 4 concrete dispatch mechanisms with clear tradeoffs and a recommended default (Mechanism 2). The "Choosing the right mechanism" decision table (lines 173-181) is the best decision-support artifact in the entire skill.
+- The Proven Provenance section references a real run that worked, building credibility.
+
+**What is missing or wrong:**
+- **Mechanism 2 bash script is unsafe for general prompts.** Lines 43-53 pass `"$PROMPT"` directly to `npx` without escaping. If the prompt contains `$`, backticks, `"`, `\`, or newlines, the shell will interpret them before `npx` sees them. The heredoc approach shown in code-review.md (lines 20-30: `cat > "$OUT/prompt.md" <<'PROMPT'`) is the correct pattern, but it's not used in the main dispatch section. This is a well-known shell injection hazard and will surface the first time a user includes a code example in their prompt.
+- **`cut -d/ -f2` slug extraction is format-dependent.** Line 44: `slug=$(echo "$model" | cut -d/ -f2)` assumes exactly 2 `/`-separated segments (`provider/model`). For 3-segment IDs like `opencode/go/minimax-m3` or `anthropic/claude-sonnet-4-20250514` (which has hyphens but still 2 segments), this silently truncates or misidentifies. The skill should either document the exact format constraint or use a more robust extraction (e.g., `echo "$model" | sed 's|.*/||'`).
+- **Mechanism 1 references specific source files and issue numbers** from the OpenCode project. Line 28: `"packages/opencode/src/tool/task.ts"` and 6 issue numbers (#6651, #11215, #17595, #26925, #29984, #32730). These are implementation details of one specific harness and will rot within months. If the skill is harness-agnostic, these references don't belong here. If it's OpenCode-specific, the frontmatter should say so.
+- **"Missing credential handling" contradicts the fail-soft principle.** Lines 151-152: `"The skill does NOT automatically skip to a fallback model — the user must explicitly omit the model from --models if they want to skip it."` But the failure handling section (lines 122-123) says `"The skill is fail-soft: a model failure is logged, the model is excluded from the consolidation."` A missing credential IS a model failure. Why treat it differently? This creates an unnecessary manual step.
+- **"MCP port collision caveat" prescribes restarting MCPs** (line 106: `"restart the MCP between dispatches"`) but offers zero code or guidance on how. The orchestrating agent doesn't know which MCPs are running, which hold ports, or how to restart them.
+- **Mechanism 3 "Known bug"** references issue #18615 on the OpenCode repository. Same harness-dependency problem as Mechanism 1.
+
+**What is unclear or ambiguous:**
+- **"OpenCode server"** (line 66: `"If you have an OpenCode server running"`) — what is this? Is it `opencode serve`? A hosted service? The term is used without definition, and it's different from the "OpenCode harness" used in Mechanism 1.
+- **Latency budget undefined.** Line 104: `"choose parallel if N × per_model_time ≤ your latency budget"`. The skill never defines a latency budget heuristic. Is it 5 minutes? 30 minutes? The user provides `--mode` but not a `--timeout` flag for the total run — that's an implementation detail the orchestrator must guess.
+
+---
+
+### 4. consolidation-rules.md
+
+**What works well:**
+- The named rule library (lines 167-221) is the strongest part of the entire skill. Each rule has a purpose, algorithm, and edge-case handling. This is genuinely implementable.
+- The conflict resolution table format (lines 227-234) is concrete and copyable.
+- Alias mapping is properly scoped as task-specific (lines 325-334: `"The alias map is task-specific, not part of this skill's core"`).
+
+**What is missing or wrong:**
+- **CRITICAL BUG: `majority-with-uncertain` algorithm contradicts its documentation example.** The algorithm (line 183): `"require ≥ max(2, ceil(N/2)) models to agree"`. For N=3: `max(2, ceil(3/2)) = max(2, 2) = 2`. So 2 votes of `true` with 1 vote `false` → threshold met → returns `true`. But the documented example (line 233) says:
+  ```
+  | claim X | verdict | 2 say true, 1 says false | majority-with-uncertain (threshold not met) | unverified | high |
+  ```
+  "(threshold not met)" is wrong for N=3. The fact-check example (line 74) also says: `"if 2 say true and 1 says false, default to unverified rather than true"` — which also contradicts the algorithm. Either the algorithm should use `ceil(N/2) + 1` as the threshold, or the documentation examples need fixing. The algorithm IS the spec; the examples are wrong.
+- **Confirmation bias: `majority-with-uncertain` with N=1 always returns `unverified`** (line 184: `"with N=1, single vote never reaches the threshold"`). The threshold `max(2, ceil(1/2)) = max(2, 1) = 2 > 1`, so yes, always `unverified`. This means the skill silently fails for single-model fact-check without warning the user. The fact-check example recommends N≥3 (line 37) but doesn't explain *why* beyond "majority-with-uncertain needs N>=3" — it should explicitly warn that N=1 is useless and N=2 is barely viable.
+[0m
+[0m$ [0mecho "=== Check structured.jsonl examples for inconsistency ===" && rtk diff <(rtk sed -n '27,29p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md) <(rtk sed -n '199,201p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md) 2>/dev/null | head -20
+=== Check structured.jsonl examples for inconsistency ===
+[ok] Files are identical
+[0m
+[0m$ [0mecho "=== research-prior-art.md has 'confirmed' as enum or not? ===" && rtk grep -n "confirmed\|partially-true\|unverified" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/fact-check.md | head -10
+=== research-prior-art.md has 'confirmed' as enum or not? ===
+9 matches in 0 files:
+
+[+9 more]
+[0m
+[0m$ [0mecho "=== alias map Windsurf row ===" && rtk sed -n '125,142p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/research-prior-art.md
+=== alias map Windsurf row ===
+| Alias | Canonical |
+|-------|-----------|
+| AutoGen/AG2, AutoGen (maintenance) | **AutoGen** |
+| MAF, Microsoft Agent Framework (MAF) | **Microsoft Agent Framework** |
+| Camunda, Camunda 8 | **Camunda 8** |
+| Conductor OSS, Conductor-OSS, Conductor (Netflix) | **Conductor** |
+| GitHub Spec Kit | **Spec Kit** |
+| GSD (Get Shit Done) | **GSD** |
+| BMAD Method | **BMAD** |
+| gh-aw, GitHub Agentic Workflows (gh-aw) | **GitHub Agentic Workflows** |
+| OPA, Open Policy Agent, OPM | **OPA** |
+| Claude Code Skills, Claude Code Hooks | **Claude Code** |
+| Lunar | **Earthly Lunar** |
+| Qodo, PR-Agent, Qodo / PR-Agent | **Qodo/PR-Agent** |
+| Windsurf, Devin Desktop | **Windsurf** |
+| Devin (Cognition), Devin (closed) | **Devin** |
+
+Add new aliases to this map as they surface in your runs. After consolidation, audit `consolidated.md` for "missed alias" cases (two near-identical names that should have been merged) and update the map.
+[0m
+[0m$ [0mecho "=== Look for where 'sum' aggregator is defined ===" && rtk grep -rn "\"sum\"\|aggregate.*sum" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/ 2>/dev/null
+=== Look for where 'sum' aggregator is defined ===
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/critical-review-r4.md:22:- **The "task-agnostic" claim is undermined by the consolidation model's hidden assumption.** Lines 16-22 describe 7 steps, but steps 3-6 (extract structured items, dedup, resolve disagreements, aggregate scores) all assume the output is **list-shaped**. The skill's own consolidation-rules.md:9-22 states: "For the consolidation step to work, the model responses need to be decomposable into **items**." This is not task-agnostic — it's list-task-agnostic. Tasks producing prose (writing critique), code (refactoring), or structured documents (architecture proposals) are forced through a lossy H2-split heuristic (methodology.md:83-98) that treats section headings as items. The skill should be honest: "task-agnostic for list-shaped outputs; experimental for non-list outputs."
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/research-prior-art.md:116:  "aggregate": "sum",
+[0m
+[0m$ [0mecho "=== R3's CRITICAL BUG verification: majority-with-uncertain ===" && rtk sed -n '180,240p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md
+=== R3's CRITICAL BUG verification: majority-with-uncertain ===
+#### `majority-with-uncertain`
+- **Purpose:** like `majority`, but require a higher threshold; if not met, return `unverified` (default for fact-check verdicts).
+- **Input:** List of values per model.
+- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `unverified`.
+- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`.
+- **Naming consistency:** the rule returns the value `unverified` (matching the schema's `values: ["true", "false", "partially-true", "unverified"]`). If a user schema uses a different name for the "unverified" verdict (e.g., `partially-true`), set `conflict_resolution.verdict_uncertain_value: "partially-true"` to remap. Do NOT change the rule's return value to match the schema — change the schema to match the rule.
+
+#### `lowest-of-majors`
+- **Purpose:** when combining verdict + confidence, use the majority verdict but the lowest confidence among the majority voters (default for fact-check).
+- **Input:** List of `(value, confidence)` per model.
+- **Algorithm:** first apply `majority` to get the majority value; then among the models voting for that value, return the lowest confidence (`high > medium > low`).
+- **Edge case:** if only 1 model voted for the majority value, return its confidence unchanged.
+
+#### `longest-with-quote`
+- **Purpose:** keep the most detailed value (default for text fields).
+- **Input:** List of values per model.
+- **Algorithm:** prefer the value with the most words AND at least one inline quote (e.g., `"..."`). Tie-break by recency (model's `last_verified` if present, else the order in the input list).
+- **Edge case:** if no value has an inline quote, fall back to longest by word count.
+
+#### `concatenate-all`
+- **Purpose:** preserve all models' values (default for evidence/quote collection in fact-check).
+- **Input:** List of values per model.
+- **Algorithm:** return all values joined by ` ; ` (or the schema's `separator` field if defined). Order: by model name (alphabetical) for determinism.
+- **Edge case:** empty values are skipped (not included in the join).
+
+#### `all-collected`
+- **Purpose:** like `concatenate-all`, but tag each value with the model that produced it.
+- **Input:** List of values per model.
+- **Algorithm:** return a list of `{model, value}` objects. Preserves provenance for human review.
+- **Edge case:** empty values are skipped.
+
+#### `union-dedup`
+- **Purpose:** merge all values into a single deduplicated set (default for `url_list`).
+- **Input:** List of values per model.
+- **Algorithm:** normalize each value (lowercase, trim, strip trailing slashes for URLs); dedup; return sorted set.
+- **Edge case:** if all models produced empty lists, return empty.
+
+#### `merge-exact`
+- **Purpose:** combine per-field entries with identical primary keys (default for composite-key dedup).
+- **Input:** List of `(primary_key, fields)` per model.
+- **Algorithm:** group by primary key; for each group, union all fields; for fields that conflict across models, apply the schema's per-field resolution rule.
+- **Edge case:** if the primary key is malformed (doesn't match the schema's composite pattern), log and skip the entry.
+
+### How to document resolutions
+
+For each conflict, write to `conflicts.md`:
+
+```markdown
+| Item | Field | Disagreement | Resolution rule | Final value | Confidence |
+|------|-------|-------------|-----------------|-------------|------------|
+| LangGraph | category | mimo=`direct`, 4 others=`adjacent`, qwen=`tangential` | outlier downgrade (1 of 6 says `direct` with no evidence quote) | `adjacent` | high |
+| BMAD | maturity | deepseek=`negative-result`, 2 others=`adjacent` | majority (3/3 prefer `adjacent` after outlier downgrade) | `adjacent` | medium |
+| security finding | severity | reviewer-A: blocker, B-D: major | most-severe | `blocker` | high |
+| claim X | verdict | 2 say `true`, 1 says `false` | majority-with-uncertain (threshold not met) | `unverified` | high |
+```
+
+The user can override the default rules in the schema. For example:
+
+```json
+{
+  "conflict_resolution": {
+[0m
+[0m$ [0mecho "=== fact-check.md threshold claim ===" && rtk sed -n '70,80p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/fact-check.md
+=== fact-check.md threshold claim ===
+}
+```
+
+Key customization for fact-check:
+- `verdict: "majority-with-uncertain"` — if 2 say true and 1 says false, default to `unverified` rather than `true`; require ≥ `max(2, ceil(N/2))` models to agree for a clean verdict (so for N=3 you need 2 votes, not 3)
+- `confidence: "lowest-of-majors"` — when in doubt, downconfidence (use the lowest confidence among the majority verdict)
+- `unverified` is a valid output (don't force a true/false judgment when evidence is insufficient)
+- `sources: "url_list"` is now formally defined in the schema spec (was a v2.1.0 gap)
+
+## The output
+[0m
+[0m$ [0mecho "=== fact-check.md consensus requirements ===" && rtk sed -n '100,113p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/fact-check.md
+=== fact-check.md consensus requirements ===
+
+## Consensus requirements
+
+For high-stakes fact-checking, set thresholds:
+- **≥ `max(2, ceil(N/2))` models agree on `true` with high confidence + primary source** → confirmed
+- **≥ `max(2, ceil(N/2))` models agree on `false` with high confidence + primary counter-source** → debunked
+- **mixed verdicts or low confidence** → flagged for human review
+- **no model could verify** → `unverified` (do not guess)
+
+For N=3, threshold = 2. For N=5, threshold = 3. For N=7, threshold = 4. The "3+ models" rule in the original draft was a typo; the correct threshold is parameterized.
+
+## Worked example
+
+Not yet produced (deferred to v2.2.0). The pattern follows the prior-art research example.
+[0m
+[0m→ [0mRead docs/research-260624/multi-ai-self-review-r3-20260627-critical.md[90m [offset=80, limit=250][0m
+[0m
+[0m$ [0mecho "=== Look at SKILL.md:96 schema example ===" && rtk sed -n '92,115p' /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md
+=== Look at SKILL.md:96 schema example ===
+
+```json
+{
+  "type": "table",
+  "primary_key": "item",
+  "columns": [
+    {"name": "item",    "type": "string",  "dedup_key": true,                "required": true},
+    {"name": "category","type": "enum",    "values": ["direct","adjacent","tangential","negative-result"]},
+    {"name": "score",   "type": "number",  "aggregate": "median",            "min": 0, "max": 16},
+    {"name": "url",     "type": "url",     "dedup_key": "secondary"},
+    {"name": "evidence","type": "string",  "max_words": 50},
+    {"name": "sources", "type": "url_list"},
+    {"name": "file",    "type": "string"},
+    {"name": "line",    "type": "number"}
+  ],
+  "conflict_resolution": {
+    "category": "prefer-with-evidence-then-newer-then-strict",
+    "score": "median",
+    "severity": "most-severe"
+  }
+}
+```
+
+**Supported column types:**
+[0m
+[0m$ [0mecho "=== Check if Phase 3.5 / Phase 3.6 sub-phase naming is real ===" && rtk grep -n "Phase 3\." /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/consolidation-rules.md | head
+=== Check if Phase 3.5 / Phase 3.6 sub-phase naming is real ===
+2 matches in 0 files:
+
+[+2 more]
+[0m
+[0m$ [0mecho "=== Look for max_total: 16 in research-prior-art.md ===" && rtk grep -n "max_total" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/research-prior-art.md
+=== Look for max_total: 16 in research-prior-art.md ===
+1 matches in 0 files:
+
+[+1 more]
+[0m
+[0m$ [0mecho "=== confirm aggregate: sum isn't defined elsewhere ===" && rtk grep -nE "aggregate.*median|aggregate.*sum|aggregate.*mean" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/*.md 2>/dev/null | head
+=== confirm aggregate: sum isn't defined elsewhere ===
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:100:    {"name": "score",   "type": "number",  "aggregate": "median",            "min": 0, "max": 16},
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/SKILL.md:240:- **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); 2 agents produced qualitative comparisons only; 1 produced only the rubric
+/Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md:115:4. **Score aggregation**: if the schema has a numeric score field with `aggregate: "median"`, compute median + min/max across models
+[0m
+[0m$ [0mecho "=== look for thorough mode output file specs ===" && rtk grep -nE "evidence-ledger|verification\.md" /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/output-schema.md /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/methodology.md 2>/dev/null | head
+=== look for thorough mode output file specs ===
+[0m

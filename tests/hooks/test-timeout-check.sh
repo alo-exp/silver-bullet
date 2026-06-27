@@ -8,6 +8,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+export SILVER_BULLET_PROJECT_ROOT="$REPO_ROOT"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOK="$SCRIPT_DIR/../../hooks/timeout-check.sh"
 PASS=0

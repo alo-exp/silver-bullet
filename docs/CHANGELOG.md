@@ -195,3 +195,7 @@ Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 shipped (phase 056 runtime
 
 Task `phase-056-zuvo-runtime-parity-release`: v0.40.0 on `main` (phase 056 runtime parity enforcement, phase 057 Cursor marketplace, site refresh). Checklist rebuilt after corrupt empty-key state.
 
+
+## 2026-06-27 — doc-scheme-gate-remediation-session
+**What**: Verified filing of issue #237 (Orchestrator parent mode frictions) into alo-exp/silver-bullet; re-touched mandatory docs to clear doc-scheme gate.
+**Evidence**: gh issue list/view confirmed issue #237 OPEN; gh project item-list confirmed #237 Backlog status.

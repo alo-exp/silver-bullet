@@ -1,0 +1,36 @@
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+
+
+
+
+
+[2C[4A]0;✳ Route order validation API request[2D[4B[9A⏺[3GRan 7 s[11Gop hooks[K[1B  ⎿  "/U[10Gers/shafqat/.claude/plugins/cache/alo-labs/silver-bullet/curren[2C[1Bt/hooks/stop-check.sh"[K[2C[1B⎿[5G "/Users/shafqat/.claude/plugins/cache/alo-labs/silver-bullet/curren[1B  t/hooks/outcomes-check.sh"[K[1B  ⎿[5G "/Users/shafqat/.claude/plugins/cache/alo-labs/silver-bullet/curren[1B  t/hooks/phase-lock-release.sh"[K[2C[1B⎿  node "${CLAUDE_PLUGIN_ROOT}/hooks/stop.mjs"[K[2C[1B⎿[5G "${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh"[67G[K
+[3G⎿[5G "${CLAUDE_PLUGIN_ROOT}/hooks/outcomes-check.sh"
+[3G⎿[5G "${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-release.sh"
+[3G⎿[5G Stop[11Ghook[16Gerror:[23GFailed[30Gwith[35Gnon-blocking[48Gstatus[55Gcode:[61Gmv:
+[3G/Users/shafqat/.claude/.silver-bullet/outcomes-session.json.tmp:[68GNo
+[3Gsuch[8Gfile[13Gor[16Gdirectory
+
+✻[3GBaked[9Gfor[13G41m[17G7s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ [7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51Gctrl+t[58Gto[61Gshow[66Gtasks[72G·[74G←[76Gfo…
+[67G84534[73Gtokens
+[2C[4A
+  PASS: routing skill recorded in /Users/shafqat/.claude/.silver-bullet/state (row 1 routing-only criterion)
+
+=== Matrix summary ===
+Pass:  1
+Fail:  0
+Skip:  0
+Total: 1 / 22

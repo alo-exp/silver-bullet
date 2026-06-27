@@ -37,9 +37,19 @@ When the `task` tool rejects custom subagent types, or when you want a no-config
 OUT=./out/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 
+# Timeout per model: adjust to your task. 10min for research, 5min for review.
+TIMEOUT=600
+
+# macOS doesn't ship `timeout` by default; use `gtimeout` from coreutils
+# (install via `brew install coreutils`). Linux ships `timeout` in util-linux.
+TIMEOUT_CMD="timeout"
+if [ "$(uname)" = "Darwin" ] && command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
 for model in opencode-go/minimax-m3 opencode-go/qwen3.7-max opencode-go/glm-5.2; do
   slug=$(echo "$model" | cut -d/ -f2)  # sanitize "opencode-go/minimax-m3" → "minimax-m3"
-  npx -y opencode-ai run \
+  "$TIMEOUT_CMD" "$TIMEOUT" npx -y opencode-ai run \
     --model "$model" \
     --title "multi-ai-task-${slug}-$(date +%s)" \
     --dangerously-skip-permissions \
@@ -56,6 +66,7 @@ echo "Outputs in $OUT/"
 - `--dangerously-skip-permissions` is fine for **read-only** tasks (research, code review, fact-check). For **write tasks** (writing a file to the user's repo, modifying configs), do NOT use this flag — let the agent prompt for permission. The skill is task-agnostic, so the user is responsible for choosing the right security posture.
 - The `build` agent's `permission.task` must allow the subagents you want it to call (if any).
 - Parallel is faster but risks MCP port collision; sequential is safer (see Parallel vs sequential below).
+- **Timeout:** `timeout "$TIMEOUT"` enforces per-model timeout. On Linux, `timeout` is a coreutil; on macOS, use `gtimeout` from `brew install coreutils`. Adjust `TIMEOUT` to your task (600s = 10 min for research, 300s = 5 min for quick review). If a model hangs past `TIMEOUT`, the process is killed and stderr shows the timeout. This prevents the 2-min default bash tool timeout from silently killing long-running models.
 
 ### Mechanism 3: HTTP SDK with `client.session.promptAsync()`
 
@@ -97,7 +108,7 @@ results = await asyncio.gather(*[dispatch(m, prompt) for m in models])
 | **Parallel** (concurrent processes) | Fastest wall-time = `max(per_model_time)` | MCP port collision if multiple share a port; harder to debug | Independent tasks; no shared state; sub-5-min per model |
 | **Sequential** (one at a time) | Predictable; no port issues; clean logs | Slowest wall-time = `N × per_model_time` | Long-running tasks (10+ min each); shared MCPs |
 
-**Recommended default:** choose parallel if `N × per_model_time ≤ your latency budget`; otherwise sequential. The proven 6-model run took ~2-3 min/model, so parallel (with 10-min shell timeout) was the right call. For 30+ min per model, sequential is the only sane option.
+**Recommended default:** choose parallel if `max(per_model_time) ≤ your latency budget`; otherwise sequential. The proven 6-model run took ~2-3 min/model, so parallel (with 10-min shell timeout) was the right call. For 30+ min per model, sequential is the only sane option.
 
 **MCP port collision caveat:** "Sequential" alone doesn't fix port collision if the MCP binds a port on first start and holds it. The proven fix is to either (a) configure MCPs that support multiplexing, or (b) dispatch to a single model at a time AND restart the MCP between dispatches.
 

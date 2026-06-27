@@ -1,0 +1,58 @@
+
+========================================
+  Hook Unit Tests
+========================================
+
+[ test-agentmemory-gate-lib.sh ]
+=== agentmemory-gate lib tests ===
+  PASS: curl smart-search is retrieval
+  PASS: git status not retrieval
+  PASS: npm install exempt
+  PASS: export root detect
+  PASS: edit path exempt under export
+  PASS: agentmemory benefits mention Graphify
+  PASS: agentmemory pending prompt
+Results: 7 passed, 0 failed
+[ test-agentmemory-gate.sh ]
+=== agentmemory-gate.sh tests ===
+  PASS: enabled_by_user false bypasses gate
+  PASS: consent pending bypasses gate
+  PASS: enforcement_suspended bypasses gate
+  PASS: no CLI blocks edit
+  PASS: CLI without MCP blocks edit
+  PASS: MCP wired but no fresh usage blocks edit
+Results: 6 passed, 0 failed
+[ test-agentmemory-graphify-synergy.sh ]
+=== agentmemory + Graphify synergy tests ===
+  PASS: synergy helper detects active pair
+  PASS: graphify query fresh for synergy
+  PASS: gate allows edit when Graphify synergy active (synergy helper + graphify freshness verified)
+Results: 3 passed, 0 failed
+[ test-agentmemory-platform-install.sh ]
+=== agentmemory platform install contract tests ===
+  PASS: template has platform_install_commands.claude
+  PASS: template has platform_install_commands.codex
+  PASS: template has platform_install_commands.cursor
+  PASS: template has platform_install_commands.opencode
+  PASS: template has platform_install_commands.goose
+  PASS: template has platform_install_commands.hermes
+  PASS: claude post_index connect
+  PASS: codex pre_index marketplace
+  PASS: template npm install
+  PASS: claude post_index fallback
+  PASS: codex pre_index fallback
+  PASS: codex post_index fallback
+  PASS: cursor artifact path
+  PASS: claude artifact path
+  PASS: codex artifact path
+  PASS: opencode artifact path
+  PASS: hermes artifact path
+  PASS: goose artifact path
+  PASS: silver-init agentmemory section
+  PASS: silver-update agentmemory retry
+  PASS: docs AGENTMEMORY
+  PASS: GRAPHIFY synergy section
+  PASS: silver-bullet agentmemory mention
+  PASS: core-rules agentmemory gate
+Results: 24 passed, 0 failed
+[ test-alumnium-gate.sh ]

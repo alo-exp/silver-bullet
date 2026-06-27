@@ -37,7 +37,19 @@ assert_eq() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 HOOK="$SCRIPT_DIR/hooks/semantic-compress.sh"
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+_saved_project_root_cache=""
+if [[ -n "${SB_RUNTIME_STATE_DIR:-}" && -f "${SB_RUNTIME_STATE_DIR}/project-root" ]]; then
+  _saved_project_root_cache="$(cat "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true)"
+  rm -f "${SB_RUNTIME_STATE_DIR}/project-root"
+fi
+cleanup() {
+  rm -rf "$TMP"
+  if [[ -n "${_saved_project_root_cache:-}" && -n "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+    printf '%s\n' "$_saved_project_root_cache" > "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+export SILVER_BULLET_PROJECT_ROOT="$TMP"
 
 # Setup fake project
 mkdir -p "$TMP/src" "$TMP/docs" "$TMP/.planning"
@@ -48,6 +60,8 @@ cat > "$TMP/.silver-bullet.json" << 'JSON'
   "semantic_compression": { "enabled": true, "context_budget_kb": 50, "min_file_size_bytes": 50, "chunk_size_bytes": 50, "top_chunks_per_file": 3, "debug": false }
 }
 JSON
+
+printf '# test project boundary\n' > "$TMP/silver-bullet.md"
 
 echo "# Implement authentication middleware" > "$TMP/.planning/phase1-CONTEXT.md"
 printf 'auth_validate() {\n  check_token "$1"\n}\n' > "$TMP/src/auth.sh"

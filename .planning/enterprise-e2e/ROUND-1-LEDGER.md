@@ -9,7 +9,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 1 |
-| SB repo SHA | `bb6150f1` (codex sync + hook test isolation gate close) |
+| SB repo SHA | `5788b277` (ledger `693763d1`; multi-ai-task catalog/sentinel fixes uncommitted in working tree) |
 | Test app SHA | `75dd459` on branch `devops-terraform-validation` |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (reinstalled after `52ce8aec`) |
 | Claude model (frozen) | `sonnet` |
@@ -28,7 +28,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Matrix dry-run 22/22 | **Pass** | `SB_E2E_MATRIX_DRY_RUN=1 bash scripts/run-enterprise-e2e-matrix.sh` — row 1 evidence `.planning/workflows/router-session.md` added 2026-06-27 |
 | Interactive matrix 22/22 | **Pass** | Prior interactive + resume2 batch (2026-06-26/27); agentmemory `mem_mqtq7oj6_4d6b3c5e110c` |
 | review-fix-ladder (8 rungs × 2 clean) | **Pass** | Completed 2026-06-26 at scoped HEAD; no scoped-file regressions since |
-| `bash tests/run-all-tests.sh` | **Pass** | **4260 passed, 0 failed** (5/5 suites green, 2026-06-27); codex package sync + hook test isolation (`SILVER_BULLET_SESSION_START_FILE`, per-PID phase heartbeat) |
+| `bash tests/run-all-tests.sh` | **Pass** | 4345 passed, 0 failed (5/5 suites green, 2026-06-27); fixes: multi-ai-task sentinel row + expected count 86, Claude bundle `user-invocable: false`, apo-catalog flow step, session-start test isolation |
 | Graphify current | **Warn** | `graphify update .` refused overwrite (15860 vs 16098 nodes); existing graph usable |
 | Open MUST-FIX | **Partial** | Skill tool in `claude --print` (interactive TUI unvalidated); round test gate green |
 
@@ -462,3 +462,8 @@ Per-row findings from `.e2e-rowN-attempt.log` and matrix runner output. Severity
 
 | 1 | blocker | skill | Unknown skill | tui-watch 2026-06-26T19:02:49Z |
 | 1 | blocker | hook | planning-file-guard | tui-watch 2026-06-26T19:02:49Z |
+
+## Round 2 requirement (ENTERPRISE-E2E-SESSION-PROMPT)
+
+Round 1 gate is satisfied when review-fix-ladder, `run-all-tests` (0 failures), 22/22 matrix, graphify post-fixes, and no open MUST-FIX items are all green. **Minimum 2 consecutive clean rounds** are required before a release tag — proceed to **Round 2** (repeat full ladder + matrix discipline) even though Round 1 ledger is closed at `693763d1`.
+

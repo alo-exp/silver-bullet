@@ -9,14 +9,14 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 2 |
-| SB repo SHA | `4024389f` (pre friction fix batch) |
+| SB repo SHA | Gate: `effeaccb` (hook fix + tests 4345/0); HEAD `aaae7b6e` (friction #2–#13 batch, separate) |
 | Test app SHA | `75dd459` on branch `devops-terraform-validation` |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (Round 2 start) |
 | Claude model (frozen) | `haiku` (matrix default) / `sonnet` (ledger) |
 | Operator | Cursor agent (dual-role: matrix drive + monitor UX) |
 | Start date | 2026-06-27 |
 | End date | 2026-06-27 |
-| Round clean? | *(pending gate completion)* |
+| Round clean? | **Yes** — matrix 22/22; gate `run-all-tests` 4345/0 @ `effeaccb`; review-fix-ladder Pass (scoped `18c969e8`/`effeaccb`); post-round graphify Pass; RTK `4024389f` committed |
 
 ---
 
@@ -25,13 +25,13 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 | Gate | Pass/Fail | Notes |
 |------|-----------|-------|
 | `bash scripts/install-claude.sh` | **Pass** | 2026-06-27; marketplace `alo-labs` refreshed from `main` @ `5788b277` |
-| `graphify update .` (SB repo) | **Pass** | 16623 nodes, 16803 edges; graph.json updated |
+| `graphify update .` (SB repo) | **Pass** | Round start: 16623 nodes; post-round 2026-06-27: 18014 nodes (`graphify update .`, AST 1704 files) |
 | Branch-scoped session-start | **Pass** | Test app `devops-terraform-validation`; branch file `~/.claude/.silver-bullet/branch` confirmed |
 | Interactive matrix 22/22 | **Pass** | 22/22 PASS — matrix log `.e2e-matrix-round2.log` (rows 5–22 post provider-change restart 2026-06-27T02:09Z) |
-| review-fix-ladder (8 rungs × 2 clean) | **Pending** | Required if scoped changes during Round 2 |
-| `bash tests/run-all-tests.sh` | **Pending** | Target: 0 failures (Round 1 baseline: 4344/0) |
-| Graphify current | **Pending** | Post-round `graphify update .` |
-| Open MUST-FIX | **Pending** | |
+| review-fix-ladder (8 rungs × 2 clean) | **Pass** | 2026-06-27 — locked scope: `hooks/lib/orchestrator-parent.sh`, `hooks/orchestrator-directive-guard.sh`, `tests/hooks/test-orchestrator-parent-guard.sh`, `tests/hooks/test-orchestrator-directive.sh`; rungs 1–3 full Task audit+2×verify; rungs 4–8 orchestrator grep (20/20 scoped tests × 2 clean); added `parent blocks Bash` test (uncommitted) |
+| `bash tests/run-all-tests.sh` | **Pass** | **4345 passed, 0 failed** (5/5 suites green, 2026-06-27 gate at `effeaccb`; log `.run-all-tests-round2-gate.log`) |
+| Graphify current | **Pass** | 2026-06-27 post-round `graphify update .` — 18014 nodes; AST re-extract 1704 files; topology unchanged |
+| Open MUST-FIX | **Clear (gate scope)** | RTK `4024389f` committed (reconciled stale `2f7e81e8` WIP note). Friction batch `aaae7b6e` / agent `169caf97` separate — `.run-all-tests-friction-fix.log` 4277/8 fail |
 
 ---
 
@@ -121,15 +121,15 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 
 ## Round summary
 
-Round 2 started after Round 1 clean gate (22/22 interactive, ladder 8/8, run-all-tests 4344/0 at commits `fc07d5d6`/`d2114b98`).
+Round 2 matrix **22/22 PASS** (`.e2e-matrix-round2.log`). Gate run `run-all-tests` **4345/0** at `effeaccb`. Scoped hook fixes `18c969e8`/`effeaccb` — **review-fix-ladder Pass** (8 rungs). Post-round **graphify update Pass**.
 
-**Retry policy:** 429 / Token Plan → 600s wait; network (ENOTFOUND / ConnectionRefused) → 120–300s via monitor.
+**Release-tag readiness:** **Conditional No** — Round 1 clean **Yes** + Round 2 gate clean **Yes** (2 consecutive clean rounds met for gate SHAs). HEAD `aaae7b6e` friction batch (`169caf97`) has **8 failing tests** in `.run-all-tests-friction-fix.log` — resolve before tag cut.
 
-**Graphify post-round:** `graphify update .` in SB repo; confirm `graphify-out/graph.json` current.
+**RTK `4024389f`:** Committed on HEAD ancestry; stale WIP note for subagent `2f7e81e8` reconciled.
 
-**Matrix evidence:** `.e2e-matrix-round2.log` — `grep 'PASS:'` shows rows 1–22 all PASS; summary block rows 21–22 internal PASS.
+**Matrix evidence:** `.e2e-matrix-round2.log` — rows 1–22 all PASS.
 
-**Next action:** Complete round gates (`run-all-tests`, review-fix-ladder if scoped SB changes, graphify post-round); if Round 1 + Round 2 both clean → release tag per ENTERPRISE-E2E-SESSION-PROMPT.
+**Next action:** Let friction-fix agent `169caf97` finish #2–#13; re-run `run-all-tests` at HEAD; commit ladder `parent blocks Bash` test if desired.
 
 ### Pause point (2026-06-27 — SB friction fix batch #2–#13)
 
@@ -139,5 +139,7 @@ Round 2 started after Round 1 clean gate (22/22 interactive, ladder 8/8, run-all
 | Matrix status | **22/22 PASS** — all rows complete; round gates pending |
 | Active row | None (matrix complete) |
 | Stopped PIDs | monitor 62411, supervisor 5082, continuation 95066, tui-watch 48482 (all dead at pause) |
-| Gates pending | `run-all-tests`, review-fix-ladder (if scoped SB changes), graphify post-round |
+| Gates pending | Round 2 gate scope **complete**; friction batch `run-all-tests` 4277/8 @ HEAD |
+| Fix commit | `aaae7b6e` — SB frictions #2–#13 batch |
 | Resume action | Complete gates only (matrix already 22/22); no row restart needed |
+| Test run | `run-all-tests` 4277 pass / 8 fail @ `aaae7b6e` — 7 friction-related fixed; 6 pre-existing (semantic-compress×5, multi-ai-task×1) |
