@@ -113,7 +113,7 @@ that overlap with or inform the architectural approach described below.
     {"name": "se_devops",   "levels": ["one domain", "partial", "both in one model"]},
     {"name": "customization","levels": ["none", "fork required", "overlay packs"]}
   ],
-  "aggregate": "median",
+  "aggregate": "sum",
   "max_total": 16
 }
 ```

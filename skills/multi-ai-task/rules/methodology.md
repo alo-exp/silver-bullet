@@ -144,42 +144,7 @@ For every field where models disagreed, document:
 
 ### `run-manifest.json`
 
-**The canonical schema lives in `rules/output-schema.md` § `run-manifest.json`.** All other files reference it. Required fields (cross-checked with `SKILL.md`, `methodology.md`, `output-schema.md`, and the failure-modes table):
-
-```json
-{
-  "timestamp": "2026-06-27T07:30:00Z",
-  "task_prompt": "...",
-  "task_prompt_hash": "sha256:...",
-  "mode": "standard",
-  "schema_provided": true,
-  "schema_auto_injected": true,
-  "models_dispatched": ["opencode-go/minimax-m3", "opencode-go/qwen3.7-max", "..."],
-  "models_responded": ["m1", "m2", "..."],
-  "models_failed": [],
-  "output_dir": "./multi-ai-out/2026-06-27-0730/",
-  "aliases": {"AutoGen/AG2": "AutoGen"},
-  "totals": {
-    "rows_per_model": {"m1": 25, "m2": 30, "m3": 18, "..."},
-    "unique_items_consolidated": 36,
-    "conflicts_resolved": 8
-  },
-  "consolidation": {
-    "dedup_merges": 12,
-    "score_aggregations": 25,
-    "unresolved_conflicts": 0
-  },
-  "phases_completed": [1, 2, 3, 4]
-}
-```
-
-**Field semantics:**
-- `schema_auto_injected: true|false` — was the schema auto-injected into the dispatch prompt? (v2.1.0+)
-- `aliases` — task-specific alias map applied during dedup (v2.1.0+); empty `{}` if no aliases
-- `phases_completed` — list of phase numbers that produced output (for partial-failure auditing)
-- `models_failed` — list of `{model, stderr_excerpt, exit_code}` per failure
-
-The `task_prompt_hash` is `sha256:` of the prompt bytes; useful for cache lookup and reproducibility audit.
+**The canonical schema lives in `rules/output-schema.md` § `run-manifest.json`.** All other files reference it. The full required-field list (cross-checked with `SKILL.md`, `methodology.md`, `output-schema.md`, and the failure-modes table) is in that single location. The field semantics, required vs optional, and all defaults are defined there — do not duplicate.
 
 ---
 

@@ -206,6 +206,8 @@ Same as §4 but as a standalone file (for tooling that consumes it).
 
 ### `run-manifest.json`
 
+**This is the canonical schema.** All other files reference this definition. Required fields (cross-checked with `SKILL.md`, `methodology.md`, and the failure-modes table):
+
 ```json
 {
   "timestamp": "2026-06-27T07:30:00Z",
@@ -213,18 +215,43 @@ Same as §4 but as a standalone file (for tooling that consumes it).
   "task_prompt_hash": "sha256:...",
   "mode": "standard",
   "schema_provided": true,
-  "schema": {...},
-  "models_dispatched": ["opencode-go/minimax-m3", ...],
-  "models_responded": ["m1", "m2", ...],
+  "schema_auto_injected": true,
+  "schema": { "type": "table", "columns": [...] },
+  "models_dispatched": ["opencode-go/minimax-m3", "opencode-go/qwen3.7-max", "..."],
+  "models_responded": ["m1", "m2", "..."],
   "models_failed": [],
   "output_dir": "./multi-ai-out/2026-06-27-0730/",
+  "aliases": {"AutoGen/AG2": "AutoGen"},
   "totals": {
-    "rows_per_model": {"m1": 25, "m2": 30, ...},
+    "rows_per_model": {"m1": 25, "m2": 30, "m3": 18, "..."},
     "unique_items_consolidated": 36,
     "conflicts_resolved": 8
-  }
+  },
+  "consolidation": {
+    "dedup_merges": 12,
+    "score_aggregations": 25,
+    "unresolved_conflicts": 0
+  },
+  "phases_completed": [1, 2, 3, 4]
 }
 ```
+
+**Field semantics:**
+- `timestamp` — ISO-8601 UTC of when the run started
+- `task_prompt` — the verbatim prompt sent to models (or `"..."` for privacy)
+- `task_prompt_hash` — `sha256:` of the prompt bytes; useful for cache lookup and reproducibility audit
+- `mode` — `quick` | `standard` | `thorough`
+- `schema_provided` — did the user pass `--schema`?
+- `schema_auto_injected` — was the schema auto-injected into the dispatch prompt? (v2.1.0+)
+- `schema` — the full schema object (if provided); omitted if `schema_provided: false`
+- `models_dispatched` — full `provider/model` IDs of all dispatched models
+- `models_responded` — bare slugs of models that returned a response
+- `models_failed` — list of `{model, stderr_excerpt, exit_code}` per failure (empty list = all succeeded)
+- `output_dir` — the output directory path
+- `aliases` — task-specific alias map applied during dedup (v2.1.0+); empty `{}` if no aliases
+- `totals` — high-level stats: per-model row counts, unique consolidated items, conflicts resolved
+- `consolidation` — detailed stats: dedup merges, score aggregations, unresolved conflicts
+- `phases_completed` — list of phase numbers that produced output (for partial-failure auditing)
 
 ---
 
