@@ -107,15 +107,15 @@ If user selects A, use the active runtime file-editing mechanism to remove the l
 ### 3.2 Create directories
 
 ```bash
-mkdir -p docs/specs docs/workflows .codex/rules
+mkdir -p docs/specs docs/workflows .cursor/rules
 ```
 
 ### 3.2.1 Install Cursor orchestrator rule
 
-When the active runtime is Cursor **or** `.codex/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
+When the active runtime is Cursor **or** `.cursor/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
 
 ```bash
-mkdir -p .codex/rules
+mkdir -p .cursor/rules
 cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .cursor/rules/silver-orchestrator.mdc
 ```
 

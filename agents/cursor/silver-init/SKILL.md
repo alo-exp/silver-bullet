@@ -170,7 +170,7 @@ elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
   SB_HOST=cursor
 elif [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
   SB_HOST=codex
-elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ]]; then
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
   SB_HOST=codex
 elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ]]; then
   SB_HOST=cursor
@@ -215,8 +215,8 @@ graphify update . --no-cluster
 
 | Host (`SB_HOST`) | Post-index commands | Artifact |
 |------------------|----------------------|----------|
-| `claude` | `graphify claude install --project` | `.cursor/settings.json` hooks |
-| `codex` | `graphify codex install --project` | `.cursor/hooks.json` |
+| `claude` | `graphify claude install --project` | `.cursor/hooks.json` hooks |
+| `codex` | `graphify codex install --project` | `.codex/hooks.json` |
 | `cursor` | `graphify cursor install` | `.cursor/rules/graphify.mdc` (`alwaysApply: true`, [issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
 
 Read `platform_install_commands.<host>.post_index` from config when present.
@@ -406,7 +406,7 @@ Same pattern as Graphify §1.1a Steps 4–5.
 
 ### 1.1f Context Mode (recommended tool — opt-in)
 
-Context Mode compacts MCP results and recovers session state across context compaction. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
+Context Mode compacts MCP results and recovers session state across host-supported context compaction. Separate consent from RTK. Config key: `recommended_tools.context_mode.enabled_by_user`.
 
 **License disclosure (required at consent):** ELv2 — not OSI-open; commercial bundling requires upstream license (`license_note` in config).
 

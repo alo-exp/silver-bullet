@@ -57,7 +57,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-BOOTSTRAP` | project_bootstrap | `templates/orchestrator-workers/BOOTSTRAP.md` | `silver-bootstrap-milestone`, `silver-bootstrap-project`, `silver-init` |
 | `AF-ORIENT` | context_orientation | `templates/orchestrator-workers/ORIENT.md` | `silver-context`, `silver-orient`, `silver-review-stats`, `silver-scan` |
 | `AF-CLARIFY` | scope_clarification | `templates/orchestrator-workers/CLARIFY.md` | `silver-clarify` |
-| `AF-DECIDE` | decision_research | `templates/orchestrator-workers/DECIDE.md` | `review-research`, `silver-research` |
+| `AF-DECIDE` | decision_research | `templates/orchestrator-workers/DECIDE.md` | `multi-ai-task`, `review-research`, `silver-research` |
 | `AF-SPECIFY` | requirements_specification | `templates/orchestrator-workers/SPECIFY.md` | `review-ingestion-manifest`, `review-requirements`, `review-spec`, `silver-ingest` |
 | `AF-PLAN` | execution_planning | `templates/orchestrator-workers/PLAN.md` | `review-context`, `review-plan`, `silver-plan` |
 | `AF-DESIGN-CONTRACT` | design_contract | `templates/orchestrator-workers/DESIGN-CONTRACT.md` | `review-design`, `silver-ui-contract` |
@@ -409,6 +409,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-DEVOPS_SKILL_ROUTER` | `devops-skill-router` | `AF-DEVOPS-ROUTE` | `EV-FS-DEVOPS_SKILL_ROUTER` |
 | `FS-EXTENSIBILITY` | `extensibility` | `AF-QUALITY-GATE` | `EV-FS-EXTENSIBILITY` |
 | `FS-MODULARITY` | `modularity` | `AF-QUALITY-GATE` | `EV-FS-MODULARITY` |
+| `FS-MULTI_AI_TASK` | `multi-ai-task` | `AF-DECIDE` | `EV-FS-MULTI_AI_TASK` |
 | `FS-RELIABILITY` | `reliability` | `AF-QUALITY-GATE` | `EV-FS-RELIABILITY` |
 | `FS-REUSABILITY` | `reusability` | `AF-QUALITY-GATE` | `EV-FS-REUSABILITY` |
 | `FS-REVIEW_CONTEXT` | `review-context` | `AF-PLAN` | `EV-FS-REVIEW_CONTEXT` |
@@ -517,6 +518,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `devops-skill-router` | `AF-DEVOPS-ROUTE` |
 | `extensibility` | `AF-QUALITY-GATE` |
 | `modularity` | `AF-QUALITY-GATE` |
+| `multi-ai-task` | `AF-DECIDE` |
 | `reliability` | `AF-QUALITY-GATE` |
 | `reusability` | `AF-QUALITY-GATE` |
 | `review-context` | `AF-PLAN` |
