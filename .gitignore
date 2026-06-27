@@ -72,3 +72,5 @@ raw/
 !.agentmemory/snapshots/**
 !.agentmemory/profile.md
 # === end agentmemory managed block ===
+site/.preview-server.pid
+site/.preview-server.log
