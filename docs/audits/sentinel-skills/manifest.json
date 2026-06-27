@@ -98,6 +98,20 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "multi-ai-task",
+    "path": "skills/multi-ai-task/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-multi-ai-task.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-06-27",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "96a831a2faf5b942aac9a2f396c280bbd2d46e19c4cbc13655294ddbecc80edc",
+    "evidence_note": "Initial sentinel row for multi-ai-task skill added in v0.48.3 cycle."
+  },
+  {
     "skill": "reliability",
     "path": "skills/reliability/SKILL.md",
     "sentinel_version": "2.3.0",

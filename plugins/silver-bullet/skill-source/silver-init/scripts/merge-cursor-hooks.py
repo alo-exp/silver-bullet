@@ -15,7 +15,7 @@ if not install_path:
     raise SystemExit("usage: merge-cursor-hooks.py <sb_install_path>")
 
 hooks_src = os.path.join(install_path, "hooks", "cursor-hooks.json")
-settings_path = os.path.join(os.path.expanduser("~"), ".codex", "hooks.json")
+settings_path = os.path.join(os.path.expanduser("~"), ".cursor", "hooks.json")
 
 
 def stable_install_path(raw_install_path: str) -> str:
