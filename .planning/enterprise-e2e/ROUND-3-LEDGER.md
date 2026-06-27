@@ -9,7 +9,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Field | Value |
 |-------|-------|
 | Round | 3 |
-| SB repo SHA | `70f7c81c` (ledger; rung 7; ladder fix `2ae7ca6e`; preflight `1aa7fb4c`) |
+| SB repo SHA | `dbd11efb` (ledger; rung 8 verify_1; ladder fix `2ae7ca6e`; preflight `1aa7fb4c`) |
 | Test app SHA | `04eb4c29664c54ee7ee7c598068431a52fb7902b` |
 | Claude plugin install | `1aa7fb4c` (hook probe fix) |
 | Claude model (frozen) | `<!-- e.g. claude-opus-4-20250514 -->` |
@@ -88,8 +88,8 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | 4 | composer-2.5 / xhigh | composer-2.5-fast | **Pass** | **Pass** | **Pass** | — | No |
 | 5 | gpt-5.5 / low | composer-2.5-fast | **Pass** | **Pass** | **Pass** | **Pass** | No |
 | 6 | gpt-5.5 / medium | composer-2.5-fast | **Pass** | **Pass** | **Pass** | **Pass** | No |
-| 7 | gpt-5.5 / high | gpt-5.5-extra-high | **Pass** | **Pass** | **Pass** | — | No |
-| 8 | gpt-5.5 / xhigh | gpt-5.5-extra-high | | | | | |
+| 7 | gpt-5.5 / high | gpt-5.5-extra-high | **Pass** | **Pass** | **Pass** | **Pass** | No |
+| 8 | gpt-5.5 / xhigh | gpt-5.5-extra-high | **Pass** | **Pass** | **Pass** | — | No |
 
 ### Rung 1 detail (2026-06-28)
 
@@ -180,9 +180,24 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | `rung_7_audit_fix` | **Pass** | Repo-wide audit @ gpt-5.5 / high (model substitution: `composer-2.5-fast` — gpt-5.5 API limit; nominal slug `gpt-5.5-extra-high`): no MUST-FIX gaps. `validate-plugin-mirror.sh` OK; ladder rung 7 resolves `gpt-5.5` / `high`; auth login/logout absent from live entrypoints; `probe_dev_cycle_bash_command` fallback present; orchestrator directive/parent hooks present. No SB code commits. |
 | `rung_7_verify_1` | **Pass** | hook-delivery 3/3; structural suite 603/0 (86 skills); orchestrator hook tests 20/0 (directive 8 + parent-guard 12). |
 | Orchestrator grep (post verify_1) | **Pass** | `auth login/logout` in entrypoints: 0 hits; runbook `review-fix-ladder`: 13 skill bundles; matrix `/silver:`: 19 (+ row 1 `/silver`); ladder resolve: 8 rungs. |
-| `rung_7_verify_2` | **Pending** | Deferred — launch readonly `Task` on next turn. |
+| `rung_7_verify_2` | **Pass** | VERIFY_PASS — readonly re-audit: no new gaps; orchestrator grep clean. |
 
 **Graphify query ref:** `graphify query "enterprise E2E scope routes hooks skills orchestrator review-fix-ladder rung 7"` — BFS depth=2, 20 nodes (CHARTER.md smoke fixture, 094-REVIEW.md, 37-01-PLAN.md).
+
+**Charter goals (unchanged):** enterprise E2E structural wiring; hook-delivery preflight reliability; 8-rung ladder resolve; orchestrator parent/directive hooks; live entrypoint auth constraints.
+
+**SB fix commits:** none (audit clean)
+
+### Rung 8 detail (2026-06-28)
+
+| Phase | Status | Evidence |
+|-------|--------|----------|
+| `rung_8_audit_fix` | **Pass** | Repo-wide audit @ gpt-5.5 / xhigh (model substitution: `composer-2.5-fast` — gpt-5.5 API limit; nominal slug `gpt-5.5-extra-high`): no MUST-FIX gaps. `validate-plugin-mirror.sh` OK; ladder rung 8 resolves `gpt-5.5` / `xhigh`; auth login/logout absent from live entrypoints; `probe_dev_cycle_bash_command` fallback present; orchestrator directive/parent hooks present. No SB code commits. |
+| `rung_8_verify_1` | **Pass** | hook-delivery 3/3; structural suite 69/0; skill-integrity 603/0 (86 skills); orchestrator hook tests 20/0 (directive 8 + parent-guard 12). |
+| Orchestrator grep (post verify_1) | **Pass** | `auth login/logout` in entrypoints: 0 hits; runbook `review-fix-ladder`: 8 skill bundles; matrix `/silver:`: 19 (+ row 1 `/silver`); ladder resolve: 8 rungs. |
+| `rung_8_verify_2` | **Pending** | Deferred — launch readonly `Task` on next turn (final ladder verify). |
+
+**Graphify query ref:** `graphify query "enterprise E2E scope routes hooks skills orchestrator review-fix-ladder rung 8"` — BFS depth=2, 20 nodes (CHARTER.md smoke fixture, 094-REVIEW.md, PRE-RELEASE-PROCESS-PROPOSAL.md).
 
 **Charter goals (unchanged):** enterprise E2E structural wiring; hook-delivery preflight reliability; 8-rung ladder resolve; orchestrator parent/directive hooks; live entrypoint auth constraints.
 
@@ -198,4 +213,4 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 <!-- agentmemory: mem_mqwok1rb_e698da3c8a56 -->
 
-**Next action:** Launch `rung_7_verify_2` (readonly `Task`, model `gpt-5.5-extra-high` — substitute `composer-2.5-fast` if API limit), orchestrator grep, then advance to rung 8. Do **not** start matrix TUI rows until ladder complete. After ladder: `bash tests/run-all-tests.sh`, `bash scripts/install-claude.sh`, Session 0 + matrix rows 1–22.
+**Next action:** Launch `rung_8_verify_2` (readonly `Task`, model `gpt-5.5-extra-high` — substitute `composer-2.5-fast` if API limit), orchestrator grep, then declare ladder complete. Do **not** start matrix TUI rows until ladder complete. After ladder: `bash tests/run-all-tests.sh`, `bash scripts/install-claude.sh`, Session 0 + matrix rows 1–22.
