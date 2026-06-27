@@ -32,40 +32,40 @@ colors:
   dark-border-hover: "#4d6884"
 typography:
   h1:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "6rem"
     fontWeight: 900
     lineHeight: "0.95em"
     letterSpacing: "-0.06em"
   page-title:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "2.8rem"
     fontWeight: 900
     lineHeight: "1.1em"
     letterSpacing: "-0.04em"
   section-title:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "3rem"
     fontWeight: 900
     lineHeight: "1.1em"
     letterSpacing: "-0.04em"
   heading-md:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "1.1rem"
     fontWeight: 700
     lineHeight: "1.3em"
   body-md:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: "1.7em"
   body-sm:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: "1.7em"
   label-caps:
-    fontFamily: "IBM Plex Sans"
+    fontFamily: "Alte DIN 1451 Mittelschrift"
     fontSize: "0.75rem"
     fontWeight: 700
     lineHeight: "1.2em"
@@ -164,7 +164,7 @@ Use the warm linen light stack:
 - Text dim: `#285c38`
 - Border token: `#8cc4a4`
 
-Light theme should inherit the same structural changes as dark theme: left-aligned boxed content, borderless content boxes, icon alignment, IBM Plex fonts, normalized Help skeleton, and icon theme switcher.
+Light theme should inherit the same structural changes as dark theme: left-aligned boxed content, borderless content boxes, icon alignment, Alte DIN fonts, normalized Help skeleton, and icon theme switcher.
 
 ### Brand Accent
 
@@ -178,10 +178,12 @@ Use cyan, purple, amber, and red as secondary semantic accents only. They are fo
 
 ## Typography
 
-Use IBM Plex across the site:
+Use Alte DIN 1451 Mittelschrift for readable marketing and product UI text, with IBM Plex Mono for code:
 
-- Sans and headings: `IBM Plex Sans`
-- Monospace: `IBM Plex Mono`
+- Sans and headings: `Alte DIN 1451 Mittelschrift` (self-hosted regular + gepraegt/bold from [freebies.fluxes.com](https://freebies.fluxes.com/font/alte-din-1451-mittelschrift/)) with `system-ui` fallback
+- Monospace: `IBM Plex Mono` (Google Fonts) for `code`, `kbd`, `pre`, install blocks, and terminal mock output
+
+Homepage and Help pages load DIN via `@font-face` in `site/tokens.css` (and inline on `site/index.html`); `--font-heading` and `--font-body` are `'Alte DIN 1451 Mittelschrift', system-ui, sans-serif`. Use `font-weight: 700` for bold display (maps to the gepraegt face).
 
 When sans and mono text are mixed inline, their visual size must be the same. In CSS, this is enforced by setting inline `code`, `kbd`, and `samp` to `font-size: 1em !important` and `line-height: inherit`.
 
@@ -324,7 +326,7 @@ Only the top nav breadcrumb is used on Help pages. Do not add a second breadcrum
 
 - Preserve the final S3 homepage structure.
 - Preserve the green brand accents.
-- Use IBM Plex Sans and IBM Plex Mono everywhere.
+- Use Alte DIN 1451 Mittelschrift and IBM Plex Mono across the site.
 - Keep boxed content left-aligned unless the entire box is page-centered.
 - Keep content boxes borderless except buttons and explicit controls.
 - Align left-side icons to the top of painted text glyphs, not to DOM bounding boxes.
@@ -361,6 +363,7 @@ This DESIGN.md captures the final state after the following session-level decisi
 - Replaced the homepage with S3 and published it.
 - Centered icons only for page-centered callout boxes.
 - Switched site fonts to IBM Plex Sans and IBM Plex Mono.
+- Switched site sans/heading fonts to Alte DIN 1451 Mittelschrift (regular + gepraegt); IBM Plex Mono for code.
 - Equalized mono and sans inline sizing.
 - Applied homepage formatting rules to Help Center pages.
 - Fixed Help Center box formatting and removed remaining borders.

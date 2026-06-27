@@ -1,0 +1,37 @@
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+
+
+
+
+
+[2C[5A]0;✳ Claude Code[2D[5B[2C[9A⎿[5G UserPromptSubmit[23Ghook[28Gerror[1B [3G⎿  Fa[9Gled[13Gwith[18Gnon-blocking[31Gstatus[38Gcode:[44G/bin/sh:[53G/Users/shafqat/.claude/plugi[5C[1Bns/cache/alo-labs/silver-bullet/current/hooks/record-requested-skill.sh:[79GNo[1B     such file or directory[K[1B  ⎿[5G UserPromptSubmit[23Ghook[28Gerror[1B  ⎿  Failed with non-blocking status code: /bin/sh: /Users/shafqat/.claude/plugi[2C[1B  [6Gns/cache/alo-labs/silver-bullet/current/hooks/outc[57Gmes-check.sh: No such[K[5C[1Bfile[11Gor[14Gdirectory[53G[K[2C[1B⎿[5G UserPromptSubmit[23Ghook[28Gerror[64G[K
+[3G⎿[5G Failed[13Gwith[18Gnon-blocking[31Gstatus[38Gcode:[44G/bin/sh:[53G/Users/shafqat/.claude/plugi
+[6Gns/cache/alo-labs/silver-bullet/current/hooks/prompt-reminder.sh:[72GNo[75Gsuch
+[6Gfile[11Gor[14Gdirectory
+[3G⎿[5G Not[10Glogged[17Gin[20G·[22GPlease[29Grun[33G/login
+
+✻[3GCrunched[12Gfor[16G0s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ [7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents
+[53GNot[57Glogged[64Gin[67G·[69GRun[73G/login
+[64G○[66Glow[70G·[72G/effort
+[2C[5A[2D[5B[2K[G[1A[K[2C[4A
+  FAIL: missing evidence at .planning/workflows/router-session.md
+  FAIL: no routing markers in session output or /Users/shafqat/.claude/.silver-bullet/state
+
+=== Matrix summary ===
+Pass:  0
+Fail:  1
+Skip:  0
+Total: 1 / 22

@@ -1,6 +1,23 @@
 # Changelog
 
-## [0.48.3] — 2026-06-25
+## [0.48.4] — 2026-06-27
+
+Enterprise E2E hardening patch: friction fixes #2–#13 (hooks, orchestrator Bash in Task workers, RTK compat, session-start branch scope), turn-level TUI watcher + matrix monitor, interactive 22/22 matrix harness, multi-ai-task v2.1–2.6 doc/sentinel fixes, and test isolation for semantic-compress / plugin-surface gates. `run-all-tests` **4672 passed, 0 failed** at release SHA.
+
+### Bug Fixes
+- `fix(hooks)`: resolve SB frictions #2–#13 for enterprise E2E (`aaae7b6e`)
+- `fix(hooks)`: allow Bash in orchestrator-spawned Task workers (`18c969e8`, `effeaccb`)
+- `fix(rtk)`: export `RTK_DISABLED` for SB shell entry points (`4024389f`)
+- `fix(install-claude)`: rsync full hooks tree to plugin cache (`97bdfece`)
+- `fix(hooks)`: add `hookEventName` to high-frequency PostToolUse output (`d382165c`)
+- `fix(matrix)`: monitor empty-array crash when all rows complete; retry on API 429
+
+### Tests
+- `test(hooks)`: accept two-line branch scope file in session-start (`ee373397`)
+- Semantic-compress + Claude plugin-surface test isolation; orchestrator parent-guard coverage
+
+---
+
 
 Recommended-tools expansion and global wiring: RTK and Context Mode opt-in gates, Alumnium opt-in, Graphify + agentmemory stack optimizer (synergy_max) across hosts, multi-agent global RTK/Context Mode optimizer, and Context Mode read-deny when enforced. Documentation and site workflow SDLC ordering; enterprise E2E fixture shift; CI/shellcheck and diagnostics fixes. Integrates doc-scheme Graphify exclusion test fix; restores opt-in Graphify gate behavior after mandatory-graphify branch merge.
 

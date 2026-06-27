@@ -1,0 +1,50 @@
+{"id":"C001","claim":"Agents skip planning and jump directly to file edits when process is not mechanically enforced","cluster":"process_bypass","rank":1,"support":["E016","E017"],"status":"supported"}
+{"id":"C002","claim":"Prompt injection via PR/issue content can escalate agent privileges to RCE or credential theft","cluster":"devops_hazards","rank":2,"support":["E005","E006","E021","E008"],"status":"supported"}
+{"id":"C003","claim":"AI-generated code ships OWASP-class vulnerabilities at high rates without verification gates","cluster":"quality_theater","rank":3,"support":["E007","E015"],"status":"supported"}
+{"id":"C004","claim":"Long sessions degrade output quality as context windows fill — context rot is silent","cluster":"context_degradation","rank":4,"support":["E004"],"status":"supported"}
+{"id":"C005","claim":"Specs, PRs, tests, and UAT drift apart without traceability enforcement","cluster":"traceability_drift","rank":5,"support":["E010","E011"],"status":"supported"}
+{"id":"C006","claim":"Agents declare done without fresh tests, review, or CI evidence","cluster":"delivery_risk","rank":6,"support":["E003","E011"],"status":"supported"}
+{"id":"C007","claim":"Top-tier model API costs and usage limits block team-scale agent adoption","cluster":"cost_model_risk","rank":7,"support":["E012","E013"],"status":"supported"}
+{"id":"C008","claim":"Agents lack durable cross-session memory of decisions and prior repo context","cluster":"knowledge_blindness","rank":8,"support":["E004","E019"],"status":"supported"}
+{"id":"C009","claim":"Benchmark scores on SWE-bench do not translate to ambiguous real-world tasks","cluster":"delivery_risk","rank":9,"support":["E022","E017"],"status":"supported"}
+{"id":"C010","claim":"Multi-agent loops multiply token cost non-linearly without routing discipline","cluster":"cost_model_risk","rank":10,"support":["E013","E014"],"status":"supported"}
+{"id":"C011","claim":"Trust prompts give false confidence — approved actions can still execute malicious side effects","cluster":"devops_hazards","rank":11,"support":["E008"],"status":"supported"}
+{"id":"C012","claim":"Production observability and post-ship iteration are not covered by most agent workflows","cluster":"delivery_risk","rank":12,"support":["E010"],"status":"supported"}
+{"id":"C013","claim":"Hallucinated permissions or configs can expose internal data without external attacker","cluster":"devops_hazards","rank":13,"support":["E009"],"status":"supported"}
+{"id":"C014","claim":"Review loops become theater when findings are not triaged against artifact contracts","cluster":"quality_theater","rank":14,"support":["E011"],"status":"supported"}
+{"id":"C015","claim":"Vibe-coded startups accumulate critical vulns faster than manual review can catch","cluster":"quality_theater","rank":15,"support":["E015"],"status":"supported"}
+{"id":"C016","claim":"Engineers hit rate limits mid-task breaking flow state and delivery momentum","cluster":"cost_model_risk","rank":16,"support":["E012"],"status":"supported"}
+{"id":"C017","claim":"Workflow compliance does not guarantee outcome validation in production","cluster":"quality_theater","rank":17,"support":["E011"],"status":"supported"}
+{"id":"C018","claim":"Agents cannot reliably navigate large codebases without graph or indexed retrieval","cluster":"knowledge_blindness","rank":18,"support":["E004"],"status":"supported"}
+{"id":"C019","claim":"Compaction erases process obligations unless re-injected by hooks","cluster":"process_bypass","rank":19,"support":["E004"],"status":"supported"}
+{"id":"C020","claim":"Security scanning is episodic not continuous in most agent-assisted SDLC flows","cluster":"devops_hazards","rank":20,"support":["E025"],"status":"supported"}
+{"id":"C021","claim":"Full delegation without oversight correlates with incident risk not productivity gains","cluster":"delivery_risk","rank":21,"support":["E024","E001"],"status":"supported"}
+{"id":"C022","claim":"Slopsquatting and invented dependencies are supply-chain vectors unique to agents","cluster":"devops_hazards","rank":22,"support":["E007"],"status":"supported"}
+{"id":"C023","claim":"Discovery and requirements phases lack verifiable feedback loops for agents","cluster":"process_bypass","rank":23,"support":["E017"],"status":"supported"}
+{"id":"C024","claim":"PR descriptions rarely link back to accepted spec criteria automatically","cluster":"traceability_drift","rank":24,"support":["E010"],"status":"supported"}
+{"id":"C025","claim":"UAT artifacts go stale against spec versions without mechanical freshness checks","cluster":"traceability_drift","rank":25,"support":["E010"],"status":"supported"}
+{"id":"C026","claim":"Token-heavy raw tool output accelerates context exhaustion","cluster":"context_degradation","rank":26,"support":["E004","E020"],"status":"supported"}
+{"id":"C027","claim":"Smaller models fail complex tasks unless process and retrieval compensate","cluster":"cost_model_risk","rank":27,"support":["E022","E023"],"status":"supported"}
+{"id":"C028","claim":"Agent identities in CI hold privileged tokens invisible to traditional IAM","cluster":"devops_hazards","rank":28,"support":["E005","E006"],"status":"supported"}
+{"id":"C029","claim":"Roadmap and planning artifacts drift from implementation without commit-time checks","cluster":"traceability_drift","rank":29,"support":["E010"],"status":"supported"}
+{"id":"C030","claim":"Test markers go stale after source edits if not invalidated mechanically","cluster":"delivery_risk","rank":30,"support":["E003"],"status":"supported"}
+{"id":"C031","claim":"Docs governance lags code changes in agent-fast delivery cycles","cluster":"traceability_drift","rank":31,"support":["E010"],"status":"supported"}
+{"id":"C032","claim":"Agents reuse wrong patterns from training data across unfamiliar stacks","cluster":"knowledge_blindness","rank":32,"support":["E007"],"status":"supported"}
+{"id":"C033","claim":"Extension plugin absence causes silent downgrade unless fail-closed gates exist","cluster":"process_bypass","rank":33,"support":["E011"],"status":"supported"}
+{"id":"C034","claim":"Blast radius of infra changes is underestimated without structured assessment","cluster":"devops_hazards","rank":34,"support":["E025"],"status":"supported"}
+{"id":"C035","claim":"Release readiness is conflated with PR merge in agent workflows","cluster":"delivery_risk","rank":35,"support":["E010"],"status":"supported"}
+{"id":"C036","claim":"Incident response and retro loops are rarely agent-governed end-to-end","cluster":"process_bypass","rank":36,"support":["E010"],"status":"supported"}
+{"id":"C037","claim":"Model non-determinism makes reproducible builds and tests harder to assert","cluster":"cost_model_risk","rank":37,"support":["E003"],"status":"supported"}
+{"id":"C038","claim":"Shadow AI tools bypass org governance and leak code to unmanaged endpoints","cluster":"devops_hazards","rank":38,"support":["E007"],"status":"supported"}
+{"id":"C039","claim":"Assessor triage missing — stylistic review findings block delivery without business value","cluster":"quality_theater","rank":39,"support":["E014"],"status":"supported"}
+{"id":"C040","claim":"Cross-artifact consistency (spec vs design vs requirements) is manual and error-prone","cluster":"traceability_drift","rank":40,"support":["E010"],"status":"supported"}
+{"id":"C041","claim":"Agent memory exports are opt-in and not indexed without Graphify synergy","cluster":"knowledge_blindness","rank":41,"support":["E019"],"status":"supported"}
+{"id":"C042","claim":"Context Mode licensing (ELv2) blocks some enterprise bundling scenarios","cluster":"cost_model_risk","rank":42,"support":["E020"],"status":"supported"}
+{"id":"C043","claim":"Fast-path bypass markers can be abused to skip gates on expanding scope","cluster":"process_bypass","rank":43,"support":["E016"],"status":"supported"}
+{"id":"C044","claim":"Load and performance testing gaps leave scale incidents undetected pre-ship","cluster":"delivery_risk","rank":44,"support":["E010"],"status":"supported"}
+{"id":"C045","claim":"Canary and progressive rollout discipline is weak in agent-default flows","cluster":"devops_hazards","rank":45,"support":["E010"],"status":"supported"}
+{"id":"C046","claim":"Brooks complexity limits still apply — agents do not remove essential complexity","cluster":"knowledge_blindness","rank":46,"support":["E023"],"status":"supported"}
+{"id":"C047","claim":"Staff+ engineers adopt agents fastest — junior teams face highest risk without gates","cluster":"process_bypass","rank":47,"support":["E002","E018"],"status":"supported"}
+{"id":"C048","claim":"MCP and tool sprawl increases attack surface without dependency gates","cluster":"devops_hazards","rank":48,"support":["E008"],"status":"supported"}
+{"id":"C049","claim":"Semantic compression (RTK) freshness can block commits if not maintained","cluster":"context_degradation","rank":49,"support":["E020"],"status":"supported"}
+{"id":"C050","claim":"Customer discovery and product validation phases have no agent enforcement layer","cluster":"process_bypass","rank":50,"support":["E010","E017"],"status":"supported"}

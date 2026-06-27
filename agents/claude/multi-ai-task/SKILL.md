@@ -1,7 +1,7 @@
 ---
 name: multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
-argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--concurrency parallel|sequential] [--no-auto-inject]"
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
 user-invocable: false
 version: 2.1.0
 ---
@@ -20,12 +20,12 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 5. Resolves disagreements across models (with documented tie-break rules)
 6. Aggregates scores / votes / ratings when applicable
 7. Produces a consolidated artifact + an HTML preview
+8. **Auto-injects the schema into every dispatch prompt** (by default ON; pass `--no-auto-inject` to opt out — see "The `--schema` parameter" below)
 
 **What this skill does NOT do:**
 - Define the task content (user provides the prompt)
 - Define the output schema (user can pass `--schema`; defaults to LLM-assisted extraction)
 - Replace domain expertise (the models do the actual work; the skill just orchestrates and consolidates)
-- Inject the schema into the prompt unless `--no-auto-inject` is set (default ON — see "The `--schema` parameter" below)
 - Retry failed dispatches (this is the calling agent's responsibility; the skill is fail-soft)
 
 ---
@@ -66,7 +66,6 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 | `--out` | NO | `./multi-ai-out/<timestamp>/` | Output directory |
 | `--schema` | NO | LLM-assisted extraction | Optional structured output schema. Either a JSON object (inline) or a path to a `.json` file. Defines columns, types, dedup keys, conflict rules. |
 | `--mode` | NO | `standard` | `quick` (merge raw, no dedup) / `standard` (dedup + conflict resolution) / `thorough` (standard + cross-source verification; see Mode semantics) |
-| `--concurrency` | NO | `parallel` | `parallel` (concurrent dispatch, faster) or `sequential` (one at a time, avoids MCP port collision) |
 | `--no-auto-inject` | NO | (schema is auto-injected) | If passed, the skill does NOT append the schema to the dispatch prompt. Use when your prompt already embeds the schema or you want to manage prompt construction yourself. |
 
 ### Default model discovery
@@ -126,6 +125,15 @@ Pass a JSON object describing the expected per-row schema:
 | `date` | ISO-8601 date string |
 | `text` | Long-form text (use `max_words` to constrain) |
 
+**Supported top-level schema fields:**
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"table"` (the only currently supported shape) |
+| `primary_key` | Name of the single column that is the dedup key. Convenience alias for putting `dedup_key: true` on one column. For composite keys, omit this and use `dedup_key: true` on multiple columns instead. |
+| `columns` | List of column definitions (see below) |
+| `conflict_resolution` | Map of `{field_name: rule_name}` to override defaults |
+
 **Supported column fields:**
 
 | Field | Description |
@@ -137,8 +145,10 @@ Pass a JSON object describing the expected per-row schema:
 | `required: true` | Row is dropped with warning if this field is missing |
 | `min` / `max` | For numeric: enforce range |
 | `max_words` | For text: enforce word count cap |
-| `values` | For enum: list of allowed values |
+| `values` | For enum: list of allowed values (most-severe first for `most-severe` rule) |
 | `separator` | For url_list: separator (default `,`) |
+| `severity_order` | Optional override for the `most-severe` rule: list of enum values in most-severe-first order. Defaults to `["blocker", "major", "minor", "nit"]` if omitted. |
+| `allow_downgrade` | Boolean. When `true`, the `most-severe` rule downgrades a lone max-severity value (1 of N reviewers says `blocker` with no evidence quote) to the next tier. Default: `false` (most-severe value wins even if only 1 reviewer reported it). |
 
 **Composite primary keys:** list multiple columns with `dedup_key: true`. Example: `file` + `line` for code review.
 
@@ -172,6 +182,28 @@ If no schema is provided, the skill uses LLM-assisted extraction:
 └── verification.md            # (thorough mode only) per-item source verification
 ```
 
+### `thorough`-mode-only file schemas
+
+`evidence-ledger.md` (one row per claim × source pair):
+
+```markdown
+| item | claim | source | verifier | verdict | confidence |
+|------|-------|--------|----------|---------|------------|
+| LangGraph | "Stateful DAG with checkpointers" | https://langchain-ai.github.io/langgraph/concepts/ | minimax-m3 | verified | high |
+| LangGraph | "Per-step rollup + intent gate" | https://langchain-ai.github.io/langgraph/concepts/ | minimax-m3 | wrong | n/a |
+```
+
+`verification.md` (one row per canonical item, per-item rollup):
+
+```markdown
+| item | source_verified | verdicts_by_source | notes |
+|------|------------------|---------------------|-------|
+| LangGraph | partially-verified | 1 verified, 1 wrong | at least one source claim contradicted |
+| BMAD | verified | 3 verified, 0 wrong | all sources support claims |
+```
+
+**Verdict values** for both files: `verified` (the source supports the claim), `wrong` (the source contradicts the claim), or `uncertain` (the verifier couldn't determine).
+
 `consolidated.html` generation: convert `consolidated.md` to HTML using a markdown library (`marked` in Node, `markdown` in Python, `pandoc` for richer output). Embed minimal CSS inline (table styles, conflict-marker color, section anchors). Self-contained — no external resources.
 
 ---
@@ -185,7 +217,7 @@ The full pipeline is documented in `rules/methodology.md`. Quick summary:
 3. **Cross-model consolidation** — dedup by primary key, resolve conflicts by configured rule, aggregate scores by configured aggregator
 4. **Final synthesis** — write `consolidated.md` (per the schema or free-form), render HTML preview, write `conflicts.md` documenting all resolutions
 
-The 4 phases are also tracked in `run-manifest.json → totals.phases_completed` for audit purposes.
+The 4 phases are also tracked in `run-manifest.json → phases_completed` (a top-level array, per the canonical schema in `rules/output-schema.md`) for audit purposes.
 
 ## Dispatch mechanics
 
@@ -238,8 +270,7 @@ The skill was first run end-to-end on 2026-06-27 for prior-art research. Inputs 
 - **6 OCG models** dispatched in parallel via `opencode run --model`
 - **Same prompt verbatim** to all 6
 - **Results**: 150+ raw mentions → 36 unique products → 1 consolidated report at `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`
-- **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); 2 agents produced qualitative comparisons only; 1 produced only the rubric
-- **All category conflicts** resolved and documented in §4 of the report
+- **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); the remaining 2 agents produced qualitative comparisons only (no scoring matrix). All category conflicts resolved and documented in §4 of the report.
 
 **Folder-name note:** the run output lives at `docs/research-260624/` — the folder name encodes `2026-06-24` (a pre-existing convention from the docs directory), but the actual run was on **2026-06-27**. The folder name is the path; the run date is in the `timestamp` field of `run-manifest.json` and in the `Proven provenance` section above. Do not rename the folder — it's referenced by 30+ other paths.
 

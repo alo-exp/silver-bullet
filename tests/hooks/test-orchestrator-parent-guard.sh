@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for orchestrator parent mode guard (parent blocks Edit, allows Task).
+# Tests for orchestrator parent mode guard (parent blocks Edit/Bash, allows Task).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -84,6 +84,10 @@ make_repo
 out=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks Edit" "$out" "ORCHESTRATOR PARENT"
+
+out_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_contains "parent blocks Bash" "$out_bash" "ORCHESTRATOR PARENT"
 
 # Bootstrap scaffold: template copied before sb_initiated is true — parent guard must stay inert
 WORK_BOOT=$(mktemp -d)

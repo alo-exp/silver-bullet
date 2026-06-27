@@ -1,0 +1,129 @@
+[0m
+> build · glm-5.2
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && rtk grep -rn "score-aggregate.md\|score_aggregate\|score-aggregate" skills/multi-ai-task/ 2>/dev/null; echo "---"; rtk grep -rn "verification.md\|evidence-ledger" skills/multi-ai-task/SKILL.md skills/multi-ai-task/rules/methodology.md skills/multi-ai-task/rules/output-schema.md; echo "---phases---"; rtk grep -rn "phases_completed\|Phase 3.6\|Phase 3.5\|Phase 2" skills/multi-ai-task/rules/*.md skills/multi-ai-task/SKILL.md | head -40
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+skills/multi-ai-task/SKILL.md:227:| Output dir contains `score-aggregate.md` (planned) but not in the contract | Old spec inconsistency | Ignore for v2.x; the section is in `consolidated.md` body as §5 Aggregated Scores |
+---
+skills/multi-ai-task/SKILL.md:81:| `thorough` | Full | Full + **cross-source verification**: for each canonical item, dispatch a verifier model to check the claimed source actually supports the claim | Dedup + conflict resolution + **evidence-ledger.md** (per-claim source URL + verdict) | Full + **evidence-ledger.md** + per-item `source_verified: true|false|wrong` flag | High-stakes (regulatory, due-diligence) |
+skills/multi-ai-task/SKILL.md:170:├── evidence-ledger.md        # (thorough mode only) per-claim source URL + verification verdict
+skills/multi-ai-task/SKILL.md:171:└── verification.md            # (thorough mode only) per-item source verification
+---phases---
+skills/multi-ai-task/rules/consolidation-rules.md:26:## Phase 2 — ALIGN: extract per-model structured data
+skills/multi-ai-task/rules/consolidation-rules.md:136:## Phase 3.5 — RESOLVE CONFLICTS
+skills/multi-ai-task/rules/consolidation-rules.md:266:## Phase 3.6 — SCORE + SYNTHESIZE
+skills/multi-ai-task/rules/methodology.md:23:## Phase 2 — Output capture and extraction
+skills/multi-ai-task/rules/output-schema.md:235:  "phases_completed": [1, 2, 3, 4]
+skills/multi-ai-task/rules/output-schema.md:254:- `phases_completed` — list of phase numbers that produced output (for partial-failure auditing)
+skills/multi-ai-task/SKILL.md:77:| Mode | Phase 1 (dispatch) | Phase 2 (extract) | Phase 3 (consolidate) | Phase 4 (synthesize) | Use when |
+skills/multi-ai-task/SKILL.md:187:The 4 phases are also tracked in `run-manifest.json → phases_completed` (a top-level array, per the canonical schema in `rules/output-schema.md`) for audit purposes.
+[0m
+[0m$ [0mrtk grep -rn "v2.0.0\|v2.1.0\|version:" skills/multi-ai-task/SKILL.md; echo "---conf in skill vs rules---"; rtk grep -n "conflicts.md" skills/multi-ai-task/SKILL.md skills/multi-ai-task/rules/methodology.md skills/multi-ai-task/rules/output-schema.md; echo "---evidence-staleness---"; rtk grep -rn "stale\|staleness" skills/multi-ai-task/ 2>/dev/null | head; echo "---timeout---"; rtk grep -rn "TIMEOUT=600\|TIMEOUT=300\|timeout" skills/multi-ai-task/rules/dispatch-mechanics.md | head
+skills/multi-ai-task/SKILL.md:6:version: 2.1.0
+skills/multi-ai-task/SKILL.md:247:A self-review run (also on 2026-06-27) used the skill recursively to review itself. The consolidated review is at `docs/research-260624/multi-ai-self-review-20260627-083255/`. A round-2 self-review (v2.1.0) is at `docs/research-260624/multi-ai-self-review-r2-20260627-093345/`.
+---conf in skill vs rules---
+7 matches in 0 files:
+
+[+7 more]
+---evidence-staleness---
+skills/multi-ai-task/critical-review-r4.md:44:- **The `run-manifest.json` canonical schema claim is still broken (flagged by both prior reviews, unfixed).** methodology.md:145-147 says "The canonical schema lives in `rules/output-schema.md`." But output-schema.md:209-237 is missing `phases_completed`, `consolidation`, `schema_auto_injected`, and `aliases`. Both files claim canonicity; one is stale. This is the single most impactful data-integrity bug in the skill.
+skills/multi-ai-task/critical-review-r4.md:118:- **`run-manifest.json` schema is stale (flagged by both prior reviews, unfixed).** This file (lines 209-237) is missing `phases_completed`, `consolidation`, `schema_auto_injected`, and `aliases`. The file explicitly says "This is the canonical schema" (line 209) but is out of date. This is the most-repeated finding across all three reviews.
+skills/multi-ai-task/critical-review-r4.md:210:| **Evidence model** | **2** | Tiered sufficiency with staleness: `source_refs`, `prefer-with-evidence-then-newer-then-strict`, `thorough` mode verification, `last_verified`. More sophisticated than many production systems. |
+skills/multi-ai-task/critical-review-r4.md:236:### 2. Fix the stale `run-manifest.json` canonical schema (3rd consecutive review flagging this)
+skills/multi-ai-task/critical-review-r3.md:36:- **`run-manifest.json` schema is duplicated and stale.** methodology.md:145-147 says "The canonical schema lives in `rules/output-schema.md`." But output-schema.md:209-237 defines the schema WITHOUT `phases_completed`, `consolidation`, `schema_auto_injected`, and `aliases` — all present in methodology.md's prose. Two files both claim canonicity; one is wrong. This is a data-integrity bug.
+skills/multi-ai-task/critical-review-r3.md:88:- **`run-manifest.json` schema is stale.** This file (lines 209-237) is missing `phases_completed`, `consolidation`, `schema_auto_injected`, and `aliases` — all defined in methodology.md. The file that explicitly says "This is the canonical schema" (line 209) is out of date. This is the single most impactful bug in the skill.
+skills/multi-ai-task/critical-review-r3.md:156:| **Evidence model** | **2** | Tiered sufficiency with staleness: (1) `source_refs` in structured extraction; (2) `prefer-with-evidence-then-newer-then-strict` treats evidence-backed claims as higher authority; (3) `thorough` mode adds per-source verification with `evidence-ledger.md`; (4) `last_verified` tracks staleness. More sophisticated than many production systems. |
+skills/multi-ai-task/critical-review-r3.md:169:- **Issue:** `run-manifest.json` schema defined in two places with different fields; `output-schema.md` version is stale (missing v2.1.0 fields)
+skills/multi-ai-task/rules/consolidation-rules.md:159:2. **Newer `last_verified` wins.** Check the source date for the candidate's evidence. Recency > staleness.
+skills/multi-ai-task/rules/examples/research-prior-art.md:112:    {"name": "evidence",    "levels": ["none", "informal", "tiered sufficiency + staleness"]},
+---timeout---
+skills/multi-ai-task/rules/dispatch-mechanics.md:41:TIMEOUT=600
+skills/multi-ai-task/rules/dispatch-mechanics.md:43:# macOS doesn't ship `timeout` by default; use `gtimeout` from coreutils
+skills/multi-ai-task/rules/dispatch-mechanics.md:44:# (install via `brew install coreutils`). Linux ships `timeout` in util-linux.
+skills/multi-ai-task/rules/dispatch-mechanics.md:45:TIMEOUT_CMD="timeout"
+skills/multi-ai-task/rules/dispatch-mechanics.md:46:if [ "$(uname)" = "Darwin" ] && command -v gtimeout >/dev/null 2>&1; then
+skills/multi-ai-task/rules/dispatch-mechanics.md:47:  TIMEOUT_CMD="gtimeout"
+skills/multi-ai-task/rules/dispatch-mechanics.md:69:- **Timeout:** `timeout "$TIMEOUT"` enforces per-model timeout. On Linux, `timeout` is a coreutil; on macOS, use `gtimeout` from `brew install coreutils`. Adjust `TIMEOUT` to your task (600s = 10 min for research, 300s = 5 min for quick review). If a model hangs past `TIMEOUT`, the process is killed and stderr shows the timeout. This prevents the 2-min default bash tool timeout from silently killing long-running models.
+skills/multi-ai-task/rules/dispatch-mechanics.md:111:**Recommended default:** choose parallel if `max(per_model_time) ≤ your latency budget`; otherwise sequential. The proven 6-model run took ~2-3 min/model, so parallel (with 10-min shell timeout) was the right call. For 30+ min per model, sequential is the only sane option.
+skills/multi-ai-task/rules/dispatch-mechanics.md:129:The skill is **fail-soft**: a model failure is logged, the model is excluded from the consolidation, and the run continues with the models that did respond. The skill does **not retry** (retry policy lives in the calling agent's runner, not in the skill core — this avoids retry loops in shell wrappers with 2-min default timeouts).
+skills/multi-ai-task/rules/dispatch-mechanics.md:134:| Subprocess dies after 2 min with no report | Shell tool's 2-min default timeout | Set explicit `timeout` on bash tool, or run sequential |
+[0m

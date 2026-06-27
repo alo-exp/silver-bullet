@@ -71,7 +71,7 @@ echo "Outputs in $OUT/"
 ```
 
 Key customization for fact-check:
-- `verdict: "majority-with-uncertain"` — if 2 say true and 1 says false, default to `unverified` rather than `true`; require ≥ `max(2, ceil(N/2))` models to agree for a clean verdict (so for N=3 you need 2 votes, not 3)
+- `verdict: "majority-with-uncertain"` — strict-majority rule: any dissent blocks consensus and returns `unverified`. For N=3, all 3 must agree; for N=5, at least 4 must agree; for N=7, at least 5 must agree. The algorithm is `> max(2, ceil(N/2))` — any disagreement means unverified.
 - `confidence: "lowest-of-majors"` — when in doubt, downconfidence (use the lowest confidence among the majority verdict)
 - `unverified` is a valid output (don't force a true/false judgment when evidence is insufficient)
 - `sources: "url_list"` is now formally defined in the schema spec (was a v2.1.0 gap)
@@ -101,12 +101,12 @@ After consolidation, `consolidated.md` contains:
 ## Consensus requirements
 
 For high-stakes fact-checking, set thresholds:
-- **≥ `max(2, ceil(N/2))` models agree on `true` with high confidence + primary source** → confirmed
-- **≥ `max(2, ceil(N/2))` models agree on `false` with high confidence + primary counter-source** → debunked
+- **All N models agree on `true` with high confidence + primary source** → confirmed
+- **All N models agree on `false` with high confidence + primary counter-source** → debunked
 - **mixed verdicts or low confidence** → flagged for human review
 - **no model could verify** → `unverified` (do not guess)
 
-For N=3, threshold = 2. For N=5, threshold = 3. For N=7, threshold = 4. The "3+ models" rule in the original draft was a typo; the correct threshold is parameterized.
+The `majority-with-uncertain` rule is strict-majority: any single dissent blocks consensus. For N=3 this means all 3 must agree; for N=5, at least 4; for N=7, at least 5. The algorithm is `> max(2, ceil(N/2))` — use the `majority` rule (any agreement is consensus) if you want a looser threshold.
 
 ## Worked example
 

@@ -1,0 +1,6 @@
+2026-06-27T04:15:07Z tui-watch started pid=5378 max_runtime=21600s poll=60-120s
+2026-06-27T04:15:07Z monitor dead — restarting (no duplicate matrix)
+2026-06-27T04:15:07Z monitor restarted pid=5407
+2026-06-27T04:15:07Z matrix complete — exiting
+2026-06-27T04:15:07Z tui-watch finished issues=0
+/Users/shafqat/projects/silver-bullet/repo/scripts/monitor-enterprise-e2e-matrix.sh: line 171: out[@]: unbound variable
