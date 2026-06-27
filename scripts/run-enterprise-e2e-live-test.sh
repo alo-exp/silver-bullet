@@ -5,6 +5,7 @@
 #   SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh [row_numbers...]
 #   bash scripts/run-enterprise-e2e-live-test.sh --preflight-only
 #   bash scripts/run-enterprise-e2e-live-test.sh --resume
+#   bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight  # debug only
 #
 # Operator model: dual-role in two persistent shells —
 #   Shell A (drive): this script or run-enterprise-e2e-matrix.sh
@@ -31,11 +32,12 @@ BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid
 
 PREFLIGHT_ONLY=0
 RESUME=0
+SKIP_CODE_INTEL_PREFLIGHT=0
 REQUESTED_ROWS=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--preflight-only] [--resume] [row_numbers...]
+Usage: $(basename "$0") [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
 
 Enterprise E2E live test — interactive Claude TUI against enterprise-grade-test-app.
 
@@ -47,6 +49,7 @@ Constraints (from Round 1/2 learnings):
   - Network blips → 120-300s backoff (monitor handles)
   - Resume skips rows with PASS/SKIP in matrix log (not from row 1)
   - Re-run bash scripts/install-claude.sh after every SB hook fix
+  - Code-intel preflight: Graphify, agentmemory, RTK, Context Mode when opted in
   - Round gates: 22/22 matrix, review-fix-ladder, run-all-tests, graphify, 2 clean rounds
 
 Environment:
@@ -71,6 +74,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --resume)
       RESUME=1
+      shift
+      ;;
+    --skip-code-intel-preflight)
+      SKIP_CODE_INTEL_PREFLIGHT=1
       shift
       ;;
     *)
@@ -106,11 +113,11 @@ fi
 # --- Preflight ---
 echo "--- Preflight ---"
 cd "$SB_ROOT"
-if command -v graphify >/dev/null 2>&1; then
-  graphify update . >/dev/null 2>&1 || echo "WARN: graphify update refused overwrite (existing graph OK)"
+if [[ "$SKIP_CODE_INTEL_PREFLIGHT" == "1" ]]; then
+  echo "WARN: skipping code-intel preflight (--skip-code-intel-preflight; debug only)"
+else
+  enterprise_e2e_code_intel_preflight "$SB_ROOT" "$FIXTURE_DIR" 0
 fi
-curl -sf http://localhost:3111/agentmemory/health >/dev/null 2>&1 \
-  || nohup agentmemory >"${HOME}/.agentmemory/server.log" 2>&1 &
 bash tests/e2e-live/hook-delivery-preflight.sh
 export SILVER_BULLET_RUNTIME=cursor
 (cd "$FIXTURE_DIR" && git status --short && npm test)

@@ -15,7 +15,7 @@ source "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 
 assert_contains() {
   local desc="$1" file="$2" needle="$3"
-  if grep -qF "$needle" "$file" 2>/dev/null; then
+  if grep -qF -- "$needle" "$file" 2>/dev/null; then
     pass "$desc"
   else
     fail "$desc — missing [$needle] in $file"
@@ -24,7 +24,7 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" file="$2" needle="$3"
-  if grep -qF "$needle" "$file" 2>/dev/null; then
+  if grep -qF -- "$needle" "$file" 2>/dev/null; then
     fail "$desc — unexpected [$needle] in $file"
   else
     pass "$desc"
@@ -112,6 +112,35 @@ assert_contains "watch continuation offset scan" "$WATCH" "grew since last pass"
 
 # --- RTK in SB scripts ---
 assert_contains "rtk-compat exports RTK_DISABLED" "${REPO_ROOT}/hooks/lib/rtk-compat.sh" "RTK_DISABLED=1"
+
+# --- Code-intel preflight helpers ---
+COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+for fn in \
+  enterprise_e2e_source_code_intel_libs \
+  enterprise_e2e_code_intel_preflight \
+  enterprise_e2e_preflight_graphify \
+  enterprise_e2e_preflight_agentmemory \
+  enterprise_e2e_preflight_rtk \
+  enterprise_e2e_preflight_context_mode; do
+  if grep -qE "^${fn}\(\)" "$COMMON_LIB" 2>/dev/null; then
+    pass "common lib defines ${fn}"
+  else
+    fail "common lib missing ${fn}"
+  fi
+done
+
+assert_contains "live entrypoint supports skip-code-intel-preflight" "$LIVE" "--skip-code-intel-preflight"
+assert_contains "live entrypoint calls code_intel_preflight" "$LIVE" "enterprise_e2e_code_intel_preflight"
+assert_contains "runbook documents skip-code-intel-preflight" "$RUNBOOK" "--skip-code-intel-preflight"
+assert_contains "runbook documents RTK coexistence" "$RUNBOOK" "RTK coexistence"
+assert_contains "runbook documents RTK_DISABLED defense" "$RUNBOOK" "RTK_DISABLED=1"
+
+# Dry-run path (no tool enforcement when configs pending or debug dry_run)
+if enterprise_e2e_code_intel_preflight "$REPO_ROOT" "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}" 1 >/dev/null 2>&1; then
+  pass "code-intel preflight dry-run exits 0"
+else
+  fail "code-intel preflight dry-run should exit 0"
+fi
 
 # --- Resume helper ---
 TMP_LOG="$(mktemp)"
