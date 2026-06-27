@@ -1,0 +1,117 @@
+# Round 3 Ledger — Enterprise E2E Matrix
+
+Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round start.
+
+---
+
+## Round metadata
+
+| Field | Value |
+|-------|-------|
+| Round | 3 |
+| SB repo SHA | `2ae7ca6e` (ladder fix; preflight `1aa7fb4c`) |
+| Test app SHA | `04eb4c29664c54ee7ee7c598068431a52fb7902b` |
+| Claude plugin install | `1aa7fb4c` (hook probe fix) |
+| Claude model (frozen) | `<!-- e.g. claude-opus-4-20250514 -->` |
+| Operator | `<!-- name -->` |
+| Start date | 2026-06-28 |
+| End date | — |
+| Round clean? | — |
+
+---
+
+## Session 0 — Bootstrap
+
+| Step | Pass/Fail | Notes |
+|------|-----------|-------|
+| `/silver:init` independent bootstrap | | |
+| Graphify + agentmemory opted in | | |
+| `graphify update .` on test app | | |
+| No SB init artifacts committed | | |
+| Enterprise preflight (`--preflight-only`) | **Pass** | 2026-06-28 @ SB `1aa7fb4c` — code-intel OK; hook-delivery 3/3 (dev-cycle deny recorded, source unchanged); fixture `npm test` OK |
+
+
+---
+
+## Workflow matrix (22 rows)
+
+| # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+|---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
+| 1 | `silver-router` | | | | | | | |
+| 2 | `silver-research` | | | | | | | |
+| 3 | `silver-feature` | | | | | | | |
+| 4 | `silver-bugfix` | | | | | | | |
+| 5 | `silver-ui` | | | | | | | |
+| 6 | `silver-fast` | | | | | | | |
+| 7 | `silver-test` | | | | | | | |
+| 8 | `silver-refactor` | | | | | | | |
+| 9 | `silver-benchmark` | | | | | | | |
+| 10 | `silver-content` | | | | | | | |
+| 11 | `silver-devops` | | | | | | | |
+| 12 | `silver-deploy` | | | | | | | |
+| 13 | `silver-canary` | | | | | | | |
+| 14 | `silver-release` | | | | | | | |
+| 15 | `review-triad` | | | | | | | |
+| 16 | `ship-readiness` | | | | | | | |
+| 17 | `silver-incident` | | | | | | | |
+| 18 | `silver-retro` | | | | | | | |
+| 19 | `silver-forensics` | | | | | | | |
+| 20 | `process-maintenance` | | | | | | | |
+| 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | |
+| 22 | `validate-substep` | | | | *(parent: row 4)* | | | |
+
+**Pass count:** ___ / 22
+
+---
+
+## Defects filed
+
+| Issue | Label | WF slug | SB fix commit | Status |
+|-------|-------|---------|---------------|--------|
+| | `enterprise-test-app` | | | |
+
+---
+
+## review-fix-ladder (8 rungs × 2 clean verify)
+
+**Scope:** repo-wide (enterprise E2E: routes, hooks, skills, orchestrator, live wiring)
+
+**Graphify query ref:** `graphify query "enterprise E2E scope routes hooks skills orchestrator review-fix-ladder"` — BFS depth=2, 20 nodes (CHARTER.md smoke fixture, 094-REVIEW.md, PRE-RELEASE-PROCESS-PROPOSAL.md)
+
+**agentmemory:** `mem_mqwok1rb_e698da3c8a56` (rung 1 audit_fix + verify_1)
+
+| Rung | Model / reasoning | Cursor slug | audit_fix | verify_1 | orchestrator grep | verify_2 | Advanced |
+|------|-------------------|-------------|-----------|----------|-------------------|----------|----------|
+| 1 | composer-2.5 / low | composer-2.5 | **Pass** | **Pass** | **Pass** | — | No |
+| 2 | composer-2.5 / medium | composer-2.5-fast | | | | | |
+| 3 | composer-2.5 / high | composer-2.5-fast | | | | | |
+| 4 | composer-2.5 / xhigh | composer-2.5-fast | | | | | |
+| 5 | gpt-5.5 / low | gpt-5.5 | | | | | |
+| 6 | gpt-5.5 / medium | gpt-5.5-extra-high | | | | | |
+| 7 | gpt-5.5 / high | gpt-5.5-extra-high | | | | | |
+| 8 | gpt-5.5 / xhigh | gpt-5.5-extra-high | | | | | |
+
+### Rung 1 detail (2026-06-28)
+
+| Phase | Status | Evidence |
+|-------|--------|----------|
+| `rung_1_audit_fix` | **Pass** | Added `probe_dev_cycle_bash_command` deterministic fallback in `tests/e2e-live/helpers.sh` when Claude print probe misses hook-audit within 8s (mirrors completion-audit pattern). Commit `2ae7ca6e`. |
+| `rung_1_verify_1` | **Pass** | VERIFY_PASS — readonly re-audit: no new gaps; hook-delivery 3/3, structural suite 69/0, orchestrator tests 20/0. |
+| Orchestrator grep (post verify_1) | **Pass** | `auth login/logout` in entrypoints: 0 hits; runbook `review-fix-ladder`: 1; matrix `/silver:`: 19; ladder resolve: 8 rungs. |
+| `rung_1_verify_2` | **Pending** | Requires separate readonly subagent pass. |
+
+**Charter goals:** enterprise E2E structural wiring; hook-delivery preflight reliability; 8-rung ladder resolve; orchestrator parent/directive hooks; live entrypoint auth constraints.
+
+**SB fix commits:** `2ae7ca6e` (hook-delivery deterministic probe)
+
+---
+
+## Round summary
+
+**Hook-delivery fix (`1aa7fb4c`):** Lighter haiku hook probe (no settings.json proxy / verbose streaming); `hook-audit-enabled` state flag enables dev-cycle deny recording without 429.
+
+**Ladder fix (`2ae7ca6e`):** Deterministic `dev-cycle-check` bash probe fallback for hook-delivery preflight flakiness.
+
+<!-- agentmemory: mem_mqwok1rb_e698da3c8a56 -->
+
+**Next action:** Complete rung 1 — launch `rung_1_verify_2` (readonly `Task`, model `composer-2.5`), orchestrator grep, then advance to rung 2. Do **not** start matrix TUI rows until ladder complete. After ladder: `bash tests/run-all-tests.sh`, `bash scripts/install-claude.sh`, Session 0 + matrix rows 1–22.
