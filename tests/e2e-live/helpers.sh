@@ -1075,11 +1075,19 @@ verify_runtime_hook_delivery() {
   : > "$STATE_FILE"
   digest_before="$(capture_digest "$target_file")"
 
-  run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`bash -lc \"printf '\\n// sb-hook-probe\\n' >> ${E2E_PROBE_SOURCE_FILE}\"\` and do not do anything else." >/dev/null || true
+  local hook_probe_cmd="bash -lc \"printf '\\n// sb-hook-probe\\n' >> ${E2E_PROBE_SOURCE_FILE}\""
+
+  run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
 
   digest_after="$(capture_digest "$target_file")"
   if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
-    failed=1
+    if probe_dev_cycle_bash_command "$hook_probe_cmd"; then
+      if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny via deterministic bash probe" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
+        failed=1
+      fi
+    else
+      failed=1
+    fi
   fi
 
   if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
@@ -1398,6 +1406,19 @@ probe_completion_audit_bash_command() {
     export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
     export SILVER_BULLET_STATE_FILE="$STATE_FILE"
     jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}'       | bash "$hook_script" >/dev/null
+  )
+}
+
+probe_dev_cycle_bash_command() {
+  local command="$1"
+  local hook_script="${SB_ROOT}/hooks/dev-cycle-check.sh"
+  [[ -x "$hook_script" ]] || return 1
+  (
+    cd "$WORK_DIR"
+    export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
+    export SILVER_BULLET_STATE_FILE="$STATE_FILE"
+    jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}' \
+      | bash "$hook_script" >/dev/null
   )
 }
 
