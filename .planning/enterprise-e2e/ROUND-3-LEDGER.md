@@ -9,7 +9,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Field | Value |
 |-------|-------|
 | Round | 3 |
-| SB repo SHA | `2ae7ca6e` (ladder fix; preflight `1aa7fb4c`) |
+| SB repo SHA | `bb555b63` (ledger; ladder fix `2ae7ca6e`; preflight `1aa7fb4c`) |
 | Test app SHA | `04eb4c29664c54ee7ee7c598068431a52fb7902b` |
 | Claude plugin install | `1aa7fb4c` (hook probe fix) |
 | Claude model (frozen) | `<!-- e.g. claude-opus-4-20250514 -->` |
@@ -82,8 +82,8 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 | Rung | Model / reasoning | Cursor slug | audit_fix | verify_1 | orchestrator grep | verify_2 | Advanced |
 |------|-------------------|-------------|-----------|----------|-------------------|----------|----------|
-| 1 | composer-2.5 / low | composer-2.5 | **Pass** | **Pass** | **Pass** | — | No |
-| 2 | composer-2.5 / medium | composer-2.5-fast | | | | | |
+| 1 | composer-2.5 / low | composer-2.5 | **Pass** | **Pass** | **Pass** | **Pass** | Yes |
+| 2 | composer-2.5 / medium | composer-2.5-fast | **Pass** | **Pass** | **Pass** | — | No |
 | 3 | composer-2.5 / high | composer-2.5-fast | | | | | |
 | 4 | composer-2.5 / xhigh | composer-2.5-fast | | | | | |
 | 5 | gpt-5.5 / low | gpt-5.5 | | | | | |
@@ -98,11 +98,24 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | `rung_1_audit_fix` | **Pass** | Added `probe_dev_cycle_bash_command` deterministic fallback in `tests/e2e-live/helpers.sh` when Claude print probe misses hook-audit within 8s (mirrors completion-audit pattern). Commit `2ae7ca6e`. |
 | `rung_1_verify_1` | **Pass** | VERIFY_PASS — readonly re-audit: no new gaps; hook-delivery 3/3, structural suite 69/0, orchestrator tests 20/0. |
 | Orchestrator grep (post verify_1) | **Pass** | `auth login/logout` in entrypoints: 0 hits; runbook `review-fix-ladder`: 1; matrix `/silver:`: 19; ladder resolve: 8 rungs. |
-| `rung_1_verify_2` | **Pending** | Requires separate readonly subagent pass. |
+| `rung_1_verify_2` | **Pass** | VERIFY_PASS — readonly re-audit: no new gaps; orchestrator grep clean. |
 
 **Charter goals:** enterprise E2E structural wiring; hook-delivery preflight reliability; 8-rung ladder resolve; orchestrator parent/directive hooks; live entrypoint auth constraints.
 
 **SB fix commits:** `2ae7ca6e` (hook-delivery deterministic probe)
+
+### Rung 2 detail (2026-06-28)
+
+| Phase | Status | Evidence |
+|-------|--------|----------|
+| `rung_2_audit_fix` | **Pass** | Repo-wide audit @ composer-2.5 / medium: no MUST-FIX gaps. Plugin mirrors OK; ladder rung 2 slug `composer-2.5-fast`; auth login/logout absent from live entrypoints; `probe_dev_cycle_bash_command` fallback present. No SB code commits. |
+| `rung_2_verify_1` | **Pass** | hook-delivery 3/3; structural suite 69/0; orchestrator hook tests 20/0 (directive 8 + parent-guard 12); related script tests (ladder, multi-ai-task, instruction-flow, composition, matrix) all green. |
+| Orchestrator grep (post verify_1) | **Pass** | `auth login/logout` in entrypoints: 0 hits; runbook `review-fix-ladder`: 1; matrix `/silver:`: 19; ladder resolve: 8 rungs. |
+| `rung_2_verify_2` | **Pending** | Requires separate readonly subagent pass (`composer-2.5-fast`). |
+
+**Charter goals (unchanged):** enterprise E2E structural wiring; hook-delivery preflight reliability; 8-rung ladder resolve; orchestrator parent/directive hooks; live entrypoint auth constraints.
+
+**SB fix commits:** none (audit clean)
 
 ---
 
@@ -114,4 +127,4 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 <!-- agentmemory: mem_mqwok1rb_e698da3c8a56 -->
 
-**Next action:** Complete rung 1 — launch `rung_1_verify_2` (readonly `Task`, model `composer-2.5`), orchestrator grep, then advance to rung 2. Do **not** start matrix TUI rows until ladder complete. After ladder: `bash tests/run-all-tests.sh`, `bash scripts/install-claude.sh`, Session 0 + matrix rows 1–22.
+**Next action:** Launch `rung_2_verify_2` (readonly `Task`, model `composer-2.5-fast`), orchestrator grep, then advance to rung 3. Do **not** start matrix TUI rows until ladder complete. After ladder: `bash tests/run-all-tests.sh`, `bash scripts/install-claude.sh`, Session 0 + matrix rows 1–22.
