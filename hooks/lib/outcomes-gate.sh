@@ -45,6 +45,25 @@ sb_outcomes_seed_for_prompt() {
 
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   if command -v jq >/dev/null 2>&1; then
+    if declare -f sb_prompt_is_informational_query >/dev/null 2>&1 \
+      && sb_prompt_is_informational_query "$prompt"; then
+      jq -n \
+        --arg pid "$pid" \
+        --arg at "$now" \
+        --arg preview "$(printf '%.120s' "$prompt")" \
+        '{
+          prompt_id: $pid,
+          started_at: $at,
+          prompt_preview: $preview,
+          informational: true,
+          outcomes: [
+            {id:"route", label:"Route via /silver or approved workflow composer", status:"done", evidence:"informational query — no routing required", decision_class:"autonomous_default"},
+            {id:"scope", label:"Define concrete deliverables for this prompt", status:"done", evidence:"informational query", decision_class:"autonomous_default"},
+            {id:"verify", label:"Run verification before claiming completion", status:"done", evidence:"informational query", decision_class:"autonomous_default"}
+          ]
+        }' >"$outfile" 2>/dev/null || true
+      return 0
+    fi
     jq -n \
       --arg pid "$pid" \
       --arg at "$now" \
@@ -91,11 +110,19 @@ sb_outcomes_auto_evaluate() {
 
   # scope: active workflow with composer metadata OR PLAN.md with substantive body
   local scope_done=false
-  if [[ -d ".planning/workflows" ]]; then
+  if printf '%s\n' "$state_contents" | grep -Fqx 'silver-execute' 2>/dev/null; then
+    scope_done=true
+  fi
+  if [[ "$scope_done" != true && -d ".planning/workflows" ]]; then
     shopt -s nullglob
     for _wf in .planning/workflows/*.md; do
       [[ -f "$_wf" && ! -L "$_wf" ]] || continue
       if grep -qE '^composer:' "$_wf" 2>/dev/null; then
+        scope_done=true
+        break
+      fi
+      _wf_body="$(grep -vE '^#|^$|^\s*$' "$_wf" 2>/dev/null | head -5 | tr -d '[:space:]' || true)"
+      if [[ -n "$_wf_body" ]]; then
         scope_done=true
         break
       fi
@@ -118,7 +145,7 @@ sb_outcomes_auto_evaluate() {
   if [[ "$scope_done" == true ]]; then
     sb_outcomes_jq_update "$outfile" \
       '(.outcomes[] | select(.id=="scope") | .status) = "done"
-        | (.outcomes[] | select(.id=="scope") | .evidence) = "composed workflow or substantive PLAN.md"'
+        | (.outcomes[] | select(.id=="scope") | .evidence) = "composed workflow, PLAN.md, or silver-execute recorded"'
   fi
 }
 

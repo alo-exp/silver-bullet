@@ -126,6 +126,13 @@ out="$(run_read "$BIG")"
 assert_deny "opted in denies large read" "$out"
 
 setup
+write_cfg true
+export CONTEXT_MODE_READ_DENY_BYPASS=1
+out="$(run_read "$BIG")"
+unset CONTEXT_MODE_READ_DENY_BYPASS
+assert_allow "CONTEXT_MODE_READ_DENY_BYPASS allows large read" "$out"
+
+setup
 write_cfg true false 0
 out="$(run_read "$BIG")"
 assert_allow "read_deny_bytes 0 disables deny" "$out"

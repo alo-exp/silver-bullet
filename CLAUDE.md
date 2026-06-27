@@ -114,7 +114,7 @@ The three pillars:
 
 `completion-audit.sh` and `stop-check.sh` enforce two separate gates:
 
-1. **Intermediate commits** (`git commit`, `git push`) — requires only `required_planning` skills (default: `silver-quality-gates`). Allows execution subagents to make atomic commits mid-execution.
+1. **Intermediate commits** (`git commit`, `git push`, and git plumbing that creates commits: `write-tree`, `commit-tree`, `hash-object -w`, `update-ref refs/heads/*`) — requires only `required_planning` skills (default: `silver-quality-gates`). Allows execution subagents to make atomic commits mid-execution.
 2. **Final delivery** (`gh pr create`, `gh release create`, `deploy`) — requires the full `required_deploy` list from `.silver-bullet.json`.
 
 The required-skill list has a **single source of truth**: `templates/silver-bullet.config.json.default`. Hooks source `hooks/lib/required-skills.sh`, which reads from that file via `jq` at runtime — there are no hardcoded skill literals in hook scripts.
@@ -122,8 +122,16 @@ The required-skill list has a **single source of truth**: `templates/silver-bull
 ### State Machine
 
 Skill invocations are recorded to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` by `record-skill.sh` after each `PostToolUse/Skill` event. The state is:
-- **Branch-scoped**: wiped when `git branch` changes between sessions (tracked via `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`)
+- **Branch-scoped**: wiped when `git branch` or git worktree toplevel changes between sessions (tracked via `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/branch`)
 - **Trivial bypass**: if `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` file exists (real file, not symlink), all enforcement gates exit 0 — used for typo/config-only sessions; auto-created at SessionStart, removed on first Write/Edit
+
+### SB OVERRIDE (audited escape hatch)
+
+When a blocking orchestrator directive or PreToolUse gate cannot be satisfied, include in your next user message:
+
+`SB OVERRIDE: <reason>`
+
+The hook logs the override to `.planning/orchestrator-override-log.jsonl` and clears the pending directive. Documented in `silver-bullet.md` §2h and `docs/ORCHESTRATOR.md`.
 
 **Test env-var overrides** (mirrors the `SILVER_BULLET_STATE_FILE` pattern):
 - `SILVER_BULLET_STATE_FILE` — overrides the default state file path (`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state`); must remain under `${SB_RUNTIME_HOME_ROOT}/`

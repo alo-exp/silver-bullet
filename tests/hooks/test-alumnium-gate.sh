@@ -60,10 +60,28 @@ fi
 rm -f "$MOCK_MCP"
 export SB_ALUMNIUM_MCP_ARTIFACT="${TMPDIR_TEST}/missing-mcp.json"
 out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$input" | bash "$GATE" 2>/dev/null)"
-if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
-  pass "gate denies edit when MCP missing"
+if [[ -z "$out" ]] || ! printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  pass "gate allows non-browser Edit when MCP missing"
 else
-  fail "gate denies edit when MCP missing — got: $out"
+  fail "gate allows non-browser Edit when MCP missing — got: $out"
+fi
+
+plan_input=$(jq -n --arg f "${TMPDIR_TEST}/docs/plan.md" \
+  '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f, contents:"# plan"}}')
+plan_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$plan_input" | bash "$GATE" 2>/dev/null)"
+if [[ -z "$plan_out" ]] || ! printf '%s' "$plan_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  pass "gate allows non-browser Write when MCP missing"
+else
+  fail "gate allows non-browser Write when MCP missing — got: $plan_out"
+fi
+
+browser_input=$(jq -n --arg f "${TMPDIR_TEST}/e2e/login.spec.ts" \
+  '{hook_event_name:"PreToolUse", tool_name:"Write", tool_input:{file_path:$f, contents:"test"}}')
+browser_out="$(cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" SILVER_BULLET_RUNTIME=cursor && printf '%s' "$browser_input" | bash "$GATE" 2>/dev/null)"
+if printf '%s' "$browser_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  pass "gate denies e2e browser Write when MCP missing"
+else
+  fail "gate denies e2e browser Write when MCP missing — got: $browser_out"
 fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

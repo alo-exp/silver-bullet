@@ -282,6 +282,12 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgit commit\b'; then
   is_intermediate=true
 elif printf '%s' "$cmd_first_line" | grep -qE '\bgit push\b'; then
   is_intermediate=true
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgit (write-tree|commit-tree)\b'; then
+  is_intermediate=true
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgit hash-object\b.*\s-w\b'; then
+  is_intermediate=true
+elif printf '%s' "$cmd_first_line" | grep -qE '\bgit update-ref\b.*\brefs/heads/'; then
+  is_intermediate=true
 elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr create\b'; then
   is_completion=true
 elif printf '%s' "$cmd_first_line" | grep -qE '\bgh pr merge\b'; then

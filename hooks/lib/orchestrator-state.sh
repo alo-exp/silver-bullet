@@ -290,6 +290,42 @@ sb_orchestrator_on_composer_start() {
   printf '%s' "$wf_id"
 }
 
+sb_orchestrator_clear_queue() {
+  local file
+  file="$(sb_orchestrator_state_file 2>/dev/null || printf '%s/orchestrator.json' "${SB_RUNTIME_STATE_DIR:-/tmp}")"
+  rm -f -- "$file" 2>/dev/null || true
+  if declare -f sb_orchestrator_directive_clear >/dev/null 2>&1; then
+    sb_orchestrator_directive_clear
+  else
+    rm -f -- "${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json" 2>/dev/null || true
+  fi
+  if declare -f sb_orchestrator_clear_worker_marker >/dev/null 2>&1; then
+    sb_orchestrator_clear_worker_marker
+  fi
+}
+
+# Clear stale flow queue when the user interrupts with a new goal or informational query.
+sb_orchestrator_clear_queue_on_interrupt() {
+  local prompt="${1:-}"
+  [[ -n "$prompt" ]] || return 1
+  sb_orchestrator_parent_queue_pending || return 1
+  if declare -f sb_prompt_is_orchestrator_followup >/dev/null 2>&1 \
+    && sb_prompt_is_orchestrator_followup "$prompt"; then
+    return 1
+  fi
+  if declare -f sb_prompt_is_informational_query >/dev/null 2>&1 \
+    && sb_prompt_is_informational_query "$prompt"; then
+    sb_orchestrator_clear_queue
+    return 0
+  fi
+  if declare -f sb_prompt_is_bare_work_request >/dev/null 2>&1 \
+    && sb_prompt_is_bare_work_request "$prompt"; then
+    sb_orchestrator_clear_queue
+    return 0
+  fi
+  return 1
+}
+
 sb_orchestrator_advance_on_atom() {
   local atom_skill="$1"
   local repo_root="${2:-}"
