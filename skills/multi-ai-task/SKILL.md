@@ -145,8 +145,10 @@ Pass a JSON object describing the expected per-row schema:
 | `required: true` | Row is dropped with warning if this field is missing |
 | `min` / `max` | For numeric: enforce range |
 | `max_words` | For text: enforce word count cap |
-| `values` | For enum: list of allowed values |
+| `values` | For enum: list of allowed values (most-severe first for `most-severe` rule) |
 | `separator` | For url_list: separator (default `,`) |
+| `severity_order` | Optional override for the `most-severe` rule: list of enum values in most-severe-first order. Defaults to `["blocker", "major", "minor", "nit"]` if omitted. |
+| `allow_downgrade` | Boolean. When `true`, the `most-severe` rule downgrades a lone max-severity value (1 of N reviewers says `blocker` with no evidence quote) to the next tier. Default: `false` (most-severe value wins even if only 1 reviewer reported it). |
 
 **Composite primary keys:** list multiple columns with `dedup_key: true`. Example: `file` + `line` for code review.
 
@@ -268,8 +270,7 @@ The skill was first run end-to-end on 2026-06-27 for prior-art research. Inputs 
 - **6 OCG models** dispatched in parallel via `opencode run --model`
 - **Same prompt verbatim** to all 6
 - **Results**: 150+ raw mentions → 36 unique products → 1 consolidated report at `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md`
-- **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); 2 agents produced qualitative comparisons only; 1 produced only the rubric
-- **All category conflicts** resolved and documented in §4 of the report
+- **All 4 scoring matrices** (from 4 of 6 agents) extracted and aggregated (median + range per dimension); the remaining 2 agents produced qualitative comparisons only (no scoring matrix). All category conflicts resolved and documented in §4 of the report.
 
 **Folder-name note:** the run output lives at `docs/research-260624/` — the folder name encodes `2026-06-24` (a pre-existing convention from the docs directory), but the actual run was on **2026-06-27**. The folder name is the path; the run date is in the `timestamp` field of `run-manifest.json` and in the `Proven provenance` section above. Do not rename the folder — it's referenced by 30+ other paths.
 
