@@ -364,38 +364,43 @@ body.has-help-subnav .doc-content .table-wrap{
   overflow-x:auto;
   max-width:100%;
   -webkit-overflow-scrolling:touch;
+  margin-bottom:24px;
+}
+body.has-help-subnav .doc-content .table-wrap > .ref-table,
+body.has-help-subnav .doc-content .table-wrap > .comparison-table,
+body.has-help-subnav .doc-content .table-wrap > .pref-table,
+body.has-help-subnav .doc-content .table-wrap > .feat-table,
+body.has-help-subnav .doc-content .table-wrap > .cat-table{
+  width:100%;
+  min-width:max-content;
+  margin-bottom:0;
+  table-layout:auto;
 }
 body.has-help-subnav .doc-content .ref-table,
 body.has-help-subnav .doc-content .comparison-table,
 body.has-help-subnav .doc-content .pref-table,
 body.has-help-subnav .doc-content .feat-table,
 body.has-help-subnav .doc-content .cat-table{
-  display:block;
-  overflow-x:auto;
+  width:100%;
   max-width:100%;
-  -webkit-overflow-scrolling:touch;
+  table-layout:auto;
 }
-body.has-help-subnav .doc-content .ref-table thead,
-body.has-help-subnav .doc-content .ref-table tbody,
-body.has-help-subnav .doc-content .comparison-table thead,
-body.has-help-subnav .doc-content .comparison-table tbody,
-body.has-help-subnav .doc-content .pref-table thead,
-body.has-help-subnav .doc-content .pref-table tbody,
-body.has-help-subnav .doc-content .feat-table thead,
-body.has-help-subnav .doc-content .feat-table tbody,
-body.has-help-subnav .doc-content .cat-table thead,
-body.has-help-subnav .doc-content .cat-table tbody{
-  display:table;
-  width:max-content;
-  min-width:100%;
+body.has-help-subnav .doc-content .ref-table th,
+body.has-help-subnav .doc-content .ref-table td,
+body.has-help-subnav .doc-content .comparison-table th,
+body.has-help-subnav .doc-content .comparison-table td,
+body.has-help-subnav .doc-content .pref-table th,
+body.has-help-subnav .doc-content .pref-table td,
+body.has-help-subnav .doc-content .feat-table th,
+body.has-help-subnav .doc-content .feat-table td,
+body.has-help-subnav .doc-content .cat-table th,
+body.has-help-subnav .doc-content .cat-table td{
+  text-align:left;
+  overflow-wrap:break-word;
 }
 body.has-help-subnav .doc-content .ref-table td:first-child{
   white-space:normal;
   overflow-wrap:anywhere;
-}
-body.has-help-subnav .doc-content .ref-table th,
-body.has-help-subnav .doc-content .ref-table td{
-  overflow-wrap:break-word;
 }
 body.has-help-subnav .doc-content pre,
 body.has-help-subnav .doc-content .code-block{

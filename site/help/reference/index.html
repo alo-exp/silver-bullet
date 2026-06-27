@@ -171,14 +171,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="runtime-install">Three-Host Runtime Install (v0.48.5)</h2>
       <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. Run <code>bash scripts/sb-bootstrap.sh</code> for first-time orientation or <code>bash scripts/sb-diagnostics.sh</code> to read capability tier 0&ndash;3 for the active host.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Host</th><th>Public marketplace</th><th>Checkout installer</th><th>State root</th></tr></thead>
         <tbody>
           <tr><td>Claude Code</td><td><code>alo-labs/claude-plugins</code></td><td><code>scripts/install-claude.sh</code></td><td><code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/</code></td></tr>
           <tr><td>Codex</td><td><code>alo-labs/codex-plugins</code></td><td><code>scripts/install-codex.sh --purge-legacy-skills</code></td><td><code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/</code></td></tr>
           <tr><td>Cursor</td><td><code>alo-labs/alo-labs-cursor-marketplace</code></td><td><code>scripts/install-cursor.sh --public-release</code></td><td><code>~/.cursor/.silver-bullet/</code></td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
@@ -191,7 +191,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="capability-matrix">Capability Matrix</h2>
       <p>Workflow routes and evidence artifacts cover the specialized quality, test, deploy, backlog, and recovery families that broad quality-layer tools advertise. Findings use <code>docs/evidence-schema.md</code> (BLOCK/WARN/INFO) — not unified numeric grades.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Capability family</th><th>SB route</th><th>Key evidence</th></tr></thead>
         <tbody>
           <tr><td>Domain audits (code, API, data, CI, a11y, content&hellip;)</td><td><code>/silver:domain-audit</code></td><td>DOMAIN-AUDIT with validated finding tables</td></tr>
@@ -205,7 +205,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>Benchmark / eval</td><td><code>/silver:benchmark</code></td><td>BENCHMARK.md</td></tr>
           <tr><td>External review enrichment</td><td>Optional; SB review authoritative</td><td><code>docs/external-review-policy.md</code></td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -213,7 +213,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="sb-lifecycle-commands">SB Lifecycle Commands</h2>
       <p>Silver Bullet owns the core lifecycle commands. Use these commands for planning, execution, review, verification, ship, release, and recovery workflows.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>/silver:init</td><td>Init</td><td>Initializes SB project state, config, docs, CI where absent, and host instruction references.</td></tr>
@@ -235,7 +235,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>/silver:incident</td><td>Incident</td><td>Coordinates incident response, postmortem, recovery verification, and corrective-action tracking.</td></tr>
           <tr><td>/silver:retro</td><td>Retro</td><td>Builds engineering retrospectives from release, CI, git, issue, review, and session evidence.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -244,7 +244,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
       <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code uses slash commands; Codex exposes the native <code>/silver:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or SB lifecycle work.</td></tr>
@@ -276,7 +276,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
           <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -284,7 +284,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="spec-skills">Spec Pipeline Skills</h2>
       <p>Three skills that form the spec-driven development pipeline. They run before SB planning begins — SPEC.md is the upstream input that REQUIREMENTS.md, ROADMAP.md, and DESIGN.md must stay aligned with.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
           <tr>
@@ -308,7 +308,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
             <td>Generates three summary tables from accumulated review metrics (JSON Lines): pass rates by artifact type, rounds to clean pass, and finding categories by artifact type. Use to track review health over time.</td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -316,7 +316,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="quality-review-skills">Quality &amp; Review Skills</h2>
       <p>These quality gates and domain audit skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are included in the skill inventory.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>Role</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>modularity</td><td>Quality dimension</td><td>Checks separation of concerns, boundaries, cohesion, and coupling.</td></tr>
@@ -341,7 +341,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>review-ingestion-manifest</td><td>Artifact reviewer</td><td>Reviews external artifact ingestion manifests and source-to-spec traceability.</td></tr>
           <tr><td>review-cross-artifact</td><td>Artifact reviewer</td><td>Checks consistency across SPEC, REQUIREMENTS, ROADMAP, DESIGN, UAT, and review artifacts.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -349,7 +349,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
       <p>Catalog-backed <code>WF-*</code> workflows that <code>/silver</code> composes after intent classification. Each workflow is a composition tree of canonical atomic-flow slugs from <code>docs/apo-catalog.json</code>; optional atoms are marked with <code>?</code>. Extension skills enrich domains only at explicit catalog boundaries.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
         <tbody>
           <tr><td><a href="../workflows/silver-router.html">/silver</a></td><td>freeform intent, route, classify</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td></tr>
@@ -378,12 +378,12 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><a href="../workflows/silver-process-maintenance.html">/silver:process-maintenance</a></td><td>phase, thread, backlog, migration</td><td style="font-family:inherit;font-size:.875rem"><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-PROCESS-MAINTENANCE</code>)</td></tr>
           <tr><td>/silver:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td style="font-family:inherit;font-size:.875rem"><code>EXECUTE</code> (worktree isolation mode)</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <p><strong>Post-exec gates</strong> (<code>WF-POST-EXEC-GATES</code>): <code>UI_QUALITY?</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE?</code> → <code>QUALITY_GATE</code> (pre-ship) → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code>.</p>
 
       <h3 id="complexity-triage">Complexity Triage</h3>
       <p><code>/silver</code> classifies every request before routing. This prevents over-engineering trivial changes and under-engineering risky ones.</p>
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Classification</th><th>Signals</th><th>Action</th></tr></thead>
         <tbody>
           <tr><td>Trivial</td><td>Typo, rename, small config/copy change, usually ≤3 files</td><td>Route to <code>/silver:fast</code> Tier 1</td></tr>
@@ -392,18 +392,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>Complex</td><td>Cross-cutting, multi-phase, architecture or data-model impact</td><td>Full workflow with clarify/research/spec gates as needed</td></tr>
           <tr><td>Fuzzy</td><td>Vague intent, unclear success criteria, missing scope</td><td>Run <code>/silver:clarify</code>, then re-classify</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3 id="ship-disambiguation">Ship Disambiguation</h3>
       <p><code>/silver</code> distinguishes phase-level ship from milestone-level release.</p>
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Signal</th><th>Route</th></tr></thead>
         <tbody>
           <tr><td>Version number, changelog, release notes, public publish, go live</td><td><code>/silver:release</code></td></tr>
           <tr><td>Active phase in progress, no version signal</td><td><code>silver:ship</code></td></tr>
           <tr><td>No active phase and milestone complete</td><td><code>/silver:release</code></td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -411,7 +411,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="core-lifecycle-skills">Core Lifecycle Skills</h2>
       <p>Silver Bullet commands and markers cover the core software-engineering lifecycle from problem framing through final delivery.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Lifecycle concern</th><th><code>/silver:</code> command</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>Problem framing / scope clarification</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
@@ -422,7 +422,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>Completion verification</td><td><code>silver:completion-audit</code>, <code>silver:verify</code></td><td>Fresh evidence before completion claims.</td></tr>
           <tr><td>Branch finishing / ship</td><td><code>silver:branch-finish</code>, <code>silver:ship</code></td><td>Branch hygiene, PR readiness, CI, and traceability.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -430,7 +430,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="runtime-parity">Runtime Parity Scripts (v0.48.5)</h2>
       <p>Structural parity scripts align documented evidence contracts with hook-enforced runtime behavior across all three hosts.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Script / gate</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td><code>scripts/validate-evidence-findings.py</code></td><td>Validates finding tables in DOMAIN-AUDIT, REVIEW, QUALITY-GATES, SECURITY, VERIFICATION, UI-REVIEW, and TEST-ENGINEERING artifacts.</td></tr>
@@ -440,7 +440,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>One-command onboarding probe: checks <code>jq</code>, runs diagnostics, prints init/plugin next steps.</td></tr>
           <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Install/runtime diagnostics for migrators and support.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -448,7 +448,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="devops-skills">DevOps Plugin Skills (Contextual Enrichment)</h2>
       <p>These skills are optional enrichment — not enforcement gates. They're invoked when a matching DevOps plugin is installed and the IaC toolchain matches.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>When to use</th></tr></thead>
         <tbody>
           <tr><td>/devops-skill-router</td><td>Determines which DevOps plugin skill to invoke based on file type and toolchain detected.</td></tr>
@@ -461,7 +461,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>ci-cd</td><td>Pipeline best practices. Invoke during Testing Strategy for pipeline phases.</td></tr>
           <tr><td>aws-cost-optimization</td><td>Flag wasteful AWS resources. Invoke during Verify for AWS deployments.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -491,7 +491,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h3 id="atomic-flow-list">Canonical atomic flows</h3>
       <p>Cross-checked against <code>docs/generated/atomic-flow-index.json</code> (27 entries). Slugs are the stable catalog identifiers; legacy FLOW numbers map through <code>migration_map.legacy_flows</code> in the catalog.</p>
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Slug</th><th>Capability class</th><th>Public route</th><th>Legacy alias</th></tr></thead>
         <tbody>
           <tr><td>ROUTE</td><td style="font-family:inherit;font-size:.875rem">route intent</td><td style="font-family:inherit;font-size:.875rem"><code>/silver</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
@@ -522,7 +522,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ensure-docs</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 17 (+ FLOW 16 design handoff in release)</td></tr>
           <tr><td>PHASE_MANAGE</td><td style="font-family:inherit;font-size:.875rem">phase and state management</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:phase</code>, <code>/silver:add</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3 id="recommended-tools">Recommended Tools (opt-in)</h3>
       <p><code>recommended_tools.graphify.enabled_by_user</code>, <code>recommended_tools.agentmemory.enabled_by_user</code>, <code>recommended_tools.rtk.enabled_by_user</code>, and <code>recommended_tools.context_mode.enabled_by_user</code> live in <code>.silver-bullet.json</code>. Once opted in, a tool is mandatory when the selected catalog flow declares it relevant and must either produce evidence or record a catalog-backed failure/skip reason. RTK and Context Mode gates verify install/wiring only; usage rules are in <code>silver-bullet.md</code> §2g-ii.</p>
@@ -637,14 +637,14 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
       <h2 id="file-structure">Project Root Files</h2>
       <p>These files live in the project root and are created by <code>/silver:init</code>.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Owner</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-10). Managed by plugin — do not edit manually. Updated by <code>/silver:init</code>.</td></tr>
           <tr><td>CLAUDE.md</td><td>User</td><td>Project-specific instructions. <code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex. References <code>silver-bullet.md</code> for enforcement rules. User-owned — Silver Bullet only adds a reference line.</td></tr>
           <tr><td>.silver-bullet.json</td><td>Silver Bullet</td><td>Project-level configuration: project name, source pattern, semantic compression, verify commands, workflow paths.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -652,7 +652,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
       <h2 id="planning-files">Planning Files (.planning/)</h2>
       <p>All planning files are managed by SB lifecycle workflows. Do not edit them manually unless you know what you're doing.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Created by</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td>.planning/PROJECT.md</td><td>/silver:init / SB bootstrap</td><td>Project goals, scope, metadata, and team context.</td></tr>
@@ -667,14 +667,14 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
           <tr><td>.planning/{phase}-UAT.md</td><td>/silver:verify</td><td>User acceptance test results (app workflow only).</td></tr>
           <tr><td>.planning/.context-cache/</td><td>semantic-compress.sh</td><td>Cached semantic context chunks. Auto-invalidated on file change.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
       <!-- DOCS FILES -->
       <h2 id="docs-files">Documentation Files (docs/)</h2>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>docs/PRD-Overview.md</td><td>High-level product requirements overview synced from planning artifacts.</td></tr>
@@ -693,7 +693,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
           <tr><td>docs/sessions/</td><td>Per-session logs created at session start and completed during finalization/handoff.</td></tr>
           <tr><td>docs/issues/</td><td>Local issue/backlog storage when the project is not configured for GitHub issue tracking.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
@@ -701,7 +701,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
       <h2 id="temp-files">State Files (${SB_RUNTIME_HOME_ROOT}/.silver-bullet/)</h2>
       <p>These files live in <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/</code> with restricted permissions (0700). They store session state for hooks.</p>
 
-      <table class="ref-table">
+      <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Purpose</th></tr></thead>
         <tbody>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
@@ -710,7 +710,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <div class="divider"></div>
 
