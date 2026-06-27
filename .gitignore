@@ -26,6 +26,10 @@ site/new/
 # Session log artifacts (generated per-session by session-log-init.sh hook)
 docs/sessions/
 
+# E2E matrix / run-all-tests runtime logs (never commit)
+.e2e-row*.log
+.run-all-tests-*.log
+
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/
 tests/test-app/.planning/

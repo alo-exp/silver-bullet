@@ -1,37 +1,0 @@
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 1: silver-router (/silver) ===
-  graphify: graphify query "silver-router routes hooks skills orchestrator"
-  evidence: .planning/workflows/router-session.md
-  launching interactive Claude session...
-
-[2C[5A[2D[5B[8A✽
-
-
-
-
-
-
-
-[2C[5A]0;⠐ Claude Code[2D[5B[11C[8A1
-
-
-
-
-
-
-
-[2C[5A]0;✳ Claude Code[2D[5B[2C[9A⎿[5G Not[10Glogged[17Gin[20G·[22GPlease[29Grun[33G/login[1B[K[1B✻[3GCooked[10Gfor[14G0s[1B[K[1B────────────────────────────────────────────────────────────────────────────────[1B❯ [7m [27m[K[1B────────────────────────────────────────────────────────────────────────────────[2C[1B⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gf[55Gr[57Gagents[64G[K[52C[1BNot[57Glogged[64Gin · Run /login
-[64G○[66Glow[70G·[72G/effort
-[2C[5A[2D[5B[2K[G[1A[K[2C[4AERROR: timed out waiting for Claude response
-  FAIL: missing evidence at .planning/workflows/router-session.md
-  FAIL: no routing markers in session output or /Users/shafqat/.claude/.silver-bullet/state
-
-=== Matrix summary ===
-Pass:  0
-Fail:  1
-Skip:  0
-Total: 1 / 22
