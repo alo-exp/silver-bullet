@@ -68,6 +68,15 @@ trivial_file="${SB_STATE_DIR}/trivial"
 if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   [[ -n "$prompt" ]] || exit 0
   printf '%s' "$prompt" >"${SB_STATE_DIR}/orchestrator-intent.txt" 2>/dev/null || true
+  if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
+    # shellcheck source=lib/prompt-classifier.sh
+    source "$_lib_dir/prompt-classifier.sh"
+  fi
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_clear_queue_on_interrupt "$prompt" 2>/dev/null || true
+  fi
   sb_outcomes_seed_for_prompt "$prompt"
   if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
     if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
@@ -80,7 +89,7 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
       repo_root="$(dirname "$config_file")"
       sb_orchestrator_log_override "$repo_root" "$(sb_orchestrator_extract_override_reason "$prompt")" "$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
       sb_orchestrator_directive_clear
-    else
+    elif ! ( declare -f sb_prompt_is_orchestrator_followup >/dev/null 2>&1 && sb_prompt_is_orchestrator_followup "$prompt" ); then
       sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
     fi
   fi

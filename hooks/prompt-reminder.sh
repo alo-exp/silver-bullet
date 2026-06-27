@@ -325,10 +325,16 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
   fi
 fi
 
-# Orchestrator directive injection (P0) — resolve first so it leads the prompt
+# Orchestrator directive injection (P0) — skip on follow-up replies; session-start owns parent mode.
 directive_ctx=""
 _od_lib="${_lib_dir}/orchestrator-directive.sh"
-if [[ -f "$_od_lib" ]]; then
+_sb_skip_directive=false
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_orchestrator_followup >/dev/null 2>&1; then
+  if sb_prompt_is_orchestrator_followup "$prompt"; then
+    _sb_skip_directive=true
+  fi
+fi
+if [[ "$_sb_skip_directive" != true && -f "$_od_lib" ]]; then
   if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
     # shellcheck source=lib/orchestrator-parent.sh
     source "$_lib_dir/orchestrator-parent.sh"
@@ -338,7 +344,9 @@ if [[ -f "$_od_lib" ]]; then
   if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
     # shellcheck source=lib/orchestrator-state.sh
     source "$_lib_dir/orchestrator-state.sh"
-    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+    if ! ( declare -f sb_prompt_is_informational_query >/dev/null 2>&1 && sb_prompt_is_informational_query "$prompt" ); then
+      sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+    fi
   fi
   if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
     if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
@@ -348,10 +356,17 @@ if [[ -f "$_od_lib" ]]; then
   directive_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
 fi
 
-# Build message: directive first (most prominent), then bare-prompt intercept, core rules, skill status
+# Build message: directive first (most prominent), then bare-prompt intercept, compact rules ref, skill status
 msg="$skill_status"
 
-if [[ -f "$core_rules_file" ]]; then
+_sb_rules_marker="${SB_STATE_DIR}/session-rules-injected"
+if [[ -f "$core_rules_file" && -f "$_sb_rules_marker" ]]; then
+  msg="SB enforcement rules active (injected at session start — see core-rules).
+
+---
+
+${msg}"
+elif [[ -f "$core_rules_file" ]]; then
   _cr_lib="${script_dir}/lib/core-rules-integrity.sh"
   core_content=""
   if [[ -f "$_cr_lib" ]]; then
@@ -404,52 +419,63 @@ ${tier_line}"
   fi
 fi
 
-# Graphify opt-in status (only when user has enabled enforcement)
+# Graphify opt-in status (only when enforcement gate is blocking)
 if [[ -f "$_lib_dir/graphify-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/graphify-gate.sh
   source "$_lib_dir/graphify-gate.sh"
-  graphify_line="$(sb_graphify_prompt_reminder_line "$config_file" 2>/dev/null || true)"
-  if [[ -n "$graphify_line" ]]; then
-    msg="${msg}
-
----
-
-${graphify_line}"
-  fi
-fi
-
-# agentmemory opt-in status
-if [[ -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
-  # shellcheck source=lib/agentmemory-gate.sh
-  source "$_lib_dir/agentmemory-gate.sh"
-  agentmemory_line="$(sb_agentmemory_prompt_reminder_line "$config_file" 2>/dev/null || true)"
-  if [[ -n "$agentmemory_line" ]]; then
-    msg="${msg}
-
----
-
-${agentmemory_line}"
-  fi
-fi
-
-# Token-compression tools (rtk, context_mode)
-if [[ -f "$_lib_dir/token-compression-tools-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
-  # shellcheck source=lib/token-compression-tools-gate.sh
-  source "$_lib_dir/token-compression-tools-gate.sh"
-  for _tc_tool in rtk context_mode; do
-    _tc_line="$(sb_token_tool_prompt_reminder_line "$config_file" "$_tc_tool" 2>/dev/null || true)"
-    if [[ -n "$_tc_line" ]]; then
+  if sb_graphify_required "$config_file" 2>/dev/null; then
+    graphify_line="$(sb_graphify_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+    if [[ -n "$graphify_line" ]]; then
       msg="${msg}
 
 ---
 
+${graphify_line}"
+    fi
+  fi
+fi
+
+# agentmemory opt-in status (only when enforcement gate is blocking)
+if [[ -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/agentmemory-gate.sh
+  source "$_lib_dir/agentmemory-gate.sh"
+  if sb_agentmemory_required "$config_file" 2>/dev/null; then
+    agentmemory_line="$(sb_agentmemory_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+    if [[ -n "$agentmemory_line" ]]; then
+      msg="${msg}
+
+---
+
+${agentmemory_line}"
+    fi
+  fi
+fi
+
+# Token-compression tools (rtk, context_mode) — only when usage gate is active
+if [[ -f "$_lib_dir/token-compression-tools-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/token-compression-tools-gate.sh
+  source "$_lib_dir/token-compression-tools-gate.sh"
+  for _tc_tool in rtk context_mode; do
+    if declare -f sb_token_tool_enforced >/dev/null 2>&1 && sb_token_tool_enforced "$config_file" "$_tc_tool" 2>/dev/null; then
+      if declare -f sb_token_tool_usage_is_fresh >/dev/null 2>&1 \
+        && sb_token_tool_usage_is_fresh "$config_file" "$_tc_tool" 2>/dev/null; then
+        continue
+      fi
+      _tc_line="$(sb_token_tool_prompt_reminder_line "$config_file" "$_tc_tool" 2>/dev/null || true)"
+      if [[ -n "$_tc_line" ]]; then
+        msg="${msg}
+
+---
+
 ${_tc_line}"
+      fi
     fi
   done
 fi
 
-# Code intelligence synergy (always when graphify + agentmemory enabled)
-if [[ -f "$_lib_dir/recommended-tools.sh" && -f "$_lib_dir/graphify-gate.sh" && -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+# Code intelligence synergy (only on first prompt after session start — avoid per-turn bloat)
+if [[ ! -f "${SB_STATE_DIR}/session-rules-injected" ]] \
+  && [[ -f "$_lib_dir/recommended-tools.sh" && -f "$_lib_dir/graphify-gate.sh" && -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
   # shellcheck source=lib/recommended-tools.sh
   source "$_lib_dir/recommended-tools.sh"
   if [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" && "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]]; then

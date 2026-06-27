@@ -89,6 +89,9 @@ if [[ -n "$file_path" ]]; then
   if sb_alumnium_edit_path_is_exempt "$file_path"; then
     exit 0
   fi
+  if ! sb_alumnium_edit_path_requires_browser "$file_path"; then
+    exit 0
+  fi
 elif [[ -n "$command_str" ]]; then
   if sb_alumnium_command_is_exempt "$command_str"; then
     exit 0

@@ -534,11 +534,28 @@ if ! sb_runtime_path_is_state_scoped "$sb_branch_file"; then
   sb_branch_file="${SB_STATE_DIR}/branch"
 fi
 stored_state_branch=""
-if [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
+stored_state_toplevel=""
+current_git_toplevel=""
+current_git_toplevel=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)
+if [[ -f "$_lib_dir/branch-scope.sh" ]]; then
+  # shellcheck source=lib/branch-scope.sh
+  source "$_lib_dir/branch-scope.sh"
+fi
+if declare -f sb_branch_scope_read >/dev/null 2>&1 && sb_branch_scope_read "$sb_branch_file"; then
+  stored_state_branch="$SB_BRANCH_SCOPE_STORED_BRANCH"
+  stored_state_toplevel="$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
+elif [[ -f "$sb_branch_file" && ! -L "$sb_branch_file" ]]; then
   stored_state_branch=$(head -1 "$sb_branch_file" 2>/dev/null | tr -d '\n' || true)
 fi
-# M-04: branch mismatch — warn visibly instead of silent fail-open.
-if [[ -n "$stored_state_branch" && -n "$current_branch" && \
+# M-04: branch / worktree mismatch — warn visibly instead of silent fail-open.
+if declare -f sb_branch_scope_mismatch >/dev/null 2>&1; then
+  if sb_branch_scope_mismatch "$current_branch" "$current_git_toplevel"; then
+    warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' (worktree ${stored_state_toplevel:-unknown}) but current scope is '${current_branch}' (${current_git_toplevel:-unknown}). Run a fresh session-start on this worktree before declaring done."
+    json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s}' "$json_warn"
+    exit 0
+  fi
+elif [[ -n "$stored_state_branch" && -n "$current_branch" && \
       "$stored_state_branch" != "$current_branch" ]]; then
   warn_msg="⚠️ Silver Bullet: skill state is from branch '${stored_state_branch}' but current branch is '${current_branch}'. Run a fresh session-start on this branch before declaring done."
   json_warn=$(printf '%s' "$warn_msg" | jq -Rs '.')

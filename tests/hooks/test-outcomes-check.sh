@@ -213,6 +213,18 @@ rm -rf "$RACE_DIR"
 unset SB_RUNTIME_PRESERVE_STATE_DIR
 teardown
 
+setup
+run_hook "UserPromptSubmit" "What are the remaining deliverables?" >/dev/null
+out=$(run_hook "Stop" "")
+if printf '%s' "$out" | grep -q '"decision":"block"'; then
+  echo "  FAIL: informational query should not block Stop"
+  FAIL=$((FAIL + 1))
+else
+  echo "  ok: informational query does not block Stop"
+  PASS=$((PASS + 1))
+fi
+teardown
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1

@@ -398,6 +398,8 @@ Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.j
 
 **Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`silver:feature`, `silver:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 
+**SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive or PreToolUse gate cannot be satisfied, include in your next user message: `SB OVERRIDE: <reason>`. The hook logs the override to `.planning/orchestrator-override-log.jsonl` and clears the pending directive. Use sparingly — overrides are audited, not silent bypasses.
+
 The active composed workflow file under `.planning/workflows/<id>.md` tracks execution state — which flows have run, which are next, and any dynamic insertions (e.g., FLOW 15 DEBUG on failure). See `docs/composable-flows-contracts.md` for full flow contracts.
 
 SB is the lifecycle authority. Semver, milestones, phases, planning, execution, verification, bug fixing, testing, review, and phase/milestone shipping flow through SB-owned skills. Optional external plugins extend SB only when a workflow explicitly marks them optional or the user requests them.

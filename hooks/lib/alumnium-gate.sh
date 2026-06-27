@@ -69,6 +69,21 @@ sb_alumnium_edit_path_is_exempt() {
   return 1
 }
 
+# True when the edit targets browser/visual testing artifacts (Alumnium scope).
+sb_alumnium_edit_path_requires_browser() {
+  local file_path="${1:-}"
+  [[ -n "$file_path" ]] || return 1
+  case "$file_path" in
+    *.canvas.tsx|*/e2e/*|*/playwright/*|*/__screenshots__/*|*/screenshots/*|*/visual-regression/*)
+      return 0
+      ;;
+  esac
+  if printf '%s' "$file_path" | grep -qiE '(screenshot|playwright|cypress|puppeteer|browser-test|visual-regression|\.spec\.(ts|js|tsx|jsx)$)'; then
+    return 0
+  fi
+  return 1
+}
+
 sb_alumnium_command_is_exempt() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || return 0

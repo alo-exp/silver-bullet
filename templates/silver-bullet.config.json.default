@@ -342,6 +342,7 @@
       "install_failure_reason": null,
       "required_when_enabled": true,
       "read_deny_bytes": 5120,
+      "read_deny_bypass_env": "CONTEXT_MODE_READ_DENY_BYPASS=1",
       "min_node_version": "22.5",
       "optimize_on_init": true,
       "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",

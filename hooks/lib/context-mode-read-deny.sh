@@ -13,6 +13,13 @@ if [[ -f "$(dirname "${BASH_SOURCE[0]}")/tool-input.sh" ]]; then
   source "$(dirname "${BASH_SOURCE[0]}")/tool-input.sh"
 fi
 
+sb_context_mode_read_deny_bypassed() {
+  case "${CONTEXT_MODE_READ_DENY_BYPASS:-${SB_CONTEXT_MODE_READ_DENY_BYPASS:-}}" in
+    1|true|yes|YES|on|ON) return 0 ;;
+  esac
+  return 1
+}
+
 sb_context_mode_read_deny_bytes() {
   local config_file="${1:-}"
   local bytes="${_sb_context_mode_default_read_deny_bytes}"
@@ -115,6 +122,10 @@ sb_context_mode_should_deny_read() {
   local input="${1:-}" config_file="${2:-}" project_root="${3:-$PWD}"
   local tool_name file_path threshold resolved size
 
+  if sb_context_mode_read_deny_bypassed; then
+    return 1
+  fi
+
   threshold="$(sb_context_mode_read_deny_bytes "$config_file")"
   [[ "$threshold" =~ ^[0-9]+$ && "$threshold" -gt 0 ]] || return 1
 
@@ -149,9 +160,13 @@ sb_context_mode_read_deny_message() {
   cat <<EOF
 🚫 CONTEXT MODE — Read blocked (${size} bytes > ${threshold} byte threshold).
 
-Use Context Mode MCP instead of Read/Grep for large-file analysis:
+Bypass options (one-time research / header checks):
+  • CONTEXT_MODE_READ_DENY_BYPASS=1 — allow this Read/Grep (session env; for transcript research)
+  • recommended_tools.context_mode.read_deny_bytes in .silver-bullet.json — raise threshold (default 5120)
+  • ctx_execute_file — sandboxed analysis (stdout only enters context)
+
+Preferred for large-file analysis:
   • ctx_index + ctx_search — index then query relevant sections
-  • ctx_execute_file — sandboxed analysis (only stdout enters context)
   • ctx_batch_execute — batch reads with auto-index
 
 Read is still correct when you will Edit the same file next (exact bytes required).
