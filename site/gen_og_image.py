@@ -176,6 +176,24 @@ def draw_gradient_text(
     canvas.paste(grad_crop, (x, y), grad_crop)
 
 
+def draw_tracking_text(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    fill: tuple[int, int, int],
+    target_width: int,
+) -> None:
+    x, y = xy
+    natural_width = draw.textlength(text, font=font)
+    gap_count = max(1, len(text) - 1)
+    tracking = max(0, (target_width - natural_width) / gap_count)
+    cursor = float(x)
+    for char in text:
+        draw.text((cursor, y), char, font=font, fill=fill)
+        cursor += draw.textlength(char, font=font) + tracking
+
+
 def rounded_rect(
     draw: ImageDraw.ImageDraw,
     box: tuple[int, int, int, int],
@@ -235,7 +253,7 @@ def main() -> None:
     fonts = {
         "label": ImageFont.truetype(str(FONT_BOLD), 26),
         "title": ImageFont.truetype(str(FONT_BOLD), 72),
-        "tag": ImageFont.truetype(str(FONT_BOLD), 18),
+        "tag": ImageFont.truetype(str(FONT_BOLD), 22),
         "headline": ImageFont.truetype(str(FONT_BOLD), 56),
         "subhead": ImageFont.truetype(str(FONT_REG), 31),
         "feature": ImageFont.truetype(str(FONT_REG), 22),
@@ -255,7 +273,7 @@ def main() -> None:
     base.alpha_composite(bullet, (bx, by))
 
     draw_gradient_text(base, (174, 73), "Silver Bullet", fonts["title"], chrome_grad)
-    draw.text((176, 148), "THE PROCESS LAYER OF AI-DRIVEN DEV", font=fonts["tag"], fill=HERO_GREEN)
+    draw_tracking_text(draw, (176, 148), "THE PROCESS LAYER OF AI-DRIVEN DEV", fonts["tag"], HERO_GREEN, 372)
 
     draw.text((82, 260), "Maximize AI-driven", font=fonts["headline"], fill=TEXT_PRIMARY)
     draw.text((82, 318), "Dev Process Reliability", font=fonts["headline"], fill=HERO_GREEN)
@@ -273,7 +291,7 @@ def main() -> None:
         "Intent-Aligned Results",
         "Knowledge Management",
     ]
-    right_x = 806
+    right_x = 732
     draw.text((right_x, 150), "AGENTIC PROCESS ORCHESTRATOR", font=fonts["label"], fill=HERO_GREEN)
     for idx, feature in enumerate(features):
         draw_feature(draw, base, (right_x, 196 + idx * 42), feature, fonts["feature"])
