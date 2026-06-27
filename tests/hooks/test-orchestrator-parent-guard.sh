@@ -134,6 +134,16 @@ else
   echo "PASS: worker marker without env treated as worker"
   PASS=$((PASS + 1))
 fi
+
+out_worker_bash=$(cd "$WORK2" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"gh issue create"}}' | env -u SB_ORCHESTRATOR_PARENT -u SB_ORCHESTRATOR_WORKER \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+if printf '%s' "$out_worker_bash" | grep -qF 'ORCHESTRATOR DIRECTIVE'; then
+  echo "FAIL: worker marker should allow Bash without directive skill recorded"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: worker marker allows Bash when directive pending"
+  PASS=$((PASS + 1))
+fi
 rm -rf "$WORK2" 2>/dev/null || true
 
 # Marker without spawned_at is invalid — parent guards must still apply
