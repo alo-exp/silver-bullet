@@ -3,7 +3,7 @@
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$SB_ROOT"
+cd "$SB_ROOT" || exit
 
 export SB_E2E_MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-round2.log}"
 export SB_E2E_MATRIX_ROWS="${SB_E2E_MATRIX_ROWS:-5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}"
@@ -17,6 +17,7 @@ export SB_TEST_ENTERPRISE_APP_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqa
 BATCH_PID_FILE="${SB_ROOT}/.e2e-matrix-batch.pid"
 MONITOR_PID_FILE="${SB_ROOT}/.e2e-matrix-monitor.pid"
 WATCH_LOG="${SB_ROOT}/.e2e-round2-watch.log"
+# shellcheck disable=SC2034  # reserved for future round-2 watch state persistence
 STATE_FILE="${SB_ROOT}/.e2e-round2-watch-state"
 POLL_SEC="${SB_E2E_ROUND2_POLL_SEC:-120}"
 MAX_SEC="${SB_E2E_ROUND2_MAX_SEC:-86400}"
@@ -130,7 +131,7 @@ PY
 
 update_ledger_row() {
   local row="$1" note="$2"
-  local slug date line
+  local slug date
   slug="$(slug_for_row "$row")"
   date="$(date -u '+%Y-%m-%d')"
   if grep -q "| ${row} | \`${slug}\` | ${date}" "$SB_E2E_LEDGER_FILE" 2>/dev/null; then

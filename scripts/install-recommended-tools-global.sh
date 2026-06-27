@@ -102,6 +102,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$HOST" ]] || { usage >&2; exit 2; }
+: "${INSTALL_GLOBAL:?}" # reserved for future --global wiring
 
 if [[ "$HOST" == "all" ]]; then
   for h in $RTCM_SUPPORTED_HOSTS; do

@@ -4,12 +4,13 @@
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$SB_ROOT"
+cd "$SB_ROOT" || exit
 
 MONITOR_SCRIPT="${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
 MONITOR_PID_FILE="${SB_ROOT}/.e2e-matrix-monitor.pid"
 SUPERVISOR_LOG="${SB_ROOT}/.e2e-matrix-supervisor.log"
 STATUS_FILE="${SB_ROOT}/.e2e-matrix-monitor-status.txt"
+# shellcheck disable=SC2034  # documented default ledger path for operators
 LEDGER="${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
 
 INTERVAL="${SB_E2E_SUPERVISOR_INTERVAL:-600}"
