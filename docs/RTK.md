@@ -124,6 +124,21 @@ grep -q rtk ~/.cursor/hooks.json   # Cursor example
 
 SB does **not** merge RTK rewrite logic into the SB plugin `hooks.json`.
 
+### Silver Bullet coexistence
+
+| Surface | RTK rewrite? | SB handling |
+|---------|--------------|-------------|
+| Agent Shell/Bash (Cursor/Claude) | Yes — allow-listed commands become `rtk <cmd>` | SB PreToolUse hooks run **before** RTK and match the **original** command string (`git push`, `gh pr create`, etc.) |
+| SB hook subprocesses (`cursor-hook-bridge.sh`, `session-start`, …) | No — hooks are not Shell tool calls | `hooks/lib/rtk-compat.sh` exports `RTK_DISABLED=1` + `SILVER_BULLET=1` |
+| SB harness scripts (`install-claude.sh`, `run-enterprise-e2e-matrix.sh`, …) | No — direct terminal execution | Same `rtk-compat.sh` export at script entry |
+| Nested `git`/`gh` inside SB scripts | Filter only if invoked via `rtk` on PATH | `RTK_DISABLED=1` disables RTK output filters for child commands |
+
+**Verbatim agent commands:** prefix with `RTK_DISABLED=1` (upstream documented bypass). Example: `RTK_DISABLED=1 git diff main...HEAD` — `rtk hook cursor` returns `{}` and runs uncompressed.
+
+**When RTK rewrite is safe:** SB intentionally recommends RTK for agent shell compression when opted in. Round 1 enterprise E2E (22 rows) and 4600+ unit tests passed with RTK wired. Rewrites affect output shape, not exit codes, for `git`/`gh` plumbing.
+
+**Context Mode (separate):** `context-mode hook cursor pretooluse` may redirect `curl`/`wget` in Shell and deny `WebFetch` — unrelated to RTK. See `docs/CONTEXT-MODE.md`.
+
 ## Complementary Tools
 
 - **Graphify** — retrieval (tier 1); no conflict with RTK

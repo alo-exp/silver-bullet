@@ -7,6 +7,8 @@
 set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=hooks/lib/rtk-compat.sh
+source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"

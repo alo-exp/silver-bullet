@@ -2,6 +2,13 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+_bridge_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _bridge_lib=""
+if [[ -f "${_bridge_lib}/rtk-compat.sh" ]]; then
+  # shellcheck source=lib/rtk-compat.sh
+  source "${_bridge_lib}/rtk-compat.sh"
+fi
+export SILVER_BULLET_HOOK_EXEC=1
+
 cursor_event="${1:-}"
 shift || true
 
