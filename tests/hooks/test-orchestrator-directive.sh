@@ -93,6 +93,14 @@ out=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","
   SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "blocks edit when directive pending" "$out" "ORCHESTRATOR DIRECTIVE"
 
+out_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"gh issue list"}}' | \
+  SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_true "worker allows Bash when directive pending" test -z "$out_bash"
+
+out_shell=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Shell","tool_input":{"command":"gh issue list"}}' | \
+  SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_true "worker allows Shell when directive pending" test -z "$out_shell"
+
 printf 'silver-context\n' >"$TMPSTATE"
 out2=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","tool_input":{}}' | \
   SB_ORCHESTRATOR_WORKER=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
