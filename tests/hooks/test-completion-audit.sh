@@ -468,6 +468,18 @@ out=$(run_hook "PreToolUse" "git push origin feature/test")
 assert_passes "git push allowed with silver-quality-gates (no finalization needed)" "$out"
 teardown
 
+# Test 5b: rtk-wrapped git push still classified (RTK-aware gate regex)
+setup
+out=$(run_hook "PreToolUse" "rtk git push origin feature/test")
+assert_blocks "rtk git push blocked without silver-quality-gates" "$out"
+teardown
+
+setup
+echo "silver-quality-gates" > "$TMPSTATE"
+out=$(run_hook "PreToolUse" "RTK_DISABLED=1 git push origin feature/test")
+assert_passes "RTK_DISABLED git push allowed with planning skill" "$out"
+teardown
+
 # Test 6: gh pr create blocked without full required_deploy
 echo "--- Group 2: Final delivery tier ---"
 setup

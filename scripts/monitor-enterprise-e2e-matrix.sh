@@ -11,6 +11,7 @@
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export SB_RTK_COMPAT_MODE=verbatim
 # shellcheck source=hooks/lib/rtk-compat.sh
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT" || exit

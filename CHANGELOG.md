@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.48.6] — 2026-06-27
+
+Scoped RTK coexistence: full agent RTK when opted in; verbatim harness mode only.
+
+### Bug Fixes
+- `fix(rtk)`: scope `RTK_DISABLED` to harness scripts (`SB_RTK_COMPAT_MODE=verbatim`) and opted-out projects — hook bridge omits disable when `recommended_tools.rtk.enabled_by_user` is true
+- `fix(rtk)`: unwrap `rtk` / `RTK_DISABLED=1` prefixes in `completion-audit.sh` gate regexes (`sb_shell_command_unwrap_rtk`)
+
+### Tests
+- `test(rtk)`: opted-in / opted-out / verbatim modes in `test-rtk-compat.sh`
+- `test(hooks)`: RTK-wrapped `git push` classification in `test-completion-audit.sh`
+
+---
+
 ## [0.48.5] — 2026-06-27
 
 Enterprise E2E live test suite, `silver:multi-ai-task` model alignment, and silver-prefix skill exposure.
