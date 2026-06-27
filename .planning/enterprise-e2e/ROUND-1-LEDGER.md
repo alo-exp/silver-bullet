@@ -9,14 +9,14 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Field | Value |
 |-------|-------|
 | Round | 1 |
-| SB repo SHA | `d2114b98` (hook test isolation + ledger gate close) |
+| SB repo SHA | `bb6150f1` (codex sync + hook test isolation gate close) |
 | Test app SHA | `75dd459` on branch `devops-terraform-validation` |
 | Claude plugin install | `v0.48.3` via `bash scripts/install-claude.sh` from SB repo (reinstalled after `52ce8aec`) |
 | Claude model (frozen) | `sonnet` |
 | Operator | Cursor agent (Cursor-native SB fallback — rows 1–22) |
 | Start date | 2026-06-26 |
 | End date | 2026-06-27 |
-| Round clean? | **Yes** — `run-all-tests` **4344 passed, 0 failed** (5/5 suites green, 2026-06-27 post ENOTFOUND retry) |
+| Round clean? | **Yes** — `run-all-tests` **4260 passed, 0 failed** (5/5 suites green, 2026-06-27 codex sync + isolation verify) |
 
 ---
 
@@ -28,7 +28,7 @@ Evidence ledger for Round 1 supervised Claude TUI sessions. Template source: `RO
 | Matrix dry-run 22/22 | **Pass** | `SB_E2E_MATRIX_DRY_RUN=1 bash scripts/run-enterprise-e2e-matrix.sh` — row 1 evidence `.planning/workflows/router-session.md` added 2026-06-27 |
 | Interactive matrix 22/22 | **Pass** | Prior interactive + resume2 batch (2026-06-26/27); agentmemory `mem_mqtq7oj6_4d6b3c5e110c` |
 | review-fix-ladder (8 rungs × 2 clean) | **Pass** | Completed 2026-06-26 at scoped HEAD; no scoped-file regressions since |
-| `bash tests/run-all-tests.sh` | **Pass** | **4344 passed, 0 failed** (5/5 suites green); hook test isolation: `SILVER_BULLET_SESSION_START_FILE` + per-PID phase heartbeat |
+| `bash tests/run-all-tests.sh` | **Pass** | **4260 passed, 0 failed** (5/5 suites green, 2026-06-27); codex package sync + hook test isolation (`SILVER_BULLET_SESSION_START_FILE`, per-PID phase heartbeat) |
 | Graphify current | **Warn** | `graphify update .` refused overwrite (15860 vs 16098 nodes); existing graph usable |
 | Open MUST-FIX | **Partial** | Skill tool in `claude --print` (interactive TUI unvalidated); round test gate green |
 
