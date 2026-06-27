@@ -509,3 +509,23 @@ body > nav .logo{
 
 /* Tagline accent — intentionally heavy (not a section heading) */
 .hero-tagline-bold{font-weight:900!important;}
+
+/* UI chrome — thin weight for buttons, badges, pills (sitewide) */
+.btn,
+.btn-primary,
+.btn-outline,
+.nav-cta,
+.nav-help,
+.platform-pill,
+.hero-pill,
+.tag,
+.version-badge,
+.alpha-badge,
+.card-badge,
+.badge-small,
+.help-subnav-links a,
+body > nav .nav-alpha,
+.workflow-tab,
+.hero .badge{
+  font-weight:400!important;
+}
