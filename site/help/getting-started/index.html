@@ -35,14 +35,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 .page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
 .page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
 .page-hero .container{position:relative;z-index:1}
-.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
 .page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7;margin-bottom:0}
 /* LAYOUT */
 .doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
 @media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
-.doc-content h2{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
 .doc-content h2:first-child{margin-top:0}
-.doc-content h3{font-size:1.1rem;font-weight:700;margin-bottom:12px;margin-top:32px;color:var(--text-primary)}
+.doc-content h3{font-size:1.1rem;margin-bottom:12px;margin-top:32px;color:var(--text-primary)}
 .doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
 .doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
 .doc-content li{margin-bottom:6px;line-height:1.7}
@@ -61,18 +61,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 .code-block .string{color:var(--amber)}
 .code-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:6px}
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
-.card h4{font-size:.95rem;font-weight:700;margin-bottom:8px}
+.card h4{font-size:.95rem;margin-bottom:8px}
 .card p{font-size:.875rem;color:var(--text-secondary);line-height:1.6;margin:0}
 .step-list{list-style:none;padding:0;margin:0 0 24px;counter-reset:step-counter}
 .step-list li{display:flex;gap:16px;margin-bottom:20px;counter-increment:step-counter}
 .step-num{min-width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#374151,#6b7280);color:#fff;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);flex-shrink:0;margin-top:2px}
-.step-body h4{font-size:.95rem;font-weight:700;margin-bottom:6px}
+.step-body h4{font-size:.95rem;margin-bottom:6px}
 .step-body p{font-size:.875rem;color:var(--text-secondary);line-height:1.6;margin:0}
 .prereq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
 @media(max-width:600px){.prereq-grid{grid-template-columns:1fr}}
 .prereq-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;display:flex;gap:12px;align-items:flex-start}
 .prereq-card .prereq-icon{font-size:1.4rem;flex-shrink:0}
-.prereq-card h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.prereq-card h4{font-size:.9rem;margin-bottom:4px}
 .prereq-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.5;margin:0}
 .prereq-card .install-cmd{font-family:var(--font-mono);font-size:.75rem;color:var(--green);margin-top:6px}
 .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-left:8px}
