@@ -139,7 +139,9 @@ agent_invoke() {
     return 0
   fi
 
-  claude_matrix_export_settings_env
+  if [[ "${CLAUDE_PRINT_SKIP_SETTINGS_EXPORT:-0}" != "1" ]]; then
+    claude_matrix_export_settings_env
+  fi
   output=$(
     cd "$WORK_DIR" && \
       HOME="${HOME}" \
@@ -165,8 +167,9 @@ args = [
     os.environ.get("CLAUDE_EFFORT", "low"),
     "--permission-mode",
     os.environ["CLAUDE_LIVE_PERMISSION_MODE"],
-    "--verbose",
 ]
+if os.environ.get("CLAUDE_PRINT_VERBOSE", "1") != "0":
+    args.append("--verbose")
 if os.environ.get("CLAUDE_LIVE_CONTINUE") == "1":
     args.append("--continue")
 args.append(prompt)
