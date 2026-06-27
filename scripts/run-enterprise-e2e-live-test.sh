@@ -26,6 +26,7 @@ LEDGER_FILE="$(enterprise_e2e_ledger_file)"
 MATRIX_LOG="$(enterprise_e2e_matrix_log)"
 MONITOR_PID_FILE="${SB_E2E_MATRIX_MONITOR_PID_FILE:-${SB_ROOT}/.e2e-matrix-monitor.pid}"
 WATCH_PID_FILE="${SB_E2E_TUI_WATCH_PID:-${SB_ROOT}/.e2e-tui-watch.pid}"
+# shellcheck disable=SC2034  # documented batch pid path for dual-shell runbook
 BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
 
 PREFLIGHT_ONLY=0

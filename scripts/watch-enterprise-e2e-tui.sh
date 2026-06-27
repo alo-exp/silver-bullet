@@ -14,7 +14,7 @@
 set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$SB_ROOT"
+cd "$SB_ROOT" || exit
 
 OFFSETS_FILE="${SB_E2E_TUI_OFFSETS:-${SB_ROOT}/.e2e-tui-watch-offsets.json}"
 FINDINGS_FILE="${SB_E2E_TUI_FINDINGS:-${SB_ROOT}/.e2e-tui-watch-findings.jsonl}"

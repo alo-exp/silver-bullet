@@ -3,7 +3,9 @@
 # Sourced by: scripts/optimize-rtk-context-mode.sh, scripts/install-recommended-tools-global.sh
 
 RTCM_ALL_HOSTS="claude codex cursor opencode hermes goose"
+# shellcheck disable=SC2034  # consumed by install-recommended-tools-global.sh
 RTCM_SUPPORTED_HOSTS="claude codex cursor opencode hermes"
+# shellcheck disable=SC2034  # consumed by install-recommended-tools-global.sh
 RTCM_UNSUPPORTED_HOSTS="goose"
 
 rtcm_dry_run() {
