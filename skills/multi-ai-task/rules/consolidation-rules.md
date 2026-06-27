@@ -133,7 +133,7 @@ If the model responses don't have a clear `primary_key` field, apply fuzzy match
 
 ---
 
-## Phase 3.5 — RESOLVE CONFLICTS
+## Phase 4 — RESOLVE CONFLICTS
 
 For each canonical item, look at the per-field values across models. Apply the configured resolution rule per field.
 
@@ -178,10 +178,11 @@ The following rules are referenced in the example recipes (`rules/examples/`) an
 - **Edge case:** with 2 models and 2 different values, no majority — return `null`.
 
 #### `majority-with-uncertain`
-- **Purpose:** like `majority`, but require a higher threshold; if not met, return `unverified` (default for fact-check verdicts).
+- **Purpose:** like `majority`, but require a *strict* majority threshold; if not met, return `unverified` (default for fact-check verdicts).
 - **Input:** List of values per model.
-- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `unverified`.
-- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`.
+- **Algorithm:** require `> max(2, ceil(N/2))` models to agree on a value (i.e., any dissent blocks consensus). For N=3, all 3 must agree; for N=5, at least 4 must agree; for N=7, at least 5 must agree. If met, return that value. If not, return `unverified`.
+- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`. With N=2, two models must agree exactly (any dissent returns `unverified`).
+- **Rationale for strict-majority:** this is the "high-stakes" rule — used for fact-check, security audit, regulatory review. Any dissent (even 1 of N) blocks consensus. If you want "any agreement is consensus", use `majority` instead.
 - **Naming consistency:** the rule returns the value `unverified` (matching the schema's `values: ["true", "false", "partially-true", "unverified"]`). If a user schema uses a different name for the "unverified" verdict (e.g., `partially-true`), set `conflict_resolution.verdict_uncertain_value: "partially-true"` to remap. Do NOT change the rule's return value to match the schema — change the schema to match the rule.
 
 #### `lowest-of-majors`
@@ -263,7 +264,7 @@ For "beta" vs "production" disagreements, use the project's most recent release 
 
 ---
 
-## Phase 3.6 — SCORE + SYNTHESIZE
+## Phase 5 — SCORE + SYNTHESIZE
 
 ### Aggregate scoring matrix
 
@@ -304,7 +305,7 @@ For specific task types, override the defaults:
 | **Code review** | Use `most-severe` for `severity` field; dedup by `file:line` (not file alone) |
 | **Fact-check** | Use `majority` for `verdict`; require ≥2 sources for `true` claims; `unverified` if no consensus |
 | **Ideation** | No dedup (every idea is unique); rank by median `feasibility` × `impact` score |
-| **Writing critique** | Use `concatenate` for comments; present all model feedback in parallel sections |
+| **Writing critique** | Use `concatenate-all` for comments; present all model feedback in parallel sections |
 | **Translation verification** | Use `majority` for `accurate`; flag any disagreements for human review |
 
 The user can specify these custom strategies in the `--schema` JSON, e.g.:
