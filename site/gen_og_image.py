@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import math
+import re
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parent
+TOKENS_CSS = ROOT / "tokens.css"
 OUT = ROOT / "og-image.png"
 BULLET = ROOT / "silver-bullet.png"
 FONT_BOLD = ROOT / "fonts" / "alte-din-1451-mittelschrift.regular.ttf"
@@ -23,12 +25,6 @@ BG_STOPS = [
     (0.80, (240, 236, 228)),
     (1.00, (234, 230, 220)),
 ]
-ACCENT = (0, 200, 52)
-ACCENT_LIGHT = (0, 154, 40)
-TEXT_PRIMARY = (5, 15, 8)
-TEXT_SECONDARY = (13, 58, 26)
-TEXT_DIM = (40, 92, 56)
-MINT_GLOW = (160, 210, 180)
 
 CHROME_STOPS = [
     (0.00, (42, 42, 42)),
@@ -44,6 +40,57 @@ CHROME_STOPS = [
     (0.86, (64, 64, 64)),
     (1.00, (30, 30, 30)),
 ]
+
+
+def _parse_hex(value: str) -> tuple[int, int, int]:
+    value = value.strip().lstrip("#")
+    return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
+
+
+def _parse_rgba(value: str) -> tuple[int, int, int, float]:
+    parts = [part.strip() for part in value.removeprefix("rgba(").removesuffix(")").split(",")]
+    return (int(parts[0]), int(parts[1]), int(parts[2]), float(parts[3]))
+
+
+def load_light_tokens(path: Path) -> dict[str, str]:
+    text = path.read_text(encoding="utf-8")
+    dark_idx = text.find('[data-theme="dark"]')
+    root_text = text[:dark_idx] if dark_idx >= 0 else text
+    return {
+        match.group(1): match.group(2).strip()
+        for match in re.finditer(r"--([\w-]+)\s*:\s*([^;]+);", root_text)
+    }
+
+
+def _token_rgb(tokens: dict[str, str], name: str) -> tuple[int, int, int]:
+    value = tokens[name]
+    if value.startswith("#"):
+        return _parse_hex(value)
+    raise ValueError(f"Token --{name} is not a hex color: {value!r}")
+
+
+def _token_rgba(tokens: dict[str, str], name: str) -> tuple[int, int, int, float]:
+    return _parse_rgba(tokens[name])
+
+
+def _alpha255(alpha: float) -> int:
+    return max(0, min(255, int(round(alpha * 255))))
+
+
+TOKENS = load_light_tokens(TOKENS_CSS)
+ACCENT = _token_rgb(TOKENS, "accent")
+ACCENT_LIGHT = _token_rgb(TOKENS, "accent-light")
+ACCENT2 = _token_rgb(TOKENS, "accent2")
+TEXT_PRIMARY = _token_rgb(TOKENS, "text-primary")
+TEXT_SECONDARY = _token_rgb(TOKENS, "text-secondary")
+TEXT_DIM = _token_rgb(TOKENS, "text-dim")
+GRAD_1 = _token_rgb(TOKENS, "grad-1")
+GRAD_2 = _token_rgb(TOKENS, "grad-2")
+MINT_GLOW = _token_rgba(TOKENS, "mint-a28")[:3]
+MINT_FILL = _token_rgba(TOKENS, "mint-a14")
+MINT_OUTLINE = _token_rgba(TOKENS, "mint-a28")
+MINT_BADGE_OUTLINE = _token_rgba(TOKENS, "mint-a35")
+GRID_ALPHA = _alpha255(0.05)
 
 
 def lerp_color(c0: tuple[int, int, int], c1: tuple[int, int, int], t: float) -> tuple[int, int, int]:
@@ -98,7 +145,7 @@ def add_grid(canvas: Image.Image) -> None:
     grid = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(grid)
     step = 48
-    line = (*ACCENT, 6)
+    line = (*ACCENT, GRID_ALPHA)
     for x in range(0, W, step):
         draw.line((x, 0, x, H), fill=line, width=1)
     for y in range(0, H, step):
@@ -136,8 +183,8 @@ def rounded_rect(
 
 def main() -> None:
     base = gradient_bg(W, H).convert("RGBA")
-    add_glow(base, 120, 80, 320, MINT_GLOW, 0.12)
-    add_glow(base, 1050, 520, 260, MINT_GLOW, 0.10)
+    add_glow(base, 120, 80, 320, MINT_GLOW, MINT_FILL[3])
+    add_glow(base, 1050, 520, 260, MINT_GLOW, _token_rgba(TOKENS, "mint-a18")[3])
     add_grid(base)
     draw = ImageDraw.Draw(base)
 
@@ -182,8 +229,8 @@ def main() -> None:
         draw,
         (W - 250, 34, W - 44, 64),
         14,
-        fill=(*ACCENT, 22),
-        outline=(*ACCENT, 70),
+        fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
+        outline=(*MINT_BADGE_OUTLINE[:3], _alpha255(MINT_BADGE_OUTLINE[3])),
         width=1,
     )
     draw.text((W - 236, 42), "ALPHA · v0.48.5", font=font_mono, fill=ACCENT_LIGHT)
@@ -192,7 +239,13 @@ def main() -> None:
     lb = font_label.getbbox(label)
     lw = lb[2] - lb[0]
     lx, ly = 300, 118
-    rounded_rect(draw, (lx - 14, ly - 8, lx + lw + 14, ly + 24), 12, fill=(*ACCENT, 18), outline=(*ACCENT, 55))
+    rounded_rect(
+        draw,
+        (lx - 14, ly - 8, lx + lw + 14, ly + 24),
+        12,
+        fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
+        outline=(*MINT_OUTLINE[:3], _alpha255(MINT_OUTLINE[3])),
+    )
     draw.text((lx, ly), label, font=font_label, fill=ACCENT_LIGHT)
 
     draw_gradient_text(base, (300, 158), "Silver Bullet", font_title, chrome_grad)
@@ -200,7 +253,12 @@ def main() -> None:
     draw.text((300, 296), "Maximize AI-driven", font=font_headline, fill=TEXT_PRIMARY)
     draw.text((300, 338), "Dev Process Reliability", font=font_headline, fill=ACCENT_LIGHT)
     draw.text((300, 396), "From spec to release · hook-enforced AI-native delivery", font=font_sub, fill=TEXT_SECONDARY)
-    draw.text((300, 432), "27 AF-* atomic flows · 22 WF-* workflows · V-loop evidence · delivery gates", font=font_small, fill=TEXT_DIM)
+    draw.text(
+        (300, 432),
+        "27 AF-* atomic flows · 22 WF-* workflows · V-loop evidence · delivery gates",
+        font=font_small,
+        fill=TEXT_DIM,
+    )
 
     pills = ["Hook Gates", "Claude · Codex · Cursor"]
     px = 300
@@ -208,7 +266,13 @@ def main() -> None:
     for pill in pills:
         pb = font_pill.getbbox(pill)
         pw = pb[2] - pb[0]
-        rounded_rect(draw, (px, py, px + pw + 24, py + 28), 14, fill=(*ACCENT, 16), outline=(*ACCENT, 48))
+        rounded_rect(
+            draw,
+            (px, py, px + pw + 24, py + 28),
+            14,
+            fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
+            outline=(*MINT_OUTLINE[:3], _alpha255(MINT_OUTLINE[3])),
+        )
         draw.text((px + 12, py + 6), pill, font=font_pill, fill=ACCENT_LIGHT)
         px += pw + 36
 
@@ -218,6 +282,13 @@ def main() -> None:
     final = base.convert("RGB")
     final.save(OUT, "PNG", optimize=True)
     print(f"Saved {OUT} ({final.size[0]}x{final.size[1]})")
+    print(
+        "Tokens:",
+        f"accent=#{ACCENT[0]:02x}{ACCENT[1]:02x}{ACCENT[2]:02x}",
+        f"accent-light=#{ACCENT_LIGHT[0]:02x}{ACCENT_LIGHT[1]:02x}{ACCENT_LIGHT[2]:02x}",
+        f"grad-1=#{GRAD_1[0]:02x}{GRAD_1[1]:02x}{GRAD_1[2]:02x}",
+        f"grad-2=#{GRAD_2[0]:02x}{GRAD_2[1]:02x}{GRAD_2[2]:02x}",
+    )
 
 
 if __name__ == "__main__":
