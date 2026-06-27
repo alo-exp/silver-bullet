@@ -39,7 +39,7 @@ sb_branch_scope_write() {
 sb_branch_scope_mismatch() {
   local current_branch="${1:-}" current_toplevel="${2:-}" stored_branch="" stored_toplevel=""
   [[ -n "$current_branch" ]] || return 1
-  sb_branch_scope_read || return 1
+  sb_branch_scope_read "$(sb_branch_scope_file)" || return 1
   stored_branch="$SB_BRANCH_SCOPE_STORED_BRANCH"
   stored_toplevel="$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
   [[ -n "$stored_branch" ]] || return 1
