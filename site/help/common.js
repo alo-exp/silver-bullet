@@ -1,7 +1,15 @@
 (function () {
   var sunIcon = '<span id="icon-sun" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>';
   var moonIcon = '<span id="icon-moon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>';
-  var anchorOffset = 96;
+  function getAnchorOffset() {
+    var root = getComputedStyle(document.documentElement);
+    var header = parseFloat(root.getPropertyValue('--site-header-h')) || 64;
+    var gap = parseFloat(root.getPropertyValue('--anchor-scroll-gap')) || 32;
+    var subnav = document.body.classList.contains('has-help-subnav')
+      ? (parseFloat(root.getPropertyValue('--help-subnav-h')) || 48)
+      : 0;
+    return header + subnav + gap;
+  }
 
   function setIconState(theme) {
     var sun = document.getElementById('icon-sun');
@@ -41,7 +49,7 @@
     var id = decodeURIComponent(hash.slice(1));
     var target = document.getElementById(id);
     if (!target) return false;
-    var y = target.getBoundingClientRect().top + window.pageYOffset - anchorOffset;
+    var y = target.getBoundingClientRect().top + window.pageYOffset - getAnchorOffset();
     window.scrollTo({ top: Math.max(0, y), behavior: replace ? 'auto' : 'smooth' });
     if (!replace) history.pushState(null, '', hash);
     return true;
