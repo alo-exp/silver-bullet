@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate light-themed Open Graph image (1200x630) for sb.alolabs.dev."""
+"""Generate Open Graph image (1200x630) for sb.alolabs.dev."""
 from __future__ import annotations
 
 import math
@@ -12,8 +12,8 @@ ROOT = Path(__file__).resolve().parent
 TOKENS_CSS = ROOT / "tokens.css"
 OUT = ROOT / "og-image.png"
 BULLET = ROOT / "silver-bullet.png"
-FONT_BOLD = ROOT / "fonts" / "alte-din-1451-mittelschrift.regular.ttf"
-FONT_REG = ROOT / "fonts" / "Gidole-Regular.ttf"
+FONT_BOLD = ROOT / "fonts" / "D-DIN-Bold.woff2"
+FONT_REG = ROOT / "fonts" / "D-DIN.woff2"
 
 W, H = 1200, 630
 
@@ -52,10 +52,16 @@ def _parse_rgba(value: str) -> tuple[int, int, int, float]:
     return (int(parts[0]), int(parts[1]), int(parts[2]), float(parts[3]))
 
 
-def load_light_tokens(path: Path) -> dict[str, str]:
+def load_theme_tokens(path: Path, theme: str) -> dict[str, str]:
     text = path.read_text(encoding="utf-8")
-    dark_idx = text.find('[data-theme="dark"]')
-    root_text = text[:dark_idx] if dark_idx >= 0 else text
+    if theme == "dark":
+        start = text.find('[data-theme="dark"]')
+        if start < 0:
+            raise ValueError("Dark theme block not found")
+        root_text = text[start:]
+    else:
+        dark_idx = text.find('[data-theme="dark"]')
+        root_text = text[:dark_idx] if dark_idx >= 0 else text
     return {
         match.group(1): match.group(2).strip()
         for match in re.finditer(r"--([\w-]+)\s*:\s*([^;]+);", root_text)
@@ -77,19 +83,19 @@ def _alpha255(alpha: float) -> int:
     return max(0, min(255, int(round(alpha * 255))))
 
 
-TOKENS = load_light_tokens(TOKENS_CSS)
+TOKENS = load_theme_tokens(TOKENS_CSS, "light")
 ACCENT = _token_rgb(TOKENS, "accent")
 ACCENT_LIGHT = _token_rgb(TOKENS, "accent-light")
 ACCENT2 = _token_rgb(TOKENS, "accent2")
+HERO_GREEN = ACCENT_LIGHT
 TEXT_PRIMARY = _token_rgb(TOKENS, "text-primary")
 TEXT_SECONDARY = _token_rgb(TOKENS, "text-secondary")
 TEXT_DIM = _token_rgb(TOKENS, "text-dim")
-GRAD_1 = _token_rgb(TOKENS, "grad-1")
-GRAD_2 = _token_rgb(TOKENS, "grad-2")
-MINT_GLOW = _token_rgba(TOKENS, "mint-a28")[:3]
+BG_PAGE = _token_rgb(TOKENS, "bg-page")
+BG_CARD = _token_rgb(TOKENS, "bg-card")
+BORDER = _token_rgb(TOKENS, "border")
 MINT_FILL = _token_rgba(TOKENS, "mint-a14")
-MINT_OUTLINE = _token_rgba(TOKENS, "mint-a28")
-MINT_BADGE_OUTLINE = _token_rgba(TOKENS, "mint-a35")
+MINT_OUTLINE = _token_rgba(TOKENS, "mint-a38")
 GRID_ALPHA = _alpha255(0.05)
 
 
@@ -141,11 +147,11 @@ def add_glow(canvas: Image.Image, cx: int, cy: int, radius: int, color: tuple[in
 
 
 def add_grid(canvas: Image.Image) -> None:
-    """Very subtle full-canvas grid — no masked dark regions."""
+    """Very subtle full-canvas grid."""
     grid = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(grid)
-    step = 48
-    line = (*ACCENT, GRID_ALPHA)
+    step = 44
+    line = (*ACCENT, _alpha255(0.045))
     for x in range(0, W, step):
         draw.line((x, 0, x, H), fill=line, width=1)
     for y in range(0, H, step):
@@ -181,103 +187,96 @@ def rounded_rect(
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
 
 
+def glow_line(
+    canvas: Image.Image,
+    points: list[tuple[int, int]],
+    fill: tuple[int, int, int],
+    width: int = 3,
+    alpha: int = 170,
+) -> None:
+    layer = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    ld = ImageDraw.Draw(layer)
+    ld.line(points, fill=(*fill, alpha), width=width, joint="curve")
+    blur = layer.filter(ImageFilter.GaussianBlur(7))
+    canvas.alpha_composite(blur)
+    canvas.alpha_composite(layer)
+
+
+def check_icon(size: int = 22, scale: int = 4) -> Image.Image:
+    """Render a circle-check from vector geometry, then downsample for clean PNG edges."""
+    s = size * scale
+    icon = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(icon)
+    stroke = max(2, int(round(size * 0.095))) * scale
+    pad = int(round(size * 0.13)) * scale
+    draw.ellipse((pad, pad, s - pad, s - pad), outline=(*HERO_GREEN, 255), width=stroke)
+    points = [
+        (size * 0.30 * scale, size * 0.52 * scale),
+        (size * 0.44 * scale, size * 0.66 * scale),
+        (size * 0.72 * scale, size * 0.36 * scale),
+    ]
+    draw.line(points, fill=(*HERO_GREEN, 255), width=stroke, joint="curve")
+    return icon.resize((size, size), Image.Resampling.LANCZOS)
+
+
+def draw_feature(draw: ImageDraw.ImageDraw, canvas: Image.Image, xy: tuple[int, int], text: str, font: ImageFont.FreeTypeFont) -> None:
+    x, y = xy
+    icon = check_icon()
+    canvas.alpha_composite(icon, (x, y + 3))
+    draw.text((x + 28, y), text, font=font, fill=TEXT_SECONDARY)
+
+
 def main() -> None:
     base = gradient_bg(W, H).convert("RGBA")
-    add_glow(base, 120, 80, 320, MINT_GLOW, MINT_FILL[3])
-    add_glow(base, 1050, 520, 260, MINT_GLOW, _token_rgba(TOKENS, "mint-a18")[3])
-    add_grid(base)
+    add_glow(base, 250, 130, 340, HERO_GREEN, 0.10)
+    add_glow(base, 980, 500, 260, ACCENT2, 0.07)
     draw = ImageDraw.Draw(base)
 
-    for x in range(W):
-        t = x / W
-        edge = min(t, 1 - t) / 0.35
-        a = max(0.0, min(1.0, edge))
-        c = lerp_color((234, 228, 218), ACCENT, a * 0.95)
-        draw.line((x, 0, x, 3), fill=(*c, 255))
+    fonts = {
+        "label": ImageFont.truetype(str(FONT_BOLD), 17),
+        "title": ImageFont.truetype(str(FONT_BOLD), 72),
+        "tag": ImageFont.truetype(str(FONT_BOLD), 18),
+        "headline": ImageFont.truetype(str(FONT_BOLD), 56),
+        "subhead": ImageFont.truetype(str(FONT_REG), 31),
+        "feature": ImageFont.truetype(str(FONT_REG), 22),
+    }
 
-    for y in range(H):
-        t = y / H
-        a = int(180 * (1 - abs(t - 0.15) * 2.2))
-        a = max(0, min(180, a))
-        draw.line((0, y, 4, y), fill=(*ACCENT, a))
-
-    font_label = ImageFont.truetype(str(FONT_BOLD), 15)
-    font_title = ImageFont.truetype(str(FONT_BOLD), 78)
-    font_tag_caps = ImageFont.truetype(str(FONT_BOLD), 16)
-    font_headline = ImageFont.truetype(str(FONT_BOLD), 34)
-    font_sub = ImageFont.truetype(str(FONT_REG), 22)
-    font_pill = ImageFont.truetype(str(FONT_BOLD), 13)
-    font_mono = ImageFont.truetype(str(FONT_REG), 14)
-    font_small = ImageFont.truetype(str(FONT_REG), 13)
-
-    chrome_grad = gradient_h(900, CHROME_STOPS)
+    chrome_grad = gradient_h(620, CHROME_STOPS)
 
     bullet = Image.open(BULLET).convert("RGBA")
-    bullet_h = 130
+    bullet_h = 104
     bullet_w = int(bullet.width * bullet_h / bullet.height)
     bullet = bullet.resize((bullet_w, bullet_h), Image.LANCZOS)
-    shadow = Image.new("RGBA", bullet.size, (0, 0, 0, 0))
-    ImageDraw.Draw(shadow).ellipse(
-        (8, bullet_h - 18, bullet_w - 8, bullet_h + 8), fill=(0, 0, 0, 45)
-    )
-    shadow = shadow.filter(ImageFilter.GaussianBlur(6))
-    bx, by = 72, 210
-    base.alpha_composite(shadow, (bx, by + 4))
+    bullet_shadow = Image.new("RGBA", base.size, (0, 0, 0, 0))
+    bullet_shadow.alpha_composite(bullet, (62, 61))
+    bullet_shadow = bullet_shadow.filter(ImageFilter.GaussianBlur(8))
+    base.alpha_composite(Image.eval(bullet_shadow, lambda p: min(p, 72)))
+    bx, by = 62, 61
     base.alpha_composite(bullet, (bx, by))
 
-    rounded_rect(
-        draw,
-        (W - 250, 34, W - 44, 64),
-        14,
-        fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
-        outline=(*MINT_BADGE_OUTLINE[:3], _alpha255(MINT_BADGE_OUTLINE[3])),
-        width=1,
-    )
-    draw.text((W - 236, 42), "ALPHA · v0.48.5", font=font_mono, fill=ACCENT_LIGHT)
+    draw_gradient_text(base, (174, 73), "Silver Bullet", fonts["title"], chrome_grad)
+    draw.text((174, 148), "THE PROCESS LAYER OF AI-DRIVEN DEV", font=fonts["tag"], fill=HERO_GREEN)
 
-    label = "Agentic Process Orchestrator for the AI Era"
-    lb = font_label.getbbox(label)
-    lw = lb[2] - lb[0]
-    lx, ly = 300, 118
-    rounded_rect(
-        draw,
-        (lx - 14, ly - 8, lx + lw + 14, ly + 24),
-        12,
-        fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
-        outline=(*MINT_OUTLINE[:3], _alpha255(MINT_OUTLINE[3])),
-    )
-    draw.text((lx, ly), label, font=font_label, fill=ACCENT_LIGHT)
+    draw.text((82, 260), "Maximize AI-driven", font=fonts["headline"], fill=TEXT_PRIMARY)
+    draw.text((82, 318), "Dev Process Reliability", font=fonts["headline"], fill=HERO_GREEN)
+    draw.text((82, 376), "at 10x Lower Cost", font=fonts["headline"], fill=TEXT_PRIMARY)
 
-    draw_gradient_text(base, (300, 158), "Silver Bullet", font_title, chrome_grad)
-    draw.text((300, 252), "THE PROCESS LAYER OF AI-DRIVEN DEV", font=font_tag_caps, fill=ACCENT_LIGHT)
-    draw.text((300, 296), "Maximize AI-driven", font=font_headline, fill=TEXT_PRIMARY)
-    draw.text((300, 338), "Dev Process Reliability", font=font_headline, fill=ACCENT_LIGHT)
-    draw.text((300, 396), "From spec to release · hook-enforced AI-native delivery", font=font_sub, fill=TEXT_SECONDARY)
-    draw.text(
-        (300, 432),
-        "27 AF-* atomic flows · 22 WF-* workflows · V-loop evidence · delivery gates",
-        font=font_small,
-        fill=TEXT_DIM,
-    )
+    draw.text((82, 458), "Enforce the Method Back to the AI Madness!", font=fonts["subhead"], fill=HERO_GREEN)
 
-    pills = ["Hook Gates", "Claude · Codex · Cursor"]
-    px = 300
-    py = 478
-    for pill in pills:
-        pb = font_pill.getbbox(pill)
-        pw = pb[2] - pb[0]
-        rounded_rect(
-            draw,
-            (px, py, px + pw + 24, py + 28),
-            14,
-            fill=(*MINT_FILL[:3], _alpha255(MINT_FILL[3])),
-            outline=(*MINT_OUTLINE[:3], _alpha255(MINT_OUTLINE[3])),
-        )
-        draw.text((px + 12, py + 6), pill, font=font_pill, fill=ACCENT_LIGHT)
-        px += pw + 36
-
-    draw.text((W - 170, H - 42), "sb.alolabs.dev", font=font_mono, fill=TEXT_DIM)
-    draw.text((48, H - 42), "Alo Labs", font=font_mono, fill=TEXT_DIM)
+    features = [
+        "Engineering Best Practices",
+        "Dynamically Tailored Workflows",
+        "Verification & Validation Loops",
+        "Quality Gates",
+        "Spec-to-Release Traceability",
+        "Cost Optimization",
+        "Intent-Aligned Results",
+        "Knowledge Management",
+    ]
+    right_x = 806
+    draw.text((right_x, 154), "Agentic Process Orchestrator", font=fonts["label"], fill=HERO_GREEN)
+    for idx, feature in enumerate(features):
+        draw_feature(draw, base, (right_x, 196 + idx * 42), feature, fonts["feature"])
 
     final = base.convert("RGB")
     final.save(OUT, "PNG", optimize=True)
@@ -285,9 +284,9 @@ def main() -> None:
     print(
         "Tokens:",
         f"accent=#{ACCENT[0]:02x}{ACCENT[1]:02x}{ACCENT[2]:02x}",
-        f"accent-light=#{ACCENT_LIGHT[0]:02x}{ACCENT_LIGHT[1]:02x}{ACCENT_LIGHT[2]:02x}",
-        f"grad-1=#{GRAD_1[0]:02x}{GRAD_1[1]:02x}{GRAD_1[2]:02x}",
-        f"grad-2=#{GRAD_2[0]:02x}{GRAD_2[1]:02x}{GRAD_2[2]:02x}",
+        f"accent2=#{ACCENT2[0]:02x}{ACCENT2[1]:02x}{ACCENT2[2]:02x}",
+        f"hero-green=#{HERO_GREEN[0]:02x}{HERO_GREEN[1]:02x}{HERO_GREEN[2]:02x}",
+        f"bg-page=#{BG_PAGE[0]:02x}{BG_PAGE[1]:02x}{BG_PAGE[2]:02x}",
     )
 
 
