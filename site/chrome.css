@@ -351,3 +351,53 @@ body.has-help-subnav .doc-content .ref-table td{
 body.has-help-subnav .page-nav-bottom{
   border-top:1px solid var(--border);
 }
+
+/* Help doc layout — prevent grid blowout from wide tables / mono paths */
+body.has-help-subnav .doc-layout{
+  grid-template-columns:220px minmax(0,1fr);
+}
+body.has-help-subnav .doc-content{
+  min-width:0;
+  max-width:100%;
+}
+body.has-help-subnav .doc-content .table-wrap{
+  overflow-x:auto;
+  max-width:100%;
+  -webkit-overflow-scrolling:touch;
+}
+body.has-help-subnav .doc-content .ref-table,
+body.has-help-subnav .doc-content .comparison-table,
+body.has-help-subnav .doc-content .pref-table,
+body.has-help-subnav .doc-content .feat-table,
+body.has-help-subnav .doc-content .cat-table{
+  display:block;
+  overflow-x:auto;
+  max-width:100%;
+  -webkit-overflow-scrolling:touch;
+}
+body.has-help-subnav .doc-content .ref-table thead,
+body.has-help-subnav .doc-content .ref-table tbody,
+body.has-help-subnav .doc-content .comparison-table thead,
+body.has-help-subnav .doc-content .comparison-table tbody,
+body.has-help-subnav .doc-content .pref-table thead,
+body.has-help-subnav .doc-content .pref-table tbody,
+body.has-help-subnav .doc-content .feat-table thead,
+body.has-help-subnav .doc-content .feat-table tbody,
+body.has-help-subnav .doc-content .cat-table thead,
+body.has-help-subnav .doc-content .cat-table tbody{
+  display:table;
+  width:max-content;
+  min-width:100%;
+}
+body.has-help-subnav .doc-content .ref-table td:first-child{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.has-help-subnav .doc-content .ref-table th,
+body.has-help-subnav .doc-content .ref-table td{
+  overflow-wrap:break-word;
+}
+body.has-help-subnav .doc-content pre,
+body.has-help-subnav .doc-content .code-block{
+  max-width:100%;
+}
