@@ -4,6 +4,21 @@ The algorithms for the cross-model consolidation phases. Generic — works for a
 
 ---
 
+## Phase mapping (methodology.md ↔ consolidation-rules.md)
+
+`methodology.md` uses 4 high-level phases (1–4). `consolidation-rules.md` uses 4 detailed sub-phases (2–5) that fit inside methodology's phases 2–3. The mapping:
+
+| methodology.md phase | consolidation-rules.md sub-phase(s) | What it does |
+|---------------------|----------------------------------------|--------------|
+| Phase 1 (Per-model execution) | — (dispatch happens before consolidation) | Same prompt sent to N models in parallel |
+| Phase 2 (Output capture and extraction) | Phase 2 (ALIGN) | Per-model outputs are aligned into a uniform structure (`structured.jsonl`) |
+| Phase 3 (Cross-model consolidation) | Phase 3 (DEDUP) + Phase 4 (Resolve + Aggregate) | Dedup by primary key → resolve conflicts → aggregate scores |
+| Phase 4 (Final synthesis) | Phase 5 (SCORE + SYNTHESIZE) | Write `consolidated.md` + HTML preview + `conflicts.md` + `evidence-ledger.md` (thorough mode) |
+
+This sub-phase numbering (2, 3, 4, 5) matches `methodology.md`'s 4-phase pipeline with an offset. Every consolidation sub-phase links back to the corresponding methodology phase.
+
+---
+
 ## The minimal contract for consolidation
 
 For the consolidation step to work, the model responses need to be decomposable into **items**. An item has:
@@ -23,7 +38,9 @@ What matters is that the responses are list-shaped, and items within a response 
 
 ---
 
-## Phase 2 — ALIGN: extract per-model structured data
+## Phase 2 — Output capture and extraction (ALIGN)
+
+Per `methodology.md:23`, Phase 2 is output capture and extraction. In the consolidation pipeline, this sub-phase is called "ALIGN" because its job is to align per-model outputs into a uniform structure.
 
 For each model report, extract the per-item data into a normalized record:
 
@@ -75,7 +92,9 @@ function extractRows(content, model) {
 
 ---
 
-## Phase 3 — DEDUP: build the canonical registry
+## Phase 3 — Cross-model consolidation (DEDUP)
+
+Per `methodology.md:108`, Phase 3 is cross-model consolidation. The DEDUP step within Phase 3 is where items with the same primary key are merged.
 
 ### Alias mapping
 
@@ -133,7 +152,9 @@ If the model responses don't have a clear `primary_key` field, apply fuzzy match
 
 ---
 
-## Phase 4 — RESOLVE CONFLICTS
+## Phase 4 — Conflict resolution and aggregation
+
+In the consolidation pipeline, Phase 4 includes both the conflict-resolution step (formerly labeled "Phase 3.5" in the original numbering) and the score-aggregation step (formerly "Phase 3.6"). This phase takes the dedup'd registry from Phase 3 and produces the final consolidated record set.
 
 For each canonical item, look at the per-field values across models. Apply the configured resolution rule per field.
 
