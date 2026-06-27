@@ -1,7 +1,7 @@
 ---
 name: multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
-argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--concurrency parallel|sequential] [--no-auto-inject]"
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
 user-invocable: false
 version: 2.1.0
 ---
@@ -66,7 +66,6 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 | `--out` | NO | `./multi-ai-out/<timestamp>/` | Output directory |
 | `--schema` | NO | LLM-assisted extraction | Optional structured output schema. Either a JSON object (inline) or a path to a `.json` file. Defines columns, types, dedup keys, conflict rules. |
 | `--mode` | NO | `standard` | `quick` (merge raw, no dedup) / `standard` (dedup + conflict resolution) / `thorough` (standard + cross-source verification; see Mode semantics) |
-| `--concurrency` | NO | `parallel` | `parallel` (concurrent dispatch, faster) or `sequential` (one at a time, avoids MCP port collision) |
 | `--no-auto-inject` | NO | (schema is auto-injected) | If passed, the skill does NOT append the schema to the dispatch prompt. Use when your prompt already embeds the schema or you want to manage prompt construction yourself. |
 
 ### Default model discovery
