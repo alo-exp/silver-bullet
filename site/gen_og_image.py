@@ -233,7 +233,7 @@ def main() -> None:
     draw = ImageDraw.Draw(base)
 
     fonts = {
-        "label": ImageFont.truetype(str(FONT_BOLD), 17),
+        "label": ImageFont.truetype(str(FONT_BOLD), 26),
         "title": ImageFont.truetype(str(FONT_BOLD), 72),
         "tag": ImageFont.truetype(str(FONT_BOLD), 18),
         "headline": ImageFont.truetype(str(FONT_BOLD), 56),
@@ -255,7 +255,7 @@ def main() -> None:
     base.alpha_composite(bullet, (bx, by))
 
     draw_gradient_text(base, (174, 73), "Silver Bullet", fonts["title"], chrome_grad)
-    draw.text((174, 148), "THE PROCESS LAYER OF AI-DRIVEN DEV", font=fonts["tag"], fill=HERO_GREEN)
+    draw.text((176, 148), "THE PROCESS LAYER OF AI-DRIVEN DEV", font=fonts["tag"], fill=HERO_GREEN)
 
     draw.text((82, 260), "Maximize AI-driven", font=fonts["headline"], fill=TEXT_PRIMARY)
     draw.text((82, 318), "Dev Process Reliability", font=fonts["headline"], fill=HERO_GREEN)
@@ -274,7 +274,7 @@ def main() -> None:
         "Knowledge Management",
     ]
     right_x = 806
-    draw.text((right_x, 154), "Agentic Process Orchestrator", font=fonts["label"], fill=HERO_GREEN)
+    draw.text((right_x, 150), "AGENTIC PROCESS ORCHESTRATOR", font=fonts["label"], fill=HERO_GREEN)
     for idx, feature in enumerate(features):
         draw_feature(draw, base, (right_x, 196 + idx * 42), feature, fonts["feature"])
 
