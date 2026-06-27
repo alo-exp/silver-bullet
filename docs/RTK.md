@@ -128,10 +128,10 @@ SB does **not** merge RTK rewrite logic into the SB plugin `hooks.json`.
 
 | Surface | RTK rewrite? | SB handling |
 |---------|--------------|-------------|
-| Agent Shell/Bash (Cursor/Claude) | Yes — allow-listed commands become `rtk <cmd>` | SB PreToolUse hooks run **before** RTK and match the **original** command string (`git push`, `gh pr create`, etc.) |
-| SB hook subprocesses (`cursor-hook-bridge.sh`, `session-start`, …) | No — hooks are not Shell tool calls | `hooks/lib/rtk-compat.sh` exports `RTK_DISABLED=1` + `SILVER_BULLET=1` |
-| SB harness scripts (`install-claude.sh`, `run-enterprise-e2e-matrix.sh`, …) | No — direct terminal execution | Same `rtk-compat.sh` export at script entry |
-| Nested `git`/`gh` inside SB scripts | Filter only if invoked via `rtk` on PATH | `RTK_DISABLED=1` disables RTK output filters for child commands |
+| Agent Shell/Bash (Cursor/Claude) | Yes — allow-listed commands become `rtk <cmd>` when opted in | SB PreToolUse hooks run **before** RTK and match the **original** command string; gates also unwrap `rtk` prefix for `beforeShellExecution` |
+| SB hook subprocesses (`cursor-hook-bridge.sh`, `session-start`, …) | No — hooks are not Shell tool calls | `rtk-compat.sh` exports `SILVER_BULLET=1`; `RTK_DISABLED` only when RTK **not** opted in |
+| SB harness scripts (`install-claude.sh`, `run-enterprise-e2e-matrix.sh`, …) | No — direct terminal execution | `SB_RTK_COMPAT_MODE=verbatim` before source → `RTK_DISABLED=1` for deterministic parsing |
+| Nested `git`/`gh` inside SB scripts | Filter only if invoked via `rtk` on PATH | Verbatim harness mode disables filters; opted-in hook bridge allows RTK |
 
 **Verbatim agent commands:** prefix with `RTK_DISABLED=1` (upstream documented bypass). Example: `RTK_DISABLED=1 git diff main...HEAD` — `rtk hook cursor` returns `{}` and runs uncompressed.
 

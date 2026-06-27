@@ -130,11 +130,15 @@ Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / 
 | **RTK** | Shell token compression (see RTK coexistence below) |
 | **Context Mode** | MCP / large-file compression |
 
-### RTK coexistence (`RTK_DISABLED=1`)
+### RTK coexistence (scoped `RTK_DISABLED`)
 
-RTK transparently rewrites allow-listed agent shell commands via PreToolUse hooks (e.g. `git status` → `rtk git status`) to compress output. That is desirable for **agent** sessions but would distort **SB harness scripts** that parse exact command output or spawn nested git/gh.
+RTK transparently rewrites allow-listed agent shell commands via PreToolUse hooks (e.g. `git status` → `rtk git status`) to compress output. That is desirable for **agent** sessions when `recommended_tools.rtk.enabled_by_user` is true.
 
-SB therefore exports `RTK_DISABLED=1` (via `hooks/lib/rtk-compat.sh`) in hook bridge, matrix runner, install entrypoints, and this live-test script. Upstream RTK honors `RTK_DISABLED=1` and skips rewrite. This is a **coexistence pattern**, not a rejection of RTK — agents still benefit from RTK when hooks are wired; SB bash runs verbatim for deterministic harness behavior.
+SB hook subprocesses are not Shell tool calls — RTK PreToolUse does not rewrite them. When the user opts in to RTK, `hooks/lib/rtk-compat.sh` does **not** export `RTK_DISABLED` in the hook bridge, so nested git/gh inside hooks can use RTK filters. Gate regexes (`completion-audit.sh`, etc.) unwrap `rtk` / `RTK_DISABLED=1` prefixes for classification.
+
+**Harness scripts** that parse exact command output (`run-enterprise-e2e-matrix.sh`, `install-claude.sh`, live-test entrypoint) set `SB_RTK_COMPAT_MODE=verbatim` before sourcing `rtk-compat.sh`, which forces `RTK_DISABLED=1` for deterministic behavior.
+
+Agents needing verbatim output can still prefix `RTK_DISABLED=1 git diff main...HEAD` — upstream RTK skips rewrite.
 
 ---
 
