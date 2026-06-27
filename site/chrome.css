@@ -2,7 +2,7 @@
 
 :root{
   --site-header-h:64px;
-  --help-subnav-h:56px;
+  --help-subnav-h:72px;
   --chrome-stack-h:calc(var(--site-header-h) + var(--help-subnav-h));
   --anchor-scroll-gap:32px;
 }
@@ -102,7 +102,7 @@ body > nav .nav-cta:hover{
 /* Footer — 3-column: brand | copyright | legal */
 footer{
   border-top:1px solid var(--border);padding:48px 0;
-  color:var(--text-dim);font-size:1.029rem;
+  color:var(--text-dim);font-size:.85rem;
   background:linear-gradient(180deg,var(--mint-a06) 0%,var(--bg-hero) 55%,rgba(4,8,14,.98) 100%);
 }
 [data-theme="light"] footer{
@@ -125,12 +125,13 @@ footer .footer-brand-link{
 }
 footer .footer-brand-link:hover{color:var(--accent-light)}
 footer .footer-brand-group{justify-self:start}
-footer .footer-credit{font-size:.9rem;color:var(--text-secondary)}
+footer .footer-credit{font-size:inherit;color:var(--text-secondary)}
 footer .footer-copyright{
   justify-self:center;text-align:center;
-  font-size:.85rem;color:var(--text-dim);white-space:nowrap;
+  font-size:inherit;color:var(--text-dim);white-space:nowrap;
 }
-footer .footer-links{display:flex;gap:24px;justify-self:end;flex-wrap:wrap}
+footer .footer-links{display:flex;gap:24px;justify-self:end;flex-wrap:wrap;font-size:inherit}
+footer .footer-links a{font-size:inherit}
 @media(max-width:768px){
   footer .footer-inner{
     grid-template-columns:1fr;
@@ -170,7 +171,7 @@ footer .footer-links{display:flex;gap:24px;justify-self:end;flex-wrap:wrap}
   overflow:visible;
 }
 .help-subnav-inner{
-  max-width:1200px;margin:0 auto;padding:10px 24px;
+  max-width:1200px;margin:0 auto;padding:14px 24px;
   min-height:var(--help-subnav-h);
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   flex-wrap:nowrap;
@@ -190,7 +191,7 @@ footer .footer-links{display:flex;gap:24px;justify-self:end;flex-wrap:wrap}
 .help-breadcrumb .current{color:var(--text-primary);font-weight:600}
 .help-subnav-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .help-subnav-links a{
-  padding:8px 18px;border-radius:999px;font-size:.8rem;font-weight:400;
+  padding:10px 20px;border-radius:999px;font-size:.8rem;font-weight:400;line-height:1.2;
   border:none;background:var(--bg-card);color:var(--text-secondary);
   text-decoration:none;white-space:nowrap;transition:all .2s;
 }
@@ -227,6 +228,7 @@ body.has-help-subnav section.hero{
   padding-top:calc(var(--chrome-stack-h) + 24px);
   padding-bottom:80px;padding-left:24px;padding-right:24px;
 }
+body.has-help-subnav section.hero h1{margin-bottom:40px}
 
 /* Help doc article layout — left sidebar TOC */
 .doc-sidebar{
@@ -266,7 +268,7 @@ body.has-help-subnav .doc-content h3{
   .doc-sidebar{display:none}
 }
 @media(max-width:768px){
-  .help-subnav-inner{flex-wrap:wrap;align-items:flex-start;padding:10px 24px}
+  .help-subnav-inner{flex-wrap:wrap;align-items:flex-start;padding:14px 24px}
   .help-breadcrumb{flex:1 1 100%}
   .help-subnav-extra{flex:1 1 100%;margin-left:0}
   .help-subnav-links{display:none}
