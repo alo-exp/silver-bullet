@@ -1,0 +1,16 @@
+2026-06-26T19:02:49Z tui-watch started pid=48482 max_runtime=21600s poll=60-120s
+2026-06-26T19:02:49Z tui-watch started pid=48482 max_runtime=21600s poll=60-120s
+2026-06-26T19:02:49Z ledger UX: row=1 blocker skill
+2026-06-26T19:02:49Z ledger UX: row=1 blocker skill
+2026-06-26T19:02:49Z ledger UX: row=1 blocker hook
+2026-06-26T19:02:49Z ledger UX: row=1 blocker hook
+2026-06-27T04:15:07Z tui-watch started pid=5378 max_runtime=21600s poll=60-120s
+2026-06-27T04:15:07Z monitor dead — restarting (no duplicate matrix)
+2026-06-27T04:15:07Z monitor restarted pid=5407
+2026-06-27T04:15:07Z matrix complete — exiting
+2026-06-27T04:15:07Z tui-watch finished issues=0
+2026-06-27T04:15:16Z tui-watch started pid=9741 max_runtime=21600s poll=60-120s
+2026-06-27T04:15:16Z monitor dead — restarting (no duplicate matrix)
+2026-06-27T04:15:16Z monitor restarted pid=9776
+2026-06-27T04:15:16Z matrix complete — exiting
+2026-06-27T04:15:16Z tui-watch finished issues=0

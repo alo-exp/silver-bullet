@@ -1,0 +1,49 @@
+=== Matrix monitor poll 2026-06-27T04:15:16Z ===
+batch PID: done — COMPLETE
+elapsed batch: ?
+current row (log): 22
+matrix log bytes: 33541
+issues (recent): none
+claude/expect:
+  
+  row1-attempt.log: 2084430 bytes (2026-06-27 09:42)
+  row5-attempt.log: 2148941 bytes (2026-06-27 12:09)
+  row7-attempt.log: 736520 bytes (2026-06-27 12:10)
+  row8-attempt.log: 822739 bytes (2026-06-27 12:10)
+  row9-attempt.log: 360650 bytes (2026-06-27 12:10)
+  row10-attempt.log: 311216 bytes (2026-06-27 12:10)
+  row11-attempt.log: 2453060 bytes (2026-06-27 12:10)
+  row12-attempt.log: 592673 bytes (2026-06-27 12:10)
+  row13-attempt.log: 381773 bytes (2026-06-27 12:11)
+  row14-attempt.log: 1017180 bytes (2026-06-27 12:11)
+  row15-attempt.log: 478811 bytes (2026-06-27 12:11)
+  row16-attempt.log: 590690 bytes (2026-06-27 12:11)
+  row17-attempt.log: 122008 bytes (2026-06-27 12:11)
+  row18-attempt.log: 433049 bytes (2026-06-27 12:11)
+  row19-attempt.log: 227407 bytes (2026-06-27 12:12)
+  row20-attempt.log: 467164 bytes (2026-06-27 12:12)
+log tail:
+
+    PASS: evidence at docs/WORKFLOW_E2E_MATRIX.md
+  
+  === Matrix summary ===
+  Pass:  12
+  Fail:  0
+  Skip:  0
+  Total: 12 / 22
+  === Enterprise E2E Matrix Runner ===
+  SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+  Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+  Claude:     /Users/shafqat/.local/bin/claude
+  
+  === Row 21: post-exec-gates (internal) PASS ===
+  === Row 22: validate-substep (internal) PASS ===
+  
+  === Matrix summary ===
+  Pass:  2
+  Fail:  0
+  Skip:  0
+  Total: 2 / 22
+retry policy: 429→600s; ENOTFOUND→120-300s; DRY_RUN unset
+monitor PID: 9776
+poll interval: 300s; stall=2700s; hung=5400s

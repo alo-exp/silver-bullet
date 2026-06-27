@@ -67,7 +67,7 @@ echo "Outputs in $OUT/"
 
 **Composite primary key:** `file` AND `line` both have `dedup_key: true`. This is the canonical way to express a composite key (per `SKILL.md:143`). Two rows with the same `(file, line)` tuple are merged.
 
-**Why the old `"primary_key": "file:line"` is wrong:** the skill spec says composite keys are expressed by listing multiple columns with `dedup_key: true` — not by concatenating strings. The string-form `primary_key` is not a recognized schema field. The schema above is the correct form.
+**Why `"primary_key": "file:line"` is wrong for composite keys:** the top-level `primary_key` field names a single column as the dedup key. For composite keys (file + line together), list multiple columns with `dedup_key: true` instead of concatenating column names with `:`. The schema above is the correct form for a composite key.
 
 **Conflict-resolution note:** the default `severity_order` for `most-severe` is `["blocker", "major", "minor", "nit"]` (most-severe first; see `rules/consolidation-rules.md`). If a reviewer adds a custom severity (e.g., `critical`), declare it in the schema:
 ```json

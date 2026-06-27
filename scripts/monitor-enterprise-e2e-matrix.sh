@@ -168,7 +168,9 @@ incomplete_rows() {
   if ! grep -q 'Row 22:.*PASS' "$MATRIX_LOG" 2>/dev/null; then
     out+=(22)
   fi
-  printf '%s\n' "${out[@]}"
+  if (( ${#out[@]} > 0 )); then
+    printf '%s\n' "${out[@]}"
+  fi
 }
 
 matrix_all_done() {

@@ -1,0 +1,36 @@
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+
+[2G⚠[4GBoth[9Gclaude.ai[19Gand[23GANTHROPIC_API_KEY[41Gset[45G·[47Gauth[52Gmay[56Gnot[60Gwork[65Gas[68Gexpected
+[4G·[6Gto[9Guse[13Gclaude.ai:[24GUnset[30Gthe[34GANTHROPIC_API_KEY[52Genvironment[64Gvariable,[74Gor
+[4Gclaude[11G/logout[19Gthen[24Gsay[28G"No"[33Gto[36Gthe[40GAPI[44Gkey[48Gapproval[57Gbefore[64Glogin.
+[4G·[6Gto[9Guse[13GANTHROPIC_API_KEY:[32Gclaude[39G/logout[47Gto[50Gsign[55Gout[59Gof[62Gclaude.ai.
+
+────────────────────────────────────────────────────────────────────────────────
+❯ [7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[71G0[73Gtokens
+[64G○[66Glow[70G·[72G/effort
+[2C[4A[2D[4B[70C[2A[K[63C[1B [66G   [70G 0 tokens
+[3G⚠[5Gclaude.ai[15Gconnectors[26Gare[30Gdisabled[39Gbecause[47GANTHROPIC_API_KEY[65Gor[68Ganother[76Gau…
+[2C[5A[>0q[c[2D[5B[2C[5A[K[1B  /silver I need to add order validation to the API — route me. Enterprise E2E[K[2C[1Bmatrix validat[18Gon.  Use the Silver Bullet orchestrator; parent[66Gmust[71Gnot[2C[1Bimplement[13Gproduct[21Gcode[26Ginline.[34GCreate[41Gworkflow[50Gevidence[59Gat[71G[K[2C[1B.planning/workflows/[24Gouter-se[33Gsion.md. Stop[47Gwhen the workflow[65Gis[68Gcompl[74Gte.[K
+[3G[7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)
+[71G0[73Gtokens
+[3G⚠[5Gclaude.ai[15Gconnectors[26Gare[30Gdisabled[39Gbecause[47GANTHROPIC_API_KEY[65Gor[68Ganother[76Gau…
+[2C[5A[2D[5B[2K[G[1A[70C[2A0[73Gtokens[63C[1B○[66Glow[70G· /effort[1B[K[2C[4A[2D[4B[2K[G[1A[K[2C[3AERROR: timed out waiting for Claude response
+  FAIL: missing evidence at .planning/workflows/router-session.md
+
+=== Matrix summary ===
+Pass:  0
+Fail:  1
+Skip:  0
+Total: 1 / 22

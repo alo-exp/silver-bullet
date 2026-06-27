@@ -1,0 +1,36 @@
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+[4Gclaude[11G/logout[19Gthen[24Gsay[28G"No"[33Gto[36Gthe[40GAPI[44Gkey[48Gapproval[57Gbefore[64Glogin.
+[4G·[6Gto[9Guse[13GANTHROPIC_API_KEY:[32Gclaude[39G/logout[47Gto[50Gsign[55Gout[59Gof[62Gclaude.ai.
+
+────────────────────────────────────────────────────────────────────────────────
+❯ [7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[71G0[73Gtokens
+[64G○[66Glow[70G·[72G/effort
+[2C[4A[2D[4B[70C[2A[K[63C[1B [66G   [70G 0 tokens
+[3G⚠[5Gclaude.ai[15Gconnectors[26Gare[30Gdisabled[39Gbecause[47GANTHROPIC_API_KEY[65Gor[68Ganother[76Gau…
+[2C[5A[>0q[c[2D[5B[2C[5A[K[1B  Use the [$silver]() skill as the only entrypoint and follow it. Route this[K[2C[1Brequest to `/s[18Glver` throug[31G the orchestrator, execute the composed[2C[1Bworkflow,[13Gand[17Gdo[20Gnot[24Guse[28Gany[32Glocal[38Gcodex-plugins[52Gskill-source[65Gcheckout.[K[2C[1BEnterprise E2E matrix v[27Glidation. I[39Gn[41Ged to[47Gadd order validati[66Gn[68Gto [74G API[K
+[3G—[5Groute[11Gme.[15GUse[19Gthe[23GSilver[30GBullet[37Gorchestrator;[51Gparent[58Gmust[63Gnot[67Gimplement
+[3Gproduct[11Gcode[16Ginline.[24GCreate[31Gworkflow[40Gevidence[49Gat[52Gthe[56Gmatrix[63Gevidence[72Gpath.
+[3GStop[8Gwhen[13Gthe[17Gworkflow[26Gis[29Gcomplete.
+[3G[7m [27m
+────────────────────────────────────────────────────────────────────────────────
+[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)
+[71G0[73Gtokens
+[3G⚠[5Gclaude.ai[15Gconnectors[26Gare[30Gdisabled[39Gbecause[47GANTHROPIC_API_KEY[65Gor[68Ganother[76Gau…
+[2C[5A[2D[5B[2K[G[1A[70C[2A0[73Gtokens[63C[1B○[66Glow[70G· /effort[1B[K[2C[4A[2D[4B[2K[G[1A[K[2C[3AERROR: timed out waiting for Claude response
+  FAIL: missing evidence at .planning/workflows/router-session.md
+
+=== Matrix summary ===
+Pass:  0
+Fail:  1
+Skip:  0
+Total: 1 / 22

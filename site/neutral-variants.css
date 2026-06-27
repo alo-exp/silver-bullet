@@ -188,12 +188,17 @@ html[data-theme="dark"][data-neutral-variant="s3"] footer{
   border-top-color:#26394f;
 }
 
-html[data-theme="dark"][data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab){
+html[data-theme="dark"][data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
   border-width:0 !important;
 }
 
 html[data-neutral-variant="s3"] .feature-card,
 html[data-neutral-variant="s3"] .ecosystem-card,
+html[data-neutral-variant="s3"] .cost-card,
+html[data-neutral-variant="s3"] .cost-emotional,
+html[data-neutral-variant="s3"] .mech-card,
+html[data-neutral-variant="s3"] .future-card,
+html[data-neutral-variant="s3"] .enforcement-block,
 html[data-neutral-variant="s3"] .devops-card,
 html[data-neutral-variant="s3"] .layer-card,
 html[data-neutral-variant="s3"] .compare-card,
@@ -256,6 +261,6 @@ html[data-neutral-variant="s3"] .callout .callout-icon svg{
   margin-right:auto;
 }
 
-html[data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab){
+html[data-neutral-variant="s3"] *:not(button):not(.btn):not(.nav-cta):not(.workflow-tab):not(.version-badge):not(.nav-alpha){
   border-width:0 !important;
 }

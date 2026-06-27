@@ -4,6 +4,21 @@ The algorithms for the cross-model consolidation phases. Generic — works for a
 
 ---
 
+## Phase mapping (methodology.md ↔ consolidation-rules.md)
+
+`methodology.md` uses 4 high-level phases (1–4). `consolidation-rules.md` uses 4 detailed sub-phases (2–5) that fit inside methodology's phases 2–3. The mapping:
+
+| methodology.md phase | consolidation-rules.md sub-phase(s) | What it does |
+|---------------------|----------------------------------------|--------------|
+| Phase 1 (Per-model execution) | — (dispatch happens before consolidation) | Same prompt sent to N models in parallel |
+| Phase 2 (Output capture and extraction) | Phase 2 (ALIGN) | Per-model outputs are aligned into a uniform structure (`structured.jsonl`) |
+| Phase 3 (Cross-model consolidation) | Phase 3 (DEDUP) + Phase 4 (Resolve + Aggregate) | Dedup by primary key → resolve conflicts → aggregate scores |
+| Phase 4 (Final synthesis) | Phase 5 (SCORE + SYNTHESIZE) | Write `consolidated.md` + HTML preview + `conflicts.md` + `evidence-ledger.md` (thorough mode) |
+
+This sub-phase numbering (2, 3, 4, 5) matches `methodology.md`'s 4-phase pipeline with an offset. Every consolidation sub-phase links back to the corresponding methodology phase.
+
+---
+
 ## The minimal contract for consolidation
 
 For the consolidation step to work, the model responses need to be decomposable into **items**. An item has:
@@ -23,7 +38,9 @@ What matters is that the responses are list-shaped, and items within a response 
 
 ---
 
-## Phase 2 — ALIGN: extract per-model structured data
+## Phase 2 — Output capture and extraction (ALIGN)
+
+Per `methodology.md:23`, Phase 2 is output capture and extraction. In the consolidation pipeline, this sub-phase is called "ALIGN" because its job is to align per-model outputs into a uniform structure.
 
 For each model report, extract the per-item data into a normalized record:
 
@@ -75,7 +92,9 @@ function extractRows(content, model) {
 
 ---
 
-## Phase 3 — DEDUP: build the canonical registry
+## Phase 3 — Cross-model consolidation (DEDUP)
+
+Per `methodology.md:108`, Phase 3 is cross-model consolidation. The DEDUP step within Phase 3 is where items with the same primary key are merged.
 
 ### Alias mapping
 
@@ -133,7 +152,9 @@ If the model responses don't have a clear `primary_key` field, apply fuzzy match
 
 ---
 
-## Phase 3.5 — RESOLVE CONFLICTS
+## Phase 4 — Conflict resolution and aggregation
+
+In the consolidation pipeline, Phase 4 includes both the conflict-resolution step (formerly labeled "Phase 3.5" in the original numbering) and the score-aggregation step (formerly "Phase 3.6"). This phase takes the dedup'd registry from Phase 3 and produces the final consolidated record set.
 
 For each canonical item, look at the per-field values across models. Apply the configured resolution rule per field.
 
@@ -168,7 +189,7 @@ The following rules are referenced in the example recipes (`rules/examples/`) an
 - **Purpose:** pick the most-severe value across models (default for code-review severity, security audit findings).
 - **Input:** List of `(value, severity_order?)` per model. If `severity_order` is declared in the schema, use it. Otherwise default to: `["blocker", "major", "minor", "nit"]` (most-severe first).
 - **Algorithm:** `min(values, key=severity_order.index)` — index 0 = most-severe (`blocker`), index N-1 = least-severe. So `min` returns the value with the smallest index, i.e., the most-severe. Ties broken by `majority` among the max-severity tier. If N=0, return `null` (or the schema default).
-- **Edge case:** if 1/N reviewers disagrees with no evidence quote, downgrade the lone max to the next-severity tier (avoids model hallucination of "blocker" with no support).
+- **Edge case:** if 1/N reviewers says `blocker` and all others say `major` (or lower), and the lone `blocker` has no evidence quote, the schema may declare `"allow_downgrade": true` to downgrade the lone max to the next-severity tier. **Default: `allow_downgrade: false`** — the most-severe value wins even if only 1 reviewer reported it. This matches the code-review safety principle: "don't downgrade a blocker just because one reviewer missed it." Set `allow_downgrade: true` only when the task context requires conservative consensus (e.g., security audit with high false-positive risk).
 - **Implementation note:** if the schema declares `severity_order`, the convention is **most-severe first** (index 0 is the most-severe value). This is the natural reading order ("blocker, major, minor, nit" reads from worst to best). If you reverse the convention, the algorithm needs `max` instead — but don't do that; the rule library assumes most-severe-first ordering everywhere.
 
 #### `majority`
@@ -178,10 +199,11 @@ The following rules are referenced in the example recipes (`rules/examples/`) an
 - **Edge case:** with 2 models and 2 different values, no majority — return `null`.
 
 #### `majority-with-uncertain`
-- **Purpose:** like `majority`, but require a higher threshold; if not met, return `unverified` (default for fact-check verdicts).
+- **Purpose:** like `majority`, but require a *strict* majority threshold; if not met, return `unverified` (default for fact-check verdicts).
 - **Input:** List of values per model.
-- **Algorithm:** require ≥ `max(2, ceil(N/2))` models to agree on a value. If met, return that value. If not, return `unverified`.
-- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`.
+- **Algorithm:** require `> max(2, ceil(N/2))` models to agree on a value (i.e., any dissent blocks consensus). For N=3, all 3 must agree; for N=5, at least 4 must agree; for N=7, at least 5 must agree. If met, return that value. If not, return `unverified`.
+- **Edge case:** with N=1, single vote never reaches the threshold; return `unverified`. With N=2, two models must agree exactly (any dissent returns `unverified`).
+- **Rationale for strict-majority:** this is the "high-stakes" rule — used for fact-check, security audit, regulatory review. Any dissent (even 1 of N) blocks consensus. If you want "any agreement is consensus", use `majority` instead.
 - **Naming consistency:** the rule returns the value `unverified` (matching the schema's `values: ["true", "false", "partially-true", "unverified"]`). If a user schema uses a different name for the "unverified" verdict (e.g., `partially-true`), set `conflict_resolution.verdict_uncertain_value: "partially-true"` to remap. Do NOT change the rule's return value to match the schema — change the schema to match the rule.
 
 #### `lowest-of-majors`
@@ -263,7 +285,7 @@ For "beta" vs "production" disagreements, use the project's most recent release 
 
 ---
 
-## Phase 3.6 — SCORE + SYNTHESIZE
+## Phase 5 — SCORE + SYNTHESIZE
 
 ### Aggregate scoring matrix
 
@@ -304,7 +326,7 @@ For specific task types, override the defaults:
 | **Code review** | Use `most-severe` for `severity` field; dedup by `file:line` (not file alone) |
 | **Fact-check** | Use `majority` for `verdict`; require ≥2 sources for `true` claims; `unverified` if no consensus |
 | **Ideation** | No dedup (every idea is unique); rank by median `feasibility` × `impact` score |
-| **Writing critique** | Use `concatenate` for comments; present all model feedback in parallel sections |
+| **Writing critique** | Use `concatenate-all` for comments; present all model feedback in parallel sections |
 | **Translation verification** | Use `majority` for `accurate`; flag any disagreements for human review |
 
 The user can specify these custom strategies in the `--schema` JSON, e.g.:

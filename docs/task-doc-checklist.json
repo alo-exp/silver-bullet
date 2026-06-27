@@ -1,7 +1,7 @@
 {
   "task_id": "phase-056-zuvo-runtime-parity-release",
   "task_granularity": 3,
-  "updated_at": "2026-06-14T05:13:16Z",
+  "updated_at": "2026-06-27T00:10:47Z",
   "docs": {
     "docs/CHANGELOG.md": "updated",
     "docs/knowledge/YYYY-MM.md": "updated",
@@ -81,7 +81,7 @@
     "docs/workflows/devops-cycle.md": "not-needed: reviewed for v0.39.3 Zuvo runtime parity + phase 057 Cursor release; no content change",
     "docs/workflows/full-dev-cycle.md": "not-needed: reviewed for v0.39.3 Zuvo runtime parity + phase 057 Cursor release; no content change",
     "README.md": "not-needed: reviewed for v0.39.3 Zuvo runtime parity + phase 057 Cursor release; no content change",
-    "CHANGELOG.md": "not-needed: reviewed for v0.39.3 Zuvo runtime parity + phase 057 Cursor release; no content change"
+    "CHANGELOG.md": "updated"
   },
   "sections": {},
   "task_summary": "v0.39.3: phase 056 runtime-enforced AS1/Zuvo parity (evidence schema gate, silver-add fingerprint/dedup, interface STATE stamp, sb-bootstrap probe, Claude bundle name rewrite); phase 057 first-class Cursor (marketplace, hook bridge, agent bundle, diagnostics); site refresh + hero copy; full verify-tests green."

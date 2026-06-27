@@ -1,0 +1,97 @@
+[0m
+> build · minimax-m3
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m✱ [0mGrep "severity_order|allow_downgrade"[90m in skills/multi-ai-task · 16 matches[0m
+[0m✱ [0mGrep "verifier|evidence-ledger|verification\.md"[90m in skills/multi-ai-task · 14 matches[0m
+[0m✱ [0mGrep "dedup_key.*secondary|secondary.*dedup"[90m in skills/multi-ai-task · 2 matches[0m
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && rtk wc -l skills/multi-ai-task/SKILL.md skills/multi-ai-task/rules/*.md skills/multi-ai-task/rules/examples/*.md
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+286 SKILL.md
+335 rules/consolidation-rules.md
+188 rules/dispatch-mechanics.md
+173 rules/methodology.md
+270 rules/output-schema.md
+111 rules/examples/code-review.md
+113 rules/examples/fact-check.md
+185 rules/examples/research-prior-art.md
+Σ 1661
+[0m
