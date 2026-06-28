@@ -1080,10 +1080,14 @@ verify_runtime_hook_delivery() {
   run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
 
   digest_after="$(capture_digest "$target_file")"
+
+  rm -f "$TRIVIAL_FILE"
   if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
     if probe_dev_cycle_bash_command "$hook_probe_cmd"; then
       if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny via deterministic bash probe" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
         failed=1
+      else
+        FAIL=$((FAIL - 1))
       fi
     else
       failed=1
@@ -1459,7 +1463,7 @@ wait_for_hook_audit_entry() {
     fi
   fi
   FAIL=$((FAIL + 1))
-  return 0
+  return 1
 }
 
 assert_file_contains() {
