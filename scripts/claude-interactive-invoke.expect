@@ -52,7 +52,7 @@ proc load_claude_settings_env {} {
       return
     }
   }
-  if {[catch {exec jq -e {(.env.ANTHROPIC_API_KEY? // "") != "" or (.env.ANTHROPIC_BASE_URL? // "") != ""} $settings}]} {
+  if {[catch {exec jq -e {(.env.ANTHROPIC_API_KEY? // "") != "" or (.env.ANTHROPIC_AUTH_TOKEN? // "") != "" or (.env.ANTHROPIC_BASE_URL? // "") != ""} $settings}]} {
     return
   }
   if {[catch {exec jq -r {.env // {} | to_entries[] | "\(.key)=\(.value)"} $settings} lines]} {
