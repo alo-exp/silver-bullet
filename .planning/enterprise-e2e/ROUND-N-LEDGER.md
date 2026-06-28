@@ -33,8 +33,8 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 ## Workflow matrix (22 rows)
 
-| # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
-|---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
+| # | WF slug | Session date | Claude model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+|---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | | | | | | | |
 | 2 | `silver-research` | | | | | | | |
 | 3 | `silver-feature` | | | | | | | |

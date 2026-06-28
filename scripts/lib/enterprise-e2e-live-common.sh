@@ -87,6 +87,54 @@ enterprise_e2e_export_live_defaults() {
   export SB_E2E_LIVE_RUNTIME=claude
 }
 
+# Session 0 gate — matrix rows require bootstrap unless explicitly skipped.
+enterprise_e2e_ledger_session0_pass() {
+  local ledger="${1:-}"
+  [[ -f "$ledger" ]] || return 1
+  awk '
+    /^## Session 0/ { in_s0 = 1; next }
+    in_s0 && /^## / { in_s0 = 0 }
+    in_s0 && /Graphify \+ agentmemory opted in/ {
+      if ($0 ~ /\*\*Pass\*\*/ || $0 ~ /\| Pass \|/) { graph = 1 }
+    }
+    in_s0 && /Enterprise preflight/ {
+      if ($0 ~ /\*\*Pass\*\*/ || $0 ~ /\| Pass \|/) { preflight = 1 }
+    }
+    END { exit (graph || preflight) ? 0 : 1 }
+  ' "$ledger" 2>/dev/null
+}
+
+enterprise_e2e_fixture_code_intel_opted_in() {
+  local fixture_dir="${1:-}" config="${fixture_dir}/.silver-bullet.json"
+  [[ -f "$config" ]] || return 1
+  jq -e \
+    '.recommended_tools.graphify.enabled_by_user == true and .recommended_tools.agentmemory.enabled_by_user == true' \
+    "$config" >/dev/null 2>&1
+}
+
+enterprise_e2e_session0_satisfied() {
+  local fixture_dir="${1:-}" ledger="${2:-}"
+  enterprise_e2e_ledger_session0_pass "$ledger" && return 0
+  enterprise_e2e_fixture_code_intel_opted_in "$fixture_dir" && return 0
+  return 1
+}
+
+enterprise_e2e_assert_session0_or_skip() {
+  local fixture_dir="${1:-}" ledger="${2:-}"
+  if [[ "${SB_E2E_SESSION0_SKIP:-}" == "1" ]]; then
+    local reason="${SB_E2E_SESSION0_SKIP_REASON:-unspecified}"
+    echo "WARN: Session 0 gate skipped (SB_E2E_SESSION0_SKIP=1): ${reason}"
+    return 0
+  fi
+  if enterprise_e2e_session0_satisfied "$fixture_dir" "$ledger"; then
+    echo "Session 0 gate: OK (ledger Pass or fixture graphify+agentmemory opted in)"
+    return 0
+  fi
+  echo "ERROR: Session 0 not satisfied — run /silver:init + code-intel opt-in on fixture," >&2
+  echo "       or mark Session 0 Pass in ledger, or set SB_E2E_SESSION0_SKIP=1 with SB_E2E_SESSION0_SKIP_REASON." >&2
+  return 1
+}
+
 # --- Code-intel preflight (Graphify, agentmemory, RTK, Context Mode) ---
 # Fail fast when recommended_tools.*.enabled_by_user is true in .silver-bullet.json.
 # Use --skip-code-intel-preflight on the live entrypoint for debugging only.

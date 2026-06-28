@@ -138,6 +138,9 @@ if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   exit 0
 fi
 
+# Session 0 gate before interactive matrix (TUI init or programmatic opt-in).
+enterprise_e2e_assert_session0_or_skip "$FIXTURE_DIR" "$LEDGER_FILE"
+
 # --- Dual-role monitor + watch (persistent shells recommended) ---
 start_background_if_missing() {
   local name="$1" pattern="$2" script="$3" pid_file="$4"

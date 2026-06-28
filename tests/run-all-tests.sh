@@ -81,6 +81,7 @@ run_suite "Hook Unit Tests" "$SCRIPT_DIR/hooks"
 run_suite "Script Unit Tests" "$SCRIPT_DIR/scripts"
 run_suite "Integration Scenario Tests" "$SCRIPT_DIR/integration"
 run_suite "E2E Live Harness Tests" "$SCRIPT_DIR/e2e-live"
+run_suite "TUI Contract Tests" "$SCRIPT_DIR/tui-contract"
 
 # Optional enterprise E2E live wiring (interactive Claude TUI — operator-only).
 # Set SB_ENTERPRISE_E2E_LIVE=1 to include structural validation in this runner.
