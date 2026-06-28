@@ -145,13 +145,15 @@ build_matrix_prompt() {
   local prompt_card="$2"
   local evidence_path="$3"
   local row_num="${4:-}"
+  local slug="${5:-}"
   if [[ "$row_num" == "1" ]]; then
     # Row 1 validates interactive routing only — same scope as the direct /silver probe.
     printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
       "$route" "$prompt_card"
     return 0
   fi
-  matrix_route_prompt "$route" "$prompt_card" "$evidence_path" ""
+  # Native /silver:* subcommands are not registered in Claude TUI — route via /silver + workflow card.
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
 }
 
 claude_routing_state_file() {
@@ -284,7 +286,7 @@ run_matrix_row() {
     (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" >/dev/null 2>&1) || true
   fi
 
-  prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num")"
+  prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num" "$slug")"
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"

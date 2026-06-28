@@ -13,6 +13,16 @@ matrix_route_prompt() {
     "$route" "$prompt_card" "$matrix_context" "$evidence_path"
 }
 
+# Rows 2-20: Claude TUI marketplace install registers /silver router only — not /silver:* subcommands.
+matrix_router_workflow_prompt() {
+  local slug="$1"
+  local prompt_card="$2"
+  local evidence_path="$3"
+
+  printf '/silver %s Enterprise E2E matrix validation. Route this through the %s workflow via the Silver Bullet orchestrator; parent must not implement product code inline. Create workflow evidence at %s. Stop when the workflow is complete.' \
+    "$prompt_card" "$slug" "$evidence_path"
+}
+
 skill_prompt() {
   local target_route="$1"
   shift
