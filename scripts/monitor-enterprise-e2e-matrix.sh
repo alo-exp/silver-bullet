@@ -86,6 +86,14 @@ is_batch_running() {
   [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
 }
 
+live_test_driver_running() {
+  pgrep -f 'run-enterprise-e2e-live-test\.sh' >/dev/null 2>&1
+}
+
+any_matrix_runner_pid() {
+  pgrep -f 'bash scripts/run-enterprise-e2e-matrix\.sh' 2>/dev/null | head -1 || true
+}
+
 claude_child_lines() {
   pgrep -fl 'claude-interactive-invoke\.expect|/claude --model' 2>/dev/null \
     | grep -v grep || true
@@ -443,15 +451,29 @@ poll_once() {
     printf '%s\n' "$batch_pid" >"$BATCH_PID_FILE"
   else
     batch_state="STOPPED"
-    log_poll "$(utc_now) ACTION: batch not running — restarting incomplete rows"
-    local inc
-    enterprise_e2e_read_lines_to_array inc incomplete_rows
-    if [[ "${#inc[@]}" -gt 0 ]]; then
-      start_batch "${inc[@]}"
-      batch_pid="$(cat "$BATCH_PID_FILE")"
-      batch_state="RESTARTED"
+    if live_test_driver_running; then
+      local adopted
+      adopted="$(any_matrix_runner_pid)"
+      if [[ -n "$adopted" ]] && kill -0 "$adopted" 2>/dev/null; then
+        batch_pid="$adopted"
+        batch_state="RUNNING"
+        printf '%s\n' "$batch_pid" >"$BATCH_PID_FILE"
+        log_poll "$(utc_now) defer restart: live-test driver active — adopted matrix pid ${batch_pid}"
+      else
+        log_poll "$(utc_now) defer restart: live-test driver pre-matrix (skip duplicate FORCE batch)"
+        batch_state="WAIT_LIVE_TEST"
+      fi
     else
-      batch_state="$(matrix_reconcile_state 2>/dev/null || echo IN_PROGRESS)"
+      log_poll "$(utc_now) ACTION: batch not running — restarting incomplete rows"
+      local inc
+      enterprise_e2e_read_lines_to_array inc incomplete_rows
+      if [[ "${#inc[@]}" -gt 0 ]]; then
+        start_batch "${inc[@]}"
+        batch_pid="$(cat "$BATCH_PID_FILE")"
+        batch_state="RESTARTED"
+      else
+        batch_state="$(matrix_reconcile_state 2>/dev/null || echo IN_PROGRESS)"
+      fi
     fi
   fi
 
