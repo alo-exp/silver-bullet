@@ -68,6 +68,17 @@ proc load_claude_settings_env {} {
   }
 }
 
+
+proc accept_bypass_permissions_disclaimer {} {
+  # Bypass Permissions modal: numbered list + "Enter to confirm" (not raw "2").
+  send -- "\033[B"
+  after 200
+  send -- "\r"
+  after 200
+  send -- "\r"
+  after 750
+}
+
 proc submit_prompt {command_name prompt_body} {
   global saw_not_logged_in
   if {$saw_not_logged_in} {
@@ -188,30 +199,19 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
-  -re {Yes, I accept} {
-    # Accept the Claude CLI permission confirmation if it appears so the
-    # actual Silver Bullet workflow can start and respond to the prompt chain.
-    send -- "2\r"
-    exp_continue
-  }
-  -re {Yes.*accept} {
-    send -- "2\r"
-    exp_continue
-  }
-  -re {Enter.*to confirm} {
-    send -- "2\r"
-    exp_continue
-  }
   -re {code.claude.com/docs/en/security} {
-    send -- "\033[B"
-    after 200
-    send -- "\r"
-    after 200
-    send -- "\r"
-    after 750
+    accept_bypass_permissions_disclaimer
     exp_continue
   }
-    -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
+  -re {(?s)Bypass Permissions mode.*2\. Yes, I accept} {
+    accept_bypass_permissions_disclaimer
+    exp_continue
+  }
+  -re {2\. Yes, I accept.*Enter.*to confirm} {
+    accept_bypass_permissions_disclaimer
+    exp_continue
+  }
+  -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
     # Newer Claude builds ask for an explicit trust confirmation before the
     # session starts. Pick the trust option so the live harness can continue.
     send -- "1\r"
