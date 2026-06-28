@@ -103,6 +103,9 @@ agent_invoke() {
       if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
         spawn_env+=("CLAUDE_INTERACTIVE_LOG_FILE=${CLAUDE_INTERACTIVE_LOG_FILE}")
       fi
+      if [[ -n "${SB_E2E_MATRIX_EVIDENCE_PATH:-}" ]]; then
+        spawn_env+=("SB_E2E_MATRIX_EVIDENCE_PATH=${SB_E2E_MATRIX_EVIDENCE_PATH}")
+      fi
       local kv
       while IFS= read -r kv; do
         [[ -n "$kv" ]] && spawn_env+=("$kv")
