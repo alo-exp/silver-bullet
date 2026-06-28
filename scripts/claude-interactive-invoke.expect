@@ -182,12 +182,6 @@ if {$continue_flag eq "0"} {
 }
 
 after $post_prompt_delay_ms
-if {$permission_mode eq "bypassPermissions"} {
-  # Bypass disclaimer is a numbered confirm menu; proactive keys after splash.
-  after 2500
-  accept_bypass_permissions_disclaimer
-  after 1000
-}
 set timeout $ready_timeout
 set prompt_submitted 0
 set saw_prompt 0
@@ -206,6 +200,15 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
+  -re {Esc.*to.*cancel} {
+    if {[regexp {Bypass Permissions} $expect_out(buffer)] && [regexp {Yes, I accept} $expect_out(buffer)]} {
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      after 500
+      exp_continue
+    }
+    exp_continue
+  }
   -re {Enter.*to confirm} {
     if {$bypass_disclaimer_menu_open || [regexp {Yes, I accept} $expect_out(buffer)]} {
       accept_bypass_permissions_disclaimer
