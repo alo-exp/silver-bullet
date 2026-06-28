@@ -70,8 +70,10 @@ proc load_claude_settings_env {} {
 
 
 proc accept_bypass_permissions_disclaimer {} {
-  # Bypass Permissions modal: numbered list + "Enter to confirm" (not raw "2").
-  send -- "\x1b\[B"
+  # Bypass Permissions modal: arrow to "2. Yes, I accept", then Enter (twice if confirm).
+  # Split ESC+[B so Tcl never treats "[" as command substitution (see missing close-bracket).
+  send \033
+  send \[B
   after 200
   send -- "\r"
   after 200
