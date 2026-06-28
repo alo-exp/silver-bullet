@@ -48,7 +48,12 @@ sb_odg_hook_field() {
   esac
 }
 
-sb_project_gate_or_exit
+# Deny decisions require SB boundary in current workspace — never cache-only resolution.
+_odg_workspace_config=""
+if declare -f sb_find_project_config_walk_only >/dev/null 2>&1; then
+  _odg_workspace_config="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+fi
+[[ -n "$_odg_workspace_config" ]] || exit 0
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0
@@ -113,12 +118,8 @@ esac
 
 # Parent orchestrator: allow delegation tools; block implementation tools on project source.
 # During /silver:init bootstrap the template scaffold may exist before sb_initiated is true.
-_config_file=""
-if declare -f sb_find_project_config >/dev/null 2>&1; then
-  _config_file="$(sb_find_project_config 2>/dev/null || true)"
-fi
-if [[ -n "$_config_file" ]] && declare -f sb_config_marked_initiated >/dev/null 2>&1 \
-  && ! sb_config_marked_initiated "$_config_file"; then
+if [[ -n "$_odg_workspace_config" ]] && declare -f sb_config_marked_initiated >/dev/null 2>&1 \
+  && ! sb_config_marked_initiated "$_odg_workspace_config"; then
   exit 0
 fi
 
@@ -177,10 +178,11 @@ fi
 if [[ -f "$(sb_orchestrator_directive_file)" ]] && sb_orchestrator_directive_is_blocking; then
   expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
   if [[ -n "$expected" ]]; then
-    config_file=""
-    if declare -f sb_find_project_config >/dev/null 2>&1; then
-      config_file="$(sb_find_project_config 2>/dev/null || true)"
+    if declare -f sb_orchestrator_guard_applies_to_workspace >/dev/null 2>&1 \
+      && ! sb_orchestrator_guard_applies_to_workspace; then
+      exit 0
     fi
+    config_file="$_odg_workspace_config"
     SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
     state_file="${SILVER_BULLET_STATE_FILE:-${SB_STATE_DIR}/state}"
     if [[ -n "$config_file" ]]; then
@@ -209,10 +211,10 @@ fi
 # P6: edits without active composed workflow — warn then block after N (default 5)
 if [[ "$tool_name" == "Edit" || "$tool_name" == "Write" || "$tool_name" == "MultiEdit" || "$tool_name" == "apply_patch" ]]; then
   repo_root=""
-  if declare -f sb_find_project_root >/dev/null 2>&1; then
-    repo_root="$(sb_find_project_root 2>/dev/null || true)"
+  if declare -f sb_find_project_root_walk_only >/dev/null 2>&1; then
+    repo_root="$(sb_find_project_root_walk_only 2>/dev/null || true)"
   fi
-  [[ -n "$repo_root" ]] || repo_root="$PWD"
+  [[ -n "$repo_root" ]] || exit 0
   wf_dir="$repo_root/.planning/workflows"
   active_wf=0
   if [[ -d "$wf_dir" && ! -L "$wf_dir" ]]; then
