@@ -15,6 +15,8 @@ export SB_RTK_COMPAT_MODE=verbatim
 # shellcheck source=hooks/lib/rtk-compat.sh
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT" || exit
+# shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 
 MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-rows5-7-22-resume2.log}"
 BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
@@ -304,7 +306,7 @@ on_stall_detected() {
     log_poll "$(utc_now) HUNG: killing claude children after ${idle_sec}s idle"
     kill_claude_children TERM
     local inc
-    mapfile -t inc < <(incomplete_rows)
+    enterprise_e2e_read_lines_to_array inc incomplete_rows
     # If batch dead, full restart; else row will retry via harness quota loop
     local bpid
     bpid="$(cat "$BATCH_PID_FILE" 2>/dev/null || true)"
@@ -397,7 +399,7 @@ poll_once() {
     batch_state="STOPPED"
     log_poll "$(utc_now) ACTION: batch not running — restarting incomplete rows"
     local inc
-    mapfile -t inc < <(incomplete_rows)
+    enterprise_e2e_read_lines_to_array inc incomplete_rows
     if [[ "${#inc[@]}" -gt 0 ]]; then
       start_batch "${inc[@]}"
       batch_pid="$(cat "$BATCH_PID_FILE")"
@@ -417,7 +419,7 @@ poll_once() {
         log_poll "$(utc_now) ACTION: no claude child ${idle_sec}s — restarting batch"
         kill -TERM "$batch_pid" 2>/dev/null || true
         sleep 5
-        mapfile -t inc < <(incomplete_rows)
+        enterprise_e2e_read_lines_to_array inc incomplete_rows
         start_batch "${inc[@]}"
         batch_pid="$(cat "$BATCH_PID_FILE")"
         batch_state="RESTARTED(no-claude)"

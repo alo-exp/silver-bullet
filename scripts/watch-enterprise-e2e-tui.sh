@@ -227,7 +227,9 @@ PY
 }
 
 count_matrix_passes() {
-  grep -cE '^\s*PASS:' "$MATRIX_LOG" 2>/dev/null || echo 0
+  local n
+  n="$(grep -cE '^\s*PASS:' \"$MATRIX_LOG\" 2>/dev/null || true)"
+  echo "${n:-0}"
 }
 
 matrix_complete() {
