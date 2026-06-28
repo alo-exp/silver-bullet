@@ -38,7 +38,7 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 - **Orchestrator parent** must not implement product code inline unless the workflow requires it.
 - **SB fixes** in SB repo only; **product code** in test app only.
 - **Do not commit** SB init artifacts from the test app to GitHub.
-- **429 / Token Plan** — wait **600s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600`) and retry the **same row**; not an auth failure.
+- **429 / Token Plan** — wait **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`) and retry the **same row**; not an auth failure.
 - **Network blips** — retry with backoff (120–300s); not auth failures.
 - **Harness parsing:** `RTK_DISABLED=1` / `SB_RTK_COMPAT_MODE=verbatim` on `run-enterprise-e2e-live-test.sh`, matrix runner, `install-claude.sh`.
 - **graphify update** in SB repo before substantive SB edits; `graphify update .` in test app after Session 0 when Graphify is enabled.
@@ -74,7 +74,7 @@ When a row fails, record `failure_class` in the ledger matrix table:
 
 | Class | When to use | Examples |
 |-------|-------------|----------|
-| `environmental` | External quota, network, proxy | API 429, `ENOTFOUND`, OpenCode weekly limit |
+| `environmental` | External quota, network, proxy — **retry same row every 60s** | API 429, Token Plan, OpenCode proxy weekly messaging (not auth); do not wait for reset without operator waiver; `ENOTFOUND` |
 | `harness` | Expect/TUI/ANSI/monitor wiring | Bypass Permissions menu, `claude-interactive-invoke` |
 | `product` | SB hook, router, orchestrator, evidence | Missing artifact, wrong route, hook BLOCK |
 
@@ -126,7 +126,7 @@ Operator monitors in parallel (SB repo):
 - bash scripts/watch-enterprise-e2e-tui.sh
 - tail -f .e2e-matrix-live.log
 
-On 429/Token Plan: wait 10 minutes (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600) and retry same row.
+On 429/Token Plan: wait 1 minute (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60) and retry same row.
 On SB hook fix: reinstall plugin before re-running failed rows.
 ```
 
@@ -156,7 +156,7 @@ When done, summarize: route invoked, skills recorded, artifacts created, test st
 
 - **Pls do that yourself. Never pause for operator.**
 - Automate Session 0 prep when possible: set `recommended_tools.graphify|agentmemory|rtk|context_mode.enabled_by_user` to `true` in `/Users/shafqat/projects/enterprise-grade-test-app/.silver-bullet.json` programmatically if TUI is unavailable; then `graphify update . --no-cluster` in the test app.
-- On **Claude API 429 / quota / Token Plan**: retry every **10 minutes** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600`); **do not** treat as auth failure; **never** `claude auth login/logout`.
+- On **Claude API 429 / quota / Token Plan**: retry every **1 minute** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); **do not** treat as auth failure; **never** `claude auth login/logout`.
 - **Do not block** on Session 0 if fixture already has partial init — complete tool opt-in and graphify update, then continue the matrix.
 - Continue through the matrix without waiting for a human unless truly blocked (interactive auth login required, missing secrets, etc.).
 - Use `--resume` when `.e2e-matrix-live.log` shows partial progress; never restart at row 1 if row 1 already passed.

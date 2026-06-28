@@ -95,7 +95,7 @@ tail -f .e2e-matrix-monitor-status.txt
 tail -f .e2e-tui-watch-findings.jsonl
 ```
 
-**Monitor policies:** 429 / Token Plan → wait **600s**; network → **120–300s** random; stall → kill hung `claude` children and restart incomplete rows only.
+**Monitor policies:** 429 / Token Plan → wait **60s**; network → **120–300s** random; stall → kill hung `claude` children and restart incomplete rows only.
 
 **Watch recovery:** if monitor dies, `watch-enterprise-e2e-tui.sh` restarts it without duplicating the matrix batch.
 
@@ -203,7 +203,7 @@ Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .
 
 | Symptom | Action |
 |---------|--------|
-| **429 / Token Plan** | Wait **600s**, retry same row (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL`) |
+| **429 / Token Plan** | Wait **60s**, retry same row (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL`) |
 | **Network blip** | Wait 120–300s; monitor auto-restarts batch |
 | **Provider change / bad state** | Kill claude children; **provider restart procedure**: stop batch → `install-claude.sh` → resume incomplete rows |
 | **SB hook bug** | SB repo: `/silver:add` label `enterprise-test-app` → fix → commit → **`bash scripts/install-claude.sh`** → re-run **failed row only** |
@@ -250,7 +250,7 @@ Operator monitors in parallel:
 - SB repo: bash scripts/watch-enterprise-e2e-tui.sh
 - Matrix log: /Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log
 
-On 429/Token Plan: wait 10 minutes and retry. On SB hook fix: reinstall plugin before re-running failed rows.
+On 429/Token Plan: wait 1 minute and retry. On SB hook fix: reinstall plugin before re-running failed rows.
 ```
 
 ---
