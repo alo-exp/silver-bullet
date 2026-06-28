@@ -212,7 +212,9 @@ EOF
 write_e2e_live_matrix_marker() {
   mkdir -p "$SB_TEST_DIR"
   local marker="full-claude-codex"
-  if [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" || "${SB_E2E_LIVE_RUNTIMES:-}" == "kay" ]]; then
+  if [[ "${SB_E2E_LIVE_RUNTIMES:-}" == "claude" ]]; then
+    marker="claude-only"
+  elif [[ "${SB_ALLOW_CODEX_ONLY_LIVE_RELEASE:-0}" == "1" || "${SB_E2E_LIVE_RUNTIMES:-}" == "codex" || "${SB_E2E_LIVE_RUNTIMES:-}" == "kay" ]]; then
     marker="codex-only"
   fi
   cat > "$E2E_LIVE_MATRIX_FILE" <<EOF
@@ -422,6 +424,12 @@ prepare_workspace() {
   APP_SERVER_LOG="${WORK_DIR}/server.log"
 
   rsync -a --exclude '.git' "${FIXTURE_DIR}/" "${WORK_DIR}/"
+
+  if [[ -f "${WORK_DIR}/.silver-bullet.json" ]] && command -v jq >/dev/null 2>&1; then
+    tmp_cfg="$(mktemp)"
+    jq '.orchestrator_mode = "worker"' "${WORK_DIR}/.silver-bullet.json" > "$tmp_cfg"
+    mv "$tmp_cfg" "${WORK_DIR}/.silver-bullet.json"
+  fi
 
   mkdir -p "${WORK_DIR}/.claude"
   python3 - "${WORK_DIR}/.claude/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'

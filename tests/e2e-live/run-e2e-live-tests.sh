@@ -45,7 +45,7 @@ if [[ -n "${SB_E2E_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
   RUNTIMES=(${SB_E2E_LIVE_RUNTIMES})
 else
-  RUNTIMES=(kay)
+  RUNTIMES=(claude)
 fi
 
 runtime_model_provider() {
@@ -95,8 +95,8 @@ echo "========================================"
 echo "  Silver Bullet Enterprise Live E2E Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime against the enterprise-grade-test-app fixture."
-echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: native config)."
+echo "WARNING: These tests default to Claude CLI against the enterprise-grade-test-app fixture."
+echo "Default provider/model: runtime-aware (Claude: native config; Codex/Kay: isolated Codex-compatible)."
 echo ""
 
 rm -f "$HOST_E2E_LIVE_MATRIX_FILE"
@@ -136,6 +136,7 @@ run_scenario() {
   echo ""
   echo "--- [$runtime] Running: $(basename "$scenario") ---"
   if SB_E2E_LIVE_RUNTIME="$runtime" \
+    SB_ORCHESTRATOR_PARENT=0 \
     SB_LIVE_CODEX_MODEL_PROVIDER="$provider" \
     SB_LIVE_CODEX_MODEL="$model" \
     SB_LIVE_CODEX_REASONING_EFFORT="$reasoning" \
@@ -317,6 +318,8 @@ else
   marker=""
   if [[ "$full_matrix_requested" == true ]]; then
     marker="full-claude-codex"
+  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "claude" ]]; then
+    marker="claude-only"
   elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
     marker="codex-only"
   fi
