@@ -46,12 +46,13 @@ build_matrix_prompt() {
   local prompt_card="$2"
   local evidence_path="$3"
   local row_num="${4:-}"
+  local slug="${5:-}"
   if [[ "$row_num" == "1" ]]; then
     printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
       "$route" "$prompt_card"
     return 0
   fi
-  matrix_route_prompt "$route" "$prompt_card" "$evidence_path" ""
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
 }
 
 claude_routing_state_file() {
