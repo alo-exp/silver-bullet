@@ -182,6 +182,12 @@ if {$continue_flag eq "0"} {
 }
 
 after $post_prompt_delay_ms
+if {$permission_mode eq "bypassPermissions"} {
+  # Bypass disclaimer is a numbered confirm menu; proactive keys after splash.
+  after 2500
+  accept_bypass_permissions_disclaimer
+  after 1000
+}
 set timeout $ready_timeout
 set prompt_submitted 0
 set saw_prompt 0
