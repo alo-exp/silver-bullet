@@ -248,6 +248,8 @@ proc accept_custom_api_key_disclaimer {} {
     send -- "\033OA"
     after 400
     send -- "\r"
+  } elseif {$strategy eq "recommended"} {
+    send -- "\r"
   } else {
     type_slow "1" 40
     after 500
