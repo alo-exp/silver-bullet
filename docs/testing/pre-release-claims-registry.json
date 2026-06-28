@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "description": "Feature-level homepage and help claims verified in pre-release (overlay dry-run structural, claims-audit, matrix rows, install scripts). Not in validation overlay gates.",
+  "sources": {
+    "homepage": "site/index.html",
+    "help_center": "site/help/",
+    "catalog": "docs/apo-catalog.json",
+    "homepage_registry": "docs/testing/claims-registry.json"
+  },
+  "verification_tiers": {
+    "structural": "Repo files, install scripts, help page existence",
+    "contract": "apo-catalog invariants, claims-audit, generated view freshness",
+    "matrix_overlay": "Enterprise E2E matrix row pass criteria",
+    "tri_host_smoke": "Per-host install + sb-diagnostics + SB script invocations"
+  },
+  "claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "surface": "homepage",
+      "text": "Agentic Process Orchestrator for the AI Era",
+      "verification_tier": "matrix_overlay",
+      "check_id": "apo-catalog-workflow-count",
+      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "surface": "homepage",
+      "text": "Claude Code, Codex, or Cursor",
+      "verification_tier": "tri_host_smoke",
+      "check_id": "tri-host-install-smoke",
+      "test_ids": ["tri-host-install-smoke", "install-claude", "install-codex", "install-cursor"]
+    },
+    {
+      "claim_id": "help-tri-host",
+      "surface": "help_center",
+      "text": "Claude Code, Codex, and Cursor",
+      "verification_tier": "tri_host_smoke",
+      "check_id": "tri-host-install-smoke",
+      "test_ids": ["tri-host-install-smoke"]
+    },
+    {
+      "claim_id": "help-router-workflow",
+      "surface": "help_center",
+      "text": "/silver router composes workflows dynamically",
+      "verification_tier": "matrix_overlay",
+      "check_id": "help-page-exists-silver-router",
+      "test_ids": ["enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "mechanism-catalog-counts",
+      "surface": "homepage",
+      "text": "27 atomic flows composed into 22 task-shaped workflows",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "mechanism-twelve-hooks",
+      "surface": "homepage",
+      "text": "twelve hook layers that physically block unsafe progress",
+      "verification_tier": "structural",
+      "check_id": "hook-scripts-present",
+      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
+    },
+    {
+      "claim_id": "mechanism-dynamic-silver",
+      "surface": "homepage",
+      "text": "Dynamic Workflow Composition",
+      "verification_tier": "matrix_overlay",
+      "check_id": "help-page-exists-silver-router",
+      "test_ids": ["enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "code-intel-stack",
+      "surface": "homepage",
+      "text": "Graphify + agentmemory wire",
+      "verification_tier": "matrix_overlay",
+      "check_id": "code-intel-preflight-wiring",
+      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+    },
+    {
+      "claim_id": "proof-sb-diagnostics",
+      "surface": "homepage",
+      "text": "sb-diagnostics.sh",
+      "verification_tier": "structural",
+      "check_id": "sb-diagnostics-exists",
+      "test_ids": ["sb-diagnostics-script"]
+    },
+    {
+      "claim_id": "catalog-contract-footer",
+      "surface": "homepage",
+      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "help-catalog-version",
+      "surface": "help_center",
+      "text": "Help Center documents current SB version",
+      "verification_tier": "structural",
+      "check_id": "help-version-sync",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-workflow-pages",
+      "surface": "help_center",
+      "text": "Each catalog workflow has a Help Center workflow page",
+      "verification_tier": "structural",
+      "check_id": "help-workflow-coverage",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-apo-catalog-sot",
+      "surface": "help_center",
+      "text": "APO catalog (docs/apo-catalog.json)",
+      "verification_tier": "contract",
+      "check_id": "help-catalog-sot-reference",
+      "test_ids": ["help-center-staleness", "validate-apo-catalog"]
+    }
+  ],
+  "internal_workflows_without_help_page": [
+    "WF-POST-EXEC-GATES",
+    "WF-VALIDATE-SUBSTEP"
+  ],
+  "matrix_row_claim_map": {
+    "1": ["hero-apo-title", "mechanism-dynamic-silver", "help-router-workflow"]
+  },
+  "tri_host_smoke": {
+    "script": "scripts/run-tri-host-install-smoke.sh",
+    "test": "tests/scripts/test-tri-host-install-smoke.sh",
+    "operator_doc": "docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md#pre-release-tri-host-smoke"
+  }
+}

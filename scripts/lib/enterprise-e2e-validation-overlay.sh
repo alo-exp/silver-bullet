@@ -227,19 +227,38 @@ validation_overlay_check_registry() {
     validation_overlay_skip "validation registry parse (jq missing)"
     return
   fi
-  local claim_count backlog telemetry_only excluded
+  local claim_count gate_count backlog telemetry_only excluded
   claim_count="$(jq '.claims | length' "$registry")"
+  gate_count="$(jq '[.claims[] | select((.validation_scope // "gate") == "gate" and (.status // "active") != "excluded")] | length' "$registry")"
   backlog="$(jq '[.claims[] | select(.status == "backlog" and ((.validation_scope // "gate") == "gate" or (.validation_scope // "gate") == "live"))] | length' "$registry")"
   telemetry_only="$(jq '[.claims[] | select(.validation_scope == "telemetry_only")] | length' "$registry")"
   excluded="$(jq '[.claims[] | select(.validation_scope == "excluded")] | length' "$registry")"
-  if [[ "$claim_count" -ge 10 ]]; then
-    validation_overlay_pass "validation registry has ${claim_count} claims"
+  if [[ "$gate_count" -ge 4 ]]; then
+    validation_overlay_pass "validation registry has ${gate_count} outcome claims (${claim_count} total incl. telemetry/backlog)"
   else
-    validation_overlay_fail "validation registry too small (${claim_count})"
+    validation_overlay_fail "validation registry outcome claims too few (${gate_count})"
   fi
   validation_overlay_pass "validation registry gate backlog items: ${backlog}"
   if [[ "$telemetry_only" -gt 0 || "$excluded" -gt 0 ]]; then
     validation_overlay_pass "validation registry out-of-gate scope: telemetry_only=${telemetry_only} excluded=${excluded}"
+  fi
+}
+
+validation_overlay_check_help_ship_readiness_page() {
+  local root="$1"
+  if [[ -f "${root}/site/help/workflows/silver-ship-readiness.html" ]]; then
+    validation_overlay_pass "help page exists: silver-ship-readiness.html"
+  else
+    validation_overlay_fail "help page missing: silver-ship-readiness.html"
+  fi
+}
+
+validation_overlay_check_evidence_gates_surface() {
+  local root="$1"
+  if grep -qF 'blocks unsafe commits' "${root}/site/index.html" 2>/dev/null; then
+    validation_overlay_pass "homepage documents evidence-gates outcome"
+  else
+    validation_overlay_fail "homepage missing evidence-gates outcome copy"
   fi
 }
 

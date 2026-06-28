@@ -1,16 +1,16 @@
 {
-  "version": 1,
-  "description": "Homepage + Help Center user-outcome claims mapped to verifiable checks for the validation overlay.",
+  "version": 2,
+  "description": "Homepage + Help Center user-outcome and capability claims only. Feature-level claims live in pre-release-claims-registry.json.",
   "sources": {
     "homepage": "site/index.html",
     "help_center": "site/help/",
-    "catalog": "docs/apo-catalog.json"
+    "feature_claims": "docs/testing/pre-release-claims-registry.json"
   },
   "verification_tiers": {
-    "structural": "Repo files, catalog counts, help page existence — no live TUI",
-    "contract": "apo-catalog invariants, claims-audit, generated view freshness",
-    "matrix_overlay": "Maps to enterprise E2E matrix row pass criteria",
-    "live": "Requires SB_ENTERPRISE_E2E_LIVE=1 — not run in overlay dry-run",
+    "structural": "Outcome documentation surfaces exist — no live TUI",
+    "contract": "Homepage outcome copy registered and present via claims-audit",
+    "matrix_overlay": "Maps to enterprise E2E matrix row pass criteria for ship/evidence outcomes",
+    "live": "Requires SB_ENTERPRISE_E2E_LIVE=1 — timed onboarding SLO (V-01)",
     "telemetry_only": "Append-only token/cost capture — no pass/fail gate (V-02)"
   },
   "validation_scopes": {
@@ -20,100 +20,28 @@
   },
   "claims": [
     {
-      "claim_id": "hero-apo-title",
+      "claim_id": "hero-evidence-gates",
       "surface": "homepage",
-      "text": "Agentic Process Orchestrator for the AI Era",
+      "text": "blocks unsafe commits, PRs, and releases until the evidence is real",
       "verification_tier": "matrix_overlay",
-      "check_id": "apo-catalog-workflow-count",
-      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+      "check_id": "evidence-gates-outcome",
+      "test_ids": ["completion-audit", "enterprise-e2e-rows-14-16"]
     },
     {
-      "claim_id": "hero-tri-host",
+      "claim_id": "hero-capabilities",
       "surface": "homepage",
-      "text": "Claude Code, Codex, or Cursor",
-      "verification_tier": "structural",
-      "check_id": "tri-host-install-scripts",
-      "test_ids": ["install-claude", "install-codex", "cursor-hook-bridge"]
-    },
-    {
-      "claim_id": "mechanism-catalog-counts",
-      "surface": "homepage",
-      "text": "27 atomic flows composed into 22 task-shaped workflows",
-      "verification_tier": "contract",
-      "check_id": "apo-catalog-counts",
-      "test_ids": ["validate-apo-catalog"]
-    },
-    {
-      "claim_id": "mechanism-twelve-hooks",
-      "surface": "homepage",
-      "text": "twelve hook layers that physically block unsafe progress",
-      "verification_tier": "structural",
-      "check_id": "hook-scripts-present",
-      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
-    },
-    {
-      "claim_id": "code-intel-stack",
-      "surface": "homepage",
-      "text": "Graphify + agentmemory wire",
+      "text": "Engineering Best Practices",
       "verification_tier": "matrix_overlay",
-      "check_id": "code-intel-preflight-wiring",
-      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+      "check_id": "capabilities-outcome",
+      "test_ids": ["enterprise-e2e-matrix"]
     },
     {
-      "claim_id": "proof-sb-diagnostics",
+      "claim_id": "hero-free-no-telemetry",
       "surface": "homepage",
-      "text": "sb-diagnostics.sh",
-      "verification_tier": "structural",
-      "check_id": "sb-diagnostics-exists",
-      "test_ids": ["sb-diagnostics-script"]
-    },
-    {
-      "claim_id": "catalog-contract-footer",
-      "surface": "homepage",
-      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
+      "text": "100% Free Forever",
       "verification_tier": "contract",
-      "check_id": "apo-catalog-counts",
-      "test_ids": ["validate-apo-catalog"]
-    },
-    {
-      "claim_id": "help-catalog-version",
-      "surface": "help_center",
-      "text": "Help Center documents current SB version",
-      "verification_tier": "structural",
-      "check_id": "help-version-sync",
-      "test_ids": ["help-center-staleness"]
-    },
-    {
-      "claim_id": "help-workflow-pages",
-      "surface": "help_center",
-      "text": "Each catalog workflow has a Help Center workflow page",
-      "verification_tier": "structural",
-      "check_id": "help-workflow-coverage",
-      "test_ids": ["help-center-staleness"]
-    },
-    {
-      "claim_id": "help-tri-host",
-      "surface": "help_center",
-      "text": "Claude Code, Codex, and Cursor",
-      "verification_tier": "structural",
-      "check_id": "help-tri-host-mentions",
-      "test_ids": ["help-center-staleness"]
-    },
-    {
-      "claim_id": "help-apo-catalog-sot",
-      "surface": "help_center",
-      "text": "APO catalog (docs/apo-catalog.json)",
-      "verification_tier": "contract",
-      "check_id": "help-catalog-sot-reference",
-      "test_ids": ["help-center-staleness", "validate-apo-catalog"]
-    },
-    {
-      "claim_id": "help-router-workflow",
-      "surface": "help_center",
-      "text": "/silver router composes workflows dynamically",
-      "verification_tier": "matrix_overlay",
-      "check_id": "help-page-exists-silver-router",
-      "test_ids": ["enterprise-e2e-row-1"]
+      "check_id": "free-forever-outcome",
+      "test_ids": ["claims-audit", "privacy-docs"]
     },
     {
       "claim_id": "help-ship-readiness",
@@ -130,7 +58,8 @@
       "verification_tier": "live",
       "check_id": "onboarding-slo-unmapped",
       "test_ids": ["planned-onboarding-slo"],
-      "status": "backlog"
+      "status": "backlog",
+      "backlog_id": "V-01"
     },
     {
       "claim_id": "hero-reliability-cost",
@@ -142,20 +71,32 @@
       "test_ids": ["token-telemetry-jsonl"],
       "status": "excluded",
       "backlog_id": "V-02",
-      "notes": "With SB in place, models ~60× cheaper than premium (e.g. Composer 2.5 vs Opus/GPT-5.5) can produce artifacts reliable enough for top-tier quality. Net savings is ~10× not 60× because: (1) SB overhead causes ~3× more work overall, (2) verification/validation loops ideally run on GPT-5.5/Opus. Marketing \"10× lower cost\" will NOT be validated as part of the validation overlay suite. DO keep tracking token counts as data for later cost/analysis (telemetry only, not pass/fail gate)."
+      "notes": "Marketing cost claim is telemetry-only — not a validation overlay pass/fail gate."
     }
   ],
   "matrix_row_claim_map": {
-    "1": ["hero-apo-title", "mechanism-dynamic-silver", "help-router-workflow"],
     "3": ["hero-evidence-gates"],
     "6": ["hero-capabilities"],
-    "11": ["hero-capabilities"],
     "14": ["hero-evidence-gates"],
     "15": ["hero-evidence-gates"],
     "16": ["help-ship-readiness", "hero-evidence-gates"]
   },
-  "internal_workflows_without_help_page": [
-    "WF-POST-EXEC-GATES",
-    "WF-VALIDATE-SUBSTEP"
+  "removed_claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "reason": "Always true product title — not a verifiable user outcome"
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "reason": "Host portability is pre-release tri-host install smoke, not validation"
+    },
+    {
+      "claim_id": "help-tri-host",
+      "reason": "Host portability is pre-release tri-host install smoke, not validation"
+    },
+    {
+      "claim_id": "help-router-workflow",
+      "reason": "Router composition is pre-release matrix row 1 / overlay dry-run structural"
+    }
   ]
 }

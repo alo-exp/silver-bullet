@@ -1,7 +1,7 @@
-# Validation Overlay Results — 2026-06-29
+# Validation Overlay Results — 2026-06-29 (outcome-only registry)
 
-**Run:** Enterprise E2E validation overlay (dry-run + live ledger overlay)  
-**SB repo:** `/Users/shafqat/projects/silver-bullet/repo` @ `main` (pre-commit)  
+**Run:** Enterprise E2E validation overlay (outcome claims) + pre-release overlay (feature claims)  
+**SB repo:** `/Users/shafqat/projects/silver-bullet/repo` @ `main`  
 **Matrix driver:** Not disturbed — overlay ran alongside active matrix (no pkill)
 
 ---
@@ -10,53 +10,59 @@
 
 | Mode | Pass | Fail | Skip | Exit |
 |------|------|------|------|------|
-| `--dry-run` (structural + contract) | 40 | 0 | 0 | 0 |
-| `--live` + `ROUND-3-LEDGER.md` | 43 | 0 | 4 | 0 |
-| Structural test suite | 14 | 0 | 0 | 0 |
+| Validation `--dry-run` (outcome only) | 6 | 0 | 0 | 0 |
+| Pre-release `--dry-run` (feature claims) | 40+ | 0 | 0 | 0 |
+| Tri-host smoke (Codex + Cursor CI) | 9 structural | 0 | 0 | 0 |
+| Structural test suite | 21 | 0 | 0 | 0 |
 
-**Verdict:** Validation overlay **GREEN** for structural/contract tier. Matrix-linked claims **partially satisfied** per Round 3 ledger (rows 11, 14–16 not Pass).
+**Verdict:** Validation overlay **GREEN** for outcome tier (5 gate claims + V-02 telemetry). Feature claims moved to pre-release registry and overlay.
 
 ---
 
-## Dry-run checks (40 pass)
+## Validation outcome claims (6 total, 5 gate)
 
-- Validation registry: 15 claims, 2 backlog items documented
-- APO catalog: 22 workflows, 27 atomic flows
-- Help version sync: `0.48.6` == `package.json`
-- Help workflow coverage: all user-facing WFs have pages; internal WFs (`WF-POST-EXEC-GATES`, `WF-VALIDATE-SUBSTEP`) correctly optional
-- Help SOT + tri-host mentions
-- Tri-host install scripts + `hooks/cursor-hook-bridge.sh`
-- Hook surface: 57 top-level hook scripts
-- `sb-diagnostics.sh` executable
+| claim_id | text (abbrev) | tier |
+|----------|---------------|------|
+| `hero-evidence-gates` | blocks unsafe commits, PRs, and releases | matrix_overlay |
+| `hero-capabilities` | Engineering Best Practices | matrix_overlay |
+| `hero-free-no-telemetry` | 100% Free Forever | contract |
+| `help-ship-readiness` | ship-readiness evidence gates | matrix_overlay |
+| `first-hour-block-pr` | first session blocks unsafe PR | live/backlog V-01 |
+| `hero-reliability-cost` | at 10x Lower Cost | telemetry_only V-02 |
+
+**Removed from validation:** `hero-apo-title`, `hero-tri-host`, `help-tri-host`, `help-router-workflow` + 9 demoted feature claims → `pre-release-claims-registry.json`.
+
+---
+
+## Validation dry-run checks (6 pass)
+
+- Validation registry: 5 outcome gate claims, 1 backlog, V-02 telemetry_only
+- Homepage evidence-gates outcome copy present
+- Help ship-readiness page exists
 - `claims-audit.sh` green
-- `check-apo-invariants.py site-doc-freshness` green
-- `check-apo-invariants.py apo-hierarchy-integrity` green
 
 ---
 
-## Live overlay (Round 3 ledger)
+## Pre-release feature overlay (representative)
 
-| Matrix row | Linked claims | Ledger status | Overlay |
-|------------|---------------|---------------|---------|
-| 1 | router / APO | Pass | PASS |
-| 3 | evidence gates | Pass | PASS |
-| 6 | fast path | Pass | PASS |
-| 11 | devops | Not Pass | SKIP |
-| 14 | release gates | Not Pass | SKIP |
-| 15 | review triad | Not Pass | SKIP |
-| 16 | ship-readiness | Not Pass | SKIP |
+- Pre-release registry: 13 feature claims + tri-host smoke wiring
+- APO catalog: 22 workflows, 27 atomic flows
+- Help version sync, workflow coverage, catalog SOT, tri-host mentions
+- Tri-host install scripts + cursor-hook-bridge
+- Hook surface, sb-diagnostics, apo invariants
+- Router help page exists
 
 ---
 
-## Top gaps (backlog — not overlay failures)
+## Tri-host install smoke
 
-| ID | Gap | Severity | Owner |
-|----|-----|----------|-------|
-| V-01 | First-hour unsafe PR block — no timed onboarding SLO | P1 | E2E / onboarding fixture |
-| V-02 | 10× lower cost — **excluded from validation gates**; token telemetry only | — | Telemetry JSONL (§10 validation plan) |
-| V-03 | Codex/Cursor 5-row smoke — Claude-only matrix | P1 | Tri-host E2E |
-| V-04 | Round 3 rows 11, 14–16 incomplete — outcome claims deferred | P0 matrix | Operator / harness |
-| V-05 | Monitor↔ledger drift (Round 3) | P0 measurement | Harness P0-1 |
+| Host | Script | CI |
+|------|--------|-----|
+| Codex | `scripts/run-tri-host-install-smoke.sh --host codex` | ✅ |
+| Cursor | `scripts/run-tri-host-install-smoke.sh --host cursor` | ✅ |
+| Claude | `scripts/run-tri-host-install-smoke.sh --host claude` | SKIP when CLI absent |
+
+Per host: install → `sb-diagnostics.sh` → `claims-audit.sh` + `check-apo-invariants.py`.
 
 ---
 
@@ -64,17 +70,15 @@
 
 ```bash
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run
-SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-3-LEDGER.md \
-  RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --live
+RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --dry-run
 bash tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh
+bash tests/scripts/test-tri-host-install-smoke.sh
 ```
 
 ---
 
-## Recommended next steps (parent orchestrator)
+## Recommended next steps
 
-1. **Complete Round 3 matrix** rows 11, 14–16; re-run `--live` overlay.
-2. **Wire overlay into round gate** — require dry-run green before matrix resume; `--live` after round.
-3. **Set `SB_E2E_RCS_VALIDATION_OVERLAY=pass`** when overlay dry-run green for RCS advisory boost.
-4. **Schedule V-01/V-03** as separate epics; do not block matrix on marketing SLO gaps. **V-02** is telemetry-only (excluded from overlay gates).
-5. **Fix P0-1 ledger↔monitor** from effectiveness plan — independent of validation copy checks.
+1. Run tri-host smoke with Claude CLI before major tag (`--host claude` or full `run-tri-host-install-smoke.sh`).
+2. Complete Round 3 matrix rows 11, 14–16; re-run validation `--live` overlay for outcome claims.
+3. Pre-release gate Stage 4b now includes pre-release overlay + tri-host smoke per `docs/internal/pre-release-quality-gate.md`.
