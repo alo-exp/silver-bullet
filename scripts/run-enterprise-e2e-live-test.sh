@@ -51,7 +51,7 @@ Constraints (from Round 1/2 learnings):
   - NO SB_E2E_MATRIX_DRY_RUN for live runs
   - 429 / Token Plan → retry every 60s (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL)
   - Network blips → 120-300s backoff (monitor handles)
-  - Resume skips rows with PASS/SKIP in matrix log (not from row 1)
+  - Resume skips ledger Pass rows; includes all ledger-incomplete rows
   - Re-run bash scripts/install-claude.sh after every SB hook fix
   - Code-intel preflight: Graphify, agentmemory, RTK, Context Mode when opted in
   - Round gates: 22/22 matrix, review-fix-ladder, run-all-tests, graphify, 2 clean rounds
@@ -155,14 +155,14 @@ if ((${#REQUESTED_ROWS[@]} > 0)); then
   MATRIX_ARGS=("${REQUESTED_ROWS[@]}")
 else
   touch "$MATRIX_LOG"
-  if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" | grep -q .; then
-    enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG"
+  if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE" | grep -q .; then
+    enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
     if ((${#inc[@]} == 0)); then
-      echo "All rows PASS/SKIP in ${MATRIX_LOG} — nothing to resume."
+      echo "All rows Pass in ledger — nothing to resume."
       echo "Set SB_E2E_MATRIX_FORCE=1 or pass explicit row numbers to re-run."
       exit 0
     fi
-    echo "Resume rows (skip last PASS/SKIP): ${inc[*]}"
+    echo "Resume rows (ledger-incomplete): ${inc[*]}"
     MATRIX_ARGS=("${inc[@]}")
   fi
 fi

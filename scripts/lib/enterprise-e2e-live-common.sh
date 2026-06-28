@@ -54,10 +54,36 @@ enterprise_e2e_row_complete_in_log() {
   ' "$log"
 }
 
-# Resume from first incomplete row after last PASS/SKIP — never restart at row 1.
+_enterprise_e2e_ensure_ledger_reconcile_sourced() {
+  if ! declare -f enterprise_e2e_ledger_matrix_rows >/dev/null 2>&1; then
+    local lib_dir
+    lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
+    source "${lib_dir}/enterprise-e2e-ledger-reconcile.sh"
+  fi
+}
+
+# True when workflow matrix row is Pass in the human-auditable ledger.
+enterprise_e2e_ledger_row_is_pass() {
+  local row="$1" ledger="$2" status
+  [[ -n "$ledger" && -f "$ledger" ]] || return 1
+  _enterprise_e2e_ensure_ledger_reconcile_sourced
+  status="$(enterprise_e2e_ledger_matrix_rows "$ledger" | awk -v r="$row" '$1 == r { print $2; exit }')"
+  enterprise_e2e_ledger_status_is_pass "${status:-}"
+}
+
+# Resume rows: ledger Pass → skip; ledger incomplete → include (even when log SKIP).
+# Without a ledger file, fall back to matrix log PASS/SKIP completion.
 enterprise_e2e_incomplete_rows() {
-  local log="$1" row out=()
+  local log="$1" ledger="${2:-}" row out=()
   for row in $(enterprise_e2e_all_row_nums); do
+    if [[ -n "$ledger" && -f "$ledger" ]]; then
+      if enterprise_e2e_ledger_row_is_pass "$row" "$ledger"; then
+        continue
+      fi
+      out+=("$row")
+      continue
+    fi
     if ! enterprise_e2e_row_complete_in_log "$row" "$log"; then
       out+=("$row")
     fi
