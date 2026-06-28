@@ -50,8 +50,10 @@ sb_run_detached() {
       nohup "$@" >>"$log_file" 2>&1 &
     fi
   else
+    # Always detach stdio: callers often capture PID via $(sb_run_detached …) and
+    # inherited PIPE stdout (e.g. monitor/watch) will stall the parent.
     if sb_detach_has_setsid; then
-      setsid "$@" &
+      setsid "$@" >/dev/null 2>&1 &
     else
       nohup "$@" >/dev/null 2>&1 &
     fi
