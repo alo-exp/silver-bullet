@@ -65,11 +65,11 @@ _enterprise_e2e_ensure_ledger_reconcile_sourced() {
 
 # True when workflow matrix row is Pass in the human-auditable ledger.
 enterprise_e2e_ledger_row_is_pass() {
-  local row="$1" ledger="$2" status
+  local row="$1" ledger="$2" row_status
   [[ -n "$ledger" && -f "$ledger" ]] || return 1
   _enterprise_e2e_ensure_ledger_reconcile_sourced
-  status="$(enterprise_e2e_ledger_matrix_rows "$ledger" | awk -v r="$row" '$1 == r { print $2; exit }')"
-  enterprise_e2e_ledger_status_is_pass "${status:-}"
+  row_status="$(enterprise_e2e_ledger_matrix_rows "$ledger" | awk -v r="$row" '$1 == r { print $2; exit }')"
+  enterprise_e2e_ledger_status_is_pass "${row_status:-}"
 }
 
 # Resume rows: ledger Pass → skip; ledger incomplete → include (even when log SKIP).

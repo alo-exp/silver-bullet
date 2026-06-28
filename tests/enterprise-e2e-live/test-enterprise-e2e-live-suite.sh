@@ -171,24 +171,38 @@ fi
 # --- Resume helper ---
 TMP_LOG="$(mktemp)"
 LEDGER_FIXTURE=""
-cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE"; }
+LEDGER_RESUME_FIXTURE=""
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE" "$LEDGER_RESUME_FIXTURE"; }
 trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/silver) ==="
   echo "  PASS: evidence at .planning/workflows/router-session.md"
   echo "=== Row 2: silver-research (/silver:research) ==="
-  echo "  FAIL: missing evidence"
+  echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
 } >"$TMP_LOG"
-inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" | tr '\n' ' ' | xargs)"
+LEDGER_RESUME_FIXTURE="$(mktemp)"
+cat >"$LEDGER_RESUME_FIXTURE" <<'LEDGER'
+| # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+|---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
+| 1 | `silver-router` | 2026-06-28 | haiku | **Pass** | | | | |
+| 2 | `silver-research` | | | | | | | |
+| 3 | `silver-feature` | | | Fail | | | | |
+LEDGER
+inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" "$LEDGER_RESUME_FIXTURE" | tr '\n' ' ' | xargs)"
 if printf '%s\n' "$inc" | grep -qw 1; then
-  fail "resume must not include row 1 when PASS"
+  fail "resume must not include row 1 when ledger Pass"
 else
-  pass "resume excludes row 1 when PASS"
+  pass "resume excludes row 1 when ledger Pass"
 fi
 if printf '%s\n' "$inc" | grep -qw 2; then
-  pass "resume includes first incomplete row 2"
+  pass "resume includes row 2 when ledger incomplete despite log SKIP"
 else
-  fail "resume includes first incomplete row 2 — got [$inc]"
+  fail "resume includes row 2 when ledger incomplete — got [$inc]"
+fi
+if printf '%s\n' "$inc" | grep -qw 3; then
+  pass "resume includes ledger Fail row 3"
+else
+  fail "resume includes ledger Fail row 3 — got [$inc]"
 fi
 
 # --- Opt-in gate in run-all-tests ---
