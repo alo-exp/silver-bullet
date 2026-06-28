@@ -76,6 +76,37 @@ enterprise_e2e_assert_no_auth_mutations() {
   return 0
 }
 
+# Single live-test driver — prevents concurrent --resume races on install-claude / hook audit.
+enterprise_e2e_live_test_lock_file() {
+  printf '%s\n' "${SB_E2E_LIVE_TEST_LOCK_FILE:-${SB_ROOT:-}/.e2e-live-test.lock}"
+}
+
+enterprise_e2e_acquire_live_test_lock() {
+  local lock pid
+  lock="$(enterprise_e2e_live_test_lock_file)"
+  if [[ -f "$lock" ]]; then
+    pid="$(tr -d '[:space:]' <"$lock" 2>/dev/null || true)"
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      echo "ERROR: enterprise E2E live test already running (pid ${pid}; lock ${lock})" >&2
+      echo "       Stop the other driver or remove stale lock if the pid is dead." >&2
+      return 1
+    fi
+    echo "WARN: removing stale live-test lock (pid ${pid:-unknown} not running)"
+    rm -f "$lock"
+  fi
+  printf '%s\n' "$$" >"$lock"
+  return 0
+}
+
+enterprise_e2e_release_live_test_lock() {
+  local lock
+  lock="$(enterprise_e2e_live_test_lock_file)"
+  [[ -f "$lock" ]] || return 0
+  if [[ "$(tr -d '[:space:]' <"$lock" 2>/dev/null || true)" == "$$" ]]; then
+    rm -f "$lock"
+  fi
+}
+
 enterprise_e2e_export_live_defaults() {
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"

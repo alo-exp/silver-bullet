@@ -498,7 +498,9 @@ PY
     (cd "$WORK_DIR" && npm install --silent >/dev/null 2>&1)
   fi
 
-  if [[ "$E2E_RUNTIME" == "claude" ]]; then
+  # Enterprise live entrypoint runs install-claude.sh after hook-delivery; skip here to
+  # avoid ENOTEMPTY races when monitor/matrix or duplicate drivers run concurrently.
+  if [[ "$E2E_RUNTIME" == "claude" && "${SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP:-}" != "1" ]]; then
     CLAUDE_PROMPT_COUNT=0
     bootstrap_claude_dependencies
   fi

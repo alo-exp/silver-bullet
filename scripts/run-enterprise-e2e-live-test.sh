@@ -94,6 +94,11 @@ if [[ "$PREFLIGHT_ONLY" != "1" && "${SB_ENTERPRISE_E2E_LIVE:-}" != "1" ]]; then
   exit 2
 fi
 
+if [[ "$PREFLIGHT_ONLY" != "1" ]]; then
+  enterprise_e2e_acquire_live_test_lock || exit 1
+  trap enterprise_e2e_release_live_test_lock EXIT
+fi
+
 enterprise_e2e_export_live_defaults
 enterprise_e2e_assert_no_auth_mutations "${SB_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
 enterprise_e2e_assert_no_auth_mutations "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
@@ -120,6 +125,8 @@ if [[ "$SKIP_CODE_INTEL_PREFLIGHT" == "1" ]]; then
 else
   enterprise_e2e_code_intel_preflight "$SB_ROOT" "$FIXTURE_DIR" 0
 fi
+# install-claude.sh runs below; avoid duplicate bootstrap during hook-delivery prepare_workspace.
+export SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP=1
 bash tests/e2e-live/hook-delivery-preflight.sh
 export SILVER_BULLET_RUNTIME=cursor
 (cd "$FIXTURE_DIR" && git status --short && npm test)
@@ -141,32 +148,6 @@ fi
 # Session 0 gate before interactive matrix (TUI init or programmatic opt-in).
 enterprise_e2e_assert_session0_or_skip "$FIXTURE_DIR" "$LEDGER_FILE"
 
-# --- Dual-role monitor + watch (persistent shells recommended) ---
-start_background_if_missing() {
-  local name="$1" pattern="$2" script="$3" pid_file="$4"
-  if pgrep -f "$pattern" >/dev/null 2>&1; then
-    echo "${name}: already running"
-    pgrep -f "$pattern" | head -1 >"$pid_file" 2>/dev/null || true
-    return 0
-  fi
-  echo "${name}: starting in background..."
-  bash "$script" &
-  echo $! >"$pid_file"
-  echo "${name}: pid $(cat "$pid_file")"
-}
-
-export SB_E2E_MATRIX_LOG="$MATRIX_LOG"
-start_background_if_missing \
-  "matrix-monitor" \
-  "monitor-enterprise-e2e-matrix.sh" \
-  "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
-  "$MONITOR_PID_FILE"
-start_background_if_missing \
-  "tui-watch" \
-  "watch-enterprise-e2e-tui.sh" \
-  "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
-  "$WATCH_PID_FILE"
-
 # --- Resume logic (default: skip PASS/SKIP rows when log exists) ---
 MATRIX_ARGS=()
 if ((${#REQUESTED_ROWS[@]} > 0)); then
@@ -184,6 +165,35 @@ else
     MATRIX_ARGS=("${inc[@]}")
   fi
 fi
+
+# --- Dual-role monitor + watch (driver-owned; replace stale harness children) ---
+start_harness_background() {
+  local name="$1" pattern="$2" script="$3" pid_file="$4"
+  if pgrep -f "$pattern" >/dev/null 2>&1; then
+    echo "${name}: replacing existing instance (driver-owned harness)"
+    pkill -f "$pattern" 2>/dev/null || true
+    sleep 1
+  fi
+  echo "${name}: starting in background..."
+  bash "$script" &
+  echo $! >"$pid_file"
+  echo "${name}: pid $(cat "$pid_file")"
+}
+
+export SB_E2E_MATRIX_LOG="$MATRIX_LOG"
+if ((${#MATRIX_ARGS[@]} > 0)); then
+  export SB_E2E_MATRIX_ROWS="${MATRIX_ARGS[*]}"
+fi
+start_harness_background \
+  "matrix-monitor" \
+  "monitor-enterprise-e2e-matrix.sh" \
+  "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
+  "$MONITOR_PID_FILE"
+start_harness_background \
+  "tui-watch" \
+  "watch-enterprise-e2e-tui.sh" \
+  "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
+  "$WATCH_PID_FILE"
 
 echo ""
 echo "--- Launching interactive matrix (live) ---"
