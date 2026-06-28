@@ -202,7 +202,12 @@ expect {
     send -- "2\r"
     exp_continue
   }
-  -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
+  -re {code.claude.com/docs/en/security} {
+    send -- "2\r"
+    after 750
+    exp_continue
+  }
+    -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
     # Newer Claude builds ask for an explicit trust confirmation before the
     # session starts. Pick the trust option so the live harness can continue.
     send -- "1\r"
