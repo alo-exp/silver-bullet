@@ -228,7 +228,7 @@ PY
 
 count_matrix_passes() {
   local n
-  n="$(grep -cE '^\s*PASS:' \"$MATRIX_LOG\" 2>/dev/null || true)"
+  n="$(grep -cE '^\s*PASS:' "$MATRIX_LOG" 2>/dev/null || true)"
   echo "${n:-0}"
 }
 
