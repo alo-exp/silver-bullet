@@ -228,7 +228,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Prior harness | `398209d3` ANSI bypass disclaimer in `claude-interactive-invoke.expect` |
 | Preflight | **PASS** (`RTK_DISABLED=1 --preflight-only`) after `9f89cfb6` |
 | Fixture | Re-cloned `alo-exp/enterprise-grade-test-app` @ `edbad21` (path was missing on disk) |
-| Row 1 | **IN FLIGHT** — bypass menu OK; prompt submitted; **OpenCode 429** (weekly limit ~13h34m); matrix **600s quota retry** active (PID batch ~62086 / expect ~65211) |
+| Row 1 | **IN FLIGHT** — bypass menu **OK**; **OpenCode 429** (weekly proxy limit, not Cursor quota); **600s retry #1** active (PIDs 62086/62131); monitor **91251** on `.e2e-row1-attempt.log` |
 | Log pass rows (historical) | 5, 9, 10, 12, 13, 17, 18, 19, 20 (+ rows 21–22 internal PASS in last batch tail) |
 | Log fail rows | 1 (prior attempts), 7, 8 |
 | `--resume` | **Not started** — waiting row 1 outcome |
