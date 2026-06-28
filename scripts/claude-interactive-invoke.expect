@@ -687,9 +687,7 @@ expect {
     if {$require_final_marker == 1 && $final_marker_seen == 0} {
       exp_continue
     }
-    if {[input_prompt_ready $expect_out(buffer)} {
-      set saw_prompt 1
-    }
+    set saw_prompt 1
     maybe_submit_prompt $expect_out(buffer)
     set timeout $quiet_timeout
     maybe_finish_on_matrix_evidence
