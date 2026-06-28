@@ -781,6 +781,44 @@ out=$(run_hook "PreToolUse" "gh release create v1.0.0")
 assert_passes "release passes with codex-only live markers" "$out"
 teardown
 
+# Test 13b-b: gh release create passes with claude-only live markers
+setup
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+requesting-code-review
+silver-review
+receiving-code-review
+testing-strategy
+documentation
+finishing-a-development-branch
+deploy-checklist
+silver-create-release
+verification-before-completion
+test-driven-development
+tech-debt
+verify-tests
+EOF
+mkdir -p "$SB_TEST_DIR"
+cat > "$RELEASE_LIVE_MATRIX_FILE" <<'EOF'
+matrix=claude-only
+EOF
+cat > "$E2E_LIVE_MATRIX_FILE" <<'EOF'
+matrix=claude-only
+EOF
+cat > "$INLINE_E2E_MATRIX_FILE" <<'EOF'
+matrix=inline-full-surface
+EOF
+cat > "$QUALITY_GATE_FILE" <<'EOF'
+adversarial-review-clean
+sentinel-skills-clean
+quality-gate-stage-3
+full-test-suite-rerun
+EOF
+write_verify_tests_state
+out=$(run_hook "PreToolUse" "gh release create v1.0.0")
+assert_passes "release passes with claude-only live markers" "$out"
+teardown
+
 # Test 13c: gh release create still passes with codex-only live markers when the legacy override is set
 setup
 cat > "$TMPSTATE" << 'EOF'
