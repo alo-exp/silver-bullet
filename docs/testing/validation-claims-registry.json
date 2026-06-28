@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "description": "Homepage + Help Center user-outcome claims mapped to verifiable checks for the validation overlay.",
+  "sources": {
+    "homepage": "site/index.html",
+    "help_center": "site/help/",
+    "catalog": "docs/apo-catalog.json"
+  },
+  "verification_tiers": {
+    "structural": "Repo files, catalog counts, help page existence — no live TUI",
+    "contract": "apo-catalog invariants, claims-audit, generated view freshness",
+    "matrix_overlay": "Maps to enterprise E2E matrix row pass criteria",
+    "live": "Requires SB_ENTERPRISE_E2E_LIVE=1 — not run in overlay dry-run"
+  },
+  "claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "surface": "homepage",
+      "text": "Agentic Process Orchestrator for the AI Era",
+      "verification_tier": "matrix_overlay",
+      "check_id": "apo-catalog-workflow-count",
+      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "surface": "homepage",
+      "text": "Claude Code, Codex, or Cursor",
+      "verification_tier": "structural",
+      "check_id": "tri-host-install-scripts",
+      "test_ids": ["install-claude", "install-codex", "cursor-hook-bridge"]
+    },
+    {
+      "claim_id": "mechanism-catalog-counts",
+      "surface": "homepage",
+      "text": "27 atomic flows composed into 22 task-shaped workflows",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "mechanism-twelve-hooks",
+      "surface": "homepage",
+      "text": "twelve hook layers that physically block unsafe progress",
+      "verification_tier": "structural",
+      "check_id": "hook-scripts-present",
+      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
+    },
+    {
+      "claim_id": "code-intel-stack",
+      "surface": "homepage",
+      "text": "Graphify + agentmemory wire",
+      "verification_tier": "matrix_overlay",
+      "check_id": "code-intel-preflight-wiring",
+      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+    },
+    {
+      "claim_id": "proof-sb-diagnostics",
+      "surface": "homepage",
+      "text": "sb-diagnostics.sh",
+      "verification_tier": "structural",
+      "check_id": "sb-diagnostics-exists",
+      "test_ids": ["sb-diagnostics-script"]
+    },
+    {
+      "claim_id": "catalog-contract-footer",
+      "surface": "homepage",
+      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "help-catalog-version",
+      "surface": "help_center",
+      "text": "Help Center documents current SB version",
+      "verification_tier": "structural",
+      "check_id": "help-version-sync",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-workflow-pages",
+      "surface": "help_center",
+      "text": "Each catalog workflow has a Help Center workflow page",
+      "verification_tier": "structural",
+      "check_id": "help-workflow-coverage",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-tri-host",
+      "surface": "help_center",
+      "text": "Claude Code, Codex, and Cursor",
+      "verification_tier": "structural",
+      "check_id": "help-tri-host-mentions",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-apo-catalog-sot",
+      "surface": "help_center",
+      "text": "APO catalog (docs/apo-catalog.json)",
+      "verification_tier": "contract",
+      "check_id": "help-catalog-sot-reference",
+      "test_ids": ["help-center-staleness", "validate-apo-catalog"]
+    },
+    {
+      "claim_id": "help-router-workflow",
+      "surface": "help_center",
+      "text": "/silver router composes workflows dynamically",
+      "verification_tier": "matrix_overlay",
+      "check_id": "help-page-exists-silver-router",
+      "test_ids": ["enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "help-ship-readiness",
+      "surface": "help_center",
+      "text": "ship-readiness evidence gates",
+      "verification_tier": "matrix_overlay",
+      "check_id": "help-page-exists-silver-ship-readiness",
+      "test_ids": ["enterprise-e2e-rows-14-16"]
+    },
+    {
+      "claim_id": "first-hour-block-pr",
+      "surface": "homepage",
+      "text": "blocking their first unsafe PR within the first session",
+      "verification_tier": "live",
+      "check_id": "onboarding-slo-unmapped",
+      "test_ids": ["planned-onboarding-slo"],
+      "status": "backlog"
+    },
+    {
+      "claim_id": "hero-reliability-cost",
+      "surface": "homepage",
+      "text": "at 10x Lower Cost",
+      "verification_tier": "live",
+      "check_id": "cost-benchmark-unmapped",
+      "test_ids": ["rtk-context-mode-preflight"],
+      "status": "backlog"
+    }
+  ],
+  "matrix_row_claim_map": {
+    "1": ["hero-apo-title", "mechanism-dynamic-silver", "help-router-workflow"],
+    "3": ["hero-evidence-gates"],
+    "6": ["hero-capabilities"],
+    "11": ["hero-capabilities"],
+    "14": ["hero-evidence-gates"],
+    "15": ["hero-evidence-gates"],
+    "16": ["help-ship-readiness", "hero-evidence-gates"]
+  },
+  "internal_workflows_without_help_page": [
+    "WF-POST-EXEC-GATES",
+    "WF-VALIDATE-SUBSTEP"
+  ]
+}

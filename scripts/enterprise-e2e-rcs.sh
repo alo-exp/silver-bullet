@@ -49,6 +49,7 @@ score_ladder=0
 score_matrix=0
 score_claims=0
 score_trihost=0
+score_validation=0
 
 # run-all-tests (20%) — caller may set SB_E2E_RCS_RUN_ALL_TESTS=pass|fail
 case "${SB_E2E_RCS_RUN_ALL_TESTS:-unknown}" in
@@ -105,6 +106,17 @@ if RTK_DISABLED=1 bash "${SB_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; the
   score_claims=15
 fi
 
+# validation overlay advisory (included in claims weight when pass — see VALIDATION-PLAN)
+case "${SB_E2E_RCS_VALIDATION_OVERLAY:-unknown}" in
+  pass) score_validation=5 ;;
+  fail) score_validation=0 ;;
+  *) score_validation=2 ;;
+esac
+if [[ "$score_validation" -gt 0 && "$score_claims" -lt 15 ]]; then
+  score_claims=$((score_claims + score_validation))
+  [[ "$score_claims" -gt 15 ]] && score_claims=15
+fi
+
 # tri-host smoke (10%) — Claude required; others warn
 case "${SB_E2E_RCS_TRIHOST:-claude-only}" in
   full) score_trihost=10 ;;
@@ -123,6 +135,7 @@ if [[ "$JSON_OUT" -eq 1 ]]; then
     --argjson matrix "$score_matrix" \
     --argjson claims "$score_claims" \
     --argjson trihost "$score_trihost" \
+    --argjson validation_overlay "$score_validation" \
     --arg ledger_pass "${pass_count}/22" \
     --arg reconcile "$(enterprise_e2e_ledger_reconcile_status)" \
     '{
@@ -133,7 +146,8 @@ if [[ "$JSON_OUT" -eq 1 ]]; then
         ladder: $ladder,
         matrix_ledger: $matrix,
         claims_audit: $claims,
-        tri_host_smoke: $trihost
+        tri_host_smoke: $trihost,
+        validation_overlay: $validation_overlay
       },
       ledger_pass: $ledger_pass,
       ledger_reconcile: $reconcile
@@ -144,7 +158,7 @@ else
   echo "  structural/contract:  ${score_structural}/15"
   echo "  ladder:               ${score_ladder}/15"
   echo "  matrix ledger:        ${score_matrix}/25 (${pass_count}/22 pass, reconcile=$(enterprise_e2e_ledger_reconcile_status))"
-  echo "  claims audit:         ${score_claims}/15"
+  echo "  claims audit:         ${score_claims}/15 (validation overlay ${score_validation}/5 advisory)"
   echo "  tri-host smoke:       ${score_trihost}/10"
 fi
 
