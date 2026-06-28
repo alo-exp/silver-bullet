@@ -40,7 +40,7 @@ export SILVER_BULLET_RUNTIME=claude
 
 # Export ~/.claude/settings.json env for interactive TUI (api_key / proxy / token gateway).
 # Enterprise matrix always exports — do not inherit SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
-# from run-all-tests.sh / run-sb-live-tests-claude.sh (leaves TUI at /login).
+# from run-all-tests.sh / run-sb-live-tests-claude.sh (leaves TUI at login wall).
 # OAuth-only: SB_E2E_MATRIX_OAUTH_ONLY=1 bash scripts/run-enterprise-e2e-matrix.sh
 # shellcheck source=scripts/lib/claude-matrix-auth.sh
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"

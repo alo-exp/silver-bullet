@@ -95,7 +95,7 @@ enterprise_e2e_incomplete_rows() {
 
 enterprise_e2e_assert_no_auth_mutations() {
   local script="$1"
-  if grep -qE 'claude auth (login|logout)|claude /logout|setup-token|/login|/logout' "$script" 2>/dev/null; then
+  if grep -vE '^[[:space:]]*#' "$script" 2>/dev/null | grep -qE 'claude auth (login|logout)|claude /logout|setup-token|/login|/logout'; then
     echo "ERROR: $script must not invoke login/logout (API key auth only)" >&2
     return 1
   fi

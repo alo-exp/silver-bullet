@@ -110,6 +110,36 @@ assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2
 
 # --- Monitor learnings ---
 MONITOR="${REPO_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
+
+# --- Auth mutation guard (ignores # comment lines) ---
+if enterprise_e2e_assert_no_auth_mutations "$MATRIX"; then
+  pass "auth mutation guard passes on matrix runner"
+else
+  fail "auth mutation guard should ignore comment lines (e.g. login wall note)"
+fi
+if enterprise_e2e_assert_no_auth_mutations "$MONITOR"; then
+  pass "auth mutation guard passes on matrix monitor"
+else
+  fail "auth mutation guard should pass on monitor script"
+fi
+TMP_AUTH_GUARD="$(mktemp)"
+{
+  echo '# comment with /login must not trip guard'
+  echo 'echo safe'
+} >"$TMP_AUTH_GUARD"
+if enterprise_e2e_assert_no_auth_mutations "$TMP_AUTH_GUARD"; then
+  pass "auth mutation guard ignores /login in comments"
+else
+  fail "auth mutation guard must skip comment lines"
+fi
+printf '%s\n' 'claude auth login' >>"$TMP_AUTH_GUARD"
+if enterprise_e2e_assert_no_auth_mutations "$TMP_AUTH_GUARD" 2>/dev/null; then
+  fail "auth mutation guard must reject claude auth login"
+else
+  pass "auth mutation guard rejects claude auth login"
+fi
+rm -f "$TMP_AUTH_GUARD"
+
 assert_contains "monitor resume incomplete rows" "$MONITOR" "incomplete_rows"
 assert_contains "monitor 429 wait 600" "$MONITOR" "QUOTA_WAIT"
 assert_contains "monitor network retry" "$MONITOR" "NETWORK_WAIT"
