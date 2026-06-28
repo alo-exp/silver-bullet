@@ -13,7 +13,9 @@ matrix_route_prompt() {
     "$route" "$prompt_card" "$matrix_context" "$evidence_path"
 }
 
-# Rows 2-20: Claude TUI marketplace install registers /silver router only — not /silver:* subcommands.
+# Rows 2-20: Claude TUI registers /silver from agents/claude/silver (skills manifest).
+# Codex-only commands/silver.md is not copied into the Claude plugin cache.
+# The expect harness must wait for the ❯ prompt before submitting slash routes.
 matrix_router_workflow_prompt() {
   local slug="$1"
   local prompt_card="$2"

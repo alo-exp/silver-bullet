@@ -319,6 +319,32 @@ proc token_gateway_configured {} {
   return 0
 }
 
+proc input_prompt_ready {buffer} {
+  set plain [strip_ansi $buffer]
+  return [regexp {❯} $plain]
+}
+
+proc maybe_submit_prompt {buffer} {
+  global command_name prompt_body prompt_submitted saw_not_logged_in quiet_timeout slash_pause_ms slash_route_pending
+  if {$prompt_submitted || $saw_not_logged_in} {
+    return 0
+  }
+  # Slash routes need the ❯ input line; submitting on the idle "0 tokens"
+  # status bar fires before Claude registers plugin /silver commands.
+  if {$slash_route_pending && ![input_prompt_ready $buffer]} {
+    return 0
+  }
+  if {$slash_route_pending} {
+    after $slash_pause_ms
+  }
+  if {[submit_prompt $command_name $prompt_body]} {
+    set prompt_submitted 1
+    set timeout $quiet_timeout
+    return 1
+  }
+  return 0
+}
+
 proc submit_prompt {command_name prompt_body} {
   global saw_not_logged_in
   if {$saw_not_logged_in && ![token_gateway_configured]} {
@@ -375,6 +401,10 @@ if {[string length $prompt] > 0 && [string index $prompt 0] eq "/"} {
   if {[regexp {^/([^[:space:]]+)\s*(.*)$} $prompt -> command_name prompt_body]} {
     set prompt_body [string trimleft $prompt_body]
   }
+}
+set slash_route_pending 0
+if {$command_name ne ""} {
+  set slash_route_pending 1
 }
 
 cd $work_dir
@@ -534,12 +564,7 @@ expect {
     exp_continue
   }
   -re {(?s)bypass.*permissions.*on} {
-    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
-      if {[submit_prompt $command_name $prompt_body]} {
-        set prompt_submitted 1
-        set timeout $quiet_timeout
-      }
-    }
+    maybe_submit_prompt $expect_out(buffer)
     exp_continue
   }
   -re {Try "how does .* work\?"} {
@@ -628,21 +653,11 @@ expect {
     exp_continue
   }
   -re {accept.*edits.*on} {
-    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
-      if {[submit_prompt $command_name $prompt_body]} {
-        set prompt_submitted 1
-        set timeout $quiet_timeout
-      }
-    }
+    maybe_submit_prompt $expect_out(buffer)
     exp_continue
   }
   -re {[0-9]+[^0-9]{0,40}tokens} {
-    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
-      if {[submit_prompt $command_name $prompt_body]} {
-        set prompt_submitted 1
-        set timeout $quiet_timeout
-      }
-    } else {
+    if {$prompt_submitted} {
       extend_quiet_on_new_token_marker [strip_ansi $expect_out(buffer)]
       maybe_finish_on_matrix_evidence
     }
@@ -672,13 +687,10 @@ expect {
     if {$require_final_marker == 1 && $final_marker_seen == 0} {
       exp_continue
     }
-    if {$prompt_submitted == 0 && $saw_not_logged_in == 0} {
-      if {[submit_prompt $command_name $prompt_body]} {
-        set prompt_submitted 1
-        set timeout $quiet_timeout
-      }
+    if {[input_prompt_ready $expect_out(buffer)} {
+      set saw_prompt 1
     }
-    set saw_prompt 1
+    maybe_submit_prompt $expect_out(buffer)
     set timeout $quiet_timeout
     maybe_finish_on_matrix_evidence
     exp_continue
