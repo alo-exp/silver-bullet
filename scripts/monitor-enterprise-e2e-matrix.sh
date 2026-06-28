@@ -17,6 +17,9 @@ source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT" || exit
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+# shellcheck source=tests/live/lib/detach-background.sh
+source "${SB_ROOT}/tests/live/lib/detach-background.sh"
+sb_prepend_harness_path
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
 

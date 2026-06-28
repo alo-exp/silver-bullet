@@ -66,6 +66,11 @@ agent_invoke() {
 
   sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
   expect_script="${sb_root}/scripts/claude-interactive-invoke.expect"
+  if [[ -f "${sb_root}/tests/live/lib/detach-background.sh" ]]; then
+    # shellcheck source=tests/live/lib/detach-background.sh
+    source "${sb_root}/tests/live/lib/detach-background.sh"
+    sb_prepend_harness_path
+  fi
   # shellcheck source=scripts/lib/claude-matrix-auth.sh
   source "${sb_root}/scripts/lib/claude-matrix-auth.sh"
 

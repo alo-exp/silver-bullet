@@ -10,6 +10,9 @@ SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export SB_RTK_COMPAT_MODE=verbatim
 # shellcheck source=hooks/lib/rtk-compat.sh
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
+# shellcheck source=tests/live/lib/detach-background.sh
+source "${SB_ROOT}/tests/live/lib/detach-background.sh"
+sb_prepend_harness_path
 FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 # shellcheck disable=SC2034  # documented matrix doc path for operators

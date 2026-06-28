@@ -107,7 +107,17 @@ enterprise_e2e_release_live_test_lock() {
   fi
 }
 
+enterprise_e2e_prepend_harness_path() {
+  local sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+  if [[ -f "${sb_root}/tests/live/lib/detach-background.sh" ]]; then
+    # shellcheck source=tests/live/lib/detach-background.sh
+    source "${sb_root}/tests/live/lib/detach-background.sh"
+    sb_prepend_harness_path
+  fi
+}
+
 enterprise_e2e_export_live_defaults() {
+  enterprise_e2e_prepend_harness_path
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
   unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# macOS setsid shim — Claude Code may prefix hook/shell spawns with setsid;
+# util-linux setsid is not shipped on Darwin (see claude binary exec-wrapper set).
+set -euo pipefail
+
+if (($# == 0)); then
+  printf 'setsid: missing operand\n' >&2
+  exit 125
+fi
+
+_real_setsid=""
+if _candidate="$(command -v setsid 2>/dev/null || true)"; then
+  if [[ -n "$_candidate" && "$_candidate" != "$0" ]]; then
+    _real_setsid="$_candidate"
+  fi
+fi
+
+if [[ -n "$_real_setsid" ]]; then
+  exec "$_real_setsid" "$@"
+fi
+
+exec python3 -c 'import os, sys
+args = sys.argv[1:]
+if args and args[0] == "--":
+    args = args[1:]
+if not args:
+    print("setsid: missing operand", file=sys.stderr)
+    raise SystemExit(125)
+os.setsid()
+os.execvp(args[0], args)' -- "$@"
