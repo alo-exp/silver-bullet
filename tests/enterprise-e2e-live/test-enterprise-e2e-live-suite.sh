@@ -81,13 +81,19 @@ done
 
 # --- Live entrypoint constraints ---
 LIVE="${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh"
+COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 assert_contains "live entrypoint requires SB_ENTERPRISE_E2E_LIVE" "$LIVE" "SB_ENTERPRISE_E2E_LIVE"
 assert_contains "live entrypoint sets CLEAN_ENV=0" "$LIVE" "SB_E2E_MATRIX_CLEAN_ENV=0"
 assert_contains "live entrypoint unsets DRY_RUN" "$LIVE" "env -u SB_E2E_MATRIX_DRY_RUN"
 assert_contains "live entrypoint starts monitor" "$LIVE" "monitor-enterprise-e2e-matrix.sh"
 assert_contains "live entrypoint starts tui watch" "$LIVE" "watch-enterprise-e2e-tui.sh"
 assert_contains "live entrypoint runs install-claude" "$LIVE" "install-claude.sh"
-assert_contains "live entrypoint quota 60s default" "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
+assert_contains "live entrypoint quota 60s default" "$COMMON_LIB" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
+assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"'
+assert_contains "live common token gateway preflight" "$COMMON_LIB" "enterprise_e2e_preflight_claude_token_gateway"
+assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_claude_token_gateway"
+assert_contains "live entrypoint matrix forces settings export" "$LIVE" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
+assert_contains "live entrypoint matrix keys strategy" "$LIVE" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys"
 assert_not_contains "live entrypoint forbids login" "$LIVE" "auth login"
 assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
@@ -103,7 +109,6 @@ assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2
 
 # --- Monitor learnings ---
 MONITOR="${REPO_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
-COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 assert_contains "monitor resume incomplete rows" "$MONITOR" "incomplete_rows"
 assert_contains "monitor 429 wait 600" "$MONITOR" "QUOTA_WAIT"
 assert_contains "monitor network retry" "$MONITOR" "NETWORK_WAIT"

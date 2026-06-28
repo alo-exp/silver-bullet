@@ -185,11 +185,46 @@ enterprise_e2e_export_live_defaults() {
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
   unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true
+  # Default ON for live matrix — inherited SKIP=1 from run-all-tests / live wrappers
+  # skips claude_matrix_export_settings_env and leaves interactive TUI at /login.
+  export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
+  export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}"
   export SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60}"
   export SB_E2E_WORKFLOW_QUIET_TIMEOUT="${SB_E2E_WORKFLOW_QUIET_TIMEOUT:-600}"
   export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
   export SILVER_BULLET_RUNTIME=claude
   export SB_E2E_LIVE_RUNTIME=claude
+}
+
+# Fail fast before interactive matrix when token gateway credentials are missing.
+# OAuth-only runs may set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 to skip this check.
+enterprise_e2e_preflight_claude_token_gateway() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+
+  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing for token gateway preflight"
+
+  if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}" == "1" ]]; then
+    echo "Token gateway preflight: skipped (SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 — OAuth-only mode)"
+    return 0
+  fi
+
+  # shellcheck source=scripts/lib/claude-matrix-auth.sh
+  source "${sb_root}/scripts/lib/claude-matrix-auth.sh"
+  local settings_file
+  settings_file="$(claude_matrix_settings_path)"
+
+  if claude_matrix_auth_has_api_key_env "$settings_file"; then
+    echo "Token gateway preflight: OK (~/.claude/settings.json has ANTHROPIC_* env)"
+    return 0
+  fi
+
+  if [[ -n "${ANTHROPIC_API_KEY:-}" || -n "${ANTHROPIC_AUTH_TOKEN:-}" || -n "${ANTHROPIC_BASE_URL:-}" ]]; then
+    echo "Token gateway preflight: OK (ANTHROPIC_* present in shell env)"
+    return 0
+  fi
+
+  enterprise_e2e_preflight_fail \
+    "Claude token gateway not configured — add ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY to ~/.claude/settings.json env (see docs/ENTERPRISE-E2E-LIVE-TEST.md). Prior SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 runs may have stripped keys via claude_matrix_auth_prepare without restore."
 }
 
 # Session 0 gate — matrix rows require bootstrap unless explicitly skipped.

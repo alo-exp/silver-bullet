@@ -142,6 +142,7 @@ if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
 fi
 
 enterprise_e2e_run_install_claude "$SB_ROOT"
+enterprise_e2e_preflight_claude_token_gateway "$SB_ROOT"
 
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   echo "Preflight complete (--preflight-only)."
@@ -230,7 +231,15 @@ fi
 (
   trap - EXIT INT TERM
   cd "$SB_ROOT"
-  env -u SB_E2E_MATRIX_DRY_RUN     SB_E2E_MATRIX_CLEAN_ENV=0     SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}"     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR"     SB_E2E_LEDGER_FILE="$LEDGER_FILE"     SB_E2E_MATRIX_LOG="$MATRIX_LOG"     "${MATRIX_LAUNCH_CMD[@]}"
+  env -u SB_E2E_MATRIX_DRY_RUN \
+    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0 \
+    SB_E2E_MATRIX_CLEAN_ENV=0 \
+    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys \
+    SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}" \
+    SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR" \
+    SB_E2E_LEDGER_FILE="$LEDGER_FILE" \
+    SB_E2E_MATRIX_LOG="$MATRIX_LOG" \
+    "${MATRIX_LAUNCH_CMD[@]}"
 ) 2>&1 | tee -a "$MATRIX_LOG"
 
 echo ""
