@@ -203,7 +203,11 @@ expect {
     exp_continue
   }
   -re {code.claude.com/docs/en/security} {
-    send -- "2\r"
+    send -- "\033[B"
+    after 200
+    send -- "\r"
+    after 200
+    send -- "\r"
     after 750
     exp_continue
   }
