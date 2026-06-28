@@ -270,13 +270,24 @@ start_batch() {
     return 1
   fi
   log_poll "$(utc_now) ACTION: starting batch rows: ${rows[*]}"
+  # Unset SKIP_SETTINGS_EXPORT so run-enterprise-e2e-matrix.sh can auto-detect
+  # (proxy → OAuth skip; else export ~/.claude/settings.json env via claude_matrix_export_settings_env).
+  # Inherited SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 from run-all-tests / live wrappers strips
+  # shell API keys and skips settings export → interactive TUI "Not logged in" on FORCE restarts.
+  local -a batch_env=(
+    -u SB_E2E_MATRIX_DRY_RUN
+    -u SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT
+    SB_E2E_MATRIX_FORCE=1
+    SB_E2E_MATRIX_CLEAN_ENV=0
+    SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR"
+    SB_E2E_MATRIX_LOG="$MATRIX_LOG"
+  )
+  if [[ -n "${SB_E2E_LEDGER_FILE:-}" ]]; then
+    batch_env+=(SB_E2E_LEDGER_FILE="$SB_E2E_LEDGER_FILE")
+  fi
   (
     cd "$SB_ROOT" || exit
-    env -u SB_E2E_MATRIX_DRY_RUN \
-      SB_E2E_MATRIX_FORCE=1 \
-      SB_E2E_MATRIX_CLEAN_ENV=0 \
-      SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR" \
-      bash scripts/run-enterprise-e2e-matrix.sh "${rows[@]}" >>"$MATRIX_LOG" 2>&1
+    env "${batch_env[@]}" bash scripts/run-enterprise-e2e-matrix.sh "${rows[@]}" >>"$MATRIX_LOG" 2>&1
   ) &
   local newpid=$!
   printf '%s\n' "$newpid" >"$BATCH_PID_FILE"
