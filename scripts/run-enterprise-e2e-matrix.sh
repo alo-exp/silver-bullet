@@ -40,7 +40,16 @@ export SILVER_BULLET_RUNTIME=claude
 
 # Export ~/.claude/settings.json env for interactive TUI (api_key / proxy hosts).
 # Set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 to use OAuth/keychain and skip settings env.
-export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
+# shellcheck source=scripts/lib/claude-matrix-auth.sh
+source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
+if [[ -z "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT+set}" ]]; then
+  if claude_matrix_settings_has_proxy_env "$(claude_matrix_settings_path)"; then
+    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
+  else
+    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0
+  fi
+fi
+export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT
 if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT}" == "1" ]]; then
   export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-recommended}"
   # Avoid local proxy keys/URLs from the caller shell when using OAuth direct API.
@@ -48,8 +57,6 @@ if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT}" == "1" ]]; then
 else
   export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}"
 fi
-# shellcheck source=scripts/lib/claude-matrix-auth.sh
-source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
 claude_matrix_export_settings_env
 
 # shellcheck source=scripts/lib/matrix-quota.sh

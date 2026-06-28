@@ -25,7 +25,7 @@ if [[ -n "${SB_LIVE_RUNTIMES:-}" ]]; then
   # shellcheck disable=SC2206
   RUNTIMES=(${SB_LIVE_RUNTIMES})
 else
-  RUNTIMES=(kay)
+  RUNTIMES=(claude)
 fi
 
 export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}"
@@ -72,8 +72,8 @@ echo "========================================"
 echo "  Silver Bullet Live AI E2E Test Suite"
 echo "========================================"
 echo ""
-echo "WARNING: These tests default to Kay in an isolated Codex-compatible runtime."
-echo "Default provider/model: runtime-aware (Kay: minimax / MiniMax-M3; Codex: native config)."
+echo "WARNING: These tests default to Claude CLI (direct OAuth when proxy settings are skipped)."
+echo "Default provider/model: runtime-aware (Claude: native config; Codex/Kay: isolated Codex-compatible)."
 echo "Per-turn timeout: ${CODEX_INTERACTIVE_TIMEOUT}s."
 echo ""
 
@@ -196,6 +196,8 @@ else
   marker=""
   if [[ "$full_matrix_requested" == true ]]; then
     marker="full-claude-codex"
+  elif [[ ${#RUNTIMES[@]} -eq 1 && "${RUNTIMES[0]}" == "claude" ]]; then
+    marker="claude-only"
   elif [[ ${#RUNTIMES[@]} -eq 1 && ( "${RUNTIMES[0]}" == "codex" || "${RUNTIMES[0]}" == "kay" ) ]]; then
     marker="codex-only"
   fi

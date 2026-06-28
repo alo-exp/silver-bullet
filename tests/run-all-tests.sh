@@ -3,20 +3,16 @@
 # Usage: bash tests/run-all-tests.sh
 set -euo pipefail
 
-# Default to Codex runtime state paths for the source-repo test harness; live
-# and E2E verification now run through isolated Kay by default.
-: "${SILVER_BULLET_RUNTIME:=codex}"
+# Default to Claude runtime for live/E2E verification; Kay remains available via
+# scripts/run-sb-live-tests-kay.sh when isolated Codex-compatible runs are needed.
+: "${SILVER_BULLET_RUNTIME:=claude}"
 export SILVER_BULLET_RUNTIME
 
-export SB_LIVE_AGENT="${SB_LIVE_AGENT:-kay}"
-export SB_E2E_LIVE_AGENT="${SB_E2E_LIVE_AGENT:-kay}"
-export SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-kay}"
-export SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-kay}"
-export SB_LIVE_CODEX_MODEL_PROVIDER="${SB_LIVE_CODEX_MODEL_PROVIDER:-minimax}"
-export SB_LIVE_CODEX_MODEL="${SB_LIVE_CODEX_MODEL:-MiniMax-M3}"
-export SB_LIVE_CODEX_REASONING_EFFORT="${SB_LIVE_CODEX_REASONING_EFFORT:-low}"
-export CODEX_REASONING_EFFORT="${CODEX_REASONING_EFFORT:-${SB_LIVE_CODEX_REASONING_EFFORT:-}}"
-export SB_DISABLE_MINIMAX_IO_TESTS="${SB_DISABLE_MINIMAX_IO_TESTS:-0}"
+export SB_LIVE_AGENT="${SB_LIVE_AGENT:-claude}"
+export SB_E2E_LIVE_AGENT="${SB_E2E_LIVE_AGENT:-claude}"
+export SB_LIVE_RUNTIMES="${SB_LIVE_RUNTIMES:-claude}"
+export SB_E2E_LIVE_RUNTIMES="${SB_E2E_LIVE_RUNTIMES:-claude}"
+export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-1}"
 
 _repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ -f "$_repo_root/hooks/lib/runtime-paths.sh" ]]; then
