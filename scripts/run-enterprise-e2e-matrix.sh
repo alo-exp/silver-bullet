@@ -306,6 +306,7 @@ run_matrix_row() {
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
+        SB_E2E_MATRIX_EVIDENCE_PATH="$evidence_path" \
         run_prompt "$prompt" 2>&1 || true
     )"
     if [[ -n "$output" ]]; then
