@@ -169,6 +169,93 @@ proc accept_bypass_permissions_disclaimer {} {
   after 900
 }
 
+proc custom_api_key_disclaimer_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Detected} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {custom} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {API} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {ANTHROPIC_API_KEY|Doyouwant|Do you want} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {use.*this.*API.*key|use this API key} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {No.*recommended|No,recommended} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {1\.Yes|1\. Yes|Yes} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+proc custom_api_key_disclaimer_menu_ready {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Doyouwant|Do you want} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {use.*this.*API.*key|use this API key} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {No.*recommended|No,recommended} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {1\.Yes|1\. Yes|Yes} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+proc should_accept_custom_api_key_disclaimer {buffer} {
+  global custom_api_key_disclaimer_menu_open
+  if {$custom_api_key_disclaimer_menu_open} {
+    return 1
+  }
+  if {[custom_api_key_disclaimer_menu_ready $buffer]} {
+    return 1
+  }
+  if {[custom_api_key_disclaimer_visible $buffer]} {
+    return 1
+  }
+  return 0
+}
+
+proc accept_custom_api_key_disclaimer {} {
+  global custom_api_key_disclaimer_accept_attempts
+  if {$custom_api_key_disclaimer_accept_attempts >= 6} {
+    return
+  }
+  incr custom_api_key_disclaimer_accept_attempts
+  set strategy [env_or_default CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY "keys"]
+  log_harness_keys "\[harness\] accept_custom_api_key_disclaimer: strategy=$strategy attempt=$custom_api_key_disclaimer_accept_attempts"
+  if {$strategy eq "arrow"} {
+    send -- "\033\[A"
+    after 400
+    send -- "\r"
+  } elseif {$strategy eq "alt-arrow"} {
+    send -- "\033OA"
+    after 400
+    send -- "\r"
+  } else {
+    type_slow "1" 40
+    after 500
+    send -- "\r"
+  }
+  after 900
+}
+
 proc submit_prompt {command_name prompt_body} {
   global saw_not_logged_in
   if {$saw_not_logged_in} {
@@ -295,6 +382,12 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 
 expect {
   -re {Enter.*to.*confirm} {
+    if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
+      accept_custom_api_key_disclaimer
+      set custom_api_key_disclaimer_menu_open 0
+      after 800
+      exp_continue
+    }
     if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
@@ -304,9 +397,28 @@ expect {
     exp_continue
   }
   -re {Esc.*to.*cancel} {
+    if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
+      accept_custom_api_key_disclaimer
+      set custom_api_key_disclaimer_menu_open 0
+      after 500
+      exp_continue
+    }
     if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
+      after 500
+      exp_continue
+    }
+    exp_continue
+  }
+  -re {(?s)Detected.*custom.*API.*key|ANTHROPIC_API_KEY:} {
+    set custom_api_key_disclaimer_menu_open 1
+    exp_continue
+  }
+  -re {(?s)Do you want to use this API key\?|want to use this API key} {
+    if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
+      accept_custom_api_key_disclaimer
+      set custom_api_key_disclaimer_menu_open 0
       after 500
       exp_continue
     }
@@ -456,12 +568,22 @@ expect {
     }
     exp_continue
   }
+  -re {(?s)1\. Yes.*2\. No|Yes.*No.*recommended.*Enter.*to.*confirm} {
+    set custom_api_key_disclaimer_menu_open 1
+    accept_custom_api_key_disclaimer
+    exp_continue
+  }
   -re {(?s)No, exit.*Yes, I accept|Yes, I accept.*Enter.*to.*confirm} {
     set bypass_disclaimer_menu_open 1
     accept_bypass_permissions_disclaimer
     exp_continue
   }
   -re {❯} {
+    if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
+      set custom_api_key_disclaimer_menu_open 0
+      accept_custom_api_key_disclaimer
+      exp_continue
+    }
     if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       set bypass_disclaimer_menu_open 0
       accept_bypass_permissions_disclaimer
