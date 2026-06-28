@@ -57,3 +57,32 @@ The artifact must include:
 
 Content work passes only when edited claims are sourced, rendered output is
 verified where applicable, and high-risk changes are approved or tracked.
+
+## Site and help batch protocol (`site/**`)
+
+Use this lightweight V-loop for iterative site/help work (hooks enforce regression + publish evidence at Stop/push).
+
+### Preconditions
+
+1. Route via `/silver` → `silver:content --mode fix` (or `audit` for read-only review).
+2. **Composer 2.5 workers only** — parent orchestrator spawns `Task` with `model=composer-2.5`; parent never edits `site/**` directly.
+3. `graphify query` before exploration; `agentmemory` save after each batch.
+
+### Batch steps (per turn)
+
+| Step | Action | Evidence |
+|------|--------|----------|
+| 1 Preflight | Run site freshness tests if last edit > prior regression marker | `test-site-*-freshness.sh` output |
+| 2 Implement | Worker edits `site/**` only; parent verifies worker claims via `/silver:completion-audit` | diff + worker summary |
+| 3 Regression | `bash tests/scripts/test-site-chrome-regression.sh` (+ doc/content freshness) | hook `site-regression-gate` pass |
+| 4 Visual | 1280px light+dark screenshots (Alumnium or host browser MCP) — Wave 2 gate | `.planning/` or agentmemory |
+| 5 Publish | push `main` → wait `pages.yml` → fetch public URL → write `live-publish-evidence.json` | explicit LIVE / NOT LIVE |
+
+### Stop gates (runtime)
+
+- `instruction-ledger-gate` — multi-bullet prompts need per-item resolution.
+- `site-regression-gate` — blocks Stop/push when `site/**` touched without passing regression tests.
+- `live-publish-evidence-gate` — blocks push-to-main / LIVE claims without fetched-page evidence.
+- `subagent-stop-enforcement` — parent Stop requires `silver-completion-audit` after Task workers.
+
+See `silver-bullet.md` §8.2 and `AGENTS.md` publish policy.

@@ -42,6 +42,7 @@ EVENT_MAP = {
     "postToolUse": "PostToolUse",
     "postToolUseFailure": "PostToolUse",
     "stop": "Stop",
+    "subagentStart": "SubagentStart",
     "subagentStop": "SubagentStop",
     "beforeSubmitPrompt": "UserPromptSubmit",
     "beforeShellExecution": "PreToolUse",
@@ -73,6 +74,9 @@ elif cursor_event in {"beforeShellExecution", "afterShellExecution"}:
         }
 elif cursor_event == "sessionStart":
     out["source"] = raw.get("source") or raw.get("sessionSource") or "startup"
+elif cursor_event == "subagentStart":
+    out["subagent_type"] = raw.get("subagent_type") or raw.get("subagentType") or ""
+    out["prompt"] = raw.get("prompt") or raw.get("user_message") or raw.get("text") or ""
 else:
     tool_name = raw.get("tool_name") or raw.get("toolName") or raw.get("tool") or ""
     out["tool_name"] = TOOL_MAP.get(tool_name, tool_name)
@@ -137,10 +141,10 @@ if isinstance(hook_specific, dict):
             text_reason = reason if isinstance(reason, str) else json.dumps(reason, separators=(",", ":"))
             out["agent_message"] = text_reason
             out["user_message"] = text_reason
-    if additional is not None and cursor_event in {"postToolUse", "sessionStart", "beforeSubmitPrompt"}:
+    if additional is not None and cursor_event in {"postToolUse", "sessionStart", "beforeSubmitPrompt", "subagentStart"}:
         out["additional_context"] = additional if isinstance(additional, str) else str(additional)
     elif message is not None:
-        if cursor_event in {"postToolUse", "sessionStart", "beforeSubmitPrompt"}:
+        if cursor_event in {"postToolUse", "sessionStart", "beforeSubmitPrompt", "subagentStart"}:
             out["additional_context"] = message if isinstance(message, str) else str(message)
         elif cursor_event in {"stop", "subagentStop"}:
             out["followup_message"] = message if isinstance(message, str) else str(message)

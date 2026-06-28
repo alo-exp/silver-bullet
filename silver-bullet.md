@@ -421,7 +421,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
-- `security` is always mandatory — cannot be skipped via §10
+- `security` is always mandatory — cannot be skipped via §9
 - `silver:devops` uses 7 IaC-adapted dimensions (`devops-quality-gates`) instead of the product sweep: reliability, security, scalability, modularity, testability, observability, and change-safety
 - TDD enforcement is hidden: implementation plans pass through the internal `tdd` gate before `silver:execute`; config/infra/doc plans skip TDD
 - Test strategy is captured inside `silver:plan`. `verify-tests` runs before final delivery so the test gate is fresh
@@ -434,7 +434,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 When the user requests skipping a workflow step, SB:
 1. Explains why the step exists (one sentence)
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
-3. Records the decision in §10 if user chooses A permanently — **before committing, display the exact text being written to §10 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
+3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
 Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `silver:verify`.
 
@@ -541,8 +541,8 @@ You MUST NOT:
 - Claim work is complete without running `/silver:verify`
 - Accept a completion claim from any plugin, skill, or subagent without invoking `/silver:completion-audit` with that claim
 - Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
-- Override a non-skippable gate (security, silver:quality-gates pre-ship, silver:verify) via §10 preferences — these gates are permanent
-- Write runtime preference updates to §10 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
+- Override a non-skippable gate (security, silver:quality-gates pre-ship, silver:verify) via §9 preferences — these gates are permanent
+- Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute an SB lifecycle phase (context, plan, execute, verify, review, ship) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next SB phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
 - Minimize, abbreviate, or reduce the thoroughness of ANY step due to context window usage concerns. When a step is expected to consume large context (e.g., SENTINEL security audits, full quality-gate sweeps, comprehensive code reviews), you MUST delegate it through the active runtime's supported subagent or delegation mechanism so it runs in a fresh, independent context window. If subagent dispatch is not possible, summarize the current context or continue in a fresh context before proceeding, then continue the step at full thoroughness. A step executed at reduced quality is NEVER acceptable — dispatch to a subagent or compact first.
@@ -928,70 +928,79 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 **Sidekick / InstaDecks:** Documented dependencies only; no SB routing until dedicated integration work lands.
 
+### 8.2 Public site and help center work
+
+These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/search.js`, OG cards, and other public-facing HTML under `site/`.
+
+**Authoring model**
+- Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
+- Route site intents through `/silver` → `silver:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+
+**Workflow catalog presentation order**
+- Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
+- Atomic flows (`AF-*`) order by capability class: orient/bootstrap → plan/specify → research → execute → verify/test → review → ship/deploy → document/process.
+- This is documentation presentation order, not runtime composition order.
+
+**Site/help publish policy**
+- `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
+- Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
+- Publish path: commit + push to `main`; GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
+
+**Live publish notification (mandatory)**
+- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
+- A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
+- Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
+- Write `${SB_RUNTIME_STATE_DIR}/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
+
+**Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.
+
 ---
-
-## 9. Pre-Release Quality Gate (Ālo Labs internal)
-
-Before `/silver-create-release`, complete `docs/internal/pre-release-quality-gate.md`
-in the **current session**. Markers are written to
-`${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` (cleared by `session-start`).
-
-| Stage | What | Marker |
-|-------|------|--------|
-| 1 | ENHANCED adversarial — 2× DISCOVERY clean on 1177-row manifest | `adversarial-review-clean` |
-| 2 | SENTINEL — 1 clean pass per `skills/*/SKILL.md` (85 skills) | `sentinel-skills-clean` |
-| 3 | Code `security` skill on `hooks/`, `scripts/` only | (in deploy state) |
-| 4 | Public content + single `verify-tests` / `run-all-tests.sh` bundle | `quality-gate-stage-3`, `full-test-suite-rerun` |
-
-**Non-substitutable:** SENTINEL audits prose instructions; `security` audits executable shell.
-ENHANCED M-G covers hook invariants during DISCOVERY but does **not** replace per-skill SENTINEL.
-
-Validate: `bash scripts/validate-launch-review.sh`,
-`bash scripts/validate-sentinel-skills-manifest.sh`.
 
 <!--
   NUMBERING NOTE (closes #59):
-  This live repo uses §9 for Pre-Release Quality Gate (internal only).
-  User Workflow Preferences is §10; Multi-Agent is §11; Runtime Compatibility is §12.
-  The template (`templates/silver-bullet.md.base`) omits §9 Pre-Release and uses
-  §9 for User Workflow Preferences instead. Skills reference
+  This template uses §9.* for User Workflow Preferences and §10 for Multi-Agent
+  Coordination. Silver Bullet's *own* live silver-bullet.md uses §10.* / §11
+  because it has an Ālo-internal §9 "Pre-Release Quality Gate" section that is
+  intentionally NOT stamped into downstream projects. Skills reference
   `silver-bullet.md §10b` (live) AND `templates/silver-bullet.md.base §9b`
   (template) explicitly — this asymmetry is by design and must stay.
 -->
-## 10. User Workflow Preferences
+## 9. User Workflow Preferences
 
 This section is written and committed by SB whenever the user expresses a workflow preference.
 Initially empty — all workflow defaults apply. Read at every relevant decision point.
 
 Last updated: 2026-05-06
 
-### 10a. Routing Preferences
+### 9a. Routing Preferences
 | Work type | Override route | Since |
 |-----------|---------------|-------|
 
-### 10b. Step Skip Preferences
+### 9b. Step Skip Preferences
 | Workflow | Step skipped | Condition | Since |
 |----------|-------------|-----------|-------|
 
-### 10c. Tool Preferences
+### 9c. Tool Preferences
 | Decision point | Preferred tool | Since |
 |----------------|---------------|-------|
 
-### 10d. MultAI Preferences
+### 9d. MultAI Preferences
 | Trigger | Disposition | Since |
 |---------|-------------|-------|
 
-### 10e. Mode Preferences
+### 9e. Mode Preferences
 | Setting | Value | Since |
 |---------|-------|-------|
 
-### 10f. Alumnium Preferences
+### 9f. Alumnium Preferences
 | Trigger | Disposition | Since |
 |---------|-------------|-------|
 
 ---
 
-## 11. Multi-Agent Coordination (v0.29.0+)
+## 10. Multi-Agent Coordination (v0.29.0+)
 
 Any number of SB-bearing coding agents (Claude-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
 
@@ -1014,7 +1023,7 @@ See `docs/multi-agent-coordination.md` for the full diagram and configuration re
 
 ---
 
-## 12. Runtime Compatibility (closes #48, #50)
+## 11. Runtime Compatibility (closes #48, #50)
 
 Silver Bullet's enforcement model is built on the host runtime's **PostToolUse / PreToolUse / SessionStart / Stop / SubagentStop** hook protocol. Hooks fire in the **host CLI** runtime when hooks are enabled. They do not fire by default in:
 

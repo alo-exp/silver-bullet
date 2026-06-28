@@ -59,5 +59,14 @@ fi
 assert_not_contains "homepage callouts omit inset box-shadow override" '\.callout\{[^}]*box-shadow:inset' "$HOMEPAGE"
 assert_contains "neutral-variants s3 applies unified card hover shadow" 'html\[data-neutral-variant="s3"\] \.pain-card:hover' "$REPO_ROOT/site/neutral-variants.css"
 assert_contains "neutral-variants s3 hover uses card-shadow-hover token" 'box-shadow:var\(--card-shadow-hover\) !important' "$REPO_ROOT/site/neutral-variants.css"
+
+# 4. Single Alpha Honesty callout in #proof (no duplicate callout-label blocks).
+alpha_count="$(grep -c 'callout-label.*Alpha Honesty' "$HOMEPAGE" || true)"
+if [[ "$alpha_count" -eq 1 ]]; then
+  pass "homepage has single Alpha Honesty callout"
+else
+  fail "homepage has $alpha_count Alpha Honesty callouts (expected 1)"
+fi
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

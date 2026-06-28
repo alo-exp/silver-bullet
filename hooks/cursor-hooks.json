@@ -60,6 +60,26 @@
         "matcher": "Task|Subagent|Agent"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
+        "timeout": 10,
+        "matcher": "Task|Subagent|Agent"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/site-preview-preflight.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
@@ -125,6 +145,16 @@
         "matcher": "Skill"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/site-regression-gate.sh\"",
+        "timeout": 120,
+        "matcher": "Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/live-publish-evidence-gate.sh\"",
+        "timeout": 15,
+        "matcher": "Shell"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
         "timeout": 5,
         "matcher": "Shell"
@@ -155,6 +185,21 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/completion-audit.sh\"",
         "matcher": ".*",
         "timeout": 15
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
+        "matcher": ".*",
+        "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/site-preview-preflight.sh\"",
+        "matcher": ".*",
+        "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/site-chrome-guard.sh\"",
+        "matcher": ".*",
+        "timeout": 10
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh\"",
@@ -202,6 +247,16 @@
         "timeout": 10
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/site-regression-gate.sh\"",
+        "matcher": ".*",
+        "timeout": 120
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/live-publish-evidence-gate.sh\"",
+        "matcher": ".*",
+        "timeout": 15
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/industry-tooling-hint.sh\"",
         "matcher": ".*",
         "timeout": 5
@@ -224,9 +279,19 @@
     ],
     "postToolUse": [
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-site-session.sh\"",
+        "timeout": 10,
+        "matcher": "Write|Edit|MultiEdit"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/trivial-file-clear.sh\"",
         "timeout": 5,
         "matcher": "Write|Edit|MultiEdit"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
+        "timeout": 10,
+        "matcher": "Task|Subagent|Agent"
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/semantic-compress.sh\"",
@@ -297,6 +362,16 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-token-compression-usage.sh\"",
         "timeout": 10,
         "matcher": "Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
+        "timeout": 10,
+        "matcher": "Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+        "timeout": 10,
+        "matcher": "Shell"
       }
     ],
     "afterShellExecution": [
@@ -354,6 +429,16 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-token-compression-usage.sh\"",
         "matcher": ".*",
         "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-site-visual-evidence.sh\"",
+        "matcher": ".*",
+        "timeout": 10
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+        "matcher": ".*",
+        "timeout": 10
       }
     ],
     "stop": [
@@ -364,6 +449,36 @@
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/instruction-ledger-gate.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/site-regression-gate.sh\"",
+        "timeout": 120,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/live-publish-evidence-gate.sh\"",
+        "timeout": 15,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/v-loop-rollup-gate.sh\"",
+        "timeout": 15,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/site-visual-evidence-gate.sh\"",
+        "timeout": 15,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" stop ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
         "timeout": 10,
         "matcher": ".*"
       },
@@ -385,6 +500,16 @@
         "matcher": ".*"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" subagentStop ${CURSOR_PLUGIN_ROOT}/hooks/instruction-ledger-gate.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" subagentStop ${CURSOR_PLUGIN_ROOT}/hooks/site-regression-gate.sh\"",
+        "timeout": 120,
+        "matcher": ".*"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" subagentStop ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-release.sh\"",
         "timeout": 10,
         "matcher": ".*"
@@ -403,6 +528,21 @@
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/outcomes-check.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/instruction-ledger-gate.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/record-site-session.sh\"",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
         "timeout": 10,
         "matcher": ".*"
       }

@@ -108,7 +108,8 @@ Display:
 ⚠️  **Note:** The update installs the new release via the active host's marketplace or package manager.
 On Codex, use the repo's Codex package refresh path instead of the Claude marketplace command.
 Your project files (project instruction file, silver-bullet.md, hooks, config) are never
-touched — only the active host's plugin cache and registry are updated.
+touched during Steps 1–8 — only the active host's plugin cache and registry are updated.
+See **Step 9** for optional project scaffolding migration.
 ```
 
 Ask the user directly:
@@ -311,3 +312,25 @@ jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-b
 On success, clear suspension.
 
 **If `enabled_by_user` is `false`:** no action needed.
+
+### Step 9: Project scaffolding migration (opt-in)
+
+After plugin install succeeds, compare the **project's** `.silver-bullet.json` `config_version` to `templates/silver-bullet.config.json.default`.
+
+**If project version is older** (minor/patch behind template):
+
+Display a migration summary (new fields since the user's version: `recommended_tools`, `hooks.evidence_schema`, `multi_agent`, `orchestrator_mode`, etc.).
+
+Ask the user:
+- **A) Migrate project scaffolding now** — run structural + instruction refresh
+- **B) Skip (plugin only)** — warn that dogfood may stay on stale enforcement
+
+**On A:**
+1. Invoke **`/silver:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge, Cursor rule scaffold.
+2. Invoke **`/silver:init`** in **update mode** — refresh `silver-bullet.md` from template, re-register host hooks, conflict detection.
+3. Bump `config_version` in `.silver-bullet.json` (preserve user customizations).
+4. Run **`/silver:doctor`** automatically; surface every FAIL for inline fix.
+
+**On B:** Warn that hooks, template parity, and orchestrator rules may not match the installed plugin until migration runs.
+
+**Note:** Step 9 is the only path that touches project files during `/silver:update`. Steps 1–8 still update only the host plugin cache/registry.
