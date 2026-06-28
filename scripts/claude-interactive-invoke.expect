@@ -200,6 +200,14 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
+  -re {Enter.*to confirm} {
+    if {$bypass_disclaimer_menu_open || [regexp {Yes, I accept} $expect_out(buffer)]} {
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      exp_continue
+    }
+    exp_continue
+  }
   -re {code.claude.com/docs/en/security} {
     set bypass_disclaimer_menu_open 1
     exp_continue
