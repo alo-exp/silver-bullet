@@ -205,6 +205,32 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 
 ---
 
+## 9. Auth policy (Enterprise E2E)
+
+| Rule | Detail |
+|------|--------|
+| **Never login/logout** | No `claude auth login`, `claude auth logout`, `claude /logout`, `setup-token`, or agent `/login` during matrix runs |
+| **Token gateway is valid** | MiniMax M3 / custom API gateway via `~/.claude/settings.json` (`ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY`) |
+| **"Not logged in" banner** | Cosmetic OAuth UI state when token gateway is active — harness ignores it; not a failure |
+| **Settings export default** | `SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0` — matrix exports settings env before interactive TUI spawn |
+| **API key disclaimer** | `CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys` — harness accepts custom key prompt |
+| **Monitor restarts** | `monitor-enterprise-e2e-matrix.sh` forces `SKIP_SETTINGS_EXPORT=0` on FORCE batch restarts |
+
+---
+
+## 9. Auth policy (Enterprise E2E)
+
+| Rule | Detail |
+|------|--------|
+| **Never login/logout** | No `claude auth login`, `claude auth logout`, `claude /logout`, `setup-token`, or agent `/login` during matrix runs |
+| **Token gateway is valid** | MiniMax M3 / custom API gateway via `~/.claude/settings.json` (`ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY`) |
+| **"Not logged in" banner** | Cosmetic OAuth UI state when token gateway is active — harness ignores it; not a failure |
+| **Settings export default** | `SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0` — matrix exports settings env before interactive TUI spawn |
+| **API key disclaimer** | `CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys` — harness accepts custom key prompt |
+| **Monitor restarts** | `monitor-enterprise-e2e-matrix.sh` forces `SKIP_SETTINGS_EXPORT=0` on FORCE batch restarts |
+
+---
+
 ## 10. Backlog (large gaps — do not block matrix)
 
 | ID | Claim | Gap | Proposed work |
@@ -294,4 +320,4 @@ bash tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh
 bash tests/scripts/test-tri-host-install-smoke.sh
 ```
 
-**Constraints:** composer-2.5 for delegated work; no `claude auth login/logout`; do not `pkill` matrix drivers.
+**Constraints:** composer-2.5 for delegated work; **never** `claude auth login/logout` or `/login`/`/logout`; MiniMax/custom API gateway (`ANTHROPIC_BASE_URL` + key in `~/.claude/settings.json`) is valid auth — the TUI "Not logged in" OAuth banner is cosmetic; do not `pkill` matrix drivers.

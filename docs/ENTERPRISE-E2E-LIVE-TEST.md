@@ -38,12 +38,13 @@ Included in `run-all-tests.sh` only when `SB_ENTERPRISE_E2E_LIVE=1`.
 
 ---
 
-## Auth — API key only (NO login / NO logout)
+## Auth — token gateway (NO login / NO logout)
 
 Round 1/2 learnings:
 
-- **Third-party API key** in `~/.claude/settings.json` (`ANTHROPIC_API_KEY`, optional `ANTHROPIC_BASE_URL`).
-- Matrix runner exports settings env via `claude_matrix_export_settings_env` so spawned interactive TUI matches manual sessions.
+- **Third-party API key / custom gateway** in `~/.claude/settings.json` (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` — e.g. MiniMax M3 proxy).
+- Matrix runner exports settings env via `claude_matrix_export_settings_env` so spawned interactive TUI matches manual sessions (`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0` default).
+- The TUI may show **"Not logged in · Please run /login"** — this is an OAuth UI state only; token gateway auth is valid. Harness ignores the banner; **never** run `/login` or `claude auth login/logout`.
 - **`SB_E2E_MATRIX_CLEAN_ENV=0`** (default) — inherit caller shell auth. Do **not** use `env -i` unless debugging OAuth conflicts.
 - **Never** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
 - Network errors (`ENOTFOUND`, `ConnectionRefused`) are **not** auth failures — retry with backoff; do not re-diagnose auth.
