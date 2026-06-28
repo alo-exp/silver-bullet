@@ -227,15 +227,20 @@ validation_overlay_check_registry() {
     validation_overlay_skip "validation registry parse (jq missing)"
     return
   fi
-  local claim_count backlog
+  local claim_count backlog telemetry_only excluded
   claim_count="$(jq '.claims | length' "$registry")"
-  backlog="$(jq '[.claims[] | select(.status == "backlog")] | length' "$registry")"
+  backlog="$(jq '[.claims[] | select(.status == "backlog" and ((.validation_scope // "gate") == "gate" or (.validation_scope // "gate") == "live"))] | length' "$registry")"
+  telemetry_only="$(jq '[.claims[] | select(.validation_scope == "telemetry_only")] | length' "$registry")"
+  excluded="$(jq '[.claims[] | select(.validation_scope == "excluded")] | length' "$registry")"
   if [[ "$claim_count" -ge 10 ]]; then
     validation_overlay_pass "validation registry has ${claim_count} claims"
   else
     validation_overlay_fail "validation registry too small (${claim_count})"
   fi
-  validation_overlay_pass "validation registry backlog items documented: ${backlog}"
+  validation_overlay_pass "validation registry gate backlog items: ${backlog}"
+  if [[ "$telemetry_only" -gt 0 || "$excluded" -gt 0 ]]; then
+    validation_overlay_pass "validation registry out-of-gate scope: telemetry_only=${telemetry_only} excluded=${excluded}"
+  fi
 }
 
 validation_overlay_matrix_row_claims() {

@@ -77,6 +77,8 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 
 Plan: `docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md`
 
+**V-02 cost claim:** “10× lower cost” is **excluded** from validation overlay pass/fail. Token counts append to `.planning/enterprise-e2e/token-telemetry.jsonl` (telemetry only — no gate).
+
 ### Execution order (each round)
 
 1. **graphify update .** in SB repo (enterprise E2E scope).

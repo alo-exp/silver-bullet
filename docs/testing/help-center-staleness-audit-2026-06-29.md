@@ -19,7 +19,7 @@
 | APO catalog SOT reference in help | ✅ PASS | `site/help/index.html` cites `docs/apo-catalog.json` |
 | Extra help pages (AF-only) | ℹ️ INFO | `silver-spec`, `silver-ingest`, `silver-clarify`, `silver-validate` — atomic/sub-flow docs beyond 22 matrix rows |
 
-**Overall:** Help Center is **not stale** relative to repo product surface for version, catalog counts, and workflow documentation. Remaining gaps are **internal workflows** and **unverified marketing SLOs** (cost, onboarding timing) — tracked in validation backlog, not help staleness.
+**Overall:** Help Center is **not stale** relative to repo product surface for version, catalog counts, and workflow documentation. Remaining gaps are **internal workflows** and **unverified marketing SLOs** (V-01 onboarding timing) — tracked in validation backlog. **V-02 “10× lower cost”** is **out of validation scope** (telemetry only; see [ENTERPRISE-E2E-VALIDATION-PLAN.md](./ENTERPRISE-E2E-VALIDATION-PLAN.md) §9).
 
 ---
 
@@ -66,13 +66,13 @@ These align with `skill_to_entity` routes in `apo-catalog.json` migration map.
 
 Both homepage and help index mention Claude Code, Codex, and Cursor. Install surface exists in repo.
 
-### F5 — Unverified user promises (not help staleness) ⚠️ BACKLOG
+### F5 — Unverified user promises (not help staleness) ⚠️ BACKLOG / TELEMETRY
 
-| Claim | Help/home copy | Product proof |
-|-------|----------------|---------------|
-| 10× lower cost | Homepage hero | No benchmark in CI |
-| First unsafe PR in 30–60 min | Homepage `#next-steps` | No timed onboarding script |
-| 39% Veracode stat | Homepage `#cost` | External citation — not SB behavior |
+| Claim | Help/home copy | Product proof | Validation scope |
+|-------|----------------|---------------|------------------|
+| 10× lower cost (V-02) | Homepage hero | Token telemetry JSONL only | **telemetry_only** — excluded from overlay gates |
+| First unsafe PR in 30–60 min (V-01) | Homepage `#next-steps` | No timed onboarding script | **backlog** |
+| 39% Veracode stat | Homepage `#cost` | External citation — not SB behavior | **external** |
 
 ---
 

@@ -25,8 +25,8 @@
 |-------|-------------------|----------------------------|
 | Question | Is the harness reliable? | Does SB deliver what users expect from marketing/docs? |
 | Primary source | Matrix ledgers, runbook, scripts | `site/index.html`, `site/help/**`, README |
-| Pass signal | 22/22 ledger, RCS ≥ 85 | Validation overlay green + mapped claims ✅ |
-| Failure example | Monitor/ledger drift | Help Center version stale; “10× lower cost” unmeasured |
+| Pass signal | 22/22 ledger, RCS ≥ 85 | Validation overlay green + mapped gate claims ✅ |
+| Failure example | Monitor/ledger drift | Help Center version stale; V-01 onboarding SLO unmeasured |
 
 ---
 
@@ -45,7 +45,8 @@
 | `structural` | Every overlay dry-run | install scripts exist, help pages exist, version sync |
 | `contract` | Every overlay dry-run | 22 WF / 27 AF counts, apo invariants, claims-audit |
 | `matrix_overlay` | `--live` + ledger | Row Pass → linked outcome claims satisfied |
-| `live` | Manual / future SLO scripts | 60-min onboarding block-PR, token cost A/B |
+| `live` | Manual / future SLO scripts | 60-min onboarding block-PR (V-01) |
+| `telemetry_only` | Append-only capture — **no pass/fail** | V-02 token/cost data for later 10×/60× analysis |
 
 ---
 
@@ -138,7 +139,8 @@ The validation overlay **does not start, stop, or signal** matrix drivers. Safe 
 2. **Small fix (≤ ~30 min)** — fix in SB repo, re-run overlay, commit on `main` with `fix(validation):` or `docs(help):`
 3. **Large product gap** — add `status: backlog` in `validation-claims-registry.json`; document in §9 backlog; do **not** block matrix
 4. **Marketing-only stats** (Veracode 39%, 7× rework) — label external/unverified in registry; no E2E assertion
-5. **Re-verify** — overlay dry-run green + update `validation-overlay-results-YYYY-MM-DD.md`
+5. **Cost claim (V-02)** — **excluded from validation gates**; capture token telemetry only (§10)
+6. **Re-verify** — overlay dry-run green + update `validation-overlay-results-YYYY-MM-DD.md`
 
 ---
 
@@ -166,10 +168,22 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 | ID | Claim | Gap | Proposed work |
 |----|-------|-----|---------------|
 | V-01 | `first-hour-block-pr` | No timed onboarding SLO script | `tests/onboarding/` timed fixture |
-| V-02 | `hero-reliability-cost` | No token/cost A/B benchmark | RTK+CM benchmark fixture (P2-1 in effectiveness plan) |
 | V-03 | Tri-host E2E | Codex/Cursor 5-row smoke absent | P1-3 effectiveness plan |
 | V-04 | `WF-POST-EXEC-GATES` help | Internal WF — no dedicated page | Optional concept page or cross-link from validate |
 | V-05 | Matrix monitor↔ledger | Measurement drift (Round 3) | P0-1 effectiveness plan — independent of validation |
+
+### V-02 — `hero-reliability-cost` (“10× lower cost”) — **excluded from validation gates**
+
+**Status:** `validation_scope: telemetry_only` — **not** a pass/fail gate in the validation overlay suite.
+
+**User rationale (verbatim):**
+
+- With SB in place, models ~60× cheaper than premium (e.g. Composer 2.5 vs Opus/GPT-5.5) can produce artifacts reliable enough for top-tier quality
+- Net savings is ~10× not 60× because: (1) SB overhead causes ~3× more work overall, (2) verification/validation loops ideally run on GPT-5.5/Opus
+- Marketing “10× lower cost” will **NOT** be validated as part of the validation overlay suite
+- **Do** keep tracking token counts as data for later cost/analysis (telemetry only, not pass/fail gate)
+
+**Telemetry policy:** Overlay and matrix harness append JSONL records (§10). Operators may analyze later; overlay dry-run/live exit codes ignore V-02.
 
 ---
 
@@ -182,9 +196,31 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 | Claims registry (validation) | `docs/testing/validation-claims-registry.json` |
 | Overlay script | `scripts/run-enterprise-e2e-validation-overlay.sh` |
 | Overlay lib | `scripts/lib/enterprise-e2e-validation-overlay.sh` |
+| Token telemetry lib | `scripts/lib/enterprise-e2e-token-telemetry.sh` |
 | Structural tests | `tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh` |
 | Results | `docs/testing/validation-overlay-results-2026-06-29.md` |
 | Round 3 ledger | `.planning/enterprise-e2e/ROUND-3-LEDGER.md` |
+| **Token telemetry (primary)** | `.planning/enterprise-e2e/token-telemetry.jsonl` |
+| **Token telemetry (mirror)** | `docs/testing/telemetry/token-telemetry.jsonl` |
+
+### Token telemetry format (V-02 — telemetry only)
+
+Append-only JSONL. **No pass/fail gate** on token counts. One object per overlay run or matrix row event.
+
+| Field | Purpose |
+|-------|---------|
+| `ts` | UTC ISO8601 timestamp |
+| `event_source` | `validation_overlay`, `matrix_row`, `matrix_row_skip`, etc. |
+| `claim_ref` | `V-02` |
+| `validation_scope` | `telemetry_only` |
+| `gate` | Always `none` |
+| `row` | Matrix row `{num, slug, result, log}` when applicable |
+| `model` | `CLAUDE_MODEL` / host model when known |
+| `tokens.tui_max` | Max TUI footer token count parsed from row log (when present) |
+| `tokens.input` / `output` / `total` | Reserved for usage-API fields (null until wired) |
+| `rtk_stats` | RTK `stats` snapshot when available |
+| `overlay` | Overlay pass/fail/skip counts when event is overlay |
+| `matrix_driver_pid` | Observed matrix PID (read-only; never signalled) |
 
 ---
 
