@@ -171,7 +171,7 @@ if ((${#REQUESTED_ROWS[@]} > 0)); then
 else
   touch "$MATRIX_LOG"
   if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" | grep -q .; then
-    mapfile -t inc < <(enterprise_e2e_incomplete_rows "$MATRIX_LOG" || true)
+    enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG"
     if ((${#inc[@]} == 0)); then
       echo "All rows PASS/SKIP in ${MATRIX_LOG} — nothing to resume."
       echo "Set SB_E2E_MATRIX_FORCE=1 or pass explicit row numbers to re-run."
@@ -190,15 +190,14 @@ echo "Monitor: tail -f ${SB_ROOT}/.e2e-matrix-monitor-status.txt"
 echo "Watch findings: tail -f ${SB_ROOT}/.e2e-tui-watch-findings.jsonl"
 echo ""
 
+MATRIX_LAUNCH_CMD=(bash scripts/run-enterprise-e2e-matrix.sh)
+if ((${#MATRIX_ARGS[@]} > 0)); then
+  MATRIX_LAUNCH_CMD=(bash scripts/run-enterprise-e2e-matrix.sh "${MATRIX_ARGS[@]}")
+fi
+
 (
   cd "$SB_ROOT"
-  env -u SB_E2E_MATRIX_DRY_RUN \
-    SB_E2E_MATRIX_CLEAN_ENV=0 \
-    SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}" \
-    SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR" \
-    SB_E2E_LEDGER_FILE="$LEDGER_FILE" \
-    SB_E2E_MATRIX_LOG="$MATRIX_LOG" \
-    bash scripts/run-enterprise-e2e-matrix.sh "${MATRIX_ARGS[@]}"
+  env -u SB_E2E_MATRIX_DRY_RUN     SB_E2E_MATRIX_CLEAN_ENV=0     SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}"     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR"     SB_E2E_LEDGER_FILE="$LEDGER_FILE"     SB_E2E_MATRIX_LOG="$MATRIX_LOG"     "${MATRIX_LAUNCH_CMD[@]}"
 ) 2>&1 | tee -a "$MATRIX_LOG"
 
 echo ""
