@@ -89,6 +89,23 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-48-8">
+      <div class="release-header">
+        <h2>v0.48.8</h2>
+        <time class="release-date" datetime="2026-06-29">2026-06-29</time>
+      </div>
+      <p class="release-summary">Host-aware silver-doctor checks and enterprise E2E credential preflight.</p>
+      <h3>Bug Fixes</h3>
+      <ul>
+        <li><code>fix(doctor)</code>: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via <code>runtime-paths.sh</code></li>
+        <li><code>fix(e2e)</code>: fail fast when Claude token gateway credentials missing</li>
+      </ul>
+      <h3>Tests</h3>
+      <ul>
+        <li><code>test(doctor)</code>: mocked-host unit tests for Claude/Codex/Cursor doctor paths</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-48-7">
       <div class="release-header">
         <h2>v0.48.7</h2>

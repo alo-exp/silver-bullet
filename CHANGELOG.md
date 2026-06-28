@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.48.8] — 2026-06-29
+
+Host-aware silver-doctor checks and enterprise E2E credential preflight.
+
+### Bug Fixes
+- `fix(doctor)`: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via `runtime-paths.sh` (no Cursor deps on Claude/Codex) (`e0f2234a`)
+- `fix(e2e)`: fail fast when Claude token gateway credentials missing — preflight after install-claude, default settings export in live defaults (`7dd82097`)
+
+### Tests
+- `test(doctor)`: mocked-host unit tests for Claude/Codex/Cursor doctor paths (`e0f2234a`)
+
+---
+
 ## [0.48.7] — 2026-06-29
 
 Instruction-following reduction closure, silver-doctor coverage, subagent model gates, and enterprise E2E harness hardening.
@@ -17,7 +30,6 @@ Instruction-following reduction closure, silver-doctor coverage, subagent model 
 - `fix(ladder)`: enforce Composer 2.5 only for all Cursor subagent rungs — never `composer-2.5-fast` (`d012973e`)
 - `fix(harness)`: macOS setsid shim, driver lock, ledger-aware `--resume`, detached install-claude, agent bundle render preflight (`61469e03`–`b0e0f378`)
 - `fix(claude)`: list SB skills with `/silver:` prefix only — Claude bundle skill dirs renamed to colon routes so picker does not duplicate hyphen stubs
-- `fix(doctor)`: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via `runtime-paths.sh` (no Cursor deps on Claude/Codex)
 - `fix(e2e)`: Claude TUI bypass disclaimer handling, proxy settings stripping, 429 retry interval, dev-cycle deny audit, idle token counter (`98691580`–`6ddb56a8`)
 
 ### Documentation
