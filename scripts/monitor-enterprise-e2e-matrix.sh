@@ -270,15 +270,14 @@ start_batch() {
     return 1
   fi
   log_poll "$(utc_now) ACTION: starting batch rows: ${rows[*]}"
-  # Unset SKIP_SETTINGS_EXPORT so run-enterprise-e2e-matrix.sh can auto-detect
-  # (proxy → OAuth skip; else export ~/.claude/settings.json env via claude_matrix_export_settings_env).
-  # Inherited SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 from run-all-tests / live wrappers strips
-  # shell API keys and skips settings export → interactive TUI "Not logged in" on FORCE restarts.
+  # Force settings export on monitor restarts — inherited SKIP=1 from run-all-tests / live
+  # wrappers would skip ~/.claude/settings.json env and leave interactive TUI at "Not logged in".
   local -a batch_env=(
     -u SB_E2E_MATRIX_DRY_RUN
-    -u SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT
+    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0
     SB_E2E_MATRIX_FORCE=1
     SB_E2E_MATRIX_CLEAN_ENV=0
+    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys
     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR"
     SB_E2E_MATRIX_LOG="$MATRIX_LOG"
   )

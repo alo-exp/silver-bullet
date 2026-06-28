@@ -94,6 +94,9 @@ assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 # --- Matrix runner learnings ---
 MATRIX="${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
 assert_contains "matrix exports settings env" "$MATRIX" "claude_matrix_export_settings_env"
+assert_contains "matrix defaults settings export on" "$MATRIX" 'SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"'
+assert_not_contains "matrix auto-skips proxy settings export" "$MATRIX" "claude_matrix_settings_has_proxy_env"
+assert_contains "matrix keys strategy for api key disclaimer" "$MATRIX" 'CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}"'
 assert_contains "matrix quota retry 60" "$MATRIX" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_contains "matrix uses /silver slash prompts" "$MATRIX" "/silver"
 assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2E_MATRIX_DRY_RUN=1'
@@ -105,8 +108,9 @@ assert_contains "monitor resume incomplete rows" "$MONITOR" "incomplete_rows"
 assert_contains "monitor 429 wait 600" "$MONITOR" "QUOTA_WAIT"
 assert_contains "monitor network retry" "$MONITOR" "NETWORK_WAIT"
 assert_contains "monitor forces CLEAN_ENV=0 on restart" "$MONITOR" "SB_E2E_MATRIX_CLEAN_ENV=0"
+assert_contains "monitor forces settings export on restart" "$MONITOR" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
+assert_contains "monitor passes keys strategy on restart" "$MONITOR" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys"
 assert_contains "monitor unsets DRY_RUN on restart" "$MONITOR" "-u SB_E2E_MATRIX_DRY_RUN"
-assert_contains "monitor unsets SKIP_SETTINGS_EXPORT on restart" "$MONITOR" "-u SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT"
 assert_contains "monitor sources ledger reconcile helper" "$MONITOR" "enterprise-e2e-ledger-reconcile.sh"
 assert_contains "monitor ledger mismatch guard" "$MONITOR" "LEDGER_MISMATCH"
 assert_executable "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh" "ledger reconcile helper exists"
@@ -134,10 +138,17 @@ else
   fail "claims-audit failed — run scripts/claims-audit.sh"
 fi
 
-# --- Watch continuation recovery ---
+# --- Expect harness: token gateway ignores OAuth banner ---
+EXPECT="${REPO_ROOT}/scripts/claude-interactive-invoke.expect"
+assert_contains "expect defines token gateway check" "$EXPECT" "token_gateway_configured"
+assert_contains "expect ignores login banner for token gateway" "$EXPECT" "ignoring OAuth banner"
+assert_not_contains "expect must not invoke /login" "$EXPECT" "/login\r"
+
+# --- Watch: Not logged in is info not blocker ---
 WATCH="${REPO_ROOT}/scripts/watch-enterprise-e2e-tui.sh"
 assert_contains "watch restarts dead monitor" "$WATCH" "ensure_monitor_alive"
 assert_contains "watch continuation offset scan" "$WATCH" "grew since last pass"
+assert_contains "watch treats not logged in as info" "$WATCH" "Not logged in"
 
 # --- RTK in SB scripts ---
 assert_contains "rtk-compat supports verbatim mode" "${REPO_ROOT}/hooks/lib/rtk-compat.sh" "SB_RTK_COMPAT_MODE=verbatim"

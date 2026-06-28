@@ -306,9 +306,22 @@ proc extend_quiet_on_new_token_marker {plain_text} {
   set timeout $quiet_timeout
 }
 
+proc token_gateway_configured {} {
+  if {[info exists env(ANTHROPIC_BASE_URL)] && $env(ANTHROPIC_BASE_URL) ne ""} {
+    return 1
+  }
+  if {[info exists env(ANTHROPIC_API_KEY)] && $env(ANTHROPIC_API_KEY) ne ""} {
+    return 1
+  }
+  if {[info exists env(ANTHROPIC_AUTH_TOKEN)] && $env(ANTHROPIC_AUTH_TOKEN) ne ""} {
+    return 1
+  }
+  return 0
+}
+
 proc submit_prompt {command_name prompt_body} {
   global saw_not_logged_in
-  if {$saw_not_logged_in} {
+  if {$saw_not_logged_in && ![token_gateway_configured]} {
     return 0
   }
   if {$command_name ne ""} {
@@ -509,6 +522,10 @@ expect {
     exp_continue
   }
   -re {Not logged in|Please run /login} {
+    if {[token_gateway_configured]} {
+      log_harness_keys "\[harness\] ignoring OAuth banner — token gateway env configured"
+      exp_continue
+    }
     set saw_not_logged_in 1
     if {$prompt_submitted == 0} {
       after 5000
