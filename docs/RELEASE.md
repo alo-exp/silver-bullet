@@ -20,6 +20,13 @@ Four effective stages must pass in the **current session**. See
 | 3 | Code security — `security` skill on `hooks/` and `scripts/` only | (in `required_deploy` state) |
 | 4 | Public content refresh + single verification bundle | `quality-gate-stage-3`, `full-test-suite-rerun` |
 
+**Stage 4a (mandatory before every plugin release):** Complete the public-content
+checklist in `docs/internal/pre-release-quality-gate.md` §4a — including
+`site/changelog/index.html` (`https://sb.alolabs.dev/changelog/`) for the version
+being shipped — and pass `test-site-content-freshness.sh` plus
+`test-site-doc-freshness.sh` before recording `quality-gate-stage-3`. Distinct from
+`silver-bullet.md` §8.2 site-only publishes (no version bump / no `gh release create`).
+
 **Security split (non-substitutable):** SENTINEL audits prose skills; `security` audits executable code.
 
 Validation scripts:
@@ -37,7 +44,10 @@ Update `package.json` version field.
 
 ### 3. Changelog
 
-Update the root `CHANGELOG.md` with features, fixes, and breaking changes. `docs/CHANGELOG.md` is the task log and is not the release notes surface.
+Update the root `CHANGELOG.md` with features, fixes, and breaking changes. Also add a
+matching release section to `site/changelog/index.html` (`https://sb.alolabs.dev/changelog/`)
+as part of Stage 4a before `gh release create`. `docs/CHANGELOG.md` is the task log and
+is not the release notes surface.
 
 ### 4. Tag and Release
 
