@@ -30,7 +30,12 @@ assert_contains() {
 assert_file_exists "${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md" "validation plan exists"
 assert_file_exists "${REPO_ROOT}/docs/testing/validation-claims-registry.json" "validation claims registry exists"
 assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" "validation overlay script executable"
+assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-token-telemetry.sh" "token telemetry lib exists"
 assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-validation-overlay.sh" "validation overlay lib exists"
+assert_contains "V-02 excluded from validation gates" \
+  "${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md" "telemetry_only"
+assert_contains "registry documents telemetry_only scope" \
+  "${REPO_ROOT}/docs/testing/validation-claims-registry.json" "telemetry_only"
 
 assert_contains "overlay sets SB_E2E_VALIDATION_OVERLAY" \
   "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" "SB_E2E_VALIDATION_OVERLAY=1"

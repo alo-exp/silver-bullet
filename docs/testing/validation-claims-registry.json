@@ -10,7 +10,13 @@
     "structural": "Repo files, catalog counts, help page existence — no live TUI",
     "contract": "apo-catalog invariants, claims-audit, generated view freshness",
     "matrix_overlay": "Maps to enterprise E2E matrix row pass criteria",
-    "live": "Requires SB_ENTERPRISE_E2E_LIVE=1 — not run in overlay dry-run"
+    "live": "Requires SB_ENTERPRISE_E2E_LIVE=1 — not run in overlay dry-run",
+    "telemetry_only": "Append-only token/cost capture — no pass/fail gate (V-02)"
+  },
+  "validation_scopes": {
+    "gate": "Included in validation overlay pass/fail",
+    "telemetry_only": "Tracked for analysis only — excluded from overlay gates",
+    "excluded": "Explicitly out of validation suite scope"
   },
   "claims": [
     {
@@ -130,10 +136,13 @@
       "claim_id": "hero-reliability-cost",
       "surface": "homepage",
       "text": "at 10x Lower Cost",
-      "verification_tier": "live",
-      "check_id": "cost-benchmark-unmapped",
-      "test_ids": ["rtk-context-mode-preflight"],
-      "status": "backlog"
+      "verification_tier": "telemetry_only",
+      "validation_scope": "telemetry_only",
+      "check_id": "cost-telemetry-only",
+      "test_ids": ["token-telemetry-jsonl"],
+      "status": "excluded",
+      "backlog_id": "V-02",
+      "notes": "With SB in place, models ~60× cheaper than premium (e.g. Composer 2.5 vs Opus/GPT-5.5) can produce artifacts reliable enough for top-tier quality. Net savings is ~10× not 60× because: (1) SB overhead causes ~3× more work overall, (2) verification/validation loops ideally run on GPT-5.5/Opus. Marketing \"10× lower cost\" will NOT be validated as part of the validation overlay suite. DO keep tracking token counts as data for later cost/analysis (telemetry only, not pass/fail gate)."
     }
   ],
   "matrix_row_claim_map": {
