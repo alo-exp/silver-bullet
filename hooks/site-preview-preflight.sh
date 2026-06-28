@@ -57,8 +57,8 @@ serve_script="${repo_root}/site/serve.sh"
 reason="Site preview preflight — local preview server is not healthy on :8765.
 
 Before editing site/** run:
-  bash site/serve.sh start
-  bash site/serve.sh status
+  bash ${serve_script} start
+  bash ${serve_script} status
 
 Then retry the edit. Durable preview: site/install-preview-launchagent.sh"
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')

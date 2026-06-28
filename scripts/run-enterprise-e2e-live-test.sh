@@ -158,6 +158,7 @@ if ((${#REQUESTED_ROWS[@]} > 0)); then
 else
   touch "$MATRIX_LOG"
   if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE" | grep -q .; then
+    inc=()
     enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
     if ((${#inc[@]} == 0)); then
       echo "All rows Pass in ledger — nothing to resume."
