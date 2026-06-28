@@ -36,6 +36,9 @@ assert_contains "V-02 excluded from validation gates" \
   "${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md" "telemetry_only"
 assert_contains "registry documents telemetry_only scope" \
   "${REPO_ROOT}/docs/testing/validation-claims-registry.json" "telemetry_only"
+assert_file_exists "${REPO_ROOT}/docs/testing/pre-release-claims-registry.json" "pre-release claims registry exists"
+assert_contains "pre-release registry wires tri-host smoke" \
+  "${REPO_ROOT}/docs/testing/pre-release-claims-registry.json" "run-tri-host-install-smoke.sh"
 
 assert_contains "overlay sets SB_E2E_VALIDATION_OVERLAY" \
   "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" "SB_E2E_VALIDATION_OVERLAY=1"
@@ -61,10 +64,11 @@ done
 
 if command -v jq >/dev/null 2>&1; then
   claim_count="$(jq '.claims | length' "${REPO_ROOT}/docs/testing/validation-claims-registry.json")"
-  if [[ "$claim_count" -ge 10 ]]; then
-    pass "validation registry has ${claim_count} claims"
+  gate_count="$(jq '[.claims[] | select((.validation_scope // "gate") == "gate" and (.status // "active") != "excluded")] | length' "${REPO_ROOT}/docs/testing/validation-claims-registry.json")"
+  if [[ "$gate_count" -ge 4 ]]; then
+    pass "validation registry has ${gate_count} outcome claims (${claim_count} total)"
   else
-    fail "validation registry too small (${claim_count})"
+    fail "validation registry outcome claims too few (${gate_count})"
   fi
 else
   pass "validation registry parse skipped (jq missing)"
