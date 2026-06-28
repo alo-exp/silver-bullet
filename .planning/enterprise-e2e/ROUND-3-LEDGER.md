@@ -9,7 +9,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Field | Value |
 |-------|-------|
 | Round | 3 |
-| SB repo SHA | `398209d3` (bypass ANSI disclaimer harness; row 1 retry on 429) |
+| SB repo SHA | `fc012e2f` (P0 enterprise E2E effectiveness on **main**) |
 | Test app SHA | `04eb4c29664c54ee7ee7c598068431a52fb7902b` |
 | Claude plugin install | **OK** @ SB `15cd42d9` — `bash scripts/install-claude.sh` (marketplace alo-labs); plugin version `0.48.6` |
 | Claude model (frozen) | `<!-- e.g. claude-opus-4-20250514 -->` |
@@ -37,14 +37,14 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-28 | haiku | **In progress** | Harness **fixed** @ `398209d3`: `.e2e-row1-attempt.log` shows `[harness] accept_bypass…` + `/silver` prompt; attempt 1 hit API **429** (600s quota retry) — routing evidence pending | 398209d3 | | |
+| 1 | `silver-router` | 2026-06-28 | haiku | **In progress** | `failure_class: environmental` — OpenCode proxy weekly **429** (not Cursor quota); bypass OK @ `398209d3`; quota retry **#3** (600s); PIDs 62086/62131; monitor **1120** on `.e2e-row1-attempt.log` | fc012e2f | | |
 | 2 | `silver-research` | | | | | | | |
 | 3 | `silver-feature` | | | | | | | |
 | 4 | `silver-bugfix` | | | | | | | |
 | 5 | `silver-ui` | | | Pass | evidence ui/src/App.jsx | | | |
 | 6 | `silver-fast` | | | | | | | |
-| 7 | `silver-test` | | | Fail | missing test-orders-integration evidence | | | |
-| 8 | `silver-refactor` | | | Fail | missing refactor-order-validation evidence | | | |
+| 7 | `silver-test` | | | Fail | `harness` — missing test-orders-integration evidence | | | |
+| 8 | `silver-refactor` | | | Fail | `harness` — missing refactor-order-validation evidence | | | |
 | 9 | `silver-benchmark` | | | Pass | docs/benchmarks/health.md | | | |
 | 10 | `silver-content` | | | Pass | docs/API.md | | | |
 | 11 | `silver-devops` | | | | | | | |
@@ -57,8 +57,8 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | 18 | `silver-retro` | | | Pass | docs/retro/RETRO-001.md | | | |
 | 19 | `silver-forensics` | | | Pass | docs/forensics/CI-001.md | | | |
 | 20 | `process-maintenance` | | | | | | | |
-| 21 | `post-exec-gates` | | | Fail | internal post-exec-gates parent row 3 | | | |
-| 22 | `validate-substep` | | | Fail | internal validate-substep parent row 4 | | | |
+| 21 | `post-exec-gates` | | | Fail | `harness` — internal post-exec-gates parent row 3 | | | |
+| 22 | `validate-substep` | | | Fail | `harness` — internal validate-substep parent row 4 | | | |
 
 **Pass count:** 8 / 22 (rows 5,9,10,12,13,17-20; row 1 still failing)
 
@@ -220,16 +220,37 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 **Post-ladder `install-claude.sh`:** **OK** — marketplace `alo-labs` registered; plugin package version `0.48.6` @ SB `15cd42d9`.
 
 **Next action:** Session 0 bootstrap + workflow matrix rows 1–22 (do not start until operator launches Claude TUI).
+
+### P0 gates on main (2026-06-28 @ `fc012e2f`)
+
+| Gate | Result |
+|------|--------|
+| `install-claude.sh` | **PASS** |
+| `test-bypass-disclaimer.sh` | **PASS** |
+| `claims-audit.sh` | **PASS** (16/16) |
+| `test-enterprise-e2e-live-suite.sh` | **PASS** (99/0) |
+| `enterprise-e2e-rcs.sh` | **58/100** (exit 1 — matrix ledger 7/25, `reconcile=LEDGER_MISMATCH`) |
+| `--preflight-only` (Session0 skip) | **PASS** (hook-delivery 2/2 via bash probe fallback; code-intel OK) |
+| `enterprise-e2e-ledger-reconcile.sh` | **LEDGER_MISMATCH** — **8/22** pass rows in ledger vs log history |
+
 ### Matrix resume (2026-06-28 post–Cursor restart)
 
 | Item | Status |
 |------|--------|
-| SB HEAD | `9f89cfb6` — hook-delivery preflight fallback (`wait_for_hook_audit_entry` return 1, clear `trivial` after haiku probe) |
+| SB HEAD | `fc012e2f` — P0 enterprise E2E effectiveness on **main** (revised P0 testing approach) |
 | Prior harness | `398209d3` ANSI bypass disclaimer in `claude-interactive-invoke.expect` |
-| Preflight | **PASS** (`RTK_DISABLED=1 --preflight-only`) after `9f89cfb6` |
-| Fixture | Re-cloned `alo-exp/enterprise-grade-test-app` @ `edbad21` (path was missing on disk) |
-| Row 1 | **IN FLIGHT** — bypass menu **OK**; **OpenCode 429** (weekly proxy limit, not Cursor quota); **600s retry #1** active (PIDs 62086/62131); monitor **91251** on `.e2e-row1-attempt.log` |
-| Log pass rows (historical) | 5, 9, 10, 12, 13, 17, 18, 19, 20 (+ rows 21–22 internal PASS in last batch tail) |
-| Log fail rows | 1 (prior attempts), 7, 8 |
-| `--resume` | **Not started** — waiting row 1 outcome |
+| P0 gates | **ALL PASS** except RCS score (58/100 — incomplete matrix) |
+| Preflight | **PASS** (`RTK_DISABLED=1 --preflight-only`, `SB_E2E_SESSION0_SKIP=1`) @ `fc012e2f` |
+| RCS | **58/100** — structural 15/15, claims 15/15, matrix ledger 7/25 (8/22 pass, `LEDGER_MISMATCH`) |
+| Reconcile | **LEDGER_MISMATCH** (8/22) |
+| Fixture | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| Row 1 | **IN FLIGHT** — `failure_class: environmental` (OpenCode proxy weekly **429**); bypass OK; quota retry **#3** @ 600s; PIDs **62086/62131** (not duplicated) |
+| Monitor | **79415** (restarted; was `1120` dead; `SB_E2E_MATRIX_LOG=.e2e-row1-attempt.log`) |
+| TUI watch | **79416** (restarted; was `2043` dead) |
+| Live `--resume` | **skipped** — `10138` dead; not restarted while row 1 blocks batch (429 retry #3) |
+| Log pass rows (ledger) | 5, 9, 10, 12, 13, 17, 18, 19, 20 |
+| Log fail rows (ledger) | 7, 8, 21, 22 (`failure_class: harness`) |
+| Blocker | OpenCode proxy weekly usage limit (~13h reset); monitor handles 600s retries |
+
+
 
