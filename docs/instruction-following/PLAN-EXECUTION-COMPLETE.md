@@ -1,6 +1,7 @@
 # SB IF Reduction Plan — execution complete
 
 **Date:** 2026-06-28  
+**Branch:** `main` @ `ce66bd4b` (IF reduction commit; not feat/e2e-effectiveness-p0; local main may be ahead of origin/main)  
 **Plan:** `.cursor/plans/sb_if_reduction_plan_71f2493c.plan.md`
 
 ---
