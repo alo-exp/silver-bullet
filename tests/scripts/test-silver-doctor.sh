@@ -83,6 +83,62 @@ else
   FAIL=$((FAIL + 1))
 fi
 
+# Host-scoped: Claude runtime must not require Cursor orchestrator rule (D8 N/A)
+MOCK_HOME="$(mktemp -d)"
+MOCK_PROJ="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ"' EXIT
+mkdir -p "$MOCK_HOME/.cursor" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
+cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$MOCK_PROJ/.silver-bullet.json"
+cp "$REPO_ROOT/silver-bullet.md" "$MOCK_PROJ/silver-bullet.md"
+cp "$REPO_ROOT/scripts/workflows.sh" "$MOCK_PROJ/scripts/workflows.sh"
+chmod +x "$MOCK_PROJ/scripts/workflows.sh"
+# Simulate Cursor hooks present on disk (must not flip Claude host detection)
+printf '{"hooks":{"SessionStart":[{"command":"~/.claude/plugins/.claude/plugins/hook.sh"}]}}\n' >"$MOCK_HOME/.cursor/hooks.json"
+mkdir -p "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks" \
+  "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/agents/claude"
+ln -sfn "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+  "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/current"
+cp "$REPO_ROOT/hooks/hooks.json" "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks/hooks.json"
+jq -n --arg v "0.48.7" --arg p "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+  '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
+  >"$MOCK_HOME/.claude/plugins/installed_plugins.json"
+printf '{"hooks":{}}\n' >"$MOCK_HOME/.claude/settings.json"
+
+claude_out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
+if printf '%s' "$claude_out" | grep -q 'D8.*N/A.*claude'; then
+  echo "PASS: D8 N/A on Claude host"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: D8 should be N/A on Claude host"
+  printf '%s\n' "$claude_out" | grep D8 || true
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$claude_out" | grep -q 'FAIL: D8'; then
+  echo "FAIL: D8 must not FAIL on Claude host"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: D8 does not FAIL on Claude host"
+  PASS=$((PASS + 1))
+fi
+if printf '%s' "$claude_out" | grep -q '\.claude/plugins'; then
+  echo "PASS: Claude doctor uses .claude plugin paths"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: Claude doctor should reference .claude plugin paths in D2/D3"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$claude_out" | grep -q '\.cursor/plugins'; then
+  echo "FAIL: Claude doctor must not reference .cursor plugin paths"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: Claude doctor avoids .cursor plugin paths"
+  PASS=$((PASS + 1))
+fi
+
+assert_contains "D8 Cursor-only in doctor script" 'runtime" == "cursor"' "$DOCTOR"
+assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR"
+assert_contains "D13 host-scoped in doctor script" 'cross-host plugin path contamination' "$DOCTOR"
+
 # Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
 if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
   echo "PASS: doctor PASS on live repo"

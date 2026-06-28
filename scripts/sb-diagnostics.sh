@@ -47,31 +47,7 @@ detect_runtime_home() {
     printf '%s' "${SB_RUNTIME_HOME_ROOT}"
     return
   fi
-  if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-    printf '%s' "${HOME}/.cursor"
-    return
-  fi
-  if [[ -n "${CODEX_HOME:-}" && -d "${CODEX_HOME}" ]]; then
-    printf '%s' "$CODEX_HOME"
-    return
-  fi
-  if [[ -n "${CLAUDE_CONFIG_DIR:-}" && -d "${CLAUDE_CONFIG_DIR}" ]]; then
-    printf '%s' "$CLAUDE_CONFIG_DIR"
-    return
-  fi
-  if [[ -d "${HOME}/.cursor" ]]; then
-    printf '%s' "${HOME}/.cursor"
-    return
-  fi
-  if [[ -d "${HOME}/.codex" ]]; then
-    printf '%s' "${HOME}/.codex"
-    return
-  fi
-  if [[ -d "${HOME}/.claude" ]]; then
-    printf '%s' "${HOME}/.claude"
-    return
-  fi
-  printf '%s' "${HOME}/.codex"
+  printf '%s' "${HOME}/.claude"
 }
 
 runtime_tier() {
@@ -109,18 +85,33 @@ main() {
   fi
   state_dir="${SB_RUNTIME_STATE_DIR:-${runtime_home}/.silver-bullet}"
 
-  if [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null; then
-    hooks_present="yes"
-    record pass "hooks" "Silver Bullet hooks referenced in ${runtime_home}/config.toml"
-  elif [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-    hooks_present="yes"
-    record pass "hooks" "Silver Bullet hooks referenced in Cursor hooks.json"
-  elif [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
-    hooks_present="yes"
-    record pass "hooks" "Silver Bullet hooks referenced in Claude settings"
-  else
-    record warn "hooks" "no SB hook config detected — enforcement may not fire"
-  fi
+  local active_runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
+  case "$active_runtime" in
+    cursor)
+      if [[ -f "${runtime_home}/hooks.json" ]] && grep -q 'silver-bullet' "${runtime_home}/hooks.json" 2>/dev/null; then
+        hooks_present="yes"
+        record pass "hooks" "Silver Bullet hooks referenced in ${runtime_home}/hooks.json"
+      else
+        record warn "hooks" "no SB hook config in Cursor hooks.json — enforcement may not fire"
+      fi
+      ;;
+    codex)
+      if [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null; then
+        hooks_present="yes"
+        record pass "hooks" "Silver Bullet hooks referenced in ${runtime_home}/config.toml"
+      else
+        record warn "hooks" "no SB hook config in Codex config.toml — enforcement may not fire"
+      fi
+      ;;
+    *)
+      if [[ -f "${runtime_home}/settings.json" ]] && grep -q 'silver-bullet' "${runtime_home}/settings.json" 2>/dev/null; then
+        hooks_present="yes"
+        record pass "hooks" "Silver Bullet hooks referenced in ${runtime_home}/settings.json"
+      else
+        record warn "hooks" "no SB hook config in Claude settings.json — enforcement may not fire"
+      fi
+      ;;
+  esac
 
   if [[ -f "${REPO_ROOT}/hooks/lib/recommended-tools.sh" ]]; then
     # shellcheck source=../hooks/lib/recommended-tools.sh

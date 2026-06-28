@@ -3,37 +3,45 @@
 
 sb_capability_hooks_present() {
   local runtime_home="${1:-${SB_RUNTIME_HOME_ROOT:-}}"
+  local runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-}}"
   [[ -n "$runtime_home" ]] || return 1
-  if [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null; then
-    return 0
-  fi
-  if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-    return 0
-  fi
-  if [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
-    return 0
-  fi
-  return 1
+  case "$runtime" in
+    cursor)
+      [[ -f "${runtime_home}/hooks.json" ]] && grep -q 'silver-bullet' "${runtime_home}/hooks.json" 2>/dev/null
+      ;;
+    codex)
+      [[ -f "${runtime_home}/config.toml" ]] && grep -q 'silver-bullet' "${runtime_home}/config.toml" 2>/dev/null
+      ;;
+    claude|*)
+      [[ -f "${runtime_home}/settings.json" ]] && grep -q 'silver-bullet' "${runtime_home}/settings.json" 2>/dev/null
+      ;;
+  esac
 }
 
 sb_capability_runtime_name() {
+  if [[ -n "${SB_RUNTIME_NAME:-}" ]]; then
+    printf '%s' "${SB_RUNTIME_NAME}"
+    return 0
+  fi
   if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
     printf '%s' "${SILVER_BULLET_RUNTIME}"
     return 0
   fi
-  if [[ -f "${HOME}/.cursor/hooks.json" ]]; then
-    printf 'cursor'
-    return 0
-  fi
-  if [[ -f "${SB_RUNTIME_HOME_ROOT:-}/config.toml" ]]; then
+  if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
     printf 'codex'
     return 0
   fi
-  if [[ -f "${HOME}/.claude/settings.json" ]]; then
-    printf 'claude'
+  if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
+    printf 'cursor'
     return 0
   fi
-  printf 'unknown'
+  if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
+    case "$CLAUDE_PLUGIN_ROOT" in
+      */.codex/*) printf 'codex'; return 0 ;;
+      */.cursor/*) printf 'cursor'; return 0 ;;
+    esac
+  fi
+  printf 'claude'
 }
 
 sb_capability_tier_number() {
