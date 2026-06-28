@@ -21,6 +21,9 @@ VLOOP_HOOK="$REPO_ROOT/hooks/v-loop-rollup-gate.sh"
 VISUAL_HOOK="$REPO_ROOT/hooks/site-visual-evidence-gate.sh"
 RECORD_VISUAL_HOOK="$REPO_ROOT/hooks/record-site-visual-evidence.sh"
 RECORD_HOOK="$REPO_ROOT/hooks/record-site-session.sh"
+PREVIEW_HOOK="$REPO_ROOT/hooks/site-preview-preflight.sh"
+CHROME_HOOK="$REPO_ROOT/hooks/site-chrome-guard.sh"
+MCP_RECORD_HOOK="$REPO_ROOT/hooks/record-recommended-mcp.sh"
 
 PASS=0
 FAIL=0
@@ -47,13 +50,29 @@ JSON
 }
 
 teardown() {
+  [[ -n "${PREVIEW_PID:-}" ]] && kill "$PREVIEW_PID" 2>/dev/null || true
+  PREVIEW_PID=""
   rm -rf "$TMPDIR_TEST" "$SB_TEST_DIR"
   rm -f "$SILVER_BULLET_STATE_FILE" "$SILVER_BULLET_BRANCH_FILE"
+}
+
+setup_with_agentmemory() {
+  setup
+  AM_STATE="${SB_TEST_DIR}/agentmemory-usage-$$"
+  CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+  cat >"$TMPDIR_TEST/.silver-bullet.json" <<EOF
+{"sb_initiated":true,"config_version":"${CURRENT_CONFIG_VERSION}","orchestrator_mode":"parent","project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]},"recommended_tools":{"agentmemory":{"enabled_by_user":true,"usage_state_file":"${AM_STATE}"}}}
+EOF
 }
 
 run_hook() {
   local hook="$1" event="$2" payload="$3"
   printf '%s' "$payload" | ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$hook" 2>/dev/null )
+}
+
+run_hook_worker() {
+  local hook="$1" event="$2" payload="$3"
+  printf '%s' "$payload" | ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_ORCHESTRATOR_PARENT=0 bash "$hook" 2>/dev/null )
 }
 
 assert_block() {
@@ -82,6 +101,17 @@ assert_allow() {
   local label="$1" out="$2"
   if printf '%s' "$out" | grep -q '"decision":"block"'; then
     echo "  FAIL: $label (unexpected block)"
+    FAIL=$((FAIL + 1))
+  else
+    echo "  ok: $label"
+    PASS=$((PASS + 1))
+  fi
+}
+
+assert_permit() {
+  local label="$1" out="$2"
+  if printf '%s' "$out" | grep -qE '"decision":"block"|"permissionDecision":"deny"'; then
+    echo "  FAIL: $label (unexpected deny/block)"
     FAIL=$((FAIL + 1))
   else
     echo "  ok: $label"
@@ -231,6 +261,50 @@ if [[ -f "${SB_TEST_DIR}/site-session.json" ]] && jq -e '.active == true' "${SB_
   PASS=$((PASS + 1))
 else
   echo "  FAIL: record site edit"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
+echo "--- site-preview-preflight ---"
+setup
+SB_SITE_PREVIEW_PORT=59991
+export SB_SITE_PREVIEW_PORT
+out=$(run_hook_worker "$PREVIEW_HOOK" PreToolUse "$(jq -n --arg fp "site/index.html" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp}}')")
+assert_deny "PreToolUse Edit site/** denied when preview unhealthy" "$out"
+printf '<html><body>preview</body></html>\n' >"$TMPDIR_TEST/index.html"
+python3 -m http.server "$SB_SITE_PREVIEW_PORT" --directory "$TMPDIR_TEST" >/dev/null 2>&1 &
+PREVIEW_PID=$!
+sleep 0.5
+out=$(run_hook_worker "$PREVIEW_HOOK" PreToolUse "$(jq -n --arg fp "site/index.html" '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp}}')")
+assert_permit "PreToolUse Edit site/** allowed when preview healthy" "$out"
+teardown
+
+echo "--- site-chrome-guard ---"
+setup
+out=$(run_hook "$CHROME_HOOK" PreToolUse "$(jq -n --arg fp "site/help/test.html" --arg ns '<nav class="nav-inner">bad</nav>' '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp,new_string:$ns}}')")
+assert_deny "PreToolUse denies inline nav chrome in site/help HTML" "$out"
+out=$(run_hook "$CHROME_HOOK" PreToolUse "$(jq -n --arg fp "site/tokens.css" --arg ns '@font-face { font-family: Bad; }' '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp,new_string:$ns}}')")
+assert_deny "PreToolUse denies tokens.css font-face without override marker" "$out"
+out=$(run_hook "$CHROME_HOOK" PreToolUse "$(jq -n --arg fp "site/tokens.css" --arg ns '/* SB FONT TOKEN OVERRIDE */ @font-face { font-family: Bad; }' '{hook_event_name:"PreToolUse",tool_name:"Edit",tool_input:{file_path:$fp,new_string:$ns}}')")
+assert_permit "PreToolUse allows tokens.css with SB FONT TOKEN OVERRIDE" "$out"
+teardown
+
+echo "--- record-recommended-mcp ---"
+setup_with_agentmemory
+EXPECTED_AM_STATE="${SB_TEST_DIR}/agentmemory-usage"
+out=$(run_hook "$MCP_RECORD_HOOK" PostToolUse "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"CallMcpTool",tool_input:{server:"user-agentmemory",toolName:"save_memory"}}')")
+if [[ -f "$EXPECTED_AM_STATE" ]] && grep -qE '^[0-9]+$' "$EXPECTED_AM_STATE"; then
+  echo "  ok: records agentmemory MCP usage"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: agentmemory MCP usage not recorded"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$out" | grep -q 'recommended MCP usage recorded'; then
+  echo "  ok: emits recorded confirmation message"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: missing recorded confirmation"
   FAIL=$((FAIL + 1))
 fi
 teardown
