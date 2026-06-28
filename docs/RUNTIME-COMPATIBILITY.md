@@ -73,6 +73,21 @@ SB_DIAG_FORMAT=json bash scripts/sb-diagnostics.sh
 Checks: `jq`, hook config presence, Graphify availability, package version,
 state root, inferred runtime name (`claude`, `codex`, or `cursor`), and capability tier.
 
+Host detection follows `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, `CLAUDE_PLUGIN_ROOT`, Codex env markers). Doctor and diagnostics **do not** infer Cursor from unrelated hosts' config files on the same machine.
+
+### silver:doctor host-scoped checks
+
+| Check | Cursor | Claude | Codex |
+|-------|--------|--------|-------|
+| D8 `silver-orchestrator.mdc` | FAIL if missing | N/A | N/A |
+| D2/D3 plugin cache | `~/.cursor/plugins/...` | `~/.claude/plugins/...` | `~/.codex/plugins/...` |
+| D13 contamination | no `.claude/plugins` in Cursor hooks | no `.cursor`/`.codex` paths in Claude settings | no `.cursor`/`.claude` paths in Codex config |
+
+```bash
+bash scripts/sb-doctor.sh
+SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
+```
+
 ### Marketplace install surfaces
 
 | Host | Public marketplace | Dev/checkout installer |

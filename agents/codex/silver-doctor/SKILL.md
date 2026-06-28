@@ -52,8 +52,8 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 | D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/silver:migrate` |
 | D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
-| D8 orchestrator rule | `bash scripts/sb-migrate-orchestrator-parent.sh` |
-| D13 Claude import | Phase 0.0a purge + Cursor-native reinstall |
+| D8 orchestrator rule | Cursor only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
+| D13 cross-host import | Cursor: purge `.codex/plugins` from hooks; Claude/Codex: reinstall native host plugin |
 
 Log friction in `$HOME/.codex/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -74,12 +74,14 @@ See plan Section B and `scripts/sb-doctor.sh` for the authoritative check list:
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
-- D8 Cursor orchestrator rule (when host=cursor)
+- D8 Cursor orchestrator rule (**Cursor host only** — N/A on Claude/Codex)
 - D9 workflow tracker (`scripts/workflows.sh`, `docs/workflows/`)
 - D10 recommended tools when `enabled_by_user: true`
 - D11 hook smoke (`session-start`, `outcomes-check`, `stop-check`)
 - D12 `$HOME/.codex/.silver-bullet` writable
-- D13 no `.codex/plugins` in Cursor hooks; `agents/cursor/` in active cache
+- D13 cross-host plugin contamination (host-scoped manifest + `agents/<host>/` in active cache)
+
+Host detection uses `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, plugin root env vars) — **not** presence of other hosts' config files on disk.
 
 ## Tests
 
