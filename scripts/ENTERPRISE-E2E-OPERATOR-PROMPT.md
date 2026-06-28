@@ -65,8 +65,31 @@ Set `recommended_tools.<tool>.enabled_by_user: true` in each repo's `.silver-bul
 6. **Session 0** — `/silver:init` in test app TUI; opt in tools; `graphify update .` in test app; stop after init.
 7. **Matrix rows 1–22** — one TUI session per row (rows 21–22 inside parent rows 3 and 4).
 8. **Dual-role monitoring** — drive matrix in shell A; `monitor-enterprise-e2e-matrix.sh` + `watch-enterprise-e2e-tui.sh` in parallel.
-9. Update round ledger with Pass/Fail, `graphify_query_ref`, `agentmemory_export_ref`.
+9. Update round ledger with Pass/Fail, `failure_class` (on Fail: `harness` | `product` | `environmental`), `graphify_query_ref`, `agentmemory_export_ref`.
 10. On SB hook bug: `/silver:add` label `enterprise-test-app` → fix → commit → `install-claude.sh` → re-run **failed row only**.
+
+### Failure classification (`failure_class`)
+
+When a row fails, record `failure_class` in the ledger matrix table:
+
+| Class | When to use | Examples |
+|-------|-------------|----------|
+| `environmental` | External quota, network, proxy | API 429, `ENOTFOUND`, OpenCode weekly limit |
+| `harness` | Expect/TUI/ANSI/monitor wiring | Bypass Permissions menu, `claude-interactive-invoke` |
+| `product` | SB hook, router, orchestrator, evidence | Missing artifact, wrong route, hook BLOCK |
+
+Helper: `bash scripts/lib/matrix-failure-class.sh .e2e-row{N}-attempt.log`
+
+**Monitor rule:** `COMPLETE` requires ledger 22/22 Pass with refs — log-only 22/22 is `LEDGER_MISMATCH` (see `scripts/lib/enterprise-e2e-ledger-reconcile.sh`).
+
+### Session 0 gate
+
+Matrix launch requires Session 0 unless waived:
+
+- Ledger Session 0 **Pass** for Graphify + agentmemory (or Enterprise preflight), **or**
+- Fixture `.silver-bullet.json` has graphify + agentmemory `enabled_by_user: true`.
+
+Waiver (document reason): `SB_E2E_SESSION0_SKIP=1` + `SB_E2E_SESSION0_SKIP_REASON=...`
 
 ### Clean round definition
 
