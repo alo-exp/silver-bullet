@@ -190,6 +190,7 @@ set saw_prompt 0
 set final_marker_seen 0
 set require_final_marker 0
 set saw_not_logged_in 0
+set bypass_disclaimer_menu_open 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -202,6 +203,7 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 
 expect {
   -re {code.claude.com/docs/en/security} {
+    set bypass_disclaimer_menu_open 1
     accept_bypass_permissions_disclaimer
     exp_continue
   }
@@ -345,7 +347,17 @@ expect {
     }
     exp_continue
   }
+  -re {(?s)No, exit.*Yes, I accept|Yes, I accept.*Enter.*to confirm} {
+    set bypass_disclaimer_menu_open 1
+    accept_bypass_permissions_disclaimer
+    exp_continue
+  }
   -re {❯} {
+    if {$bypass_disclaimer_menu_open || ([regexp {No, exit} $expect_out(buffer)] && [regexp {Yes, I accept} $expect_out(buffer)])} {
+      set bypass_disclaimer_menu_open 0
+      accept_bypass_permissions_disclaimer
+      exp_continue
+    }
     if {$require_final_marker == 1 && $final_marker_seen == 0} {
       exp_continue
     }
