@@ -3,6 +3,17 @@
 # Sourced by scripts/run-enterprise-e2e-live-test.sh and tests/enterprise-e2e-live/*.
 set -euo pipefail
 
+# Bash 3.2 (macOS): mapfile/readarray unavailable
+enterprise_e2e_read_lines_to_array() {
+  local _var="$1"
+  shift
+  local _line
+  eval "${_var}=()"
+  while IFS= read -r _line; do
+    [[ -n "$_line" ]] && eval "${_var}+=(\"$_line\")"
+  done < <("$@")
+}
+
 enterprise_e2e_sb_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd
 }
