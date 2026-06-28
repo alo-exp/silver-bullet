@@ -1,10 +1,11 @@
 # Round 3 Enterprise E2E — Session Handoff
 
-**Updated:** 2026-06-28 (light follow-up — row 1 quota retry; do not start duplicate row 1)
+**Updated:** 2026-06-28 (P0 merged to main @ `6fd63d81`; row 1 quota retry — do not start duplicate row 1)
 
 ## SB HEAD
 
-`9f89cfb6` — `fix(e2e): restore hook-delivery preflight bash probe fallback`  
+`6fd63d81` — P0 enterprise E2E effectiveness merged to **main**  
+Prior: `9f89cfb6` — hook-delivery preflight bash probe fallback  
 Bypass disclaimer: `398209d3` in `scripts/claude-interactive-invoke.expect`
 
 ## Active work
@@ -58,13 +59,15 @@ bash scripts/watch-enterprise-e2e-tui.sh &
 ## Policies
 
 - Never `claude auth login/logout`
-- `install-claude.sh` after harness fixes (done @ `9f89cfb6`)
+- `install-claude.sh` after harness fixes — **already run post-merge** @ `6fd63d81`
 - Fixture re-cloned @ `edbad21` at default enterprise test-app path
 
 ---
 
 ## Coordination (2026-06-28 — P0 effectiveness)
 
-- **P0 implementation** (`P0-1`…`P0-5` per [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](../../docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §6) is on feature branch **`feat/e2e-effectiveness-p0`** — **not merged to main**.
-- **main contested** — other session has dirty working tree + active matrix row 1 (PIDs 62086/62131, monitor 3562); do not kill or reset.
+- **P0 merged to main** @ `6fd63d81` (`P0-1`…`P0-5` per [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](../../docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md) §6). Feature branch **`feat/e2e-effectiveness-p0`** deleted locally after merge.
+- **Other sessions:** work from **`main`**, not `feat/e2e-effectiveness-p0`. When ready: `git checkout main && git pull`.
+- **main contested** — other session may have dirty working tree + active matrix row 1 (PIDs 62086/62131, monitor 3562); do not kill or reset.
+- **`install-claude.sh`:** already run post-merge @ `6fd63d81`.
 - Artifacts: ledger reconcile, tui-contract, claims-audit, `failure_class`, Session 0 gate.
