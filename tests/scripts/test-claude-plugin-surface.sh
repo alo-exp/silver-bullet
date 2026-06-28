@@ -42,10 +42,17 @@ else
   fail "Codex package commands directory exists"
 fi
 
-if grep -qE '^name: silver:feature$' "${REPO_ROOT}/agents/claude/silver-feature/SKILL.md"; then
+if grep -qE '^name: silver:feature$' "${REPO_ROOT}/agents/claude/silver:feature/SKILL.md"; then
   pass "Claude bundle exposes silver:feature skill name"
 else
   fail "Claude bundle exposes silver:feature skill name"
+fi
+
+hyphen_skill_dirs="$(find "${REPO_ROOT}/agents/claude" -mindepth 1 -maxdepth 1 -type d -name 'silver-*' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "$hyphen_skill_dirs" == "0" ]]; then
+  pass "Claude bundle has no silver-* hyphen skill directories"
+else
+  fail "Claude bundle has no silver-* hyphen skill directories — found $hyphen_skill_dirs"
 fi
 
 if grep -qE '^name: silver-feature$' "${REPO_ROOT}/skills/silver-feature/SKILL.md"; then
