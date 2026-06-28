@@ -385,6 +385,29 @@ def sanitize_root(root: pathlib.Path, agent: str) -> None:
             rewrite_file(current, agent)
 
 
+def rename_claude_skill_directories(root: pathlib.Path) -> None:
+    """Align Claude skill folder names with silver: frontmatter routes.
+
+    Claude lists skills from both directory names and SKILL.md ``name:`` fields.
+    Hyphen directories (``silver-feature``) plus colon names (``silver:feature``)
+    produce duplicate picker entries; rename dirs to the colon form only.
+    """
+    if not root.is_dir():
+        return
+
+    for child in sorted(root.iterdir(), key=lambda path: path.name):
+        if not child.is_dir() or child.is_symlink():
+            continue
+        dirname = child.name
+        if dirname == "silver" or not dirname.startswith("silver-"):
+            continue
+        route = dirname.removeprefix("silver-")
+        target = child.parent / f"silver:{route}"
+        if target.exists():
+            raise SystemExit(f"claude skill rename collision: {dirname} -> {target.name}")
+        child.rename(target)
+
+
 def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str) -> None:
     if not source_root.is_dir():
         raise SystemExit(f"source root missing: {source_root}")
@@ -399,6 +422,8 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
             sanitize_root(staging, agent)
+            if agent == "claude":
+                rename_claude_skill_directories(staging)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
         except Exception:
