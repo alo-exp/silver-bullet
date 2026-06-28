@@ -11,9 +11,12 @@ Instruction-following reduction closure, silver-doctor coverage, subagent model 
 - `feat(ci)`: homepage claims registry and audit (`7ae148c0`)
 
 ### Bug Fixes
+- `fix(hooks)`: scope orchestrator guard to walk-resolved SB workspace (`10a1268e`)
+- `fix(e2e)`: token gateway auth without login, matrix rows 2–20 via `/silver` router, monitor FORCE restart settings export (`70098a36`–`7b5cc6a9`)
 - `fix(if)`: close remaining test, hook coverage, and documentation gaps (`b84801f7`)
 - `fix(ladder)`: enforce Composer 2.5 only for all Cursor subagent rungs — never `composer-2.5-fast` (`d012973e`)
 - `fix(harness)`: macOS setsid shim, driver lock, ledger-aware `--resume`, detached install-claude, agent bundle render preflight (`61469e03`–`b0e0f378`)
+- `fix(claude)`: list SB skills with `/silver:` prefix only — Claude bundle skill dirs renamed to colon routes so picker does not duplicate hyphen stubs
 - `fix(e2e)`: Claude TUI bypass disclaimer handling, proxy settings stripping, 429 retry interval, dev-cycle deny audit, idle token counter (`98691580`–`6ddb56a8`)
 
 ### Documentation
