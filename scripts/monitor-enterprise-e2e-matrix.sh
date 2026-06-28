@@ -17,6 +17,8 @@ source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT" || exit
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+# shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
 
 MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-rows5-7-22-resume2.log}"
 BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
@@ -176,13 +178,39 @@ incomplete_rows() {
   fi
 }
 
+matrix_log_reports_complete() {
+  grep -qE 'Total: 22 / 22|Pass:  22' "$MATRIX_LOG" 2>/dev/null
+}
+
 matrix_all_done() {
-  if grep -qE 'Total: 22 / 22|Pass:  22' "$MATRIX_LOG" 2>/dev/null; then
+  if matrix_log_reports_complete; then
     return 0
   fi
   local inc
   inc="$(incomplete_rows | wc -l | tr -d ' ')"
   [[ "$inc" -eq 0 ]]
+}
+
+# Monitor must agree with human-auditable ledger before emitting COMPLETE.
+matrix_reconcile_state() {
+  local log_done ledger_status
+  log_done=0
+  matrix_log_reports_complete && log_done=1
+  ledger_status="$(enterprise_e2e_ledger_reconcile_status 2>/dev/null || echo UNREADABLE)"
+  if [[ "$log_done" -eq 1 && "$ledger_status" == "COMPLETE" ]]; then
+    printf '%s\n' "COMPLETE"
+    return 0
+  fi
+  if [[ "$log_done" -eq 1 ]]; then
+    printf '%s\n' "LEDGER_MISMATCH"
+    return 1
+  fi
+  if [[ "$ledger_status" == "STALE" || "$ledger_status" == "UNREADABLE" ]]; then
+    printf '%s\n' "STALE"
+    return 1
+  fi
+  printf '%s\n' "IN_PROGRESS"
+  return 1
 }
 
 parse_recent_issues() {
@@ -322,10 +350,28 @@ poll_once() {
   batch_pid="$(discover_batch_pid 2>/dev/null || true)"
 
   if matrix_all_done; then
-    log_poll "$(utc_now) COMPLETE: matrix 22/22 — monitor exiting"
-    write_status "$(build_status_block "${batch_pid:-done}" "COMPLETE")"
-    rm -f "$BATCH_PID_FILE"
-    exit 0
+    local reconcile_state
+    reconcile_state="$(matrix_reconcile_state)"
+    case "$reconcile_state" in
+      COMPLETE)
+        log_poll "$(utc_now) COMPLETE: matrix 22/22 — ledger reconcile OK — monitor exiting"
+        write_status "$(build_status_block "${batch_pid:-done}" "COMPLETE")"
+        rm -f "$BATCH_PID_FILE"
+        exit 0
+        ;;
+      LEDGER_MISMATCH)
+        log_poll "$(utc_now) LEDGER_MISMATCH: matrix log 22/22 but ledger is not 22 PASS — not exiting"
+        write_status "$(build_status_block "${batch_pid:-done}" "LEDGER_MISMATCH")"
+        ;;
+      STALE)
+        log_poll "$(utc_now) STALE: matrix log complete but ledger missing/stale — not exiting"
+        write_status "$(build_status_block "${batch_pid:-done}" "STALE")"
+        ;;
+      *)
+        log_poll "$(utc_now) IN_PROGRESS: matrix log complete; ledger reconcile=$reconcile_state"
+        write_status "$(build_status_block "${batch_pid:-done}" "IN_PROGRESS")"
+        ;;
+    esac
   fi
 
   local now_epoch last_growth_epoch last_bytes cur_bytes idle_sec row attempt_log
@@ -405,7 +451,7 @@ poll_once() {
       batch_pid="$(cat "$BATCH_PID_FILE")"
       batch_state="RESTARTED"
     else
-      batch_state="COMPLETE?"
+      batch_state="$(matrix_reconcile_state 2>/dev/null || echo IN_PROGRESS)"
     fi
   fi
 
