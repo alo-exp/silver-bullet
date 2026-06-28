@@ -30,10 +30,31 @@ claude_matrix_auth_has_conflict() {
   ' >/dev/null 2>&1
 }
 
+claude_matrix_settings_has_proxy_env() {
+  local settings_file="$1"
+  [[ -f "$settings_file" ]] || return 1
+  jq -e '
+    ((.env.ANTHROPIC_BASE_URL? // "") != "")
+    or ((.env.ANTHROPIC_API_KEY? // "") | test("PROXY"; "i"))
+  ' "$settings_file" >/dev/null 2>&1
+}
+
+claude_matrix_auth_should_strip_settings() {
+  local settings_file
+  settings_file="$(claude_matrix_settings_path)"
+  if claude_matrix_auth_has_conflict; then
+    return 0
+  fi
+  if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}" == "1" ]] && claude_matrix_settings_has_proxy_env "$settings_file"; then
+    return 0
+  fi
+  return 1
+}
+
 claude_matrix_auth_prepare() {
   local settings_file backup_file
   settings_file="$(claude_matrix_settings_path)"
-  if ! claude_matrix_auth_has_conflict; then
+  if ! claude_matrix_auth_should_strip_settings; then
     return 0
   fi
   if ! claude_matrix_auth_has_api_key_env "$settings_file"; then
