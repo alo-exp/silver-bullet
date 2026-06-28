@@ -194,6 +194,14 @@ expect {
     send -- "2\r"
     exp_continue
   }
+  -re {Yes.*accept} {
+    send -- "2\r"
+    exp_continue
+  }
+  -re {Enter.*to confirm} {
+    send -- "2\r"
+    exp_continue
+  }
   -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
     # Newer Claude builds ask for an explicit trust confirmation before the
     # session starts. Pick the trust option so the live harness can continue.
