@@ -4,7 +4,7 @@ Adversarial audits of Cursor session instruction-following quality.
 
 | Date | Session | Failure rate | Report |
 |------|---------|-------------:|--------|
-| 2026-06-28 | `e12690dc-fb94-4616-b1c4-d9341a80e789` | **76.2%** (80/105) | [SESSION-AUDIT-2026-06-28.md](./SESSION-AUDIT-2026-06-28.md) |
+| 2026-06-28 | `e12690dc-fb94-4616-b1c4-d9341a80e789` | **76.2%** (80/105) | [SESSION-AUDIT-2026-06-28.md](./SESSION-AUDIT-2026-06-28.md) · [META-AUDIT-2026-06-28.md](./META-AUDIT-2026-06-28.md) |
 
 ## Scoring methodology (canonical)
 
