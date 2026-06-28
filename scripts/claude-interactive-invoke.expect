@@ -25,6 +25,12 @@ proc dismiss_claude_splash {} {
 }
 
 proc load_claude_settings_env {} {
+  if {[env_or_default SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT "0"] eq "1"} {
+    return
+  }
+  if {[env_or_default CLAUDE_PRINT_SKIP_SETTINGS_EXPORT "0"] eq "1"} {
+    return
+  }
   # Interactive TUI does not always inherit ~/.claude/settings.json env like
   # `claude --print`. Inject API-key env before spawn when not in clean-env mode
   # and when claude.ai OAuth is not already active (avoid auth conflicts).

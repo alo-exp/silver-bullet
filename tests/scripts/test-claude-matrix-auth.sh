@@ -33,6 +33,12 @@ cat > "${HOME}/.claude/settings.json" <<'EOF'
 }
 EOF
 
+
+export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
+claude_matrix_export_settings_env
+assert_eq "skip export when SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1" "" "${ANTHROPIC_API_KEY:-}"
+unset SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT
+
 claude_matrix_export_settings_env
 assert_eq "exports ANTHROPIC_API_KEY from settings" "sk-test-matrix-key" "${ANTHROPIC_API_KEY:-}"
 
