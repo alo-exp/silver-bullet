@@ -370,6 +370,8 @@ set require_final_marker 0
 set saw_not_logged_in 0
 set bypass_disclaimer_menu_open 0
 set bypass_disclaimer_accept_attempts 0
+set custom_api_key_disclaimer_menu_open 0
+set custom_api_key_disclaimer_accept_attempts 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
