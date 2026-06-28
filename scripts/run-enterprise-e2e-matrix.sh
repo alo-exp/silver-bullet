@@ -165,6 +165,7 @@ verify_row_success() {
   local row_num="$1"
   local evidence_path="$2"
   local output="${3:-}"
+  local row_log="${4:-}"
   if verify_row_evidence "$evidence_path"; then
     return 0
   fi
@@ -173,6 +174,9 @@ verify_row_success() {
       return 0
     fi
     if [[ -n "$output" ]] && verify_row_routing_output "$output"; then
+      return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && verify_row_routing_output "$(tail -c 2500000 "$row_log" 2>/dev/null || true)"; then
       return 0
     fi
   fi
@@ -278,7 +282,7 @@ run_matrix_row() {
       printf '%s\n' "$output" | tail -20
     fi
 
-    if verify_row_success "$row_num" "$evidence_path" "$output"; then
+    if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if verify_row_evidence "$evidence_path"; then
         echo "  PASS: evidence at ${evidence_path}"
       elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
