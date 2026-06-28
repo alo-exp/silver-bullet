@@ -78,7 +78,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-BLAST-RADIUS` | blast_radius_assessment | `templates/orchestrator-workers/BLAST-RADIUS.md` | `silver-blast-radius` |
 | `AF-DEVOPS-ROUTE` | devops_toolchain_routing | `templates/orchestrator-workers/DEVOPS-SKILL-ROUTER.md` | `devops-skill-router`, `silver-devops` |
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
-| `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-migrate`, `silver-phase`, `silver-rem` |
+| `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-doctor`, `silver-migrate`, `silver-phase`, `silver-rem` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
 
 ## Skill-Dispatched Worker Templates
@@ -441,6 +441,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_DEBUG` | `silver-debug` | `AF-DEBUG` | `EV-FS-SILVER_DEBUG` |
 | `FS-SILVER_DEPLOY` | `silver-deploy` | `AF-SHIP` | `EV-FS-SILVER_DEPLOY` |
 | `FS-SILVER_DEVOPS` | `silver-devops` | `AF-DEVOPS-ROUTE` | `EV-FS-SILVER_DEVOPS` |
+| `FS-SILVER_DOCTOR` | `silver-doctor` | `AF-PHASE-MANAGE` | `EV-FS-SILVER_DOCTOR` |
 | `FS-SILVER_DOMAIN_AUDIT` | `silver-domain-audit` | `AF-REVIEW` | `EV-FS-SILVER_DOMAIN_AUDIT` |
 | `FS-SILVER_ENSURE_DOCS` | `silver-ensure-docs` | `AF-DOCUMENT` | `EV-FS-SILVER_ENSURE_DOCS` |
 | `FS-SILVER_EXECUTE` | `silver-execute` | `AF-EXECUTE` | `EV-FS-SILVER_EXECUTE` |
@@ -550,6 +551,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-debug` | `AF-DEBUG` |
 | `silver-deploy` | `AF-SHIP` |
 | `silver-devops` | `AF-DEVOPS-ROUTE` |
+| `silver-doctor` | `AF-PHASE-MANAGE` |
 | `silver-domain-audit` | `AF-REVIEW` |
 | `silver-ensure-docs` | `AF-DOCUMENT` |
 | `silver-execute` | `AF-EXECUTE` |
