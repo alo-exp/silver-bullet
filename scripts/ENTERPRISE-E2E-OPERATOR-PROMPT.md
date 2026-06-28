@@ -38,6 +38,7 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 - **Orchestrator parent** must not implement product code inline unless the workflow requires it.
 - **SB fixes** in SB repo only; **product code** in test app only.
 - **Do not commit** SB init artifacts from the test app to GitHub.
+- **OpenCode / local proxy 429** — if `~/.claude/settings.json` sets `ANTHROPIC_BASE_URL` (e.g. `127.0.0.1:15721`), matrix defaults to `SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1` (direct OAuth). Set `=0` only for api_key-only hosts.
 - **429 / Token Plan** — wait **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`) and retry the **same row**; not an auth failure.
 - **Network blips** — retry with backoff (120–300s); not auth failures.
 - **Harness parsing:** `RTK_DISABLED=1` / `SB_RTK_COMPAT_MODE=verbatim` on `run-enterprise-e2e-live-test.sh`, matrix runner, `install-claude.sh`.

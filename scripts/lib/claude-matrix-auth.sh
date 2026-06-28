@@ -83,6 +83,9 @@ claude_matrix_auth_restore() {
 # matches `claude --print` api_key auth. Project-level settings lack API keys;
 # the TUI does not inject global settings env unless it is exported here.
 claude_matrix_should_export_settings_env() {
+  if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}" == "1" || "${CLAUDE_PRINT_SKIP_SETTINGS_EXPORT:-0}" == "1" ]]; then
+    return 1
+  fi
   local settings_file
   settings_file="$(claude_matrix_settings_path)"
   [[ -f "$settings_file" ]] || return 1

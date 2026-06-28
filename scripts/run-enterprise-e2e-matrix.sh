@@ -35,6 +35,9 @@ export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
+# Matrix interactive sessions use OAuth/keychain by default; skip ~/.claude/settings.json
+# env when it routes through local proxies (e.g. OpenCode ANTHROPIC_BASE_URL) that emit false 429s.
+export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-1}"
 # shellcheck source=scripts/lib/claude-matrix-auth.sh
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
 claude_matrix_export_settings_env
@@ -87,6 +90,7 @@ Environment:
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
+  SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 1; set 0 for api_key hosts)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
