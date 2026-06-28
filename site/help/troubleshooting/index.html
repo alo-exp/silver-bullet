@@ -137,7 +137,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- HOOK FAILURES -->
       <h2 id="hooks">Hook Failures</h2>
-      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). As of v0.48.3, enforcement engages only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist — workspaces without <code>/silver:init</code> receive no gates. Start with <code>bash scripts/sb-diagnostics.sh</code> for capability tier and hook config status.</p>
+      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). As of v0.48.3, enforcement engages only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist — workspaces without <code>/silver:init</code> receive no gates. Start with <code>/silver:doctor</code> or <code>bash scripts/sb-doctor.sh</code> for host-aware install/activation checks; use <code>bash scripts/sb-diagnostics.sh</code> for capability tier and hook config status.</p>
 
       <div class="issue-card">
         <h4>Hooks never engage on a fresh clone</h4>

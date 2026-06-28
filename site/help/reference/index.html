@@ -242,7 +242,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
       <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code uses slash commands; Codex exposes the native <code>/silver:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code lists SB skills under the <code>/silver:</code> prefix only (no duplicate hyphen stubs); Codex exposes the native <code>/silver:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
@@ -272,7 +272,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>/silver:undo</td><td>Safe revert</td><td>Safe git revert for phase or plan commits with dependency checks and artifact cleanup. Keeps STATE.md and SUMMARY.md consistent with reverted code.</td></tr>
           <tr><td>/silver:thread</td><td>Cross-session tracking</td><td>Creates and manages lightweight cross-session context threads for tracking a specific topic, decision chain, or concern across multiple sessions.</td></tr>
           <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
-          <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation.</td></tr>
+          <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation. Runs <code>/silver:doctor</code> automatically and surfaces every FAIL for inline fix.</td></tr>
+          <tr><td>/silver:doctor</td><td>Diagnostics</td><td>Host-aware install and project activation audit via <code>scripts/sb-doctor.sh</code> (checks D1&ndash;D13). Run after <code>/silver:update</code>, when hooks seem inactive, or before relying on enforcement. D8 orchestrator rule applies on Cursor only; D2/D3/D13 use the active host plugin paths.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
           <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung.</td></tr>
         </tbody>
@@ -439,6 +440,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><code>scripts/stamp-interface-state.sh</code></td><td>Stamps <code>.planning/interface/STATE.md</code> from template during <code>/silver:init</code> for UI projects.</td></tr>
           <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>One-command onboarding probe: checks <code>jq</code>, runs diagnostics, prints init/plugin next steps.</td></tr>
           <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Install/runtime diagnostics for migrators and support.</td></tr>
+          <tr><td><code>scripts/sb-doctor.sh</code></td><td>Host-aware install + activation audit (<code>/silver:doctor</code>). Checks plugin cache, hooks manifest, config freshness, orchestrator rule (Cursor only), and cross-host contamination.</td></tr>
         </tbody>
       </table></div>
 

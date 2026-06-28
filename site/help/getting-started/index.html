@@ -271,6 +271,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="code-block"><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
       <p>After install on any host, confirm hook delivery and capability tier:</p>
       <div class="code-block"><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
+      <p>After <code>/silver:update</code> or when hooks seem inactive, run the host-aware activation audit:</p>
+      <div class="code-block"><span class="cmd">/silver:doctor</span></div>
 
       <h3>Cursor Plugin</h3>
       <p>For normal Cursor use, add the public <code>alo-labs/alo-labs-cursor-marketplace</code> marketplace in Cursor and install <code>silver-bullet</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>

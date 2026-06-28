@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or alo-labs/claude-plugins marketplace, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Onboarding: bash scripts/sb-bootstrap.sh and bash scripts/sb-diagnostics.sh for capability tier 0-3. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or alo-labs/claude-plugins marketplace, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Onboarding: bash scripts/sb-bootstrap.sh and bash scripts/sb-diagnostics.sh for capability tier 0-3. After /silver:update run /silver:doctor or bash scripts/sb-doctor.sh for host-aware install activation audit. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -177,6 +177,13 @@ var IDX = [
     "anchor": "hook-activation",
     "title": "Hook activation guard v0.48.8",
     "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify, agentmemory, RTK, and Context Mode are opt-in via recommended_tools in config."
+  },
+  {
+    "page": "Reference",
+    "url": "/help/reference/",
+    "anchor": "sb-skills",
+    "title": "/silver:doctor host-aware audit",
+    "text": "/silver:doctor v0.48.8 host-aware install and project activation audit via scripts/sb-doctor.sh checks D1-D13. Run after /silver:update when hooks seem inactive or before relying on enforcement. D8 orchestrator rule Cursor-only; D2 D3 D13 use active host plugin paths via runtime-paths.sh not Cursor deps on Claude Codex."
   },
   {
     "page": "Workflows",
@@ -463,7 +470,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "runtime-parity",
     "title": "Runtime parity scripts v0.48.8",
-    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh interface STATE.md delivery hook structural parity runtime enforcement"
+    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh sb-doctor.sh silver:doctor host-aware audit interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
     "page": "Reference",
@@ -484,7 +491,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "hooks",
     "title": "Hook failures",
-    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.48.8 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, stale compliance state, and /silver:init initialization issues."
+    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.48.8 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, sb-doctor.sh silver:doctor host-aware install activation audit, stale compliance state, and /silver:init initialization issues."
   },
   {
     "page": "Troubleshooting",
