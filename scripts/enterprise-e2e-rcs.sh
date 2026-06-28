@@ -3,6 +3,7 @@
 #
 # Usage:
 #   RTK_DISABLED=1 bash scripts/enterprise-e2e-rcs.sh
+#   RTK_DISABLED=1 bash scripts/enterprise-e2e-rcs.sh --ledger PATH
 #   SB_E2E_LEDGER_FILE=... bash scripts/enterprise-e2e-rcs.sh --json
 set -euo pipefail
 
@@ -13,9 +14,20 @@ JSON_OUT=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --json) JSON_OUT=1; shift ;;
+    --ledger)
+      if [[ $# -lt 2 ]]; then
+        echo "Missing value for --ledger" >&2
+        exit 2
+      fi
+      export SB_E2E_LEDGER_FILE="$2"
+      shift 2
+      ;;
     -h|--help)
       cat <<'EOF'
 Computes Release Confidence Score from ledger + optional matrix log.
+
+Options:
+  --ledger PATH   Ledger markdown (default: SB_E2E_LEDGER_FILE or ROUND-1-LEDGER.md)
 
 Components (weights): run-all-tests 20%, structural/contract 15%, ladder 15%,
 matrix ledger 25%, claims audit 15%, tri-host smoke 10%.
