@@ -273,6 +273,7 @@ run_matrix_row() {
     else
       echo "  launching interactive Claude session..."
     fi
+    : >"$row_log"
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
