@@ -33,7 +33,7 @@ SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-row1-attempt.log" SB_E2E_MATRIX_ROWS="1" \
 echo $! > .e2e-matrix-monitor.pid
 ```
 
-- **Monitor PID:** `91251` (must use row-1 log env; default log shows stale 22/22 and monitor exits immediately)
+- **Monitor PID:** `3562` (restarted; prior `91251` exited) (must use row-1 log env; default log shows stale 22/22 and monitor exits immediately)
 - Status: [`.e2e-matrix-monitor-status.txt`](../../.e2e-matrix-monitor-status.txt)
 
 ## Env
