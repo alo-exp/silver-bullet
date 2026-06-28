@@ -258,6 +258,54 @@ proc accept_custom_api_key_disclaimer {} {
   after 900
 }
 
+proc finish_session_success {} {
+  catch {close}
+  catch {wait}
+  exit 0
+}
+
+proc matrix_evidence_ready {} {
+  global evidence_path work_dir session_started
+  if {$evidence_path eq ""} {
+    return 0
+  }
+  set target "$work_dir/$evidence_path"
+  if {![file exists $target]} {
+    return 0
+  }
+  if {[file mtime $target] + 2 < $session_started} {
+    return 0
+  }
+  return 1
+}
+
+proc maybe_finish_on_matrix_evidence {} {
+  global prompt_submitted saw_prompt require_final_marker final_marker_seen
+  if {!$prompt_submitted || !$saw_prompt} {
+    return 0
+  }
+  if {$require_final_marker == 1 && $final_marker_seen == 0} {
+    return 0
+  }
+  if {[matrix_evidence_ready]} {
+    finish_session_success
+  }
+  return 0
+}
+
+proc extend_quiet_on_new_token_marker {plain_text} {
+  global quiet_timeout last_token_marker
+  set marker ""
+  if {![regexp {([0-9][0-9.,kKmM]*[^0-9]{0,12}tokens)} $plain_text match marker]} {
+    return
+  }
+  if {$marker eq $last_token_marker} {
+    return
+  }
+  set last_token_marker $marker
+  set timeout $quiet_timeout
+}
+
 proc submit_prompt {command_name prompt_body} {
   global saw_not_logged_in
   if {$saw_not_logged_in} {
@@ -291,6 +339,7 @@ set effort [env_or_default CLAUDE_EFFORT "low"]
 set permission_mode [env_or_default CLAUDE_PERMISSION_MODE "acceptEdits"]
 set continue_flag [env_or_default CLAUDE_CONTINUE "0"]
 set debug_log [env_or_default CLAUDE_INTERACTIVE_LOG_FILE ""]
+set evidence_path [env_or_default SB_E2E_MATRIX_EVIDENCE_PATH ""]
 set debug_trace [env_or_default CLAUDE_INTERACTIVE_DEBUG "0"]
 set post_prompt_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_DELAY_MS 1000])}]
 set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 60])}]
@@ -370,6 +419,11 @@ set saw_prompt 0
 set final_marker_seen 0
 set require_final_marker 0
 set saw_not_logged_in 0
+set last_token_marker ""
+set session_started [clock seconds]
+if {$debug_log ne "" && [file exists $debug_log]} {
+  set session_started [file mtime $debug_log]
+}
 set bypass_disclaimer_menu_open 0
 set bypass_disclaimer_accept_attempts 0
 set custom_api_key_disclaimer_menu_open 0
@@ -550,8 +604,10 @@ expect {
   }
   -re {[1-9][0-9]*[^0-9].*tokens} {
     set saw_not_logged_in 0
-    # Claude is actively generating; extend the quiet window.
-    set timeout $quiet_timeout
+    # Extend quiet window only when the token counter changes; idle TUI
+    # status lines repeat the same count and would never reach quiet timeout.
+    extend_quiet_on_new_token_marker [strip_ansi $expect_out(buffer)]
+    maybe_finish_on_matrix_evidence
     exp_continue
   }
   -re {accept.*edits.*on} {
@@ -569,6 +625,9 @@ expect {
         set prompt_submitted 1
         set timeout $quiet_timeout
       }
+    } else {
+      extend_quiet_on_new_token_marker [strip_ansi $expect_out(buffer)]
+      maybe_finish_on_matrix_evidence
     }
     exp_continue
   }
@@ -604,6 +663,7 @@ expect {
     }
     set saw_prompt 1
     set timeout $quiet_timeout
+    maybe_finish_on_matrix_evidence
     exp_continue
   }
   timeout {
