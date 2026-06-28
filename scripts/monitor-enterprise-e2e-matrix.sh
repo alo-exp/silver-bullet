@@ -344,6 +344,11 @@ on_stall_detected() {
   if [[ "$idle_sec" -ge "$HUNG_SEC" ]]; then
     log_poll "$(utc_now) HUNG: killing claude children after ${idle_sec}s idle"
     kill_claude_children TERM
+    if live_test_driver_running; then
+      log_poll "$(utc_now) defer hung restart: live-test driver active"
+      write_state_kv LAST_GROWTH_EPOCH "$(date +%s)"
+      return 0
+    fi
     local inc
     enterprise_e2e_read_lines_to_array inc incomplete_rows
     # If batch dead, full restart; else row will retry via harness quota loop
@@ -487,6 +492,9 @@ poll_once() {
     if [[ "$row" != "?" ]] && ! row_is_complete "$row"; then
       idle_sec=$((now_epoch - last_growth_epoch))
       if [[ "$idle_sec" -ge "$HUNG_SEC" ]]; then
+        if live_test_driver_running; then
+          log_poll "$(utc_now) defer no-claude restart: live-test driver active"
+        else
         log_poll "$(utc_now) ACTION: no claude child ${idle_sec}s — restarting batch"
         kill -TERM "$batch_pid" 2>/dev/null || true
         sleep 5
@@ -494,6 +502,7 @@ poll_once() {
         start_batch "${inc[@]}"
         batch_pid="$(cat "$BATCH_PID_FILE")"
         batch_state="RESTARTED(no-claude)"
+        fi
       fi
     fi
   fi
