@@ -144,6 +144,9 @@ if {$debug_trace eq "1"} {
 }
 
 set args [list --model $model --effort $effort --permission-mode $permission_mode --verbose]
+if {$permission_mode eq "bypassPermissions"} {
+  lappend args --allow-dangerously-skip-permissions
+}
 set home [env_or_default HOME ""]
 set settings_file [env_or_default CLAUDE_SETTINGS_FILE ""]
 if {$settings_file eq "" && $home ne ""} {
