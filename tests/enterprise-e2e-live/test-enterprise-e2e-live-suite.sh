@@ -180,6 +180,9 @@ assert_contains "expect defines token gateway check" "$EXPECT" "token_gateway_co
 assert_contains "expect ignores login banner for token gateway" "$EXPECT" "ignoring OAuth banner"
 assert_contains "expect waits for input prompt before slash submit" "$EXPECT" "slash_route_pending"
 assert_contains "expect gates slash submit on input prompt ready" "$EXPECT" "input_prompt_ready"
+assert_contains "expect detects context exhaustion" "$EXPECT" "context_exhaustion_visible"
+assert_contains "expect recovers from context exhaustion with /clear" "$EXPECT" "recover_from_context_exhaustion"
+assert_contains "expect caps quiet timeout when context-full stalls" "$EXPECT" "context_full_stalled_at"
 assert_not_contains "expect must not invoke /login" "$EXPECT" "/login\r"
 
 # --- Watch: Not logged in is info not blocker ---

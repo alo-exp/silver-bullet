@@ -106,6 +106,8 @@ assert_file_contains "Claude matrix auth exports settings env" "${REPO_ROOT}/scr
 assert_file_contains "Claude live agent avoids login shell for clean env" "${REPO_ROOT}/tests/live/agents/claude/agent.sh" 'bash -c'
 assert_file_contains "Claude interactive harness dismisses splash screen" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'dismiss_claude_splash'
 assert_file_contains "Claude interactive harness passes settings for api_key auth" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" '--settings \$settings_file'
+assert_file_contains "Claude interactive harness recovers from context exhaustion" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'recover_from_context_exhaustion'
+assert_file_contains "Claude interactive harness detects context-full stall" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'context_exhaustion_visible'
 assert_file_contains "enterprise matrix row 1 accepts routing state fallback" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 'verify_row_routing_state_delta'
 assert_file_contains "live doc scheme uses Claude-native Bash wording" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'Use the Bash tool to run exactly'
 assert_file_contains "live doc scheme has deterministic script fallback" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'bash "\./\.live-doc-step\.sh"'
