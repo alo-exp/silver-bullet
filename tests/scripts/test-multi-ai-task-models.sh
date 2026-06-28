@@ -31,7 +31,7 @@ claude_json="$(python3 "$RESOLVER" --host claude --json)"
 assert_jq_true "claude sonnet medium present" '[.models[] | select(.model == "claude-sonnet-4-6" and .reasoning == "medium")] | length == 1' "$claude_json"
 
 # Claude bundle exposes silver: prefix
-if grep -qE '^name: silver:multi-ai-task$' "${REPO_ROOT}/agents/claude/silver-multi-ai-task/SKILL.md" 2>/dev/null; then
+if grep -qE '^name: silver:multi-ai-task$' "${REPO_ROOT}/agents/claude/silver:multi-ai-task/SKILL.md" 2>/dev/null; then
   pass "Claude bundle exposes silver:multi-ai-task"
 else
   fail "Claude bundle exposes silver:multi-ai-task (run render-agent-bundle)"

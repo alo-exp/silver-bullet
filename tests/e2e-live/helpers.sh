@@ -953,13 +953,13 @@ verify_runtime_dependency_access() {
     claude_cache_root="${KAY_HOME:-$HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
-      assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver-init/SKILL.md"
-      assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md"
-      assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver-feature/SKILL.md"
+      assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver:init/SKILL.md"
+      assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver:ensure-docs/SKILL.md"
+      assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver:feature/SKILL.md"
       assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
-      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver-init/SKILL.md" 'name: silver:init' 'name: "silver:init"' 'name: silver-init'
-      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver-ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: "silver:ensure-docs"' 'name: silver-ensure-docs'
-      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver-feature/SKILL.md" 'name: silver:feature' 'name: "silver:feature"' 'name: silver-feature'
+      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver:init/SKILL.md" 'name: silver:init' 'name: "silver:init"'
+      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver:ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: "silver:ensure-docs"'
+      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver:feature/SKILL.md" 'name: silver:feature' 'name: "silver:feature"'
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
       echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"

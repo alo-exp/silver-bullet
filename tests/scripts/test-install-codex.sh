@@ -1176,7 +1176,7 @@ assert_file_exists "Current cache workflow-chain guard synced" "$FAKE_CACHE_ROOT
 assert_file_exists "SB instruction-file guard hook synced into source bundle" "$REPO_ROOT/hooks/instruction-file-guard.sh"
 assert_file_exists "Installed SB instruction-file guard hook synced into package" "$FAKE_SB_PACKAGE_ROOT/hooks/instruction-file-guard.sh"
 assert_file_exists "Current cache instruction-file guard synced" "$FAKE_CACHE_ROOT/hooks/instruction-file-guard.sh"
-assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROOT/agents/claude/silver-scan/SKILL.md"
+assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROOT/agents/claude/silver:scan/SKILL.md"
 assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/agents/codex/silver-scan/SKILL.md"
 assert_file_absent "Installed SB package does not expose agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents"
 assert_file_absent "Current cache does not expose agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents"
