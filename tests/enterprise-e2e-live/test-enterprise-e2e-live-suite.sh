@@ -100,11 +100,35 @@ assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2
 
 # --- Monitor learnings ---
 MONITOR="${REPO_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
+COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 assert_contains "monitor resume incomplete rows" "$MONITOR" "incomplete_rows"
 assert_contains "monitor 429 wait 600" "$MONITOR" "QUOTA_WAIT"
 assert_contains "monitor network retry" "$MONITOR" "NETWORK_WAIT"
 assert_contains "monitor forces CLEAN_ENV=0 on restart" "$MONITOR" "SB_E2E_MATRIX_CLEAN_ENV=0"
 assert_contains "monitor unsets DRY_RUN on restart" "$MONITOR" "env -u SB_E2E_MATRIX_DRY_RUN"
+assert_contains "monitor sources ledger reconcile helper" "$MONITOR" "enterprise-e2e-ledger-reconcile.sh"
+assert_contains "monitor ledger mismatch guard" "$MONITOR" "LEDGER_MISMATCH"
+assert_executable "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh" "ledger reconcile helper exists"
+assert_executable "${REPO_ROOT}/scripts/lib/matrix-failure-class.sh" "matrix failure_class helper exists"
+assert_executable "${REPO_ROOT}/scripts/claims-audit.sh" "claims audit script exists"
+assert_file_exists "${REPO_ROOT}/docs/testing/claims-registry.json" "claims registry exists"
+assert_executable "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" "bypass disclaimer contract test exists"
+
+# Ledger template includes failure_class column
+assert_contains "ledger template failure_class column" "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-LEDGER.md" "failure_class"
+
+# Session 0 gate wiring
+assert_contains "live entrypoint session0 gate" "$LIVE" "enterprise_e2e_assert_session0_or_skip"
+assert_contains "common lib session0 skip env" "$COMMON_LIB" "SB_E2E_SESSION0_SKIP"
+assert_contains "runbook documents session0 gate" "$RUNBOOK" "Session 0"
+assert_contains "runbook documents failure_class" "$RUNBOOK" "failure_class"
+
+# claims-audit in structural gate
+if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; then
+  pass "claims-audit passes against site + registry"
+else
+  fail "claims-audit failed — run scripts/claims-audit.sh"
+fi
 
 # --- Watch continuation recovery ---
 WATCH="${REPO_ROOT}/scripts/watch-enterprise-e2e-tui.sh"
@@ -117,7 +141,6 @@ assert_contains "matrix runner uses verbatim RTK mode" "$MATRIX" "SB_RTK_COMPAT_
 assert_contains "live entrypoint uses verbatim RTK mode" "$LIVE" "SB_RTK_COMPAT_MODE=verbatim"
 
 # --- Code-intel preflight helpers ---
-COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 for fn in \
   enterprise_e2e_source_code_intel_libs \
   enterprise_e2e_code_intel_preflight \
@@ -147,7 +170,9 @@ fi
 
 # --- Resume helper ---
 TMP_LOG="$(mktemp)"
-trap 'rm -f "$TMP_LOG"' EXIT
+LEDGER_FIXTURE=""
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE"; }
+trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/silver) ==="
   echo "  PASS: evidence at .planning/workflows/router-session.md"
@@ -168,6 +193,66 @@ fi
 
 # --- Opt-in gate in run-all-tests ---
 assert_contains "run-all-tests documents opt-in" "${REPO_ROOT}/tests/run-all-tests.sh" "SB_ENTERPRISE_E2E_LIVE"
+
+# --- P0 effectiveness: ledger reconcile, tui-contract, claims-audit, failure_class, session0 ---
+assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh" "ledger reconcile lib exists"
+assert_file_exists "${REPO_ROOT}/scripts/lib/matrix-failure-class.sh" "matrix failure_class lib exists"
+assert_executable "${REPO_ROOT}/scripts/claims-audit.sh" "claims-audit executable"
+assert_file_exists "${REPO_ROOT}/docs/testing/claims-registry.json" "claims registry exists"
+assert_contains "monitor ledger reconcile" "$MONITOR" "matrix_reconcile_state"
+assert_contains "monitor sources ledger reconcile" "$MONITOR" "enterprise-e2e-ledger-reconcile.sh"
+assert_contains "live entrypoint session0 gate" "$LIVE" "enterprise_e2e_assert_session0_or_skip"
+assert_contains "common lib session0 gate" "$COMMON_LIB" "enterprise_e2e_assert_session0_or_skip"
+assert_contains "runbook failure_class taxonomy" "$RUNBOOK" "failure_class"
+assert_contains "runbook ledger reconcile" "$RUNBOOK" "ledger-reconcile"
+assert_file_exists "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" "tui-contract bypass test exists"
+assert_executable "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" "tui-contract bypass test executable"
+
+if RTK_DISABLED=1 bash "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" >/dev/null 2>&1; then
+  pass "tui-contract bypass-disclaimer passes"
+else
+  fail "tui-contract bypass-disclaimer failed"
+fi
+
+if command -v jq >/dev/null 2>&1; then
+  if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; then
+    pass "claims-audit passes"
+  else
+    fail "claims-audit failed"
+  fi
+else
+  pass "claims-audit skipped (jq not installed)"
+fi
+
+# failure_class helper smoke
+# shellcheck source=scripts/lib/matrix-failure-class.sh
+source "${REPO_ROOT}/scripts/lib/matrix-failure-class.sh"
+if [[ "$(matrix_failure_class_from_snippet 'API Error 429 weekly usage limit')" == "environmental" ]]; then
+  pass "failure_class environmental for 429"
+else
+  fail "failure_class environmental for 429"
+fi
+if [[ "$(matrix_failure_class_from_snippet 'accept_bypass Permissions ANSI expect')" == "harness" ]]; then
+  pass "failure_class harness for expect"
+else
+  fail "failure_class harness for expect"
+fi
+
+# ledger reconcile fixture
+LEDGER_FIXTURE="$(mktemp)"
+cat >"$LEDGER_FIXTURE" <<'LEDGER'
+| # | WF slug | Pass/Fail | graphify_query_ref | agentmemory_export_ref |
+|---|---------|-----------|--------------------|------------------------|
+| 1 | `silver-router` | Pass | gq-1 | am-1 |
+LEDGER
+# shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
+source "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
+SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
+if [[ "$reconcile_status" == "STALE" ]]; then
+  pass "ledger reconcile STALE when <22 rows"
+else
+  fail "ledger reconcile expected STALE for partial fixture, got $reconcile_status"
+fi
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

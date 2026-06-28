@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "description": "Homepage marketing claims mapped to verification test IDs (site/index.html).",
+  "claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "text": "Agentic Process Orchestrator for the AI Era",
+      "source_selector": "#hero-main .version-badge",
+      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "hero-tagline",
+      "text": "THE PROCESS LAYER OF AI-DRIVEN DEV",
+      "source_selector": "#hero-main .hero-tagline-caps",
+      "test_ids": ["claims-audit"]
+    },
+    {
+      "claim_id": "hero-reliability-cost",
+      "text": "at 10x Lower Cost",
+      "source_selector": "#hero-main .hero-headline",
+      "test_ids": ["rtk-context-mode-preflight"]
+    },
+    {
+      "claim_id": "hero-free-no-telemetry",
+      "text": "100% Free Forever",
+      "source_selector": "#hero-main .hero-cta-note",
+      "test_ids": ["claims-audit", "privacy-docs"]
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "text": "Claude Code, Codex, or Cursor",
+      "source_selector": "#hero-main .hero-intro",
+      "test_ids": ["install-claude", "install-codex", "cursor-hook-bridge"]
+    },
+    {
+      "claim_id": "hero-evidence-gates",
+      "text": "blocks unsafe commits, PRs, and releases until the evidence is real",
+      "source_selector": "#hero-main .hero-intro",
+      "test_ids": ["completion-audit", "enterprise-e2e-rows-14-16"]
+    },
+    {
+      "claim_id": "mechanism-catalog-counts",
+      "text": "27 atomic flows composed into 22 task-shaped workflows",
+      "source_selector": "#mechanism",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "mechanism-twelve-hooks",
+      "text": "twelve hook layers that physically block unsafe progress",
+      "source_selector": "#mechanism",
+      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
+    },
+    {
+      "claim_id": "mechanism-dynamic-silver",
+      "text": "Dynamic Workflow Composition",
+      "source_selector": "#mechanism",
+      "test_ids": ["enterprise-e2e-row-1", "tui-contract-bypass-disclaimer"]
+    },
+    {
+      "claim_id": "code-intel-stack",
+      "text": "Graphify + agentmemory wire",
+      "source_selector": "#code-intelligence",
+      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+    },
+    {
+      "claim_id": "proof-sb-diagnostics",
+      "text": "sb-diagnostics.sh",
+      "source_selector": "#proof",
+      "test_ids": ["sb-diagnostics-script"]
+    },
+    {
+      "claim_id": "proof-enforcement-tier",
+      "text": "enforcement tier your host actually supports",
+      "source_selector": "#proof",
+      "test_ids": ["runtime-compatibility-doc"]
+    },
+    {
+      "claim_id": "first-hour-block-pr",
+      "text": "blocking their first unsafe PR within the first session",
+      "source_selector": "#next-steps",
+      "test_ids": ["planned-onboarding-slo"]
+    },
+    {
+      "claim_id": "catalog-contract-footer",
+      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
+      "source_selector": "#catalog",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "hero-capabilities",
+      "text": "Engineering Best Practices",
+      "source_selector": "#hero-main .hero-features-list",
+      "test_ids": ["enterprise-e2e-matrix"]
+    }
+  ]
+}

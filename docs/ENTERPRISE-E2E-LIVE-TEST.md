@@ -153,6 +153,22 @@ claude
 
 In TUI: run **`/silver:init`**, opt in Graphify + agentmemory, `graphify update .`, **do not commit** SB init artifacts.
 
+### Session 0 gate (before matrix rows)
+
+`run-enterprise-e2e-live-test.sh` blocks matrix launch unless Session 0 is satisfied:
+
+- Ledger Session 0 table shows **Pass** for Graphify + agentmemory (or Enterprise preflight), **or**
+- Fixture `.silver-bullet.json` has `recommended_tools.graphify.enabled_by_user` and `recommended_tools.agentmemory.enabled_by_user` both `true`.
+
+Debug / operator waiver (log reason):
+
+```bash
+export SB_E2E_SESSION0_SKIP=1
+export SB_E2E_SESSION0_SKIP_REASON="programmatic opt-in verified manually"
+```
+
+`--preflight-only` does not require Session 0 (preflight runs before the gate).
+
 ---
 
 ## Matrix rows 1–22
@@ -165,7 +181,11 @@ SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh --resume
 SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh 3 14
 ```
 
-Per row: `graphify query "<slug> routes hooks skills orchestrator"` → paste matrix prompt card → update ledger with Pass/Fail + refs.
+Per row: `graphify query "<slug> routes hooks skills orchestrator"` → paste matrix prompt card → update ledger with Pass/Fail, optional `failure_class` (`harness` | `product` | `environmental`), and refs.
+
+Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .e2e-rowN-attempt.log`
+
+**Ledger↔monitor reconciliation:** monitor emits `COMPLETE` only when `scripts/lib/enterprise-e2e-ledger-reconcile.sh` reports 22/22 Pass in `SB_E2E_LEDGER_FILE`. Log-only 22/22 without ledger agreement surfaces `LEDGER_MISMATCH` or `STALE`.
 
 ---
 
@@ -179,6 +199,8 @@ Per row: `graphify query "<slug> routes hooks skills orchestrator"` → paste ma
 | **SB hook bug** | SB repo: `/silver:add` label `enterprise-test-app` → fix → commit → **`bash scripts/install-claude.sh`** → re-run **failed row only** |
 | **Branch/worktree drift** | Confirm fixture branch; reset skill state; re-run session-start from test app |
 | **Pause for P1 fix** | Stop batch; fix SB; deploy via `install-claude.sh`; resume with `--resume` |
+| **Monitor LEDGER_MISMATCH** | Matrix log says 22/22 but ledger &lt; 22 Pass — update ledger or re-run failed rows; monitor stays alive |
+| **failure_class** | Record in ledger: `harness` (expect/TUI), `product` (hook/router), `environmental` (429/network) — helper: `matrix-failure-class.sh` |
 
 ---
 
