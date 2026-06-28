@@ -70,10 +70,8 @@ proc load_claude_settings_env {} {
 
 
 proc accept_bypass_permissions_disclaimer {} {
-  # Bypass Permissions modal: arrow to "2. Yes, I accept", then Enter (twice if confirm).
-  # Split ESC+[B so Tcl never treats "[" as command substitution (see missing close-bracket).
-  send \033
-  send \[B
+  # Bypass Permissions modal: select option 2, confirm with Enter.
+  send -- "2"
   after 200
   send -- "\r"
   after 200
@@ -204,7 +202,6 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 expect {
   -re {code.claude.com/docs/en/security} {
     set bypass_disclaimer_menu_open 1
-    accept_bypass_permissions_disclaimer
     exp_continue
   }
   -re {(?s)Bypass Permissions mode.*2\. Yes, I accept} {
