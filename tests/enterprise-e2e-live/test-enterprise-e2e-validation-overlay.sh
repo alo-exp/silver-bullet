@@ -38,6 +38,10 @@ assert_contains "overlay supports dry-run" \
   "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" "--dry-run"
 assert_contains "overlay does not pkill matrix" \
   "${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md" "does not start, stop, or signal"
+assert_contains "live test wires validation pre-gate" \
+  "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "run-enterprise-e2e-validation-overlay.sh"
+assert_contains "live test documents SB_E2E_VALIDATION_OVERLAY" \
+  "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "SB_E2E_VALIDATION_OVERLAY"
 
 PLAN="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md"
 for needle in \
