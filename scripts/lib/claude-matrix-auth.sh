@@ -16,6 +16,7 @@ claude_matrix_auth_has_api_key_env() {
   [[ -f "$settings_file" ]] || return 1
   jq -e '
     (.env.ANTHROPIC_API_KEY? // "") != ""
+    or (.env.ANTHROPIC_AUTH_TOKEN? // "") != ""
     or (.env.ANTHROPIC_BASE_URL? // "") != ""
   ' "$settings_file" >/dev/null 2>&1
 }
@@ -73,6 +74,7 @@ claude_matrix_auth_prepare() {
     if .env then
       .env |= del(
         .ANTHROPIC_API_KEY,
+        .ANTHROPIC_AUTH_TOKEN,
         .ANTHROPIC_BASE_URL,
         .ANTHROPIC_DEFAULT_HAIKU_MODEL,
         .ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME,
