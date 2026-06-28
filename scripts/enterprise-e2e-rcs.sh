@@ -86,7 +86,7 @@ else
 fi
 
 # matrix ledger (25%)
-read -r pass_count total_rows _ < <(enterprise_e2e_ledger_pass_summary "$(enterprise_e2e_ledger_file_path)")
+read -r pass_count _ _ < <(enterprise_e2e_ledger_pass_summary "$(enterprise_e2e_ledger_file_path)")
 pass_count="${pass_count:-0}"
 if [[ "$pass_count" -ge 22 ]]; then
   score_matrix=25
