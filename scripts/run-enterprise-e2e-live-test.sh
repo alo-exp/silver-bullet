@@ -22,6 +22,8 @@ export SB_RTK_COMPAT_MODE=verbatim
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+# shellcheck source=tests/live/lib/detach-background.sh
+source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 
 export SB_ROOT
 FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
@@ -169,15 +171,16 @@ fi
 # --- Dual-role monitor + watch (driver-owned; replace stale harness children) ---
 start_harness_background() {
   local name="$1" pattern="$2" script="$3" pid_file="$4"
+  local pid
   if pgrep -f "$pattern" >/dev/null 2>&1; then
     echo "${name}: replacing existing instance (driver-owned harness)"
     pkill -f "$pattern" 2>/dev/null || true
     sleep 1
   fi
   echo "${name}: starting in background..."
-  bash "$script" &
-  echo $! >"$pid_file"
-  echo "${name}: pid $(cat "$pid_file")"
+  pid="$(sb_run_detached -- bash "$script")"
+  printf '%s\n' "$pid" >"$pid_file"
+  echo "${name}: pid ${pid}"
 }
 
 export SB_E2E_MATRIX_LOG="$MATRIX_LOG"
@@ -209,6 +212,7 @@ if ((${#MATRIX_ARGS[@]} > 0)); then
 fi
 
 (
+  trap - EXIT INT TERM
   cd "$SB_ROOT"
   env -u SB_E2E_MATRIX_DRY_RUN     SB_E2E_MATRIX_CLEAN_ENV=0     SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}"     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR"     SB_E2E_LEDGER_FILE="$LEDGER_FILE"     SB_E2E_MATRIX_LOG="$MATRIX_LOG"     "${MATRIX_LAUNCH_CMD[@]}"
 ) 2>&1 | tee -a "$MATRIX_LOG"
