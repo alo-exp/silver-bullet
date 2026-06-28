@@ -34,15 +34,15 @@ sb_project_root_cache_read() {
   printf '%s' "$cached"
 }
 
-# Walk upward from start_dir; print .silver-bullet.json when boundary is satisfied.
-sb_find_project_config_from() {
+# Walk upward from start_dir only — no project-root cache fallback.
+# Use for deny/guard decisions so stale cache cannot affect non-SB workspaces.
+_sb_find_project_config_walk_from() {
   local search_dir="${1:-$PWD}"
   local root=""
 
   if [[ -n "${SILVER_BULLET_PROJECT_ROOT:-}" ]]; then
     root="${SILVER_BULLET_PROJECT_ROOT%/}"
     if [[ -f "$root/.silver-bullet.json" && -f "$root/silver-bullet.md" ]]; then
-      sb_project_root_cache_write "$root"
       printf '%s/.silver-bullet.json' "$root"
       return 0
     fi
@@ -50,7 +50,6 @@ sb_find_project_config_from() {
 
   while [[ -n "$search_dir" ]]; do
     if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
-      sb_project_root_cache_write "$search_dir"
       printf '%s/.silver-bullet.json' "$search_dir"
       return 0
     fi
@@ -59,6 +58,36 @@ sb_find_project_config_from() {
     fi
     search_dir="$(dirname "$search_dir")"
   done
+
+  return 1
+}
+
+sb_find_project_config_walk_only_from() {
+  _sb_find_project_config_walk_from "$@"
+}
+
+sb_find_project_config_walk_only() {
+  sb_find_project_config_walk_only_from "$PWD"
+}
+
+sb_find_project_root_walk_only() {
+  local cfg
+  cfg="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+  [[ -n "$cfg" ]] || return 1
+  dirname "$cfg"
+}
+
+# Walk upward from start_dir; print .silver-bullet.json when boundary is satisfied.
+sb_find_project_config_from() {
+  local search_dir="${1:-$PWD}"
+  local cfg root
+
+  cfg="$(_sb_find_project_config_walk_from "$search_dir" 2>/dev/null || true)"
+  if [[ -n "$cfg" ]]; then
+    sb_project_root_cache_write "$(dirname "$cfg")"
+    printf '%s' "$cfg"
+    return 0
+  fi
 
   root="$(sb_project_root_cache_read 2>/dev/null || true)"
   if [[ -n "$root" ]]; then

@@ -112,7 +112,13 @@ while true; do
   fi
   search_dir=$(dirname "$search_dir")
 done
-[[ -z "$sb_project_root" ]] && exit 0
+if [[ -z "$sb_project_root" ]]; then
+  # Non-SB workspace: clear stale global orchestrator markers from a prior SB session.
+  rm -f -- "${SB_STATE_DIR}/orchestrator-directive.json" \
+        "${SB_STATE_DIR}/orchestrator-worker-active.json" \
+        "${SB_STATE_DIR}/project-root" 2>/dev/null || true
+  exit 0
+fi
 
 # Cache project root for CWD-independent hook resolution (#232).
 if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
