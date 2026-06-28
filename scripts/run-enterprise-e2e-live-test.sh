@@ -139,8 +139,7 @@ if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
   source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
 fi
 
-echo "Plugin install (latest SB checkout):"
-bash scripts/install-claude.sh
+enterprise_e2e_run_install_claude "$SB_ROOT"
 
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   echo "Preflight complete (--preflight-only)."
