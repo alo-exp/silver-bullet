@@ -148,6 +148,12 @@ When done, summarize: route invoked, skills recorded, artifacts created, test st
 
 ## Operator autonomy policy
 
+### Subagent model policy
+
+- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
+- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
+- Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
+
 - **Pls do that yourself. Never pause for operator.**
 - Automate Session 0 prep when possible: set `recommended_tools.graphify|agentmemory|rtk|context_mode.enabled_by_user` to `true` in `/Users/shafqat/projects/enterprise-grade-test-app/.silver-bullet.json` programmatically if TUI is unavailable; then `graphify update . --no-cluster` in the test app.
 - On **Claude API 429 / quota / Token Plan**: retry every **10 minutes** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600`); **do not** treat as auth failure; **never** `claude auth login/logout`.

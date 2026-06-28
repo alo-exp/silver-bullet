@@ -67,6 +67,16 @@ Quiet timeouts (from Round 2):
 
 ---
 
+## Orchestrator / Cursor operator notes
+
+### Subagent model policy
+
+- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
+- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
+- Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
+
+---
+
 ## Dual-role monitoring (drive + monitor + watch in persistent shells)
 
 Operator model: **dual-role** — drive the matrix in one persistent shell while monitor + watch run in parallel shells.
