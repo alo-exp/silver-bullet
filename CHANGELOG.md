@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.48.7] — 2026-06-29
+
+Instruction-following reduction closure, silver-doctor coverage, subagent model gates, and enterprise E2E harness hardening.
+
+### Features
+- `feat(if-reduction)`: complete Waves 1–4 and subagent engagement audit closure (`ce66bd4b`)
+- `feat(e2e)`: Session 0 gate, structural suite wiring, ledger↔monitor reconciliation, matrix failure_class taxonomy, Release Confidence Score script (`82ae6887`, `87417315`, `b2ff5448`, `3f7026a5`)
+- `feat(validation)`: enterprise E2E claims overlay on 22-row matrix with pre-matrix dry-run gate (`0d7f967c`, `8406364e`)
+- `feat(ci)`: homepage claims registry and audit (`7ae148c0`)
+
+### Bug Fixes
+- `fix(if)`: close remaining test, hook coverage, and documentation gaps (`b84801f7`)
+- `fix(ladder)`: enforce Composer 2.5 only for all Cursor subagent rungs — never `composer-2.5-fast` (`d012973e`)
+- `fix(harness)`: macOS setsid shim, driver lock, ledger-aware `--resume`, detached install-claude, agent bundle render preflight (`61469e03`–`b0e0f378`)
+- `fix(e2e)`: Claude TUI bypass disclaimer handling, proxy settings stripping, 429 retry interval, dev-cycle deny audit, idle token counter (`98691580`–`6ddb56a8`)
+
+### Documentation
+- `docs(test)`: silver-doctor catalog, scenario, and sentinel manifest coverage (`6670e0db`)
+- `docs(if)`: plan execution complete on main (`d7954ae2`)
+- `docs(e2e)`: subagent model policy — Composer 2.5 only (`ffcc1b11`)
+
+### Tests
+- `test(e2e)`: PTY bypass disclaimer contract (`ddb8d88a`)
+
+---
+
 ## [0.48.6] — 2026-06-27
 
 Scoped RTK coexistence: full agent RTK when opted in; verbatim harness mode only.
