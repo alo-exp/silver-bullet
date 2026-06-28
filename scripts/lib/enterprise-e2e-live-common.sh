@@ -112,25 +112,37 @@ enterprise_e2e_release_live_test_lock() {
 enterprise_e2e_run_install_claude() {
   local sb_root="${1:-${SB_ROOT:-}}"
   local log="${SB_E2E_INSTALL_CLAUDE_LOG:-${sb_root}/.e2e-install-claude.log}"
+  local pid deadline
   [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
+  enterprise_e2e_prepend_harness_path
   echo "Plugin install (latest SB checkout):"
-  if [[ -t 1 ]]; then
+  if [[ -t 1 && -t 0 ]]; then
     (cd "$sb_root" && bash scripts/install-claude.sh)
     return $?
   fi
   : >"$log"
-  if ! (cd "$sb_root" && bash scripts/install-claude.sh </dev/null >>"$log" 2>&1); then
-    echo "ERROR: install-claude failed — see ${log}" >&2
-    tail -20 "$log" >&2 || true
-    return 1
-  fi
-  if ! grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
-    echo "ERROR: install-claude incomplete — see ${log}" >&2
-    tail -20 "$log" >&2 || true
-    return 1
-  fi
-  tail -3 "$log" || true
-  return 0
+  pid="$(sb_run_detached --log "$log" -- bash -c "cd $(printf '%q' "$sb_root") && exec bash scripts/install-claude.sh </dev/null")"
+  deadline=$((SECONDS + 300))
+  while (( SECONDS < deadline )); do
+    if grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
+      wait "$pid" 2>/dev/null || true
+      tail -3 "$log" || true
+      return 0
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then
+      if grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
+        tail -3 "$log" || true
+        return 0
+      fi
+      echo "ERROR: install-claude exited before completion — see ${log}" >&2
+      tail -20 "$log" >&2 || true
+      return 1
+    fi
+    sleep 2
+  done
+  echo "ERROR: install-claude timed out after 300s — see ${log}" >&2
+  tail -20 "$log" >&2 || true
+  return 1
 }
 
 enterprise_e2e_prepend_harness_path() {
