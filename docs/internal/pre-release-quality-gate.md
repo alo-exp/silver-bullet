@@ -101,20 +101,60 @@ Invoke the `security` skill; record in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/s
 
 ## Stage 4 — Public Content Refresh + Verification Bundle
 
-### 4a — Public-facing content (ex-Stage 3)
+### 4a — Public-facing content (mandatory before release)
 
-Verify and update user-visible surfaces:
+**Required for every plugin release** (patch, minor, or major). This stage is
+**distinct** from `silver-bullet.md` §8.2 site-only publishes — those may land on
+`main` without a version bump or `gh release create`, but **cannot** substitute for
+Stage 4a when shipping a plugin release.
+
+You MUST complete the entire checklist below **before** `git tag`, `gh release create`,
+or `/silver-create-release`. Do not record `quality-gate-stage-3` until every item is
+done and both freshness tests pass.
+
+#### Gate entry (mandatory)
+
+Run both scripts; both MUST pass before you record the Stage 4a marker:
+
+```bash
+bash tests/scripts/test-site-content-freshness.sh
+bash tests/scripts/test-site-doc-freshness.sh
+```
+
+Re-run both after all content edits in this stage (or confirm they still pass).
+
+#### Checklist
+
+Complete every item for the version being shipped:
+
+- [ ] **`package.json` version** — current release version reflected in site/help version
+  strings (`site/index.html`, `site/help/index.html`, `site/help/reference/index.html`,
+  `site/help/search.js`)
+- [ ] **Public changelog page** — [`site/changelog/index.html`](../../site/changelog/index.html)
+  (`https://sb.alolabs.dev/changelog/`) MUST include a new `<article class="release">`
+  section for the version being shipped (summary plus categorized bullets). Root
+  [`CHANGELOG.md`](../../CHANGELOG.md) is the authoritative source; the public page is
+  a user-facing digest (not a raw copy).
+- [ ] **Homepage** — [`site/index.html`](../../site/index.html) updated if user-facing
+  claims, counts, workflow tables, or enforcement layers changed in this release
+- [ ] **Help Center** — update every affected `site/help/**/*.html` page (new skills,
+  hooks, behaviors, workflows)
+- [ ] **Search index** — if pages were added, renamed, or materially retitled, reindex
+  [`site/help/search.js`](../../site/help/search.js) so search entries match live URLs
+
+**Also verify or update when applicable:**
 
 - GitHub repo description and topics (`gh repo edit`)
-- `README.md` (version, step counts, enforcement layers)
-- Landing page (`site/index.html`) and help pages (`site/help/`)
-- Search index (`site/help/search.js`)
+- Root `README.md` (version, step counts, enforcement layers)
 
-Record marker:
+#### Hook marker (only after checklist complete)
 
 ```bash
 echo "quality-gate-stage-3" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
 ```
+
+Do **not** write this marker until the checklist is complete and both freshness tests
+pass.
 
 ### 4b — Verification bundle (single pass)
 
