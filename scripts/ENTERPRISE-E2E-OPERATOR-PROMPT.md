@@ -136,5 +136,6 @@ When done, summarize: route invoked, skills recorded, artifacts created, test st
 
 ## Related documentation
 
+- Effectiveness plan: `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md`
 - Runbook: `docs/ENTERPRISE-E2E-LIVE-TEST.md`
 - Fixture operator copy-paste: `enterprise-grade-test-app/docs/ENTERPRISE-E2E-SESSION-PROMPT.md`
