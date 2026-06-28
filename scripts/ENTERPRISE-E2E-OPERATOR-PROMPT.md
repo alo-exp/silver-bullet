@@ -56,18 +56,40 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 
 Set `recommended_tools.<tool>.enabled_by_user: true` in each repo's `.silver-bullet.json`.
 
+### Validation overlay (claims layer on 22-row matrix)
+
+Structural + contract checks for homepage/help-center claims. **Does not** start, stop, or signal matrix drivers — safe alongside an active batch (e.g. PID 7484).
+
+| Trigger | Command |
+|---------|---------|
+| **Pre-matrix gate** (default on live) | Wired into `run-enterprise-e2e-live-test.sh` when `SB_E2E_VALIDATION_OVERLAY=1` (default) or `SB_E2E_VALIDATION_PRE_GATE=1` |
+| Manual dry-run | `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run` |
+| Post-round live overlay | `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-N-LEDGER.md bash scripts/run-enterprise-e2e-validation-overlay.sh --live` |
+| CI structural | `bash tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh` |
+| Skip pre-gate | `SB_E2E_VALIDATION_OVERLAY=0` |
+
+**RCS advisory:** when overlay dry-run is green, set `SB_E2E_RCS_VALIDATION_OVERLAY=pass` before scoring:
+
+```bash
+RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
+  && SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash scripts/enterprise-e2e-rcs.sh
+```
+
+Plan: `docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md`
+
 ### Execution order (each round)
 
 1. **graphify update .** in SB repo (enterprise E2E scope).
 2. **Preflight:** `bash scripts/run-enterprise-e2e-live-test.sh --preflight-only` (or hook-delivery + install-claude + test-app `npm test`).
-3. **Review-fix-ladder** — 8 rungs, **2 consecutive clean verify passes** each (`/silver:review-fix-ladder` in SB repo).
-4. **Full test suite:** `bash tests/run-all-tests.sh` → 0 failures.
-5. **install-claude.sh** after every SB fix commit before re-running failed matrix rows.
-6. **Session 0** — `/silver:init` in test app TUI; opt in tools; `graphify update .` in test app; stop after init.
-7. **Matrix rows 1–22** — one TUI session per row (rows 21–22 inside parent rows 3 and 4).
-8. **Dual-role monitoring** — drive matrix in shell A; `monitor-enterprise-e2e-matrix.sh` + `watch-enterprise-e2e-tui.sh` in parallel.
-9. Update round ledger with Pass/Fail, `failure_class` (on Fail: `harness` | `product` | `environmental`), `graphify_query_ref`, `agentmemory_export_ref`.
-10. On SB hook bug: `/silver:add` label `enterprise-test-app` → fix → commit → `install-claude.sh` → re-run **failed row only**.
+3. **Validation overlay dry-run** — automatic pre-matrix gate on live launch (or manual command above).
+4. **Review-fix-ladder** — 8 rungs, **2 consecutive clean verify passes** each (`/silver:review-fix-ladder` in SB repo).
+5. **Full test suite:** `bash tests/run-all-tests.sh` → 0 failures.
+6. **install-claude.sh** after every SB fix commit before re-running failed matrix rows.
+7. **Session 0** — `/silver:init` in test app TUI; opt in tools; `graphify update .` in test app; stop after init.
+8. **Matrix rows 1–22** — one TUI session per row (rows 21–22 inside parent rows 3 and 4).
+9. **Dual-role monitoring** — drive matrix in shell A; `monitor-enterprise-e2e-matrix.sh` + `watch-enterprise-e2e-tui.sh` in parallel.
+10. Update round ledger with Pass/Fail, `failure_class` (on Fail: `harness` | `product` | `environmental`), `graphify_query_ref`, `agentmemory_export_ref`.
+11. On SB hook bug: `/silver:add` label `enterprise-test-app` → fix → commit → `install-claude.sh` → re-run **failed row only**.
 
 ### Failure classification (`failure_class`)
 

@@ -61,6 +61,8 @@ Environment:
   SB_TEST_ENTERPRISE_APP_ROOT  Test app path (default: enterprise-grade-test-app)
   SB_E2E_LEDGER_FILE           Ledger path (default: ROUND-1-LEDGER.md)
   SB_E2E_MATRIX_LOG            Matrix batch log (default: .e2e-matrix-live.log)
+  SB_E2E_VALIDATION_OVERLAY    Pre-matrix validation gate (default: 1 on live runs; 0 to skip)
+  SB_E2E_VALIDATION_PRE_GATE   Force validation overlay dry-run before matrix (=1)
 
 Docs: docs/ENTERPRISE-E2E-LIVE-TEST.md
 EOF
@@ -165,6 +167,20 @@ else
     echo "Resume rows (ledger-incomplete): ${inc[*]}"
     MATRIX_ARGS=("${inc[@]}")
   fi
+fi
+
+# --- Validation overlay pre-matrix gate (dry-run; fail fast) ---
+# Default ON for live runs (SB_E2E_VALIDATION_OVERLAY=1). Skip with =0 unless PRE_GATE=1.
+if [[ "${SB_E2E_VALIDATION_OVERLAY:-1}" == "1" || "${SB_E2E_VALIDATION_PRE_GATE:-0}" == "1" ]]; then
+  echo "--- Validation overlay pre-matrix gate (dry-run) ---"
+  export SB_E2E_VALIDATION_OVERLAY=1
+  if ! RTK_DISABLED=1 bash "${SB_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh" --dry-run; then
+    echo "ERROR: validation overlay pre-matrix gate failed — fix before launching matrix" >&2
+    echo "       (skip: SB_E2E_VALIDATION_OVERLAY=0; force: SB_E2E_VALIDATION_PRE_GATE=1)" >&2
+    exit 1
+  fi
+  echo "Validation overlay pre-matrix gate: PASS"
+  echo ""
 fi
 
 # --- Dual-role monitor + watch (driver-owned; replace stale harness children) ---
