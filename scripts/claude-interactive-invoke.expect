@@ -71,7 +71,7 @@ proc load_claude_settings_env {} {
 
 proc accept_bypass_permissions_disclaimer {} {
   # Bypass Permissions modal: numbered list + "Enter to confirm" (not raw "2").
-  send -- "\033[B"
+  send -- "\x1b\[B"
   after 200
   send -- "\r"
   after 200
