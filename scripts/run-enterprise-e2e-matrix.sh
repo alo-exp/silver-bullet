@@ -39,17 +39,19 @@ export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
 # Export ~/.claude/settings.json env for interactive TUI (api_key / proxy / token gateway).
-# Default 0 — inject ANTHROPIC_* from settings before spawn (MiniMax/custom gateway).
-# Set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 only for direct claude.ai OAuth (no settings env).
+# Enterprise matrix always exports — do not inherit SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
+# from run-all-tests.sh / run-sb-live-tests-claude.sh (leaves TUI at /login).
+# OAuth-only: SB_E2E_MATRIX_OAUTH_ONLY=1 bash scripts/run-enterprise-e2e-matrix.sh
 # shellcheck source=scripts/lib/claude-matrix-auth.sh
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
-export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
-if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT}" == "1" ]]; then
+if [[ "${SB_E2E_MATRIX_OAUTH_ONLY:-}" == "1" ]]; then
+  export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
   export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-recommended}"
-  # Avoid local proxy keys/URLs from the caller shell when using OAuth direct API.
   unset ANTHROPIC_BASE_URL ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN 2>/dev/null || true
 else
-  export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}"
+  export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0
+  # Arrow moves off default "No (recommended)" to "Yes" on custom API key disclaimer.
+  export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-arrow}"
 fi
 claude_matrix_export_settings_env
 

@@ -93,16 +93,17 @@ assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_
 assert_contains "live common token gateway preflight" "$COMMON_LIB" "enterprise_e2e_preflight_claude_token_gateway"
 assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_claude_token_gateway"
 assert_contains "live entrypoint matrix forces settings export" "$LIVE" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
-assert_contains "live entrypoint matrix keys strategy" "$LIVE" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys"
+assert_contains "live entrypoint matrix arrow strategy" "$LIVE" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow"
 assert_not_contains "live entrypoint forbids login" "$LIVE" "auth login"
 assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
 # --- Matrix runner learnings ---
 MATRIX="${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
 assert_contains "matrix exports settings env" "$MATRIX" "claude_matrix_export_settings_env"
-assert_contains "matrix defaults settings export on" "$MATRIX" 'SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"'
+assert_contains "matrix forces settings export on" "$MATRIX" 'export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0'
 assert_not_contains "matrix auto-skips proxy settings export" "$MATRIX" "claude_matrix_settings_has_proxy_env"
-assert_contains "matrix keys strategy for api key disclaimer" "$MATRIX" 'CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}"'
+assert_contains "matrix arrow strategy for api key disclaimer" "$MATRIX" 'CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-arrow}"'
+assert_contains "matrix forces settings export on" "$MATRIX" 'export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0'
 assert_contains "matrix quota retry 60" "$MATRIX" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_contains "matrix uses /silver slash prompts" "$MATRIX" "/silver"
 assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2E_MATRIX_DRY_RUN=1'
@@ -114,7 +115,7 @@ assert_contains "monitor 429 wait 600" "$MONITOR" "QUOTA_WAIT"
 assert_contains "monitor network retry" "$MONITOR" "NETWORK_WAIT"
 assert_contains "monitor forces CLEAN_ENV=0 on restart" "$MONITOR" "SB_E2E_MATRIX_CLEAN_ENV=0"
 assert_contains "monitor forces settings export on restart" "$MONITOR" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
-assert_contains "monitor passes keys strategy on restart" "$MONITOR" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys"
+assert_contains "monitor passes arrow strategy on restart" "$MONITOR" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow"
 assert_contains "monitor unsets DRY_RUN on restart" "$MONITOR" "-u SB_E2E_MATRIX_DRY_RUN"
 assert_contains "monitor sources ledger reconcile helper" "$MONITOR" "enterprise-e2e-ledger-reconcile.sh"
 assert_contains "monitor ledger mismatch guard" "$MONITOR" "LEDGER_MISMATCH"
