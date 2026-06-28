@@ -73,6 +73,10 @@ agent_invoke() {
     prompt_file="$(mktemp "${TMPDIR:-/tmp}/claude-live-prompt.XXXXXX")"
     printf '%s' "$prompt" >"$prompt_file"
     run_expect() {
+      if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}" == "1" ]]; then
+        claude_matrix_auth_prepare
+        trap 'claude_matrix_auth_restore' RETURN
+      fi
       local -a spawn_env=(
         "HOME=${HOME}"
         "TERM=${TERM:-xterm-256color}"
@@ -89,6 +93,7 @@ agent_invoke() {
         "SB_E2E_MATRIX_CLEAN_ENV=${SB_E2E_MATRIX_CLEAN_ENV:-0}"
         "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
         "CLAUDE_PRINT_SKIP_SETTINGS_EXPORT=${CLAUDE_PRINT_SKIP_SETTINGS_EXPORT:-0}"
+        "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-recommended}"
       )
       if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
         spawn_env+=("CLAUDE_INTERACTIVE_LOG_FILE=${CLAUDE_INTERACTIVE_LOG_FILE}")
