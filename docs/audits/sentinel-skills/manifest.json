@@ -532,6 +532,20 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "silver-doctor",
+    "path": "skills/silver-doctor/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-doctor.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-06-28",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "9160d3ed787762df65f910f0c3113d9eff0affafed0f5ddd4d646aea2b4bb831",
+    "evidence_note": "Greenfield SENTINEL pass for install/activation audit skill; sb-doctor.sh contract covered by tests/scripts/test-silver-doctor.sh."
+  },
+  {
     "skill": "silver-domain-audit",
     "path": "skills/silver-domain-audit/SKILL.md",
     "sentinel_version": "2.3.0",

@@ -191,6 +191,9 @@
     "FS-SILVER_DEVOPS": [
       "AF-DEVOPS-ROUTE"
     ],
+    "FS-SILVER_DOCTOR": [
+      "AF-PHASE-MANAGE"
+    ],
     "FS-SILVER_DOMAIN_AUDIT": [
       "AF-REVIEW"
     ],

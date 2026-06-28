@@ -3397,12 +3397,14 @@
       "tools": [],
       "owning_skills": [
         "silver-add",
+        "silver-doctor",
         "silver-migrate",
         "silver-phase",
         "silver-rem"
       ],
       "flow_steps": [
         "FS-SILVER_ADD",
+        "FS-SILVER_DOCTOR",
         "FS-SILVER_MIGRATE",
         "FS-SILVER_PHASE",
         "FS-SILVER_REM",
@@ -5523,6 +5525,57 @@
         "AF-DEVOPS-ROUTE"
       ],
       "canonical_catalog_entity": "AF-DEVOPS-ROUTE"
+    },
+    {
+      "id": "FS-SILVER_DOCTOR",
+      "skill": "silver-doctor",
+      "purpose": "Execute the silver-doctor skill as a catalog-backed step in AF-PHASE-MANAGE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-doctor work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_DOCTOR",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-doctor receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-doctor produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "testing"
+          ],
+          "artifact_refs": [
+            "skills/silver-doctor/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_DOCTOR"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-PHASE-MANAGE"
+      ],
+      "canonical_catalog_entity": "AF-PHASE-MANAGE"
     },
     {
       "id": "FS-SILVER_DOMAIN_AUDIT",
@@ -9466,6 +9519,14 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_DEVOPS"
     },
     {
+      "id": "EV-FS-SILVER_DOCTOR",
+      "producer": "FS-SILVER_DOCTOR",
+      "artifact_or_tool_ref": "skills/silver-doctor/SKILL.md",
+      "sufficiency_class": "testing",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_DOCTOR"
+    },
+    {
       "id": "EV-FS-SILVER_DOMAIN_AUDIT",
       "producer": "FS-SILVER_DOMAIN_AUDIT",
       "artifact_or_tool_ref": "skills/silver-domain-audit/SKILL.md",
@@ -9939,6 +10000,7 @@
         "VL-FS-SILVER_DEBUG",
         "VL-FS-SILVER_DEPLOY",
         "VL-FS-SILVER_DEVOPS",
+        "VL-FS-SILVER_DOCTOR",
         "VL-FS-SILVER_DOMAIN_AUDIT",
         "VL-FS-SILVER_ENSURE_DOCS",
         "VL-FS-SILVER_EXECUTE",
@@ -10173,6 +10235,7 @@
       "silver-debug": "AF-DEBUG",
       "silver-deploy": "AF-SHIP",
       "silver-devops": "AF-DEVOPS-ROUTE",
+      "silver-doctor": "AF-PHASE-MANAGE",
       "silver-domain-audit": "AF-REVIEW",
       "silver-ensure-docs": "AF-DOCUMENT",
       "silver-execute": "AF-EXECUTE",
