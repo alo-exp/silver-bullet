@@ -293,11 +293,56 @@ proc maybe_finish_on_matrix_evidence {} {
   return 0
 }
 
+proc context_exhaustion_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {[regexp -nocase {100%\s*context\s*used} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {context\s+window.*full|context\s+is\s+full|context\s+limit\s+reached} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {run\s+/compact|auto[- ]?compact|compact\s+(the\s+)?conversation} $plain]} {
+    return 1
+  }
+  return 0
+}
+
+proc recover_from_context_exhaustion {} {
+  global context_recovery_attempts
+  if {$context_recovery_attempts >= 1} {
+    log_harness_keys "\[harness\] context exhaustion persists after /clear — allowing quiet timeout"
+    return 0
+  }
+  incr context_recovery_attempts
+  log_harness_keys "\[harness\] context exhaustion detected — sending /clear"
+  send -- "/clear"
+  after 400
+  send -- "\r"
+  after 2000
+  return 1
+}
+
 proc extend_quiet_on_new_token_marker {plain_text} {
-  global quiet_timeout last_token_marker
+  global quiet_timeout last_token_marker context_full_stalled_at
   set marker ""
   if {![regexp {([0-9][0-9.,kKmM]*[^0-9]{0,12}tokens)} $plain_text match marker]} {
     return
+  }
+  if {[context_exhaustion_visible $plain_text]} {
+    if {$context_full_stalled_at == 0} {
+      set context_full_stalled_at [clock seconds]
+      recover_from_context_exhaustion
+    } elseif {$marker eq $last_token_marker} {
+      set stalled [expr {[clock seconds] - $context_full_stalled_at}]
+      # Context-full with unchanged token count: cap quiet window so matrix
+      # can fail/retry instead of hanging while the TUI refreshes idle status.
+      if {$stalled >= 120} {
+        set timeout 30
+      }
+      return
+    }
+  } else {
+    set context_full_stalled_at 0
   }
   if {$marker eq $last_token_marker} {
     return
@@ -463,6 +508,8 @@ set final_marker_seen 0
 set require_final_marker 0
 set saw_not_logged_in 0
 set last_token_marker ""
+set context_recovery_attempts 0
+set context_full_stalled_at 0
 set session_started [clock seconds]
 if {$debug_log ne "" && [file exists $debug_log]} {
   set session_started [file mtime $debug_log]
@@ -642,6 +689,12 @@ expect {
     if {$prompt_submitted == 0} { exp_continue }
     send -- "\r"
     set timeout $quiet_timeout
+    exp_continue
+  }
+  -re {100%.*context.*used|context window|context is full|context limit reached|/compact} {
+    if {[context_exhaustion_visible $expect_out(buffer)]} {
+      recover_from_context_exhaustion
+    }
     exp_continue
   }
   -re {[1-9][0-9]*[^0-9].*tokens} {
