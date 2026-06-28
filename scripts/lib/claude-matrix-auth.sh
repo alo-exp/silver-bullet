@@ -124,13 +124,24 @@ claude_matrix_should_export_settings_env() {
   return 0
 }
 
+claude_matrix_shell_has_auth_env() {
+  [[ -n "${ANTHROPIC_API_KEY:-}" || -n "${ANTHROPIC_AUTH_TOKEN:-}" || -n "${ANTHROPIC_BASE_URL:-}" ]]
+}
+
 claude_matrix_auth_env_lines() {
-  local settings_file
+  local settings_file key
   settings_file="$(claude_matrix_settings_path)"
-  if ! claude_matrix_should_export_settings_env; then
+  if claude_matrix_should_export_settings_env; then
+    jq -r '.env // {} | to_entries[] | "\(.key)=\(.value)"' "$settings_file"
     return 0
   fi
-  jq -r '.env // {} | to_entries[] | "\(.key)=\(.value)"' "$settings_file"
+  # When settings export is skipped, still pass through caller shell gateway env
+  # (terminal operators often export ANTHROPIC_* without duplicating settings.json).
+  for key in ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL; do
+    if [[ -n "${!key:-}" ]]; then
+      printf '%s=%s\n' "$key" "${!key}"
+    fi
+  done
 }
 
 claude_matrix_export_settings_env() {
