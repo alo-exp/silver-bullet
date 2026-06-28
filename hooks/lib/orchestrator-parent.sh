@@ -55,17 +55,43 @@ sb_orchestrator_is_worker_session() {
   return 1
 }
 
+# True when current PWD walk finds SB boundary (.silver-bullet.json + silver-bullet.md).
+# Never uses project-root cache — stale cache must not activate orchestrator enforcement.
+sb_orchestrator_workspace_has_boundary() {
+  local config_file=""
+  if declare -f sb_find_project_config_walk_only >/dev/null 2>&1; then
+    config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+  fi
+  [[ -n "$config_file" && -f "$config_file" ]]
+}
+
+# True when orchestrator guard blocks may apply in the current workspace.
+sb_orchestrator_guard_applies_to_workspace() {
+  local repo_root=""
+  sb_orchestrator_workspace_has_boundary || return 1
+  if declare -f sb_find_project_root_walk_only >/dev/null 2>&1; then
+    repo_root="$(sb_find_project_root_walk_only 2>/dev/null || true)"
+  fi
+  [[ -n "$repo_root" ]] || return 1
+  if sb_orchestrator_parent_queue_pending 2>/dev/null; then
+    sb_orchestrator_state_applies_to_project "$repo_root" || return 1
+  fi
+  return 0
+}
+
 # Parent orchestrator session — config parent mode and not a worker subagent.
 sb_orchestrator_is_parent_session() {
   if sb_orchestrator_is_worker_session; then
     return 1
   fi
-  [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] && return 0
-  local config_file
-  if declare -f sb_find_project_config >/dev/null 2>&1; then
-    config_file="$(sb_find_project_config 2>/dev/null || true)"
+  local config_file=""
+  if declare -f sb_find_project_config_walk_only >/dev/null 2>&1; then
+    config_file="$(sb_find_project_config_walk_only 2>/dev/null || true)"
   fi
-  [[ "$(sb_orchestrator_mode_from_config "${config_file:-}")" == "parent" ]]
+  # No walk-resolved config — not parent (cache-only resolution must not default parent).
+  [[ -n "$config_file" ]] || return 1
+  [[ "${SB_ORCHESTRATOR_PARENT:-}" == "1" || "${SB_ORCHESTRATOR_PARENT:-}" == "true" ]] && return 0
+  [[ "$(sb_orchestrator_mode_from_config "$config_file")" == "parent" ]]
 }
 
 # Map flow/skill token to worker prompt template basename (without path).
