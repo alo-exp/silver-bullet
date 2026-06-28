@@ -56,9 +56,18 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 
 Set `recommended_tools.<tool>.enabled_by_user: true` in each repo's `.silver-bullet.json`.
 
-### Validation overlay (claims layer on 22-row matrix)
+### Validation vs pre-release overlays
 
-Structural + contract checks for homepage/help-center claims. **Does not** start, stop, or signal matrix drivers — safe alongside an active batch (e.g. PID 7484).
+| Layer | Registry | Overlay | Pre-matrix gate? |
+|-------|----------|---------|------------------|
+| **Validation** | `docs/testing/validation-claims-registry.json` (6 outcome/telemetry claims; **6 dry-run checks**) | `run-enterprise-e2e-validation-overlay.sh` | **Yes** — default on live matrix launch |
+| **Pre-release** | `docs/testing/pre-release-claims-registry.json` (feature claims) | `run-enterprise-e2e-pre-release-overlay.sh` | **No** — run before tag / `gh release create` |
+
+Feature claims (catalog counts, hooks, install surfaces, tri-host) are **not** in the validation overlay after registry refactor `1fb50e7b`.
+
+### Validation overlay (outcome claims on 22-row matrix)
+
+Structural + contract checks for **user outcome** homepage/help claims. **Does not** start, stop, or signal matrix drivers — safe alongside an active batch (e.g. PID 7484). Expect **6 passed** on `--dry-run` (registry + evidence gates + ship readiness + claims-audit).
 
 | Trigger | Command |
 |---------|---------|
@@ -78,6 +87,22 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 Plan: `docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md`
 
 **V-02 cost claim:** “10× lower cost” is **excluded** from validation overlay pass/fail. Token counts append to `.planning/enterprise-e2e/token-telemetry.jsonl` (telemetry only — no gate).
+
+### Pre-release overlay (feature claims before tag)
+
+Structural + contract checks for homepage/help **feature** claims (catalog, hooks, help coverage, install scripts). **Not** wired into `run-enterprise-e2e-live-test.sh` pre-matrix gate.
+
+| Trigger | Command |
+|---------|---------|
+| Manual dry-run | `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --dry-run` |
+| With tri-host smoke | `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke` |
+| Post-round live | `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-N-LEDGER.md bash scripts/run-enterprise-e2e-pre-release-overlay.sh --live` |
+| Tri-host only (all hosts) | `RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh` |
+| CI tri-host structural | `bash tests/scripts/test-tri-host-install-smoke.sh` |
+
+**Release order:** validation overlay dry-run green (pre-matrix) → matrix round → pre-release overlay dry-run green → tri-host smoke → `gh release create`.
+
+Registry: `docs/testing/pre-release-claims-registry.json`
 
 ### Execution order (each round)
 
