@@ -38,6 +38,10 @@ export SILVER_BULLET_RUNTIME=claude
 # Matrix interactive sessions use OAuth/keychain by default; skip ~/.claude/settings.json
 # env when it routes through local proxies (e.g. OpenCode ANTHROPIC_BASE_URL) that emit false 429s.
 export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-1}"
+if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT}" == "1" ]]; then
+  # Avoid local proxy keys/URLs from the caller shell when using OAuth direct API.
+  unset ANTHROPIC_BASE_URL ANTHROPIC_API_KEY 2>/dev/null || true
+fi
 # shellcheck source=scripts/lib/claude-matrix-auth.sh
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
 claude_matrix_export_settings_env
