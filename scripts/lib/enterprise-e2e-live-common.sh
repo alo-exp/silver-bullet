@@ -107,6 +107,32 @@ enterprise_e2e_release_live_test_lock() {
   fi
 }
 
+# install-claude.sh invokes the Claude CLI; without a controlling tty (nohup / &)
+# the child can receive SIGHUP mid-marketplace-add and abort under set -e.
+enterprise_e2e_run_install_claude() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  local log="${SB_E2E_INSTALL_CLAUDE_LOG:-${sb_root}/.e2e-install-claude.log}"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
+  echo "Plugin install (latest SB checkout):"
+  if [[ -t 1 ]]; then
+    (cd "$sb_root" && bash scripts/install-claude.sh)
+    return $?
+  fi
+  : >"$log"
+  if ! (cd "$sb_root" && bash scripts/install-claude.sh </dev/null >>"$log" 2>&1); then
+    echo "ERROR: install-claude failed — see ${log}" >&2
+    tail -20 "$log" >&2 || true
+    return 1
+  fi
+  if ! grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
+    echo "ERROR: install-claude incomplete — see ${log}" >&2
+    tail -20 "$log" >&2 || true
+    return 1
+  fi
+  tail -3 "$log" || true
+  return 0
+}
+
 enterprise_e2e_prepend_harness_path() {
   local sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
   if [[ -f "${sb_root}/tests/live/lib/detach-background.sh" ]]; then
