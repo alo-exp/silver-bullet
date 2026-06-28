@@ -9,7 +9,7 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 | Field | Value |
 |-------|-------|
 | Round | 3 |
-| SB repo SHA | `15cd42d96090ef1c7dbec8a25596cc0591fd1b1e` (ladder 8/8 complete; post-ladder run-all-tests) |
+| SB repo SHA | `398209d3` (bypass ANSI disclaimer harness; row 1 retry on 429) |
 | Test app SHA | `04eb4c29664c54ee7ee7c598068431a52fb7902b` |
 | Claude plugin install | **OK** @ SB `15cd42d9` — `bash scripts/install-claude.sh` (marketplace alo-labs); plugin version `0.48.6` |
 | Claude model (frozen) | `<!-- e.g. claude-opus-4-20250514 -->` |
@@ -37,30 +37,30 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | | | | | | | |
+| 1 | `silver-router` | 2026-06-28 | haiku | **In progress** | Harness **fixed** @ `398209d3`: `.e2e-row1-attempt.log` shows `[harness] accept_bypass…` + `/silver` prompt; attempt 1 hit API **429** (600s quota retry) — routing evidence pending | 398209d3 | | |
 | 2 | `silver-research` | | | | | | | |
 | 3 | `silver-feature` | | | | | | | |
 | 4 | `silver-bugfix` | | | | | | | |
-| 5 | `silver-ui` | | | | | | | |
+| 5 | `silver-ui` | | | Pass | evidence ui/src/App.jsx | | | |
 | 6 | `silver-fast` | | | | | | | |
-| 7 | `silver-test` | | | | | | | |
-| 8 | `silver-refactor` | | | | | | | |
-| 9 | `silver-benchmark` | | | | | | | |
-| 10 | `silver-content` | | | | | | | |
+| 7 | `silver-test` | | | Fail | missing test-orders-integration evidence | | | |
+| 8 | `silver-refactor` | | | Fail | missing refactor-order-validation evidence | | | |
+| 9 | `silver-benchmark` | | | Pass | docs/benchmarks/health.md | | | |
+| 10 | `silver-content` | | | Pass | docs/API.md | | | |
 | 11 | `silver-devops` | | | | | | | |
-| 12 | `silver-deploy` | | | | | | | |
-| 13 | `silver-canary` | | | | | | | |
+| 12 | `silver-deploy` | | | Pass | docs/DEPLOY.md | | | |
+| 13 | `silver-canary` | | | Pass | docs/CANARY.md | | | |
 | 14 | `silver-release` | | | | | | | |
 | 15 | `review-triad` | | | | | | | |
 | 16 | `ship-readiness` | | | | | | | |
-| 17 | `silver-incident` | | | | | | | |
-| 18 | `silver-retro` | | | | | | | |
-| 19 | `silver-forensics` | | | | | | | |
+| 17 | `silver-incident` | | | Pass | docs/incidents/INC-001.md | | | |
+| 18 | `silver-retro` | | | Pass | docs/retro/RETRO-001.md | | | |
+| 19 | `silver-forensics` | | | Pass | docs/forensics/CI-001.md | | | |
 | 20 | `process-maintenance` | | | | | | | |
-| 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | |
-| 22 | `validate-substep` | | | | *(parent: row 4)* | | | |
+| 21 | `post-exec-gates` | | | Fail | internal post-exec-gates parent row 3 | | | |
+| 22 | `validate-substep` | | | Fail | internal validate-substep parent row 4 | | | |
 
-**Pass count:** ___ / 22
+**Pass count:** 8 / 22 (rows 5,9,10,12,13,17-20; row 1 still failing)
 
 ---
 
@@ -220,3 +220,16 @@ Copy this template to `ROUND-1-LEDGER.md`, `ROUND-2-LEDGER.md`, etc. at round st
 **Post-ladder `install-claude.sh`:** **OK** — marketplace `alo-labs` registered; plugin package version `0.48.6` @ SB `15cd42d9`.
 
 **Next action:** Session 0 bootstrap + workflow matrix rows 1–22 (do not start until operator launches Claude TUI).
+### Matrix resume (2026-06-28 post–Cursor restart)
+
+| Item | Status |
+|------|--------|
+| SB HEAD | `9f89cfb6` — hook-delivery preflight fallback (`wait_for_hook_audit_entry` return 1, clear `trivial` after haiku probe) |
+| Prior harness | `398209d3` ANSI bypass disclaimer in `claude-interactive-invoke.expect` |
+| Preflight | **PASS** (`RTK_DISABLED=1 --preflight-only`) after `9f89cfb6` |
+| Fixture | Re-cloned `alo-exp/enterprise-grade-test-app` @ `edbad21` (path was missing on disk) |
+| Row 1 | **IN FLIGHT** — bypass menu OK; prompt submitted; **OpenCode 429** (weekly limit ~13h34m); matrix **600s quota retry** active (PID batch ~62086 / expect ~65211) |
+| Log pass rows (historical) | 5, 9, 10, 12, 13, 17, 18, 19, 20 (+ rows 21–22 internal PASS in last batch tail) |
+| Log fail rows | 1 (prior attempts), 7, 8 |
+| `--resume` | **Not started** — waiting row 1 outcome |
+
