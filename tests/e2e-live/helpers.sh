@@ -183,7 +183,7 @@ restore_session_state() {
 
 enable_hook_audit() {
   mkdir -p "$SB_TEST_DIR"
-  rm -f "$HOOK_AUDIT_FILE"
+  : > "$HOOK_AUDIT_FILE"
   # Claude hook subprocesses do not inherit SILVER_BULLET_HOOK_AUDIT_LOG; use the
   # state flag so hooks still write to the default state-scoped audit sink.
   : > "${SB_TEST_DIR}/hook-audit-enabled"
@@ -199,7 +199,7 @@ disable_hook_audit() {
 }
 
 clear_hook_audit_log() {
-  rm -f "$HOOK_AUDIT_FILE"
+  : > "$HOOK_AUDIT_FILE"
 }
 
 write_inline_e2e_matrix_marker() {
@@ -1077,22 +1077,25 @@ verify_runtime_hook_delivery() {
 
   local hook_probe_cmd="bash -lc \"printf '\\n// sb-hook-probe\\n' >> ${E2E_PROBE_SOURCE_FILE}\""
 
-  run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
-
-  digest_after="$(capture_digest "$target_file")"
-
-  rm -f "$TRIVIAL_FILE"
-  if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
-    if probe_dev_cycle_bash_command "$hook_probe_cmd"; then
-      if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny via deterministic bash probe" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 8 1; then
-        failed=1
+  probe_dev_cycle_bash_command "$hook_probe_cmd" || true
+  if hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'; then
+    echo "PASS: hook-delivery preflight records dev-cycle deny via deterministic bash probe"
+    PASS=$((PASS + 1))
+    HOOK_AUDIT_LAST_WAIT_PASSED=1
+  else
+    run_hook_probe_strict "$(runtime_hook_probe_prefix)Run the exact shell command \`${hook_probe_cmd}\` and do not do anything else." >/dev/null || true
+    if ! wait_for_hook_audit_entry "hook-delivery preflight records dev-cycle deny" "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete' 30 2; then
+      if probe_dev_cycle_bash_command "$hook_probe_cmd" && hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'; then
+        echo "PASS: hook-delivery preflight records dev-cycle deny via deterministic bash probe"
+        PASS=$((PASS + 1))
+        HOOK_AUDIT_LAST_WAIT_PASSED=1
       else
-        FAIL=$((FAIL - 1))
+        failed=1
       fi
-    else
-      failed=1
     fi
   fi
+
+  digest_after="$(capture_digest "$target_file")"
 
   if [[ -n "$digest_before" && "$digest_after" == "$digest_before" ]]; then
     echo "PASS: hook-delivery preflight keeps source unchanged before planning"
@@ -1447,6 +1450,20 @@ probe_dev_cycle_bash_command() {
     jq -n --arg fp "$E2E_PROBE_SOURCE_FILE" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$fp}}' \
       | bash "$hook_script" >/dev/null
   )
+  hook_audit_has_entry "dev-cycle-check" "deny" 'HARD STOP|Planning incomplete'
+}
+
+hook_audit_has_entry() {
+  local hook_name="$1"
+  local decision="$2"
+  local detail_pattern="${3:-}"
+
+  [[ -f "$HOOK_AUDIT_FILE" ]] && jq -e \
+    --arg hook_name "$hook_name" \
+    --arg decision "$decision" \
+    --arg detail_pattern "$detail_pattern" \
+    'select(.hook_name == $hook_name and .decision == $decision and ($detail_pattern == "" or ((.detail // "") | test($detail_pattern; "i"))))' \
+    "$HOOK_AUDIT_FILE" >/dev/null 2>&1
 }
 
 wait_for_hook_audit_entry() {

@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import errno
+import fcntl
 import os
 import pathlib
 import re
 import shutil
 import sys
+import time
 
 NAME_RE = re.compile(r"^(name:\s*)(silver-)([A-Za-z0-9_-]+)\s*$", re.MULTILINE)
 CODEX_TITLE_WORD_OVERRIDES = {
@@ -297,24 +301,71 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
     return updated
 
 
+def _safe_rmtree(path: pathlib.Path, *, retries: int = 8, delay: float = 0.05) -> None:
+    if not path.exists() and not path.is_symlink():
+        return
+
+    last_error: OSError | None = None
+    for attempt in range(retries):
+        try:
+            if path.is_symlink() or path.is_file():
+                path.unlink()
+                return
+            shutil.rmtree(path)
+            return
+        except FileNotFoundError:
+            return
+        except OSError as exc:
+            last_error = exc
+            if exc.errno in {errno.ENOTEMPTY, errno.EBUSY, errno.EEXIST} and attempt + 1 < retries:
+                time.sleep(delay * (attempt + 1))
+                continue
+            raise
+
+    if last_error is not None:
+        raise last_error
+
+
+@contextlib.contextmanager
+def _render_lock(dest_root: pathlib.Path):
+    lock_path = dest_root.parent / f".{dest_root.name}.render.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "w", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        yield
+
+
 def rewrite_file(path: pathlib.Path, agent: str) -> bool:
     if path.name == "runtime-paths.sh" and "hooks" in path.parts:
         return False
 
-    try:
-        text = path.read_text()
-    except UnicodeDecodeError:
-        return False
-    except Exception:
-        return False
+    for attempt in range(3):
+        try:
+            if not path.is_file():
+                return False
+            text = path.read_text()
+        except UnicodeDecodeError:
+            return False
+        except OSError:
+            if attempt + 1 >= 3:
+                return False
+            time.sleep(0.05 * (attempt + 1))
+            continue
 
-    preserve_runtime_placeholders = "hooks" in path.parts
-    updated = sanitize_text(text, agent, preserve_runtime_placeholders=preserve_runtime_placeholders)
-    if updated == text:
-        return False
+        preserve_runtime_placeholders = "hooks" in path.parts
+        updated = sanitize_text(text, agent, preserve_runtime_placeholders=preserve_runtime_placeholders)
+        if updated == text:
+            return False
 
-    path.write_text(updated)
-    return True
+        try:
+            path.write_text(updated)
+            return True
+        except OSError:
+            if attempt + 1 >= 3:
+                return False
+            time.sleep(0.05 * (attempt + 1))
+
+    return False
 
 
 def sanitize_root(root: pathlib.Path, agent: str) -> None:
@@ -338,18 +389,21 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
     if not source_root.is_dir():
         raise SystemExit(f"source root missing: {source_root}")
 
-    if dest_root.exists() or dest_root.is_symlink():
-        if dest_root.is_dir() and not dest_root.is_symlink():
-            shutil.rmtree(dest_root)
-        else:
-            dest_root.unlink()
-
     dest_root.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(source_root, dest_root, symlinks=False)
-    if agent in {"claude", "cursor"}:
-        for metadata in dest_root.glob("*/agents/openai.yaml"):
-            metadata.unlink()
-    sanitize_root(dest_root, agent)
+    with _render_lock(dest_root):
+        staging = dest_root.parent / f".{dest_root.name}.staging-{os.getpid()}"
+        try:
+            _safe_rmtree(staging)
+            shutil.copytree(source_root, staging, symlinks=False)
+            if agent in {"claude", "cursor"}:
+                for metadata in staging.glob("*/agents/openai.yaml"):
+                    metadata.unlink()
+            sanitize_root(staging, agent)
+            _safe_rmtree(dest_root)
+            staging.rename(dest_root)
+        except Exception:
+            _safe_rmtree(staging)
+            raise
 
 
 def main() -> int:
