@@ -87,14 +87,14 @@ assert_contains "live entrypoint unsets DRY_RUN" "$LIVE" "env -u SB_E2E_MATRIX_D
 assert_contains "live entrypoint starts monitor" "$LIVE" "monitor-enterprise-e2e-matrix.sh"
 assert_contains "live entrypoint starts tui watch" "$LIVE" "watch-enterprise-e2e-tui.sh"
 assert_contains "live entrypoint runs install-claude" "$LIVE" "install-claude.sh"
-assert_contains "live entrypoint quota 600s default" "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-600"
+assert_contains "live entrypoint quota 60s default" "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_not_contains "live entrypoint forbids login" "$LIVE" "auth login"
 assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
 # --- Matrix runner learnings ---
 MATRIX="${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
 assert_contains "matrix exports settings env" "$MATRIX" "claude_matrix_export_settings_env"
-assert_contains "matrix quota retry 600" "$MATRIX" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-600"
+assert_contains "matrix quota retry 60" "$MATRIX" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_contains "matrix uses /silver slash prompts" "$MATRIX" "/silver"
 assert_not_contains "matrix docs DRY_RUN as opt-in only" "$MATRIX" 'export SB_E2E_MATRIX_DRY_RUN=1'
 

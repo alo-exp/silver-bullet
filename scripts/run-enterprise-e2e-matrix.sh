@@ -90,9 +90,9 @@ Environment:
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)
-  SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 600)
+  SB_E2E_WORKFLOW_QUIET_TIMEOUT    Quiet window for rows 2-20 (default 60)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for TUI ready before submit (default 60)
-  SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL  Seconds between 429/Token Plan retries (default 600)
+  SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL  Seconds between 429/Token Plan retries (default 60)
   SB_E2E_MATRIX_QUOTA_MAX_RETRIES     Max quota retries per row (0 = unlimited, default 0)
 EOF
 }
@@ -257,7 +257,7 @@ run_matrix_row() {
     # Claude may return to the ❯ prompt between turns while still writing evidence.
     quiet_timeout="${SB_E2E_WORKFLOW_QUIET_TIMEOUT:-600}"
   fi
-  local quota_retry_interval="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-600}"
+  local quota_retry_interval="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60}"
   local quota_max_retries="${SB_E2E_MATRIX_QUOTA_MAX_RETRIES:-0}"
   local attempt=0 quota_retries=0 row_log output
 

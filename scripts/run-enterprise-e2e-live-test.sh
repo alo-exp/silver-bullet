@@ -47,7 +47,7 @@ Constraints (from Round 1/2 learnings):
   - API key auth via ~/.claude/settings.json — NO login/logout
   - SB_E2E_MATRIX_CLEAN_ENV=0 (inherit shell auth; default)
   - NO SB_E2E_MATRIX_DRY_RUN for live runs
-  - 429 / Token Plan → retry every 600s (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL)
+  - 429 / Token Plan → retry every 60s (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL)
   - Network blips → 120-300s backoff (monitor handles)
   - Resume skips rows with PASS/SKIP in matrix log (not from row 1)
   - Re-run bash scripts/install-claude.sh after every SB hook fix

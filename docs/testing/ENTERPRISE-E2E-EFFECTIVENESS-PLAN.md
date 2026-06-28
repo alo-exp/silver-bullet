@@ -122,7 +122,7 @@ The enterprise E2E program has delivered real value across three rounds:
 ### Strengths
 
 1. **End-to-end path coverage** — all 22 catalog workflows exercised on a realistic fixture.
-2. **Operational learnings encoded** — API-key-only auth, 600s quota retry, `--resume`, provider restart, RTK verbatim mode for harnesses.
+2. **Operational learnings encoded** — API-key-only auth, 60s quota retry, `--resume`, provider restart, RTK verbatim mode for harnesses.
 3. **Evidence discipline** — ledger schema with `graphify_query_ref`, `agentmemory_export_ref`, SB fix commits.
 4. **Preflight stack** — hook-delivery, code-intel (Graphify, agentmemory, RTK, Context Mode) when opted in.
 5. **Regression feedback loop** — matrix failures → SB fixes → `install-claude.sh` → re-run failed rows only.
@@ -230,11 +230,11 @@ The enterprise E2E program has delivered real value across three rounds:
 
 | Symptom | Root cause | Misdiagnosis | Correct action |
 |---------|------------|--------------|----------------|
-| Row stuck 600s+ | API 429, Token Plan, OpenCode weekly limit | “Auth failure”, “hung claude” | Wait `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=600`; retry same row |
+| Row stuck 600s+ | API 429, Token Plan, OpenCode weekly limit | “Auth failure”, “hung claude” | Wait `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60` (retry environmental); retry same row |
 | ConnectionRefused | Proxy down (`127.0.0.1:15721`) | SB hook bug | Fix proxy; provider restart procedure |
 | Monitor restart loop | Network blip | Matrix logic error | 120–300s backoff per runbook |
 
-**Round 3:** Row 1 runner alive in 429 retry ~14h reset — not dead process. Preflight hook probe hardening (`1aa7fb4c`, `2ae7ca6e`) addressed **probe timeout**, not quota.
+**Round 3:** Row 1 runner alive in 429 retry — retry every 60s; do not treat proxy weekly-reset messaging as block. Preflight hook probe hardening (`1aa7fb4c`, `2ae7ca6e`) addressed **probe timeout**, not quota.
 
 ### 4.2 Bypass Permissions expect / TUI fragility
 
@@ -502,7 +502,7 @@ Add **Round confidence** footer: `RCS: 87/100`, `ledger_monitor_agree: yes/no`, 
 
 | Anti-pattern | Why it fails | Do instead |
 |--------------|--------------|------------|
-| Treating 429 as SB bug | Wastes days; wrong fixes | `failure_class=environmental`; wait 600s |
+| Treating 429 as SB bug | Wastes days; wrong fixes | `failure_class=environmental`; wait 60s |
 | Trusting monitor without ledger | Round 3 false complete | Reconcile before resume |
 | Restarting matrix at row 1 | Burns quota | `--resume` incomplete rows only |
 | `claude auth login` during live | Breaks API-key-only policy | Export settings env via `claude-matrix-auth.sh` |
