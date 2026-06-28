@@ -17,6 +17,7 @@ Instruction-following reduction closure, silver-doctor coverage, subagent model 
 - `fix(ladder)`: enforce Composer 2.5 only for all Cursor subagent rungs — never `composer-2.5-fast` (`d012973e`)
 - `fix(harness)`: macOS setsid shim, driver lock, ledger-aware `--resume`, detached install-claude, agent bundle render preflight (`61469e03`–`b0e0f378`)
 - `fix(claude)`: list SB skills with `/silver:` prefix only — Claude bundle skill dirs renamed to colon routes so picker does not duplicate hyphen stubs
+- `fix(doctor)`: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via `runtime-paths.sh` (no Cursor deps on Claude/Codex)
 - `fix(e2e)`: Claude TUI bypass disclaimer handling, proxy settings stripping, 429 retry interval, dev-cycle deny audit, idle token counter (`98691580`–`6ddb56a8`)
 
 ### Documentation

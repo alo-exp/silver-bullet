@@ -44,38 +44,38 @@ version_lt() {
   [[ "$(version_to_int "$1")" -lt "$(version_to_int "$2")" ]]
 }
 
-detect_runtime() {
-  if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
-    printf '%s' "$SILVER_BULLET_RUNTIME"
-    return
+source_runtime_paths() {
+  if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
+    # shellcheck source=../hooks/lib/runtime-paths.sh
+    source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+    return 0
   fi
-  if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q 'silver-bullet' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-    printf 'cursor'
-    return
-  fi
-  if [[ -d "${HOME}/.codex" ]] && [[ -f "${HOME}/.codex/plugins/installed_plugins.json" ]]; then
-    printf 'codex'
-    return
-  fi
-  printf 'claude'
+  export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-claude}"
+  SB_RUNTIME_NAME="$SILVER_BULLET_RUNTIME"
+  SB_RUNTIME_HOME_ROOT="${HOME}/.${SILVER_BULLET_RUNTIME}"
+  SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+  SB_RUNTIME_PLUGIN_CACHE_ROOT="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
+  return 0
 }
 
 plugin_registry_path() {
-  local runtime="$1"
-  case "$runtime" in
-    cursor) printf '%s/plugins/installed_plugins.json' "${HOME}/.cursor" ;;
-    codex) printf '%s/plugins/installed_plugins.json' "${HOME}/.codex" ;;
-    *) printf '%s/plugins/installed_plugins.json' "${HOME}/.claude" ;;
-  esac
+  printf '%s/plugins/installed_plugins.json' "${SB_RUNTIME_HOME_ROOT}"
 }
 
 plugin_cache_root() {
-  local runtime="$1"
-  case "$runtime" in
-    cursor) printf '%s/plugins/cache/alo-labs/silver-bullet' "${HOME}/.cursor" ;;
-    codex) printf '%s/plugins/cache/alo-labs/silver-bullet' "${HOME}/.codex" ;;
-    *) printf '%s/plugins/cache/alo-labs/silver-bullet' "${HOME}/.claude" ;;
-  esac
+  printf '%s/alo-labs/silver-bullet' "${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
+}
+
+# Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
+resolve_registry_plugin_field() {
+  local reg="$1" plugin_id="$2" field="$3"
+  jq -r --arg id "$plugin_id" --arg f "$field" '
+    .plugins[$id] as $entry
+    | if $entry == null then empty
+      elif ($entry | type) == "array" then ($entry[0][$f] // empty)
+      else ($entry[$f] // empty)
+      end
+  ' "$reg" 2>/dev/null || true
 }
 
 resolve_template_config_version() {
@@ -117,10 +117,11 @@ main() {
   local runtime template_ver proj_ver plugin_ver install_path cache_root current_link
   local hooks_manifest sb_config
 
-  runtime="$(detect_runtime)"
+  source_runtime_paths
+  runtime="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}"
   template_ver="$(resolve_template_config_version)"
   sb_config="${PROJ_ROOT}/.silver-bullet.json"
-  cache_root="$(plugin_cache_root "$runtime")"
+  cache_root="$(plugin_cache_root)"
 
   # D1 — jq
   if command -v jq >/dev/null 2>&1; then
@@ -131,13 +132,16 @@ main() {
 
   # D2 — plugin registry
   local reg
-  reg="$(plugin_registry_path "$runtime")"
+  reg="$(plugin_registry_path)"
   if [[ -f "$reg" ]]; then
-    plugin_ver="$(jq -r '.plugins["silver-bullet@alo-labs"].version // empty' "$reg" 2>/dev/null || true)"
-    install_path="$(jq -r '.plugins["silver-bullet@alo-labs"].installPath // empty' "$reg" 2>/dev/null || true)"
+    plugin_ver="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "version")"
+    install_path="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "installPath")"
     if [[ -z "$plugin_ver" || "$plugin_ver" == "null" ]]; then
-      plugin_ver="$(jq -r '.plugins["silver-bullet@alo-labs-codex"].version // .plugins["silver-bullet@silver-bullet"].version // empty' "$reg" 2>/dev/null || true)"
-      install_path="$(jq -r '.plugins["silver-bullet@alo-labs-codex"].installPath // .plugins["silver-bullet@silver-bullet"].installPath // empty' "$reg" 2>/dev/null || true)"
+      for _fallback_id in "silver-bullet@alo-labs-codex" "silver-bullet@silver-bullet"; do
+        plugin_ver="$(resolve_registry_plugin_field "$reg" "$_fallback_id" "version")"
+        install_path="$(resolve_registry_plugin_field "$reg" "$_fallback_id" "installPath")"
+        [[ -n "$plugin_ver" && "$plugin_ver" != "null" ]] && break
+      done
     fi
     if [[ -n "$plugin_ver" && "$plugin_ver" != "null" ]]; then
       if version_lt "$plugin_ver" "$template_ver"; then
@@ -230,15 +234,15 @@ main() {
     record warn D7 "parity test script not found; skipped"
   fi
 
-  # D8 — Cursor orchestrator rule
-  if [[ "$runtime" == "cursor" || -d "${PROJ_ROOT}/.cursor" ]]; then
+  # D8 — Cursor orchestrator rule (Cursor host only; not required on Claude/Codex)
+  if [[ "$runtime" == "cursor" ]]; then
     if [[ -f "${PROJ_ROOT}/.cursor/rules/silver-orchestrator.mdc" ]]; then
       record pass D8 ".cursor/rules/silver-orchestrator.mdc present"
     else
-      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run silver:migrate or silver:init)"
+      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run silver:migrate or silver:init on Cursor)"
     fi
   else
-    record pass D8 "orchestrator rule check skipped (host=${runtime})"
+    record pass D8 "orchestrator rule N/A (host=${runtime})"
   fi
 
   # D9 — workflow tracker
@@ -320,22 +324,48 @@ main() {
     fi
   fi
 
-  # D13 — no Claude import contamination (Cursor only)
-  if [[ "$runtime" == "cursor" ]]; then
-    if [[ -f "${HOME}/.cursor/hooks.json" ]] && grep -q '\.claude/plugins' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
-      record fail D13 "${HOME}/.cursor/hooks.json contains .claude/plugins paths"
+  # D13 — cross-host plugin path contamination (host-scoped)
+  local skill_root hooks_manifest_path agent_bundle_dir
+  skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+  case "$runtime" in
+    cursor)
+      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
+      agent_bundle_dir="agents/cursor"
+      if [[ -f "$hooks_manifest_path" ]] && grep -q '\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
+        record fail D13 "${hooks_manifest_path} contains .claude/plugins paths"
+      else
+        record pass D13 "no .claude/plugins contamination in Cursor hooks"
+      fi
+      ;;
+    claude)
+      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/settings.json"
+      agent_bundle_dir="agents/claude"
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
+        record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
+      else
+        record pass D13 "no cross-host plugin paths in Claude settings"
+      fi
+      ;;
+    codex)
+      hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
+      agent_bundle_dir="agents/codex"
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
+        record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
+      else
+        record pass D13 "no cross-host plugin paths in Codex config"
+      fi
+      ;;
+    *)
+      record pass D13 "cross-host contamination check N/A (host=${runtime})"
+      agent_bundle_dir=""
+      ;;
+  esac
+  if [[ -n "$agent_bundle_dir" ]]; then
+    if [[ -d "${skill_root}/${agent_bundle_dir}" ]]; then
+      record pass D13 "active install has ${agent_bundle_dir}/"
     else
-      record pass D13 "no .claude/plugins contamination in Cursor hooks"
+      record fail D13 "${agent_bundle_dir}/ missing in active plugin cache (${cache_root}/current)"
     fi
-    local skill_root
-    skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
-    if [[ -d "${skill_root}/agents/cursor" ]]; then
-      record pass D13 "active install has agents/cursor/"
-    else
-      record fail D13 "agents/cursor/ missing in active plugin cache"
-    fi
-  else
-    record pass D13 "Claude import check skipped (host=${runtime})"
   fi
 
   if [[ "$FORMAT" == "json" ]]; then
