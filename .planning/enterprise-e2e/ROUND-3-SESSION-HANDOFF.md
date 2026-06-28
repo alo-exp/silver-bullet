@@ -58,6 +58,12 @@ bash scripts/watch-enterprise-e2e-tui.sh &
 
 ## Policies
 
+### Subagent model policy (resume)
+
+- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
+- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
+- Ladder nominal model slugs in `review-fix-ladder.py` are separate (Claude TUI matrix); this policy applies to **Cursor Task subagents only**.
+
 - Never `claude auth login/logout`
 - `install-claude.sh` after harness fixes — **already run post-merge** @ `6fd63d81`
 - Fixture re-cloned @ `edbad21` at default enterprise test-app path
