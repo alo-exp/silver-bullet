@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Opt-in enterprise E2E live test entrypoint (interactive Claude TUI + dual-role monitoring).
+# Operator prompt: scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md
 #
 # Usage:
 #   SB_ENTERPRISE_E2E_LIVE=1 bash scripts/run-enterprise-e2e-live-test.sh [row_numbers...]
