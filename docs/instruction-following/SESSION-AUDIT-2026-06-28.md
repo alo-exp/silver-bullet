@@ -3,7 +3,8 @@
 **Session ID:** `e12690dc-fb94-4616-b1c4-d9341a80e789`  
 **Audit date:** 2026-06-28  
 **Repo:** `/Users/shafqat/projects/silver-bullet/repo`  
-**Primary source:** `agent-transcripts/e12690dc-fb94-4616-b1c4-d9341a80e789/e12690dc-fb94-4616-b1c4-d9341a80e789.jsonl` (+ 74 subagent transcripts)
+**Primary source:** `agent-transcripts/e12690dc-fb94-4616-b1c4-d9341a80e789/e12690dc-fb94-4616-b1c4-d9341a80e789.jsonl` (+ ~77 subagent transcripts; 74–76 at audit cutoff)  
+**Meta-audit:** [META-AUDIT-2026-06-28.md](./META-AUDIT-2026-06-28.md) — independent verification; **76.2% failure rate confirmed**
 
 ---
 
@@ -29,7 +30,7 @@
    - **Partial** — delivered incompletely, user re-asked, or regressed later in session.
    - **Failed** — not done, explicitly called out by user as not done, or blocked (e.g. server down).
 6. Cross-checked outcomes against git history (`site/` commits 2026-06-27 → 2026-06-28) and current `site/` tree.
-7. Reviewed 74 subagent completion summaries for delegation gaps.
+7. Reviewed ~77 subagent completion summaries for delegation gaps.
 
 **Headline finding:** Roughly **three in four** actionable instructions were not fully satisfied on first delivery. The dominant failure modes were **visual QA skipped**, **ephemeral preview server**, **duplicate HTML chrome** (header/footer/help nav), and **regressions on previously fixed items** (overlaps, APO badge, card hover, button alignment).
 
@@ -197,7 +198,7 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 | 40 | Partial | Brooks/shadow policy iterations |
 | 41 | Partial | Right-align hero block |
 | 42 | Failed | Process: claimed done without screenshots |
-| 43 | Partial | No Alumnium/browser screenshots in transcript |
+| 43 | Partial | Episodic browser CDP/screenshots only; no sustained visual QA gate |
 | 44 | Full | Changelog page + button sizing |
 | 45 | Partial | Incremental spacing tweaks |
 | 46 | Partial | **Duplicate "Alpha Honesty" callouts remain** at `site/index.html` ~L1803 & ~L1870 |
@@ -299,8 +300,8 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 | Field | Detail |
 |-------|--------|
 | **Asked** | Visually inspect before claiming done (L200, L296, L314, L420, L456, L460, L580) |
-| **Happened** | 0 `browser_take_screenshot` / Alumnium calls in parent transcript; overlaps/server issues persisted |
-| **Root cause** | AGENTS.md requires Composer subagents for site work but visual QA not enforced; Alumnium opted-in but unused |
+| **Happened** | Minimal/episodic browser CDP and screenshot-after-navigation (~5 batches); not sustained Alumnium or screenshot-at-1280px gates before claiming done; overlaps/server issues persisted |
+| **Root cause** | AGENTS.md requires Composer subagents for site work but visual QA not enforced as a gate; Alumnium opted-in but not used systematically |
 | **Fix** | None institutionalized in session |
 
 ### 4.5 Font reverts (Gidole → Alte DIN → D-Din)
@@ -371,7 +372,7 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 | Field | Detail |
 |-------|--------|
 | **Asked** | Max Graphify, agentmemory, RTK, Context Mode (L844, L847) |
-| **Happened** | ~5 mentions each in 862 assistant lines; 74 subagents largely without graphify-first; no `graphify-out/wiki/` index |
+| **Happened** | ~5 explicit mentions each in parent assistant text (~669 assistant lines through audit cutoff); ~77 subagents largely without graphify-first; no `graphify-out/wiki/` index |
 | **Root cause** | Site-edit subagents prioritized direct file edits; hooks not blocking site-only work |
 | **Fix** | User-directed audit L103 → this report |
 
@@ -390,11 +391,11 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 
 | Process rule | Session behavior | Severity |
 |--------------|------------------|----------|
-| **Graphify first** | Used sparingly (~5 explicit queries in parent); 74 subagents mostly Read/Grep | High |
+| **Graphify first** | Used sparingly (~5 explicit queries in parent); ~77 subagents mostly Read/Grep | High |
 | **agentmemory capture** | ~5 mentions; no systematic session notes export | High |
 | **RTK on shell** | Minimal evidence in transcript | Medium |
 | **Context Mode for large reads** | ctx_execute failed (bun ENOENT); fell back to raw node | Medium |
-| **Alumnium / browser visual QA** | 0 invocations despite site-heavy session | **Critical** |
+| **Alumnium / browser visual QA** | Episodic browser CDP/screenshots (~5 batches); insufficient for site-heavy session — not zero, not systematic | **Critical** |
 | **Composer 2.5 for site work** | Task subagents used but parent did not verify completions | High |
 | **Live publish verification** | Claimed LIVE without URL fetch evidence (L730) | High |
 | **No regression discipline** | Same fixes re-requested: overlaps, APO, alignment, server, header/footer | **Critical** |
@@ -402,7 +403,7 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 
 ### Subagent delegation pattern
 
-- **74 subagents** spawned for site/help work.
+- **~77 subagents** spawned for site/help work (74–76 at audit cutoff).
 - Theme counts in final assistant messages: font (12), server (9), help (9), publish (10), overlap (3), visual (2).
 - Parent frequently treated subagent "done" as session done → user became the QA loop.
 
@@ -436,4 +437,5 @@ Numbered list of every distinct actionable user request (meta handoffs excluded)
 
 ---
 
-*Generated adversarially — when in doubt, instruction scored Partial or Failed.*
+*Generated adversarially — when in doubt, instruction scored Partial or Failed.*  
+*Corrected 2026-06-28 per [META-AUDIT-2026-06-28.md](./META-AUDIT-2026-06-28.md) (browser-QA wording, assistant line count, subagent count); **76.2% failure rate unchanged**.*
