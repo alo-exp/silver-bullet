@@ -170,7 +170,9 @@ fi
 
 # --- Resume helper ---
 TMP_LOG="$(mktemp)"
-trap 'rm -f "$TMP_LOG"' EXIT
+LEDGER_FIXTURE=""
+cleanup_tmp() { rm -f "$TMP_LOG" "$LEDGER_FIXTURE"; }
+trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/silver) ==="
   echo "  PASS: evidence at .planning/workflows/router-session.md"
@@ -238,7 +240,6 @@ fi
 
 # ledger reconcile fixture
 LEDGER_FIXTURE="$(mktemp)"
-trap 'rm -f "$TMP_LOG" "$LEDGER_FIXTURE"' EXIT
 cat >"$LEDGER_FIXTURE" <<'LEDGER'
 | # | WF slug | Pass/Fail | graphify_query_ref | agentmemory_export_ref |
 |---|---------|-----------|--------------------|------------------------|
@@ -246,16 +247,11 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
-if [[ "$(enterprise_e2e_ledger_reconcile_status 2>/dev/null || SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" enterprise_e2e_ledger_reconcile_status)" == "STALE" ]] \
-  || SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" [[ "$(enterprise_e2e_ledger_reconcile_status)" == "STALE" ]]; then
+SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
+if [[ "$reconcile_status" == "STALE" ]]; then
   pass "ledger reconcile STALE when <22 rows"
 else
-  SB_E2E_LEDGER_FILE="$LEDGER_FIXTURE" status="$(enterprise_e2e_ledger_reconcile_status)"
-  if [[ "$status" == "STALE" ]]; then
-    pass "ledger reconcile STALE when <22 rows"
-  else
-    fail "ledger reconcile expected STALE for partial fixture, got $status"
-  fi
+  fail "ledger reconcile expected STALE for partial fixture, got $reconcile_status"
 fi
 
 echo ""
