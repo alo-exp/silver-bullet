@@ -125,6 +125,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "retro", "retrospective", "release metrics", "delivery metrics", "process review" | `silver:retro` | Engineering retrospective path |
 | "benchmark", "compare agents", "compare models", "provider comparison", "agent quality" | `silver:benchmark` | Repeatable evaluation and adversarial benchmark path |
 | "content", "SEO", "GEO", "AI search", "article", "blog", "site content", "metadata", "link health" | `silver:content` | Public content/search workflow; **not** SB project upgrade (use `silver:migrate`) |
+| "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `silver:content --mode fix` | **Default route** for public site/help work — use site batch protocol (Composer 2.5 workers) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |

@@ -101,6 +101,14 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
 fi
 
 # Stop / SubagentStop
+if [[ "$hook_event" == "SubagentStop" ]]; then
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    sb_orchestrator_is_worker_session 2>/dev/null && exit 0
+  fi
+fi
+
 state_contents=""
 [[ -f "$state_file" && ! -L "$state_file" ]] && state_contents=$(cat "$state_file" 2>/dev/null || true)
 

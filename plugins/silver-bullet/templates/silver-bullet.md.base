@@ -928,6 +928,34 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 **Sidekick / InstaDecks:** Documented dependencies only; no SB routing until dedicated integration work lands.
 
+### 8.2 Public site and help center work
+
+These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/search.js`, OG cards, and other public-facing HTML under `site/`.
+
+**Authoring model**
+- Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
+- Route site intents through `/silver` → `silver:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+
+**Workflow catalog presentation order**
+- Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
+- Atomic flows (`AF-*`) order by capability class: orient/bootstrap → plan/specify → research → execute → verify/test → review → ship/deploy → document/process.
+- This is documentation presentation order, not runtime composition order.
+
+**Site/help publish policy**
+- `site/**` publishes via direct commits to `main` without a patch release, version bump, git tag, or GitHub release unless the user explicitly requests a release.
+- Before pushing, run `bash tests/scripts/test-site-doc-freshness.sh` and `bash tests/scripts/test-site-content-freshness.sh`; site-only work does not require the full `tests/run-all-tests.sh` suite.
+- Publish path: commit + push to `main`; GitHub Pages deploys via `.github/workflows/pages.yml` (path-filtered to `site/**`).
+- Expect **~1–15 minutes** end-to-end deploy latency (Pages queue + `Cache-Control: max-age=600` on GitHub Pages).
+
+**Live publish notification (mandatory)**
+- Do **not** tell the user changes are **LIVE** until deployed page content is verified at the public URL (e.g. `https://sb.alolabs.dev/` or the specific `site/help/` path).
+- A commit pushed to `main` or a queued/succeeded Pages workflow is **not** sufficient alone.
+- Before claiming live status: fetch URL(s), confirm key markers match the commit, inspect headers (`Last-Modified`, `ETag`, `Cache-Control`, `Age`), wait for `pages.yml` when needed.
+- Write `$HOME/.codex/.silver-bullet/live-publish-evidence.json` with `commit_sha`, `urls`, `markers_matched`, `status` (`LIVE`|`NOT_LIVE`), `verified_at`.
+- Notify the user with: commit SHA; what went live; explicit **LIVE** or **NOT LIVE** with fetched-page evidence; GitHub release URL if applicable.
+
+**Runtime hooks:** `site-regression-gate.sh`, `live-publish-evidence-gate.sh`, `instruction-ledger-gate.sh`, `subagent-stop-enforcement.sh` enforce the above at Stop/push.
+
 ---
 
 <!--
