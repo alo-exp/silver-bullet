@@ -69,14 +69,98 @@ proc load_claude_settings_env {} {
 }
 
 
+proc strip_ansi {text} {
+  regsub -all {\[[0-9;?]*[ -/]*[@-~]} $text "" text
+  regsub -all {\][^]*(|\\)} $text "" text
+  regsub -all {.} $text "" text
+  return $text
+}
+
+proc bypass_disclaimer_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Bypass} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Permissions} $plain]} {
+    return 0
+  }
+  if {![regexp {code\.claude\.com/docs/en/security} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {No,exit|No, exit} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+proc bypass_disclaimer_menu_ready {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {No,exit|No, exit} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+proc should_accept_bypass_disclaimer {buffer} {
+  global bypass_disclaimer_menu_open
+  if {$bypass_disclaimer_menu_open} {
+    return 1
+  }
+  if {[bypass_disclaimer_menu_ready $buffer]} {
+    return 1
+  }
+  if {[bypass_disclaimer_visible $buffer]} {
+    return 1
+  }
+  return 0
+}
+
+proc log_harness_keys {message} {
+  global debug_log
+  if {$debug_log ne ""} {
+    catch {
+      set fh [open $debug_log a]
+      puts $fh $message
+      close $fh
+    }
+  }
+  puts stderr $message
+}
+
 proc accept_bypass_permissions_disclaimer {} {
-  # Bypass Permissions modal: select option 2, confirm with Enter.
-  send -- "2"
-  after 200
-  send -- "\r"
-  after 200
-  send -- "\r"
-  after 750
+  global bypass_disclaimer_accept_attempts
+  if {$bypass_disclaimer_accept_attempts >= 6} {
+    return
+  }
+  incr bypass_disclaimer_accept_attempts
+  set strategy [env_or_default CLAUDE_INTERACTIVE_BYPASS_STRATEGY "keys"]
+  log_harness_keys "\[harness\] accept_bypass_permissions_disclaimer: strategy=$strategy attempt=$bypass_disclaimer_accept_attempts"
+  if {$strategy eq "arrow"} {
+    send -- "\033\[B"
+    after 400
+    send -- "\r"
+  } elseif {$strategy eq "alt-arrow"} {
+    send -- "\033OB"
+    after 400
+    send -- "\r"
+  } else {
+    type_slow "2" 40
+    after 500
+    send -- "\r"
+  }
+  after 900
 }
 
 proc submit_prompt {command_name prompt_body} {
@@ -176,7 +260,10 @@ spawn -noecho $cli {*}$args
 if {$continue_flag eq "0"} {
   set trust_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_DELAY_MS 2000])}]
   after $trust_delay_ms
-  dismiss_claude_splash
+  # Bare Enter during Bypass Permissions disclaimer selects option 1 (exit).
+  if {$permission_mode ne "bypassPermissions"} {
+    dismiss_claude_splash
+  }
 } else {
   after 200
 }
@@ -189,6 +276,7 @@ set final_marker_seen 0
 set require_final_marker 0
 set saw_not_logged_in 0
 set bypass_disclaimer_menu_open 0
+set bypass_disclaimer_accept_attempts 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -200,19 +288,20 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
-  -re {Esc.*to.*cancel} {
-    if {[regexp {Bypass Permissions} $expect_out(buffer)] && [regexp {Yes, I accept} $expect_out(buffer)]} {
+  -re {Enter.*to.*confirm} {
+    if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
-      after 500
+      after 800
       exp_continue
     }
     exp_continue
   }
-  -re {Enter.*to confirm} {
-    if {$bypass_disclaimer_menu_open || [regexp {Yes, I accept} $expect_out(buffer)]} {
+  -re {Esc.*to.*cancel} {
+    if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
+      after 500
       exp_continue
     }
     exp_continue
@@ -225,7 +314,7 @@ expect {
     accept_bypass_permissions_disclaimer
     exp_continue
   }
-  -re {2\. Yes, I accept.*Enter.*to confirm} {
+  -re {2\. Yes, I accept.*Enter.*to.*confirm} {
     accept_bypass_permissions_disclaimer
     exp_continue
   }
@@ -361,13 +450,13 @@ expect {
     }
     exp_continue
   }
-  -re {(?s)No, exit.*Yes, I accept|Yes, I accept.*Enter.*to confirm} {
+  -re {(?s)No, exit.*Yes, I accept|Yes, I accept.*Enter.*to.*confirm} {
     set bypass_disclaimer_menu_open 1
     accept_bypass_permissions_disclaimer
     exp_continue
   }
   -re {❯} {
-    if {$bypass_disclaimer_menu_open || ([regexp {No, exit} $expect_out(buffer)] && [regexp {Yes, I accept} $expect_out(buffer)])} {
+    if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
       set bypass_disclaimer_menu_open 0
       accept_bypass_permissions_disclaimer
       exp_continue
