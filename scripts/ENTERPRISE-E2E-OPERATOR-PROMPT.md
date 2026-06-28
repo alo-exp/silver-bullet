@@ -33,12 +33,14 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 
 ### Hard constraints
 
-- **API key auth only** — do **not** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
+- **API key / token gateway auth only** — do **not** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
+- The TUI may show **"Not logged in · Please run /login"** when using a custom API gateway (e.g. MiniMax M3 via `ANTHROPIC_BASE_URL` in `~/.claude/settings.json`). That banner is **cosmetic** — token-based access is valid; the harness ignores it and never instructs `/login`.
+- **`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0`** (default) — export `~/.claude/settings.json` env (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, etc.) into interactive TUI before spawn. Set `=1` only for direct claude.ai OAuth without settings env.
+- **`CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys`** (default when export on) — accept custom API key disclaimer via keyboard `1` + Enter.
 - **Interactive TUI only** — use `/silver` and `/silver:*` slash commands (not legacy markdown skill links).
 - **Orchestrator parent** must not implement product code inline unless the workflow requires it.
 - **SB fixes** in SB repo only; **product code** in test app only.
 - **Do not commit** SB init artifacts from the test app to GitHub.
-- **OpenCode / local proxy 429** — if `~/.claude/settings.json` sets `ANTHROPIC_BASE_URL` (e.g. `127.0.0.1:15721`), matrix defaults to `SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1` (direct OAuth). Set `=0` only for api_key-only hosts.
 - **429 / Token Plan** — wait **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`) and retry the **same row**; not an auth failure.
 - **Network blips** — retry with backoff (120–300s); not auth failures.
 - **Harness parsing:** `RTK_DISABLED=1` / `SB_RTK_COMPAT_MODE=verbatim` on `run-enterprise-e2e-live-test.sh`, matrix runner, `install-claude.sh`.
@@ -208,7 +210,7 @@ When done, summarize: route invoked, skills recorded, artifacts created, test st
 - Automate Session 0 prep when possible: set `recommended_tools.graphify|agentmemory|rtk|context_mode.enabled_by_user` to `true` in `/Users/shafqat/projects/enterprise-grade-test-app/.silver-bullet.json` programmatically if TUI is unavailable; then `graphify update . --no-cluster` in the test app.
 - On **Claude API 429 / quota / Token Plan**: retry every **1 minute** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); **do not** treat as auth failure; **never** `claude auth login/logout`.
 - **Do not block** on Session 0 if fixture already has partial init — complete tool opt-in and graphify update, then continue the matrix.
-- Continue through the matrix without waiting for a human unless truly blocked (interactive auth login required, missing secrets, etc.).
+- Continue through the matrix without waiting for a human unless truly blocked (missing secrets, fixture unreachable, etc.). **Never** treat the OAuth "Not logged in" banner as requiring `/login` when token gateway env is configured.
 - Use `--resume` when `.e2e-matrix-live.log` shows partial progress; never restart at row 1 if row 1 already passed.
 
 ---

@@ -38,18 +38,12 @@ export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}
 export SB_E2E_LIVE_RUNTIME=claude
 export SILVER_BULLET_RUNTIME=claude
 
-# Export ~/.claude/settings.json env for interactive TUI (api_key / proxy hosts).
-# Set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 to use OAuth/keychain and skip settings env.
+# Export ~/.claude/settings.json env for interactive TUI (api_key / proxy / token gateway).
+# Default 0 — inject ANTHROPIC_* from settings before spawn (MiniMax/custom gateway).
+# Set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 only for direct claude.ai OAuth (no settings env).
 # shellcheck source=scripts/lib/claude-matrix-auth.sh
 source "${SB_ROOT}/scripts/lib/claude-matrix-auth.sh"
-if [[ -z "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT+set}" ]]; then
-  if claude_matrix_settings_has_proxy_env "$(claude_matrix_settings_path)"; then
-    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
-  else
-    SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0
-  fi
-fi
-export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT
+export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"
 if [[ "${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT}" == "1" ]]; then
   export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-recommended}"
   # Avoid local proxy keys/URLs from the caller shell when using OAuth direct API.
