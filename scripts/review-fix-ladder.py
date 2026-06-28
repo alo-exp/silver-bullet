@@ -29,9 +29,9 @@ CURSOR_FIXED_RUNGS: list[tuple[str, str]] = [
 # not a separate Task parameter. Keys are (ladder_model, reasoning_effort).
 CURSOR_TASK_SLUG_MAP: dict[tuple[str, str], str] = {
     ("composer-2.5", "low"): "composer-2.5",
-    ("composer-2.5", "medium"): "composer-2.5-fast",
-    ("composer-2.5", "high"): "composer-2.5-fast",
-    ("composer-2.5", "xhigh"): "composer-2.5-fast",
+    ("composer-2.5", "medium"): "composer-2.5",
+    ("composer-2.5", "high"): "composer-2.5",
+    ("composer-2.5", "xhigh"): "composer-2.5",
     ("gpt-5.5", "low"): "gpt-5.5",
     # Host model-lock substitution: gpt-5.5-medium/high are not selectable in Cursor.
     ("gpt-5.5", "medium"): "gpt-5.5-extra-high",
