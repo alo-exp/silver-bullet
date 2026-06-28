@@ -54,6 +54,8 @@ claude_matrix_export_settings_env
 
 # shellcheck source=scripts/lib/matrix-quota.sh
 source "${SB_ROOT}/scripts/lib/matrix-quota.sh"
+# shellcheck source=scripts/lib/enterprise-e2e-token-telemetry.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-token-telemetry.sh"
 
 # shellcheck source=tests/e2e-live/helpers.sh
 source "${SB_ROOT}/tests/e2e-live/helpers.sh"
@@ -232,6 +234,8 @@ run_matrix_row() {
   local evidence_path="$5"
   local graphify_ref prompt output
 
+  local row_telemetry_result="fail"
+
   graphify_ref="$(graphify_query_ref "$slug")"
   echo "=== Row ${row_num}: ${slug} (${route}) ==="
   echo "  graphify: ${graphify_ref}"
@@ -241,16 +245,27 @@ run_matrix_row() {
     if verify_row_evidence "$evidence_path"; then
       echo "  DRY RUN PASS: evidence present"
       PASS_ROWS=$((PASS_ROWS + 1))
+      row_telemetry_result="pass"
     else
       echo "  DRY RUN FAIL: missing evidence"
       FAIL_ROWS=$((FAIL_ROWS + 1))
     fi
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+      SB_E2E_TELEMETRY_ROW_LOG="" \
+      enterprise_e2e_telemetry_append "matrix_row_dry_run" || true
     return 0
   fi
 
   if [[ "${SB_E2E_MATRIX_FORCE:-}" != "1" ]] && verify_row_success "$row_num" "$evidence_path"; then
     echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
     SKIP_ROWS=$((SKIP_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="skip" \
+      SB_E2E_TELEMETRY_ROW_LOG="${SB_ROOT}/.e2e-row${row_num}-attempt.log" \
+      enterprise_e2e_telemetry_append "matrix_row_skip" || true
     return 0
   fi
 
@@ -309,6 +324,12 @@ run_matrix_row() {
         echo "  PASS: succeeded after ${quota_retries} quota retry(ies)"
       fi
       PASS_ROWS=$((PASS_ROWS + 1))
+      row_telemetry_result="pass"
+      SB_E2E_TELEMETRY_ROW="$row_num" \
+        SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+        SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+        SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+        enterprise_e2e_telemetry_append "matrix_row" || true
       break
     fi
 
@@ -317,6 +338,11 @@ run_matrix_row() {
       if [[ "$quota_max_retries" -gt 0 && "$quota_retries" -gt "$quota_max_retries" ]]; then
         echo "  FAIL: quota retries exhausted (${quota_max_retries}) — missing evidence at ${evidence_path}"
         FAIL_ROWS=$((FAIL_ROWS + 1))
+        SB_E2E_TELEMETRY_ROW="$row_num" \
+          SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+          SB_E2E_TELEMETRY_ROW_RESULT="fail" \
+          SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+          enterprise_e2e_telemetry_append "matrix_row" || true
         break
       fi
       echo "  QUOTA: API 429 / Token Plan limit — waiting ${quota_retry_interval}s before retry ${quota_retries}..."
@@ -329,6 +355,11 @@ run_matrix_row() {
       echo "  FAIL: no routing markers in session output or $(claude_routing_state_file)"
     fi
     FAIL_ROWS=$((FAIL_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="fail" \
+      SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+      enterprise_e2e_telemetry_append "matrix_row" || true
     break
   done
 }

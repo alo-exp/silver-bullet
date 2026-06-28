@@ -52,6 +52,8 @@ export SB_E2E_VALIDATION_OVERLAY_DRY_RUN="$DRY_RUN"
 
 # shellcheck source=scripts/lib/enterprise-e2e-validation-overlay.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-validation-overlay.sh"
+# shellcheck source=scripts/lib/enterprise-e2e-token-telemetry.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-token-telemetry.sh"
 
 VALIDATION_OVERLAY_PASS=0
 VALIDATION_OVERLAY_FAIL=0
@@ -92,5 +94,7 @@ if [[ "$JSON_OUT" -eq 1 ]]; then
       '{pass: $pass, fail: $fail, skip: $skip, mode: $mode, overlay: "SB_E2E_VALIDATION_OVERLAY=1"}'
   fi
 fi
+
+enterprise_e2e_telemetry_append "validation_overlay"
 
 [[ "$VALIDATION_OVERLAY_FAIL" -eq 0 ]]

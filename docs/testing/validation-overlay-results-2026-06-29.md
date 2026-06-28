@@ -53,7 +53,7 @@
 | ID | Gap | Severity | Owner |
 |----|-----|----------|-------|
 | V-01 | First-hour unsafe PR block — no timed onboarding SLO | P1 | E2E / onboarding fixture |
-| V-02 | 10× lower cost — no token benchmark | P2 | Research / RTK+CM |
+| V-02 | 10× lower cost — **excluded from validation gates**; token telemetry only | — | Telemetry JSONL (§10 validation plan) |
 | V-03 | Codex/Cursor 5-row smoke — Claude-only matrix | P1 | Tri-host E2E |
 | V-04 | Round 3 rows 11, 14–16 incomplete — outcome claims deferred | P0 matrix | Operator / harness |
 | V-05 | Monitor↔ledger drift (Round 3) | P0 measurement | Harness P0-1 |
@@ -76,5 +76,5 @@ bash tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh
 1. **Complete Round 3 matrix** rows 11, 14–16; re-run `--live` overlay.
 2. **Wire overlay into round gate** — require dry-run green before matrix resume; `--live` after round.
 3. **Set `SB_E2E_RCS_VALIDATION_OVERLAY=pass`** when overlay dry-run green for RCS advisory boost.
-4. **Schedule V-01/V-03** as separate epics; do not block matrix on marketing SLO gaps (V-02).
+4. **Schedule V-01/V-03** as separate epics; do not block matrix on marketing SLO gaps. **V-02** is telemetry-only (excluded from overlay gates).
 5. **Fix P0-1 ledger↔monitor** from effectiveness plan — independent of validation copy checks.
