@@ -1,6 +1,6 @@
 # SB IF Reduction — Wave Progress
 
-**Updated:** 2026-06-28  
+**Updated:** 2026-06-29  
 **Phase 0:** COMPLETE (E0–E8, sb-doctor 16/16, plugin 0.48.6)  
 **Waves 1–4:** COMPLETE  
 **Evidence:** [PHASE0-PREFLIGHT-EVIDENCE.md](./PHASE0-PREFLIGHT-EVIDENCE.md) · [PLAN-EXECUTION-COMPLETE.md](./PLAN-EXECUTION-COMPLETE.md)
@@ -19,7 +19,7 @@
 | 6 | AGENTS.md → template parity | **done** | §8.2 in templates |
 | 7 | `silver-content` site batch + router | **done** | V-loop table in skill |
 | 8 | Hook registration | **done** | `hooks/hooks.json`, `cursor-hooks.json` |
-| 9 | `test-site-session-gates.sh` | **done** | expanded to 20/20 |
+| 9 | `test-site-session-gates.sh` | **done** | expanded to 27/27 |
 
 ---
 
@@ -40,6 +40,7 @@
 | Preview preflight | **done** | `hooks/site-preview-preflight.sh` |
 | MCP recorders | **done** | `hooks/record-recommended-mcp.sh` (+ existing graphify/agentmemory shell recorders) |
 | Chrome single-source + tokens guard | **done** | `hooks/site-chrome-guard.sh` |
+| Wave 3 hook tests | **done** | `tests/hooks/test-site-session-gates.sh` (preview, chrome, MCP sections) |
 
 ---
 
@@ -47,8 +48,9 @@
 
 | Item | Status | Files |
 |------|--------|-------|
-| Expand `test-site-session-gates.sh` | **done** | 20 tests incl. chrome regression integration |
+| Expand `test-site-session-gates.sh` | **done** | 27 tests incl. Wave 3 + chrome regression integration |
 | Alpha Honesty dedupe | **done** | `site/index.html` #proof — single callout |
+| Hook coverage matrix | **done** | 55/55 hooks covered (`tests/integration/coverage-matrix.sh`) |
 
 ---
 
@@ -66,12 +68,16 @@ See [SB-SUBAGENT-ENGAGEMENT-AUDIT.md](./SB-SUBAGENT-ENGAGEMENT-AUDIT.md) for CLO
 
 ---
 
-## Tests (final run)
+## Tests (final run — 2026-06-29)
 
 ```text
-bash tests/hooks/test-site-session-gates.sh          # 20 passed, 0 failed
+bash tests/run-all-tests.sh                          # 4818 passed, 0 failed, exit 0
+bash tests/integration/coverage-matrix.sh            # 55/55 hooks covered
+bash tests/hooks/test-site-session-gates.sh          # 27 passed, 0 failed
+bash scripts/validate-launch-review.sh               # OK
+bash scripts/validate-sentinel-skills-manifest.sh    # OK (87/87)
+bash scripts/verify-tests.sh                         # OK
 bash tests/scripts/test-silver-bullet-template-parity.sh  # 2 passed, 0 failed
-bash scripts/sb-doctor.sh                          # 16 PASS, OVERALL PASS
-bash tests/scripts/test-silver-doctor.sh           # 22 passed, 0 failed
-bash tests/scripts/test-site-chrome-regression.sh  # 14 passed, 0 failed
+bash scripts/sb-doctor.sh                            # 16 PASS, OVERALL PASS
+bash tests/scripts/test-site-chrome-regression.sh    # 14 passed, 0 failed
 ```
