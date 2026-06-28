@@ -1417,11 +1417,34 @@ probe_dev_cycle_bash_command() {
   local command="$1"
   local hook_script="${SB_ROOT}/hooks/dev-cycle-check.sh"
   [[ -x "$hook_script" ]] || return 1
+  rm -f "$TRIVIAL_FILE"
+  if [[ ! -f "${WORK_DIR}/.silver-bullet.json" ]]; then
+    printf '{"project":{"status":"active"}}
+' > "${WORK_DIR}/.silver-bullet.json"
+  fi
+  if [[ ! -f "${WORK_DIR}/silver-bullet.md" ]]; then
+    printf '# E2E hook probe
+' > "${WORK_DIR}/silver-bullet.md"
+  fi
   (
     cd "$WORK_DIR"
     export SILVER_BULLET_HOOK_AUDIT_LOG="$HOOK_AUDIT_FILE"
     export SILVER_BULLET_STATE_FILE="$STATE_FILE"
-    jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}' \
+    if [[ -n "${SILVER_BULLET_BRANCH_FILE:-}" ]]; then
+      export SILVER_BULLET_BRANCH_FILE
+    fi
+    if jq -n --arg cmd "$command" '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:$cmd}}' \
+      | bash "$hook_script" >/dev/null; then
+      :
+    fi
+    if [[ -f "$HOOK_AUDIT_FILE" ]] && jq -e \
+      --arg hook_name dev-cycle-check \
+      --arg decision deny \
+      'select(.hook_name == $hook_name and .decision == $decision)' \
+      "$HOOK_AUDIT_FILE" >/dev/null 2>&1; then
+      exit 0
+    fi
+    jq -n --arg fp "$E2E_PROBE_SOURCE_FILE" '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$fp}}' \
       | bash "$hook_script" >/dev/null
   )
 }
