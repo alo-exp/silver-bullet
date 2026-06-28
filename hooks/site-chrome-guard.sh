@@ -24,12 +24,12 @@ case "$tool_name" in
 esac
 
 config_file=""
-repo_root=""
 search_dir="$PWD"
 while true; do
   if [[ -f "$search_dir/.silver-bullet.json" && -f "$search_dir/silver-bullet.md" ]]; then
     config_file="$search_dir/.silver-bullet.json"
-    repo_root="$search_dir"
+    # repo_root reserved for future site-root resolution
+    : "${search_dir:?}"
     break
   fi
   if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
