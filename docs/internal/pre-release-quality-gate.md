@@ -122,8 +122,12 @@ After all fixes from Stages 1–4a:
 
 1. Invoke `/verify-tests` (records freshness marker)
 2. Invoke `/silver:verify` (release scope) and `/silver:completion-audit` (release claim)
-3. Run `bash tests/run-all-tests.sh` once — must be green
-4. Record:
+3. Run pre-release feature overlay + tri-host install smoke:
+   `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke`
+4. Run outcome validation overlay dry-run:
+   `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run`
+5. Run `bash tests/run-all-tests.sh` once — must be green
+6. Record:
 
 ```bash
 echo "full-test-suite-rerun" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"

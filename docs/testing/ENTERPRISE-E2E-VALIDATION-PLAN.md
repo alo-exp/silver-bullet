@@ -13,13 +13,55 @@
 |------|---------|-------------------|
 | **Testing** | Proves SB **wiring** — 22 workflow routes, AF coverage, hooks, harness scripts, ladder rungs | `run-enterprise-e2e-matrix.sh`, `test-enterprise-e2e-live-suite.sh`, Round ledgers |
 | **Verification** | Proves **structural contracts** — catalog counts, site↔registry parity, generated views fresh | `claims-audit.sh`, `check-apo-invariants.py`, `apo-catalog.json` |
-| **Validation** | Proves **user outcomes** — homepage + Help Center promises match observable product behavior | This plan, `validation-claims-registry.json`, `run-enterprise-e2e-validation-overlay.sh` |
+| **Pre-release** | Proves **feature-level** homepage/help claims before tag — install surfaces, catalog counts, hooks, tri-host smoke | `pre-release-claims-registry.json`, `run-enterprise-e2e-pre-release-overlay.sh`, `run-tri-host-install-smoke.sh` |
+| **Validation** | Proves **user outcomes/capabilities** — ship readiness, evidence gates, onboarding SLO, cost telemetry philosophy | This plan, `validation-claims-registry.json`, `run-enterprise-e2e-validation-overlay.sh` |
 
-**Rule:** Testing can be 22/22 while validation fails (e.g. homepage promises tri-host E2E but only Claude matrix exists). Validation overlays testing; it does not replace it.
+**Taxonomy rule:** If a claim can be tested in pre-release (overlay dry-run structural checks, claims-audit, matrix rows, install scripts, tri-host smoke), it does **not** belong in `validation-claims-registry.json`.
+
+**Rule:** Testing can be 22/22 while validation fails (e.g. ship-readiness outcome undocumented). Validation overlays testing; it does not replace it. Pre-release overlays both for feature claims.
 
 ---
 
-## 2. Validation vs effectiveness plan
+## 2. Feature vs validation vs pre-release
+
+| Layer | Question | Registry | Overlay script |
+|-------|----------|----------|----------------|
+| **Pre-release** | Do feature claims hold? (catalog counts, hooks, install scripts, router doc, tri-host) | [`pre-release-claims-registry.json`](./pre-release-claims-registry.json) | `run-enterprise-e2e-pre-release-overlay.sh` |
+| **Validation** | Do outcome/capability promises hold? (evidence gates, ship readiness, free forever, onboarding SLO) | [`validation-claims-registry.json`](./validation-claims-registry.json) | `run-enterprise-e2e-validation-overlay.sh` |
+| **Testing** | Does the 22-row matrix pass? | Matrix ledgers | `run-enterprise-e2e-live-test.sh` |
+
+**Removed from validation (always):**
+
+| claim_id | Reason | Where now |
+|----------|--------|-----------|
+| `hero-apo-title` | Product title — always true, not an outcome | Dropped |
+| `hero-tri-host` / `help-tri-host` | Host portability — install smoke, not validation | Pre-release + tri-host smoke |
+| `help-router-workflow` | Router composition — matrix row 1 / pre-release | Pre-release |
+
+Demoted feature claims (catalog counts, twelve hooks, code intel, sb-diagnostics, help version/coverage/SOT) live in [`pre-release-claims-registry.json`](./pre-release-claims-registry.json).
+
+### Pre-release tri-host smoke
+
+Before release, each host must install SB locally and pass a few SB script invocations:
+
+```bash
+# Operator — all hosts (Claude skipped when CLI absent)
+RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
+
+# CI structural — Codex + Cursor only
+bash tests/scripts/test-tri-host-install-smoke.sh
+
+# Wired into pre-release overlay
+RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke
+```
+
+Per host: `install-{claude,codex,cursor}.sh` → `sb-diagnostics.sh` → `claims-audit.sh` + `check-apo-invariants.py site-doc-freshness`.
+
+Document in operator prompt: run tri-host smoke after pre-release overlay dry-run green and before `gh release create`.
+
+---
+
+## 3. Validation vs effectiveness plan
 
 | Layer | Effectiveness plan | Validation plan (this doc) |
 |-------|-------------------|----------------------------|
@@ -30,9 +72,9 @@
 
 ---
 
-## 3. Homepage claim inventory methodology
+## 4. Homepage claim inventory methodology
 
-1. **Extract** — Curate claims in [`claims-registry.json`](./claims-registry.json) (homepage) and [`validation-claims-registry.json`](./validation-claims-registry.json) (homepage + help).
+1. **Extract** — Outcome claims in [`validation-claims-registry.json`](./validation-claims-registry.json); feature claims in [`pre-release-claims-registry.json`](./pre-release-claims-registry.json); homepage selectors in [`claims-registry.json`](./claims-registry.json).
 2. **Anchor** — Each claim has `source_selector` or `surface` + verbatim `text` from live HTML.
 3. **Map** — Assign `check_id`, `verification_tier`, and `test_ids` (structural, contract, matrix row, or live backlog).
 4. **Enforce** — `claims-audit.sh` fails if registry text disappears from homepage or unregistered `data-claim` appears.
@@ -50,7 +92,7 @@
 
 ---
 
-## 4. Help Center staleness re-verification process
+## 5. Help Center staleness re-verification process
 
 **Run before every validation mapping session** (or when site/help changes):
 
@@ -72,34 +114,34 @@
 
 ---
 
-## 5. Claim → behavior mapping matrix
+## 6. Claim → behavior mapping matrix
 
-### Homepage (selected)
+### Validation outcomes (validation-claims-registry.json)
 
 | claim_id | User expectation | Verification | Matrix / test link |
 |----------|------------------|--------------|-------------------|
-| `hero-apo-title` | `/silver` routes to APO catalog workflows | `apo-catalog-workflow-count` + row 1 | E2E row 1 |
-| `hero-tri-host` | Works in Claude, Codex, Cursor | `tri-host-install-scripts` | install scripts + cursor-hook-bridge |
-| `mechanism-catalog-counts` | 27 AF, 22 WF | `apo-catalog-counts` | validate-apo-catalog |
-| `mechanism-twelve-hooks` | Hooks physically block progress | `hook-scripts-present` | hook unit tests |
-| `hero-evidence-gates` | Unsafe PR/release blocked | matrix_overlay | rows 14–16 |
+| `hero-evidence-gates` | Unsafe PR/release blocked until evidence real | `evidence-gates-outcome` + claims-audit | E2E rows 14–16 |
+| `hero-capabilities` | Engineering best practices enforced | `capabilities-outcome` | E2E matrix |
+| `hero-free-no-telemetry` | Free forever, no telemetry | `free-forever-outcome` | claims-audit |
+| `help-ship-readiness` | Ship gates documented and enforced | help page + E2E row 16 | rows 14–16 |
 | `first-hour-block-pr` | First session blocks unsafe PR | **backlog** (`live`) | planned-onboarding-slo |
+| `hero-reliability-cost` | 10× lower cost | **telemetry only** (V-02) | token-telemetry-jsonl |
 
-### Help Center (selected)
+### Pre-release features (pre-release-claims-registry.json)
 
 | claim_id | User expectation | Verification |
 |----------|------------------|--------------|
-| `help-catalog-version` | Docs match shipped version | `help-version-sync` |
-| `help-workflow-pages` | Each user-facing WF documented | `help-workflow-coverage` |
-| `help-apo-catalog-sot` | Catalog is authoritative | `help-catalog-sot-reference` |
+| `hero-tri-host` | Works in Claude, Codex, Cursor | `run-tri-host-install-smoke.sh` |
+| `mechanism-catalog-counts` | 27 AF, 22 WF | `apo-catalog-counts` |
+| `mechanism-twelve-hooks` | Hooks physically block progress | `hook-scripts-present` |
 | `help-router-workflow` | Router doc matches `/silver` behavior | help page + E2E row 1 |
-| `help-ship-readiness` | Ship gates documented and enforced | help page + E2E row 16 |
+| `help-catalog-version` | Docs match shipped version | `help-version-sync` |
 
 Full machine-readable map: [`validation-claims-registry.json`](./validation-claims-registry.json).
 
 ---
 
-## 6. Overlay integration with 22-row live matrix
+## 7. Overlay integration with 22-row live matrix
 
 The validation overlay **does not start, stop, or signal** matrix drivers. Safe alongside active batch PID (e.g. 7484).
 
@@ -133,7 +175,7 @@ The validation overlay **does not start, stop, or signal** matrix drivers. Safe 
 
 ---
 
-## 7. Gap remediation workflow
+## 8. Gap remediation workflow
 
 1. **Overlay fails** → classify: `copy` | `product` | `harness` | `backlog`
 2. **Small fix (≤ ~30 min)** — fix in SB repo, re-run overlay, commit on `main` with `fix(validation):` or `docs(help):`
@@ -144,7 +186,7 @@ The validation overlay **does not start, stop, or signal** matrix drivers. Safe 
 
 ---
 
-## 8. RCS / scoring integration
+## 9. RCS / scoring integration
 
 [enterprise-e2e-rcs.sh](../../scripts/enterprise-e2e-rcs.sh) computes Release Confidence Score. Validation extends it:
 
@@ -163,12 +205,12 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 
 ---
 
-## 9. Backlog (large gaps — do not block matrix)
+## 10. Backlog (large gaps — do not block matrix)
 
 | ID | Claim | Gap | Proposed work |
 |----|-------|-----|---------------|
 | V-01 | `first-hour-block-pr` | No timed onboarding SLO script | `tests/onboarding/` timed fixture |
-| V-03 | Tri-host E2E | Codex/Cursor 5-row smoke absent | P1-3 effectiveness plan |
+| V-03 | Tri-host install smoke | Codex/Cursor in CI; Claude operator-local | `run-tri-host-install-smoke.sh` |
 | V-04 | `WF-POST-EXEC-GATES` help | Internal WF — no dedicated page | Optional concept page or cross-link from validate |
 | V-05 | Matrix monitor↔ledger | Measurement drift (Round 3) | P0-1 effectiveness plan — independent of validation |
 
@@ -187,15 +229,20 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run \
 
 ---
 
-## 10. Artifacts
+## 11. Artifacts
 
 | Artifact | Path |
 |----------|------|
 | Validation plan | `docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md` |
 | Staleness audit | `docs/testing/help-center-staleness-audit-2026-06-29.md` |
-| Claims registry (validation) | `docs/testing/validation-claims-registry.json` |
-| Overlay script | `scripts/run-enterprise-e2e-validation-overlay.sh` |
+| Outcome claims registry | `docs/testing/validation-claims-registry.json` |
+| Feature claims registry | `docs/testing/pre-release-claims-registry.json` |
+| Validation overlay script | `scripts/run-enterprise-e2e-validation-overlay.sh` |
+| Pre-release overlay script | `scripts/run-enterprise-e2e-pre-release-overlay.sh` |
+| Tri-host install smoke | `scripts/run-tri-host-install-smoke.sh` |
+| Tri-host smoke test | `tests/scripts/test-tri-host-install-smoke.sh` |
 | Overlay lib | `scripts/lib/enterprise-e2e-validation-overlay.sh` |
+| Pre-release overlay lib | `scripts/lib/enterprise-e2e-pre-release-overlay.sh` |
 | Token telemetry lib | `scripts/lib/enterprise-e2e-token-telemetry.sh` |
 | Structural tests | `tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh` |
 | Results | `docs/testing/validation-overlay-results-2026-06-29.md` |
@@ -224,20 +271,27 @@ Append-only JSONL. **No pass/fail gate** on token counts. One object per overlay
 
 ---
 
-## 11. Operator quick start
+## 12. Operator quick start
 
 ```bash
 cd /path/to/silver-bullet/repo
 
-# 1. Staleness + structural validation (safe during live matrix)
+# 1. Pre-release feature checks (safe during live matrix)
+RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --dry-run
+
+# 2. Tri-host install smoke (Codex + Cursor in CI; Claude when CLI present)
+RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
+
+# 3. Outcome validation overlay (structural + claims-audit)
 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run
 
-# 2. Include ledger-linked claims (after rows complete)
+# 4. Include ledger-linked outcome claims (after rows complete)
 SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-3-LEDGER.md \
   RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --live
 
-# 3. Structural CI test
+# 5. Structural CI tests
 bash tests/enterprise-e2e-live/test-enterprise-e2e-validation-overlay.sh
+bash tests/scripts/test-tri-host-install-smoke.sh
 ```
 
 **Constraints:** composer-2.5 for delegated work; no `claude auth login/logout`; do not `pkill` matrix drivers.

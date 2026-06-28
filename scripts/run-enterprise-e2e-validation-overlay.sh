@@ -64,17 +64,11 @@ echo "SB_ROOT=${SB_ROOT}"
 echo "mode=$([[ "$DRY_RUN" == 1 ]] && echo dry-run || echo live-overlay)"
 echo ""
 
+# Outcome/capability claims only — feature checks live in pre-release overlay.
 validation_overlay_check_registry "$SB_ROOT"
-validation_overlay_check_apo_catalog_counts "$SB_ROOT"
-validation_overlay_check_help_version_sync "$SB_ROOT"
-validation_overlay_check_help_workflow_coverage "$SB_ROOT"
-validation_overlay_check_help_catalog_sot "$SB_ROOT"
-validation_overlay_check_help_tri_host "$SB_ROOT"
-validation_overlay_check_tri_host_install "$SB_ROOT"
-validation_overlay_check_hook_surface "$SB_ROOT"
-validation_overlay_check_sb_diagnostics "$SB_ROOT"
+validation_overlay_check_evidence_gates_surface "$SB_ROOT"
+validation_overlay_check_help_ship_readiness_page "$SB_ROOT"
 validation_overlay_check_claims_audit "$SB_ROOT"
-validation_overlay_check_apo_invariants "$SB_ROOT"
 
 if [[ "$DRY_RUN" == 0 ]]; then
   validation_overlay_matrix_row_claims "$SB_ROOT"
