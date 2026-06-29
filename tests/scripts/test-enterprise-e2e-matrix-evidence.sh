@@ -83,6 +83,33 @@ assert_ok "router evidence stub written on routing-only pass" \
   test -f "$FIXTURE/.planning/workflows/router-session-test.md"
 rm -f "$FIXTURE/.planning/workflows/router-session-test.md"
 
+# --- Outcome assessment harness (workflow row 1 checklist) ---
+# shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+source "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+OUT_CHECKLIST="${STATE_DIR}/row-1-outcomes.md"
+printf 'silver-context\n' >"$SB_RUNTIME_STATE_DIR/state"
+cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
+# Router session evidence
+EOF
+enterprise_e2e_outcome_write_workflow_checklist 1 "$OUT_CHECKLIST" "$FIXTURE" "$SB_RUNTIME_STATE_DIR" "" "" ".planning/workflows/router-session.md"
+assert_ok "outcome checklist written for workflow row 1" test -f "$OUT_CHECKLIST"
+if grep -q 'OUT-TAILOR-01' "$OUT_CHECKLIST" && grep -q 'OUT-ORCH-01' "$OUT_CHECKLIST"; then
+  echo "PASS: row 1 checklist includes primary outcome criteria"
+  ((PASS++)) || true
+else
+  echo "FAIL: row 1 checklist missing primary criteria"
+  ((FAIL++)) || true
+fi
+score="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$SB_RUNTIME_STATE_DIR" "" 1 "" ".planning/workflows/router-session.md")"
+if [[ "$score" == "pass" ]]; then
+  echo "PASS: OUT-TAILOR-01 pass on router fixture"
+  ((PASS++)) || true
+else
+  echo "FAIL: OUT-TAILOR-01 expected pass got $score"
+  ((FAIL++)) || true
+fi
+rm -f "$FIXTURE/.planning/workflows/router-session.md"
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 if [[ "$FAIL" -gt 0 ]]; then
