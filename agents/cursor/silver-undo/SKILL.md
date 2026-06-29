@@ -1,5 +1,5 @@
 ---
-name: silver-undo
+name: silver:undo
 description: >
   Safe git revert for SB phase or plan commits. Shows recent commits,
   checks dependent phases, and requires confirmation before reverting.

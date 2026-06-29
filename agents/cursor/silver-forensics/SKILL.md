@@ -1,5 +1,5 @@
 ---
-name: silver-forensics
+name: silver:forensics
 description: This skill should be used for root-cause investigation for completed sessions, abandoned sessions, verification failures, or mid-session stalls — classifies failure, walks investigation path, writes report to <project-root>/docs/silver:forensics/
 version: 0.1.0
 ---

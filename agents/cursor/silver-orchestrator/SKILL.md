@@ -1,5 +1,5 @@
 ---
-name: silver-orchestrator
+name: silver:orchestrator
 description: Parent-only Silver Bullet orchestrator — reads intent and directive state, spawns Task workers per atomic flow, never implements directly
 argument-hint: "<user intent or continue queue>"
 version: 0.1.0

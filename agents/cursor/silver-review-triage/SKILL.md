@@ -1,5 +1,5 @@
 ---
-name: silver-review-triage
+name: silver:review-triage
 description: This skill triages review findings, rejects weak findings, fixes valid blockers, and captures deferred work.
 argument-hint: "<review findings>"
 version: 0.1.0

@@ -1,5 +1,5 @@
 ---
-name: silver-init
+name: silver:init
 description: This skill should be used to initialize Silver Bullet enforcement for a project — checks dependencies, auto-detects project, scaffolds silver-bullet.md + config + workflow files, and reconciles any existing project instruction file in place without creating one
 version: 0.1.0
 ---

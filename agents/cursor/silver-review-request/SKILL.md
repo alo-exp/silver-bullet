@@ -1,5 +1,5 @@
 ---
-name: silver-review-request
+name: silver:review-request
 description: This skill frames a code review request with scope, risks, artifacts, and reviewer instructions.
 argument-hint: "<review scope>"
 version: 0.1.0

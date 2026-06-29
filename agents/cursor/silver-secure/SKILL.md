@@ -1,5 +1,5 @@
 ---
-name: silver-secure
+name: silver:secure
 description: This skill verifies security and threat-mitigation coverage for completed SB work.
 argument-hint: "<phase or change scope>"
 version: 0.1.0

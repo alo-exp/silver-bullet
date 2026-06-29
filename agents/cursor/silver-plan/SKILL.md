@@ -1,5 +1,5 @@
 ---
-name: silver-plan
+name: silver:plan
 description: This skill writes SB phase plans with dependencies, assumptions, waves, TDD policy, acceptance criteria, and verification steps.
 argument-hint: "<phase or change description>"
 version: 0.1.0

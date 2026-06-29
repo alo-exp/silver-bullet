@@ -1,5 +1,5 @@
 ---
-name: silver-ui-contract
+name: silver:ui-contract
 description: This skill creates UI implementation contracts covering layout, states, accessibility, copy, tokens, and acceptance criteria.
 argument-hint: "<UI scope>"
 version: 0.1.0

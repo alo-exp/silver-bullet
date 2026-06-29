@@ -1,5 +1,5 @@
 ---
-name: silver-doctor
+name: silver:doctor
 description: This skill should be used when the user runs `/silver:doctor` or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/silver:init` update, after `/silver:update`, and during CI diagnostics.
 version: 0.1.0
 ---

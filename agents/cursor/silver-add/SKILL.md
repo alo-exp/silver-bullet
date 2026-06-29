@@ -1,5 +1,5 @@
 ---
-name: silver-add
+name: silver:add
 description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=local or absent) — and return a stable, referenceable ID.
 version: 0.1.0
 ---

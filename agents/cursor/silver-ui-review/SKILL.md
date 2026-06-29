@@ -1,5 +1,5 @@
 ---
-name: silver-ui-review
+name: silver:ui-review
 description: This skill audits implemented UI for visual quality, accessibility, responsiveness, interaction quality, and performance.
 argument-hint: "<UI scope>"
 version: 0.1.0

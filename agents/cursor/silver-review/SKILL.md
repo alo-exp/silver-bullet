@@ -1,5 +1,5 @@
 ---
-name: silver-review
+name: silver:review
 description: This skill performs SB-owned code review, records findings, and drives the fix loop.
 argument-hint: "<review scope>"
 version: 0.1.0
