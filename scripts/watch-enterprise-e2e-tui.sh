@@ -21,10 +21,11 @@ FINDINGS_FILE="${SB_E2E_TUI_FINDINGS:-${SB_ROOT}/.e2e-tui-watch-findings.jsonl}"
 WATCH_LOG="${SB_E2E_TUI_WATCH_LOG:-${SB_ROOT}/.e2e-tui-watch.log}"
 WATCH_PID_FILE="${SB_E2E_TUI_WATCH_PID:-${SB_ROOT}/.e2e-tui-watch.pid}"
 BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
-MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-rows5-7-22-resume2.log}"
+MATRIX_LOG="${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-round5-batch-resume.log}"
+LEDGER="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-5-LEDGER.md}"
+MONITOR_AUTO_RESTART="${SB_E2E_MONITOR_AUTO_RESTART:-0}"
 MONITOR_SCRIPT="${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh"
 MONITOR_PID_FILE="${SB_E2E_MATRIX_MONITOR_PID_FILE:-${SB_ROOT}/.e2e-matrix-monitor.pid}"
-LEDGER="${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md"
 
 POLL_MIN="${SB_E2E_TUI_POLL_MIN:-60}"
 POLL_MAX="${SB_E2E_TUI_POLL_MAX:-120}"
@@ -72,6 +73,9 @@ ensure_monitor_alive() {
     return 0
   fi
   log "monitor dead — restarting (no duplicate matrix)"
+  SB_E2E_MATRIX_LOG="$MATRIX_LOG" \
+  SB_E2E_LEDGER_FILE="$LEDGER" \
+  SB_E2E_MONITOR_AUTO_RESTART="$MONITOR_AUTO_RESTART" \
   bash "$MONITOR_SCRIPT" &
   echo $! >"$MONITOR_PID_FILE"
   log "monitor restarted pid=$(cat "$MONITOR_PID_FILE")"
