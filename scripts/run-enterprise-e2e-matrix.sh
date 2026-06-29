@@ -359,6 +359,17 @@ run_matrix_row() {
       if [[ "$quota_retries" -gt 0 ]]; then
         echo "  PASS: succeeded after ${quota_retries} quota retry(ies)"
       fi
+      if [[ -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+        # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+        source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+        local outcome_dir="${WORK_DIR}/.planning/enterprise-e2e/outcomes"
+        mkdir -p "$outcome_dir"
+        enterprise_e2e_outcome_write_workflow_checklist "$row_num" \
+          "${outcome_dir}/row-${row_num}-outcomes.md" \
+          "$WORK_DIR" "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+          "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path" 2>/dev/null || true
+        echo "  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-${row_num}-outcomes.md"
+      fi
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
       SB_E2E_TELEMETRY_ROW="$row_num" \
