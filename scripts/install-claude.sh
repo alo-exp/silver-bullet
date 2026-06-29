@@ -153,8 +153,19 @@ purge_plugin_cache() {
   local marketplace="${plugin_id#*@}"
   local name="${plugin_id%@*}"
   local cache_dir="${HOME}/.claude/plugins/cache/${marketplace}/${name}"
+  local attempt=0
 
-  rm -rf "$cache_dir"
+  # Drop stable alias before purge — concurrent install / claude CLI can race with plain rm.
+  rm -f "${cache_dir}/current" 2>/dev/null || true
+
+  while (( attempt < 5 )); do
+    if rm -rf "$cache_dir" 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.3
+    attempt=$((attempt + 1))
+  done
+  rm -rf "$cache_dir" || true
 }
 
 sync_silver_bullet_settings_paths() {
