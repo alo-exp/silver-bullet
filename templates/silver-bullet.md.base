@@ -18,6 +18,7 @@ At the very start of any new session, perform these steps automatically:
 5. **Check for updates** — after context compaction, before starting work, run version checks:
 
    **5.1 Silver Bullet**
+   The SessionStart hook (`session-start`) performs this check deterministically on `startup` and `clear` events: it reads `installed_plugins.json`, compares semver to GitHub latest, and injects the A/B prompt below when installed < latest. Honor the injected prompt when present; otherwise run:
    ```bash
    cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
