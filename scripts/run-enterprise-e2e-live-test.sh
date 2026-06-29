@@ -124,6 +124,8 @@ fi
 # --- Preflight ---
 echo "--- Preflight ---"
 cd "$SB_ROOT"
+enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"
+enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"
 if [[ "$SKIP_CODE_INTEL_PREFLIGHT" == "1" ]]; then
   echo "WARN: skipping code-intel preflight (--skip-code-intel-preflight; debug only)"
 else
