@@ -28,7 +28,8 @@ SMOKE_SKILL_CANONICAL="silver-verify"
 source "${SCRIPT_DIR}/lib/pre-release-host-isolation.sh"
 
 # Pin smoke root once for the whole run (subscripts must not create sibling roots).
-export SB_PRE_RELEASE_SMOKE_ROOT="$(sb_smoke_root)"
+SB_PRE_RELEASE_SMOKE_ROOT="$(sb_smoke_root)"
+export SB_PRE_RELEASE_SMOKE_ROOT
 
 HOST_FILTER="${1:-all}"
 if [[ "$HOST_FILTER" == --host ]]; then
