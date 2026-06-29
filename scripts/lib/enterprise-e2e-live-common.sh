@@ -171,6 +171,39 @@ enterprise_e2e_run_install_claude() {
   return 1
 }
 
+# At Round N start, seek TUI monitor offsets to EOF so historical row attempt logs
+# are not re-ingested into findings or ENTERPRISE-E2E-SB-ISSUES.md.
+enterprise_e2e_reset_tui_monitor_offsets() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  local offsets_file findings_file agent_offset line_count
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
+
+  offsets_file="${SB_E2E_TUI_OFFSETS:-${sb_root}/.e2e-tui-watch-offsets.json}"
+  findings_file="${SB_E2E_TUI_FINDINGS:-${sb_root}/.e2e-tui-watch-findings.jsonl}"
+  agent_offset="${sb_root}/.planning/enterprise-e2e/.tui-monitor-agent-offset.json"
+
+  python3 - "$sb_root" "$offsets_file" <<'PY'
+import glob, json, os, sys
+root, offsets_path = sys.argv[1:3]
+offsets = {}
+for path in sorted(glob.glob(os.path.join(root, ".e2e-row*-attempt.log"))):
+    key = os.path.basename(path)
+    offsets[key] = os.path.getsize(path) if os.path.isfile(path) else 0
+with open(offsets_path, "w", encoding="utf-8") as f:
+    json.dump(offsets, f, indent=2)
+print(f"tui-watch offsets reset ({len(offsets)} row logs) -> {offsets_path}")
+PY
+
+  line_count=0
+  if [[ -f "$findings_file" ]]; then
+    line_count="$(wc -l <"$findings_file" | tr -d ' ')"
+  fi
+  mkdir -p "$(dirname "$agent_offset")"
+  printf '{"findings_line": %s, "ts": "%s", "reset_reason": "round_start"}\n' \
+    "$line_count" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >"$agent_offset"
+  echo "tui-monitor-agent-offset reset findings_line=${line_count} -> ${agent_offset}"
+}
+
 enterprise_e2e_prepend_harness_path() {
   local sb_root="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
   if [[ -f "${sb_root}/tests/live/lib/detach-background.sh" ]]; then

@@ -87,6 +87,8 @@ assert_contains "live entrypoint sets CLEAN_ENV=0" "$LIVE" "SB_E2E_MATRIX_CLEAN_
 assert_contains "live entrypoint unsets DRY_RUN" "$LIVE" "env -u SB_E2E_MATRIX_DRY_RUN"
 assert_contains "live entrypoint starts monitor" "$LIVE" "monitor-enterprise-e2e-matrix.sh"
 assert_contains "live entrypoint starts tui watch" "$LIVE" "watch-enterprise-e2e-tui.sh"
+assert_contains "live entrypoint resets tui offsets" "$LIVE" "enterprise_e2e_reset_tui_monitor_offsets"
+assert_contains "common lib resets tui offsets" "$COMMON_LIB" "enterprise_e2e_reset_tui_monitor_offsets"
 assert_contains "live entrypoint runs install-claude" "$LIVE" "install-claude.sh"
 assert_contains "live entrypoint quota 60s default" "$COMMON_LIB" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"'
