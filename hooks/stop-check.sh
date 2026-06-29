@@ -189,6 +189,13 @@ fi
     sb_orchestrator_clear_worker_marker 2>/dev/null || true
     exit 0
   fi
+  if [[ -f "$lib_dir/e2e-matrix-routing.sh" ]]; then
+    # shellcheck source=lib/e2e-matrix-routing.sh
+    source "$lib_dir/e2e-matrix-routing.sh"
+    if sb_e2e_matrix_routing_row_active 2>/dev/null; then
+      exit 0
+    fi
+  fi
   _stop_project_root="$(dirname "$config_file")"
   [[ -z "$_stop_project_root" || "$_stop_project_root" == "." ]] && _stop_project_root="$search_dir"
   if sb_orchestrator_is_parent_session 2>/dev/null \

@@ -792,6 +792,31 @@ out=$(run_hook)
 assert_passes "ORCH-2: orchestrator without repo_root/workflow_id ignored despite local workflows" "$out"
 teardown
 
+echo "--- ORCH-3: enterprise matrix routing row marker exempts orchestrator Stop block ---"
+setup
+write_current_planning_state
+jq -n \
+  --arg repo "$TMPDIR_TEST" \
+  '{current_flow:"FLOW-EXECUTE",repo_root:$repo,workflow_id:"20260428T120000Z-abc123-silver-feature"}' \
+  > "${SB_TEST_DIR}/orchestrator.json"
+jq -n '{next_skill:"silver-execute",next_worker_template:"EXECUTE"}' \
+  > "${SB_TEST_DIR}/orchestrator-directive.json"
+if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
+  export SB_E2E_ENTERPRISE_MATRIX=1
+  sb_e2e_matrix_set_routing_row_marker
+  out=$(run_hook)
+  assert_passes "ORCH-3: routing row marker allows Stop with pending silver-execute queue" "$out"
+  sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
+  out=$(run_hook)
+  assert_blocks "ORCH-3b: without routing marker orchestrator queue still blocks Stop" "$out"
+else
+  echo "  SKIP: e2e-matrix-routing.sh missing"
+fi
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -98,6 +98,34 @@ snapshot_routing_state
 printf 'silver-context\nsilver-unknown\n' >"$STATE_FILE"
 assert_fail "rejects unrelated new skill names" verify_row_routing_state_delta
 
+driver="$(grep -F 'enterprise_e2e_matrix_quiesce_orchestrator_queue' "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" | head -1)"
+if [[ -n "$driver" ]]; then
+  echo "PASS: matrix runner quiesces orchestrator before live rows"
+  ((PASS++)) || true
+else
+  echo "FAIL: matrix runner quiesces orchestrator before live rows"
+  ((FAIL++)) || true
+fi
+
+if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh"
+  export SB_E2E_ENTERPRISE_MATRIX=1
+  sb_e2e_matrix_set_routing_row_marker
+  if sb_e2e_matrix_routing_row_active; then
+    echo "PASS: routing row marker pairs with enterprise matrix env"
+    ((PASS++)) || true
+  else
+    echo "FAIL: routing row marker pairs with enterprise matrix env"
+    ((FAIL++)) || true
+  fi
+  sb_e2e_matrix_clear_routing_row_marker
+  unset SB_E2E_ENTERPRISE_MATRIX
+else
+  echo "FAIL: e2e-matrix-routing.sh helper missing"
+  ((FAIL++)) || true
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 if [[ "$FAIL" -gt 0 ]]; then

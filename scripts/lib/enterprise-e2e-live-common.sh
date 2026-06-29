@@ -173,6 +173,14 @@ enterprise_e2e_run_install_claude() {
 
 # At Round N start, seek TUI monitor offsets to EOF so historical row attempt logs
 # are not re-ingested into findings or ENTERPRISE-E2E-SB-ISSUES.md.
+enterprise_e2e_quiesce_orchestrator_queue() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
+  # shellcheck source=scripts/lib/enterprise-e2e-matrix-quiesce.sh
+  source "${sb_root}/scripts/lib/enterprise-e2e-matrix-quiesce.sh"
+  enterprise_e2e_matrix_quiesce_orchestrator_queue "$sb_root"
+}
+
 enterprise_e2e_reset_tui_monitor_offsets() {
   local sb_root="${1:-${SB_ROOT:-}}"
   local offsets_file findings_file agent_offset line_count
