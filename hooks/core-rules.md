@@ -23,7 +23,7 @@ Sixteen enforcement layers are active. Hooks are invocation-based — the hooks 
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); use the owning SB skill or workflow instead
 5. **Completion audit** (Pre+PostToolUse/Bash) — blocks commits until planning done; blocks PR/deploy/release until full workflow done
 6. **CI status check** (Pre+PostToolUse/Bash) — blocks all actions when CI is failing
-7. **Session management** (PostToolUse/Bash) — timeout detection, branch-scoped state reset
+7. **Session management** (PostToolUse/Bash + SessionStart) — timeout detection, branch-scoped state reset; SessionStart hook checks installed SB version vs GitHub latest and injects the §0.5.1 A/B update prompt when an update is available (fail-soft offline)
 8. **Stop hook** (Stop/SubagentStop) — blocks task-complete declaration if the required_planning floor is incomplete (two-tier model: the full required_deploy list is enforced separately at delivery commands by the completion audit, layer 5)
 9. **UserPromptSubmit recorder + reminder** (UserPromptSubmit) — records requested SB and optional extension routes and re-injects missing skills before every message
 10. **Forbidden skill gate** (PreToolUse/Skill) — blocks deprecated/forbidden skill invocations
