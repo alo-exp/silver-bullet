@@ -7,6 +7,7 @@
 # Stage 1 (structural): validate-host-skill-surface.sh — all three hosts.
 # Stage 2 (route): per-host invoke-skill / install / CLI smoke without full E2E matrix.
 #
+# Cursor CLI isolation (official): fake HOME, CURSOR_CONFIG_DIR, --plugin-dir, --workspace.
 # Cursor CLI auth: CURSOR_API_KEY env only + AGENT_CLI_CREDENTIAL_STORE=memory.
 # Never uses macOS Keychain (cursor-user) or cursor-agent login/status.
 #
@@ -127,10 +128,15 @@ smoke_cursor() {
   assert_invoke_route "cursor" "${REPO_ROOT}/agents/cursor"
 
   sb_smoke_begin_cursor
-  local root
-  root="$(sb_smoke_host_root cursor)"
   export SB_CURSOR_SMOKE_USE_CURRENT_ENV=1
-  printf '  isolated root: %s\n' "$root"
+  printf '  isolated fake-home: %s
+' "${SB_SMOKE_CURSOR_FAKE_HOME:-$HOME}"
+  printf '  CURSOR_CONFIG_DIR: %s
+' "${CURSOR_CONFIG_DIR:-}"
+  printf '  workspace: %s
+' "${SB_SMOKE_CURSOR_WORKSPACE:-}"
+  printf '  plugin-dir: %s
+' "${SB_SMOKE_CURSOR_PLUGIN_DIR:-}"
 
   if SB_CURSOR_SMOKE_USE_CURRENT_ENV=1 bash "${REPO_ROOT}/scripts/release-live-matrix-cursor-smoke.sh"; then
     smoke_pass "cursor: release-live-matrix-cursor-smoke.sh"
@@ -179,7 +185,7 @@ if [[ "$FAIL" -eq 0 ]]; then
   marker_root="$(sb_smoke_host_root codex)"
   marker_file="${marker_root}/.silver-bullet/pre-release-host-smoke"
   mkdir -p "$(dirname "$marker_file")"
-  printf 'hosts=codex,cursor,claude\nstructural=validate-host-skill-surface\ncursor_auth=env-api-key-memory\n' >"$marker_file"
+  printf 'hosts=codex,cursor,claude\nstructural=validate-host-skill-surface\ncursor_auth=env-api-key-memory\ncursor_isolation=fake-home,CURSOR_CONFIG_DIR,--plugin-dir,--workspace\n' >"$marker_file"
   printf 'Wrote isolated marker %s\n' "$marker_file"
 
   if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then

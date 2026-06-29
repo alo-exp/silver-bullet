@@ -25,12 +25,12 @@ assert_pass() {
 
 assert_contains() {
   local haystack="$1" needle="$2"
-  printf '%s' "$haystack" | grep -qF "$needle"
+  printf '%s' "$haystack" | grep -qF -- "$needle"
 }
 
 assert_not_contains() {
   local haystack="$1" needle="$2"
-  ! printf '%s' "$haystack" | grep -qF "$needle"
+  ! printf '%s' "$haystack" | grep -qF -- "$needle"
 }
 
 script_body="$(<"$SCRIPT")"
@@ -47,10 +47,15 @@ assert_pass "script writes pre-release-host-smoke marker" assert_contains "$scri
 
 echo "--- isolation + cursor CLI auth policy ---"
 assert_pass "isolation helper documents isolated homes" assert_contains "$isolation_body" "never read or write"
+assert_pass "isolation uses CURSOR_CONFIG_DIR" assert_contains "$isolation_body" "CURSOR_CONFIG_DIR"
+assert_pass "isolation uses fake HOME for cursor" assert_contains "$isolation_body" "fake-home"
+assert_pass "cursor CLI uses --plugin-dir" assert_contains "$cursor_body" "--plugin-dir"
+assert_pass "cursor CLI uses --workspace" assert_contains "$cursor_body" "--workspace"
 assert_pass "cursor CLI uses AGENT_CLI_CREDENTIAL_STORE=memory" assert_contains "$cursor_body" "AGENT_CLI_CREDENTIAL_STORE=memory"
 assert_pass "cursor CLI passes --api-key" assert_contains "$cursor_body" "api-key"
 assert_pass "cursor CLI forbids login" assert_contains "$cursor_body" "Do not use cursor-agent login"
 assert_pass "cursor CLI forbids status" assert_contains "$cursor_body" "Never calls"
+assert_pass "quality gate doc documents official cursor isolation" assert_contains "$gate_doc" "CURSOR_CONFIG_DIR"
 
 echo "--- pre-release-quality-gate.md wiring ---"
 assert_pass "quality gate doc mandates host smoke" assert_contains "$gate_doc" "run-pre-release-host-smoke.sh"
