@@ -2,7 +2,7 @@
   "name": "silver-bullet",
   "displayName": "Silver Bullet",
   "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
-  "version": "0.48.7",
+  "version": "0.48.8",
   "author": {
     "name": "Alo Labs",
     "email": "info@alolabs.dev"
