@@ -1,5 +1,5 @@
 ---
-name: silver-retro
+name: silver:retro
 description: >
   This skill should be used for SB-owned engineering retrospectives over a
   release, date range, incident cluster, or workflow history.

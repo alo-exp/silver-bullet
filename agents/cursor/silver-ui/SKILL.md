@@ -1,5 +1,5 @@
 ---
-name: silver-ui
+name: silver:ui
 description: >
   This skill should be used for full SB-owned UI/frontend workflow: orient → clarify/decide → test strategy → silver:ui-contract → execute+TDD → silver:ui-review → review → verify → secure → ship
 argument-hint: "<UI feature or component description>"

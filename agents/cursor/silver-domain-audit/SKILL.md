@@ -1,5 +1,5 @@
 ---
-name: silver-domain-audit
+name: silver:domain-audit
 description: >
   This skill should be used for SB-owned domain quality contract packs across code, tests, API, data, dependency, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident, retro, and benchmark evidence.
 argument-hint: "<scope> [--pack <pack>] [--mode quick|full|release]"

@@ -280,7 +280,7 @@ def sanitize_codex_text(text: str) -> str:
 
 def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = False) -> str:
     updated = text
-    if agent in {"claude", "codex"}:
+    if agent in {"claude", "codex", "cursor"}:
         updated = rewrite_names(updated)
     if agent == "codex":
         updated = ensure_codex_picker_title(updated)

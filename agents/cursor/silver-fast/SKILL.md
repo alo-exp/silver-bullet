@@ -1,5 +1,5 @@
 ---
-name: silver-fast
+name: silver:fast
 description: >
   This skill should be used for 3-tier complexity triage: trivial → direct SB edit, medium → SB context/plan/execute/verify, complex → silver:feature escalation.
 argument-hint: "<description of change>"

@@ -1,5 +1,5 @@
 ---
-name: silver-verify
+name: silver:verify
 description: This skill verifies completed SB work against plan, spec, tests, UAT criteria, and artifact requirements.
 argument-hint: "<phase or completion claim>"
 version: 0.1.0

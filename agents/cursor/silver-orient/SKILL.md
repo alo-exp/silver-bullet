@@ -1,5 +1,5 @@
 ---
-name: silver-orient
+name: silver:orient
 description: "DEPRECATED — use silver-scan for retrospective session scan or silver-context for phase context."
 version: 0.1.0
 ---

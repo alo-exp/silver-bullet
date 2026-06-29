@@ -1,5 +1,5 @@
 ---
-name: silver-ensure-docs
+name: silver:ensure-docs
 description: This skill should be used to bootstrap, reconcile, and semantically audit complete task-level documentation updates from docs/doc-scheme.md + docs/doc-scheme.json
 argument-hint: "[--bootstrap | --reconcile-brownfield | --from-hook --task <id> --gaps <path> | --recover-scheme]"
 version: 0.1.0

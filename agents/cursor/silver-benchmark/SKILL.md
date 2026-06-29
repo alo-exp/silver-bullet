@@ -1,5 +1,5 @@
 ---
-name: silver-benchmark
+name: silver:benchmark
 description: >
   This skill should be used for SB-owned benchmark and adversarial evaluation
   workflows across agents, models, providers, prompts, or implementation

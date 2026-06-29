@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.48.8] — 2026-06-30
+
+Enterprise E2E matrix hardening (session isolation, E2E-011 five-tool preflight, orchestrator read-only parent Bash), WBS meta-supervision MVP, and enterprise issues-doc traceability.
+
+### Features
+- `feat(wbs): add cross-cutting WBS meta-supervision MVP` (`b378026e`)
+- `feat(release): mandatory isolated tri-host pre-release smoke (Claude, Codex, Cursor CLI)` — `validate-host-skill-surface.sh`, `run-pre-release-host-smoke.sh`, `AGENT_CLI_CREDENTIAL_STORE=memory` for Cursor (no Keychain)
+
+### Bug Fixes
+- `fix(e2e): isolate matrix rows with fresh sessions per workflow` (`30089281`)
+- `fix(e2e): run matrix /clear inside expect prompt handler` (`73db2c82`)
+- `fix(e2e): accept archived workflow evidence in matrix verify` (`bb4da237`)
+- `fix(e2e): broaden internal matrix gate patterns for rows 21-22` (`f593236c`)
+- `fix(e2e): quiesce active workflows before matrix live rows` (`fa48f52f`)
+- `fix(e2e): stop friction append to Round 4 ledger; auto-sync PASS rows` (`09178a95`)
+- `fix(orchestrator): allow read-only parent Bash; block SB state mutations only` (`c4c71a80`)
+- `fix(e2e): recover from context exhaustion with /compact not /clear` (`95bc8c49`)
+- `fix(e2e): propagate E2E-011 preflight failure; add live-path test` (`6bd631b8`)
+- `fix(e2e): E2E-011 five-tool preflight, issues doc wiring, stop Next guidance` (`c2fc21a1`)
+- `fix(e2e): assert E2E-011 live preflight on opted-in test app` (`d3090ae4`)
+- `fix(e2e): auto-restart pending-rows driver on batch death` (`0a9a4e73`)
+- `fix(e2e): match ↑/↓ navigate picker in expect harness` (`8af4b9ac`)
+- `fix(e2e): orchestrator read-only bash and matrix harness tweaks` (`5524bf64`)
+
+### Refactoring
+- `refactor(runtime): purge GSD references; add enterprise E2E issues doc` (`5c39d1c3`)
+
+### Documentation
+- `docs(e2e): Round 4 ledger 16/22 — rows 2-3 pass + E2E-034 fixed` (`9850f591`)
+- `docs(issues): link E2E-016 WBS MVP to commit b378026e` (`26ec3b3e`)
+- `docs(issues): record fix commit SHAs in enterprise E2E issues log` (`7f8e757f`)
+- `docs(e2e): clarify SB-only branch isolation for release cut` (`95e85173`)
+- `docs(e2e): record Round 4 continuation branch for release cut` (`88b8b202`)
+
+---
+
 ## [0.48.7] — 2026-06-29
 
 Instruction-following reduction closure, silver-doctor coverage, subagent model gates, and enterprise E2E harness hardening.

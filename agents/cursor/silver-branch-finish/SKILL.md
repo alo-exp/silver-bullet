@@ -1,5 +1,5 @@
 ---
-name: silver-branch-finish
+name: silver:branch-finish
 description: "This skill performs branch finishing decisions before PR or merge: status, tests, docs, cleanup, and user choice."
 argument-hint: "<branch or ship scope>"
 version: 0.1.0

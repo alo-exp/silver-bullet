@@ -1,5 +1,5 @@
 ---
-name: silver-incident
+name: silver:incident
 description: >
   This skill should be used for SB-owned incident response, postmortem,
   corrective action filing, and release/process feedback loops.
