@@ -164,10 +164,13 @@ After all fixes from Stages 1–4a:
 2. Invoke `/silver:verify` (release scope) and `/silver:completion-audit` (release claim)
 3. Run pre-release feature overlay + tri-host install smoke:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke`
-4. Run outcome validation overlay dry-run:
+4. Run mandatory tri-host skill surface + routing smoke (isolated env per host):
+   `CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh`
+   Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
+5. Run outcome validation overlay dry-run:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run`
-5. Run `bash tests/run-all-tests.sh` once — must be green
-6. Record:
+6. Run `bash tests/run-all-tests.sh` once — must be green
+7. Record:
 
 ```bash
 echo "full-test-suite-rerun" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
@@ -212,8 +215,18 @@ Before `gh release create` or `/silver-create-release`:
 Default release path uses Kay-backed Codex-compatible markers (`matrix=codex-only`).
 Full Claude/native-Codex parity is optional diagnostic coverage.
 
-Optional Cursor smoke: `bash scripts/release-live-matrix-cursor-smoke.sh` writes
-`matrix=cursor-smoke` when enabled.
+Mandatory tri-host skill surface + routing smoke (before live matrix):
+
+```bash
+CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+```
+
+Isolated temp homes per host; Cursor CLI auth via `CURSOR_API_KEY` +
+`AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Writes
+`${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke` on success.
+
+Cursor install/hook smoke (included above): `release-live-matrix-cursor-smoke.sh`
+writes `matrix=cursor-smoke` when enabled.
 
 ---
 

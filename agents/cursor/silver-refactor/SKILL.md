@@ -1,5 +1,5 @@
 ---
-name: silver-refactor
+name: silver:refactor
 description: >
   This skill should be used for SB-owned refactoring: evaluate scope, preserve
   behavior with baseline tests, make structural changes, and prove nothing

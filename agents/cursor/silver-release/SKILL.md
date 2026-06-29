@@ -1,5 +1,5 @@
 ---
-name: silver-release
+name: silver:release
 description: >
   This skill should be used for SB-owned milestone release: silver:quality-gates -> audit -> gap closure (max 2x) -> docs -> silver:ship -> milestone archive -> silver:create-release
 argument-hint: "<version or release description, e.g. v1.2.0>"

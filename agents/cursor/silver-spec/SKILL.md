@@ -1,5 +1,5 @@
 ---
-name: silver-spec
+name: silver:spec
 description: >
   This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
 argument-hint: "<feature name or description>"

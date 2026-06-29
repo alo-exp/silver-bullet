@@ -1,5 +1,5 @@
 ---
-name: silver-review-fix-ladder
+name: silver:review-fix-ladder
 description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder, requiring two consecutive clean passes at each rung before advancing. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
 user-invocable: false
 ---

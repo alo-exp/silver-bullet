@@ -1,5 +1,5 @@
 ---
-name: silver-bootstrap-project
+name: silver:bootstrap-project
 description: Legacy alias for milestone/project bootstrap — routes to silver-init for new projects.
 version: 0.1.0
 ---

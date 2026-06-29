@@ -1,5 +1,5 @@
 ---
-name: silver-bugfix
+name: silver:bugfix
 description: >
   This skill should be used for SB-orchestrated bug investigation and fix: triage → path A/B/C → plan → TDD regression test → execute → review → verify → ship
 argument-hint: "<description of the bug or failure>"

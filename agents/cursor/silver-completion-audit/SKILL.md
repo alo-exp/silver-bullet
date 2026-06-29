@@ -1,5 +1,5 @@
 ---
-name: silver-completion-audit
+name: silver:completion-audit
 description: This skill independently verifies completion claims before SB accepts a phase, task, review, or release as done.
 argument-hint: "<completion claim>"
 version: 0.1.0

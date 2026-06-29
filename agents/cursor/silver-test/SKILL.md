@@ -1,5 +1,5 @@
 ---
-name: silver-test
+name: silver:test
 description: >
   This skill should be used for SB-owned test engineering: test writing,
   E2E route discovery, test repair, test audit, test performance, and

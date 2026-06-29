@@ -1,5 +1,5 @@
 ---
-name: silver-deploy
+name: silver:deploy
 description: >
   This skill should be used for SB-owned deployment orchestration: platform
   detection, deploy command safety, health checks, rollback readiness, and

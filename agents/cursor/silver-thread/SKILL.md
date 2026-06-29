@@ -1,5 +1,5 @@
 ---
-name: silver-thread
+name: silver:thread
 description: >
   Lightweight cross-session context threads for tracking a specific topic,
   decision chain, or concern across multiple sessions without a full project

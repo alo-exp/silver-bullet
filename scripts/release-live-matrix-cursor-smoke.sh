@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Cursor runtime smoke gate for release live matrix.
 #
+# Runs in an isolated HOME/CURSOR_HOME (never touches operator ~/.cursor).
 # Validates install-cursor.sh, hook merge, diagnostics, and cursor hook unit tests
 # without requiring a live Cursor agent session. Writes matrix=cursor-smoke when
 # SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER=1 (default for this script).
@@ -17,12 +18,16 @@ if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
 fi
 
-TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/sb-cursor-smoke-home.XXXXXX")"
-trap 'rm -rf "$TMP_HOME"' EXIT
+if [[ "${SB_CURSOR_SMOKE_USE_CURRENT_ENV:-}" == "1" && -n "${CURSOR_HOME:-}" ]]; then
+  printf '[cursor-smoke] Using caller-isolated CURSOR_HOME=%s\n' "$CURSOR_HOME"
+else
+  TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/sb-cursor-smoke-home.XXXXXX")"
+  trap 'rm -rf "$TMP_HOME"' EXIT
 
-export HOME="$TMP_HOME"
-export CURSOR_HOME="${TMP_HOME}/.cursor"
-export SILVER_BULLET_RUNTIME=cursor
+  export HOME="$TMP_HOME"
+  export CURSOR_HOME="${TMP_HOME}/.cursor"
+  export SILVER_BULLET_RUNTIME=cursor
+fi
 
 printf '[cursor-smoke] Running install-cursor.sh in isolated HOME\n'
 bash "${REPO_ROOT}/scripts/install-cursor.sh"

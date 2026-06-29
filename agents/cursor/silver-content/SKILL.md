@@ -1,5 +1,5 @@
 ---
-name: silver-content
+name: silver:content
 description: >
   This skill should be used for SB-owned public content, documentation,
   search-readiness, migration, optimization, and article-writing workflows.

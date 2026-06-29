@@ -1,5 +1,5 @@
 ---
-name: silver-bootstrap-milestone
+name: silver:bootstrap-milestone
 description: Legacy alias for new-milestone bootstrap — use silver-feature or silver-clarify flows.
 version: 0.1.0
 ---

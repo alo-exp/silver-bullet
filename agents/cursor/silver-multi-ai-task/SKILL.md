@@ -1,5 +1,5 @@
 ---
-name: silver-multi-ai-task
+name: silver:multi-ai-task
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
 user-invocable: false

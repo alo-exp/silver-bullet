@@ -1,5 +1,5 @@
 ---
-name: silver-spike
+name: silver:spike
 description: >
   Run 2–5 focused feasibility experiments before committing to an
   implementation approach. Each experiment has a hypothesis, executable

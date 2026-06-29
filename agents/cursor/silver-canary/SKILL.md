@@ -1,5 +1,5 @@
 ---
-name: silver-canary
+name: silver:canary
 description: >
   This skill should be used for SB-owned post-deploy canary and runtime watch
   evidence after releases, deploys, or high-risk runtime changes.

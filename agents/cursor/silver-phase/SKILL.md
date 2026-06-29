@@ -1,5 +1,5 @@
 ---
-name: silver-phase
+name: silver:phase
 description: >
   CRUD management for phases in .planning/ROADMAP.md — add, insert, remove,
   or edit phases. The only sanctioned way to modify the phase list without

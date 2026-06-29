@@ -1,5 +1,5 @@
 ---
-name: silver-debug
+name: silver:debug
 description: This skill performs systematic debugging with reproduction, hypotheses, evidence, root cause, fix plan, and regression guard.
 argument-hint: "<bug or failure description>"
 version: 0.1.0

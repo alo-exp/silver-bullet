@@ -1,5 +1,5 @@
 ---
-name: silver-worktree
+name: silver:worktree
 description: >
   This skill should be used for SB-owned isolated git worktree setup, finish,
   merge/PR handoff, and cleanup safety.

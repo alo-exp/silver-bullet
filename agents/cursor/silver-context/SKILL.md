@@ -1,5 +1,5 @@
 ---
-name: silver-context
+name: silver:context
 description: This skill captures phase context, decisions, assumptions, constraints, and open questions before planning.
 argument-hint: "<phase or change description> [--assumptions] [--auto] [--batch]"
 version: 0.2.0
