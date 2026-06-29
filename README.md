@@ -286,5 +286,3 @@ Run `bash scripts/sb-diagnostics.sh` for host-specific install and hook wiring c
 ## License
 
 [Business Source License 1.1 (BUSL 1.1)](LICENSE) — © 2026 [Alo Labs](https://alolabs.dev).
-
-Production use is permitted under the Additional Use Grant. Hosted or SaaS offerings of a substantially similar agentic process orchestration product in competition with Alo Labs' paid offerings require a commercial license. Converts to [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) on **2030-06-24**.
