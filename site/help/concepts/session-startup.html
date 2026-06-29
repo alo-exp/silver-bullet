@@ -179,7 +179,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="update-card">
         <h4>5.1 Silver Bullet <span class="badge badge-auto">auto-offer</span></h4>
-        <p>Reads the installed version from the plugin registry and fetches the latest version from GitHub. If installed &lt; latest, presents a prompt:</p>
+        <p>The <code>session-start</code> hook runs this check on <code>startup</code> and <code>clear</code> SessionStart events (not on <code>compact</code> or <code>resume</code>). It reads the installed version from <code>installed_plugins.json</code>, fetches the latest release from GitHub with a short timeout, and injects the prompt into session context when installed &lt; latest. Offline or failed checks are non-blocking.</p>
+        <p>If an update is available, the runtime presents:</p>
         <p><em>"Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
         <div class="update-options">
           <span class="update-opt opt-a">A. Yes, update now</span>
