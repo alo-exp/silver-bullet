@@ -373,10 +373,19 @@ enterprise_e2e_preflight_agentmemory() {
   fi
 
   if ! sb_agentmemory_server_healthy "$config_file"; then
+    if command -v lsof >/dev/null 2>&1 && lsof -tiTCP:3111 -sTCP:LISTEN >/dev/null 2>&1; then
+      echo "    agentmemory port 3111 in use but health failed — recycling stale listener"
+      lsof -tiTCP:3111 -sTCP:LISTEN | xargs kill -9 2>/dev/null || true
+      sleep 1
+    fi
     echo "    agentmemory server not healthy — starting background server"
     mkdir -p "${HOME}/.agentmemory"
     nohup agentmemory >"${HOME}/.agentmemory/server.log" 2>&1 &
-    sleep 2
+    local _am_wait=0
+    while [[ "$_am_wait" -lt 20 ]] && ! sb_agentmemory_server_healthy "$config_file"; do
+      sleep 1
+      _am_wait=$((_am_wait + 1))
+    done
     if ! sb_agentmemory_server_healthy "$config_file"; then
       enterprise_e2e_preflight_fail "agentmemory server not healthy — see docs/AGENTMEMORY.md and ~/.agentmemory/server.log"
     fi
