@@ -167,6 +167,7 @@ After all fixes from Stages 1–4a:
 4. Run mandatory tri-host skill surface + routing smoke (isolated env per host):
    `CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh`
    Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
+   Isolation: fake `HOME`, `CURSOR_CONFIG_DIR`, `--plugin-dir`, `--workspace`.
 5. Run outcome validation overlay dry-run:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-validation-overlay.sh --dry-run`
 6. Run `bash tests/run-all-tests.sh` once — must be green
@@ -222,7 +223,9 @@ CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
 ```
 
 Isolated temp homes per host; Cursor CLI auth via `CURSOR_API_KEY` +
-`AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Writes
+`AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Cursor isolation uses
+official mechanisms only: fake `HOME`, `CURSOR_CONFIG_DIR`, `--plugin-dir`, and
+`--workspace` (no undocumented `~/.cursor` redirects). Writes
 `${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke` on success.
 
 Cursor install/hook smoke (included above): `release-live-matrix-cursor-smoke.sh`
