@@ -1,6 +1,6 @@
 # Round 5 Ledger — Enterprise E2E Matrix
 
-> **Working branch:** `enterprise-e2e/round4-continuation` @ `91470686` — see [ROUND-5-GATES.md](./ROUND-5-GATES.md).
+> **Working branch:** `enterprise-e2e/round4-continuation` @ `3fe6a044` — see [ROUND-5-GATES.md](./ROUND-5-GATES.md).
 
 ---
 
@@ -9,14 +9,14 @@
 | Field | Value |
 |-------|-------|
 | Round | 5 |
-| SB repo SHA | `91470686` |
+| SB repo SHA | `f04cacb6` |
 | Test app SHA | `826cb5c3` |
 | Claude plugin install | pending — `bash scripts/install-claude.sh` |
 | Claude model (frozen) | `haiku` (matrix default) |
 | Operator | Cursor agent (continuous monitor; no login/logout) |
 | Start date | 2026-06-30 |
 | End date | |
-| Round clean? | **No** — monitor replay appended friction; matrix not started |
+| Round clean? | **In progress** — rows 1,5 PASS @ `3fe6a044`; row 7 silver-test active (driver PID 24087, Claude 24846); monitor `f04cacb6` AUTO_RESTART=0 |
 
 **Round 5 restart (offset reset):** TUI monitor offsets reset at driver/preflight start; E2E-086+ replay IDs on `main` are `false-positive-replay` — baseline remains 76.
 
@@ -73,13 +73,13 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 
 | # | WF slug | Session date | Claude model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | | haiku | | | | | | |
+| 1 | `silver-router` | 2026-06-30 | haiku | **Pass** | | | `3fe6a044` | silver-router routes hooks skills orchestrator | |
 | 2 | `silver-research` | | haiku | | | | | | |
 | 3 | `silver-feature` | | haiku | | | | | | |
 | 4 | `silver-bugfix` | | haiku | | | | | | |
-| 5 | `silver-ui` | | haiku | | | | | | |
+| 5 | `silver-ui` | 2026-06-30 | haiku | **Pass** | stop-hook friction (58m20s) | | `3fe6a044` | silver-ui routes hooks skills orchestrator | |
 | 6 | `silver-fast` | | haiku | | | | | | |
-| 7 | `silver-test` | | haiku | | | | | | |
+| 7 | `silver-test` | 2026-06-30 | haiku | *(blocked — decision)* | evidence hook needs `/silver:init` context-mode fragment | | `f04cacb6` | silver-test routes hooks skills orchestrator | tests green; TUI awaiting option 1 |
 | 8 | `silver-refactor` | | haiku | | | | | | |
 | 9 | `silver-benchmark` | | haiku | | | | | | |
 | 10 | `silver-content` | | haiku | | | | | | |
@@ -96,7 +96,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | 21 | `post-exec-gates` | | haiku | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | haiku | | *(parent: row 4)* | | | | |
 
-**Pass count:** 0 / 22
+**Pass count:** 2 / 22
 
 ---
 
