@@ -70,10 +70,18 @@ sb_agentmemory_cli_available() {
 
 sb_agentmemory_server_healthy() {
   local config_file="${1:-}"
-  local url
+  local url status_out
   url="$(sb_agentmemory_health_url "$config_file")"
-  command -v curl >/dev/null 2>&1 || return 1
-  curl -sf --max-time 3 "$url" >/dev/null 2>&1
+  if command -v curl >/dev/null 2>&1 && curl -sf --max-time 3 "$url" >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v agentmemory >/dev/null 2>&1; then
+    status_out="$(agentmemory status 2>/dev/null || true)"
+    if printf '%s\n' "$status_out" | grep -qE 'Connected|Health:[[:space:]]+healthy'; then
+      return 0
+    fi
+  fi
+  return 1
 }
 
 sb_agentmemory_platform_artifact_path() {
