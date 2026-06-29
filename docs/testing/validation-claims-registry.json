@@ -33,7 +33,7 @@
       "text": "Engineering Best Practices",
       "verification_tier": "matrix_overlay",
       "check_id": "capabilities-outcome",
-      "test_ids": ["enterprise-e2e-matrix"]
+      "test_ids": ["enterprise-e2e-matrix", "test-outcome-assessment", "enterprise-e2e-outcome-assess"]
     },
     {
       "claim_id": "hero-free-no-telemetry",

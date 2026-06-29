@@ -158,6 +158,11 @@ assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-validation-overlay.sh
 assert_file_exists "${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md" "validation plan exists"
 assert_file_exists "${REPO_ROOT}/docs/testing/validation-claims-registry.json" "validation claims registry exists"
 assert_file_exists "${REPO_ROOT}/docs/testing/claims-registry.json" "claims registry exists"
+assert_file_exists "${REPO_ROOT}/docs/testing/outcome-criteria-registry.json" "outcome criteria registry exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md" "outcome assessment rubric exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md" "ROUND-N-OUTCOMES template exists"
+assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" "outcome assessment lib exists"
+assert_file_exists "${REPO_ROOT}/tests/scripts/test-outcome-assessment.sh" "outcome assessment test exists"
 assert_executable "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" "bypass disclaimer contract test exists"
 
 # Ledger template includes failure_class column
@@ -168,6 +173,8 @@ assert_contains "live entrypoint session0 gate" "$LIVE" "enterprise_e2e_assert_s
 assert_contains "common lib session0 skip env" "$COMMON_LIB" "SB_E2E_SESSION0_SKIP"
 assert_contains "runbook documents session0 gate" "$RUNBOOK" "Session 0"
 assert_contains "runbook documents failure_class" "$RUNBOOK" "failure_class"
+assert_contains "rubric defines OUT-TAILOR-01" "${REPO_ROOT}/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md" "OUT-TAILOR-01"
+assert_contains "rubric defines OUT-KM-01" "${REPO_ROOT}/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md" "OUT-KM-01"
 
 # claims-audit in structural gate
 if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; then
