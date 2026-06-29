@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.48.9] — 2026-06-30
+
+## Features
+- `feat(release): official Cursor isolation for pre-release smoke` (73e3244d)
+
+## Bug Fixes
+- `fix(release): satisfy shellcheck SC2155 in pre-release host smoke` (97196fc6)
+
+---
+
 ## [0.48.8] — 2026-06-30
 
 Enterprise E2E matrix hardening (session isolation, E2E-011 five-tool preflight, orchestrator read-only parent Bash), WBS meta-supervision MVP, and enterprise issues-doc traceability.
