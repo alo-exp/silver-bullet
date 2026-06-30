@@ -679,7 +679,7 @@ expect {
     set timeout $quiet_timeout
     exp_continue
   }
-  -re {Enter to select.*Tab/Arrow keys to navigate.*Esc to cancel} {
+  -re {Enter to select.*navigate.*Esc to cancel} {
     if {$prompt_submitted == 0} { exp_continue }
     send -- "1\r"
     set timeout $quiet_timeout
