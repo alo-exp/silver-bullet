@@ -48,7 +48,7 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 
 | ID | Severity | Component | Issue | Notes |
 |----|----------|-----------|-------|-------|
-| E2E-085 | annoyance | stall | ft+tabtocycle)·←foragents     0 tokens
+| E2E-086 | friction→fixed | harness/cursor | Cursor matrix row attempt logs stayed 0 bytes — `cursor-agent --print` ignored `CLAUDE_INTERACTIVE_LOG_FILE`; OUT-SKILL-01/OUT-WORLD-01 false fails | `tests/live/agents/cursor/agent.sh` writes log file; matrix tees output + seeds state slug; outcome scorer checks `state.requested` @ cursor branch |
 
  ○low·/effort
 

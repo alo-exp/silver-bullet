@@ -226,6 +226,17 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
     9) printf 'silver-benchmark\n' ;;
     10) printf 'silver-content\n' ;;
     11) printf 'silver-devops\n' ;;
+    12) printf 'silver-deploy\n' ;;
+    13) printf 'silver-canary\n' ;;
+    14) printf 'silver-release\n' ;;
+    15) printf 'review-triad\n' ;;
+    16) printf 'ship-readiness\n' ;;
+    17) printf 'silver-incident\n' ;;
+    18) printf 'silver-retro\n' ;;
+    19) printf 'silver-forensics\n' ;;
+    20) printf 'process-maintenance\n' ;;
+    21) printf 'post-exec-gates\n' ;;
+    22) printf 'validate-substep\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -625,12 +636,19 @@ enterprise_e2e_outcome_score_plan() {
 
 enterprise_e2e_outcome_score_skill() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
-  local state_file="${state_dir}/state" slug
+  local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
-  if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
-    if grep -qE '^silver-' "$state_file" 2>/dev/null; then
-      printf 'pass\n'; return 0
+  for candidate in "$state_file" "$requested_file"; do
+    if [[ -f "$candidate" ]] && [[ -s "$candidate" ]]; then
+      if grep -qE '^silver(-|$)' "$candidate" 2>/dev/null; then
+        printf 'pass\n'; return 0
+      fi
+      if [[ -n "$slug" ]] && grep -Fqx -- "$slug" "$candidate" 2>/dev/null; then
+        printf 'pass\n'; return 0
+      fi
     fi
+  done
+  if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
     printf 'partial\n'; return 0
   fi
   if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then

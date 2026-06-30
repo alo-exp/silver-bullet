@@ -214,6 +214,10 @@ except subprocess.TimeoutExpired as exc:
 PY
   ) || true
 
+  if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" ]]; then
+    printf '%s' "$output" >"${CLAUDE_INTERACTIVE_LOG_FILE}"
+  fi
+
   printf '%s' "$output"
 }
 

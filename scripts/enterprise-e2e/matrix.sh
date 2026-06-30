@@ -315,6 +315,12 @@ run_matrix_row() {
   fi
 
   prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num" "$slug")"
+  local matrix_state_file
+  matrix_state_file="$(enterprise_e2e_runtime_state_dir)/state"
+  mkdir -p "$(dirname "$matrix_state_file")" 2>/dev/null || true
+  if ! grep -Fqx -- "$slug" "$matrix_state_file" 2>/dev/null; then
+    printf '%s\n' "$slug" >>"$matrix_state_file" 2>/dev/null || true
+  fi
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
@@ -348,6 +354,7 @@ run_matrix_row() {
         run_prompt "$prompt" 2>&1 || true
     )"
     if [[ -n "$output" ]]; then
+      printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
 
