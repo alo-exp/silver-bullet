@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.49.0] — 2026-07-01
+
+## Features
+- `feat(hooks): run SB update check on SessionStart startup/clear` (fee7ede2)
+- `feat(core): enforce host-agnostic SB core with pre-release validator` (807b6871)
+- `feat(e2e): enforce autonomy outcome criteria in matrix harness` (dfb451d8)
+- `refactor(hooks): completion-audit policy pipeline + hook-bootstrap` (7490bd69)
+- `refactor(install): decompose install-codex.sh into lib modules` (9ed84aac)
+- `refactor: close thermo-nuclear WARN monoliths on main` (bfd77344)
+
+## Bug Fixes
+- `fix(install): cross-host surface audit, host-bundles isolation, doctor D14-D17` (4ccea894)
+- `fix(install): align codex tests and bundles with host-bundles layout` (f99eae52)
+- `fix(release): host-bundles smoke paths + classify dedup + hook-bootstrap` (95c50892)
+- `fix(install): restore validate-host-install-surface.sh for D16 gate` (9bbbcf88)
+- `fix(site): contain mobile horizontal overflow on help docs` (667114ef)
+- `fix(e2e): routing-only row 1 outcome scoring without WBS supervisor` (ee62a820)
+
+## Other
+- Enterprise E2E harness, matrix, and site polish commits since v0.48.9 (50 commits total)
+
+---
+
 ## [0.48.9] — 2026-06-30
 
 ### Enterprise E2E (main)
