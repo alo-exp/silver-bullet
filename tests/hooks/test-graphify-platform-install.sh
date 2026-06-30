@@ -96,10 +96,11 @@ mkdir -p "$TMP/.cursor/rules"
 printf 'graphify query-first\n' >"$TMP/.cursor/rules/graphify.mdc"
 sb_graphify_platform_artifact_present "$TMP" cursor && pass "cursor artifact detect" || fail "cursor artifact detect"
 
-# Skill markdown contracts
-assert_grep "silver-init pre_index step" "$REPO_ROOT/skills/silver-init/SKILL.md" "Step 3b — Skill registration"
-assert_grep "silver-init post_index step" "$REPO_ROOT/skills/silver-init/SKILL.md" "Step 3d — Platform always-on"
-assert_grep "silver-init hook install optional" "$REPO_ROOT/skills/silver-init/SKILL.md" "graphify hook install"
+# Skill markdown contracts (Phase 1.1 content lives in reference doc after skill split)
+INIT_RT_REF="$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md"
+assert_grep "silver-init pre_index step" "$INIT_RT_REF" "Step 3b — Skill registration"
+assert_grep "silver-init post_index step" "$INIT_RT_REF" "Step 3d — Platform always-on"
+assert_grep "silver-init hook install optional" "$INIT_RT_REF" "graphify hook install"
 assert_grep "silver-update pre_index retry" "$REPO_ROOT/skills/silver-update/SKILL.md" "Pre-index skill"
 assert_grep "docs GRAPHIFY platform table" "$REPO_ROOT/docs/GRAPHIFY.md" "graphify cursor install"
 assert_grep "silver-bullet platform order" "$REPO_ROOT/silver-bullet.md" "Pre-index skill"

@@ -20,16 +20,21 @@ assert_grep() {
 
 echo "=== recommended-tools policy contract tests ==="
 
+INIT_RT_REF="$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md"
+HOST_CURSOR_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/cursor.md"
+HOST_CLAUDE_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/claude.md"
+HOST_CODEX_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/codex.md"
+
 assert_grep "silver-init re-prompts on update when null" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$INIT_RT_REF" \
   "Update mode re-prompt"
 
 assert_grep "silver-init fresh init always pending" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$INIT_RT_REF" \
   "Fresh init default"
 
 assert_grep "silver-init install failure suspends" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$INIT_RT_REF" \
   "enforcement_suspended"
 
 assert_grep "silver-update retries suspended install" \
@@ -45,7 +50,7 @@ template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' \
 [[ "$template_null" == "null" ]] && pass "template enabled_by_user is null" || fail "template enabled_by_user is null"
 
 assert_grep "silver-init hook install optional" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$INIT_RT_REF" \
   "graphify hook install"
 
 assert_grep "template platform_install_commands cursor" \
@@ -87,20 +92,20 @@ codex_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex
   && pass "template codex platform install" || fail "template codex platform install"
 
 assert_grep "silver-init documents cursor platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CURSOR_GUIDE" \
   "graphify cursor install"
 
 assert_grep "silver-init documents claude platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CLAUDE_GUIDE" \
   "graphify claude install --project"
 
 assert_grep "silver-init documents codex platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CODEX_GUIDE" \
   "graphify codex install --project"
 
 assert_grep "silver-init host detection" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
-  "CURSOR_PLUGIN_ROOT"
+  "$INIT_RT_REF" \
+  "SILVER_BULLET_RUNTIME"
 
 assert_grep "GRAPHIFY.md platform table" \
   "$REPO_ROOT/docs/GRAPHIFY.md" \
@@ -139,7 +144,7 @@ assert_grep "silver-update RTK retry" \
   "Step 8c: RTK"
 
 assert_grep "silver-init stack optimize step" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$INIT_RT_REF" \
   "sb-optimize-stack.sh --apply"
 
 assert_grep "silver-update stack optimize step" \
