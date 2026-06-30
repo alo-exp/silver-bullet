@@ -167,7 +167,7 @@ lifecycle steps are enforcement gates.
 - `cloudformation-to-pulumi` — Migrate CloudFormation → Pulumi
 - `pulumi-arm-to-pulumi` — Migrate Azure ARM/Bicep → Pulumi
 
-### ahmedasmar/devops-claude-skills
+### ahmedasmar/devops skills marketplace
 - `iac-terraform` — Terraform/Terragrunt IaC management
 - `k8s-troubleshooter` — Kubernetes troubleshooting and diagnostics
 - `aws-cost-optimization` — AWS cost analysis and optimization

@@ -64,6 +64,6 @@ When spawning Task, include:
 
 User may send `SB OVERRIDE: <reason>` for audited bypass (logged to `.planning/orchestrator-override-log.jsonl`).
 
-## Host note (Cursor)
+## Host note (orchestrator parent)
 
-Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill + `templates/cursor-rules/silver-orchestrator.mdc` are the contract. See `docs/ORCHESTRATOR.md`.
+Hooks block parent Edit/Write/Bash at tier ≥ 2. This skill + `scripts/lib/install-task host/templates/task host-rules/silver-orchestrator.mdc` are the contract. See `docs/ORCHESTRATOR.md`.

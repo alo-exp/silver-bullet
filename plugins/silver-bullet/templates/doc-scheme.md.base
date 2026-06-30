@@ -27,8 +27,8 @@ Write docs so the intended reader is obvious.
 | **Reviewer / release operator** | Is this ready to ship? What is the risk? | `docs/TESTING.md`, `docs/CICD.md`, `docs/DEPLOYMENT.md` |
 | **Maintainer** | What is durable policy vs temporary plan? | `docs/doc-scheme.md`, `docs/knowledge/`, `docs/ADR/` |
 | **External stakeholder** | What shipped and why? | `README.md`, `docs/CHANGELOG.md` |
-| **Plugin author** *(Claude-Codex plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
-| **Runtime operator** *(Claude/Codex/Kay, plugin-dev only)* | What is shared vs runtime-specific? | `docs/RUNTIME-COMPATIBILITY.md` |
+| **Plugin author** *(multi-host plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
+| **Runtime operator** *(supported runtimes, plugin-dev only)* | What is shared vs runtime-specific? | `docs/RUNTIME-COMPATIBILITY.md` |
 
 ---
 
@@ -106,7 +106,7 @@ Both use monthly files (`YYYY-MM.md`). Each month's file is append-only during t
 | `GLOSSARY.md` | Terminology starts drifting across docs |
 | `NAVIGATION.md` | Docs grow large enough that question-first routing needs a dedicated page |
 | `DOC-OWNERSHIP.md` | Team needs explicit doc owners and review cadence tracking |
-| `RUNTIME-COMPATIBILITY.md` | **Claude-Codex plugin-dev projects only**; runtime parity must be explicit |
+| `RUNTIME-COMPATIBILITY.md` | **multi-host plugin-dev projects only**; runtime parity must be explicit |
 | `ADR/` | Significant architecture, packaging, compatibility, or deprecation decisions |
 
 ---
@@ -241,7 +241,7 @@ Use terms consistently.
 | **Milestone** | Group of tasks delivered and archived together |
 | **ADR** | Architecture Decision Record for durable technical decisions |
 | **Skill** | Reusable workflow capability invoked during development |
-| **Runtime compatibility** *(plugin-dev only)* | Matrix of shared vs runtime-specific behavior (Claude/Codex/Kay) |
+| **Runtime compatibility** *(plugin-dev only)* | Matrix of shared vs runtime-specific behavior (supported runtimes) |
 
 If terms drift or multiply, create/update `docs/GLOSSARY.md` and link it from `knowledge/INDEX.md`.
 

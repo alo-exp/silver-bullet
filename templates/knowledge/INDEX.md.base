@@ -10,7 +10,7 @@ Quick-reference pointer to current project docs. Updated when docs are added/rem
 | Task Log | `docs/CHANGELOG.md` | Rolling task log (50 entries max) |
 | Decisions (ADR) | `docs/ADR/` | Durable architecture/packaging/runtime decisions |
 | Glossary | `docs/GLOSSARY.md` | Canonical terminology (when needed) |
-| Runtime Compatibility | `docs/RUNTIME-COMPATIBILITY.md` | Claude/Codex/Kay parity (**plugin-dev projects only**) |
+| Runtime Compatibility | `docs/RUNTIME-COMPATIBILITY.md` | supported runtimes parity (**plugin-dev projects only**) |
 | Session Logs | `docs/sessions/` | Per-session work logs (30 max) |
 | Design Specs | `docs/specs/` | Point-in-time design specs |
 | Active Workflow | `docs/workflows/full-dev-cycle.md` | Dev cycle steps |

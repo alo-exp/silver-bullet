@@ -133,7 +133,7 @@ The default behavior (no aliases) catches `AutoGen` vs `autogen` and `BMAD Metho
 | BMAD Method | **BMAD** |
 | gh-aw, GitHub Agentic Workflows (gh-aw) | **GitHub Agentic Workflows** |
 | OPA, Open Policy Agent, OPM | **OPA** |
-| Claude Code Skills, Claude Code Hooks | **Claude Code** |
+| the active host agent Skills, the active host agent Hooks | **the active host agent** |
 | Lunar | **Earthly Lunar** |
 | Qodo, PR-Agent, Qodo / PR-Agent | **Qodo/PR-Agent** |
 | Windsurf, Devin Desktop | **Windsurf** |
