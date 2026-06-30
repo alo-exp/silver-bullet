@@ -182,6 +182,7 @@ assert_text_not_contains "Codex prompt does not expose Markdown skill-link entry
 assert_text_contains "Claude prompt preserves Markdown skill-link entrypoint" "$claude_quality_prompt" '\[\$silver\]\(/tmp/silver/SKILL\.md\)'
 assert_file_contains "helpers trust temp workspaces before live turns" "${SCRIPT_DIR}/helpers.sh" 'trust_runtime_workspace'
 assert_file_contains "workspace preparation invokes trust seeding" "${SCRIPT_DIR}/helpers.sh" '^  trust_runtime_workspace$'
+assert_file_contains "enterprise matrix setup_workspace seeds codex workspace trust" "${SCRIPT_DIR}/helpers.sh" 'Pre-trust fixture workspace before interactive Codex matrix turns'
 assert_file_contains "Kay E2E helpers source the Kay isolation library in child shells" "${SCRIPT_DIR}/helpers.sh" 'source "\$\{SB_ROOT\}/tests/live/lib/kay-codex-isolation\.sh"'
 assert_file_contains "interactive launcher fails fast on workspace trust prompt" "${REPO_ROOT}/scripts/codex-interactive-invoke.expect" 'workspace trust prompt surfaced'
 assert_file_contains "interactive launcher fails fast on hook review prompt" "${REPO_ROOT}/scripts/codex-interactive-invoke.expect" 'interactive hook trust review surfaced'
