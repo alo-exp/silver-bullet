@@ -309,8 +309,16 @@ TUI11_LOG="$(mktemp)"
 printf 'graphify query "terraform validation"\rFull verdict persisted to agentmemory\r.planning/workflows/devops-terraform-validation.md\r' >"$TUI11_LOG"
 score_km_tui11="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI11_LOG" 11 "" "$ROW67_LEDGER")"
 [[ "$score_km_tui11" == "pass" ]] && pass "TUI-noisy row 11 OUT-KM-01 pass (graphify query + persisted capture)" || fail "TUI-noisy row 11 OUT-KM-01 got $score_km_tui11"
+TUI2_LOG="$(mktemp)"
+printf 'graphify query "silver-research routes hooks skills orchestrator"\rsaved the decision to agentmemory as mem_mr0ghyhm_78cf4b75a677\rWROTE: docs/ADR-001-runtime.md\r' >"$TUI2_LOG"
+mkdir -p "$FIXTURE/docs"
+touch "$FIXTURE/docs/ADR-001-runtime.md"
+score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-KM-01 pass (mem_mr id + graphify query)" || fail "TUI-noisy row 2 OUT-KM-01 got $score_km_tui2"
+score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
+[[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
 
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG"
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
