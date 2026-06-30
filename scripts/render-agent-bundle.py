@@ -206,6 +206,7 @@ def ensure_codex_picker_title(text: str) -> str:
 
 
 PROTECTED_RUNTIME_SUBSTRINGS = (
+    "scripts/lib/install-cursor/templates/cursor-rules/",
     "templates/cursor-rules/",
     ".cursor/rules/",
 )

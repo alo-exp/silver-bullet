@@ -15,13 +15,13 @@ proceeds to `silver:plan`. A ❌ is a hard stop — redesign before continuing.
 `${PLUGIN_ROOT}/skills/devops-quality-gates/SKILL.md`, so the plugin root is two
 directories up.
 
-**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a Codex native mirror such as `$HOME/.cursor/skills/devops-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged Codex source root instead:
+**Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. If this skill is running from a native skill mirror such as `$HOME/.secondary host/skills/devops-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, use the hidden packaged secondary host source root instead:
 
 ```bash
-DIMENSION_SKILLS_ROOT="$HOME/.cursor/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source"
+DIMENSION_SKILLS_ROOT="$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet/current/skill-source"
 ```
 
-Do not require dimension helper skills to appear in the Codex skill picker. They are implementation dependencies of `devops-quality-gates`, not user-facing routes.
+Do not require dimension helper skills to appear in the host skill picker. They are implementation dependencies of `devops-quality-gates`, not user-facing routes.
 
 ---
 

@@ -34,7 +34,7 @@ When the topic is visual or diagram-heavy and `--text` is not set, offer the vis
 If A: follow the browser evidence fallback hierarchy in `silver-bullet.md §8.1`:
 
 1. **Alumnium MCP (preferred)** — when configured, `start` the session, then `do` / `check` / `get` against a URL or local dev server, and `stop` when done. Capture screenshots, assertion results, or extracted UI state in `.planning/CLARIFY.md`.
-2. **Host browser MCP** — when Alumnium is unavailable, use the host agent's built-in browser tools for the same visual exploration. Typical flow: navigate → snapshot → screenshot → click/type to explore options → re-snapshot. In Cursor, use `cursor-ide-browser` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_type`, `browser_scroll`). Attach screenshots and snapshot notes to `.planning/CLARIFY.md`.
+2. **Host browser MCP** — when Alumnium is unavailable, use the host agent's built-in browser tools for the same visual exploration. Typical flow: navigate → snapshot → screenshot → click/type to explore options → re-snapshot. In task host, use `host browser MCP` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_type`, `browser_scroll`). Attach screenshots and snapshot notes to `.planning/CLARIFY.md`.
 3. **Text-only** — when neither path is available; notify the user, offer Alumnium install-and-retry ([install reference](https://github.com/alumnium-hq/alumnium)), then continue without blocking.
 
 Prefer Alumnium over host browser MCP when both are available — structured `do`/`check`/`get` compresses browser noise versus ad-hoc navigation.

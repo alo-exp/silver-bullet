@@ -52,7 +52,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT="$REPO_ROOT/skills/silver-init/scripts/merge-hooks.py"
+SCRIPT="$REPO_ROOT/scripts/lib/install-claude/merge-hooks.py"
 HOME_DIR="$TMP/home"
 INSTALL_PATH="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.32.4"
 
