@@ -72,7 +72,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | |
-| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-research | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
 | 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-bugfix | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-ui | timeout 900s OUT-KM-01 OUT-WORLD-01 |
@@ -94,7 +94,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 3)* | grep post-exec-gates in feature-currency.md |
 | 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 4)* | grep validate-substep in bugfix-health.md |
 
-**Pass count:** 1 / 22 (initial batch complete; FORCE retry pending @1800s)
+**Pass count:** 2 / 22 (FORCE retry in flight; row 3+ pending)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
