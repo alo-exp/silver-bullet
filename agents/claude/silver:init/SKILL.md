@@ -447,7 +447,7 @@ Confirm Silver Bullet is installed for the active host before project init:
 | Host | Normal install | Development checkout |
 |------|----------------|----------------------|
 | the active host agent | Add marketplace `https://github.com/host marketplace (install guide)`, then `/plugin install silver-bullet@alo-labs` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| secondary host | Public `host marketplace (install guide)` marketplace via `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --purge-legacy-skills` |
+| Codex | Public `host marketplace (install guide)` marketplace via `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --purge-legacy-skills` |
 | task host | Add marketplace `https://github.com/alo-labs/host marketplace (install guide)`, install `silver-bullet`, or run `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
 
 **Orchestrator parent rule (active host):** On init, copy `scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc` → `host rules path (see install guide) silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1 and Phase 3 step 3.2.1).
@@ -804,7 +804,7 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 Execute these steps in order. Full detail for each step is in `references/scaffold-steps.md`.
 
 - **3.1a Write `silver-bullet.md`** from template with `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` substitutions.
-- **3.1b Handle optional project instruction file**: if a project instruction file already exists, reconcile it non-destructively. If it does not exist, do not create one during secondary host initialization; Silver Bullet does not require a project instruction file to be present.
+- **3.1b Handle optional project instruction file**: if a project instruction file already exists, reconcile it non-destructively. If it does not exist, do not create one during Codex initialization; Silver Bullet does not require a project instruction file to be present.
 
 - **3.1c Conflict resolution** (only when an existing project instruction file is present — no silent override guarantee):
 

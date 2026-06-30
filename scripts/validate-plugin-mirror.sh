@@ -49,7 +49,7 @@ for composer in "${THINNED_COMPOSERS[@]}"; do
   src="$(sb_agent_bundle_root "$REPO_ROOT" codex)/${composer}/SKILL.md"
   dst="${REPO_ROOT}/plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
   if [[ ! -f "$src" ]]; then
-    echo "MISSING codex bundle: agents/codex/${composer}/SKILL.md"
+    echo "MISSING codex bundle: host-bundles/codex/${composer}/SKILL.md"
     FAIL=1
     continue
   fi
