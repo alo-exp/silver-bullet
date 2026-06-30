@@ -19,6 +19,8 @@
 
 Deliver **2 consecutive strict-clean rounds** on the **Codex host track** (Round Codex-1, then Round Codex-2). Strict-clean criteria are defined in **§Mission** above — adapted for Codex TUI instead of Claude TUI.
 
+**SB git branch (mandatory):** All harness fixes, ledgers, and operator commits live on a Codex-named branch — default **`enterprise-e2e/codex-round1`** (must contain `codex`; e.g. `enterprise-e2e/codex-track`). Create or checkout at session start. Cherry-pick verified fixes to `main` per cherry-pick policy; **never** commit Codex harness work to `enterprise-e2e/round6`, `enterprise-e2e/multi-host`, or Cursor/Claude branches.
+
 **Strict-clean** = ALL of:
 
 1. **review-fix-ladder** **8/8** rungs with **2 consecutive clean verify passes** per rung, **0 new issues** (`python3 scripts/review-fix-ladder.py --host codex`)
@@ -41,6 +43,7 @@ Evidence-only PASS or SKIP rows **do not** count strict-clean.
 - **No** `claude auth login/logout` — this track is Codex-only.
 - **429 / quota:** retry every **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); not auth failure.
 - Re-run `bash scripts/install-codex.sh --purge-legacy-skills` after every SB harness/hook fix.
+- **SB branch:** `enterprise-e2e/codex-round1` (or other `*codex*` branch) — verify with `git branch --show-current` before every commit; never commit harness work to Claude Round 6 or Cursor branches.
 - Recommended tools **opted-in and verified:** Graphify, agentmemory, RTK, Context Mode, Alumnium.
 
 ---
@@ -79,7 +82,7 @@ On any friction:
 
 1. **Diagnose** from logs (no guessing).
 2. **Fix** in SB repo (`scripts/enterprise-e2e/lib/` — shared across hosts; not test app product code).
-3. **Commit** on feature branch; log verified fix in [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
+3. **Commit** on the Codex host branch (`enterprise-e2e/codex-round1` or `*codex*`); log verified fix in [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
 4. **Cherry-pick** verified fixes to `main` per cherry-pick policy.
 5. **`graphify update .`** after substantive SB edits; `graphify query` before scoped work.
 6. Re-run affected row with **`SB_E2E_MATRIX_FORCE=1`**; then `bash scripts/install-codex.sh --purge-legacy-skills`.
@@ -93,14 +96,18 @@ On any friction:
 | Role | Path |
 |------|------|
 | **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
+| **SB git branch (Codex harness work)** | `enterprise-e2e/codex-round1` (default; any branch with `codex` in the name) |
 | **Codex TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
 
 **Never** use the test app as SB workspace root. **Never** use Cursor global config as session root.
+
+**Test app:** Same fixture (`enterprise-grade-test-app`) is OK for all hosts — matrix rows and Session 0 run there. **SB harness commits** stay on the Codex-named branch only; do not use the test app repo for SB harness fixes.
 
 ---
 
 ## Cross-host isolation (mandatory when Claude Round 6 active)
 
+- **Git branches:** Claude Round 6 uses `enterprise-e2e/round6` (or its Round 6 branch). Codex uses `enterprise-e2e/codex-*` only. **Never** commit Codex harness work to `enterprise-e2e/round6`, `enterprise-e2e/cursor-*`, or `main` (except via cherry-pick after verification).
 - Do **NOT** remove `.e2e-live-test.lock` unless Round 6 Claude driver is confirmed dead.
 - Codex track uses `.e2e-live-test-codex.lock` — never steal Claude's lock.
 - Set before matrix/monitor/watch launch (or rely on harness defaults when `SB_E2E_LIVE_RUNTIME=codex`):
@@ -127,6 +134,7 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 | Resource | Path |
 |----------|------|
 | SB repo root | `/Users/shafqat/projects/silver-bullet/repo` |
+| SB git branch (Codex) | `enterprise-e2e/codex-round1` (default; `*codex*` required) |
 | Test app (Codex CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
 | Codex install script | `/Users/shafqat/projects/silver-bullet/repo/scripts/install-codex.sh` |
 | Codex live adapter | `/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/codex/agent.sh` |
@@ -149,10 +157,20 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 
 ## Host-specific setup (Codex)
 
-### Install & runtime
+### Git branch (session start — before install)
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_E2E_BRANCH=enterprise-e2e/codex-round1   # must contain "codex"
+cd "$SB_ROOT"
+git fetch origin
+git checkout "$SB_E2E_BRANCH" 2>/dev/null || git checkout -b "$SB_E2E_BRANCH" origin/main
+git branch --show-current   # must show *codex* — abort if on round6/cursor/multi-host
+```
+
+### Install & runtime
+
+```bash
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=codex
 export SB_E2E_LIVE_RUNTIME=codex
@@ -481,6 +499,7 @@ Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIM
 
 ## Resume first actions (§H)
 
+0. **Verify SB branch:** `cd "$SB_ROOT" && git checkout enterprise-e2e/codex-round1` (or your `*codex*` branch); `git branch --show-current` must contain `codex` — never resume harness work on `enterprise-e2e/round6` or Cursor branches.
 1. **Read** current round ledger ([ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) or Round 2); note active row and last checkpoint.
 2. **Verify driver:** `kill -0 "$(cat .e2e-matrix-codex-batch.pid 2>/dev/null)" 2>/dev/null || echo "driver dead"`.
 3. **If dead:** clear **host lock only** — `rm -f .e2e-live-test-codex.lock` (never `.e2e-live-test.lock` while Claude R6 may be live); single `--resume` relaunch (tmux if no PTY).
@@ -490,6 +509,7 @@ Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIM
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_E2E_BRANCH=enterprise-e2e/codex-round1
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=codex
 export SB_E2E_LIVE_RUNTIME=codex
@@ -499,6 +519,8 @@ export SB_E2E_MONITOR_AUTO_RESTART=0
 export SB_E2E_SESSION0_SKIP=1   # only if Session 0 already Pass in ledger
 export RTK_DISABLED=1
 cd "$SB_ROOT"
+git fetch origin && git checkout "$SB_E2E_BRANCH" || git checkout -b "$SB_E2E_BRANCH" origin/main
+git branch --show-current   # must contain codex
 
 # If dead — host lock only, single relaunch:
 rm -f .e2e-live-test-codex.lock
@@ -519,4 +541,4 @@ tail -f .e2e-matrix-codex-monitor-status.txt
 
 ## One-liner (fresh session copy-paste)
 
-> **Self-contained Codex operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo`, TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex`, **2 consecutive strict-clean rounds** (Codex-1→2). One `composer-2.5` background operator, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit→cherry-pick→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-codex.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host codex`. Compaction not `/clear`; no `gsd`.
+> **Self-contained Codex operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo` on branch **`enterprise-e2e/codex-round1`** (`*codex*` only — never `round6`/Cursor), TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex`, **2 consecutive strict-clean rounds** (Codex-1→2). One `composer-2.5` background operator, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on codex branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-codex.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host codex`. Compaction not `/clear`; no `gsd`.

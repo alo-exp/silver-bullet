@@ -19,6 +19,8 @@
 
 Deliver **2 consecutive strict-clean rounds** on the **Cursor host track** (Round Cursor-1, then Round Cursor-2). Strict-clean criteria are defined in **§Mission** above — adapted for Cursor `agent` TUI instead of Claude TUI.
 
+**SB git branch (mandatory):** All harness fixes, ledgers, and operator commits live on a Cursor-named branch — default **`enterprise-e2e/cursor-round1`** (must contain `cursor`; e.g. `enterprise-e2e/cursor-track`). Create or checkout at session start. Cherry-pick verified fixes to `main` per cherry-pick policy; **never** commit Cursor harness work to `enterprise-e2e/round6`, `enterprise-e2e/multi-host`, or Codex/Claude branches.
+
 **Strict-clean** = ALL of:
 
 1. **review-fix-ladder** **8/8** rungs with **2 consecutive clean verify passes** per rung, **0 new issues** (`python3 scripts/review-fix-ladder.py --host cursor`)
@@ -41,6 +43,7 @@ Evidence-only PASS or SKIP rows **do not** count strict-clean.
 - **No** `claude auth login/logout` — this track is Cursor-only.
 - **429 / quota:** retry every **60s**; not auth failure.
 - Re-run `bash scripts/install-cursor.sh` after every SB harness/hook fix.
+- **SB branch:** `enterprise-e2e/cursor-round1` (or other `*cursor*` branch) — verify with `git branch --show-current` before every commit; never commit harness work to Claude Round 6 or Codex branches.
 - Recommended tools **opted-in and verified:** Graphify, agentmemory, RTK, Context Mode, Alumnium.
 
 ---
@@ -79,7 +82,7 @@ On any friction:
 
 1. **Diagnose** from logs (no guessing).
 2. **Fix** in SB repo (`scripts/enterprise-e2e/lib/` — shared across hosts; not test app product code).
-3. **Commit** on feature branch; log verified fix in [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
+3. **Commit** on the Cursor host branch (`enterprise-e2e/cursor-round1` or `*cursor*`); log verified fix in [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
 4. **Cherry-pick** verified fixes to `main` per cherry-pick policy.
 5. **`graphify update .`** after substantive SB edits; `graphify query` before scoped work.
 6. Re-run affected row with **`SB_E2E_MATRIX_FORCE=1`**; then `bash scripts/install-cursor.sh`.
@@ -93,9 +96,12 @@ On any friction:
 | Role | Path |
 |------|------|
 | **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
+| **SB git branch (Cursor harness work)** | `enterprise-e2e/cursor-round1` (default; any branch with `cursor` in the name) |
 | **Cursor agent TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
 
 **Never** use the test app as SB workspace root. Operator parent sessions use SB repo root per silver-orchestrator rules.
+
+**Test app:** Same fixture (`enterprise-grade-test-app`) is OK for all hosts — matrix rows and Session 0 run there. **SB harness commits** stay on the Cursor-named branch only; do not use the test app repo for SB harness fixes.
 
 **Supervisor:** Cursor Composer (parent orchestrator with `Task` tool). Matrix child is `cursor-agent` CLI — Codex TUI cannot spawn `Task`.
 
@@ -103,6 +109,7 @@ On any friction:
 
 ## Cross-host isolation (mandatory when Claude Round 6 active)
 
+- **Git branches:** Claude Round 6 uses `enterprise-e2e/round6` (or its Round 6 branch). Cursor uses `enterprise-e2e/cursor-*` only. **Never** commit Cursor harness work to `enterprise-e2e/round6`, `enterprise-e2e/codex-*`, or `main` (except via cherry-pick after verification).
 - Do **NOT** remove `.e2e-live-test.lock` unless Round 6 Claude driver is confirmed dead.
 - Cursor track uses `.e2e-live-test-cursor.lock`.
 - Set before matrix/monitor/watch (or rely on harness defaults when `SB_E2E_LIVE_RUNTIME=cursor`):
@@ -129,6 +136,7 @@ TUI protocol: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 | Resource | Path |
 |----------|------|
 | SB repo root | `/Users/shafqat/projects/silver-bullet/repo` |
+| SB git branch (Cursor) | `enterprise-e2e/cursor-round1` (default; `*cursor*` required) |
 | Test app (agent CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
 | Cursor install script | `/Users/shafqat/projects/silver-bullet/repo/scripts/install-cursor.sh` |
 | Cursor live adapter | `/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/cursor/agent.sh` |
@@ -151,10 +159,20 @@ TUI protocol: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 
 ## Host-specific setup (Cursor)
 
-### Install & runtime
+### Git branch (session start — before install)
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_E2E_BRANCH=enterprise-e2e/cursor-round1   # must contain "cursor"
+cd "$SB_ROOT"
+git fetch origin
+git checkout "$SB_E2E_BRANCH" 2>/dev/null || git checkout -b "$SB_E2E_BRANCH" origin/main
+git branch --show-current   # must show *cursor* — abort if on round6/codex/multi-host
+```
+
+### Install & runtime
+
+```bash
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
@@ -523,6 +541,7 @@ Same as **§Mission** above, with Cursor-specific substitutions:
 
 ## Resume first actions (§H)
 
+0. **Verify SB branch:** `cd "$SB_ROOT" && git checkout enterprise-e2e/cursor-round1` (or your `*cursor*` branch); `git branch --show-current` must contain `cursor` — never resume harness work on `enterprise-e2e/round6` or Codex branches.
 1. **Read** current round ledger ([ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) or Round 2); note active row and last checkpoint.
 2. **Verify driver:** `kill -0 "$(cat .e2e-matrix-cursor-batch.pid 2>/dev/null)" 2>/dev/null || echo "driver dead"`.
 3. **If dead:** clear **host lock only** — `rm -f .e2e-live-test-cursor.lock` (never `.e2e-live-test.lock` while Claude R6 may be live); single `--resume` relaunch (tmux if no PTY).
@@ -532,6 +551,7 @@ Same as **§Mission** above, with Cursor-specific substitutions:
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_E2E_BRANCH=enterprise-e2e/cursor-round1
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
@@ -543,6 +563,8 @@ export RTK_DISABLED=1
 export CURSOR_API_KEY="${CURSOR_API_KEY:?}"
 export AGENT_CLI_CREDENTIAL_STORE=memory
 cd "$SB_ROOT"
+git fetch origin && git checkout "$SB_E2E_BRANCH" || git checkout -b "$SB_E2E_BRANCH" origin/main
+git branch --show-current   # must contain cursor
 
 # If dead — host lock only, single relaunch:
 rm -f .e2e-live-test-cursor.lock
@@ -564,4 +586,4 @@ tail -f .e2e-matrix-cursor-monitor-status.txt
 
 ## One-liner (fresh session copy-paste)
 
-> **Self-contained Cursor operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo`, agent CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host cursor`, **2 consecutive strict-clean rounds** (Cursor-1→2). One `composer-2.5` parent + `cursor-agent` matrix child, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit→cherry-pick→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-cursor.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host cursor`. `CURSOR_API_KEY` headless. Compaction not `/clear`; no `gsd`.
+> **Self-contained Cursor operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo` on branch **`enterprise-e2e/cursor-round1`** (`*cursor*` only — never `round6`/Codex), agent CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host cursor`, **2 consecutive strict-clean rounds** (Cursor-1→2). One `composer-2.5` parent + `cursor-agent` matrix child, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit on cursor branch→cherry-pick to main→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-cursor.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host cursor`. `CURSOR_API_KEY` headless. Compaction not `/clear`; no `gsd`.
