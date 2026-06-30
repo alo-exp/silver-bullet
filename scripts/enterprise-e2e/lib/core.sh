@@ -6,6 +6,10 @@ set -euo pipefail
 _E2E_HARNESS_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/enterprise-e2e/lib/host.sh
 source "${_E2E_HARNESS_LIB}/host.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
+source "${_E2E_HARNESS_LIB}/test-app-branch.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
+source "${_E2E_HARNESS_LIB}/test-app-branch.sh"
 
 
 # Bash 3.2 (macOS): mapfile/readarray unavailable
