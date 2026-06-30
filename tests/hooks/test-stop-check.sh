@@ -863,6 +863,44 @@ else
 fi
 teardown
 
+echo "--- ORCH-6: instruction-ledger exempt during routing row marker ---"
+setup
+LEDGER_HOOK="$REPO_ROOT/hooks/instruction-ledger-gate.sh"
+if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$LEDGER_HOOK" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
+  jq -n '{prompt_id:"abc",status:"pending",children:[{id:"c1",label:"item",status:"pending",evidence:"",children:[]}]}' \
+    >"${SB_TEST_DIR}/instruction-ledger.json"
+  ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
+  assert_blocks "ORCH-6a: instruction-ledger blocks Stop with unresolved items" "$ledger_out"
+  sb_e2e_matrix_set_routing_row_marker
+  ledger_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$LEDGER_HOOK" 2>/dev/null || true )
+  assert_passes "ORCH-6b: instruction-ledger allows Stop during routing row marker" "$ledger_out"
+  sb_e2e_matrix_clear_routing_row_marker
+else
+  echo "  SKIP: instruction-ledger-gate or e2e-matrix-routing missing"
+fi
+teardown
+
+echo "--- ORCH-7: site-regression exempt during routing row marker ---"
+setup
+SITE_REG_HOOK="$REPO_ROOT/hooks/site-regression-gate.sh"
+if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
+  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false}' \
+    >"${SB_TEST_DIR}/site-session.json"
+  site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
+  assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"
+  sb_e2e_matrix_set_routing_row_marker
+  site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
+  assert_passes "ORCH-7b: site-regression allows Stop during routing row marker" "$site_out"
+  sb_e2e_matrix_clear_routing_row_marker
+else
+  echo "  SKIP: site-regression-gate or e2e-matrix-routing missing"
+fi
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
