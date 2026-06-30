@@ -75,6 +75,9 @@ fi
 
 # --- Fixture: row 3 feature workflow scoring ---
 mkdir -p "$FIXTURE/.planning/workflows" "$FIXTURE/.planning/ship-readiness" 2>/dev/null || true
+if [[ ! -f "$FIXTURE/.silver-bullet.json" ]]; then
+  printf '%s\n' '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$FIXTURE/.silver-bullet.json"
+fi
 mkdir -p "$STATE_DIR"
 printf 'silver-context\nsilver-feature\nsilver-quality-gates\n' >"$STATE_DIR/state"
 cat >"$FIXTURE/.planning/PLAN-feature.md" <<'EOF'
