@@ -348,6 +348,10 @@ run_matrix_row() {
   while true; do
     attempt=$((attempt + 1))
     row_log="$(enterprise_e2e_row_attempt_log "$row_num" "$attempt")"
+    if [[ "$MATRIX_HOST" == "codex" ]] && enterprise_e2e_source_host_adapter 2>/dev/null && \
+       declare -f enterprise_e2e_adapter_before_matrix_row >/dev/null 2>&1; then
+      enterprise_e2e_adapter_before_matrix_row "$SB_ROOT" || true
+    fi
     if [[ "$attempt" -gt 1 ]]; then
       echo "  retry attempt ${attempt} (quota retry #${quota_retries})..."
     else
@@ -360,9 +364,12 @@ run_matrix_row() {
         SB_E2E_MATRIX_EVIDENCE_PATH="$evidence_path" \
         SB_E2E_ENTERPRISE_MATRIX=1 \
         SB_E2E_MATRIX_ROUTING_ROW="$routing_row_env" \
+        CODEX_AUTO_TRUST_HOOKS=1 \
+        CODEX_BYPASS_HOOK_TRUST=1 \
         run_prompt "$prompt" 2>&1 || true
     )"
     if [[ -n "$output" ]]; then
+      printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
     # Codex interactive adapter does not tee to CLAUDE_INTERACTIVE_LOG_FILE — backfill for scoring.
