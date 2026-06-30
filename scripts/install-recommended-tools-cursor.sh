@@ -57,7 +57,7 @@ elif command -v context-mode >/dev/null 2>&1; then
   fi
 fi
 
-TOKEN_ENFORCE_TPL="${REPO_ROOT}/templates/cursor/token-compression-enforcement.mdc"
+TOKEN_ENFORCE_TPL="${REPO_ROOT}/scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc"
 if [[ ! -f "${RULES_DIR}/token-compression-enforcement.mdc" ]] && [[ -f "$TOKEN_ENFORCE_TPL" ]]; then
   cp "$TOKEN_ENFORCE_TPL" "${RULES_DIR}/token-compression-enforcement.mdc"
 fi

@@ -41,7 +41,7 @@ Write or update `.planning/phases/<phase>/VERIFICATION.md` or
    - **Host browser MCP:** when Alumnium is absent, navigate to the app, walk
      UAT steps with `browser_click` / `browser_type` / `browser_scroll`,
      verify state via `browser_snapshot`, and capture `browser_take_screenshot`
-     per criterion. Cursor: `cursor-ide-browser` tools. Attach evidence to
+     per criterion. task host: `host browser MCP` tools. Attach evidence to
      VERIFICATION.md.
    - **Text-only:** document unverified browser-dependent criteria as WARN when
      neither path is available.
