@@ -366,6 +366,40 @@ round_review="$(enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$FIXTURE" 
 [[ "$round_review" == "pass" ]] && pass "round OUT-REVIEW-01 pass from ladder fixture" || fail "round OUT-REVIEW-01 got $round_review"
 rm -f "$LEDGER_FIXTURE"
 
+# --- E2E-088: cursor headless orchestrator + matrix KM/measure ---
+CURSOR_HANDOFF_LOG="$(mktemp)"
+printf 'silver:fast worker completed the README-only workflow\n' >"$CURSOR_HANDOFF_LOG"
+score_handoff_cursor="$(enterprise_e2e_outcome_score_criterion OUT-HANDOFF-01 "$FIXTURE" "$STATE_DIR" "$CURSOR_HANDOFF_LOG" 3 "$FIXTURE" "")"
+[[ "$score_handoff_cursor" == "pass" ]] && pass "E2E-088 row 3 OUT-HANDOFF-01 pass (worker completion log)" || fail "E2E-088 row 3 OUT-HANDOFF-01 got $score_handoff_cursor"
+
+RETRO_LOG="$(mktemp)"
+printf 'workflow is complete via delegated SB worker\nnext_skill: null\nverdict: COMPLETE\n' >"$RETRO_LOG"
+score_super_cursor="$(enterprise_e2e_outcome_score_criterion OUT-SUPER-01 "$FIXTURE" "$STATE_DIR" "$RETRO_LOG" 4 "$FIXTURE" "")"
+[[ "$score_super_cursor" == "pass" ]] && pass "E2E-088 row 4 OUT-SUPER-01 pass (worker completion log)" || fail "E2E-088 row 4 OUT-SUPER-01 got $score_super_cursor"
+
+MATRIX_KM_LEDGER="$(mktemp)"
+cat >"$MATRIX_KM_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | |
+LEDGER
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_km_matrix="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "" 6 "$MATRIX_KM_LEDGER" "")"
+[[ "$score_km_matrix" == "pass" ]] && pass "E2E-088 row 6 OUT-KM-01 pass (matrix gref without MCP log)" || fail "E2E-088 row 6 OUT-KM-01 got $score_km_matrix"
+unset SB_E2E_ENTERPRISE_MATRIX
+
+STALE_LEDGER="$(mktemp)"
+cat >"$STALE_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | | | graphify query silver-router | am-1 |
+| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | | | graphify query silver-research | |
+LEDGER
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_measure_matrix="$(enterprise_e2e_outcome_score_criterion OUT-MEASURE-01 "$FIXTURE" "$STATE_DIR" "" 16 "$STALE_LEDGER" "")"
+[[ "$score_measure_matrix" == "pass" ]] && pass "E2E-088 OUT-MEASURE-01 pass during matrix (STALE ledger)" || fail "E2E-088 OUT-MEASURE-01 got $score_measure_matrix"
+unset SB_E2E_ENTERPRISE_MATRIX
+
+rm -f "$CURSOR_HANDOFF_LOG" "$RETRO_LOG" "$MATRIX_KM_LEDGER" "$STALE_LEDGER"
+
 # --- ROUND-N-OUTCOMES template references rubric ---
 OUTCOMES_TEMPLATE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md"
 for needle in OUT-TAILOR-01 OUT-REVIEW-01 OUT-MEASURE-01 OUT-AUTO-01 OUT-WORLD-01 "Per-session checklist"; do
