@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 VERSION="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/package.json" 2>/dev/null || echo 0.0.0)"
 PUBLIC_RELEASE_ONLY=0
 CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
@@ -70,9 +72,11 @@ sync_plugin_tree_from_checkout() {
   rsync -a --delete "${source_root}/skills/" "${dest}/skills/"
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
-  if [[ -d "${source_root}/agents/cursor" ]]; then
+  local cursor_bundle
+  cursor_bundle="$(sb_agent_bundle_root "$source_root" cursor)"
+  if [[ -d "$cursor_bundle" ]]; then
     mkdir -p "${dest}/agents/cursor"
-    rsync -a --delete "${source_root}/agents/cursor/" "${dest}/agents/cursor/"
+    rsync -a --delete "${cursor_bundle}/" "${dest}/agents/cursor/"
   fi
   python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
@@ -216,11 +220,11 @@ PY
 sync_plugin_tree() {
   local dest
 
-  mkdir -p "${REPO_ROOT}/agents"
+  mkdir -p "${REPO_ROOT}/host-bundles"
   python3 "$AGENT_RENDERER" render \
     --agent cursor \
     --source-root "${REPO_ROOT}/skills" \
-    --dest-root "${REPO_ROOT}/agents/cursor" >/dev/null 2>&1 || true
+    --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)" >/dev/null 2>&1 || true
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
   dest="$(sync_plugin_tree_from_checkout "$REPO_ROOT" "$VERSION")"
   ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
@@ -240,11 +244,11 @@ sync_plugin_tree_from_public_release() {
       https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null 2>&1 || \
     git clone --depth 1 https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null
 
-  mkdir -p "${checkout_dir}/agents"
+  mkdir -p "${checkout_dir}/host-bundles"
   python3 "$AGENT_RENDERER" render \
     --agent cursor \
     --source-root "${checkout_dir}/skills" \
-    --dest-root "${checkout_dir}/agents/cursor" >/dev/null
+    --dest-root "$(sb_agent_bundle_root "$checkout_dir" cursor)" >/dev/null
 
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$checkout_dir")"
   VERSION="$release_version"

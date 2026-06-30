@@ -88,11 +88,11 @@ HOST_SURFACES: dict[str, list[tuple[str, str]]] = {
         ("agents/claude", "skill"),
     ],
     "codex": [
-        ("agents/codex", "skill"),
+        ("host-bundles/codex", "skill"),
         ("plugins/silver-bullet/commands", "command"),
     ],
     "cursor": [
-        ("agents/cursor", "skill"),
+        ("host-bundles/cursor", "skill"),
         ("plugins/silver-bullet/commands", "command"),
     ],
 }
