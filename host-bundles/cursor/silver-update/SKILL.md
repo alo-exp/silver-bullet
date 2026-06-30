@@ -15,7 +15,7 @@ Check GitHub for the latest Silver Bullet release, display what changed since yo
 Read `$HOME/.cursor/plugins/installed_plugins.json`. Try these keys in order:
 
 - `silver-bullet@alo-labs` (primary host / host marketplace)
-- `silver-bullet@alo-labs-secondary host` (secondary host marketplace)
+- `silver-bullet@alo-labs` (Cursor marketplace)
 - `silver-bullet@silver-bullet` (legacy installation)
 
 Use the first key that exists; read its `version` field (e.g. `0.24.1`). If none exist, treat installed version as `0.0.0`.
@@ -126,7 +126,7 @@ Run the host-appropriate install command. Silver Bullet is a **plugin**, not an 
 ```bash
 # the active host agent / task host (plugin host): run inside the agent, not the shell
 /plugin install alo-exp/silver-bullet
-# secondary host host: ./scripts/install-<runtime>.sh --purge-legacy-skills
+# Cursor host: ./scripts/install-<runtime>.sh --purge-legacy-skills
 ```
 
 If the command fails (non-zero exit code), display the error output and exit without proceeding to cleanup:
@@ -202,17 +202,17 @@ as fresh init — present benefits, ask Yes/No, write choice to `.silver-bullet.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry Graphify install
 without re-asking. Detect host the same way as `/silver:init` Phase 1.1a Step 3 (`SB_HOST` =
-`primary host`, `secondary host`, or `task host` via `SILVER_BULLET_RUNTIME`, `SB_PLUGIN_ROOT`, or host env vars).
+`primary host`, `Cursor`, or `task host` via `SILVER_BULLET_RUNTIME`, `SB_PLUGIN_ROOT`, or host env vars).
 
 1. `uv tool install graphifyy` or `pipx install graphifyy`
 2. Pre-index skill registration (upstream Install Step 2):
    - **primary host:** `graphify install --project`
-   - **secondary host:** `graphify install --project --platform <runtime>`
+   - **Cursor:** `graphify install --project --platform <runtime>`
    - **task host:** skip
 3. `graphify update . --no-cluster`
 4. Post-index always-on (upstream "Make your assistant always use the graph"):
    - **primary host:** `graphify host install (see install guide) --project`
-   - **secondary host:** `graphify host install (see install guide) --project`
+   - **Cursor:** `graphify host install (see install guide) --project`
    - **task host:** `graphify host install (see install guide)`
 
 Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` / `.post_index` from `.silver-bullet.json` when present.
@@ -243,10 +243,10 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement
 
 1. `npm install -g @agentmemory/agentmemory`
 2. Start server: `nohup agentmemory > ~/.agentmemory/server.log 2>&1 &`
-3. Pre-index (secondary host): `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `secondary host plugin add agentmemory@agentmemory`
+3. Pre-index (Cursor): `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `Cursor plugin add agentmemory@agentmemory`
 4. Post-index MCP connect:
    - **primary host:** `agentmemory connect (see install guide)`
-   - **secondary host:** `agentmemory connect (see install guide) --with-hooks`
+   - **Cursor:** `agentmemory connect (see install guide) --with-hooks`
    - **task host:** merge MCP block per `docs/AGENTMEMORY.md` (host MCP config)
 5. Scaffold: `mkdir -p .agentmemory/memory .agentmemory/snapshots`
 6. **gitleaks:** `command -v gitleaks || brew install gitleaks` (macOS); verify with `gitleaks version`. Required for bridge second-line secret scan — SB optimizer also installs via `sb-optimize-stack.sh --apply`.
