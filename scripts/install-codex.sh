@@ -3,10 +3,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/install-common.sh
+source "${REPO_ROOT}/scripts/lib/install-common.sh"
 _LIB="${SCRIPT_DIR}/lib/install-codex"
-AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
-# shellcheck source=scripts/lib/agent-bundle-paths.sh
-source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 PURGE_LEGACY_SKILLS=0
 PUBLIC_RELEASE_ONLY=0
 # Native Codex loads plugin-declared hooks directly, so merging the same SB
