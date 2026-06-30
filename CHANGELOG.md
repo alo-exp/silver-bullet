@@ -2,6 +2,9 @@
 
 ## [0.48.9] — 2026-06-30
 
+### Enterprise E2E (main)
+- Merged `enterprise-e2e/round4-continuation`: outcome assessment harness, matrix tooling, Round 6 docs. Active Round 6 work continues on `enterprise-e2e/round6`.
+
 ## Features
 - `feat(release): official Cursor isolation for pre-release smoke` (73e3244d)
 
