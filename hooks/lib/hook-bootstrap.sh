@@ -2,6 +2,8 @@
 # Shared hook lib sourcing for delivery gate hooks
 # Expects _lib_dir to be set by the caller.
 
+# shellcheck disable=SC2154  # _lib_dir set by sourcing hook entrypoint
+
 # shellcheck source=lib/workflow-utils.sh
 [[ -f "$_lib_dir/workflow-utils.sh" ]] && source "$_lib_dir/workflow-utils.sh"
 # Fallback definitions if sourcing failed (e.g. in test environments or path resolution issues)

@@ -26,7 +26,15 @@ main() {
   run_doctor_checks
   if [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]]; then
     [[ "$FORMAT" != "json" ]] && echo && echo "sb-doctor: re-running checks after --fix"
-    PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
+    # shellcheck disable=SC2034
+    PASS=0
+    FAIL=0
+    # shellcheck disable=SC2034
+    WARN=0
+    # shellcheck disable=SC2034
+    REPORT_LINES=()
+    # shellcheck disable=SC2034
+    FAILED_CHECK_IDS=()
     run_doctor_checks
   fi
   doctor_print_summary
