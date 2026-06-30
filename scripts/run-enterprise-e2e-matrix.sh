@@ -15,13 +15,18 @@ source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 sb_prepend_harness_path
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+export SB_ROOT
+enterprise_e2e_apply_matrix_host_defaults
+MATRIX_HOST="$(enterprise_e2e_matrix_host)"
 FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 # shellcheck disable=SC2034  # documented matrix doc path for operators
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
-export CLAUDE_USE_INTERACTIVE=1
+if [[ "$MATRIX_HOST" == "claude" ]]; then
+  export CLAUDE_USE_INTERACTIVE=1
+fi
 # SB_E2E_MATRIX_CLEAN_ENV=1 (env -i) is opt-in for claude.ai OAuth users whose shell
 # ANTHROPIC_API_KEY conflicts with stored credentials. It strips most env vars and can
 # leave interactive TUI at "Not logged in" when keychain / ~/.claude/ auth is required.
@@ -37,10 +42,9 @@ export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
-export SB_E2E_LIVE_RUNTIME=claude
-export SILVER_BULLET_RUNTIME=claude
 
-# Export ~/.claude/settings.json env for interactive TUI (api_key / proxy / token gateway).
+# Export ~/.claude/settings.json env for interactive TUI (Claude host only).
+if [[ "$MATRIX_HOST" == "claude" ]]; then
 # Enterprise matrix always exports — do not inherit SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
 # from run-all-tests.sh / run-sb-live-tests-claude.sh (leaves TUI at login wall).
 # OAuth-only: SB_E2E_MATRIX_OAUTH_ONLY=1 bash scripts/run-enterprise-e2e-matrix.sh
@@ -58,6 +62,7 @@ fi
 claude_matrix_export_settings_env
 if declare -f enterprise_e2e_prepare_matrix_mcp_env >/dev/null 2>&1; then
   enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
+fi
 fi
 
 # shellcheck source=scripts/lib/matrix-quota.sh
@@ -106,11 +111,13 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [row_numbers...]
 
-Run enterprise E2E matrix rows via interactive Claude TUI.
+Run enterprise E2E matrix rows via interactive agent TUI (host: ${MATRIX_HOST}).
 Fixture: ${FIXTURE_DIR}
 Ledger:  ${LEDGER_FILE}
 
 Environment:
+  SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME   claude (default) | codex | cursor
+  SB_E2E_MATRIX_LOG / SB_E2E_MATRIX_BATCH_PID_FILE / SB_E2E_LIVE_TEST_LOCK_FILE  host-isolated defaults
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
@@ -151,6 +158,7 @@ build_matrix_prompt() {
   local evidence_path="$3"
   local row_num="${4:-}"
   local slug="${5:-}"
+  route="$(enterprise_e2e_matrix_host_route "$route")"
   if [[ "$row_num" == "1" ]]; then
     # Row 1 validates interactive routing only — same scope as the direct /silver probe.
     printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
@@ -162,7 +170,7 @@ build_matrix_prompt() {
 }
 
 claude_routing_state_file() {
-  printf '%s\n' "${HOME}/.claude/.silver-bullet/state"
+  enterprise_e2e_routing_state_file
 }
 
 snapshot_routing_state() {
@@ -288,7 +296,7 @@ run_matrix_row() {
     SB_E2E_TELEMETRY_ROW="$row_num" \
       SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
       SB_E2E_TELEMETRY_ROW_RESULT="skip" \
-      SB_E2E_TELEMETRY_ROW_LOG="${SB_ROOT}/.e2e-row${row_num}-attempt.log" \
+      SB_E2E_TELEMETRY_ROW_LOG="$(enterprise_e2e_row_attempt_log "$row_num")" \
       enterprise_e2e_telemetry_append "matrix_row_skip" || true
     return 0
   fi
@@ -323,15 +331,11 @@ run_matrix_row() {
 
   while true; do
     attempt=$((attempt + 1))
-    row_log="${SB_ROOT}/.e2e-row${row_num}-attempt${attempt}.log"
-    if [[ "$attempt" -eq 1 ]]; then
-      # Back-compat symlink path for operators tailing .e2e-rowN-attempt.log
-      row_log="${SB_ROOT}/.e2e-row${row_num}-attempt.log"
-    fi
+    row_log="$(enterprise_e2e_row_attempt_log "$row_num" "$attempt")"
     if [[ "$attempt" -gt 1 ]]; then
       echo "  retry attempt ${attempt} (quota retry #${quota_retries})..."
     else
-      echo "  launching interactive Claude session..."
+      echo "  launching interactive ${MATRIX_HOST} session..."
     fi
     : >"$row_log"
     output="$(
@@ -456,7 +460,8 @@ main() {
   echo "=== Enterprise E2E Matrix Runner ==="
   echo "SB_ROOT:    ${SB_ROOT}"
   echo "Fixture:    ${FIXTURE_DIR}"
-  echo "Claude:     $(agent_cli_path 2>/dev/null || echo missing)"
+  echo "Host:       ${MATRIX_HOST}"
+  echo "Agent:      $(agent_cli_path 2>/dev/null || echo missing)"
   echo ""
 
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" != "1" ]]; then
@@ -465,7 +470,6 @@ main() {
     _matrix_batch_pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
     printf '%s\n' "$$" >"$_matrix_batch_pid_file"
   fi
-  bootstrap_claude_dependencies || true
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
     trap 'rm -f "$_matrix_batch_pid_file"; cleanup_workspace' EXIT

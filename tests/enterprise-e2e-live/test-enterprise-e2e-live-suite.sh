@@ -100,7 +100,7 @@ assert_contains "live entrypoint runs install-claude" "$LIVE" "install-claude.sh
 assert_contains "live entrypoint quota 60s default" "$COMMON_LIB" "SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60"
 assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT="${SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT:-0}"'
 assert_contains "live common token gateway preflight" "$COMMON_LIB" "enterprise_e2e_preflight_claude_token_gateway"
-assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_claude_token_gateway"
+assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_host"
 assert_contains "live entrypoint matrix forces settings export" "$LIVE" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
 assert_contains "live entrypoint matrix arrow strategy" "$LIVE" "CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow"
 assert_not_contains "live entrypoint forbids login" "$LIVE" "auth login"
@@ -339,6 +339,39 @@ if [[ "$reconcile_status" == "STALE" ]]; then
 else
   fail "ledger reconcile expected STALE for partial fixture, got $reconcile_status"
 fi
+
+# --- Multi-host matrix wiring (M1–M6) ---
+assert_contains "matrix honors SB_E2E_LIVE_RUNTIME" "$MATRIX" "enterprise_e2e_apply_matrix_host_defaults"
+assert_contains "matrix host route translation" "$MATRIX" "enterprise_e2e_matrix_host_route"
+assert_contains "matrix host row attempt log" "$MATRIX" "enterprise_e2e_row_attempt_log"
+assert_not_contains "matrix hardcodes runtime overwrite" "$MATRIX" "export SB_E2E_LIVE_RUNTIME=claude"
+assert_contains "live entrypoint --host flag" "$LIVE" "--host"
+assert_contains "live entrypoint host install" "$LIVE" "enterprise_e2e_run_install_host"
+assert_contains "helpers cursor runtime" "${REPO_ROOT}/tests/e2e-live/helpers.sh" "cursor/agent.sh"
+assert_contains "common host lock file helper" "$COMMON_LIB" "enterprise_e2e_live_test_lock_file"
+assert_contains "monitor matrix agent children" "$MONITOR" "matrix_agent_child_lines"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" "ROUND-CODEX-1-LEDGER template exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" "ROUND-CURSOR-1-LEDGER template exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md" "CODEX-TUI-PROTOCOL exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CURSOR-TUI-PROTOCOL.md" "CURSOR-TUI-PROTOCOL exists"
+
+export SB_ROOT="$REPO_ROOT"
+export SB_E2E_LIVE_RUNTIME=codex
+export SILVER_BULLET_RUNTIME=codex
+enterprise_e2e_apply_matrix_host_defaults
+codex_row_log="$(enterprise_e2e_row_attempt_log 6)"
+if [[ "$codex_row_log" == *".e2e-row6-codex-attempt.log" ]]; then
+  pass "codex row attempt log is host-prefixed"
+else
+  fail "codex row log expected host prefix, got $codex_row_log"
+fi
+codex_lock="$(enterprise_e2e_live_test_lock_file)"
+if [[ "$codex_lock" == *".e2e-live-test-codex.lock" ]]; then
+  pass "codex live-test lock is host-isolated"
+else
+  fail "codex lock expected .e2e-live-test-codex.lock, got $codex_lock"
+fi
+unset SB_E2E_LIVE_RUNTIME SILVER_BULLET_RUNTIME SB_E2E_LIVE_TEST_LOCK_FILE
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

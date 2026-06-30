@@ -133,3 +133,43 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 **Graphify post-round:** `graphify update .` in SB repo; confirm `graphify-out/graph.json` current.
 
 **Next action:** **PAUSED** — poll driver 84198 until exit (or resume per checkpoint if dead after reboot). Then: FORCE row 1 @ `ee62a820`+ for strict-clean credit; re-score rows 3–4, 6–20; Phase C when 22/22 + outcomes + baseline 76 (0 new IDs). See [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md).
+
+### Operator poll (2026-06-30T02:57Z) — session handoff execution (post-reboot audit)
+
+| Signal | Value |
+|--------|-------|
+| SB HEAD | `6e7fb3b1` (`main`; was `9ad5bb8b` @ pause) |
+| Test app HEAD | `8482e60` (unchanged @ pause) |
+| Driver **84198** | **DEAD** — stale `.e2e-round6-force-driver.pid`; pause checkpoint row 4 TUI **not** preserved |
+| Batch **85965** | **DEAD** |
+| Relaunch **40095** / batch **49485** | **DEAD** — Cursor agent shell detach (`script` PTY unsupported); 0 log growth / 80s poll |
+| Monitor PID | **41532** — **ALIVE** (orphan; no active batch) |
+| TUI watch PID | **41886** — **ALIVE** (orphan) |
+| Stale PIDs cleared | continuation 95066, supervisor 5082, old monitor 9776/9741 |
+| Pass count (ledger table) | **18 / 22** evidence — rows 6, 7, 8, 11 FAIL (expect `:531`) |
+| Force log @ exit | Row 7 `silver-test` launching when batch died; rows 4, 6 outcome FAIL (OUT-KM-01, OUT-WORLD-01) |
+| Harness verify | `test-outcome-assessment.sh` — **41/41 PASS** @ `6e7fb3b1` |
+| Duplicate drivers | **None** |
+| Blocker | **Relaunch requires real terminal** — `bash .planning/enterprise-e2e/round6-matrix-driver.sh` |
+| Phase C | **Blocked** until strict-clean 22/22 + outcomes + baseline 76 |
+
+**Next action:** Resume per [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md) — single FORCE from real terminal; rows 6, 7, 8, 11 + outcome re-score FORCE queue; poll-only when healthy.
+
+### Operator poll (2026-06-30T03:35Z) — operational addendum compliance
+
+| Driver PID alive? | Active row/skill | Last meaningful TUI lines | Evidence PASS count | Outcome PASS count | Friction this cycle | Action taken |
+|-------------------|------------------|---------------------------|---------------------|--------------------|---------------------|--------------|
+| **YES** — driver **65488**, batch **65490** (~35m elapsed) | **Row 8** `silver-refactor` (FORCE queue 6→7→8→11) | Agent subagent “Close 6 audit gaps + re-audit”; row 7 ended evidence PASS / outcome FAIL (`OUT-KM-01` partial, `OUT-WORLD-01`) | Ledger **18/22**; FORCE log row 7 evidence PASS | Row 7 outcome **FAIL**; prior rows 4/6 outcome FAIL pending re-score | Row 8: 0-token annoyance (×3), orchestrator deliberation; `gsd-session-state.sh` missing (non-blocking); row 8 attempt log **growing** | Poll-only — **no** duplicate FORCE relaunch; read [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md); agentmemory `mem_mr03gc2j_61135b62dcc2` |
+
+| Signal | Value |
+|--------|-------|
+| SB HEAD | `6e7fb3b1` (`main`) |
+| Test app HEAD | `8482e60` |
+| tmux | `round6-force` **ALIVE** |
+| Monitor | **64921** ALIVE (`AUTO_RESTART=0`) |
+| TUI watch | **64932** ALIVE |
+| TUI friction monitor | **92849** ALIVE (batch continuation) |
+| Duplicate drivers | **None** |
+| Phase C | **Blocked** — strict-clean requires 22/22 live + all outcomes |
+| 11 | blocker | skill | Unknown skill | tui-watch 2026-06-30T03:46:19Z |
+| 11 | blocker | skill | Unknown skill | tui-watch 2026-06-30T03:46:19Z |

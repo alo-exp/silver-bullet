@@ -15,6 +15,12 @@ set -uo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SB_ROOT" || exit
+# shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+export SB_ROOT
+enterprise_e2e_apply_matrix_host_defaults
+MATRIX_HOST="$(enterprise_e2e_matrix_host)"
+ROW_LOG_GLOB="$(enterprise_e2e_row_attempt_log_glob)"
 
 OFFSETS_FILE="${SB_E2E_TUI_OFFSETS:-${SB_ROOT}/.e2e-tui-watch-offsets.json}"
 FINDINGS_FILE="${SB_E2E_TUI_FINDINGS:-${SB_ROOT}/.e2e-tui-watch-findings.jsonl}"
@@ -192,16 +198,17 @@ PY
 }
 
 find_active_row() {
-  python3 - "$SB_ROOT" <<'PY'
+  python3 - "$SB_ROOT" "$ROW_LOG_GLOB" <<'PY'
 import glob, os, sys
-root = sys.argv[1]
-logs = sorted(glob.glob(os.path.join(root, ".e2e-row*-attempt.log")))
+root, row_glob = sys.argv[1:3]
+logs = sorted(glob.glob(os.path.join(root, os.path.basename(row_glob))))
+if not logs:
+    logs = sorted(glob.glob(os.path.join(root, row_glob.split('/')[-1])))
 if not logs:
     print("0")
     sys.exit(0)
-# Prefer largest mtime; tie-break by size
 best = max(logs, key=lambda p: (os.path.getmtime(p), os.path.getsize(p)))
-m = __import__('re').search(r'row(\d+)-attempt', os.path.basename(best))
+m = __import__('re').search(r'row(\d+)(?:-(?:codex|cursor))?-attempt', os.path.basename(best))
 print(m.group(1) if m else "0")
 PY
 }
@@ -287,20 +294,20 @@ while true; do
   fi
 
   active_row="$(find_active_row)"
-  active_log="${SB_ROOT}/.e2e-row${active_row}-attempt.log"
+  active_log="$(enterprise_e2e_row_attempt_log "$active_row" 2>/dev/null || echo "${SB_ROOT}/.e2e-row${active_row}-attempt.log")"
 
   # Scan all row logs that grew since last pass
   grew=0
   chunk_tmp="$(mktemp "${TMPDIR:-/tmp}/e2e-tui-chunk.XXXXXX")"
   trap 'rm -f "$chunk_tmp"' RETURN
-  for logfile in "${SB_ROOT}"/.e2e-row*-attempt.log; do
+  for logfile in ${ROW_LOG_GLOB}; do
     [[ -f "$logfile" ]] || continue
     key="$(basename "$logfile")"
     read_new_tail "$logfile" "$key" >"$chunk_tmp"
     clen="$(wc -c <"$chunk_tmp" | tr -d ' ')"
     if (( clen > 0 )); then
       grew=1
-      row="$(echo "$key" | sed -n 's/\.e2e-row\([0-9]*\)-attempt\.log/\1/p')"
+      row="$(echo "$key" | sed -n 's/\.e2e-row\([0-9]*\)\(-[a-z]*\)\{0,1\}-attempt\.log/\1/p')"
       while IFS= read -r finding; do
         [[ -n "$finding" ]] || continue
         append_finding "$finding"
