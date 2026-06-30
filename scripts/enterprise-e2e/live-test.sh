@@ -98,6 +98,7 @@ if [[ -n "$MATRIX_HOST_ARG" ]]; then
 fi
 enterprise_e2e_apply_matrix_host_defaults
 MATRIX_HOST="$(enterprise_e2e_matrix_host)"
+enterprise_e2e_assert_host_git_branch || exit 1
 FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
 LEDGER_FILE="$(enterprise_e2e_ledger_file)"
 MATRIX_LOG="$(enterprise_e2e_matrix_log)"

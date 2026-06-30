@@ -43,7 +43,10 @@ Evidence-only PASS or SKIP rows **do not** count strict-clean.
 - **No** `claude auth login/logout` — this track is Cursor-only.
 - **429 / quota:** retry every **60s**; not auth failure.
 - Re-run `bash scripts/install-cursor.sh` after every SB harness/hook fix.
-- **SB branch:** `enterprise-e2e/cursor` — verify with `git branch --show-current` before every commit; never commit harness work to Claude Round 6, Codex, or multi-host branches.
+- **SB branch:** `enterprise-e2e/cursor` — verify with `git branch --show-current` before **every commit** and **every TUI monitor poll / harness restart**.
+- **NEVER checkout `enterprise-e2e/codex` or `enterprise-e2e/multi-host`** during Cursor track work — unintended branch switches are catastrophic (wrong ledger paths, cross-track commits, codex-only artifacts). If you land on the wrong branch, `git checkout enterprise-e2e/cursor` immediately; do not commit until verified.
+- Harness **aborts** on branch mismatch when `--host cursor` (or `SB_E2E_LIVE_RUNTIME=cursor`): `enterprise_e2e_assert_host_git_branch` in `scripts/enterprise-e2e/lib/host.sh` reads `git_branch` from `hosts.json`.
+- Never commit harness work to Claude Round 6, Codex, or multi-host branches.
 - Recommended tools **opted-in and verified:** Graphify, agentmemory, RTK, Context Mode, Alumnium.
 
 ---
