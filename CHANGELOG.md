@@ -11,6 +11,7 @@
 - `refactor: close thermo-nuclear WARN monoliths on main` (bfd77344)
 
 ## Bug Fixes
+- `fix(hooks): canonicalize shell write paths for macOS /var symlinks` (b0670b53)
 - `fix(install): cross-host surface audit, host-bundles isolation, doctor D14-D17` (4ccea894)
 - `fix(install): align codex tests and bundles with host-bundles layout` (f99eae52)
 - `fix(release): host-bundles smoke paths + classify dedup + hook-bootstrap` (95c50892)
