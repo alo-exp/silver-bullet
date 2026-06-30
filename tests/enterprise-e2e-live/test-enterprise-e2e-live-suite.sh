@@ -46,6 +46,13 @@ assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "liv
 assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "matrix runner executable"
 assert_executable "${REPO_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" "matrix monitor executable"
 assert_executable "${REPO_ROOT}/scripts/watch-enterprise-e2e-tui.sh" "TUI watch executable"
+assert_executable "${REPO_ROOT}/.planning/enterprise-e2e/round6-matrix-driver.sh" "round6 matrix driver executable"
+
+DETACH_LIB="${REPO_ROOT}/tests/live/lib/detach-background.sh"
+assert_contains "detach lib defines sb_run_detached_pty" "$DETACH_LIB" "sb_run_detached_pty"
+assert_contains "detach lib script pty wrapper" "$DETACH_LIB" "script -q /dev/null"
+ROUND6_DRIVER="${REPO_ROOT}/.planning/enterprise-e2e/round6-matrix-driver.sh"
+assert_contains "round6 driver uses sb_run_detached_pty" "$ROUND6_DRIVER" "sb_run_detached_pty"
 
 # --- Operational learnings encoded in runbook ---
 RUNBOOK="${REPO_ROOT}/docs/ENTERPRISE-E2E-LIVE-TEST.md"
