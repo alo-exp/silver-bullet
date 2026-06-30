@@ -74,27 +74,27 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | |
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-research | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
-| 5 | `silver-ui` | | | Skip | evidence-only | | | | |
-| 6 | `silver-fast` | | | Skip | evidence-only | | | | |
-| 7 | `silver-test` | | | Skip | evidence-only | | | | |
-| 8 | `silver-refactor` | | | Skip | evidence-only | | | | |
-| 9 | `silver-benchmark` | | | Skip | evidence-only | | | | |
-| 10 | `silver-content` | | | Skip | evidence-only | | | | |
-| 11 | `silver-devops` | | | Skip | evidence-only | | | | |
-| 12 | `silver-deploy` | | | Skip | evidence-only | | | | |
-| 13 | `silver-canary` | | | Skip | evidence-only | | | | |
-| 14 | `silver-release` | | | Skip | evidence-only | | | | |
-| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | timeout+outcome | E2E-086 | pending | | |
-| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
-| 17 | `silver-incident` | | | Skip | evidence-only | | | | |
-| 18 | `silver-retro` | | | Skip | evidence-only | | | | |
-| 19 | `silver-forensics` | | | Skip | evidence-only | | | | |
-| 20 | `process-maintenance` | | | Skip | evidence-only | | | | |
+| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-bugfix | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-ui | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-fast | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-test | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 8 | `silver-refactor` | 2026-06-30 | composer-2.5 | Fail | evidence+timeout | E2E-087 | 2b197be9 | graphify query silver-refactor | timeout 900s missing evidence |
+| 9 | `silver-benchmark` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-benchmark | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 10 | `silver-content` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-content | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-devops | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-deploy | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 13 | `silver-canary` | | | | | | | | |
+| 14 | `silver-release` | | | | | | | | |
+| 15 | `review-triad` | | | | | | | | |
+| 16 | `ship-readiness` | | | | | | | | |
+| 17 | `silver-incident` | | | | | | | | |
+| 18 | `silver-retro` | | | | | | | | |
+| 19 | `silver-forensics` | | | | | | | | |
+| 20 | `process-maintenance` | | | | | | | | |
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 1 / 22 (tmux cursor-e2e FORCE batch in flight)
+**Pass count:** 1 / 22 (tmux cursor-e2e FORCE batch row 13 in flight; 11 fail scored E2E-087)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
