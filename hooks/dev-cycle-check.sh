@@ -2,66 +2,18 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# Load shared workflow utilities (TD-1: single source of truth for Flow Log regex)
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
-  # shellcheck source=lib/runtime-paths.sh
-  source "$_lib_dir/runtime-paths.sh"
-fi
+# shellcheck source=lib/hook-bootstrap.sh
+[[ -n "$_lib_dir" ]] && source "${_lib_dir}/hook-bootstrap.sh"
 if [[ -f "$_lib_dir/plugin-cache-guard.sh" ]]; then
   # shellcheck source=lib/plugin-cache-guard.sh
   source "$_lib_dir/plugin-cache-guard.sh"
 fi
-if [[ -f "$_lib_dir/required-skills.sh" ]]; then
-  # shellcheck source=lib/required-skills.sh
-  # shellcheck disable=SC1091
-  source "$_lib_dir/required-skills.sh"
-fi
 DEFAULT_PLANNING="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
 DEVOPS_DEFAULT_PLANNING="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
-if [[ -f "$_lib_dir/hook-audit.sh" ]]; then
-  # shellcheck source=lib/hook-audit.sh
-  source "$_lib_dir/hook-audit.sh"
-fi
-if [[ -f "$_lib_dir/tool-input.sh" ]]; then
-  # shellcheck source=lib/tool-input.sh
-  source "$_lib_dir/tool-input.sh"
-fi
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
-  # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
-fi
-if [[ -n "$_lib_dir" && -f "$_lib_dir/workflow-utils.sh" ]]; then
-  source "$_lib_dir/workflow-utils.sh"
-fi
-if ! declare -f count_flow_log_rows >/dev/null 2>&1; then
-  count_flow_log_rows() { grep -cE '^\| [0-9]+ \|' "$1" 2>/dev/null || echo 0; }
-  count_complete_flow_rows() { grep -cE '^\| [^|]+\| [^|]+\| (complete|skipped)' "$1" 2>/dev/null || echo 0; }
-fi
-
-# shellcheck source=lib/skill-discovery.sh
-if [[ -f "$_lib_dir/skill-discovery.sh" ]]; then
-  # shellcheck disable=SC1091
-  source "$_lib_dir/skill-discovery.sh"
-fi
-if ! declare -f sb_skill_is_installed >/dev/null 2>&1; then
-  sb_skill_is_installed() { return 0; }
-fi
 
 # Pre+PostToolUse hook (matcher: Edit|Write|MultiEdit|Bash)
 # Enforces four-stage workflow gate — blocks source edits if planning skills incomplete.
-
-# Security: restrict file creation permissions (user-only)
-umask 0077
-
-if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
-  # shellcheck source=lib/jq-gate.sh
-  source "$_lib_dir/jq-gate.sh"
-fi
-if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
-  # shellcheck source=lib/sb-project-gate.sh
-  source "$_lib_dir/sb-project-gate.sh"
-fi
 
 emit_block_jq_missing() {
   local reason="$1"
