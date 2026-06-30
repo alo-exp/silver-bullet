@@ -357,13 +357,21 @@ body.has-help-subnav .page-nav-bottom{
   border-top:1px solid var(--border);
 }
 
-/* Help doc layout — prevent grid blowout from wide tables / mono paths */
+/* Help doc layout — prevent grid blowout from wide tables / mono paths.
+   !important beats per-page inline <style> (loaded after chrome.css). */
 body.has-help-subnav .doc-layout{
-  grid-template-columns:220px minmax(0,1fr);
+  grid-template-columns:220px minmax(0,1fr) !important;
+}
+@media(max-width:768px){
+  body.has-help-subnav .doc-layout{
+    grid-template-columns:1fr !important;
+  }
 }
 body.has-help-subnav .doc-content{
   min-width:0;
   max-width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
 }
 body.has-help-subnav .doc-content .table-wrap{
   overflow-x:auto;
@@ -371,43 +379,49 @@ body.has-help-subnav .doc-content .table-wrap{
   -webkit-overflow-scrolling:touch;
   margin-bottom:24px;
 }
-body.has-help-subnav .doc-content .table-wrap > .ref-table,
-body.has-help-subnav .doc-content .table-wrap > .comparison-table,
-body.has-help-subnav .doc-content .table-wrap > .pref-table,
-body.has-help-subnav .doc-content .table-wrap > .feat-table,
-body.has-help-subnav .doc-content .table-wrap > .cat-table{
+body.has-help-subnav .doc-content .table-wrap > table{
   width:100%;
   min-width:max-content;
   margin-bottom:0;
   table-layout:auto;
 }
-body.has-help-subnav .doc-content .ref-table,
-body.has-help-subnav .doc-content .comparison-table,
-body.has-help-subnav .doc-content .pref-table,
-body.has-help-subnav .doc-content .feat-table,
-body.has-help-subnav .doc-content .cat-table{
+body.has-help-subnav .doc-content table{
   width:100%;
   max-width:100%;
+  margin-bottom:24px;
   table-layout:auto;
 }
-body.has-help-subnav .doc-content .ref-table th,
-body.has-help-subnav .doc-content .ref-table td,
-body.has-help-subnav .doc-content .comparison-table th,
-body.has-help-subnav .doc-content .comparison-table td,
-body.has-help-subnav .doc-content .pref-table th,
-body.has-help-subnav .doc-content .pref-table td,
-body.has-help-subnav .doc-content .feat-table th,
-body.has-help-subnav .doc-content .feat-table td,
-body.has-help-subnav .doc-content .cat-table th,
-body.has-help-subnav .doc-content .cat-table td{
+body.has-help-subnav .doc-content table th,
+body.has-help-subnav .doc-content table td{
   text-align:left;
   overflow-wrap:break-word;
 }
-body.has-help-subnav .doc-content .ref-table td:first-child{
-  white-space:normal;
+body.has-help-subnav .doc-content .ref-table td:first-child,
+body.has-help-subnav .doc-content .ref-table th{
+  white-space:normal !important;
   overflow-wrap:anywhere;
+  word-break:break-word;
 }
 body.has-help-subnav .doc-content pre,
 body.has-help-subnav .doc-content .code-block{
   max-width:100%;
+}
+
+/* Gaps backlog — minmax(380px) exceeds 375px mobile viewport */
+@media(max-width:768px){
+  .backlog-grid{
+    grid-template-columns:1fr;
+  }
+  .topnav .nav-links{
+    gap:12px;
+  }
+  .topnav .nav-links a{
+    font-size:.8rem;
+  }
+}
+
+/* Inline code in main content — prevent sub-pixel page overflow on mobile */
+main code{
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
