@@ -165,6 +165,7 @@ fi
 rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
+SESSION_LOG_R1="$(mktemp)"
 printf 'silver-context\n' >"$STATE_DIR/state"
 rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'

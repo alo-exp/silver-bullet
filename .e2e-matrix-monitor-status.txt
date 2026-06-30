@@ -1,49 +1,50 @@
-=== Matrix monitor poll 2026-06-27T04:15:16Z ===
-batch PID: done — COMPLETE
-elapsed batch: ?
-current row (log): 22
-matrix log bytes: 33541
-issues (recent): none
+=== Matrix monitor poll 2026-06-30T02:26:03Z ===
+batch PID: 85965 — RUNNING
+elapsed batch: 24:56
+current row (log): 6
+matrix log bytes: 10054
+issues (recent): FAIL
 claude/expect:
-  
-  row1-attempt.log: 2084430 bytes (2026-06-27 09:42)
-  row5-attempt.log: 2148941 bytes (2026-06-27 12:09)
-  row7-attempt.log: 736520 bytes (2026-06-27 12:10)
-  row8-attempt.log: 822739 bytes (2026-06-27 12:10)
-  row9-attempt.log: 360650 bytes (2026-06-27 12:10)
-  row10-attempt.log: 311216 bytes (2026-06-27 12:10)
-  row11-attempt.log: 2453060 bytes (2026-06-27 12:10)
-  row12-attempt.log: 592673 bytes (2026-06-27 12:10)
-  row13-attempt.log: 381773 bytes (2026-06-27 12:11)
-  row14-attempt.log: 1017180 bytes (2026-06-27 12:11)
-  row15-attempt.log: 478811 bytes (2026-06-27 12:11)
-  row16-attempt.log: 590690 bytes (2026-06-27 12:11)
-  row17-attempt.log: 122008 bytes (2026-06-27 12:11)
-  row18-attempt.log: 433049 bytes (2026-06-27 12:11)
-  row19-attempt.log: 227407 bytes (2026-06-27 12:12)
-  row20-attempt.log: 467164 bytes (2026-06-27 12:12)
+  44200 expect /Users/shafqat/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
+  44213 /Users/shafqat/.local/bin/claude --model haiku --effort low --permission-mode bypassPermissions --verbose --allow-dangerously-skip-permissions --settings /Users/shafqat/.claude/settings.json
+  row1-attempt.log: 175171 bytes (2026-06-30 12:04)
+  row5-attempt.log: 3759 bytes (2026-06-30 10:24)
+  row7-attempt.log: 355 bytes (2026-06-30 10:52)
+  row8-attempt.log: 3805 bytes (2026-06-30 10:28)
+  row9-attempt.log: 3765 bytes (2026-06-30 10:29)
+  row10-attempt.log: 3750 bytes (2026-06-30 10:30)
+  row11-attempt.log: 5844 bytes (2026-06-30 10:31)
+  row12-attempt.log: 3746 bytes (2026-06-30 10:32)
+  row13-attempt.log: 3749 bytes (2026-06-30 10:34)
+  row14-attempt.log: 3746 bytes (2026-06-30 10:35)
+  row15-attempt.log: 3795 bytes (2026-06-30 10:36)
+  row16-attempt.log: 355 bytes (2026-06-30 10:37)
+  row17-attempt.log: 355 bytes (2026-06-30 10:37)
+  row18-attempt.log: 355 bytes (2026-06-30 10:37)
+  row19-attempt.log: 355 bytes (2026-06-30 10:37)
+  row20-attempt.log: 355 bytes (2026-06-30 10:37)
 log tail:
 
-    PASS: evidence at docs/WORKFLOW_E2E_MATRIX.md
-  
-  === Matrix summary ===
-  Pass:  12
-  Fail:  0
-  Skip:  0
-  Total: 12 / 22
-  === Enterprise E2E Matrix Runner ===
-  SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-  Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-  Claude:     /Users/shafqat/.local/bin/claude
-  
-  === Row 21: post-exec-gates (internal) PASS ===
-  === Row 22: validate-substep (internal) PASS ===
-  
-  === Matrix summary ===
-  Pass:  2
-  Fail:  0
-  Skip:  0
-  Total: 2 / 22
-retry policy: 429→600s; ENOTFOUND→120-300s; DRY_RUN unset
-monitor PID: 9776
+  [10GEVIDENCE_EOF
+  [10Gls[13G-la[17G/Users/shafqat/projects/enterprise-grade-test-app/.planning/work
+  [10Gflows/bugfix-health.md
+  [10Gwc[13G-l[16G/Users/shafqat/projects/enterprise-grade-test-app/.planning/workf
+  [10Glows/bugfix-health.md)
+  [6GRunning…
+  [6G…[8G+46[12Gtool[17Guses[22G(ctrl+o[30Gto[33Gexpand)
+  [6G(ctrl+b[14Gto[17Grun[21Gin[24Gbackground)
+  
+  ✻[3GQuantumizing…[17G(8m[21G47s[25G·[27G↓[29G11.7k[35Gtokens)
+  [3G⎿[5G Tip:[11GUse[15G/btw[20Gto[23Gask[27Ga[29Gquick[35Gside[40Gquestion[49Gw
+    PASS: evidence at .planning/workflows/bugfix-health.md
+    OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-4-outcomes.md
+    FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
+      OUTCOME-FAIL: OUT-KM-01 partial
+      OUTCOME-FAIL: OUT-WORLD-01 fail
+  === Row 6: silver-fast (/silver:fast) ===
+    graphify: graphify query "silver-fast routes hooks skills orchestrator"
+    evidence: .planning/workflows/fast-readme.md
+    launching interactive Claude session...
+retry policy: 429→60s; ENOTFOUND→120-300s; DRY_RUN unset
+monitor PID: 85232
 poll interval: 300s; stall=2700s; hung=5400s

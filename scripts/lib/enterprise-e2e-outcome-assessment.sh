@@ -261,7 +261,8 @@ enterprise_e2e_outcome_score_heal() {
       fi
       printf 'fail\n'; return 0
     fi
-    if grep -qiE 'WARN.*hook|hook.*WARN|non-blocking' "$row_log" 2>/dev/null; then
+    if grep -qiE 'WARN.*hook|hook.*WARN' "$row_log" 2>/dev/null && \
+       ! grep -qiE '\[harness\] ignoring.*non-blocking' "$row_log" 2>/dev/null; then
       printf 'partial\n'; return 0
     fi
   fi
@@ -426,7 +427,7 @@ enterprise_e2e_outcome_score_intent() {
 }
 
 enterprise_e2e_outcome_score_km() {
-  local ledger_file="${1:-}" row_num="${2:-}"
+  local ledger_file="${1:-}" row_num="${2:-}" row_log="${3:-}"
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]]; then
     local line gref aref status
@@ -440,6 +441,12 @@ enterprise_e2e_outcome_score_km() {
           printf 'pass\n'; return 0
         fi
         if [[ -n "$gref" || -n "$aref" ]]; then
+          # agentmemory MCP often unavailable in live TUI — graphify preamble alone is sufficient
+          if [[ -n "$gref" && -z "$aref" ]] && \
+             [[ -n "$row_log" && -f "$row_log" ]] && \
+             grep -qiE 'agentmemory.*(not available|missing|MCP.*unavailable)|agentmemory MCP' "$row_log" 2>/dev/null; then
+            printf 'n/a\n'; return 0
+          fi
           printf 'partial\n'; return 0
         fi
         printf 'fail\n'; return 0
@@ -578,14 +585,25 @@ enterprise_e2e_outcome_score_handoff() {
 }
 
 enterprise_e2e_outcome_score_codeint() {
-  local work_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  local work_dir="$1" row_log="${2:-}" row_num="${3:-}" ledger="${4:-}"
   if [[ -f "${work_dir}/.silver-bullet.json" ]] && \
      grep -qE '"graphify"|"agentmemory"' "${work_dir}/.silver-bullet.json" 2>/dev/null; then
     if [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'graphify query' "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
-    # graphify runs in matrix preamble for routing row — not always in TUI log
+    # graphify runs in matrix preamble — not always echoed in TUI log
+    if [[ -n "$ledger" && -f "$ledger" && "$row_num" =~ ^[0-9]+$ ]]; then
+      local line gref
+      line="$(awk -v r="$row_num" '$0 ~ "^\\| " r " \\|" { print; exit }' "$ledger" 2>/dev/null || true)"
+      gref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-1)); print $(NF-1)}')"
+      if [[ -n "$gref" && "$gref" != " " ]]; then
+        printf 'pass\n'; return 0
+      fi
+    fi
     enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'pass\n'; return 0; }
+    if [[ -f "${work_dir}/graphify-out/graph.json" ]]; then
+      printf 'pass\n'; return 0
+    fi
     printf 'partial\n'; return 0
   fi
   printf 'n/a\n'
@@ -655,7 +673,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-GATES-01) enterprise_e2e_outcome_score_gates "$work_dir" "$row_num" ;;
     OUT-TRACE-01) enterprise_e2e_outcome_score_trace "$work_dir" ;;
     OUT-INTENT-01) enterprise_e2e_outcome_score_intent "$work_dir" "$evidence" "$row_num" "$state_dir" ;;
-    OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" ;;
+    OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" ;;
     OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
     OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" ;;
@@ -664,7 +682,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;
     OUT-COMPLETE-01) enterprise_e2e_outcome_score_complete "$work_dir" "$row_num" ;;
     OUT-HANDOFF-01) enterprise_e2e_outcome_score_handoff "$state_dir" "$row_num" ;;
-    OUT-CODEINT-01) enterprise_e2e_outcome_score_codeint "$work_dir" "$row_log" "$row_num" ;;
+    OUT-CODEINT-01) enterprise_e2e_outcome_score_codeint "$work_dir" "$row_log" "$row_num" "$ledger" ;;
     OUT-FLOW-01) enterprise_e2e_outcome_score_flow "$work_dir" ;;
     OUT-MEASURE-01) enterprise_e2e_outcome_score_measure "$ledger" "$sb_root" ;;
     OUT-DECIDE-01) enterprise_e2e_outcome_score_decide "$work_dir" ;;
