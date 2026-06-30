@@ -71,7 +71,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | | | | | | | | |
 | 2 | `silver-research` | | | | | | | | |
-| 3 | `silver-feature` | | | | | | | | |
+| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | pending | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 4 | `silver-bugfix` | | | | | | | | |
 | 5 | `silver-ui` | | | | | | | | |
 | 6 | `silver-fast` | | | | | | | | |
