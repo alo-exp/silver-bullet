@@ -50,7 +50,8 @@ matrix_quiesce_active_workflows() {
 
 matrix_write_router_session_evidence() {
   local evidence_path="$1"
-  local state_file="${HOME}/.claude/.silver-bullet/state"
+  local state_file
+  state_file="$(enterprise_e2e_routing_state_file 2>/dev/null || printf '%s' "${HOME}/.claude/.silver-bullet/state")"
   mkdir -p "$(dirname "${WORK_DIR}/${evidence_path}")"
   {
     printf '# Router session evidence (matrix row 1 — routing-only)\n\n'
