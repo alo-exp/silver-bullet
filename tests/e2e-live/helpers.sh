@@ -541,7 +541,11 @@ setup_workspace() {
       trust_runtime_workspace
       ;;
     cursor)
-      bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      if [[ "${SB_E2E_SKIP_CURSOR_INSTALL:-}" != "1" ]]; then
+        bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      else
+        echo "SKIP: cursor plugin install (SB_E2E_SKIP_CURSOR_INSTALL=1)" >&2
+      fi
       ;;
     kay)
       trust_runtime_workspace
