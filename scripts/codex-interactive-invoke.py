@@ -265,6 +265,8 @@ def main() -> int:
                 if "hooksneedreview" in compact_buffer or "trustallandcontinue" in compact_buffer:
                     if auto_trust_hooks == "1":
                         hook_trust_confirmation_pending = True
+                        # Option 2 = Trust all; fall back to arrow+enter for older menus.
+                        os.write(master_fd, b"2\r")
                         os.write(master_fd, b"\x1b[B\r")
                         text_buffer = ""
                         continue
