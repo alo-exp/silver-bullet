@@ -111,7 +111,7 @@ am_template_null="$(jq -r '.recommended_tools.agentmemory.enabled_by_user' \
 [[ "$am_template_null" == "null" ]] && pass "template agentmemory enabled_by_user is null" || fail "template agentmemory enabled_by_user is null"
 
 assert_grep "silver-init agentmemory opt-in section" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
   "### 1.1b agentmemory"
 
 assert_grep "silver-update agentmemory retry" \
@@ -127,11 +127,11 @@ cm_template_null="$(jq -r '.recommended_tools.context_mode.enabled_by_user' \
 [[ "$cm_template_null" == "null" ]] && pass "template context_mode enabled_by_user is null" || fail "template context_mode enabled_by_user is null"
 
 assert_grep "silver-init RTK opt-in section" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
   "### 1.1e RTK"
 
 assert_grep "silver-init Context Mode opt-in section" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
   "### 1.1f Context Mode"
 
 assert_grep "silver-update RTK retry" \
