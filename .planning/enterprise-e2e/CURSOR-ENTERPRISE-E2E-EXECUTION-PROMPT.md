@@ -1,4 +1,6 @@
-# Cursor Host — Enterprise E2E Fresh Session Execution Prompt
+# Cursor Host — Enterprise E2E Fresh Session Execution Prompt (v2)
+
+**Harness:** Shared host-agnostic tree — [SHARED-HARNESS.md](./SHARED-HARNESS.md) · [HOST-CONFIG.md](./HOST-CONFIG.md) · `scripts/enterprise-e2e/`
 
 **Host identity:** **Cursor `agent` TUI** (`cursor-agent` or `agent` CLI) — rules/skills + orchestrator parent mode.
 
@@ -6,7 +8,9 @@
 
 **Cross-links (read first):**
 
-- [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — parent orchestrator ops, strict-clean, friction watch
+- [SHARED-HARNESS.md](./SHARED-HARNESS.md) — deterministic vs live layers, shared `scripts/enterprise-e2e/`
+- [OPERATIONAL-ADDENDUM.md](./OPERATIONAL-ADDENDUM.md) — cross-host strict-clean ops
+- [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — parent orchestrator ops (Claude parallel track)
 - [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) — per-row/session scoring; blocking autonomy gates
 - [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) — canonical live test runbook
 - [WORKFLOW_E2E_MATRIX.md](https://github.com/alo-exp/enterprise-grade-test-app/blob/main/docs/WORKFLOW_E2E_MATRIX.md) — 22-row prompt cards (test app)
@@ -76,6 +80,9 @@ TUI protocol: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
 | Cursor CLI smoke (pre-release) | `/Users/shafqat/projects/silver-bullet/repo/scripts/pre-release-cursor-cli-smoke.sh` |
 | Review-fix-ladder resolver | `python3 scripts/review-fix-ladder.py --host cursor` |
 | Round ledger (Cursor-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md` |
+| Round ledger (Cursor-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md` |
+| Round gates (Cursor-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md` |
+| Round gates (Cursor-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md` |
 | Matrix live log | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-cursor-live.log` |
 | Monitor status | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-cursor-monitor-status.txt` |
 | TUI watch findings | `/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-cursor-findings.jsonl` |
@@ -332,6 +339,32 @@ SB_E2E_RCS_TRIHOST=full SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash s
 
 ---
 
+## Two-round release gate (Cursor host)
+
+**Do not tag or sign off** until **both** rounds are strict-clean **back-to-back** (Round Cursor-2 immediately follows a strict-clean Round Cursor-1 — no intervening dirty round or skipped Phase A–C).
+
+| Step | Action |
+|------|--------|
+| 1 | Complete **Round Cursor-1** Phases A → B → C; set `Round clean? = Pass` in [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md). |
+| 2 | Update [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md): all gates green including **2 consecutive strict clean rounds = PENDING (1/2)**. |
+| 3 | **Fresh Round Cursor-2:** copy ledger template → [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md); reset matrix log (archive Cursor-1 log); re-run **full** Phase A (ladder 8/8 × 2 verify, `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0`) + Phase B (22/22) + Phase C. |
+| 4 | Pin `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md` for Round 2 only. |
+| 5 | After Round Cursor-2 strict-clean: update [ROUND-CURSOR-2-GATES.md](./ROUND-CURSOR-2-GATES.md) — **2 consecutive strict clean rounds = PASS (2/2)**. |
+| 6 | **Release readiness:** both gate files show Round N strict-clean + consecutive pair PASS; RCS ≥ 85 with `SB_E2E_RCS_TRIHOST=full`; pre-release overlay + `pre-release-cursor-cli-smoke.sh` green. |
+
+**Failure between rounds:** If Round Cursor-2 is not strict-clean, the pair resets — fix SB, re-run Round Cursor-2 from Phase A (do not claim release until a **new** consecutive pair completes).
+
+**Cross-round check (manual until harness script exists):**
+
+```bash
+grep -E 'Round clean\? \| \*\*Pass\*\*|2 consecutive strict clean rounds \| \*\*PASS \(2/2\)\*\*' \
+  .planning/enterprise-e2e/ROUND-CURSOR-{1,2}-GATES.md
+```
+
+Harness does **not** auto-enforce the pair — operator + gate files are authoritative ([ROUND-N-GATES.md](./ROUND-N-GATES.md) row **2 consecutive strict clean rounds**).
+
+---
+
 ## Cursor agent TUI protocol
 
 Full checklist: [CURSOR-TUI-PROTOCOL.md](./CURSOR-TUI-PROTOCOL.md)
@@ -478,4 +511,4 @@ RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh
 
 ## One-liner (fresh session copy-paste)
 
-> Cursor enterprise E2E track: SB repo root `/Users/shafqat/projects/silver-bullet/repo`, agent TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, ledger `ROUND-CURSOR-1-LEDGER.md`, log `.e2e-matrix-cursor-live.log`. One `composer-2.5` background operator resumed across turns, report every 60–90s with Cursor agent friction watch. Phase A: `review-fix-ladder.py --host cursor` 8/8. Phase B: 22-row matrix via `SILVER_BULLET_RUNTIME=cursor` + `tests/live/agents/cursor/agent.sh` (extend harness if Claude-only). Phase C: outcome + validation + RCS + tri-host + `pre-release-cursor-cli-smoke.sh`. Fix SB immediately, `install-cursor.sh`, cherry-pick to main, strict-clean = ladder + matrix + all outcome criteria + 0 new issues vs 76, never pause for me, 429 retry 1min, single driver only, `CURSOR_API_KEY` headless. Parallel to Claude Round 6 — not a smoke.
+> Cursor enterprise E2E v2 (shared harness `scripts/enterprise-e2e/`): **2 consecutive strict-clean rounds** (Cursor-1→2). SB `/Users/shafqat/projects/silver-bullet/repo`, agent CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host cursor` or `SB_E2E_LIVE_RUNTIME=cursor`, ledger `ROUND-CURSOR-{1,2}-LEDGER.md`, log `.e2e-matrix-cursor-live.log`. One `composer-2.5` parent orchestrator + `cursor-agent` matrix child, poll 60–90s. Each round: ladder 8/8×2 verify → matrix 22/22 → Phase C outcome+RCS+CLI smoke. Deterministic preflight: `RTK_DISABLED=1 bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh`. Fix shared `enterprise-e2e/lib/` not forks; `CURSOR_API_KEY` headless; parallel Claude R6 — not smoke.
