@@ -10,9 +10,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 |-------|-------|
 | Round | Codex-1 |
 | Host | `codex` |
-| SB repo SHA | `5796b1459229b9f7b79c14c9c515e30f3b08eb692` |
-| Test app SHA | `565e825de6ce6873cfbb789a35dab24ad6d493b2` |
-| Codex plugin install | `5796b1459229b9f7b79c14c9c515e30f3b08eb692` |
+| SB repo SHA | `d24207e3` |
+| Codex plugin install | `d24207e3` |
 | Codex model (frozen) | gpt-5.4 / gpt-5.5 (ladder rungs 1–8) |
 | Operator | Cursor Composer (Codex E2E subagent) |
 | Start date | 2026-06-30 |
@@ -67,13 +66,13 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Codex model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|-------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | | **Fail** | routing | ROUTING completed in TUI but scorer missed ANSI markers; `/silver` in rows 2+ (hardcoded prompt) | pending | graphify query "silver-router routes hooks skills orchestrator" | mem_mr0cnnzi |
-| 2 | `silver-research` | 2026-06-30 | | **Fail** | outcome | evidence PASS @ docs/ADR-001-runtime.md; OUT-SKILL/ORCH/WORLD fail (empty row_log) | pending | graphify query "silver-research routes hooks skills orchestrator" | mem_mr0dio16 |
-| 3 | `silver-feature` | 2026-06-30 | | **Fail** | outcome | evidence PASS @ feature-currency.md after 10×429; OUT-HANDOFF/SUPER/WORLD | pending | | |
-| 4 | `silver-bugfix` | 2026-06-30 | | **Fail** | evidence | missing .planning/workflows/bugfix-health.md | pending | | |
-| 5 | `silver-ui` | 2026-06-30 | | **Fail** | outcome | evidence PASS @ ui/src/App.jsx; OUT-HANDOFF/SUPER/WORLD | pending | | |
-| 6 | `silver-fast` | 2026-06-30 | | **Pass** | — | strict-clean evidence + OUT-WORLD-01 @ batch 65528 | | | |
-| 7 | `silver-test` | 2026-06-30 | | *in flight* | — | batch PID 65528 RUNNING | | | |
+| 1 | `silver-router` | 2026-06-30 | | **Pass** | — | FORCE row1 @78406; OUT-SKILL-01 fix ac4b9322 | ac4b9322 | graphify query "silver-router routes hooks skills orchestrator" | mem_mr0flf2a |
+| 2 | `silver-research` | 2026-06-30 | | **Fail** | hook-trust | resume pending — hook review aborted rows 2+ | d24207e3 | graphify query "silver-research routes hooks skills orchestrator" | mem_mr0dio16 |
+| 3 | `silver-feature` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
+| 4 | `silver-bugfix` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
+| 5 | `silver-ui` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
+| 6 | `silver-fast` | 2026-06-30 | | **Pass** | — | strict-clean @ batch 65528 | | | |
+| 7 | `silver-test` | 2026-06-30 | | **Pass** | — | strict-clean @ batch 65528 | | | |
 | 8 | `silver-refactor` | | | | | | | | |
 | 9 | `silver-benchmark` | | | | | | | | |
 | 10 | `silver-content` | | | | | | | | |
@@ -90,12 +89,12 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 1 / 22 *(Phase B batch PID 65528 RUNNING — row 7 in flight @08:17Z; row 6 strict PASS)*
+**Pass count:** 3 / 22 *(rows 1,6,7 PASS — driver PID resuming 2-5,8-22 @d24207e3)*
 
-**Harness fixes (uncommitted → commit next):**
-- `matrix_router_workflow_prompt` — pass `$silver` for Codex (was hardcoded `/silver`)
-- Outcome scorer — effective row_log, ANSI routing markers, handoff/super evidence pass
-- Codex agent — write `CLAUDE_INTERACTIVE_LOG_FILE` for outcome scoring
+**Harness fixes (enterprise-e2e/codex):**
+- `d24207e3` — hook trust auto-select + per-row seed + row_log append
+- `ac4b9322` — OUT-SKILL-01 ANSI-normalized scoring (row 1)
+- `f6c4843e` — `$silver` route prompt + outcome scorer backfill
 
 **Prior harness fix:** `5796b145` — `trust_runtime_workspace()` in `setup_workspace()`.
 
