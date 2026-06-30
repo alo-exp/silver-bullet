@@ -60,6 +60,8 @@ batch_elapsed() {
   ps -p "$pid" -o etime= 2>/dev/null | tr -d ' ' || echo "?"
 }
 
+matrix_runner_pgrep_pattern='bash scripts/(run-enterprise-e2e-matrix|enterprise-e2e/matrix)\.sh'
+
 discover_batch_pid() {
   local pid p ppid cmd
   if [[ -f "$BATCH_PID_FILE" ]]; then
@@ -75,11 +77,11 @@ discover_batch_pid() {
     [[ -z "$p" ]] && continue
     ppid="$(ps -p "$p" -o ppid= 2>/dev/null | tr -d ' ')"
     cmd="$(ps -p "$ppid" -o command= 2>/dev/null || true)"
-    if [[ "$cmd" != *run-enterprise-e2e-matrix.sh* ]]; then
+    if [[ "$cmd" != *run-enterprise-e2e-matrix.sh* && "$cmd" != *enterprise-e2e/matrix.sh* ]]; then
       pid="$p"
       break
     fi
-  done < <(pgrep -f 'bash scripts/run-enterprise-e2e-matrix.sh' 2>/dev/null | sort -n)
+  done < <(pgrep -f "$matrix_runner_pgrep_pattern" 2>/dev/null | sort -n)
   if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
     printf '%s\n' "$pid" >"$BATCH_PID_FILE"
     printf '%s\n' "$pid"
@@ -94,11 +96,11 @@ is_batch_running() {
 }
 
 live_test_driver_running() {
-  pgrep -f 'run-enterprise-e2e-live-test\.sh' >/dev/null 2>&1
+  pgrep -f 'run-enterprise-e2e-live-test\.sh|enterprise-e2e/live-test\.sh' >/dev/null 2>&1
 }
 
 any_matrix_runner_pid() {
-  pgrep -f 'bash scripts/run-enterprise-e2e-matrix\.sh' 2>/dev/null | head -1 || true
+  pgrep -f "$matrix_runner_pgrep_pattern" 2>/dev/null | head -1 || true
 }
 
 matrix_agent_child_lines() {

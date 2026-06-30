@@ -377,7 +377,8 @@ assert_file_exists "${HARNESS_ROOT}/lib/adapters/claude.sh" "claude host adapter
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/codex.sh" "codex host adapter exists"
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/cursor.sh" "cursor host adapter exists"
 assert_executable "${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh" "deterministic consecutive-rounds shim exists"
-assert_contains "monitor matrix agent children" "$MONITOR" "matrix_agent_child_lines"
+assert_contains "monitor detects harness matrix path" "$MONITOR" "enterprise-e2e/matrix.sh"
+assert_contains "monitor detects live harness entry" "$MONITOR" "enterprise-e2e/live-test"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" "ROUND-CODEX-1-LEDGER template exists"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" "ROUND-CURSOR-1-LEDGER template exists"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md" "CODEX-TUI-PROTOCOL exists"
@@ -446,6 +447,12 @@ else
   fail "consecutive rounds JSON expected ok for claude-style fixtures"
 fi
 rm -rf "$CONSEC_TMP"
+consec_host_out="$(RTK_DISABLED=1 bash "$CONSEC_CHECK" --host codex 2>&1 || true)"
+if printf '%s\n' "$consec_host_out" | grep -q "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md"; then
+  pass "consecutive rounds --host resolves repo-root gate paths"
+else
+  fail "consecutive rounds --host must resolve gates under repo .planning/"
+fi
 assert_contains "rcs wires consecutive rounds env" "${REPO_ROOT}/scripts/enterprise-e2e-rcs.sh" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 assert_contains "live test wires consecutive rounds env" "$LIVE" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 
