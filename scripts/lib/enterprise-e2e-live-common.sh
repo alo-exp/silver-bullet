@@ -22,11 +22,172 @@ enterprise_e2e_fixture_dir() {
   printf '%s\n' "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 }
 
+# claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
+enterprise_e2e_matrix_host() {
+  local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-claude}}"
+  case "$host" in
+    claude|codex|cursor) printf '%s\n' "$host" ;;
+    *) printf 'claude\n' ;;
+  esac
+}
+
+# Default host-isolated artifact paths (Claude keeps legacy names for Round 6).
+enterprise_e2e_apply_matrix_host_defaults() {
+  local host sb_root
+  host="$(enterprise_e2e_matrix_host)"
+  sb_root="${SB_ROOT:-$(enterprise_e2e_sb_root)}"
+  export SB_ROOT="$sb_root"
+  export SB_E2E_LIVE_RUNTIME="$host"
+  export SILVER_BULLET_RUNTIME="$host"
+
+  if [[ -f "${sb_root}/hooks/lib/runtime-paths.sh" ]]; then
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${sb_root}/hooks/lib/runtime-paths.sh"
+  fi
+
+  if [[ -z "${SB_E2E_LIVE_TEST_LOCK_FILE:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_LIVE_TEST_LOCK_FILE="${sb_root}/.e2e-live-test.lock"
+    else
+      export SB_E2E_LIVE_TEST_LOCK_FILE="${sb_root}/.e2e-live-test-${host}.lock"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_MATRIX_LOG:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_MATRIX_LOG="${sb_root}/.e2e-matrix-live.log"
+    else
+      export SB_E2E_MATRIX_LOG="${sb_root}/.e2e-matrix-${host}-live.log"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_MATRIX_BATCH_PID_FILE:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_MATRIX_BATCH_PID_FILE="${sb_root}/.e2e-matrix-batch.pid"
+    else
+      export SB_E2E_MATRIX_BATCH_PID_FILE="${sb_root}/.e2e-matrix-${host}-batch.pid"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_MATRIX_MONITOR_PID_FILE:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_MATRIX_MONITOR_PID_FILE="${sb_root}/.e2e-matrix-monitor.pid"
+    else
+      export SB_E2E_MATRIX_MONITOR_PID_FILE="${sb_root}/.e2e-matrix-${host}-monitor.pid"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_MATRIX_MONITOR_STATUS_FILE:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_MATRIX_MONITOR_STATUS_FILE="${sb_root}/.e2e-matrix-monitor-status.txt"
+    else
+      export SB_E2E_MATRIX_MONITOR_STATUS_FILE="${sb_root}/.e2e-matrix-${host}-monitor-status.txt"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_TUI_FINDINGS:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_TUI_FINDINGS="${sb_root}/.e2e-tui-watch-findings.jsonl"
+    else
+      export SB_E2E_TUI_FINDINGS="${sb_root}/.e2e-tui-watch-${host}-findings.jsonl"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_TUI_OFFSETS:-}" ]]; then
+    if [[ "$host" == "claude" ]]; then
+      export SB_E2E_TUI_OFFSETS="${sb_root}/.e2e-tui-watch-offsets.json"
+    else
+      export SB_E2E_TUI_OFFSETS="${sb_root}/.e2e-tui-watch-${host}-offsets.json"
+    fi
+  fi
+
+  if [[ -z "${SB_E2E_LEDGER_FILE:-}" ]]; then
+    case "$host" in
+      codex) export SB_E2E_LEDGER_FILE="${sb_root}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" ;;
+      cursor) export SB_E2E_LEDGER_FILE="${sb_root}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" ;;
+      *) export SB_E2E_LEDGER_FILE="${sb_root}/.planning/enterprise-e2e/ROUND-1-LEDGER.md" ;;
+    esac
+  fi
+}
+
+enterprise_e2e_row_attempt_log() {
+  local row="$1" attempt="${2:-1}" host sb_root
+  host="$(enterprise_e2e_matrix_host)"
+  sb_root="${SB_ROOT:-}"
+  if [[ "$host" == "claude" ]]; then
+    if [[ "$attempt" -eq 1 ]]; then
+      printf '%s\n' "${sb_root}/.e2e-row${row}-attempt.log"
+    else
+      printf '%s\n' "${sb_root}/.e2e-row${row}-attempt${attempt}.log"
+    fi
+    return 0
+  fi
+  if [[ "$attempt" -eq 1 ]]; then
+    printf '%s\n' "${sb_root}/.e2e-row${row}-${host}-attempt.log"
+  else
+    printf '%s\n' "${sb_root}/.e2e-row${row}-${host}-attempt${attempt}.log"
+  fi
+}
+
+enterprise_e2e_row_attempt_log_glob() {
+  local host sb_root
+  host="$(enterprise_e2e_matrix_host)"
+  sb_root="${SB_ROOT:-}"
+  if [[ "$host" == "claude" ]]; then
+    printf '%s\n' "${sb_root}/.e2e-row*-attempt.log"
+  else
+    printf '%s\n' "${sb_root}/.e2e-row*-${host}-attempt.log"
+  fi
+}
+
+enterprise_e2e_routing_state_file() {
+  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+  fi
+  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}/state"
+}
+
+# Translate MATRIX_ROWS route column for non-Claude hosts.
+enterprise_e2e_matrix_host_route() {
+  local route="$1" host
+  host="$(enterprise_e2e_matrix_host)"
+  case "$host" in
+    codex)
+      if [[ "$route" == /silver* ]]; then
+        printf '$%s\n' "${route:1}"
+      else
+        printf '%s\n' "$route"
+      fi
+      ;;
+    cursor)
+      case "$route" in
+        /silver) printf '/silver\n' ;;
+        /silver:*) printf '%s\n' "${route#/silver:}" ;;
+        *) printf '%s\n' "$route" ;;
+      esac
+      ;;
+    *)
+      printf '%s\n' "$route"
+      ;;
+  esac
+}
+
 enterprise_e2e_matrix_log() {
+  local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
+  if [[ -z "${SB_E2E_MATRIX_LOG:-}" && -n "$host" && "$host" != "claude" ]]; then
+    printf '%s\n' "${SB_ROOT}/.e2e-matrix-${host}-live.log"
+    return 0
+  fi
   printf '%s\n' "${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-live.log}"
 }
 
 enterprise_e2e_matrix_batch_pid_file() {
+  local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
+  if [[ -z "${SB_E2E_MATRIX_BATCH_PID_FILE:-}" && -n "$host" && "$host" != "claude" ]]; then
+    printf '%s\n' "${SB_ROOT}/.e2e-matrix-${host}-batch.pid"
+    return 0
+  fi
   printf '%s\n' "${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
 }
 
@@ -115,7 +276,7 @@ enterprise_e2e_matrix_log_bytes() {
 
   # Last resort: sum row attempt logs when canonical log is unlinked (0-byte stat).
   for row in $(enterprise_e2e_all_row_nums); do
-    row_log="${SB_ROOT}/.e2e-row${row}-attempt.log"
+    row_log="$(enterprise_e2e_row_attempt_log "$row" 2>/dev/null || echo "${SB_ROOT}/.e2e-row${row}-attempt.log")"
     [[ -f "$row_log" ]] || continue
     bytes=$((bytes + $(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)))
   done
@@ -198,9 +359,20 @@ enterprise_e2e_assert_no_auth_mutations() {
   return 0
 }
 
-# Single live-test driver — prevents concurrent --resume races on install-claude / hook audit.
+# Single live-test driver — prevents concurrent --resume races on install / hook audit.
 enterprise_e2e_live_test_lock_file() {
-  printf '%s\n' "${SB_E2E_LIVE_TEST_LOCK_FILE:-${SB_ROOT:-}/.e2e-live-test.lock}"
+  if [[ -n "${SB_E2E_LIVE_TEST_LOCK_FILE:-}" ]]; then
+    printf '%s\n' "$SB_E2E_LIVE_TEST_LOCK_FILE"
+    return 0
+  fi
+  local host sb_root
+  host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
+  sb_root="${SB_ROOT:-}"
+  if [[ "$host" == "claude" ]]; then
+    printf '%s\n' "${sb_root}/.e2e-live-test.lock"
+  else
+    printf '%s\n' "${sb_root}/.e2e-live-test-${host}.lock"
+  fi
 }
 
 enterprise_e2e_acquire_live_test_lock() {
@@ -282,15 +454,24 @@ enterprise_e2e_reset_tui_monitor_offsets() {
   local offsets_file findings_file agent_offset line_count
   [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
 
-  offsets_file="${SB_E2E_TUI_OFFSETS:-${sb_root}/.e2e-tui-watch-offsets.json}"
-  findings_file="${SB_E2E_TUI_FINDINGS:-${sb_root}/.e2e-tui-watch-findings.jsonl}"
+  local host row_glob
+  host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
+  if [[ "$host" == "claude" ]]; then
+    offsets_file="${SB_E2E_TUI_OFFSETS:-${sb_root}/.e2e-tui-watch-offsets.json}"
+    findings_file="${SB_E2E_TUI_FINDINGS:-${sb_root}/.e2e-tui-watch-findings.jsonl}"
+    row_glob=".e2e-row*-attempt.log"
+  else
+    offsets_file="${SB_E2E_TUI_OFFSETS:-${sb_root}/.e2e-tui-watch-${host}-offsets.json}"
+    findings_file="${SB_E2E_TUI_FINDINGS:-${sb_root}/.e2e-tui-watch-${host}-findings.jsonl}"
+    row_glob=".e2e-row*-${host}-attempt.log"
+  fi
   agent_offset="${sb_root}/.planning/enterprise-e2e/.tui-monitor-agent-offset.json"
 
-  python3 - "$sb_root" "$offsets_file" <<'PY'
+  python3 - "$sb_root" "$offsets_file" "$row_glob" <<'PY'
 import glob, json, os, sys
-root, offsets_path = sys.argv[1:3]
+root, offsets_path, row_glob = sys.argv[1:4]
 offsets = {}
-for path in sorted(glob.glob(os.path.join(root, ".e2e-row*-attempt.log"))):
+for path in sorted(glob.glob(os.path.join(root, row_glob))):
     key = os.path.basename(path)
     offsets[key] = os.path.getsize(path) if os.path.isfile(path) else 0
 with open(offsets_path, "w", encoding="utf-8") as f:
@@ -370,6 +551,9 @@ if Path(claude_bin).is_file():
     except (OSError, subprocess.TimeoutExpired):
         pass
 
+# Keep agentmemory MCP enabled for live matrix KM capture (OUT-KM-01).
+names = {n for n in names if "agentmemory" not in n.lower()}
+
 # Clear needs-auth cache so the TUI does not stall on the OAuth banner; disabled
 # servers are enforced via fixture settings.local.json instead.
 mcp_cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -386,8 +570,48 @@ print(f"matrix MCP env: disabled {len(names)} server(s) for TUI")
 PY
 }
 
+enterprise_e2e_run_install_host() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  local host
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
+  host="$(enterprise_e2e_matrix_host)"
+  case "$host" in
+    claude) enterprise_e2e_run_install_claude "$sb_root" ;;
+    codex)
+      echo "Plugin install (Codex):"
+      (cd "$sb_root" && bash scripts/install-codex.sh --purge-legacy-skills)
+      ;;
+    cursor)
+      echo "Plugin install (Cursor):"
+      (cd "$sb_root" && bash scripts/install-cursor.sh)
+      ;;
+    *)
+      enterprise_e2e_run_install_claude "$sb_root"
+      ;;
+  esac
+}
+
+enterprise_e2e_preflight_host() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  local host
+  host="$(enterprise_e2e_matrix_host)"
+  case "$host" in
+    claude) enterprise_e2e_preflight_claude_token_gateway "$sb_root" ;;
+    codex)
+      echo "Codex preflight: native CLI required (no Claude token gateway)"
+      ;;
+    cursor)
+      echo "Cursor preflight: cursor-agent CLI or CURSOR_API_KEY required"
+      ;;
+    *)
+      enterprise_e2e_preflight_claude_token_gateway "$sb_root"
+      ;;
+  esac
+}
+
 enterprise_e2e_export_live_defaults() {
   enterprise_e2e_prepend_harness_path
+  enterprise_e2e_apply_matrix_host_defaults
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
   unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true
@@ -398,8 +622,6 @@ enterprise_e2e_export_live_defaults() {
   export SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60}"
   export SB_E2E_WORKFLOW_QUIET_TIMEOUT="${SB_E2E_WORKFLOW_QUIET_TIMEOUT:-600}"
   export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
-  export SILVER_BULLET_RUNTIME=claude
-  export SB_E2E_LIVE_RUNTIME=claude
 }
 
 # Fail fast before interactive matrix when token gateway credentials are missing.

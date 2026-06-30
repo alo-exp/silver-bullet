@@ -202,6 +202,99 @@ rm -f "$ROW1_LOG"
 score_gates6="$(enterprise_e2e_outcome_score_criterion OUT-GATES-01 "$FIXTURE" "$STATE_DIR" "" 6)"
 [[ "$score_gates6" == "pass" ]] && pass "fixture row 6 OUT-GATES-01 pass (fast-path skip)" || fail "fixture row 6 OUT-GATES-01 got $score_gates6"
 
+# --- Fixture: row 6/7/8/11 FORCE-resume outcome patterns (retained log signals) ---
+ROW67_LEDGER="$(mktemp)"
+cat >"$ROW67_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Claude model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 6 | `silver-fast` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-fast routes hooks skills orchestrator | |
+| 7 | `silver-test` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-test routes hooks skills orchestrator | |
+| 8 | `silver-refactor` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-refactor routes hooks skills orchestrator | |
+| 11 | `silver-devops` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-devops routes hooks skills orchestrator | |
+LEDGER
+ROW6_LOG="$(mktemp)"
+printf 'Route through silver-fast workflow\ngraphify query silver-fast routes hooks skills orchestrator\nagentmemory - memory_save (MCP)(content: "README decision")\nautonomous orchestrator active\n' >"$ROW6_LOG"
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/fast-readme.md" <<'EOF'
+# Fast README evidence
+EOF
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-fast","next_worker_template":"fast"}
+EOF
+score_km6="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" 6 "" "$ROW67_LEDGER")"
+[[ "$score_km6" == "pass" ]] && pass "fixture row 6 OUT-KM-01 pass (graphify ref + agentmemory MCP in log)" || fail "fixture row 6 OUT-KM-01 got $score_km6"
+score_skill6="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" 6)"
+[[ "$score_skill6" == "pass" ]] && pass "fixture row 6 OUT-SKILL-01 pass from log slug fallback" || fail "fixture row 6 OUT-SKILL-01 got $score_skill6"
+rm -f "$STATE_DIR/state"
+if enterprise_e2e_outcome_row_passes 6 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" "$ROW67_LEDGER" ".planning/workflows/fast-readme.md"; then
+  pass "fixture row 6 enterprise_e2e_outcome_row_passes (KM + skill log fallback)"
+else
+  fail "fixture row 6 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 6 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" "$ROW67_LEDGER" ".planning/workflows/fast-readme.md" || true
+fi
+ROW7_LOG="$(mktemp)"
+printf 'silver-test workflow\ngraphify query silver-test routes hooks skills orchestrator\nagentmemory - memory_smart_search (MCP)(query: "test-orders-integration")\n' >"$ROW7_LOG"
+cat >"$FIXTURE/.planning/workflows/test-orders-integration.md" <<'EOF'
+# Test orders integration evidence
+EOF
+printf 'silver-test\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-test","next_worker_template":"test"}
+EOF
+score_km7="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" 7 "" "$ROW67_LEDGER")"
+[[ "$score_km7" == "pass" ]] && pass "fixture row 7 OUT-KM-01 pass (graphify ref + agentmemory MCP in log)" || fail "fixture row 7 OUT-KM-01 got $score_km7"
+if enterprise_e2e_outcome_row_passes 7 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" "$ROW67_LEDGER" ".planning/workflows/test-orders-integration.md"; then
+  pass "fixture row 7 enterprise_e2e_outcome_row_passes (KM-only gap fixed)"
+else
+  fail "fixture row 7 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 7 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" "$ROW67_LEDGER" ".planning/workflows/test-orders-integration.md" || true
+fi
+ROW8_LOG="$(mktemp)"
+printf 'silver-refactor workflow\ngraphify query silver-refactor routes hooks skills orchestrator\nagentmemory - memory_save (MCP)(content: "refactor validation")\n' >"$ROW8_LOG"
+cat >"$FIXTURE/.planning/workflows/refactor-order-validation.md" <<'EOF'
+# Refactor order validation evidence
+EOF
+cat >"$FIXTURE/.planning/PLAN-refactor.md" <<'EOF'
+# Plan — refactor
+EOF
+printf 'silver-refactor\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-refactor","next_worker_template":"refactor"}
+EOF
+if enterprise_e2e_outcome_row_passes 8 "$FIXTURE" "$STATE_DIR" "$ROW8_LOG" "$ROW67_LEDGER" ".planning/workflows/refactor-order-validation.md"; then
+  pass "fixture row 8 enterprise_e2e_outcome_row_passes (KM-only gap fixed)"
+else
+  fail "fixture row 8 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 8 "$FIXTURE" "$STATE_DIR" "$ROW8_LOG" "$ROW67_LEDGER" ".planning/workflows/refactor-order-validation.md" || true
+fi
+ROW11_LOG="$(mktemp)"
+printf 'silver-devops terraform validation\ngraphify query silver-devops routes hooks skills orchestrator\nagentmemory - memory_smart_search (MCP)(query: "devops terraform")\n◯ general-purpose SB orchestrator worker — ROUTER for terraform env valid\nMinimum next action: Ask the user to decide whether to accept the current evidence\n' >"$ROW11_LOG"
+mkdir -p "$FIXTURE/infra/terraform"
+touch "$FIXTURE/infra/terraform/main.tf"
+cat >"$FIXTURE/.planning/workflows/devops-terraform-validation.md" <<'EOF'
+# Devops terraform validation
+Terraform environment variable validation for IaC blast-radius review.
+EOF
+cat >"$FIXTURE/.planning/PLAN-devops.md" <<'EOF'
+# Plan — devops
+EOF
+printf 'silver-devops\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-devops","next_worker_template":"devops"}
+EOF
+score_blast11="$(enterprise_e2e_outcome_score_criterion OUT-BLAST-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11)"
+[[ "$score_blast11" == "pass" ]] && pass "fixture row 11 OUT-BLAST-01 pass (devops evidence + terraform)" || fail "fixture row 11 OUT-BLAST-01 got $score_blast11"
+score_noop11="$(enterprise_e2e_outcome_score_criterion OUT-NOOP-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11)"
+[[ "$score_noop11" == "pass" ]] && pass "fixture row 11 OUT-NOOP-01 pass (planning Ask-the-user not babysitting)" || fail "fixture row 11 OUT-NOOP-01 got $score_noop11"
+score_auto11="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11 "" ".planning/workflows/devops-terraform-validation.md")"
+[[ "$score_auto11" == "pass" ]] && pass "fixture row 11 OUT-AUTO-01 pass (evidence + orchestrator worker log)" || fail "fixture row 11 OUT-AUTO-01 got $score_auto11"
+if enterprise_e2e_outcome_row_passes 11 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" "$ROW67_LEDGER" ".planning/workflows/devops-terraform-validation.md"; then
+  pass "fixture row 11 enterprise_e2e_outcome_row_passes (devops resume set)"
+else
+  fail "fixture row 11 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 11 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" "$ROW67_LEDGER" ".planning/workflows/devops-terraform-validation.md" || true
+fi
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER"
+
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
 printf 'graphify query silver-feature routes hooks\nTask worker spawned\n' >"$SESSION_LOG"
