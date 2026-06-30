@@ -8,9 +8,10 @@ sb_e2e_matrix_routing_row_marker_file() {
 }
 
 sb_e2e_matrix_routing_row_active() {
-  [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] || return 1
   local marker
   marker="$(sb_e2e_matrix_routing_row_marker_file)"
+  # Harness sets this marker for matrix row 1 only. Claude TUI hooks may not
+  # inherit SB_E2E_ENTERPRISE_MATRIX — marker alone exempts routing-only Stop.
   [[ -f "$marker" && ! -L "$marker" ]]
 }
 

@@ -817,6 +817,52 @@ else
 fi
 teardown
 
+echo "--- ORCH-4: routing row marker alone exempts Stop (no SB_E2E_ENTERPRISE_MATRIX in hook env) ---"
+setup
+write_current_planning_state
+jq -n \
+  --arg repo "$TMPDIR_TEST" \
+  '{current_flow:"FLOW-EXECUTE",repo_root:$repo,workflow_id:"20260428T120000Z-abc123-silver-feature"}' \
+  > "${SB_TEST_DIR}/orchestrator.json"
+jq -n '{next_skill:"silver-execute",next_worker_template:"EXECUTE"}' \
+  > "${SB_TEST_DIR}/orchestrator-directive.json"
+if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
+  unset SB_E2E_ENTERPRISE_MATRIX
+  unset SB_E2E_MATRIX_ROUTING_ROW
+  sb_e2e_matrix_set_routing_row_marker
+  out=$(run_hook)
+  assert_passes "ORCH-4: marker alone allows Stop with pending orchestrator queue" "$out"
+  sb_e2e_matrix_clear_routing_row_marker
+else
+  echo "  SKIP: e2e-matrix-routing.sh missing"
+fi
+teardown
+
+echo "--- ORCH-5: subagent-stop exempt during routing row marker ---"
+setup
+write_current_planning_state
+SUBAGENT_HOOK="$REPO_ROOT/hooks/subagent-stop-enforcement.sh"
+if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SUBAGENT_HOOK" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
+  if [[ -f "$REPO_ROOT/hooks/lib/site-session.sh" ]]; then
+    # shellcheck source=hooks/lib/site-session.sh
+    source "$REPO_ROOT/hooks/lib/site-session.sh"
+    sb_site_session_record_subagent_spawn '{"subagent_type":"generalPurpose"}' 2>/dev/null || true
+  fi
+  sb_e2e_matrix_set_routing_row_marker
+  sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
+  assert_passes "ORCH-5: subagent-stop allows Stop during routing row" "$sub_out"
+  sb_e2e_matrix_clear_routing_row_marker
+  sub_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SUBAGENT_HOOK" 2>/dev/null || true )
+  assert_blocks "ORCH-5b: subagent-stop blocks without routing marker when workers ran" "$sub_out"
+else
+  echo "  SKIP: subagent-stop or e2e-matrix-routing missing"
+fi
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
