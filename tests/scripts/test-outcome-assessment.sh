@@ -159,8 +159,44 @@ rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
 EOF
-score_tailor="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$STATE_DIR" "" 1)"
+score_tailor="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_tailor" == "pass" ]] && pass "fixture row 1 OUT-TAILOR-01 pass" || fail "fixture row 1 OUT-TAILOR-01 got $score_tailor"
+
+# --- Fixture: row 1 routing-only world composite ---
+SESSION_LOG_R1="$(mktemp)"
+printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
+cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
+# Router session evidence
+EOF
+score_super="$(enterprise_e2e_outcome_score_criterion OUT-SUPER-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
+[[ "$score_super" == "n/a" ]] && pass "fixture row 1 OUT-SUPER-01 n/a (routing-only)" || fail "fixture row 1 OUT-SUPER-01 got $score_super (expected n/a)"
+score_handoff="$(enterprise_e2e_outcome_score_criterion OUT-HANDOFF-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
+[[ "$score_handoff" == "n/a" ]] && pass "fixture row 1 OUT-HANDOFF-01 n/a (routing-only)" || fail "fixture row 1 OUT-HANDOFF-01 got $score_handoff"
+score_hook="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
+[[ "$score_hook" == "pass" ]] && pass "fixture row 1 OUT-HOOK-01 pass (routing-only)" || fail "fixture row 1 OUT-HOOK-01 got $score_hook"
+if enterprise_e2e_outcome_row_passes 1 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" "" ".planning/workflows/router-session.md"; then
+  pass "fixture row 1 enterprise_e2e_outcome_row_passes (routing-only)"
+else
+  fail "fixture row 1 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 1 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" "" ".planning/workflows/router-session.md" >&2 || true
+fi
+rm -f "$SESSION_LOG_R1"
+
+# --- Fixture: row 1 routing-only outcome pass (no WBS supervisor) ---
+ROW1_LOG="$(mktemp)"
+printf 'silver-feature routing validation only\n/silver orchestrator routing\n' >"$ROW1_LOG"
+printf 'silver-feature\n' >"$STATE_DIR/state"
+mkdir -p "$FIXTURE/.planning/workflows/.archive"
+cat >"$FIXTURE/.planning/workflows/.archive/router-session.md" <<'EOF'
+# Router session evidence (matrix row 1 — routing-only)
+EOF
+if enterprise_e2e_outcome_row_passes 1 "$FIXTURE" "$STATE_DIR" "$ROW1_LOG" "" ".planning/workflows/.archive/router-session.md"; then
+  pass "fixture row 1 enterprise_e2e_outcome_row_passes (routing-only)"
+else
+  fail "fixture row 1 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 1 "$FIXTURE" "$STATE_DIR" "$ROW1_LOG" "" ".planning/workflows/.archive/router-session.md" || true
+fi
+rm -f "$ROW1_LOG"
 
 # --- Fixture: row 6 fast path gates n/a ---
 score_gates6="$(enterprise_e2e_outcome_score_criterion OUT-GATES-01 "$FIXTURE" "$STATE_DIR" "" 6)"
