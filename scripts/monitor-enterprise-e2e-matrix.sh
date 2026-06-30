@@ -17,6 +17,9 @@ source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 cd "$SB_ROOT" || exit
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+export SB_ROOT
+enterprise_e2e_apply_matrix_host_defaults
+MATRIX_HOST="$(enterprise_e2e_matrix_host)"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 sb_prepend_harness_path
@@ -98,9 +101,24 @@ any_matrix_runner_pid() {
   pgrep -f 'bash scripts/run-enterprise-e2e-matrix\.sh' 2>/dev/null | head -1 || true
 }
 
+matrix_agent_child_lines() {
+  local host
+  host="$(enterprise_e2e_matrix_host)"
+  case "$host" in
+    codex)
+      pgrep -fl 'codex-interactive-invoke\.expect|/codex ' 2>/dev/null | grep -v grep || true
+      ;;
+    cursor)
+      pgrep -fl 'cursor-agent|/agent -p|/agent --print' 2>/dev/null | grep -v grep || true
+      ;;
+    *)
+      pgrep -fl 'claude-interactive-invoke\.expect|/claude --model' 2>/dev/null | grep -v grep || true
+      ;;
+  esac
+}
+
 claude_child_lines() {
-  pgrep -fl 'claude-interactive-invoke\.expect|/claude --model' 2>/dev/null \
-    | grep -v grep || true
+  matrix_agent_child_lines
 }
 
 current_row_from_log() {
@@ -116,9 +134,9 @@ current_row_from_log() {
 }
 
 row_attempt_log() {
-  local row="$1"
-  local f="${SB_ROOT}/.e2e-row${row}-attempt.log"
-  [[ -f "$f" ]] && printf '%s\n' "$f"
+  local row="$1" f
+  f="$(enterprise_e2e_row_attempt_log "$row" 2>/dev/null || true)"
+  [[ -n "$f" && -f "$f" ]] && printf '%s\n' "$f"
 }
 
 log_bytes() {
@@ -260,13 +278,38 @@ random_network_wait() {
   echo $((NETWORK_WAIT_MIN + RANDOM % range))
 }
 
-kill_claude_children() {
-  local sig="${1:-TERM}"
-  pkill "-$sig" -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-  pkill "-$sig" -f '/claude --model' 2>/dev/null || true
+kill_matrix_agent_children() {
+  local sig="${1:-TERM}" host
+  host="$(enterprise_e2e_matrix_host)"
+  case "$host" in
+    codex)
+      pkill "-$sig" -f 'codex-interactive-invoke\.expect' 2>/dev/null || true
+      ;;
+    cursor)
+      pkill "-$sig" -f 'cursor-agent' 2>/dev/null || true
+      pkill "-$sig" -f '/agent -p' 2>/dev/null || true
+      ;;
+    *)
+      pkill "-$sig" -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
+      pkill "-$sig" -f '/claude --model' 2>/dev/null || true
+      ;;
+  esac
   sleep 3
-  pkill -KILL -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
-  pkill -KILL -f '/claude --model' 2>/dev/null || true
+  case "$host" in
+    codex) pkill -KILL -f 'codex-interactive-invoke\.expect' 2>/dev/null || true ;;
+    cursor)
+      pkill -KILL -f 'cursor-agent' 2>/dev/null || true
+      pkill -KILL -f '/agent -p' 2>/dev/null || true
+      ;;
+    *)
+      pkill -KILL -f 'claude-interactive-invoke\.expect' 2>/dev/null || true
+      pkill -KILL -f '/claude --model' 2>/dev/null || true
+      ;;
+  esac
+}
+
+kill_claude_children() {
+  kill_matrix_agent_children "$@"
 }
 
 monitor_auto_restart_enabled() {
@@ -288,6 +331,8 @@ start_batch() {
   # wrappers would skip ~/.claude/settings.json env and leave interactive TUI at "Not logged in".
   local -a batch_env=(
     -u SB_E2E_MATRIX_DRY_RUN
+    SB_E2E_LIVE_RUNTIME="$MATRIX_HOST"
+    SILVER_BULLET_RUNTIME="$MATRIX_HOST"
     SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0
     SB_E2E_MATRIX_FORCE=1
     SB_E2E_MATRIX_CLEAN_ENV=0
@@ -297,6 +342,12 @@ start_batch() {
   )
   if [[ -n "${SB_E2E_LEDGER_FILE:-}" ]]; then
     batch_env+=(SB_E2E_LEDGER_FILE="$SB_E2E_LEDGER_FILE")
+  fi
+  if [[ -n "${SB_E2E_MATRIX_BATCH_PID_FILE:-}" ]]; then
+    batch_env+=(SB_E2E_MATRIX_BATCH_PID_FILE="$SB_E2E_MATRIX_BATCH_PID_FILE")
+  fi
+  if [[ -n "${SB_E2E_LIVE_TEST_LOCK_FILE:-}" ]]; then
+    batch_env+=(SB_E2E_LIVE_TEST_LOCK_FILE="$SB_E2E_LIVE_TEST_LOCK_FILE")
   fi
   (
     cd "$SB_ROOT" || exit

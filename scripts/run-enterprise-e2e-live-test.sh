@@ -25,25 +25,17 @@ source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 
-export SB_ROOT
-FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
-LEDGER_FILE="$(enterprise_e2e_ledger_file)"
-MATRIX_LOG="$(enterprise_e2e_matrix_log)"
-MONITOR_PID_FILE="${SB_E2E_MATRIX_MONITOR_PID_FILE:-${SB_ROOT}/.e2e-matrix-monitor.pid}"
-WATCH_PID_FILE="${SB_E2E_TUI_WATCH_PID:-${SB_ROOT}/.e2e-tui-watch.pid}"
-# shellcheck disable=SC2034  # documented batch pid path for dual-shell runbook
-BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
-
 PREFLIGHT_ONLY=0
 RESUME=0
 SKIP_CODE_INTEL_PREFLIGHT=0
+MATRIX_HOST_ARG=""
 REQUESTED_ROWS=()
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
+Usage: $(basename "$0") [--host claude|codex|cursor] [--preflight-only] [--resume] [--skip-code-intel-preflight] [row_numbers...]
 
-Enterprise E2E live test — interactive Claude TUI against enterprise-grade-test-app.
+Enterprise E2E live test — interactive agent TUI against enterprise-grade-test-app.
 
 Constraints (from Round 1/2 learnings):
   - API key auth via ~/.claude/settings.json — NO login/logout
@@ -59,8 +51,9 @@ Constraints (from Round 1/2 learnings):
 Environment:
   SB_ENTERPRISE_E2E_LIVE=1     Required opt-in (unless --preflight-only)
   SB_TEST_ENTERPRISE_APP_ROOT  Test app path (default: enterprise-grade-test-app)
-  SB_E2E_LEDGER_FILE           Ledger path (default: ROUND-1-LEDGER.md)
-  SB_E2E_MATRIX_LOG            Matrix batch log (default: .e2e-matrix-live.log)
+  SB_E2E_LEDGER_FILE           Ledger path (default: host-specific ROUND-*-LEDGER.md)
+  SB_E2E_MATRIX_LOG            Matrix batch log (default: host-isolated)
+  SB_E2E_LIVE_RUNTIME          claude | codex | cursor (see --host)
   SB_E2E_VALIDATION_OVERLAY    Pre-matrix validation gate (default: 1 on live runs; 0 to skip)
   SB_E2E_VALIDATION_PRE_GATE   Force validation overlay dry-run before matrix (=1)
 
@@ -86,12 +79,31 @@ while [[ $# -gt 0 ]]; do
       SKIP_CODE_INTEL_PREFLIGHT=1
       shift
       ;;
+    --host)
+      MATRIX_HOST_ARG="$2"
+      shift 2
+      ;;
     *)
       REQUESTED_ROWS+=("$1")
       shift
       ;;
   esac
 done
+
+export SB_ROOT
+if [[ -n "$MATRIX_HOST_ARG" ]]; then
+  export SB_E2E_LIVE_RUNTIME="$MATRIX_HOST_ARG"
+  export SILVER_BULLET_RUNTIME="$MATRIX_HOST_ARG"
+fi
+enterprise_e2e_apply_matrix_host_defaults
+MATRIX_HOST="$(enterprise_e2e_matrix_host)"
+FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
+LEDGER_FILE="$(enterprise_e2e_ledger_file)"
+MATRIX_LOG="$(enterprise_e2e_matrix_log)"
+MONITOR_PID_FILE="${SB_E2E_MATRIX_MONITOR_PID_FILE:-${SB_ROOT}/.e2e-matrix-monitor.pid}"
+WATCH_PID_FILE="${SB_E2E_TUI_WATCH_PID:-${SB_ROOT}/.e2e-tui-watch.pid}"
+# shellcheck disable=SC2034  # documented batch pid path for dual-shell runbook
+BATCH_PID_FILE="${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
 
 if [[ "$PREFLIGHT_ONLY" != "1" && "${SB_ENTERPRISE_E2E_LIVE:-}" != "1" ]]; then
   echo "ERROR: set SB_ENTERPRISE_E2E_LIVE=1 to run live enterprise E2E (or use --preflight-only)" >&2
@@ -112,6 +124,7 @@ echo "SB_ROOT:     ${SB_ROOT}"
 echo "Fixture:     ${FIXTURE_DIR}"
 echo "Ledger:      ${LEDGER_FILE}"
 echo "Matrix log:  ${MATRIX_LOG}"
+echo "Host:        ${MATRIX_HOST}"
 echo "CLEAN_ENV:   ${SB_E2E_MATRIX_CLEAN_ENV}"
 echo "DRY_RUN:     unset (live)"
 echo ""
@@ -143,8 +156,8 @@ if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
   source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
 fi
 
-enterprise_e2e_run_install_claude "$SB_ROOT"
-enterprise_e2e_preflight_claude_token_gateway "$SB_ROOT"
+enterprise_e2e_run_install_host "$SB_ROOT"
+enterprise_e2e_preflight_host "$SB_ROOT"
 
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   echo "Preflight complete (--preflight-only)."
