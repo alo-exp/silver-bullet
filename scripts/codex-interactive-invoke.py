@@ -15,6 +15,10 @@ from typing import Optional, Tuple
 
 
 ANSI_RE = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+SPINNER_CHARS_RE = re.compile(r"[⠁-⠿⌛⏳]")
+ACTIVITY_NOISE_RE = re.compile(
+    r"(\d+/\d+|\d+m\d+s|\d+(\.\d+)?ktokens|\d+tokens|openaicodex|enterprise-grade-test-app)"
+)
 
 
 def env_or_default(name: str, default: str) -> str:
@@ -63,12 +67,33 @@ def native_prompt_ready(text: str) -> bool:
     return "›" in text or "❯" in text
 
 
+def activity_fingerprint(text: str) -> str:
+    compact = compact_text(text)
+    compact = SPINNER_CHARS_RE.sub("", compact)
+    compact = ACTIVITY_NOISE_RE.sub("", compact)
+    return compact[-8000:]
+
+
+def stop_hooks_active(compact: str) -> bool:
+    return "running" in compact and "stophook" in compact
+
+
+def stop_hooks_completed(compact: str) -> bool:
+    if "ran" in compact and "stophook" in compact:
+        return True
+    if "workedfor" in compact:
+        return True
+    return False
+
+
 def completion_prompt_returned(text: str) -> bool:
     compact = compact_text(text)
-    if "workedfor" not in compact and "running2stophooks" not in compact:
-        return False
     if "use/skillstolistavailableskills" in compact:
         return True
+    if stop_hooks_completed(compact):
+        return True
+    if "workedfor" not in compact and not stop_hooks_active(compact):
+        return False
     return "›" in text or "❯" in text
 
 
@@ -205,6 +230,7 @@ def main() -> int:
     prompt_typed_at = None
     text_buffer = ""
     text_since_prompt = ""
+    activity_fp = ""
     stdout_forwarding_enabled = True
 
     try:
@@ -238,7 +264,10 @@ def main() -> int:
                     text_since_prompt = (text_since_prompt + plain)[-40000:]
                     if plain.strip():
                         saw_post_submit_output = True
-                last_activity = now
+                new_activity_fp = activity_fingerprint(text_buffer)
+                if new_activity_fp != activity_fp:
+                    activity_fp = new_activity_fp
+                    last_activity = now
 
                 if "continueanyway?[y/n]:" in compact_buffer:
                     os.write(master_fd, b"y\r")
