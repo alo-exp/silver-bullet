@@ -159,12 +159,12 @@ rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
 EOF
+SESSION_LOG_R1="$(mktemp)"
+printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 score_tailor="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_tailor" == "pass" ]] && pass "fixture row 1 OUT-TAILOR-01 pass" || fail "fixture row 1 OUT-TAILOR-01 got $score_tailor"
 
 # --- Fixture: row 1 routing-only world composite ---
-SESSION_LOG_R1="$(mktemp)"
-printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session evidence
 EOF
