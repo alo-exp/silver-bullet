@@ -140,7 +140,7 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 ## E2E-089 fix + rescore (2026-07-01)
 
-**SB fixes (uncommitted → commit pending):**
+**SB fixes @3d4ef10e:**
 
 - `tests/live/agents/cursor/agent.sh` — force headless CLI under matrix; Popen line-stream to `CLAUDE_INTERACTIVE_LOG_FILE`
 - `scripts/lib/enterprise-e2e-outcome-assessment.sh` — evidence resolver; matrix hook/heal/super pass when evidence or worker-completion (watch blocker only when log shows session hook block)
