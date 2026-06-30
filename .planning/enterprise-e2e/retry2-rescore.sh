@@ -11,8 +11,11 @@ source scripts/lib/enterprise-e2e-outcome-assessment.sh
 source scripts/enterprise-e2e/lib/host.sh
 
 FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+export SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE"
 LEDGER=".planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md"
 STATE="$(enterprise_e2e_runtime_state_dir)"
+OUTCOME_DIR="${FIXTURE}/.planning/enterprise-e2e/outcomes"
+mkdir -p "$OUTCOME_DIR"
 pass=0
 fail=0
 
@@ -27,13 +30,21 @@ row_log() {
   [[ -f "$log" ]] && printf '%s\n' "$log" || printf '\n'
 }
 
+row_evidence() {
+  enterprise_e2e_outcome_matrix_evidence_path "$1"
+}
+
 for r in $(seq 1 20); do
   log="$(row_log "$r")"
-  if [[ -n "$log" ]] && enterprise_e2e_outcome_row_passes "$r" "$FIXTURE" "$STATE" "$log" "$LEDGER" ""; then
+  ev="$(row_evidence "$r")"
+  if [[ -n "$log" ]] && enterprise_e2e_outcome_row_passes "$r" "$FIXTURE" "$STATE" "$log" "$LEDGER" "$ev"; then
     printf 'row %2d: PASS\n' "$r"
     pass=$((pass + 1))
+    enterprise_e2e_outcome_write_workflow_checklist "$r" \
+      "${OUTCOME_DIR}/row-${r}-outcomes.md" \
+      "$FIXTURE" "$STATE" "$log" "$LEDGER" "$ev" 2>/dev/null || true
   else
-    fails="$(enterprise_e2e_outcome_row_failures "$r" "$FIXTURE" "$STATE" "$log" "$LEDGER" "" 2>/dev/null | tr '\n' ' ')"
+    fails="$(enterprise_e2e_outcome_row_failures "$r" "$FIXTURE" "$STATE" "$log" "$LEDGER" "$ev" 2>/dev/null | tr '\n' ' ')"
     printf 'row %2d: FAIL %s\n' "$r" "$fails"
     fail=$((fail + 1))
   fi

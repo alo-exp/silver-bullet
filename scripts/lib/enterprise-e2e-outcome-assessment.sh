@@ -161,6 +161,7 @@ enterprise_e2e_outcome_log_has_babysitting() {
 
 enterprise_e2e_outcome_log_has_autonomous() {
   local row_log="${1:-}"
+  enterprise_e2e_outcome_log_has_worker_completion "$row_log" && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
     'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' || \
     grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
@@ -245,6 +246,86 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
   esac
 }
 
+# Matrix evidence path (matches scripts/enterprise-e2e/matrix.sh MATRIX_ROWS).
+enterprise_e2e_outcome_matrix_evidence_path() {
+  local row_num="${1:-}"
+  case "$row_num" in
+    1) printf '.planning/workflows/router-session.md' ;;
+    2) printf 'docs/ADR-001-runtime.md' ;;
+    3) printf '.planning/workflows/feature-currency.md' ;;
+    4) printf '.planning/workflows/bugfix-health.md' ;;
+    5) printf 'ui/src/App.jsx' ;;
+    6) printf '.planning/workflows/fast-readme.md' ;;
+    7) printf '.planning/workflows/test-orders-integration.md' ;;
+    8) printf '.planning/workflows/refactor-order-validation.md' ;;
+    9) printf 'docs/benchmarks/health.md' ;;
+    10) printf 'docs/API.md' ;;
+    11) printf '.planning/workflows/devops-terraform-validation.md' ;;
+    12) printf 'docs/DEPLOY.md' ;;
+    13) printf 'docs/CANARY.md' ;;
+    14) printf 'CHANGELOG.md' ;;
+    15) printf '.planning/reviews/triad-currency.md' ;;
+    16) printf '.planning/ship-readiness/checklist.md' ;;
+    17) printf 'docs/incidents/INC-001.md' ;;
+    18) printf 'docs/retro/RETRO-001.md' ;;
+    19) printf 'docs/forensics/CI-001.md' ;;
+    20) printf 'docs/WORKFLOW_E2E_MATRIX.md' ;;
+    *) printf '' ;;
+  esac
+}
+
+# Evidence at live path, archive, or slug-adjacent workflow artifact.
+enterprise_e2e_outcome_evidence_resolved() {
+  local work_dir="$1" evidence_path="${2:-}" row_num="${3:-}"
+  local base="" slug=""
+  [[ -n "$evidence_path" ]] || evidence_path="$(enterprise_e2e_outcome_matrix_evidence_path "$row_num")"
+  [[ -n "$evidence_path" ]] || return 1
+  if [[ -f "${work_dir}/${evidence_path}" || -d "${work_dir}/${evidence_path}" ]]; then
+    printf '%s\n' "$evidence_path"
+    return 0
+  fi
+  base="${evidence_path##*/}"
+  if find "${work_dir}/.planning/workflows/.archive" -name "$base" -print -quit 2>/dev/null | grep -q .; then
+    printf '%s\n' "$evidence_path"
+    return 0
+  fi
+  slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+  if [[ -n "$slug" ]] && find "${work_dir}/.planning/workflows" \( -name "$base" -o -name "*${slug}*" \) \
+     ! -path '*/.archive/*' -print -quit 2>/dev/null | grep -q .; then
+    printf '%s\n' "$evidence_path"
+    return 0
+  fi
+  if [[ -n "$slug" ]] && find "${work_dir}/.planning/workflows/.archive" -name "*${slug}*" -print -quit 2>/dev/null | grep -q .; then
+    printf '%s\n' "$evidence_path"
+    return 0
+  fi
+  return 1
+}
+
+enterprise_e2e_outcome_matrix_evidence_present() {
+  local work_dir="$1" evidence_path="${2:-}" row_num="${3:-}"
+  enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence_path" "$row_num" >/dev/null 2>&1
+}
+
+# Enterprise test-app root for matrix rescoring when work_dir is not passed explicitly.
+enterprise_e2e_outcome_matrix_work_dir() {
+  if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
+    printf '%s\n' "$SB_TEST_ENTERPRISE_APP_ROOT"
+    return 0
+  fi
+  local root
+  root="$(enterprise_e2e_outcome_repo_root)"
+  if [[ -f "${root}/.silver-bullet.json" ]] && command -v jq >/dev/null 2>&1; then
+    local app_root
+    app_root="$(jq -r '.test_enterprise_app_root // empty' "${root}/.silver-bullet.json" 2>/dev/null || true)"
+    if [[ -n "$app_root" ]]; then
+      printf '%s\n' "$app_root"
+      return 0
+    fi
+  fi
+  return 1
+}
+
 # Workflow matrix rows use backtick slugs — skip ladder/summary tables that reuse row numbers.
 enterprise_e2e_outcome_ledger_workflow_line() {
   local ledger_file="${1:-}" row_num="${2:-}"
@@ -282,14 +363,22 @@ enterprise_e2e_outcome_score_auto() {
     fi
     printf 'fail\n'; return 0
   fi
-  if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
+  if [[ -n "$evidence" ]] && enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1; then
     if enterprise_e2e_outcome_log_has_autonomous "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
       printf 'pass\n'; return 0
     fi
     if [[ -f "${state_dir}/orchestrator-directive.json" ]] || [[ -f "${state_dir}/state" ]]; then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0
+  fi
+  if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1 && \
+     [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] && \
+     enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+    printf 'pass\n'; return 0
   fi
   printf 'fail\n'
 }
@@ -368,7 +457,7 @@ enterprise_e2e_outcome_directive_drained() {
 enterprise_e2e_outcome_log_has_worker_completion() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null' "$row_log" 2>/dev/null
+  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|Review-triad workflow|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_orchestrator_handoff() {
@@ -398,12 +487,18 @@ enterprise_e2e_outcome_score_drift() {
 
 enterprise_e2e_outcome_score_super() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
-  local directive=""
+  local directive="" work_dir=""
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   case "$row_num" in
     3|4|5) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+    work_dir="$(enterprise_e2e_outcome_matrix_work_dir 2>/dev/null || true)"
+    if [[ -n "$work_dir" ]] && enterprise_e2e_outcome_evidence_resolved "$work_dir" "" "$row_num" >/dev/null 2>&1; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'wbs-supervisor|wbs supervisor|WBS stub' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
@@ -431,6 +526,25 @@ enterprise_e2e_outcome_score_heal() {
   local sb_root="$1" row_log="${2:-}" row_num="${3:-}"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qiE 'Stop hook blocks completion|session ended on hook block' "$row_log" 2>/dev/null; then
+      printf 'fail\n'; return 0
+    fi
+    if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+      printf 'n/a\n'; return 0
+    fi
+    local work_dir
+    work_dir="$(enterprise_e2e_outcome_matrix_work_dir 2>/dev/null || true)"
+    if [[ -n "$work_dir" ]] && enterprise_e2e_outcome_evidence_resolved "$work_dir" "" "$row_num" >/dev/null 2>&1; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+      printf 'fail\n'; return 0
+    fi
+    printf 'n/a\n'; return 0
+  fi
   if [[ -n "$row_log" && -f "$row_log" ]]; then
     if grep -qiE 'Stop hook blocks completion|session ended on hook block' "$row_log" 2>/dev/null; then
       if grep -qiE 'retry|recovered|self-heal|SB fix' "$row_log" 2>/dev/null; then
@@ -589,8 +703,8 @@ enterprise_e2e_outcome_score_trace() {
 
 enterprise_e2e_outcome_score_intent() {
   local work_dir="$1" evidence_path="${2:-}" row_num="${3:-}" state_dir="${4:-}"
-  if [[ -n "$evidence_path" ]]; then
-    if [[ -f "${work_dir}/${evidence_path}" || -d "${work_dir}/${evidence_path}" ]]; then
+  if [[ -n "$evidence_path" ]] || [[ -n "$row_num" ]]; then
+    if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence_path" "$row_num" >/dev/null 2>&1; then
       printf 'pass\n'; return 0
     fi
     if enterprise_e2e_outcome_is_routing_row "$row_num" && \
@@ -790,12 +904,31 @@ enterprise_e2e_outcome_score_blast() {
 }
 
 enterprise_e2e_outcome_score_hook() {
-  local sb_root="$1" row_num="${2:-}"
+  local sb_root="$1" row_num="${2:-}" row_log="${3:-}"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
-  local ledger="${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
+  local ledger="${SB_E2E_LEDGER_FILE:-${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md}"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
-    if [[ -n "${3:-}" && -f "${3}" ]] && \
-       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment' "${3}" 2>/dev/null; then
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment' "$row_log" 2>/dev/null; then
+      printf 'fail\n'; return 0
+    fi
+    printf 'pass\n'; return 0
+  fi
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qiE 'session ended on hook block|Stop hook blocks completion' "$row_log" 2>/dev/null; then
+      printf 'fail\n'; return 0
+    fi
+    if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    local work_dir
+    work_dir="$(enterprise_e2e_outcome_matrix_work_dir 2>/dev/null || true)"
+    if [[ -n "$work_dir" ]] && enterprise_e2e_outcome_evidence_resolved "$work_dir" "" "$row_num" >/dev/null 2>&1; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0

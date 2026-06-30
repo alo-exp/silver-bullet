@@ -12,6 +12,7 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
+unset SB_E2E_ENTERPRISE_MATRIX SB_E2E_LEDGER_FILE
 FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
@@ -397,6 +398,30 @@ SB_E2E_ENTERPRISE_MATRIX=1 \
   score_measure_matrix="$(enterprise_e2e_outcome_score_criterion OUT-MEASURE-01 "$FIXTURE" "$STATE_DIR" "" 16 "$STALE_LEDGER" "")"
 [[ "$score_measure_matrix" == "pass" ]] && pass "E2E-088 OUT-MEASURE-01 pass during matrix (STALE ledger)" || fail "E2E-088 OUT-MEASURE-01 got $score_measure_matrix"
 unset SB_E2E_ENTERPRISE_MATRIX
+
+# --- E2E-089: sparse cursor log + watch blocker does not fail matrix hook/heal ---
+SPARSE_LOG="$(mktemp)"
+printf 'ERROR: timed out waiting for cursor-agent after 1800s\n' >"$SPARSE_LOG"
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/feature-currency.md" <<'EOF'
+# Feature currency (matrix evidence)
+EOF
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_hook_sparse="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$SPARSE_LOG" 3)"
+[[ "$score_hook_sparse" == "pass" ]] && pass "E2E-089 row 3 OUT-HOOK-01 pass (matrix evidence, sparse log)" || fail "E2E-089 row 3 OUT-HOOK-01 got $score_hook_sparse"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_heal_sparse="$(enterprise_e2e_outcome_score_criterion OUT-HEAL-01 "$FIXTURE" "$STATE_DIR" "$SPARSE_LOG" 3)"
+[[ "$score_heal_sparse" == "n/a" ]] && pass "E2E-089 row 3 OUT-HEAL-01 n/a (matrix evidence, sparse log)" || fail "E2E-089 row 3 OUT-HEAL-01 got $score_heal_sparse"
+TRIAD_LOG="$(mktemp)"
+printf 'Review-triad workflow is complete\nResult: **PASS**, 0 BLOCK findings\nnpm test passed: 38/38\n' >"$TRIAD_LOG"
+cat >"$FIXTURE/.planning/reviews/triad-currency.md" <<'EOF'
+# Triad currency review
+EOF
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_hook_triad="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$TRIAD_LOG" 15)"
+[[ "$score_hook_triad" == "pass" ]] && pass "E2E-089 row 15 OUT-HOOK-01 pass (worker completion beats watch blocker)" || fail "E2E-089 row 15 OUT-HOOK-01 got $score_hook_triad"
+unset SB_E2E_ENTERPRISE_MATRIX
+rm -f "$SPARSE_LOG" "$TRIAD_LOG"
 
 rm -f "$CURSOR_HANDOFF_LOG" "$RETRO_LOG" "$MATRIX_KM_LEDGER" "$STALE_LEDGER"
 

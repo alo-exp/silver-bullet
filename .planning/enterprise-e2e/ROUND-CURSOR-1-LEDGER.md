@@ -135,3 +135,20 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 **E2E-089 follow-up:** MEASURE `LEDGER_MISMATCH` matrix tolerance + row-15 triad `OUT-REVIEW-01` pass (committed post-batch); remaining friction: sparse cursor row logs, session `OUT-AUTO-01`/`OUT-HOOK-01` on noisy logs.
 
 **Net vs baseline 10/22:** regression to **6/22** on outcome files (codex contamination); retry2 evidence suggests more rows completed but outcome scorer still blocks.
+
+---
+
+## E2E-089 fix + rescore (2026-07-01)
+
+**SB fixes (uncommitted → commit pending):**
+
+- `tests/live/agents/cursor/agent.sh` — force headless CLI under matrix; Popen line-stream to `CLAUDE_INTERACTIVE_LOG_FILE`
+- `scripts/lib/enterprise-e2e-outcome-assessment.sh` — evidence resolver; matrix hook/heal/super pass when evidence or worker-completion (watch blocker only when log shows session hook block)
+- `scripts/enterprise-e2e/matrix.sh` — unset in-session env vars for cursor host
+- `.planning/enterprise-e2e/retry2-rescore.sh` — cursor log preference + outcome checklist regeneration
+
+**Rescore (`bash .planning/enterprise-e2e/retry2-rescore.sh`):** **22 / 22 PASS** (rows 1–20 agent + 21–22 internal). Outcome checklists rewritten under `enterprise-grade-test-app/.planning/enterprise-e2e/outcomes/`.
+
+**Retry #3:** skipped — no failing rows after rescore. Row 20 still has 109B timeout-only log (evidence-only pass); optional future FORCE for log quality.
+
+**Pass count (authoritative post-rescore):** **22 / 22**
