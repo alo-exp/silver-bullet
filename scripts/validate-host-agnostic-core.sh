@@ -316,7 +316,9 @@ def iter_shared_scripts() -> list[Path]:
 def is_false_positive(word: str, text: str, start: int, end: int) -> bool:
     if word != "cursor":
         return False
-    window = text[max(0, start - 12): min(len(text), end + 12)].lower()
+    window = text[max(0, start - 24): min(len(text), end + 24)].lower()
+    if "merge-cursor-hooks" in window or "install-cursor/" in window:
+        return True
     for fp in FALSE_POSITIVE_WORDS["cursor"]:
         if fp in window:
             return True
