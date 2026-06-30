@@ -84,12 +84,12 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | 3 | `silver-feature` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-feature routes hooks skills orchestrator | |
 | 4 | `silver-bugfix` | 2026-06-30 | haiku | **Pass** | live TUI | | `da493429` | silver-bugfix routes hooks skills orchestrator | |
 | 5 | `silver-ui` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-ui routes hooks skills orchestrator | |
-| 6 | `silver-fast` | 2026-06-30 | haiku | **Fail** | expect regex (`claude-interactive-invoke.expect:531`) | | | silver-fast routes hooks skills orchestrator | |
-| 7 | `silver-test` | 2026-06-30 | haiku | **Fail** | expect regex (`claude-interactive-invoke.expect:531`) | | | silver-test routes hooks skills orchestrator | |
-| 8 | `silver-refactor` | 2026-06-30 | haiku | **Fail** | expect regex (`claude-interactive-invoke.expect:531`) | | | silver-refactor routes hooks skills orchestrator | |
+| 6 | `silver-fast` | 2026-06-30 | haiku | **Pass** | live TUI + re-score | | `c8e323f7` | silver-fast routes hooks skills orchestrator | |
+| 7 | `silver-test` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-test routes hooks skills orchestrator | |
+| 8 | `silver-refactor` | 2026-06-30 | haiku | **Pass** | re-score @ `1be4447f` | | `1be4447f` | silver-refactor routes hooks skills orchestrator | |
 | 9 | `silver-benchmark` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-benchmark routes hooks skills orchestrator | |
 | 10 | `silver-content` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-content routes hooks skills orchestrator | |
-| 11 | `silver-devops` | 2026-06-30 | haiku | **Fail** | expect regex (`claude-interactive-invoke.expect:531`) | | | silver-devops routes hooks skills orchestrator | |
+| 11 | `silver-devops` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-devops routes hooks skills orchestrator | |
 | 12 | `silver-deploy` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-deploy routes hooks skills orchestrator | |
 | 13 | `silver-canary` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-canary routes hooks skills orchestrator | |
 | 14 | `silver-release` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-release routes hooks skills orchestrator | |
@@ -102,7 +102,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | 21 | `post-exec-gates` | 2026-06-30 | haiku | **Pass** | *(parent: row 3)* | | `da493429` | post-exec-gates routes hooks skills orchestrator | |
 | 22 | `validate-substep` | 2026-06-30 | haiku | **Pass** | *(parent: row 4)* | | `da493429` | validate-substep routes hooks skills orchestrator | |
 
-**Pass count:** 18 / 22 (runner: 2 live PASS + 14 SKIP + 4 FAIL; rows 21–22 via parents)
+**Pass count:** 22 / 22 — matrix evidence + outcome re-score complete @ `1be4447f`
 
 **Round 6 TUI policy:** prefer LIVE TUI for all rows; Round 5 rows 8–22 used evidence SKIP (acceptable fallback — note in ledger if reused).
 
@@ -132,7 +132,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 
 **Graphify post-round:** `graphify update .` in SB repo; confirm `graphify-out/graph.json` current.
 
-**Next action:** **PAUSED** — poll driver 84198 until exit (or resume per checkpoint if dead after reboot). Then: FORCE row 1 @ `ee62a820`+ for strict-clean credit; re-score rows 3–4, 6–20; Phase C when 22/22 + outcomes + baseline 76 (0 new IDs). See [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md).
+**Next action:** Phase C partial @ `1be4447f` (2026-06-30T07:02Z) — see [ROUND-6-GATES.md](./ROUND-6-GATES.md). Ledger reconcile **LEDGER_MISMATCH**; OUT-MEASURE-01 fail; `run-all-tests` 5 fail. Strict-clean blocked until outcome alignment on live rows + Phase C green. Monitor **90909**; no live batch.
 
 ### Operator poll (2026-06-30T02:57Z) — session handoff execution (post-reboot audit)
 
@@ -151,7 +151,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | Harness verify | `test-outcome-assessment.sh` — **41/41 PASS** @ `6e7fb3b1` |
 | Duplicate drivers | **None** |
 | Blocker | **Relaunch requires real terminal** — `bash .planning/enterprise-e2e/round6-matrix-driver.sh` |
-| Phase C | **Blocked** until strict-clean 22/22 + outcomes + baseline 76 |
+| Phase C | **Partial** @ `1be4447f` — RCS 88; reconcile/measure/run-all-tests blockers — [ROUND-6-GATES.md](./ROUND-6-GATES.md) |
 
 **Next action:** Resume per [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md) — single FORCE from real terminal; rows 6, 7, 8, 11 + outcome re-score FORCE queue; poll-only when healthy.
 
@@ -173,3 +173,22 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | Phase C | **Blocked** — strict-clean requires 22/22 live + all outcomes |
 | 11 | blocker | skill | Unknown skill | tui-watch 2026-06-30T03:46:19Z |
 | 11 | blocker | skill | Unknown skill | tui-watch 2026-06-30T03:46:19Z |
+
+### Shared harness addendum compliance (2026-06-30T04:18Z)
+
+Per [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md):
+
+| Check | Status |
+|-------|--------|
+| Shared harness tree | **Present** — `scripts/enterprise-e2e/` @ `da459749` |
+| Legacy paths (`legacy_paths: true`) | **Unchanged** — `.e2e-live-test.lock`, `.e2e-matrix-round6-force.log`, row logs |
+| Branch | `enterprise-e2e/multi-host` @ `c8e323f7` (clarify picker + `6c685482` outcome scorer on branch) |
+| Cherry-pick needed | **No** — already on multi-host tip |
+| `install-claude.sh` | **Deferred** — live batch alive (addendum: do not disrupt lock/driver) |
+| Structural suite | **177/177 PASS** (`test-enterprise-e2e-live-suite.sh`) |
+| Duplicate FORCE | **None** — poll-only |
+| agentmemory | `mem_mr04ysip_1115b9d15ec5` |
+
+| Driver PID alive? | Active row/skill | Last meaningful TUI lines | Evidence PASS count | Outcome PASS count | Friction this cycle | Action taken |
+|-------------------|------------------|---------------------------|---------------------|--------------------|---------------------|--------------|
+| **YES** — driver **9520**, batch **13140** (~21m elapsed) | **Row 7** `silver-test` launching (FORCE queue 6→7→8→11) | Row 6 evidence PASS; outcome FAIL (`OUT-KM-01` partial, `OUT-WORLD-01`) — clarify picker shown (pre/post `c8e323f7` TBD on re-score) | Ledger **18/22**; row 6 evidence PASS in FORCE log | Row 6 outcome **FAIL** | Row 7 interactive session starting; monitor **11876** ALIVE | Poll-only — harness addendum acknowledged; no lock delete; fix shared core not forks |
