@@ -539,7 +539,11 @@ setup_workspace() {
       bash "${SB_ROOT}/scripts/install-codex.sh" --purge-legacy-skills >/dev/null
       ;;
     cursor)
-      bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      if [[ "${SB_E2E_SKIP_CURSOR_INSTALL:-}" != "1" ]]; then
+        bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      else
+        echo "SKIP: cursor plugin install (SB_E2E_SKIP_CURSOR_INSTALL=1)" >&2
+      fi
       ;;
   esac
 }
