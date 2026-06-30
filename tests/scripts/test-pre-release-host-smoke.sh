@@ -43,6 +43,9 @@ assert_pass "script exists and is executable" test -x "$SCRIPT"
 assert_pass "script sources isolation helper" assert_contains "$script_body" "pre-release-host-isolation.sh"
 assert_pass "script references validate-host-skill-surface" assert_contains "$script_body" "validate-host-skill-surface.sh"
 assert_pass "script references pre-release-cursor-cli-smoke" assert_contains "$script_body" "pre-release-cursor-cli-smoke.sh"
+assert_pass "script uses host-bundles for codex route" assert_contains "$script_body" "sb_agent_bundle_root"
+assert_pass "script does not reference agents/codex checkout path" assert_not_contains "$script_body" 'agents/codex"'
+assert_pass "script does not reference agents/cursor checkout path" assert_not_contains "$script_body" 'agents/cursor"'
 assert_pass "script writes pre-release-host-smoke marker" assert_contains "$script_body" "pre-release-host-smoke"
 
 echo "--- isolation + cursor CLI auth policy ---"
