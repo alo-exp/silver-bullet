@@ -45,6 +45,8 @@ FORCE monitor PIDs (e.g. 12948 / 9452) — **do not kill** if healthy. Cherry-pi
 | 2026-06-30 | `9f36ffcb` | `dfb451d8` | Autonomy outcome criteria + matrix enforcement |
 | 2026-06-30 | `c5877bc7` | `e2864c78` | Matrix log guard, MCP auth mitigation (scripts only) |
 | 2026-06-30 | `5781e164` | `e425865a` | MCP auth cache clear + expect banner ignore |
+| 2026-06-30 | `9abbd8ee` | `94c82681` | UTF-8 + MCP dismiss (already on `main` via partial overlap `7a5d3b79`) |
+| 2026-06-30 | `6bd2355f` | `59de6e30` | Delta: ❯ prompt, Submit regex, ASCII logs, MCP dismiss; `(?s)` omitted per `5f90a9ef` |
 
 ### Skipped on 2026-06-30
 
