@@ -241,6 +241,14 @@ CI wait, tag, or GitHub Release until the current session has recorded:
 Validate with `bash scripts/validate-launch-review.sh` and
 `bash scripts/validate-sentinel-skills-manifest.sh` when available.
 
+Before the live matrix (Step 6 below), run mandatory tri-host skill surface + routing smoke:
+
+```bash
+CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+```
+
+Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
+
 ---
 
 ## Step 6 — Run Shared Live Matrix

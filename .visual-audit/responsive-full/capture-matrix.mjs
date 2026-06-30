@@ -14,13 +14,19 @@ const { chromium } = require('playwright');
 
 const REPO_ROOT = join(__dirname, '../..');
 const SITE_ROOT = join(REPO_ROOT, 'site');
+const DATE_TAG = process.env.CAPTURE_DATE || new Date().toISOString().slice(0, 10);
 const OUT_DIR = process.env.CAPTURE_OUT_DIR
-  ? join(REPO_ROOT, process.env.CAPTURE_OUT_DIR)
-  : join(REPO_ROOT, '.visual-audit/responsive-full/2026-06-30-post-fix');
-const BASE_URL = 'https://sb.alolabs.dev';
-const WIDTHS = [375, 768, 1280];
-const THEMES = ['light', 'dark'];
+  ? (process.env.CAPTURE_OUT_DIR.startsWith('/') ? process.env.CAPTURE_OUT_DIR : join(REPO_ROOT, process.env.CAPTURE_OUT_DIR))
+  : join(REPO_ROOT, `.visual-audit/responsive-full/${DATE_TAG}`);
+const BASE_URL = process.env.CAPTURE_BASE_URL || 'https://sb.alolabs.dev';
+const WIDTHS = (process.env.CAPTURE_WIDTHS || '375,768,1280').split(',').map(Number);
+const THEMES = (process.env.CAPTURE_THEMES || 'light,dark').split(',');
 const MAX_FULL_PAGE_HEIGHT = 12000;
+/** Pages with hover-sensitive terminal mocks (hero-visual-mocks) */
+const HOVER_SELECTORS = ['.hero-visual-mocks .enforcement-block:first-child'];
+const CAPTURE_ONLY = process.env.CAPTURE_ONLY
+  ? process.env.CAPTURE_ONLY.split(',').map((s) => s.trim())
+  : null;
 
 function discoverPages() {
   const skip = new Set([
@@ -71,6 +77,19 @@ async function setTheme(page, theme) {
   }, theme);
 }
 
+async function captureHoverStates(page, slug, width, theme, metrics) {
+  for (const selector of HOVER_SELECTORS) {
+    const el = page.locator(selector).first();
+    if (!(await el.count())) continue;
+    await el.hover({ timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(250);
+    const hoverName = `${slug}-${theme}-${width}px-hover-terminal.png`;
+    const hoverPath = join(OUT_DIR, hoverName);
+    await page.screenshot({ path: hoverPath, fullPage: false });
+    metrics.push({ slug, width, theme, filename: hoverName, capture: 'hover-terminal' });
+  }
+}
+
 async function capturePage(page, url, slug, width, theme, metrics) {
   await setTheme(page, theme);
   await page.setViewportSize({ width, height: 900 });
@@ -81,6 +100,10 @@ async function capturePage(page, url, slug, width, theme, metrics) {
     return;
   }
   await page.waitForTimeout(400);
+
+  if (slug === 'home' || url === '/') {
+    await captureHoverStates(page, slug, width, theme, metrics);
+  }
 
   const scrollInfo = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -125,8 +148,23 @@ async function capturePage(page, url, slug, width, theme, metrics) {
 
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
-  const pages = discoverPages();
-  const manifest = { baseUrl: BASE_URL, capturedAt: new Date().toISOString(), pages: [], metrics: [] };
+  let pages = discoverPages();
+  if (CAPTURE_ONLY?.length) {
+    pages = pages.filter((rel) => {
+      const slug = fileToSlug(rel);
+      return CAPTURE_ONLY.some((c) => rel.includes(c) || slug === c || slug.includes(c));
+    });
+  }
+  const manifest = {
+    baseUrl: BASE_URL,
+    capturedAt: new Date().toISOString(),
+    outDir: OUT_DIR,
+    widths: WIDTHS,
+    themes: THEMES,
+    hoverSelectors: HOVER_SELECTORS,
+    pages: [],
+    metrics: [],
+  };
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ deviceScaleFactor: 1 });
