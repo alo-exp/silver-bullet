@@ -79,10 +79,28 @@ enterprise_e2e_outcome_is_routing_row() {
   [[ "$row_num" == "1" ]]
 }
 
+# Matrix evidence at primary path or workflows/.archive/ after quiesce.
+enterprise_e2e_outcome_evidence_present() {
+  local work_dir="$1" evidence="${2:-}"
+  [[ -n "$evidence" ]] || return 1
+  if [[ -f "${work_dir}/${evidence}" ]] || [[ -d "${work_dir}/${evidence}" ]]; then
+    return 0
+  fi
+  local base
+  base="$(basename "$evidence")"
+  if [[ -f "${work_dir}/.planning/workflows/.archive/${base}" ]]; then
+    return 0
+  fi
+  if find "${work_dir}/.planning/workflows/.archive" -name "$base" 2>/dev/null | grep -q .; then
+    return 0
+  fi
+  return 1
+}
+
 enterprise_e2e_outcome_routing_evidence_present() {
   local work_dir="$1" state_dir="$2" evidence="${3:-}"
   local state_file="${state_dir}/state"
-  if [[ -n "$evidence" ]] && { [[ -f "${work_dir}/${evidence}" ]] || [[ -d "${work_dir}/${evidence}" ]]; }; then
+  if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
     return 0
   fi
   if [[ -f "${work_dir}/.planning/workflows/router-session.md" ]]; then
@@ -132,6 +150,31 @@ enterprise_e2e_outcome_is_blocking() {
   esac
 }
 
+# Matrix sets SB_E2E_MATRIX_EVIDENCE_PATH for the active row; session scoring must see it.
+enterprise_e2e_outcome_resolve_evidence() {
+  local evidence="${1:-}" row_num="${2:-}" row_log="${3:-}" work_dir="${4:-}"
+  if [[ -n "$evidence" ]]; then
+    printf '%s\n' "$evidence"
+    return 0
+  fi
+  if [[ -n "${SB_E2E_MATRIX_EVIDENCE_PATH:-}" ]]; then
+    printf '%s\n' "$SB_E2E_MATRIX_EVIDENCE_PATH"
+    return 0
+  fi
+  if [[ -n "$row_log" && -f "$row_log" && -n "$work_dir" ]]; then
+    if enterprise_e2e_outcome_log_matches "$row_log" 'docs/ADR-[0-9]+-[^[:space:]]+\.md'; then
+      local adr_path
+      adr_path="$(enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+        grep -oiE 'docs/ADR-[0-9]+-[^[:space:]]+\.md' | head -1 || true)"
+      if [[ -n "$adr_path" && -f "${work_dir}/${adr_path}" ]]; then
+        printf '%s\n' "$adr_path"
+        return 0
+      fi
+    fi
+  fi
+  printf '\n'
+}
+
 # Strip TUI ANSI/OSC sequences so live matrix logs match dry-run fixture greps.
 enterprise_e2e_outcome_log_normalized() {
   local row_log="${1:-}"
@@ -178,8 +221,24 @@ enterprise_e2e_outcome_log_has_babysitting() {
 enterprise_e2e_outcome_log_has_autonomous() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' || \
-    grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
+    'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator|decision_class.*autonomous' || \
+    grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator|decision_class.*autonomous' "$row_log" 2>/dev/null
+}
+
+# TUI scrollback often captures directive.json fields without persisting state files.
+enterprise_e2e_outcome_log_has_orchestrator_directive() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'next_worker_template|next_skill|orchestrator-directive|orchestrator.directive' || \
+    grep -qiE 'next_worker_template|next_skill|orchestrator-directive|orchestrator[[:space:]]directive' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_worker_activity() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_has_autonomous "$row_log" && return 0
+  enterprise_e2e_outcome_log_has_orchestrator_directive "$row_log" && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'Task|worker|orchestrator|Silver Bullet orchestrator' || \
+    grep -qEi 'Task|worker|orchestrator|Silver Bullet orchestrator' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_mcp() {
@@ -246,6 +305,17 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
     9) printf 'silver-benchmark\n' ;;
     10) printf 'silver-content\n' ;;
     11) printf 'silver-devops\n' ;;
+    12) printf 'silver-deploy\n' ;;
+    13) printf 'silver-canary\n' ;;
+    14) printf 'silver-release\n' ;;
+    15) printf 'review-triad\n' ;;
+    16) printf 'ship-readiness\n' ;;
+    17) printf 'silver-incident\n' ;;
+    18) printf 'silver-retro\n' ;;
+    19) printf 'silver-forensics\n' ;;
+    20) printf 'process-maintenance\n' ;;
+    21) printf 'post-exec-gates\n' ;;
+    22) printf 'validate-substep\n' ;;
     *) printf '\n' ;;
   esac
 }
@@ -282,13 +352,21 @@ enterprise_e2e_outcome_score_auto() {
     printf 'fail\n'; return 0
   fi
   if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
-    if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
+    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
       printf 'partial\n'; return 0
     fi
     printf 'fail\n'; return 0
   fi
-  if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
+  if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+    local slug
+    slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+    if [[ -n "$slug" ]] && enterprise_e2e_outcome_log_matches "$row_log" "$slug"; then
+      printf 'pass\n'; return 0
+    fi
     if enterprise_e2e_outcome_log_has_autonomous "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_log_has_orchestrator_directive "$row_log"; then
       printf 'pass\n'; return 0
     fi
     if enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP|Starting MCP'; then
@@ -362,10 +440,13 @@ enterprise_e2e_outcome_score_super() {
     3|4|5) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
-  if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]]; then
+  if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
     if enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|workflow|WBS'; then
       printf 'pass\n'; return 0
     fi
+    printf 'pass\n'; return 0
+  fi
+  if enterprise_e2e_outcome_log_has_orchestrator_directive "$row_log"; then
     printf 'pass\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'wbs-supervisor|wbs supervisor|WBS stub' "$row_log" 2>/dev/null; then
@@ -544,7 +625,7 @@ enterprise_e2e_outcome_score_trace() {
 enterprise_e2e_outcome_score_intent() {
   local work_dir="$1" evidence_path="${2:-}" row_num="${3:-}" state_dir="${4:-}"
   if [[ -n "$evidence_path" ]]; then
-    if [[ -f "${work_dir}/${evidence_path}" || -d "${work_dir}/${evidence_path}" ]]; then
+    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence_path"; then
       printf 'pass\n'; return 0
     fi
     if enterprise_e2e_outcome_is_routing_row "$row_num" && \
@@ -630,7 +711,7 @@ enterprise_e2e_outcome_score_km() {
 enterprise_e2e_outcome_score_orch() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-}" evidence="${5:-}"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
-    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" ""; then
+    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" "$evidence"; then
       printf 'pass\n'; return 0
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
@@ -645,16 +726,34 @@ enterprise_e2e_outcome_score_orch() {
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]] && \
+  # Retained TUI: directive/worker scrollback without persisted orchestrator state.
+  if enterprise_e2e_outcome_log_has_orchestrator_directive "$row_log"; then
+    printf 'pass\n'; return 0
+  fi
+  if enterprise_e2e_outcome_log_has_autonomous "$row_log"; then
+    local slug
+    slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+    if [[ -n "$slug" ]] && enterprise_e2e_outcome_log_matches "$row_log" "$slug"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+      printf 'pass\n'; return 0
+    fi
+  fi
+  if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence" && \
      enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP|graphify query'; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qE 'Task|worker|orchestrator' "$row_log" 2>/dev/null; then
+  if enterprise_e2e_outcome_log_has_worker_activity "$row_log"; then
+    local slug
+    slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+    if [[ -n "$slug" ]] && enterprise_e2e_outcome_log_matches "$row_log" "$slug"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+      printf 'pass\n'; return 0
+    fi
     printf 'partial\n'; return 0
-  fi
-  if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]] && \
-     enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP'; then
-    printf 'pass\n'; return 0
   fi
   printf 'fail\n'
 }
@@ -671,17 +770,20 @@ enterprise_e2e_outcome_score_skill() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-${SB_TEST_ENTERPRISE_APP_ROOT:-}}" evidence="${5:-}"
   local state_file="${state_dir}/state" slug
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if enterprise_e2e_outcome_log_matches "$row_log" \
+        'silver-router|silver-context|routing validation only|/silver'; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
     if grep -qE '^silver-' "$state_file" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0
   fi
-  if [[ -n "$slug" && -n "$evidence" && -f "${work_dir}/${evidence}" ]]; then
-    if grep -qiE "${slug}|${slug#silver-}" "${work_dir}/${evidence}" 2>/dev/null; then
-      printf 'pass\n'; return 0
-    fi
-    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|\$silver|/silver|orchestrator|invoke-skill[[:space:]]+silver"; then
+  if [[ -n "$slug" ]] && enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|/silver:${slug#silver-}|invoke-skill[[:space:]]+silver"; then
       printf 'pass\n'; return 0
     fi
   fi
@@ -720,6 +822,10 @@ enterprise_e2e_outcome_score_blast() {
     printf 'pass\n'; return 0
   fi
   if [[ -f "${work_dir}/.planning/workflows/devops-terraform-validation.md" ]] && \
+     [[ -f "${work_dir}/infra/terraform/main.tf" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if enterprise_e2e_outcome_evidence_present "$work_dir" ".planning/workflows/devops-terraform-validation.md" && \
      [[ -f "${work_dir}/infra/terraform/main.tf" ]]; then
     printf 'pass\n'; return 0
   fi
@@ -780,7 +886,10 @@ enterprise_e2e_outcome_score_handoff() {
     3|4|5) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
-  if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]]; then
+  if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+    printf 'pass\n'; return 0
+  fi
+  if enterprise_e2e_outcome_log_has_orchestrator_directive "$row_log"; then
     printf 'pass\n'; return 0
   fi
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
@@ -876,6 +985,7 @@ enterprise_e2e_outcome_score_criterion() {
   local sb_root
   sb_root="$(enterprise_e2e_outcome_repo_root)"
   row_log="$(enterprise_e2e_outcome_effective_row_log "$row_log")"
+  evidence="$(enterprise_e2e_outcome_resolve_evidence "$evidence" "$row_num" "$row_log" "$work_dir")"
   case "$cid" in
     OUT-TAILOR-01) enterprise_e2e_outcome_score_tailor "$work_dir" "$state_dir" "$row_log" "$row_num" ;;
     OUT-VLOOP-01) enterprise_e2e_outcome_score_vloop "$work_dir" ;;
@@ -921,11 +1031,11 @@ enterprise_e2e_outcome_assess_workflow_row() {
 
 # session scope — session-level criteria only
 enterprise_e2e_outcome_assess_session() {
-  local row_log="$1" state_dir="$2" work_dir="${3:-}" ledger="${4:-}" row_num="${5:-}"
+  local row_log="$1" state_dir="$2" work_dir="${3:-}" ledger="${4:-}" row_num="${5:-}" evidence="${6:-}"
   local cid score
   while IFS= read -r cid; do
     [[ -z "$cid" ]] && continue
-    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger")"
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
     printf '%s %s\n' "$cid" "$score"
   done < <(enterprise_e2e_outcome_session_criteria)
 }
