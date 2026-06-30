@@ -7,7 +7,19 @@
 #   SB_E2E_GATES_ROUND1=... SB_E2E_GATES_ROUND2=... bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --json
 set -euo pipefail
 
-SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Resolve repo root even when invoked via scripts/enterprise-e2e/lib/deterministic/ symlink.
+if [[ -z "${SB_ROOT:-}" ]]; then
+  _e2e_root_candidate="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  while [[ "$_e2e_root_candidate" != "/" ]]; do
+    if [[ -f "${_e2e_root_candidate}/scripts/enterprise-e2e/config/hosts.json" ]]; then
+      SB_ROOT="$_e2e_root_candidate"
+      break
+    fi
+    _e2e_root_candidate="$(dirname "$_e2e_root_candidate")"
+  done
+  SB_ROOT="${SB_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+fi
+export SB_ROOT
 JSON_OUT=0
 HOST_ARG=""
 ROUND1="${SB_E2E_GATES_ROUND1:-${SB_E2E_GATES_ROUND1_FILE:-}}"
