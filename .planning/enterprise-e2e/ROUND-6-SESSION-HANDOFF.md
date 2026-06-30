@@ -2,12 +2,14 @@
 
 **Operational addendum:** [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md)
 
-**Updated:** 2026-06-30T03:05Z (FORCE relaunched via tmux on `main`; see [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md))
+**Updated:** 2026-06-30T04:18Z (shared harness addendum compliance; FORCE on `enterprise-e2e/multi-host`)
+
+**Shared harness:** [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md) — canonical code `scripts/enterprise-e2e/`; Claude legacy paths unchanged.
 
 ## SB HEAD
 
-`6e7fb3b1` — `main` @ merge tip  
-Pause checkpoint harness: `9ad5bb8b` (outcome fix `ee62a820` on main)
+`c8e323f7` — `enterprise-e2e/multi-host` (clarify picker fix; harness reorg `da459749`)  
+Prior pause checkpoint: `6e7fb3b1` on `main`
 
 **Test app HEAD:** `8482e60` @ `/Users/shafqat/projects/enterprise-grade-test-app`
 
@@ -16,11 +18,10 @@ Pause checkpoint harness: `9ad5bb8b` (outcome fix `ee62a820` on main)
 - **Pass count (ledger):** **18 / 22** evidence — rows **6, 7, 8, 11** FAIL (expect `:531`); rows 21–22 via parents
 - **Strict-clean:** pending outcome re-score FORCE + rows 6/7/8/11 LIVE retry
 - **Pause checkpoint:** driver **84198** was ALIVE @ 02:24Z — **DEAD** post-reboot
-- **PID audit (2026-06-30T03:05Z):**
-  - tmux session **`round6-force`** — **ALIVE**
-  - Live-test driver **65488** — **ALIVE** (`--resume` on `main`)
-  - Matrix batch **65490** — **ALIVE** (rows **6 7 8 11**)
-  - Monitor **64921** / tui-watch **64932** — **ALIVE** (driver-owned)
+- **PID audit (2026-06-30T04:18Z):**
+  - Live-test driver **9520** — **ALIVE** (`--skip-code-intel-preflight 6 7 8 11` on `enterprise-e2e/multi-host`)
+  - Matrix batch **13140** — **ALIVE** (rows **6 7 8 11**; row **7** `silver-test` launching)
+  - Monitor **11876** — **ALIVE** (driver-owned; `AUTO_RESTART=0`)
 - **Relaunch:** tmux + `run-enterprise-e2e-live-test.sh --resume` (bypasses `round6-matrix-driver.sh` branch checkout on dirty tree)
 - **Do not duplicate drivers** while batch alive
 

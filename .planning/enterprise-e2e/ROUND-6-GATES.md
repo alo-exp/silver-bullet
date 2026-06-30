@@ -1,15 +1,15 @@
 # Round 6 — Gate checklist
 
-**Updated:** 2026-06-30T02:57Z  
-**SB HEAD:** `6e7fb3b1` (`main`)  
+**Updated:** 2026-06-30T07:02Z  
+**SB HEAD:** `1be4447f` (`enterprise-e2e/multi-host`)  
 **Test app HEAD:** `8482e60`  
 **Ledger:** [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md)  
 **Outcomes:** [ROUND-6-OUTCOMES.md](./ROUND-6-OUTCOMES.md)  
 **Session ref:** Round 5 strict-clean @ 22/22 — Round 6 is confirmation round (2× consecutive)
 
-## Status: PAUSED — driver dead post-reboot; relaunch from real terminal
+## Status: Phase C partial — ledger 22/22 evidence; strict-clean **not** confirmed
 
-**Blockers:** Driver **84198** dead after reboot. Agent-shell relaunch fails (PTY). Resume per [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md). Monitor **41532** + tui-watch **41886** orphan-alive.
+**Blockers:** `OUT-MEASURE-01` fail + `LEDGER_MISMATCH` on reconcile; `run-all-tests` **5 failed** (3/6 suites green). Live FORCE resume set (rows 6/7/8/11) last run: **1/4** outcome-aligned (row 6 only @ `c8e323f7`). Monitor agent **90909** alive; **no live batch** (idle).
 
 ### Baseline (strict clean)
 
@@ -36,18 +36,19 @@ Round 6 is **strict-clean** only when **all** hold:
 | Gate | Status |
 |------|--------|
 | review-fix-ladder 8/8 (2× clean verify per rung) | **PASS** (no new issues) |
-| Matrix ledger 22/22 (zero new friction) | **PENDING** |
-| Outcome assessment harness (`test-outcome-assessment.sh`) | **PASS** (41/41 @ `6e7fb3b1`) |
+| Matrix ledger 22/22 (zero new friction) | **PASS** evidence @ `1be4447f` — reconcile **LEDGER_MISMATCH** |
+| Outcome assessment harness (`test-outcome-assessment.sh`) | **PASS** (72/72 @ `1be4447f`) |
 | World-class criteria registry (27 criteria + 4 blocking) | **WIRED** — [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) |
 | Per-row OUT-WORLD-01 composite + outcome enforcement | **WIRED** — matrix runner fails row if criteria incomplete |
-| `run-all-tests` | **PENDING** (Phase C) |
-| Validation overlay | **PASS** (6/6 pre-matrix) |
-| Pre-release overlay | **PENDING** (Phase C) |
-| Ledger reconcile | **PENDING** (Phase C — requires 22/22) |
-| RCS ≥ 85 | **PENDING** (Phase C) |
+| `run-all-tests` | **FAIL** — 4996 pass, **5 fail** (3/6 suites green @ `1be4447f`) |
+| Validation overlay | **PASS** (6/6 dry-run @ `1be4447f`) |
+| Pre-release overlay | **PASS** (40/40 dry-run @ `1be4447f`) |
+| Ledger reconcile | **FAIL** — `LEDGER_MISMATCH` (ledger 22/22 vs force log history) |
+| Round outcome assess (`enterprise_e2e_outcome_assess_round`) | **PARTIAL** — OUT-REVIEW-01 pass; OUT-MEASURE-01 **fail**; OUT-KM-01 partial |
+| RCS ≥ 85 | **PASS** — **88/100** (matrix ledger 20/25 due reconcile mismatch) |
 | New issues vs baseline | **0** *(so far)* |
-| Round clean (zero new issues vs baseline) | **PENDING** |
-| 2 consecutive strict clean rounds | **PENDING** (Round 6 must complete clean) |
+| Round strict-clean (outcomes + 0 new issues) | **FAIL** — rows 7/8/11 outcome misalign on last FORCE; measure gate fail |
+| 2 consecutive strict clean rounds | **PENDING** (Round 6 not strict-clean yet) |
 
 ### Outcome assessment (world-class + autonomy)
 
@@ -83,6 +84,18 @@ SB_E2E_RCS_RUN_ALL_TESTS=pass SB_E2E_RCS_LADDER=8/8 SB_E2E_RCS_VALIDATION_OVERLA
   RTK_DISABLED=1 bash scripts/enterprise-e2e-rcs.sh --ledger "$SB_E2E_LEDGER_FILE"
 ```
 
+### Phase C run log (2026-06-30T06:33–07:02Z @ `1be4447f`)
+
+| Step | Result |
+|------|--------|
+| `test-outcome-assessment.sh` | **PASS** 72/72 |
+| `enterprise_e2e_outcome_assess_round` | OUT-REVIEW-01 pass; OUT-MEASURE-01 **fail**; OUT-KM-01 partial |
+| `run-enterprise-e2e-validation-overlay.sh --dry-run` | **PASS** 6/6 |
+| `run-enterprise-e2e-pre-release-overlay.sh --dry-run` | **PASS** 40/40 |
+| `enterprise-e2e-ledger-reconcile.sh` | **LEDGER_MISMATCH** (pass count 22/22) |
+| `run-all-tests.sh` | 4996 pass, **5 fail** (3/6 suites green) |
+| `enterprise-e2e-rcs.sh` | **88/100** |
+
 ## Release verdict
 
-**Round 6:** matrix **0/22** in progress — awaiting Phase B completion before Phase C gates. Outcome assessment harness integrated @ `da493429` and green.
+**Round 6:** ledger **22/22** evidence @ `1be4447f`; Phase C **partial** — RCS ≥85 but strict-clean **not** met (OUT-MEASURE-01, ledger reconcile, run-all-tests failures, live outcome alignment 1/4 on resume set). Next: fix measure/reconcile + run-all-tests failures; re-FORCE rows 7/8/11 with harness fixes.

@@ -1,0 +1,37 @@
+{
+  "pipeline": "visual-qa",
+  "date": "2026-06-30",
+  "outDir": "/Users/shafqat/projects/silver-bullet/repo/.visual-audit/responsive-full/2026-06-30-pipeline",
+  "steps": [
+    {
+      "step": "capture",
+      "status": "PASS",
+      "detail": "/Users/shafqat/projects/silver-bullet/repo/.visual-audit/responsive-full/2026-06-30-pipeline",
+      "ts": "2026-06-30T07:13:29Z"
+    },
+    {
+      "step": "overflow-375",
+      "status": "PASS",
+      "detail": "0px overflow on / and /help/getting-started/",
+      "ts": "2026-06-30T07:13:31Z"
+    },
+    {
+      "step": "style-check",
+      "status": "PASS",
+      "detail": "hero-tagline-thin font-weight 400",
+      "ts": "2026-06-30T07:13:34Z"
+    },
+    {
+      "step": "golden-strings",
+      "status": "PASS",
+      "detail": "/Users/shafqat/projects/silver-bullet/repo/.visual-audit/responsive-full/2026-06-30-pipeline/golden-strings",
+      "ts": "2026-06-30T07:13:37Z"
+    },
+    {
+      "step": "vision-self-test",
+      "status": "PASS",
+      "detail": "grounding logic",
+      "ts": "2026-06-30T07:13:37Z"
+    }
+  ]
+}
