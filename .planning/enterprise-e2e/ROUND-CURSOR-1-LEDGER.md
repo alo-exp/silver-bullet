@@ -72,8 +72,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | |
-| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | pending | graphify query silver-research | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | pending | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-research | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
 | 5 | `silver-ui` | | | Skip | evidence-only | | | | |
 | 6 | `silver-fast` | | | Skip | evidence-only | | | | |
