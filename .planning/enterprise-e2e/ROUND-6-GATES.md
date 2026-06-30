@@ -1,15 +1,15 @@
 # Round 6 — Gate checklist
 
-**Updated:** 2026-06-30T10:00Z  
-**SB HEAD:** `da493429` (`enterprise-e2e/round4-continuation`)  
-**Test app HEAD:** `08f9284`  
+**Updated:** 2026-06-30T02:57Z  
+**SB HEAD:** `6e7fb3b1` (`main`)  
+**Test app HEAD:** `8482e60`  
 **Ledger:** [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md)  
 **Outcomes:** [ROUND-6-OUTCOMES.md](./ROUND-6-OUTCOMES.md)  
 **Session ref:** Round 5 strict-clean @ 22/22 — Round 6 is confirmation round (2× consecutive)
 
-## Status: MATRIX IN PROGRESS — Phase B live TUI
+## Status: PAUSED — driver dead post-reboot; relaunch from real terminal
 
-**Blockers:** None. Row 1 `silver-router` LIVE TUI active (~7m elapsed @ checkpoint). Single driver tree; monitor `AUTO_RESTART=0`.
+**Blockers:** Driver **84198** dead after reboot. Agent-shell relaunch fails (PTY). Resume per [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md). Monitor **41532** + tui-watch **41886** orphan-alive.
 
 ### Baseline (strict clean)
 
@@ -18,7 +18,7 @@
 | Issues baseline IDs | **76** unique (E2E-001 … E2E-085) |
 | New issues allowed for clean round | **0** |
 | Ladder | **8 / 8** rungs |
-| Matrix | **0 / 22** *(in progress)* |
+| Matrix | **18 / 22** *(rows 6, 7, 8, 11 FAIL — expect `:531`; driver dead post-reboot)* |
 
 ### Strict-clean definition
 
@@ -37,7 +37,7 @@ Round 6 is **strict-clean** only when **all** hold:
 |------|--------|
 | review-fix-ladder 8/8 (2× clean verify per rung) | **PASS** (no new issues) |
 | Matrix ledger 22/22 (zero new friction) | **PENDING** |
-| Outcome assessment harness (`test-outcome-assessment.sh`) | **PENDING** (re-run after 27-criteria autonomy harness) |
+| Outcome assessment harness (`test-outcome-assessment.sh`) | **PASS** (41/41 @ `6e7fb3b1`) |
 | World-class criteria registry (27 criteria + 4 blocking) | **WIRED** — [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) |
 | Per-row OUT-WORLD-01 composite + outcome enforcement | **WIRED** — matrix runner fails row if criteria incomplete |
 | `run-all-tests` | **PENDING** (Phase C) |
