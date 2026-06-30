@@ -73,9 +73,9 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 5 | `silver-ui` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
 | 6 | `silver-fast` | 2026-06-30 | | **Pass** | — | strict-clean @ batch 65528 | | | |
 | 7 | `silver-test` | 2026-06-30 | | **Pass** | — | strict-clean @ batch 65528 | | | |
-| 8 | `silver-refactor` | | | | | | | | |
-| 9 | `silver-benchmark` | | | | | | | | |
-| 10 | `silver-content` | | | | | | | | |
+| 8 | `silver-refactor` | 2026-06-30 | | **Fail** | km-gap | OUT-ORCH-01 partial OUT-KM-01 partial @860abb7c harness | | | |
+| 9 | `silver-benchmark` | 2026-06-30 | | **Fail** | km-gap | OUT-KM-01 partial @860abb7c harness | | | |
+| 10 | `silver-content` | 2026-06-30 | | **Fail** | km-gap | OUT-KM-01 partial @860abb7c harness | | | |
 | 11 | `silver-devops` | | | | | | | | |
 | 12 | `silver-deploy` | | | | | | | | |
 | 13 | `silver-canary` | | | | | | | | |
@@ -89,9 +89,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 3 / 22 *(rows 1,6,7 strict-clean — R3 driver PID 54793 rows 2-5,8-22 in flight; row 3 retry #2 @41641; row 2 FORCE queued post-DRIVER_DONE_R3)*
+**Pass count:** 3 / 22 *(rows 1,6,7 strict-clean — hung batch 21441 killed; FORCE driver PID 29579 rows 4→2,3,5,8-22; rows 8-10 rescored FAIL km-gap @860abb7c)*
 
 **Harness fixes (enterprise-e2e/codex):**
+- *(pending commit)* — `CODEX_INTERACTIVE_IDLE_TIMEOUT` watchdog + non-blocking PTY read in `codex-interactive-invoke.py` (prevents 9h+ hung invoke)
 - `959de0ea` — stop-hook quiet timeout (spinner-immune last_activity + completion without prompt return); CLAUDE→CODEX quiet timeout forward; SB_E2E_MATRIX_EVIDENCE_PATH scorer (75 tests)
 - `b4f471b3` — TUI-aware KM/ORCH/HEAL outcome scoring (Codex mem_mr* + graphify query evidence path)
 - `33c22980` — preserve CODEX_AUTO_TRUST_HOOKS from matrix spawn env
