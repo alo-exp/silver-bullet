@@ -667,21 +667,21 @@ enterprise_e2e_outcome_score_skill() {
     fi
     printf 'partial\n'; return 0
   fi
-  if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
-    if grep -qiE "${slug}|/silver:${slug#silver-}" "$row_log" 2>/dev/null; then
-      printf 'pass\n'; return 0
-    fi
-  fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'silver-[a-z]|/silver:|\$silver' "$row_log" 2>/dev/null; then
-    printf 'partial\n'; return 0
-  fi
   if [[ -n "$slug" && -n "$evidence" && -f "${work_dir}/${evidence}" ]]; then
     if grep -qiE "${slug}|${slug#silver-}" "${work_dir}/${evidence}" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
-    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|\$silver|/silver|orchestrator"; then
+    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|\$silver|/silver|orchestrator|invoke-skill[[:space:]]+silver"; then
       printf 'pass\n'; return 0
     fi
+  fi
+  if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
+    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|/silver:${slug#silver-}|invoke-skill[[:space:]]+silver"; then
+      printf 'pass\n'; return 0
+    fi
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && enterprise_e2e_outcome_log_matches "$row_log" 'silver-[a-z]|/silver:|\$silver'; then
+    printf 'partial\n'; return 0
   fi
   printf 'fail\n'
 }
