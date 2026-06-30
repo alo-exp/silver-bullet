@@ -151,4 +151,29 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 **Retry #3:** skipped — no failing rows after rescore. Row 20 still has 109B timeout-only log (evidence-only pass); optional future FORCE for log quality.
 
-**Pass count (authoritative post-rescore):** **22 / 22**
+**Pass count (authoritative post-rescore):** **22 / 22** *(harness rescore @3d4ef10e; not strict-clean — evidence-only rows + live ledger 10/22)*
+
+---
+
+## Phase C assessment (2026-07-01 @ d9f7a3cf)
+
+| Gate | Result |
+|------|--------|
+| `test-outcome-assessment.sh` | **81/81 PASS** |
+| `test-enterprise-e2e-live-suite.sh` | **179/179 PASS** |
+| `run-all-tests.sh` | **5188 pass / 21 fail** (3/7 suites) |
+| Validation overlay dry-run | **6/6 PASS** |
+| Validation overlay --live | **8 pass / 5 skip** (ledger rows not Pass) |
+| Pre-release overlay dry-run | **40/40 PASS** |
+| Tri-host smoke cursor | **6/6 PASS** |
+| Ledger reconcile | **FAIL** (`LEDGER_MISMATCH` 10/22) |
+| RCS tri-host full | **66/100** (need ≥85) |
+| Consecutive rounds check | **FAIL** (0/2) |
+
+**Rescore re-check:** `retry2-rescore.sh` → **21/22** (row 21 `post-exec-gates` missing in test app).
+
+**Strict-clean:** **NO** — see [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md).
+
+**Round clean?:** **Fail** (unchanged)
+
+**Next action:** Live FORCE rows 3, 4, 20, 21–22; fix `run-all-tests` failures; update ledger matrix table; re-run Phase C; then Round Cursor-2 after strict-clean Cursor-1.
