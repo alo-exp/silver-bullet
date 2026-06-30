@@ -1,7 +1,7 @@
 # Responsive QA Fix — Mobile Horizontal Overflow
 
 **Date:** 2026-06-30  
-**Commit:** (see publish SHA below)  
+**Commit:** [667114ef](https://github.com/alo-exp/silver-bullet/commit/667114ef)  
 **File changed:** [`site/chrome.css`](../../site/chrome.css)
 
 ## Problem
