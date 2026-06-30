@@ -1,0 +1,56 @@
+#!/usr/bin/expect -f
+# PTY contract: blocking decision_class clarify picker (row 6 silver-fast stall).
+# Validates the same TCL procs used by scripts/claude-interactive-invoke.expect.
+
+proc strip_ansi {text} {
+  regsub -all {\x1b\[[0-9;?]*[ -/]*[@-~]} $text "" text
+  regsub -all {\x1b\][^\x07]*(\x07|\x1b\\)} $text "" text
+  regsub -all {\x1b.} $text "" text
+  return $text
+}
+
+proc blocking_decision_picker_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Enter to select} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {navigate} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Esc to cancel} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {1\.|2\.|3\.} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+set fixture [file normalize [file join [file dirname $argv0] .. fixtures blocking-decision-picker.ansi]]
+if {![file exists $fixture]} {
+  puts stderr "FAIL: missing fixture $fixture"
+  exit 1
+}
+
+set fh [open $fixture r]
+fconfigure $fh -translation binary
+set bytes [read $fh]
+close $fh
+
+if {![blocking_decision_picker_visible $bytes]} {
+  puts stderr "FAIL: blocking_decision_picker_visible did not match fixture"
+  exit 1
+}
+
+set plain [strip_ansi $bytes]
+if {![regexp -nocase {How should I close out this turn} $plain]} {
+  puts stderr "FAIL: stripped fixture missing close-out prompt"
+  exit 1
+}
+if {![regexp -nocase {SB OVERRIDE} $plain]} {
+  puts stderr "FAIL: stripped fixture missing SB OVERRIDE option"
+  exit 1
+}
+
+puts "PASS: blocking decision picker contract (fixture bytes, no live API)"
+exit 0
