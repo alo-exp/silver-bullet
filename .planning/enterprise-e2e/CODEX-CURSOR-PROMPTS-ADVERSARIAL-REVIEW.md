@@ -20,9 +20,72 @@
 
 ## Executive verdict
 
-### **NOT READY**
+### **READY WITH GAPS** (session launch allowed; strict-clean 2×22 still requires live proof)
 
-Both prompts are well-structured **operator intent documents** but **overclaim 22/22 matrix execution** on hosts the harness does not drive end-to-end. Launching a fresh session today would:
+Harness M1–M6 landed on `enterprise-e2e/multi-host` (`bd68a159`). Prompts, ledgers, and TUI protocols align with host-isolated paths. Remaining gaps are **P2+** (live row CI fixtures, Codex expect parity, shared test-app mutation policy).
+
+**Honest current capability:** Phase A smoke/resolver + tri-host install; Phase B matrix driver **wired** for Codex/Cursor (dry-run verified); autonomous 2× strict-clean 22-row matrix still requires live sessions and M7 fixtures.
+
+---
+
+## Review run history
+
+| Pass | Timestamp (UTC) | Verdict | Notes |
+|------|-----------------|---------|-------|
+| 0 (initial) | 2026-06-30 | **NOT READY** | P0-1–P0-10; harness Claude-only; shared locks/logs |
+| 1 | 2026-06-30T12:00:00Z | **READY WITH GAPS** | M1–M6 done; prompts patched; structural suite 155/0; outcome 69/0; codex dry-run row 1 invokes Codex agent |
+| 2 | 2026-06-30T12:15:00Z | **READY WITH GAPS** | Re-review: no new P0/P1; P2 follow-ups unchanged; consecutive clean |
+
+---
+
+## M1–M6 acceptance (post-fix)
+
+| ID | Status | Evidence |
+|----|--------|----------|
+| M1 | **DONE** | `enterprise_e2e_apply_matrix_host_defaults`; no `export SB_E2E_LIVE_RUNTIME=claude` overwrite; dry-run `Host: codex` + `/Applications/Codex.app/.../codex` |
+| M2 | **DONE** | `helpers.sh` cursor case; `run-enterprise-e2e-live-test.sh --host codex\|cursor\|claude`; `enterprise_e2e_run_install_host` |
+| M3 | **DONE** | `.e2e-live-test-{host}.lock`, `.e2e-matrix-{host}-*`, `.e2e-row{N}-{host}-attempt.log` (Claude keeps legacy names) |
+| M4 | **DONE** | `matrix_agent_child_lines` / `kill_matrix_agent_children` host-scoped in monitor |
+| M5 | **DONE** | `enterprise_e2e_routing_state_file` → `SB_RUNTIME_STATE_DIR`; outcome assess uses runtime state in matrix |
+| M6 | **DONE** | `enterprise_e2e_matrix_host_route` — `/silver:feature` → `$silver:feature` (Codex); skill slug (Cursor) |
+| M8 | **DONE** | `ROUND-CODEX-1-LEDGER.md`, `ROUND-CURSOR-1-LEDGER.md` with ladder tables |
+| M9 | **PARTIAL** | `$silver:clarify` grep added; `SB_E2E_RCS_TRIHOST=full` documented in prompts, not auto in `enterprise-e2e-rcs.sh` |
+| M10 | **DONE** | `CODEX-TUI-PROTOCOL.md`, `CURSOR-TUI-PROTOCOL.md` linked from prompts |
+
+---
+
+## Remaining P2 follow-up (non-blocking for session launch)
+
+| # | Item | Notes |
+|---|------|-------|
+| P2-7 | M7 — one full row live CI fixture per host | `test-enterprise-e2e-live-suite.sh` structural only |
+| P2-10 | Codex matrix expect parity suite | No `tests/enterprise-e2e-live/*codex*` yet |
+| P2-11 | Host-prefixed outcome companion paths | `row-N-outcomes.md` not yet `{host}-row-N` |
+| P2-15 | RCS auto `SB_E2E_RCS_TRIHOST=full` | Manual export in Phase C prompts |
+| — | Parallel tracks mutating same test-app fixture | Document serial mutation or branch-per-host for rows 21–22 |
+
+---
+
+## Critical blockers (P0) — RESOLVED in pass 1
+
+| # | Gap | Resolution |
+|---|-----|------------|
+| P0-1 | Matrix runner Claude-only | `enterprise_e2e_apply_matrix_host_defaults` honors pre-set runtime |
+| P0-2 | No `--host` on live-test | `--host codex\|cursor\|claude` + `enterprise_e2e_run_install_host` |
+| P0-3 | helpers.sh no cursor | `cursor/agent.sh` sourced |
+| P0-4 | Shared lock | Per-host lock files (Claude keeps `.e2e-live-test.lock`) |
+| P0-5 | Shared row logs | `enterprise_e2e_row_attempt_log` host prefix |
+| P0-6 | Monitor Claude-only pkill | `matrix_agent_child_lines` host-scoped |
+| P0-7 | No host ledgers | Templates added |
+| P0-8 | Wrong batch PID paths | Defaults + prompt env blocks |
+| P0-9 | `/silver:*` literals only | `enterprise_e2e_matrix_host_route` |
+| P0-10 | Claude-only routing state | `enterprise_e2e_routing_state_file` |
+
+---
+
+## Prior executive verdict (pass 0 — superseded)
+
+### ~~NOT READY~~ (2026-06-30 initial review)
 
 1. **Fail Phase B immediately** — matrix runner hardcodes Claude and overwrites `SB_E2E_LIVE_RUNTIME` / `SILVER_BULLET_RUNTIME`.
 2. **Corrupt or block Claude Round 6** — shared `.e2e-live-test.lock`, `.e2e-row{N}-attempt.log`, default `.e2e-matrix-batch.pid`, and monitor `pkill` patterns are not host-isolated.
@@ -301,10 +364,10 @@ SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash scripts/enterprise-e2e-rc
 
 ---
 
-## Verdict (3-line)
+## Verdict (3-line) — pass 2 (final)
 
-**NOT READY** — prompts describe a strict-clean 22-row program the harness cannot run; `run-enterprise-e2e-matrix.sh` hardcodes Claude and shared lock/row logs make parallel Codex/Cursor tracks unsafe against Round 6.
+**READY WITH GAPS** — M1–M6 harness + host ledgers + protocols land on `enterprise-e2e/multi-host`; Codex/Cursor Phase B is honest; Claude Round 6 isolation preserved.
 
-**Minimum before launch:** M1–M6 harness work + host ledger templates + monitor isolation; prompt patches must mark Phase B blocked and document full env isolation (P1-3, P1-4).
+**Session launch:** allowed with host env blocks in prompts/TUI protocols. **Strict-clean 2×22:** still requires live matrix + ladder proof (M7 CI fixtures recommended).
 
-**Scorecard:** Prompt prose ~7/10; harness-adjusted execution ~3/10 for both hosts — honest labeling is **smoke + manual proof**, not 2× strict-clean.
+**Scorecard:** Prompt + harness alignment ~8/10; remaining gaps P2 only (expect parity, outcome path prefix, RCS auto-trihost).
