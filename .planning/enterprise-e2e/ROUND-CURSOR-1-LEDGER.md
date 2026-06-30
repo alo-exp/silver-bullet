@@ -15,10 +15,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | Cursor plugin install | `<!-- commit SHA used by install-cursor.sh -->` |
 | Cursor model (frozen) | `<!-- e.g. composer-2.5 -->` |
 | Operator | `<!-- name -->` |
-| Start date | YYYY-MM-DD |
+| Start date | 2026-06-30 |
 | End date | YYYY-MM-DD |
-| Round clean? | Pass / Fail |
-| Consecutive pair | ___ / 2 *(release requires 2/2 — see ROUND-CURSOR-1-GATES.md)* |
+| Round clean? | Fail |
+| Consecutive pair | 0 / 2 *(release requires 2/2 — see ROUND-CURSOR-1-GATES.md)* |
 
 **Harness artifacts (Cursor-isolated):**
 
@@ -54,12 +54,12 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 2 | composer-2.5 / medium | composer-2.5 | | PASS | | | |
 | 3 | composer-2.5 / high | composer-2.5 | | PASS | | | |
 | 4 | composer-2.5 / xhigh | composer-2.5 | | PASS | | | |
-| 5 | gpt-5.5 / low | gpt-5.5 | | IN PROGRESS | | | |
-| 6 | | | | | | | |
-| 7 | | | | | | | |
-| 8 | | | | | | | |
+| 5 | gpt-5.5 / low | gpt-5.5 | | PASS | | | |
+| 6 | gpt-5.5 / medium | gpt-5.5-extra-high | | PASS | | | |
+| 7 | gpt-5.5 / high | gpt-5.5-extra-high | | PASS | | | |
+| 8 | gpt-5.5 / xhigh | gpt-5.5-extra-high | | PASS | | | |
 
-**Ladder progress:** 4 / 8 rungs complete (verify_1); rung 5 in flight (tmux `cursor-ladder`)
+**Ladder progress:** 8 / 8 rungs complete ([cursor-ladder-live.log](./cursor-ladder-live.log))
 
 **Strict-clean Phase A:** requires `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0` and live API turns — not resolver-only structural smoke. ~~`CURSOR_API_KEY`~~ **not required** for live ladder/matrix when `agent` is Keychain-authenticated (`cursor-agent status`). API key + `AGENT_CLI_CREDENTIAL_STORE=memory` only for isolated `pre-release-cursor-cli-smoke.sh`.
 
@@ -69,30 +69,30 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | composer-2.5 | IN PROGRESS | | | | graphify query silver-router | agentmemory pending |
-| 2 | `silver-research` | | | | | | | | |
-| 3 | `silver-feature` | | | | | | | | |
-| 4 | `silver-bugfix` | | | | | | | | |
-| 5 | `silver-ui` | | | | | | | | |
-| 6 | `silver-fast` | | | | | | | | |
-| 7 | `silver-test` | | | | | | | | |
-| 8 | `silver-refactor` | | | | | | | | |
-| 9 | `silver-benchmark` | | | | | | | | |
-| 10 | `silver-content` | | | | | | | | |
-| 11 | `silver-devops` | | | | | | | | |
-| 12 | `silver-deploy` | | | | | | | | |
-| 13 | `silver-canary` | | | | | | | | |
-| 14 | `silver-release` | | | | | | | | |
-| 15 | `review-triad` | | | | | | | | |
-| 16 | `ship-readiness` | | | | | | | | |
-| 17 | `silver-incident` | | | | | | | | |
-| 18 | `silver-retro` | | | | | | | | |
-| 19 | `silver-forensics` | | | | | | | | |
-| 20 | `process-maintenance` | | | | | | | | |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
+| 2 | `silver-research` | | | Skip | evidence-only | | | | |
+| 3 | `silver-feature` | | | Skip | evidence-only | | | | |
+| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
+| 5 | `silver-ui` | | | Skip | evidence-only | | | | |
+| 6 | `silver-fast` | | | Skip | evidence-only | | | | |
+| 7 | `silver-test` | | | Skip | evidence-only | | | | |
+| 8 | `silver-refactor` | | | Skip | evidence-only | | | | |
+| 9 | `silver-benchmark` | | | Skip | evidence-only | | | | |
+| 10 | `silver-content` | | | Skip | evidence-only | | | | |
+| 11 | `silver-devops` | | | Skip | evidence-only | | | | |
+| 12 | `silver-deploy` | | | Skip | evidence-only | | | | |
+| 13 | `silver-canary` | | | Skip | evidence-only | | | | |
+| 14 | `silver-release` | | | Skip | evidence-only | | | | |
+| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | timeout+outcome | E2E-086 | pending | | |
+| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
+| 17 | `silver-incident` | | | Skip | evidence-only | | | | |
+| 18 | `silver-retro` | | | Skip | evidence-only | | | | |
+| 19 | `silver-forensics` | | | Skip | evidence-only | | | | |
+| 20 | `process-maintenance` | | | Skip | evidence-only | | | | |
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** ___ / 22
+**Pass count:** 0 / 22 (FORCE re-run in flight after E2E-086 harness fix)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
@@ -102,7 +102,7 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.m
 
 | Issue | Label | WF slug | SB fix commit | Status |
 |-------|-------|---------|---------------|--------|
-| | `enterprise-test-app` | | | |
+| E2E-086 | harness | matrix rows 1–22 | pending | fixed on branch |
 
 ---
 
