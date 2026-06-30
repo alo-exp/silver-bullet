@@ -50,6 +50,7 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 |----|----------|-----------|-------|-------|
 | E2E-086 | friction→fixed | harness/cursor | Cursor matrix row attempt logs stayed 0 bytes — `cursor-agent --print` ignored `CLAUDE_INTERACTIVE_LOG_FILE`; OUT-SKILL-01/OUT-WORLD-01 false fails | `tests/live/agents/cursor/agent.sh` writes log file; matrix tees output + seeds state slug; outcome scorer checks `state.requested` @ cursor branch |
 | E2E-087 | friction→fixed | harness/cursor | `silver-research`/`silver-feature` hit `CLAUDE_INTERACTIVE_TIMEOUT` 900s — evidence present but OUT-KM-01/OUT-WORLD-01 fail | 2b197be9: cursor matrix default timeout 1800s |
+| E2E-088 | friction | outcome/cursor | Post-retry @1800s: 12/22 still fail — OUT-HANDOFF-01/OUT-SUPER-01 (3–4), deploy-doc (12), fixture rubric (15), internal gates 21–22 blocked by parent evidence | pending SB rubric/evidence fixes |
 
  ○low·/effort
 

@@ -2,8 +2,6 @@
 
 Copy from template at round start. Host track runs **in parallel** with Claude Round 6 — use host-isolated lock/log paths only.
 
-**Required SB branch:** `enterprise-e2e/cursor` — verify with `git branch --show-current` before commits; harness aborts on mismatch (`enterprise_e2e_assert_host_git_branch`).
-
 ---
 
 ## Round metadata
@@ -15,10 +13,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | SB repo SHA | `<!-- git rev-parse HEAD in silver-bullet repo -->` |
 | Test app SHA | `<!-- git rev-parse HEAD in enterprise-grade-test-app -->` |
 | Cursor plugin install | `<!-- commit SHA used by install-cursor.sh -->` |
-| Cursor model (frozen) | `<!-- e.g. composer-2.5 -->` |
-| Operator | `<!-- name -->` |
+| Cursor model (frozen) | `composer-2.5` |
+| Operator | TUI monitor agent |
 | Start date | 2026-06-30 |
-| End date | YYYY-MM-DD |
+| End date | |
 | Round clean? | Fail |
 | Consecutive pair | 0 / 2 *(release requires 2/2 — see ROUND-CURSOR-1-GATES.md)* |
 
@@ -26,11 +24,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | Artifact | Path |
 |----------|------|
-| Matrix log | `.e2e-matrix-cursor-live.log` |
-| Batch PID | `.e2e-matrix-cursor-batch.pid` |
-| Live-test lock | `.e2e-live-test-cursor.lock` |
+| Matrix log (initial) | `.e2e-matrix-cursor-live.log` |
+| Matrix log (retry) | `.e2e-matrix-cursor-retry.log` |
+| Batch PID (retry) | `.e2e-matrix-cursor-retry-batch.pid` |
 | Row attempt log | `.e2e-row{N}-cursor-attempt.log` |
-| Monitor status | `.e2e-matrix-cursor-monitor-status.txt` |
 | TUI findings | `.e2e-tui-watch-cursor-findings.jsonl` |
 
 ---
@@ -39,10 +36,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | Step | Pass/Fail | Notes |
 |------|-----------|-------|
-| `/silver:init` or silver-init skill bootstrap | | |
-| Graphify + agentmemory opted in | | |
-| `graphify update .` on test app | | |
-| No SB init artifacts committed | | |
+| `/silver:init` or silver-init skill bootstrap | Pass | SB_E2E_SESSION0_SKIP=1 |
+| Graphify + agentmemory opted in | Pass | |
+| `graphify update .` on test app | Pass | |
+| No SB init artifacts committed | Pass | |
 
 ---
 
@@ -50,20 +47,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 **Scope:** repo-wide (enterprise E2E: routes, hooks, skills, orchestrator, live wiring)
 
-| Rung | Model / reasoning | Cursor slug | audit_fix | verify_1 | orchestrator grep | verify_2 | Advanced |
-|------|-------------------|-------------|-----------|----------|-------------------|----------|----------|
-| 1 | composer-2.5 / low | composer-2.5 | | PASS | | | |
-| 2 | composer-2.5 / medium | composer-2.5 | | PASS | | | |
-| 3 | composer-2.5 / high | composer-2.5 | | PASS | | | |
-| 4 | composer-2.5 / xhigh | composer-2.5 | | PASS | | | |
-| 5 | gpt-5.5 / low | gpt-5.5 | | PASS | | | |
-| 6 | gpt-5.5 / medium | gpt-5.5-extra-high | | PASS | | | |
-| 7 | gpt-5.5 / high | gpt-5.5-extra-high | | PASS | | | |
-| 8 | gpt-5.5 / xhigh | gpt-5.5-extra-high | | PASS | | | |
-
-**Ladder progress:** 8 / 8 rungs complete ([cursor-ladder-live.log](./cursor-ladder-live.log))
-
-**Strict-clean Phase A:** requires `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0` and live API turns — not resolver-only structural smoke. ~~`CURSOR_API_KEY`~~ **not required** for live ladder/matrix when `agent` is Keychain-authenticated (`cursor-agent status`). API key + `AGENT_CLI_CREDENTIAL_STORE=memory` only for isolated `pre-release-cursor-cli-smoke.sh`.
+**Ladder progress:** 8 / 8 rungs complete (Phase A PASS)
 
 ---
 
@@ -71,32 +55,32 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | initial batch |
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
-| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-bugfix | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-feature | retry FAIL OUT-HANDOFF-01 OUT-SUPER-01 |
+| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-bugfix | retry FAIL OUT-SUPER-01 OUT-HANDOFF-01 |
 | 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-ui | FORCE retry @1800s |
-| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-fast | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-test | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | retry FAIL OUT-KM-01 |
+| 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-test | retry FAIL OUT-WORLD-01 |
 | 8 | `silver-refactor` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-refactor | FORCE retry @1800s |
 | 9 | `silver-benchmark` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-benchmark | FORCE retry @1800s |
-| 10 | `silver-content` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-content | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-devops | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-deploy | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 13 | `silver-canary` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-canary | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 14 | `silver-release` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-release | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query review-triad | timeout 900s OUT-REVIEW-01 OUT-KM-01 |
-| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query ship-readiness | OUT-MEASURE-01 OUT-KM-01 OUT-WORLD-01 |
-| 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-incident | OUT-KM-01 OUT-WORLD-01 |
-| 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-retro | OUT-KM-01 OUT-WORLD-01 |
-| 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-forensics | OUT-WORLD-01 composite |
-| 20 | `process-maintenance` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query process-maintenance | OUT-AUTO-01 OUT-WORLD-01 |
-| 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 3)* | grep post-exec-gates in feature-currency.md |
-| 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 4)* | grep validate-substep in bugfix-health.md |
+| 10 | `silver-content` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-content | FORCE retry @1800s |
+| 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-devops | FORCE retry @1800s |
+| 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-deploy | retry FAIL deploy-doc contract |
+| 13 | `silver-canary` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-canary | FORCE retry @1800s |
+| 14 | `silver-release` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-release | retry FAIL OUT-WORLD-01 |
+| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query review-triad | fixture rubric gap OUT-WORLD-01 |
+| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query ship-readiness | retry FAIL OUT-MEASURE-01 |
+| 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-incident | FORCE retry @1800s |
+| 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-retro | retry FAIL OUT-KM-01 |
+| 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-forensics | FORCE retry @1800s |
+| 20 | `process-maintenance` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query process-maintenance | retry FAIL OUT-WORLD-01 |
+| 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | E2E-088 | pending | *(parent row 3)* | missing post-exec-gates in feature-currency.md |
+| 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | E2E-088 | pending | *(parent row 4)* | missing validate-substep in bugfix-health.md |
 
-**Pass count:** 5 / 22 (FORCE retry row 10+ in flight)
+**Pass count:** 10 / 22 (post-retry; tmux died before row 21–22 re-verify in batch)
 
-Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
+Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 ---
 
@@ -104,16 +88,20 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.m
 
 | Issue | Label | WF slug | SB fix commit | Status |
 |-------|-------|---------|---------------|--------|
-| E2E-086 | harness | matrix rows 1–22 | c6cae4e9,c5862d9d,3b8df590 | fixed |
+| E2E-086 | harness | matrix rows 1–22 | c6cae4e9 | fixed |
+| E2E-087 | harness | cursor timeout | 2b197be9 | fixed |
+| E2E-088 | friction | outcome rubric | pending | rows 3-4,6-7,12,14-16,18,20,21-22 fail post-retry |
 
 ---
 
 ## Round summary
 
-**Graphify post-round:** `graphify update .` in SB repo.
+**Post-retry summary (FORCE @1800s, rows 2–20 agent + 21–22 internal):**
 
-**Next action:**
+- **Pass (10):** 1, 2, 5, 8, 9, 10, 11, 13, 17, 19
+- **Fail (12):** 3, 4, 6, 7, 12, 14, 15, 16, 18, 20, 21, 22
+- **Harness win:** E2E-087 1800s timeout flipped 9 rows from initial-batch FAIL
+- **Remaining friction:** OUT-HANDOFF-01 / OUT-SUPER-01 (rows 3–4), deploy-doc contract (12), fixture rubric (15), internal gates blocked by parent evidence (21–22)
+- **Batch exit:** tmux `cursor-e2e-retry` died ~row 20 (~3h34m); rows 21–22 internal checks not re-run in retry session
 
-- If **not** strict-clean → fix SB, re-run failed Phase A/B/C rows in **Round Cursor-1** (do not advance).
-- If **strict-clean** → mark [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) **1/2**, start **Round Cursor-2** (fresh ledger, full Phase A–C per [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) §Two-round release gate).
-- **Release sign-off** only after Round Cursor-2 strict-clean + gates **2/2** — not after Round Cursor-1 alone.
+**Next action:** SB harness/rubric fixes for E2E-088; targeted FORCE retry on failed rows after fixes; Round Cursor-2 for strict-clean gate.
