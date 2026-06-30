@@ -26,7 +26,7 @@ EOF
 seed_good_fixture() {
   local root="$1"
   mkdir -p "${root}/.claude-plugin" "${root}/.cursor-plugin" "${root}/plugins/silver-bullet/.cursor-plugin" "${root}/plugins/silver-bullet/.codex-plugin"
-  printf '{"name":"silver-bullet","skills":"./agents/claude","agents":"./agents/claude"}\n' >"${root}/.claude-plugin/plugin.json"
+  printf '{"name":"silver-bullet","skills":"./agents/claude"}\n' >"${root}/.claude-plugin/plugin.json"
   printf '{"name":"silver-bullet","skills":"./agents/cursor","hooks":"./cursor-hooks.json"}\n' >"${root}/.cursor-plugin/plugin.json"
   cp "${root}/.cursor-plugin/plugin.json" "${root}/plugins/silver-bullet/.cursor-plugin/plugin.json"
   printf '{"name":"silver-bullet","commands":"./commands/","hooks":"./hooks/hooks.json"}\n' >"${root}/plugins/silver-bullet/.codex-plugin/plugin.json"
