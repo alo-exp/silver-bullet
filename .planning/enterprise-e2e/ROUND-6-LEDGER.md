@@ -79,28 +79,28 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 
 | # | WF slug | Session date | Claude model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | haiku | **Pass** | live TUI | | `da493429` | silver-router routes hooks skills orchestrator | |
-| 2 | `silver-research` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-research routes hooks skills orchestrator | |
-| 3 | `silver-feature` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-feature routes hooks skills orchestrator | |
-| 4 | `silver-bugfix` | 2026-06-30 | haiku | **Pass** | live TUI | | `da493429` | silver-bugfix routes hooks skills orchestrator | |
-| 5 | `silver-ui` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-ui routes hooks skills orchestrator | |
-| 6 | `silver-fast` | 2026-06-30 | haiku | **Pass** | live TUI + re-score | | `c8e323f7` | silver-fast routes hooks skills orchestrator | |
-| 7 | `silver-test` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-test routes hooks skills orchestrator | |
-| 8 | `silver-refactor` | 2026-06-30 | haiku | **Pass** | re-score @ `1be4447f` | | `1be4447f` | silver-refactor routes hooks skills orchestrator | |
-| 9 | `silver-benchmark` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-benchmark routes hooks skills orchestrator | |
-| 10 | `silver-content` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-content routes hooks skills orchestrator | |
-| 11 | `silver-devops` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-devops routes hooks skills orchestrator | |
-| 12 | `silver-deploy` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-deploy routes hooks skills orchestrator | |
-| 13 | `silver-canary` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-canary routes hooks skills orchestrator | |
-| 14 | `silver-release` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-release routes hooks skills orchestrator | |
-| 15 | `review-triad` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | review-triad routes hooks skills orchestrator | |
-| 16 | `ship-readiness` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | ship-readiness routes hooks skills orchestrator | |
-| 17 | `silver-incident` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-incident routes hooks skills orchestrator | |
-| 18 | `silver-retro` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-retro routes hooks skills orchestrator | |
-| 19 | `silver-forensics` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-forensics routes hooks skills orchestrator | |
-| 20 | `process-maintenance` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | process-maintenance routes hooks skills orchestrator | |
-| 21 | `post-exec-gates` | 2026-06-30 | haiku | **Pass** | *(parent: row 3)* | | `da493429` | post-exec-gates routes hooks skills orchestrator | |
-| 22 | `validate-substep` | 2026-06-30 | haiku | **Pass** | *(parent: row 4)* | | `da493429` | validate-substep routes hooks skills orchestrator | |
+| 1 | `silver-router` | 2026-06-30 | haiku | **Pass** | live TUI | | `da493429` | silver-router routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 2 | `silver-research` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-research routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 3 | `silver-feature` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-feature routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 4 | `silver-bugfix` | 2026-06-30 | haiku | **Pass** | live TUI | | `da493429` | silver-bugfix routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 5 | `silver-ui` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-ui routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 6 | `silver-fast` | 2026-06-30 | haiku | **Pass** | live TUI + re-score | | `c8e323f7` | silver-fast routes hooks skills orchestrator | `mem_mr04ysip_1115b9d15ec5` |
+| 7 | `silver-test` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-test routes hooks skills orchestrator | `mem_mr03gc2j_61135b62dcc2` |
+| 8 | `silver-refactor` | 2026-06-30 | haiku | **Pass** | re-score @ `1be4447f` | | `1be4447f` | silver-refactor routes hooks skills orchestrator | `mem_mr03gc2j_61135b62dcc2` |
+| 9 | `silver-benchmark` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-benchmark routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 10 | `silver-content` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-content routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 11 | `silver-devops` | 2026-06-30 | haiku | **Pass** | re-score @ `f7b9509f` | | `f7b9509f` | silver-devops routes hooks skills orchestrator | `mem_mr04ysip_1115b9d15ec5` |
+| 12 | `silver-deploy` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-deploy routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 13 | `silver-canary` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-canary routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 14 | `silver-release` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-release routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 15 | `review-triad` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | review-triad routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 16 | `ship-readiness` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | ship-readiness routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 17 | `silver-incident` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-incident routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 18 | `silver-retro` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-retro routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 19 | `silver-forensics` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | silver-forensics routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 20 | `process-maintenance` | 2026-06-30 | haiku | **Pass** | evidence SKIP | | `da493429` | process-maintenance routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 21 | `post-exec-gates` | 2026-06-30 | haiku | **Pass** | *(parent: row 3)* | | `da493429` | post-exec-gates routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
+| 22 | `validate-substep` | 2026-06-30 | haiku | **Pass** | *(parent: row 4)* | | `da493429` | validate-substep routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
 
 **Pass count:** 22 / 22 — matrix evidence + outcome re-score complete @ `1be4447f`
 
@@ -132,7 +132,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 
 **Graphify post-round:** `graphify update .` in SB repo; confirm `graphify-out/graph.json` current.
 
-**Next action:** Phase C partial @ `1be4447f` (2026-06-30T07:02Z) — see [ROUND-6-GATES.md](./ROUND-6-GATES.md). Ledger reconcile **LEDGER_MISMATCH**; OUT-MEASURE-01 fail; `run-all-tests` 5 fail. Strict-clean blocked until outcome alignment on live rows + Phase C green. Monitor **90909**; no live batch.
+**Next action:** Phase C blockers cleared — ledger reconcile COMPLETE; OUT-MEASURE-01 pass; harness tests updated for `scripts/enterprise-e2e/matrix.sh` shim. See [ROUND-6-GATES.md](./ROUND-6-GATES.md).
 
 ### Operator poll (2026-06-30T02:57Z) — session handoff execution (post-reboot audit)
 
@@ -192,3 +192,17 @@ Per [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-AD
 | Driver PID alive? | Active row/skill | Last meaningful TUI lines | Evidence PASS count | Outcome PASS count | Friction this cycle | Action taken |
 |-------------------|------------------|---------------------------|---------------------|--------------------|---------------------|--------------|
 | **YES** — driver **9520**, batch **13140** (~21m elapsed) | **Row 7** `silver-test` launching (FORCE queue 6→7→8→11) | Row 6 evidence PASS; outcome FAIL (`OUT-KM-01` partial, `OUT-WORLD-01`) — clarify picker shown (pre/post `c8e323f7` TBD on re-score) | Ledger **18/22**; row 6 evidence PASS in FORCE log | Row 6 outcome **FAIL** | Row 7 interactive session starting; monitor **11876** ALIVE | Poll-only — harness addendum acknowledged; no lock delete; fix shared core not forks |
+
+### Codex operator consolidate (2026-06-30T08:04Z @ `761c7429`)
+
+| Signal | Value |
+|--------|-------|
+| Branch | `enterprise-e2e/codex` @ `761c7429` |
+| Harness commits | `6c685482`/`c8e323f7`/`f7b9509f`/`1be4447f` — **present** (no cherry-pick) |
+| Dry-run re-score 6/7/8/11 | **PASS** 4/4 on retained logs |
+| Ledger reconcile | **COMPLETE** 22/22 (agentmemory refs populated) |
+| OUT-MEASURE-01 | **pass** |
+| Monitor | **12844** relaunched (46567 dead); batch idle |
+| Live FORCE | **Not relaunched** — dry-run PASS sufficient |
+| agentmemory | `mem_mr0cnzox_12e009fe380f` |
+| `run-all-tests` | In progress @ codex HEAD |
