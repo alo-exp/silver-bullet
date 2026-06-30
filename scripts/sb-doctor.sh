@@ -469,6 +469,16 @@ run_doctor_checks() {
     record warn D16 "validate-host-install-surface.sh not found; skipped"
   fi
 
+  # D17 — host-agnostic SB core (repo checkout)
+  local agnostic_script="${REPO_ROOT}/scripts/validate-host-agnostic-core.sh"
+  if [[ -x "$agnostic_script" ]] && bash "$agnostic_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+    record pass D17 "SB core is host-agent agnostic"
+  elif [[ -x "$agnostic_script" ]]; then
+    record fail D17 "host-specific bleed in SB core — run: bash scripts/validate-host-agnostic-core.sh"
+  else
+    record warn D17 "validate-host-agnostic-core.sh not found; skipped"
+  fi
+
   doctor_apply_fixes "$runtime"
 }
 

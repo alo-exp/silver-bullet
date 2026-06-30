@@ -113,7 +113,7 @@ before enabling mandatory enforcement. Consent is stored in `.silver-bullet.json
 **Benefits (present concisely when asking):**
 - Scoped retrieval saves tokens vs broad file reads
 - Team-shared knowledge graph indexes code + docs in the repo
-- Portable across Claude, Codex, and Cursor agents
+- Portable across all supported hosts agents
 
 **Fresh init default:** always start with `enabled_by_user: null` (pending). Do not pre-opt-in
 or pre-opt-out from org defaults or template overrides — the user must explicitly choose each
@@ -167,16 +167,12 @@ Run when `graphify_consent` is `true` AND either:
 ```bash
 if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
   SB_HOST="$SILVER_BULLET_RUNTIME"
-elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]]; then
-  SB_HOST=cursor
-elif [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
-  SB_HOST=codex
-elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.codex/"* ]]; then
-  SB_HOST=codex
-elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ]]; then
-  SB_HOST=cursor
+elif [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
+  SB_HOST="${SILVER_BULLET_RUNTIME}"
 else
-  SB_HOST=claude
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "${PLUGIN_ROOT}/hooks/lib/runtime-paths.sh"
+  SB_HOST="${SILVER_BULLET_RUNTIME}"
 fi
 echo "$SB_HOST"
 ```
@@ -197,13 +193,7 @@ pipx install graphifyy
 
 Re-check `command -v graphify`.
 
-**Step 3b — Skill registration** (before index; upstream [Install Step 2](https://github.com/safishamsi/graphify#install)):
-
-| Host (`SB_HOST`) | Pre-index commands |
-|------------------|-------------------|
-| `claude` | `graphify install --project` |
-| `codex` | `graphify install --project --platform codex` |
-| `cursor` | *(none — Cursor uses post-index `graphify cursor install` only)* |
+**Step 3b — Skill registration:** Read `recommended_tools.graphify.platform_install_commands.<SB_HOST>.pre_index` from `.silver-bullet.json`. Per-runtime matrices: `scripts/lib/host-install-guides/<SB_HOST>.md`.
 
 Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` from `.silver-bullet.json` when present.
 
@@ -214,11 +204,6 @@ graphify update . --no-cluster
 
 **Step 3d — Platform always-on** (after index; per upstream [Make your assistant always use the graph](https://github.com/safishamsi/graphify#make-your-assistant-always-use-the-graph)):
 
-| Host (`SB_HOST`) | Post-index commands | Artifact |
-|------------------|----------------------|----------|
-| `claude` | `graphify claude install --project` | `.codex/settings.json` hooks |
-| `codex` | `graphify codex install --project` | `.codex/hooks.json` |
-| `cursor` | `graphify cursor install` | `.cursor/rules/graphify.mdc` (`alwaysApply: true`, [issue #137](https://github.com/safishamsi/graphify/issues/137#issuecomment-4215764533)) |
 
 Read `platform_install_commands.<host>.post_index` from config when present.
 
@@ -322,9 +307,9 @@ Add agentmemory gitignore block if missing (see `docs/AGENTMEMORY.md`).
 
 | Host | Pre-index | Post-index |
 |------|-----------|------------|
-| `claude` | *(none)* | `agentmemory connect claude-code` |
-| `codex` | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` |
-| `cursor` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (Cursor MCP config) |
+| `<SB_HOST>` | *(none)* | `agentmemory connect (see install guide)` |
+| `<SB_HOST>` | `host plugin marketplace (see install guide) add rohitg00/agentmemory`; `host plugin add agentmemory@agentmemory` | `agentmemory connect (see install guide) --with-hooks` |
+| `<SB_HOST>` | *(none)* | Merge MCP block per `docs/AGENTMEMORY.md` (host MCP config) |
 
 Read `recommended_tools.agentmemory.platform_install_commands.<host>` from config when present.
 
@@ -383,7 +368,7 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 #### Step 2 — Ask when `null`
 
-Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** Codex uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
+Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** secondary host uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
 
 - **Yes** → `enabled_by_user: true`
 - **No** → `enabled_by_user: false`
@@ -394,8 +379,8 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
-3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g --agent cursor`, or `rtk init -g --codex`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — merges hooks, MCP, Cursor `cli-config` allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
 6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
 
@@ -429,11 +414,11 @@ Include ELv2 license disclosure and MCP-value note in the question.
 **OS gate:** Native Windows → suspend with `Windows requires WSL`.
 
 1. **Node >= 22.5** check first
-2. `npm install -g context-mode` (or Claude plugin path per host — see `docs/CONTEXT-MODE.md`)
+2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <cursor|claude|codex|auto>` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, Cursor allow-list, global Cursor `rules/` directory (see `docs/CONTEXT-MODE.md`)
-5. **Scaffold instruction fragment** into `silver-bullet.md` and `CLAUDE.md` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
-6. **Cursor:** copy `context-mode.mdc` to `.cursor/rules/` per upstream (also done by optimize script)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
+5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
+6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install
 8. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
 
@@ -462,11 +447,11 @@ Confirm Silver Bullet is installed for the active host before project init:
 
 | Host | Normal install | Development checkout |
 |------|----------------|----------------------|
-| Claude Code | Add marketplace `https://github.com/alo-labs/claude-plugins`, then `/plugin install silver-bullet@alo-labs` | `bash scripts/install-claude.sh` |
-| Codex | Public `alo-labs/codex-plugins` marketplace via `bash scripts/install-codex.sh --public-release` | `bash scripts/install-codex.sh --purge-legacy-skills` |
-| Cursor | Add marketplace `https://github.com/alo-labs/alo-labs-cursor-marketplace`, install `silver-bullet`, or run `bash scripts/install-cursor.sh --public-release` | `bash scripts/install-cursor.sh` |
+| the active host agent | Add marketplace `https://github.com/host marketplace (install guide)`, then `/plugin install silver-bullet@alo-labs` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
+| secondary host | Public `host marketplace (install guide)` marketplace via `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --purge-legacy-skills` |
+| task host | Add marketplace `https://github.com/alo-labs/host marketplace (install guide)`, install `silver-bullet`, or run `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --public-release` | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
 
-**Cursor orchestrator rule (Cursor hosts only):** On init, copy `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1 and Phase 3 step 3.2.1).
+**Orchestrator parent rule (active host):** On init, copy `scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc` → `host rules path (see install guide) silver-orchestrator.mdc` (see `references/scaffold-steps.md` §3.2.1 and Phase 3 step 3.2.1).
 
 After install, `bash scripts/sb-bootstrap.sh` (onboarding) or
 `bash scripts/sb-diagnostics.sh` (capability probe) confirms hook delivery and
@@ -481,7 +466,7 @@ SB-owned. Continue initialization without those plugins.
 ### 1.6 Runtime-aware bootstrap
 
 Keep bootstrap terminology aligned to the current runtime:
-- In Codex, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
+- On this runtime, refer to the local agent instruction surface as a project instruction file and avoid runtime-specific model-routing jargon.
 - Per-host project instruction filenames and skill invocation channels are documented in `docs/RUNTIME-COMPATIBILITY.md`.
 - If the runtime already implies the approval model, do not ask the user to restate it; only prompt when detection genuinely fails.
 - If a legacy lifecycle plugin is present but flaky, do not fail bootstrap. SB-owned lifecycle
@@ -701,7 +686,7 @@ ls -d src/ app/ lib/ includes/ admin/ public/ packages/*/src/ modules/*/src/ wp-
 ### 2.6 Runtime and repo metadata defaults
 
 If the current runtime and repo metadata already imply an answer, use it without prompting:
-- Codex runtime → keep prompts runtime-neutral and use the current approval model instead of asking the user to restate it
+- active runtime → keep prompts runtime-neutral and use the current approval model instead of asking the user to restate it
 - GitHub remote/hosting metadata → set `issue_tracker` to `github`
 - Local-only / non-GitHub repo → set `issue_tracker` to `local`
 - Only ask when the runtime, remote, or approval state is genuinely ambiguous
@@ -820,11 +805,11 @@ See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 Execute these steps in order. Full detail for each step is in `references/scaffold-steps.md`.
 
 - **3.1a Write `silver-bullet.md`** from template with `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` substitutions.
-- **3.1b Handle optional project instruction file**: if a project instruction file already exists, reconcile it non-destructively. If it does not exist, do not create one during Codex initialization; Silver Bullet does not require a project instruction file to be present.
+- **3.1b Handle optional project instruction file**: if a project instruction file already exists, reconcile it non-destructively. If it does not exist, do not create one during secondary host initialization; Silver Bullet does not require a project instruction file to be present.
 
 - **3.1c Conflict resolution** (only when an existing project instruction file is present — no silent override guarantee):
 
-  **3.1c-1 Build the section inventory.** Use the active runtime file-reading mechanism to load `${PLUGIN_ROOT}/templates/CLAUDE.md.base` (host-neutral project instruction template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
+  **3.1c-1 Build the section inventory.** Use the active runtime file-reading mechanism to load `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base` (host-neutral project instruction template). Parse both the existing project instruction file and the template into named sections. A "section" is any `##` or `###` heading and its content. Also treat the preamble (text before the first heading) as a section named "Preamble". For each section, check whether the template contains a corresponding section with the same heading.
 
   **3.1c-2 Categorize each section:**
   - **SB-owned** (same heading exists in both existing and template): potential conflict — needs user decision. If the content is identical, preserve as-is (no prompt needed).
@@ -855,11 +840,11 @@ Execute these steps in order. Full detail for each step is in `references/scaffo
   **3.1c-6 Ensure the reference line** `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` is present at the top of the final project instruction file. If absent, prepend it. Do not duplicate it if already present.
 
   **Non-destructive guarantee**: Steps 3.1c-3 through 3.1c-5 together ensure that no project instruction file section is silently removed or overwritten without explicit user confirmation. User-owned sections (step 3.1c-2) are always preserved without prompting.
-- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers .cursor/rules`.
+- **3.2 Create dirs**: `mkdir -p docs/specs docs/workflows .silver-bullet/orchestrator-workers host rules directory (install guide)`.
 - **3.2.1 Orchestrator surface (parent mode)**: when `orchestrator_mode` is `parent` (default), install mechanical orchestrator artifacts idempotently:
   1. Copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/` (skip existing files).
   2. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
-  3. **Cursor only:** copy `templates/cursor-rules/silver-orchestrator.mdc` → `.cursor/rules/silver-orchestrator.mdc`.
+  3. **When orchestrator parent applies:** copy `scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc` → `host rules path (see install guide) silver-orchestrator.mdc`.
   See `references/scaffold-steps.md` §3.2.1–3.2.2 for full commands.
 - **3.2.2 Interface design state (UI/frontend projects)**: when the detected
   stack or workflow indicates a UI surface (React/Vue/Angular/Svelte/Flutter,
@@ -907,5 +892,5 @@ Never use “fully enforced” unless tier ≥ 2 is confirmed.
 
 ### Scripts
 
-- **`scripts/merge-hooks.py`** — Host global settings hook merge for Phase 3.7.5
-- **`scripts/merge-cursor-hooks.py`** — Cursor host hooks manifest merge for Phase 3.7.5
+- **`scripts/lib/install-<runtime>/merge-hooks.py`** — Host global settings hook merge for Phase 3.7.5
+- **`scripts/lib/install-<runtime>/merge-hooks.py`** — task host host hooks manifest merge for Phase 3.7.5

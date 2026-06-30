@@ -164,8 +164,9 @@ After all fixes from Stages 1–4a:
 2. Invoke `/silver:verify` (release scope) and `/silver:completion-audit` (release claim)
 3. Run pre-release feature overlay + tri-host install smoke:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke`
-4. Run mandatory tri-host skill surface + routing smoke (isolated env per host):
-   `CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh`
+4. Run mandatory tri-host skill surface + routing smoke (isolated env per host;
+   includes `validate-host-agnostic-core.sh`):
+   `HOST_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh`
    Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
    Isolation: fake `HOME`, `CURSOR_CONFIG_DIR`, `--plugin-dir`, `--workspace`.
 5. Run outcome validation overlay dry-run:
@@ -219,14 +220,20 @@ Full Claude/native-Codex parity is optional diagnostic coverage.
 Mandatory tri-host skill surface + routing smoke (before live matrix):
 
 ```bash
-CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+HOST_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
 ```
 
-Isolated temp homes per host; Cursor CLI auth via `CURSOR_API_KEY` +
-`AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Cursor isolation uses
-official mechanisms only: fake `HOME`, `CURSOR_CONFIG_DIR`, `--plugin-dir`, and
-`--workspace` (no undocumented `~/.cursor` redirects). Writes
+Isolated temp homes per host; host CLI auth via `HOST_API_KEY` +
+`AGENT_CLI_CREDENTIAL_STORE=memory` (never macOS Keychain). Host isolation uses
+official mechanisms only: fake `HOME`, host config dir, `--plugin-dir`, and
+`--workspace` (no undocumented host config redirects). Writes
 `${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke` on success.
+
+Structural stages inside the smoke script (mandatory):
+
+- `scripts/validate-host-agnostic-core.sh` — SB core must not embed foreign host references
+- `scripts/validate-host-install-surface.sh` — per-host bundle layout
+- `scripts/validate-host-skill-surface.sh` — namespaced skill surfaces
 
 Cursor install/hook smoke (included above): `release-live-matrix-cursor-smoke.sh`
 writes `matrix=cursor-smoke` when enabled.
