@@ -117,3 +117,21 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 **Harness fixes (8feda5fc):** multi-host orchestrator state; cursor headless worker-completion for OUT-HANDOFF-01/OUT-SUPER-01; matrix OUT-KM-01 gref pass; STALE OUT-MEASURE-01 tolerance; recursive internal-gate verify + row 3/4 seed for 21–22.
 
 **Status:** in flight — row 3 `silver-feature` launched 2026-07-01T03:21Z
+
+---
+
+## Retry #2 completion (2026-07-01 ~07:57 AEST)
+
+**Batch:** tmux `cursor-e2e-retry2` ended after **~4h05m** (PID 98939 exited). No `Matrix summary` in log file (tee never flushed to disk).
+
+**Agent-row evidence PASS (tmux):** 3, 4, 6, 7, 12, 14, 15, 16, 18 (`docs/DEPLOY.md`, ship-readiness, triad, etc.)
+
+**Agent-row FAIL:** 20 (1800s timeout in `.e2e-row20-cursor-attempt.log`)
+
+**Outcome checklist verdicts (authoritative):** **6 / 22 PASS** — rows 1, 2, 5, 8, 11, 19. Retry2 re-ran outcomes for 12, 14, 15, 16 (all FAIL). Rows 9, 10, 13, 17 regressed (likely parallel codex batch).
+
+**Internal rows 21–22:** markers only in `.planning/workflows/.archive/` — recursive `verify_row_internal` passes; live parent files still missing seeds.
+
+**E2E-089 follow-up:** MEASURE `LEDGER_MISMATCH` matrix tolerance + row-15 triad `OUT-REVIEW-01` pass (committed post-batch); remaining friction: sparse cursor row logs, session `OUT-AUTO-01`/`OUT-HOOK-01` on noisy logs.
+
+**Net vs baseline 10/22:** regression to **6/22** on outcome files (codex contamination); retry2 evidence suggests more rows completed but outcome scorer still blocks.
