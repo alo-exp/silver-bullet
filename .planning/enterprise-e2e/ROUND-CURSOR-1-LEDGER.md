@@ -50,18 +50,18 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | Rung | Model / reasoning | Cursor slug | audit_fix | verify_1 | orchestrator grep | verify_2 | Advanced |
 |------|-------------------|-------------|-----------|----------|-------------------|----------|----------|
-| 1 | | | | | | | |
-| 2 | | | | | | | |
-| 3 | | | | | | | |
-| 4 | | | | | | | |
-| 5 | | | | | | | |
+| 1 | composer-2.5 / low | composer-2.5 | | PASS | | | |
+| 2 | composer-2.5 / medium | composer-2.5 | | PASS | | | |
+| 3 | composer-2.5 / high | composer-2.5 | | PASS | | | |
+| 4 | composer-2.5 / xhigh | composer-2.5 | | PASS | | | |
+| 5 | gpt-5.5 / low | gpt-5.5 | | IN PROGRESS | | | |
 | 6 | | | | | | | |
 | 7 | | | | | | | |
 | 8 | | | | | | | |
 
-**Ladder progress:** ___ / 8 rungs complete
+**Ladder progress:** 4 / 8 rungs complete (verify_1); rung 5 in flight (tmux `cursor-ladder`)
 
-**Strict-clean Phase A:** requires `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0`, `CURSOR_API_KEY`, and live API turns — not resolver-only structural smoke.
+**Strict-clean Phase A:** requires `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0` and live API turns — not resolver-only structural smoke. ~~`CURSOR_API_KEY`~~ **not required** for live ladder/matrix when `agent` is Keychain-authenticated (`cursor-agent status`). API key + `AGENT_CLI_CREDENTIAL_STORE=memory` only for isolated `pre-release-cursor-cli-smoke.sh`.
 
 ---
 
@@ -69,7 +69,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | | | | | | | | |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | IN PROGRESS | | | | graphify query silver-router | agentmemory pending |
 | 2 | `silver-research` | | | | | | | | |
 | 3 | `silver-feature` | | | | | | | | |
 | 4 | `silver-bugfix` | | | | | | | | |
