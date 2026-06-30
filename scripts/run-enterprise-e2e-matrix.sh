@@ -13,6 +13,8 @@ source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"
 sb_prepend_harness_path
+# shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 # shellcheck disable=SC2034  # documented matrix doc path for operators
@@ -54,6 +56,9 @@ else
   export CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-arrow}"
 fi
 claude_matrix_export_settings_env
+if declare -f enterprise_e2e_prepare_matrix_mcp_env >/dev/null 2>&1; then
+  enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
+fi
 
 # shellcheck source=scripts/lib/matrix-quota.sh
 source "${SB_ROOT}/scripts/lib/matrix-quota.sh"
@@ -455,9 +460,18 @@ main() {
   echo ""
 
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" != "1" ]]; then
+  local _matrix_batch_pid_file=""
+  if declare -f enterprise_e2e_matrix_batch_pid_file >/dev/null 2>&1; then
+    _matrix_batch_pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
+    printf '%s\n' "$$" >"$_matrix_batch_pid_file"
+  fi
   bootstrap_claude_dependencies || true
   setup_workspace
-  trap cleanup_workspace EXIT
+  if [[ -n "$_matrix_batch_pid_file" ]]; then
+    trap 'rm -f "$_matrix_batch_pid_file"; cleanup_workspace' EXIT
+  else
+    trap cleanup_workspace EXIT
+  fi
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
