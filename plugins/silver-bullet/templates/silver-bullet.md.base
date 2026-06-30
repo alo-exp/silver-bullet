@@ -18,6 +18,7 @@ At the very start of any new session, perform these steps automatically:
 5. **Check for updates** — after context compaction, before starting work, run version checks:
 
    **5.1 Silver Bullet**
+   The SessionStart hook (`session-start`) performs this check deterministically on `startup` and `clear` events: it reads `installed_plugins.json`, compares semver to GitHub latest, and injects the A/B prompt below when installed < latest. Honor the injected prompt when present; otherwise run:
    ```bash
    cat "$HOME/.codex/plugins/installed_plugins.json" | jq -r '.plugins["silver-bullet@alo-labs"][0].version // .plugins["silver-bullet@silver-bullet"][0].version // "unknown"'
    curl -s https://api.github.com/repos/alo-exp/silver-bullet/releases/latest | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/'
@@ -56,7 +57,7 @@ At the very start of any new session, perform these steps automatically:
 
 Twelve enforcement layers enforce compliance:
 
-1. **Skill tracker** (Claude Skill event or Codex `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
+1. **Skill tracker** (PostToolUse/Skill or Codex invoke-skill receipt or host `silver-bullet invoke-skill`) — Records every supported Silver Bullet skill invocation to the state file
 2. **Stage enforcer** (Pre+PostToolUse/Edit|Write|Bash) — HARD STOP if planning skills incomplete before source edits
 3. **Compliance status** (PostToolUse/all) — Shows workflow progress on every tool use (informational)
 4. **Planning file guard** (PreToolUse/Edit|Write|MultiEdit) — `planning-file-guard.sh` blocks direct edits to SB-managed planning artifacts (ROADMAP.md, STATE.md, etc.); forces use of the owning SB skill or workflow
@@ -332,10 +333,10 @@ lifts hook blocks until the next init/update retry succeeds.
 2. If Graphify is installed but has no graph yet, run `graphify update . --no-cluster` —
    substantive work is blocked until the index exists.
 3. After CLI install, run platform registration from the project root in upstream order (detect host via
-   `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars):
-   - **Pre-index skill:** Claude `graphify install --project`; Codex `graphify install --project --platform codex`; OpenCode `graphify install --project --platform opencode`; Goose `graphify install --project --platform pi`; Hermes `graphify install --project --platform hermes`; Cursor skip
+   `SILVER_BULLET_RUNTIME`, `SB_PLUGIN_ROOT`, or host env vars):
+   - **Pre-index skill:** Host `graphify install --project`; Host `graphify install --project --platform <runtime>`; OpenCode `graphify install --project --platform opencode`; Goose `graphify install --project --platform pi`; Hermes `graphify install --project --platform hermes`; orchestrator-capable hosts: skip pre-index
    - **Index:** `graphify update . --no-cluster`
-   - **Post-index always-on:** Claude `graphify claude install --project`; Codex `graphify codex install --project`; Cursor `graphify cursor install` (writes `.cursor/rules/graphify.mdc`); OpenCode/Goose/Hermes use project skill + hooks or `AGENTS.md` (see `docs/GRAPHIFY.md`)
+   - **Post-index always-on:** Host `graphify host install (see install guide) --project`; Host `graphify host install (see install guide) --project`; Host `graphify host install (see install guide)` (writes `host rules path (see install guide) graphify.mdc`); OpenCode/Goose/Hermes use project skill + hooks or `AGENTS.md` (see `docs/GRAPHIFY.md`)
    - **Optional:** `graphify hook install` for auto-rebuild on commit
 
 **When opted out or consent pending:**
@@ -370,11 +371,11 @@ See `docs/AGENTMEMORY.md`.
 
 SB recommends **RTK** and **Context Mode** as **separate** opt-in tools (`recommended_tools.rtk` and `recommended_tools.context_mode`). They complement Graphify (retrieval) and agentmemory (capture) — no evidence-tier conflict; see `docs/code-intelligence-contract.md`.
 
-**RTK (`recommended_tools.rtk`):** When opted in and not suspended, hooks verify rtk-ai/rtk CLI (v0.4x, `rtk gain --help`) and host PreToolUse wiring. Shell compression is **automatic** once wired — SB does not rewrite Bash. Wrong binary (`reachingforthejack/rtk`) is rejected. Codex relies on AGENTS.md awareness; live rewrite requires upstream `updatedInput` support.
+**RTK (`recommended_tools.rtk`):** When opted in and not suspended, hooks verify rtk-ai/rtk CLI (v0.4x, `rtk gain --help`) and host PreToolUse wiring. Shell compression is **automatic** once wired — SB does not rewrite Bash. Wrong binary (`reachingforthejack/rtk`) is rejected. Some hosts rely on AGENTS.md awareness; live rewrite requires upstream `updatedInput` support.
 
 **Context Mode (`recommended_tools.context_mode`):** When opted in and not suspended, hooks verify Node >= 22.5, CLI/plugin install, MCP/hooks wiring, and the instruction fragment in project docs. The agent **must** follow the scaffolded hint for files > 5 KB and MCP-heavy results — this is **instructionally mandatory**, not Read-size hook blocking. ELv2 license applies — see `recommended_tools.context_mode.license_note`. **Restart the agent** after plugin/MCP changes.
 
-Install and wiring: `docs/RTK.md`, `docs/CONTEXT-MODE.md`. Verification: `bash scripts/enable-rtk-context-mode.sh`. Cursor always-on rules: `.cursor/rules/recommended-tools.mdc`.
+Install and wiring: `docs/RTK.md`, `docs/CONTEXT-MODE.md`. Verification: `bash scripts/enable-rtk-context-mode.sh`. Host always-on rules: `host rules path (see install guide) recommended-tools.mdc`.
 
 <!-- BEGIN context-mode hint (do not edit) -->
 ## Context Mode usage
@@ -385,7 +386,7 @@ When reading large files, MCP results, or web fetches:
 - For Playwright snapshots, web fetches, and other MCP tool results: use `ctx_execute` to run a sandboxed script that processes the result and only returns relevant `console.log` lines.
 - For batch reads (5+ files): use `ctx_batch_execute` instead of N separate reads.
 
-If a call returns "tool not found", run Context Mode doctor in a live session to confirm the exact tool prefix for your host, or use slash commands where available (`/ctx-index`, `/ctx-search` on Claude Code).
+If a call returns "tool not found", run Context Mode doctor in a live session to confirm the exact tool prefix for your host, or use slash commands where available (`/ctx-index`, `/ctx-search` on the active host agent).
 
 For everything else, use your normal tools. RTK handles shell command output automatically when RTK is opted in and wired.
 <!-- END context-mode hint (do not edit) -->
@@ -916,7 +917,7 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 | **InstaDecks** | [alo-exp/instadecks](https://github.com/alo-exp/instadecks) | Presentation generation (`zuvo:presentation` parity) | **Deferred** |
 | **MultAI** | multai plugin | Multi-AI research perspectives when user-requested | Optional (existing) |
 
-**Alumnium integration contract:** When Alumnium MCP is configured, SB may invoke it for natural-language browser actions (`do`), assertions (`check`), data extraction (`get`), and waits (`wait`) against a running app or mockup URL. Alumnium wraps Playwright, Selenium, or Appium via accessibility trees and optional screenshots — it augments SB skills; it does not replace them. Install: `claude mcp add alumnium --env OPENAI_API_KEY=... -- npx alumnium mcp` (or `uvx alumnium mcp`; provider keys per [Alumnium docs](https://alumnium.ai/docs)). Do not block core workflows when Alumnium is absent.
+**Alumnium integration contract:** When Alumnium MCP is configured, SB may invoke it for natural-language browser actions (`do`), assertions (`check`), data extraction (`get`), and waits (`wait`) against a running app or mockup URL. Alumnium wraps Playwright, Selenium, or Appium via accessibility trees and optional screenshots — it augments SB skills; it does not replace them. Install: `host mcp add (see install guide) alumnium --env OPENAI_API_KEY=... -- npx alumnium mcp` (or `uvx alumnium mcp`; provider keys per [Alumnium docs](https://alumnium.ai/docs)). Do not block core workflows when Alumnium is absent.
 
 **Browser evidence fallback hierarchy** (visual companion, `silver:ui-review`, `silver:verify` UAT):
 
@@ -1002,7 +1003,7 @@ Last updated: 2026-05-06
 
 ## 10. Multi-Agent Coordination (v0.29.0+)
 
-Any number of SB-bearing coding agents (Claude-SB, Codex-SB, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
+Any number of SB-bearing coding agents (SB-enabled agents, OpenCode-SB, …) may cooperate on the same project folder. The invariant is **one phase = one runtime at a time**.
 
 ### Runtime contract for the main agent
 

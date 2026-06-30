@@ -77,13 +77,13 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 python3 scripts/multi-ai-task-models.py --json
 ```
 
-This uses the **same model inventory as `/silver:review-fix-ladder`** for the active host (`claude`, `codex`, or `cursor`) but pins **reasoning effort to `medium` only**. Print `host`, `plan`, and the resolved model list before dispatching.
+This uses the **same model inventory as `/silver:review-fix-ladder`** for the active host (from `SILVER_BULLET_RUNTIME`) but pins **reasoning effort to `medium` only**. Print `host`, `plan`, and the resolved model list before dispatching.
 
 | Host | Source | Notes |
 |------|--------|-------|
-| **cursor** | Fixed ladder set | Same models as review-fix-ladder; use cursor Task slug when dispatching |
-| **codex** | `models_cache.json` or fallback | Excludes `gpt-5.4-mini`; medium rung per model |
-| **claude** | Fallback chain | `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-opus-4-8` @ medium |
+| **task host** | Fixed ladder set | Same models as review-fix-ladder; use task host Task slug when dispatching |
+| **api host** | `models_cache.json` or fallback | Excludes `gpt-5.4-mini`; medium rung per model |
+| **primary host** | Fallback chain | `primary-model`, `primary host-opus-4-7`, `primary host-opus-4-8` @ medium |
 
 **OpenCode Go (OCG) plan:** when `~/.config/opencode/opencode.json(c)` defines `agent.*.model` entries under `opencode-go/*`, those models are preferred for parallel dispatch (Mechanism 1 / Mechanism 2). **Prerequisite:** each OCG model needs a pre-defined agent entry — the `task` tool does not accept per-call `model`. Example:
 
@@ -312,4 +312,4 @@ A self-review run (also on 2026-06-27) used the skill recursively to review itse
 
 - `silver-bullet` — for managing the SDLC workflow that may consume `silver:multi-ai-task` outputs
 - `find-skills` — to discover other SB skills
-- For a deep 8-phase research methodology (when invoking a per-model prompt for research), use Claude's `deep-research` skill if available, or inline the methodology in the dispatch prompt
+- For a deep 8-phase research methodology (when invoking a per-model prompt for research), use the host `deep-research` skill skill if available, or inline the methodology in the dispatch prompt
