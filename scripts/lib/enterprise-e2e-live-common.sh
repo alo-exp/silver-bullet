@@ -26,6 +26,102 @@ enterprise_e2e_matrix_log() {
   printf '%s\n' "${SB_E2E_MATRIX_LOG:-${SB_ROOT}/.e2e-matrix-live.log}"
 }
 
+enterprise_e2e_matrix_batch_pid_file() {
+  printf '%s\n' "${SB_E2E_MATRIX_BATCH_PID_FILE:-${SB_ROOT}/.e2e-matrix-batch.pid}"
+}
+
+enterprise_e2e_matrix_batch_pid() {
+  local pid_file pid
+  pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
+  [[ -f "$pid_file" ]] || return 1
+  pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
+  [[ -n "$pid" ]] || return 1
+  printf '%s\n' "$pid"
+}
+
+enterprise_e2e_matrix_batch_running() {
+  local pid
+  pid="$(enterprise_e2e_matrix_batch_pid 2>/dev/null || true)"
+  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
+}
+
+# Keep matrix log path on disk while a batch holds an open tee fd.
+# Operators must not rm/truncate the log mid-run; recreate the pathname if unlinked.
+enterprise_e2e_ensure_matrix_log() {
+  local log_path="${1:-$(enterprise_e2e_matrix_log)}"
+  local log_dir driver_log bytes
+
+  log_dir="$(dirname "$log_path")"
+  mkdir -p "$log_dir"
+
+  if [[ -e "$log_path" ]]; then
+    return 0
+  fi
+
+  driver_log="${SB_E2E_MATRIX_DRIVER_LOG:-}"
+  if enterprise_e2e_matrix_batch_running; then
+    if [[ -n "$driver_log" && -f "$driver_log" ]]; then
+      echo "WARN: matrix log unlinked during active batch — symlink ${log_path} -> ${driver_log}" >&2
+      ln -sf "$(basename "$driver_log")" "$log_path"
+      return 0
+    fi
+    echo "WARN: matrix log missing during active batch — recreating ${log_path} (tee fd may still hold bytes)" >&2
+    touch "$log_path"
+    return 0
+  fi
+
+  touch "$log_path"
+}
+
+# Refuse truncate/delete while batch driver is alive (harness guard).
+enterprise_e2e_assert_matrix_log_mutable() {
+  local log_path="${1:-$(enterprise_e2e_matrix_log)}"
+  if enterprise_e2e_matrix_batch_running; then
+    echo "ERROR: refusing to truncate/delete matrix log ${log_path} while batch is running" >&2
+    echo "       Stop the driver or wait for batch exit; tail row attempt logs meanwhile." >&2
+    return 1
+  fi
+  return 0
+}
+
+enterprise_e2e_matrix_log_bytes() {
+  local log_path="${1:-$(enterprise_e2e_matrix_log)}"
+  local bytes fallback row_log row
+
+  enterprise_e2e_ensure_matrix_log "$log_path"
+  bytes="0"
+  if [[ -f "$log_path" && ! -L "$log_path" ]]; then
+    bytes="$(wc -c <"$log_path" 2>/dev/null | tr -d ' ' || echo 0)"
+  elif [[ -L "$log_path" ]]; then
+    fallback="$(readlink "$log_path" 2>/dev/null || true)"
+    if [[ -n "$fallback" && -f "$(dirname "$log_path")/${fallback}" ]]; then
+      bytes="$(wc -c <"$(dirname "$log_path")/${fallback}" 2>/dev/null | tr -d ' ' || echo 0)"
+    fi
+  fi
+
+  if [[ "${bytes:-0}" -gt 0 ]]; then
+    printf '%s\n' "$bytes"
+    return 0
+  fi
+
+  fallback="${SB_E2E_MATRIX_LOG_FALLBACK:-${SB_E2E_MATRIX_DRIVER_LOG:-}}"
+  if [[ -n "$fallback" && -f "$fallback" ]]; then
+    bytes="$(wc -c <"$fallback" 2>/dev/null | tr -d ' ' || echo 0)"
+    if [[ "${bytes:-0}" -gt 0 ]]; then
+      printf '%s\n' "$bytes"
+      return 0
+    fi
+  fi
+
+  # Last resort: sum row attempt logs when canonical log is unlinked (0-byte stat).
+  for row in $(enterprise_e2e_all_row_nums); do
+    row_log="${SB_ROOT}/.e2e-row${row}-attempt.log"
+    [[ -f "$row_log" ]] || continue
+    bytes=$((bytes + $(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)))
+  done
+  printf '%s\n' "${bytes:-0}"
+}
+
 enterprise_e2e_ledger_file() {
   printf '%s\n' "${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 }
@@ -219,6 +315,79 @@ enterprise_e2e_prepend_harness_path() {
     source "${sb_root}/tests/live/lib/detach-background.sh"
     sb_prepend_harness_path
   fi
+}
+
+# Suppress Claude TUI MCP OAuth banner during enterprise matrix (token gateway auth).
+# Disables unauthenticated plugin MCP servers so the TUI reaches the ❯ prompt and accrues tokens.
+enterprise_e2e_prepare_matrix_mcp_env() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local mcp_cache="${HOME}/.claude/mcp-needs-auth-cache.json"
+  local claude_bin="${CLAUDE_BIN:-${HOME}/.local/bin/claude}"
+  mkdir -p "${fixture_dir}/.claude" "$(dirname "$mcp_cache")"
+  python3 - "$mcp_cache" "${fixture_dir}/.claude/settings.local.json" "$claude_bin" <<'PY'
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+mcp_cache_path = Path(sys.argv[1])
+settings_path = Path(sys.argv[2])
+claude_bin = sys.argv[3]
+home = Path(os.environ.get("HOME", ""))
+names: set[str] = set()
+
+def add_name(name: str) -> None:
+    name = (name or "").strip()
+    if name:
+        names.add(name)
+
+for cfg in (home / ".claude.json", home / ".cursor" / "mcp.json"):
+    if not cfg.is_file():
+        continue
+    try:
+        data = json.loads(cfg.read_text())
+        for key in (data.get("mcpServers") or {}).keys():
+            add_name(key)
+    except (OSError, json.JSONDecodeError):
+        pass
+
+if Path(claude_bin).is_file():
+    try:
+        proc = subprocess.run(
+            [claude_bin, "mcp", "list"],
+            capture_output=True,
+            text=True,
+            timeout=90,
+            env=os.environ.copy(),
+        )
+        text = (proc.stdout or "") + (proc.stderr or "")
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("Checking "):
+                continue
+            m = re.match(r"^(plugin:.+?):\s+(?:https?://|\(HTTP)", line)
+            if m:
+                add_name(m.group(1))
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+ts = int(time.time())
+cache = {name: {"timestamp": ts} for name in sorted(names)}
+mcp_cache_path.parent.mkdir(parents=True, exist_ok=True)
+mcp_cache_path.write_text(json.dumps(cache, indent=2) + "\n")
+
+settings_path.parent.mkdir(parents=True, exist_ok=True)
+payload = {
+    "permissions": {"defaultMode": "auto"},
+    "enableAllProjectMcpServers": False,
+    "disabledMcpjsonServers": sorted(names),
+}
+settings_path.write_text(json.dumps(payload, indent=2) + "\n")
+print(f"matrix MCP env: disabled {len(names)} server(s) for TUI")
+PY
 }
 
 enterprise_e2e_export_live_defaults() {

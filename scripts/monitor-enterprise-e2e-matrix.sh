@@ -105,6 +105,7 @@ claude_child_lines() {
 
 current_row_from_log() {
   local row
+  enterprise_e2e_ensure_matrix_log "$MATRIX_LOG" 2>/dev/null || true
   row="$(grep -E '^=== Row [0-9]+:' "$MATRIX_LOG" 2>/dev/null | tail -1 | sed -n 's/^=== Row \([0-9]*\):.*/\1/p')"
   if [[ -n "$row" ]]; then
     printf '%s\n' "$row"
@@ -121,6 +122,10 @@ row_attempt_log() {
 }
 
 log_bytes() {
+  if declare -f enterprise_e2e_matrix_log_bytes >/dev/null 2>&1; then
+    enterprise_e2e_matrix_log_bytes "$1"
+    return 0
+  fi
   [[ -f "$1" ]] && wc -c <"$1" | tr -d ' ' || echo 0
 }
 

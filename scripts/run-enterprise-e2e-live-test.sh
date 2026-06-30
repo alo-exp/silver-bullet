@@ -159,7 +159,7 @@ MATRIX_ARGS=()
 if ((${#REQUESTED_ROWS[@]} > 0)); then
   MATRIX_ARGS=("${REQUESTED_ROWS[@]}")
 else
-  touch "$MATRIX_LOG"
+  enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
   if [[ "$RESUME" == "1" ]] || enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE" | grep -q .; then
     inc=()
     enterprise_e2e_read_lines_to_array inc enterprise_e2e_incomplete_rows "$MATRIX_LOG" "$LEDGER_FILE"
@@ -218,6 +218,9 @@ start_harness_background \
   "$WATCH_PID_FILE"
 
 echo ""
+enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
+enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
+
 echo "--- Launching interactive matrix (live) ---"
 echo "Log: ${MATRIX_LOG}"
 echo "Tail: tail -f ${MATRIX_LOG}"
