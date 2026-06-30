@@ -119,11 +119,38 @@ if [[ -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
     echo "FAIL: routing row marker pairs with enterprise matrix env"
     ((FAIL++)) || true
   fi
+  unset SB_E2E_ENTERPRISE_MATRIX
+  unset SB_E2E_MATRIX_ROUTING_ROW
+  if sb_e2e_matrix_routing_row_active; then
+    echo "PASS: routing row marker active without enterprise matrix env (hook spawn)"
+    ((PASS++)) || true
+  else
+    echo "FAIL: routing row marker active without enterprise matrix env (hook spawn)"
+    ((FAIL++)) || true
+  fi
   sb_e2e_matrix_clear_routing_row_marker
   unset SB_E2E_ENTERPRISE_MATRIX
 else
   echo "FAIL: e2e-matrix-routing.sh helper missing"
   ((FAIL++)) || true
+fi
+
+SUBAGENT_HOOK="${REPO_ROOT}/hooks/subagent-stop-enforcement.sh"
+if [[ -x "$SUBAGENT_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]]; then
+  # shellcheck source=hooks/lib/e2e-matrix-routing.sh
+  source "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh"
+  export SB_RUNTIME_STATE_DIR="$STATE_DIR/home/.claude/.silver-bullet"
+  mkdir -p "$SB_RUNTIME_STATE_DIR"
+  sb_e2e_matrix_set_routing_row_marker
+  sub_out="$(printf '%s' '{"hook_event_name":"Stop"}' | HOME="$HOME" SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash "$SUBAGENT_HOOK" 2>/dev/null || true)"
+  if ! printf '%s' "$sub_out" | grep -qE '"decision"\s*:\s*"block"'; then
+    echo "PASS: subagent-stop exempt when routing row marker set"
+    ((PASS++)) || true
+  else
+    echo "FAIL: subagent-stop exempt when routing row marker set"
+    ((FAIL++)) || true
+  fi
+  sb_e2e_matrix_clear_routing_row_marker
 fi
 
 echo ""
