@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.49.1] — 2026-07-01
+
+## Bug Fixes
+- `fix(ci): restore create-release marketplace git-add paths` (fa47e747)
+- `fix(ci): seed graphify config in outcome assessment fixture` (28527b61)
+- `fix(ci): use temp fixture when enterprise app path absent` (de78be98)
+- `fix(ci): allow merge-cursor-hooks refs in host-agnostic scan` (201857a3)
+- `fix(ci): sync site v0.49.0 and silver-migrate Cursor hook docs` (42fb4923)
+- `fix(ci): codex runtime state pinning and sb-doctor test paths` (bad9a7c9)
+- `fix(ci): align bundle tests with host-bundles layout and test bugs` (33e9523d)
+- `fix(ci): resolve ShellCheck warnings blocking CI on main` (54ca5029)
+- `fix(release): unblock v0.49.0 CI and Claude plugin install` (066806cf)
+
+## Tests
+- `test: align recommended-tools contracts with skill reference split` (db5d31d1)
+- `test: point silver-init agentmemory checks at reference doc` (c7276f5a)
+
+---
+
 ## [0.49.0] — 2026-07-01
 
 ## Features
