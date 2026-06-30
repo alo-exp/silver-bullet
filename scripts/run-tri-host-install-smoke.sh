@@ -58,7 +58,16 @@ smoke_codex() {
   trap 'rm -rf "$tmp_home"' RETURN
 
   smoke_pass "codex: isolated HOME ${tmp_home}"
-  if bash "${REPO_ROOT}/scripts/install-codex.sh" >/dev/null 2>&1; then
+  local attempt=0 install_ok=0
+  while [[ $attempt -lt 3 ]]; do
+    if bash "${REPO_ROOT}/scripts/install-codex.sh" >/dev/null 2>&1; then
+      install_ok=1
+      break
+    fi
+    attempt=$((attempt + 1))
+    sleep 2
+  done
+  if [[ $install_ok -eq 1 ]]; then
     smoke_pass "codex: install-codex.sh"
   else
     smoke_fail "codex: install-codex.sh"
