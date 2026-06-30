@@ -373,6 +373,55 @@ else
 fi
 unset SB_E2E_LIVE_RUNTIME SILVER_BULLET_RUNTIME SB_E2E_LIVE_TEST_LOCK_FILE
 
+# --- Consecutive strict-clean round pair (P2 harness) ---
+CONSEC_CHECK="${REPO_ROOT}/scripts/lib/enterprise-e2e-consecutive-rounds-check.sh"
+assert_executable "$CONSEC_CHECK" "consecutive rounds check script executable"
+CONSEC_TMP="$(mktemp -d)"
+cat >"${CONSEC_TMP}/round-a-gates.md" <<'GATES_A'
+| Gate | Status |
+|------|--------|
+| Round strict-clean | **PASS** |
+GATES_A
+cat >"${CONSEC_TMP}/round-b-gates.md" <<'GATES_B'
+| Gate | Status |
+|------|--------|
+| Round strict-clean | **PASS** |
+GATES_B
+if RTK_DISABLED=1 bash "$CONSEC_CHECK" "${CONSEC_TMP}/round-a-gates.md" "${CONSEC_TMP}/round-b-gates.md" >/dev/null 2>&1; then
+  pass "consecutive rounds check PASS when both rounds strict-clean"
+else
+  fail "consecutive rounds check expected PASS for dual PASS fixtures"
+fi
+cat >"${CONSEC_TMP}/round-b-pending.md" <<'GATES_P'
+| Gate | Status |
+|------|--------|
+| Round strict-clean | **PENDING** |
+GATES_P
+if RTK_DISABLED=1 bash "$CONSEC_CHECK" "${CONSEC_TMP}/round-a-gates.md" "${CONSEC_TMP}/round-b-pending.md" >/dev/null 2>&1; then
+  fail "consecutive rounds check expected FAIL when round2 pending"
+else
+  pass "consecutive rounds check FAIL when round2 not strict-clean"
+fi
+cat >"${CONSEC_TMP}/claude-round5.md" <<'GATES_5'
+| Gate | Status |
+|------|--------|
+| Round clean (zero new issues vs baseline) | **Pass** |
+GATES_5
+cat >"${CONSEC_TMP}/claude-round6.md" <<'GATES_6'
+| Gate | Status |
+|------|--------|
+| Round clean (zero new issues vs baseline) | **PASS** |
+GATES_6
+if RTK_DISABLED=1 bash "$CONSEC_CHECK" "${CONSEC_TMP}/claude-round5.md" "${CONSEC_TMP}/claude-round6.md" --json | jq -e '.ok == true' >/dev/null 2>&1; then
+  pass "consecutive rounds check JSON ok for claude-style round clean rows"
+else
+  fail "consecutive rounds JSON expected ok for claude-style fixtures"
+fi
+rm -rf "$CONSEC_TMP"
+assert_contains "rcs wires consecutive rounds env" "${REPO_ROOT}/scripts/enterprise-e2e-rcs.sh" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
+assert_contains "live test wires consecutive rounds env" "$LIVE" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
+
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
