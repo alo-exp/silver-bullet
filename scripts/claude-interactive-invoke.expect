@@ -258,6 +258,37 @@ proc accept_custom_api_key_disclaimer {} {
   after 900
 }
 
+proc blocking_decision_picker_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Enter to select} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {navigate} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Esc to cancel} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {1\.|2\.|3\.} $plain]} {
+    return 0
+  }
+  return 1
+}
+
+proc resolve_blocking_decision_picker {} {
+  global picker_resolve_attempts
+  if {$picker_resolve_attempts >= 6} {
+    return
+  }
+  incr picker_resolve_attempts
+  set choice [env_or_default CLAUDE_INTERACTIVE_PICKER_CHOICE "1"]
+  log_harness_keys "\[harness\] resolve_blocking_decision_picker: choice=$choice attempt=$picker_resolve_attempts"
+  type_slow $choice 40
+  after 500
+  send -- "\r"
+  after 900
+}
+
 proc finish_session_success {} {
   catch {close}
   catch {wait}
@@ -518,6 +549,7 @@ set bypass_disclaimer_menu_open 0
 set bypass_disclaimer_accept_attempts 0
 set custom_api_key_disclaimer_menu_open 0
 set custom_api_key_disclaimer_accept_attempts 0
+set picker_resolve_attempts 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -544,7 +576,18 @@ expect {
     }
     exp_continue
   }
+  -re {How should I close out this turn\?} {
+    if {$prompt_submitted == 0} { exp_continue }
+    resolve_blocking_decision_picker
+    set timeout $quiet_timeout
+    exp_continue
+  }
   -re {Esc.*to.*cancel} {
+    if {$prompt_submitted && [blocking_decision_picker_visible $expect_out(buffer)]} {
+      resolve_blocking_decision_picker
+      set timeout $quiet_timeout
+      exp_continue
+    }
     if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
       accept_custom_api_key_disclaimer
       set custom_api_key_disclaimer_menu_open 0
@@ -695,7 +738,7 @@ expect {
   }
   -re {Enter to select.*navigate.*Esc to cancel} {
     if {$prompt_submitted == 0} { exp_continue }
-    send -- "1\r"
+    resolve_blocking_decision_picker
     set timeout $quiet_timeout
     exp_continue
   }
