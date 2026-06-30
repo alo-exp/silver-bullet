@@ -329,8 +329,15 @@ score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$S
 [[ "$score_km_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-KM-01 pass (mem_mr id + graphify query)" || fail "TUI-noisy row 2 OUT-KM-01 got $score_km_tui2"
 score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
 [[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
+export SB_E2E_MATRIX_EVIDENCE_PATH="docs/ADR-001-runtime.md"
+ROW2_LIVE_LOG="$(mktemp)"
+cp "$TUI2_LOG" "$ROW2_LIVE_LOG"
+printf 'autonomous Task worker spawned\r' >>"$ROW2_LIVE_LOG"
+score_auto_row2_env="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW2_LIVE_LOG" 2 "$ROW67_LEDGER" "")"
+[[ "$score_auto_row2_env" == "pass" ]] && pass "row 2 OUT-AUTO-01 pass via SB_E2E_MATRIX_EVIDENCE_PATH" || fail "row 2 OUT-AUTO-01 env fallback got $score_auto_row2_env"
+unset SB_E2E_MATRIX_EVIDENCE_PATH
 
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG"
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$ROW2_LIVE_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
