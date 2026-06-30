@@ -1,5 +1,7 @@
 # Round 6 Ledger — Enterprise E2E Matrix
 
+> **⏸ PAUSED** 2026-06-30T02:24Z — operator reboot request. Driver **84198** left **ALIVE** on row 4 TUI. Resume: [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md). **Do not relaunch** until checkpoint resume steps.
+
 > **Working branch:** `enterprise-e2e/round4-continuation` @ `da493429` — Round 6 in progress (2× consecutive strict-clean gate). See [ROUND-6-GATES.md](./ROUND-6-GATES.md) and [ROUND-6-OUTCOMES.md](./ROUND-6-OUTCOMES.md).
 
 ---
@@ -16,8 +18,9 @@
 | Claude model (frozen) | `haiku` (matrix default) |
 | Operator | Cursor agent (continuous monitor; `SB_E2E_MONITOR_AUTO_RESTART=0`) |
 | Start date | 2026-06-30 |
-| End date | *(in progress)* |
-| Round clean? | **NO** — 4 live FAIL (rows 6, 7, 8, 11); expect regex bug blocks TUI |
+| End date | *(in progress — **PAUSED** 2026-06-30T02:24Z)* |
+| Pause checkpoint | [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md) — driver **84198** ALIVE, row 4 TUI |
+| Round clean? | **NO** — matrix incomplete; outcome re-score pending post-exit |
 
 **Round 6 context:** Round 5 strict-clean @ 22/22, 0 new issues vs baseline 76. Release requires **2 consecutive** strict-clean rounds — Round 6 is the confirmation round. Harness: canonical log `.e2e-matrix-round6-live.log`; monitor `AUTO_RESTART=0`; locked init/replay decisions automated (no operator pause).
 
@@ -129,4 +132,4 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 
 **Graphify post-round:** `graphify update .` in SB repo; confirm `graphify-out/graph.json` current.
 
-**Next action:** Fix `claude-interactive-invoke.expect:531` regex; re-run failed rows 6, 7, 8, 11. Phase C gates blocked until strict-clean 22/22.
+**Next action:** **PAUSED** — poll driver 84198 until exit (or resume per checkpoint if dead after reboot). Then: FORCE row 1 @ `ee62a820`+ for strict-clean credit; re-score rows 3–4, 6–20; Phase C when 22/22 + outcomes + baseline 76 (0 new IDs). See [ROUND-6-PAUSE-CHECKPOINT.md](./ROUND-6-PAUSE-CHECKPOINT.md).
