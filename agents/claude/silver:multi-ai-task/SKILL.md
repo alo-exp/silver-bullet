@@ -82,7 +82,7 @@ This uses the **same model inventory as `/silver:review-fix-ladder`** for the ac
 |------|--------|-------|
 | **task host** | Fixed ladder set | Same models as review-fix-ladder; use task host Task slug when dispatching |
 | **api host** | `models_cache.json` or fallback | Excludes `gpt-5.4-mini`; medium rung per model |
-| **primary host** | Fallback chain | `primary-model`, `primary host-opus-4-7`, `primary host-opus-4-8` @ medium |
+| **Claude Code** | Fallback chain | `primary-model`, `Claude Code-opus-4-7`, `Claude Code-opus-4-8` @ medium |
 
 **OpenCode Go (OCG) plan:** when `~/.config/opencode/opencode.json(c)` defines `agent.*.model` entries under `opencode-go/*`, those models are preferred for parallel dispatch (Mechanism 1 / Mechanism 2). **Prerequisite:** each OCG model needs a pre-defined agent entry — the `task` tool does not accept per-call `model`. Example:
 

@@ -13,7 +13,7 @@ Audits whether local SB installation is correct for the active host and whether 
 - Before Wave 1+ implementation work or after `/silver:update`
 - When hooks appear inactive or plugin version is stale
 - After migrating a project with `/silver:migrate` + `/silver:init` update mode
-- When task host may have an imported primary host-native SB install (contamination check)
+- When task host may have an imported Claude Code-native SB install (contamination check)
 
 ## Process
 
@@ -57,8 +57,8 @@ bash scripts/sb-doctor.sh --fix
 | D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
 | D8 orchestrator rule | task host only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
 | D13 manifest paths | Host install script for active runtime |
-| D14 cache bleed | `bash scripts/install-{primary host,secondary host,task host}.sh` or `sb-doctor.sh --fix` |
-| D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
+| D14 cache bleed | `bash scripts/install-{Claude Code,Codex,task host}.sh` or `sb-doctor.sh --fix` |
+| D15 token budget | Shorten Claude Code `description` frontmatter in `agents/Claude Code/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 
 Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
@@ -74,7 +74,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
 - D3 plugin cache `current` symlink + hooks manifest
-- D4 host hooks manifest (task host `hooks.json`, secondary host `config.toml`, primary host `settings.json`)
+- D4 host hooks manifest (task host `hooks.json`, Codex `config.toml`, Claude Code `settings.json`)
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
@@ -85,7 +85,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D12 `$HOME/.claude/.silver-bullet` writable
 - D13 cross-host manifest paths + expected cache bundle
 - D14 foreign agent namespaces in plugin cache
-- D15 primary host agent description token budget
+- D15 Claude Code agent description token budget
 - D16 repo install surface (`validate-host-install-surface.sh`)
 
 ```bash
