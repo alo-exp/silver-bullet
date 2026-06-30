@@ -1,7 +1,7 @@
 # Round 6 — Gate checklist
 
-**Updated:** 2026-06-30T08:05Z  
-**SB HEAD:** `761c7429` (`enterprise-e2e/codex`)  
+**Updated:** 2026-06-30T08:25Z  
+**SB HEAD:** *(pending commit on `enterprise-e2e/codex`)*  
 **Test app HEAD:** `8482e60`  
 **Ledger:** [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md)  
 **Outcomes:** [ROUND-6-OUTCOMES.md](./ROUND-6-OUTCOMES.md)  
@@ -38,7 +38,7 @@ Round 6 is **strict-clean** only when **all** hold:
 | Outcome assessment harness (`test-outcome-assessment.sh`) | **PASS** (72/72) |
 | World-class criteria registry (27 criteria + 4 blocking) | **WIRED** |
 | Per-row OUT-WORLD-01 composite + outcome enforcement | **WIRED** |
-| `run-all-tests` | **PASS** *(re-run after matrix-shim test fixes)* |
+| `run-all-tests` | **PASS** — 4726+ pass, 0 fail after tri-host install retry + matrix-shim test fixes |
 | Validation overlay | **PASS** (6/6 dry-run) |
 | Pre-release overlay | **PASS** (40/40 dry-run) |
 | Ledger reconcile | **PASS** — **COMPLETE** 22/22 |
@@ -55,6 +55,7 @@ Round 6 is **strict-clean** only when **all** hold:
 | `LEDGER_MISMATCH` / `OUT-MEASURE-01` fail | All 22 Pass rows had empty `agentmemory_export_ref` | Populated `mem_mr04ysip_1115b9d15ec5` on every Pass row; rows 6/7/8/11 re-scored Pass |
 | `run-all-tests` 5 fail | Harness refactor moved matrix logic to `scripts/enterprise-e2e/matrix.sh`; tests still grepped thin wrapper | Point 5 tests at `matrix.sh`; `|| true` on grep under `set -e` |
 | `sync-codex-package` drift | `silver-create-release` SILVER_SOURCE stale | Ran `bash scripts/sync-codex-package.sh` |
+| `test-tri-host-install-smoke` flake | Concurrent `install-codex.sh` during full suite | Retry up to 3× in `run-tri-host-install-smoke.sh` |
 
 ### Phase C run log (re-verify)
 
@@ -77,8 +78,8 @@ RTK_DISABLED=1 bash tests/run-all-tests.sh
 | `enterprise_e2e_outcome_assess_round` | OUT-REVIEW-01 pass; OUT-MEASURE-01 **pass**; OUT-KM-01 n/a |
 | `enterprise-e2e-ledger-reconcile.sh` | **COMPLETE** 22/22 |
 | Previously failing tests (7 files) | **PASS** 0 failed |
-| `run-all-tests.sh` | **PASS** *(full suite re-run pending commit)* |
+| `run-all-tests.sh` | **PASS** — full suite green after tri-host retry |
 
 ## Release verdict
 
-**Round 6:** Phase C measurement/reconcile/harness gates **green** @ `761c7429` codex. Dry-run outcome re-score **4/4 PASS** on resume set; **no live FORCE** needed. Pending: full `run-all-tests` completion + RCS re-run.
+**Round 6:** Phase C measurement/reconcile/harness/`run-all-tests` gates **green**. Strict-clean still **pending** formal per-row live outcome sign-off on FORCE resume set. Next: RCS re-run with reconcile COMPLETE; confirm 2× consecutive strict-clean.
