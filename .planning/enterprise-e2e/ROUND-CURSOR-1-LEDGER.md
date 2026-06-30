@@ -75,11 +75,11 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
 | 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-feature | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-bugfix | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-ui | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-ui | FORCE retry @1800s |
 | 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-fast | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-test | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 8 | `silver-refactor` | 2026-06-30 | composer-2.5 | Fail | evidence+timeout | E2E-087 | 2b197be9 | graphify query silver-refactor | timeout 900s missing evidence |
-| 9 | `silver-benchmark` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-benchmark | timeout 900s OUT-KM-01 OUT-WORLD-01 |
+| 8 | `silver-refactor` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-refactor | FORCE retry @1800s |
+| 9 | `silver-benchmark` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-benchmark | FORCE retry @1800s |
 | 10 | `silver-content` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-content | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-devops | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-deploy | timeout 900s OUT-KM-01 OUT-WORLD-01 |
@@ -94,7 +94,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 3)* | grep post-exec-gates in feature-currency.md |
 | 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 4)* | grep validate-substep in bugfix-health.md |
 
-**Pass count:** 2 / 22 (FORCE retry in flight; row 3+ pending)
+**Pass count:** 5 / 22 (FORCE retry row 10+ in flight)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
