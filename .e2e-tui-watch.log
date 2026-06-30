@@ -14,3 +14,15 @@
 2026-06-27T04:15:16Z monitor restarted pid=9776
 2026-06-27T04:15:16Z matrix complete — exiting
 2026-06-27T04:15:16Z tui-watch finished issues=0
+2026-06-30T01:17:41Z status row=1 passes=3 issues=1888 batch=dead
+2026-06-30T01:25:47Z tui-watch started pid=3709 max_runtime=21600s poll=60-120s
+2026-06-30T01:36:15Z status row=1 passes=3 issues=165 batch=4450
+2026-06-30T01:46:32Z ledger UX: row=1 blocker hook
+2026-06-30T01:46:33Z status row=1 passes=3 issues=281 batch=4450
+2026-06-30T01:56:47Z status row=1 passes=3 issues=324 batch=4450
+2026-06-30T02:00:05Z tui-watch started pid=83174 max_runtime=21600s poll=60-120s
+2026-06-30T02:00:50Z tui-watch signal — exiting
+2026-06-30T02:00:58Z tui-watch started pid=85617 max_runtime=21600s poll=60-120s
+2026-06-30T02:01:12Z tui-watch signal — exiting
+2026-06-30T02:11:27Z status row=3 passes=4 issues=130 batch=85965
+2026-06-30T02:21:43Z status row=4 passes=5 issues=179 batch=85965

@@ -1,0 +1,230 @@
+
+=== Operator resume 2026-06-30T01:08:30Z — Row 1 PASS (routing markers); rows 3-4,6-20,21-22 ===
+=== Enterprise E2E Live Test ===
+SB_ROOT:     /Users/shafqat/projects/silver-bullet/repo
+Fixture:     /Users/shafqat/projects/enterprise-grade-test-app
+Ledger:      /Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-6-LEDGER.md
+Matrix log:  /Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-round6-force.log
+CLEAN_ENV:   0
+DRY_RUN:     unset (live)
+
+--- Preflight ---
+tui-watch offsets reset (20 row logs) -> /Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-offsets.json
+tui-monitor-agent-offset reset findings_line=776 -> /Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/.tui-monitor-agent-offset.json
+tui-watch offsets reset (20 row logs) -> /Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-offsets.json
+tui-monitor-agent-offset reset findings_line=776 -> /Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/.tui-monitor-agent-offset.json
+WARN: skipping code-intel preflight (--skip-code-intel-preflight; debug only)
+=== E2E Live: Hook Delivery Preflight ===
+PASS: E2E workspace has all recommended tools opted in
+PASS: hook-delivery preflight records dev-cycle deny via deterministic bash probe
+PASS: hook-delivery preflight keeps source unchanged before planning
+
+Results: 3 passed, 0 failed
+ M .planning/orchestrator-composition-log.jsonl
+?? .claude/
+?? .planning/CLARIFY.md
+?? .planning/PLAN-feature.md
+?? .planning/QUALITY-GATES-feature.md
+?? .planning/SPEC-feature.md
+?? .planning/VALIDATION-feature.md
+?? api/.gitkeep
+
+> enterprise-grade-test-app@0.1.0 test
+> node api/src/health.test.js && node api/src/orders.test.js && node tests/integration/orders.integration.test.js && node tests/ui/badge.test.js && echo ui-stub-ok
+
+api health ok
+orders.test.js
+  ok  AC-1: createOrder includes supplied currency
+  ok  AC-2: createOrder defaults to USD when currency omitted
+  ok  AC-3: createOrder rejects lowercase currency
+  ok  AC-4: createOrder rejects 2-letter currency
+  ok  AC-5: getOrder returns order with currency
+  ok  extra: createOrder rejects digits
+
+6 passed, 0 failed
+orders.integration.test.js
+  ok  AC-2: create 3 orders across distinct SKUs and currencies; each round-trips via getOrder
+  ok  AC-3a: createOrder return value matches public shape contract
+  ok  AC-3b: getOrder round-trip preserves the public shape contract
+  ok  AC-4a: getOrder with unknown id throws
+  ok  AC-4b: createOrder propagates validation errors for invalid currency
+  ok  AC-4c: createOrder propagates validation errors for invalid qty
+  ok  AC-5: re-creating the same SKU produces a distinct order id
+
+7 passed, 0 failed
+badge.test.js
+  ok  AC-9: ui/src/App.jsx references the badge module
+  ok  ui/src/badge.js is importable from Node
+  ok  AC-1: getBadgeText returns "API v1.2.3" when source returns "1.2.3"
+  ok  AC-2: getBadgeText returns "API v9.9.9-test" for non-semver versions
+  ok  AC-3: getBadgeText returns fallback "API v0.0.0-unknown" when source returns undefined
+  ok  AC-4: getBadgeText returns fallback when no versionSource is provided
+  ok  AC-5: getBadgeText NEVER throws when versionSource throws
+  ok  AC-5b: getBadgeText returns fallback when source returns a non-string
+  ok  AC-6: getBadgeMarkup contains data-testid="api-version-badge"
+  ok  AC-11: getBadgeMarkup includes role="note" and an aria-label
+  ok  AC-7/AC-8 [viewport=360 mode=resolved]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=360 mode=fallback]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=360 mode=error]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=768 mode=resolved]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=768 mode=fallback]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=768 mode=error]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1280 mode=resolved]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1280 mode=fallback]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1280 mode=error]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1920 mode=resolved]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1920 mode=fallback]: text non-empty & markup < 256
+  ok  AC-7/AC-8 [viewport=1920 mode=error]: text non-empty & markup < 256
+
+22 passed, 0 failed
+ui-stub-ok
+Plugin install (latest SB checkout):
+matrix MCP env: disabled 23 server(s) for TUI
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+matrix MCP env: disabled 23 server(s) for TUI
+=== Enterprise E2E Matrix Runner ===
+SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
+Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
+Claude:     /Users/shafqat/.local/bin/claude
+
+=== Row 1: silver-router (/silver) ===
+  graphify: graphify query "silver-router routes hooks skills orchestrator"
+  evidence: .planning/workflows/router-session.md
+  launching interactive Claude session...
+
+
+
+[2C[3A[2D[3B[37C[8A8
+
+
+
+
+
+
+
+[2C[3A[2D[3B[8A✢
+
+
+
+
+
+
+
+[2C[3A]0;✳ Claude Code[2D[3B[2K[1A[2K[G[1A[6A✻[3GCogit[9Gt[11Gd for[17G2m 39s[K[2C[1B[K[1B────────────────────────────────────────────────────────────────────────────────[1B❯ [7m [2B[27m  ⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[67G59782[73Gtokens[1B[K[1B[K[1A[2C[3A
+  PASS: evidence at .planning/workflows/router-session.md
+  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-1-outcomes.md
+  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
+    OUTCOME-FAIL: OUT-ORCH-01 partial
+    OUTCOME-FAIL: OUT-HOOK-01 fail
+    OUTCOME-FAIL: OUT-CODEINT-01 partial
+    OUTCOME-FAIL: OUT-SUPER-01 fail
+    OUTCOME-FAIL: OUT-HOOK-01 fail
+    OUTCOME-FAIL: OUT-ORCH-01 partial
+    OUTCOME-FAIL: OUT-HANDOFF-01 fail
+    OUTCOME-FAIL: OUT-CODEINT-01 partial
+    OUTCOME-FAIL: OUT-KM-01 partial
+    OUTCOME-FAIL: OUT-HEAL-01 fail
+    OUTCOME-FAIL: OUT-SUPER-01 fail
+    OUTCOME-FAIL: OUT-WORLD-01 fail
+=== Row 3: silver-feature (/silver:feature) ===
+  graphify: graphify query "silver-feature routes hooks skills orchestrator"
+  evidence: .planning/workflows/feature-currency.md
+  launching interactive Claude session...
+
+
+
+
+
+
+[2C[6A]0;⠂ Claude Code[2D[6B[H[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[H[10G2>/dev/null[22G&&[25Gcat[29G/Users/shafqat/projects/enterprise-grade-test-app/.p
+[10Glanning/workflows/feature-currency.md[48G2>/dev/null)
+[6GRunning…
+[6GBash(ls[14G/Users/shafqat/projects/enterprise-grade-test-app/docs/[70G2>/dev/null
+[10G|[12Ghead[17G-50)
+[6GRunning…
+[6GBash(ls[14G/Users/shafqat/projects/enterprise-grade-test-app/docs/composable-f
+[10Glows-contracts.md[28G2>/dev/null[40G&&[43Gecho[48G"EXISTS"[57G||[60Gecho[65G"MISSING")
+[6GRunning…
+[6G…[8G+2[11Gtool[16Guses[21G(ctrl+o[29Gto[32Gexpand)
+[6G(ctrl+b[14Gto[17Grun[21Gin[24Gbackground)
+
+✽[3GSublimating…[16G(5m[20G22s[24G·[26G↓[28G11.2k[34Gtokens)
+[3G⎿[5G Tip:[11GUse[15G/btw[20Gto[23Gask[27Ga[29Gquick[35Gside[40Gquestion[49Gwithout[57Ginterrupt
+  PASS: evidence at .planning/workflows/feature-currency.md
+  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-3-outcomes.md
+  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
+    OUTCOME-FAIL: OUT-HOOK-01 fail
+    OUTCOME-FAIL: OUT-CODEINT-01 partial
+    OUTCOME-FAIL: OUT-KM-01 partial
+    OUTCOME-FAIL: OUT-HEAL-01 fail
+    OUTCOME-FAIL: OUT-WORLD-01 fail
+=== Row 4: silver-bugfix (/silver:bugfix) ===
+  graphify: graphify query "silver-bugfix routes hooks skills orchestrator"
+  evidence: .planning/workflows/bugfix-health.md
+  launching interactive Claude session...
+
+
+
+
+
+
+[2C[6A[2D[6B[H[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[H[10GNone.[16GThe[20Gbug[24Gis[27Gfixed,[34Gregression[45Gcoverage[54Gis[57Gin[60Gplace,[67Gand[71Gthe
+[10Gexisting[19GE2E[23Gmatrix[30Gcontinues[40Gto[43Gvalidate[52Gthe[56Gendpoint.[66GNo[69Gnew[73Gscope
+[10Gwas[14Gopened.
+[10GEVIDENCE_EOF
+[10Gls[13G-la[17G/Users/shafqat/projects/enterprise-grade-test-app/.planning/work
+[10Gflows/bugfix-health.md
+[10Gwc[13G-l[16G/Users/shafqat/projects/enterprise-grade-test-app/.planning/workf
+[10Glows/bugfix-health.md)
+[6GRunning…
+[6G…[8G+46[12Gtool[17Guses[22G(ctrl+o[30Gto[33Gexpand)
+[6G(ctrl+b[14Gto[17Grun[21Gin[24Gbackground)
+
+✻[3GQuantumizing…[17G(8m[21G47s[25G·[27G↓[29G11.7k[35Gtokens)
+[3G⎿[5G Tip:[11GUse[15G/btw[20Gto[23Gask[27Ga[29Gquick[35Gside[40Gquestion[49Gw
+  PASS: evidence at .planning/workflows/bugfix-health.md
+  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-4-outcomes.md
+  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
+    OUTCOME-FAIL: OUT-KM-01 partial
+    OUTCOME-FAIL: OUT-WORLD-01 fail
+=== Row 6: silver-fast (/silver:fast) ===
+  graphify: graphify query "silver-fast routes hooks skills orchestrator"
+  evidence: .planning/workflows/fast-readme.md
+  launching interactive Claude session...
+
+
+
+
+
+
+
+
+[2C[6A[2D[6B[11A✳
+
+
+
+
+
+
+
+
+
+
+[2C[6A[2D[6B[9C[23Ap[12G= Path("/Users/shafqat/projects/enterpri[53Ge-grade-test-app/.planning/w[9C[1Borkflows/fast-readme.md")[10C[1B.parent.mkdir(parents=True, [40Gxi[43Gt_ok=True)[K[9C[1Bp.write_text(content)[K[10C[1Brint(f"WROTE {[26G} ({len(content)} bytes)")[K[9C[1BPYEOF)[K[5C[1BRunning…[K[5C[1BBash(rtk git[19Gstatus[26G--short[34G&&[37Gecho[42G"---"[48G&&[51Gls[54G-la[58G/Users/shafqat/projects[5C[1B    /enterprise-grade-test-app/.planning/workflows/fast-readme.md)[5C[1BRunning…[K[5C[1B… +38 tool[17Guses (ctrl+o to expand)[5C[1B(ctrl+b[14Gto[17Grun[21Gin[24Gbackground)[1B[K[1B✳[3GFlummoxing…[15G(5m 19s[23G· ↓[27G14.5k tokens)[K[2C[1B⎿[5G Tip: Use /btw[20Gto[23Gask[27Ga[29Gquick[35Gside[40Gquestion[49Gwithout[57Ginterrupting[70GClaude's[5C[1Bcurrent[14Gwork[1B[K[1B──────────────────────────────────────────────
+  PASS: evidence at .planning/workflows/fast-readme.md
+  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-6-outcomes.md
+  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
+    OUTCOME-FAIL: OUT-KM-01 partial
+    OUTCOME-FAIL: OUT-WORLD-01 fail
+=== Row 7: silver-test (/silver:test) ===
+  graphify: graphify query "silver-test routes hooks skills orchestrator"
+  evidence: .planning/workflows/test-orders-integration.md
+  launching interactive Claude session...
