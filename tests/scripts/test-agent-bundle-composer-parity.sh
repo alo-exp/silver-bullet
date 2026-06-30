@@ -3,6 +3,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 RENDER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 PASS=0
 FAIL=0
@@ -64,7 +66,8 @@ for agent in "${AGENTS[@]}"; do
       bundle_dir="silver:${comp}"
     fi
     rendered="${dest}/${bundle_dir}/SKILL.md"
-    bundle="${REPO_ROOT}/agents/${agent}/${bundle_dir}/SKILL.md"
+    bundle="$(sb_agent_bundle_root "$REPO_ROOT" "$agent")/${bundle_dir}/SKILL.md"
+    bundle_rel="$(sb_agent_bundle_rel "$agent")/${bundle_dir}/SKILL.md"
 
     if [[ ! -f "$canonical" ]]; then
       echo "FAIL: missing canonical $skill"
@@ -72,7 +75,7 @@ for agent in "${AGENTS[@]}"; do
       continue
     fi
     if [[ ! -f "$bundle" ]]; then
-      echo "FAIL: missing bundle agents/${agent}/${skill}/SKILL.md"
+      echo "FAIL: missing bundle ${bundle_rel}"
       FAIL=$((FAIL + 1))
       continue
     fi

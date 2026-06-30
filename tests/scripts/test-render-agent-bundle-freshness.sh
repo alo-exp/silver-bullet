@@ -3,6 +3,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 RENDER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 PASS=0
 FAIL=0
@@ -13,17 +15,19 @@ trap 'rm -rf "$TMP_BASE"' EXIT
 for agent in claude codex cursor; do
   dest="${TMP_BASE}/${agent}"
   python3 "$RENDER" render --agent "$agent" --source-root "${REPO_ROOT}/skills" --dest-root "$dest" >/dev/null
+  bundle_root="$(sb_agent_bundle_root "$REPO_ROOT" "$agent")"
+  bundle_rel="$(sb_agent_bundle_rel "$agent")"
 
   while IFS= read -r rendered; do
     rel="${rendered#${dest}/}"
-    committed="${REPO_ROOT}/agents/${agent}/${rel}"
+    committed="${bundle_root}/${rel}"
     if [[ ! -f "$committed" ]]; then
-      echo "FAIL: missing committed agents/${agent}/${rel}"
+      echo "FAIL: missing committed ${bundle_rel}/${rel}"
       FAIL=$((FAIL + 1))
       continue
     fi
     if ! cmp -s "$rendered" "$committed"; then
-      echo "FAIL: agents/${agent}/${rel} drift — run: python3 scripts/render-agent-bundle.py render --agent ${agent} ... (or bash scripts/sync-codex-package.sh)"
+      echo "FAIL: ${bundle_rel}/${rel} drift — run: bash scripts/sync-codex-package.sh"
       FAIL=$((FAIL + 1))
       continue
     fi
