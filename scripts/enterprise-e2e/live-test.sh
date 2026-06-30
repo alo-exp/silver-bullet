@@ -139,7 +139,6 @@ fi
 echo "--- Preflight ---"
 cd "$SB_ROOT"
 enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"
-enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"
 if [[ "$SKIP_CODE_INTEL_PREFLIGHT" == "1" ]]; then
   echo "WARN: skipping code-intel preflight (--skip-code-intel-preflight; debug only)"
 else
@@ -148,13 +147,15 @@ fi
 # install-claude.sh runs below; avoid duplicate bootstrap during hook-delivery prepare_workspace.
 export SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP=1
 bash tests/e2e-live/hook-delivery-preflight.sh
-export SILVER_BULLET_RUNTIME=cursor
 (cd "$FIXTURE_DIR" && git status --short && npm test)
 
-# Session-start from test app (cursor-hook-bridge / branch scope)
+# Session-start from test app (cursor-hook-bridge / branch scope — cursor runtime only).
 if [[ -f "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" ]]; then
-  # shellcheck source=tests/e2e-live/lib/session-start-preflight.sh
-  source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
+  (
+    export SILVER_BULLET_RUNTIME=cursor
+    # shellcheck source=tests/e2e-live/lib/session-start-preflight.sh
+    source "${SB_ROOT}/tests/e2e-live/lib/session-start-preflight.sh" || true
+  )
 fi
 
 enterprise_e2e_run_install_host "$SB_ROOT"
@@ -238,8 +239,10 @@ enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
 echo "--- Launching interactive matrix (live) ---"
 echo "Log: ${MATRIX_LOG}"
 echo "Tail: tail -f ${MATRIX_LOG}"
-echo "Monitor: tail -f ${SB_ROOT}/.e2e-matrix-monitor-status.txt"
-echo "Watch findings: tail -f ${SB_ROOT}/.e2e-tui-watch-findings.jsonl"
+MONITOR_STATUS_FILE="${SB_E2E_MATRIX_MONITOR_STATUS_FILE:-${SB_ROOT}/.e2e-matrix-monitor-status.txt}"
+TUI_FINDINGS_FILE="${SB_E2E_TUI_FINDINGS:-${SB_ROOT}/.e2e-tui-watch-findings.jsonl}"
+echo "Monitor: tail -f ${MONITOR_STATUS_FILE}"
+echo "Watch findings: tail -f ${TUI_FINDINGS_FILE}"
 echo ""
 
 MATRIX_LAUNCH_CMD=(bash scripts/enterprise-e2e/matrix.sh)
@@ -279,5 +282,5 @@ cat <<'GATES'
   [ ] bash tests/run-all-tests.sh → 0 failures
   [ ] graphify update . in SB repo post-fixes
   [ ] 2 consecutive clean rounds before release tag
-  [ ] After SB hook fixes: bash scripts/install-claude.sh then re-run failed rows only
+  [ ] After SB hook fixes: re-run host install (install-claude.sh | install-codex.sh | install-cursor.sh) then re-run failed rows only
 GATES

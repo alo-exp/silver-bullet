@@ -143,6 +143,15 @@ enterprise_e2e_routing_state_file() {
   printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}/state"
 }
 
+# Host-aware .silver-bullet state root (parent of routing state file).
+enterprise_e2e_runtime_state_dir() {
+  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+  fi
+  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
+}
+
 # Translate MATRIX_ROWS route column for non-Claude hosts.
 enterprise_e2e_matrix_host_route() {
   local route="$1" host
