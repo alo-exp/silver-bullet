@@ -1,19 +1,18 @@
-=== Matrix monitor poll 2026-06-30T02:26:03Z ===
-batch PID: 85965 — RUNNING
-elapsed batch: 24:56
-current row (log): 6
-matrix log bytes: 10054
+=== Matrix monitor poll 2026-06-30T07:14:02Z ===
+batch PID: none — WAIT_OPERATOR
+elapsed batch: ?
+current row (log): 11
+matrix log bytes: 26059
 issues (recent): FAIL
 claude/expect:
-  44200 expect /Users/shafqat/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
-  44213 /Users/shafqat/.local/bin/claude --model haiku --effort low --permission-mode bypassPermissions --verbose --allow-dangerously-skip-permissions --settings /Users/shafqat/.claude/settings.json
+  
   row1-attempt.log: 175171 bytes (2026-06-30 12:04)
   row5-attempt.log: 3759 bytes (2026-06-30 10:24)
-  row7-attempt.log: 355 bytes (2026-06-30 10:52)
-  row8-attempt.log: 3805 bytes (2026-06-30 10:28)
+  row7-attempt.log: 382919 bytes (2026-06-30 14:34)
+  row8-attempt.log: 316914 bytes (2026-06-30 14:45)
   row9-attempt.log: 3765 bytes (2026-06-30 10:29)
   row10-attempt.log: 3750 bytes (2026-06-30 10:30)
-  row11-attempt.log: 5844 bytes (2026-06-30 10:31)
+  row11-attempt.log: 472350 bytes (2026-06-30 14:57)
   row12-attempt.log: 3746 bytes (2026-06-30 10:32)
   row13-attempt.log: 3749 bytes (2026-06-30 10:34)
   row14-attempt.log: 3746 bytes (2026-06-30 10:35)
@@ -25,26 +24,26 @@ claude/expect:
   row20-attempt.log: 355 bytes (2026-06-30 10:37)
 log tail:
 
-  [10GEVIDENCE_EOF
-  [10Gls[13G-la[17G/Users/shafqat/projects/enterprise-grade-test-app/.planning/work
-  [10Gflows/bugfix-health.md
-  [10Gwc[13G-l[16G/Users/shafqat/projects/enterprise-grade-test-app/.planning/workf
-  [10Glows/bugfix-health.md)
-  [6GRunning…
-  [6G…[8G+46[12Gtool[17Guses[22G(ctrl+o[30Gto[33Gexpand)
-  [6G(ctrl+b[14Gto[17Grun[21Gin[24Gbackground)
-  
-  ✻[3GQuantumizing…[17G(8m[21G47s[25G·[27G↓[29G11.7k[35Gtokens)
-  [3G⎿[5G Tip:[11GUse[15G/btw[20Gto[23Gask[27Ga[29Gquick[35Gside[40Gquestion[49Gw
-    PASS: evidence at .planning/workflows/bugfix-health.md
-    OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-4-outcomes.md
+  
+  
+  
+  
+  
+  
+  
+  
+  [2C[6A
+    PASS: evidence at .planning/workflows/devops-terraform-validation.md
+    OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-11-outcomes.md
     FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
       OUTCOME-FAIL: OUT-KM-01 partial
       OUTCOME-FAIL: OUT-WORLD-01 fail
-  === Row 6: silver-fast (/silver:fast) ===
-    graphify: graphify query "silver-fast routes hooks skills orchestrator"
-    evidence: .planning/workflows/fast-readme.md
-    launching interactive Claude session...
+  
+  === Matrix summary ===
+  Pass:  1
+  Fail:  3
+  Skip:  0
+  Total: 4 / 22
 retry policy: 429→60s; ENOTFOUND→120-300s; DRY_RUN unset
-monitor PID: 85232
+monitor PID: 16907
 poll interval: 300s; stall=2700s; hung=5400s

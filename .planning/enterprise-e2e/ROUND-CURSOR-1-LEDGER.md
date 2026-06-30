@@ -18,6 +18,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | Start date | YYYY-MM-DD |
 | End date | YYYY-MM-DD |
 | Round clean? | Pass / Fail |
+| Consecutive pair | ___ / 2 *(release requires 2/2 — see ROUND-CURSOR-1-GATES.md)* |
 
 **Harness artifacts (Cursor-isolated):**
 
@@ -109,4 +110,8 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.m
 
 **Graphify post-round:** `graphify update .` in SB repo.
 
-**Next action:** Round Cursor-2 if not clean; else proceed to release gates (Phase C).
+**Next action:**
+
+- If **not** strict-clean → fix SB, re-run failed Phase A/B/C rows in **Round Cursor-1** (do not advance).
+- If **strict-clean** → mark [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) **1/2**, start **Round Cursor-2** (fresh ledger, full Phase A–C per [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) §Two-round release gate).
+- **Release sign-off** only after Round Cursor-2 strict-clean + gates **2/2** — not after Round Cursor-1 alone.
