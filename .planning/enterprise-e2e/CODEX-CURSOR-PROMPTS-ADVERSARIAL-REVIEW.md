@@ -22,7 +22,7 @@
 
 ### **READY WITH GAPS** (session launch allowed; strict-clean 2×22 still requires live proof)
 
-Harness M1–M6 landed on `enterprise-e2e/multi-host` (`bd68a159`). Prompts, ledgers, and TUI protocols align with host-isolated paths. Remaining gaps are **P2+** (live row CI fixtures, Codex expect parity, shared test-app mutation policy).
+Post-rearchitecture shared harness review: [SHARED-HARNESS-ADVERSARIAL-REVIEW.md](./SHARED-HARNESS-ADVERSARIAL-REVIEW.md) — **2 consecutive clean passes** (pass 2 + 3) after P0/P1 harness fixes. Structural suite **179/0**; outcome **69/0**.
 
 **Honest current capability:** Phase A smoke/resolver + tri-host install; Phase B matrix driver **wired** for Codex/Cursor (dry-run verified); autonomous 2× strict-clean 22-row matrix still requires live sessions and M7 fixtures.
 
@@ -35,8 +35,9 @@ Harness M1–M6 landed on `enterprise-e2e/multi-host` (`bd68a159`). Prompts, led
 | 0 (initial) | 2026-06-30 | **NOT READY** | P0-1–P0-10; harness Claude-only; shared locks/logs |
 | 1 | 2026-06-30T12:00:00Z | **READY WITH GAPS** | M1–M6 done; prompts patched; structural suite 155/0; outcome 69/0; codex dry-run row 1 invokes Codex agent |
 | 2 | 2026-06-30T12:15:00Z | **READY WITH GAPS** | Re-review: no new P0/P1; P2 follow-ups unchanged; consecutive clean |
-
----
+| 3 (shared harness) | 2026-06-30T18:00:00Z | **NOT READY** | Post-reorg pass 1: P0 runtime leak (`live-test.sh:151`), P0 consecutive-rounds SB_ROOT, P1 monitor pgrep — see [SHARED-HARNESS-ADVERSARIAL-REVIEW.md](./SHARED-HARNESS-ADVERSARIAL-REVIEW.md) |
+| 4 (shared harness) | 2026-06-30T18:30:00Z | **READY WITH GAPS** | Fixes applied; structural 179/0; outcome 69/0 |
+| 5 (shared harness) | 2026-06-30T18:45:00Z | **READY WITH GAPS** | Confirmatory pass 3 — **2 consecutive clean** (no P0/P1) |
 
 ## M1–M6 acceptance (post-fix)
 
@@ -371,3 +372,43 @@ SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash scripts/enterprise-e2e-rc
 **Session launch:** allowed with host env blocks in prompts/TUI protocols. **Strict-clean 2×22:** still requires live matrix + ladder proof (M7 CI fixtures recommended).
 
 **Scorecard:** Prompt + harness alignment ~8/10; remaining gaps P2 only (expect parity, outcome path prefix, RCS auto-trihost).
+
+---
+
+## 2-round gate audit (2026-06-30)
+
+**User requirement:** Release needs **2 consecutive strict-clean rounds** per host — each round = ladder 8/8 × 2 clean verify + matrix 22/22 + all outcomes + 0 new issues + Phase C. Claude: Round 5 = first strict-clean; Round 6 = confirmation. Codex/Cursor: Codex-1/Cursor-1 then Codex-2/Cursor-2.
+
+### Per-track explicitness
+
+| Track | In prompt? | Round-2 ledger/gates | Transition procedure | Harness enforced? |
+|-------|------------|----------------------|----------------------|-------------------|
+| **Claude Round 6** | **YES** — [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) §A, [ROUND-6-GATES.md](./ROUND-6-GATES.md), [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md) | Round 5 + Round 6 ledgers/gates exist | §H evaluate release pair with Round 5 | **NO** — manual gate row only |
+| **Codex** | **YES** (Mission + §Two-round release gate after patch) | **ADDED** `ROUND-CODEX-{1,2}-{LEDGER,GATES}.md` | 6-step table in prompt | **NO** |
+| **Cursor** | **YES** (Mission + §Two-round release gate after patch) | **ADDED** `ROUND-CURSOR-{1,2}-{LEDGER,GATES}.md` | 6-step table in prompt | **NO** |
+
+### Harness finding
+
+| Script | 2-round enforcement |
+|--------|---------------------|
+| `run-enterprise-e2e-live-test.sh` | Prints **manual** checklist only (`[ ] 2 consecutive clean rounds before release tag`) — no ledger cross-check |
+| `run-enterprise-e2e-validation-overlay.sh` | Single-round ledger scope |
+| `enterprise-e2e-rcs.sh` | Single `--ledger` file; no consecutive-round logic |
+| `test-enterprise-e2e-live-suite.sh` | Structural: runbook **mentions** "2 consecutive clean rounds" — does not validate pair |
+| Gate scripts | **None** — operator + `ROUND-*-GATES.md` are authoritative |
+
+**Recommendation (P2 harness):** add `scripts/lib/enterprise-e2e-consecutive-rounds-check.sh` accepting two gate file paths; fail release overlay if either round not strict-clean or pair broken.
+
+### Gaps closed by this patch
+
+- Codex/Cursor prompts: §Two-round release gate, pinned Round-2 paths, one-liner updated
+- Ledgers: fixed inverted "Next action"; `Consecutive pair` metadata column
+- Host gate files: `PENDING (1/2)` / `PASS (2/2)` on consecutive row
+- Round-2 ledger templates with prior-round linkage
+
+### Remaining gaps (not patched — out of scope / P2)
+
+- No automated harness script for cross-round comparison
+- [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) is Claude-centric (no Codex/Cursor host tracks)
+- [enterprise_e2e_iteration_30417faf.plan.md](file:///Users/shafqat/.cursor/plans/enterprise_e2e_iteration_30417faf.plan.md) references Claude-only Round 1/2 todos
+- Tri-host release still requires **three** host pairs independently (Claude 5+6, Codex 1+2, Cursor 1+2) — no single RELEASE-READINESS rollup doc

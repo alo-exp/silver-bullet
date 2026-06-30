@@ -373,14 +373,16 @@ run_matrix_row() {
         # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
         source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
         local outcome_dir="${WORK_DIR}/.planning/enterprise-e2e/outcomes"
+        local runtime_state_dir
+        runtime_state_dir="$(enterprise_e2e_runtime_state_dir)"
         mkdir -p "$outcome_dir"
         enterprise_e2e_outcome_write_workflow_checklist "$row_num" \
           "${outcome_dir}/row-${row_num}-outcomes.md" \
-          "$WORK_DIR" "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+          "$WORK_DIR" "$runtime_state_dir" \
           "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path" 2>/dev/null || true
         echo "  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-${row_num}-outcomes.md"
         if ! enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" \
-          "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+          "$runtime_state_dir" \
           "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"; then
           echo "  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)"
           local fail_line
@@ -388,7 +390,7 @@ run_matrix_row() {
             [[ -z "$fail_line" ]] && continue
             echo "    OUTCOME-FAIL: $fail_line"
           done < <(enterprise_e2e_outcome_row_failures "$row_num" "$WORK_DIR" \
-            "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+            "$runtime_state_dir" \
             "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path")
           FAIL_ROWS=$((FAIL_ROWS + 1))
           row_telemetry_result="fail"
