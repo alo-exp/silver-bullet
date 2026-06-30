@@ -34,6 +34,14 @@ done
 [[ -n "$config_file" ]] || exit 0
 sb_project_gate_or_exit 2>/dev/null || exit 0
 
+if [[ -f "$_lib_dir/e2e-matrix-routing.sh" ]]; then
+  # shellcheck source=lib/e2e-matrix-routing.sh
+  source "$_lib_dir/e2e-matrix-routing.sh"
+  if sb_e2e_matrix_routing_row_active 2>/dev/null; then
+    exit 0
+  fi
+fi
+
 SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
 mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
 state_file="${SILVER_BULLET_STATE_FILE:-${SB_STATE_DIR}/state}"
