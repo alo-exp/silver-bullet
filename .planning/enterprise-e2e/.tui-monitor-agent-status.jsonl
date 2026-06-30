@@ -19,3 +19,4 @@
 {"ts":"2026-06-30T11:05:00Z","row":13,"ledger":"1P 11F","pids":{"batch":"55165","tmux":"cursor-e2e"},"action":"watch","note":"10/22 scored checkpoint; row13 in flight; monitors restarted"}
 {"ts":"2026-06-30T12:31:00Z","row":15,"ledger":"1P 13F","action":"watch","note":"15/22 checkpoint; row15 review-triad in flight"}
 {"ts":"2026-06-30T13:35:00Z","ledger":"1P 21F","action":"retry","note":"initial batch complete; launching FORCE retry 2-22 @1800s"}
+{"ts":"2026-06-30T17:12:00Z","ledger":"10P 12F","action":"final","note":"post-retry summary; tmux died row20; E2E-088 filed"}
