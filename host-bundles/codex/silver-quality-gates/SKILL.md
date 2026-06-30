@@ -19,12 +19,12 @@ The standard product sweep is **8 core dimensions**. `ai-llm-safety` is included
 
 **Dimension skills root**: Set `DIMENSION_SKILLS_ROOT="${PLUGIN_ROOT}/skills"` by default. Dimension helpers are hidden implementation dependencies, so their packaged files may be named `SILVER_SOURCE` instead of `SKILL.md`.
 
-If this skill is running from a native skill mirror such as `$HOME/.secondary host/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged secondary host source root in this order:
+If this skill is running from a native skill mirror such as `$HOME/.codex/skills/silver-quality-gates/SKILL.md` and `${PLUGIN_ROOT}/skills/modularity/SKILL.md` does not exist, resolve the hidden packaged Codex source root in this order:
 
 ```bash
 for candidate in \
-  "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet/current/skill-source" \
-  "$(find "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet" -mindepth 2 -maxdepth 2 -type d -path '*/skill-source' 2>/dev/null | sort -V | tail -n 1)"; do
+  "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current/skill-source" \
+  "$(find "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet" -mindepth 2 -maxdepth 2 -type d -path '*/skill-source' 2>/dev/null | sort -V | tail -n 1)"; do
   if [[ -n "$candidate" && -f "$candidate/modularity/SILVER_SOURCE" ]]; then
     DIMENSION_SKILLS_ROOT="$candidate"
     break
@@ -36,7 +36,7 @@ Do not require dimension helper skills to appear in the host skill picker. They 
 
 If any required dimension source is unavailable, first repair the missing dependency from its marketplace source before any fallback:
 
-1. Reinstall or update Silver Bullet from the active host marketplace source (`/plugin install alo-exp/silver-bullet` or the host-specific marketplace equivalent; host package key: `silver-bullet@alo-labs-secondary host`).
+1. Reinstall or update Silver Bullet from the active host marketplace source (`/plugin install alo-exp/silver-bullet` or the host-specific marketplace equivalent; host package key: `silver-bullet@alo-labs-codex`).
 2. Re-run the dimension source lookup.
 3. Only if installation/repair fails or the user explicitly declines, stop or mark the quality-gates run degraded. Do not silently replace missing dimension skills with ad hoc reasoning.
 

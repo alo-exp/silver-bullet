@@ -12,7 +12,7 @@ If Phase 0 determined this is an update:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. If the project already has a project instruction file (`project instruction file` in primary host, `AGENTS.md` in secondary host), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
+3. If the project already has a project instruction file (`project instruction file` in Claude Code, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.claude/settings.json`.
@@ -53,7 +53,7 @@ Keep user-facing bootstrap language runtime-neutral. On this runtime, describe t
 
 Check if a project instruction file exists in the project root (`project instruction file` or `AGENTS.md`, depending on the runtime).
 
-**If NO existing project instruction file**: do not create a new agent instruction file during secondary host initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
+**If NO existing project instruction file**: do not create a new agent instruction file during Codex initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
 
 **If an existing project instruction file is present**: First, strip any existing Silver Bullet sections (migration from pre-v0.7.0). Then add the reference line and run conflict detection.
 
@@ -89,7 +89,7 @@ Then run conflict detection (step 3.1c).
 
 Scan the project instruction file for patterns that conflict with `silver-bullet.md` rules. Check for these conflict patterns:
 
-1. **Model routing overrides**: regex `(always|default|prefer|use).*(primary host-opus|primary host-sonnet|opus|sonnet)` on directive-like lines (conflicts with SB Section 5)
+1. **Model routing overrides**: regex `(always|default|prefer|use).*(Claude Code-opus|Claude Code-sonnet|opus|sonnet)` on directive-like lines (conflicts with SB Section 5)
 2. **Execution preferences**: regex `(always|never|must).*(subagent-driven|executing-plans)` on directive-like lines (conflicts with SB Section 6)
 3. **Review loop overrides**: regex `(skip|disable|no).*(review.*loop|code.review)|approved.*(once|single)` on directive-like lines (conflicts with SB Section 3a)
 4. **Workflow overrides**: regex `(override|replace|ignore).*(workflow|silver.bullet)` on directive-like lines (conflicts with SB Section 2)
@@ -143,7 +143,7 @@ If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` base
 
 ### 3.3 Write the project instruction file (only when an existing one was found)
 
-Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during secondary host init.
+Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
 
 Read `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
@@ -162,7 +162,7 @@ When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silv
 2. Otherwise append the template block to each file.
 3. Copy upstream `context-mode.mdc` to `host rules path (see install guide) context-mode.mdc` on task host hosts (see `docs/CONTEXT-MODE.md`).
 
-### 3.4.2 RTK awareness (secondary host / optional)
+### 3.4.2 RTK awareness (Codex / optional)
 
 On active host when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
 

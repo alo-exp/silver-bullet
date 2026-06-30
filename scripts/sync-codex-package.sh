@@ -31,6 +31,9 @@ python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skil
 python3 "$AGENT_RENDERER" render --agent codex --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
 python3 "$AGENT_RENDERER" render --agent cursor --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
 
+# Legacy render paths under agents/{codex,cursor} must not remain in the checkout.
+rm -rf "${REPO_ROOT}/agents/codex" "${REPO_ROOT}/agents/cursor"
+
 shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
   base="$(basename "$entry")"
