@@ -2,6 +2,8 @@
 
 Copy from template at round start. Host track runs **in parallel** with Claude Round 6 — use host-isolated lock/log paths only.
 
+**Required SB branch:** `enterprise-e2e/cursor` — verify with `git branch --show-current` before commits; harness aborts on mismatch (`enterprise_e2e_assert_host_git_branch`).
+
 ---
 
 ## Round metadata

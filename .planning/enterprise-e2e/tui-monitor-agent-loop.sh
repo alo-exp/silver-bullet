@@ -9,6 +9,7 @@ enterprise_e2e_prepend_harness_path
 export SB_ROOT
 enterprise_e2e_apply_matrix_host_defaults
 MATRIX_HOST="$(enterprise_e2e_matrix_host)"
+enterprise_e2e_assert_host_git_branch || exit 1
 ROW_LOG_GLOB="$(enterprise_e2e_row_attempt_log_glob)"
 
 STATUS_FILE=".planning/enterprise-e2e/.tui-monitor-agent-status.jsonl"
