@@ -10,8 +10,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 |-------|-------|
 | Round | Codex-1 |
 | Host | `codex` |
-| SB repo SHA | `b4f471b3` |
-| Codex plugin install | `d24207e3` |
+| SB repo SHA | `959de0ea` |
+| Codex plugin install | `959de0ea` *(install-codex.sh post-harness)* |
 | Codex model (frozen) | gpt-5.4 / gpt-5.5 (ladder rungs 1–8) |
 | Operator | Cursor Composer (Codex E2E subagent) |
 | Start date | 2026-06-30 |
@@ -67,8 +67,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | # | WF slug | Session date | Codex model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|-------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-30 | | **Pass** | — | FORCE row1 @78406; OUT-SKILL-01 fix ac4b9322 | ac4b9322 | graphify query "silver-router routes hooks skills orchestrator" | mem_mr0flf2a |
-| 2 | `silver-research` | 2026-06-30 | | **Fail** | scorer-false-negative | evidence PASS (72/72 tests); OUT-KM/ORCH/HEAL partial — FORCE retry after R3 @b4f471b3 | b4f471b3 | graphify query "silver-research routes hooks skills orchestrator" | mem_mr0ghyhm |
-| 3 | `silver-feature` | 2026-06-30 | | *(in flight)* | — | R3 driver PID 54793; row 3 launching @b4f471b3 scorer on disk | b4f471b3 | graphify query "silver-feature routes hooks skills orchestrator" | |
+| 2 | `silver-research` | 2026-06-30 | | **Fail** | scorer-false-negative | transcript KM/ORCH pass @959de0ea; FORCE retry post-DRIVER_DONE_R3 | 959de0ea | graphify query "silver-research routes hooks skills orchestrator" | mem_mr0ghyhm |
+| 3 | `silver-feature` | 2026-06-30 | | *(in flight)* | stop-hook-stall / quota | R3 PID 54793; retry #2 invoke 41641 (429→retry); harness 959de0ea for new invocations only | 959de0ea | graphify query "silver-feature routes hooks skills orchestrator" | mem_mr0iqx2q |
 | 4 | `silver-bugfix` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
 | 5 | `silver-ui` | 2026-06-30 | | **Fail** | hook-trust | resume pending | d24207e3 | | |
 | 6 | `silver-fast` | 2026-06-30 | | **Pass** | — | strict-clean @ batch 65528 | | | |
@@ -89,9 +89,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 3 / 22 *(rows 1,6,7 strict-clean — R3 driver PID 54793 rows 3-5,8-22 in flight; row 2 FORCE retry queued post-R3 @b4f471b3)*
+**Pass count:** 3 / 22 *(rows 1,6,7 strict-clean — R3 driver PID 54793 rows 2-5,8-22 in flight; row 3 retry #2 @41641; row 2 FORCE queued post-DRIVER_DONE_R3)*
 
 **Harness fixes (enterprise-e2e/codex):**
+- `959de0ea` — stop-hook quiet timeout (spinner-immune last_activity + completion without prompt return); CLAUDE→CODEX quiet timeout forward; SB_E2E_MATRIX_EVIDENCE_PATH scorer (75 tests)
 - `b4f471b3` — TUI-aware KM/ORCH/HEAL outcome scoring (Codex mem_mr* + graphify query evidence path)
 - `33c22980` — preserve CODEX_AUTO_TRUST_HOOKS from matrix spawn env
 - `d24207e3` — hook trust auto-select + per-row seed + row_log append
