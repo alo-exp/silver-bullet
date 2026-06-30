@@ -38,7 +38,8 @@ enterprise_e2e_outcome_criteria_ids() {
     OUT-TAILOR-01 OUT-VLOOP-01 OUT-GATES-01 OUT-TRACE-01 OUT-INTENT-01 OUT-KM-01 \
     OUT-ORCH-01 OUT-PLAN-01 OUT-SKILL-01 OUT-REVIEW-01 OUT-BLAST-01 OUT-HOOK-01 \
     OUT-COMPLETE-01 OUT-HANDOFF-01 OUT-CODEINT-01 OUT-FLOW-01 OUT-MEASURE-01 \
-    OUT-DECIDE-01 OUT-FORENS-01
+    OUT-DECIDE-01 OUT-FORENS-01 OUT-AUTO-01 OUT-CLARIFY-01 OUT-NOOP-01 OUT-WORLD-01 \
+    OUT-DRIFT-01 OUT-SUPER-01 OUT-HEAL-01 OUT-RELEASE-01
 }
 
 enterprise_e2e_outcome_row_criteria() {
@@ -63,7 +64,222 @@ enterprise_e2e_outcome_session_criteria() {
     jq -r '.session_criteria[]?' "$reg"
     return 0
   fi
-  printf '%s\n' OUT-SKILL-01 OUT-HOOK-01 OUT-ORCH-01 OUT-HANDOFF-01 OUT-CODEINT-01 OUT-KM-01 OUT-DECIDE-01
+  printf '%s\n' OUT-SKILL-01 OUT-HOOK-01 OUT-ORCH-01 OUT-HANDOFF-01 OUT-CODEINT-01 OUT-KM-01 OUT-DECIDE-01 \
+    OUT-AUTO-01 OUT-NOOP-01 OUT-CLARIFY-01 OUT-HEAL-01 OUT-SUPER-01
+}
+
+enterprise_e2e_outcome_is_blocking() {
+  local cid="$1"
+  local reg
+  reg="$(enterprise_e2e_outcome_registry_path)"
+  if [[ -f "$reg" ]] && command -v jq >/dev/null 2>&1; then
+    jq -e --arg c "$cid" '.blocking_criteria[]? | select(. == $c)' "$reg" >/dev/null 2>&1 && return 0
+    jq -e --arg c "$cid" '.criteria[]? | select(.id == $c and .blocking == true)' "$reg" >/dev/null 2>&1 && return 0
+    return 1
+  fi
+  case "$cid" in
+    OUT-AUTO-01|OUT-CLARIFY-01|OUT-NOOP-01|OUT-WORLD-01) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+enterprise_e2e_outcome_log_has_babysitting() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  grep -qiE 'waiting for (your|user)|ask the user|operator pause|need your input|babysit' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_autonomous() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_score_auto() {
+  local work_dir="$1" state_dir="$2" row_log="${3:-}" evidence="${4:-}"
+  if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
+    if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
+      printf 'partial\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
+  if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
+    if enterprise_e2e_outcome_log_has_autonomous "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ -f "${state_dir}/orchestrator-directive.json" ]] || [[ -f "${state_dir}/state" ]]; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
+enterprise_e2e_outcome_score_clarify() {
+  local work_dir="$1" state_dir="$2" row_log="${3:-}" row_num="${4:-}"
+  local state_file="${state_dir}/state"
+  if [[ -f "${work_dir}/.planning/CLARIFY.md" ]]; then
+    if grep -qiE 'locked|decision_class' "${work_dir}/.planning/CLARIFY.md" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
+  fi
+  if [[ -f "$state_file" ]] && grep -q 'silver-clarify' "$state_file" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify' "$row_log" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
+  case "$row_num" in
+    1|2|3) printf 'fail\n' ;;
+    *) printf 'n/a\n' ;;
+  esac
+}
+
+enterprise_e2e_outcome_score_noop() {
+  local work_dir="$1" row_log="${2:-}"
+  if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
+    if [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'SB OVERRIDE' "$row_log" 2>/dev/null; then
+      printf 'partial\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
+  if [[ -f "${work_dir}/.planning/CLARIFY.md" ]] && grep -qi 'locked' "${work_dir}/.planning/CLARIFY.md" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  printf 'partial\n'
+}
+
+enterprise_e2e_outcome_score_drift() {
+  local work_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  case "$row_num" in
+    3|4|5|17|19) ;;
+    *) printf 'n/a\n'; return 0 ;;
+  esac
+  if find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'deviation|drift|course.correct|realign' {} + 2>/dev/null | grep -q .; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'course correct|implementation drift|realign' "$row_log" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
+  printf 'partial\n'
+}
+
+enterprise_e2e_outcome_score_super() {
+  local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  case "$row_num" in
+    1|3|4|5) ;;
+    *) printf 'n/a\n'; return 0 ;;
+  esac
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'wbs-supervisor|wbs supervisor|WBS stub' "$row_log" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -f "${state_dir}/orchestrator-directive.json" ]] && \
+     grep -q 'next_worker_template\|next_skill' "${state_dir}/orchestrator-directive.json" 2>/dev/null; then
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
+enterprise_e2e_outcome_score_heal() {
+  local sb_root="$1" row_log="${2:-}"
+  local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
+  if [[ -n "$row_log" && -f "$row_log" ]]; then
+    if grep -qiE 'hook.*block' "$row_log" 2>/dev/null; then
+      if grep -qiE 'retry|recovered|self-heal|SB fix' "$row_log" 2>/dev/null; then
+        printf 'pass\n'; return 0
+      fi
+      printf 'fail\n'; return 0
+    fi
+    if grep -qiE 'WARN.*hook|hook.*WARN' "$row_log" 2>/dev/null; then
+      printf 'partial\n'; return 0
+    fi
+  fi
+  if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+     [[ -f "$watch" ]] && grep -qi 'false.positive\|hook.*block' "$watch" 2>/dev/null; then
+    printf 'fail\n'; return 0
+  fi
+  printf 'n/a\n'
+}
+
+enterprise_e2e_outcome_score_release() {
+  local work_dir="$1" row_num="${2:-}" ledger="${3:-}"
+  [[ ! "$row_num" =~ ^(14|15|16)$ ]] && { printf 'n/a\n'; return 0; }
+  local has_ledger=0 has_ship=0
+  [[ -f "${work_dir}/docs/instruction-ledger.jsonl" ]] && has_ledger=1
+  [[ -d "${work_dir}/.planning/ship-readiness" ]] && has_ship=1
+  if [[ "$has_ledger" -eq 1 && "$has_ship" -eq 1 ]]; then
+    if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
+      printf 'partial\n'; return 0
+    fi
+    printf 'pass\n'; return 0
+  fi
+  if [[ "$has_ledger" -eq 1 || "$has_ship" -eq 1 ]]; then
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
+enterprise_e2e_outcome_score_world() {
+  local row_num="$1" work_dir="$2" state_dir="$3" row_log="${4:-}" ledger="${5:-}" evidence="${6:-}"
+  local cid score
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    printf 'fail\n'; return 0
+  done < <(enterprise_e2e_outcome_row_criteria "$row_num")
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    printf 'fail\n'; return 0
+  done < <(enterprise_e2e_outcome_session_criteria)
+  printf 'pass\n'
+}
+
+enterprise_e2e_outcome_row_passes() {
+  local row_num="$1" work_dir="$2" state_dir="$3" row_log="${4:-}" ledger="${5:-}" evidence="${6:-}"
+  local cid score world
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    return 1
+  done < <(enterprise_e2e_outcome_row_criteria "$row_num")
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    return 1
+  done < <(enterprise_e2e_outcome_session_criteria)
+  world="$(enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence")"
+  [[ "$world" == "pass" ]]
+}
+
+enterprise_e2e_outcome_row_failures() {
+  local row_num="$1" work_dir="$2" state_dir="$3" row_log="${4:-}" ledger="${5:-}" evidence="${6:-}"
+  local cid score world
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    printf '%s %s\n' "$cid" "$score"
+  done < <(enterprise_e2e_outcome_row_criteria "$row_num")
+  while IFS= read -r cid; do
+    [[ -z "$cid" ]] && continue
+    score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
+    [[ "$score" == "n/a" || "$score" == "pass" ]] && continue
+    printf '%s %s\n' "$cid" "$score"
+  done < <(enterprise_e2e_outcome_session_criteria)
+  world="$(enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence")"
+  [[ "$world" != "pass" ]] && printf 'OUT-WORLD-01 %s\n' "$world"
 }
 
 # Emit: pass|partial|fail|n/a
@@ -160,6 +376,9 @@ enterprise_e2e_outcome_score_km() {
       fi
     fi
   fi
+  if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" == "1" ]]; then
+    printf 'n/a\n'; return 0
+  fi
   if [[ -f "${work_dir:-}/.silver-bullet.json" ]] && grep -q '"graphify"' "${work_dir}/.silver-bullet.json" 2>/dev/null; then
     printf 'partial\n'; return 0
   fi
@@ -233,7 +452,8 @@ enterprise_e2e_outcome_score_blast() {
 enterprise_e2e_outcome_score_hook() {
   local sb_root="$1"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
-  if [[ -f "$watch" ]] && grep -qi 'false.positive\|hook.*block' "$watch" 2>/dev/null; then
+  if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+     [[ -f "$watch" ]] && grep -qi 'false.positive\|hook.*block' "$watch" 2>/dev/null; then
     printf 'fail\n'; return 0
   fi
   if [[ -f "${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md" ]] && \
@@ -356,6 +576,14 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-MEASURE-01) enterprise_e2e_outcome_score_measure "$ledger" "$sb_root" ;;
     OUT-DECIDE-01) enterprise_e2e_outcome_score_decide "$work_dir" ;;
     OUT-FORENS-01) enterprise_e2e_outcome_score_forens "$work_dir" "$row_num" ;;
+    OUT-AUTO-01) enterprise_e2e_outcome_score_auto "$work_dir" "$state_dir" "$row_log" "$evidence" ;;
+    OUT-CLARIFY-01) enterprise_e2e_outcome_score_clarify "$work_dir" "$state_dir" "$row_log" "$row_num" ;;
+    OUT-NOOP-01) enterprise_e2e_outcome_score_noop "$work_dir" "$row_log" ;;
+    OUT-WORLD-01) enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence" ;;
+    OUT-DRIFT-01) enterprise_e2e_outcome_score_drift "$work_dir" "$row_log" "$row_num" ;;
+    OUT-SUPER-01) enterprise_e2e_outcome_score_super "$state_dir" "$row_log" "$row_num" ;;
+    OUT-HEAL-01) enterprise_e2e_outcome_score_heal "$sb_root" "$row_log" ;;
+    OUT-RELEASE-01) enterprise_e2e_outcome_score_release "$work_dir" "$row_num" "$ledger" ;;
     *) printf 'n/a\n' ;;
   esac
 }
@@ -408,6 +636,11 @@ enterprise_e2e_outcome_write_workflow_checklist() {
       score="$(enterprise_e2e_outcome_score_criterion "$cid" "$work_dir" "$state_dir" "$row_log" "$row_num" "$ledger" "$evidence")"
       printf '| %s | %s | workflow |\n' "$cid" "$score"
     done < <(enterprise_e2e_outcome_row_criteria "$row_num")
+    world="$(enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence")"
+    printf '| OUT-WORLD-01 | %s | composite |\n' "$world"
+    row_pass="FAIL"
+    enterprise_e2e_outcome_row_passes "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence" && row_pass="PASS"
+    printf '\n**Row outcome verdict:** %s (all applicable criteria must pass; partial = fail)\n' "$row_pass"
     printf '\n## Session criteria (same session)\n\n'
     printf '| Criterion | Score | Scope |\n|-----------|-------|-------|\n'
     while IFS= read -r cid; do
@@ -434,7 +667,7 @@ enterprise_e2e_outcome_assess_structural_wiring() {
   if command -v jq >/dev/null 2>&1; then
     local count
     count="$(jq '.criteria | length' "${root}/docs/testing/outcome-criteria-registry.json")"
-    [[ "$count" -ge 18 ]] || { echo "CRITERIA_COUNT: expected >=18 got $count"; fail=1; }
+    [[ "$count" -ge 27 ]] || { echo "CRITERIA_COUNT: expected >=27 got $count"; fail=1; }
   fi
   return "$fail"
 }

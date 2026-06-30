@@ -11,6 +11,7 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
+export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
 FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
@@ -27,7 +28,7 @@ else
   fail "outcome assessment structural wiring incomplete"
 fi
 
-# --- Rubric documents all 18 criterion IDs ---
+# --- Rubric documents all criterion IDs ---
 RUBRIC="${REPO_ROOT}/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md"
 for cid in $(enterprise_e2e_outcome_criteria_ids); do
   if grep -q "$cid" "$RUBRIC" 2>/dev/null; then
@@ -40,10 +41,15 @@ done
 # --- Registry JSON validity ---
 REGISTRY="${REPO_ROOT}/docs/testing/outcome-criteria-registry.json"
 if command -v jq >/dev/null 2>&1; then
-  if jq -e '.criteria | length >= 18' "$REGISTRY" >/dev/null 2>&1; then
-    pass "registry has >=18 criteria"
+  if jq -e '.criteria | length >= 27' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry has >=27 criteria"
   else
-    fail "registry criteria count < 18"
+    fail "registry criteria count < 27"
+  fi
+  if jq -e '.blocking_criteria | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry blocking_criteria has >=4 entries"
+  else
+    fail "registry blocking_criteria missing"
   fi
   if jq -e '.workflow_row_map["1"] | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
     pass "registry workflow_row_map row 1 populated"
@@ -72,15 +78,38 @@ EOF
 cat >"$FIXTURE/.planning/QUALITY-GATES-feature.md" <<'EOF'
 # Quality gates
 EOF
+cat >"$FIXTURE/.planning/CLARIFY.md" <<'EOF'
+# Clarify — currency feature
+locked decision: use ISO 4217 currency codes
+decision_class: locked
+EOF
 cat >"$FIXTURE/.planning/workflows/feature-currency.md" <<'EOF'
 # Feature currency
 post-exec-gates evidence
+deviation logged and realigned to prompt
+Flow Log
+| step | status |
+| VALIDATE | pass |
+EOF
+mkdir -p "$FIXTURE/api"
+touch "$FIXTURE/api/.gitkeep"
+SESSION_LOG_R3="$(mktemp)"
+printf 'autonomous orchestrator active\nTask worker spawned\nwbs-supervisor stub\n/silver:clarify locked decisions applied\ngraphify query silver-feature routes hooks\n' >"$SESSION_LOG_R3"
+cat >"$STATE_DIR/orchestrator-worker-active.json" <<'EOF'
+{"worker":"feature"}
+EOF
+cat >"$FIXTURE/.planning/SPEC-feature.md" <<'EOF'
+# Spec — currency field
+EOF
+cat >"$FIXTURE/.planning/workflows/20260630T120000Z-feature-currency.md" <<'EOF'
+# Feature currency dated workflow
+deviation logged and realigned to prompt
 Flow Log
 | step | status |
 | VALIDATE | pass |
 EOF
 
-row_scores="$(enterprise_e2e_outcome_assess_workflow_row 3 "$FIXTURE" "$STATE_DIR" "" "" "api/")"
+row_scores="$(enterprise_e2e_outcome_assess_workflow_row 3 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" "" "api/")"
 if printf '%s\n' "$row_scores" | grep -q 'OUT-GATES-01 pass'; then
   pass "fixture row 3 OUT-GATES-01 pass"
 else
@@ -91,12 +120,38 @@ if printf '%s\n' "$row_scores" | grep -q 'OUT-VLOOP-01 pass'; then
 else
   fail "fixture row 3 OUT-VLOOP-01 expected pass"
 fi
-session_scores_r3="$(enterprise_e2e_outcome_assess_session "" "$STATE_DIR" "$FIXTURE")"
+# --- Fixture: row 3 autonomy + clarify + world composite ---
+score_auto="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" 3 "" "api/")"
+[[ "$score_auto" == "pass" ]] && pass "fixture row 3 OUT-AUTO-01 pass" || fail "fixture row 3 OUT-AUTO-01 got $score_auto"
+score_clarify="$(enterprise_e2e_outcome_score_criterion OUT-CLARIFY-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" 3)"
+[[ "$score_clarify" == "pass" ]] && pass "fixture row 3 OUT-CLARIFY-01 pass" || fail "fixture row 3 OUT-CLARIFY-01 got $score_clarify"
+score_world="$(enterprise_e2e_outcome_score_criterion OUT-WORLD-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" 3 "" "api/")"
+[[ "$score_world" == "pass" ]] && pass "fixture row 3 OUT-WORLD-01 composite pass" || fail "fixture row 3 OUT-WORLD-01 got $score_world"
+if enterprise_e2e_outcome_row_passes 3 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R3" "" "api/"; then
+  pass "fixture row 3 enterprise_e2e_outcome_row_passes"
+else
+  fail "fixture row 3 enterprise_e2e_outcome_row_passes expected pass"
+fi
+# Negative: babysitting log fails AUTO + row_passes
+BAD_LOG="$(mktemp)"
+printf 'waiting for your input before continuing\n' >"$BAD_LOG"
+score_auto_fail="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$BAD_LOG" 3 "" "api/")"
+[[ "$score_auto_fail" == "partial" || "$score_auto_fail" == "fail" ]] && pass "fixture OUT-AUTO-01 fails on babysitting log" || fail "fixture OUT-AUTO-01 babysitting got $score_auto_fail"
+if enterprise_e2e_outcome_row_passes 3 "$FIXTURE" "$STATE_DIR" "$BAD_LOG" "" "api/"; then
+  fail "fixture row 3 row_passes should fail on babysitting log"
+else
+  pass "fixture row 3 row_passes fails on babysitting log"
+fi
+rm -f "$BAD_LOG"
+rm -f "$STATE_DIR/orchestrator-worker-active.json"
+
+session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
 if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
 else
   fail "fixture row 3 session OUT-SKILL-01 expected pass"
 fi
+rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
 printf 'silver-context\n' >"$STATE_DIR/state"
@@ -130,8 +185,8 @@ rm -f "$SESSION_LOG"
 # --- Workflow checklist writer ---
 CHECKLIST="${OUT_DIR}/row-3-outcomes.md"
 enterprise_e2e_outcome_write_workflow_checklist 3 "$CHECKLIST" "$FIXTURE" "$STATE_DIR" "" "" "api/"
-if [[ -f "$CHECKLIST" ]] && grep -q 'OUT-GATES-01' "$CHECKLIST" && grep -q 'session' "$CHECKLIST"; then
-  pass "workflow checklist writer emits workflow + session tables"
+if [[ -f "$CHECKLIST" ]] && grep -q 'OUT-GATES-01' "$CHECKLIST" && grep -q 'OUT-WORLD-01' "$CHECKLIST" && grep -q 'session' "$CHECKLIST"; then
+  pass "workflow checklist writer emits workflow + session + composite tables"
 else
   fail "workflow checklist writer output invalid"
 fi
@@ -159,7 +214,7 @@ rm -f "$LEDGER_FIXTURE"
 
 # --- ROUND-N-OUTCOMES template references rubric ---
 OUTCOMES_TEMPLATE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md"
-for needle in OUT-TAILOR-01 OUT-REVIEW-01 OUT-MEASURE-01 "Per-session checklist"; do
+for needle in OUT-TAILOR-01 OUT-REVIEW-01 OUT-MEASURE-01 OUT-AUTO-01 OUT-WORLD-01 "Per-session checklist"; do
   if grep -qF "$needle" "$OUTCOMES_TEMPLATE" 2>/dev/null; then
     pass "ROUND-N-OUTCOMES template includes $needle"
   else

@@ -73,7 +73,9 @@ Copy row block per workflow. Primary criteria from registry `workflow_row_map`.
 | row-1-attempt-1 | matrix TUI | | OUT-TAILOR-01, OUT-ORCH-01, … | | | |
 | ladder-rung-1 | review-fix-ladder | | OUT-REVIEW-01 (partial) | | | |
 
-**Session criteria (always):** OUT-SKILL-01, OUT-HOOK-01, OUT-ORCH-01, OUT-HANDOFF-01, OUT-CODEINT-01, OUT-KM-01, OUT-DECIDE-01
+**Session criteria (always):** OUT-SKILL-01, OUT-HOOK-01, OUT-ORCH-01, OUT-HANDOFF-01, OUT-CODEINT-01, OUT-KM-01, OUT-DECIDE-01, OUT-AUTO-01, OUT-NOOP-01, OUT-CLARIFY-01, OUT-HEAL-01, OUT-SUPER-01
+
+**Blocking composite:** OUT-WORLD-01 — all applicable criteria must pass (partial = row fail).
 
 ---
 

@@ -369,6 +369,27 @@ run_matrix_row() {
           "$WORK_DIR" "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
           "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path" 2>/dev/null || true
         echo "  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-${row_num}-outcomes.md"
+        if ! enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" \
+          "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+          "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"; then
+          echo "  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)"
+          local fail_line
+          while IFS= read -r fail_line; do
+            [[ -z "$fail_line" ]] && continue
+            echo "    OUTCOME-FAIL: $fail_line"
+          done < <(enterprise_e2e_outcome_row_failures "$row_num" "$WORK_DIR" \
+            "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}" \
+            "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path")
+          FAIL_ROWS=$((FAIL_ROWS + 1))
+          row_telemetry_result="fail"
+          SB_E2E_TELEMETRY_ROW="$row_num" \
+            SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+            SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+            SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+            enterprise_e2e_telemetry_append "matrix_row" || true
+          break
+        fi
+        echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"

@@ -14,7 +14,20 @@
 
 ---
 
-## Criteria (18)
+## Blocking autonomy criteria
+
+These four criteria are **mandatory** for matrix row PASS and strict-clean round verdict. **`partial` scores as row FAIL** — evidence file alone is insufficient.
+
+| ID | Blocking |
+|----|----------|
+| **OUT-AUTO-01** | Yes — autonomous end-to-end delivery |
+| **OUT-CLARIFY-01** | Yes — ambiguous input routes to `/silver:clarify` before wrong execution |
+| **OUT-NOOP-01** | Yes — no operator pause when automation path exists |
+| **OUT-WORLD-01** | Yes — composite: all applicable workflow + session criteria pass |
+
+---
+
+## Criteria (27)
 
 ### OUT-TAILOR-01 — Dynamic workflow tailoring
 
@@ -224,6 +237,96 @@
 | **Partial** | Forensics doc without actionable next steps. |
 | **n/a** | Non-forensics rows. |
 | **Artifacts** | `docs/forensics/CI-001.md`, row 19 log |
+
+### OUT-AUTO-01 — Autonomous end-to-end delivery *(blocking)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | workflow + session |
+| **Definition** | SB drives vague or partial prompts to a shipped outcome without operator babysitting; uses clarify loop when needed instead of stalling. |
+| **Pass signals** | Evidence artifact exists; row log shows `autonomous` / orchestrator queue drained; no babysitting markers; parent completes worker chain. |
+| **Partial** | Evidence exists but log shows non-locked operator prompts or stalled queue before recovery. |
+| **Fail** | Session ended needing operator to advance; parent declared done without outcome; autonomy breakdown in row log. |
+| **Artifacts** | Matrix evidence path, `.e2e-row{N}-attempt.log`, `orchestrator-directive.json` |
+
+### OUT-CLARIFY-01 — Clarify gate *(blocking)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | workflow + session |
+| **Definition** | Ambiguous or fuzzy intent routes to `/silver:clarify` before wrong workflow execution — not silent mis-routing. |
+| **Pass signals** | `state` contains `silver-clarify`; `.planning/CLARIFY.md` with locked decisions; row log shows `/silver:clarify` before first src edit. |
+| **Partial** | Clarify artifact exists but after wrong-route attempt in log. |
+| **Fail** | Vague prompt (row 1–3 class) executed wrong workflow with zero clarify markers. |
+| **n/a** | Rows with fully specified prompt cards and no ambiguity signals. |
+| **Artifacts** | `.planning/CLARIFY.md`, `state`, row log |
+
+### OUT-NOOP-01 — No operator pause *(blocking)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | No locked `decision_class` outcomes left for human when an automation path exists — matrix runs without operator babysitting. |
+| **Pass signals** | Row log lacks operator pause markers; locked decisions in CLARIFY/outcomes JSON; `outcomes-check` pass. |
+| **Partial** | Single recoverable pause with documented `SB OVERRIDE`. |
+| **Fail** | Repeated operator prompts for automatable decisions; ledger notes manual intervention mid-row. |
+| **Artifacts** | Row log, `.planning/CLARIFY.md`, outcomes hook state |
+
+### OUT-WORLD-01 — World-class composite gate *(blocking)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | workflow (per row) |
+| **Definition** | Composite gate: **all applicable** workflow + session criteria for the row score `pass` (not `partial` or `fail`). Evidence file existence alone is insufficient. |
+| **Pass signals** | `enterprise_e2e_outcome_row_passes` returns 0; checklist has zero non-pass applicable scores. |
+| **Partial** | *(not used — partial on any applicable criterion fails this gate)* |
+| **Fail** | Any applicable criterion `partial` or `fail`. |
+| **Artifacts** | `.planning/enterprise-e2e/outcomes/row-N-outcomes.md` |
+
+### OUT-DRIFT-01 — Intent drift course correction
+
+| Field | Value |
+|-------|-------|
+| **Scope** | workflow + session |
+| **Definition** | When implementation drifts from plan or matrix prompt, SB proactively course-corrects — logs deviation and realigns. |
+| **Pass signals** | Flow Log deviation row; forensics/drift note in workflow md; log shows course correction. |
+| **Partial** | Drift mentioned without corrective action. |
+| **n/a** | Simple single-artifact rows (6, 10) with no drift signals. |
+| **Artifacts** | `.planning/workflows/*.md` Flow Log, row log |
+
+### OUT-SUPER-01 — WBS meta-supervision to completion
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | WBS meta-supervisor tracks parent/worker loop to completion — no parent exit with pending subagent work. |
+| **Pass signals** | `wbs-supervisor` in log; worker handoff snapshot; `current_flow` empty at row end. |
+| **Partial** | Supervisor stub without worker completion evidence. |
+| **Fail** | Parent session ended with pending `current_flow`; open WBS items at row boundary. |
+| **Artifacts** | `hooks/lib/wbs-supervisor.sh` output, `orchestrator-directive.json`, composition log |
+
+### OUT-HEAL-01 — Self-healing on hook friction
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | Hook BLOCK/WARN friction triggers autonomous retry or fix in-session — not user babysitting. |
+| **Pass signals** | Log shows hook block followed by retry/recovery in same session; TUI watch finding resolved. |
+| **Partial** | WARN-level hook only; recovered without operator. |
+| **Fail** | Session ended on hook block; false-positive BLOCK with no SB fix attempt. |
+| **n/a** | Sessions with zero hook friction events. |
+| **Artifacts** | `.e2e-tui-watch-findings.jsonl`, row log, hook audit |
+
+### OUT-RELEASE-01 — Release-ready artifact chain
+
+| Field | Value |
+|-------|-------|
+| **Scope** | workflow (rows 14–16) |
+| **Definition** | SPEC → PLAN → VALIDATION → SHIP → ledger refs form a complete chain without manual ledger patching. |
+| **Pass signals** | `docs/instruction-ledger.jsonl` entry; ship-readiness checklist; ledger row refs match automated telemetry. |
+| **Partial** | Artifacts exist but ledger manually patched mid-round. |
+| **Fail** | Release/ship row without instruction-ledger or ship-readiness chain. |
+| **Artifacts** | `docs/instruction-ledger.jsonl`, `.planning/ship-readiness/`, ROUND-N-LEDGER.md |
 
 ---
 

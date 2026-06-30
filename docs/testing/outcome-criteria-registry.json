@@ -1,11 +1,23 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Observable outcome criteria for enterprise E2E workflow and session assessment beyond pass/fail.",
   "rubric_doc": ".planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md",
   "harness_lib": "scripts/lib/enterprise-e2e-outcome-assessment.sh",
   "test_ids": ["test-outcome-assessment", "enterprise-e2e-outcome-assess"],
   "scopes": ["workflow", "session", "round"],
   "scores": ["pass", "partial", "fail", "n/a"],
+  "blocking_criteria": [
+    "OUT-AUTO-01",
+    "OUT-CLARIFY-01",
+    "OUT-NOOP-01",
+    "OUT-WORLD-01"
+  ],
+  "composite_criteria": {
+    "OUT-WORLD-01": {
+      "title": "World-class composite gate",
+      "depends_on": "all_applicable_non_composite"
+    }
+  },
   "criteria": [
     {
       "id": "OUT-TAILOR-01",
@@ -196,31 +208,116 @@
       "signals_pass": ["forensics-root-cause-timeline"],
       "signals_partial": ["forensics-no-actions"],
       "signals_fail": ["missing-forensics-doc"]
+    },
+    {
+      "id": "OUT-AUTO-01",
+      "title": "Autonomous end-to-end delivery",
+      "scope": "workflow",
+      "blocking": true,
+      "homepage_source": "README: autonomous default; silver-orchestrator parent mode",
+      "primary_rows": "all",
+      "signals_pass": ["evidence-exists", "autonomous-markers-in-log", "orchestrator-queue-drained", "no-babysitting"],
+      "signals_partial": ["evidence-with-operator-prompts"],
+      "signals_fail": ["session-stalled", "premature-done", "autonomy-breakdown"]
+    },
+    {
+      "id": "OUT-CLARIFY-01",
+      "title": "Clarify gate before wrong execution",
+      "scope": "workflow",
+      "blocking": true,
+      "homepage_source": "silver:clarify skill; silver-feature FLOW 3",
+      "primary_rows": [1, 2, 3],
+      "signals_pass": ["state:silver-clarify", "CLARIFY.md-locked", "clarify-before-src-edit"],
+      "signals_partial": ["clarify-after-wrong-route"],
+      "signals_fail": ["vague-prompt-wrong-workflow-no-clarify"]
+    },
+    {
+      "id": "OUT-NOOP-01",
+      "title": "No operator pause",
+      "scope": "session",
+      "blocking": true,
+      "homepage_source": "silver-orchestrator: locked decisions only",
+      "primary_rows": "all",
+      "signals_pass": ["no-operator-pause-in-log", "outcomes-check-pass", "locked-decisions-recorded"],
+      "signals_partial": ["single-documented-override"],
+      "signals_fail": ["repeated-operator-prompts", "manual-ledger-intervention"]
+    },
+    {
+      "id": "OUT-WORLD-01",
+      "title": "World-class composite gate",
+      "scope": "workflow",
+      "blocking": true,
+      "composite": true,
+      "homepage_source": "hero-features-list: Engineering Best Practices composite",
+      "primary_rows": "all",
+      "signals_pass": ["all-applicable-criteria-pass"],
+      "signals_partial": [],
+      "signals_fail": ["any-applicable-partial-or-fail"]
+    },
+    {
+      "id": "OUT-DRIFT-01",
+      "title": "Intent drift course correction",
+      "scope": "workflow",
+      "homepage_source": "silver-forensics: implementation drift",
+      "primary_rows": [3, 4, 5, 17, 19],
+      "signals_pass": ["flow-log-deviation", "course-correction-in-log"],
+      "signals_partial": ["drift-mentioned-no-action"],
+      "signals_fail": ["silent-drift-no-correction"]
+    },
+    {
+      "id": "OUT-SUPER-01",
+      "title": "WBS meta-supervision to completion",
+      "scope": "session",
+      "homepage_source": "WBS-META-SUPERVISION.md; E2E-016",
+      "primary_rows": [1, 3, 4, 5],
+      "signals_pass": ["wbs-supervisor-in-log", "worker-handoff-complete", "current-flow-empty"],
+      "signals_partial": ["wbs-stub-only"],
+      "signals_fail": ["parent-ended-pending-flow"]
+    },
+    {
+      "id": "OUT-HEAL-01",
+      "title": "Self-healing on hook friction",
+      "scope": "session",
+      "homepage_source": "README: twelve hook layers; stop-check recovery",
+      "primary_rows": "all",
+      "signals_pass": ["hook-block-recovered-in-session", "retry-after-block"],
+      "signals_partial": ["warn-only-recovered"],
+      "signals_fail": ["session-ended-on-hook-block"]
+    },
+    {
+      "id": "OUT-RELEASE-01",
+      "title": "Release-ready artifact chain",
+      "scope": "workflow",
+      "homepage_source": "hero-evidence-gates; instruction-ledger",
+      "primary_rows": [14, 15, 16],
+      "signals_pass": ["instruction-ledger-chain", "ship-readiness-no-manual-patch"],
+      "signals_partial": ["artifacts-with-manual-ledger-patch"],
+      "signals_fail": ["release-without-artifact-chain"]
     }
   ],
   "workflow_row_map": {
-    "1": ["OUT-TAILOR-01", "OUT-ORCH-01", "OUT-SKILL-01", "OUT-HOOK-01", "OUT-CODEINT-01", "OUT-INTENT-01"],
-    "2": ["OUT-KM-01", "OUT-TRACE-01", "OUT-INTENT-01", "OUT-SKILL-01", "OUT-VLOOP-01"],
-    "3": ["OUT-GATES-01", "OUT-VLOOP-01", "OUT-PLAN-01", "OUT-TRACE-01", "OUT-ORCH-01", "OUT-FLOW-01", "OUT-INTENT-01", "OUT-HANDOFF-01"],
-    "4": ["OUT-VLOOP-01", "OUT-PLAN-01", "OUT-INTENT-01", "OUT-FLOW-01"],
-    "5": ["OUT-GATES-01", "OUT-INTENT-01", "OUT-TRACE-01", "OUT-SKILL-01"],
-    "6": ["OUT-TAILOR-01", "OUT-INTENT-01"],
-    "7": ["OUT-INTENT-01", "OUT-SKILL-01", "OUT-PLAN-01"],
-    "8": ["OUT-INTENT-01", "OUT-PLAN-01", "OUT-TRACE-01"],
-    "9": ["OUT-INTENT-01", "OUT-TRACE-01"],
-    "10": ["OUT-INTENT-01", "OUT-TRACE-01"],
-    "11": ["OUT-BLAST-01", "OUT-INTENT-01", "OUT-PLAN-01"],
-    "12": ["OUT-INTENT-01", "OUT-TRACE-01"],
-    "13": ["OUT-INTENT-01", "OUT-TRACE-01"],
-    "14": ["OUT-COMPLETE-01", "OUT-TRACE-01", "OUT-GATES-01"],
-    "15": ["OUT-REVIEW-01", "OUT-VLOOP-01", "OUT-GATES-01"],
-    "16": ["OUT-COMPLETE-01", "OUT-GATES-01", "OUT-TRACE-01", "OUT-MEASURE-01"],
-    "17": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-KM-01"],
-    "18": ["OUT-KM-01", "OUT-INTENT-01"],
-    "19": ["OUT-FORENS-01", "OUT-KM-01", "OUT-INTENT-01"],
-    "20": ["OUT-TRACE-01", "OUT-FLOW-01"],
-    "21": ["OUT-GATES-01", "OUT-VLOOP-01"],
-    "22": ["OUT-VLOOP-01"]
+    "1": ["OUT-TAILOR-01", "OUT-ORCH-01", "OUT-SKILL-01", "OUT-HOOK-01", "OUT-CODEINT-01", "OUT-INTENT-01", "OUT-AUTO-01", "OUT-CLARIFY-01", "OUT-NOOP-01", "OUT-SUPER-01"],
+    "2": ["OUT-KM-01", "OUT-TRACE-01", "OUT-INTENT-01", "OUT-SKILL-01", "OUT-VLOOP-01", "OUT-AUTO-01", "OUT-CLARIFY-01", "OUT-NOOP-01"],
+    "3": ["OUT-GATES-01", "OUT-VLOOP-01", "OUT-PLAN-01", "OUT-TRACE-01", "OUT-ORCH-01", "OUT-FLOW-01", "OUT-INTENT-01", "OUT-HANDOFF-01", "OUT-AUTO-01", "OUT-CLARIFY-01", "OUT-NOOP-01", "OUT-SUPER-01", "OUT-DRIFT-01"],
+    "4": ["OUT-VLOOP-01", "OUT-PLAN-01", "OUT-INTENT-01", "OUT-FLOW-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-SUPER-01", "OUT-DRIFT-01"],
+    "5": ["OUT-GATES-01", "OUT-INTENT-01", "OUT-TRACE-01", "OUT-SKILL-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-SUPER-01", "OUT-DRIFT-01"],
+    "6": ["OUT-TAILOR-01", "OUT-INTENT-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "7": ["OUT-INTENT-01", "OUT-SKILL-01", "OUT-PLAN-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "8": ["OUT-INTENT-01", "OUT-PLAN-01", "OUT-TRACE-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "9": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "10": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "11": ["OUT-BLAST-01", "OUT-INTENT-01", "OUT-PLAN-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "12": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "13": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "14": ["OUT-COMPLETE-01", "OUT-TRACE-01", "OUT-GATES-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-RELEASE-01"],
+    "15": ["OUT-REVIEW-01", "OUT-VLOOP-01", "OUT-GATES-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-RELEASE-01"],
+    "16": ["OUT-COMPLETE-01", "OUT-GATES-01", "OUT-TRACE-01", "OUT-MEASURE-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-RELEASE-01"],
+    "17": ["OUT-INTENT-01", "OUT-TRACE-01", "OUT-KM-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-DRIFT-01"],
+    "18": ["OUT-KM-01", "OUT-INTENT-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "19": ["OUT-FORENS-01", "OUT-KM-01", "OUT-INTENT-01", "OUT-AUTO-01", "OUT-NOOP-01", "OUT-DRIFT-01"],
+    "20": ["OUT-TRACE-01", "OUT-FLOW-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "21": ["OUT-GATES-01", "OUT-VLOOP-01", "OUT-AUTO-01", "OUT-NOOP-01"],
+    "22": ["OUT-VLOOP-01", "OUT-AUTO-01", "OUT-NOOP-01"]
   },
   "session_criteria": [
     "OUT-SKILL-01",
@@ -229,7 +326,12 @@
     "OUT-HANDOFF-01",
     "OUT-CODEINT-01",
     "OUT-KM-01",
-    "OUT-DECIDE-01"
+    "OUT-DECIDE-01",
+    "OUT-AUTO-01",
+    "OUT-NOOP-01",
+    "OUT-CLARIFY-01",
+    "OUT-HEAL-01",
+    "OUT-SUPER-01"
   ],
   "round_criteria": [
     "OUT-REVIEW-01",
