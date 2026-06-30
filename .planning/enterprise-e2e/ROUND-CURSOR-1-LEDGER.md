@@ -71,7 +71,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | |
 | 2 | `silver-research` | | | Skip | evidence-only | | | | |
 | 3 | `silver-feature` | | | Skip | evidence-only | | | | |
 | 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-086 | pending | | |
@@ -94,7 +94,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 0 / 22 (FORCE re-run in flight after E2E-086 harness fix)
+**Pass count:** 1 / 22 (tmux cursor-e2e FORCE batch in flight)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
@@ -104,7 +104,7 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.m
 
 | Issue | Label | WF slug | SB fix commit | Status |
 |-------|-------|---------|---------------|--------|
-| E2E-086 | harness | matrix rows 1–22 | pending | fixed on branch |
+| E2E-086 | harness | matrix rows 1–22 | c6cae4e9,c5862d9d,3b8df590 | fixed |
 
 ---
 
