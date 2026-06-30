@@ -12,11 +12,19 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
-FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
 OUT_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-out.XXXXXX")"
-trap 'rm -rf "$STATE_DIR" "$OUT_DIR"' EXIT
+FIXTURE_CLEANUP=""
+if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
+  FIXTURE="$SB_TEST_ENTERPRISE_APP_ROOT"
+elif [[ -d "/Users/shafqat/projects/enterprise-grade-test-app" ]]; then
+  FIXTURE="/Users/shafqat/projects/enterprise-grade-test-app"
+else
+  FIXTURE="$(mktemp -d "${TMPDIR}/sb-outcome-fixture.XXXXXX")"
+  FIXTURE_CLEANUP=1
+fi
+trap 'rm -rf "$STATE_DIR" "$OUT_DIR"; [[ -n "$FIXTURE_CLEANUP" ]] && rm -rf "$FIXTURE"' EXIT
 
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
