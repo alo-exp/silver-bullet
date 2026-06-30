@@ -10,6 +10,12 @@ pass() { echo "PASS: $1"; (( PASS++ )) || true; }
 fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HARNESS_ROOT="${REPO_ROOT}/scripts/enterprise-e2e"
+HARNESS_LIVE="${HARNESS_ROOT}/live-test.sh"
+HARNESS_MATRIX="${HARNESS_ROOT}/matrix.sh"
+HARNESS_CORE="${HARNESS_ROOT}/lib/core.sh"
+HARNESS_HOST="${HARNESS_ROOT}/lib/host.sh"
+HARNESS_CONFIG="${HARNESS_ROOT}/config/hosts.json"
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 
@@ -41,9 +47,18 @@ assert_executable() {
 
 # --- Docs and entrypoints ---
 assert_file_exists "${REPO_ROOT}/docs/ENTERPRISE-E2E-LIVE-TEST.md" "live test runbook exists"
-assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "live test entrypoint executable"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/SHARED-HARNESS.md" "SHARED-HARNESS architecture doc exists"
+assert_file_exists "$HARNESS_CONFIG" "hosts.json config exists"
+assert_file_exists "$HARNESS_CORE" "harness core lib exists"
+assert_file_exists "$HARNESS_HOST" "harness host lib exists"
+assert_executable "$HARNESS_LIVE" "harness live-test entry executable"
+assert_executable "$HARNESS_MATRIX" "harness matrix runner executable"
+assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "live test wrapper executable"
+assert_contains "live wrapper delegates to harness" "${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh" "enterprise-e2e/live-test.sh"
 assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "live test common lib exists"
-assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "matrix runner executable"
+assert_contains "live-common sources harness core" "${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh" "enterprise-e2e/lib/core.sh"
+assert_executable "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "matrix runner wrapper executable"
+assert_contains "matrix wrapper delegates to harness" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "enterprise-e2e/matrix.sh"
 assert_executable "${REPO_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" "matrix monitor executable"
 assert_executable "${REPO_ROOT}/scripts/watch-enterprise-e2e-tui.sh" "TUI watch executable"
 assert_executable "${REPO_ROOT}/.planning/enterprise-e2e/round6-matrix-driver.sh" "round6 matrix driver executable"
@@ -87,8 +102,8 @@ do
 done
 
 # --- Live entrypoint constraints ---
-LIVE="${REPO_ROOT}/scripts/run-enterprise-e2e-live-test.sh"
-COMMON_LIB="${REPO_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+LIVE="$HARNESS_LIVE"
+COMMON_LIB="$HARNESS_CORE"
 assert_contains "live entrypoint requires SB_ENTERPRISE_E2E_LIVE" "$LIVE" "SB_ENTERPRISE_E2E_LIVE"
 assert_contains "live entrypoint sets CLEAN_ENV=0" "$LIVE" "SB_E2E_MATRIX_CLEAN_ENV=0"
 assert_contains "live entrypoint unsets DRY_RUN" "$LIVE" "env -u SB_E2E_MATRIX_DRY_RUN"
@@ -107,7 +122,7 @@ assert_not_contains "live entrypoint forbids login" "$LIVE" "auth login"
 assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
 # --- Matrix runner learnings ---
-MATRIX="${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
+MATRIX="$HARNESS_MATRIX"
 assert_contains "matrix exports settings env" "$MATRIX" "claude_matrix_export_settings_env"
 assert_contains "matrix forces settings export on" "$MATRIX" 'export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0'
 assert_not_contains "matrix auto-skips proxy settings export" "$MATRIX" "claude_matrix_settings_has_proxy_env"
@@ -300,6 +315,15 @@ else
   fail "tui-contract bypass-disclaimer failed"
 fi
 
+assert_file_exists "${REPO_ROOT}/tests/tui-contract/test-blocking-decision-picker.sh" "tui-contract blocking picker test exists"
+assert_executable "${REPO_ROOT}/tests/tui-contract/test-blocking-decision-picker.sh" "tui-contract blocking picker test executable"
+
+if RTK_DISABLED=1 bash "${REPO_ROOT}/tests/tui-contract/test-blocking-decision-picker.sh" >/dev/null 2>&1; then
+  pass "tui-contract blocking-decision-picker passes"
+else
+  fail "tui-contract blocking-decision-picker failed"
+fi
+
 if command -v jq >/dev/null 2>&1; then
   if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; then
     pass "claims-audit passes"
@@ -348,7 +372,11 @@ assert_not_contains "matrix hardcodes runtime overwrite" "$MATRIX" "export SB_E2
 assert_contains "live entrypoint --host flag" "$LIVE" "--host"
 assert_contains "live entrypoint host install" "$LIVE" "enterprise_e2e_run_install_host"
 assert_contains "helpers cursor runtime" "${REPO_ROOT}/tests/e2e-live/helpers.sh" "cursor/agent.sh"
-assert_contains "common host lock file helper" "$COMMON_LIB" "enterprise_e2e_live_test_lock_file"
+assert_contains "common host lock file helper" "$HARNESS_CORE" "enterprise_e2e_live_test_lock_file"
+assert_file_exists "${HARNESS_ROOT}/lib/adapters/claude.sh" "claude host adapter exists"
+assert_file_exists "${HARNESS_ROOT}/lib/adapters/codex.sh" "codex host adapter exists"
+assert_file_exists "${HARNESS_ROOT}/lib/adapters/cursor.sh" "cursor host adapter exists"
+assert_executable "${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh" "deterministic consecutive-rounds shim exists"
 assert_contains "monitor matrix agent children" "$MONITOR" "matrix_agent_child_lines"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" "ROUND-CODEX-1-LEDGER template exists"
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" "ROUND-CURSOR-1-LEDGER template exists"
@@ -374,7 +402,7 @@ fi
 unset SB_E2E_LIVE_RUNTIME SILVER_BULLET_RUNTIME SB_E2E_LIVE_TEST_LOCK_FILE
 
 # --- Consecutive strict-clean round pair (P2 harness) ---
-CONSEC_CHECK="${REPO_ROOT}/scripts/lib/enterprise-e2e-consecutive-rounds-check.sh"
+CONSEC_CHECK="${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh"
 assert_executable "$CONSEC_CHECK" "consecutive rounds check script executable"
 CONSEC_TMP="$(mktemp -d)"
 cat >"${CONSEC_TMP}/round-a-gates.md" <<'GATES_A'
