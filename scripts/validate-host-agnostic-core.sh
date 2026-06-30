@@ -61,7 +61,7 @@ STRICT_FILES = [
 
 # Host-specific template trees — excluded from core scan (owned by installers).
 TEMPLATE_EXCLUDE_PREFIXES = (
-    "templates/CLAUDE.md.base",
+    "scripts/lib/install-claude/templates/CLAUDE.md.base",
     "templates/cursor-rules/",
     "templates/cursor/",
 )
