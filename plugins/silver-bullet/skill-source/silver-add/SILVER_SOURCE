@@ -323,7 +323,7 @@ Set `FILED_ID` to `"#${ISSUE_NUM}"`.
 ### Enterprise E2E journey tagging
 
 When the filing originated from the enterprise-grade-test-app live E2E journey
-(Claude supervised matrix or Kay inline diagnostic),
+(supervised matrix on the active host or Kay inline diagnostic),
 the GitHub issue must carry the `enterprise-test-app` label in addition to the normal
 Silver Bullet filing labels. Keep that label attached on any later edit path so
 the live run can find the issue again. The journey files these items into the

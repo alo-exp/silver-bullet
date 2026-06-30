@@ -182,7 +182,7 @@ For maximum diversity, pick models from different provider families:
 | OpenCode harness with `task` tool that accepts custom subagent_types AND you've pre-defined them in `opencode.json` | Mechanism 1 |
 | OpenCode harness but `task` tool rejects custom types OR you want zero-config fan-out | Mechanism 2 |
 | An OpenCode server running (`opencode serve`) | Mechanism 3 |
-| A different harness entirely (Claude, Codex, Cursor with no OpenCode) | Mechanism 4 |
+| A different harness entirely (supported hosts with no OpenCode) | Mechanism 4 |
 | Multiple MCPs that share ports (e.g., agentmemory on 3111) | Mechanism 2 sequential |
 | Time-critical interactive session (<5 min budget for total run) | Mechanism 2 parallel |
 | Models from different providers (e.g., OpenAI + Anthropic + local) | Mechanism 4 for cross-provider coverage |
