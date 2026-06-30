@@ -3,11 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-export SB_RTK_COMPAT_MODE=verbatim
-# shellcheck source=hooks/lib/rtk-compat.sh
-source "${REPO_ROOT}/hooks/lib/rtk-compat.sh"
-# shellcheck source=scripts/lib/agent-bundle-paths.sh
-source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/install-common.sh
+source "${REPO_ROOT}/scripts/lib/install-common.sh"
 PURGE_LEGACY_PLUGINS=0
 PUBLIC_RELEASE_ONLY=0
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
@@ -24,7 +21,6 @@ LEGACY_PLUGINS=(
 TARGET_PLUGINS=(
   "silver-bullet@alo-labs"
 )
-AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
   cat <<'USAGE'
@@ -119,16 +115,6 @@ ensure_marketplace_ready() {
   else
     "$CLAUDE_BIN" plugin marketplace update "$marketplace" >/dev/null
   fi
-}
-
-render_agent_bundle() {
-  local agent="$1"
-
-  mkdir -p "${REPO_ROOT}/agents"
-  python3 "$AGENT_RENDERER" render \
-    --agent "$agent" \
-    --source-root "${REPO_ROOT}/skills" \
-    --dest-root "${REPO_ROOT}/agents/${agent}"
 }
 
 uninstall_plugin_scope() {

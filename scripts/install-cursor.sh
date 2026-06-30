@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-# shellcheck source=scripts/lib/agent-bundle-paths.sh
-source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/install-common.sh
+source "${REPO_ROOT}/scripts/lib/install-common.sh"
 VERSION="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/package.json" 2>/dev/null || echo 0.0.0)"
 PUBLIC_RELEASE_ONLY=0
 CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
@@ -17,7 +17,6 @@ CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/sil
 DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
 INSTALL_COMMIT_SHA=""
 MERGE_HOOKS="${REPO_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py"
-AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
   cat <<'USAGE'
