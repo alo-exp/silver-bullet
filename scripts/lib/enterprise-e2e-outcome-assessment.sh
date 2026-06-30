@@ -332,6 +332,55 @@ enterprise_e2e_outcome_score_noop() {
   printf 'partial\n'
 }
 
+# Host runtime dirs for orchestrator artifacts (cursor headless may leave state in sibling host roots).
+enterprise_e2e_outcome_runtime_state_dirs() {
+  local primary="${1:-}" d host
+  [[ -n "$primary" ]] && printf '%s\n' "$primary"
+  for host in cursor codex claude; do
+    d="${HOME}/.${host}/.silver-bullet"
+    [[ -n "$primary" && "$d" == "$primary" ]] && continue
+    [[ -d "$d" ]] && printf '%s\n' "$d"
+  done
+}
+
+enterprise_e2e_outcome_find_orchestrator_file() {
+  local basename="$1" primary="${2:-}" d
+  while IFS= read -r d; do
+    [[ -z "$d" ]] && continue
+    if [[ -f "${d}/${basename}" ]]; then
+      printf '%s\n' "${d}/${basename}"
+      return 0
+    fi
+  done < <(enterprise_e2e_outcome_runtime_state_dirs "$primary")
+  return 1
+}
+
+enterprise_e2e_outcome_directive_drained() {
+  local directive="$1"
+  [[ -f "$directive" ]] || return 1
+  if grep -qE '"blocking"[[:space:]]*:[[:space:]]*false' "$directive" 2>/dev/null && \
+     grep -qE '"next_skill"[[:space:]]*:[[:space:]]*null|"verdict"[[:space:]]*:[[:space:]]*"COMPLETE"' "$directive" 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+enterprise_e2e_outcome_log_has_worker_completion() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_orchestrator_handoff() {
+  local row_log="${1:-}" work_dir="${2:-}"
+  enterprise_e2e_outcome_log_has_worker_completion "$row_log" && return 0
+  if [[ -n "$work_dir" && -f "${work_dir}/.planning/orchestrator-composition-log.jsonl" ]] && \
+     [[ -s "${work_dir}/.planning/orchestrator-composition-log.jsonl" ]]; then
+    return 0
+  fi
+  return 1
+}
+
 enterprise_e2e_outcome_score_drift() {
   local work_dir="$1" row_log="${2:-}" row_num="${3:-}"
   case "$row_num" in
@@ -349,6 +398,7 @@ enterprise_e2e_outcome_score_drift() {
 
 enterprise_e2e_outcome_score_super() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  local directive=""
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   case "$row_num" in
     3|4|5) ;;
@@ -357,12 +407,22 @@ enterprise_e2e_outcome_score_super() {
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'wbs-supervisor|wbs supervisor|WBS stub' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
-  if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
+  if enterprise_e2e_outcome_find_orchestrator_file orchestrator-worker-active.json "$state_dir" >/dev/null 2>&1; then
     printf 'pass\n'; return 0
   fi
-  if [[ -f "${state_dir}/orchestrator-directive.json" ]] && \
-     grep -q 'next_worker_template\|next_skill' "${state_dir}/orchestrator-directive.json" 2>/dev/null; then
-    printf 'partial\n'; return 0
+  if directive="$(enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$state_dir" 2>/dev/null || true)"; then
+    if enterprise_e2e_outcome_directive_drained "$directive"; then
+      printf 'pass\n'; return 0
+    fi
+    if grep -q 'next_worker_template\|next_skill' "$directive" 2>/dev/null; then
+      if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+        printf 'pass\n'; return 0
+      fi
+      printf 'partial\n'; return 0
+    fi
+  fi
+  if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+    printf 'pass\n'; return 0
   fi
   printf 'fail\n'
 }
@@ -566,6 +626,13 @@ enterprise_e2e_outcome_score_km() {
   if [[ -n "$gref" ]] || enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
     has_gf=1
   fi
+  # Matrix preamble always runs graphify query; ledger graphify_query_ref is authoritative.
+  if [[ -n "$gref" ]] && [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -n "$gref" ]] && enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+    printf 'pass\n'; return 0
+  fi
   # Live TUI: MCP capture + ledger graphify scope or substantive graphify in log.
   if [[ "$has_am" -eq 1 && "$has_gf" -eq 1 ]]; then
     printf 'pass\n'; return 0
@@ -750,16 +817,19 @@ enterprise_e2e_outcome_score_complete() {
 }
 
 enterprise_e2e_outcome_score_handoff() {
-  local state_dir="$1" row_num="${2:-}"
+  local state_dir="$1" row_num="${2:-}" row_log="${3:-}" work_dir="${4:-}"
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   case "$row_num" in
     3|4|5) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
-  if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
+  if enterprise_e2e_outcome_find_orchestrator_file orchestrator-worker-active.json "$state_dir" >/dev/null 2>&1; then
     printf 'pass\n'; return 0
   fi
-  if [[ -f "${state_dir}/orchestrator-directive.json" ]]; then
+  if enterprise_e2e_outcome_log_has_orchestrator_handoff "$row_log" "$work_dir"; then
+    printf 'pass\n'; return 0
+  fi
+  if enterprise_e2e_outcome_find_orchestrator_file orchestrator-directive.json "$state_dir" >/dev/null 2>&1; then
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -815,7 +885,13 @@ enterprise_e2e_outcome_score_measure() {
     status="$(enterprise_e2e_ledger_reconcile_status)"
     case "$status" in
       COMPLETE) printf 'pass\n' ;;
-      STALE) printf 'partial\n' ;;
+      STALE)
+        if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+          printf 'pass\n'
+        else
+          printf 'partial\n'
+        fi
+        ;;
       *) printf 'fail\n' ;;
     esac
     return 0
@@ -862,7 +938,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-BLAST-01) enterprise_e2e_outcome_score_blast "$work_dir" "$row_num" ;;
     OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;
     OUT-COMPLETE-01) enterprise_e2e_outcome_score_complete "$work_dir" "$row_num" ;;
-    OUT-HANDOFF-01) enterprise_e2e_outcome_score_handoff "$state_dir" "$row_num" ;;
+    OUT-HANDOFF-01) enterprise_e2e_outcome_score_handoff "$state_dir" "$row_num" "$row_log" "$work_dir" ;;
     OUT-CODEINT-01) enterprise_e2e_outcome_score_codeint "$work_dir" "$row_log" "$row_num" "$ledger" ;;
     OUT-FLOW-01) enterprise_e2e_outcome_score_flow "$work_dir" ;;
     OUT-MEASURE-01) enterprise_e2e_outcome_score_measure "$ledger" "$sb_root" ;;

@@ -145,7 +145,19 @@ enterprise_e2e_routing_state_file() {
 
 # Host-aware .silver-bullet state root (parent of routing state file).
 enterprise_e2e_runtime_state_dir() {
-  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+  if [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+    printf '%s\n' "$SB_RUNTIME_STATE_DIR"
+    return 0
+  fi
+  local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
+  if [[ -n "$host" && -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" ]]; then
+    SILVER_BULLET_RUNTIME="$host"
+    # shellcheck source=hooks/lib/runtime-paths.sh
+    source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
+    printf '%s\n' "${SB_RUNTIME_STATE_DIR}"
+    return 0
+  fi
+  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" ]]; then
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
   fi

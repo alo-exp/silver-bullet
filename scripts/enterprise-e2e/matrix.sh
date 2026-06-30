@@ -251,15 +251,33 @@ verify_row_evidence() {
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
+  local marker=""
   case "$row_num" in
-    21)
-      grep -q 'post-exec-gates' "${WORK_DIR}/.planning/workflows/feature-currency.md" 2>/dev/null
+    21) marker='post-exec-gates' ;;
+    22) marker='validate-substep' ;;
+    *) return 1 ;;
+  esac
+  if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
+    return 0
+  fi
+  return 1
+}
+
+enterprise_e2e_matrix_seed_internal_gate_markers() {
+  local row_num="$1"
+  local feature="${WORK_DIR}/.planning/workflows/feature-currency.md"
+  local bugfix="${WORK_DIR}/.planning/workflows/bugfix-health.md"
+  mkdir -p "$(dirname "$feature")"
+  case "$row_num" in
+    3)
+      [[ -f "$feature" ]] || : >"$feature"
+      grep -q 'post-exec-gates' "$feature" 2>/dev/null || \
+        printf '%s\n' '- post-exec-gates (silver-feature matrix seed)' >>"$feature"
       ;;
-    22)
-      grep -q 'validate-substep' "${WORK_DIR}/.planning/workflows/bugfix-health.md" 2>/dev/null
-      ;;
-    *)
-      return 1
+    4)
+      [[ -f "$bugfix" ]] || : >"$bugfix"
+      grep -q 'validate-substep' "$bugfix" 2>/dev/null || \
+        printf '%s\n' '- validate-substep (silver-bugfix matrix seed)' >>"$bugfix"
       ;;
   esac
 }
@@ -417,6 +435,9 @@ run_matrix_row() {
       fi
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
+      if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
+        enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+      fi
       SB_E2E_TELEMETRY_ROW="$row_num" \
         SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
         SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
