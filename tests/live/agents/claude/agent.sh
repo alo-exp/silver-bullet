@@ -106,6 +106,12 @@ agent_invoke() {
       if [[ -n "${SB_E2E_MATRIX_EVIDENCE_PATH:-}" ]]; then
         spawn_env+=("SB_E2E_MATRIX_EVIDENCE_PATH=${SB_E2E_MATRIX_EVIDENCE_PATH}")
       fi
+      if [[ -n "${SB_E2E_ENTERPRISE_MATRIX:-}" ]]; then
+        spawn_env+=("SB_E2E_ENTERPRISE_MATRIX=${SB_E2E_ENTERPRISE_MATRIX}")
+      fi
+      if [[ -n "${SB_E2E_MATRIX_ROUTING_ROW:-}" ]]; then
+        spawn_env+=("SB_E2E_MATRIX_ROUTING_ROW=${SB_E2E_MATRIX_ROUTING_ROW}")
+      fi
       local kv
       while IFS= read -r kv; do
         [[ -n "$kv" ]] && spawn_env+=("$kv")
