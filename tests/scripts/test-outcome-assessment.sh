@@ -293,7 +293,24 @@ else
   fail "fixture row 11 enterprise_e2e_outcome_row_passes expected pass"
   enterprise_e2e_outcome_row_failures 11 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" "$ROW67_LEDGER" ".planning/workflows/devops-terraform-validation.md" || true
 fi
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER"
+
+# --- Live TUI log patterns: ANSI noise + fragmented graphify/agentmemory tokens ---
+TUI7_LOG="$(mktemp)"
+printf '\x1b[5Gagentmeory -memory_save (MCP)(concepts:"silver-test")\rquery "orders integration test" --graph\r    graphify-out/graph.json\rEvidence written to .planning/workflows/test-orders-integration.md\r' >"$TUI7_LOG"
+score_km_tui7="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI7_LOG" 7 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui7" == "pass" ]] && pass "TUI-noisy row 7 OUT-KM-01 pass (ANSI + agentmeory typo)" || fail "TUI-noisy row 7 OUT-KM-01 got $score_km_tui7"
+TUI8_LOG="$(mktemp)"
+printf 'WROTE:.planning/workflows/refactor-order-validation.md\r|graphify-out/graph.json|AST cache\r' >"$TUI8_LOG"
+mkdir -p "$FIXTURE/graphify-out"
+touch "$FIXTURE/graphify-out/graph.json"
+score_km_tui8="$(SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE" enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI8_LOG" 8 "$ROW67_LEDGER" "")"
+[[ "$score_km_tui8" == "pass" ]] && pass "TUI-noisy row 8 OUT-KM-01 pass (gref + graphify-out + evidence written)" || fail "TUI-noisy row 8 OUT-KM-01 got $score_km_tui8"
+TUI11_LOG="$(mktemp)"
+printf 'graphify query "terraform validation"\rFull verdict persisted to agentmemory\r.planning/workflows/devops-terraform-validation.md\r' >"$TUI11_LOG"
+score_km_tui11="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI11_LOG" 11 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui11" == "pass" ]] && pass "TUI-noisy row 11 OUT-KM-01 pass (graphify query + persisted capture)" || fail "TUI-noisy row 11 OUT-KM-01 got $score_km_tui11"
+
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"

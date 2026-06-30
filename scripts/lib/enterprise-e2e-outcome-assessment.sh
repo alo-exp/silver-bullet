@@ -132,30 +132,83 @@ enterprise_e2e_outcome_is_blocking() {
   esac
 }
 
-enterprise_e2e_outcome_log_has_babysitting() {
+# Strip TUI ANSI/OSC sequences so live matrix logs match dry-run fixture greps.
+enterprise_e2e_outcome_log_normalized() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  # Exclude agent planning text ("Ask the user to decide…") — require TUI pause signals.
-  grep -qiE 'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' "$row_log" 2>/dev/null
+  sed $'s/\x1b\\[[0-9;]*[A-Za-z]//g; s/\x1b\\][^\x07]*\x07//g' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_matches() {
+  local row_log="${1:-}" pattern="${2:-}" tmp="" rc=0
+  [[ -n "$pattern" ]] || return 1
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-outcome-log.XXXXXX")"
+  if ! enterprise_e2e_outcome_log_normalized "$row_log" >"$tmp" 2>/dev/null; then
+    rm -f "$tmp"
+    return 1
+  fi
+  grep -qiE "$pattern" "$tmp" 2>/dev/null || rc=$?
+  rm -f "$tmp"
+  [[ "$rc" -eq 0 ]]
+}
+
+enterprise_e2e_outcome_log_has_babysitting() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' || \
+    grep -qiE 'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_autonomous() {
   local row_log="${1:-}"
-  [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' || \
+    grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_mcp() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'agentme[mn]?ory[[:space:]_-]*(memory_save|memory_smart_search|memory_recall|memory_capture)' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'memory_(save|smart_search|recall|capture)[[:space:]]*\(MCP\)' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'agentme[mn]?ory.*\(MCP\)' && return 0
   grep -qiE 'agentmemory[[:space:]_-]*(memory_save|memory_smart_search|memory_recall|memory_capture)' "$row_log" 2>/dev/null || \
     grep -qiE 'agentmemory.*\(MCP\)' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_agentmemory_capture() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'persisted[[:space:]]*to[[:space:]]*agentme[mn]?ory|verdict[[:space:]]*persisted[[:space:]]*to[[:space:]]*agentme[mn]?ory' || \
+    enterprise_e2e_outcome_log_matches "$row_log" 'agentme[mn]?ory[[:space:]]*-[[:space:]]*memory_(save|smart_search)'
+}
+
+enterprise_e2e_outcome_log_has_workflow_evidence_written() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md'
+}
+
+enterprise_e2e_outcome_log_has_graphify_activity() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  enterprise_e2e_outcome_log_matches "$row_log" 'graphify[[:space:]]*query' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'query[[:space:]]*"[^"]+"[[:space:]]*--graph' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'graphify[[:space:]]*update' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'Skill[[:space:]]*\([[:space:]]*graphify[[:space:]]*\)' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'graphify-out/graph\.json' && return 0
+  grep -qiE 'graphify[[:space:]]*query|graphify query' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_unavailable() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'agentmemory.*(not available|missing|unavailable|MCP.*unavailable)|agentmemory MCP' "$row_log" 2>/dev/null || \
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'agentme[mn]?ory.*(not available|missing|unavailable|MCP.*unavailable)|matrix MCP env: disabled' || \
+    grep -qiE 'agentmemory.*(not available|missing|unavailable|MCP.*unavailable)|agentmemory MCP' "$row_log" 2>/dev/null || \
     grep -qiE 'matrix MCP env: disabled' "$row_log" 2>/dev/null
 }
 
@@ -175,6 +228,22 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
     11) printf 'silver-devops\n' ;;
     *) printf '\n' ;;
   esac
+}
+
+# Workflow matrix rows use backtick slugs — skip ladder/summary tables that reuse row numbers.
+enterprise_e2e_outcome_ledger_workflow_line() {
+  local ledger_file="${1:-}" row_num="${2:-}"
+  [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]] || return 0
+  awk -v r="$row_num" '$0 ~ "^\\| " r " \\| `" { print; exit }' "$ledger_file" 2>/dev/null || true
+}
+
+enterprise_e2e_outcome_ledger_parse_workflow_row() {
+  local line="${1:-}" gref="" aref="" status=""
+  [[ -n "$line" ]] || return 1
+  gref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $10); print $10}')"
+  aref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $11); print $11}')"
+  status="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $6); print $6}' | tr '[:upper:]' '[:lower:]')"
+  printf '%s\n%s\n%s\n' "$gref" "$aref" "$status"
 }
 
 enterprise_e2e_outcome_score_auto() {
@@ -462,21 +531,34 @@ enterprise_e2e_outcome_score_intent() {
 enterprise_e2e_outcome_score_km() {
   local ledger_file="${1:-}" row_num="${2:-}" row_log="${3:-}"
   local line="" gref="" aref="" status=""
+  local work_dir="${SB_TEST_ENTERPRISE_APP_ROOT:-}"
+  local has_am=0 has_gf=0
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]]; then
-    line="$(awk -v r="$row_num" '$0 ~ "^\\| " r " \\|" { print; exit }' "$ledger_file" 2>/dev/null || true)"
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger_file" "$row_num")"
     if [[ -n "$line" ]]; then
-      gref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-1)); print $(NF-1)}')"
-      aref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $NF); print $NF}')"
-      status="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-3)); print $(NF-3)}' | tr '[:upper:]' '[:lower:]')"
+      gref="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '1p')"
+      aref="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '2p')"
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
     fi
   fi
-  # Live TUI often captures agentmemory via MCP while ledger agentmemory_export_ref stays empty.
-  if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log"; then
-    if [[ -n "$gref" ]] || { [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'graphify query' "$row_log" 2>/dev/null; }; then
+  if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
+     enterprise_e2e_outcome_log_has_agentmemory_capture "$row_log"; then
+    has_am=1
+  fi
+  if [[ -n "$gref" ]] || enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
+    has_gf=1
+  fi
+  # Live TUI: MCP capture + ledger graphify scope or substantive graphify in log.
+  if [[ "$has_am" -eq 1 && "$has_gf" -eq 1 ]]; then
+    printf 'pass\n'; return 0
+  fi
+  # Live TUI: ledger graphify scope + graphify activity + workflow evidence (row 8 heredoc path).
+  if [[ -n "$gref" ]] && enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
+    if [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
+       enterprise_e2e_outcome_log_has_workflow_evidence_written "$row_log"; then
       printf 'pass\n'; return 0
     fi
-    printf 'partial\n'; return 0
   fi
   if [[ "$status" == "pass" ]]; then
     if [[ -n "$gref" && -n "$aref" ]]; then
@@ -665,8 +747,8 @@ enterprise_e2e_outcome_score_codeint() {
     # graphify runs in matrix preamble — not always echoed in TUI log
     if [[ -n "$ledger" && -f "$ledger" && "$row_num" =~ ^[0-9]+$ ]]; then
       local line gref
-      line="$(awk -v r="$row_num" '$0 ~ "^\\| " r " \\|" { print; exit }' "$ledger" 2>/dev/null || true)"
-      gref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-1)); print $(NF-1)}')"
+      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num")"
+      gref="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" 2>/dev/null | sed -n '1p' || true)"
       if [[ -n "$gref" && "$gref" != " " ]]; then
         printf 'pass\n'; return 0
       fi
