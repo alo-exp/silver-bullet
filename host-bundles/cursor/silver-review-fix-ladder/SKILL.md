@@ -195,7 +195,7 @@ Report:
 |------|------------|
 | **Task-capable host** | `Task` subagent with `model` set to the **composite slug** from `cursor_task_slug()` in `scripts/review-fix-ladder.py` (reasoning effort is encoded in the slug — there is no separate Task reasoning parameter). Ladder order: Composer low → medium → high → xhigh, then GPT-5.5 low → medium → high → xhigh. **All Composer rungs map to `composer-2.5` only** — never `composer-2.5-fast` (global subagent policy). GPT-5.5 maps to `gpt-5.5` for low and `gpt-5.5-extra-high` for medium/high/xhigh by model-lock substitution (not `gpt-5.5-medium`, `gpt-5.5-high`, or `gpt-5.5-xhigh`). Verify passes: `readonly: true`. **Note:** host model picker pinning may filter the Task enum; if a slug is rejected, document the rejection and apply model-lock substitution per rung. |
 | **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
-| **Secondary host agent** | `secondary host exec -m <model> -c model_reasoning_effort=<reasoning>` (native secondary host binary, not Kay shim) |
+| **Secondary host agent** | `Cursor exec -m <model> -c model_reasoning_effort=<reasoning>` (native Cursor binary, not Kay shim) |
 
 Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-bullet.md`.
 
