@@ -344,16 +344,6 @@ def add_name(name: str) -> None:
     if name:
         names.add(name)
 
-for cfg in (home / ".claude.json", home / ".cursor" / "mcp.json"):
-    if not cfg.is_file():
-        continue
-    try:
-        data = json.loads(cfg.read_text())
-        for key in (data.get("mcpServers") or {}).keys():
-            add_name(key)
-    except (OSError, json.JSONDecodeError):
-        pass
-
 if Path(claude_bin).is_file():
     try:
         proc = subprocess.run(
@@ -368,7 +358,13 @@ if Path(claude_bin).is_file():
             line = line.strip()
             if not line or line.startswith("Checking "):
                 continue
-            m = re.match(r"^(plugin:.+?):\s+(?:https?://|\(HTTP)", line)
+            if "Connected" in line:
+                continue
+            if "Needs authentication" not in line and "Failed to connect" not in line:
+                continue
+            m = re.match(r"^(plugin:.+?):\s", line)
+            if not m:
+                m = re.match(r"^([^:]+):\s", line)
             if m:
                 add_name(m.group(1))
     except (OSError, subprocess.TimeoutExpired):
