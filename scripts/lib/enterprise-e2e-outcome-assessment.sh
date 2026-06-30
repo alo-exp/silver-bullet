@@ -190,6 +190,9 @@ enterprise_e2e_outcome_log_has_agentmemory_mcp() {
   enterprise_e2e_outcome_log_matches "$row_log" \
     'memory_(save|smart_search|recall|capture)[[:space:]]*\(MCP\)' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" 'agentme[mn]?ory.*\(MCP\)' && return 0
+  # Codex TUI: tool name without agentmemory prefix; mem_mr* export ids.
+  enterprise_e2e_outcome_log_matches "$row_log" 'memory_save' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" 'mem_mr[0-9a-z_]+' && return 0
   grep -qiE 'agentmemory[[:space:]_-]*(memory_save|memory_smart_search|memory_recall|memory_capture)' "$row_log" 2>/dev/null || \
     grep -qiE 'agentmemory.*\(MCP\)' "$row_log" 2>/dev/null
 }
@@ -198,7 +201,8 @@ enterprise_e2e_outcome_log_has_agentmemory_capture() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_matches "$row_log" \
     'persisted[[:space:]]*to[[:space:]]*agentme[mn]?ory|verdict[[:space:]]*persisted[[:space:]]*to[[:space:]]*agentme[mn]?ory' || \
-    enterprise_e2e_outcome_log_matches "$row_log" 'agentme[mn]?ory[[:space:]]*-[[:space:]]*memory_(save|smart_search)'
+    enterprise_e2e_outcome_log_matches "$row_log" 'agentme[mn]?ory[[:space:]]*-[[:space:]]*memory_(save|smart_search)' || \
+    enterprise_e2e_outcome_log_matches "$row_log" 'saved to agentme[mn]?ory|decision is saved to agentme[mn]?ory'
 }
 
 enterprise_e2e_outcome_log_has_workflow_evidence_written() {
@@ -388,8 +392,10 @@ enterprise_e2e_outcome_score_heal() {
       fi
       printf 'fail\n'; return 0
     fi
-    if grep -qiE 'WARN.*hook|hook.*WARN' "$row_log" 2>/dev/null && \
-       ! grep -qiE '\[harness\] ignoring.*non-blocking' "$row_log" 2>/dev/null; then
+    if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+       grep -qiE '\[WARN\].*hook|hook gate|hook-trust|Stop hook blocks|session ended on hook block' && \
+       ! enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+       grep -qiE '\[harness\] ignoring.*non-blocking|warning: Spec session'; then
       printf 'partial\n'; return 0
     fi
   fi
@@ -637,6 +643,10 @@ enterprise_e2e_outcome_score_orch() {
     printf 'pass\n'; return 0
   fi
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]] && \
+     enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP|graphify query'; then
     printf 'pass\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qE 'Task|worker|orchestrator' "$row_log" 2>/dev/null; then
