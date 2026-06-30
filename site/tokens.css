@@ -513,8 +513,8 @@ body > nav .logo{
   font-weight:var(--heading-weight)!important;
 }
 
-/* Tagline accent — intentionally heavy (not a section heading) */
-.hero-tagline-bold{font-weight:900!important;}
+/* Tagline accent — intentionally light (not a section heading) */
+.hero-tagline-thin{font-weight:300!important;}
 
 /* UI chrome — thin weight for buttons, badges, pills (sitewide) */
 .btn,
