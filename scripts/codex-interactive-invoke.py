@@ -219,9 +219,15 @@ def main() -> int:
         fcntl.ioctl(master_fd, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
     except OSError:
         pass
+    try:
+        fd_flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+        fcntl.fcntl(master_fd, fcntl.F_SETFL, fd_flags | os.O_NONBLOCK)
+    except OSError:
+        pass
 
     start = time.monotonic()
     last_activity = start
+    idle_timeout = int(env_or_default("CODEX_INTERACTIVE_IDLE_TIMEOUT", "1800"))
     prompt_submitted = False
     prompt_typed = interactive_prompt_input != "1"
     hook_trust_confirmation_pending = False
@@ -250,7 +256,26 @@ def main() -> int:
 
             read_ready, _, _ = select.select([master_fd], [], [], 1.0)
             if read_ready:
-                chunk = os.read(master_fd, 65536)
+                try:
+                    chunk = os.read(master_fd, 65536)
+                except OSError as exc:
+                    if getattr(exc, "errno", None) in (errno.EAGAIN, errno.EWOULDBLOCK):
+                        if now - last_activity >= idle_timeout:
+                            print(
+                                f"ERROR: no Codex PTY output for {idle_timeout}s (idle watchdog)",
+                                file=sys.stderr,
+                            )
+                            try:
+                                os.killpg(child_pid, signal.SIGTERM)
+                            except OSError:
+                                pass
+                            try:
+                                os.waitpid(child_pid, 0)
+                            except ChildProcessError:
+                                pass
+                            return 1
+                        continue
+                    raise
                 if not chunk:
                     break
                 answer_terminal_queries(master_fd, chunk)
@@ -338,6 +363,21 @@ def main() -> int:
             exited, returncode = child_returncode(child_pid)
             if exited:
                 return returncode or 0
+
+            if now - last_activity >= idle_timeout:
+                print(
+                    f"ERROR: no Codex PTY output for {idle_timeout}s (idle watchdog)",
+                    file=sys.stderr,
+                )
+                try:
+                    os.killpg(child_pid, signal.SIGTERM)
+                except OSError:
+                    pass
+                try:
+                    os.waitpid(child_pid, 0)
+                except ChildProcessError:
+                    pass
+                return 1
 
             if prompt_submitted and saw_post_submit_output and now - last_activity >= quiet_timeout:
                 try:
