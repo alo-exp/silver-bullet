@@ -260,6 +260,16 @@ fi
     "${MATRIX_LAUNCH_CMD[@]}"
 ) 2>&1 | tee -a "$MATRIX_LOG"
 
+
+if [[ "${SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS:-}" == "1" ]]; then
+  echo ""
+  echo "--- Consecutive strict-clean round pair (P2 harness) ---"
+  if ! RTK_DISABLED=1 bash "${SB_ROOT}/scripts/lib/enterprise-e2e-consecutive-rounds-check.sh" --host "${MATRIX_HOST}"; then
+    echo "ERROR: consecutive strict-clean round pair check failed (SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1)" >&2
+    exit 1
+  fi
+fi
+
 echo ""
 echo "--- Round gate checklist (manual before release) ---"
 cat <<'GATES'
