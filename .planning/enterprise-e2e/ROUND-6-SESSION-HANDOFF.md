@@ -2,18 +2,26 @@
 
 **Operational addendum:** [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md)
 
-**Updated:** 2026-06-30T04:18Z (shared harness addendum compliance; FORCE on `enterprise-e2e/multi-host`)
+**Updated:** 2026-06-30T12:42Z (Round 6 recovery CHECKPOINT @ `6485ec34`)
 
 **Shared harness:** [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md) — canonical code `scripts/enterprise-e2e/`; Claude legacy paths unchanged.
 
 ## SB HEAD
 
-`c8e323f7` — `enterprise-e2e/multi-host` (clarify picker fix; harness reorg `da459749`)  
-Prior pause checkpoint: `6e7fb3b1` on `main`
+`6485ec34` — `enterprise-e2e/multi-host` (+ pending harness commit: archive evidence + rows 21–22 internal fallback)
 
 **Test app HEAD:** `8482e60` @ `/Users/shafqat/projects/enterprise-grade-test-app`
 
-## Active work
+## Active work (recovery CHECKPOINT)
+
+- **Rows 3/4/21:** `enterprise_e2e_outcome_row_passes` **PASS** on retained logs @ `6485ec34`
+- **Row 22:** matrix internal **PASS**; outcome **FAIL** (`OUT-SKILL-01` partial) — honest pending
+- **Row 4:** no live re-FORCE — evidence in `workflows/.archive/bugfix-health.md`
+- **Cursor WIP:** stashed (`round6-recovery-wip-cursor-*`); stay on `multi-host`
+- **Monitor:** **80434** alive — [`.e2e-matrix-monitor.pid`](../../.e2e-matrix-monitor.pid)
+- **Gates:** [ROUND-6-GATES.md](./ROUND-6-GATES.md) updated
+
+## Prior snapshot (superseded)
 
 - **Pass count (ledger):** **18 / 22** evidence — rows **6, 7, 8, 11** FAIL (expect `:531`); rows 21–22 via parents
 - **Strict-clean:** pending outcome re-score FORCE + rows 6/7/8/11 LIVE retry
