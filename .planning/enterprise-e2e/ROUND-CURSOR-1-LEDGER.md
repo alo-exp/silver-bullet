@@ -89,12 +89,12 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query ship-readiness | OUT-MEASURE-01 OUT-KM-01 OUT-WORLD-01 |
 | 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-incident | OUT-KM-01 OUT-WORLD-01 |
 | 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-retro | OUT-KM-01 OUT-WORLD-01 |
-| 19 | `silver-forensics` | | | | | | | | |
-| 20 | `process-maintenance` | | | | | | | | |
-| 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
-| 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
+| 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-forensics | OUT-WORLD-01 composite |
+| 20 | `process-maintenance` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query process-maintenance | OUT-AUTO-01 OUT-WORLD-01 |
+| 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 3)* | grep post-exec-gates in feature-currency.md |
+| 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | | 2b197be9 | *(parent row 4)* | grep validate-substep in bugfix-health.md |
 
-**Pass count:** 1 / 22 (row 19 in flight; 17 fail; FORCE retry after batch)
+**Pass count:** 1 / 22 (initial batch complete; FORCE retry pending @1800s)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
