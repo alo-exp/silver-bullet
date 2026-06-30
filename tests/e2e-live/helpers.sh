@@ -28,6 +28,7 @@ KAY_HOME="${KAY_HOME:-${SB_LIVE_CODEX_ISOLATION_DIR:-${KAY_SB_TEST_HOME:-}}}"
 case "$E2E_RUNTIME" in
   claude) export SILVER_BULLET_RUNTIME=claude ;;
   kay|codex) export SILVER_BULLET_RUNTIME=codex ;;
+  cursor) export SILVER_BULLET_RUNTIME=cursor ;;
 esac
 if [[ -f "${SB_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -101,6 +102,10 @@ case "$E2E_RUNTIME" in
   codex)
     # shellcheck source=tests/live/agents/codex/agent.sh
     source "$AGENT_DIR/codex/agent.sh"
+    ;;
+  cursor)
+    # shellcheck source=tests/live/agents/cursor/agent.sh
+    source "$AGENT_DIR/cursor/agent.sh"
     ;;
   kay)
     # shellcheck source=tests/live/agents/kay/agent.sh
@@ -525,10 +530,18 @@ setup_workspace() {
   WORK_DIR="$FIXTURE_DIR"
   agent_preflight
 
-  if [[ "$E2E_RUNTIME" == "claude" ]]; then
-    CLAUDE_PROMPT_COUNT=0
-    bootstrap_claude_dependencies
-  fi
+  case "$E2E_RUNTIME" in
+    claude)
+      CLAUDE_PROMPT_COUNT=0
+      bootstrap_claude_dependencies
+      ;;
+    codex)
+      bash "${SB_ROOT}/scripts/install-codex.sh" --purge-legacy-skills >/dev/null
+      ;;
+    cursor)
+      bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      ;;
+  esac
 }
 
 ensure_e2e_recommended_tools_opt_in() {
