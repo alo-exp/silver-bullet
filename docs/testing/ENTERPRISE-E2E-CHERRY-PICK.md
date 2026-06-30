@@ -47,6 +47,9 @@ FORCE monitor PIDs (e.g. 12948 / 9452) — **do not kill** if healthy. Cherry-pi
 | 2026-06-30 | `5781e164` | `e425865a` | MCP auth cache clear + expect banner ignore |
 | 2026-06-30 | `9abbd8ee` | `94c82681` | UTF-8 + MCP dismiss (already on `main` via partial overlap `7a5d3b79`) |
 | 2026-06-30 | `6bd2355f` | `59de6e30` | Delta: ❯ prompt, Submit regex, ASCII logs, MCP dismiss; `(?s)` omitted per `5f90a9ef` |
+| 2026-06-30 | `e7eab44a` | `90572502` | MCP disable list from needs-auth `mcp list` only |
+| 2026-06-30 | `9a21160a` | `e5a2bff5` | Site hover-only terminal shadows + hero tagline weight |
+| 2026-06-30 | `2be1016e` | `2aeabad8` | Routing-row marker exempts subagent-stop §3c without `SB_E2E_ENTERPRISE_MATRIX` in TUI hook env (ORCH-4/5) |
 
 ### Skipped on 2026-06-30
 
