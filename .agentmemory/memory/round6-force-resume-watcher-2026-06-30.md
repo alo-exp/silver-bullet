@@ -9,3 +9,4 @@
 - **On clear:** RTK_DISABLED=1 install-claude.sh → tmux `round6-force` rows 7-22 FORCE → log `.e2e-matrix-round6-force-resume.log` → ledger ROUND-6-LEDGER.md → relaunch monitor if 80434 dead
 - **Status file:** `.e2e-matrix-round6-force-resume-status.txt`
 - **Launched:** N (polling at start)
+- **Watcher (fixed):** PID **81614** — first instance 3035 exited due to `set -e` + `pid_alive && assign` (fixed)
