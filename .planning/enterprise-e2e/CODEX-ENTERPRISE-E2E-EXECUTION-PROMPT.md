@@ -1,4 +1,6 @@
-# Codex Host — Enterprise E2E Fresh Session Execution Prompt
+# Codex Host — Enterprise E2E Fresh Session Execution Prompt (v2)
+
+**Harness:** Shared host-agnostic tree — [SHARED-HARNESS.md](./SHARED-HARNESS.md) · [HOST-CONFIG.md](./HOST-CONFIG.md) · `scripts/enterprise-e2e/`
 
 **Host identity:** OpenAI **Codex TUI** (`codex` CLI) — `$silver:*` slash skills, `codex-interactive-invoke.*` harness.
 
@@ -6,7 +8,9 @@
 
 **Cross-links (read first):**
 
-- [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — parent orchestrator ops, strict-clean, friction watch
+- [SHARED-HARNESS.md](./SHARED-HARNESS.md) — deterministic vs live layers, shared `scripts/enterprise-e2e/`
+- [OPERATIONAL-ADDENDUM.md](./OPERATIONAL-ADDENDUM.md) — cross-host strict-clean ops
+- [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — parent orchestrator ops (Claude parallel track)
 - [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) — per-row/session scoring; blocking autonomy gates
 - [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) — canonical live test runbook
 - [WORKFLOW_E2E_MATRIX.md](https://github.com/alo-exp/enterprise-grade-test-app/blob/main/docs/WORKFLOW_E2E_MATRIX.md) — 22-row prompt cards (test app)
@@ -74,6 +78,9 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 | Codex interactive invoke | `/Users/shafqat/projects/silver-bullet/repo/scripts/codex-interactive-invoke.py` (+ `.expect`) |
 | Review-fix-ladder resolver | `python3 scripts/review-fix-ladder.py --host codex` |
 | Round ledger (Codex-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md` |
+| Round ledger (Codex-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md` |
+| Round gates (Codex-1) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-1-GATES.md` |
+| Round gates (Codex-2) | `/Users/shafqat/projects/silver-bullet/repo/.planning/enterprise-e2e/ROUND-CODEX-2-GATES.md` |
 | Matrix live log | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-codex-live.log` |
 | Monitor status | `/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-codex-monitor-status.txt` |
 | TUI watch findings | `/Users/shafqat/projects/silver-bullet/repo/.e2e-tui-watch-codex-findings.jsonl` |
@@ -308,6 +315,32 @@ SB_E2E_RCS_TRIHOST=full SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash s
 
 ---
 
+## Two-round release gate (Codex host)
+
+**Do not tag or sign off** until **both** rounds are strict-clean **back-to-back** (Round Codex-2 immediately follows a strict-clean Round Codex-1 — no intervening dirty round or skipped Phase A–C).
+
+| Step | Action |
+|------|--------|
+| 1 | Complete **Round Codex-1** Phases A → B → C; set `Round clean? = Pass` in [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md). |
+| 2 | Update [ROUND-CODEX-1-GATES.md](./ROUND-CODEX-1-GATES.md): all gates green including **2 consecutive strict clean rounds = PENDING (1/2)**. |
+| 3 | **Fresh Round Codex-2:** copy ledger template → [ROUND-CODEX-2-LEDGER.md](./ROUND-CODEX-2-LEDGER.md); reset matrix log (archive Codex-1 log); re-run **full** Phase A (ladder 8/8 × 2 verify) + Phase B (22/22) + Phase C. |
+| 4 | Pin `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md` for Round 2 only. |
+| 5 | After Round Codex-2 strict-clean: update [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md) — **2 consecutive strict clean rounds = PASS (2/2)**. |
+| 6 | **Release readiness:** both gate files show Round N strict-clean + consecutive pair PASS; RCS ≥ 85 with `SB_E2E_RCS_TRIHOST=full`; pre-release overlay dry-run green. |
+
+**Failure between rounds:** If Round Codex-2 is not strict-clean, the pair resets — fix SB, re-run Round Codex-2 from Phase A (do not claim release until a **new** consecutive pair completes).
+
+**Cross-round check (manual until harness script exists):**
+
+```bash
+grep -E 'Round clean\? \| \*\*Pass\*\*|2 consecutive strict clean rounds \| \*\*PASS \(2/2\)\*\*' \
+  .planning/enterprise-e2e/ROUND-CODEX-{1,2}-GATES.md
+```
+
+Harness does **not** auto-enforce the pair — operator + gate files are authoritative ([ROUND-N-GATES.md](./ROUND-N-GATES.md) row **2 consecutive strict clean rounds**).
+
+---
+
 ## Codex TUI protocol
 
 Full checklist: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
@@ -377,16 +410,16 @@ Same as [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) §A
 
 ## Known harness gaps + operator responsibilities
 
+Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIME`, host-isolated paths, and dry-run for all hosts. Remaining operator responsibilities:
+
 | Gap | Operator action |
 |-----|-----------------|
-| `run-enterprise-e2e-live-test.sh` has no `--host codex` | Wire via env + matrix runner patch; file SB issue; implement `--host` flag |
-| `run-enterprise-e2e-matrix.sh` hardcodes `SILVER_BULLET_RUNTIME=claude` | Patch to honor `SB_E2E_LIVE_RUNTIME`; add CI test |
-| Claude-specific expect scripts | Fork/adapt for Codex prompt patterns (`codex-interactive-invoke.expect`) |
-| Claude routing state path (`~/.claude/.silver-bullet/state`) | Add Codex runtime state dir via `SB_RUNTIME_STATE_DIR` |
-| Session 0 TUI-only path | Programmatic opt-in when TUI unavailable (same as Claude operator prompt) |
+| Codex-specific TUI friction | Adapt patterns in [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md); file SB issues |
+| Codex runtime state dir | Set `SB_RUNTIME_STATE_DIR` when not using `~/.claude/.silver-bullet` |
+| Session 0 TUI-only path | Programmatic opt-in when TUI unavailable (same as Claude) |
 | Outcome re-score per row | Run `enterprise_e2e_outcome_row_passes` after each row FORCE retry |
 
-**File issues** in `docs/issues/ENTERPRISE-E2E-SB-ISSUES.md`. **Implement host wiring** in SB repo — do not workaround in test app product code.
+**File issues** in `docs/issues/ENTERPRISE-E2E-SB-ISSUES.md`. **Implement host wiring** in `scripts/enterprise-e2e/lib/adapters/codex.sh` — not test app product code.
 
 ---
 
@@ -431,4 +464,4 @@ RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh
 
 ## One-liner (fresh session copy-paste)
 
-> Codex enterprise E2E track: SB repo root `/Users/shafqat/projects/silver-bullet/repo`, Codex TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, ledger `ROUND-CODEX-1-LEDGER.md`, log `.e2e-matrix-codex-live.log`. One `composer-2.5` background operator resumed across turns, report every 60–90s with Codex TUI friction watch. Phase A: `review-fix-ladder.py --host codex` 8/8. Phase B: 22-row matrix via `SILVER_BULLET_RUNTIME=codex` + `tests/live/agents/codex/agent.sh` (extend harness if Claude-only). Phase C: outcome + validation + RCS + tri-host. Fix SB immediately, `install-codex.sh`, cherry-pick to main, strict-clean = ladder + matrix + all outcome criteria + 0 new issues vs 76, never pause for me, 429 retry 1min, single driver only. Parallel to Claude Round 6 — not a smoke.
+> Codex enterprise E2E v2 (shared harness `scripts/enterprise-e2e/`): **2 consecutive strict-clean rounds** (Codex-1→2). SB `/Users/shafqat/projects/silver-bullet/repo`, TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex` or `SB_E2E_LIVE_RUNTIME=codex`, ledger `ROUND-CODEX-{1,2}-LEDGER.md`, log `.e2e-matrix-codex-live.log`. One `composer-2.5` background operator, poll 60–90s. Each round: ladder 8/8×2 verify → matrix 22/22 → Phase C outcome+RCS. Deterministic preflight: `RTK_DISABLED=1 bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh`. Fix shared `enterprise-e2e/lib/` not forks; parallel Claude R6 — not smoke.
