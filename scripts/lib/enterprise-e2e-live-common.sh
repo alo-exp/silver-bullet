@@ -374,10 +374,10 @@ if Path(claude_bin).is_file():
     except (OSError, subprocess.TimeoutExpired):
         pass
 
-ts = int(time.time())
-cache = {name: {"timestamp": ts} for name in sorted(names)}
+# Clear needs-auth cache so the TUI does not stall on the OAuth banner; disabled
+# servers are enforced via fixture settings.local.json instead.
 mcp_cache_path.parent.mkdir(parents=True, exist_ok=True)
-mcp_cache_path.write_text(json.dumps(cache, indent=2) + "\n")
+mcp_cache_path.write_text("{}\n")
 
 settings_path.parent.mkdir(parents=True, exist_ok=True)
 payload = {
