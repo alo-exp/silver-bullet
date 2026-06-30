@@ -200,7 +200,7 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the release marketplace sync wrapper so the primary host and secondary host marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
+Run the release marketplace sync wrapper so the Claude Code and Codex marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
 
 ```bash
 bash scripts/sync-release-marketplace-versions.sh "$VERSION"
@@ -262,8 +262,8 @@ the current session earns the release-live-matrix marker used by
 bash scripts/run-release-live-matrix.sh
 ```
 
-The matrix must complete successfully for the Kay-backed secondary host-compatible path
-(`matrix=secondary host-only`) in the current session. A full primary host/native-secondary host matrix
+The matrix must complete successfully for the Kay-backed Codex-compatible path
+(`matrix=Codex-only`) in the current session. A full Claude Code/native-Codex matrix
 remains optional diagnostic coverage when explicitly requested.
 
 ## Step 6b — Wait for Release CI to Go Green

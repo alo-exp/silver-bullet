@@ -124,7 +124,7 @@ else
   SB_WORKFLOWS_BIN="$(
     for root in \
       "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet/current"; do
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
         break
