@@ -17,3 +17,4 @@
 {"ts":"2026-06-30T09:40:00Z","row":2,"pids":{"batch":"55165","tmux":"cursor-e2e"},"ledger":"1/22 pass 1 fail","action":"watch","note":"row2 FAIL timeout; row3 in flight"}
 {"ts":"2026-06-30T09:55:00Z","row":4,"ledger":"1P 2F","action":"watch","fix":"2b197be9 timeout 1800s","note":"row4 in flight; FORCE retry after batch"}
 {"ts":"2026-06-30T11:05:00Z","row":13,"ledger":"1P 11F","pids":{"batch":"55165","tmux":"cursor-e2e"},"action":"watch","note":"10/22 scored checkpoint; row13 in flight; monitors restarted"}
+{"ts":"2026-06-30T12:31:00Z","row":15,"ledger":"1P 13F","action":"watch","note":"15/22 checkpoint; row15 review-triad in flight"}

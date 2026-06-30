@@ -84,7 +84,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-devops | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-deploy | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 13 | `silver-canary` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-canary | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 14 | `silver-release` | | | | | | | | |
+| 14 | `silver-release` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-release | timeout 900s OUT-KM-01 OUT-WORLD-01 |
 | 15 | `review-triad` | | | | | | | | |
 | 16 | `ship-readiness` | | | | | | | | |
 | 17 | `silver-incident` | | | | | | | | |
@@ -94,7 +94,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** 1 / 22 (row 14 in flight; 12 fail E2E-087 pending FORCE retry @1800s)
+**Pass count:** 1 / 22 (row 15 in flight; 13 fail E2E-087; FORCE retry after batch)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/cursor-row-{N}-outcomes.md` (when host prefix enabled).
 
