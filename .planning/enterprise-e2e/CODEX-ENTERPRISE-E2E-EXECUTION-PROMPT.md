@@ -6,12 +6,10 @@
 
 **Parallel track:** Runs **in parallel** with ongoing Claude [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — this is the **Codex host track**, not a 5-row smoke.
 
-**Cross-links (read first):**
+**Cross-links (reference — operational behavior is inlined below; paste this prompt only for fresh sessions):**
 
 - [SHARED-HARNESS.md](./SHARED-HARNESS.md) — deterministic vs live layers, shared `scripts/enterprise-e2e/`
-- [OPERATIONAL-ADDENDUM.md](./OPERATIONAL-ADDENDUM.md) — cross-host strict-clean ops
-- [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — parent orchestrator ops (Claude parallel track)
-- [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) — per-row/session scoring; blocking autonomy gates
+- [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) — **mandatory read before row scoring** (27 criteria + WBS)
 - [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) — canonical live test runbook
 - [WORKFLOW_E2E_MATRIX.md](https://github.com/alo-exp/enterprise-grade-test-app/blob/main/docs/WORKFLOW_E2E_MATRIX.md) — 22-row prompt cards (test app)
 
@@ -19,7 +17,7 @@
 
 ## Mission
 
-Deliver **2 consecutive strict-clean rounds** on the **Codex host track** (Round Codex-1, then Round Codex-2). Strict-clean criteria match [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) §A — adapted for Codex TUI instead of Claude TUI.
+Deliver **2 consecutive strict-clean rounds** on the **Codex host track** (Round Codex-1, then Round Codex-2). Strict-clean criteria are defined in **§Mission** above — adapted for Codex TUI instead of Claude TUI.
 
 **Strict-clean** = ALL of:
 
@@ -30,6 +28,63 @@ Deliver **2 consecutive strict-clean rounds** on the **Codex host track** (Round
 5. Phase C green: `test-outcome-assessment.sh`, `run-all-tests.sh`, validation/pre-release overlays, ledger reconcile, RCS ≥ 85 (tri-host includes Codex)
 
 Evidence-only PASS or SKIP rows **do not** count strict-clean.
+
+---
+
+## Operational policies (mandatory)
+
+- **Compaction** on context full — **not** `/clear`.
+- **No `gsd` references** anywhere (docs, prompts, commits).
+- **Single driver** per host; `SB_E2E_MONITOR_AUTO_RESTART=0`; poll-only while batch alive and log growing.
+- **Do not kill** healthy driver **<45 min** unless confirmed stuck/dead.
+- `RTK_DISABLED=1` for harness/preflight verbatim output.
+- **No** `claude auth login/logout` — this track is Codex-only.
+- **429 / quota:** retry every **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); not auth failure.
+- Re-run `bash scripts/install-codex.sh --purge-legacy-skills` after every SB harness/hook fix.
+- Recommended tools **opted-in and verified:** Graphify, agentmemory, RTK, Context Mode, Alumnium.
+
+---
+
+## Outcome assessment (mandatory)
+
+**Read** [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) **before scoring any row.**
+
+Score **all 27 criteria** in rubric / `outcome-criteria-registry.json`, including:
+
+- **WBS** decomposition, supervision, verification, validation (`OUT-SUPER-01` meta-supervision loop)
+- Blocking autonomy gates: `OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`
+- Contextual workflow tailoring, verification & validation loops, quality gates, spec-to-release traceability, knowledge management (Graphify + agentmemory JIT retrieval)
+- Autonomous delivery: SB drives to completion from vague prompt; `$silver:clarify` when needed — assist-only = FAIL
+
+Any mandatory outcome failure = **row FAIL** = round **not** strict-clean. Run `enterprise_e2e_outcome_row_passes` after each row; re-score after `SB_E2E_MATRIX_FORCE=1`.
+
+---
+
+## Deterministic preflight (mandatory before live)
+
+Run all green before `SB_ENTERPRISE_E2E_LIVE=1` matrix launch:
+
+| Phase | Command |
+|-------|---------|
+| Structural harness | `RTK_DISABLED=1 bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh` |
+| Outcome harness | `RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh` |
+| Host preflight | `bash scripts/run-enterprise-e2e-live-test.sh --host codex --preflight-only` |
+| Dry-run matrix | `SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME=codex bash scripts/run-enterprise-e2e-matrix.sh` |
+
+---
+
+## Fix loop (SB codebase)
+
+On any friction:
+
+1. **Diagnose** from logs (no guessing).
+2. **Fix** in SB repo (`scripts/enterprise-e2e/lib/` — shared across hosts; not test app product code).
+3. **Commit** on feature branch; log verified fix in [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
+4. **Cherry-pick** verified fixes to `main` per cherry-pick policy.
+5. **`graphify update .`** after substantive SB edits; `graphify query` before scoped work.
+6. Re-run affected row with **`SB_E2E_MATRIX_FORCE=1`**; then `bash scripts/install-codex.sh --purge-legacy-skills`.
+
+**Baseline:** `docs/issues/ENTERPRISE-E2E-SB-ISSUES.md` — **76** unique IDs (0 new for strict-clean). Persist new issues after each fix cycle.
 
 ---
 
@@ -245,7 +300,7 @@ tmux new-session -d -s codex-e2e bash -lc '
 '
 ```
 
-4. **After every SB harness fix:** `bash scripts/install-codex.sh --purge-legacy-skills` then `SB_E2E_MATRIX_FORCE=1` on failed row.
+4. **After every SB harness fix:** follow [Fix loop](#fix-loop-sb-codebase) — `install-codex.sh` + `SB_E2E_MATRIX_FORCE=1` on failed row.
 
 5. Cherry-pick verified fixes to `main` per [ENTERPRISE-E2E-CHERRY-PICK.md](../../docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md).
 
@@ -330,11 +385,11 @@ SB_E2E_RCS_TRIHOST=full SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash s
 
 **Failure between rounds:** If Round Codex-2 is not strict-clean, the pair resets — fix SB, re-run Round Codex-2 from Phase A (do not claim release until a **new** consecutive pair completes).
 
-**Cross-round check (manual until harness script exists):**
+**Cross-round check:**
 
 ```bash
-grep -E 'Round clean\? \| \*\*Pass\*\*|2 consecutive strict clean rounds \| \*\*PASS \(2/2\)\*\*' \
-  .planning/enterprise-e2e/ROUND-CODEX-{1,2}-GATES.md
+RTK_DISABLED=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host codex
+# Or on live-test exit: SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1
 ```
 
 Harness does **not** auto-enforce the pair — operator + gate files are authoritative ([ROUND-N-GATES.md](./ROUND-N-GATES.md) row **2 consecutive strict clean rounds**).
@@ -370,6 +425,7 @@ Read **during** each row, not only at row end:
 - `.e2e-row{N}-attempt.log`, `.e2e-matrix-codex-live.log`, monitor status, Codex expect transcript
 - Watch for: 0-token turns, MCP auth banners, skill picker failures, `(?s)` regex/Tcl expect failures, `install-codex` hangs, orchestrator parent deny, stale plugin cache, duplicate subagents, WiFi stalls, stub/skipped rows, outcome FAIL with evidence PASS
 - **3 idle polls on same row → investigate** (do not silently poll)
+- **Token counts:** record per-row telemetry (input/output/total when available); do not gate on cost claims
 
 ### Graphify + agentmemory (per row)
 
@@ -381,25 +437,25 @@ After each row: agentmemory export — record in `agentmemory_export_ref`.
 
 ## Parent orchestrator ops (this chat)
 
-Mirror [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) §B–§G:
-
 - Run **ONE** long-lived background worker (`Task`, `run_in_background: true`, **`model: composer-2.5` ONLY** — never `composer-2.5-fast`).
 - **Resume the same worker ID** across turns; do not spawn parallel matrix operators.
-- Relay **every poll cycle (~60–90s)** — substantive checkpoint with minimum table:
+- Relay **every poll cycle (~60–90s)** — substantive checkpoint, NOT "still running"; minimum table:
 
 | Driver PID alive? | Active row/skill | Last meaningful TUI lines | Evidence PASS count | Outcome PASS count | Friction this cycle | Action taken |
 |-------------------|------------------|---------------------------|---------------------|--------------------|---------------------|--------------|
 
-- **Never pause for operator.** On blockers: diagnose → fix SB → cherry-pick → re-run affected row.
+- **On row complete:** report evidence PASS/FAIL + full outcome checklist (all 27 criteria) + friction summary + fix SHA (if any).
+- **Never pause for operator.** On blockers: follow [Fix loop](#fix-loop-sb-codebase) — do not wait for user input.
+- **User-pause exception:** if user explicitly requests pause → finish current poll turn, write checkpoint to ledger, then stop.
 - **Single driver:** poll-only while batch alive and log growing; no duplicate monitors/drivers.
 - **Do not kill** healthy driver **<45 min** unless confirmed stuck/dead.
-- On friction: diagnose from logs → fix in SB repo → `install-codex.sh` → `graphify update .` → `SB_E2E_MATRIX_FORCE=1` on affected row → persist new issues (0 new for strict-clean).
+- **Token counts:** track as telemetry data per row (do not block on marketing "10× cost" claims).
 
 ---
 
 ## Strict-clean criteria (Codex track)
 
-Same as [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) §A, with Codex-specific substitutions:
+Same as **§Mission** above, with Codex-specific substitutions:
 
 - `install-codex.sh` instead of `install-claude.sh`
 - `$silver:*` skills instead of `/silver:*` slash commands
@@ -423,7 +479,14 @@ Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIM
 
 ---
 
-## Resume commands (Codex track)
+## Resume first actions (§H)
+
+1. **Read** current round ledger ([ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) or Round 2); note active row and last checkpoint.
+2. **Verify driver:** `kill -0 "$(cat .e2e-matrix-codex-batch.pid 2>/dev/null)" 2>/dev/null || echo "driver dead"`.
+3. **If dead:** clear **host lock only** — `rm -f .e2e-live-test-codex.lock` (never `.e2e-live-test.lock` while Claude R6 may be live); single `--resume` relaunch (tmux if no PTY).
+4. **If alive:** poll + friction watch only — **no second driver**.
+5. **Post first substantive checkpoint within 90s** of session start.
+6. Continue until round strict-clean + Phase C; then `bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host codex`.
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
@@ -437,31 +500,23 @@ export SB_E2E_SESSION0_SKIP=1   # only if Session 0 already Pass in ledger
 export RTK_DISABLED=1
 cd "$SB_ROOT"
 
-# 1. Read ledger + verify driver alive:
-kill -0 "$(cat .e2e-matrix-codex-batch.pid 2>/dev/null)" 2>/dev/null || echo "driver dead"
-
-# 2. If dead: clear stale lock, single relaunch (tmux if no PTY):
-rm -f .e2e-live-test.lock
+# If dead — host lock only, single relaunch:
+rm -f .e2e-live-test-codex.lock
 tmux new-session -d -s codex-e2e bash -lc '
+  export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
   cd "$SB_ROOT" && SB_ENTERPRISE_E2E_LIVE=1 SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex \
     SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md \
     SB_E2E_MATRIX_LOG=.e2e-matrix-codex-live.log RTK_DISABLED=1 \
     bash scripts/run-enterprise-e2e-matrix.sh --resume
 '
 
-# 3. Poll (no second driver while batch alive):
+# Poll (no second driver while batch alive):
 tail -f .e2e-matrix-codex-live.log
 tail -f .e2e-matrix-codex-monitor-status.txt
-
-# 4. Preflight only:
-RTK_DISABLED=1 SILVER_BULLET_RUNTIME=codex bash tests/e2e-live/hook-delivery-preflight.sh
-
-# 5. Outcome harness verify:
-RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh
 ```
 
 ---
 
 ## One-liner (fresh session copy-paste)
 
-> Codex enterprise E2E v2 (shared harness `scripts/enterprise-e2e/`): **2 consecutive strict-clean rounds** (Codex-1→2). SB `/Users/shafqat/projects/silver-bullet/repo`, TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex` or `SB_E2E_LIVE_RUNTIME=codex`, ledger `ROUND-CODEX-{1,2}-LEDGER.md`, log `.e2e-matrix-codex-live.log`. One `composer-2.5` background operator, poll 60–90s. Each round: ladder 8/8×2 verify → matrix 22/22 → Phase C outcome+RCS. Deterministic preflight: `RTK_DISABLED=1 bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh`. Fix shared `enterprise-e2e/lib/` not forks; parallel Claude R6 — not smoke.
+> **Self-contained Codex operator prompt** — paste only this file for fresh sessions (no separate addendum). SB `/Users/shafqat/projects/silver-bullet/repo`, TUI CWD `/Users/shafqat/projects/enterprise-grade-test-app`, `--host codex`, **2 consecutive strict-clean rounds** (Codex-1→2). One `composer-2.5` background operator, poll 60–90s, checkpoint within 90s on resume. Read OUTCOME-ASSESSMENT-RUBRIC before row scoring (27 + WBS). Deterministic preflight: structural suite + outcome harness + `--preflight-only` + dry-run matrix (see §Deterministic preflight). Fix loop: diagnose→commit→cherry-pick→graphify→FORCE; baseline 76 issues. Host lock `.e2e-live-test-codex.lock` only. Consecutive rounds: `enterprise-e2e-consecutive-rounds-check.sh --host codex`. Compaction not `/clear`; no `gsd`.
