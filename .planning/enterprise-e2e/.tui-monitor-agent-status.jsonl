@@ -15,3 +15,4 @@
 {"ts": "2026-06-30T07:16:09Z", "row": 11, "pids": {"watch": "37239", "monitor": "16907"}, "findings_new": 0, "blockers": [], "ledger": "30/22", "action": "final", "cycle": 9, "fix_shas": ["fa48f52f"], "retry_rows_done": 0, "retry_rows_total": 22, "note": "batch_dead"}
 {"ts": "2026-06-30T09:25:00Z", "row": 2, "pids": {"batch": "55165", "tmux": "cursor-e2e"}, "findings_new": 0, "blockers": [], "ledger": "1/22", "action": "watch", "fix_shas": ["c6cae4e9", "c5862d9d", "3b8df590"], "note": "tmux FORCE batch row1 PASS row2 in flight"}
 {"ts":"2026-06-30T09:40:00Z","row":2,"pids":{"batch":"55165","tmux":"cursor-e2e"},"ledger":"1/22 pass 1 fail","action":"watch","note":"row2 FAIL timeout; row3 in flight"}
+{"ts":"2026-06-30T09:55:00Z","row":4,"ledger":"1P 2F","action":"watch","fix":"2b197be9 timeout 1800s","note":"row4 in flight; FORCE retry after batch"}
