@@ -162,4 +162,11 @@ else
   echo "  tri-host smoke:       ${score_trihost}/10"
 fi
 
+if [[ "${SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS:-}" == "1" ]]; then
+  if ! RTK_DISABLED=1 bash "${SB_ROOT}/scripts/lib/enterprise-e2e-consecutive-rounds-check.sh" --host "${SB_E2E_LIVE_RUNTIME:-claude}"; then
+    echo "RCS blocked: consecutive strict-clean round pair not satisfied (SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1)" >&2
+    exit 1
+  fi
+fi
+
 [[ "$total" -ge 85 ]]
