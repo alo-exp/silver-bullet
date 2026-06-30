@@ -33,6 +33,9 @@ TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-matrix-routing.XXXXXX")"
 trap 'rm -rf "$STATE_DIR"' EXIT
 
+# shellcheck source=scripts/enterprise-e2e/lib/host.sh
+source "${REPO_ROOT}/scripts/enterprise-e2e/lib/host.sh"
+
 export HOME="$STATE_DIR/home"
 mkdir -p "$HOME/.claude/.silver-bullet"
 STATE_FILE="$HOME/.claude/.silver-bullet/state"
@@ -47,12 +50,17 @@ build_matrix_prompt() {
   local evidence_path="$3"
   local row_num="${4:-}"
   local slug="${5:-}"
+  route="$(enterprise_e2e_matrix_host_route "$route")"
   if [[ "$row_num" == "1" ]]; then
     printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
       "$route" "$prompt_card"
     return 0
   fi
-  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
+  local workflow_route="/silver"
+  if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+  fi
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route"
 }
 
 claude_routing_state_file() {

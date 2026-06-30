@@ -166,8 +166,13 @@ build_matrix_prompt() {
       "$route" "$prompt_card"
     return 0
   fi
-  # Native /silver:* subcommands are not registered in Claude TUI — route via /silver + workflow card.
-  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
+  # Claude TUI: /silver:* subcommands are not registered — always use /silver + slug in prose.
+  # Codex TUI: use $silver (slash→dollar); subcommand tokens are not registered.
+  local workflow_route="/silver"
+  if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+  fi
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route"
 }
 
 claude_routing_state_file() {
@@ -203,8 +208,18 @@ verify_row_routing_state_present() {
 }
 
 verify_row_routing_output() {
-  local output="$1"
-  printf '%s\n' "$output" | grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)'
+  local output="$1" tmp="" rc=0
+  [[ -n "$output" ]] || return 1
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-routing-out.XXXXXX")"
+  # Codex/Claude TUI embeds ANSI between "SILVER BULLET" and "ROUTING" — normalize first.
+  printf '%s' "$output" | sed $'s/\x1b\\[[0-9;]*[A-Za-z]//g; s/\x1b\\][^\x07]*\x07//g' >"$tmp"
+  if grep -qE 'SILVER BULLET.*ROUTING|ROUTING completed|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)|\$silver|routing validation only' "$tmp" 2>/dev/null; then
+    rc=0
+  else
+    rc=1
+  fi
+  rm -f "$tmp"
+  return "$rc"
 }
 
 verify_row_success() {
@@ -349,6 +364,10 @@ run_matrix_row() {
     )"
     if [[ -n "$output" ]]; then
       printf '%s\n' "$output" | tail -20
+    fi
+    # Codex interactive adapter does not tee to CLAUDE_INTERACTIVE_LOG_FILE — backfill for scoring.
+    if [[ ! -s "$row_log" && -n "$output" ]]; then
+      printf '%s\n' "$output" >"$row_log"
     fi
 
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
