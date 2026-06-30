@@ -21,7 +21,7 @@ matrix_router_workflow_prompt() {
   local prompt_card="$2"
   local evidence_path="$3"
 
-  printf '/silver %s Enterprise E2E matrix validation. Route this through the %s workflow via the Silver Bullet orchestrator; parent must not implement product code inline. Create workflow evidence at %s. Stop when the workflow is complete.' \
+  printf '/silver %s Enterprise E2E matrix validation. Route this through the %s workflow via the Silver Bullet orchestrator; parent must not implement product code inline. Matrix autonomous mode: apply autonomous_default for decision_class blocking clarify — issue SB OVERRIDE when planning-file-guard blocks evidence writes; do not present interactive disposition menus. Create workflow evidence at %s. Stop when the workflow is complete.' \
     "$prompt_card" "$slug" "$evidence_path"
 }
 
