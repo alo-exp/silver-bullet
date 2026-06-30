@@ -180,6 +180,13 @@ agent_invoke() {
     hook_trust_bypass="${SB_LIVE_CODEX_BYPASS_HOOK_TRUST:-1}"
     auto_trust_hooks="${SB_LIVE_CODEX_AUTO_TRUST_HOOKS:-1}"
   fi
+  if [[ "${CODEX_AUTO_TRUST_HOOKS:-}" == "1" ]]; then
+    auto_trust_hooks=1
+    hook_trust_bypass=1
+  fi
+  if [[ "${CODEX_BYPASS_HOOK_TRUST:-}" == "1" ]]; then
+    hook_trust_bypass=1
+  fi
   if [[ "${SB_LIVE_CODEX_GUARD:-0}" == "1" ]]; then
     codex_prompt="${codex_prompt}"$'\n\n'"$(codex_live_guard_context)"
   fi
@@ -269,8 +276,8 @@ PY
       CODEX_INTERACTIVE_PROMPT_INPUT="1" \
       CODEX_SANDBOX_MODE="danger-full-access" \
       CODEX_BYPASS=$([[ "$mode" == "permissive" ]] && printf '1' || printf '0') \
-      CODEX_BYPASS_HOOK_TRUST="$hook_trust_bypass" \
-      CODEX_AUTO_TRUST_HOOKS="$auto_trust_hooks" \
+      CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-$hook_trust_bypass}" \
+      CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-$auto_trust_hooks}" \
       python3 "$SB_ROOT/scripts/codex-interactive-invoke.py"
   ) || true
   if [[ -f "$last_message_file" ]]; then
