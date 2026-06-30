@@ -28,6 +28,24 @@
       "test_ids": ["completion-audit", "enterprise-e2e-rows-14-16"]
     },
     {
+      "claim_id": "hero-autonomous-delivery",
+      "surface": "homepage",
+      "text": "stays out of the way for the work that should be fast",
+      "verification_tier": "matrix_overlay",
+      "check_id": "autonomous-delivery-outcome",
+      "test_ids": ["test-outcome-assessment", "enterprise-e2e-outcome-assess"],
+      "notes": "Blocking criteria OUT-AUTO-01, OUT-NOOP-01, OUT-WORLD-01 per row"
+    },
+    {
+      "claim_id": "hero-clarify-gate",
+      "surface": "help_center",
+      "text": "clarify before wrong execution",
+      "verification_tier": "matrix_overlay",
+      "check_id": "clarify-gate-outcome",
+      "test_ids": ["test-outcome-assessment", "enterprise-e2e-outcome-assess"],
+      "notes": "Blocking OUT-CLARIFY-01 for ambiguous prompts (rows 1-3)"
+    },
+    {
       "claim_id": "hero-capabilities",
       "surface": "homepage",
       "text": "Engineering Best Practices",
@@ -75,7 +93,9 @@
     }
   ],
   "matrix_row_claim_map": {
-    "3": ["hero-evidence-gates"],
+    "1": ["hero-autonomous-delivery", "hero-clarify-gate"],
+    "2": ["hero-clarify-gate"],
+    "3": ["hero-evidence-gates", "hero-autonomous-delivery", "hero-clarify-gate"],
     "6": ["hero-capabilities"],
     "14": ["hero-evidence-gates"],
     "15": ["hero-evidence-gates"],

@@ -20,15 +20,26 @@
 | Ladder | **8 / 8** rungs |
 | Matrix | **0 / 22** *(in progress)* |
 
+### Strict-clean definition
+
+Round 6 is **strict-clean** only when **all** hold:
+
+1. **Matrix 22/22** with graphify + agentmemory refs per PASS row.
+2. **All applicable outcome criteria pass** per row (`partial` = row FAIL) — [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md).
+3. **Blocking autonomy gates** per row: `OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, composite `OUT-WORLD-01`. Evidence alone is insufficient.
+4. **Zero new issues** vs baseline 76.
+
+**Propagation:** Matrix runner downgrades evidence-only PASS to FAIL when `enterprise_e2e_outcome_row_passes` fails → row FAIL → round **not strict-clean**.
+
 ### Round gates
 
 | Gate | Status |
 |------|--------|
 | review-fix-ladder 8/8 (2× clean verify per rung) | **PASS** (no new issues) |
-| Matrix ledger 22/22 (zero new friction) | **PENDING** — 0/22 @ checkpoint |
-| Outcome assessment harness (`test-outcome-assessment.sh`) | **PASS** (37/37 @ `da493429`) |
-| World-class criteria registry (18 criteria) | **PASS** — [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) |
-| Per-row outcome checklists on matrix PASS | **WIRED** — `row-N-outcomes.md` via matrix runner |
+| Matrix ledger 22/22 (zero new friction) | **PENDING** |
+| Outcome assessment harness (`test-outcome-assessment.sh`) | **PENDING** (re-run after 27-criteria autonomy harness) |
+| World-class criteria registry (27 criteria + 4 blocking) | **WIRED** — [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) |
+| Per-row OUT-WORLD-01 composite + outcome enforcement | **WIRED** — matrix runner fails row if criteria incomplete |
 | `run-all-tests` | **PENDING** (Phase C) |
 | Validation overlay | **PASS** (6/6 pre-matrix) |
 | Pre-release overlay | **PENDING** (Phase C) |
@@ -38,7 +49,9 @@
 | Round clean (zero new issues vs baseline) | **PENDING** |
 | 2 consecutive strict clean rounds | **PENDING** (Round 6 must complete clean) |
 
-### Outcome assessment (world-class criteria)
+### Outcome assessment (world-class + autonomy)
+
+Blocking: `OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`. Template: [ROUND-N-GATES.md](./ROUND-N-GATES.md).
 
 Phase C includes outcome assessment verification when matrix completes:
 
@@ -49,6 +62,7 @@ RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh
 source scripts/lib/enterprise-e2e-outcome-assessment.sh
 enterprise_e2e_outcome_assess_round "$SB_ROOT/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
 # Expect: OUT-REVIEW-01 pass; OUT-MEASURE-01 pass after ledger reconcile COMPLETE
+# Per row: enterprise_e2e_outcome_row_passes <N> ... must return 0
 ```
 
 Validation overlay claim `hero-capabilities` maps to `test-outcome-assessment` + `enterprise-e2e-outcome-assess` per [validation-claims-registry.json](../../docs/testing/validation-claims-registry.json).
