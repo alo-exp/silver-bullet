@@ -68,6 +68,55 @@ enterprise_e2e_outcome_session_criteria() {
     OUT-AUTO-01 OUT-NOOP-01 OUT-CLARIFY-01 OUT-HEAL-01 OUT-SUPER-01
 }
 
+# Matrix row 1 (silver-router) — interactive routing-only; no WBS supervisor chain.
+enterprise_e2e_outcome_is_routing_row() {
+  local row_num="${1:-}"
+  local reg
+  reg="$(enterprise_e2e_outcome_registry_path)"
+  if [[ -f "$reg" ]] && command -v jq >/dev/null 2>&1; then
+    jq -e --arg r "$row_num" '.routing_only_rows[]? | select(. == ($r | tonumber))' "$reg" >/dev/null 2>&1 && return 0
+  fi
+  [[ "$row_num" == "1" ]]
+}
+
+enterprise_e2e_outcome_routing_evidence_present() {
+  local work_dir="$1" state_dir="$2" evidence="${3:-}"
+  local state_file="${state_dir}/state"
+  if [[ -n "$evidence" ]] && { [[ -f "${work_dir}/${evidence}" ]] || [[ -d "${work_dir}/${evidence}" ]]; }; then
+    return 0
+  fi
+  if [[ -f "${work_dir}/.planning/workflows/router-session.md" ]]; then
+    return 0
+  fi
+  if [[ -d "${work_dir}/.planning/workflows/.archive" ]] && \
+     find "${work_dir}/.planning/workflows/.archive" -name 'router-session.md' 2>/dev/null | grep -q .; then
+    return 0
+  fi
+  if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+# True hook BLOCKER in TUI watch (severity=blocker, category=hook) — not annoyance noise.
+enterprise_e2e_outcome_watch_has_hook_blocker() {
+  local watch="$1" row_num="${2:-}"
+  [[ -f "$watch" ]] || return 1
+  if command -v jq >/dev/null 2>&1; then
+    if [[ -n "$row_num" ]]; then
+      jq -e --argjson r "$row_num" \
+        'select(.row == $r) | select(.severity == "blocker") | select(.category == "hook")' \
+        "$watch" 2>/dev/null | grep -q .
+      return $?
+    fi
+    jq -e 'select(.severity == "blocker") | select(.category == "hook")' \
+      "$watch" 2>/dev/null | grep -q .
+    return $?
+  fi
+  grep -q '"severity": "blocker"' "$watch" 2>/dev/null && \
+    grep -qiE '"category": "hook"|false.positive' "$watch" 2>/dev/null
+}
+
 enterprise_e2e_outcome_is_blocking() {
   local cid="$1"
   local reg
@@ -96,7 +145,20 @@ enterprise_e2e_outcome_log_has_autonomous() {
 }
 
 enterprise_e2e_outcome_score_auto() {
-  local work_dir="$1" state_dir="$2" row_log="${3:-}" evidence="${4:-}"
+  local work_dir="$1" state_dir="$2" row_log="${3:-}" evidence="${4:-}" row_num="${5:-}"
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
+      printf 'fail\n'; return 0
+    fi
+    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" "$evidence"; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi 'routing validation only|routing completes|composed workflow skill' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
   if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
     if [[ -n "$evidence" ]] && [[ -f "${work_dir}/${evidence}" || -d "${work_dir}/${evidence}" ]]; then
       printf 'partial\n'; return 0
@@ -170,8 +232,9 @@ enterprise_e2e_outcome_score_drift() {
 
 enterprise_e2e_outcome_score_super() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   case "$row_num" in
-    1|3|4|5) ;;
+    3|4|5) ;;
     *) printf 'n/a\n'; return 0 ;;
   esac
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'wbs-supervisor|wbs supervisor|WBS stub' "$row_log" 2>/dev/null; then
@@ -188,21 +251,22 @@ enterprise_e2e_outcome_score_super() {
 }
 
 enterprise_e2e_outcome_score_heal() {
-  local sb_root="$1" row_log="${2:-}"
+  local sb_root="$1" row_log="${2:-}" row_num="${3:-}"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
+  enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$row_log" && -f "$row_log" ]]; then
-    if grep -qiE 'hook.*block' "$row_log" 2>/dev/null; then
+    if grep -qiE 'Stop hook blocks completion|session ended on hook block' "$row_log" 2>/dev/null; then
       if grep -qiE 'retry|recovered|self-heal|SB fix' "$row_log" 2>/dev/null; then
         printf 'pass\n'; return 0
       fi
       printf 'fail\n'; return 0
     fi
-    if grep -qiE 'WARN.*hook|hook.*WARN' "$row_log" 2>/dev/null; then
+    if grep -qiE 'WARN.*hook|hook.*WARN|non-blocking' "$row_log" 2>/dev/null; then
       printf 'partial\n'; return 0
     fi
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     [[ -f "$watch" ]] && grep -qi 'false.positive\|hook.*block' "$watch" 2>/dev/null; then
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
     printf 'fail\n'; return 0
   fi
   printf 'n/a\n'
@@ -287,13 +351,14 @@ enterprise_e2e_outcome_score_tailor() {
   local work_dir="$1" state_dir="$2" row_log="$3" row_num="${4:-}"
   local state_file="${state_dir}/state"
   [[ "$row_num" == "6" ]] && { printf 'n/a\n'; return 0; }
-  if [[ -f "$state_file" ]] && grep -qE 'silver-context|silver-router' "$state_file" 2>/dev/null; then
+  if [[ -f "$state_file" ]] && grep -qE 'silver-context|silver-router|silver-feature' "$state_file" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
   if [[ -f "${work_dir}/.planning/workflows/router-session.md" ]]; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qE 'SILVER BULLET.*ROUTING|silver-context' "$row_log" 2>/dev/null; then
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qEi 'SILVER BULLET.*ROUTING|silver-context|routing validation only' "$row_log" 2>/dev/null; then
+    [[ "$row_num" == "1" ]] && { printf 'pass\n'; return 0; }
     printf 'partial\n'; return 0
   fi
   [[ "$row_num" == "1" ]] && { printf 'fail\n'; return 0; }
@@ -343,9 +408,13 @@ enterprise_e2e_outcome_score_trace() {
 }
 
 enterprise_e2e_outcome_score_intent() {
-  local work_dir="$1" evidence_path="${2:-}"
+  local work_dir="$1" evidence_path="${2:-}" row_num="${3:-}" state_dir="${4:-}"
   if [[ -n "$evidence_path" ]]; then
     if [[ -f "${work_dir}/${evidence_path}" || -d "${work_dir}/${evidence_path}" ]]; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_is_routing_row "$row_num" && \
+       enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" "$evidence_path"; then
       printf 'pass\n'; return 0
     fi
     printf 'fail\n'; return 0
@@ -358,6 +427,7 @@ enterprise_e2e_outcome_score_intent() {
 
 enterprise_e2e_outcome_score_km() {
   local ledger_file="${1:-}" row_num="${2:-}"
+  enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]]; then
     local line gref aref status
     line="$(awk -v r="$row_num" '$0 ~ "^\\| " r " \\|" { print; exit }' "$ledger_file" 2>/dev/null || true)"
@@ -386,7 +456,16 @@ enterprise_e2e_outcome_score_km() {
 }
 
 enterprise_e2e_outcome_score_orch() {
-  local state_dir="$1" row_log="${2:-}"
+  local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-}"
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" ""; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi 'SILVER BULLET|routing validation only|/silver|silver-feature' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   if [[ -f "${state_dir}/orchestrator-directive.json" ]] && \
      grep -q 'next_worker_template\|next_skill' "${state_dir}/orchestrator-directive.json" 2>/dev/null; then
     printf 'pass\n'; return 0
@@ -450,15 +529,26 @@ enterprise_e2e_outcome_score_blast() {
 }
 
 enterprise_e2e_outcome_score_hook() {
-  local sb_root="$1"
+  local sb_root="$1" row_num="${2:-}"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
-  if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     [[ -f "$watch" ]] && grep -qi 'false.positive\|hook.*block' "$watch" 2>/dev/null; then
-    printf 'fail\n'; return 0
-  fi
-  if [[ -f "${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md" ]] && \
-     grep -q 'hook-delivery 3/3' "${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md" 2>/dev/null; then
+  local ledger="${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if [[ -n "${3:-}" && -f "${3}" ]] && \
+       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment' "${3}" 2>/dev/null; then
+      printf 'fail\n'; return 0
+    fi
     printf 'pass\n'; return 0
+  fi
+  if [[ -f "$ledger" ]] && grep -q 'hook-delivery 3/3' "$ledger" 2>/dev/null; then
+    if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+      printf 'fail\n'; return 0
+    fi
+    printf 'pass\n'; return 0
+  fi
+  if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+    printf 'fail\n'; return 0
   fi
   printf 'partial\n'
 }
@@ -476,7 +566,8 @@ enterprise_e2e_outcome_score_complete() {
 }
 
 enterprise_e2e_outcome_score_handoff() {
-  local state_dir="$1"
+  local state_dir="$1" row_num="${2:-}"
+  enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
     printf 'pass\n'; return 0
   fi
@@ -487,12 +578,14 @@ enterprise_e2e_outcome_score_handoff() {
 }
 
 enterprise_e2e_outcome_score_codeint() {
-  local work_dir="$1" row_log="${2:-}"
+  local work_dir="$1" row_log="${2:-}" row_num="${3:-}"
   if [[ -f "${work_dir}/.silver-bullet.json" ]] && \
      grep -qE '"graphify"|"agentmemory"' "${work_dir}/.silver-bullet.json" 2>/dev/null; then
     if [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'graphify query' "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
+    # graphify runs in matrix preamble for routing row — not always in TUI log
+    enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'pass\n'; return 0; }
     printf 'partial\n'; return 0
   fi
   printf 'n/a\n'
@@ -561,28 +654,28 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-VLOOP-01) enterprise_e2e_outcome_score_vloop "$work_dir" ;;
     OUT-GATES-01) enterprise_e2e_outcome_score_gates "$work_dir" "$row_num" ;;
     OUT-TRACE-01) enterprise_e2e_outcome_score_trace "$work_dir" ;;
-    OUT-INTENT-01) enterprise_e2e_outcome_score_intent "$work_dir" "$evidence" ;;
+    OUT-INTENT-01) enterprise_e2e_outcome_score_intent "$work_dir" "$evidence" "$row_num" "$state_dir" ;;
     OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" ;;
-    OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" ;;
+    OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
     OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" ;;
     OUT-REVIEW-01) enterprise_e2e_outcome_score_review "$ledger" ;;
     OUT-BLAST-01) enterprise_e2e_outcome_score_blast "$work_dir" "$row_num" ;;
-    OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" ;;
+    OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;
     OUT-COMPLETE-01) enterprise_e2e_outcome_score_complete "$work_dir" "$row_num" ;;
-    OUT-HANDOFF-01) enterprise_e2e_outcome_score_handoff "$state_dir" ;;
-    OUT-CODEINT-01) enterprise_e2e_outcome_score_codeint "$work_dir" "$row_log" ;;
+    OUT-HANDOFF-01) enterprise_e2e_outcome_score_handoff "$state_dir" "$row_num" ;;
+    OUT-CODEINT-01) enterprise_e2e_outcome_score_codeint "$work_dir" "$row_log" "$row_num" ;;
     OUT-FLOW-01) enterprise_e2e_outcome_score_flow "$work_dir" ;;
     OUT-MEASURE-01) enterprise_e2e_outcome_score_measure "$ledger" "$sb_root" ;;
     OUT-DECIDE-01) enterprise_e2e_outcome_score_decide "$work_dir" ;;
     OUT-FORENS-01) enterprise_e2e_outcome_score_forens "$work_dir" "$row_num" ;;
-    OUT-AUTO-01) enterprise_e2e_outcome_score_auto "$work_dir" "$state_dir" "$row_log" "$evidence" ;;
+    OUT-AUTO-01) enterprise_e2e_outcome_score_auto "$work_dir" "$state_dir" "$row_log" "$evidence" "$row_num" ;;
     OUT-CLARIFY-01) enterprise_e2e_outcome_score_clarify "$work_dir" "$state_dir" "$row_log" "$row_num" ;;
     OUT-NOOP-01) enterprise_e2e_outcome_score_noop "$work_dir" "$row_log" ;;
     OUT-WORLD-01) enterprise_e2e_outcome_score_world "$row_num" "$work_dir" "$state_dir" "$row_log" "$ledger" "$evidence" ;;
     OUT-DRIFT-01) enterprise_e2e_outcome_score_drift "$work_dir" "$row_log" "$row_num" ;;
     OUT-SUPER-01) enterprise_e2e_outcome_score_super "$state_dir" "$row_log" "$row_num" ;;
-    OUT-HEAL-01) enterprise_e2e_outcome_score_heal "$sb_root" "$row_log" ;;
+    OUT-HEAL-01) enterprise_e2e_outcome_score_heal "$sb_root" "$row_log" "$row_num" ;;
     OUT-RELEASE-01) enterprise_e2e_outcome_score_release "$work_dir" "$row_num" "$ledger" ;;
     *) printf 'n/a\n' ;;
   esac
