@@ -17,7 +17,11 @@ assert_ok() {
 }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-}"
+if [[ -z "$FIXTURE" || ! -d "$FIXTURE" ]]; then
+  FIXTURE="${TMPDIR:-/tmp}/sb-enterprise-fixture-$$"
+  mkdir -p "$FIXTURE/.planning/workflows"
+fi
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-matrix-evidence.XXXXXX")"
 trap 'rm -rf "$STATE_DIR"' EXIT
@@ -25,6 +29,7 @@ trap 'rm -rf "$STATE_DIR"' EXIT
 export HOME="$STATE_DIR/home"
 mkdir -p "$HOME/.claude/.silver-bullet"
 export SB_RUNTIME_STATE_DIR="$HOME/.claude/.silver-bullet"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_E2E_ENTERPRISE_MATRIX=1
 export WORK_DIR="$FIXTURE"
 export SB_ROOT="$REPO_ROOT"

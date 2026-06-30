@@ -4,6 +4,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DOCTOR="$REPO_ROOT/scripts/sb-doctor.sh"
+DOCTOR_CHECKS="$REPO_ROOT/scripts/lib/sb-doctor/checks.sh"
+DOCTOR_FIX="$REPO_ROOT/scripts/lib/sb-doctor/fix.sh"
 PASS=0
 FAIL=0
 
@@ -13,10 +15,10 @@ fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 chmod +x "$DOCTOR" 2>/dev/null || true
 
 for id in D14 D15 D16; do
-  grep -q "record pass ${id}\|record fail ${id}\|record warn ${id}" "$DOCTOR" && pass "check ${id}" || fail "check ${id}"
+  grep -q "record pass ${id}\|record fail ${id}\|record warn ${id}" "$DOCTOR_CHECKS" && pass "check ${id}" || fail "check ${id}"
 done
 
-grep -q -- '--fix' "$DOCTOR" && grep -q 'doctor_apply_fixes' "$DOCTOR" && pass "--fix support" || fail "--fix support"
+grep -q -- '--fix' "$DOCTOR" && grep -q 'doctor_apply_fixes' "$DOCTOR_FIX" && pass "--fix support" || fail "--fix support"
 
 MOCK_HOME="$(mktemp -d)"
 MOCK_PROJ="$(mktemp -d)"

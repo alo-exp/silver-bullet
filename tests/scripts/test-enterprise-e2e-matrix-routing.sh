@@ -142,7 +142,7 @@ if [[ -x "$SUBAGENT_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
   export SB_RUNTIME_STATE_DIR="$STATE_DIR/home/.claude/.silver-bullet"
   mkdir -p "$SB_RUNTIME_STATE_DIR"
   sb_e2e_matrix_set_routing_row_marker
-  sub_out="$(printf '%s' '{"hook_event_name":"Stop"}' | HOME="$HOME" SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" bash "$SUBAGENT_HOOK" 2>/dev/null || true)"
+  sub_out="$(printf '%s' '{"hook_event_name":"Stop"}' | HOME="$HOME" SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$SUBAGENT_HOOK" 2>/dev/null || true)"
   if ! printf '%s' "$sub_out" | grep -qE '"decision"\s*:\s*"block"'; then
     echo "PASS: subagent-stop exempt when routing row marker set"
     ((PASS++)) || true
@@ -166,7 +166,7 @@ if [[ -x "$LEDGER_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]];
   jq -n '{prompt_id:"abc",status:"pending",children:[{id:"c1",label:"item",status:"pending",evidence:"",children:[]}]}' \
     >"${ledger_state}/instruction-ledger.json"
   export SB_RUNTIME_STATE_DIR="$ledger_state"
-  ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_STATE_DIR="$ledger_state" bash "$LEDGER_HOOK" 2>/dev/null || true)"
+  ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_STATE_DIR="$ledger_state" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$LEDGER_HOOK" 2>/dev/null || true)"
   if printf '%s' "$ledger_out" | grep -qE '"decision"\s*:\s*"block"'; then
     echo "PASS: instruction-ledger blocks Stop with unresolved items (no marker)"
     ((PASS++)) || true
@@ -175,7 +175,7 @@ if [[ -x "$LEDGER_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]];
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_set_routing_row_marker
-  ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_STATE_DIR="$ledger_state" bash "$LEDGER_HOOK" 2>/dev/null || true)"
+  ledger_out="$(cd "$ledger_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$ledger_home" SB_RUNTIME_STATE_DIR="$ledger_state" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$LEDGER_HOOK" 2>/dev/null || true)"
   if ! printf '%s' "$ledger_out" | grep -qE '"decision"\s*:\s*"block"'; then
     echo "PASS: instruction-ledger exempt when routing row marker set"
     ((PASS++)) || true
@@ -200,7 +200,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
   jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false}' \
     >"${site_state}/site-session.json"
   export SB_RUNTIME_STATE_DIR="$site_state"
-  site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
+  site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_STATE_DIR="$site_state" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$SITE_REG_HOOK" 2>/dev/null || true)"
   if printf '%s' "$site_out" | grep -qE '"decision"\s*:\s*"block"'; then
     echo "PASS: site-regression blocks Stop with active session (no marker)"
     ((PASS++)) || true
@@ -209,7 +209,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
     ((FAIL++)) || true
   fi
   sb_e2e_matrix_set_routing_row_marker
-  site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
+  site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_STATE_DIR="$site_state" SB_RUNTIME_PRESERVE_STATE_DIR=1 bash "$SITE_REG_HOOK" 2>/dev/null || true)"
   if ! printf '%s' "$site_out" | grep -qE '"decision"\s*:\s*"block"'; then
     echo "PASS: site-regression exempt when routing row marker set"
     ((PASS++)) || true

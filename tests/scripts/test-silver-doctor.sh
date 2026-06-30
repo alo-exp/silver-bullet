@@ -5,12 +5,14 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SKILL="${REPO_ROOT}/skills/silver-doctor/SKILL.md"
 DOCTOR="${REPO_ROOT}/scripts/sb-doctor.sh"
+DOCTOR_CHECKS="${REPO_ROOT}/scripts/lib/sb-doctor/checks.sh"
+DOCTOR_FIX="${REPO_ROOT}/scripts/lib/sb-doctor/fix.sh"
 PASS=0
 FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
-  if grep -qE "$needle" "$file"; then
+  if grep -qE -- "$needle" "$file"; then
     echo "PASS: $desc"
     PASS=$((PASS + 1))
   else
@@ -52,18 +54,18 @@ assert_contains "documents D13 Claude import" "claude/plugins|D13" "$SKILL"
 assert_contains "documents D14 cache bleed" "D14" "$SKILL"
 assert_contains "documents --fix flag" "--fix" "$SKILL"
 for id in D14 D15 D16; do
-  grep -q "${id}" "$DOCTOR" && echo "PASS: sb-doctor.sh references check ${id}" && PASS=$((PASS + 1)) || { echo "FAIL: sb-doctor.sh missing check ${id}"; FAIL=$((FAIL + 1)); }
+  grep -q "${id}" "$DOCTOR_CHECKS" && echo "PASS: sb-doctor checks reference ${id}" && PASS=$((PASS + 1)) || { echo "FAIL: sb-doctor checks missing ${id}"; FAIL=$((FAIL + 1)); }
 done
 assert_contains "documents zero FAIL for PASS" "zero FAIL" "$SKILL"
 assert_contains "documents friction log" "sb-friction-log" "$SKILL"
 
-# Script implements key check IDs
+# Script implements key check IDs (checks live in lib/sb-doctor/checks.sh)
 for id in D1 D2 D3 D4 D5 D6 D7 D8 D9 D11 D12 D13; do
-  if grep -q "record pass ${id}\|record fail ${id}\|record warn ${id}" "$DOCTOR" 2>/dev/null || grep -q "${id}" "$DOCTOR"; then
-    echo "PASS: sb-doctor.sh references check ${id}"
+  if grep -q "record pass ${id}\|record fail ${id}\|record warn ${id}" "$DOCTOR_CHECKS" 2>/dev/null; then
+    echo "PASS: sb-doctor checks reference ${id}"
     PASS=$((PASS + 1))
   else
-    echo "FAIL: sb-doctor.sh missing check ${id}"
+    echo "FAIL: sb-doctor checks missing ${id}"
     FAIL=$((FAIL + 1))
   fi
 done
@@ -140,9 +142,9 @@ else
   PASS=$((PASS + 1))
 fi
 
-assert_contains "D8 Cursor-only in doctor script" 'runtime" == "cursor"' "$DOCTOR"
-assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR"
-assert_contains "D13 host-scoped in doctor script" 'cross-host plugin path contamination' "$DOCTOR"
+assert_contains "D8 Cursor-only in doctor checks" 'runtime" == "cursor"' "$DOCTOR_CHECKS"
+assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR_CHECKS"
+assert_contains "D13 host-scoped in doctor checks" 'cross-host plugin path contamination' "$DOCTOR_CHECKS"
 
 # Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
 if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
