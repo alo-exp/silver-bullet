@@ -28,12 +28,12 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git tag -s` (create signed tag)
-- `git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json` (stage release doc + marketplace updates — Step 5c)
+- `git add CHANGELOG.md README.md host plugin manifest/marketplace.json plugins/silver-bullet/host plugin manifest/plugin.json` (stage release doc + marketplace updates — Step 5c)
 - `git commit` (commit CHANGELOG + badge updates — Step 5c)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
 - `jq` (read `.silver-bullet.json` config — verify_commands only)
-- `bash scripts/sync-release-marketplace-versions.sh` (sync Claude + Codex marketplace manifests before tagging — Step 5b.1)
+- `bash scripts/sync-release-marketplace-versions.sh` (sync host marketplace manifests manifests before tagging — Step 5b.1)
 - `bash scripts/run-release-live-matrix.sh` (run the repo-configured live matrix wrapper before tagging — Step 6)
 - `bash scripts/validate-github-release-notes.sh` (validate GitHub Release body after creation — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
@@ -201,7 +201,7 @@ If `README.md` has no version badge, skip this step silently.
 
 ## Step 5b.1 — Sync marketplace.json Version
 
-Run the release marketplace sync wrapper so the Claude and Codex marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
+Run the release marketplace sync wrapper so the primary host and secondary host marketplace version surfaces, the in-repo marketplace manifest, and both upstream marketplace repos all match the new plugin version before tagging the release:
 
 ```bash
 bash scripts/sync-release-marketplace-versions.sh "$VERSION"
@@ -209,7 +209,7 @@ bash scripts/sync-release-marketplace-versions.sh "$VERSION"
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the wrapper runs, the version in `.claude-plugin/marketplace.json` must match `.claude-plugin/plugin.json`, the version in `plugins/silver-bullet/.codex-plugin/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
+After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
 
 ---
 
@@ -218,7 +218,7 @@ After the wrapper runs, the version in `.claude-plugin/marketplace.json` must ma
 Commit the CHANGELOG, README, and marketplace manifest changes before creating the tag:
 
 ```bash
-git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json
+git add CHANGELOG.md README.md host plugin manifest/marketplace.json plugins/silver-bullet/host plugin manifest/plugin.json
 git commit -m "chore(release): update CHANGELOG, README badge, and marketplaces for <version>"
 git push
 ```
@@ -238,16 +238,18 @@ CI wait, tag, or GitHub Release until the current session has recorded:
 - `quality-gate-stage-3` (public content refresh)
 - `full-test-suite-rerun` (post-fix test bundle)
 
-Validate with `bash scripts/validate-launch-review.sh` and
-`bash scripts/validate-sentinel-skills-manifest.sh` when available.
+Validate with `bash scripts/validate-launch-review.sh`,
+`bash scripts/validate-sentinel-skills-manifest.sh`, and
+`bash scripts/validate-host-agnostic-core.sh` when available.
 
-Before the live matrix (Step 6 below), run mandatory tri-host skill surface + routing smoke:
+Before the live matrix (Step 6 below), run mandatory tri-host skill surface + routing smoke
+(includes host-agnostic core validation):
 
 ```bash
-CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+HOST_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
 ```
 
-Cursor CLI uses `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
+host CLI uses `HOST_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain).
 
 ---
 
@@ -261,8 +263,8 @@ the current session earns the release-live-matrix marker used by
 bash scripts/run-release-live-matrix.sh
 ```
 
-The matrix must complete successfully for the Kay-backed Codex-compatible path
-(`matrix=codex-only`) in the current session. A full Claude/native-Codex matrix
+The matrix must complete successfully for the Kay-backed secondary host-compatible path
+(`matrix=secondary host-only`) in the current session. A full primary host/native-secondary host matrix
 remains optional diagnostic coverage when explicitly requested.
 
 ## Step 6b — Wait for Release CI to Go Green
@@ -358,8 +360,8 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
 
    The wrapper performs a clean uninstall + fresh reinstall cycle for both host
    runtimes by calling:
-   - `scripts/install-claude.sh --purge-legacy-plugins`
-   - `scripts/install-codex.sh --purge-legacy-skills`
+   - `scripts/install-<runtime>.sh --purge-legacy-plugins`
+   - `scripts/install-<runtime>.sh --purge-legacy-skills`
 
    Do not mark the release complete until both the announcement workflow and the
    refresh wrapper have succeeded.
