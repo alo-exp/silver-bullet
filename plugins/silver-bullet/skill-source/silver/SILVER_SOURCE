@@ -46,12 +46,12 @@ If user intent implies a semver-relevant codebase change, route through an SB wo
 Use logical route names in decisions (`silver:feature`, `silver:plan`, `tdd`). At invocation time, use the skill name exposed by the current host:
 
 - primary host-style slash/skill aliases may expose `silver:feature`.
-- secondary host exposes SB skills through the native `/Silver:` picker surface, with logical names such as `silver:feature`.
+- Codex exposes SB skills through the native `/Silver:` picker surface, with logical names such as `silver:feature`.
 - Source repos may show authoring names such as `silver-feature`.
 
 When a workflow says to invoke another SB skill, use the active runtime's
 SB-recognized skill invocation channel. In the active host agent this may be a host skill
-event. In secondary host this may be the native skill picker or the SB
+event. In Codex this may be the native skill picker or the SB
 `silver-bullet invoke-skill <name>` adapter when an invocation receipt is
 required. If the host has no callable skill tool, load the target skill's
 instructions and follow them directly, then record degraded invocation evidence

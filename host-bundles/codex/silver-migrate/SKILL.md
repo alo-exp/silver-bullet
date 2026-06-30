@@ -158,7 +158,7 @@ Regenerate stale host instruction files from the init contract when they predate
 
 1. Detect the active host instruction file per `docs/RUNTIME-COMPATIBILITY.md`:
    - the active host agent → `primary host.md` when present
-   - secondary host / task host → `AGENTS.md` when present
+   - Codex / task host → `AGENTS.md` when present
    - If neither exists, skip this step (SB does not require creating one during migrate).
 
 2. Determine staleness — refresh when any of:
@@ -179,7 +179,7 @@ Regenerate stale host instruction files from the init contract when they predate
 6. Ensure the reference line at top:
    `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 
-7. Do not create `primary host.md` on secondary host-only projects or `AGENTS.md` on primary host-only projects unless the user explicitly requests it.
+7. Do not create `primary host.md` on Codex-only projects or `AGENTS.md` on primary host-only projects unless the user explicitly requests it.
 
 ### Step 4: Runtime Support, task host Hooks, and Parity Artifacts
 
@@ -303,9 +303,9 @@ if [[ -x scripts/workflows.sh ]]; then
 else
   SB_WORKFLOWS_BIN="$(
     for root in \
-      "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet/current" \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
       "$HOME/.codex/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet"/* \
+      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
       "$HOME/.codex/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
@@ -364,4 +364,4 @@ Recommend `/silver:init` in update mode when hook registration or full doc boots
 - If a legacy `.planning/WORKFLOW.md` exists, leave it untouched and treat it as historical evidence only.
 - If inferred state is ambiguous, choose the safer pending status and let SB resume from `.planning/STATE.md`.
 - Do not leave new writes pointed at `docs/lessons/`. Read legacy `docs/lessons/` only as migration input.
-- Canonical skill text stays host-neutral; run `python3 scripts/render-agent-bundle.py render --agent {primary host,secondary host,task host} --source-root skills --dest-root agents/<agent>` and `bash scripts/sync-secondary host-package.sh` after editing this file in the SB source repo.
+- Canonical skill text stays host-neutral; run `python3 scripts/render-agent-bundle.py render --agent {primary host,Codex,task host} --source-root skills --dest-root agents/<agent>` and `bash scripts/sync-Codex-package.sh` after editing this file in the SB source repo.

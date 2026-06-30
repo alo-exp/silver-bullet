@@ -61,7 +61,7 @@ assert_command "canonical repo skills have YAML-parseable frontmatter" \
   parse_frontmatter_tree "$REPO_ROOT/skills"
 
 assert_command "Codex agent bundle skills have YAML-parseable frontmatter" \
-  parse_frontmatter_tree "$REPO_ROOT/agents/codex"
+  parse_frontmatter_tree "$REPO_ROOT/host-bundles/codex"
 
 assert_command "Codex generated skills have YAML-parseable frontmatter" \
   parse_frontmatter_tree "$REPO_ROOT/plugins/silver-bullet/.generated-skills"

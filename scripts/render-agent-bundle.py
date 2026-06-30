@@ -28,6 +28,41 @@ CODEX_TITLE_WORD_OVERRIDES = {
     "uat": "UAT",
 }
 
+
+def resolve_codex_host_agnostic_terms(text: str) -> str:
+    updated = text
+    for old, new in (
+        ("alo-labs-secondary host", "alo-labs-codex"),
+        (".secondary host", ".codex"),
+        ("secondary host", "Codex"),
+    ):
+        updated = updated.replace(old, new)
+    return updated
+
+
+def resolve_cursor_host_agnostic_terms(text: str) -> str:
+    updated = text
+    for old, new in (
+        ("alo-labs-secondary host", "alo-labs"),
+        (".secondary host", ".cursor"),
+        ("secondary host", "Cursor"),
+    ):
+        updated = updated.replace(old, new)
+    return updated
+
+
+def resolve_claude_host_agnostic_terms(text: str) -> str:
+    updated = text
+    for old, new in (
+        ("alo-labs-secondary host", "alo-labs"),
+        (".secondary host", ".claude"),
+        ("secondary host", "Codex"),
+        ("primary host", "Claude Code"),
+    ):
+        updated = updated.replace(old, new)
+    return updated
+
+
 CURSOR_REPLACEMENTS = [
     ("${CLAUDE_PLUGIN_ROOT}", "${CURSOR_PLUGIN_ROOT}"),
     ("Claude Code", "Cursor"),
@@ -266,14 +301,14 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
 def sanitize_cursor_text(text: str) -> str:
     # Preserve cross-host delegation rows — do not rewrite Claude Code host label to Cursor.
     host_row_token = "__SB_CURSOR_HOST_ROW_CLAUDE_CODE__"
-    updated = text.replace("| **Claude Code** |", f"| **{host_row_token}** |")
+    updated = resolve_cursor_host_agnostic_terms(text).replace("| **Claude Code** |", f"| **{host_row_token}** |")
     for old, new in CURSOR_REPLACEMENTS:
         updated = updated.replace(old, new)
     return updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
 
 
 def sanitize_codex_text(text: str) -> str:
-    updated = text
+    updated = resolve_codex_host_agnostic_terms(text)
     for old, new in CODEX_REPLACEMENTS:
         updated = updated.replace(old, new)
     return updated
@@ -283,6 +318,8 @@ def sanitize_text(text: str, agent: str, preserve_runtime_placeholders: bool = F
     updated = text
     if agent in {"claude", "codex", "cursor"}:
         updated = rewrite_names(updated)
+    if agent == "claude":
+        updated = resolve_claude_host_agnostic_terms(updated)
     if agent == "codex":
         updated = ensure_codex_picker_title(updated)
         updated = quote_codex_frontmatter_scalars(updated)

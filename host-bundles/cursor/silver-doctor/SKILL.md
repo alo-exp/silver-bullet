@@ -57,7 +57,7 @@ bash scripts/sb-doctor.sh --fix
 | D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
 | D8 orchestrator rule | task host only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
 | D13 manifest paths | Host install script for active runtime |
-| D14 cache bleed | `bash scripts/install-{primary host,secondary host,task host}.sh` or `sb-doctor.sh --fix` |
+| D14 cache bleed | `bash scripts/install-{primary host,Cursor,task host}.sh` or `sb-doctor.sh --fix` |
 | D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 | D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
@@ -75,7 +75,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
 - D3 plugin cache `current` symlink + hooks manifest
-- D4 host hooks manifest (task host `hooks.json`, secondary host `config.toml`, primary host `settings.json`)
+- D4 host hooks manifest (task host `hooks.json`, Cursor `config.toml`, primary host `settings.json`)
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
