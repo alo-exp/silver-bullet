@@ -730,7 +730,7 @@ section:nth-child(even){background:var(--section-alt)}
 }
 .notfor-item h4{font-size:.9rem;color:var(--text-dim);margin-bottom:6px}
 .notfor-item p{font-size:.935rem;color:var(--text-secondary);line-height:1.5}
-.hero-tagline-bold{font-weight:900;font-family:'D-Din',system-ui,sans-serif;-webkit-text-stroke:.4px currentColor;letter-spacing:.26em;text-shadow:0 0 1px currentColor}
+.hero-tagline-thin{font-weight:300;font-family:'D-Din',system-ui,sans-serif;letter-spacing:.26em}
 .hero-split-brand{align-items:flex-end;gap:0;margin-bottom:20px;text-align:right}
 .hero-brand-lockup{display:flex;flex-direction:column;align-items:flex-end;gap:4px;width:100%}
 .hero-brand-lockup .hero-tagline-caps{margin:0;line-height:1.35;text-align:right}
@@ -1214,6 +1214,9 @@ section:nth-child(even){background:var(--section-alt)}
   background:linear-gradient(180deg,#060c15 0%,#03070d 100%);
   border-color:rgba(255,255,255,.08);
 }
+[data-theme="light"] .hero-visual-mocks .enforcement-block{
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.18)) drop-shadow(0 4px 10px rgba(0,0,0,.10));
+}
 .hero-visual-mocks .enforcement-body{
   font-size:.7rem;line-height:1.7;padding:14px 16px;
   white-space:normal;overflow-wrap:anywhere;
@@ -1368,7 +1371,7 @@ img{max-width:100%;height:auto}
               <span class="gradient">Silver Bullet</span>
             </span>
           </h1>
-          <p class="hero-tagline-caps hero-tagline-bold">THE PROCESS LAYER OF AI-DRIVEN DEV</p>
+          <p class="hero-tagline-caps hero-tagline-thin">THE PROCESS LAYER OF AI-DRIVEN DEV</p>
         </div>
       </div>
       <h2 class="hero-headline">Maximize AI-driven<br><span class="hero-headline-accent">Dev Process Reliability</span><br>at 10x Lower Cost</h2>
