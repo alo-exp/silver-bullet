@@ -87,6 +87,13 @@ if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
   # shellcheck source=lib/runtime-paths.sh
   source "$_lib_dir/runtime-paths.sh"
 fi
+
+# shellcheck source=lib/path-canonical.sh
+if [[ -f "$_lib_dir/path-canonical.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$_lib_dir/path-canonical.sh"
+fi
+
 if [[ -f "$_lib_dir/required-skills.sh" ]]; then
   # shellcheck source=lib/required-skills.sh
   # shellcheck disable=SC1091

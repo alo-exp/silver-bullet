@@ -21,15 +21,17 @@ sb_plugin_cache_installed_paths() {
 sb_plugin_cache_path_is_uninstalled() {
   local target="$1"
   local cache_root="${2:-${SB_RUNTIME_PLUGIN_CACHE_ROOT}}"
-  local install_path normalized_target normalized_install
+  local install_path normalized_install
+  local target_canon cache_canon install_canon
 
   [[ -n "$target" && -n "$cache_root" ]] || return 1
   [[ -f "$(sb_plugin_cache_registry_file)" ]] || return 1
   cache_root="${cache_root%/}"
-  normalized_target="${target//\/\//\/}"
+  target_canon="$(sb_canonical_path "$target")"
+  cache_canon="$(sb_canonical_path "$cache_root")"
 
-  case "$normalized_target" in
-    "$cache_root"|"$cache_root"/*) ;;
+  case "$target_canon" in
+    "$cache_canon"|"$cache_canon"/*) ;;
     *) return 1 ;;
   esac
 
@@ -37,13 +39,14 @@ sb_plugin_cache_path_is_uninstalled() {
     [[ -n "$install_path" ]] || continue
     normalized_install="${install_path/#\~/$HOME}"
     normalized_install="${normalized_install//\/\//\/}"
-    case "$normalized_install" in
-      "$normalized_target"|"$normalized_target"/*)
+    install_canon="$(sb_canonical_path "$normalized_install")"
+    case "$install_canon" in
+      "$target_canon"|"$target_canon"/*)
         return 1
         ;;
-      "$cache_root"|"$cache_root"/*)
-        case "$normalized_target" in
-          "$normalized_install"|"$normalized_install"/*)
+      "$cache_canon"|"$cache_canon"/*)
+        case "$target_canon" in
+          "$install_canon"|"$install_canon"/*)
             return 1
             ;;
         esac
@@ -58,10 +61,14 @@ sb_plugin_cache_path_is_uninstalled() {
 # Only deletion-style writes qualify; cp/mv/install/tee/sed-in-place remain blocked.
 sb_plugin_cache_command_is_uninstall_cleanup() {
   local command_str="$1"
-  local cache_root="${2:-${SB_RUNTIME_PLUGIN_CACHE_ROOT}}"
+  shift
+  local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
+  local cache_root_canon
   [[ -n "$command_str" && -n "$cache_root" ]] || return 1
 
-  if ! printf '%s' "$command_str" | grep -qE "$cache_root"; then
+  cache_root_canon="$(sb_canonical_path "$cache_root")"
+  if ! { printf '%s' "$command_str" | grep -qF "$cache_root" || \
+        printf '%s' "$command_str" | grep -qF "$cache_root_canon"; }; then
     return 1
   fi
 
@@ -76,16 +83,18 @@ sb_plugin_cache_command_is_uninstall_cleanup() {
 # True when every write target under the plugin cache is uninstall cleanup.
 sb_plugin_cache_writes_are_uninstall_cleanup() {
   local cache_root="${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
-  local target_path
+  local target_path target_canon cache_canon
   local saw_cache_target=false
 
   [[ -n "$cache_root" ]] || return 1
   [[ -f "$(sb_plugin_cache_registry_file)" ]] || return 1
+  cache_canon="$(sb_canonical_path "$cache_root")"
 
   for target_path in "$@"; do
     [[ -n "$target_path" ]] || continue
-    case "$target_path" in
-      "$cache_root"|"$cache_root"/*) ;;
+    target_canon="$(sb_canonical_path "$target_path")"
+    case "$target_canon" in
+      "$cache_canon"|"$cache_canon"/*) ;;
       *) continue ;;
     esac
     saw_cache_target=true
