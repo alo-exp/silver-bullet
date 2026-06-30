@@ -39,7 +39,7 @@ Write or update `.planning/UI-REVIEW.md`.
      capture `browser_snapshot` for structure/a11y cues and
      `browser_take_screenshot` for visual layout; exercise key interactions with
      `browser_click` / `browser_type` / `browser_scroll`, then re-snapshot.
-     Cursor: `cursor-ide-browser` tools. Attach evidence to UI-REVIEW.md.
+     task host: `host browser MCP` tools. Attach evidence to UI-REVIEW.md.
    - **Otherwise:** Playwright output and static screenshots when available.
 5. Invoke or apply `silver:domain-audit` with `ui-system`, `accessibility`, and
    `performance-resource` packs for reusable or public UI changes.
