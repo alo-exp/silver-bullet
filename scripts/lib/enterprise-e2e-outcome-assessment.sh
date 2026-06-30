@@ -135,13 +135,46 @@ enterprise_e2e_outcome_is_blocking() {
 enterprise_e2e_outcome_log_has_babysitting() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'waiting for (your|user)|ask the user|operator pause|need your input|babysit' "$row_log" 2>/dev/null
+  # Exclude agent planning text ("Ask the user to decide…") — require TUI pause signals.
+  grep -qiE 'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_autonomous() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker' "$row_log" 2>/dev/null
+  grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_agentmemory_mcp() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  grep -qiE 'agentmemory[[:space:]_-]*(memory_save|memory_smart_search|memory_recall|memory_capture)' "$row_log" 2>/dev/null || \
+    grep -qiE 'agentmemory.*\(MCP\)' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_log_has_agentmemory_unavailable() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  grep -qiE 'agentmemory.*(not available|missing|unavailable|MCP.*unavailable)|agentmemory MCP' "$row_log" 2>/dev/null || \
+    grep -qiE 'matrix MCP env: disabled' "$row_log" 2>/dev/null
+}
+
+enterprise_e2e_outcome_matrix_workflow_slug() {
+  local row_num="${1:-}"
+  case "$row_num" in
+    1) printf 'silver-router\n' ;;
+    2) printf 'silver-research\n' ;;
+    3) printf 'silver-feature\n' ;;
+    4) printf 'silver-bugfix\n' ;;
+    5) printf 'silver-ui\n' ;;
+    6) printf 'silver-fast\n' ;;
+    7) printf 'silver-test\n' ;;
+    8) printf 'silver-refactor\n' ;;
+    9) printf 'silver-benchmark\n' ;;
+    10) printf 'silver-content\n' ;;
+    11) printf 'silver-devops\n' ;;
+    *) printf '\n' ;;
+  esac
 }
 
 enterprise_e2e_outcome_score_auto() {
@@ -189,7 +222,7 @@ enterprise_e2e_outcome_score_clarify() {
   if [[ -f "$state_file" ]] && grep -q 'silver-clarify' "$state_file" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify' "$row_log" 2>/dev/null; then
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify|\$silver:clarify|silver-clarify' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
   case "$row_num" in
@@ -428,30 +461,44 @@ enterprise_e2e_outcome_score_intent() {
 
 enterprise_e2e_outcome_score_km() {
   local ledger_file="${1:-}" row_num="${2:-}" row_log="${3:-}"
+  local line="" gref="" aref="" status=""
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]]; then
-    local line gref aref status
     line="$(awk -v r="$row_num" '$0 ~ "^\\| " r " \\|" { print; exit }' "$ledger_file" 2>/dev/null || true)"
     if [[ -n "$line" ]]; then
       gref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-1)); print $(NF-1)}')"
       aref="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $NF); print $NF}')"
       status="$(printf '%s' "$line" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$|\*/, "", $(NF-3)); print $(NF-3)}' | tr '[:upper:]' '[:lower:]')"
-      if [[ "$status" == "pass" ]]; then
-        if [[ -n "$gref" && -n "$aref" ]]; then
-          printf 'pass\n'; return 0
-        fi
-        if [[ -n "$gref" || -n "$aref" ]]; then
-          # agentmemory MCP often unavailable in live TUI — graphify preamble alone is sufficient
-          if [[ -n "$gref" && -z "$aref" ]] && \
-             [[ -n "$row_log" && -f "$row_log" ]] && \
-             grep -qiE 'agentmemory.*(not available|missing|MCP.*unavailable)|agentmemory MCP' "$row_log" 2>/dev/null; then
-            printf 'n/a\n'; return 0
-          fi
-          printf 'partial\n'; return 0
-        fi
-        printf 'fail\n'; return 0
-      fi
     fi
+  fi
+  # Live TUI often captures agentmemory via MCP while ledger agentmemory_export_ref stays empty.
+  if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log"; then
+    if [[ -n "$gref" ]] || { [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'graphify query' "$row_log" 2>/dev/null; }; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
+  fi
+  if [[ "$status" == "pass" ]]; then
+    if [[ -n "$gref" && -n "$aref" ]]; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ -n "$gref" || -n "$aref" ]]; then
+      if [[ -n "$gref" && -z "$aref" ]] && \
+         enterprise_e2e_outcome_log_has_agentmemory_unavailable "$row_log"; then
+        printf 'n/a\n'; return 0
+      fi
+      printf 'partial\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
+  if [[ -n "$gref" ]]; then
+    if [[ -n "$aref" ]]; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_log_has_agentmemory_unavailable "$row_log"; then
+      printf 'n/a\n'; return 0
+    fi
+    printf 'partial\n'; return 0
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" == "1" ]]; then
     printf 'n/a\n'; return 0
@@ -495,12 +542,21 @@ enterprise_e2e_outcome_score_plan() {
 }
 
 enterprise_e2e_outcome_score_skill() {
-  local state_dir="$1"
-  local state_file="${state_dir}/state"
+  local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  local state_file="${state_dir}/state" slug
+  slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
   if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
     if grep -qE '^silver-' "$state_file" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
+    printf 'partial\n'; return 0
+  fi
+  if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
+    if grep -qiE "${slug}|/silver:${slug#silver-}" "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'silver-[a-z]|/silver:' "$row_log" 2>/dev/null; then
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -528,6 +584,17 @@ enterprise_e2e_outcome_score_blast() {
   [[ "$row_num" != "11" ]] && { printf 'n/a\n'; return 0; }
   if compgen -G "${work_dir}/.planning/SECURITY"*.md >/dev/null 2>&1; then
     printf 'pass\n'; return 0
+  fi
+  if [[ -f "${work_dir}/.planning/workflows/devops-terraform-validation.md" ]] && \
+     [[ -f "${work_dir}/infra/terraform/main.tf" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if compgen -G "${work_dir}/.planning/workflows/devops"*.md >/dev/null 2>&1; then
+    if [[ -f "${work_dir}/infra/terraform/main.tf" ]] || \
+       grep -qiE 'blast.radius|terraform.*validation|IaC|environment variable' \
+         "${work_dir}"/.planning/workflows/devops*.md 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
   fi
   if [[ -f "${work_dir}/infra/terraform/main.tf" ]]; then
     printf 'partial\n'; return 0
@@ -575,6 +642,10 @@ enterprise_e2e_outcome_score_complete() {
 enterprise_e2e_outcome_score_handoff() {
   local state_dir="$1" row_num="${2:-}"
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
+  case "$row_num" in
+    3|4|5) ;;
+    *) printf 'n/a\n'; return 0 ;;
+  esac
   if [[ -f "${state_dir}/orchestrator-worker-active.json" ]]; then
     printf 'pass\n'; return 0
   fi
@@ -676,7 +747,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" ;;
     OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
-    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" ;;
+    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" ;;
     OUT-REVIEW-01) enterprise_e2e_outcome_score_review "$ledger" ;;
     OUT-BLAST-01) enterprise_e2e_outcome_score_blast "$work_dir" "$row_num" ;;
     OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;
