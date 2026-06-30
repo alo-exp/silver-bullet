@@ -9,6 +9,8 @@
 
 ## Status: PENDING
 
+**Auth (not a live blocker):** Cursor `agent` is Keychain-authenticated on this host — sufficient for ladder/matrix drivers. ~~`CURSOR_API_KEY`~~ not required for live tmux sessions. Use `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` only for isolated `pre-release-cursor-cli-smoke.sh` (CI / no Keychain).
+
 **Release pair:** Round Cursor-1 is **1 of 2** required consecutive strict-clean rounds. Do **not** release after Cursor-1 alone.
 
 ### Baseline (strict clean)

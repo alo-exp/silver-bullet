@@ -1,6 +1,6 @@
 # Enterprise E2E — cherry-pick harness fixes to `main`
 
-**Policy (2026-06-30):** Verified production/harness fixes land on `main` in the same session so the next patch release can ship them anytime. Long-running matrix work stays on `enterprise-e2e/round6`; round-specific ledgers, poll checkpoints, and runtime `.e2e-*` state remain on that branch only.
+**Policy (2026-06-30):** Verified production/harness fixes land on `main` in the same session so the next patch release can ship them anytime. Long-running matrix work stays on host branches: Claude `enterprise-e2e/round6`, Codex `enterprise-e2e/codex`, Cursor **`enterprise-e2e/cursor`**. Round-specific ledgers, poll checkpoints, and runtime `.e2e-*` state remain on those branches only.
 
 ## Repos
 
