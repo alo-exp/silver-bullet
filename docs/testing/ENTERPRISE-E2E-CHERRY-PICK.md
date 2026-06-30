@@ -50,6 +50,7 @@ FORCE monitor PIDs (e.g. 12948 / 9452) — **do not kill** if healthy. Cherry-pi
 | 2026-06-30 | `e7eab44a` | `90572502` | MCP disable list from needs-auth `mcp list` only |
 | 2026-06-30 | `9a21160a` | `e5a2bff5` | Site hover-only terminal shadows + hero tagline weight |
 | 2026-06-30 | `2be1016e` | `2aeabad8` | Routing-row marker exempts subagent-stop §3c without `SB_E2E_ENTERPRISE_MATRIX` in TUI hook env (ORCH-4/5) |
+| 2026-06-30 | `4db8e71d` | `70059a6b` | Pass `SB_E2E_ENTERPRISE_MATRIX` + `SB_E2E_MATRIX_ROUTING_ROW` into Claude TUI spawn env |
 
 ### Skipped on 2026-06-30
 
