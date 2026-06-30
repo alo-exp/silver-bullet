@@ -473,7 +473,9 @@ enterprise_e2e_outcome_score_heal() {
       fi
       printf 'fail\n'; return 0
     fi
+    # Codex startup banner (--dangerously-bypass-hook-trust) is informational, not hook friction.
     if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+       grep -viE 'dangerously-bypass-hook-trust' | \
        grep -qiE '\[WARN\].*hook|hook gate|hook-trust|Stop hook blocks|session ended on hook block' && \
        ! enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
        grep -qiE '\[harness\] ignoring.*non-blocking|warning: Spec session'; then

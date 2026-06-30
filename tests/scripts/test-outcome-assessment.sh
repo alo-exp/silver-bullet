@@ -329,6 +329,14 @@ score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$S
 [[ "$score_km_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-KM-01 pass (mem_mr id + graphify query)" || fail "TUI-noisy row 2 OUT-KM-01 got $score_km_tui2"
 score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
 [[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
+TUI_HEAL_BYPASS_LOG="$(mktemp)"
+printf '⚠ `--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without\n' >"$TUI_HEAL_BYPASS_LOG"
+score_heal_bypass="$(enterprise_e2e_outcome_score_heal "$REPO_ROOT" "$TUI_HEAL_BYPASS_LOG" 2)"
+[[ "$score_heal_bypass" == "n/a" ]] && pass "Codex bypass-hook-trust banner does not trigger OUT-HEAL-01 partial" || fail "Codex bypass-hook-trust OUT-HEAL-01 got $score_heal_bypass"
+TUI_HEAL_FRICTION_LOG="$(mktemp)"
+printf '[WARN] hook-trust prompt blocking session completion\n' >"$TUI_HEAL_FRICTION_LOG"
+score_heal_friction="$(enterprise_e2e_outcome_score_heal "$REPO_ROOT" "$TUI_HEAL_FRICTION_LOG" 2)"
+[[ "$score_heal_friction" == "partial" ]] && pass "real hook-trust friction still scores OUT-HEAL-01 partial" || fail "hook-trust friction OUT-HEAL-01 got $score_heal_friction"
 export SB_E2E_MATRIX_EVIDENCE_PATH="docs/ADR-001-runtime.md"
 ROW2_LIVE_LOG="$(mktemp)"
 cp "$TUI2_LOG" "$ROW2_LIVE_LOG"
@@ -337,7 +345,7 @@ score_auto_row2_env="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXT
 [[ "$score_auto_row2_env" == "pass" ]] && pass "row 2 OUT-AUTO-01 pass via SB_E2E_MATRIX_EVIDENCE_PATH" || fail "row 2 OUT-AUTO-01 env fallback got $score_auto_row2_env"
 unset SB_E2E_MATRIX_EVIDENCE_PATH
 
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$ROW2_LIVE_LOG"
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$ROW2_LIVE_LOG" "$TUI_HEAL_BYPASS_LOG" "$TUI_HEAL_FRICTION_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
