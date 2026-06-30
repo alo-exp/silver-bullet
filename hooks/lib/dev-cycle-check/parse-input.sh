@@ -76,18 +76,22 @@ dcc_collect_shell_write_targets() {
 
 dcc_shell_writes_to_exact_path() {
   local expected="$1"
-  local target_path
+  local target_path expected_canon target_canon
+  expected_canon="$(sb_canonical_path "$expected")"
   for target_path in "${shell_write_targets[@]:-}"; do
-    [[ "$target_path" == "$expected" ]] && return 0
+    target_canon="$(sb_canonical_path "$target_path")"
+    [[ "$target_canon" == "$expected_canon" ]] && return 0
   done
   return 1
 }
 
 dcc_shell_writes_under_prefix() {
   local prefix="${1%/}"
-  local target_path
+  local target_path prefix_canon target_canon
+  prefix_canon="$(sb_canonical_path "$prefix")"
   for target_path in "${shell_write_targets[@]:-}"; do
-    [[ "$target_path" == "$prefix" || "$target_path" == "$prefix"/* ]] && return 0
+    target_canon="$(sb_canonical_path "$target_path")"
+    [[ "$target_canon" == "$prefix_canon" || "$target_canon" == "$prefix_canon"/* ]] && return 0
   done
   return 1
 }
