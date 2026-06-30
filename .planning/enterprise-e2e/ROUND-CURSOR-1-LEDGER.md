@@ -83,8 +83,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 12 | `silver-deploy` | | | | | | | | |
 | 13 | `silver-canary` | | | | | | | | |
 | 14 | `silver-release` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query silver-release | timeout 900s OUT-KM-01 OUT-WORLD-01 |
-| 15 | `review-triad` | | | | | | | | |
-| 16 | `ship-readiness` | | | | | | | | |
+| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query review-triad | timeout 900s OUT-REVIEW-01 OUT-KM-01 |
+| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-087 | 2b197be9 | graphify query ship-readiness | OUT-MEASURE-01 OUT-KM-01 OUT-WORLD-01 |
 | 17 | `silver-incident` | | | | | | | | |
 | 18 | `silver-retro` | | | | | | | | |
 | 19 | `silver-forensics` | | | | | | | | |
