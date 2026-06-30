@@ -105,3 +105,15 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 - **Batch exit:** tmux `cursor-e2e-retry` died ~row 20 (~3h34m); rows 21–22 internal checks not re-run in retry session
 
 **Next action:** SB harness/rubric fixes for E2E-088; targeted FORCE retry on failed rows after fixes; Round Cursor-2 for strict-clean gate.
+
+---
+
+## Retry #2 (E2E-088 harness @ 8feda5fc)
+
+**Launched:** 2026-07-01 — tmux `cursor-e2e-retry2`, matrix PID **98939**, log `.e2e-matrix-cursor-retry2.log`
+
+**Rows:** 3 4 6 7 12 14 15 16 18 20 21 22 (FORCE, 1800s, `SB_E2E_SKIP_CURSOR_INSTALL=1`)
+
+**Harness fixes (8feda5fc):** multi-host orchestrator state; cursor headless worker-completion for OUT-HANDOFF-01/OUT-SUPER-01; matrix OUT-KM-01 gref pass; STALE OUT-MEASURE-01 tolerance; recursive internal-gate verify + row 3/4 seed for 21–22.
+
+**Status:** in flight — row 3 `silver-feature` launched 2026-07-01T03:21Z
