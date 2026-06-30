@@ -155,6 +155,13 @@ printf '=== Pre-release host smoke ===\n'
 printf 'REPO_ROOT=%s\n' "$REPO_ROOT"
 printf 'SB_PRE_RELEASE_SMOKE_ROOT=%s\n' "$(sb_smoke_root)"
 
+printf '\n=== Structural install surface (all hosts) ===\n'
+if bash "${REPO_ROOT}/scripts/validate-host-install-surface.sh" --repo-root "$REPO_ROOT"; then
+  smoke_pass "structural: validate-host-install-surface.sh"
+else
+  smoke_fail "structural: validate-host-install-surface.sh"
+fi
+
 printf '\n=== Structural skill surface (all hosts) ===\n'
 if bash "${REPO_ROOT}/scripts/validate-host-skill-surface.sh" --repo-root "$REPO_ROOT"; then
   smoke_pass "structural: validate-host-skill-surface.sh"

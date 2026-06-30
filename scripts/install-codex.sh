@@ -4,6 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 PURGE_LEGACY_SKILLS=0
 PUBLIC_RELEASE_ONLY=0
 # Native Codex loads plugin-declared hooks directly, so merging the same SB
@@ -35,11 +37,11 @@ resolve_codex_config_file() {
 render_agent_bundle() {
   local agent="$1"
 
-  mkdir -p "${REPO_ROOT}/agents"
+  mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
   python3 "$AGENT_RENDERER" render \
     --agent "$agent" \
     --source-root "${REPO_ROOT}/skills" \
-    --dest-root "${REPO_ROOT}/agents/${agent}"
+    --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" "$agent")"
 }
 
 usage() {
