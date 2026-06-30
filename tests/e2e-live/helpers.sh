@@ -537,9 +537,14 @@ setup_workspace() {
       ;;
     codex)
       bash "${SB_ROOT}/scripts/install-codex.sh" --purge-legacy-skills >/dev/null
+      # Pre-trust fixture workspace before interactive Codex matrix turns.
+      trust_runtime_workspace
       ;;
     cursor)
       bash "${SB_ROOT}/scripts/install-cursor.sh" >/dev/null
+      ;;
+    kay)
+      trust_runtime_workspace
       ;;
   esac
 }
