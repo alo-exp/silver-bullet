@@ -251,31 +251,85 @@ verify_row_success() {
   return 1
 }
 
-verify_row_evidence() {
+# Primary workflow evidence path or workflows/.archive/ after matrix quiesce.
+enterprise_e2e_matrix_resolve_evidence_file() {
   local evidence_path="$1"
   if [[ -f "${WORK_DIR}/${evidence_path}" ]]; then
+    printf '%s\n' "${WORK_DIR}/${evidence_path}"
     return 0
   fi
   if [[ -d "${WORK_DIR}/${evidence_path}" ]]; then
+    printf '%s\n' "${WORK_DIR}/${evidence_path}"
+    return 0
+  fi
+  local base="${evidence_path##*/}"
+  if [[ -f "${WORK_DIR}/.planning/workflows/.archive/${base}" ]]; then
+    printf '%s\n' "${WORK_DIR}/.planning/workflows/.archive/${base}"
+    return 0
+  fi
+  local found=""
+  found="$(find "${WORK_DIR}/.planning/workflows/.archive" -name "$base" 2>/dev/null | head -1)"
+  if [[ -n "$found" ]]; then
+    printf '%s\n' "$found"
     return 0
   fi
   return 1
 }
 
+verify_row_evidence() {
+  local evidence_path="$1"
+  enterprise_e2e_matrix_resolve_evidence_file "$evidence_path" >/dev/null
+}
+
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
+  local parent_file="" needle="" parent_row="" resolved="" parent_log="" row_log="" runtime_state_dir=""
   case "$row_num" in
     21)
-      grep -q 'post-exec-gates' "${WORK_DIR}/.planning/workflows/feature-currency.md" 2>/dev/null
+      parent_file=".planning/workflows/feature-currency.md"
+      needle='post-exec-gates'
+      parent_row=3
       ;;
     22)
-      grep -q 'validate-substep' "${WORK_DIR}/.planning/workflows/bugfix-health.md" 2>/dev/null
+      parent_file=".planning/workflows/bugfix-health.md"
+      needle='validate-substep'
+      parent_row=4
       ;;
     *)
       return 1
       ;;
   esac
+  if resolved="$(enterprise_e2e_matrix_resolve_evidence_file "$parent_file" 2>/dev/null)"; then
+    grep -q "$needle" "$resolved" 2>/dev/null && return 0
+  fi
+  parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
+  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$needle" "$parent_log" 2>/dev/null; then
+    return 0
+  fi
+  if [[ -n "${SB_E2E_LEDGER_FILE:-}" && -f "${SB_E2E_LEDGER_FILE}" ]] && \
+     [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+    source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+    local line="" status=""
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "${SB_E2E_LEDGER_FILE}" "$parent_row" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+      if [[ "$status" == "pass" ]]; then
+        return 0
+      fi
+    fi
+    runtime_state_dir="$(enterprise_e2e_runtime_state_dir)"
+    if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$runtime_state_dir" \
+      "$parent_log" "${SB_E2E_LEDGER_FILE:-}" "$parent_file"; then
+      return 0
+    fi
+    row_log="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
+    enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" "$runtime_state_dir" \
+      "${row_log:-$parent_log}" "${SB_E2E_LEDGER_FILE:-}" "$parent_file"
+    return $?
+  fi
+  return 1
 }
 
 run_matrix_row() {
