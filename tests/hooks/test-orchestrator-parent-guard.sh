@@ -107,6 +107,10 @@ out_agent=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"A
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Agent (#229)" "$out_agent"
 
+out_spawn=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"multi_agent_v1.spawn_agent","tool_input":{"description":"worker"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows Codex spawn_agent" "$out_spawn"
+
 assert_true_marker=false
 [[ -f "${SB_TEST_DIR}/orchestrator-worker-active.json" ]] && assert_true_marker=true
 if $assert_true_marker; then

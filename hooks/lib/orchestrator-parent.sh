@@ -242,11 +242,20 @@ sb_orchestrator_worker_allows_bash() {
   esac
 }
 
+# Host-native delegation tool label for parent context and guard messages.
+sb_orchestrator_spawn_tool_label() {
+  case "${SILVER_BULLET_RUNTIME:-cursor}" in
+    codex) printf '%s' 'spawn_agent (multi_agent_v1.spawn_agent)' ;;
+    claude) printf '%s' 'Agent (Claude subagent)' ;;
+    *) printf '%s' 'Task worker' ;;
+  esac
+}
+
 # Parent-allowed PreToolUse tools (read-only + delegation).
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
   case "$tool_name" in
-    Task|Subagent|Agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
       return 0
       ;;
     Skill)
@@ -277,10 +286,12 @@ sb_orchestrator_parent_skill_allowed() {
 # Parent context block for session injection.
 sb_orchestrator_parent_context_block() {
   sb_orchestrator_is_parent_session || return 0
+  local spawn_label
+  spawn_label="$(sb_orchestrator_spawn_tool_label)"
   printf '%s\n' \
     "SB ORCHESTRATOR PARENT MODE (mandatory)" \
     "  You are the parent orchestrator — NEVER Edit/Write/Bash on project source." \
-    "  Read orchestrator-directive.json → spawn Task worker with templates/orchestrator-workers/<TEMPLATE>.md" \
+    "  Read orchestrator-directive.json → spawn ${spawn_label} with templates/orchestrator-workers/<TEMPLATE>.md" \
     "  On worker completion: flow-advance queues next_worker_template + next_skill → spawn next worker." \
     "  Ask the user ONLY for locked decisions (decision_class in outcomes)."
 }

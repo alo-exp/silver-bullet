@@ -125,7 +125,7 @@ fi
 
 if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
   case "$tool_name" in
-    Task|Subagent|Agent)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent)
       expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
       tmpl=""
       args=""
@@ -146,7 +146,11 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
   tmpl=""
   [[ -f "$(sb_orchestrator_directive_file)" ]] && \
     tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
-  emit_block "$(printf '🛑 ORCHESTRATOR PARENT — %s is forbidden in parent mode. Spawn Task worker (%s.md) for /%s, or use read-only tools for state.' "$tool_name" "${tmpl:-WORKER}" "${expected:-next flow}")"
+  spawn_label="Task worker"
+  if declare -f sb_orchestrator_spawn_tool_label >/dev/null 2>&1; then
+    spawn_label="$(sb_orchestrator_spawn_tool_label)"
+  fi
+  emit_block "$(printf '🛑 ORCHESTRATOR PARENT — %s is forbidden in parent mode. Spawn %s (%s.md) for /%s, or use read-only tools for state.' "$tool_name" "$spawn_label" "${tmpl:-WORKER}" "${expected:-next flow}")"
   exit 0
 fi
 

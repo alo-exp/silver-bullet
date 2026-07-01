@@ -201,11 +201,11 @@ sb_orchestrator_directive_skill_recorded() {
 }
 
 sb_orchestrator_directive_context_block() {
-  local file
+  local file block spawn_label
   file="$(sb_orchestrator_directive_file)"
   [[ -f "$file" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
-  jq -r '
+  block="$(jq -r '
     if (.next_skill // "") == "" then empty else
       "SB ORCHESTRATOR DIRECTIVE (mandatory next action)\n" +
       "  next_skill: " + .next_skill + "\n" +
@@ -220,7 +220,13 @@ sb_orchestrator_directive_context_block() {
         "  blocking: false — recommended next skill."
       end)
     end
-  ' "$file" 2>/dev/null || true
+  ' "$file" 2>/dev/null || true)"
+  [[ -n "$block" ]] || return 0
+  if declare -f sb_orchestrator_spawn_tool_label >/dev/null 2>&1; then
+    spawn_label="$(sb_orchestrator_spawn_tool_label)"
+    block="${block//spawn Task worker/spawn ${spawn_label}}"
+  fi
+  printf '%s\n' "$block"
 }
 
 sb_orchestrator_log_override() {
