@@ -259,18 +259,20 @@ Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOS
 | Concept | Detail |
 |---------|--------|
 | **Registry file** | `.planning/enterprise-e2e/.row-pass-registry.json` |
-| **Install fingerprint (`install_fp`)** | `<host>:<package.json version>` — e.g. `claude:0.49.1` (stable across harness-only commits) |
-| **Override fingerprint** | `SB_E2E_INSTALL_FP=<host>:<ver>` (tests / pinned resume) |
+| **Install fingerprint (`install_fp`)** | `<host>@<sb_git_sha12>+<surface_hash12>` — e.g. `claude@89e2ab8f96a1+724a435c9991` (`surface_hash` = sha256 of hooks digest + package version) |
+| **Override fingerprint** | `SB_E2E_INSTALL_FP=<host>@<sha>+<surface>` (tests / pinned resume) |
 | **Harness skip class** | `ROW_ALREADY_PASSED_SAME_INSTALL` — counts toward **22/22 Pass** (not evidence SKIP) |
 | **Re-run override** | `SB_E2E_MATRIX_FORCE_ALL=1` — explicit full re-run of registry-passed rows |
 | **Evidence-only FORCE** | `SB_E2E_MATRIX_FORCE=1` re-runs evidence-SKIP rows only; does **not** override registry |
 | **FAIL_ON_SKIP** | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` does **not** fail on registry passes |
 
-**When a row completes live + outcome PASS**, the matrix runner appends `{passed_at, log_ref, outcome_pass}` under `by_install[install_fp].rows[row]`.
+**When a row completes live + outcome PASS**, the matrix runner appends `{passed_at, log_ref, outcome_pass, source}` under `installs[install_fp].rows[row]`.
+
+Legacy `by_install[host:version]` seeds are migrated via `enterprise_e2e_row_pass_registry_migrate_legacy` into the canonical `install_fp` for the current `SB_ROOT` HEAD.
 
 **Strict-clean:** `strict-clean-check.sh` requires **22/22** registry rows for the current `install_fp` in addition to ledger + outcome gates.
 
-**Seeded smoke rows (R8 @ `0.49.1`):** 1, 3, 6, 11, 21, 22 — resume batches skip these unless `SB_E2E_MATRIX_FORCE_ALL=1`.
+**Seeded smoke rows (R8 @ `89e2ab8f`):** 1, 3, 4, 6, 7, 11, 21, 22 — resume batches skip these unless `SB_E2E_MATRIX_FORCE_ALL=1`.
 
 ---
 
