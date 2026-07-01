@@ -10,8 +10,10 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 |-------|-------|
 | Round | Cursor-1 |
 | Host | `cursor` |
+| SB harness branch | `enterprise-e2e/cursor` |
+| Test-app branch | `enterprise-e2e/round-1-cursor` |
 | SB repo SHA | `<!-- git rev-parse HEAD in silver-bullet repo -->` |
-| Test app SHA | `<!-- git rev-parse HEAD in enterprise-grade-test-app -->` |
+| Test app SHA | `<!-- git rev-parse HEAD on enterprise-e2e/round-1-cursor -->` |
 | Cursor plugin install | `<!-- commit SHA used by install-cursor.sh -->` |
 | Cursor model (frozen) | `composer-2.5` |
 | Operator | TUI monitor agent |

@@ -100,7 +100,8 @@ On any friction:
 |------|------|
 | **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
 | **SB git branch (Cursor harness work)** | `enterprise-e2e/cursor` |
-| **Cursor agent TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| **Test-app git branch (matrix evidence)** | `enterprise-e2e/round-1-cursor` — [TEST-APP-BRANCH-POLICY.md](./TEST-APP-BRANCH-POLICY.md) |
+| **Cursor agent TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` (checkout host branch above) |
 
 **Never** use the test app as SB workspace root. Operator parent sessions use SB repo root per silver-orchestrator rules.
 
