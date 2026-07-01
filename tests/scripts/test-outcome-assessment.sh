@@ -319,7 +319,28 @@ score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$S
 score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
 [[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
 
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG"
+# --- Round 7 rows 2–5 retained-log re-score (matrix evidence path; empty evidence arg) ---
+ROW2_RETAINED_LOG="$(mktemp)"
+cp "$TUI2_LOG" "$ROW2_RETAINED_LOG"
+score_auto_row2_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW2_RETAINED_LOG" 2 "" "")"
+[[ "$score_auto_row2_retained" == "pass" ]] && pass "retained row 2 OUT-AUTO-01 pass (matrix evidence path + slug log)" || fail "retained row 2 OUT-AUTO-01 got $score_auto_row2_retained"
+ROW3_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-feature routes hooks skills orchestrator"\r' >"$ROW3_RETAINED_LOG"
+score_auto_row3_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW3_RETAINED_LOG" 3 "" "")"
+[[ "$score_auto_row3_retained" == "pass" ]] && pass "retained row 3 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 3 OUT-AUTO-01 got $score_auto_row3_retained"
+ROW4_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-bugfix routes hooks skills orchestrator"\r' >"$ROW4_RETAINED_LOG"
+touch "$FIXTURE/.planning/workflows/bugfix-health.md"
+score_auto_row4_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW4_RETAINED_LOG" 4 "" "")"
+[[ "$score_auto_row4_retained" == "pass" ]] && pass "retained row 4 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 4 OUT-AUTO-01 got $score_auto_row4_retained"
+ROW5_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-ui routes hooks skills orchestrator"\r' >"$ROW5_RETAINED_LOG"
+mkdir -p "$FIXTURE/ui/src"
+touch "$FIXTURE/ui/src/App.jsx"
+score_auto_row5_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW5_RETAINED_LOG" 5 "" "")"
+[[ "$score_auto_row5_retained" == "pass" ]] && pass "retained row 5 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 5 OUT-AUTO-01 got $score_auto_row5_retained"
+
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$ROW2_RETAINED_LOG" "$ROW3_RETAINED_LOG" "$ROW4_RETAINED_LOG" "$ROW5_RETAINED_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
@@ -420,8 +441,20 @@ EOF
 SB_E2E_ENTERPRISE_MATRIX=1 \
   score_hook_triad="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$TRIAD_LOG" 15)"
 [[ "$score_hook_triad" == "pass" ]] && pass "E2E-089 row 15 OUT-HOOK-01 pass (worker completion beats watch blocker)" || fail "E2E-089 row 15 OUT-HOOK-01 got $score_hook_triad"
+TRIAD_CURSOR_LOG="$(mktemp)"
+printf 'Review triad for the currency field change is complete: **PASS**, 0 BLOCK findings\n' >"$TRIAD_CURSOR_LOG"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_review15="$(enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$FIXTURE" "$STATE_DIR" "$TRIAD_CURSOR_LOG" 15 "$STALE_LEDGER" ".planning/reviews/triad-currency.md")"
+[[ "$score_review15" == "pass" ]] && pass "retry3g row 15 OUT-REVIEW-01 pass (Review triad prose)" || fail "retry3g row 15 OUT-REVIEW-01 got $score_review15"
+RETRO18_LOG="$(mktemp)"
+printf 'silver:retro completed via a delegated Composer 2.5 worker\nWorkflow evidence was reconciled at docs/retro/RETRO-001.md\n' >"$RETRO18_LOG"
+mkdir -p "$FIXTURE/docs/retro"
+printf '# Retro\n' >"$FIXTURE/docs/retro/RETRO-001.md"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_auto18="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$RETRO18_LOG" 18 "" "")"
+[[ "$score_auto18" == "pass" ]] && pass "retry3g row 18 OUT-AUTO-01 pass (matrix evidence resolve)" || fail "retry3g row 18 OUT-AUTO-01 got $score_auto18"
 unset SB_E2E_ENTERPRISE_MATRIX
-rm -f "$SPARSE_LOG" "$TRIAD_LOG"
+rm -f "$SPARSE_LOG" "$TRIAD_LOG" "$TRIAD_CURSOR_LOG" "$RETRO18_LOG"
 
 rm -f "$CURSOR_HANDOFF_LOG" "$RETRO_LOG" "$MATRIX_KM_LEDGER" "$STALE_LEDGER"
 

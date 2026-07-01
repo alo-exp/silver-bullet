@@ -145,19 +145,7 @@ enterprise_e2e_routing_state_file() {
 
 # Host-aware .silver-bullet state root (parent of routing state file).
 enterprise_e2e_runtime_state_dir() {
-  if [[ -n "${SB_RUNTIME_STATE_DIR:-}" ]]; then
-    printf '%s\n' "$SB_RUNTIME_STATE_DIR"
-    return 0
-  fi
-  local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
-  if [[ -n "$host" && -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" ]]; then
-    SILVER_BULLET_RUNTIME="$host"
-    # shellcheck source=hooks/lib/runtime-paths.sh
-    source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
-    printf '%s\n' "${SB_RUNTIME_STATE_DIR}"
-    return 0
-  fi
-  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" ]]; then
+  if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
   fi
@@ -187,33 +175,6 @@ enterprise_e2e_matrix_host_route() {
       printf '%s\n' "$route"
       ;;
   esac
-}
-
-# Abort when hosts.json declares git_branch for the active host and SB_ROOT is wrong.
-enterprise_e2e_assert_host_git_branch() {
-  local host required current sb_root
-  host="$(enterprise_e2e_matrix_host)"
-  sb_root="${SB_ROOT:-}"
-  if [[ -z "$sb_root" ]]; then
-    if declare -f enterprise_e2e_sb_root >/dev/null 2>&1; then
-      sb_root="$(enterprise_e2e_sb_root)"
-    else
-      sb_root="$(cd "$(enterprise_e2e_harness_root)/.." && pwd)"
-    fi
-  fi
-  [[ -d "${sb_root}/.git" ]] || return 0
-
-  required="$(enterprise_e2e_host_config_get git_branch "$host" 2>/dev/null || true)"
-  [[ -n "$required" ]] || return 0
-
-  current="$(git -C "$sb_root" branch --show-current 2>/dev/null || true)"
-  if [[ "$current" != "$required" ]]; then
-    echo "ERROR: ${host} enterprise E2E requires git branch '${required}' (current: '${current:-detached}')" >&2
-    echo "  Fix: git checkout ${required}" >&2
-    echo "  Aborting to prevent cross-track harness commits." >&2
-    return 1
-  fi
-  return 0
 }
 
 enterprise_e2e_source_host_adapter() {

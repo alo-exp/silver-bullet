@@ -43,7 +43,6 @@
     },
     "cursor": {
       "adapter": "cursor",
-      "git_branch": "enterprise-e2e/cursor",
       "legacy_paths": false,
       "install_script": "scripts/install-cursor.sh",
       "agent_script": "tests/live/agents/cursor/agent.sh",

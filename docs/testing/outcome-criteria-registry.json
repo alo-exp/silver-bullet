@@ -293,6 +293,25 @@
       "signals_pass": ["instruction-ledger-chain", "ship-readiness-no-manual-patch"],
       "signals_partial": ["artifacts-with-manual-ledger-patch"],
       "signals_fail": ["release-without-artifact-chain"]
+    },
+    {
+      "id": "OUT-SURFACE-01",
+      "title": "Install surface host isolation and token budget",
+      "scope": "round",
+      "homepage_source": "README: tri-host install; agent-bundle-paths host scoping",
+      "primary_rows": [],
+      "signals_pass": [
+        "validate-host-install-surface-pass",
+        "agents-only-claude",
+        "no-silver-bullet-codex-cursor-refs",
+        "claude-token-budget-lte-14k"
+      ],
+      "signals_partial": ["surface-check-skipped"],
+      "signals_fail": [
+        "agents-codex-or-cursor-bleed",
+        "claude-token-budget-exceeded",
+        "foreign-namespace-in-claude-bundle"
+      ]
     }
   ],
   "workflow_row_map": {
@@ -336,6 +355,7 @@
   "round_criteria": [
     "OUT-REVIEW-01",
     "OUT-MEASURE-01",
-    "OUT-KM-01"
+    "OUT-KM-01",
+    "OUT-SURFACE-01"
   ]
 }

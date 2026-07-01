@@ -1,2 +1,0 @@
-{"ts": "2026-06-30T08:30:00Z", "row": 0, "severity": "friction", "category": "harness", "issue_id": "E2E-086", "excerpt": "cursor row attempt logs 0 bytes — CLAUDE_INTERACTIVE_LOG_FILE not honored by cursor-agent --print", "action": "fixed cursor/agent.sh + matrix tee + outcome state.requested"}
-{"ts":"2026-06-30T09:40:00Z","row":2,"slug":"silver-research","verdict":"fail","class":"outcome","issue":"E2E-087","detail":"cursor-agent timeout 900s; OUT-KM-01 OUT-WORLD-01"}

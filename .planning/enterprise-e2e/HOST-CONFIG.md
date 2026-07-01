@@ -15,7 +15,6 @@ Set **`SB_E2E_LIVE_RUNTIME`** (or `--host` on live-test) to select a track. Arti
 | Matrix log | `.e2e-matrix-live.log` | `.e2e-matrix-codex-live.log` | `.e2e-matrix-cursor-live.log` |
 | Row attempt log | `.e2e-row{N}-attempt.log` | `.e2e-row{N}-codex-attempt.log` | `.e2e-row{N}-cursor-attempt.log` |
 | Ledger | `ROUND-1-LEDGER.md` (R6 uses project ledger) | `ROUND-CODEX-1-LEDGER.md` | `ROUND-CURSOR-1-LEDGER.md` |
-| SB git branch | `enterprise-e2e/round6` | `enterprise-e2e/codex` | **`enterprise-e2e/cursor`** |
 | Gates pair | `ROUND-5/6-GATES.md` | `ROUND-CODEX-1/2-GATES.md` | `ROUND-CURSOR-1/2-GATES.md` |
 | Install | `scripts/install-claude.sh` | `scripts/install-codex.sh --purge-legacy-skills` | `scripts/install-cursor.sh` |
 | Agent adapter | `tests/live/agents/claude/agent.sh` | `tests/live/agents/codex/agent.sh` | `tests/live/agents/cursor/agent.sh` |

@@ -48,10 +48,7 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 
 | ID | Severity | Component | Issue | Notes |
 |----|----------|-----------|-------|-------|
-| E2E-086 | friction→fixed | harness/cursor | Cursor matrix row attempt logs stayed 0 bytes — `cursor-agent --print` ignored `CLAUDE_INTERACTIVE_LOG_FILE`; OUT-SKILL-01/OUT-WORLD-01 false fails | `tests/live/agents/cursor/agent.sh` writes log file; matrix tees output + seeds state slug; outcome scorer checks `state.requested` @ cursor branch |
-| E2E-087 | friction→fixed | harness/cursor | `silver-research`/`silver-feature` hit `CLAUDE_INTERACTIVE_TIMEOUT` 900s — evidence present but OUT-KM-01/OUT-WORLD-01 fail | 2b197be9: cursor matrix default timeout 1800s |
-| E2E-088 | friction→fixed | outcome/cursor | Post-retry @1800s: 12/22 fail on OUT-HANDOFF-01/OUT-SUPER-01 (3–4), OUT-KM-01 session partial (6–7,12,14–16,18,20), OUT-MEASURE-01 (16), internal gates 21–22 | SB harness @8feda5fc; retry2 completed ~4h — evidence PASS 9/12 agent rows; outcome files still FAIL |
-| E2E-089 | friction→fixed | harness/cursor | Retry2 row logs 0–317B (timeout/connection noise); matrix evidence PASS but outcome FAIL; row 20 timeout; parallel codex batch regressed rows 9–10–13–17 outcome files | Headless log streaming in `cursor/agent.sh`; matrix evidence resolver + hook/heal/super scorer @3d4ef10e; rescore harness **21–22/22** — **not** strict-clean (evidence-only rows) |
+| E2E-085 | annoyance | stall | ft+tabtocycle)·←foragents     0 tokens
 
  ○low·/effort
 

@@ -7,9 +7,6 @@
 #    auto-detected via CURSOR_AGENT=1 or SB_LIVE_CURSOR_IN_SESSION=1
 
 cursor_in_session_active() {
-  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_LIVE_CURSOR_FORCE_HEADLESS:-}" == "1" ]]; then
-    return 1
-  fi
   if [[ "${SB_LIVE_CURSOR_IN_SESSION:-}" == "1" ]]; then
     return 0
   fi
@@ -172,20 +169,16 @@ agent_invoke_cli() {
       CURSOR_AGENT_TIMEOUT="$timeout_seconds" \
       CURSOR_AGENT_MODEL="$model" \
       CURSOR_AGENT_MODE="$mode" \
-      CLAUDE_INTERACTIVE_LOG_FILE="${CLAUDE_INTERACTIVE_LOG_FILE:-}" \
       python3 - <<'PY'
 import os
-import signal
 import subprocess
 import sys
-import time
 
 cli = os.environ["CURSOR_AGENT_CLI"]
 prompt = os.environ["CURSOR_AGENT_PROMPT"]
 timeout = int(os.environ.get("CURSOR_AGENT_TIMEOUT") or "300")
 model = os.environ.get("CURSOR_AGENT_MODEL") or ""
 mode = os.environ.get("CURSOR_AGENT_MODE") or "default"
-log_path = os.environ.get("CLAUDE_INTERACTIVE_LOG_FILE") or ""
 
 args = [
     cli,
@@ -201,57 +194,25 @@ if mode == "permissive":
     args.append("--yolo")
 args.append(prompt)
 
-if log_path:
-    open(log_path, "w", encoding="utf-8").close()
-
-proc = subprocess.Popen(
-    args,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    text=True,
-    bufsize=1,
-    start_new_session=True,
-)
-
-started = time.time()
 try:
-    assert proc.stdout is not None
-    for line in proc.stdout:
-        sys.stdout.write(line)
-        if log_path:
-            with open(log_path, "a", encoding="utf-8") as handle:
-                handle.write(line)
-        if time.time() - started >= timeout:
-            raise subprocess.TimeoutExpired(args, timeout, output=None)
-    rc = proc.wait(timeout=max(1, timeout - int(time.time() - started)))
-    sys.exit(rc)
-except subprocess.TimeoutExpired:
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        proc.kill()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            proc.kill()
+    result = subprocess.run(
+        args,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        timeout=timeout,
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    sys.exit(result.returncode)
+except subprocess.TimeoutExpired as exc:
+    if exc.stdout:
+        sys.stdout.write(exc.stdout if isinstance(exc.stdout, str) else exc.stdout.decode(errors="replace"))
     sys.stdout.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
-    if log_path:
-        with open(log_path, "a", encoding="utf-8") as handle:
-            handle.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
     sys.exit(124)
 PY
   ) || true
-
-  if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && ! -s "${CLAUDE_INTERACTIVE_LOG_FILE}" && -n "$output" ]]; then
-    printf '%s' "$output" >"${CLAUDE_INTERACTIVE_LOG_FILE}"
-  fi
-
-  if [[ -z "$output" && -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && -f "${CLAUDE_INTERACTIVE_LOG_FILE}" ]]; then
-    output="$(cat "${CLAUDE_INTERACTIVE_LOG_FILE}")"
-  fi
 
   printf '%s' "$output"
 }
