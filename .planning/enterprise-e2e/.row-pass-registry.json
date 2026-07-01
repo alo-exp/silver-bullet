@@ -50,6 +50,62 @@
           "source": "r8-smoke-seed"
         }
       }
+    },
+    "cursor@26cf687fbe54+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "26cf687fbe54",
+      "install_fp": "cursor@26cf687fbe54+ff940b08e724",
+      "rows": {
+        "7": {
+          "passed_at": "2026-07-01T14:00:28Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row7-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "cursor@d572f53f3928+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "d572f53f3928",
+      "install_fp": "cursor@d572f53f3928+ff940b08e724",
+      "rows": {
+        "21": {
+          "passed_at": "2026-07-01T15:38:23Z",
+          "log_ref": ".e2e-matrix-cursor-c2-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "22": {
+          "passed_at": "2026-07-01T15:38:23Z",
+          "log_ref": ".e2e-matrix-cursor-c2-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "8": {
+          "passed_at": "2026-07-01T16:37:53Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row8-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "11": {
+          "passed_at": "2026-07-01T17:13:32Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row11-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "15": {
+          "passed_at": "2026-07-01T17:30:25Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row15-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "16": {
+          "passed_at": "2026-07-01T17:38:40Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row16-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
     }
   }
 }
