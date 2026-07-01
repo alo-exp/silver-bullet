@@ -192,7 +192,7 @@ pipx install graphifyy
 
 Re-check `command -v graphify`.
 
-**Step 3b — Skill registration:** Read `recommended_tools.graphify.platform_install_commands.<SB_HOST>.pre_index` from `.silver-bullet.json`. Per-runtime matrices: `scripts/lib/host-install-guides/<SB_HOST>.md`.
+**Step 3b — Skill registration:** Read `recommended_tools.graphify.platform_install_commands.<SB_HOST>.pre_index` from `.silver-bullet.json`. Per-runtime matrices: `scripts/lib/host-install-guides/<SB_HOST>.md` and `hooks/lib/runtime-paths.sh`.
 
 Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` from `.silver-bullet.json` when present.
 
