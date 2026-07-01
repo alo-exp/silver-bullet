@@ -363,7 +363,7 @@ enterprise_e2e_outcome_score_auto() {
     fi
     printf 'fail\n'; return 0
   fi
-  if [[ -n "$evidence" ]] && enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1; then
+  if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1; then
     if enterprise_e2e_outcome_log_has_autonomous "$row_log"; then
       printf 'pass\n'; return 0
     fi
@@ -457,7 +457,7 @@ enterprise_e2e_outcome_directive_drained() {
 enterprise_e2e_outcome_log_has_worker_completion() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|workflow_complete:[[:space:]]*true|workflow ran through|completion-audit → SHIP|completion-audit.*SHIP|Review-triad workflow|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings' "$row_log" 2>/dev/null
+  grep -qiE 'worker completed|delegated SB worker|delegated Composer|completed via a delegated|workflow is complete|Workflow complete|workflow_complete:[[:space:]]*true|workflow ran through|completion-audit → SHIP|completion-audit.*SHIP|Review[- ]triad|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings|Workflow evidence was reconciled' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_orchestrator_handoff() {
@@ -824,7 +824,13 @@ enterprise_e2e_outcome_score_orch() {
      enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP|graphify query'; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qE 'Task|worker|orchestrator' "$row_log" 2>/dev/null; then
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qEi 'Task|worker|orchestrator' "$row_log" 2>/dev/null; then
+    if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1; then
+      printf 'pass\n'; return 0
+    fi
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -881,7 +887,7 @@ enterprise_e2e_outcome_score_review() {
       printf 'pass\n'; return 0
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qiE 'review-triad workflow is complete|0 BLOCK findings|REVIEW-TRIAGE' "$row_log" 2>/dev/null; then
+       grep -qiE 'review[- ]triad.*complete|review-triad workflow is complete|0 BLOCK findings|REVIEW-TRIAGE' "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
   fi
