@@ -254,14 +254,47 @@ verify_row_evidence() {
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
-  local marker=""
+  local marker="" parent_row="" parent_log="" ledger="${SB_E2E_LEDGER_FILE:-}"
   case "$row_num" in
-    21) marker='post-exec-gates' ;;
-    22) marker='validate-substep' ;;
+    21) marker='post-exec-gates'; parent_row=3 ;;
+    22) marker='validate-substep'; parent_row=4 ;;
     *) return 1 ;;
   esac
+  enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
   if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
     return 0
+  fi
+  parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
+  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$marker" "$parent_log" 2>/dev/null; then
+    return 0
+  fi
+  if [[ -n "$parent_log" && -f "$parent_log" && -s "$parent_log" ]] && \
+     [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+    source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+    local ev="" state_dir
+    state_dir="$(enterprise_e2e_runtime_state_dir 2>/dev/null || mktemp -d)"
+    ev="$(enterprise_e2e_outcome_matrix_evidence_path "$parent_row" 2>/dev/null || true)"
+    if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$state_dir" \
+        "$parent_log" "$ledger" "$ev" 2>/dev/null; then
+      enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+      find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+      return $?
+    fi
+  fi
+  if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+    source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+    local line="" status=""
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$parent_row" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+      if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
+        enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+        find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+        return $?
+      fi
+    fi
   fi
   return 1
 }
@@ -554,6 +587,10 @@ main() {
     fi
     run_matrix_row "$row_num" "$slug" "$route" "$prompt_card" "$evidence_path"
   done
+
+  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
+    enterprise_e2e_matrix_ensure_internal_gate_markers
+  fi
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 21 silver-feature; then
