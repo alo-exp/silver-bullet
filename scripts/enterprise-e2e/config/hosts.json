@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "default_host": "claude",
+  "hosts": {
+    "claude": {
+      "adapter": "claude",
+      "legacy_paths": true,
+      "install_script": "scripts/install-claude.sh",
+      "agent_script": "tests/live/agents/claude/agent.sh",
+      "ledger_file": ".planning/enterprise-e2e/ROUND-1-LEDGER.md",
+      "gates_round1": ".planning/enterprise-e2e/ROUND-5-GATES.md",
+      "gates_round2": ".planning/enterprise-e2e/ROUND-6-GATES.md",
+      "execution_prompt": ".planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md",
+      "tui_protocol": ".planning/enterprise-e2e/CLAUDE-TUI-PROTOCOL.md",
+      "lock_file": ".e2e-live-test.lock",
+      "matrix_log": ".e2e-matrix-live.log",
+      "batch_pid_file": ".e2e-matrix-batch.pid",
+      "monitor_pid_file": ".e2e-matrix-monitor.pid",
+      "monitor_status_file": ".e2e-matrix-monitor-status.txt",
+      "tui_findings": ".e2e-tui-watch-findings.jsonl",
+      "tui_offsets": ".e2e-tui-watch-offsets.json",
+      "row_attempt_pattern": ".e2e-row{row}-attempt{suffix}.log"
+    },
+    "codex": {
+      "adapter": "codex",
+      "legacy_paths": false,
+      "install_script": "scripts/install-codex.sh",
+      "install_args": ["--purge-legacy-skills"],
+      "agent_script": "tests/live/agents/codex/agent.sh",
+      "ledger_file": ".planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md",
+      "gates_round1": ".planning/enterprise-e2e/ROUND-CODEX-1-GATES.md",
+      "gates_round2": ".planning/enterprise-e2e/ROUND-CODEX-2-GATES.md",
+      "execution_prompt": ".planning/enterprise-e2e/CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md",
+      "tui_protocol": ".planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md",
+      "lock_file": ".e2e-live-test-codex.lock",
+      "matrix_log": ".e2e-matrix-codex-live.log",
+      "batch_pid_file": ".e2e-matrix-codex-batch.pid",
+      "monitor_pid_file": ".e2e-matrix-codex-monitor.pid",
+      "monitor_status_file": ".e2e-matrix-codex-monitor-status.txt",
+      "tui_findings": ".e2e-tui-watch-codex-findings.jsonl",
+      "tui_offsets": ".e2e-tui-watch-codex-offsets.json",
+      "row_attempt_pattern": ".e2e-row{row}-codex-attempt{suffix}.log",
+      "test_app_git_branch": "enterprise-e2e/round-1-codex",
+      "test_app_git_baseline_sha": "8482e60"
+    },
+    "cursor": {
+      "adapter": "cursor",
+      "legacy_paths": false,
+      "install_script": "scripts/install-cursor.sh",
+      "agent_script": "tests/live/agents/cursor/agent.sh",
+      "ledger_file": ".planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md",
+      "gates_round1": ".planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md",
+      "gates_round2": ".planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md",
+      "execution_prompt": ".planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md",
+      "tui_protocol": ".planning/enterprise-e2e/CURSOR-TUI-PROTOCOL.md",
+      "lock_file": ".e2e-live-test-cursor.lock",
+      "matrix_log": ".e2e-matrix-cursor-live.log",
+      "batch_pid_file": ".e2e-matrix-cursor-batch.pid",
+      "monitor_pid_file": ".e2e-matrix-cursor-monitor.pid",
+      "monitor_status_file": ".e2e-matrix-cursor-monitor-status.txt",
+      "tui_findings": ".e2e-tui-watch-cursor-findings.jsonl",
+      "tui_offsets": ".e2e-tui-watch-cursor-offsets.json",
+      "row_attempt_pattern": ".e2e-row{row}-cursor-attempt{suffix}.log",
+      "git_branch": "enterprise-e2e/cursor",
+      "test_app_root": "/Users/shafqat/projects/enterprise-grade-test-app-cursor",
+      "test_app_git_branch": "enterprise-e2e/round-1-cursor",
+      "test_app_git_baseline_sha": "8482e60"
+    }
+  },
+  "route_map": {
+    "codex": {
+      "prefix_slash_to_dollar": "/silver"
+    },
+    "cursor": {
+      "strip_silver_prefix": true
+    }
+  }
+}
