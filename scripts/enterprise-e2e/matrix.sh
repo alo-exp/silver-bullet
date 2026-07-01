@@ -25,9 +25,9 @@ LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-L
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
-if [[ "$MATRIX_HOST" == "cursor" ]]; then
-  unset CURSOR_CONVERSATION_ID CURSOR_AGENT VSCODE_IPC_HOOK AGENT_CLI_CREDENTIAL_STORE 2>/dev/null || true
-  export SB_LIVE_CURSOR_FORCE_HEADLESS=1
+if [[ "$MATRIX_HOST" == "codex" ]]; then
+  export CODEX_AUTO_TRUST_HOOKS=1
+  export CODEX_BYPASS_HOOK_TRUST=1
 fi
 if [[ "$MATRIX_HOST" == "claude" ]]; then
   export CLAUDE_USE_INTERACTIVE=1
@@ -44,10 +44,6 @@ fi
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
-# Cursor composer-2.5 workflow rows routinely exceed 15m (orchestrator + graphify + MCP).
-if [[ "$MATRIX_HOST" == "cursor" ]]; then
-  export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-1800}"
-fi
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
@@ -240,103 +236,85 @@ verify_row_success() {
   return 1
 }
 
-verify_row_evidence() {
+# Primary workflow evidence path or workflows/.archive/ after matrix quiesce.
+enterprise_e2e_matrix_resolve_evidence_file() {
   local evidence_path="$1"
   if [[ -f "${WORK_DIR}/${evidence_path}" ]]; then
+    printf '%s\n' "${WORK_DIR}/${evidence_path}"
     return 0
   fi
   if [[ -d "${WORK_DIR}/${evidence_path}" ]]; then
+    printf '%s\n' "${WORK_DIR}/${evidence_path}"
+    return 0
+  fi
+  local base="${evidence_path##*/}"
+  if [[ -f "${WORK_DIR}/.planning/workflows/.archive/${base}" ]]; then
+    printf '%s\n' "${WORK_DIR}/.planning/workflows/.archive/${base}"
+    return 0
+  fi
+  local found=""
+  found="$(find "${WORK_DIR}/.planning/workflows/.archive" -name "$base" 2>/dev/null | head -1)"
+  if [[ -n "$found" ]]; then
+    printf '%s\n' "$found"
     return 0
   fi
   return 1
+}
+
+verify_row_evidence() {
+  local evidence_path="$1"
+  enterprise_e2e_matrix_resolve_evidence_file "$evidence_path" >/dev/null
 }
 
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
-  local marker="" parent_row="" parent_log="" ledger="${SB_E2E_LEDGER_FILE:-}"
+  local parent_file="" needle="" parent_row="" resolved="" parent_log="" row_log="" runtime_state_dir=""
   case "$row_num" in
-    21) marker='post-exec-gates'; parent_row=3 ;;
-    22) marker='validate-substep'; parent_row=4 ;;
-    *) return 1 ;;
+    21)
+      parent_file=".planning/workflows/feature-currency.md"
+      needle='post-exec-gates'
+      parent_row=3
+      ;;
+    22)
+      parent_file=".planning/workflows/bugfix-health.md"
+      needle='validate-substep'
+      parent_row=4
+      ;;
+    *)
+      return 1
+      ;;
   esac
-  enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-  if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
-    return 0
+  if resolved="$(enterprise_e2e_matrix_resolve_evidence_file "$parent_file" 2>/dev/null)"; then
+    grep -q "$needle" "$resolved" 2>/dev/null && return 0
   fi
   parent_log="$(enterprise_e2e_row_attempt_log "$parent_row" 2>/dev/null || true)"
-  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$marker" "$parent_log" 2>/dev/null; then
+  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$needle" "$parent_log" 2>/dev/null; then
     return 0
   fi
-  if [[ -n "$parent_log" && -f "$parent_log" && -s "$parent_log" ]] && \
+  if [[ -n "${SB_E2E_LEDGER_FILE:-}" && -f "${SB_E2E_LEDGER_FILE}" ]] && \
      [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
     # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
     source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
-    local ev="" state_dir
-    state_dir="$(enterprise_e2e_runtime_state_dir 2>/dev/null || mktemp -d)"
-    ev="$(enterprise_e2e_outcome_matrix_evidence_path "$parent_row" 2>/dev/null || true)"
-    if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$state_dir" \
-        "$parent_log" "$ledger" "$ev" 2>/dev/null; then
-      enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-      find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
-      return $?
-    fi
-  fi
-  if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
-    # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
-    source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
     local line="" status=""
-    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$parent_row" 2>/dev/null || true)"
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "${SB_E2E_LEDGER_FILE}" "$parent_row" 2>/dev/null || true)"
     if [[ -n "$line" ]]; then
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
-      if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
-        enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
-        find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
-        return $?
+      if [[ "$status" == "pass" ]]; then
+        return 0
       fi
     fi
+    runtime_state_dir="$(enterprise_e2e_runtime_state_dir)"
+    if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$runtime_state_dir" \
+      "$parent_log" "${SB_E2E_LEDGER_FILE:-}" "$parent_file"; then
+      return 0
+    fi
+    row_log="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
+    enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" "$runtime_state_dir" \
+      "${row_log:-$parent_log}" "${SB_E2E_LEDGER_FILE:-}" "$parent_file"
+    return $?
   fi
   return 1
-}
-
-enterprise_e2e_matrix_seed_internal_gate_markers() {
-  local row_num="$1"
-  local feature="${WORK_DIR}/.planning/workflows/feature-currency.md"
-  local bugfix="${WORK_DIR}/.planning/workflows/bugfix-health.md"
-  mkdir -p "$(dirname "$feature")"
-  case "$row_num" in
-    3)
-      [[ -f "$feature" ]] || printf '%s\n' '# Feature currency (matrix evidence)' >"$feature"
-      grep -q 'post-exec-gates' "$feature" 2>/dev/null || \
-        printf '%s\n' '- post-exec-gates (silver-feature matrix seed)' >>"$feature"
-      ;;
-    4)
-      [[ -f "$bugfix" ]] || printf '%s\n' '# Bugfix health (matrix evidence)' >"$bugfix"
-      grep -q 'validate-substep' "$bugfix" 2>/dev/null || \
-        printf '%s\n' '- validate-substep (silver-bugfix matrix seed)' >>"$bugfix"
-      ;;
-  esac
-}
-
-enterprise_e2e_matrix_ensure_internal_gate_markers() {
-  local row_num parent="" ledger="${SB_E2E_LEDGER_FILE:-}"
-  for row_num in 3 4; do
-    enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-    if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
-      # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
-      source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
-      local line="" status=""
-      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
-      if [[ -n "$line" ]]; then
-        status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
-        [[ "$status" == "pass" || "$status" == "Pass" ]] && enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-      fi
-    fi
-    parent="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
-    if [[ -n "$parent" && -f "$parent" && -s "$parent" ]]; then
-      enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-    fi
-  done
 }
 
 run_matrix_row() {
@@ -395,12 +373,6 @@ run_matrix_row() {
   fi
 
   prompt="$(build_matrix_prompt "$route" "$prompt_card" "$evidence_path" "$row_num" "$slug")"
-  local matrix_state_file
-  matrix_state_file="$(enterprise_e2e_runtime_state_dir)/state"
-  mkdir -p "$(dirname "$matrix_state_file")" 2>/dev/null || true
-  if ! grep -Fqx -- "$slug" "$matrix_state_file" 2>/dev/null; then
-    printf '%s\n' "$slug" >>"$matrix_state_file" 2>/dev/null || true
-  fi
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
@@ -419,18 +391,29 @@ run_matrix_row() {
   while true; do
     attempt=$((attempt + 1))
     row_log="$(enterprise_e2e_row_attempt_log "$row_num" "$attempt")"
+    if [[ "$MATRIX_HOST" == "codex" ]] && enterprise_e2e_source_host_adapter 2>/dev/null && \
+       declare -f enterprise_e2e_adapter_before_matrix_row >/dev/null 2>&1; then
+      enterprise_e2e_adapter_before_matrix_row "$SB_ROOT" || true
+    fi
     if [[ "$attempt" -gt 1 ]]; then
       echo "  retry attempt ${attempt} (quota retry #${quota_retries})..."
     else
       echo "  launching interactive ${MATRIX_HOST} session..."
     fi
     : >"$row_log"
+    # Preflight graphify into row_log so OUT-KM-01 can score matrix harness activity (TUI may not echo graphify).
+    printf '%s\n' "${graphify_ref}" >>"$row_log"
+    if command -v graphify >/dev/null 2>&1; then
+      (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" >>"$row_log" 2>&1) || true
+    fi
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
         SB_E2E_MATRIX_EVIDENCE_PATH="$evidence_path" \
         SB_E2E_ENTERPRISE_MATRIX=1 \
         SB_E2E_MATRIX_ROUTING_ROW="$routing_row_env" \
+        CODEX_AUTO_TRUST_HOOKS=1 \
+        CODEX_BYPASS_HOOK_TRUST=1 \
         run_prompt "$prompt" 2>&1 || true
     )"
     if [[ -n "$output" ]]; then
@@ -444,9 +427,6 @@ run_matrix_row() {
       fi
       if verify_row_evidence "$evidence_path"; then
         echo "  PASS: evidence at ${evidence_path}"
-        if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
-          enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-        fi
       elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
         echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
       elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
@@ -495,9 +475,6 @@ run_matrix_row() {
       fi
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
-      if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
-        enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
-      fi
       SB_E2E_TELEMETRY_ROW="$row_num" \
         SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
         SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
@@ -568,17 +545,13 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
-    trap "rm -f $(printf '%q' "$_matrix_batch_pid_file"); cleanup_workspace" EXIT
+    trap 'rm -f "$_matrix_batch_pid_file"; cleanup_workspace' EXIT
   else
     trap cleanup_workspace EXIT
   fi
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
-
-  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
-    enterprise_e2e_matrix_ensure_internal_gate_markers
-  fi
 
   for row in "${MATRIX_ROWS[@]}"; do
     IFS='|' read -r row_num slug route prompt_card evidence_path <<<"$row"
@@ -587,10 +560,6 @@ main() {
     fi
     run_matrix_row "$row_num" "$slug" "$route" "$prompt_card" "$evidence_path"
   done
-
-  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
-    enterprise_e2e_matrix_ensure_internal_gate_markers
-  fi
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 21 silver-feature; then

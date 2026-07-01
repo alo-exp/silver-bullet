@@ -49,6 +49,11 @@ assert_executable "sb-doctor.sh executable" "$DOCTOR"
 assert_contains "documents sb-doctor.sh" "sb-doctor\\.sh" "$SKILL"
 assert_contains "documents D1 jq check" "D1" "$SKILL"
 assert_contains "documents D13 Claude import" "claude/plugins|D13" "$SKILL"
+assert_contains "documents D14 cache bleed" "D14" "$SKILL"
+assert_contains "documents --fix flag" "--fix" "$SKILL"
+for id in D14 D15 D16; do
+  grep -q "${id}" "$DOCTOR" && echo "PASS: sb-doctor.sh references check ${id}" && PASS=$((PASS + 1)) || { echo "FAIL: sb-doctor.sh missing check ${id}"; FAIL=$((FAIL + 1)); }
+done
 assert_contains "documents zero FAIL for PASS" "zero FAIL" "$SKILL"
 assert_contains "documents friction log" "sb-friction-log" "$SKILL"
 

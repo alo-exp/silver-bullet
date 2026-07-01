@@ -5,7 +5,6 @@ Operator protocol for executing 22 supervised Cursor agent workflow sessions aga
 **Supervisor session:** Cursor Composer (parent orchestrator with `Task` tool, `composer-2.5` only).  
 **Matrix child:** `cursor-agent` / `agent` CLI headless **or** in-session Composer when `SB_LIVE_CURSOR_IN_SESSION=1`.
 
-**SB git branch:** `enterprise-e2e/cursor` (canonical Cursor track — verify before commits).  
 **Working directory for SB fixes:** `/Users/shafqat/projects/silver-bullet/repo`  
 **Working directory for matrix rows:** `/Users/shafqat/projects/enterprise-grade-test-app`
 
@@ -15,9 +14,9 @@ See also: [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EX
 
 ## Prerequisites (each round)
 
-1. SB repo on branch **`enterprise-e2e/cursor`** at harness tip; structural suite green.
+1. SB repo harness tip; structural suite green.
 2. `bash scripts/install-cursor.sh` from SB checkout; reload Cursor window after hook merge.
-3. **Auth:** Cursor `agent` authenticated via **macOS Keychain** / interactive login (`cursor-agent status`). `CURSOR_API_KEY` required only for CI/memory-store runs (`AGENT_CLI_CREDENTIAL_STORE=memory`), not when agent is already logged in.
+3. `CURSOR_API_KEY` for headless matrix (or `cursor-agent login`).
 4. **Graphify** + **agentmemory** when opted in.
 
 ---
@@ -26,11 +25,10 @@ See also: [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EX
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_E2E_BRANCH=enterprise-e2e/cursor
 export SILVER_BULLET_RUNTIME=cursor
 export SB_E2E_LIVE_RUNTIME=cursor
-# Keychain auth (default): do NOT set AGENT_CLI_CREDENTIAL_STORE=memory or CURSOR_API_KEY
-# CI only: export CURSOR_API_KEY=... AGENT_CLI_CREDENTIAL_STORE=memory
+export CURSOR_API_KEY="${CURSOR_API_KEY:?}"
+export AGENT_CLI_CREDENTIAL_STORE=memory
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md"
 export SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-matrix-cursor-live.log"
 export SB_E2E_MATRIX_BATCH_PID_FILE="$SB_ROOT/.e2e-matrix-cursor-batch.pid"
@@ -47,11 +45,10 @@ export SB_E2E_LIVE_TEST_LOCK_FILE="$SB_ROOT/.e2e-live-test-cursor.lock"
 
 ## Headless vs in-session
 
-| Mode | When | Auth |
-|------|------|------|
-| Headless CLI | Matrix batch (default) | Keychain / `cursor-agent login` — omit `AGENT_CLI_CREDENTIAL_STORE=memory` |
-| In-session | IDE babysitting | `SB_LIVE_CURSOR_IN_SESSION=1`; `CURSOR_AGENT`, `VSCODE_IPC_HOOK` when available |
-| CI smoke | `pre-release-cursor-cli-smoke.sh` only | `CURSOR_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` |
+| Mode | When | Env |
+|------|------|-----|
+| Headless CLI | Matrix batch (default) | `CURSOR_API_KEY`, `agent -p` via `cursor/agent.sh` |
+| In-session | IDE babysitting | `SB_LIVE_CURSOR_IN_SESSION=1` |
 
 **Phase A strict-clean:** `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0` + live API turns (not resolver-only default).
 
@@ -87,8 +84,6 @@ Per-row: graphify query → agent invoke → monitor `.e2e-row{N}-cursor-attempt
 
 **Compaction:** allowed; **do not** `/clear`.
 
-See [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) Phase B for row template, monitor env, and tmux relaunch (Keychain auth — unset `AGENT_CLI_CREDENTIAL_STORE`).
-
 ---
 
 ## Launch commands
@@ -97,6 +92,6 @@ See [CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CURSOR-ENTERPRISE-E2E-EXECUTIO
 # Dry-run row 1:
 SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME=cursor bash scripts/run-enterprise-e2e-matrix.sh 1
 
-# Live entrypoint (Keychain auth — omit CURSOR_API_KEY / AGENT_CLI_CREDENTIAL_STORE=memory):
+# Live entrypoint:
 SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --host cursor --resume
 ```

@@ -2,50 +2,61 @@
 
 **Operational addendum:** [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md)
 
-**Updated:** 2026-06-30T04:18Z (shared harness addendum compliance; FORCE on `enterprise-e2e/multi-host`)
+**Updated:** 2026-06-30T12:52Z — row **22** outcome **PASS** (`OUT-SKILL-01` parent-log harness fix)
 
-**Shared harness:** [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md) — canonical code `scripts/enterprise-e2e/`; Claude legacy paths unchanged.
+**Shared harness:** [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md)
 
 ## SB HEAD
 
-`c8e323f7` — `enterprise-e2e/multi-host` (clarify picker fix; harness reorg `da459749`)  
-Prior pause checkpoint: `6e7fb3b1` on `main`
+Pending commit on `enterprise-e2e/multi-host` (after `66d9c9c9` + row 22 OUT-SKILL-01 fix)
 
 **Test app HEAD:** `8482e60` @ `/Users/shafqat/projects/enterprise-grade-test-app`
 
-## Active work
+## Recovery CHECKPOINT (cleared 2026-06-30T12:52Z)
 
-- **Pass count (ledger):** **18 / 22** evidence — rows **6, 7, 8, 11** FAIL (expect `:531`); rows 21–22 via parents
-- **Strict-clean:** pending outcome re-score FORCE + rows 6/7/8/11 LIVE retry
-- **Pause checkpoint:** driver **84198** was ALIVE @ 02:24Z — **DEAD** post-reboot
-- **PID audit (2026-06-30T04:18Z):**
-  - Live-test driver **9520** — **ALIVE** (`--skip-code-intel-preflight 6 7 8 11` on `enterprise-e2e/multi-host`)
-  - Matrix batch **13140** — **ALIVE** (rows **6 7 8 11**; row **7** `silver-test` launching)
-  - Monitor **11876** — **ALIVE** (driver-owned; `AUTO_RESTART=0`)
-- **Relaunch:** tmux + `run-enterprise-e2e-live-test.sh --resume` (bypasses `round6-matrix-driver.sh` branch checkout on dirty tree)
-- **Do not duplicate drivers** while batch alive
+- Rows **3/4/21/22:** `enterprise_e2e_outcome_row_passes` **PASS** (retained logs; parent log for 21/22)
+- **Row 22 fix:** `enterprise_e2e_outcome_score_skill` log-first + internal parent patterns; **no live FORCE**
+- Row **4:** no live re-FORCE — `bugfix-health.md` in `workflows/.archive/`
+- **Monitor:** **80434** alive — [`.e2e-matrix-monitor.pid`](../../.e2e-matrix-monitor.pid)
+- **Gates:** [ROUND-6-GATES.md](./ROUND-6-GATES.md) — strict-clean **PASS** (22/22 retained outcome)
+- **Cursor WIP:** stashed; remain on `multi-host`
+
+## Prior active work (superseded)
+
+- **Pass count (ledger):** **22 / 22** evidence — reconcile **COMPLETE**
+- **Strict-clean:** **PENDING** — retained-log `enterprise_e2e_outcome_row_passes` **20/20** (rows 1–20); rows 21–22 parent FORCE only
+- **Phase C:** **GREEN** — ladder 8/8, reconcile 22/22, harness 72/72, `run-all-tests` 5029/5029
+- **Retained-log policy:** re-score without live FORCE is **allowed** when logs + evidence exist; OUT-ORCH-01 harness fix aligns TUI scrollback (`next_worker_template`, autonomous worker + evidence) with row-1 pattern
+- **Live FORCE:** **not** relaunched for Round 6 rows 6/7/8/11 (checkpoint — re-score failed but operator hold)
 
 ## Matrix snapshot
 
-| Pass (ledger) | 1–5, 9–10, 12–22 (14 SKIP + live + parents) |
-| Fail | 6, 7, 8, 11 — expect regex `:531` |
-| Force log outcome FAIL | 4, 6 — OUT-KM-01 partial, OUT-WORLD-01 (pre re-score) |
-| Current | Row **7** was launching when batch died |
+| Signal | Value |
+|--------|-------|
+| Ledger evidence | **22/22 Pass** |
+| `enterprise_e2e_outcome_row_passes` (retained logs) | **20/20** (rows 1–20) |
+| Rows 6/7/8/11 retained re-score | **4/4** PASS |
+| Rows 21–22 | no `.e2e-row{N}-attempt.log` — need parent rows **3** / **4** FORCE |
+| Primary blocker (post-ORCH fix) | `OUT-AUTO-01`, `OUT-SKILL-01`, `OUT-SUPER-01` partial on other rows |
 
-Canonical logs: [`.e2e-matrix-round6-force.log`](../../.e2e-matrix-round6-force.log), [`.e2e-round6-force-driver.log`](../../.e2e-round6-force-driver.log)
+Retained logs source: git `00ae6e63` (pre-untrack); not present on working tree as `.e2e-row{N}-attempt.log`.
 
 ## Monitor
 
+| Component | PID | Status |
+|-----------|-----|--------|
+| Matrix monitor | **53368** | **ALIVE** — `scripts/monitor-enterprise-e2e-matrix.sh` |
+| tmux `r6-monitor` | pane **25758** | present |
+| `.e2e-matrix-monitor.pid` | **53368** | repointed from stale 16907 |
+
 ```bash
 cd "$SB_ROOT"
+# If 53368 dead:
 SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-matrix-round6-force.log" \
   nohup bash scripts/monitor-enterprise-e2e-matrix.sh >> .e2e-matrix-monitor-nohup.log 2>&1 &
 echo $! > .e2e-matrix-monitor.pid
 ```
 
-- **Monitor PID:** `41532` (alive; repoint if dead)
-- Status: [`.e2e-matrix-monitor-status.txt`](../../.e2e-matrix-monitor-status.txt)
-- **TUI watch PID:** `41886` (alive; repoint if dead)
 - `SB_E2E_MONITOR_AUTO_RESTART=0`
 
 ## Env
@@ -55,58 +66,54 @@ export SB_E2E_LEDGER_FILE=/Users/shafqat/projects/silver-bullet/repo/.planning/e
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
 export SB_E2E_MATRIX_LOG="$SB_ROOT/.e2e-matrix-round6-force.log"
-export SB_E2E_MATRIX_FORCE=1
 export SB_E2E_MONITOR_AUTO_RESTART=0
 export SB_E2E_SESSION0_SKIP=1
 export RTK_DISABLED=1
 cd "$SB_ROOT"
-git checkout enterprise-e2e/round6
+git checkout enterprise-e2e/multi-host
 ```
 
-## Resume commands
+## Re-score commands (retained logs)
 
 ```bash
-# Single FORCE driver (tmux if agent shell lacks PTY):
-tmux new-session -d -s round6-force bash -lc 'cd "$SB_ROOT" && RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight --resume'
-# Or: RTK_DISABLED=1 bash .planning/enterprise-e2e/round6-matrix-driver.sh  # requires clean tree for branch checkout
+# Extract retained logs (example row 6):
+git show 00ae6e63:.e2e-row6-attempt.log > /tmp/.e2e-row6-attempt.log
 
-# Preflight only:
-RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --preflight-only
+source scripts/lib/enterprise-e2e-outcome-assessment.sh
+enterprise_e2e_outcome_row_passes 6 "$SB_TEST_ENTERPRISE_APP_ROOT" \
+  "${HOME}/.claude/.silver-bullet" /tmp/.e2e-row6-attempt.log \
+  "$SB_E2E_LEDGER_FILE" .planning/workflows/fast-readme.md
 
-# Harness verify:
-RTK_DISABLED=1 bash tests/scripts/test-outcome-assessment.sh
-
-# Poll (no second driver while batch alive):
-tail -f .e2e-matrix-round6-force.log
-tail -f .e2e-matrix-monitor-status.txt
+enterprise_e2e_outcome_assess_round "$SB_E2E_LEDGER_FILE"
+# OUT-REVIEW-01 pass; OUT-MEASURE-01 pass; OUT-KM-01 partial
 ```
 
-## P0 gates (2026-06-30)
+## P0 gates (2026-06-30T10:10Z)
 
-- review-fix-ladder **8/8** — no new issues
-- outcome harness **41/41 PASS** @ `6e7fb3b1` (minor `SESSION_LOG_R1` unbound at tail; exit 0)
-- preflight **PASS** (session0 skipped programmatically)
-- matrix **3/22** — Phase B in progress
-- OUT-AUTO-01 **Pass** for Row 1 after `af5449bd` re-score
+| Gate | Status |
+|------|--------|
+| review-fix-ladder 8/8 | **PASS** |
+| Matrix ledger 22/22 | **PASS** — reconcile COMPLETE |
+| `test-outcome-assessment.sh` | **PASS** 72/72 |
+| `run-all-tests.sh` | **PASS** 5029/5029 @ `44babd22` |
+| `enterprise_e2e_outcome_assess_round` | OUT-REVIEW-01 pass; OUT-MEASURE-01 pass; OUT-KM-01 **partial** |
+| Per-row `enterprise_e2e_outcome_row_passes` | **0/22** (retained logs) |
+| Round strict-clean | **PENDING** |
+| 2 consecutive strict-clean | **PENDING** (Round 5 done) |
 
 ## Policies
 
-### Subagent model policy (resume)
-
-- Parent orchestrator and enterprise E2E workers: use **Composer 2.5** (`composer-2.5`) for all Task/subagent delegations.
-- **Do not** use Composer 2.5 Fast (`composer-2.5-fast`) for subagent work.
-
+- **Branch pin:** `enterprise-e2e/multi-host` only for Round 6 close-out
+- Subagent model: **composer-2.5** only (never Fast)
+- Poll-only when healthy driver alive; **no duplicate** FORCE for Round 6 at checkpoint
 - Never `claude auth login/logout`
-- **Poll-only** when driver alive and log growing; **single FORCE** relaunch only if all drivers dead
-- **No duplicate** matrix/monitor trees
-- Never kill healthy drivers &lt;45m
-- `install-claude.sh` after harness fixes on `main` tip
+
+## Next actions (post-checkpoint)
+
+1. **Option A:** Live `SB_E2E_MATRIX_FORCE=1` rows 6/7/8/11 (+ 21–22 parent scoring) with fresh TUI logs
+2. **Option B:** Harness fix — OUT-ORCH-01 pass when retained log has Task/worker + evidence PASS + ledger refs (align with fixture tests)
+3. Restore `.e2e-row{N}-attempt.log` to SB_ROOT from `00ae6e63` if re-score loop continues without live TUI
 
 ---
 
-## Coordination (2026-06-30 — Round 6 handoff execution)
-
-- **Handoff file missing** — reconstructed from [ROUND-3-SESSION-HANDOFF.md](./ROUND-3-SESSION-HANDOFF.md) template + [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md) last poll @ 02:18Z.
-- Driver **84198** / batch **85965** confirmed **DEAD** on audit; stale PID files cleared.
-- Relaunch from agent shell **failed** (PTY/detach); **resolved** @ 03:05Z via tmux + direct `run-enterprise-e2e-live-test.sh --resume` on `main`.
-- Artifacts: [ROUND-6-LEDGER.md](./ROUND-6-LEDGER.md), [ROUND-6-GATES.md](./ROUND-6-GATES.md), [round6-matrix-driver.sh](./round6-matrix-driver.sh)
+**CHECKPOINT:** Phase C green @ `44babd22`; strict-clean **not** declared; monitor **53368** alive; no Round 6 FORCE relaunch.
