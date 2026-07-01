@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "fingerprint_scheme": "host@sb_git_sha12+surface_hash12",
+  "surface_hash_inputs": [
+    "hooks/hooks.json sha256[:16]",
+    "package.json version"
+  ],
+  "created_at": "2026-07-01T12:00:00Z",
+  "installs": {
+    "claude@30558b37c1ac+9a58159041c7": {
+      "host": "claude",
+      "sb_sha": "30558b37c1ac",
+      "install_fp": "claude@30558b37c1ac+9a58159041c7",
+      "seed_note": "Round 8 smoke live+outcome passes on main @ 30558b37",
+      "rows": {
+        "1": {
+          "passed_at": "2026-07-01T09:30:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "3": {
+          "passed_at": "2026-07-01T09:35:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "6": {
+          "passed_at": "2026-07-01T09:45:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "11": {
+          "passed_at": "2026-07-01T10:15:00Z",
+          "log_ref": ".e2e-matrix-round2.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "21": {
+          "passed_at": "2026-07-01T09:50:00Z",
+          "log_ref": ".e2e-r8-smoke-rows21-22-verify.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "22": {
+          "passed_at": "2026-07-01T09:50:00Z",
+          "log_ref": ".e2e-r8-smoke-rows21-22-verify.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        }
+      }
+    }
+  }
+}
