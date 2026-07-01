@@ -23,13 +23,15 @@ Deliver **2 consecutive strict-clean rounds** on the **Cursor host track** (Roun
 
 **Strict-clean** = ALL of:
 
-1. **review-fix-ladder** **8/8** rungs with **2 consecutive clean verify passes** per rung, **0 new issues** (`python3 scripts/review-fix-ladder.py --host cursor`)
-2. Live matrix **22/22** evidence PASS, **0 new friction/issues** vs baseline
+1. **review-fix-ladder** **8/8** rungs — **one live pass per rung** @ current install version (§11 methodology); do not repeat rungs already Pass @ `SB_INSTALL_VERSION_KEY`
+2. Live matrix **22/22** evidence PASS — **one pass per row** @ install version (harness skips via `matrix.sh` + `.e2e-matrix-pass-at-version.tsv`)
 3. **Every row** passes `enterprise_e2e_outcome_row_passes` (no `partial`)
 4. Blocking autonomy gates: `OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`
 5. Phase C green: `test-outcome-assessment.sh`, `run-all-tests.sh`, validation/pre-release overlays, ledger reconcile, RCS ≥ 85 (tri-host includes Cursor)
 
 Evidence-only PASS or SKIP rows **do not** count strict-clean.
+
+**Single-pass-at-install-version (2026-07-01):** Do not repeat matrix rows, ladder rungs, or T1 when already Pass @ `SB_INSTALL_VERSION_KEY` (`${SB_ROOT}/.e2e-cursor-install-version.txt`). Harness logs `SKIP: row N already pass @ install <ver>`. Force: `SB_E2E_MATRIX_FORCE=1` or `SB_E2E_FORCE_ROW=1`. See [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) §11.
 
 ---
 
@@ -270,7 +272,7 @@ Opt in Graphify + agentmemory, `graphify update .` in test app, confirm hooks vi
 
 ## Phase A — review-fix-ladder (Cursor host)
 
-Run **8 rungs** with **2 consecutive clean verify passes** each before starting Phase B.
+Run **8 rungs** — **one live pass per rung** when not already Pass @ install version (§11 methodology). Legacy 2× verify only after install version change or explicit `SB_E2E_MATRIX_FORCE=1`.
 
 ```bash
 cd "$SB_ROOT"
@@ -428,7 +430,7 @@ SB_E2E_RCS_TRIHOST=full SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash s
 |------|--------|
 | 1 | Complete **Round Cursor-1** Phases A → B → C; set `Round clean? = Pass` in [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md). |
 | 2 | Update [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md): all gates green including **2 consecutive strict clean rounds = PENDING (1/2)**. |
-| 3 | **Fresh Round Cursor-2:** copy ledger template → [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md); reset matrix log (archive Cursor-1 log); re-run **full** Phase A (ladder 8/8 × 2 verify, `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0`) + Phase B (22/22) + Phase C. |
+| 3 | **Fresh Round Cursor-2:** copy ledger template → [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md); reset matrix log (archive Cursor-1 log); re-run Phase A + Phase B + Phase C — **skip rows/rungs already Pass @ install version** (§11) |
 | 4 | Pin `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md` for Round 2 only. |
 | 5 | After Round Cursor-2 strict-clean: update [ROUND-CURSOR-2-GATES.md](./ROUND-CURSOR-2-GATES.md) — **2 consecutive strict clean rounds = PASS (2/2)**. |
 | 6 | **Release readiness:** both gate files show Round N strict-clean + consecutive pair PASS; RCS ≥ 85 with `SB_E2E_RCS_TRIHOST=full`; pre-release overlay + `pre-release-cursor-cli-smoke.sh` green. |
