@@ -2,6 +2,18 @@
 
 > **Poll checkpoint** 2026-07-01T07:05Z — driver **32939** ALIVE (~1h12m). **Do not kill mid-row** (operator policy). ENOTFOUND poll retry OK @ 2026-07-01T07:05Z.
 
+## Methodology session checkpoint 2026-07-01T09:15Z (main @ ea959ce4)
+
+| Field | Value |
+|-------|-------|
+| SB repo | `main` @ `ea959ce4` (**no branch switch**) |
+| Test-app | `enterprise-e2e/round-8-claude` @ `8482e60` (reset + clean) |
+| Harness fixes | Gate 2 `SB_E2E_MATRIX_FAIL_ON_SKIP=1`; restored `scripts/enterprise-e2e/lib/`; post-Gate-0 `sync-codex-package`; dry-run warn on clean fixture when `SB_ENTERPRISE_E2E_LIVE=1` |
+| Preflight Gate 0+1 | **PASS** — Gate 0 skipped (`SB_E2E_PREFLIGHT_SKIP_SURFACE=1` re-run); Gate 1 green + dry-run warn |
+| Smoke (live FORCE) | **IN PROGRESS** — tmux `r8-claude-smoke`; matrix PID **49245**; rows **1/3/6 live PASS**; row **11** TUI active; rows 21–22 pending |
+| Smoke log | [.e2e-r8-claude-smoke-live.log](../../.e2e-r8-claude-smoke-live.log) |
+| R8 resume FORCE 3–22 | **NOT launched** — awaiting smoke PASS (0 SKIP, all six rows live) |
+
 ## Branch / fixture policy (Round 8 Claude)
 
 | Item | Value |
