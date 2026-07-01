@@ -35,11 +35,19 @@ assert_contains() {
 
 assert_contains "live-test calls branch preflight" \
   "${REPO_ROOT}/scripts/enterprise-e2e/live-test.sh" \
-  "enterprise_e2e_ensure_test_app_branch"
+  "enterprise_e2e_assert_test_app_branch"
 
 assert_contains "matrix calls branch preflight" \
   "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
-  "enterprise_e2e_ensure_test_app_branch"
+  "enterprise_e2e_assert_test_app_branch"
+
+assert_contains "test app branch assert helper" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh" \
+  "enterprise_e2e_assert_test_app_branch"
+
+assert_contains "hosts.json cursor test app root worktree" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
+  "enterprise-grade-test-app-cursor"
 
 assert_contains "hosts.json cursor test app branch" \
   "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \

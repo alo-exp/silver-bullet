@@ -117,7 +117,7 @@ assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_
 assert_contains "live common token gateway preflight" "$COMMON_LIB" "enterprise_e2e_preflight_claude_token_gateway"
 assert_contains "live common sources test app branch module" "$COMMON_LIB" "test-app-branch.sh"
 assert_contains "test app branch ensure helper" "${REPO_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh" "enterprise_e2e_ensure_test_app_branch"
-assert_contains "live entrypoint test app branch preflight" "$LIVE" "enterprise_e2e_ensure_test_app_branch"
+assert_contains "live entrypoint test app branch preflight" "$LIVE" "enterprise_e2e_assert_test_app_branch"
 assert_contains "round8 driver pins test app branch" "${REPO_ROOT}/.planning/enterprise-e2e/round8-matrix-driver.sh" "SB_E2E_TEST_APP_BRANCH"
 assert_contains "test app branch policy doc" "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" "enterprise-e2e/round-1-cursor"
 assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_host"
@@ -128,7 +128,7 @@ assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
 # --- Matrix runner learnings ---
 MATRIX="$HARNESS_MATRIX"
-assert_contains "matrix runner test app branch preflight" "$MATRIX" "enterprise_e2e_ensure_test_app_branch"
+assert_contains "matrix runner test app branch preflight" "$MATRIX" "enterprise_e2e_assert_test_app_branch"
 assert_contains "matrix runner harness git branch assert" "$MATRIX" "enterprise_e2e_assert_host_git_branch"
 assert_contains "hosts.json cursor test app branch" "$HARNESS_CONFIG" "enterprise-e2e/round-1-cursor"
 assert_contains "hosts.json cursor harness git branch" "$HARNESS_CONFIG" "enterprise-e2e/cursor"
