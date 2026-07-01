@@ -68,12 +68,23 @@ Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived 
 
 | Run | Result | Notes |
 |-----|--------|-------|
-| 1/2 | **IN PROGRESS** | |
-| 2/2 | **PENDING** | |
+| 1/2 | **PASS** | `12:42Z` @ `a455aeb8` — router-session.md + OUTCOMES |
+| 2/2 | **PASS** | `12:49Z` @ `0de1cf6b` — router-session.md + OUTCOMES |
+
+**T1 verdict:** **PASS** 2/2 · log [`.e2e-matrix-cursor-t1-r2.log`](../../.e2e-matrix-cursor-t1-r2.log)
 
 ---
 
-## review-fix-ladder (8 rungs × 2 clean verify)
+## Phase A + Tier B/C pipeline
+
+**Driver:** `cursor-c2-pipeline-driver.sh` · tmux `cursor-c2-pipeline` · in-session `cursor-ladder-c2-insession`
+
+| Phase | Status |
+|-------|--------|
+| Phase A ladder 8/8 | **IN PROGRESS** |
+| T2 smoke (1,3,6) | **PENDING** |
+| Full matrix 22/22 | **PENDING** |
+| Phase C | **PENDING** |
 
 **Scope:** full re-run required for Round 2.
 
@@ -128,3 +139,17 @@ Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived 
 **Strict-clean:** **NOT CLAIMED** — T0/T1 bootstrap only; full A→B→C pending.
 
 **Next action:** Poll T1 FORCE×2; on PASS proceed Phase A ladder + Tier B smoke (rows 1,3,6) + full matrix.
+
+## Poll checkpoint 2026-07-01T12:53:26Z
+
+| Field | Value |
+|-------|-------|
+| Driver PID | **29899** — **ALIVE** |
+| Exit reason | t1_x2_complete |
+| Batch DONE | **NO** |
+| Ledger pass | **0/22** (reconcile: LEDGER_MISMATCH) |
+| Test-app | `enterprise-e2e/round-8-claude@8482e60` — want `enterprise-e2e/round-2-cursor@8482e60` |
+| Last row ~ | 1 |
+| Methodology gate | A |
+
+**While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
