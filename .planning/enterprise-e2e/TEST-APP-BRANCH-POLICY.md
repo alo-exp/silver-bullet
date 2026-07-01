@@ -8,11 +8,11 @@ Canonical config: [`scripts/enterprise-e2e/config/hosts.json`](../../scripts/ent
 
 Pattern: **`enterprise-e2e/round-{N}-{host}`** where `{host}` is `claude`, `codex`, or `cursor`.
 
-| Host track | SB harness branch (`git_branch`) | Test-app branch (`test_app_git_branch`) | Baseline SHA |
-|------------|----------------------------------|----------------------------------------|--------------|
-| Claude Round 6 | `enterprise-e2e/round6` | `enterprise-e2e/round-6-claude` | `8482e60` |
-| Codex Round 1 | `enterprise-e2e/codex` | `enterprise-e2e/round-1-codex` | `8482e60` |
-| Cursor Round 1 | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` | `8482e60` |
+| Host track | SB harness branch (`git_branch`) | Test-app branch (`test_app_git_branch`) | Test-app root (`test_app_root`) | Baseline SHA |
+|------------|----------------------------------|----------------------------------------|--------------------------------|--------------|
+| Claude Round 6 | `enterprise-e2e/round6` | `enterprise-e2e/round-6-claude` | *(shared default)* | `8482e60` |
+| Codex Round 1 | `enterprise-e2e/codex` | `enterprise-e2e/round-1-codex` | *(shared default)* | `8482e60` |
+| Cursor Round 1 | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` | `8482e60` |
 
 **Legacy aliases (do not reuse for new work):** `enterprise-e2e/round6` (test app, Claude), `enterprise-e2e/round-codex-1` (Codex).
 
@@ -22,7 +22,7 @@ Pattern: **`enterprise-e2e/round-{N}-{host}`** where `{host}` is `claude`, `code
 
 | Variable | Purpose |
 |----------|---------|
-| `SB_TEST_ENTERPRISE_APP_ROOT` | Fixture path (default: `~/projects/enterprise-grade-test-app`) |
+| `SB_TEST_ENTERPRISE_APP_ROOT` | Fixture path (default: `~/projects/enterprise-grade-test-app`; Cursor: from `hosts.json` `test_app_root`) |
 | `SB_E2E_TEST_APP_BRANCH` | Explicit fixture branch (overrides `hosts.json`) |
 | `SB_E2E_TEST_APP_ROUND` | Round number → auto branch `enterprise-e2e/round-N-{host}` |
 | `SB_E2E_TEST_APP_BASELINE_SHA` | Baseline when creating branch (default from `hosts.json`: `8482e60`) |
@@ -34,10 +34,43 @@ Pattern: **`enterprise-e2e/round-{N}-{host}`** where `{host}` is `claude`, `code
 Implementation:
 
 - SB harness assert: `enterprise_e2e_assert_host_git_branch` in [`scripts/enterprise-e2e/lib/host.sh`](../../scripts/enterprise-e2e/lib/host.sh)
-- Test-app ensure: `enterprise_e2e_ensure_test_app_branch` in [`scripts/enterprise-e2e/lib/test-app-branch.sh`](../../scripts/enterprise-e2e/lib/test-app-branch.sh)
+- Test-app assert (fail-fast, no checkout): `enterprise_e2e_assert_test_app_branch` in [`scripts/enterprise-e2e/lib/test-app-branch.sh`](../../scripts/enterprise-e2e/lib/test-app-branch.sh)
+- Test-app ensure (legacy checkout/create): `enterprise_e2e_ensure_test_app_branch` in the same module — manual bootstrap only
 - Invoked from [`scripts/enterprise-e2e/live-test.sh`](../../scripts/enterprise-e2e/live-test.sh) and [`scripts/enterprise-e2e/matrix.sh`](../../scripts/enterprise-e2e/matrix.sh) before matrix rows
 
-**Dirty + wrong branch:** preflight **fails** (refuses checkout that would stomp other agents). **Dirty + correct branch:** OK (matrix work in progress). **Dirty + wrong branch + CREATE_ONLY:** creates branch ref only, no checkout.
+**Dirty + wrong branch:** preflight **fails** (assert refuses checkout that would stomp other agents). **Dirty + correct branch:** OK (matrix work in progress). **Wrong branch:** fail-fast — use a dedicated worktree instead of checking out on the shared clone.
+
+## Cursor worktree isolation
+
+When Codex (or another host) holds the shared clone (`~/projects/enterprise-grade-test-app`) on a different branch with a dirty tree, Cursor matrix rows MUST use a **git worktree** so preflight never touches the shared checkout.
+
+| Item | Value |
+|------|-------|
+| Shared clone (do not checkout for Cursor) | `/Users/shafqat/projects/enterprise-grade-test-app` |
+| Cursor worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
+| Branch | `enterprise-e2e/round-1-cursor` |
+| Baseline | `8482e60` |
+
+Create once (from the shared clone — does not change its HEAD):
+
+```bash
+APP=/Users/shafqat/projects/enterprise-grade-test-app
+WORKTREE=/Users/shafqat/projects/enterprise-grade-test-app-cursor
+BRANCH=enterprise-e2e/round-1-cursor
+BASELINE=8482e60
+
+cd "$APP"
+git fetch origin 2>/dev/null || true
+if ! git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
+  git branch "${BRANCH}" "${BASELINE}"
+fi
+if [[ ! -d "$WORKTREE" ]]; then
+  git worktree add "$WORKTREE" "$BRANCH"
+fi
+git -C "$WORKTREE" status -sb
+```
+
+Harness picks up `hosts.json` → `hosts.cursor.test_app_root` automatically when `SB_E2E_LIVE_RUNTIME=cursor` (or `--host cursor`).
 
 ## Create Cursor Round 1 branch (without disturbing in-flight batch)
 
