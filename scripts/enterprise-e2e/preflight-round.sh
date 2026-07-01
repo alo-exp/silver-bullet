@@ -75,6 +75,9 @@ if [[ "$HARNESS_ONLY" != "1" && "${SB_E2E_PREFLIGHT_SKIP_SURFACE:-0}" != "1" && 
     bash "${SB_ROOT}/scripts/validate-host-install-surface.sh" --repo-root "$SB_ROOT" --host "$HOST"
   run_step "Gate 0: tri-host install smoke" \
     bash "${SB_ROOT}/scripts/run-tri-host-install-smoke.sh" --host "$HOST"
+  # install-claude prune removes host-bundles/ — restore before Gate 1 structural checks
+  run_step "Gate 0: sync host-bundles after install smoke" \
+    bash "${SB_ROOT}/scripts/sync-codex-package.sh"
 else
   echo "Gate 0: SKIPPED (--harness-only or SB_E2E_PREFLIGHT_SKIP_SURFACE=1 or SB_E2E_SURFACE_SKIP=1)"
 fi
