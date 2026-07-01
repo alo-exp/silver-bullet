@@ -174,6 +174,11 @@ def main() -> int:
     bypass = env_or_default("CODEX_BYPASS", "0")
     hook_trust_bypass = env_or_default("CODEX_BYPASS_HOOK_TRUST", "0")
     auto_trust_hooks = env_or_default("CODEX_AUTO_TRUST_HOOKS", "0")
+    if env_or_default("SB_E2E_ENTERPRISE_MATRIX", "0") == "1":
+        if auto_trust_hooks != "1":
+            auto_trust_hooks = "1"
+        if hook_trust_bypass != "1":
+            hook_trust_bypass = "1"
     color = env_or_default("CODEX_COLOR", "never")
     transcript_file = env_or_default("CODEX_TRANSCRIPT_FILE", "")
     model = env_or_default("CODEX_MODEL", "")
