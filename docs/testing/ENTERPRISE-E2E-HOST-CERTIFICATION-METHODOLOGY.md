@@ -18,7 +18,12 @@
 | Live test runbook | [`docs/ENTERPRISE-E2E-LIVE-TEST.md`](../ENTERPRISE-E2E-LIVE-TEST.md) |
 | Operator prompt | [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) |
 | Fixture branch policy | [`.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md`](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md) |
+| Round gates template | [`.planning/enterprise-e2e/ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md) |
 | Cherry-pick policy | [`docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) |
+| Preflight script (Gate 0+1) | [`scripts/enterprise-e2e/preflight-round.sh`](../../scripts/enterprise-e2e/preflight-round.sh) |
+| Smoke script (Tier B) | [`scripts/enterprise-e2e/smoke-matrix.sh`](../../scripts/enterprise-e2e/smoke-matrix.sh) |
+| Strict-clean checker | [`scripts/enterprise-e2e/strict-clean-check.sh`](../../scripts/enterprise-e2e/strict-clean-check.sh) |
+| Monitor checkpoint | [`scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh`](../../scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh) |
 
 ---
 
@@ -38,7 +43,39 @@
 
 ---
 
-## 2. What worked / failed (Round Codex-1)
+## 2.1 Gate order (mandatory sequence)
+
+Gates are **sequential**. Do not spend live quota until earlier gates are green.
+
+| Gate | Name | Layer | TUI? | Script / artifact |
+|------|------|-------|------|-------------------|
+| **0** | Install contracts | Surface isolation (D16 / **OUT-SURFACE-01**) | No | `validate-host-install-surface.sh`, `run-tri-host-install-smoke.sh` |
+| **1** | Harness structural | Offline wiring, outcome harness, test-app branch, dry-run matrix | No | `scripts/enterprise-e2e/preflight-round.sh` |
+| **2** | Live smoke | Rows **1, 3, 6, 11, 21, 22** | Yes | `scripts/enterprise-e2e/smoke-matrix.sh` |
+| **3** | Full matrix + strict-clean | 22/22 + Phase C + 2 consecutive clean rounds | Yes | `run-enterprise-e2e-matrix.sh` 1–22 |
+
+```bash
+RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host <host>
+RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --harness-only   # skip Gate 0 during install fix
+
+SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host <host>
+```
+
+**Install contracts before harness live:** Gate 0 must pass before `SB_ENTERPRISE_E2E_LIVE=1` unless operator runs `--harness-only` (document blocker in ledger). `SB_E2E_SURFACE_SKIP=1` is an anti-pattern — `strict-clean-check.sh` fails it.
+
+### Harness truth vs strict-clean (do not conflate)
+
+| Claim | Meaning | Eligible when |
+|-------|---------|---------------|
+| **Harness truth** | Gate 0+1 green — wiring, registries, dry-run, branch policy | Structural tests pass; may skip Gate 0 with `--harness-only` |
+| **Smoke pass** | Gate 2 rows PASS + post-invoke rescore | Live evidence + outcome on smoke subset |
+| **Strict-clean** | Gate 3 — ladder 8/8 + matrix 22/22 + outcome + Phase C + **0 new issues** | `strict-clean-check.sh` exit 0; [ROUND-N-GATES.md](../../.planning/enterprise-e2e/ROUND-N-GATES.md) |
+
+Ledger-only PASS without outcome assessment **does not** count strict-clean. Monitor log-only 22/22 without ledger reconcile is **LEDGER_MISMATCH** — ledger wins.
+
+---
+
+## 2.2 What worked / failed (Round Codex-1)
 
 | Worked | Failed / friction |
 |--------|---------------------|
@@ -54,6 +91,8 @@
 
 ## 3. Tier A / B / C gate model
 
+Maps to §2.1: **Tier A = Gate 0+1**, **Tier B = Gate 2**, **Tier C = Gate 3**.
+
 Gates are **sequential**. Do not start Tier B until Tier A is green. Do not start Tier C until Tier B smoke passes.
 
 ### Summary table
@@ -61,7 +100,7 @@ Gates are **sequential**. Do not start Tier B until Tier A is green. Do not star
 | Tier | Layer | TUI? | Purpose |
 |------|-------|------|---------|
 | **A** | Offline / pre-release structural | **No** | Wiring, registries, surface isolation, outcome harness |
-| **B** | Live smoke (rows **1, 3, 6**) | **Yes** | Router + feature + fast paths before full burn |
+| **B** | Live smoke (rows **1, 3, 6, 11, 21, 22**) | **Yes** | Router + feature + fast + research + parent/child gates |
 | **C** | Full matrix **22/22** + Phase C strict-clean | **Yes** | Release pair gate (2 consecutive strict-clean rounds) |
 
 ### Tier A — offline / pre-release (no TUI)
@@ -83,26 +122,32 @@ Run **all** green before `SB_ENTERPRISE_E2E_LIVE=1`.
 | Host preflight | `bash scripts/run-enterprise-e2e-live-test.sh --host <host> --preflight-only` |
 | Dry-run matrix | `SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME=<host> bash scripts/run-enterprise-e2e-matrix.sh` |
 | Test-app branch structural | `RTK_DISABLED=1 bash tests/scripts/test-enterprise-e2e-test-app-branch.sh` |
+| Test-app branch assert (before driver) | `enterprise_e2e_assert_test_app_branch` via `preflight-round.sh` |
+| Preflight Gate 0+1 bundle | `RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host <host>` |
 | Claims registries | `docs/testing/validation-claims-registry.json`, `docs/testing/pre-release-claims-registry.json` |
 
 **Registries:** validation overlay = 6 outcome/telemetry gate claims; pre-release overlay = feature/install claims (tri-host, catalog, hooks). See [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) §Validation vs pre-release.
 
-### Tier B — live smoke (rows 1, 3, 6)
+### Tier B — live smoke (rows 1, 3, 6, 11, 21, 22)
 
 | Row | WF slug | Why smoke |
 |-----|---------|-----------|
 | 1 | `silver-router` | Routing-only — cheapest live signal |
-| 3 | `silver-feature` | Parent for rows 21–22 — catches orchestrator + implement path |
-| 6 | `silver-fast` | Fast path + hook trust — high signal / lower cost |
+| 3 | `silver-feature` | Parent for rows 21–22 — orchestrator + implement path |
+| 6 | `silver-fast` | Fast path + hook trust |
+| 11 | `silver-research` | Research workflow + ADR path |
+| 21 | internal gate (parent 3) | Parent/child composition gate |
+| 22 | internal gate (parent 3) | Parent/child composition gate |
 
 ```bash
 export SB_ENTERPRISE_E2E_LIVE=1
 export SB_E2E_LIVE_RUNTIME=<host>
-export SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-<HOST>-1-LEDGER.md
-RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
+export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-N-<host>   # pin BEFORE driver
+export SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-<N>-LEDGER.md
+SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host <host>
 ```
 
-**After each row:** post-invoke rescore (§6). **Gate:** all three rows evidence PASS + outcome PASS before Tier C.
+**After each row:** post-invoke rescore (§6). **Gate:** all six rows evidence PASS + outcome PASS before Tier C.
 
 ### Tier C — full matrix + strict-clean
 
@@ -116,7 +161,9 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
    - `bash scripts/lib/enterprise-e2e-ledger-reconcile.sh <matrix-log>`
    - `SB_E2E_RCS_TRIHOST=full bash scripts/enterprise-e2e-rcs.sh` (RCS ≥ 85)
 
-**Strict-clean** = ladder 8/8 + matrix 22/22 + every row `enterprise_e2e_outcome_row_passes` + blocking autonomy gates + Phase C green + **0 new issues** vs baseline (`docs/issues/ENTERPRISE-E2E-SB-ISSUES.md`).
+**Strict-clean** = ladder 8/8 + matrix 22/22 + every row `enterprise_e2e_outcome_row_passes` + blocking autonomy gates + Phase C green + **0 new issues** vs baseline + **no** `SB_E2E_SURFACE_SKIP=1`.
+
+Verify: `bash scripts/enterprise-e2e/strict-clean-check.sh --ledger "$SB_E2E_LEDGER_FILE"`
 
 **Release:** 2 consecutive strict-clean rounds per host ([`ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md)).
 
@@ -134,19 +181,20 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 
 **Rules:**
 
-1. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
-2. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
-3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
-4. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
+1. **Pin test-app branch before driver** — export `SB_E2E_TEST_APP_BRANCH` and run `preflight-round.sh` before matrix (Round 8 branch-miss lesson).
+2. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
+3. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
+4. **Dirty + correct branch:** OK. **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+5. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
 
 ---
 
 ## 5. Cherry-pick policy (no main switch for deploy)
 
-- **Harness fixes** commit on host branch (`enterprise-e2e/codex`, `enterprise-e2e/cursor`, `enterprise-e2e/round6`).
-- **Verified fixes** cherry-pick to `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) — paths only when mixed with ledger noise.
-- **Do not** switch live matrix driver to `main` mid-round for deploy; re-run host install (`install-codex.sh`, etc.) from pinned SB SHA on host branch.
-- **Docs on `main`** (this file) are the cross-agent share surface; host prompts link here.
+- **Harness fixes** land on `main` when verified; host tracks cherry-pick **from** `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md).
+- Cherry-pick **onto** `main` while on `main`: `git cherry-pick <sha>` for harness-only commits.
+- **Do not** switch live matrix driver SB branch mid-round; re-run host install from pinned SHA.
+- **Docs + harness on `main`** are the cross-agent share surface.
 
 ---
 
@@ -183,6 +231,21 @@ Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSES
 | Watchers | Prefer **durable daemon** (`run-enterprise-e2e-matrix.sh` / tmux batch) — not agent-shell poll loops as primary driver |
 | Parent orchestrator | One `composer-2.5` background worker; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
+| Checkpoint format | `bash scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh [--append LEDGER.md]` |
+
+### Standard monitor checkpoint
+
+| Field | Value |
+|-------|-------|
+| Driver PID | `<pid>` — **ALIVE** / **DEAD** |
+| Exit reason | `45m_checkpoint` / — |
+| Batch DONE | **YES** / **NO** |
+| Ledger pass | **X/22** (reconcile status) |
+| Test-app | `have@sha` — want `expected@baseline` |
+| Last row ~ | N |
+| Methodology gate | A / B / B-in-progress / C |
+
+**While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
 
@@ -194,11 +257,12 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 
 1. **Separate SB git branches** per host — never commit Codex harness to `enterprise-e2e/cursor` or Claude `round6`.
 2. **Separate fixture branches** per host — see §4.
-3. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
-4. **Never** `pkill` another host's monitor/driver PIDs.
-5. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
-6. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
-7. **Single workspace per host** for SB fixes — test app is matrix CWD only.
+3. **No cross-host wait** — Claude tracks do **not** block on Codex quota or driver state; each host runs Gate 0→1→2→3 independently.
+4. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
+5. **Never** `pkill` another host's monitor/driver PIDs.
+6. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
+7. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+8. **Single workspace per host** for SB fixes — test app is matrix CWD only.
 
 ---
 
