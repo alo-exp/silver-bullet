@@ -32,12 +32,17 @@ enterprise_e2e_apply_test_app_branch_defaults() {
   host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
   if [[ -z "${SB_E2E_TEST_APP_BRANCH:-}" ]]; then
     branch="$(enterprise_e2e_host_config_get test_app_git_branch "$host" 2>/dev/null || true)"
-    [[ -n "$branch" ]] && export SB_E2E_TEST_APP_BRANCH="$branch"
+    if [[ -n "$branch" ]]; then
+      export SB_E2E_TEST_APP_BRANCH="$branch"
+    fi
   fi
   if [[ -z "${SB_E2E_TEST_APP_BASELINE_SHA:-}" ]]; then
     baseline="$(enterprise_e2e_host_config_get test_app_git_baseline_sha "$host" 2>/dev/null || true)"
-    [[ -n "$baseline" ]] && export SB_E2E_TEST_APP_BASELINE_SHA="$baseline"
+    if [[ -n "$baseline" ]]; then
+      export SB_E2E_TEST_APP_BASELINE_SHA="$baseline"
+    fi
   fi
+  return 0
 }
 
 # Priority: explicit env → derived round-N-host → hosts.json default.

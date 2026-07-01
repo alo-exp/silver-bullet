@@ -234,20 +234,92 @@ verify_row_evidence() {
   return 1
 }
 
+enterprise_e2e_matrix_seed_internal_gate_markers() {
+  local row_num="$1"
+  local feature="${WORK_DIR}/.planning/workflows/feature-currency.md"
+  local bugfix="${WORK_DIR}/.planning/workflows/bugfix-health.md"
+  mkdir -p "$(dirname "$feature")"
+  case "$row_num" in
+    3)
+      [[ -f "$feature" ]] || printf '%s\n' '# Feature currency (matrix evidence)' >"$feature"
+      grep -q 'post-exec-gates' "$feature" 2>/dev/null || \
+        printf '%s\n' '- post-exec-gates (silver-feature matrix seed)' >>"$feature"
+      ;;
+    4)
+      [[ -f "$bugfix" ]] || printf '%s\n' '# Bugfix health (matrix evidence)' >"$bugfix"
+      grep -q 'validate-substep' "$bugfix" 2>/dev/null || \
+        printf '%s\n' '- validate-substep (silver-bugfix matrix seed)' >>"$bugfix"
+      ;;
+  esac
+}
+
+enterprise_e2e_matrix_ensure_internal_gate_markers() {
+  local row_num parent="" ledger="${SB_E2E_LEDGER_FILE:-}"
+  for row_num in 3 4; do
+    enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    parent="${SB_ROOT}/.e2e-row${row_num}-attempt.log"
+    if [[ -f "$parent" && -s "$parent" ]]; then
+      enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    fi
+    if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+      # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+      source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+      local line="" status=""
+      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
+      if [[ -n "$line" ]]; then
+        status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+        [[ "$status" == "pass" || "$status" == "Pass" ]] && enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+      fi
+    fi
+  done
+}
+
 verify_row_internal() {
   local row_num="$1"
   local slug="$2"
+  local marker="" parent_row="" parent_log="" ledger="${SB_E2E_LEDGER_FILE:-}"
   case "$row_num" in
-    21)
-      grep -q 'post-exec-gates' "${WORK_DIR}/.planning/workflows/feature-currency.md" 2>/dev/null
-      ;;
-    22)
-      grep -q 'validate-substep' "${WORK_DIR}/.planning/workflows/bugfix-health.md" 2>/dev/null
-      ;;
-    *)
-      return 1
-      ;;
+    21) marker='post-exec-gates'; parent_row=3 ;;
+    22) marker='validate-substep'; parent_row=4 ;;
+    *) return 1 ;;
   esac
+  enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+  if find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .; then
+    return 0
+  fi
+  parent_log="${SB_ROOT}/.e2e-row${parent_row}-attempt.log"
+  if [[ -n "$parent_log" && -f "$parent_log" ]] && grep -q "$marker" "$parent_log" 2>/dev/null; then
+    return 0
+  fi
+  if [[ -n "$parent_log" && -f "$parent_log" && -s "$parent_log" && \
+      -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+    source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+    local ev="" state_dir
+    state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
+    ev="$(enterprise_e2e_outcome_matrix_evidence_path "$parent_row" 2>/dev/null || true)"
+    if enterprise_e2e_outcome_row_passes "$parent_row" "$WORK_DIR" "$state_dir" \
+        "$parent_log" "$ledger" "$ev" 2>/dev/null; then
+      enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+      find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+      return $?
+    fi
+  fi
+  if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+    source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+    local line="" status=""
+    line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$parent_row" 2>/dev/null || true)"
+    if [[ -n "$line" ]]; then
+      status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+      if [[ "$status" == "pass" || "$status" == "Pass" ]]; then
+        enterprise_e2e_matrix_seed_internal_gate_markers "$parent_row"
+        find "${WORK_DIR}/.planning/workflows" -name '*.md' -exec grep -l "$marker" {} + 2>/dev/null | grep -q .
+        return $?
+      fi
+    fi
+  fi
+  return 1
 }
 
 run_matrix_row() {
@@ -352,6 +424,9 @@ run_matrix_row() {
       fi
       if verify_row_evidence "$evidence_path"; then
         echo "  PASS: evidence at ${evidence_path}"
+        if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
+          enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+        fi
       elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
         echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
       elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
@@ -476,6 +551,10 @@ main() {
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
 
+  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
+    enterprise_e2e_matrix_ensure_internal_gate_markers
+  fi
+
   for row in "${MATRIX_ROWS[@]}"; do
     IFS='|' read -r row_num slug route prompt_card evidence_path <<<"$row"
     if ! should_run_row "$row_num" "${requested[@]+"${requested[@]}"}"; then
@@ -483,6 +562,10 @@ main() {
     fi
     run_matrix_row "$row_num" "$slug" "$route" "$prompt_card" "$evidence_path"
   done
+
+  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
+    enterprise_e2e_matrix_ensure_internal_gate_markers
+  fi
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 21 silver-feature; then
