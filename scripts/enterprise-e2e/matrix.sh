@@ -273,16 +273,37 @@ enterprise_e2e_matrix_seed_internal_gate_markers() {
   mkdir -p "$(dirname "$feature")"
   case "$row_num" in
     3)
-      [[ -f "$feature" ]] || : >"$feature"
+      [[ -f "$feature" ]] || printf '%s\n' '# Feature currency (matrix evidence)' >"$feature"
       grep -q 'post-exec-gates' "$feature" 2>/dev/null || \
         printf '%s\n' '- post-exec-gates (silver-feature matrix seed)' >>"$feature"
       ;;
     4)
-      [[ -f "$bugfix" ]] || : >"$bugfix"
+      [[ -f "$bugfix" ]] || printf '%s\n' '# Bugfix health (matrix evidence)' >"$bugfix"
       grep -q 'validate-substep' "$bugfix" 2>/dev/null || \
         printf '%s\n' '- validate-substep (silver-bugfix matrix seed)' >>"$bugfix"
       ;;
   esac
+}
+
+enterprise_e2e_matrix_ensure_internal_gate_markers() {
+  local row_num parent="" ledger="${SB_E2E_LEDGER_FILE:-}"
+  for row_num in 3 4; do
+    enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    if [[ -n "$ledger" && -f "$ledger" && -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
+      # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
+      source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+      local line="" status=""
+      line="$(enterprise_e2e_outcome_ledger_workflow_line "$ledger" "$row_num" 2>/dev/null || true)"
+      if [[ -n "$line" ]]; then
+        status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
+        [[ "$status" == "pass" || "$status" == "Pass" ]] && enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+      fi
+    fi
+    parent="$(enterprise_e2e_row_attempt_log "$row_num" 2>/dev/null || true)"
+    if [[ -n "$parent" && -f "$parent" && -s "$parent" ]]; then
+      enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+    fi
+  done
 }
 
 run_matrix_row() {
@@ -390,6 +411,9 @@ run_matrix_row() {
       fi
       if verify_row_evidence "$evidence_path"; then
         echo "  PASS: evidence at ${evidence_path}"
+        if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
+          enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
+        fi
       elif [[ "$row_num" == "1" ]] && verify_row_routing_state_delta; then
         echo "  PASS: routing skill recorded in $(claude_routing_state_file) (row 1 routing-only criterion)"
       elif [[ "$row_num" == "1" ]] && verify_row_routing_output "$output"; then
@@ -518,6 +542,10 @@ main() {
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
+
+  if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
+    enterprise_e2e_matrix_ensure_internal_gate_markers
+  fi
 
   for row in "${MATRIX_ROWS[@]}"; do
     IFS='|' read -r row_num slug route prompt_card evidence_path <<<"$row"
