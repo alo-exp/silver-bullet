@@ -15,9 +15,11 @@ from typing import Optional, Tuple
 
 
 ANSI_RE = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-SPINNER_CHARS_RE = re.compile(r"[⠁-⠿⌛⏳]")
+SPINNER_CHARS_RE = re.compile(r"[\u2800-\u28FF⌛⏳…]+")
 ACTIVITY_NOISE_RE = re.compile(
-    r"(\d+/\d+|\d+m\d+s|\d+(\.\d+)?ktokens|\d+tokens|openaicodex|enterprise-grade-test-app)"
+    r"(\d+/\d+|\d+m\d+s|\d+(\.\d+)?s\b|\d+(\.\d+)?%|\d+(\.\d+)?ktokens|\d+tokens"
+    r"|openaicodex|enterprise-grade-test-app"
+    r"|esc(?:ape)?tointerrupt|thinking|working|spinner|loading)"
 )
 
 
@@ -32,6 +34,39 @@ def strip_ansi(text: str) -> str:
 
 def compact_text(text: str) -> str:
     return re.sub(r"\s+", "", text).lower()
+
+
+def apply_terminal_overwrites(text: str) -> str:
+    """Collapse \\r/\\b spinner lines so PTY noise does not shift fingerprints."""
+    out: list[str] = []
+    line: list[str] = []
+    for ch in text:
+        if ch == "\r":
+            line = []
+        elif ch == "\b":
+            if line:
+                line.pop()
+        elif ch == "\n":
+            out.append("".join(line))
+            line = []
+        else:
+            line.append(ch)
+    if line:
+        out.append("".join(line))
+    return "\n".join(out)
+
+
+def append_terminal_text(existing: str, chunk: str, max_len: int = 40000) -> str:
+    for ch in chunk:
+        if ch == "\r":
+            last_nl = existing.rfind("\n")
+            existing = existing[: last_nl + 1] if last_nl >= 0 else ""
+        elif ch == "\b":
+            if existing and existing[-1] != "\n":
+                existing = existing[:-1]
+        else:
+            existing += ch
+    return existing[-max_len:]
 
 
 def load_prompt(prompt_path: str) -> str:
@@ -68,7 +103,8 @@ def native_prompt_ready(text: str) -> bool:
 
 
 def activity_fingerprint(text: str) -> str:
-    compact = compact_text(text)
+    normalized = apply_terminal_overwrites(strip_ansi(text))
+    compact = compact_text(normalized)
     compact = SPINNER_CHARS_RE.sub("", compact)
     compact = ACTIVITY_NOISE_RE.sub("", compact)
     return compact[-8000:]
@@ -163,6 +199,41 @@ def child_returncode(pid: int) -> Tuple[bool, Optional[int]]:
     return True, 1
 
 
+def terminate_child(child_pid: int, *, grace: float = 3.0) -> None:
+    """SIGTERM then SIGKILL; never block indefinitely in waitpid."""
+
+    def _signal(sig: int) -> None:
+        try:
+            os.kill(child_pid, sig)
+        except OSError:
+            pass
+        try:
+            os.killpg(child_pid, sig)
+        except OSError:
+            pass
+
+    _signal(signal.SIGTERM)
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        exited, _ = child_returncode(child_pid)
+        if exited:
+            return
+        time.sleep(0.05)
+
+    _signal(signal.SIGKILL)
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        exited, _ = child_returncode(child_pid)
+        if exited:
+            return
+        time.sleep(0.05)
+
+    try:
+        os.waitpid(child_pid, os.WNOHANG)
+    except ChildProcessError:
+        pass
+
+
 def main() -> int:
     timeout = int(env_or_default("CODEX_INTERACTIVE_TIMEOUT", "900"))
     ready_timeout = int(env_or_default("CODEX_INTERACTIVE_READY_TIMEOUT", "20"))
@@ -231,6 +302,7 @@ def main() -> int:
         pass
 
     start = time.monotonic()
+    hard_deadline = start + timeout
     last_activity = start
     idle_timeout = int(env_or_default("CODEX_INTERACTIVE_IDLE_TIMEOUT", "1800"))
     prompt_submitted = False
@@ -247,16 +319,12 @@ def main() -> int:
     try:
         while True:
             now = time.monotonic()
-            if now - start > timeout:
-                print("ERROR: timed out waiting for Codex prompt to complete", file=sys.stderr)
-                try:
-                    os.killpg(child_pid, signal.SIGTERM)
-                except OSError:
-                    pass
-                try:
-                    os.waitpid(child_pid, 0)
-                except ChildProcessError:
-                    pass
+            if now >= hard_deadline:
+                print(
+                    f"ERROR: hard timeout ({timeout}s) exceeded waiting for Codex prompt to complete",
+                    file=sys.stderr,
+                )
+                terminate_child(child_pid)
                 return 1
 
             read_ready, _, _ = select.select([master_fd], [], [], 1.0)
@@ -267,17 +335,10 @@ def main() -> int:
                     if getattr(exc, "errno", None) in (errno.EAGAIN, errno.EWOULDBLOCK):
                         if now - last_activity >= idle_timeout:
                             print(
-                                f"ERROR: no Codex PTY output for {idle_timeout}s (idle watchdog)",
+                                f"ERROR: no substantive Codex PTY output for {idle_timeout}s (idle watchdog)",
                                 file=sys.stderr,
                             )
-                            try:
-                                os.killpg(child_pid, signal.SIGTERM)
-                            except OSError:
-                                pass
-                            try:
-                                os.waitpid(child_pid, 0)
-                            except ChildProcessError:
-                                pass
+                            terminate_child(child_pid)
                             return 1
                         continue
                     raise
@@ -288,10 +349,10 @@ def main() -> int:
                 stdout_forwarding_enabled = forward_stdout(chunk, stdout_forwarding_enabled)
                 decoded = chunk.decode("utf-8", errors="replace")
                 plain = strip_ansi(decoded)
-                text_buffer = (text_buffer + plain)[-40000:]
+                text_buffer = append_terminal_text(text_buffer, plain)
                 compact_buffer = compact_text(text_buffer)
                 if prompt_submitted:
-                    text_since_prompt = (text_since_prompt + plain)[-40000:]
+                    text_since_prompt = append_terminal_text(text_since_prompt, plain)
                     if plain.strip():
                         saw_post_submit_output = True
                 new_activity_fp = activity_fingerprint(text_buffer)
@@ -355,14 +416,7 @@ def main() -> int:
                         continue
 
                 if prompt_submitted and saw_post_submit_output and completion_prompt_returned(text_buffer):
-                    try:
-                        os.killpg(child_pid, signal.SIGTERM)
-                    except OSError:
-                        pass
-                    try:
-                        os.waitpid(child_pid, 0)
-                    except ChildProcessError:
-                        pass
+                    terminate_child(child_pid)
                     return 0
 
             exited, returncode = child_returncode(child_pid)
@@ -371,40 +425,19 @@ def main() -> int:
 
             if now - last_activity >= idle_timeout:
                 print(
-                    f"ERROR: no Codex PTY output for {idle_timeout}s (idle watchdog)",
+                    f"ERROR: no substantive Codex PTY output for {idle_timeout}s (idle watchdog)",
                     file=sys.stderr,
                 )
-                try:
-                    os.killpg(child_pid, signal.SIGTERM)
-                except OSError:
-                    pass
-                try:
-                    os.waitpid(child_pid, 0)
-                except ChildProcessError:
-                    pass
+                terminate_child(child_pid)
                 return 1
 
             if prompt_submitted and saw_post_submit_output and now - last_activity >= quiet_timeout:
-                try:
-                    os.killpg(child_pid, signal.SIGTERM)
-                except OSError:
-                    pass
-                try:
-                    os.waitpid(child_pid, 0)
-                except ChildProcessError:
-                    pass
+                terminate_child(child_pid)
                 return 0
 
             if prompt_submitted and not saw_post_submit_output and prompt_submitted_at is not None and now - prompt_submitted_at >= ready_timeout:
                 print("ERROR: timed out waiting for Codex to accept the submitted prompt", file=sys.stderr)
-                try:
-                    os.killpg(child_pid, signal.SIGTERM)
-                except OSError:
-                    pass
-                try:
-                    os.waitpid(child_pid, 0)
-                except ChildProcessError:
-                    pass
+                terminate_child(child_pid)
                 return 1
 
             if not prompt_submitted and now - start > ready_timeout and not native_prompt_ready(text_buffer):
