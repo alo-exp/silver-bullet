@@ -643,9 +643,10 @@ enterprise_e2e_outcome_score_intent() {
 }
 
 enterprise_e2e_outcome_score_km() {
-  local ledger_file="${1:-}" row_num="${2:-}" row_log="${3:-}" work_dir="${4:-}"
+  local ledger_file="${1:-}" row_num="${2:-}" row_log="${3:-}" work_dir="${4:-}" evidence="${5:-}"
   local line="" gref="" aref="" status=""
   work_dir="${work_dir:-${SB_TEST_ENTERPRISE_APP_ROOT:-}}"
+  evidence="$(enterprise_e2e_outcome_resolve_evidence "$evidence" "$row_num" "$row_log" "$work_dir")"
   local has_am=0 has_gf=0
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]]; then
@@ -671,6 +672,17 @@ enterprise_e2e_outcome_score_km() {
   if [[ -n "$gref" ]] && enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
     if [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
        enterprise_e2e_outcome_log_has_workflow_evidence_written "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+  fi
+  # Matrix harness: preflight graphify query in row_log + graph.json + row evidence satisfies KM
+  # when TUI sessions do not emit agentmemory MCP tool lines (matrix strips non-essential MCP).
+  if enterprise_e2e_outcome_log_has_graphify_activity "$row_log" && \
+     [[ -f "${work_dir}/graphify-out/graph.json" ]]; then
+    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_log_has_workflow_evidence_written "$row_log"; then
       printf 'pass\n'; return 0
     fi
   fi
@@ -994,7 +1006,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-GATES-01) enterprise_e2e_outcome_score_gates "$work_dir" "$row_num" ;;
     OUT-TRACE-01) enterprise_e2e_outcome_score_trace "$work_dir" ;;
     OUT-INTENT-01) enterprise_e2e_outcome_score_intent "$work_dir" "$evidence" "$row_num" "$state_dir" ;;
-    OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" "$work_dir" ;;
+    OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" "$work_dir" "$evidence" ;;
     OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
     OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
