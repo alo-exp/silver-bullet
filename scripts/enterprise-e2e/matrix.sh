@@ -25,6 +25,10 @@ LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-L
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
 
 export SB_E2E_ENTERPRISE_MATRIX=1
+if [[ "$MATRIX_HOST" == "codex" ]]; then
+  export CODEX_AUTO_TRUST_HOOKS=1
+  export CODEX_BYPASS_HOOK_TRUST=1
+fi
 if [[ "$MATRIX_HOST" == "claude" ]]; then
   export CLAUDE_USE_INTERACTIVE=1
 fi
@@ -416,6 +420,11 @@ run_matrix_row() {
       echo "  launching interactive ${MATRIX_HOST} session..."
     fi
     : >"$row_log"
+    # Preflight graphify into row_log so OUT-KM-01 can score matrix harness activity (TUI may not echo graphify).
+    printf '%s\n' "${graphify_ref}" >>"$row_log"
+    if command -v graphify >/dev/null 2>&1; then
+      (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" >>"$row_log" 2>&1) || true
+    fi
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
