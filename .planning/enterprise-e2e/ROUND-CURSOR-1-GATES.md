@@ -16,9 +16,8 @@
 
 ### Latest
 
-- **retry3d:** rows 4, 20 live PASS; 21–22 internal FAIL (markers wiped)
-- **retry3e @098f48c6:** rows **21–22 internal PASS** (parent-log/ledger seed fix)
-- DNS `agentn.global.api5.cursor.sh` restored
+- **retry3f @b2b3f073:** tmux `cursor-e2e-retry3f` — rows **6 7 12 14 15 16 18** **IN FLIGHT** (row 6 launched)
+- Diagnosis: 15/16/18 rescore PASS on existing logs; 6/7/12/14 need live non-timeout sessions
 
 ### Gates
 
