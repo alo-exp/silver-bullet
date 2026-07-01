@@ -51,7 +51,7 @@ if [[ ! -f "$LEDGER" ]]; then
 fi
 
 reconcile_status="$(enterprise_e2e_ledger_reconcile_status)"
-read -r pass_count total_count _ < <(enterprise_e2e_ledger_pass_summary "$ledger")
+read -r pass_count total_count _ < <(enterprise_e2e_ledger_pass_summary "$LEDGER")
 
 echo "Ledger reconcile status: ${reconcile_status}"
 echo "Ledger Pass rows: ${pass_count:-0}/${total_count:-0}"
