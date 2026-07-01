@@ -819,13 +819,14 @@ enterprise_e2e_outcome_score_skill() {
 }
 
 enterprise_e2e_outcome_score_review() {
-  local ledger_file="$1"
+  local ledger_file="$1" ladder_section=""
   [[ -f "$ledger_file" ]] || { printf 'fail\n'; return 0; }
-  if grep -q 'review-fix-ladder' "$ledger_file" && \
-     awk '/^\| [1-8] \|/{c++} END{exit (c>=8?0:1)}' "$ledger_file" 2>/dev/null; then
-    if grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
+  ladder_section="$(awk '/review-fix-ladder/{found=1; next} found && /^## /{exit} found{print}' "$ledger_file")"
+  [[ -n "$ladder_section" ]] || { printf 'fail\n'; return 0; }
+  if printf '%s\n' "$ladder_section" | awk '/^\| [1-8] \|/{c++} END{exit (c>=8?0:1)}' 2>/dev/null; then
+    if printf '%s\n' "$ladder_section" | grep -E '^\| [1-8] \|' | grep -cvE '\*\*Pass\*\*| Pass | PASS' >/dev/null 2>&1; then
       local fails
-      fails="$(grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' || true)"
+      fails="$(printf '%s\n' "$ladder_section" | grep -E '^\| [1-8] \|' | grep -cvE '\*\*Pass\*\*| Pass | PASS' || true)"
       [[ "${fails:-0}" -eq 0 ]] && { printf 'pass\n'; return 0; }
     else
       printf 'pass\n'; return 0
