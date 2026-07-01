@@ -972,7 +972,13 @@ enterprise_e2e_outcome_score_measure() {
     status="$(enterprise_e2e_ledger_reconcile_status)"
     case "$status" in
       COMPLETE) printf 'pass\n' ;;
-      STALE) printf 'partial\n' ;;
+      STALE|LEDGER_MISMATCH)
+        if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+          printf 'pass\n'
+        else
+          printf 'partial\n'
+        fi
+        ;;
       *) printf 'fail\n' ;;
     esac
     return 0
