@@ -156,6 +156,19 @@ should_run_row() {
   return 1
 }
 
+# When callers pass explicit row numbers, honor argv order (not MATRIX_ROWS definition order).
+matrix_row_execution_order() {
+  local row row_num
+  if [[ "$#" -gt 0 ]]; then
+    printf '%s\n' "$@"
+    return 0
+  fi
+  for row in "${MATRIX_ROWS[@]}"; do
+    IFS='|' read -r row_num _ _ _ _ <<<"$row"
+    printf '%s\n' "$row_num"
+  done
+}
+
 graphify_query_ref() {
   local slug="$1"
   printf 'graphify query "%s routes hooks skills orchestrator"' "$slug"
@@ -599,12 +612,22 @@ main() {
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
 
-  for row in "${MATRIX_ROWS[@]}"; do
-    IFS='|' read -r row_num slug route prompt_card evidence_path <<<"$row"
-    if ! should_run_row "$row_num" "${requested[@]+"${requested[@]}"}"; then
-      continue
-    fi
-    run_matrix_row "$row_num" "$slug" "$route" "$prompt_card" "$evidence_path"
+  local -a _row_order=()
+  local _rn=""
+  while IFS= read -r _rn; do
+    [[ -z "$_rn" ]] && continue
+    _row_order+=("$_rn")
+  done < <(matrix_row_execution_order "${requested[@]+"${requested[@]}"}")
+  for row_num in "${_row_order[@]}"; do
+    [[ -z "$row_num" ]] && continue
+    local slug="" route="" prompt_card="" evidence_path="" row="" rn=""
+    for row in "${MATRIX_ROWS[@]}"; do
+      IFS='|' read -r rn slug route prompt_card evidence_path <<<"$row"
+      if [[ "$rn" == "$row_num" ]]; then
+        run_matrix_row "$row_num" "$slug" "$route" "$prompt_card" "$evidence_path"
+        break
+      fi
+    done
   done
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
