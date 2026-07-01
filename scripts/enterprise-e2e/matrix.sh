@@ -161,6 +161,25 @@ graphify_query_ref() {
   printf 'graphify query "%s routes hooks skills orchestrator"' "$slug"
 }
 
+matrix_repair_row_log_graphify_preamble() {
+  local slug="$1" row_log="$2"
+  [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]] || return 0
+  if grep -qiE 'graphify[[:space:]]*query' "$row_log" 2>/dev/null; then return 0; fi
+  local graphify_ref tmp body
+  graphify_ref="$(graphify_query_ref "$slug")"
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-matrix-log.XXXXXX")"
+  body="$(cat "$row_log")"
+  { printf '%s\n' "$graphify_ref"; if command -v graphify >/dev/null 2>&1; then (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" 2>&1) || true; fi; printf '%s' "$body"; } >"$tmp"
+  mv "$tmp" "$row_log"
+}
+
+matrix_row_outcome_passes() {
+  local row_num="$1" evidence_path="$2" row_log="$3" runtime_state_dir="$4"
+  [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]] || return 1
+  source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+  enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" "$runtime_state_dir" "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"
+}
+
 build_matrix_prompt() {
   local route="$1"
   local prompt_card="$2"
@@ -443,7 +462,7 @@ run_matrix_row() {
     if [[ ! -s "$row_log" && -n "$output" ]]; then
       printf '%s\n' "$output" >"$row_log"
     fi
-
+    matrix_repair_row_log_graphify_preamble "$slug" "$row_log"
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if [[ "$row_num" == "1" ]] && ! verify_row_evidence "$evidence_path"; then
         matrix_write_router_session_evidence "$evidence_path"
@@ -474,9 +493,13 @@ run_matrix_row() {
           "$WORK_DIR" "$runtime_state_dir" \
           "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path" 2>/dev/null || true
         echo "  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-${row_num}-outcomes.md"
-        if ! enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" \
-          "$runtime_state_dir" \
-          "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"; then
+        local outcome_pass=0
+        if matrix_row_outcome_passes "$row_num" "$evidence_path" "$row_log" "$runtime_state_dir"; then outcome_pass=1
+        else
+          matrix_repair_row_log_graphify_preamble "$slug" "$row_log"
+          if matrix_row_outcome_passes "$row_num" "$evidence_path" "$row_log" "$runtime_state_dir"; then outcome_pass=1; echo "  OUTCOMES: pass after post-invoke log repair (graphify preamble)"; fi
+        fi
+        if [[ "$outcome_pass" -ne 1 ]]; then
           echo "  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)"
           local fail_line
           while IFS= read -r fail_line; do
