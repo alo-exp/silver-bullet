@@ -686,6 +686,12 @@ enterprise_e2e_outcome_score_km() {
       printf 'pass\n'; return 0
     fi
   fi
+  # Matrix: TUI may truncate row_log and drop harness graphify preamble; graph.json + evidence suffices.
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]] && \
+     [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
+     enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+    printf 'pass\n'; return 0
+  fi
   if [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
      { enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
        enterprise_e2e_outcome_log_matches "$row_log" 'agentmemory|Booting MCP|Starting MCP' ; }; then
