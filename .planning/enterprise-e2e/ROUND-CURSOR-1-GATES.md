@@ -72,6 +72,7 @@ run_all_exit:0
 | T1 FORCE×2 | **PASS** |
 | Phase A ladder 8/8 ×2 | **PASS** |
 | `run-all-tests` green (recorded) | **PASS** (r5) |
+| Round strict-clean | **Pass** |
 | Strict-clean Round Cursor-1 | **YES** |
 | Consecutive strict-clean pair | **1 / 2** |
 

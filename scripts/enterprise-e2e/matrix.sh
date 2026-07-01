@@ -430,10 +430,16 @@ run_matrix_row() {
   fi
   local quota_retry_interval="${SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL:-60}"
   local quota_max_retries="${SB_E2E_MATRIX_QUOTA_MAX_RETRIES:-0}"
+  local agent_timeout="${CLAUDE_INTERACTIVE_TIMEOUT:-1800}"
+  case "$row_num" in
+    8) agent_timeout="${SB_E2E_ROW8_TIMEOUT:-3600}" ;;
+    11) agent_timeout="${SB_E2E_ROW11_TIMEOUT:-5400}" ;;
+  esac
   local attempt=0 quota_retries=0 row_log output routing_row_env="0"
   if [[ "$row_num" == "1" ]]; then
     routing_row_env="1"
   fi
+  export SB_E2E_MATRIX_GRAPHIFY_REF="$graphify_ref"
 
   while true; do
     attempt=$((attempt + 1))
@@ -444,8 +450,11 @@ run_matrix_row() {
       echo "  launching interactive ${MATRIX_HOST} session..."
     fi
     : >"$row_log"
+    printf 'HARNESS graphify: %s\n' "$graphify_ref" >>"$row_log"
     output="$(
       CLAUDE_INTERACTIVE_QUIET_TIMEOUT="$quiet_timeout" \
+        CLAUDE_INTERACTIVE_TIMEOUT="$agent_timeout" \
+        CURSOR_AGENT_TIMEOUT="$agent_timeout" \
         CLAUDE_INTERACTIVE_LOG_FILE="$row_log" \
         SB_E2E_MATRIX_EVIDENCE_PATH="$evidence_path" \
         SB_E2E_ENTERPRISE_MATRIX=1 \

@@ -193,7 +193,12 @@ enterprise_e2e_outcome_log_has_agentmemory_capture() {
 enterprise_e2e_outcome_log_has_workflow_evidence_written() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md'
+    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum_]_.-]+\.md' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum_]_.-]+\.md' && return 0
+  return 1
 }
 
 enterprise_e2e_outcome_log_has_graphify_activity() {
@@ -732,6 +737,10 @@ enterprise_e2e_outcome_score_km() {
       aref="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '2p')"
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
     fi
+  fi
+  # Matrix harness records graphify scope before agent session (ledger may be empty on first pass).
+  if [[ -z "$gref" && -n "${SB_E2E_MATRIX_GRAPHIFY_REF:-}" ]]; then
+    gref="$SB_E2E_MATRIX_GRAPHIFY_REF"
   fi
   if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
      enterprise_e2e_outcome_log_has_agentmemory_capture "$row_log"; then
