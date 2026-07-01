@@ -18,9 +18,9 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | Cursor model (frozen) | `composer-2.5` |
 | Operator | TUI monitor agent |
 | Start date | 2026-06-30 |
-| End date | |
-| Round clean? | Fail |
-| Consecutive pair | 0 / 2 *(release requires 2/2 — see ROUND-CURSOR-1-GATES.md)* |
+| End date | 2026-07-01 |
+| Round clean? | **Pass** (strict-clean @ `ee74f598`) |
+| Consecutive pair | **1 / 2** *(release requires 2/2 — see ROUND-CURSOR-2-GATES.md)* |
 
 **Harness artifacts (Cursor-isolated):**
 
@@ -320,3 +320,31 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 | Methodology gate | C |
 
 **While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
+
+---
+
+## Strict-clean gate (2026-07-01 @ `ee74f598`)
+
+**silver-doctor targeted:** 33 passed, 0 failed (`bash tests/scripts/test-silver-doctor.sh`).
+
+**run-all r5** (tmux `cursor-runall-r5`, quiescent tree @ `ee74f598`):
+
+```
+TOTAL: 5070 passed, 0 failed (6/6 suites green)
+run_all_exit:0
+```
+
+Log: [`/tmp/cursor-phasec-run-all-r5.log`](/tmp/cursor-phasec-run-all-r5.log)
+
+| Gate | Status |
+|------|--------|
+| Matrix 22/22 + reconcile | **PASS** |
+| T1 FORCE×2 | **PASS** |
+| Ladder 8/8 ×2 | **PASS** |
+| `run-all-tests` 0 fail (recorded) | **PASS** (r5) |
+| Phase C overlays | **PASS** (prior) |
+| RCS | **100/100** (paper) |
+| **Round strict-clean** | **YES** |
+| **Consecutive pair** | **1 / 2** |
+
+**Round Cursor-2:** eligible to start — see [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) § Round Cursor-2 start criteria. Release sign-off blocked until Cursor-2 strict-clean (**2/2**).
