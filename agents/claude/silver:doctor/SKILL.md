@@ -60,6 +60,7 @@ bash scripts/sb-doctor.sh --fix
 | D14 cache bleed | `bash scripts/install-{Claude Code,Codex,task host}.sh` or `sb-doctor.sh --fix` |
 | D15 token budget | Shorten Claude Code `description` frontmatter in `agents/Claude Code/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
+| D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
 
 Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -69,7 +70,7 @@ Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor su
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D16)
+## Check catalog (D1–D17)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
@@ -87,9 +88,11 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D14 foreign agent namespaces in plugin cache
 - D15 Claude Code agent description token budget
 - D16 repo install surface (`validate-host-install-surface.sh`)
+- D17 host-agnostic SB core (`validate-host-agnostic-core.sh`)
 
 ```bash
 bash scripts/validate-host-install-surface.sh
+bash scripts/validate-host-agnostic-core.sh
 bash scripts/sb-doctor.sh --fix
 ```
 
