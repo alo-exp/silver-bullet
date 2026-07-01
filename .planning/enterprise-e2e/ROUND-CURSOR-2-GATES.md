@@ -24,7 +24,8 @@
 | T0 outcome harness | **PASS** 59/0 |
 | T0 surface validation | **PASS** |
 | T0 branch assert | **PASS** 13/0 |
-| T1 row 1 FORCE×2 | **IN PROGRESS** (tmux `cursor-t1-r2`) |
+| T1 row 1 FORCE×2 | **PASS** 2/2 |
+| Phase A ladder | **IN PROGRESS** (tmux `cursor-c2-pipeline`) |
 
 ### Round gates
 
