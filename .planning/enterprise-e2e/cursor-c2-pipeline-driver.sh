@@ -10,7 +10,9 @@ PIPELINE_MARKER="${SB_ROOT}/.planning/enterprise-e2e/cursor-c2-pipeline.state"
 export SB_ROOT SB_E2E_BRANCH=enterprise-e2e/cursor
 export SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor
 export SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md
-export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_MATRIX_FORCE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
+export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
+# Single-pass-at-install-version: do not blanket FORCE; per-row skip in matrix.sh
+unset SB_E2E_MATRIX_FORCE
 export SB_E2E_SURFACE_SKIP=0 SB_LIVE_CURSOR_FORCE_HEADLESS=1
 export RTK_DISABLED=1 CLAUDE_INTERACTIVE_TIMEOUT=1800
 export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
