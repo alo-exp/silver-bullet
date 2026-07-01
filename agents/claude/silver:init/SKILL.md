@@ -192,7 +192,7 @@ pipx install graphifyy
 
 Re-check `command -v graphify`.
 
-**Step 3b — Skill registration:** Read `recommended_tools.graphify.platform_install_commands.<SB_HOST>.pre_index` from `.silver-bullet.json`. Per-runtime matrices: `scripts/lib/host-install-guides/<SB_HOST>.md`.
+**Step 3b — Skill registration:** Read `recommended_tools.graphify.platform_install_commands.<SB_HOST>.pre_index` from `.silver-bullet.json`. Per-runtime matrices: `scripts/lib/host-install-guides/<SB_HOST>.md` and `hooks/lib/runtime-paths.sh`.
 
 Read `recommended_tools.graphify.platform_install_commands.<host>.pre_index` from `.silver-bullet.json` when present.
 
@@ -367,7 +367,7 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 #### Step 2 — Ask when `null`
 
-Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** secondary host uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
+Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** Codex uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
 
 - **Yes** → `enabled_by_user: true`
 - **No** → `enabled_by_user: false`
