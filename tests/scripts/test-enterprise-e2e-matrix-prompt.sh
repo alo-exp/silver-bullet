@@ -65,7 +65,8 @@ assert_contains "row 5 prompt names ui artifact evidence path" "$row5_prompt" 'u
 assert_not_contains "row 5 prompt avoids native /silver:ui subcommand" "$row5_prompt" '/silver:ui'
 assert_not_contains "row 5 prompt avoids stale workflow md evidence" "$row5_prompt" 'ui-version-badge.md'
 
-matrix_row5="$(grep -F "silver-ui" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" | head -1)"
+MATRIX_SCRIPT="${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh"
+matrix_row5="$(grep -F "silver-ui" "$MATRIX_SCRIPT" | head -1 || true)"
 assert_contains "matrix harness row 5 evidence matches WORKFLOW_E2E_MATRIX.md" "$matrix_row5" 'ui/src/App.jsx'
 
 echo ""

@@ -20,6 +20,10 @@ assert_grep() {
 
 echo "=== recommended-tools policy contract tests ==="
 
+HOST_CURSOR_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/cursor.md"
+HOST_CLAUDE_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/claude.md"
+HOST_CODEX_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/codex.md"
+
 assert_grep "silver-init re-prompts on update when null" \
   "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "Update mode re-prompt"
@@ -87,20 +91,20 @@ codex_post="$(jq -r '.recommended_tools.graphify.platform_install_commands.codex
   && pass "template codex platform install" || fail "template codex platform install"
 
 assert_grep "silver-init documents cursor platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CURSOR_GUIDE" \
   "graphify cursor install"
 
 assert_grep "silver-init documents claude platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CLAUDE_GUIDE" \
   "graphify claude install --project"
 
 assert_grep "silver-init documents codex platform install" \
-  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "$HOST_CODEX_GUIDE" \
   "graphify codex install --project"
 
 assert_grep "silver-init host detection" \
   "$REPO_ROOT/skills/silver-init/SKILL.md" \
-  "CURSOR_PLUGIN_ROOT"
+  "hooks/lib/runtime-paths.sh"
 
 assert_grep "GRAPHIFY.md platform table" \
   "$REPO_ROOT/docs/GRAPHIFY.md" \

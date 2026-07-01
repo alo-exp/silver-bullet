@@ -319,7 +319,7 @@ rel_allow_refresh_line=$(grep -n "bash scripts/post-release-refresh.sh" "$SCL" |
 check "silver-create-release: post-release refresh wrapper is allowed (line $rel_allow_refresh_line > 0)" \
   "$([[ "$rel_allow_refresh_line" -gt 0 ]] && echo pass || echo fail)"
 
-rel_allow_git_add_line=$(grep -n "git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json" "$SCL" | head -1 | cut -d: -f1 || echo 0)
+rel_allow_git_add_line=$(grep -nE 'git add CHANGELOG\.md README\.md .*(marketplace\.json|host plugin manifest).*plugin\.json' "$SCL" | head -1 | cut -d: -f1 || echo 0)
 check "silver-create-release: marketplace manifests are staged by the allowed git add command (line $rel_allow_git_add_line > 0)" \
   "$([[ "$rel_allow_git_add_line" -gt 0 ]] && echo pass || echo fail)"
 

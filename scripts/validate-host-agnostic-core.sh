@@ -116,6 +116,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/sync-",
     "scripts/validate-host-install",
     "scripts/validate-claude",
+    "scripts/enterprise-e2e/",
     "scripts/run-enterprise-e2e",
     "scripts/run-release-",
     "scripts/run-pre-release",
