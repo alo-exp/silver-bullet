@@ -17,7 +17,7 @@
 | Outcome rubric | [`.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`](../../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md) |
 | Live test runbook | [`docs/ENTERPRISE-E2E-LIVE-TEST.md`](../ENTERPRISE-E2E-LIVE-TEST.md) |
 | Operator prompt | [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) |
-| Fixture branch policy | [`.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md`](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md) |
+| Fixture branch policy | [`.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md`](../../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md) |
 | Cherry-pick policy | [`docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) |
 
 ---
@@ -124,7 +124,7 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
 
 ## 4. Fixture branch rules
 
-Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB `main`).
+**Canonical pattern:** `enterprise-e2e/round-<n>-<host>` @ baseline SHA (test app, not SB `main`), where `<host>` is `claude`, `codex`, or `cursor` and `<n>` is the certification round number.
 
 | Host | SB harness branch | Test-app fixture branch | Baseline SHA |
 |------|-------------------|-------------------------|--------------|
@@ -132,11 +132,13 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 | Codex | `enterprise-e2e/codex` | `enterprise-e2e/round-8-codex` | `8482e60` |
 | Cursor | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` (worktree) | `8482e60` |
 
+**Deprecated:** host-first names such as `enterprise-e2e/round-codex-1` — do not create new fixtures with that ordering; migrate to `round-<n>-<host>` on resume.
+
 **Rules:**
 
 1. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
 2. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
-3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree (see [OPERATIONAL-ADDENDUM.md](../../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md) §worktree policy).
 4. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
 
 ---
@@ -197,7 +199,7 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 3. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
 4. **Never** `pkill` another host's monitor/driver PIDs.
 5. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
-6. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+6. **Cursor worktree** when shared clone is dirty on another branch ([OPERATIONAL-ADDENDUM.md](../../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md)).
 7. **Single workspace per host** for SB fixes — test app is matrix CWD only.
 
 ---
