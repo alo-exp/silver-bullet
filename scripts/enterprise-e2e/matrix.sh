@@ -554,6 +554,8 @@ main() {
     exit 1
   fi
 
+  enterprise_e2e_ensure_test_app_branch "$FIXTURE_DIR"
+
   echo "=== Enterprise E2E Matrix Runner ==="
   echo "SB_ROOT:    ${SB_ROOT}"
   echo "Fixture:    ${FIXTURE_DIR}"
