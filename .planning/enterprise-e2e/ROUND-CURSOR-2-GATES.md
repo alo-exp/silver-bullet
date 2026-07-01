@@ -1,8 +1,8 @@
 # Round Cursor-2 — Gate checklist
 
 **Host:** Cursor agent TUI — **confirmation round**  
-**Updated:** 2026-07-01T15:30Z  
-**SB HEAD:** `a455aeb8` (`enterprise-e2e/cursor`)  
+**Updated:** 2026-07-01T13:45Z  
+**SB HEAD:** `26cf687f` (`enterprise-e2e/cursor`)  
 **Test app HEAD:** `enterprise-e2e/round-1-cursor` @ `8482e60` (worktree)  
 **Ledger:** [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md)  
 **Prior round:** [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) — strict-clean **Pass** @ `e9236365`
@@ -27,7 +27,9 @@
 | T0 surface validation | **PASS** |
 | T0 branch assert | **PASS** 13/0 |
 | T1 row 1 FORCE (single @ install version) | **PASS** 1/1 *(legacy log: 2/2 before policy)* |
-| Phase A ladder | **PASS** (tmux `cursor-c2-pipeline`) |
+| Phase A ladder | **PASS** 8/8 @ `12:58Z` |
+| T2 smoke (rows 1,3,6) | **PASS** (2/0/1 skip) |
+| Full matrix 22/22 | **IN PROGRESS** (row 8) |
 
 ### Round gates
 
