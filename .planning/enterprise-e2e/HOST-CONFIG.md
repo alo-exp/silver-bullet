@@ -16,6 +16,7 @@ Set **`SB_E2E_LIVE_RUNTIME`** (or `--host` on live-test) to select a track. Arti
 | Row attempt log | `.e2e-row{N}-attempt.log` | `.e2e-row{N}-codex-attempt.log` | `.e2e-row{N}-cursor-attempt.log` |
 | Ledger | `ROUND-1-LEDGER.md` (R6 uses project ledger) | `ROUND-CODEX-1-LEDGER.md` | `ROUND-CURSOR-1-LEDGER.md` |
 | SB git branch | `enterprise-e2e/round6` | `enterprise-e2e/codex` | **`enterprise-e2e/cursor`** |
+| Test-app git branch | `enterprise-e2e/round-6-claude` | `enterprise-e2e/round-1-codex` | **`enterprise-e2e/round-1-cursor`** |
 | Gates pair | `ROUND-5/6-GATES.md` | `ROUND-CODEX-1/2-GATES.md` | `ROUND-CURSOR-1/2-GATES.md` |
 | Install | `scripts/install-claude.sh` | `scripts/install-codex.sh --purge-legacy-skills` | `scripts/install-cursor.sh` |
 | Agent adapter | `tests/live/agents/claude/agent.sh` | `tests/live/agents/codex/agent.sh` | `tests/live/agents/cursor/agent.sh` |
@@ -43,6 +44,7 @@ Wrappers delegate to [`scripts/enterprise-e2e/`](../../scripts/enterprise-e2e/).
 
 ## Cross-host isolation (when Claude Round 6 active)
 
+- Each host uses an isolated test-app branch (`test_app_git_branch` in `hosts.json`) — see [TEST-APP-BRANCH-POLICY.md](./TEST-APP-BRANCH-POLICY.md).
 - Never remove `.e2e-live-test.lock` unless Claude driver PID is dead.
 - Codex/Cursor use host-suffixed locks — do not steal Claude's lock.
 - Never `pkill` another host's monitor/driver children.
