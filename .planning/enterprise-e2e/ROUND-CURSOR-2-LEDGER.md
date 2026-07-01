@@ -2,7 +2,7 @@
 
 **Confirmation round** — must follow a strict-clean [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md). Release requires **2 consecutive** strict-clean Cursor rounds (Cursor-1 + Cursor-2).
 
-Copy from [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) template at round start; use host-isolated lock/log paths only.
+Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived before Phase B.
 
 ---
 
@@ -12,18 +12,28 @@ Copy from [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) template at rou
 |-------|-------|
 | Round | Cursor-2 |
 | Host | `cursor` |
-| Prior round | [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) — must be **strict-clean Pass** |
-| SB repo SHA | `<!-- git rev-parse HEAD in silver-bullet repo -->` |
-| Test app SHA | `<!-- git rev-parse HEAD in enterprise-grade-test-app -->` |
-| Cursor plugin install | `<!-- commit SHA used by install-cursor.sh -->` |
-| Cursor model (frozen) | `<!-- e.g. composer-2.5 -->` |
-| Operator | `<!-- name -->` |
-| Start date | YYYY-MM-DD |
-| End date | YYYY-MM-DD |
-| Round clean? | Pass / Fail |
-| Consecutive pair | ___ / 2 *(2/2 required — see [ROUND-CURSOR-2-GATES.md](./ROUND-CURSOR-2-GATES.md))* |
+| Prior round | [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) — **strict-clean Pass** @ `e9236365` |
+| SB harness branch | `enterprise-e2e/cursor` |
+| SB repo SHA | `a455aeb8` *(bootstrap; cherry-pick CI from main)* |
+| Test-app branch | `enterprise-e2e/round-1-cursor` |
+| Test app SHA | `8482e60` |
+| Test-app worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
+| Cursor plugin install | *(pinned @ bootstrap SHA)* |
+| Cursor model (frozen) | `composer-2.5` |
+| Operator | TUI monitor agent |
+| Start date | 2026-07-01 |
+| End date | |
+| Round clean? | **In progress** |
+| Consecutive pair | **1 / 2** *(target 2/2 on strict-clean Cursor-2)* |
 
-**Harness artifacts (Cursor-isolated):** same paths as Round Cursor-1 — archive prior `.e2e-matrix-cursor-live.log` before fresh Phase B.
+**Harness artifacts (Cursor-isolated):**
+
+| Artifact | Path |
+|----------|------|
+| Matrix log (Cursor-2) | `.e2e-matrix-cursor-live.log` |
+| T1 FORCE log | `.e2e-matrix-cursor-t1-r2.log` |
+| T1 batch PID | `.e2e-matrix-cursor-t1-r2-batch.pid` |
+| TUI findings | `.e2e-tui-watch-cursor-findings.jsonl` |
 
 ---
 
@@ -31,29 +41,54 @@ Copy from [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) template at rou
 
 | Step | Pass/Fail | Notes |
 |------|-----------|-------|
-| `/silver:init` or silver-init skill bootstrap | | |
-| Graphify + agentmemory opted in | | |
-| `graphify update .` on test app | | |
-| No SB init artifacts committed | | |
+| Prior round strict-clean | **Pass** | Cursor-1 @ `e9236365` |
+| Cherry-pick CI from main | **Pass** | `6ab2e26f` `7cf34b14` `a455aeb8` (release v0.49.1 deferred — merge conflicts) |
+| Worktree `enterprise-grade-test-app-cursor` | **Pass** | `enterprise-e2e/round-1-cursor` @ `8482e60` |
+| Graphify + agentmemory opted in | **Pass** | |
+| No SB init artifacts committed | **Pass** | |
+
+---
+
+## Tier A (T0) — structural preflight
+
+| Check | Result | Log |
+|-------|--------|-----|
+| Structural suite | **PASS** 189/0 | `/tmp/cursor2-t0-structural.log` |
+| Outcome harness | **PASS** 59/0 | `/tmp/cursor2-t0-outcome.log` |
+| Surface validation D16 | **PASS** | `/tmp/cursor2-t0-surface.log` |
+| Test-app branch assert | **PASS** 13/0 | `/tmp/cursor2-t0-branch.log` |
+
+**T0 verdict:** **PASS** @ `a455aeb8`
+
+---
+
+## Tier B — T1 row 1 FORCE×2
+
+**Driver:** `cursor-t1-r2-driver.sh` · tmux `cursor-t1-r2` · `SB_E2E_SURFACE_SKIP=0`
+
+| Run | Result | Notes |
+|-----|--------|-------|
+| 1/2 | **IN PROGRESS** | |
+| 2/2 | **PENDING** | |
 
 ---
 
 ## review-fix-ladder (8 rungs × 2 clean verify)
 
-**Scope:** full re-run required for Round 2. Strict-clean Phase A: `SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0` + `CURSOR_API_KEY` + live API turns.
+**Scope:** full re-run required for Round 2.
 
-| Rung | Model / reasoning | Cursor slug | audit_fix | verify_1 | orchestrator grep | verify_2 | Advanced |
-|------|-------------------|-------------|-----------|----------|-------------------|----------|----------|
-| 1 | | | | | | | |
-| 2 | | | | | | | |
-| 3 | | | | | | | |
-| 4 | | | | | | | |
-| 5 | | | | | | | |
-| 6 | | | | | | | |
-| 7 | | | | | | | |
-| 8 | | | | | | | |
+| Rung | Model / reasoning | audit_fix | verify_1 | verify_2 | Status |
+|------|-------------------|-----------|----------|----------|--------|
+| 1 | composer-2.5 / low | | | | |
+| 2 | composer-2.5 / medium | | | | |
+| 3 | composer-2.5 / high | | | | |
+| 4 | composer-2.5 / xhigh | | | | |
+| 5 | gpt-5.5 / low | | | | |
+| 6 | gpt-5.5 / medium | | | | |
+| 7 | gpt-5.5 / high | | | | |
+| 8 | gpt-5.5 / xhigh | | | | |
 
-**Ladder progress:** ___ / 8 rungs complete
+**Ladder progress:** 0 / 8 rungs complete
 
 ---
 
@@ -61,7 +96,7 @@ Copy from [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) template at rou
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | | | | | | | | |
+| 1 | `silver-router` | | composer-2.5 | | | | | | |
 | 2 | `silver-research` | | | | | | | | |
 | 3 | `silver-feature` | | | | | | | | |
 | 4 | `silver-bugfix` | | | | | | | | |
@@ -84,15 +119,12 @@ Copy from [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) template at rou
 | 21 | `post-exec-gates` | | | | *(parent: row 3)* | | | | |
 | 22 | `validate-substep` | | | | *(parent: row 4)* | | | | |
 
-**Pass count:** ___ / 22
+**Pass count:** 0 / 22
 
 ---
 
 ## Round summary
 
-**Graphify post-round:** `graphify update .` in SB repo.
+**Strict-clean:** **NOT CLAIMED** — T0/T1 bootstrap only; full A→B→C pending.
 
-**Next action:**
-
-- If **not** strict-clean → pair resets; re-run Round Cursor-2 from Phase A (Round Cursor-1 Pass alone is insufficient for release).
-- If **strict-clean** → update [ROUND-CURSOR-2-GATES.md](./ROUND-CURSOR-2-GATES.md) **2 consecutive strict clean rounds = PASS (2/2)** → Cursor host release readiness.
+**Next action:** Poll T1 FORCE×2; on PASS proceed Phase A ladder + Tier B smoke (rows 1,3,6) + full matrix.

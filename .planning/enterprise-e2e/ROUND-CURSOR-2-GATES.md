@@ -1,47 +1,48 @@
 # Round Cursor-2 — Gate checklist
 
 **Host:** Cursor agent TUI — **confirmation round**  
-**Updated:** 2026-07-01T14:05Z  
-**SB HEAD:** *(set at round start — branch `enterprise-e2e/cursor`)*  
-**Test app HEAD:** `enterprise-e2e/round-1-cursor`  
+**Updated:** 2026-07-01T15:30Z  
+**SB HEAD:** `a455aeb8` (`enterprise-e2e/cursor`)  
+**Test app HEAD:** `enterprise-e2e/round-1-cursor` @ `8482e60` (worktree)  
 **Ledger:** [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md)  
-**Prior round:** [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) — Round Cursor-1 strict-clean **Pass** @ `ee74f598`
+**Prior round:** [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) — strict-clean **Pass** @ `e9236365`
 
-## Status: **READY TO START** (Cursor-1 strict-clean 1/2)
+## Status: **IN PROGRESS** (T0 PASS · T1 FORCE×2 running)
 
 **Release pair:** Round Cursor-2 completes the **2/2** consecutive strict-clean requirement for Cursor host release sign-off.
 
-### Start criteria (from Cursor-1 @ `ee74f598`)
+**Strict-clean NOT claimed** until full Tier A→B→C on this round.
 
-All prerequisites **met** — Round Cursor-2 may open:
+### Bootstrap (2026-07-01)
 
-| # | Prerequisite | Status |
-|---|--------------|--------|
-| 1 | [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) strict-clean **Pass** | **YES** |
-| 2 | Matrix **22/22** + ledger reconcile **COMPLETE** | **YES** |
-| 3 | Recorded `run-all-tests` **0 failed** on cursor branch | **YES** (r5) |
-| 4 | Phase A ladder **8/8 ×2** consecutive | **YES** |
-| 5 | T1 FORCE×2 **PASS** | **YES** |
-| 6 | Harness branch `enterprise-e2e/cursor`; test-app `enterprise-e2e/round-1-cursor` | **YES** |
-| 7 | Model **composer-2.5** only | **YES** |
-
-**Operator action:** copy [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md) from template; run full matrix + ladder + Phase C; no branch checkout mid-run.
+| Step | Status |
+|------|--------|
+| Ledger reset from template | **DONE** |
+| Worktree `enterprise-grade-test-app-cursor` @ `round-1-cursor` | **DONE** |
+| Cherry-pick CI from main | **DONE** (`6ab2e26f` `7cf34b14` `a455aeb8`; v0.49.1 release merge deferred) |
+| T0 structural suite | **PASS** 189/0 |
+| T0 outcome harness | **PASS** 59/0 |
+| T0 surface validation | **PASS** |
+| T0 branch assert | **PASS** 13/0 |
+| T1 row 1 FORCE×2 | **IN PROGRESS** (tmux `cursor-t1-r2`) |
 
 ### Round gates
 
 | Gate | Status |
 |------|--------|
+| Tier A (T0) structural preflight | **PASS** |
+| T1 row 1 FORCE×2 | **IN PROGRESS** |
 | review-fix-ladder 8/8 (2× clean verify per rung, live turns) | **PENDING** |
 | Matrix ledger 22/22 (zero new friction) | **PENDING** |
-| Outcome assessment harness | **PENDING** |
+| Outcome assessment harness | **PENDING** (live rows) |
 | All outcome criteria + blocking autonomy gates | **PENDING** |
 | Phase C (`run-all-tests`, overlays, reconcile, RCS, CLI smoke) | **PENDING** |
 | New issues vs baseline 76 | **PENDING** |
 | Round strict-clean | **PENDING** |
-| **2 consecutive strict clean rounds** | **PENDING (1/2 → 2/2)** — set **PASS (2/2)** only when Cursor-2 strict-clean AND Cursor-1 was strict-clean |
+| **2 consecutive strict clean rounds** | **PENDING (1/2 → 2/2)** |
 
 ## Release verdict
 
-**Cursor host release readiness:** **BLOCKED** until **2 consecutive strict clean rounds = PASS (2/2)** on this file and Cursor-1 gates show prior Pass.
+**Cursor host release readiness:** **BLOCKED** until Cursor-2 strict-clean → **2/2**.
 
-**Current pair progress:** **1/2** (Cursor-1 strict-clean @ `ee74f598`; Cursor-2 not started).
+**Current pair progress:** **1/2** (Cursor-1 strict-clean; Cursor-2 bootstrap in flight).
