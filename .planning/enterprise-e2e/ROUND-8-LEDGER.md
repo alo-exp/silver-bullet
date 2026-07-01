@@ -315,3 +315,61 @@ bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight --resum
 ```
 
 Re-FORCE rows **3–22** after claude checkout (branch-miss on `round-8-codex` for rows 3+).
+
+---
+
+## Methodology session checkpoint 2026-07-01T08:18Z (main @ f21cdeee)
+
+| Field | Value |
+|-------|-------|
+| SB repo | `main` @ `f21cdeee` (methodology harness; **no branch switch**) |
+| Test-app | `enterprise-e2e/round-8-claude` @ `8482e60` (**pinned**) |
+| Preflight Gate 0+1 | **PASS** — Gate 0: surface + tri-host claude smoke; `sync-codex-package` after install-claude `host-bundles` prune; Gate 1: structural + outcome + test-app assert (`SB_E2E_TEST_APP_BASELINE_SHA=8482e60`) + dry-run 22/22 + live `--preflight-only` |
+| Preflight log | [.e2e-r8-claude-preflight.log](../../.e2e-r8-claude-preflight.log), [.e2e-r8-claude-preflight-g1.log](../../.e2e-r8-claude-preflight-g1.log) |
+| Smoke (rows 1,3,6,11,21,22) | **STRUCTURAL PASS / LIVE SKIP** — `smoke-matrix.sh` exit 0; rows 1,3,6,11 **SKIP** (evidence from outcome-assessment fixture + dry-run stubs on test-app); rows 21–22 internal PASS. **Not live-TUI green** — re-run with `SB_E2E_MATRIX_FORCE=1` after `git -C $SB_TEST_ENTERPRISE_APP_ROOT reset --hard 8482e60` |
+| Smoke log | [.e2e-r8-claude-smoke.log](../../.e2e-r8-claude-smoke.log) |
+| Claude lock | **none** |
+| R8 resume FORCE 3–22 | **NOT launched** — live smoke not green (SKIP rows) |
+
+**Preflight env (Claude track):**
+
+```bash
+export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
+export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
+export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-8-LEDGER.md"
+export SB_E2E_PREFLIGHT_SKIP_SURFACE=1   # optional on re-run if Gate 0 already green this session
+RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host claude
+```
+
+**Smoke (after preflight green):**
+
+```bash
+git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude
+git -C "$SB_TEST_ENTERPRISE_APP_ROOT" reset --hard 8482e60   # clean fixture before live smoke
+bash scripts/sync-codex-package.sh   # if Gate 0 ran recently
+export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_MATRIX_FORCE=1
+RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host claude
+```
+
+**R8 resume FORCE rows 3–22 (launch only if preflight+smoke green and no lock):**
+
+```bash
+export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
+export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app
+export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-8-claude
+export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
+git -C "$SB_TEST_ENTERPRISE_APP_ROOT" checkout enterprise-e2e/round-8-claude
+git -C "$SB_TEST_ENTERPRISE_APP_ROOT" reset --hard 8482e60
+export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-8-LEDGER.md"
+export SB_E2E_MATRIX_FORCE=1
+export SB_E2E_MONITOR_AUTO_RESTART=0
+export SB_ENTERPRISE_E2E_LIVE=1
+export SB_E2E_SESSION0_SKIP=1
+export RTK_DISABLED=1
+cd "$SB_ROOT"   # stay on main
+bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight --resume
+```
+
+**Known harness friction:** `install-claude.sh` `prune_claude_cross_host_agent_surfaces` removes `host-bundles/` from live repo during Gate 0 tri-host smoke — run `bash scripts/sync-codex-package.sh` before Gate 1 structural `live repo passes` check.
