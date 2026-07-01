@@ -43,6 +43,7 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 | E2E-013 | gap | host modes | Plan/Debug mode interaction with SB hooks undocumented at runtime | See §Plan & Debug mode — no hook detection yet; document + future `SwitchMode` branch in router |
 | E2E-014 | friction | stop-check | Repeated Stop churn when multiple gates fire sequentially | Consider consolidating first-block reason; agent already gets one block per Stop event |
 | E2E-015 | open | ledger | Round 4 friction no longer appends to human ledger (`SB_E2E_LEDGER_NO_UX_APPEND=1`) | Correct policy — friction → status jsonl + **this file** only |
+| E2E-089 | blocker | stop-check / TUI | R8 Claude smoke row **11** (`/silver:devops`): Stop hook blocked 9× on missing `silver-quality-gates`, `silver-context`, `silver-plan`; agent never wrote `.planning/workflows/devops-terraform-validation.md` (~33m). Skills installed — agent did not invoke planning floor before stop; `active_workflow` likely still `full-dev-cycle` (expected `devops-cycle` for devops-quality-gates pair). | **Runtime/TUI** — not harness; re-smoke row 11 after smoke 22 harness fix; tune matrix devops prompt or stop-check devops-cycle detection if recurrence |
 
 ### Friction (accepted / monitor)
 
