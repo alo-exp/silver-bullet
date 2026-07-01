@@ -60,25 +60,25 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 3 | `silver-feature` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-feature | retry3c live 2888B PASS |
 | 4 | `silver-bugfix` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | 098f48c6 | graphify query silver-bugfix | retry3d live OUTCOME PASS (148B+timeout) |
 | 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-ui | FORCE retry @1800s |
-| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | retry FAIL OUT-KM-01 |
-| 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-test | retry FAIL OUT-WORLD-01 |
+| 6 | `silver-fast` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | e2b6800 | graphify query silver-fast | retry3f live 1316B OUTCOMES PASS |
+| 7 | `silver-test` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | e2b6800 | graphify query silver-test | retry3f live 848B OUTCOMES PASS |
 | 8 | `silver-refactor` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-refactor | FORCE retry @1800s |
 | 9 | `silver-benchmark` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-benchmark | FORCE retry @1800s |
 | 10 | `silver-content` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-content | FORCE retry @1800s |
 | 11 | `silver-devops` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-devops | FORCE retry @1800s |
-| 12 | `silver-deploy` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-deploy | retry FAIL deploy-doc contract |
+| 12 | `silver-deploy` | 2026-07-01 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-deploy | retry3f 2196B OUT-KM partial OUT-WORLD |
 | 13 | `silver-canary` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-canary | FORCE retry @1800s |
-| 14 | `silver-release` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-release | retry FAIL OUT-WORLD-01 |
-| 15 | `review-triad` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query review-triad | fixture rubric gap OUT-WORLD-01 |
-| 16 | `ship-readiness` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query ship-readiness | retry FAIL OUT-MEASURE-01 |
+| 14 | `silver-release` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | e2b6800 | graphify query silver-release | retry3f live 1840B OUTCOMES PASS |
+| 15 | `review-triad` | 2026-07-01 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query review-triad | retry3f 2110B OUT-REVIEW/ORCH/WORLD |
+| 16 | `ship-readiness` | 2026-07-01 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query ship-readiness | retry3f 2084B OUT-MEASURE/WORLD |
 | 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-incident | FORCE retry @1800s |
-| 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-retro | retry FAIL OUT-KM-01 |
+| 18 | `silver-retro` | 2026-07-01 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-retro | retry3f 1490B OUT-KM partial OUT-WORLD |
 | 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-forensics | FORCE retry @1800s |
 | 20 | `process-maintenance` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | 098f48c6 | graphify query process-maintenance | retry3d live PASS (994B; ENOTFOUND recovered) |
 | 21 | `post-exec-gates` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | 098f48c6 | *(parent row 3)* | retry3e internal PASS @098f48c6 |
 | 22 | `validate-substep` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | 098f48c6 | *(parent row 4)* | retry3e internal PASS @098f48c6 |
 
-**Pass count:** **15 / 22** (blocker rows cleared: 3–4, 20–22; remaining: 6, 7, 12, 14–16, 18)
+**Pass count:** **18 / 22** (retry3f live: +6, +7, +14; remaining: 12, 15, 16, 18)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
@@ -90,7 +90,7 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 |-------|-------|---------|---------------|--------|
 | E2E-086 | harness | matrix rows 1–22 | c6cae4e9 | fixed |
 | E2E-087 | harness | cursor timeout | 2b197be9 | fixed |
-| E2E-088 | friction | outcome rubric | pending | rows 3-4,6-7,12,14-16,18,20,21-22 fail post-retry |
+| E2E-088 | friction | outcome rubric | pending | rows 12, 15, 16, 18 fail retry3f live |
 
 ---
 
@@ -244,3 +244,23 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 | 18 | 1557B | **PASS** | ledger stale Fail |
 
 **Launched:** tmux `cursor-e2e-retry3f`, rows **6 7 12 14 15 16 18**, log `.e2e-matrix-cursor-retry3f.log`
+
+---
+
+## Retry #3f complete (2026-07-01)
+
+**Batch:** tmux `cursor-e2e-retry3f`, ~2h45m. Rows 6 7 12 14 15 16 18.
+
+| Row | Log | Live result | Notes |
+|-----|-----|-------------|-------|
+| 6 | 1316B | **PASS** | OUTCOMES all pass; row 6 stdout buffered ~30min (normal) |
+| 7 | 848B | **PASS** | OUTCOMES all pass |
+| 12 | 2196B | **FAIL** | OUT-KM-01 partial; OUT-WORLD-01 fail |
+| 14 | 1840B | **PASS** | OUTCOMES all pass |
+| 15 | 2110B | **FAIL** | OUT-REVIEW-01 partial; OUT-ORCH-01; OUT-WORLD-01 |
+| 16 | 2084B | **FAIL** | OUT-MEASURE-01; OUT-WORLD-01 |
+| 18 | 1490B | **FAIL** | OUT-KM-01 partial (×2); OUT-WORLD-01 |
+
+**Rescore note:** Pre-flight diagnosis rescore PASS on 15/16/18 was **superseded** by live retry3f — all three **FAIL** live. Rows 6/7/12/14 needed live (not rescore-only).
+
+**Ledger:** **18/22**. Strict-clean blocked (rows 12, 15, 16, 18 + Phase C run-all-tests + Phase A ladder).
