@@ -14,7 +14,7 @@ Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived 
 | Host | `cursor` |
 | Prior round | [ROUND-CURSOR-1-LEDGER.md](./ROUND-CURSOR-1-LEDGER.md) — **strict-clean Pass** @ `e9236365` |
 | SB harness branch | `enterprise-e2e/cursor` |
-| SB repo SHA | `a455aeb8` *(bootstrap; cherry-pick CI from main)* |
+| SB repo SHA | `26cf687f` *(pipeline @ install-version skip policy)* |
 | Test-app branch | `enterprise-e2e/round-1-cursor` |
 | Test app SHA | `8482e60` |
 | Test-app worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
@@ -82,25 +82,12 @@ Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived 
 
 | Phase | Status |
 |-------|--------|
-| Phase A ladder 8/8 | **IN PROGRESS** |
-| T2 smoke (1,3,6) | **PENDING** |
-| Full matrix 22/22 | **PENDING** |
+| Phase A ladder 8/8 | **PASS** 9/0 @ `12:58Z` ([cursor-ladder-live.log](cursor-ladder-live.log)) |
+| T2 smoke (1,3,6) | **PASS** 2 pass / 0 fail / 1 skip (row 6 install-skip) @ `13:41Z` |
+| Full matrix 22/22 | **IN PROGRESS** — row **8** `silver-refactor` (tmux `cursor-c2-pipeline`) |
 | Phase C | **PENDING** |
 
-**Scope:** full re-run required for Round 2.
-
-| Rung | Model / reasoning | audit_fix | verify_1 | verify_2 | Status |
-|------|-------------------|-----------|----------|----------|--------|
-| 1 | composer-2.5 / low | | | | |
-| 2 | composer-2.5 / medium | | | | |
-| 3 | composer-2.5 / high | | | | |
-| 4 | composer-2.5 / xhigh | | | | |
-| 5 | gpt-5.5 / low | | | | |
-| 6 | gpt-5.5 / medium | | | | |
-| 7 | gpt-5.5 / high | | | | |
-| 8 | gpt-5.5 / xhigh | | | | |
-
-**Ladder progress:** 0 / 8 rungs complete
+**Ladder progress:** **8 / 8** rungs PASS (Round Cursor-2 section in cursor-ladder-live.log)
 
 ---
 
