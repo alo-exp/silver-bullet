@@ -295,8 +295,19 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 **Confirm:** tmux `cursor-e2e-t1b` relaunch if driver tally needed.
 
+---
 
-## Poll checkpoint 2026-07-01T09:36:34Z
+## Phase A ladder (2026-07-01)
+
+**tmux `cursor-ladder`** — live 8/8 PASS; log [cursor-ladder-live.log](cursor-ladder-live.log).
+
+| Rung | Model | Reasoning | Status |
+|------|-------|-----------|--------|
+| 1–4 | composer-2.5 | low→xhigh | **PASS** |
+| 5–8 | gpt-5.5 | low→xhigh | **PASS** |
+
+`Results: 9 passed, 0 failed, 0 skipped` @ `f901f1fa`
+
 
 | Field | Value |
 |-------|-------|

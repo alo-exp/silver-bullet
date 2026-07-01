@@ -21,7 +21,7 @@
 | Validation `--live` | **PASS** 6/6 |
 | Pre-release `--live` | **PASS** 40/40 |
 | `run-all-tests` | **IN FLIGHT** → `/tmp/cursor-phasec-run-all-r2.log` |
-| RCS `SB_E2E_RCS_TRIHOST=full` | **83** (target ≥85 after run-all green) |
+| RCS `SB_E2E_RCS_TRIHOST=full` | **90/100** (`SB_E2E_RCS_LADDER=8/8`) |
 
 ### Gates
 
