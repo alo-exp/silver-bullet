@@ -114,13 +114,17 @@ enterprise_e2e_row_passed_at_install_version 1 && pass "row 1 pass @ install ver
 enterprise_e2e_matrix_should_skip_row_at_version 1 && pass "matrix skip row 1 @ version" \
   || fail "matrix skip row 1 @ version"
 export SB_E2E_MATRIX_FORCE=1
-enterprise_e2e_matrix_should_skip_row_at_version 1 && fail "force overrides skip" || pass "force overrides skip"
-unset SB_E2E_MATRIX_FORCE
+enterprise_e2e_matrix_should_skip_row_at_version 1 && pass "FORCE=1 does not bypass install registry" \
+  || fail "FORCE=1 should not bypass install registry"
+export SB_E2E_MATRIX_FORCE_ALL=1
+enterprise_e2e_matrix_should_skip_row_at_version 1 && fail "FORCE_ALL overrides skip" \
+  || pass "FORCE_ALL overrides skip"
+unset SB_E2E_MATRIX_FORCE SB_E2E_MATRIX_FORCE_ALL
 enterprise_e2e_row_passed_at_install_version 2 && fail "row 2 not pass" || pass "row 2 not pass @ version"
 
 assert_contains "matrix.sh install-version skip" \
   "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
-  "already pass @ install"
+  "ROW_ALREADY_PASSED_SAME_INSTALL"
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

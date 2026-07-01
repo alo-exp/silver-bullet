@@ -156,11 +156,64 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 | Event | Action |
 |-------|--------|
 | **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log |
-| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` or `SB_E2E_FORCE_ROW=1` on affected row(s), then rescore |
+| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then rescore — does **not** bypass install-version registry |
+| **Full re-run same install** | `SB_E2E_MATRIX_FORCE_ALL=1` overrides `.row-pass-registry.json` skip |
 | **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until rescore passes or issue filed |
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
 
 Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md) before scoring. All **27 criteria** + blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`).
+
+---
+
+## 6a. Install-version row pass registry
+
+**Policy (effective 2026-07-01):** Do **not** repeat any matrix row that has **already passed once** (live TUI + outcome criteria) for the **same SB install fingerprint** within a round or continuation. One clean pass per row per install is sufficient.
+
+### Install fingerprint
+
+Derived at matrix run time as:
+
+```text
+<host>@<sb_git_sha12>+<surface_hash12>
+```
+
+| Component | Source |
+|-----------|--------|
+| `host` | `SB_E2E_LIVE_RUNTIME` / `enterprise_e2e_matrix_host` (`claude` \| `codex` \| `cursor`) |
+| `sb_git_sha12` | `git -C $SB_ROOT rev-parse --short=12 HEAD` |
+| `surface_hash12` | `sha256(hooks/hooks.json_digest[:16] \| package.json version)[:12]` |
+
+Re-install or harness surface change (hooks version bump) produces a **new** fingerprint — rows must be re-run on the new install. Legacy TSV registry `.e2e-matrix-pass-at-version.tsv` (`package@sha`) remains for Cursor track continuity; canonical JSON registry supersedes for strict-clean.
+
+### Registry file
+
+Path: [`.planning/enterprise-e2e/.row-pass-registry.json`](../../.planning/enterprise-e2e/.row-pass-registry.json)
+
+Keyed by `install_fp` → `rows` → `{passed_at, log_ref, outcome_pass, source}`.
+
+### Harness skip behavior
+
+Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
+
+| Message | Class | Counts toward 22/22? | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` |
+|---------|-------|----------------------|--------------------------------|
+| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) | **Allowed** — does not fail |
+| `SKIP: evidence already present` | Evidence reuse | No (SKIP) | **Fails** when set |
+
+| Override | Effect |
+|----------|--------|
+| `SB_E2E_MATRIX_FORCE=1` | Re-run despite evidence SKIP; **does not** bypass install-version registry |
+| `SB_E2E_MATRIX_FORCE_ALL=1` | Full re-run including registry-passed rows |
+
+### Driver coordination (Round 8 example)
+
+When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
+
+1. **Do not kill** a healthy driver to avoid duplicate TUI spend on rows already in flight.
+2. Seed registry for smoke-passed rows (1, 3, 6, 11, 21, 22) **before** next resume launch.
+3. On resume after driver exit, rows 3 and 11 (if seeded) emit `ROW_ALREADY_PASSED_SAME_INSTALL` — run only missing rows.
+
+`bash scripts/enterprise-e2e/strict-clean-check.sh` requires install registry **22/22** for current `install_fp` plus ledger reconcile and outcome assessment.
 
 ---
 
