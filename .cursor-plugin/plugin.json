@@ -17,5 +17,7 @@
     "devops",
     "quality-gates",
     "ci-cd"
-  ]
+  ],
+  "skills": "./agents/cursor",
+  "hooks": "./cursor-hooks.json"
 }

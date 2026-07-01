@@ -27,7 +27,7 @@ These four criteria are **mandatory** for matrix row PASS and strict-clean round
 
 ---
 
-## Criteria (27)
+## Criteria (28)
 
 ### OUT-TAILOR-01 — Dynamic workflow tailoring
 
@@ -327,6 +327,17 @@ These four criteria are **mandatory** for matrix row PASS and strict-clean round
 | **Partial** | Artifacts exist but ledger manually patched mid-round. |
 | **Fail** | Release/ship row without instruction-ledger or ship-readiness chain. |
 | **Artifacts** | `docs/instruction-ledger.jsonl`, `.planning/ship-readiness/`, ROUND-N-LEDGER.md |
+
+### OUT-SURFACE-01 — Install surface host isolation and token budget
+
+| Field | Value |
+|-------|-------|
+| **Scope** | round (Phase C pre-matrix + post-install) |
+| **Definition** | Post-install user-facing surface audit: Claude Agents Library must not expose Codex/Cursor namespaces; Claude agent description aggregate ≤ 14k tokens (buffer under 15k host warning). |
+| **Pass signals** | `validate-host-install-surface.sh` exit 0; `agents/` contains only `claude/`; no `silver-bullet:codex:` / `silver-bullet:cursor:` in Claude bundle; `validate-claude-agent-token-budget.sh` pass. |
+| **Partial** | Surface check skipped with documented `SB_E2E_SURFACE_SKIP`. |
+| **Fail** | `agents/codex` or `agents/cursor` present; foreign namespace refs in Claude manifests; token budget exceeded (e.g. 17.8k warning). |
+| **Artifacts** | `scripts/validate-host-install-surface.sh`, `tests/scripts/test-claude-agent-surface-isolation.sh`, `sb-doctor` D15/D16 |
 
 ---
 

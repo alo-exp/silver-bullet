@@ -45,6 +45,10 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 
 ### Step 3: Fix FAILs inline
 
+```bash
+bash scripts/sb-doctor.sh --fix
+```
+
 | Check | Typical fix |
 |-------|-------------|
 | D2/D3 plugin stale | `/silver:update` or `bash scripts/install-cursor.sh` (Cursor) |
@@ -52,7 +56,10 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/silver:migrate` |
 | D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
 | D8 orchestrator rule | Cursor only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
-| D13 cross-host import | Cursor: purge `.claude/plugins` from hooks; Claude/Codex: reinstall native host plugin |
+| D13 manifest paths | Host install script for active runtime |
+| D14 cache bleed | `bash scripts/install-{claude,codex,cursor}.sh` or `sb-doctor.sh --fix` |
+| D15 token budget | Shorten Claude `description` frontmatter in `agents/claude/` |
+| D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 
 Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -62,9 +69,7 @@ Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surface
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D13)
-
-See plan Section B and `scripts/sb-doctor.sh` for the authoritative check list:
+## Check catalog (D1–D16)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
@@ -73,14 +78,20 @@ See plan Section B and `scripts/sb-doctor.sh` for the authoritative check list:
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
-- D8 Cursor orchestrator rule (**Cursor host only** — N/A on Claude/Codex)
-- D9 workflow tracker (`scripts/workflows.sh`, `docs/workflows/`)
-- D10 recommended tools when `enabled_by_user: true`
-- D11 hook smoke (`session-start`, `outcomes-check`, `stop-check`)
+- D8 Cursor orchestrator rule (**Cursor host only**)
+- D9 workflow tracker
+- D10 recommended tools when opted in
+- D11 hook smoke
 - D12 `${SB_RUNTIME_STATE_DIR}` writable
-- D13 cross-host plugin contamination (host-scoped manifest + `agents/<host>/` in active cache)
+- D13 cross-host manifest paths + expected cache bundle
+- D14 foreign agent namespaces in plugin cache
+- D15 Claude agent description token budget
+- D16 repo install surface (`validate-host-install-surface.sh`)
 
-Host detection uses `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, plugin root env vars) — **not** presence of other hosts' config files on disk.
+```bash
+bash scripts/validate-host-install-surface.sh
+bash scripts/sb-doctor.sh --fix
+```
 
 ## Tests
 

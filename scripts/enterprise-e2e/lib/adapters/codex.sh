@@ -21,3 +21,10 @@ enterprise_e2e_adapter_install() {
 enterprise_e2e_adapter_preflight() {
   echo "Codex preflight: native CLI required (no Claude token gateway)"
 }
+
+enterprise_e2e_adapter_before_matrix_row() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 0
+  # Re-seed hook trust hashes after prior rows or sync may invalidate Codex trust state.
+  (cd "$sb_root" && bash scripts/install-codex.sh --hook-trust-seed-only 2>/dev/null) || true
+}

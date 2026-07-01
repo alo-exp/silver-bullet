@@ -98,7 +98,7 @@ snapshot_routing_state
 printf 'silver-context\nsilver-unknown\n' >"$STATE_FILE"
 assert_fail "rejects unrelated new skill names" verify_row_routing_state_delta
 
-driver="$(grep -F 'enterprise_e2e_matrix_quiesce_orchestrator_queue' "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" | head -1)"
+driver="$(grep -F 'enterprise_e2e_matrix_quiesce_orchestrator_queue' "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" | head -1 || true)"
 if [[ -n "$driver" ]]; then
   echo "PASS: matrix runner quiesces orchestrator before live rows"
   ((PASS++)) || true

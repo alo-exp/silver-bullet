@@ -456,6 +456,26 @@ enterprise_e2e_export_live_defaults() {
   export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 }
 
+# Post-install user-facing surface audit (OUT-SURFACE-01): host bundle isolation + Claude token budget.
+enterprise_e2e_preflight_install_surface() {
+  local sb_root="${1:-${SB_ROOT:-}}"
+  [[ -n "$sb_root" && -d "$sb_root" ]] || enterprise_e2e_preflight_fail "SB_ROOT missing for install surface preflight"
+
+  if [[ "${SB_E2E_SURFACE_SKIP:-0}" == "1" ]]; then
+    echo "Install surface preflight: skipped (SB_E2E_SURFACE_SKIP=1)"
+    return 0
+  fi
+
+  local script="${sb_root}/scripts/validate-host-install-surface.sh"
+  [[ -x "$script" ]] || enterprise_e2e_preflight_fail "validate-host-install-surface.sh missing"
+
+  if bash "$script" --repo-root "$sb_root"; then
+    echo "Install surface preflight: OK (host isolation + Claude token budget)"
+    return 0
+  fi
+  enterprise_e2e_preflight_fail "install surface audit failed — see validate-host-install-surface.sh"
+}
+
 # Fail fast before interactive matrix when token gateway credentials are missing.
 # OAuth-only runs may set SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 to skip this check.
 enterprise_e2e_preflight_claude_token_gateway() {

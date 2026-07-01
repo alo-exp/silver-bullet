@@ -1,15 +1,34 @@
 #!/usr/bin/env bash
 # sb-doctor.sh — Silver Bullet install + project activation audit (silver:doctor)
 # Exit 0 only when zero FAIL checks (WARN allowed).
+#
+# Usage:
+#   bash scripts/sb-doctor.sh [PROJECT_ROOT]
+#   bash scripts/sb-doctor.sh --fix [PROJECT_ROOT]
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJ_ROOT="${1:-$PWD}"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+DOCTOR_FIX="${SB_DOCTOR_FIX:-0}"
+DOCTOR_FIX_APPLIED=0
+PROJ_ROOT="${PWD}"
 FORMAT="${SB_DOCTOR_FORMAT:-text}"
 PASS=0
 FAIL=0
 WARN=0
 REPORT_LINES=()
+FAILED_CHECK_IDS=()
+
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --fix) DOCTOR_FIX=1; shift ;;
+      -h|--help) sed -n '1,8p' "$0"; exit 0 ;;
+      *) PROJ_ROOT="$1"; shift ;;
+    esac
+  done
+}
 
 record() {
   local level="$1" id="$2" detail="$3"
@@ -26,6 +45,7 @@ record() {
     fail)
       line="FAIL: ${id} — ${detail}"
       ((FAIL++)) || true
+      FAILED_CHECK_IDS+=("$id")
       ;;
   esac
   REPORT_LINES+=("$line")
@@ -63,7 +83,10 @@ plugin_registry_path() {
 }
 
 plugin_cache_root() {
-  printf '%s/alo-labs/silver-bullet' "${SB_RUNTIME_PLUGIN_CACHE_ROOT}"
+  case "${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-claude}}" in
+    codex) printf '%s/alo-labs-codex/silver-bullet' "${SB_RUNTIME_PLUGIN_CACHE_ROOT}" ;;
+    *) printf '%s/alo-labs/silver-bullet' "${SB_RUNTIME_PLUGIN_CACHE_ROOT}" ;;
+  esac
 }
 
 # Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
@@ -113,7 +136,50 @@ run_hook_smoke() {
   return 1
 }
 
-main() {
+doctor_host_install_script() {
+  case "${1:-}" in
+    claude) printf '%s\n' "${REPO_ROOT}/scripts/install-claude.sh" ;;
+    codex) printf '%s\n' "${REPO_ROOT}/scripts/install-codex.sh" ;;
+    cursor) printf '%s\n' "${REPO_ROOT}/scripts/install-cursor.sh" ;;
+    *) return 1 ;;
+  esac
+}
+
+doctor_apply_fixes() {
+  local runtime="$1" check_id install_script fixed=0
+  [[ "$DOCTOR_FIX" -eq 1 ]] || return 0
+  [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && return 0
+  [[ "$FAIL" -eq 0 ]] && return 0
+  for check_id in "${FAILED_CHECK_IDS[@]}"; do
+    case "$check_id" in
+      D13|D14|D16)
+        install_script="$(doctor_host_install_script "$runtime" || true)"
+        if [[ -n "$install_script" && -x "$install_script" ]]; then
+          printf 'sb-doctor: --fix running %s for %s\n' "$install_script" "$check_id" >&2
+          bash "$install_script" >&2 || true
+          fixed=1
+        fi
+        ;;
+      D15)
+        printf 'sb-doctor: --fix D15 requires shortening Claude agent descriptions\n' >&2
+        ;;
+      D4)
+        case "$runtime" in
+          cursor) bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >&2 || true; fixed=1 ;;
+          *)
+            install_script="$(doctor_host_install_script "$runtime" || true)"
+            [[ -n "$install_script" && -x "$install_script" ]] && bash "$install_script" >&2 || true
+            fixed=1
+            ;;
+        esac
+        ;;
+    esac
+    [[ "$fixed" -eq 1 ]] && break
+  done
+  [[ "$fixed" -eq 1 ]] && DOCTOR_FIX_APPLIED=1
+}
+
+run_doctor_checks() {
   local runtime template_ver proj_ver plugin_ver install_path cache_root current_link
   local hooks_manifest sb_config
 
@@ -324,13 +390,14 @@ main() {
     fi
   fi
 
-  # D13 — cross-host plugin path contamination (host-scoped)
-  local skill_root hooks_manifest_path agent_bundle_dir
+  # D13 — cross-host plugin path contamination (host-scoped manifest paths)
+  local skill_root hooks_manifest_path agent_cache_dir install_surface_script
+  install_surface_script="${REPO_ROOT}/scripts/validate-host-install-surface.sh"
   skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
   case "$runtime" in
     cursor)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
-      agent_bundle_dir="agents/cursor"
+      agent_cache_dir="$(sb_agent_cache_rel cursor)"
       if [[ -f "$hooks_manifest_path" ]] && grep -q '\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains .claude/plugins paths"
       else
@@ -339,7 +406,7 @@ main() {
       ;;
     claude)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/settings.json"
-      agent_bundle_dir="agents/claude"
+      agent_cache_dir="$(sb_agent_cache_rel claude)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
@@ -348,7 +415,7 @@ main() {
       ;;
     codex)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
-      agent_bundle_dir="agents/codex"
+      agent_cache_dir="$(sb_agent_cache_rel codex)"
       if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
@@ -357,17 +424,55 @@ main() {
       ;;
     *)
       record pass D13 "cross-host contamination check N/A (host=${runtime})"
-      agent_bundle_dir=""
+      agent_cache_dir=""
       ;;
   esac
-  if [[ -n "$agent_bundle_dir" ]]; then
-    if [[ -d "${skill_root}/${agent_bundle_dir}" ]]; then
-      record pass D13 "active install has ${agent_bundle_dir}/"
+  if [[ -n "$agent_cache_dir" && -n "$skill_root" ]]; then
+    if [[ -d "${skill_root}/${agent_cache_dir}" ]]; then
+      record pass D13 "active install has ${agent_cache_dir}/"
     else
-      record fail D13 "${agent_bundle_dir}/ missing in active plugin cache (${cache_root}/current)"
+      record fail D13 "${agent_cache_dir}/ missing in active plugin cache (${cache_root}/current)"
     fi
   fi
 
+  # D14 — foreign agent namespaces in active plugin cache
+  if [[ -n "$skill_root" && -d "$skill_root" && -x "$install_surface_script" ]]; then
+    if bash "$install_surface_script" --cache-root "$skill_root" --host "$runtime" >/dev/null 2>&1; then
+      record pass D14 "plugin cache has no foreign host agent namespaces"
+    else
+      record fail D14 "plugin cache cross-host bleed — run: bash scripts/install-${runtime}.sh"
+    fi
+  else
+    record warn D14 "plugin cache surface check skipped (no active install)"
+  fi
+
+  # D15 — Claude agent description token budget
+  if [[ "$runtime" == "claude" ]]; then
+    local token_script="${REPO_ROOT}/scripts/validate-claude-agent-token-budget.sh"
+    if [[ -x "$token_script" ]] && bash "$token_script" --repo-root "$REPO_ROOT" >/dev/null 2>&1; then
+      record pass D15 "Claude agent description token budget within limit"
+    elif [[ -x "$token_script" ]]; then
+      record fail D15 "Claude agent descriptions exceed token budget"
+    else
+      record warn D15 "validate-claude-agent-token-budget.sh not found; skipped"
+    fi
+  else
+    record pass D15 "Claude token budget N/A (host=${runtime})"
+  fi
+
+  # D16 — repo install surface
+  if [[ -x "$install_surface_script" ]] && bash "$install_surface_script" --repo-root "$REPO_ROOT" --host "$runtime" >/dev/null 2>&1; then
+    record pass D16 "repo install surface clean for host=${runtime}"
+  elif [[ -x "$install_surface_script" ]]; then
+    record fail D16 "repo install surface bleed — run: bash scripts/install-${runtime}.sh"
+  else
+    record warn D16 "validate-host-install-surface.sh not found; skipped"
+  fi
+
+  doctor_apply_fixes "$runtime"
+}
+
+doctor_print_summary() {
   if [[ "$FORMAT" == "json" ]]; then
     jq -n \
       --argjson pass "$PASS" --argjson fail "$FAIL" --argjson warn "$WARN" \
@@ -382,8 +487,19 @@ main() {
       echo "OVERALL: FAIL"
     fi
   fi
+}
 
+main() {
+  parse_args "$@"
+  run_doctor_checks
+  if [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]]; then
+    [[ "$FORMAT" != "json" ]] && echo && echo "sb-doctor: re-running checks after --fix"
+    PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
+    run_doctor_checks
+  fi
+  doctor_print_summary
   [[ "$FAIL" -eq 0 ]]
 }
 
-main "$@"
+parse_args "$@"
+main
