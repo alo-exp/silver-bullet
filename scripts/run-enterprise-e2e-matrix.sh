@@ -514,6 +514,11 @@ main() {
   if [[ "$FAIL_ROWS" -gt 0 ]]; then
     exit 1
   fi
+
+  if [[ "${SB_E2E_MATRIX_FAIL_ON_SKIP:-}" == "1" && "$SKIP_ROWS" -gt 0 ]]; then
+    echo "ERROR: ${SKIP_ROWS} row(s) SKIP — live run required (set SB_E2E_MATRIX_FORCE=1 to re-run)" >&2
+    exit 1
+  fi
 }
 
 main "$@"
