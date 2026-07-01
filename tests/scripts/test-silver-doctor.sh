@@ -12,7 +12,7 @@ assert_contains() {
   local desc="$1" needle="$2" file="$3"
   # Fixed-string when needle looks like a flag (BSD grep treats "--fix" as an option).
   if [[ "$needle" == --* ]]; then
-    if grep -qF "$needle" "$file"; then
+    if grep -Fq -- "$needle" "$file"; then
       echo "PASS: $desc"
       PASS=$((PASS + 1))
     else
