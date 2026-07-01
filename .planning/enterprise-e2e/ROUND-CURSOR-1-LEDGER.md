@@ -228,3 +228,19 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 | 22 | **PASS** |
 
 **Ledger:** **15/22**. Strict-clean still blocked (rows 6, 7, 12, 14–16, 18 + Phase A ladder + run-all-tests 15 fail).
+
+---
+
+## Retry #3f diagnosis (2026-07-01 @40347ca7)
+
+| Row | Log | Rescore | Blocker |
+|-----|-----|---------|---------|
+| 6 | 785B ENOTFOUND only | FAIL | no evidence file; needs live |
+| 7 | 109B timeout | FAIL | timeout-only |
+| 12 | 109B timeout | FAIL | timeout-only (DEPLOY.md exists) |
+| 14 | 109B timeout | FAIL | timeout-only |
+| 15 | 2271B | **PASS** | ledger stale Fail |
+| 16 | 1171B | **PASS** | ledger stale Fail |
+| 18 | 1557B | **PASS** | ledger stale Fail |
+
+**Launched:** tmux `cursor-e2e-retry3f`, rows **6 7 12 14 15 16 18**, log `.e2e-matrix-cursor-retry3f.log`
