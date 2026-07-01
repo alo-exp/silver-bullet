@@ -281,3 +281,17 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 |------|--------|
 | Matrix 22/22 | **PASS** |
 | T1 row 1 FORCE×2 | **IN FLIGHT** (tmux `cursor-e2e-t1`) |
+
+---
+
+## T1 Tier B (2026-07-01)
+
+**FORCE×2 row 1** (`cursor-t1-driver.sh`, tmux `cursor-e2e-t1`):
+
+| Run | Result | Evidence |
+|-----|--------|----------|
+| 1/2 | **PASS** | live OUTCOMES + `router-session.md` @ worktree |
+| 2/2 | **PASS** | live OUTCOMES @ `f901f1fa` (driver exit interrupted; log lines 188–196) |
+
+**Confirm:** tmux `cursor-e2e-t1b` relaunch if driver tally needed.
+
