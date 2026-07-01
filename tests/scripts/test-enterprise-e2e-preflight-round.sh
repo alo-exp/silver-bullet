@@ -42,6 +42,10 @@ assert_contains "smoke rows 1 3 6 11 21 22" \
   "${REPO_ROOT}/scripts/enterprise-e2e/smoke-matrix.sh" \
   "SMOKE_ROWS=(1 3 6 11 21 22)"
 
+assert_contains "smoke gate 2 fails on SKIP" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/smoke-matrix.sh" \
+  "SB_E2E_MATRIX_FAIL_ON_SKIP=1"
+
 assert_contains "strict-clean rejects surface skip" \
   "${REPO_ROOT}/scripts/enterprise-e2e/strict-clean-check.sh" \
   "SB_E2E_SURFACE_SKIP"
