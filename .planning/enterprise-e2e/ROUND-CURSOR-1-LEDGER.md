@@ -57,7 +57,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 
 | # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
-| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | initial batch |
+| 1 | `silver-router` | 2026-07-01 | composer-2.5 | **Pass** | | E2E-086 | 2e44b65c | graphify query silver-router | T1 FORCE×2 PASS @ worktree; router-session.md |
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
 | 3 | `silver-feature` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-feature | retry3c live 2888B PASS |
 | 4 | `silver-bugfix` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | 098f48c6 | graphify query silver-bugfix | retry3d live OUTCOME PASS (148B+timeout) |
@@ -280,7 +280,7 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 | Gate | Status |
 |------|--------|
 | Matrix 22/22 | **PASS** |
-| T1 row 1 FORCE×2 | **IN FLIGHT** (tmux `cursor-e2e-t1`) |
+| T1 row 1 FORCE×2 | **PASS** (2/2 @ `f901f1fa`+; tmux `cursor-e2e-t1`) |
 
 ---
 
@@ -295,3 +295,17 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 **Confirm:** tmux `cursor-e2e-t1b` relaunch if driver tally needed.
 
+
+## Poll checkpoint 2026-07-01T09:36:34Z
+
+| Field | Value |
+|-------|-------|
+| Driver PID | **49245** — **ALIVE** |
+| Exit reason | t1_x2_pass |
+| Batch DONE | **YES** |
+| Ledger pass | **22/22** (reconcile: COMPLETE) |
+| Test-app | `enterprise-e2e/round-8-claude@8482e60` — want `enterprise-e2e/round-1-claude@8482e60` |
+| Last row ~ | 1 |
+| Methodology gate | C |
+
+**While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
