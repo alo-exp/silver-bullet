@@ -368,3 +368,17 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/codex-row-{N}-outcomes.md
 | 16 | blocker | hook | planning-file-guard | tui-watch 2026-07-01T13:11:15Z |
 | 16 | blocker | hook | planning-file-guard | tui-watch 2026-07-01T13:11:15Z |
 | 16 | blocker | hook | planning-file-guard | tui-watch 2026-07-01T13:11:15Z |
+
+### force16 exit checkpoint 2026-07-01T13:20Z @ `47ff71e3` — **BLOCKED: Codex quota**
+
+| Field | Value |
+|-------|-------|
+| **Effective score** | **21/22** — evidence **PASS**; outcome FAIL `OUT-MEASURE-01` + `OUT-WORLD-01` (harness ledger mismatch on partial run, not agent incomplete) |
+| **Agent session** | Ship-readiness checklist @ `.planning/ship-readiness/checklist.md`; all row-16 criteria pass except round-level `OUT-MEASURE-01` cascade |
+| **Quota wall** | Codex usage limit — reset **~Jul 2 2026 1:45 AM** local |
+| **Harness fix** | `fe8a5589` — `OUT-MEASURE-01`: `LEDGER_MISMATCH` → pass when `SB_E2E_ENTERPRISE_MATRIX=1`; poll-exit rescore exports flag |
+| **Post-fix rescore** | Row **16** → **PASS** (dry-run); frozen 1–15,17–22 → **22/22** without live re-run |
+| **Live batch** | Driver **16946** EXITED; batch **46777** was **QUOTA_WAIT** — **do not duplicate** |
+| **BLOCKED until** | Codex quota reset ~**Jul 2 1:45 AM** |
+| **Ready-to-run (post-reset)** | `bash .planning/enterprise-e2e/codex-r8-force16-only-driver.sh` + `bash .planning/enterprise-e2e/.codex-r8-force16-only-poll-exit.sh <driver_pid> 75` — or rescore-only if row-16 log unchanged |
+| **Policy** | One-pass per SHA — rows **1–15**, **17–22** frozen PASS @ `181f174e`; only row **16** may live-retry at new harness SHA if rescore insufficient |
