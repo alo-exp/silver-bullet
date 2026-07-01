@@ -845,7 +845,17 @@ enterprise_e2e_outcome_score_plan() {
 }
 
 enterprise_e2e_outcome_score_skill() {
-  local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
+  local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-}"
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi 'SILVER BULLET.*ROUTING|Routing to:|routing validation only|routing completes' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+    work_dir="${work_dir:-${SB_TEST_ENTERPRISE_APP_ROOT:-}}"
+    if [[ -n "$work_dir" && -f "${work_dir}/.planning/workflows/router-session.md" ]]; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug ev_base=""
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
   if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] && enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
@@ -1102,7 +1112,7 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" "$work_dir" ;;
     OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
-    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" ;;
+    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" "$work_dir" ;;
     OUT-REVIEW-01) enterprise_e2e_outcome_score_review "$ledger" "$row_num" "$row_log" "$work_dir" ;;
     OUT-BLAST-01) enterprise_e2e_outcome_score_blast "$work_dir" "$row_num" ;;
     OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;

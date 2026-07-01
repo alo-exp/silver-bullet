@@ -266,3 +266,18 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 **Rescore note:** Pre-flight diagnosis rescore PASS on 15/16/18 was **superseded** by live retry3f — all three **FAIL** live. Rows 6/7/12/14 needed live (not rescore-only).
 
 **Ledger:** **18/22**. Strict-clean blocked (rows 12, 15, 16, 18 + Phase C run-all-tests + Phase A ladder).
+
+---
+
+## Retry #3g + retry4 (2026-07-01)
+
+**retry3g** (tmux `cursor-e2e-retry3g`, rows 12/15/16/18): rows **12, 15, 16** live **PASS** (substantive logs ~1707–1709B); row **18** incomplete (session died; ENOTFOUND).
+
+**retry4** (tmux `cursor-e2e-retry4`, row 18 only): worktree `enterprise-grade-test-app-cursor` @ `enterprise-e2e/round-1-cursor` — row **18** live **PASS** (1582B substantive).
+
+**Reconcile:** **COMPLETE** @ harness `bea95551` — matrix **22/22** live OUTCOMES.
+
+| Gate | Status |
+|------|--------|
+| Matrix 22/22 | **PASS** |
+| T1 row 1 FORCE×2 | **IN FLIGHT** (tmux `cursor-e2e-t1`) |
