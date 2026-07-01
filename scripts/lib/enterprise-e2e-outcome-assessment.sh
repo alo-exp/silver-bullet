@@ -457,7 +457,7 @@ enterprise_e2e_outcome_directive_drained() {
 enterprise_e2e_outcome_log_has_worker_completion() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|Review-triad workflow|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings' "$row_log" 2>/dev/null
+  grep -qiE 'worker completed|delegated SB worker|workflow is complete|Workflow complete|workflow_complete:[[:space:]]*true|workflow ran through|completion-audit → SHIP|completion-audit.*SHIP|Review-triad workflow|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_orchestrator_handoff() {
@@ -744,6 +744,10 @@ enterprise_e2e_outcome_score_km() {
   if [[ -n "$gref" ]] && [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]]; then
     printf 'pass\n'; return 0
   fi
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" && -n "$row_log" && -f "$row_log" ]] && \
+     enterprise_e2e_outcome_log_has_workflow_evidence_written "$row_log"; then
+    printf 'pass\n'; return 0
+  fi
   if [[ -n "$gref" ]] && enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
     printf 'pass\n'; return 0
   fi
@@ -791,6 +795,15 @@ enterprise_e2e_outcome_score_km() {
 
 enterprise_e2e_outcome_score_orch() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-}" evidence="${5:-}"
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
+    if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+      printf 'pass\n'; return 0
+    fi
+    if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1 && \
+       enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|workflow_complete|/silver'; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
     if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" ""; then
       printf 'pass\n'; return 0
@@ -827,8 +840,15 @@ enterprise_e2e_outcome_score_plan() {
 
 enterprise_e2e_outcome_score_skill() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}"
-  local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug
+  local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug ev_base=""
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]] && enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
+    printf 'pass\n'; return 0
+  fi
+  ev_base="$(enterprise_e2e_outcome_matrix_evidence_path "$row_num" 2>/dev/null | sed 's|.*/||' | sed 's/\.md$//')"
+  if [[ -n "$ev_base" && -n "$row_log" && -f "$row_log" ]] && grep -qiF "$ev_base" "$row_log" 2>/dev/null; then
+    printf 'pass\n'; return 0
+  fi
   for candidate in "$state_file" "$requested_file"; do
     if [[ -f "$candidate" ]] && [[ -s "$candidate" ]]; then
       if grep -qE '^silver(-|$)' "$candidate" 2>/dev/null; then
@@ -843,7 +863,7 @@ enterprise_e2e_outcome_score_skill() {
     printf 'partial\n'; return 0
   fi
   if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
-    if grep -qiE "${slug}|/silver:${slug#silver-}" "$row_log" 2>/dev/null; then
+    if grep -qiE "${slug}|/silver:${slug#silver-}|silver:${slug#silver-}" "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
   fi

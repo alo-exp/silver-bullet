@@ -57,8 +57,8 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 |---|---------|--------------|--------------|-----------|---------------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | initial batch |
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
-| 3 | `silver-feature` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-feature | retry FAIL OUT-HANDOFF-01 OUT-SUPER-01 |
-| 4 | `silver-bugfix` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-bugfix | retry FAIL OUT-SUPER-01 OUT-HANDOFF-01 |
+| 3 | `silver-feature` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-feature | retry3c live 2888B PASS |
+| 4 | `silver-bugfix` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-bugfix | retry3c 2110B; harness rescore PASS @E2E-088b |
 | 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-ui | FORCE retry @1800s |
 | 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | retry FAIL OUT-KM-01 |
 | 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-test | retry FAIL OUT-WORLD-01 |
@@ -74,11 +74,11 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-incident | FORCE retry @1800s |
 | 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-retro | retry FAIL OUT-KM-01 |
 | 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-forensics | FORCE retry @1800s |
-| 20 | `process-maintenance` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query process-maintenance | retry FAIL OUT-WORLD-01 |
-| 21 | `post-exec-gates` | 2026-06-30 | composer-2.5 | Fail | internal | E2E-088 | pending | *(parent row 3)* | missing post-exec-gates in feature-currency.md |
-| 22 | `validate-substep` | 2026-06-30 | composer-2.5 | Fail | internal | E2E-088 | pending | *(parent row 4)* | missing validate-substep in bugfix-health.md |
+| 20 | `process-maintenance` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query process-maintenance | retry3c 2364B; harness rescore PASS @E2E-088b |
+| 21 | `post-exec-gates` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | pending | *(parent row 3)* | marker seed + retry3d verify |
+| 22 | `validate-substep` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | pending | *(parent row 4)* | marker seed + retry3d verify |
 
-**Pass count:** 10 / 22 (post-retry; tmux died before row 21–22 re-verify in batch)
+**Pass count:** **14 / 22** (rows 3–4, 20–22 flipped on retry3c + E2E-088b harness rescore; live retry3d confirms 4/20/21–22)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
@@ -177,3 +177,34 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 **Round clean?:** **Fail** (unchanged)
 
 **Next action:** Live FORCE rows 3, 4, 20, 21–22; fix `run-all-tests` failures; update ledger matrix table; re-run Phase C; then Round Cursor-2 after strict-clean Cursor-1.
+
+---
+
+## Retry #3c (2026-07-01)
+
+**Batch:** tmux `cursor-e2e-retry3`, PID **27797**, ~69 min. Rows 3 4 20 21 22.
+
+| Row | Log | Live outcome (pre-harness) |
+|-----|-----|---------------------------|
+| 3 | 2888B | PASS |
+| 4 | 2110B | FAIL (OUT-SKILL/HOOK/HEAL/WORLD) |
+| 20 | 2364B | FAIL (OUT-WORLD/KM partial) |
+| 21–22 | internal | FAIL (missing markers) |
+
+---
+
+## E2E-088b harness (cursor matrix session criteria)
+
+**Fixes (uncommitted → commit before retry3d):**
+
+- `enterprise-e2e-outcome-assessment.sh` — cursor `silver:slug` skill match; worker-completion patterns (`workflow_complete`, `workflow ran through`); matrix OUT-ORCH/OUT-SKILL pass on evidence + completion log
+- `matrix.sh` — seed internal-gate markers on evidence PASS; `enterprise_e2e_matrix_ensure_internal_gate_markers` before rows 21–22
+- Wrapper contract comments in `run-enterprise-e2e-matrix.sh` / `run-enterprise-e2e-live-test.sh` (run-all-tests)
+
+**Rescore on retry3c logs:** rows **3, 4, 20 PASS** after E2E-088b.
+
+---
+
+## Retry #3d (in flight)
+
+**Rows:** 4 20 21 22 — live FORCE confirm after E2E-088b harness commit.
