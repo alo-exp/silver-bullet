@@ -17,6 +17,8 @@ export SB_ROOT
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/row-pass-registry.sh
+source "${SB_ROOT}/scripts/enterprise-e2e/lib/row-pass-registry.sh"
 
 LEDGER=""
 while [[ $# -gt 0 ]]; do
@@ -76,6 +78,14 @@ done < <(enterprise_e2e_ledger_matrix_rows "$LEDGER")
 
 echo "Outcome strict-clean rows: ${outcome_pass}/22"
 
+registry_pass="$(enterprise_e2e_row_pass_registry_pass_count)"
+install_fp="$(enterprise_e2e_install_fingerprint)"
+echo "Install-version registry: ${registry_pass}/22 rows (install_fp=${install_fp})"
+
+if [[ "${registry_pass:-0}" -lt 22 ]]; then
+  record_fail "install-version registry incomplete — ${registry_pass:-0}/22 rows at ${install_fp}"
+fi
+
 if [[ "${pass_count:-0}" -lt 22 ]]; then
   record_fail "matrix incomplete — ${pass_count:-0}/22 ledger Pass"
 fi
@@ -92,5 +102,5 @@ if [[ "${#FAILURES[@]}" -gt 0 ]]; then
 fi
 
 echo ""
-echo "STRICT-CLEAN ELIGIBLE — ledger 22/22 + outcome 22/22 + no surface skip"
+echo "STRICT-CLEAN ELIGIBLE — ledger 22/22 + outcome 22/22 + registry 22/22 + no surface skip"
 exit 0

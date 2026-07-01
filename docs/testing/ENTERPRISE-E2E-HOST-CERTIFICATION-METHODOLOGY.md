@@ -23,6 +23,7 @@
 | Preflight script (Gate 0+1) | [`scripts/enterprise-e2e/preflight-round.sh`](../../scripts/enterprise-e2e/preflight-round.sh) |
 | Smoke script (Tier B) | [`scripts/enterprise-e2e/smoke-matrix.sh`](../../scripts/enterprise-e2e/smoke-matrix.sh) |
 | Strict-clean checker | [`scripts/enterprise-e2e/strict-clean-check.sh`](../../scripts/enterprise-e2e/strict-clean-check.sh) |
+| Row pass registry | [`.planning/enterprise-e2e/.row-pass-registry.json`](../../.planning/enterprise-e2e/.row-pass-registry.json) |
 | Monitor checkpoint | [`scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh`](../../scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh) |
 
 ---
@@ -248,6 +249,28 @@ Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSES
 **While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
+
+---
+
+## 8.1 Install-version row pass registry (one-pass-per-version)
+
+**Policy:** Do **not** repeat any matrix row that has already achieved **live evidence + outcome PASS** for the **same SB install version** in the current round or continuation. One clean pass per row per install is sufficient.
+
+| Concept | Detail |
+|---------|--------|
+| **Registry file** | `.planning/enterprise-e2e/.row-pass-registry.json` |
+| **Install fingerprint (`install_fp`)** | `<host>:<package.json version>` — e.g. `claude:0.49.1` (stable across harness-only commits) |
+| **Override fingerprint** | `SB_E2E_INSTALL_FP=<host>:<ver>` (tests / pinned resume) |
+| **Harness skip class** | `ROW_ALREADY_PASSED_SAME_INSTALL` — counts toward **22/22 Pass** (not evidence SKIP) |
+| **Re-run override** | `SB_E2E_MATRIX_FORCE_ALL=1` — explicit full re-run of registry-passed rows |
+| **Evidence-only FORCE** | `SB_E2E_MATRIX_FORCE=1` re-runs evidence-SKIP rows only; does **not** override registry |
+| **FAIL_ON_SKIP** | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` does **not** fail on registry passes |
+
+**When a row completes live + outcome PASS**, the matrix runner appends `{passed_at, log_ref, outcome_pass}` under `by_install[install_fp].rows[row]`.
+
+**Strict-clean:** `strict-clean-check.sh` requires **22/22** registry rows for the current `install_fp` in addition to ledger + outcome gates.
+
+**Seeded smoke rows (R8 @ `0.49.1`):** 1, 3, 6, 11, 21, 22 — resume batches skip these unless `SB_E2E_MATRIX_FORCE_ALL=1`.
 
 ---
 
