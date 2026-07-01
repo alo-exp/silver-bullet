@@ -12,19 +12,11 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
+FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
 OUT_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-out.XXXXXX")"
-FIXTURE_CLEANUP=""
-if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
-  FIXTURE="$SB_TEST_ENTERPRISE_APP_ROOT"
-elif [[ -d "/Users/shafqat/projects/enterprise-grade-test-app" ]]; then
-  FIXTURE="/Users/shafqat/projects/enterprise-grade-test-app"
-else
-  FIXTURE="$(mktemp -d "${TMPDIR}/sb-outcome-fixture.XXXXXX")"
-  FIXTURE_CLEANUP=1
-fi
-trap 'rm -rf "$STATE_DIR" "$OUT_DIR"; [[ -n "$FIXTURE_CLEANUP" ]] && rm -rf "$FIXTURE"' EXIT
+trap 'rm -rf "$STATE_DIR" "$OUT_DIR"' EXIT
 
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
@@ -49,10 +41,10 @@ done
 # --- Registry JSON validity ---
 REGISTRY="${REPO_ROOT}/docs/testing/outcome-criteria-registry.json"
 if command -v jq >/dev/null 2>&1; then
-  if jq -e '.criteria | length >= 27' "$REGISTRY" >/dev/null 2>&1; then
-    pass "registry has >=27 criteria"
+  if jq -e '.criteria | length >= 28' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry has >=28 criteria"
   else
-    fail "registry criteria count < 27"
+    fail "registry criteria count < 28"
   fi
   if jq -e '.blocking_criteria | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
     pass "registry blocking_criteria has >=4 entries"
@@ -75,9 +67,6 @@ fi
 
 # --- Fixture: row 3 feature workflow scoring ---
 mkdir -p "$FIXTURE/.planning/workflows" "$FIXTURE/.planning/ship-readiness" 2>/dev/null || true
-if [[ ! -f "$FIXTURE/.silver-bullet.json" ]]; then
-  printf '%s\n' '{"recommended_tools":{"graphify":{"enabled_by_user":true}}}' >"$FIXTURE/.silver-bullet.json"
-fi
 mkdir -p "$STATE_DIR"
 printf 'silver-context\nsilver-feature\nsilver-quality-gates\n' >"$STATE_DIR/state"
 cat >"$FIXTURE/.planning/PLAN-feature.md" <<'EOF'
@@ -165,17 +154,17 @@ fi
 rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
+SESSION_LOG_R1="$(mktemp)"
 printf 'silver-context\n' >"$STATE_DIR/state"
 rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
 EOF
-SESSION_LOG_R1="$(mktemp)"
-printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 score_tailor="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_tailor" == "pass" ]] && pass "fixture row 1 OUT-TAILOR-01 pass" || fail "fixture row 1 OUT-TAILOR-01 got $score_tailor"
 
 # --- Fixture: row 1 routing-only world composite ---
+printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session evidence
 EOF
@@ -212,6 +201,216 @@ rm -f "$ROW1_LOG"
 # --- Fixture: row 6 fast path gates n/a ---
 score_gates6="$(enterprise_e2e_outcome_score_criterion OUT-GATES-01 "$FIXTURE" "$STATE_DIR" "" 6)"
 [[ "$score_gates6" == "pass" ]] && pass "fixture row 6 OUT-GATES-01 pass (fast-path skip)" || fail "fixture row 6 OUT-GATES-01 got $score_gates6"
+
+# --- Fixture: row 6/7/8/11 FORCE-resume outcome patterns (retained log signals) ---
+ROW67_LEDGER="$(mktemp)"
+cat >"$ROW67_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Claude model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 6 | `silver-fast` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-fast routes hooks skills orchestrator | |
+| 7 | `silver-test` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-test routes hooks skills orchestrator | |
+| 8 | `silver-refactor` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-refactor routes hooks skills orchestrator | |
+| 11 | `silver-devops` | 2026-06-30 | haiku | **Fail** | expect regex | | | silver-devops routes hooks skills orchestrator | |
+LEDGER
+ROW6_LOG="$(mktemp)"
+printf 'Route through silver-fast workflow\ngraphify query silver-fast routes hooks skills orchestrator\nagentmemory - memory_save (MCP)(content: "README decision")\nautonomous orchestrator active\n' >"$ROW6_LOG"
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/fast-readme.md" <<'EOF'
+# Fast README evidence
+EOF
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-fast","next_worker_template":"fast"}
+EOF
+score_km6="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" 6 "" "$ROW67_LEDGER")"
+[[ "$score_km6" == "pass" ]] && pass "fixture row 6 OUT-KM-01 pass (graphify ref + agentmemory MCP in log)" || fail "fixture row 6 OUT-KM-01 got $score_km6"
+score_skill6="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" 6)"
+[[ "$score_skill6" == "pass" ]] && pass "fixture row 6 OUT-SKILL-01 pass from log slug fallback" || fail "fixture row 6 OUT-SKILL-01 got $score_skill6"
+rm -f "$STATE_DIR/state"
+if enterprise_e2e_outcome_row_passes 6 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" "$ROW67_LEDGER" ".planning/workflows/fast-readme.md"; then
+  pass "fixture row 6 enterprise_e2e_outcome_row_passes (KM + skill log fallback)"
+else
+  fail "fixture row 6 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 6 "$FIXTURE" "$STATE_DIR" "$ROW6_LOG" "$ROW67_LEDGER" ".planning/workflows/fast-readme.md" || true
+fi
+ROW7_LOG="$(mktemp)"
+printf 'silver-test workflow\ngraphify query silver-test routes hooks skills orchestrator\nagentmemory - memory_smart_search (MCP)(query: "test-orders-integration")\n' >"$ROW7_LOG"
+cat >"$FIXTURE/.planning/workflows/test-orders-integration.md" <<'EOF'
+# Test orders integration evidence
+EOF
+printf 'silver-test\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-test","next_worker_template":"test"}
+EOF
+score_km7="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" 7 "" "$ROW67_LEDGER")"
+[[ "$score_km7" == "pass" ]] && pass "fixture row 7 OUT-KM-01 pass (graphify ref + agentmemory MCP in log)" || fail "fixture row 7 OUT-KM-01 got $score_km7"
+if enterprise_e2e_outcome_row_passes 7 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" "$ROW67_LEDGER" ".planning/workflows/test-orders-integration.md"; then
+  pass "fixture row 7 enterprise_e2e_outcome_row_passes (KM-only gap fixed)"
+else
+  fail "fixture row 7 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 7 "$FIXTURE" "$STATE_DIR" "$ROW7_LOG" "$ROW67_LEDGER" ".planning/workflows/test-orders-integration.md" || true
+fi
+ROW8_LOG="$(mktemp)"
+printf 'silver-refactor workflow\ngraphify query silver-refactor routes hooks skills orchestrator\nagentmemory - memory_save (MCP)(content: "refactor validation")\n' >"$ROW8_LOG"
+cat >"$FIXTURE/.planning/workflows/refactor-order-validation.md" <<'EOF'
+# Refactor order validation evidence
+EOF
+cat >"$FIXTURE/.planning/PLAN-refactor.md" <<'EOF'
+# Plan — refactor
+EOF
+printf 'silver-refactor\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-refactor","next_worker_template":"refactor"}
+EOF
+if enterprise_e2e_outcome_row_passes 8 "$FIXTURE" "$STATE_DIR" "$ROW8_LOG" "$ROW67_LEDGER" ".planning/workflows/refactor-order-validation.md"; then
+  pass "fixture row 8 enterprise_e2e_outcome_row_passes (KM-only gap fixed)"
+else
+  fail "fixture row 8 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 8 "$FIXTURE" "$STATE_DIR" "$ROW8_LOG" "$ROW67_LEDGER" ".planning/workflows/refactor-order-validation.md" || true
+fi
+ROW11_LOG="$(mktemp)"
+printf 'silver-devops terraform validation\ngraphify query silver-devops routes hooks skills orchestrator\nagentmemory - memory_smart_search (MCP)(query: "devops terraform")\n◯ general-purpose SB orchestrator worker — ROUTER for terraform env valid\nMinimum next action: Ask the user to decide whether to accept the current evidence\n' >"$ROW11_LOG"
+mkdir -p "$FIXTURE/infra/terraform"
+touch "$FIXTURE/infra/terraform/main.tf"
+cat >"$FIXTURE/.planning/workflows/devops-terraform-validation.md" <<'EOF'
+# Devops terraform validation
+Terraform environment variable validation for IaC blast-radius review.
+EOF
+cat >"$FIXTURE/.planning/PLAN-devops.md" <<'EOF'
+# Plan — devops
+EOF
+printf 'silver-devops\n' >"$STATE_DIR/state"
+cat >"$STATE_DIR/orchestrator-directive.json" <<'EOF'
+{"next_skill":"silver-devops","next_worker_template":"devops"}
+EOF
+score_blast11="$(enterprise_e2e_outcome_score_criterion OUT-BLAST-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11)"
+[[ "$score_blast11" == "pass" ]] && pass "fixture row 11 OUT-BLAST-01 pass (devops evidence + terraform)" || fail "fixture row 11 OUT-BLAST-01 got $score_blast11"
+score_noop11="$(enterprise_e2e_outcome_score_criterion OUT-NOOP-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11)"
+[[ "$score_noop11" == "pass" ]] && pass "fixture row 11 OUT-NOOP-01 pass (planning Ask-the-user not babysitting)" || fail "fixture row 11 OUT-NOOP-01 got $score_noop11"
+score_auto11="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" 11 "" ".planning/workflows/devops-terraform-validation.md")"
+[[ "$score_auto11" == "pass" ]] && pass "fixture row 11 OUT-AUTO-01 pass (evidence + orchestrator worker log)" || fail "fixture row 11 OUT-AUTO-01 got $score_auto11"
+if enterprise_e2e_outcome_row_passes 11 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" "$ROW67_LEDGER" ".planning/workflows/devops-terraform-validation.md"; then
+  pass "fixture row 11 enterprise_e2e_outcome_row_passes (devops resume set)"
+else
+  fail "fixture row 11 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 11 "$FIXTURE" "$STATE_DIR" "$ROW11_LOG" "$ROW67_LEDGER" ".planning/workflows/devops-terraform-validation.md" || true
+fi
+
+# --- Live TUI log patterns: ANSI noise + fragmented graphify/agentmemory tokens ---
+TUI7_LOG="$(mktemp)"
+printf '\x1b[5Gagentmeory -memory_save (MCP)(concepts:"silver-test")\rquery "orders integration test" --graph\r    graphify-out/graph.json\rEvidence written to .planning/workflows/test-orders-integration.md\r' >"$TUI7_LOG"
+score_km_tui7="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI7_LOG" 7 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui7" == "pass" ]] && pass "TUI-noisy row 7 OUT-KM-01 pass (ANSI + agentmeory typo)" || fail "TUI-noisy row 7 OUT-KM-01 got $score_km_tui7"
+TUI8_LOG="$(mktemp)"
+printf 'WROTE:.planning/workflows/refactor-order-validation.md\r|graphify-out/graph.json|AST cache\r' >"$TUI8_LOG"
+mkdir -p "$FIXTURE/graphify-out"
+touch "$FIXTURE/graphify-out/graph.json"
+score_km_tui8="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI8_LOG" 8 "$ROW67_LEDGER" "")"
+[[ "$score_km_tui8" == "pass" ]] && pass "TUI-noisy row 8 OUT-KM-01 pass (work_dir graphify-out + evidence written)" || fail "TUI-noisy row 8 OUT-KM-01 got $score_km_tui8"
+TUI11_LOG="$(mktemp)"
+printf 'graphify query "terraform validation"\rFull verdict persisted to agentmemory\r.planning/workflows/devops-terraform-validation.md\r' >"$TUI11_LOG"
+score_km_tui11="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI11_LOG" 11 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui11" == "pass" ]] && pass "TUI-noisy row 11 OUT-KM-01 pass (graphify query + persisted capture)" || fail "TUI-noisy row 11 OUT-KM-01 got $score_km_tui11"
+TUI2_LOG="$(mktemp)"
+printf 'graphify query "silver-research routes hooks skills orchestrator"\rsaved the decision to agentmemory as mem_mr0ghyhm_78cf4b75a677\rWROTE: docs/ADR-001-runtime.md\r' >"$TUI2_LOG"
+mkdir -p "$FIXTURE/docs"
+touch "$FIXTURE/docs/ADR-001-runtime.md"
+score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "" "$ROW67_LEDGER")"
+[[ "$score_km_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-KM-01 pass (mem_mr id + graphify query)" || fail "TUI-noisy row 2 OUT-KM-01 got $score_km_tui2"
+TUI5_MATRIX_LOG="$(mktemp)"
+printf 'graphify query "silver-ui routes hooks skills orchestrator"\r' >"$TUI5_MATRIX_LOG"
+mkdir -p "$FIXTURE/ui/src" "$FIXTURE/graphify-out"
+touch "$FIXTURE/ui/src/App.jsx" "$FIXTURE/graphify-out/graph.json"
+score_km_tui5="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI5_MATRIX_LOG" 5 "" "ui/src/App.jsx")"
+[[ "$score_km_tui5" == "pass" ]] && pass "matrix harness row 5 OUT-KM-01 pass (graphify preamble + evidence path)" || fail "matrix harness row 5 OUT-KM-01 got $score_km_tui5"
+score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
+[[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
+export SB_E2E_MATRIX_EVIDENCE_PATH="docs/ADR-001-runtime.md"
+ROW2_LIVE_LOG="$(mktemp)"
+cp "$TUI2_LOG" "$ROW2_LIVE_LOG"
+printf 'autonomous Task worker spawned\r' >>"$ROW2_LIVE_LOG"
+score_auto_row2_env="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW2_LIVE_LOG" 2 "$ROW67_LEDGER" "")"
+[[ "$score_auto_row2_env" == "pass" ]] && pass "row 2 OUT-AUTO-01 pass via SB_E2E_MATRIX_EVIDENCE_PATH" || fail "row 2 OUT-AUTO-01 env fallback got $score_auto_row2_env"
+unset SB_E2E_MATRIX_EVIDENCE_PATH
+
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$TUI5_MATRIX_LOG" "$ROW2_LIVE_LOG"
+
+# --- Internal rows 21/22: parent log + non-silver state (retained TUI re-score) ---
+INTERNAL_STATE="$(mktemp -d)"
+printf 'code-review\nrequesting-code-review\n' >"$INTERNAL_STATE/state"
+ROW21_PARENT_LOG="$(mktemp)"
+printf 'silver-feature workflow\npost-exec-gates evidence in parent session\n/silver:feature\n' >"$ROW21_PARENT_LOG"
+mkdir -p "$FIXTURE/.planning/workflows/.archive"
+cat >"$FIXTURE/.planning/workflows/.archive/feature-currency.md" <<'EOF'
+# Feature currency
+post-exec-gates evidence
+EOF
+score_skill21="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$INTERNAL_STATE" "$ROW21_PARENT_LOG" 21 "" ".planning/workflows/feature-currency.md")"
+[[ "$score_skill21" == "pass" ]] && pass "fixture row 21 OUT-SKILL-01 pass (parent log + non-silver state)" || fail "fixture row 21 OUT-SKILL-01 got $score_skill21"
+ROW22_PARENT_LOG="$(mktemp)"
+printf 'silver-bugfix workflow\nvalidate-substep gap check runs\n/silver:bugfix\nsilver-context orientation\n' >"$ROW22_PARENT_LOG"
+cat >"$FIXTURE/.planning/workflows/.archive/bugfix-health.md" <<'EOF'
+# Bugfix health evidence
+validate-substep gap documented
+EOF
+score_skill22="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" 22 "" ".planning/workflows/bugfix-health.md")"
+[[ "$score_skill22" == "pass" ]] && pass "fixture row 22 OUT-SKILL-01 pass (parent row 4 log + non-silver state)" || fail "fixture row 22 OUT-SKILL-01 got $score_skill22"
+if enterprise_e2e_outcome_row_passes 22 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" "" ".planning/workflows/bugfix-health.md"; then
+  pass "fixture row 22 enterprise_e2e_outcome_row_passes (parent log fallback)"
+else
+  fail "fixture row 22 enterprise_e2e_outcome_row_passes expected pass"
+  enterprise_e2e_outcome_row_failures 22 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" "" ".planning/workflows/bugfix-health.md" || true
+fi
+rm -rf "$INTERNAL_STATE" "$ROW21_PARENT_LOG" "$ROW22_PARENT_LOG"
+
+# --- Live TUI hook false-positive filter (planning-file-guard deliberation) ---
+unset SB_E2E_OUTCOME_ASSESS_FIXTURE
+FP_WATCH="$(mktemp)"
+cat >"$FP_WATCH" <<'FPJSON'
+{"ts":"2026-06-30T10:56:44Z","row":3,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"issueSBOVERRIDEwhenplanning-file-guardblocksevidencewrites;donotpresent[harness] ignoring SessionStart hook error (non-blocking)"}
+{"ts":"2026-06-30T11:03:08Z","row":4,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"IneedtoissueSBOVERRIDEwhenplanning-file-guardblocksevidencewrites"}
+FPJSON
+FP_ROW3_LOG="$(mktemp)"
+printf '[harness] ignoring non-blocking hook failure\rplanning-file-guard blocks evidence writes\r' >"$FP_ROW3_LOG"
+if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH" 3 "$FP_ROW3_LOG"; then
+  fail "planning-file-guard deliberation should not count as hook blocker (row 3)"
+else
+  pass "planning-file-guard deliberation excluded from hook blocker (row 3)"
+fi
+if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH" 4 "$FP_ROW3_LOG"; then
+  fail "planning-file-guard deliberation should not count as hook blocker (row 4)"
+else
+  pass "planning-file-guard deliberation excluded from hook blocker (row 4)"
+fi
+FP_WATCH_R68="$(mktemp)"
+cat >"$FP_WATCH_R68" <<'FPJSON68'
+{"ts":"2026-06-30T23:50:55Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":", on any subsequent planning-file-guard block, the"}
+{"ts":"2026-06-30T23:50:55Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":" authorized for any planning-file-guard block under autonomous mode."}
+{"ts":"2026-06-30T23:52:02Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"ERRIDE:authorizedforplanning-file-guardblocks(usedthisrun —see override log)"}
+{"ts":"2026-06-30T23:53:09Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"sfile—survives the planning-file-guard)"}
+{"ts":"2026-07-01T00:01:02Z","row":8,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"BOVERRIDEifneededforplanning-file-guard\r\r 4.Don'tpresentinteractivemenus\r\r 5.Createevidencefileat.planning/workflows/re"}
+FPJSON68
+FP_ROW68_LOG="$(mktemp)"
+printf '[harness] ignoring SessionStart hook error (non-blocking)\rplanning-file-guard blocks evidence writes\r' >"$FP_ROW68_LOG"
+if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH_R68" 6 "$FP_ROW68_LOG"; then
+  fail "planning-file-guard deliberation should not count as hook blocker (row 6 round-7 patterns)"
+else
+  pass "planning-file-guard deliberation excluded from hook blocker (row 6 round-7 patterns)"
+fi
+if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH_R68" 8 "$FP_ROW68_LOG"; then
+  fail "planning-file-guard deliberation should not count as hook blocker (row 8 round-7 patterns)"
+else
+  pass "planning-file-guard deliberation excluded from hook blocker (row 8 round-7 patterns)"
+fi
+REAL_WATCH="$(mktemp)"
+printf '{"row":3,"severity":"blocker","category":"hook","message":"stage enforcer","excerpt":"stage enforcer blocked unsafe deploy"}\n' >"$REAL_WATCH"
+if enterprise_e2e_outcome_watch_has_hook_blocker "$REAL_WATCH" 3 ""; then
+  pass "real stage-enforcer hook blocker still detected"
+else
+  fail "stage-enforcer hook blocker should not be filtered"
+fi
+export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
+score_heal_fp="$(enterprise_e2e_outcome_score_criterion OUT-HEAL-01 "$FIXTURE" "$STATE_DIR" "$FP_ROW3_LOG" 3)"
+[[ "$score_heal_fp" == "n/a" ]] && pass "OUT-HEAL-01 n/a when harness ignores non-blocking hook" || fail "OUT-HEAL-01 harness-ignore got $score_heal_fp"
+rm -f "$FP_WATCH" "$FP_ROW3_LOG" "$FP_WATCH_R68" "$FP_ROW68_LOG" "$REAL_WATCH"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
@@ -257,6 +456,8 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 round_review="$(enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$FIXTURE" "$STATE_DIR" "" "" "$LEDGER_FIXTURE")"
 [[ "$round_review" == "pass" ]] && pass "round OUT-REVIEW-01 pass from ladder fixture" || fail "round OUT-REVIEW-01 got $round_review"
+round_surface="$(enterprise_e2e_outcome_score_criterion OUT-SURFACE-01 "$FIXTURE" "$STATE_DIR")"
+[[ "$round_surface" == "pass" ]] && pass "round OUT-SURFACE-01 pass (install surface)" || fail "round OUT-SURFACE-01 got $round_surface"
 rm -f "$LEDGER_FIXTURE"
 
 # --- ROUND-N-OUTCOMES template references rubric ---
