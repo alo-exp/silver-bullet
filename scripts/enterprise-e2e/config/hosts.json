@@ -19,7 +19,8 @@
       "monitor_status_file": ".e2e-matrix-monitor-status.txt",
       "tui_findings": ".e2e-tui-watch-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-offsets.json",
-      "row_attempt_pattern": ".e2e-row{row}-attempt{suffix}.log"
+      "row_attempt_pattern": ".e2e-row{row}-attempt{suffix}.log",
+      "fixture_branch": "enterprise-e2e/round6"
     },
     "codex": {
       "adapter": "codex",
@@ -39,7 +40,8 @@
       "monitor_status_file": ".e2e-matrix-codex-monitor-status.txt",
       "tui_findings": ".e2e-tui-watch-codex-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-codex-offsets.json",
-      "row_attempt_pattern": ".e2e-row{row}-codex-attempt{suffix}.log"
+      "row_attempt_pattern": ".e2e-row{row}-codex-attempt{suffix}.log",
+      "fixture_branch": "enterprise-e2e/round-8-codex"
     },
     "cursor": {
       "adapter": "cursor",
@@ -58,7 +60,8 @@
       "monitor_status_file": ".e2e-matrix-cursor-monitor-status.txt",
       "tui_findings": ".e2e-tui-watch-cursor-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-cursor-offsets.json",
-      "row_attempt_pattern": ".e2e-row{row}-cursor-attempt{suffix}.log"
+      "row_attempt_pattern": ".e2e-row{row}-cursor-attempt{suffix}.log",
+      "fixture_branch": "enterprise-e2e/round-cursor-1"
     }
   },
   "route_map": {
