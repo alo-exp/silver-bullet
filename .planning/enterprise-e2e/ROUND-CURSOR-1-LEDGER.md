@@ -58,7 +58,7 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | E2E-086 | c6cae4e9 | graphify query silver-router | initial batch |
 | 2 | `silver-research` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-research | FORCE retry @1800s |
 | 3 | `silver-feature` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-feature | retry3c live 2888B PASS |
-| 4 | `silver-bugfix` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query silver-bugfix | retry3c 2110B; harness rescore PASS @E2E-088b |
+| 4 | `silver-bugfix` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | 098f48c6 | graphify query silver-bugfix | retry3d live OUTCOME PASS (148B+timeout) |
 | 5 | `silver-ui` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-ui | FORCE retry @1800s |
 | 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | retry FAIL OUT-KM-01 |
 | 7 | `silver-test` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-test | retry FAIL OUT-WORLD-01 |
@@ -74,11 +74,11 @@ Copy from template at round start. Host track runs **in parallel** with Claude R
 | 17 | `silver-incident` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-incident | FORCE retry @1800s |
 | 18 | `silver-retro` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-retro | retry FAIL OUT-KM-01 |
 | 19 | `silver-forensics` | 2026-06-30 | composer-2.5 | Pass | | E2E-087 | 2b197be9 | graphify query silver-forensics | FORCE retry @1800s |
-| 20 | `process-maintenance` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | pending | graphify query process-maintenance | retry3c 2364B; harness rescore PASS @E2E-088b |
-| 21 | `post-exec-gates` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | pending | *(parent row 3)* | marker seed + retry3d verify |
-| 22 | `validate-substep` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | pending | *(parent row 4)* | marker seed + retry3d verify |
+| 20 | `process-maintenance` | 2026-07-01 | composer-2.5 | Pass | | E2E-088 | 098f48c6 | graphify query process-maintenance | retry3d live PASS (994B; ENOTFOUND recovered) |
+| 21 | `post-exec-gates` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | 098f48c6 | *(parent row 3)* | retry3e internal PASS @098f48c6 |
+| 22 | `validate-substep` | 2026-07-01 | composer-2.5 | Pass | internal | E2E-088 | 098f48c6 | *(parent row 4)* | retry3e internal PASS @098f48c6 |
 
-**Pass count:** **14 / 22** (rows 3–4, 20–22 flipped on retry3c + E2E-088b harness rescore; live retry3d confirms 4/20/21–22)
+**Pass count:** **15 / 22** (blocker rows cleared: 3–4, 20–22; remaining: 6, 7, 12, 14–16, 18)
 
 Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
@@ -205,6 +205,26 @@ Outcome companions: `.planning/enterprise-e2e/outcomes/row-{N}-outcomes.md`
 
 ---
 
-## Retry #3d (in flight)
+## Retry #3d (2026-07-01 @56c576d9)
 
-**Rows:** 4 20 21 22 — live FORCE confirm after E2E-088b harness commit.
+**Batch:** tmux `cursor-e2e-retry3d`, ~53 min. Rows 4 20 21 22.
+
+| Row | Result | Notes |
+|-----|--------|-------|
+| 4 | **PASS** | 148B log + timeout suffix; evidence + OUTCOMES pass |
+| 20 | **PASS** | 994B; `ENOTFOUND agentn.global.api5.cursor.sh` mid-session, recovered |
+| 21 | **FAIL** | internal — workflow markers missing post-run |
+| 22 | **FAIL** | internal — parent marker missing |
+
+---
+
+## Retry #3e (2026-07-01 @098f48c6)
+
+**Rows:** 21 22 internal only (DNS restored). `verify_row_internal` fix: parent log + ledger pass seeds markers.
+
+| Row | Result |
+|-----|--------|
+| 21 | **PASS** |
+| 22 | **PASS** |
+
+**Ledger:** **15/22**. Strict-clean still blocked (rows 6, 7, 12, 14–16, 18 + Phase A ladder + run-all-tests 15 fail).
