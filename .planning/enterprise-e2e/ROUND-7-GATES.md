@@ -1,7 +1,7 @@
 # Round 7 — Gate checklist
 
 **Updated:** 2026-07-01T05:42Z  
-**SB HEAD:** `755a074c` (`enterprise-e2e/multi-host`)  
+**SB HEAD:** `b0094b1` (`enterprise-e2e/multi-host`)  
 **Test app HEAD:** `565e825`  
 **Ledger:** [ROUND-7-LEDGER.md](./ROUND-7-LEDGER.md)
 
