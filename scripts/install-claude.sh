@@ -295,8 +295,11 @@ prune_claude_cross_host_agent_surfaces() {
   [[ -n "$plugin_root" && -d "$plugin_root" ]] || return 0
   rm -rf \
     "${plugin_root}/agents/codex" \
-    "${plugin_root}/agents/cursor" \
-    "${plugin_root}/host-bundles"
+    "${plugin_root}/agents/cursor"
+  # host-bundles/ is canonical Codex/Cursor source in the dev repo — prune only from live plugin cache.
+  if [[ "$(cd "$plugin_root" && pwd -P)" != "$(cd "$REPO_ROOT" && pwd -P)" ]]; then
+    rm -rf "${plugin_root}/host-bundles"
+  fi
   if [[ -d "${plugin_root}/agents" ]]; then
     find "${plugin_root}/agents" -mindepth 1 -maxdepth 1 -type d ! -name 'claude' -exec rm -rf {} +
   fi
