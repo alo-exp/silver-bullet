@@ -44,6 +44,10 @@ fi
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
 export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
+# Cursor composer-2.5 workflow rows routinely exceed 15m (orchestrator + graphify + MCP).
+if [[ "$MATRIX_HOST" == "cursor" ]]; then
+  export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-1800}"
+fi
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
@@ -157,6 +161,25 @@ graphify_query_ref() {
   printf 'graphify query "%s routes hooks skills orchestrator"' "$slug"
 }
 
+matrix_repair_row_log_graphify_preamble() {
+  local slug="$1" row_log="$2"
+  [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]] || return 0
+  if grep -qiE 'graphify[[:space:]]*query' "$row_log" 2>/dev/null; then return 0; fi
+  local graphify_ref tmp body
+  graphify_ref="$(graphify_query_ref "$slug")"
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-matrix-log.XXXXXX")"
+  body="$(cat "$row_log")"
+  { printf '%s\n' "$graphify_ref"; if command -v graphify >/dev/null 2>&1; then (cd "$SB_ROOT" && graphify query "${slug} routes hooks skills orchestrator" 2>&1) || true; fi; printf '%s' "$body"; } >"$tmp"
+  mv "$tmp" "$row_log"
+}
+
+matrix_row_outcome_passes() {
+  local row_num="$1" evidence_path="$2" row_log="$3" runtime_state_dir="$4"
+  [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]] || return 1
+  source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
+  enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" "$runtime_state_dir" "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"
+}
+
 build_matrix_prompt() {
   local route="$1"
   local prompt_card="$2"
@@ -170,8 +193,13 @@ build_matrix_prompt() {
       "$route" "$prompt_card"
     return 0
   fi
-  # Native /silver:* subcommands are not registered in Claude TUI — route via /silver + workflow card.
-  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
+  # Claude TUI: /silver:* subcommands are not registered — always use /silver + slug in prose.
+  # Codex TUI: use $silver (slash→dollar); subcommand tokens are not registered.
+  local workflow_route="/silver"
+  if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+  fi
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route"
 }
 
 claude_routing_state_file() {
@@ -207,8 +235,18 @@ verify_row_routing_state_present() {
 }
 
 verify_row_routing_output() {
-  local output="$1"
-  printf '%s\n' "$output" | grep -qE 'SILVER BULLET.*ROUTING|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)'
+  local output="$1" tmp="" rc=0
+  [[ -n "$output" ]] || return 1
+  tmp="$(mktemp "${TMPDIR:-/tmp}/sb-routing-out.XXXXXX")"
+  # Codex/Claude TUI embeds ANSI between "SILVER BULLET" and "ROUTING" — normalize first.
+  printf '%s' "$output" | sed $'s/\x1b\\[[0-9;]*[A-Za-z]//g; s/\x1b\\][^\x07]*\x07//g' >"$tmp"
+  if grep -qE 'SILVER BULLET.*ROUTING|ROUTING completed|Skill\(silver-bullet:silver-(feature|fast|clarify|context|quality-gates)|\$silver|routing validation only' "$tmp" 2>/dev/null; then
+    rc=0
+  else
+    rc=1
+  fi
+  rm -f "$tmp"
+  return "$rc"
 }
 
 verify_row_success() {
@@ -420,7 +458,11 @@ run_matrix_row() {
       printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
-
+    # Codex interactive adapter does not tee to CLAUDE_INTERACTIVE_LOG_FILE — backfill for scoring.
+    if [[ ! -s "$row_log" && -n "$output" ]]; then
+      printf '%s\n' "$output" >"$row_log"
+    fi
+    matrix_repair_row_log_graphify_preamble "$slug" "$row_log"
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if [[ "$row_num" == "1" ]] && ! verify_row_evidence "$evidence_path"; then
         matrix_write_router_session_evidence "$evidence_path"
@@ -451,9 +493,13 @@ run_matrix_row() {
           "$WORK_DIR" "$runtime_state_dir" \
           "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path" 2>/dev/null || true
         echo "  OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-${row_num}-outcomes.md"
-        if ! enterprise_e2e_outcome_row_passes "$row_num" "$WORK_DIR" \
-          "$runtime_state_dir" \
-          "$row_log" "${SB_E2E_LEDGER_FILE:-}" "$evidence_path"; then
+        local outcome_pass=0
+        if matrix_row_outcome_passes "$row_num" "$evidence_path" "$row_log" "$runtime_state_dir"; then outcome_pass=1
+        else
+          matrix_repair_row_log_graphify_preamble "$slug" "$row_log"
+          if matrix_row_outcome_passes "$row_num" "$evidence_path" "$row_log" "$runtime_state_dir"; then outcome_pass=1; echo "  OUTCOMES: pass after post-invoke log repair (graphify preamble)"; fi
+        fi
+        if [[ "$outcome_pass" -ne 1 ]]; then
           echo "  FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)"
           local fail_line
           while IFS= read -r fail_line; do
