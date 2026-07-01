@@ -17,7 +17,7 @@
 | Operator | Cursor agent (continuous monitor; `SB_E2E_MONITOR_AUTO_RESTART=0`) |
 | Start date | 2026-06-30 |
 | End date | **2026-07-01T04:50Z** — rows 1–5 FORCE complete; Phase C reconcile |
-| Round clean? | **NO** — live matrix 22/22 outcome PASS; `OUT-SURFACE-01` skipped (`SB_E2E_SURFACE_SKIP=1`); rows 2–5 dry-run re-score gap (live PASS) |
+| Round clean? | **NO** — live matrix 22/22 outcome PASS; `OUT-SURFACE-01` skipped (`SB_E2E_SURFACE_SKIP=1`); rows 2–5 dry-run re-score **PASS** @ `67e014a6` |
 
 **Round 7 context:** Live matrix on `enterprise-e2e/multi-host`. Rows 1–5 FORCE @ `8e45f6f3`. Tier 1 rows 6/7/8/11 @ `dcda2df9`. Logs: [`.e2e-matrix-round7-rows1-5.log`](../../.e2e-matrix-round7-rows1-5.log), [`.e2e-matrix-round7-live.log`](../../.e2e-matrix-round7-live.log).
 
@@ -28,10 +28,10 @@
 | Row | Slug | Evidence | Live outcome | Dry-run re-score @ `8e45f6f3` | Root cause |
 |-----|------|----------|--------------|-------------------------------|------------|
 | 1 | `silver-router` | **PASS** | **PASS** | **PASS** | Clean |
-| 2 | `silver-research` | **PASS** | **PASS** | **FAIL** — OUT-AUTO-01 | Live scorer PASS; retained-log gap |
-| 3 | `silver-feature` | **PASS** | **PASS** | **FAIL** — OUT-AUTO-01 | Live scorer PASS; retained-log gap |
-| 4 | `silver-bugfix` | **PASS** | **PASS** | **FAIL** — OUT-AUTO-01 | Live scorer PASS; retained-log gap |
-| 5 | `silver-ui` | **PASS** | **PASS** | **FAIL** — OUT-AUTO-01 | Live scorer PASS; retained-log gap |
+| 2 | `silver-research` | **PASS** | **PASS** | **PASS** @ `67e014a6` | Harness: `matrix_evidence_path` in `resolve_evidence` |
+| 3 | `silver-feature` | **PASS** | **PASS** | **PASS** @ `67e014a6` | Dry-run @ `8e45f6f3` lacked matrix path fallback |
+| 4 | `silver-bugfix` | **PASS** | **PASS** | **PASS** @ `67e014a6` | Same |
+| 5 | `silver-ui` | **PASS** | **PASS** | **PASS** @ `67e014a6` | Same |
 
 **Rows 1–5 live:** **5 / 5** outcome PASS. Driver: [round7-rows1-5-matrix-driver.sh](./round7-rows1-5-matrix-driver.sh).
 
@@ -166,7 +166,7 @@ Snapshot at round start — **clean = zero new issue IDs** after round completes
 | 21 | `post-exec-gates` | 2026-06-30 | haiku | **Pass** | *(parent: row 3)* | | `da493429` | post-exec-gates routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
 | 22 | `validate-substep` | 2026-06-30 | haiku | **Pass** | *(parent: row 4)* | | `da493429` | validate-substep routes hooks skills orchestrator | `mem_mr0cnzox_12e009fe380f` |
 
-**Pass count:** **22 / 22** — live outcome PASS all rows; row 16 upgraded @ Phase C reconcile; rows 2–5 retained-log dry-run re-score gap documented.
+**Pass count:** **22 / 22** — live outcome PASS all rows; row 16 upgraded @ Phase C reconcile; rows 2–5 retained-log dry-run re-score PASS @ `67e014a6`.
 
 **Round 6 TUI policy:** prefer LIVE TUI for all rows; Round 5 rows 8–22 used evidence SKIP (acceptable fallback — note in ledger if reused).
 
