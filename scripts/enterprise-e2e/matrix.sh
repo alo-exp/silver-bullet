@@ -378,13 +378,15 @@ run_matrix_row() {
   fi
 
   if enterprise_e2e_matrix_should_skip_row_at_version "$row_num"; then
-    echo "  SKIP: row ${row_num} already pass @ install $(enterprise_e2e_sb_install_version_key)"
+    echo "  SKIP: ROW_ALREADY_PASSED_SAME_INSTALL (install_fp=$(enterprise_e2e_install_fingerprint); set SB_E2E_MATRIX_FORCE_ALL=1 to re-run)"
     SKIP_ROWS=$((SKIP_ROWS + 1))
+    INSTALL_PASS_SKIP_ROWS=$((INSTALL_PASS_SKIP_ROWS + 1))
+    PASS_ROWS=$((PASS_ROWS + 1))
     SB_E2E_TELEMETRY_ROW="$row_num" \
       SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
-      SB_E2E_TELEMETRY_ROW_RESULT="skip" \
+      SB_E2E_TELEMETRY_ROW_RESULT="skip_install_pass" \
       SB_E2E_TELEMETRY_ROW_LOG="$(enterprise_e2e_row_attempt_log "$row_num")" \
-      enterprise_e2e_telemetry_append "matrix_row_skip_at_version" || true
+      enterprise_e2e_telemetry_append "matrix_row_install_pass_skip" || true
     return 0
   fi
 
@@ -510,10 +512,9 @@ run_matrix_row() {
         fi
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
-      enterprise_e2e_row_pass_registry_record "$row_num" "$row_log" true "matrix" || true
+      enterprise_e2e_record_row_pass_at_install_version "$row_num" "${SB_E2E_LEDGER_FILE:-}" "$row_log"
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
-      enterprise_e2e_record_row_pass_at_install_version "$row_num" "${SB_E2E_LEDGER_FILE:-}"
       if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
         enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
       fi
@@ -616,7 +617,7 @@ main() {
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 21 silver-feature; then
       echo "=== Row 21: post-exec-gates (internal) PASS ==="
-      enterprise_e2e_row_pass_registry_record 21 "" true "matrix_internal" || true
+      enterprise_e2e_record_row_pass_at_install_version 21 "${SB_E2E_LEDGER_FILE:-}" ""
       PASS_ROWS=$((PASS_ROWS + 1))
     elif enterprise_e2e_row_pass_registry_should_skip 21; then
       echo "=== Row 21: post-exec-gates (internal) SKIP: ROW_ALREADY_PASSED_SAME_INSTALL ==="
@@ -632,7 +633,7 @@ main() {
   if should_run_row 22 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 22 silver-bugfix; then
       echo "=== Row 22: validate-substep (internal) PASS ==="
-      enterprise_e2e_row_pass_registry_record 22 "" true "matrix_internal" || true
+      enterprise_e2e_record_row_pass_at_install_version 22 "${SB_E2E_LEDGER_FILE:-}" ""
       PASS_ROWS=$((PASS_ROWS + 1))
     elif enterprise_e2e_row_pass_registry_should_skip 22; then
       echo "=== Row 22: validate-substep (internal) SKIP: ROW_ALREADY_PASSED_SAME_INSTALL ==="
