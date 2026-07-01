@@ -28,6 +28,8 @@ docs/sessions/
 
 # E2E matrix / run-all-tests runtime logs (never commit)
 .e2e-row*.log
+.e2e-cursor-install-version.txt
+.e2e-matrix-pass-at-version.tsv
 .run-all-tests-*.log
 
 # E2E test app -- SB-generated artifacts (excluded from SB repo)

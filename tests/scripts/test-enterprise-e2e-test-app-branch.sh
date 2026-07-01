@@ -91,6 +91,37 @@ assert_eq "expected branch cursor r1 derived" \
 
 assert_eq "default baseline sha" "8482e60" "$(enterprise_e2e_test_app_default_baseline_sha)"
 
+# --- install-version single-pass skip (structural) ---
+TMP_E2E="$(mktemp -d)"
+trap 'rm -rf "$TMP_E2E"' EXIT
+export SB_ROOT="$TMP_E2E"
+mkdir -p "$TMP_E2E/.planning/enterprise-e2e"
+cat >"$TMP_E2E/.e2e-cursor-install-version.txt" <<'VER'
+SB_CURSOR_PLUGIN_VERSION=0.48.9
+SB_INSTALL_SHA=abc1234
+SB_INSTALL_VERSION_KEY=0.48.9@abc1234
+VER
+cat >"$TMP_E2E/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" <<'LED'
+| SB repo SHA | `abc1234` |
+| # | WF slug | Pass/Fail |
+| 1 | `silver-router` | **Pass** |
+| 3 | `silver-feature` | **Pass** |
+LED
+assert_eq "install version key from file" "0.48.9@abc1234" "$(enterprise_e2e_sb_install_version_key)"
+enterprise_e2e_matrix_force_active && fail "force inactive by default" || pass "force inactive by default"
+enterprise_e2e_row_passed_at_install_version 1 && pass "row 1 pass @ install version from ledger" \
+  || fail "row 1 pass @ install version from ledger"
+enterprise_e2e_matrix_should_skip_row_at_version 1 && pass "matrix skip row 1 @ version" \
+  || fail "matrix skip row 1 @ version"
+export SB_E2E_MATRIX_FORCE=1
+enterprise_e2e_matrix_should_skip_row_at_version 1 && fail "force overrides skip" || pass "force overrides skip"
+unset SB_E2E_MATRIX_FORCE
+enterprise_e2e_row_passed_at_install_version 2 && fail "row 2 not pass" || pass "row 2 not pass @ version"
+
+assert_contains "matrix.sh install-version skip" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
+  "already pass @ install"
+
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

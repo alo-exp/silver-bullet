@@ -7,7 +7,9 @@
 **Ledger:** [ROUND-CURSOR-2-LEDGER.md](./ROUND-CURSOR-2-LEDGER.md)  
 **Prior round:** [ROUND-CURSOR-1-GATES.md](./ROUND-CURSOR-1-GATES.md) — strict-clean **Pass** @ `e9236365`
 
-## Status: **IN PROGRESS** (T0 PASS · T1 FORCE×2 running)
+## Status: **IN PROGRESS** (T0 PASS · T1 PASS · Phase A PASS · matrix in flight)
+
+**Policy (2026-07-01):** **Single-pass-at-install-version** — do not repeat matrix/ladder/T1 rows already Pass @ `SB_INSTALL_VERSION_KEY` (`SB_CURSOR_PLUGIN_VERSION` + install SHA). See [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) §11. T1 FORCE×2 **replaced** by single FORCE when not already green. Harness: `matrix.sh` logs `SKIP: row N already pass @ install <ver>`; overrides `SB_E2E_MATRIX_FORCE=1` / `SB_E2E_FORCE_ROW=1`.
 
 **Release pair:** Round Cursor-2 completes the **2/2** consecutive strict-clean requirement for Cursor host release sign-off.
 
@@ -24,16 +26,16 @@
 | T0 outcome harness | **PASS** 59/0 |
 | T0 surface validation | **PASS** |
 | T0 branch assert | **PASS** 13/0 |
-| T1 row 1 FORCE×2 | **PASS** 2/2 |
-| Phase A ladder | **IN PROGRESS** (tmux `cursor-c2-pipeline`) |
+| T1 row 1 FORCE (single @ install version) | **PASS** 1/1 *(legacy log: 2/2 before policy)* |
+| Phase A ladder | **PASS** (tmux `cursor-c2-pipeline`) |
 
 ### Round gates
 
 | Gate | Status |
 |------|--------|
 | Tier A (T0) structural preflight | **PASS** |
-| T1 row 1 FORCE×2 | **IN PROGRESS** |
-| review-fix-ladder 8/8 (2× clean verify per rung, live turns) | **PENDING** |
+| T1 row 1 FORCE (single @ install version) | **PASS** |
+| review-fix-ladder 8/8 (single pass per rung @ install version) | **PASS** |
 | Matrix ledger 22/22 (zero new friction) | **PENDING** |
 | Outcome assessment harness | **PENDING** (live rows) |
 | All outcome criteria + blocking autonomy gates | **PENDING** |

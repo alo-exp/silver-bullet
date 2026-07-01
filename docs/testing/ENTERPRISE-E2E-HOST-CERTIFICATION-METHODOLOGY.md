@@ -33,6 +33,7 @@
 | **Structural / offline suite** | **Highly effective** — catches script/doc/registry drift without TUI |
 | **Monitor “22/22 COMPLETE” without ledger reconcile** | **Anti-pattern** — observed Round 3 drift |
 | **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) |
+| **Repeat matrix/ladder/T1 rows at same install** | **Deprecated** — one clean pass per row/criterion @ install version (see §11) |
 
 **Honest scope:** This program certifies SB harness + workflow routing on a fixture app with operator supervision. It does **not** prove homepage marketing stats, cold-install SLOs, or statistical reliability across providers without additional claims mapping (see registries below).
 
@@ -106,8 +107,8 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
 
 ### Tier C — full matrix + strict-clean
 
-1. **review-fix-ladder** 8/8 × 2 verify (if not already complete in round)
-2. Live matrix rows **1–22** (`SB_ENTERPRISE_E2E_LIVE=1`)
+1. **review-fix-ladder** 8/8 — **one live pass per rung** when already green at current install version (§11); legacy 2× verify only when install version changes or `SB_E2E_MATRIX_FORCE=1`
+2. Live matrix rows **1–22** (`SB_ENTERPRISE_E2E_LIVE=1`) — **one pass per row** when ledger/registry shows Pass @ current `SB_INSTALL_VERSION_KEY`
 3. **Phase C** (all green):
    - `bash tests/scripts/test-outcome-assessment.sh`
    - `bash tests/run-all-tests.sh`
@@ -155,7 +156,7 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 | Event | Action |
 |-------|--------|
 | **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log |
-| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then rescore |
+| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` or `SB_E2E_FORCE_ROW=1` on affected row(s), then rescore |
 | **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until rescore passes or issue filed |
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
 
@@ -211,6 +212,44 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 | Claude R6 | [`.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md`](../../.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md) |
 
 All tracks **must read this methodology doc** at session start.
+
+---
+
+## 11. Single-pass-at-install-version (Cursor E2E — effective 2026-07-01)
+
+**Policy:** Do **not** repeat any matrix row, ladder rung, or T1 criterion that already **Pass** at the current SB install version. One clean pass per row/criterion is sufficient within and across rounds (Cursor-1 + Cursor-2) when the install version key is unchanged.
+
+**Install version key** (`SB_INSTALL_VERSION_KEY`):
+
+```text
+<SB_CURSOR_PLUGIN_VERSION>@<git HEAD short SHA at install-cursor.sh>
+```
+
+Example: `0.48.9@e9236365`
+
+| Artifact | Path |
+|----------|------|
+| Install version file | `${SB_ROOT}/.e2e-cursor-install-version.txt` |
+| Row pass registry | `${SB_ROOT}/.e2e-matrix-pass-at-version.tsv` |
+
+Written by `bash scripts/install-cursor.sh` after each install. Harness skip log line:
+
+```text
+SKIP: row N already pass @ install <version>
+```
+
+**Force overrides** (explicit re-run only):
+
+| Env | Effect |
+|-----|--------|
+| `SB_E2E_MATRIX_FORCE=1` | Re-run all requested rows |
+| `SB_E2E_FORCE_ROW=1` | Re-run despite pass-at-version |
+
+**Release pair unchanged:** 2 consecutive **strict-clean rounds** (Cursor-1 + Cursor-2) still required. Within each round, rows already Pass @ install version are skipped — the round still must complete Phase A→C for any not-yet-passed rows/criteria.
+
+**T1 row 1:** single FORCE run when not already Pass @ version (replaces T1 FORCE×2).
+
+**Cross-round skip:** `matrix.sh` consults `ROUND-CURSOR-*-LEDGER.md` + pass registry; if Cursor-1 row Pass and ledger SB SHA matches current install key, Cursor-2 skips that row.
 
 ---
 

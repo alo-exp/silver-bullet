@@ -62,16 +62,17 @@ Host-isolated lock/log paths only. Prior `.e2e-matrix-cursor-live.log` archived 
 
 ---
 
-## Tier B — T1 row 1 FORCE×2
+## Tier B — T1 row 1 FORCE (single @ install version)
 
 **Driver:** `cursor-t1-r2-driver.sh` · tmux `cursor-t1-r2` · `SB_E2E_SURFACE_SKIP=0`
 
+**Policy:** Single-pass @ `SB_INSTALL_VERSION_KEY` (legacy log shows 2/2 before 2026-07-01 policy).
+
 | Run | Result | Notes |
 |-----|--------|-------|
-| 1/2 | **PASS** | `12:42Z` @ `a455aeb8` — router-session.md + OUTCOMES |
-| 2/2 | **PASS** | `12:49Z` @ `0de1cf6b` — router-session.md + OUTCOMES |
+| 1/1 | **PASS** | `12:42Z` @ `a455aeb8` — router-session.md + OUTCOMES *(+ legacy 2/2 in log)* |
 
-**T1 verdict:** **PASS** 2/2 · log [`.e2e-matrix-cursor-t1-r2.log`](../../.e2e-matrix-cursor-t1-r2.log)
+**T1 verdict:** **PASS** · log [`.e2e-matrix-cursor-t1-r2.log`](../../.e2e-matrix-cursor-t1-r2.log)
 
 ---
 

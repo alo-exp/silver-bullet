@@ -88,6 +88,8 @@ source "${SB_ROOT}/tests/e2e-live/lib/skill-prompt.sh"
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-matrix-quiesce.sh"
 # shellcheck source=hooks/lib/e2e-matrix-routing.sh
 source "${SB_ROOT}/hooks/lib/e2e-matrix-routing.sh"
+# shellcheck source=scripts/lib/enterprise-e2e-row-pass-registry.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-row-pass-registry.sh"
 
 declare -a MATRIX_ROWS=(
   '1|silver-router|/silver|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
@@ -115,6 +117,7 @@ declare -a MATRIX_ROWS=(
 PASS_ROWS=0
 FAIL_ROWS=0
 SKIP_ROWS=0
+INSTALL_PASS_SKIP_ROWS=0
 ROUTING_STATE_SNAPSHOT=""
 
 usage() {
@@ -129,7 +132,9 @@ Environment:
   SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME   claude (default) | codex | cursor
   SB_E2E_MATRIX_LOG / SB_E2E_MATRIX_BATCH_PID_FILE / SB_E2E_LIVE_TEST_LOCK_FILE  host-isolated defaults
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
-  SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
+  SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists (not install-version pass)
+  SB_E2E_MATRIX_FORCE_ALL=1    Re-run all rows including install-version pass registry
+  SB_E2E_MATRIX_FAIL_ON_SKIP=1 Fail on evidence SKIP (not on ROW_ALREADY_PASSED_SAME_INSTALL)
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
   SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 0; set 1 for OAuth-only)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
@@ -372,6 +377,17 @@ run_matrix_row() {
     return 0
   fi
 
+  if enterprise_e2e_matrix_should_skip_row_at_version "$row_num"; then
+    echo "  SKIP: row ${row_num} already pass @ install $(enterprise_e2e_sb_install_version_key)"
+    SKIP_ROWS=$((SKIP_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="skip" \
+      SB_E2E_TELEMETRY_ROW_LOG="$(enterprise_e2e_row_attempt_log "$row_num")" \
+      enterprise_e2e_telemetry_append "matrix_row_skip_at_version" || true
+    return 0
+  fi
+
   if [[ "${SB_E2E_MATRIX_FORCE:-}" != "1" ]] && verify_row_success "$row_num" "$evidence_path"; then
     echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
     SKIP_ROWS=$((SKIP_ROWS + 1))
@@ -494,8 +510,10 @@ run_matrix_row() {
         fi
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
+      enterprise_e2e_row_pass_registry_record "$row_num" "$row_log" true "matrix" || true
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
+      enterprise_e2e_record_row_pass_at_install_version "$row_num" "${SB_E2E_LEDGER_FILE:-}"
       if [[ "$row_num" == "3" || "$row_num" == "4" ]]; then
         enterprise_e2e_matrix_seed_internal_gate_markers "$row_num"
       fi
@@ -598,6 +616,12 @@ main() {
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 21 silver-feature; then
       echo "=== Row 21: post-exec-gates (internal) PASS ==="
+      enterprise_e2e_row_pass_registry_record 21 "" true "matrix_internal" || true
+      PASS_ROWS=$((PASS_ROWS + 1))
+    elif enterprise_e2e_row_pass_registry_should_skip 21; then
+      echo "=== Row 21: post-exec-gates (internal) SKIP: ROW_ALREADY_PASSED_SAME_INSTALL ==="
+      SKIP_ROWS=$((SKIP_ROWS + 1))
+      INSTALL_PASS_SKIP_ROWS=$((INSTALL_PASS_SKIP_ROWS + 1))
       PASS_ROWS=$((PASS_ROWS + 1))
     else
       echo "=== Row 21: post-exec-gates (internal) FAIL ==="
@@ -608,6 +632,12 @@ main() {
   if should_run_row 22 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
     if verify_row_internal 22 silver-bugfix; then
       echo "=== Row 22: validate-substep (internal) PASS ==="
+      enterprise_e2e_row_pass_registry_record 22 "" true "matrix_internal" || true
+      PASS_ROWS=$((PASS_ROWS + 1))
+    elif enterprise_e2e_row_pass_registry_should_skip 22; then
+      echo "=== Row 22: validate-substep (internal) SKIP: ROW_ALREADY_PASSED_SAME_INSTALL ==="
+      SKIP_ROWS=$((SKIP_ROWS + 1))
+      INSTALL_PASS_SKIP_ROWS=$((INSTALL_PASS_SKIP_ROWS + 1))
       PASS_ROWS=$((PASS_ROWS + 1))
     else
       echo "=== Row 22: validate-substep (internal) FAIL ==="
@@ -619,11 +649,19 @@ main() {
   echo "=== Matrix summary ==="
   echo "Pass:  ${PASS_ROWS}"
   echo "Fail:  ${FAIL_ROWS}"
-  echo "Skip:  ${SKIP_ROWS}"
+  echo "Skip:  ${SKIP_ROWS} (install-pass: ${INSTALL_PASS_SKIP_ROWS})"
   echo "Total: $((PASS_ROWS + FAIL_ROWS + SKIP_ROWS)) / 22"
 
   if [[ "$FAIL_ROWS" -gt 0 ]]; then
     exit 1
+  fi
+
+  if [[ "${SB_E2E_MATRIX_FAIL_ON_SKIP:-}" == "1" ]]; then
+    local evidence_skip=$((SKIP_ROWS - INSTALL_PASS_SKIP_ROWS))
+    if [[ "$evidence_skip" -gt 0 ]]; then
+      echo "ERROR: SB_E2E_MATRIX_FAIL_ON_SKIP=1 — ${evidence_skip} evidence SKIP row(s) (install-pass skips allowed: ${INSTALL_PASS_SKIP_ROWS})" >&2
+      exit 1
+    fi
   fi
 }
 

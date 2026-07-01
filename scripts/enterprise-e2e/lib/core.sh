@@ -8,8 +8,11 @@ _E2E_HARNESS_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${_E2E_HARNESS_LIB}/host.sh"
 # shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
 source "${_E2E_HARNESS_LIB}/test-app-branch.sh"
-# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
-source "${_E2E_HARNESS_LIB}/test-app-branch.sh"
+_sb_e2e_registry_lib="$(cd "${_E2E_HARNESS_LIB}/../../lib" && pwd)/enterprise-e2e-row-pass-registry.sh"
+if [[ -f "$_sb_e2e_registry_lib" ]]; then
+  # shellcheck source=scripts/lib/enterprise-e2e-row-pass-registry.sh
+  source "$_sb_e2e_registry_lib"
+fi
 
 
 # Bash 3.2 (macOS): mapfile/readarray unavailable
@@ -221,6 +224,130 @@ enterprise_e2e_incomplete_rows() {
   if ((${#out[@]} > 0)); then
     printf '%s\n' "${out[@]}"
   fi
+}
+
+# Install version key: SB_CURSOR_PLUGIN_VERSION @ git HEAD short SHA at last install-cursor.sh.
+# Stored in ${SB_ROOT}/.e2e-cursor-install-version.txt; row passes recorded in pass-at-version registry.
+enterprise_e2e_install_version_file() {
+  local root="${SB_ROOT:-}"
+  [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  printf '%s\n' "${root}/.e2e-cursor-install-version.txt"
+}
+
+enterprise_e2e_pass_at_version_registry() {
+  local root="${SB_ROOT:-}"
+  [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  printf '%s\n' "${root}/.e2e-matrix-pass-at-version.tsv"
+}
+
+enterprise_e2e_sb_install_version_key() {
+  if [[ -n "${SB_E2E_INSTALL_VERSION_KEY:-}" ]]; then
+    printf '%s\n' "$SB_E2E_INSTALL_VERSION_KEY"
+    return 0
+  fi
+  local file plugin sha
+  file="$(enterprise_e2e_install_version_file)"
+  if [[ -f "$file" ]]; then
+  # shellcheck disable=SC1090
+    source "$file" 2>/dev/null || true
+    if [[ -n "${SB_INSTALL_VERSION_KEY:-}" ]]; then
+      printf '%s\n' "$SB_INSTALL_VERSION_KEY"
+      return 0
+    fi
+    if [[ -n "${SB_CURSOR_PLUGIN_VERSION:-}" && -n "${SB_INSTALL_SHA:-}" ]]; then
+      printf '%s@%s\n' "$SB_CURSOR_PLUGIN_VERSION" "$SB_INSTALL_SHA"
+      return 0
+    fi
+  fi
+  plugin="$(jq -r '.version // "0.0.0"' "${SB_ROOT:-}/package.json" 2>/dev/null || echo 0.0.0)"
+  sha="$(git -C "${SB_ROOT:-.}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  printf '%s@%s\n' "$plugin" "$sha"
+}
+
+enterprise_e2e_write_sb_install_version() {
+  local root="${1:-${SB_ROOT:-}}" plugin="${2:-}" sha="${3:-}" file key
+  [[ -n "$root" && -d "$root" ]] || return 1
+  plugin="${plugin:-$(jq -r '.version // "0.0.0"' "${root}/package.json" 2>/dev/null || echo 0.0.0)}"
+  sha="${sha:-$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)}"
+  key="${plugin}@${sha}"
+  file="$(enterprise_e2e_install_version_file)"
+  mkdir -p "$(dirname "$file")" 2>/dev/null || true
+  cat >"$file" <<EOF
+SB_CURSOR_PLUGIN_VERSION=${plugin}
+SB_INSTALL_SHA=${sha}
+SB_INSTALL_VERSION_KEY=${key}
+EOF
+  printf '%s\n' "$key"
+}
+
+enterprise_e2e_matrix_force_active() {
+  [[ "${SB_E2E_MATRIX_FORCE:-}" == "1" ]] && return 0
+  [[ "${SB_E2E_FORCE_ROW:-}" == "1" ]] && return 0
+  return 1
+}
+
+enterprise_e2e_record_row_pass_at_install_version() {
+  local row="$1" ledger="${2:-${SB_E2E_LEDGER_FILE:-}}" log_ref="${3:-}" ver reg
+  [[ "$row" =~ ^[0-9]+$ ]] || return 1
+  ver="$(enterprise_e2e_sb_install_version_key)"
+  reg="$(enterprise_e2e_pass_at_version_registry)"
+  mkdir -p "$(dirname "$reg")" 2>/dev/null || true
+  if [[ -f "$reg" ]] && grep -qE "^${row}[[:space:]]+${ver//\./\\.}[[:space:]]" "$reg" 2>/dev/null; then
+    :
+  else
+    printf '%s\t%s\t%s\t%s\n' "$row" "$ver" "$ledger" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$reg"
+  fi
+  if declare -f enterprise_e2e_row_pass_registry_record >/dev/null 2>&1; then
+    log_ref="${log_ref:-${SB_E2E_MATRIX_LOG:-}}"
+    enterprise_e2e_row_pass_registry_record "$row" "$log_ref" true "matrix" || true
+  fi
+}
+
+enterprise_e2e_ledger_sb_sha() {
+  local ledger="$1" sha=""
+  [[ -f "$ledger" ]] || return 1
+  sha="$(awk -F'|' '/SB repo SHA/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3; exit }' "$ledger" 2>/dev/null || true)"
+  sha="${sha//\`/}"
+  sha="${sha// /}"
+  [[ -n "$sha" ]] || return 1
+  printf '%s\n' "$sha"
+}
+
+enterprise_e2e_row_passed_at_install_version() {
+  local row="$1" ver="${2:-}" reg ledger
+  [[ "$row" =~ ^[0-9]+$ ]] || return 1
+  if declare -f enterprise_e2e_row_pass_registry_has_pass >/dev/null 2>&1; then
+    enterprise_e2e_row_pass_registry_has_pass "$row" && return 0
+  fi
+  ver="${ver:-$(enterprise_e2e_sb_install_version_key)}"
+  reg="$(enterprise_e2e_pass_at_version_registry)"
+  if [[ -f "$reg" ]] && awk -v r="$row" -v v="$ver" '$1 == r && $2 == v { found = 1 } END { exit found ? 0 : 1 }' "$reg" 2>/dev/null; then
+    return 0
+  fi
+  _enterprise_e2e_ensure_ledger_reconcile_sourced
+  local root="${SB_ROOT:-}" plugin="${ver%%@*}"
+  for ledger in "${root}"/.planning/enterprise-e2e/ROUND-CURSOR-*-LEDGER.md; do
+    [[ -f "$ledger" ]] || continue
+    enterprise_e2e_ledger_row_is_pass "$row" "$ledger" || continue
+    local ledger_sha
+    ledger_sha="$(enterprise_e2e_ledger_sb_sha "$ledger" 2>/dev/null || true)"
+    [[ -n "$ledger_sha" ]] || continue
+    if [[ "${ver}" == "${plugin}@${ledger_sha}" ]]; then
+      enterprise_e2e_record_row_pass_at_install_version "$row" "$ledger"
+      return 0
+    fi
+  done
+  return 1
+}
+
+enterprise_e2e_matrix_should_skip_row_at_version() {
+  local row="$1"
+  [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]] && return 1
+  if declare -f enterprise_e2e_row_pass_registry_should_skip >/dev/null 2>&1; then
+    enterprise_e2e_row_pass_registry_should_skip "$row"
+    return $?
+  fi
+  enterprise_e2e_row_passed_at_install_version "$row"
 }
 
 enterprise_e2e_assert_no_auth_mutations() {
