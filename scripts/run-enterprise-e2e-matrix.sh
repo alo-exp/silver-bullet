@@ -73,6 +73,8 @@ source "${SB_ROOT}/tests/e2e-live/lib/skill-prompt.sh"
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-matrix-quiesce.sh"
 # shellcheck source=hooks/lib/e2e-matrix-routing.sh
 source "${SB_ROOT}/hooks/lib/e2e-matrix-routing.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/row-pass-registry.sh
+source "${SB_ROOT}/scripts/enterprise-e2e/lib/row-pass-registry.sh"
 
 declare -a MATRIX_ROWS=(
   '1|silver-router|/silver|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
@@ -113,6 +115,7 @@ Ledger:  ${LEDGER_FILE}
 Environment:
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
+  SB_E2E_MATRIX_FORCE_ALL=1    Re-run rows already in install-version pass registry
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
   SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 0; set 1 for OAuth-only)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
@@ -337,6 +340,19 @@ run_matrix_row() {
   echo "  graphify: ${graphify_ref}"
   echo "  evidence: ${evidence_path}"
 
+  if [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" != "1" ]] && enterprise_e2e_row_pass_registry_has_pass "$row_num"; then
+    echo "  ROW_ALREADY_PASSED_SAME_INSTALL: row ${row_num} (install_fp=$(enterprise_e2e_install_fingerprint))"
+    echo "  PASS: install-version registry — set SB_E2E_MATRIX_FORCE_ALL=1 to re-run live TUI"
+    PASS_ROWS=$((PASS_ROWS + 1))
+    row_telemetry_result="pass"
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="registry_pass" \
+      SB_E2E_TELEMETRY_ROW_LOG="$(enterprise_e2e_row_pass_registry_path)" \
+      enterprise_e2e_telemetry_append "matrix_row_registry_pass" || true
+    return 0
+  fi
+
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" == "1" ]]; then
     if verify_row_evidence "$evidence_path"; then
       echo "  DRY RUN PASS: evidence present"
@@ -471,6 +487,7 @@ run_matrix_row() {
         fi
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
+      enterprise_e2e_row_pass_registry_record "$row_num" "$row_log" true
       PASS_ROWS=$((PASS_ROWS + 1))
       row_telemetry_result="pass"
       SB_E2E_TELEMETRY_ROW="$row_num" \
@@ -532,6 +549,7 @@ main() {
   echo "SB_ROOT:    ${SB_ROOT}"
   echo "Fixture:    ${FIXTURE_DIR}"
   echo "Claude:     $(agent_cli_path 2>/dev/null || echo missing)"
+  echo "install_fp: $(enterprise_e2e_install_fingerprint)"
   echo ""
 
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" != "1" ]]; then
@@ -568,8 +586,12 @@ main() {
   fi
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
-    if verify_row_internal 21 silver-feature; then
+    if [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" != "1" ]] && enterprise_e2e_row_pass_registry_has_pass 21; then
+      echo "=== Row 21: ROW_ALREADY_PASSED_SAME_INSTALL (install_fp=$(enterprise_e2e_install_fingerprint)) ==="
+      PASS_ROWS=$((PASS_ROWS + 1))
+    elif verify_row_internal 21 silver-feature; then
       echo "=== Row 21: post-exec-gates (internal) PASS ==="
+      enterprise_e2e_row_pass_registry_record 21 "internal:post-exec-gates" true
       PASS_ROWS=$((PASS_ROWS + 1))
     else
       echo "=== Row 21: post-exec-gates (internal) FAIL ==="
@@ -578,8 +600,12 @@ main() {
   fi
 
   if should_run_row 22 "${requested[@]+"${requested[@]}"}" || [[ "${#requested[@]}" -eq 0 ]]; then
-    if verify_row_internal 22 silver-bugfix; then
+    if [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" != "1" ]] && enterprise_e2e_row_pass_registry_has_pass 22; then
+      echo "=== Row 22: ROW_ALREADY_PASSED_SAME_INSTALL (install_fp=$(enterprise_e2e_install_fingerprint)) ==="
+      PASS_ROWS=$((PASS_ROWS + 1))
+    elif verify_row_internal 22 silver-bugfix; then
       echo "=== Row 22: validate-substep (internal) PASS ==="
+      enterprise_e2e_row_pass_registry_record 22 "internal:validate-substep" true
       PASS_ROWS=$((PASS_ROWS + 1))
     else
       echo "=== Row 22: validate-substep (internal) FAIL ==="
