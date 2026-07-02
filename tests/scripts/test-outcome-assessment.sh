@@ -70,6 +70,16 @@ fi
 # --- Fixture: row 3 feature workflow scoring ---
 mkdir -p "$FIXTURE/.planning/workflows" "$FIXTURE/.planning/ship-readiness" 2>/dev/null || true
 mkdir -p "$STATE_DIR"
+if [[ ! -f "$FIXTURE/.silver-bullet.json" ]]; then
+  cat >"$FIXTURE/.silver-bullet.json" <<'EOF'
+{
+  "recommended_tools": {
+    "graphify": { "enabled_by_user": true },
+    "agentmemory": { "enabled_by_user": true }
+  }
+}
+EOF
+fi
 printf 'silver-context\nsilver-feature\nsilver-quality-gates\n' >"$STATE_DIR/state"
 cat >"$FIXTURE/.planning/PLAN-feature.md" <<'EOF'
 # Plan — currency feature
