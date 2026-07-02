@@ -224,6 +224,26 @@ build_matrix_prompt() {
          enterprise_e2e_row_requires_product_commit "$row_num"; then
       prompt="${prompt} $(matrix_row3_product_commit_clause)"
     fi
+  elif [[ "$row_num" == "14" ]]; then
+    prompt="${prompt} $(matrix_row14_outcome_clause)"
+    if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
+      prompt="${prompt} $(matrix_row14_outcome_only_clause)"
+    elif [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
+         [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
+         enterprise_e2e_row_requires_product_commit "$row_num"; then
+      prompt="${prompt} $(matrix_product_commit_clause)"
+    fi
+  elif [[ "$row_num" == "15" ]]; then
+    prompt="${prompt} $(matrix_row15_outcome_clause)"
+  elif [[ "$row_num" == "16" ]]; then
+    prompt="${prompt} $(matrix_row16_outcome_clause)"
+    if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
+      prompt="${prompt} $(matrix_row16_outcome_only_clause)"
+    elif [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
+         [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
+         enterprise_e2e_row_requires_product_commit "$row_num"; then
+      prompt="${prompt} $(matrix_product_commit_clause)"
+    fi
   elif [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
        [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
        enterprise_e2e_row_requires_product_commit "$row_num"; then
