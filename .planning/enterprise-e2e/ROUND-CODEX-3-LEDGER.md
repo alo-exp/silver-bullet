@@ -226,3 +226,59 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |
 | 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |
 | 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:15:33Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:15:33Z |
+| 6 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:28:32Z |
+
+### Poll checkpoint 2026-07-02T15:29:34Z (force36 exit @ 2909294e)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen row **1** PASS; FORCE rows **3,6** only |
+| **Driver** | EXITED PID **4291** |
+| **Tier B rescore** | **1/3** — [.codex-r3-force36-rescore.log](./.codex-r3-force36-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
+
+### Diagnosis — force36 effective 1/3 @ `2909294e` (2026-07-03)
+
+| Row | Root cause | Evidence |
+|-----|------------|----------|
+| **1** | **Frozen PASS** @ `4412bb01` — do not re-run | [.codex-r3-tierb-rescore.log](./.codex-r3-tierb-rescore.log) |
+| **3** | Codex wrote **84B stub** [feature-currency.md](file:///Users/shafqat/projects/enterprise-grade-test-app/.planning/workflows/feature-currency.md) only; **0 api/currency commits** despite `matrix_product_commit_clause` in prompt. Row log **15KB** — session queued prompt then exited before worker implementation. `planning-file-guard` blocked evidence writes (tui-watch). Outcomes: `OUT-PLAN-01` `OUT-TRACE-01` `OUT-CLARIFY-01` `OUT-VLOOP-01` partial → `OUT-WORLD-01` fail. | [.e2e-row3-codex-attempt.log](../../.e2e-row3-codex-attempt.log) |
+| **6** | **Product commit** `b22b730` README landed. Outcome FAIL: `OUT-KM-01` partial — `graphify-out/graph.json` absent on fixture; `enabled_by_user: null` for graphify/agentmemory (`SB_E2E_SESSION0_SKIP=1`). `OUT-WORLD-01` fail (composite). | [.e2e-row6-codex-attempt.log](../../.e2e-row6-codex-attempt.log) |
+
+**Harness fixes (force3 relaunch):**
+
+| Fix | Implementation |
+|-----|----------------|
+| §5b early fail | `matrix.sh` — product delta check **before** outcome scorer on evidence-only rows |
+| §5b rescore | `enterprise_e2e_assert_row_product_commit_rescore` in `core.sh`; poll-exit scripts |
+| Row 6 outcome-only | `SB_E2E_OUTCOME_ONLY_ROWS=6` + frozen commit `b22b730` — §5b without new delta |
+| Row 3 product anchor | commits required **after** `b22b730` (row-6 README preserved) |
+| Session 0 | `SB_E2E_SESSION0_SKIP=0` on [codex-r3-force3-driver.sh](./codex-r3-force3-driver.sh) for KM opt-in |
+| Driver | [codex-r3-force3-launch.sh](./codex-r3-force3-launch.sh) → tmux `codex-r3-force3` |
+
+**Next:** force3+6 relaunch; on **3/3** rescore → auto [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) (22/22 chain).
+
+### Poll checkpoint 2026-07-02T15:35Z (force3 launch @ `8a077b1a`)
+
+| Field | Value |
+|-------|-------|
+| **Harness** | `8a077b1a` — §5b early gate + outcome-only row 6 + force3 driver |
+| **Policy** | Frozen row **1** PASS; FORCE rows **3,6**; fixture pinned @ `b22b730` |
+| **Session 0** | **ON** (`SB_E2E_SESSION0_SKIP=0`) for graphify/agentmemory opt-in |
+| **Tier B driver** | tmux `codex-r3-force3:driver` PID **15080** |
+| **Poll-exit** | tmux `codex-r3-force3:poll` → [.codex-r3-force3-poll-exit.sh](./.codex-r3-force3-poll-exit.sh) |
+| **Chain monitor** | tmux `codex-r3-force3:chain` |
+| **Tier C** | On **3/3** rescore → auto [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |

@@ -81,6 +81,7 @@ run_tierb_rescore() {
   export SB_E2E_LEDGER_FILE="$LEDGER"
   export SB_E2E_ENTERPRISE_MATRIX=1
   export SB_E2E_PRODUCT_WORK_GATE=1
+  export SB_E2E_TEST_APP_BASELINE_SHA="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
   # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
   source "${ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
   # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
@@ -107,6 +108,11 @@ run_tierb_rescore() {
     row_log="$(latest_row_log "$row")"
     if [[ -z "$row_log" || ! -f "$row_log" ]]; then
       printf 'row %d SKIP no log\n' "$row" >>"$RESCORE_LOG"
+      fail_rows+=("$row")
+      continue
+    fi
+    if ! enterprise_e2e_assert_row_product_commit_rescore "$row" "$WORK_DIR" >>"$RESCORE_LOG" 2>&1; then
+      printf 'row %d FAIL: §5b product commit\n' "$row" >>"$RESCORE_LOG"
       fail_rows+=("$row")
       continue
     fi
