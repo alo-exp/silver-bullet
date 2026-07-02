@@ -282,3 +282,33 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **Poll-exit** | tmux `codex-r3-force3:poll` → [.codex-r3-force3-poll-exit.sh](./.codex-r3-force3-poll-exit.sh) |
 | **Chain monitor** | tmux `codex-r3-force3:chain` |
 | **Tier C** | On **3/3** rescore → auto [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:39:46Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:39:46Z |
+
+### Poll checkpoint 2026-07-02T15:46:01Z (force3 exit @ 0821023e)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen row **1** PASS; FORCE rows **3,6**; row6 outcome-only @ `b22b730` |
+| **Driver** | EXITED PID **31332** |
+| **Tier B rescore** | **2/3** — [.codex-r3-force3-rescore.log](./.codex-r3-force3-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
+
+### Diagnosis — force3 effective 2/3 @ `fb889d61` (2026-07-03)
+
+| Row | Root cause | Evidence |
+|-----|------------|----------|
+| **1** | **Frozen PASS** @ `4412bb01` | [.codex-r3-force3-rescore.log](./.codex-r3-force3-rescore.log) |
+| **3** | Codex **queued prompt then exited** (15KB log ends at `Queued follow-up inputs`); wrote 84B planning stub only. `planning-file-guard` blocked evidence (tui-watch). §5b counted row-6 docs commit `5072735` as product delta — **not api/currency**. Parent orchestrator never spawned silver-feature workers. | [.e2e-row3-codex-attempt.log](../../.e2e-row3-codex-attempt.log) |
+| **6** | **Frozen PASS** @ `5072735` (outcome-only @ `b22b730` + docs fix) | [.codex-r3-force3-rescore.log](./.codex-r3-force3-rescore.log) |
+
+**Harness fixes (force3-only relaunch):**
+
+| Fix | Implementation |
+|-----|----------------|
+| §5b row 3 api/currency | `enterprise_e2e_assert_row3_api_currency_commit` in `core.sh` — rejects docs/planning-only commits |
+| Row 3 invoke prompt | `matrix_row3_product_commit_clause` — parent must spawn workers, not exit after queuing |
+| Row 3 quiet timeout | `SB_E2E_ROW3_QUIET_TIMEOUT=1800` on Codex |
+| Driver | [codex-r3-force3-only-driver.sh](./codex-r3-force3-only-driver.sh) — row **3** only; frozen rows **1+6** |
+| Fixture pin | `round-9-codex` @ `5072735` |
+| Tier C chain | On **3/3** → [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) (22/22) |

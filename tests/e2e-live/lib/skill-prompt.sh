@@ -23,6 +23,14 @@ matrix_product_commit_clause() {
     "$branch"
 }
 
+# Row 3 Codex: require api/currency implementation commits, not planning stubs or docs-only.
+matrix_row3_product_commit_clause() {
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
+  local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
+  printf '§5b row 3 gate: implement orders API currency field under api/ (source + tests). Parent orchestrator MUST spawn silver-feature workers — do NOT exit after queuing the prompt or writing planning-only evidence. Git-commit on fixture branch %s with api/currency paths before ending; docs-only or planning-only commits FAIL.' \
+    "$branch"
+}
+
 matrix_router_workflow_prompt() {
   local slug="$1"
   local prompt_card="$2"

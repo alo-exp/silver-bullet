@@ -215,7 +215,11 @@ build_matrix_prompt() {
      [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
      enterprise_e2e_row_requires_product_commit "$row_num"; then
     # shellcheck source=tests/e2e-live/lib/skill-prompt.sh
-    prompt="${prompt} $(matrix_product_commit_clause)"
+    if [[ "$row_num" == "3" ]]; then
+      prompt="${prompt} $(matrix_row3_product_commit_clause)"
+    else
+      prompt="${prompt} $(matrix_product_commit_clause)"
+    fi
   fi
   printf '%s' "$prompt"
 }
@@ -463,6 +467,10 @@ run_matrix_row() {
   local quiet_timeout="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
   if [[ "$row_num" == "1" ]]; then
     quiet_timeout="${SB_E2E_ROW1_QUIET_TIMEOUT:-300}"
+  elif [[ "$row_num" == "3" ]] && [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    quiet_timeout="${SB_E2E_ROW3_QUIET_TIMEOUT:-1800}"
+  elif [[ "$row_num" == "3" ]] && [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    quiet_timeout="${SB_E2E_ROW3_QUIET_TIMEOUT:-1800}"
   elif [[ "$row_num" =~ ^[0-9]+$ && "$row_num" -ge 2 && "$row_num" -le 20 ]]; then
     # Full workflow rows need a wider quiet window than routing-only row 1.
     # Claude may return to the ❯ prompt between turns while still writing evidence.
