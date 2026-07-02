@@ -45,11 +45,11 @@ fi
 manifest="${REPO_ROOT}/.claude-plugin/plugin.json"
 if [[ -f "$manifest" ]] && command -v jq >/dev/null 2>&1; then
   skills="$(jq -r '.skills // ""' "$manifest")"
-  agents="$(jq -r '.agents // ""' "$manifest")"
-  if [[ "$skills" == "./agents/claude" && "$agents" == "./agents/claude" ]]; then
-    pass "Claude plugin manifest scopes skills+agents to ./agents/claude"
+  agents="$(jq -r '.agents // empty' "$manifest" 2>/dev/null || true)"
+  if [[ "$skills" == "./agents/claude" && ( -z "$agents" || "$agents" == "null" ) ]]; then
+    pass "Claude plugin manifest scopes skills to ./agents/claude (no agents field — Claude schema rejects agents)"
   else
-    fail "Claude plugin manifest must point skills+agents at ./agents/claude (got skills=${skills} agents=${agents})"
+    fail "Claude plugin manifest must scope skills to ./agents/claude without agents field (got skills=${skills} agents=${agents:-<unset>})"
   fi
 else
   pass "Claude plugin manifest jq check skipped"

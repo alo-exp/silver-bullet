@@ -202,16 +202,18 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 Re-register SB hooks in the active host settings file (same contract as `/silver:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `$HOME/.claude/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
 
+Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`, `merge-cursor-hooks.py`).
+
 ```bash
 INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
-if [[ "${SILVER_BULLET_RUNTIME:-}" == "task host" ]] || [[ -d "${HOME}/.task host" && -f "${PLUGIN_ROOT}/scripts/lib/install-task host/merge-task host-hooks.py" ]]; then
-  python3 "${PLUGIN_ROOT}/scripts/lib/install-task host/merge-task host-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+if [[ -f "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" ]]; then
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 else
   python3 "${PLUGIN_ROOT}/scripts/lib/install-Claude Code/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 fi
 ```
 
-Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`, `install-<runtime>.sh`, or `install-<runtime>.sh`).
+Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`).
 
 #### 4.2a v1 hook incompatibility check
 
