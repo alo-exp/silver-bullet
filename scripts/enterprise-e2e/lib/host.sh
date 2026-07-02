@@ -103,6 +103,31 @@ enterprise_e2e_apply_matrix_host_defaults() {
   enterprise_e2e_apply_host_path_default SB_E2E_TUI_FINDINGS tui_findings
   enterprise_e2e_apply_host_path_default SB_E2E_TUI_OFFSETS tui_offsets
   enterprise_e2e_apply_host_path_default SB_E2E_LEDGER_FILE ledger_file
+  enterprise_e2e_apply_test_app_fixture_default
+}
+
+# Host-isolated test-app checkout (absolute path or repo-relative).
+enterprise_e2e_apply_test_app_fixture_default() {
+  local host val sb_root
+  if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
+    return 0
+  fi
+  host="$(enterprise_e2e_matrix_host)"
+  val="$(enterprise_e2e_host_config_get test_app_root "$host" 2>/dev/null || true)"
+  [[ -n "$val" ]] || return 0
+  if [[ "$val" == /* ]]; then
+    export SB_TEST_ENTERPRISE_APP_ROOT="$val"
+    return 0
+  fi
+  sb_root="${SB_ROOT:-}"
+  if [[ -z "$sb_root" ]]; then
+    if declare -f enterprise_e2e_sb_root >/dev/null 2>&1; then
+      sb_root="$(enterprise_e2e_sb_root)"
+    else
+      sb_root="$(cd "$(enterprise_e2e_harness_root)/.." && pwd)"
+    fi
+  fi
+  export SB_TEST_ENTERPRISE_APP_ROOT="${sb_root}/${val}"
 }
 
 # Fail fast when SB harness is not on the host track branch (hosts.json git_branch).

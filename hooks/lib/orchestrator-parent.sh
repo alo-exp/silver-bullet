@@ -242,11 +242,20 @@ sb_orchestrator_worker_allows_bash() {
   esac
 }
 
+# Host-native delegation tool label for parent context and guard messages.
+sb_orchestrator_spawn_tool_label() {
+  case "${SILVER_BULLET_RUNTIME:-cursor}" in
+    codex) printf '%s' 'spawn_agent (multi_agent_v1.spawn_agent)' ;;
+    claude) printf '%s' 'Agent (Claude subagent)' ;;
+    *) printf '%s' 'Task worker' ;;
+  esac
+}
+
 # Parent-allowed PreToolUse tools (read-only + delegation).
 sb_orchestrator_parent_tool_allowed() {
   local tool_name="$1"
   case "$tool_name" in
-    Task|Subagent|Agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent|Read|Grep|Glob|SemanticSearch|WebSearch|WebFetch|AskQuestion|SwitchMode|UpdateCurrentStep|CallMcpTool|FetchMcpResource)
       return 0
       ;;
     Skill)
@@ -256,6 +265,92 @@ sb_orchestrator_parent_tool_allowed() {
       return 1
       ;;
   esac
+}
+
+# Extract skill name from Codex silver-bullet invoke-skill adapter bash command.
+sb_orchestrator_extract_invoke_skill_adapter() {
+  local command_str="$1"
+  [[ -n "$command_str" ]] || return 1
+  python3 - "$command_str" <<'PY' 2>/dev/null || return 1
+import pathlib
+import re
+import shlex
+import sys
+
+command = sys.argv[1]
+assignment_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=.*$")
+shell_names = {"bash", "sh", "zsh"}
+
+
+def parse(raw):
+    try:
+        return shlex.split(raw, posix=True)
+    except Exception:
+        return []
+
+
+def skip_env_and_assignments(tokens):
+    idx = 0
+    if idx < len(tokens) and tokens[idx] == "env":
+        idx += 1
+    while idx < len(tokens) and assignment_re.match(tokens[idx]):
+        idx += 1
+    return idx
+
+
+def inspect_tokens(tokens):
+    idx = skip_env_and_assignments(tokens)
+    if idx >= len(tokens):
+        return None
+
+    cmd = pathlib.Path(tokens[idx]).name
+    args = tokens[idx + 1 :]
+
+    if cmd in shell_names:
+        for arg_index, arg in enumerate(args):
+            if arg.startswith("-") and "c" in arg[1:] and arg_index + 1 < len(args):
+                return inspect_tokens(parse(args[arg_index + 1]))
+        script_index = 0
+        while script_index < len(args) and args[script_index].startswith("-"):
+            script_index += 1
+        if script_index < len(args) and pathlib.Path(args[script_index]).name == "silver-bullet":
+            script_args = args[script_index + 1 :]
+            if len(script_args) >= 2 and script_args[0] == "invoke-skill":
+                return script_args[1]
+        return None
+
+    if cmd == "silver-bullet" and len(args) >= 2 and args[0] == "invoke-skill":
+        return args[1]
+    return None
+
+
+skill = inspect_tokens(parse(command))
+if skill:
+    print(skill)
+PY
+}
+
+# Parent may use Bash for Codex invoke-skill router adapter or read-only state inspection.
+sb_orchestrator_parent_bash_allowed() {
+  local command_str="$1"
+  [[ -n "$command_str" ]] || return 1
+
+  local adapter_skill=""
+  adapter_skill="$(sb_orchestrator_extract_invoke_skill_adapter "$command_str" 2>/dev/null || true)"
+  if [[ -n "$adapter_skill" ]]; then
+    sb_orchestrator_parent_skill_allowed "$adapter_skill"
+    return $?
+  fi
+
+  local _tool_input_lib
+  _tool_input_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tool-input.sh"
+  if [[ -f "$_tool_input_lib" ]]; then
+    # shellcheck source=tool-input.sh
+    source "$_tool_input_lib"
+    sb_shell_command_looks_read_only "$command_str" >/dev/null
+    return $?
+  fi
+  return 1
 }
 
 # Parent may only invoke router/orchestrator skills directly — flow atoms via Task workers.
@@ -277,10 +372,12 @@ sb_orchestrator_parent_skill_allowed() {
 # Parent context block for session injection.
 sb_orchestrator_parent_context_block() {
   sb_orchestrator_is_parent_session || return 0
+  local spawn_label
+  spawn_label="$(sb_orchestrator_spawn_tool_label)"
   printf '%s\n' \
     "SB ORCHESTRATOR PARENT MODE (mandatory)" \
     "  You are the parent orchestrator — NEVER Edit/Write/Bash on project source." \
-    "  Read orchestrator-directive.json → spawn Task worker with templates/orchestrator-workers/<TEMPLATE>.md" \
+    "  Read orchestrator-directive.json → spawn ${spawn_label} with templates/orchestrator-workers/<TEMPLATE>.md" \
     "  On worker completion: flow-advance queues next_worker_template + next_skill → spawn next worker." \
     "  Ask the user ONLY for locked decisions (decision_class in outcomes)."
 }

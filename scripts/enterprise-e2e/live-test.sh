@@ -140,7 +140,7 @@ if [[ ! -d "$FIXTURE_DIR" ]]; then
   exit 1
 fi
 
-enterprise_e2e_ensure_test_app_branch "$FIXTURE_DIR"
+enterprise_e2e_assert_test_app_branch "$FIXTURE_DIR"
 
 # --- Preflight ---
 echo "--- Preflight ---"
