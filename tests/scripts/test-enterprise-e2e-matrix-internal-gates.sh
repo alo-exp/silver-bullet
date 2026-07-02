@@ -25,6 +25,7 @@ trap 'rm -rf "$FIXTURE"' EXIT
 mkdir -p "$FIXTURE/.planning/workflows"
 
 out="$(SB_E2E_MATRIX_DRY_RUN=1 \
+  SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE" \
   bash "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 22 2>&1)" || true
 
@@ -33,6 +34,7 @@ assert_ok "bugfix-health.md seeded with validate-substep" \
   grep -q 'validate-substep' "$FIXTURE/.planning/workflows/bugfix-health.md"
 
 out21="$(SB_E2E_MATRIX_DRY_RUN=1 \
+  SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE" \
   bash "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 21 2>&1)" || true
 
