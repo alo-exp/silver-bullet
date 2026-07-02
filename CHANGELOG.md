@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.50.2] — 2026-07-03
+
+Patch release: Cursor-3 REAL enterprise E2E certification (22/22 strict-clean), anti-faking methodology (void Cursor-1/2), and harness fixes E2E-091–E2E-100.
+
+## Features
+- `feat(e2e/cursor): Phase A ladder + rows 3/7/8 smoke expansion drivers` (63355ec5)
+- `feat(e2e/cursor): batch 2 rows 2/4/5/9 PASS; E2E-095 FORCE brownfield skip fix` (d02b8584)
+
+## Bug Fixes
+- `fix(e2e): E2E-091 clarify n/a for routing row 1; E2E-092 cursor 1800s timeout` (32231c44)
+- `fix(e2e/cursor): E2E-093 stream-json log capture; E2E-094 fast-path OUT-ORCH-01 n/a` (5fa5d2fc)
+- `fix(e2e): E2E-096 row 10 outcome false-negative on autonomy summary` (e1ff9580)
+- `fix(e2e): E2E-097 row 14 OUT-RELEASE-01 false partial` (0420501d)
+- `fix(e2e): E2E-098 matrix graphify preamble satisfies OUT-KM-01` (87c4228f)
+- `fix(e2e): E2E-099 row 15 review-triad triad evidence for OUT-RELEASE-01` (e371d311)
+- `fix(codex-e2e): clear pre-release blockers for enterprise-e2e/codex` (5e40e2b4)
+- `fix(codex-e2e): skip absent validate-host-install-surface in prerelease harness` (365bea43)
+- `fix(ci): use CI-writable enterprise E2E fixture paths in script tests` (55a67ccb)
+- `fix(ci): seed silver-bullet.json in outcome assessment temp fixture` (703eaf00)
+
+## Documentation
+- `docs(e2e): register E2E-091–100 and void Cursor-1/2 in methodology` (2834fe3d)
+- `docs(e2e): cursor-3 REAL 22/22 strict-clean + Phase C RCS 100` (cca0ffc0)
+- Merge `enterprise-e2e/cursor` → `main` (c507f1c) — ROUND-CURSOR-3-REAL-LEDGER, cursor3 drivers, §11a + Appendix D
+
+---
+
 ## [0.50.1] — 2026-07-02
 
 Patch release: test harness fixes for Claude plugin manifest, install-surface validation, outcomes-check isolation, orchestrator parent guard, plugin-cache uninstall cleanup, and local Claude install materialization fallback.
