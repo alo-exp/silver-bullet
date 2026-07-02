@@ -79,7 +79,7 @@ assert_eq "auth env lines include shell API key when export skipped" "1" "$(prin
 assert_eq "auth env lines include shell base URL when export skipped" "1" "$(printf '%s\n' "$lines" | grep -c '^ANTHROPIC_BASE_URL=https://api.example.test/shell$' || true)"
 
 # Enterprise matrix runner forces export on (ignores inherited SKIP=1).
-MATRIX="${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
+MATRIX="${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh"
 MATRIX_SRC="$(<"$MATRIX")"
 assert_contains "enterprise matrix forces settings export on" "$MATRIX_SRC" 'export SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0'
 assert_contains "enterprise matrix arrow strategy for api key disclaimer" "$MATRIX_SRC" 'CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-arrow}"'

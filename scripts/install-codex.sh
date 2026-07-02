@@ -3,11 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-# shellcheck source=scripts/lib/install-common.sh
-source "${REPO_ROOT}/scripts/lib/install-common.sh"
 _LIB="${SCRIPT_DIR}/lib/install-codex"
+AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 PURGE_LEGACY_SKILLS=0
 PUBLIC_RELEASE_ONLY=0
+HOOK_TRUST_SEED_ONLY=0
 # Native Codex loads plugin-declared hooks directly, so merging the same SB
 # hook bundle into ~/.codex/hooks.json duplicates delivery. Kay still relies on
 # the merged user-hook surface, so keep merge enabled there unless explicitly
@@ -32,6 +34,7 @@ done
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --purge-legacy-skills) PURGE_LEGACY_SKILLS=1; shift ;;
+    --hook-trust-seed-only) HOOK_TRUST_SEED_ONLY=1; shift ;;
     --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
@@ -41,6 +44,14 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$HOOK_TRUST_SEED_ONLY" -eq 1 ]]; then
+  SB_PROJECT_ROOT=""
+  if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
+    seed_silver_bullet_hook_trust_state
+  fi
+  exit 0
+fi
 
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   "${SCRIPT_DIR}/sync-codex-package.sh"

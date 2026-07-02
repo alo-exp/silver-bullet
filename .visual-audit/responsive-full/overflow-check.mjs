@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, 'package.json'));
 const { chromium } = require('playwright');
 
-const BASE = process.env.OVERFLOW_BASE_URL || 'http://localhost:8765';
+const BASE = process.env.OVERFLOW_BASE_URL || 'https://sb.alolabs.dev';
 const pages = process.argv.slice(2).length
   ? process.argv.slice(2)
   : [
