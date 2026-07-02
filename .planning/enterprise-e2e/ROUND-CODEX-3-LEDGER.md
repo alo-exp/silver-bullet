@@ -353,3 +353,56 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **Driver** | EXITED PID **56707** |
 | **Tier B rescore** | **2/3** — [.codex-r3-force3-only-rescore.log](./.codex-r3-force3-only-rescore.log) |
 | **Tier C** | **BLOCKED** — fix Tier B failures first |
+
+### Poll checkpoint 2026-07-02T16:47:45Z (force3-only exit @ e4e8f814)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen rows **1+6** PASS; FORCE row **3** only; fixture @ `5072735` |
+| **Driver** | EXITED PID **78105** |
+| **Tier B rescore** | **3/3** — [.codex-r3-force3-only-rescore.log](./.codex-r3-force3-only-rescore.log) |
+| **Tier C** | **READY** — launch [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |
+| 1 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T16:54:12Z |
+| 1 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T16:54:12Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T16:54:12Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T16:54:13Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T16:54:13Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T16:54:13Z |
+
+### Poll checkpoint 2026-07-02T17:28:58Z (Tier C quota resume @ e4e8f814)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — Tier B **3/3** frozen; matrix driver **ALIVE**; rows 1–2 live PASS; row 3 live FAIL §5b (TERM during quota stall); row 4+ in flight |
+| **Driver** | RUNNING PID **45140** (tmux **codex-r3-matrix**) |
+| **Quota** | Reset confirmed — row 4 invoke active (~4% CPU post-restart) |
+| **Partial live** | **2/22** rows PASS in matrix log (rows 1–2); row 3 §5b FAIL |
+| **Partial rescore** | **3/22** outcome-only rows 1–3 — [.codex-r3-matrix-partial-rescore.log](./.codex-r3-matrix-partial-rescore.log) |
+| **Fixture** | `enterprise-e2e/round-9-codex` @ `ecb2ff6` (6 commits since `09f8d1a`) |
+| **§5b** | **ON** (exempt 1,15,21,22) |
+| **Poll-exit** | PID **46249** RUNNING |
+| **Friction** | PID **56435** relaunched |
+| **matrix-monitor** | PID **57586** relaunched |
+| **tui-watch** | PID **57588** relaunched |
+| **Next** | Let matrix continue rows 4–22; FORCE row 3 only after batch if §5b still FAIL |
+
+### Poll checkpoint 2026-07-02T20:42:46Z (Round Codex-3 REAL Tier C exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **45140** |
+| **Matrix rescore** | **18/22** — [.codex-r3-matrix-rescore.log](./.codex-r3-matrix-rescore.log) |
+| **Phase C** | **BLOCKED** — 18/22 |
+
+### Launch checkpoint 2026-07-02T20:47:03Z (force141619 @ e4e8f814)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen **18 PASS** @ `e4e8f814`; FORCE rows **14,15,16,19** live |
+| **Fixture** | `round-9-codex` @ `3ca685f` — **18** commits since `09f8d1a` |
+| **R3 ladder** | **8/8 PASS** — row 15 OUT-REVIEW-01 unblocked |
+| **Driver** | [codex-r3-force141619-driver.sh](./codex-r3-force141619-driver.sh) PID **6768** |
+| **Poll** | tmux `codex-r3-force141619:poll` — [.codex-r3-force141619-poll-exit.sh](./.codex-r3-force141619-poll-exit.sh) |
+| **§5b** | ON for rows 14,16,19; exempt 1,15,21,22 |
+| **Fail targets** | 14 OUT-RELEASE-01 partial; 15 OUT-REVIEW-01+OUT-RELEASE-01; 16 OUT-RELEASE-01; 19 OUT-FORENS-01 partial |
+| **Rows 21–22** | Internal PASS (frozen from rows 3/4) — verify on rescore |
