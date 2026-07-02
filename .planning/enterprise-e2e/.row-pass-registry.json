@@ -106,6 +106,32 @@
           "source": "matrix"
         }
       }
+    },
+    "cursor@5d5ef7c854ab+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "5d5ef7c854ab",
+      "install_fp": "cursor@5d5ef7c854ab+ff940b08e724",
+      "rows": {
+        "1": {
+          "passed_at": "2026-07-02T12:34:05Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "cursor@32231c4436d7+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "32231c4436d7",
+      "install_fp": "cursor@32231c4436d7+ff940b08e724",
+      "rows": {
+        "6": {
+          "passed_at": "2026-07-02T13:25:25Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row6-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
     }
   }
 }

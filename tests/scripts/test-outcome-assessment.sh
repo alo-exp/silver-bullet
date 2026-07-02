@@ -216,6 +216,16 @@ rm -f "$ROW1_LOG"
 score_gates6="$(enterprise_e2e_outcome_score_criterion OUT-GATES-01 "$FIXTURE" "$STATE_DIR" "" 6)"
 [[ "$score_gates6" == "pass" ]] && pass "fixture row 6 OUT-GATES-01 pass (fast-path skip)" || fail "fixture row 6 OUT-GATES-01 got $score_gates6"
 
+# --- Fixture: row 6 fast path OUT-ORCH-01 n/a when evidence present ---
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/fast-readme.md" <<'EOF'
+# fast-readme evidence
+status: complete
+EOF
+printf 'silver-fast\n' >"$STATE_DIR/state"
+score_orch6="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "" 6 "" ".planning/workflows/fast-readme.md")"
+[[ "$score_orch6" == "n/a" ]] && pass "fixture row 6 OUT-ORCH-01 n/a (fast-path)" || fail "fixture row 6 OUT-ORCH-01 got $score_orch6 (expected n/a)"
+
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
 printf 'graphify query silver-feature routes hooks\nTask worker spawned\n' >"$SESSION_LOG"

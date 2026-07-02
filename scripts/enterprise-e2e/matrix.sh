@@ -471,6 +471,7 @@ run_matrix_row() {
       printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
+    enterprise_e2e_matrix_finalize_attempt_log "$row_log" "$row_num" "$WORK_DIR" "$evidence_path" "$graphify_ref"
 
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if [[ "$row_num" == "1" ]] && ! verify_row_evidence "$evidence_path"; then

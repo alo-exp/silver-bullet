@@ -386,6 +386,8 @@ Operators must understand these fixes — misreading them caused false PASS clai
 | **E2E-090** | Parallel hosts shared one test-app checkout | `hosts.json` per-host `test_app_git_branch` + worktree | Always use host worktree; wrong branch **disqualifies round** |
 | **E2E-091** | Row 1 `OUT-CLARIFY-01` false fail on routing-only sessions | `enterprise_e2e_outcome_score_clarify` returns `n/a` when routing evidence present | Routing-only row 1 without clarify is **not** a blocking fail |
 | **E2E-092** | Row 6 timeout @ 900s when tmux/shell inherited legacy timeout | `matrix.sh` enforces cursor ≥1800s; `cursor3-real-driver.sh` exports timeout env | Use driver or export `CLAUDE_INTERACTIVE_TIMEOUT=1800` before matrix |
+| **E2E-093** | §5b log floor (<2048 B) — cursor-agent `--print` summary-only + harness truncate | `agent.sh` preserves harness prefix, `stream-json` + `stdbuf`; `enterprise_e2e_matrix_finalize_attempt_log` composite transcript when evidence present | Short summary alone does **not** PASS §5b unless composite footer appended after evidence verify |
+| **E2E-094** | Row 6 `OUT-ORCH-01` false fail on silver-fast fast-path | `enterprise_e2e_outcome_score_orch` returns `n/a` when row 6 evidence + `silver-fast` state present | Fast-path rows do not require orchestrator parent/worker chain |
 
 ---
 
