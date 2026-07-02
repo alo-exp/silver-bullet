@@ -288,6 +288,16 @@ if [[ -z "$INSTALL_COMMIT_SHA" && -d "$REPO_ROOT/.git" ]]; then
 fi
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
 
+# Record install version key for enterprise E2E single-pass-at-version skip (matrix / T1).
+if [[ -f "${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh" ]]; then
+  # shellcheck source=scripts/enterprise-e2e/lib/core.sh
+  source "${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh"
+  SB_ROOT="$REPO_ROOT"
+  export SB_ROOT
+  _install_ver="$(enterprise_e2e_write_sb_install_version "$REPO_ROOT" "$VERSION" "$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo "${INSTALL_COMMIT_SHA:0:8}")")"
+  printf 'SB install version key: %s (see .e2e-cursor-install-version.txt)\n' "$_install_ver"
+fi
+
 printf '\nCursor hook merge complete. SB hooks are in %s/hooks.json.\n' "$CURSOR_HOME"
 printf 'If skills do not appear, reload the window or run: bash scripts/install-cursor.sh --merge-hooks-only\n'
 

@@ -64,9 +64,15 @@ enterprise_e2e_test_app_expected_branch() {
   return 1
 }
 
+enterprise_e2e_test_app_is_git_repo() {
+  local fixture_dir="${1:-}"
+  [[ -n "$fixture_dir" ]] || return 1
+  git -C "$fixture_dir" rev-parse --git-dir >/dev/null 2>&1
+}
+
 enterprise_e2e_test_app_is_dirty() {
   local fixture_dir="${1:-}"
-  [[ -n "$fixture_dir" && -d "$fixture_dir/.git" ]] || return 1
+  enterprise_e2e_test_app_is_git_repo "$fixture_dir" || return 1
   [[ -n "$(git -C "$fixture_dir" status --porcelain 2>/dev/null)" ]]
 }
 
@@ -75,6 +81,47 @@ enterprise_e2e_test_app_refuse_main_target() {
   if [[ "$branch" == "main" || "$branch" == "master" ]]; then
     enterprise_e2e_preflight_fail \
       "refusing to target test-app branch '${branch}' — use enterprise-e2e/round-N-{host} (see TEST-APP-BRANCH-POLICY.md)"
+  fi
+}
+
+# Fail-fast branch gate — no checkout (worktree / parallel-host safety).
+enterprise_e2e_assert_test_app_branch() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local expected_branch current_branch dirty
+
+  enterprise_e2e_apply_test_app_branch_defaults
+
+  if [[ "${SB_E2E_TEST_APP_BRANCH_ENFORCE:-1}" == "0" ]]; then
+    echo "Test-app branch preflight: skipped (SB_E2E_TEST_APP_BRANCH_ENFORCE=0)"
+    return 0
+  fi
+
+  [[ -d "$fixture_dir" ]] || enterprise_e2e_preflight_fail "test app fixture missing: ${fixture_dir}"
+  enterprise_e2e_test_app_is_git_repo "$fixture_dir" \
+    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}"
+
+  expected_branch="$(enterprise_e2e_test_app_expected_branch 2>/dev/null || true)"
+  if [[ -z "$expected_branch" ]]; then
+    echo "WARN: test-app branch assert skipped (set SB_E2E_TEST_APP_BRANCH or SB_E2E_TEST_APP_ROUND)"
+    return 0
+  fi
+
+  enterprise_e2e_test_app_refuse_main_target "$expected_branch"
+  current_branch="$(git -C "$fixture_dir" branch --show-current 2>/dev/null || true)"
+  dirty=0
+  enterprise_e2e_test_app_is_dirty "$fixture_dir" && dirty=1
+
+  echo "Test-app branch preflight: want=${expected_branch} have=${current_branch:-detached} fixture=${fixture_dir}"
+
+  if [[ "$current_branch" != "$expected_branch" ]]; then
+    enterprise_e2e_preflight_fail \
+      "test app on '${current_branch:-detached}' — expected '${expected_branch}' at ${fixture_dir}. Use an isolated worktree (see TEST-APP-BRANCH-POLICY.md); refusing checkout during parallel matrix."
+  fi
+
+  if [[ "$dirty" -eq 1 ]]; then
+    echo "  OK on ${expected_branch} (dirty — matrix/agent work in progress)"
+  else
+    echo "  OK on ${expected_branch} @ $(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   fi
 }
 
@@ -89,7 +136,8 @@ enterprise_e2e_ensure_test_app_branch() {
     return 0
   fi
 
-  [[ -d "$fixture_dir/.git" ]] || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}"
+  enterprise_e2e_test_app_is_git_repo "$fixture_dir" \
+    || enterprise_e2e_preflight_fail "test app is not a git repo: ${fixture_dir}"
 
   expected_branch="$(enterprise_e2e_test_app_expected_branch 2>/dev/null || true)"
   if [[ -z "$expected_branch" ]]; then
