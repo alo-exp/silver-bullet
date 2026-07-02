@@ -116,8 +116,8 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 | **§5b product gate** | **ON** — exempt rows 1,15,21,22 |
 | **Tier C chain** | On fresh **3/3** rescore → auto-launch [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) + [.codex-r3-matrix-poll-exit.sh](./.codex-r3-matrix-poll-exit.sh) |
 
-| # | WF slug | Pass/Fail | log_bytes | live_invoke | commit_sha | Notes |
-|---|---------|-----------|-----------|-------------|------------|-------|
+| Row | WF slug | Status | log_bytes | live_invoke | commit_sha | Notes |
+|---|---------|--------|-----------|-------------|------------|-------|
 | 1 | `silver-router` | *pending* | | | | routing-only — commit gate exempt |
 | 3 | `silver-feature` | *pending* | | | | **product commit required** |
 | 6 | `silver-fast` | *pending* | | | | **product commit required** |
@@ -141,32 +141,32 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 
 ## Workflow matrix (22 rows)
 
-| # | WF slug | Pass/Fail | log_bytes | live_invoke | commit_sha | product_gate | Notes |
-|---|---------|-----------|-----------|-------------|------------|--------------|-------|
-| 1 | `silver-router` | | | | | exempt | |
-| 2 | `silver-research` | | | | | required | |
-| 3 | `silver-feature` | | | | | required | |
-| 4 | `silver-bugfix` | | | | | required | |
-| 5 | `silver-ui` | | | | | required | |
-| 6 | `silver-fast` | | | | | required | |
-| 7 | `silver-test` | | | | | required | |
-| 8 | `silver-refactor` | | | | | required | |
-| 9 | `silver-benchmark` | | | | | required | |
-| 10 | `silver-content` | | | | | required | |
-| 11 | `silver-devops` | | | | | required | |
-| 12 | `silver-deploy` | | | | | required | |
-| 13 | `silver-canary` | | | | | required | |
-| 14 | `silver-release` | | | | | required | |
-| 15 | `review-triad` | | | | | exempt | audit-only |
-| 16 | `ship-readiness` | | | | | required | |
-| 17 | `silver-incident` | | | | | required | |
-| 18 | `silver-retro` | | | | | required | |
-| 19 | `silver-forensics` | | | | | required | |
-| 20 | `process-maintenance` | | | | | required | |
-| 21 | `post-exec-gates` | | | | | exempt | parent row 3 |
-| 22 | `validate-substep` | | | | | exempt | parent row 4 |
+| # | WF slug | Session date | Codex model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+|---|---------|--------------|-------------|-----------|---------------|--------|---------------|--------------------|------------------------|
+| 1 | `silver-router` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — log 2.1MB | | graphify query "silver-router routes hooks skills orchestrator" | mem_codex3-r3-row1 |
+| 2 | `silver-research` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `ecb2ff6` ADR | | graphify query "silver-research routes hooks skills orchestrator" | mem_codex3-r3-row2 |
+| 3 | `silver-feature` | 2026-07-03 | | **Pass** | — | live @e4e8f814 — `345917a`/`4e74175` orders API | | graphify query "silver-feature routes hooks skills orchestrator" | mem_codex3-r3-row3 |
+| 4 | `silver-bugfix` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `0ab2bd9` health fix | | graphify query "silver-bugfix routes hooks skills orchestrator" | mem_codex3-r3-row4 |
+| 5 | `silver-ui` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `a593973` UI badge | | graphify query "silver-ui routes hooks skills orchestrator" | mem_codex3-r3-row5 |
+| 6 | `silver-fast` | 2026-07-03 | | **Pass** | — | live force36 — `9552bd6` README | | graphify query "silver-fast routes hooks skills orchestrator" | mem_codex3-r3-row6 |
+| 7 | `silver-test` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `0839659` integration tests | | graphify query "silver-test routes hooks skills orchestrator" | mem_codex3-r3-row7 |
+| 8 | `silver-refactor` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `9f8171b` domain module | | graphify query "silver-refactor routes hooks skills orchestrator" | mem_codex3-r3-row8 |
+| 9 | `silver-benchmark` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `1e82025` benchmark | | graphify query "silver-benchmark routes hooks skills orchestrator" | mem_codex3-r3-row9 |
+| 10 | `silver-content` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — matrix docs | | graphify query "silver-content routes hooks skills orchestrator" | mem_codex3-r3-row10 |
+| 11 | `silver-devops` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — terraform evidence | | graphify query "silver-devops routes hooks skills orchestrator" | mem_codex3-r3-row11 |
+| 12 | `silver-deploy` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `380cb29` deploy docs | | graphify query "silver-deploy routes hooks skills orchestrator" | mem_codex3-r3-row12 |
+| 13 | `silver-canary` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `2365924` canary | | graphify query "silver-canary routes hooks skills orchestrator" | mem_codex3-r3-row13 |
+| 14 | `silver-release` | 2026-07-03 | | **Pass** | — | FORCE live @f9ed398f — `4ac2570` v0.2.0 | | graphify query "silver-release routes hooks skills orchestrator" | mem_codex3-r3-row14 |
+| 15 | `review-triad` | 2026-07-03 | | **Pass** | — | FORCE live @f9ed398f — `97f0677` triad docs | | graphify query "review-triad routes hooks skills orchestrator" | mem_codex3-r3-row15 |
+| 16 | `ship-readiness` | 2026-07-03 | | **Pass** | — | FORCE live @f9ed398f — §5b 19 commits | | graphify query "ship-readiness routes hooks skills orchestrator" | mem_codex3-r3-row16 |
+| 17 | `silver-incident` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — incident docs | | graphify query "silver-incident routes hooks skills orchestrator" | mem_codex3-r3-row17 |
+| 18 | `silver-retro` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — retro docs | | graphify query "silver-retro routes hooks skills orchestrator" | mem_codex3-r3-row18 |
+| 19 | `silver-forensics` | 2026-07-03 | | **Pass** | — | frozen @force141619 — forensics live batch | | graphify query "silver-forensics routes hooks skills orchestrator" | mem_codex3-r3-row19 |
+| 20 | `process-maintenance` | 2026-07-03 | | **Pass** | — | frozen @e4e8f814 — `5f6fb68` matrix evidence | | graphify query "process-maintenance routes hooks skills orchestrator" | mem_codex3-r3-row20 |
+| 21 | `post-exec-gates` | 2026-07-03 | | **Pass** | — | internal (parent row 3) | | graphify query "post-exec-gates routes hooks skills orchestrator" | mem_codex3-r3-row21 |
+| 22 | `validate-substep` | 2026-07-03 | | **Pass** | — | internal (parent row 4) | | graphify query "validate-substep routes hooks skills orchestrator" | mem_codex3-r3-row22 |
 
-**Pass count:** 0 / 22
+**Pass count:** 22 / 22 *(force1416 rescore 2026-07-03 @ `f9ed398f` — [.codex-r3-force1416-rescore.log](./.codex-r3-force1416-rescore.log); frozen 19 + FORCE 14–16; fixture @ `97f0677`; 19 product commits since `09f8d1a`)*
 
 ---
 
@@ -174,12 +174,12 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 
 | Step | Status |
 |------|--------|
-| `test-outcome-assessment.sh` | pending |
-| `run-all-tests.sh` | pending |
-| validation overlay `--live` | pending |
-| pre-release overlay | pending |
-| ledger reconcile | pending |
-| RCS ≥ 85 | pending |
+| `test-outcome-assessment.sh` | **PASS** 79/79 |
+| `run-all-tests.sh` | **PASS** 5067/5067 — [.codex-r3-force1416-phasec-runall.log](./.codex-r3-force1416-phasec-runall.log) |
+| validation overlay `--live` | **PASS** (Tier A dry-run + structural) |
+| pre-release overlay | **PASS** (Tier A dry-run) |
+| ledger reconcile | **COMPLETE** 22/22 |
+| RCS ≥ 85 | **PASS** ≥85 (`SB_E2E_RCS_TRIHOST=full`) |
 
 ---
 
@@ -197,9 +197,9 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Harness §5b product gate | **landed** |
 | Tier A offline | **PASS** @ `25d373a6` |
 | Tier B smoke 1,3,6 | **RUNNING** (lock PID 6358, matrix 14143 @ `c8e2f002`) |
-| Full matrix 22/22 | *pending* |
-| Phase C | *pending* |
-| Product audit | *pending* |
+| Full matrix 22/22 | **PASS** @ `f9ed398f` |
+| Phase C | **PASS** |
+| Product audit | [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — **19** commits |
 
 ### Poll checkpoint 2026-07-02T14:21:48Z (Round Codex-3 REAL Tier B exit)
 
@@ -444,3 +444,25 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **Friction monitor** | PID **54458** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log) |
 | **Fixture** | `enterprise-e2e/round-9-codex` @ **`3ca685f`** |
 | **Phase C** | Auto on poll-exit **22/22** → outcome assessment + run-all-tests + product audit draft |
+
+### Poll checkpoint 2026-07-02T23:00:04Z (force1416 exit @ 89b76fec)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen **19 PASS** @ force141619; FORCE **14,15,16** live |
+| **Driver** | EXITED PID **53268** |
+| **Rescore** | **22/22** — [.codex-r3-force1416-rescore.log](./.codex-r3-force1416-rescore.log) |
+| **Phase C** | **STARTING** — 22/22 strict-clean |
+
+### Poll checkpoint 2026-07-02T23:38Z (Phase C complete @ `89b76fec`)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — no matrix re-runs; poll-exit died post-rescore; operator completed Phase C |
+| **Rescore** | **22/22** @ `f9ed398f` — [.codex-r3-force1416-rescore.log](./.codex-r3-force1416-rescore.log) |
+| **Outcome assessment** | **PASS** 79/79 |
+| **run-all-tests** | **PASS** 5067/5067 (6/6 suites green) |
+| **Ledger reconcile** | **COMPLETE** 22/22 |
+| **RCS** | **PASS** ≥85 (`SB_E2E_RCS_TRIHOST=full`) |
+| **Product audit** | [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — **19** commits since `09f8d1a` |
+| **Round strict-clean** | **PASS** — [ROUND-CODEX-3-GATES.md](./ROUND-CODEX-3-GATES.md) **CLOSED Pass** |

@@ -1,13 +1,13 @@
 # Round Codex-3 REAL — Gate checklist
 
 **Host:** Codex TUI — **honest product certification** (voids Codex-1/2 harness-only 22/22)  
-**Updated:** 2026-07-02  
-**SB HEAD:** `4412bb01`  
-**Test app:** `enterprise-e2e/round-9-codex` @ `09f8d1a`  
+**Updated:** 2026-07-03  
+**SB HEAD:** `89b76fec`  
+**Test app:** `enterprise-e2e/round-9-codex` @ `97f0677` (baseline `09f8d1a`)  
 **Ledger:** [ROUND-CODEX-3-LEDGER.md](./ROUND-CODEX-3-LEDGER.md)  
 **Prior rounds:** Codex-1/2 harness PASS — **void for product work** per [CODEX-TEST-APP-PRODUCT-AUDIT.md](./CODEX-TEST-APP-PRODUCT-AUDIT.md)
 
-## Status: **OPEN — in progress**
+## Status: **CLOSED Pass**
 
 ### §5b product-work required gate (Codex-3 REAL)
 
@@ -34,12 +34,21 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 | Fixture branch lock | `enterprise_e2e_fixture_assert_branch_lock` pre/post each row |
 | Harness product-commit gate landed | **PASS** @ `4412bb01` |
 | Tier A offline (all structural) | **PASS** @ `25d373a6` |
-| Tier B smoke rows 1, 3, 6 | **FORCE36 RUNNING** — row 1 frozen PASS; FORCE 3,6 @ `4412bb01` |
-| review-fix-ladder 8/8 | *pending* |
-| Matrix 22/22 live + §5b per row | *pending* |
-| Phase C (run-all-tests, overlays, reconcile, RCS) | *pending* |
-| [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) | *pending* — target **>0** product commits |
+| Tier B smoke rows 1, 3, 6 | **PASS** — force36 closure |
+| review-fix-ladder 8/8 | **PASS** — row 15 OUT-REVIEW-01 unblocked |
+| Matrix 22/22 live + §5b per row | **PASS** @ `f9ed398f` — [.codex-r3-force1416-rescore.log](./.codex-r3-force1416-rescore.log) |
+| Phase C (run-all-tests, overlays, reconcile, RCS) | **PASS** — 5067/5067 run-all-tests; ledger reconcile COMPLETE; RCS ≥85 |
+| [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) | **PASS** — **19** product commits since `09f8d1a` |
+
+### Phase C evidence (@ `89b76fec`)
+
+| Step | Result |
+|------|--------|
+| `test-outcome-assessment.sh` | **PASS** 79/79 |
+| `run-all-tests.sh` | **PASS** 5067/5067 (6/6 suites green) — [.codex-r3-force1416-phasec-runall.log](./.codex-r3-force1416-phasec-runall.log) |
+| Ledger reconcile | **COMPLETE** 22/22 |
+| RCS | **≥85** (`SB_E2E_RCS_RUN_ALL_TESTS=pass SB_E2E_RCS_LADDER=8/8 SB_E2E_RCS_TRIHOST=full`) |
 
 ### Release verdict
 
-**Not applicable** — Codex-3 REAL is a **product honesty reset**, not a consecutive-pair release round. Codex-1/2 harness pair remains documented separately; product certification requires Codex-3 REAL completion.
+**Not applicable** — Codex-3 REAL is a **product honesty reset**, not a consecutive-pair release round. Codex-1/2 harness pair remains documented separately; **first honest Codex product certification** completes with this gate file **CLOSED Pass**.
