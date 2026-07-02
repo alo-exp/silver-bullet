@@ -40,6 +40,20 @@ enterprise_e2e_fixture_dir() {
   printf '%s\n' "$(cd "${sb_root}/../.." && pwd)/enterprise-grade-test-app"
 }
 
+# Host-isolated test-app git branch (enterprise-grade-test-app). Override with
+# SB_TEST_ENTERPRISE_APP_FIXTURE_BRANCH or SB_E2E_TEST_APP_BRANCH; disable pin with SB_E2E_FIXTURE_BRANCH_PIN=0.
+enterprise_e2e_fixture_branch() {
+  if [[ -n "${SB_TEST_ENTERPRISE_APP_FIXTURE_BRANCH:-}" ]]; then
+    printf '%s\n' "$SB_TEST_ENTERPRISE_APP_FIXTURE_BRANCH"
+    return 0
+  fi
+  if [[ -n "${SB_E2E_TEST_APP_BRANCH:-}" ]]; then
+    printf '%s\n' "$SB_E2E_TEST_APP_BRANCH"
+    return 0
+  fi
+  enterprise_e2e_host_config_get fixture_branch 2>/dev/null || true
+}
+
 # claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
 
 # Default host-isolated artifact paths (Claude keeps legacy names for Round 6).
