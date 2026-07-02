@@ -20,21 +20,20 @@ assert_grep() {
 
 echo "=== recommended-tools policy contract tests ==="
 
-INIT_RT_REF="$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md"
 HOST_CURSOR_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/cursor.md"
 HOST_CLAUDE_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/claude.md"
 HOST_CODEX_GUIDE="$REPO_ROOT/scripts/lib/host-install-guides/codex.md"
 
 assert_grep "silver-init re-prompts on update when null" \
-  "$INIT_RT_REF" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "Update mode re-prompt"
 
 assert_grep "silver-init fresh init always pending" \
-  "$INIT_RT_REF" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "Fresh init default"
 
 assert_grep "silver-init install failure suspends" \
-  "$INIT_RT_REF" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "enforcement_suspended"
 
 assert_grep "silver-update retries suspended install" \
@@ -50,7 +49,7 @@ template_null="$(jq -r '.recommended_tools.graphify.enabled_by_user' \
 [[ "$template_null" == "null" ]] && pass "template enabled_by_user is null" || fail "template enabled_by_user is null"
 
 assert_grep "silver-init hook install optional" \
-  "$INIT_RT_REF" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "graphify hook install"
 
 assert_grep "template platform_install_commands cursor" \
@@ -104,8 +103,8 @@ assert_grep "silver-init documents codex platform install" \
   "graphify codex install --project"
 
 assert_grep "silver-init host detection" \
-  "$INIT_RT_REF" \
-  "SILVER_BULLET_RUNTIME"
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
+  "hooks/lib/runtime-paths.sh"
 
 assert_grep "GRAPHIFY.md platform table" \
   "$REPO_ROOT/docs/GRAPHIFY.md" \
@@ -116,7 +115,7 @@ am_template_null="$(jq -r '.recommended_tools.agentmemory.enabled_by_user' \
 [[ "$am_template_null" == "null" ]] && pass "template agentmemory enabled_by_user is null" || fail "template agentmemory enabled_by_user is null"
 
 assert_grep "silver-init agentmemory opt-in section" \
-  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "### 1.1b agentmemory"
 
 assert_grep "silver-update agentmemory retry" \
@@ -132,11 +131,11 @@ cm_template_null="$(jq -r '.recommended_tools.context_mode.enabled_by_user' \
 [[ "$cm_template_null" == "null" ]] && pass "template context_mode enabled_by_user is null" || fail "template context_mode enabled_by_user is null"
 
 assert_grep "silver-init RTK opt-in section" \
-  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "### 1.1e RTK"
 
 assert_grep "silver-init Context Mode opt-in section" \
-  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "### 1.1f Context Mode"
 
 assert_grep "silver-update RTK retry" \
@@ -144,7 +143,7 @@ assert_grep "silver-update RTK retry" \
   "Step 8c: RTK"
 
 assert_grep "silver-init stack optimize step" \
-  "$INIT_RT_REF" \
+  "$REPO_ROOT/skills/silver-init/SKILL.md" \
   "sb-optimize-stack.sh --apply"
 
 assert_grep "silver-update stack optimize step" \

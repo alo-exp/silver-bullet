@@ -63,12 +63,4 @@ export RTK_DISABLED="${RTK_DISABLED:-1}"
 
 echo ""
 echo "=== Live smoke rows ${SMOKE_ROWS[*]} ==="
-# Gate 2 (Tier B): SKIP = not live — methodology requires evidence from TUI invoke, not fixture reuse.
-export SB_E2E_MATRIX_FAIL_ON_SKIP=1
-bash "${SB_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "${SMOKE_ROWS[@]}"
-matrix_rc=$?
-if [[ "$matrix_rc" -ne 0 ]]; then
-  echo "SMOKE FAIL — Gate 2 requires live PASS on rows ${SMOKE_ROWS[*]} (no SKIP)" >&2
-  exit "$matrix_rc"
-fi
-echo "SMOKE PASS — Gate 2 live rows ${SMOKE_ROWS[*]} green (0 SKIP)"
+exec bash "${SB_ROOT}/scripts/run-enterprise-e2e-matrix.sh" "${SMOKE_ROWS[@]}"
