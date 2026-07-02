@@ -29,6 +29,9 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T1 row 1 live log | [`.e2e-cursor3-t1-row1-live.log`](../../.e2e-cursor3-t1-row1-live.log) |
 | T2 row 6 live log | [`.e2e-cursor3-t2-row6-live.log`](../../.e2e-cursor3-t2-row6-live.log) |
 | Live driver | [`.planning/enterprise-e2e/cursor3-real-driver.sh`](./cursor3-real-driver.sh) |
+| Pipeline driver | [`.planning/enterprise-e2e/cursor3-real-pipeline-driver.sh`](./cursor3-real-pipeline-driver.sh) |
+| Phase A ladder log | [`.planning/enterprise-e2e/cursor3-ladder-live.log`](./cursor3-ladder-live.log) |
+| Pipeline log | [`.e2e-cursor3-pipeline-live.log`](../../.e2e-cursor3-pipeline-live.log) |
 | T0 structural log | `/tmp/cursor3-t0-structural.log` (inline: 193/193 PASS) |
 | T0 outcome log | `/tmp/cursor3-t0-outcome.log` (inline: 61/61 PASS post-fix) |
 
@@ -115,13 +118,64 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 ---
 
-## T2 smoke — deferred rows 3
+## Phase A — review-fix-ladder (8/8 live)
+
+| Field | Value |
+|-------|-------|
+| Invoke | `bash .planning/enterprise-e2e/cursor3-real-pipeline-driver.sh` (Phase A segment) |
+| Driver | tmux `cursor3-pipeline` |
+| Log | [`.planning/enterprise-e2e/cursor3-ladder-live.log`](./cursor3-ladder-live.log) |
+| Resolver-only | **no** (`SB_LIVE_REVIEW_FIX_LADDER_CURSOR_RESOLVER_ONLY=0`) |
+| Model | `composer-2.5` + `gpt-5.5` rungs per ladder resolver |
+
+| Rung | Model | Reasoning | Status |
+|------|-------|-----------|--------|
+| 1 | composer-2.5 | low | **PASS** |
+| 2 | composer-2.5 | medium | **PASS** |
+| 3 | composer-2.5 | high | **PASS** |
+| 4 | composer-2.5 | xhigh | **PASS** |
+| 5 | gpt-5.5 | low | **PASS** |
+| 6 | gpt-5.5 | medium | **PASS** |
+| 7 | gpt-5.5 | high | **PASS** |
+| 8 | gpt-5.5 | xhigh | **PASS** |
+
+**Phase A verdict:** **PASS** 9/0/0 @ `668a9f13` (2026-07-02T13:43:50Z)
+
+---
+
+## T2 smoke expansion — rows 3, 7, 8
+
+| # | WF slug | Invoke | Log | attempt_bytes | commit_sha | Pass/Fail | Notes |
+|---|---------|--------|-----|---------------|------------|-----------|-------|
+| 3 | `silver-feature` | `cursor3-real-driver.sh 3` | [`.e2e-cursor3-row3-live.log`](../../.e2e-cursor3-row3-live.log) | 1383110 | `826cb5c` (brownfield) | **PASS** | Full orchestrator chain; currency API pre-exists @826cb5c |
+| 7 | `silver-test` | `cursor3-real-driver.sh 7` | [`.e2e-cursor3-row7-live.log`](../../.e2e-cursor3-row7-live.log) | 1063695 | `826cb5c` (brownfield) | **PASS** | Integration test pre-exists @826cb5c; live verify session |
+| 8 | `silver-refactor` | `cursor3-real-driver.sh 8` | [`.e2e-cursor3-row8-live.log`](../../.e2e-cursor3-row8-live.log) | 724000 | `826cb5c` (brownfield) | **PASS** | `domain/orders/validation.js` pre-exists @826cb5c; live refactor workflow |
+
+### Evidence gates (§5b) — rows 3, 7, 8
+
+| Gate | Row 3 | Row 7 | Row 8 |
+|------|-------|-------|-------|
+| Log size > 2048 B | **PASS** (1383110) | **PASS** (1063695) | **PASS** (724000) |
+| Live strict-clean | **yes** | **yes** | **yes** |
+| Product delta (commit) | **brownfield** @826cb5c | **brownfield** @826cb5c | **brownfield** @826cb5c |
+| Host-agent authorship | **yes** | **yes** | **yes** |
+| Outcome PASS | **PASS** | **PASS** | **PASS** |
+
+**T2 smoke expansion verdict:** **PASS** (rows 3+7+8)
 
 ---
 
 ## Workflow matrix (22 rows)
 
-*In progress — T1/T2 smoke rows 1+6 PASS; remaining rows pending.*
+*In progress — 6/22 rows PASS (1, 3, 6, 7, 8 + T1); rows 2–5, 9–22 pending.*
+
+| # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
+|---|---------|-----------|-----------|------------|-------|
+| 1 | `silver-router` | **PASS** | 535179 | *(routing evidence)* | T1 @5d5ef7c8 |
+| 3 | `silver-feature` | **PASS** | 1383110 | `826cb5c` | brownfield product; live orchestrator |
+| 6 | `silver-fast` | **PASS** | 524236 | `650e4bc` | T2 @E2E-094 |
+| 7 | `silver-test` | **PASS** | 1063695 | `826cb5c` | brownfield product; live verify |
+| 8 | `silver-refactor` | **PASS** | 724000 | `826cb5c` | brownfield product; live refactor |
 
 ---
 
@@ -146,8 +200,9 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T1 row 1 live retry | **PASS** (535179 B; outcome PASS) |
 | T2 row 6 smoke retry | **PASS** (524236 B; outcome PASS) |
 | **T2 overall** | **PASS** (rows 1+6) |
-| Phase A ladder | pending |
-| Full matrix 22/22 | pending |
+| T2 smoke expansion (3,7,8) | **PASS** |
+| Phase A ladder | **PASS** 8/8 @668a9f13 |
+| Full matrix 22/22 | pending (6/22 PASS) |
 | Phase C | pending |
 
-**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) — `README.md` install fix on `enterprise-e2e/round-3-cursor`.
+**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) — row 6 README fix; [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c) — brownfield product baseline for rows 3/7/8.
