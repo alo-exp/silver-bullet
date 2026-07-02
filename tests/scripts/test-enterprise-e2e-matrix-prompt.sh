@@ -27,8 +27,13 @@ assert_not_contains() {
 }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/enterprise-e2e/lib/host.sh
+source "${REPO_ROOT}/scripts/enterprise-e2e/lib/host.sh"
 # shellcheck source=tests/e2e-live/lib/skill-prompt.sh
 source "${REPO_ROOT}/tests/e2e-live/lib/skill-prompt.sh"
+
+export SB_E2E_LIVE_RUNTIME=claude
+export SILVER_BULLET_RUNTIME=claude
 
 build_matrix_prompt() {
   local route="$1"
@@ -36,12 +41,17 @@ build_matrix_prompt() {
   local evidence_path="$3"
   local row_num="${4:-}"
   local slug="${5:-}"
+  route="$(enterprise_e2e_matrix_host_route "$route")"
   if [[ "$row_num" == "1" ]]; then
     printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
       "$route" "$prompt_card"
     return 0
   fi
-  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
+  local workflow_route="/silver"
+  if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+  fi
+  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route"
 }
 
 row1_prompt="$(build_matrix_prompt '/silver' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1' 'silver-router')"
@@ -67,6 +77,13 @@ assert_not_contains "row 5 prompt avoids stale workflow md evidence" "$row5_prom
 
 matrix_row5="$(grep -F "silver-ui" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" | head -1 || true)"
 assert_contains "matrix harness row 5 evidence matches WORKFLOW_E2E_MATRIX.md" "$matrix_row5" 'ui/src/App.jsx'
+
+export SB_E2E_LIVE_RUNTIME=codex
+export SILVER_BULLET_RUNTIME=codex
+codex_row2_prompt="$(build_matrix_prompt '/silver:research' 'Should we use Postgres or SQLite for orders?' 'docs/ADR-001-runtime.md' '2' 'silver-research')"
+assert_contains "codex row 2 prompt uses \$silver not /silver" "$codex_row2_prompt" '$silver Should we use Postgres'
+assert_not_contains "codex row 2 prompt avoids /silver slash command" "$codex_row2_prompt" '/silver Should'
+unset SB_E2E_LIVE_RUNTIME SILVER_BULLET_RUNTIME
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

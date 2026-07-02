@@ -63,6 +63,8 @@ assert_file_contains "native codex PTY launcher clears inherited desktop thread 
 assert_file_contains "native codex PTY launcher clears inherited desktop originator overrides" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE'
 assert_file_contains "native codex PTY launcher suppresses closed stdout tracebacks" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'except BrokenPipeError'
 assert_file_contains "native codex PTY launcher keeps transcript capture before stdout forwarding" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'stdout_forwarding_enabled = forward_stdout(chunk, stdout_forwarding_enabled)'
+assert_file_contains "native codex PTY launcher escalates hard timeout with SIGKILL" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'terminate_child(child_pid)'
+assert_file_contains "native codex PTY launcher ignores spinner-only PTY noise" "$REPO_ROOT/scripts/codex-interactive-invoke.py" 'apply_terminal_overwrites'
 
 echo
 echo "Results: $PASS passed, $FAIL failed"

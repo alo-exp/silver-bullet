@@ -125,7 +125,7 @@ fi
 
 if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrator_is_parent_session; then
   case "$tool_name" in
-    Task|Subagent|Agent)
+    Task|Subagent|Agent|spawn_agent|multi_agent_v1.spawn_agent)
       expected="$(sb_orchestrator_directive_next_skill 2>/dev/null || true)"
       tmpl=""
       args=""
@@ -139,6 +139,23 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
       exit 0
       ;;
   esac
+  if [[ "$tool_name" == "Bash" || "$tool_name" == "exec_command" || "$tool_name" == "Shell" ]]; then
+    _odg_cmd=""
+    if declare -f sb_tool_command_string >/dev/null 2>&1; then
+      _odg_cmd="$(sb_tool_command_string "$input")"
+    else
+      _odg_cmd="$(sb_odg_hook_field "$input" 'tool_input.command' '')"
+    fi
+    if [[ -f "$_lib_dir/tool-input.sh" ]] && ! declare -f sb_tool_command_string >/dev/null 2>&1; then
+      # shellcheck source=lib/tool-input.sh
+      source "$_lib_dir/tool-input.sh"
+      _odg_cmd="$(sb_tool_command_string "$input")"
+    fi
+    if declare -f sb_orchestrator_parent_bash_allowed >/dev/null 2>&1 && \
+       sb_orchestrator_parent_bash_allowed "$_odg_cmd"; then
+      exit 0
+    fi
+  fi
   if sb_orchestrator_parent_tool_allowed "$tool_name"; then
     exit 0
   fi
@@ -146,7 +163,11 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
   tmpl=""
   [[ -f "$(sb_orchestrator_directive_file)" ]] && \
     tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
-  emit_block "$(printf '🛑 ORCHESTRATOR PARENT — %s is forbidden in parent mode. Spawn Task worker (%s.md) for /%s, or use read-only tools for state.' "$tool_name" "${tmpl:-WORKER}" "${expected:-next flow}")"
+  spawn_label="Task worker"
+  if declare -f sb_orchestrator_spawn_tool_label >/dev/null 2>&1; then
+    spawn_label="$(sb_orchestrator_spawn_tool_label)"
+  fi
+  emit_block "$(printf '🛑 ORCHESTRATOR PARENT — %s is forbidden in parent mode. Spawn %s (%s.md) for /%s, or use read-only tools for state.' "$tool_name" "$spawn_label" "${tmpl:-WORKER}" "${expected:-next flow}")"
   exit 0
 fi
 

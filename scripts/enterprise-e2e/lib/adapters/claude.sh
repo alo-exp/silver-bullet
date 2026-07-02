@@ -18,6 +18,5 @@ enterprise_e2e_adapter_install() {
 
 enterprise_e2e_adapter_preflight() {
   local sb_root="${1:-${SB_ROOT:-}}"
-  enterprise_e2e_preflight_install_surface "$sb_root"
   enterprise_e2e_preflight_claude_token_gateway "$sb_root"
 }

@@ -18,13 +18,7 @@
 | Live test runbook | [`docs/ENTERPRISE-E2E-LIVE-TEST.md`](../ENTERPRISE-E2E-LIVE-TEST.md) |
 | Operator prompt | [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) |
 | Fixture branch policy | [`.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md`](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md) |
-| Round gates template | [`.planning/enterprise-e2e/ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md) |
 | Cherry-pick policy | [`docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) |
-| Preflight script (Gate 0+1) | [`scripts/enterprise-e2e/preflight-round.sh`](../../scripts/enterprise-e2e/preflight-round.sh) |
-| Smoke script (Tier B) | [`scripts/enterprise-e2e/smoke-matrix.sh`](../../scripts/enterprise-e2e/smoke-matrix.sh) |
-| Strict-clean checker | [`scripts/enterprise-e2e/strict-clean-check.sh`](../../scripts/enterprise-e2e/strict-clean-check.sh) |
-| Row pass registry | [`.planning/enterprise-e2e/.row-pass-registry.json`](../../.planning/enterprise-e2e/.row-pass-registry.json) |
-| Monitor checkpoint | [`scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh`](../../scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh) |
 
 ---
 
@@ -39,44 +33,13 @@
 | **Structural / offline suite** | **Highly effective** — catches script/doc/registry drift without TUI |
 | **Monitor “22/22 COMPLETE” without ledger reconcile** | **Anti-pattern** — observed Round 3 drift |
 | **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) |
+| **Repeat matrix/ladder/T1 rows at same install** | **Deprecated** — one clean pass per row/criterion @ install version (see §11) |
 
 **Honest scope:** This program certifies SB harness + workflow routing on a fixture app with operator supervision. It does **not** prove homepage marketing stats, cold-install SLOs, or statistical reliability across providers without additional claims mapping (see registries below).
 
 ---
 
-## 2.1 Gate order (mandatory sequence)
-
-Gates are **sequential**. Do not spend live quota until earlier gates are green.
-
-| Gate | Name | Layer | TUI? | Script / artifact |
-|------|------|-------|------|-------------------|
-| **0** | Install contracts | Surface isolation (D16 / **OUT-SURFACE-01**) | No | `validate-host-install-surface.sh`, `run-tri-host-install-smoke.sh` |
-| **1** | Harness structural | Offline wiring, outcome harness, test-app branch, dry-run matrix | No | `scripts/enterprise-e2e/preflight-round.sh` |
-| **2** | Live smoke | Rows **1, 3, 6, 11, 21, 22** | Yes | `scripts/enterprise-e2e/smoke-matrix.sh` |
-| **3** | Full matrix + strict-clean | 22/22 + Phase C + 2 consecutive clean rounds | Yes | `run-enterprise-e2e-matrix.sh` 1–22 |
-
-```bash
-RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host <host>
-RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --harness-only   # skip Gate 0 during install fix
-
-SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host <host>
-```
-
-**Install contracts before harness live:** Gate 0 must pass before `SB_ENTERPRISE_E2E_LIVE=1` unless operator runs `--harness-only` (document blocker in ledger). `SB_E2E_SURFACE_SKIP=1` is an anti-pattern — `strict-clean-check.sh` fails it.
-
-### Harness truth vs strict-clean (do not conflate)
-
-| Claim | Meaning | Eligible when |
-|-------|---------|---------------|
-| **Harness truth** | Gate 0+1 green — wiring, registries, dry-run, branch policy | Structural tests pass; may skip Gate 0 with `--harness-only` |
-| **Smoke pass** | Gate 2 rows PASS + post-invoke rescore | Live evidence + outcome on smoke subset |
-| **Strict-clean** | Gate 3 — ladder 8/8 + matrix 22/22 + outcome + Phase C + **0 new issues** | `strict-clean-check.sh` exit 0; [ROUND-N-GATES.md](../../.planning/enterprise-e2e/ROUND-N-GATES.md) |
-
-Ledger-only PASS without outcome assessment **does not** count strict-clean. Monitor log-only 22/22 without ledger reconcile is **LEDGER_MISMATCH** — ledger wins.
-
----
-
-## 2.2 What worked / failed (Round Codex-1)
+## 2. What worked / failed (Round Codex-1)
 
 | Worked | Failed / friction |
 |--------|---------------------|
@@ -92,8 +55,6 @@ Ledger-only PASS without outcome assessment **does not** count strict-clean. Mon
 
 ## 3. Tier A / B / C gate model
 
-Maps to §2.1: **Tier A = Gate 0+1**, **Tier B = Gate 2**, **Tier C = Gate 3**.
-
 Gates are **sequential**. Do not start Tier B until Tier A is green. Do not start Tier C until Tier B smoke passes.
 
 ### Summary table
@@ -101,7 +62,7 @@ Gates are **sequential**. Do not start Tier B until Tier A is green. Do not star
 | Tier | Layer | TUI? | Purpose |
 |------|-------|------|---------|
 | **A** | Offline / pre-release structural | **No** | Wiring, registries, surface isolation, outcome harness |
-| **B** | Live smoke (rows **1, 3, 6, 11, 21, 22**) | **Yes** | Router + feature + fast + research + parent/child gates |
+| **B** | Live smoke (rows **1, 3, 6**) | **Yes** | Router + feature + fast paths before full burn |
 | **C** | Full matrix **22/22** + Phase C strict-clean | **Yes** | Release pair gate (2 consecutive strict-clean rounds) |
 
 ### Tier A — offline / pre-release (no TUI)
@@ -123,37 +84,31 @@ Run **all** green before `SB_ENTERPRISE_E2E_LIVE=1`.
 | Host preflight | `bash scripts/run-enterprise-e2e-live-test.sh --host <host> --preflight-only` |
 | Dry-run matrix | `SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME=<host> bash scripts/run-enterprise-e2e-matrix.sh` |
 | Test-app branch structural | `RTK_DISABLED=1 bash tests/scripts/test-enterprise-e2e-test-app-branch.sh` |
-| Test-app branch assert (before driver) | `enterprise_e2e_assert_test_app_branch` via `preflight-round.sh` |
-| Preflight Gate 0+1 bundle | `RTK_DISABLED=1 bash scripts/enterprise-e2e/preflight-round.sh --host <host>` |
 | Claims registries | `docs/testing/validation-claims-registry.json`, `docs/testing/pre-release-claims-registry.json` |
 
 **Registries:** validation overlay = 6 outcome/telemetry gate claims; pre-release overlay = feature/install claims (tri-host, catalog, hooks). See [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) §Validation vs pre-release.
 
-### Tier B — live smoke (rows 1, 3, 6, 11, 21, 22)
+### Tier B — live smoke (rows 1, 3, 6)
 
 | Row | WF slug | Why smoke |
 |-----|---------|-----------|
 | 1 | `silver-router` | Routing-only — cheapest live signal |
-| 3 | `silver-feature` | Parent for rows 21–22 — orchestrator + implement path |
-| 6 | `silver-fast` | Fast path + hook trust |
-| 11 | `silver-research` | Research workflow + ADR path |
-| 21 | internal gate (parent 3) | Parent/child composition gate |
-| 22 | internal gate (parent 3) | Parent/child composition gate |
+| 3 | `silver-feature` | Parent for rows 21–22 — catches orchestrator + implement path |
+| 6 | `silver-fast` | Fast path + hook trust — high signal / lower cost |
 
 ```bash
 export SB_ENTERPRISE_E2E_LIVE=1
 export SB_E2E_LIVE_RUNTIME=<host>
-export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-N-<host>   # pin BEFORE driver
-export SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-<N>-LEDGER.md
-SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix.sh --host <host>
+export SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-<HOST>-1-LEDGER.md
+RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
 ```
 
-**After each row:** post-invoke rescore (§6). **Gate:** all six rows evidence PASS + outcome PASS before Tier C.
+**After each row:** post-invoke rescore (§6). **Gate:** all three rows evidence PASS + outcome PASS before Tier C.
 
 ### Tier C — full matrix + strict-clean
 
-1. **review-fix-ladder** 8/8 × 2 verify (if not already complete in round)
-2. Live matrix rows **1–22** (`SB_ENTERPRISE_E2E_LIVE=1`)
+1. **review-fix-ladder** 8/8 — **one live pass per rung** when already green at current install version (§11); legacy 2× verify only when install version changes or `SB_E2E_MATRIX_FORCE=1`
+2. Live matrix rows **1–22** (`SB_ENTERPRISE_E2E_LIVE=1`) — **one pass per row** when ledger/registry shows Pass @ current `SB_INSTALL_VERSION_KEY`
 3. **Phase C** (all green):
    - `bash tests/scripts/test-outcome-assessment.sh`
    - `bash tests/run-all-tests.sh`
@@ -162,9 +117,7 @@ SB_ENTERPRISE_E2E_LIVE=1 RTK_DISABLED=1 bash scripts/enterprise-e2e/smoke-matrix
    - `bash scripts/lib/enterprise-e2e-ledger-reconcile.sh <matrix-log>`
    - `SB_E2E_RCS_TRIHOST=full bash scripts/enterprise-e2e-rcs.sh` (RCS ≥ 85)
 
-**Strict-clean** = ladder 8/8 + matrix 22/22 + every row `enterprise_e2e_outcome_row_passes` + blocking autonomy gates + Phase C green + **0 new issues** vs baseline + **no** `SB_E2E_SURFACE_SKIP=1`.
-
-Verify: `bash scripts/enterprise-e2e/strict-clean-check.sh --ledger "$SB_E2E_LEDGER_FILE"`
+**Strict-clean** = ladder 8/8 + matrix 22/22 + every row `enterprise_e2e_outcome_row_passes` + blocking autonomy gates + Phase C green + **0 new issues** vs baseline (`docs/issues/ENTERPRISE-E2E-SB-ISSUES.md`).
 
 **Release:** 2 consecutive strict-clean rounds per host ([`ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md)).
 
@@ -182,20 +135,19 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 
 **Rules:**
 
-1. **Pin test-app branch before driver** — export `SB_E2E_TEST_APP_BRANCH` and run `preflight-round.sh` before matrix (Round 8 branch-miss lesson).
-2. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
-3. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
-4. **Dirty + correct branch:** OK. **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
-5. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
+1. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
+2. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
+3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+4. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
 
 ---
 
 ## 5. Cherry-pick policy (no main switch for deploy)
 
-- **Harness fixes** land on `main` when verified; host tracks cherry-pick **from** `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md).
-- Cherry-pick **onto** `main` while on `main`: `git cherry-pick <sha>` for harness-only commits.
-- **Do not** switch live matrix driver SB branch mid-round; re-run host install from pinned SHA.
-- **Docs + harness on `main`** are the cross-agent share surface.
+- **Harness fixes** commit on host branch (`enterprise-e2e/codex`, `enterprise-e2e/cursor`, `enterprise-e2e/round6`).
+- **Verified fixes** cherry-pick to `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) — paths only when mixed with ledger noise.
+- **Do not** switch live matrix driver to `main` mid-round for deploy; re-run host install (`install-codex.sh`, etc.) from pinned SB SHA on host branch.
+- **Docs on `main`** (this file) are the cross-agent share surface; host prompts link here.
 
 ---
 
@@ -204,11 +156,64 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 | Event | Action |
 |-------|--------|
 | **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log |
-| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then rescore |
+| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then rescore — does **not** bypass install-version registry |
+| **Full re-run same install** | `SB_E2E_MATRIX_FORCE_ALL=1` overrides `.row-pass-registry.json` skip |
 | **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until rescore passes or issue filed |
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
 
 Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md) before scoring. All **27 criteria** + blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`).
+
+---
+
+## 6a. Install-version row pass registry
+
+**Policy (effective 2026-07-01):** Do **not** repeat any matrix row that has **already passed once** (live TUI + outcome criteria) for the **same SB install fingerprint** within a round or continuation. One clean pass per row per install is sufficient.
+
+### Install fingerprint
+
+Derived at matrix run time as:
+
+```text
+<host>@<sb_git_sha12>+<surface_hash12>
+```
+
+| Component | Source |
+|-----------|--------|
+| `host` | `SB_E2E_LIVE_RUNTIME` / `enterprise_e2e_matrix_host` (`claude` \| `codex` \| `cursor`) |
+| `sb_git_sha12` | `git -C $SB_ROOT rev-parse --short=12 HEAD` |
+| `surface_hash12` | `sha256(hooks/hooks.json_digest[:16] \| package.json version)[:12]` |
+
+Re-install or harness surface change (hooks version bump) produces a **new** fingerprint — rows must be re-run on the new install. Legacy TSV registry `.e2e-matrix-pass-at-version.tsv` (`package@sha`) remains for Cursor track continuity; canonical JSON registry supersedes for strict-clean.
+
+### Registry file
+
+Path: [`.planning/enterprise-e2e/.row-pass-registry.json`](../../.planning/enterprise-e2e/.row-pass-registry.json)
+
+Keyed by `install_fp` → `rows` → `{passed_at, log_ref, outcome_pass, source}`.
+
+### Harness skip behavior
+
+Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
+
+| Message | Class | Counts toward 22/22? | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` |
+|---------|-------|----------------------|--------------------------------|
+| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) | **Allowed** — does not fail |
+| `SKIP: evidence already present` | Evidence reuse | No (SKIP) | **Fails** when set |
+
+| Override | Effect |
+|----------|--------|
+| `SB_E2E_MATRIX_FORCE=1` | Re-run despite evidence SKIP; **does not** bypass install-version registry |
+| `SB_E2E_MATRIX_FORCE_ALL=1` | Full re-run including registry-passed rows |
+
+### Driver coordination (Round 8 example)
+
+When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
+
+1. **Do not kill** a healthy driver to avoid duplicate TUI spend on rows already in flight.
+2. Seed registry for smoke-passed rows (1, 3, 6, 11, 21, 22) **before** next resume launch.
+3. On resume after driver exit, rows 3 and 11 (if seeded) emit `ROW_ALREADY_PASSED_SAME_INSTALL` — run only missing rows.
+
+`bash scripts/enterprise-e2e/strict-clean-check.sh` requires install registry **22/22** for current `install_fp` plus ledger reconcile and outcome assessment.
 
 ---
 
@@ -232,47 +237,8 @@ Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSES
 | Watchers | Prefer **durable daemon** (`run-enterprise-e2e-matrix.sh` / tmux batch) — not agent-shell poll loops as primary driver |
 | Parent orchestrator | One `composer-2.5` background worker; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
-| Checkpoint format | `bash scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh [--append LEDGER.md]` |
-
-### Standard monitor checkpoint
-
-| Field | Value |
-|-------|-------|
-| Driver PID | `<pid>` — **ALIVE** / **DEAD** |
-| Exit reason | `45m_checkpoint` / — |
-| Batch DONE | **YES** / **NO** |
-| Ledger pass | **X/22** (reconcile status) |
-| Test-app | `have@sha` — want `expected@baseline` |
-| Last row ~ | N |
-| Methodology gate | A / B / B-in-progress / C |
-
-**While driver alive:** poll-only; no duplicate FORCE; do not kill healthy driver (<45m mid-row).
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
-
----
-
-## 8.1 Install-version row pass registry (one-pass-per-version)
-
-**Policy:** Do **not** repeat any matrix row that has already achieved **live evidence + outcome PASS** for the **same SB install version** in the current round or continuation. One clean pass per row per install is sufficient.
-
-| Concept | Detail |
-|---------|--------|
-| **Registry file** | `.planning/enterprise-e2e/.row-pass-registry.json` |
-| **Install fingerprint (`install_fp`)** | `<host>@<sb_git_sha12>+<surface_hash12>` — e.g. `claude@89e2ab8f96a1+724a435c9991` (`surface_hash` = sha256 of hooks digest + package version) |
-| **Override fingerprint** | `SB_E2E_INSTALL_FP=<host>@<sha>+<surface>` (tests / pinned resume) |
-| **Harness skip class** | `ROW_ALREADY_PASSED_SAME_INSTALL` — counts toward **22/22 Pass** (not evidence SKIP) |
-| **Re-run override** | `SB_E2E_MATRIX_FORCE_ALL=1` — explicit full re-run of registry-passed rows |
-| **Evidence-only FORCE** | `SB_E2E_MATRIX_FORCE=1` re-runs evidence-SKIP rows only; does **not** override registry |
-| **FAIL_ON_SKIP** | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` does **not** fail on registry passes |
-
-**When a row completes live + outcome PASS**, the matrix runner appends `{passed_at, log_ref, outcome_pass, source}` under `installs[install_fp].rows[row]`.
-
-Legacy `by_install[host:version]` seeds are migrated via `enterprise_e2e_row_pass_registry_migrate_legacy` into the canonical `install_fp` for the current `SB_ROOT` HEAD.
-
-**Strict-clean:** `strict-clean-check.sh` requires **22/22** registry rows for the current `install_fp` in addition to ledger + outcome gates.
-
-**Seeded smoke rows (R8 @ `89e2ab8f`):** 1, 3, 4, 6, 7, 11, 21, 22 — resume batches skip these unless `SB_E2E_MATRIX_FORCE_ALL=1`.
 
 ---
 
@@ -282,12 +248,11 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 
 1. **Separate SB git branches** per host — never commit Codex harness to `enterprise-e2e/cursor` or Claude `round6`.
 2. **Separate fixture branches** per host — see §4.
-3. **No cross-host wait** — Claude tracks do **not** block on Codex quota or driver state; each host runs Gate 0→1→2→3 independently.
-4. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
-5. **Never** `pkill` another host's monitor/driver PIDs.
-6. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
-7. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
-8. **Single workspace per host** for SB fixes — test app is matrix CWD only.
+3. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
+4. **Never** `pkill` another host's monitor/driver PIDs.
+5. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
+6. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+7. **Single workspace per host** for SB fixes — test app is matrix CWD only.
 
 ---
 
@@ -300,6 +265,44 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 | Claude R6 | [`.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md`](../../.planning/enterprise-e2e/ROUND-6-OPERATIONAL-ADDENDUM.md) |
 
 All tracks **must read this methodology doc** at session start.
+
+---
+
+## 11. Single-pass-at-install-version (Cursor E2E — effective 2026-07-01)
+
+**Policy:** Do **not** repeat any matrix row, ladder rung, or T1 criterion that already **Pass** at the current SB install version. One clean pass per row/criterion is sufficient within and across rounds (Cursor-1 + Cursor-2) when the install version key is unchanged.
+
+**Install version key** (`SB_INSTALL_VERSION_KEY`):
+
+```text
+<SB_CURSOR_PLUGIN_VERSION>@<git HEAD short SHA at install-cursor.sh>
+```
+
+Example: `0.48.9@e9236365`
+
+| Artifact | Path |
+|----------|------|
+| Install version file | `${SB_ROOT}/.e2e-cursor-install-version.txt` |
+| Row pass registry | `${SB_ROOT}/.e2e-matrix-pass-at-version.tsv` |
+
+Written by `bash scripts/install-cursor.sh` after each install. Harness skip log line:
+
+```text
+SKIP: row N already pass @ install <version>
+```
+
+**Force overrides** (explicit re-run only):
+
+| Env | Effect |
+|-----|--------|
+| `SB_E2E_MATRIX_FORCE=1` | Re-run all requested rows |
+| `SB_E2E_FORCE_ROW=1` | Re-run despite pass-at-version |
+
+**Release pair unchanged:** 2 consecutive **strict-clean rounds** (Cursor-1 + Cursor-2) still required. Within each round, rows already Pass @ install version are skipped — the round still must complete Phase A→C for any not-yet-passed rows/criteria.
+
+**T1 row 1:** single FORCE run when not already Pass @ version (replaces T1 FORCE×2).
+
+**Cross-round skip:** `matrix.sh` consults `ROUND-CURSOR-*-LEDGER.md` + pass registry; if Cursor-1 row Pass and ledger SB SHA matches current install key, Cursor-2 skips that row.
 
 ---
 

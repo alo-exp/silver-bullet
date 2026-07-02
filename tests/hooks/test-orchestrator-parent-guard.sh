@@ -85,9 +85,9 @@ out=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks Edit" "$out" "ORCHESTRATOR PARENT"
 
-out_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | \
+out_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"npm run build"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-assert_contains "parent blocks Bash" "$out_bash" "ORCHESTRATOR PARENT"
+assert_contains "parent blocks non-readonly Bash" "$out_bash" "ORCHESTRATOR PARENT"
 
 # Bootstrap scaffold: template copied before sb_initiated is true — parent guard must stay inert
 WORK_BOOT=$(mktemp -d)
@@ -106,6 +106,26 @@ assert_empty "parent allows Task" "$out_task"
 out_agent=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Agent","tool_input":{"description":"worker"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Agent (#229)" "$out_agent"
+
+out_spawn=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"multi_agent_v1.spawn_agent","tool_input":{"description":"worker"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows Codex spawn_agent" "$out_spawn"
+
+out_invoke=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash /path/to/silver-bullet invoke-skill silver '\''$silver ship readiness'\''"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows Codex invoke-skill silver adapter" "$out_invoke"
+
+out_invoke_flow=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"silver-bullet invoke-skill silver-plan"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_contains "parent blocks invoke-skill flow skill" "$out_invoke_flow" "ORCHESTRATOR PARENT"
+
+out_readonly=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"cat .silver-bullet/orchestrator-directive.json"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows read-only Bash" "$out_readonly"
+
+out_write_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo test > foo.txt"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_contains "parent blocks write Bash" "$out_write_bash" "ORCHESTRATOR PARENT"
 
 assert_true_marker=false
 [[ -f "${SB_TEST_DIR}/orchestrator-worker-active.json" ]] && assert_true_marker=true
