@@ -17,7 +17,7 @@ fi
 SB_ROOT="/Users/shafqat/projects/silver-bullet/repo"
 export SB_ROOT
 export SB_E2E_BRANCH=enterprise-e2e/cursor
-export SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor
+export SILVER_BULLET_RUNTIME=cursor SB_E2E_LIVE_RUNTIME=cursor SB_LIVE_RUNTIME=cursor
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
 export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
