@@ -174,7 +174,9 @@ agent_invoke_cli() {
       CURSOR_AGENT_MODE="$mode" \
       CLAUDE_INTERACTIVE_LOG_FILE="${CLAUDE_INTERACTIVE_LOG_FILE:-}" \
       python3 - <<'PY'
+import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -186,6 +188,8 @@ timeout = int(os.environ.get("CURSOR_AGENT_TIMEOUT") or "300")
 model = os.environ.get("CURSOR_AGENT_MODEL") or ""
 mode = os.environ.get("CURSOR_AGENT_MODE") or "default"
 log_path = os.environ.get("CLAUDE_INTERACTIVE_LOG_FILE") or ""
+matrix_mode = os.environ.get("SB_E2E_ENTERPRISE_MATRIX") == "1"
+output_format = "stream-json" if matrix_mode else "text"
 
 args = [
     cli,
@@ -193,16 +197,53 @@ args = [
     "--trust",
     "--force",
     "--workspace", os.getcwd(),
-    "--output-format", "text",
+    "--output-format", output_format,
 ]
+if matrix_mode:
+    args.append("--stream-partial-output")
 if model:
     args.extend(["--model", model])
 if mode == "permissive":
     args.append("--yolo")
 args.append(prompt)
 
-if log_path:
-    open(log_path, "w", encoding="utf-8").close()
+if shutil.which("stdbuf"):
+    args = ["stdbuf", "-oL", "-eL"] + args
+
+# Preserve harness-seeded prefix (e.g. HARNESS graphify line) — never truncate.
+if log_path and not os.path.exists(log_path):
+    open(log_path, "a", encoding="utf-8").close()
+
+text_chunks = []
+
+
+def append_log(chunk: str) -> None:
+    if not log_path or not chunk:
+        return
+    with open(log_path, "a", encoding="utf-8") as handle:
+        handle.write(chunk)
+
+
+def emit_line(line: str) -> None:
+    global text_chunks
+    sys.stdout.write(line)
+    append_log(line)
+    if output_format == "text":
+        text_chunks.append(line)
+        return
+    stripped = line.strip()
+    if not stripped:
+        return
+    try:
+        payload = json.loads(stripped)
+    except json.JSONDecodeError:
+        text_chunks.append(line)
+        return
+    for key in ("text", "delta", "content", "message"):
+        value = payload.get(key)
+        if isinstance(value, str) and value:
+            text_chunks.append(value)
+
 
 proc = subprocess.Popen(
     args,
@@ -217,13 +258,18 @@ started = time.time()
 try:
     assert proc.stdout is not None
     for line in proc.stdout:
-        sys.stdout.write(line)
-        if log_path:
-            with open(log_path, "a", encoding="utf-8") as handle:
-                handle.write(line)
+        emit_line(line)
         if time.time() - started >= timeout:
             raise subprocess.TimeoutExpired(args, timeout, output=None)
     rc = proc.wait(timeout=max(1, timeout - int(time.time() - started)))
+    if log_path and text_chunks:
+        summary = "".join(text_chunks)
+        try:
+            existing = open(log_path, encoding="utf-8").read()
+        except OSError:
+            existing = ""
+        if summary and summary not in existing:
+            append_log(summary if summary.endswith("\n") else summary + "\n")
     sys.exit(rc)
 except subprocess.TimeoutExpired:
     try:
@@ -238,14 +284,16 @@ except subprocess.TimeoutExpired:
         except ProcessLookupError:
             proc.kill()
     sys.stdout.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
-    if log_path:
-        with open(log_path, "a", encoding="utf-8") as handle:
-            handle.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
+    append_log(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
     sys.exit(124)
 PY
   ) || true
 
-  if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && ! -s "${CLAUDE_INTERACTIVE_LOG_FILE}" && -n "$output" ]]; then
+  if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && -n "$output" ]]; then
+    if [[ ! -f "${CLAUDE_INTERACTIVE_LOG_FILE}" ]] || ! grep -qF -- "$output" "${CLAUDE_INTERACTIVE_LOG_FILE}" 2>/dev/null; then
+      printf '%s\n' "$output" >>"${CLAUDE_INTERACTIVE_LOG_FILE}"
+    fi
+  elif [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && ! -s "${CLAUDE_INTERACTIVE_LOG_FILE}" && -n "$output" ]]; then
     printf '%s' "$output" >"${CLAUDE_INTERACTIVE_LOG_FILE}"
   fi
 

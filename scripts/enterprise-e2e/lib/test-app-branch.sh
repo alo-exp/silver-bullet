@@ -28,11 +28,19 @@ enterprise_e2e_test_app_round_from_ledger() {
 }
 
 enterprise_e2e_apply_test_app_branch_defaults() {
-  local host baseline branch
+  local host baseline branch round
   host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
   if [[ -z "${SB_E2E_TEST_APP_BRANCH:-}" ]]; then
-    branch="$(enterprise_e2e_host_config_get test_app_git_branch "$host" 2>/dev/null || true)"
-    [[ -n "$branch" ]] && export SB_E2E_TEST_APP_BRANCH="$branch"
+    round="${SB_E2E_TEST_APP_ROUND:-}"
+    if [[ -z "$round" ]]; then
+      round="$(enterprise_e2e_test_app_round_from_ledger "${SB_E2E_LEDGER_FILE:-}" 2>/dev/null || true)"
+    fi
+    if [[ -n "$round" ]]; then
+      export SB_E2E_TEST_APP_BRANCH="enterprise-e2e/round-${round}-${host}"
+    else
+      branch="$(enterprise_e2e_host_config_get test_app_git_branch "$host" 2>/dev/null || true)"
+      [[ -n "$branch" ]] && export SB_E2E_TEST_APP_BRANCH="$branch"
+    fi
   fi
   if [[ -z "${SB_E2E_TEST_APP_BASELINE_SHA:-}" ]]; then
     baseline="$(enterprise_e2e_host_config_get test_app_git_baseline_sha "$host" 2>/dev/null || true)"

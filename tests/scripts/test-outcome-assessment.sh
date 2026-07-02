@@ -160,6 +160,50 @@ fi
 rm -f "$BAD_LOG"
 rm -f "$STATE_DIR/orchestrator-worker-active.json"
 
+# E2E-096: negated autonomy summary must not trip babysitting (row 10 stream-json)
+ROW10_FP_LOG="$(mktemp)"
+cat >"$ROW10_FP_LOG" <<'LOG'
+HARNESS graphify: graphify query "silver-content routes hooks skills orchestrator"
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"autonomous_default applied — no clarify menus or operator pauses"}]}}
+{"type":"result","subtype":"success","result":"Workflow complete — matrix row 10 PASS. autonomous_default applied — no clarify menus or operator pauses"}
+LOG
+if enterprise_e2e_outcome_log_has_babysitting "$ROW10_FP_LOG"; then
+  fail "E2E-096 negated operator-pause summary should not trigger babysitting"
+else
+  pass "E2E-096 negated operator-pause summary does not trigger babysitting"
+fi
+score_auto_r10="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW10_FP_LOG" 10 "" "docs/API.md")"
+[[ "$score_auto_r10" == "pass" ]] && pass "E2E-096 row 10 autonomy summary OUT-AUTO-01 pass" || fail "E2E-096 row 10 OUT-AUTO-01 got $score_auto_r10"
+PROMPT_OVERRIDE_LOG="$(mktemp)"
+printf 'issue SB OVERRIDE when planning-file-guard blocks evidence writes\n' >"$PROMPT_OVERRIDE_LOG"
+if enterprise_e2e_outcome_log_has_sb_override "$PROMPT_OVERRIDE_LOG"; then
+  fail "E2E-096 matrix prompt instruction should not count as SB OVERRIDE usage"
+else
+  pass "E2E-096 matrix prompt instruction not counted as SB OVERRIDE"
+fi
+rm -f "$ROW10_FP_LOG" "$PROMPT_OVERRIDE_LOG"
+
+# E2E-098: matrix graphify preamble without agentmemory MCP → OUT-KM-01 pass
+ROW14_KM_LOG="$(mktemp)"
+cat >"$ROW14_KM_LOG" <<'LOG'
+HARNESS graphify: graphify query "silver-release routes hooks skills orchestrator"
+matrix MCP env: disabled 23 server(s) for TUI
+{"type":"tool_call","subtype":"completed","tool_call":{"readToolCall":{}}}
+LOG
+export SB_E2E_ENTERPRISE_MATRIX=1
+score_km_r14="$(enterprise_e2e_outcome_score_km "" 14 "$ROW14_KM_LOG" "$FIXTURE")"
+[[ "$score_km_r14" == "pass" ]] && pass "E2E-098 matrix graphify preamble OUT-KM-01 pass" || fail "E2E-098 OUT-KM-01 got $score_km_r14"
+unset SB_E2E_ENTERPRISE_MATRIX
+rm -f "$ROW14_KM_LOG"
+
+# E2E-099: row 15 review-triad triad evidence satisfies OUT-RELEASE-01
+FIXTURE_REVIEWS="${FIXTURE}/.planning/reviews"
+mkdir -p "$FIXTURE_REVIEWS"
+printf '# triad\n' >"$FIXTURE_REVIEWS/triad-currency.md"
+score_rel_r15="$(enterprise_e2e_outcome_score_release "$FIXTURE" 15 "")"
+[[ "$score_rel_r15" == "pass" ]] && pass "E2E-099 row 15 triad evidence OUT-RELEASE-01 pass" || fail "E2E-099 OUT-RELEASE-01 got $score_rel_r15"
+rm -f "$FIXTURE_REVIEWS/triad-currency.md"
+
 session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
 if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
@@ -170,6 +214,7 @@ rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
 printf 'silver-context\n' >"$STATE_DIR/state"
+rm -f "$FIXTURE/.planning/CLARIFY.md" 2>/dev/null || true
 rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
@@ -189,6 +234,8 @@ score_handoff="$(enterprise_e2e_outcome_score_criterion OUT-HANDOFF-01 "$FIXTURE
 [[ "$score_handoff" == "n/a" ]] && pass "fixture row 1 OUT-HANDOFF-01 n/a (routing-only)" || fail "fixture row 1 OUT-HANDOFF-01 got $score_handoff"
 score_hook="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_hook" == "pass" ]] && pass "fixture row 1 OUT-HOOK-01 pass (routing-only)" || fail "fixture row 1 OUT-HOOK-01 got $score_hook"
+score_clarify_r1="$(enterprise_e2e_outcome_score_criterion OUT-CLARIFY-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
+[[ "$score_clarify_r1" == "n/a" ]] && pass "fixture row 1 OUT-CLARIFY-01 n/a (routing-only)" || fail "fixture row 1 OUT-CLARIFY-01 got $score_clarify_r1 (expected n/a)"
 if enterprise_e2e_outcome_row_passes 1 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" "" ".planning/workflows/router-session.md"; then
   pass "fixture row 1 enterprise_e2e_outcome_row_passes (routing-only)"
 else
@@ -216,6 +263,16 @@ rm -f "$ROW1_LOG"
 # --- Fixture: row 6 fast path gates n/a ---
 score_gates6="$(enterprise_e2e_outcome_score_criterion OUT-GATES-01 "$FIXTURE" "$STATE_DIR" "" 6)"
 [[ "$score_gates6" == "pass" ]] && pass "fixture row 6 OUT-GATES-01 pass (fast-path skip)" || fail "fixture row 6 OUT-GATES-01 got $score_gates6"
+
+# --- Fixture: row 6 fast path OUT-ORCH-01 n/a when evidence present ---
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/fast-readme.md" <<'EOF'
+# fast-readme evidence
+status: complete
+EOF
+printf 'silver-fast\n' >"$STATE_DIR/state"
+score_orch6="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "" 6 "" ".planning/workflows/fast-readme.md")"
+[[ "$score_orch6" == "n/a" ]] && pass "fixture row 6 OUT-ORCH-01 n/a (fast-path)" || fail "fixture row 6 OUT-ORCH-01 got $score_orch6 (expected n/a)"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
