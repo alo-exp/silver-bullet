@@ -158,6 +158,13 @@ sys.exit(0)
 PY
 }
 
+# True when row should skip due to prior pass on same install (allowed skip class).
+enterprise_e2e_row_pass_registry_should_skip() {
+  local row_num="$1"
+  [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]] && return 1
+  enterprise_e2e_row_pass_registry_has_pass "$row_num"
+}
+
 enterprise_e2e_row_pass_registry_record() {
   local row_num="$1"
   local log_ref="${2:-}"

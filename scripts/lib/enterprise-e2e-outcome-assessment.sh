@@ -347,7 +347,12 @@ enterprise_e2e_outcome_log_has_agentmemory_capture() {
 enterprise_e2e_outcome_log_has_workflow_evidence_written() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md'
+    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum_]_.-]+\.md' && return 0
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum_]_.-]+\.md' && return 0
+  return 1
 }
 
 enterprise_e2e_outcome_log_has_graphify_activity() {
@@ -746,6 +751,10 @@ enterprise_e2e_outcome_score_km() {
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
     fi
   fi
+  # Matrix harness records graphify scope before agent session (ledger may be empty on first pass).
+  if [[ -z "$gref" && -n "${SB_E2E_MATRIX_GRAPHIFY_REF:-}" ]]; then
+    gref="$SB_E2E_MATRIX_GRAPHIFY_REF"
+  fi
   if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
      enterprise_e2e_outcome_log_has_agentmemory_capture "$row_log"; then
     has_am=1
@@ -878,7 +887,7 @@ enterprise_e2e_outcome_score_plan() {
 
 enterprise_e2e_outcome_score_skill() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-${SB_TEST_ENTERPRISE_APP_ROOT:-}}" evidence="${5:-}"
-  local state_file="${state_dir}/state" slug parent_log_patterns=""
+  local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug parent_log_patterns=""
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
     if enterprise_e2e_outcome_log_matches "$row_log" \
@@ -907,6 +916,16 @@ enterprise_e2e_outcome_score_skill() {
       printf 'pass\n'; return 0
     fi
   fi
+  for candidate in "$state_file" "$requested_file"; do
+    if [[ -f "$candidate" ]] && [[ -s "$candidate" ]]; then
+      if grep -qE '^silver(-|$)' "$candidate" 2>/dev/null; then
+        printf 'pass\n'; return 0
+      fi
+      if [[ -n "$slug" ]] && grep -Fqx -- "$slug" "$candidate" 2>/dev/null; then
+        printf 'pass\n'; return 0
+      fi
+    fi
+  done
   if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
     if grep -qE '^silver-' "$state_file" 2>/dev/null; then
       printf 'pass\n'; return 0

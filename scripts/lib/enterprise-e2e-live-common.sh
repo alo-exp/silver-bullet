@@ -727,3 +727,10 @@ enterprise_e2e_code_intel_preflight() {
   fi
   return 0
 }
+
+# Harness core (scripts/enterprise-e2e/lib/core.sh) — host/matrix helpers override legacy copies above.
+_E2E_HARNESS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../enterprise-e2e" && pwd)"
+if [[ -f "${_E2E_HARNESS}/lib/core.sh" ]]; then
+  # shellcheck source=scripts/enterprise-e2e/lib/core.sh
+  source "${_E2E_HARNESS}/lib/core.sh"
+fi
