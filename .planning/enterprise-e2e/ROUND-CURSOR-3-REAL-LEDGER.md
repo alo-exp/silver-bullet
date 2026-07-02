@@ -165,17 +165,53 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 ---
 
+## T2 batch 2 — rows 2, 4, 5, 9, 10 (live FORCE)
+
+| Field | Value |
+|-------|-------|
+| Invoke | `bash .planning/enterprise-e2e/cursor3-real-pipeline-driver.sh` (batch 2 segment) |
+| Driver | tmux `cursor3-batch2` |
+| Log | [`.e2e-cursor3-pipeline-live.log`](../../.e2e-cursor3-pipeline-live.log) |
+| Fix | **E2E-095** — `SB_E2E_MATRIX_FORCE=1` added (with `FORCE_ALL`) to defeat brownfield evidence SKIP |
+
+| # | WF slug | Invoke | Log | attempt_bytes | commit_sha | Pass/Fail | Notes |
+|---|---------|--------|-----|---------------|------------|-----------|-------|
+| 2 | `silver-research` | `cursor3-real-driver.sh 2` | [`.e2e-cursor3-row2-live.log`](../../.e2e-cursor3-row2-live.log) | 1877366 | `d798937` | **PASS** | ADR-001 brownfield @826cb5c; live 4-worker research chain ~16 min |
+| 4 | `silver-bugfix` | `cursor3-real-driver.sh 4` | [`.e2e-cursor3-row4-live.log`](../../.e2e-cursor3-row4-live.log) | 549858 | `d736a71` | **PASS** | Zero-diff brownfield execute; validate-substep documented |
+| 5 | `silver-ui` | `cursor3-real-driver.sh 5` | [`.e2e-cursor3-row5-live.log`](../../.e2e-cursor3-row5-live.log) | 662685 | `f6a80dd` | **PASS** | Badge marker in `ui/src/App.jsx`; 36/36 tests |
+| 9 | `silver-benchmark` | `cursor3-real-driver.sh 9` | [`.e2e-cursor3-row9-live.log`](../../.e2e-cursor3-row9-live.log) | 788480 | `a2fbef1` | **PASS** | run-4 benchmark; concurrent p95 env WARN (loadavg ~58) |
+| 10 | `silver-content` | `cursor3-real-driver.sh 10` | [`.e2e-cursor3-row10-live.log`](../../.e2e-cursor3-row10-live.log) | 206034 | *(uncommitted)* | **FAIL** | OUT-AUTO-01 partial, OUT-NOOP-01 partial, OUT-WORLD-01 fail — brownfield `docs/API.md` |
+
+### Evidence gates (§5b) — batch 2
+
+| Gate | Row 2 | Row 4 | Row 5 | Row 9 | Row 10 |
+|------|-------|-------|-------|-------|--------|
+| Log size > 2048 B | **PASS** (1877366) | **PASS** (549858) | **PASS** (662685) | **PASS** (788480) | **PASS** (206034) |
+| Live strict-clean | **yes** | **yes** | **yes** | **yes** | **yes** |
+| Product delta (commit) | **brownfield** @826cb5c | **brownfield** zero-diff | **yes** `f6a80dd` | **brownfield** run-4 | **brownfield** API.md refresh |
+| Host-agent authorship | **yes** | **yes** | **yes** | **yes** | **yes** |
+| Outcome PASS | **PASS** | **PASS** | **PASS** | **PASS** | **FAIL** |
+
+**T2 batch 2 verdict:** **PARTIAL** — 4/5 PASS (rows 2,4,5,9); row 10 outcome FAIL (no fake PASS)
+
+---
+
 ## Workflow matrix (22 rows)
 
-*In progress — 6/22 rows PASS (1, 3, 6, 7, 8 + T1); rows 2–5, 9–22 pending.*
+*In progress — 11/22 rows PASS; row 10 FAIL; rows 11–22 pending.*
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
 | 1 | `silver-router` | **PASS** | 535179 | *(routing evidence)* | T1 @5d5ef7c8 |
+| 2 | `silver-research` | **PASS** | 1877366 | `d798937` | batch 2 live FORCE |
 | 3 | `silver-feature` | **PASS** | 1383110 | `0e36609` | brownfield product @826cb5c; live orchestrator |
+| 4 | `silver-bugfix` | **PASS** | 549858 | `d736a71` | batch 2; zero-diff brownfield |
+| 5 | `silver-ui` | **PASS** | 662685 | `f6a80dd` | batch 2; App.jsx marker |
 | 6 | `silver-fast` | **PASS** | 524236 | `650e4bc` | T2 @E2E-094 |
 | 7 | `silver-test` | **PASS** | 1063695 | `b2daab9` | brownfield product @826cb5c; live verify |
 | 8 | `silver-refactor` | **PASS** | 724000 | `4609c19` | brownfield product @826cb5c; live refactor |
+| 9 | `silver-benchmark` | **PASS** | 788480 | `a2fbef1` | batch 2; run-4 env WARN |
+| 10 | `silver-content` | **FAIL** | 206034 | — | OUT-WORLD-01 fail; autonomy partial |
 
 ---
 
@@ -189,6 +225,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | **E2E-092** | Row 6 timeout @ 900s with 124 B log | **fixed** |
 | **E2E-093** | §5b log floor (<2048 B) on rows 1+6 despite live agent work | **fixed** — stream-json + composite transcript + scoring surface |
 | **E2E-094** | Row 6 `OUT-ORCH-01` session fail after live retry | **fixed** — fast-path n/a when evidence present |
+| **E2E-095** | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` (row 2 initial 0 B) | **fixed** — drivers export `FORCE` + `FORCE_ALL` |
 
 ---
 
@@ -201,8 +238,9 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T2 row 6 smoke retry | **PASS** (524236 B; outcome PASS) |
 | **T2 overall** | **PASS** (rows 1+6) |
 | T2 smoke expansion (3,7,8) | **PASS** |
+| T2 batch 2 (2,4,5,9,10) | **PARTIAL** — 4/5 PASS; row 10 FAIL |
 | Phase A ladder | **PASS** 8/8 @668a9f13 |
-| Full matrix 22/22 | pending (6/22 PASS) |
+| Full matrix 22/22 | pending (11/22 PASS, 1 FAIL) |
 | Phase C | pending |
 
-**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
+**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c). Row 10: outcome FAIL — no fixture commit.

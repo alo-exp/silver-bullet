@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Round Cursor-3 REAL phased driver: Phase A ladder → T2 smoke rows 3,7,8 → ledger update hooks.
+# Round Cursor-3 REAL phased driver: Phase A ladder → T2 rows 3,7,8 → batch 2 rows 2,4,5,9,10.
 # Usage:
 #   tmux new-session -d -s cursor3-pipeline \
 #     "bash .planning/enterprise-e2e/cursor3-real-pipeline-driver.sh 2>&1 | tee -a .e2e-cursor3-pipeline-live.log"
@@ -17,7 +17,7 @@ export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
 export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
 export SB_E2E_SURFACE_SKIP=0 SB_LIVE_CURSOR_FORCE_HEADLESS=1
-export SB_E2E_MATRIX_FORCE_ALL=1
+export SB_E2E_MATRIX_FORCE_ALL=1 SB_E2E_MATRIX_FORCE=1
 export SB_E2E_TEST_APP_ROUND=3
 export RTK_DISABLED=1 CLAUDE_INTERACTIVE_TIMEOUT=1800 CURSOR_AGENT_TIMEOUT=1800
 export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
@@ -76,4 +76,30 @@ for ROW in 3 7 8; do
   fi
 done
 
-log "=== Round Cursor-3 REAL pipeline (Phase A + rows 3,7,8) finished ==="
+# --- T2 smoke expansion batch 2: rows 2, 4, 5, 9, 10 ---
+for ROW in 2 4 5 9 10; do
+  PHASE_KEY="ROW_${ROW}"
+  if phase_done "$PHASE_KEY"; then
+    log "ROW ${ROW} already done — skip"
+    continue
+  fi
+  log "=== ROW ${ROW} start ==="
+  if bash .planning/enterprise-e2e/cursor3-real-driver.sh "$ROW" 2>&1 | tee -a "$LOG"; then
+    ATTEMPT_LOG="${SB_ROOT}/.e2e-row${ROW}-cursor-attempt.log"
+    if [[ -f "$ATTEMPT_LOG" ]]; then
+      BYTES=$(wc -c <"$ATTEMPT_LOG" | tr -d ' ')
+      log "ROW ${ROW} attempt log: ${BYTES} B"
+      if [[ "$BYTES" -lt 2048 ]]; then
+        log "ROW ${ROW} FAIL — §5b log floor (${BYTES} B < 2048)"
+        exit 1
+      fi
+    fi
+    mark_done "$PHASE_KEY"
+    log "ROW ${ROW} driver exit 0"
+  else
+    log "ROW ${ROW} driver exit non-zero"
+    exit 1
+  fi
+done
+
+log "=== Round Cursor-3 REAL pipeline (Phase A + rows 2,3,4,5,7,8,9,10) finished ==="
