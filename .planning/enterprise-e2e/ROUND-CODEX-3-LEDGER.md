@@ -15,7 +15,7 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 | Round | Codex-3 REAL |
 | Host | `codex` |
 | SB harness branch | `enterprise-e2e/codex` |
-| SB repo SHA | `c7816775` (start) → *(update per checkpoint)* |
+| SB repo SHA | `25d373a6` (fixture reset + §5b gate) |
 | Test-app branch | `enterprise-e2e/round-9-codex` |
 | Test app baseline SHA | `09f8d1a` (pre-`826cb5c` — **no matrix pre-seed**) |
 | Test-app CWD | `/Users/shafqat/projects/enterprise-grade-test-app` |
@@ -55,17 +55,26 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| Structural suite | *pending* | `test-enterprise-e2e-live-suite.sh` |
-| Outcome harness | *pending* | `test-outcome-assessment.sh` |
-| Test-app branch | *pending* | `test-enterprise-e2e-test-app-branch.sh` (round-9 + no 826cb5c) |
-| Host preflight | *pending* | `run-enterprise-e2e-live-test.sh --host codex --preflight-only` |
-| Dry-run matrix | *pending* | `SB_E2E_MATRIX_DRY_RUN=1` |
+| Structural suite | **PASS** 179/0 | [.codex-r3-tiera-offline.log](./.codex-r3-tiera-offline.log) |
+| Outcome harness | **PASS** 79/0 | |
+| Test-app branch | **PASS** 16/0 | round-9 @ 09f8d1a; excludes 826cb5c |
+| Validation overlay (dry-run) | **PASS** 6/0 | |
+| Pre-release overlay (dry-run) | **PASS** 40/0 | |
+| Tri-host smoke (codex) | **PASS** 5/0 | |
+| Hook delivery preflight | **PASS** 3/0 | |
+| Host preflight | **PASS** | install in flight @ Tier B launch |
+| Dry-run matrix | **PASS** 20/22 | rows 21–22 FAIL expected (no parent 3/4 evidence) |
+| validate-host-install-surface | **SKIP** | script absent on codex branch |
 
-**Tier A verdict:** *pending*
+**Tier A verdict:** **PASS** @ `25d373a6`
 
 ---
 
 ## Tier B — live smoke (rows 1, 3, 6)
+
+**Driver:** batch PID **60854** — [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `25d373a6`  
+**Launch log:** [.codex-r3-tierb-launch.nohup](./.codex-r3-tierb-launch.nohup)  
+**Status:** **RUNNING** (Codex plugin install + row 1 invoke)
 
 | # | WF slug | Pass/Fail | log_bytes | live_invoke | commit_sha | Notes |
 |---|---------|-----------|-----------|-------------|------------|-------|
@@ -133,8 +142,8 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 |-------|--------|
 | Fixture reset (round-9 @ 09f8d1a) | **PASS** |
 | Harness §5b product gate | **landed** |
-| Tier A offline | *pending* |
-| Tier B smoke 1,3,6 | *pending* |
+| Tier A offline | **PASS** @ `25d373a6` |
+| Tier B smoke 1,3,6 | **RUNNING** (batch PID 60854) |
 | Full matrix 22/22 | *pending* |
 | Phase C | *pending* |
 | Product audit | *pending* |
