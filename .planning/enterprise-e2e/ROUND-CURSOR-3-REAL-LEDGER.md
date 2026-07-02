@@ -208,7 +208,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 ## Workflow matrix (22 rows)
 
-*In progress — 12/22 rows PASS; rows 11–22 pending.*
+*In progress — 13/22 rows PASS; rows 12–22 pending.*
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
@@ -222,6 +222,25 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | 8 | `silver-refactor` | **PASS** | 724000 | `4609c19` | brownfield product @826cb5c; live refactor |
 | 9 | `silver-benchmark` | **PASS** | 788480 | `a2fbef1` | batch 2; run-4 env WARN |
 | 10 | `silver-content` | **PASS** | 427233 | `73bd359` | E2E-096 rescored; docs/API.md metadata refresh |
+| 11 | `silver-devops` | **PASS** | 669649 | `922f9ba` | batch3 live; 19-flow devops-cycle; terraform validate+plan |
+
+---
+
+## T2 batch 3 — rows 11–14 (in progress)
+
+| # | WF slug | Invoke | Log | attempt_bytes | commit_sha | Pass/Fail | Notes |
+|---|---------|--------|-----|---------------|------------|-----------|-------|
+| 11 | `silver-devops` | `cursor3-real-driver.sh 11` | [`.e2e-cursor3-row11-live.log`](../../.e2e-cursor3-row11-live.log) | 669649 | `922f9ba` | **PASS** | §5b + outcome PASS; terraform env validation |
+
+### Evidence gates (§5b) — row 11
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| Log size > 2048 B | **PASS** (669649 B) | E2E-093 stream-json |
+| Live strict-clean | **yes** | `cursor3-real-driver.sh` @ 5400s timeout |
+| Product delta (commit) | **yes** | `922f9ba` — main.tf fix + tfvars examples |
+| Host-agent authorship | **yes** | composer-2.5 orchestrator + worker chain |
+| Outcome PASS | **PASS** | OUT-WORLD-01 composite green |
 
 ---
 
@@ -252,7 +271,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T2 batch 2 (2,4,5,9,10) | **PASS** — 5/5 @E2E-096 |
 | T2 batches 3–6 (11–22) | pending |
 | Phase A ladder | **PASS** 8/8 @668a9f13 |
-| Full matrix 22/22 | pending (12/22 PASS) |
+| Full matrix 22/22 | pending (13/22 PASS) |
 | Phase C | pending |
 
-**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
+**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10; [`922f9ba`](https://github.com/alo-exp/enterprise-grade-test-app/commit/922f9ba) row 11. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
