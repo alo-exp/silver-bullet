@@ -14,6 +14,29 @@ FROZEN_RESCORE="${ROOT}/.planning/enterprise-e2e/.codex-r3-force141619-rescore.l
 printf '\n=== codex-r3-force1416-launch %s @ %s frozen@%s ===\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD)" "$FROZEN_SHA"
 
+export SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex
+export SB_E2E_MATRIX_BATCH_PID_FILE="${ROOT}/.e2e-matrix-codex-batch.pid"
+# shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
+source "${ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+if declare -f enterprise_e2e_matrix_batch_running >/dev/null 2>&1 && enterprise_e2e_matrix_batch_running; then
+  batch_pid="$(enterprise_e2e_matrix_batch_pid 2>/dev/null || true)"
+  if [[ "${SB_E2E_LAUNCH_FORCE:-}" != "1" ]]; then
+    echo "ERROR: codex matrix batch still running (pid ${batch_pid:-unknown}) — refuse tmux kill; set SB_E2E_LAUNCH_FORCE=1 to override" >&2
+    exit 1
+  fi
+  echo "WARN: SB_E2E_LAUNCH_FORCE=1 — killing running codex batch pid ${batch_pid:-unknown}" >&2
+fi
+for stale_pid_file in \
+  "${ROOT}/.planning/enterprise-e2e/.codex-r3-force1416-driver.pid" \
+  "${ROOT}/.planning/enterprise-e2e/.codex-r3-force141619-driver.pid"; do
+  if [[ -f "$stale_pid_file" ]]; then
+    stale_pid="$(tr -d '[:space:]' <"$stale_pid_file" 2>/dev/null || true)"
+    if [[ -n "$stale_pid" ]] && ! kill -0 "$stale_pid" 2>/dev/null; then
+      rm -f "$stale_pid_file"
+    fi
+  fi
+done
+
 tmux kill-session -t codex-r3-force1416 2>/dev/null || true
 tmux kill-session -t codex-r3-force141619 2>/dev/null || true
 rm -f "${ROOT}/.e2e-matrix-codex-batch.pid" "${ROOT}/.e2e-live-test.lock" 2>/dev/null || true
