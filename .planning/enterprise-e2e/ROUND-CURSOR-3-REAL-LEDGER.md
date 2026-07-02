@@ -147,9 +147,9 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 | # | WF slug | Invoke | Log | attempt_bytes | commit_sha | Pass/Fail | Notes |
 |---|---------|--------|-----|---------------|------------|-----------|-------|
-| 3 | `silver-feature` | `cursor3-real-driver.sh 3` | [`.e2e-cursor3-row3-live.log`](../../.e2e-cursor3-row3-live.log) | 1383110 | `826cb5c` (brownfield) | **PASS** | Full orchestrator chain; currency API pre-exists @826cb5c |
-| 7 | `silver-test` | `cursor3-real-driver.sh 7` | [`.e2e-cursor3-row7-live.log`](../../.e2e-cursor3-row7-live.log) | 1063695 | `826cb5c` (brownfield) | **PASS** | Integration test pre-exists @826cb5c; live verify session |
-| 8 | `silver-refactor` | `cursor3-real-driver.sh 8` | [`.e2e-cursor3-row8-live.log`](../../.e2e-cursor3-row8-live.log) | 724000 | `826cb5c` (brownfield) | **PASS** | `domain/orders/validation.js` pre-exists @826cb5c; live refactor workflow |
+| 3 | `silver-feature` | `cursor3-real-driver.sh 3` | [`.e2e-cursor3-row3-live.log`](../../.e2e-cursor3-row3-live.log) | 1383110 | `0e36609` | **PASS** | Full orchestrator chain; currency API pre-exists @826cb5c |
+| 7 | `silver-test` | `cursor3-real-driver.sh 7` | [`.e2e-cursor3-row7-live.log`](../../.e2e-cursor3-row7-live.log) | 1063695 | `b2daab9` | **PASS** | Integration test pre-exists @826cb5c; live verify session |
+| 8 | `silver-refactor` | `cursor3-real-driver.sh 8` | [`.e2e-cursor3-row8-live.log`](../../.e2e-cursor3-row8-live.log) | 724000 | `4609c19` | **PASS** | `domain/orders/validation.js` pre-exists @826cb5c; live refactor workflow |
 
 ### Evidence gates (§5b) — rows 3, 7, 8
 
@@ -172,10 +172,10 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
 | 1 | `silver-router` | **PASS** | 535179 | *(routing evidence)* | T1 @5d5ef7c8 |
-| 3 | `silver-feature` | **PASS** | 1383110 | `826cb5c` | brownfield product; live orchestrator |
+| 3 | `silver-feature` | **PASS** | 1383110 | `0e36609` | brownfield product @826cb5c; live orchestrator |
 | 6 | `silver-fast` | **PASS** | 524236 | `650e4bc` | T2 @E2E-094 |
-| 7 | `silver-test` | **PASS** | 1063695 | `826cb5c` | brownfield product; live verify |
-| 8 | `silver-refactor` | **PASS** | 724000 | `826cb5c` | brownfield product; live refactor |
+| 7 | `silver-test` | **PASS** | 1063695 | `b2daab9` | brownfield product @826cb5c; live verify |
+| 8 | `silver-refactor` | **PASS** | 724000 | `4609c19` | brownfield product @826cb5c; live refactor |
 
 ---
 
@@ -205,4 +205,4 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | Full matrix 22/22 | pending (6/22 PASS) |
 | Phase C | pending |
 
-**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) — row 6 README fix; [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c) — brownfield product baseline for rows 3/7/8.
+**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
