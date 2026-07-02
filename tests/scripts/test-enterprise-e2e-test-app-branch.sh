@@ -68,7 +68,8 @@ else
   fail "enterprise_e2e_fixture_branch cursor must match enterprise-e2e/* (got: ${cursor_branch:-empty})"
 fi
 
-FIXTURE_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+DEFAULT_FIXTURE_ROOT="$(cd "${REPO_ROOT}/../.." && pwd)/enterprise-grade-test-app"
+FIXTURE_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$DEFAULT_FIXTURE_ROOT}"
 if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
   if git -C "$FIXTURE_ROOT" show-ref --verify --quiet "refs/heads/enterprise-e2e/round-8-codex" 2>/dev/null; then
     pass "fixture repo has enterprise-e2e/round-8-codex branch"
