@@ -312,3 +312,44 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Driver | [codex-r3-force3-only-driver.sh](./codex-r3-force3-only-driver.sh) — row **3** only; frozen rows **1+6** |
 | Fixture pin | `round-9-codex` @ `5072735` |
 | Tier C chain | On **3/3** → [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) (22/22) |
+
+### Poll checkpoint 2026-07-02T16:06:22Z (force3-only exit @ 737a728a)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen rows **1+6** PASS; FORCE row **3** only; fixture @ `5072735` |
+| **Driver** | EXITED PID **60621** |
+| **Tier B rescore** | **2/3** — [.codex-r3-force3-only-rescore.log](./.codex-r3-force3-only-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
+
+### Harness fix + outcome-only relaunch 2026-07-02T16:12:43Z (force3-only @ ca8af883)
+
+| Field | Value |
+|-------|-------|
+| **§5b rescore bug** | `enterprise_e2e_assert_row_product_commit_rescore` case **3** missing `return $?` — assert passed (1 api/currency @ `0fcd73e` after anchor `5072735`) but fell through to generic FAIL |
+| **Fix** | [core.sh](../../scripts/enterprise-e2e/lib/core.sh) `return $?` after `enterprise_e2e_assert_row3_api_currency_commit`; commit **ca8af883** |
+| **Row 3 product** | **PASS** @ `0fcd73e` — `Add orders currency field` |
+| **Row 3 outcomes (prior log)** | **FAIL** — `OUT-GATES-01` `OUT-PLAN-01` `OUT-TRACE-01` `OUT-VLOOP-01` partial → `OUT-WORLD-01` fail (no `PLAN*.md`, no `QUALITY-GATES`, no `post-exec-gates` in workflow) |
+| **Outcome-only relaunch** | [codex-r3-row3-outcome-only-launch.sh](./codex-r3-row3-outcome-only-launch.sh) — fixture @ `0fcd73e`, `SB_E2E_OUTCOME_ONLY_ROWS=3`, tmux **codex-r3-row3-outcome** driver **56707** |
+| **Tier B rescore** | **2/3** pending outcome-only log — §5b fixed; matrix **BLOCKED** until row 3 outcomes PASS |
+| **Tier C** | **BLOCKED** — poll-exit chains matrix on rescore **3/3** |
+
+### Harness fix + outcome-only relaunch 2 2026-07-03 (row 3 @ 345917a)
+
+| Field | Value |
+|-------|-------|
+| **Root cause** | Invoke prompt required api/currency §5b but not methodology artifacts — agent committed product code without `PLAN*.md`, `QUALITY-GATES*.md`, `SPEC*.md`, `VALIDATION*.md`, or `post-exec-gates` in workflow |
+| **Scorer paths** | OUT-PLAN-01 → `.planning/PLAN*.md`; OUT-GATES-01 → `.planning/QUALITY-GATES*.md` or `feature-currency.md` + `post-exec-gates`; OUT-TRACE-01 → `*SPEC*` + `PLAN*.md`; OUT-VLOOP-01 → `.planning/VALIDATION*.md` |
+| **Harness fix** | `matrix_row3_outcome_clause` + `matrix_row3_outcome_only_clause` in [skill-prompt.sh](../../tests/e2e-live/lib/skill-prompt.sh); wired in [matrix.sh](../../scripts/enterprise-e2e/matrix.sh) row 3 prompt |
+| **Product frozen** | `0fcd73e` + `345917a` api/currency — §5b PASS (2 commits after anchor `5072735`) |
+| **Outcome-only relaunch** | [codex-r3-row3-outcome-only-launch.sh](./codex-r3-row3-outcome-only-launch.sh) fixture @ `345917a`, `SB_E2E_OUTCOME_ONLY_ROWS=3` |
+| **Tier B rescore** | **2/3** pending — matrix **BLOCKED** until row 3 outcomes PASS |
+
+### Poll checkpoint 2026-07-02T16:27:36Z (force3-only exit @ ca8af883)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen rows **1+6** PASS; FORCE row **3** only; fixture @ `5072735` |
+| **Driver** | EXITED PID **56707** |
+| **Tier B rescore** | **2/3** — [.codex-r3-force3-only-rescore.log](./.codex-r3-force3-only-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
