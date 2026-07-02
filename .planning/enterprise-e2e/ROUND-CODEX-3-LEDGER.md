@@ -432,3 +432,15 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **SIGTERM 98417** | External kill mid row 14 @ `132b29e3` — matrix child SIGTERM (not codex idle/quiet timeout; ~12m < 900s workflow quiet). Same class as **52051**: parent/tmux abort, not matrix self-kill |
 | **Harness fix** | `codex-r3-force1416-launch.sh` — refuse `tmux kill-session` when `enterprise_e2e_matrix_batch_running` unless `SB_E2E_LAUNCH_FORCE=1`; prune stale driver.pid |
 | **Remediation** | stale locks cleared; fixture @ `3ca685f`; frozen 19 rows @ force141619 rescore; relaunch rows **14,15,16** |
+
+### Launch checkpoint 2026-07-03T08:13Z (force1416 relaunch @ `f9ed398f`)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen **19 PASS** @ force141619; FORCE **14,15,16** live |
+| **Driver** | **RUNNING** tmux `codex-r3-force1416` PID **53268** |
+| **Poll** | tmux `codex-r3-force1416:poll` — [.codex-r3-force1416-poll-exit.sh](./.codex-r3-force1416-poll-exit.sh) |
+| **Chain monitor** | tmux `codex-r3-force1416:chain` — [.codex-r3-chain-monitor.log](./.codex-r3-chain-monitor.log) |
+| **Friction monitor** | PID **54458** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log) |
+| **Fixture** | `enterprise-e2e/round-9-codex` @ **`3ca685f`** |
+| **Phase C** | Auto on poll-exit **22/22** → outcome assessment + run-all-tests + product audit draft |
