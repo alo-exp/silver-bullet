@@ -106,6 +106,25 @@
           "source": "matrix"
         }
       }
+    },
+    "claude@62aa0de356e9+cb146a0bba2a": {
+      "host": "claude",
+      "sb_sha": "62aa0de356e9",
+      "install_fp": "claude@62aa0de356e9+cb146a0bba2a",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-02T08:14:28Z",
+          "log_ref": "/private/tmp/sb-cherry-pick-to-main/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-02T08:14:53Z",
+          "log_ref": "/private/tmp/sb-cherry-pick-to-main/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
     }
   }
 }

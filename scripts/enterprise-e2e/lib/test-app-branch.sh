@@ -38,6 +38,7 @@ enterprise_e2e_apply_test_app_branch_defaults() {
     baseline="$(enterprise_e2e_host_config_get test_app_git_baseline_sha "$host" 2>/dev/null || true)"
     [[ -n "$baseline" ]] && export SB_E2E_TEST_APP_BASELINE_SHA="$baseline"
   fi
+  return 0
 }
 
 # Priority: explicit env → derived round-N-host → hosts.json default.

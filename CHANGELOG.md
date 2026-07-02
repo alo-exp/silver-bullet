@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.50.0] — 2026-07-02
+
+Multi-host enterprise E2E harness merge: integrates `enterprise-e2e/cursor` Phase C strict-clean fixes, Codex sibling cherry-picks from `origin/main`, and Claude/round6 harness already on main.
+
+## Features
+- `feat(e2e): install-version row pass registry (one-pass-per-version)` (89e2ab8f)
+- `feat(e2e): merge host certification methodology and gate harness on main` (38102e26)
+- `feat(e2e): test-app branch isolation policy and harness preflight` (00d2ff30)
+- `feat(e2e): wire JSON row-pass registry with install-version skip` (9ae769be)
+- `feat(core): enforce host-agnostic SB core with pre-release validator` (06485ea6)
+
+## Bug Fixes
+- `fix(e2e/cursor): Phase C driver retry + Cursor-2 strict-clean green` (5d56b2ca)
+- `fix(e2e/codex): spinner-immune idle watchdog + reliable hard timeout` (158556e4)
+- `fix(e2e/codex): honor matrix ROWS argv order; pin baadf87 fixture` (1f035575)
+- `fix(e2e/codex): TUI-aware KM/ORCH/HEAL outcome scoring` (be769ddd)
+- `fix(e2e): cherry-pick Cursor strict-clean harness from enterprise-e2e/cursor` (6f86e144)
+- `fix(e2e): cherry-pick harness registry skip and outcome scoring onto main` (dca46dad)
+- `fix(e2e): Gate 2 smoke fails when matrix rows SKIP` (82437f6a)
+- `fix(e2e): OUT-SKILL routing row 1 pass + T1 driver` (f901f1fa)
+- `fix(tests): silver-doctor --fix grep on BSD/macOS` (0cc001ad)
+- `fix(tests): use grep -Fq -- for flag needles in silver-doctor` (ee74f598)
+- `fix(ci): restore create-release marketplace git-add paths` (fa47e747)
+
+## Documentation
+- Merge commit `62aa0de3` — enterprise-e2e/cursor harness and Phase C matrix fixes
+- Merge commit `e9146308` — Codex sibling cherry-picks from origin/main
+
+---
+
 ## [0.49.1] — 2026-07-01
 
 ## Bug Fixes

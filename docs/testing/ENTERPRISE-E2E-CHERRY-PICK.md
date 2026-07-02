@@ -87,3 +87,15 @@ Squashed logical groups from `enterprise-e2e/cursor` @ `5d56b2ca` (Cursor-2 Phas
 ## Test app
 
 Cherry-pick test-app commits only when they change matrix fixtures or docs the harness reads. On 2026-06-30, `8482e60` on round6 was docs-only for blocking criteria — optional follow-up if `main` needs parity.
+
+## Merge + release (2026-07-02)
+
+| Track | Branch | Merge commit on `main` | Notes |
+|-------|--------|------------------------|-------|
+| **Cursor** | `enterprise-e2e/cursor` | `62aa0de3` | Phase C strict-clean, row-pass registry, R8 orchestration scripts |
+| **Codex** | `enterprise-e2e/codex` (cherry-picks) | `e9146308` | Matrix argv order, codex hook auto-trust, PTY watchdog, outcome scoring |
+| **Claude** | `enterprise-e2e/round6` + local cherry-picks | `de1d2b1d`, `dca46dad`, `6f86e144`, `9e957a1c` | Routing env, UTF-8/MCP dismiss, methodology harness |
+
+**Release:** [v0.50.0](https://github.com/alo-exp/silver-bullet/releases/tag/v0.50.0) — merge SHA `62aa0de3` on `main`.
+
+Pre-release validation (2026-07-02): `test-outcome-assessment.sh` 60/60, `test-enterprise-e2e-live-suite.sh` 189/189, `test-enterprise-e2e-matrix-routing.sh` 11/11, `test-enterprise-e2e-row-pass-registry.sh` 13/13, `test-enterprise-e2e-test-app-branch.sh` 21/21, `test-silver-doctor.sh` 33/33.
