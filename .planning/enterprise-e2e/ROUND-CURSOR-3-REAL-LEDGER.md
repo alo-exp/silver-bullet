@@ -13,7 +13,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | Round | Cursor-3 REAL |
 | Host | `cursor` |
 | SB harness branch | `enterprise-e2e/cursor` |
-| SB repo SHA | `5d5ef7c8` (+ E2E-093/E2E-094 harness commit pending) |
+| SB repo SHA | `5fa5d2fc` (E2E-093/E2E-094) |
 | Test-app branch | `enterprise-e2e/round-3-cursor` |
 | Test app SHA (baseline) | `8482e60` |
 | Test-app worktree | `/Users/shafqat/projects/enterprise-grade-test-app-cursor` |
@@ -109,7 +109,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
-| 6 | `silver-fast` | **PASS** | 524236 | *(README pending)* | E2E-094 OUT-ORCH-01 n/a; matrix outcome PASS |
+| 6 | `silver-fast` | **PASS** | 524236 | `650e4bc` | E2E-094 OUT-ORCH-01 n/a; matrix outcome PASS |
 
 **T2 verdict:** **PASS** — §5b + outcome green after E2E-093/E2E-094.
 
@@ -150,4 +150,4 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | Full matrix 22/22 | pending |
 | Phase C | pending |
 
-**Commits on fixture:** `README.md` install fix pending commit on `enterprise-e2e/round-3-cursor`.
+**Commits on fixture:** [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) — `README.md` install fix on `enterprise-e2e/round-3-cursor`.
