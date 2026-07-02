@@ -1,15 +1,19 @@
 # Round Codex-2 — Gate checklist
 
 **Host:** Codex TUI — **confirmation round**  
-**Updated:** YYYY-MM-DDTHH:MMZ  
-**SB HEAD:** `<sha>`  
-**Test app HEAD:** `<sha>`  
+**Updated:** 2026-07-02T04:05Z  
+**SB HEAD:** `fbb38851`  
+**Test app HEAD:** `baadf87`  
 **Ledger:** [ROUND-CODEX-2-LEDGER.md](./ROUND-CODEX-2-LEDGER.md)  
 **Prior round:** [ROUND-CODEX-1-GATES.md](./ROUND-CODEX-1-GATES.md) must show Round Codex-1 strict-clean **Pass**
 
-## Status: PENDING
+## Status: **IN PROGRESS**
 
 **Release pair:** Round Codex-2 completes the **2/2** consecutive strict-clean requirement for Codex host release sign-off.
+
+**Prior round:** [ROUND-CODEX-1-GATES.md](./ROUND-CODEX-1-GATES.md) — **CLOSED Pass** (1/2).
+
+**Quota:** CLEAR (Jul 2 14:02 AEST). Tier A → Tier B smoke (rows 1,3,6) → Tier C full matrix.
 
 ### Round gates
 
