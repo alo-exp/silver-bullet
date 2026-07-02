@@ -179,6 +179,19 @@ else
 fi
 rm -f "$ROW10_FP_LOG" "$PROMPT_OVERRIDE_LOG"
 
+# E2E-098: matrix graphify preamble without agentmemory MCP → OUT-KM-01 pass
+ROW14_KM_LOG="$(mktemp)"
+cat >"$ROW14_KM_LOG" <<'LOG'
+HARNESS graphify: graphify query "silver-release routes hooks skills orchestrator"
+matrix MCP env: disabled 23 server(s) for TUI
+{"type":"tool_call","subtype":"completed","tool_call":{"readToolCall":{}}}
+LOG
+export SB_E2E_ENTERPRISE_MATRIX=1
+score_km_r14="$(enterprise_e2e_outcome_score_km "" 14 "$ROW14_KM_LOG" "$FIXTURE")"
+[[ "$score_km_r14" == "pass" ]] && pass "E2E-098 matrix graphify preamble OUT-KM-01 pass" || fail "E2E-098 OUT-KM-01 got $score_km_r14"
+unset SB_E2E_ENTERPRISE_MATRIX
+rm -f "$ROW14_KM_LOG"
+
 session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
 if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
