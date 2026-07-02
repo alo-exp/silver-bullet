@@ -275,10 +275,10 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 
 | Field | Value |
 |-------|-------|
-| **Harness** | `8a077b1a` — §5b early gate + outcome-only row 6 + force3 driver |
+| **Harness** | `fb889d61` — §5b early gate + outcome-only row 6 + force3 driver + fixture Session0 opt-in |
 | **Policy** | Frozen row **1** PASS; FORCE rows **3,6**; fixture pinned @ `b22b730` |
 | **Session 0** | **ON** (`SB_E2E_SESSION0_SKIP=0`) for graphify/agentmemory opt-in |
-| **Tier B driver** | tmux `codex-r3-force3:driver` PID **15080** |
+| **Tier B driver** | tmux `codex-r3-force3:driver` PID **31332** |
 | **Poll-exit** | tmux `codex-r3-force3:poll` → [.codex-r3-force3-poll-exit.sh](./.codex-r3-force3-poll-exit.sh) |
 | **Chain monitor** | tmux `codex-r3-force3:chain` |
 | **Tier C** | On **3/3** rescore → auto [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |
