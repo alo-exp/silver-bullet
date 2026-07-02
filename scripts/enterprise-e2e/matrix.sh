@@ -736,7 +736,7 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
-    trap "rm -f $(printf '%q' "$_matrix_batch_pid_file"); cleanup_workspace" EXIT
+    trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT
   fi
