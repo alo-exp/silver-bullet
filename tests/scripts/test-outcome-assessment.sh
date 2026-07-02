@@ -192,6 +192,14 @@ score_km_r14="$(enterprise_e2e_outcome_score_km "" 14 "$ROW14_KM_LOG" "$FIXTURE"
 unset SB_E2E_ENTERPRISE_MATRIX
 rm -f "$ROW14_KM_LOG"
 
+# E2E-099: row 15 review-triad triad evidence satisfies OUT-RELEASE-01
+FIXTURE_REVIEWS="${FIXTURE}/.planning/reviews"
+mkdir -p "$FIXTURE_REVIEWS"
+printf '# triad\n' >"$FIXTURE_REVIEWS/triad-currency.md"
+score_rel_r15="$(enterprise_e2e_outcome_score_release "$FIXTURE" 15 "")"
+[[ "$score_rel_r15" == "pass" ]] && pass "E2E-099 row 15 triad evidence OUT-RELEASE-01 pass" || fail "E2E-099 OUT-RELEASE-01 got $score_rel_r15"
+rm -f "$FIXTURE_REVIEWS/triad-currency.md"
+
 session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
 if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
