@@ -651,9 +651,26 @@ enterprise_e2e_outcome_score_heal() {
 enterprise_e2e_outcome_score_release() {
   local work_dir="$1" row_num="${2:-}" ledger="${3:-}"
   [[ ! "$row_num" =~ ^(14|15|16)$ ]] && { printf 'n/a\n'; return 0; }
-  local has_ledger=0 has_ship=0
+  local has_ledger=0 has_ship=0 has_changelog=0 has_release_ship=0
   [[ -f "${work_dir}/docs/instruction-ledger.jsonl" ]] && has_ledger=1
   [[ -d "${work_dir}/.planning/ship-readiness" ]] && has_ship=1
+  [[ -f "${work_dir}/CHANGELOG.md" ]] && has_changelog=1
+  if find "${work_dir}/.planning/phases" -name 'SHIP.md' 2>/dev/null | grep -qi 'release'; then
+    has_release_ship=1
+  fi
+  # E2E-097: row 14 silver-release uses CHANGELOG + release phase, not ship-readiness.
+  if [[ "$row_num" == "14" ]]; then
+    if [[ "$has_changelog" -eq 1 ]] && { [[ "$has_ledger" -eq 1 ]] || [[ "$has_release_ship" -eq 1 ]]; }; then
+      if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
+        printf 'partial\n'; return 0
+      fi
+      printf 'pass\n'; return 0
+    fi
+    if [[ "$has_changelog" -eq 1 || "$has_ledger" -eq 1 ]]; then
+      printf 'partial\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
   if [[ "$has_ledger" -eq 1 && "$has_ship" -eq 1 ]]; then
     if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
       printf 'partial\n'; return 0
