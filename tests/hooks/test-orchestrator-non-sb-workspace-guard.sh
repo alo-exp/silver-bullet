@@ -132,7 +132,7 @@ run_runtime_suite() {
     SILVER_BULLET_RUNTIME="$runtime" HOME="$TMP_HOME" bash "$GUARD" 2>/dev/null || true)
   assert_empty "[$runtime] non-SB cwd + blocking directive file does not block Bash" "$out_directive"
 
-  out_sb=$(cd "$sb_work" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"ls"}}' | \
+  out_sb=$(cd "$sb_work" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo test > foo.txt"}}' | \
     SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_STATE_FILE="$tmpstate" SB_RUNTIME_STATE_DIR="$sb_test_dir" \
     SILVER_BULLET_RUNTIME="$runtime" HOME="$TMP_HOME" bash "$GUARD" 2>/dev/null || true)
   assert_contains "[$runtime] SB cwd still blocks parent Bash" "$out_sb" "ORCHESTRATOR PARENT"
