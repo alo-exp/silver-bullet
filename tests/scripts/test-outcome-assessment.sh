@@ -156,6 +156,29 @@ fi
 rm -f "$BAD_LOG"
 rm -f "$STATE_DIR/orchestrator-worker-active.json"
 
+# E2E-096: negated autonomy summary must not trip babysitting (row 10 stream-json)
+ROW10_FP_LOG="$(mktemp)"
+cat >"$ROW10_FP_LOG" <<'LOG'
+HARNESS graphify: graphify query "silver-content routes hooks skills orchestrator"
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"autonomous_default applied — no clarify menus or operator pauses"}]}}
+{"type":"result","subtype":"success","result":"Workflow complete — matrix row 10 PASS. autonomous_default applied — no clarify menus or operator pauses"}
+LOG
+if enterprise_e2e_outcome_log_has_babysitting "$ROW10_FP_LOG"; then
+  fail "E2E-096 negated operator-pause summary should not trigger babysitting"
+else
+  pass "E2E-096 negated operator-pause summary does not trigger babysitting"
+fi
+score_auto_r10="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW10_FP_LOG" 10 "" "docs/API.md")"
+[[ "$score_auto_r10" == "pass" ]] && pass "E2E-096 row 10 autonomy summary OUT-AUTO-01 pass" || fail "E2E-096 row 10 OUT-AUTO-01 got $score_auto_r10"
+PROMPT_OVERRIDE_LOG="$(mktemp)"
+printf 'issue SB OVERRIDE when planning-file-guard blocks evidence writes\n' >"$PROMPT_OVERRIDE_LOG"
+if enterprise_e2e_outcome_log_has_sb_override "$PROMPT_OVERRIDE_LOG"; then
+  fail "E2E-096 matrix prompt instruction should not count as SB OVERRIDE usage"
+else
+  pass "E2E-096 matrix prompt instruction not counted as SB OVERRIDE"
+fi
+rm -f "$ROW10_FP_LOG" "$PROMPT_OVERRIDE_LOG"
+
 session_scores_r3="$(enterprise_e2e_outcome_assess_session "$SESSION_LOG_R3" "$STATE_DIR" "$FIXTURE" "" 3)"
 if printf '%s\n' "$session_scores_r3" | grep -q 'OUT-SKILL-01 pass'; then
   pass "fixture row 3 session OUT-SKILL-01 pass"
