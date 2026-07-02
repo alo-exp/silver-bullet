@@ -1,13 +1,13 @@
 ---
-name: "silver:multi-ai-task"
-title: "Multi AI Task"
+name: "silver:multi-ai"
+title: "Multi AI"
 description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
-argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]"
+argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject] [--lite]"
 user-invocable: false
-version: 2.2.0
+version: 2.3.0
 ---
 
-# /silver:multi-ai-task — Multi-Model Orchestration
+# /silver:multi-ai — Multi-Model Orchestration
 
 Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
 
@@ -55,7 +55,7 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 ## Usage
 
 ```
-/silver:multi-ai-task "<task-prompt>" [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject]
+/silver:multi-ai "<task-prompt>" [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject] [--lite]
 ```
 
 ### Inputs
@@ -68,6 +68,7 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 | `--schema` | NO | LLM-assisted extraction | Optional structured output schema. Either a JSON object (inline) or a path to a `.json` file. Defines columns, types, dedup keys, conflict rules. |
 | `--mode` | NO | `standard` | `quick` (merge raw, no dedup) / `standard` (dedup + conflict resolution) / `thorough` (standard + cross-source verification; see Mode semantics) |
 | `--no-auto-inject` | NO | (schema is auto-injected) | If passed, the skill does NOT append the schema to the dispatch prompt. Use when your prompt already embeds the schema or you want to manage prompt construction yourself. |
+| `--lite` | NO | (standard models) | If passed, or if the task-prompt contains the keyword "lite", use the OCG-Lite budget-friendly model set (see OCG-Lite below). Replaces high-cost models with cheaper alternatives; excludes some models entirely. |
 
 ### Default model discovery
 
@@ -99,6 +100,29 @@ This uses the **same model inventory as `/silver:review-fix-ladder`** for the ac
 See `rules/dispatch-mechanics.md` for Mechanism 1–4 selection.
 
 If `--models` is omitted after Step 0, use the resolver output. Override with `--models` to pin a specific set. When OCG is unavailable, pick 4–6 models across ≥2 provider families from the resolver list.
+
+### OCG-Lite (budget-friendly variant)
+
+Activate by passing `--lite` or by including the keyword "lite" in the task-prompt. The resolver replaces high-cost OCG models with cheaper alternatives:
+
+```bash
+python3 scripts/multi-ai-task-models.py --json --lite
+```
+
+| Standard OCG | OCG-Lite replacement | Notes |
+|---|---|---|
+| `opencode-go/minimax-m3` | `opencode-go/minimax-m3` | Kept unchanged (already budget-friendly) |
+| `opencode-go/qwen3.7-max` | `opencode-go/qwen3.7-plus` | Mid-tier replacement |
+| `opencode-go/deepseek-v4-pro` | `opencode-go/deepseek-v4-flash` | Flash-tier, lower cost |
+| `opencode-go/glm-5.2` | **excluded** | Removed to reduce total model count |
+| `opencode-go/kimi-k2.6` | `opencode-go/kimi-k2.7-code` | Code-specialised, cost-efficient |
+| `opencode-go/mimo-v2.5-pro` | `opencode-go/mimo-v2.5` | Non-pro tier, lower cost |
+
+Ladder fallback models (non-OCG) are kept as-is. The `plan` field in the payload is set to `"ocg-lite"` for audit trail.
+
+**Use when:** budget is constrained, the task tolerates lower model capability (quick drafts, low-stakes ideation, cost-conscious triage), or you are testing the pipeline before a full run.
+
+**Avoid when:** the task requires the highest quality per model output (deep research, critical code review, production decisions).
 
 ### Mode semantics
 
@@ -310,6 +334,6 @@ A self-review run (also on 2026-06-27) used the skill recursively to review itse
 
 ## See also
 
-- `silver-bullet` — for managing the SDLC workflow that may consume `silver:multi-ai-task` outputs
+- `silver-bullet` — for managing the SDLC workflow that may consume `silver:multi-ai` outputs
 - `find-skills` — to discover other SB skills
 - For a deep 8-phase research methodology (when invoking a per-model prompt for research), use the host `deep-research` skill skill if available, or inline the methodology in the dispatch prompt
