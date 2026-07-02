@@ -117,10 +117,8 @@ assert_contains "live common defaults settings export on" "$COMMON_LIB" 'SB_E2E_
 assert_contains "live common token gateway preflight" "$COMMON_LIB" "enterprise_e2e_preflight_claude_token_gateway"
 assert_contains "live common sources test app branch module" "$COMMON_LIB" "test-app-branch.sh"
 assert_contains "test app branch ensure helper" "${REPO_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh" "enterprise_e2e_ensure_test_app_branch"
-assert_contains "live entrypoint test app branch preflight" "$LIVE" "enterprise_e2e_assert_test_app_branch"
-if [[ -f "${REPO_ROOT}/.planning/enterprise-e2e/round8-matrix-driver.sh" ]]; then
-  assert_contains "round8 driver pins test app branch" "${REPO_ROOT}/.planning/enterprise-e2e/round8-matrix-driver.sh" "SB_E2E_TEST_APP_BRANCH"
-fi
+assert_contains "live entrypoint test app branch preflight" "$LIVE" "enterprise_e2e_ensure_test_app_branch"
+assert_contains "round8 driver pins test app branch" "${REPO_ROOT}/.planning/enterprise-e2e/round8-matrix-driver.sh" "SB_E2E_TEST_APP_BRANCH"
 assert_contains "test app branch policy doc" "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" "enterprise-e2e/round-1-cursor"
 assert_contains "live entrypoint token gateway preflight" "$LIVE" "enterprise_e2e_preflight_host"
 assert_contains "live entrypoint matrix forces settings export" "$LIVE" "SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0"
@@ -130,7 +128,7 @@ assert_not_contains "live entrypoint forbids logout" "$LIVE" "auth logout"
 
 # --- Matrix runner learnings ---
 MATRIX="$HARNESS_MATRIX"
-assert_contains "matrix runner test app branch preflight" "$MATRIX" "enterprise_e2e_assert_test_app_branch"
+assert_contains "matrix runner test app branch preflight" "$MATRIX" "enterprise_e2e_ensure_test_app_branch"
 assert_contains "matrix runner harness git branch assert" "$MATRIX" "enterprise_e2e_assert_host_git_branch"
 assert_contains "hosts.json cursor test app branch" "$HARNESS_CONFIG" "enterprise-e2e/round-1-cursor"
 assert_contains "hosts.json cursor harness git branch" "$HARNESS_CONFIG" "enterprise-e2e/cursor"
@@ -388,10 +386,13 @@ assert_contains "common host lock file helper" "$HARNESS_CORE" "enterprise_e2e_l
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/claude.sh" "claude host adapter exists"
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/codex.sh" "codex host adapter exists"
 assert_file_exists "${HARNESS_ROOT}/lib/adapters/cursor.sh" "cursor host adapter exists"
-assert_file_exists "${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh" "deterministic consecutive-rounds shim exists"
+assert_executable "${HARNESS_ROOT}/lib/deterministic/consecutive-rounds.sh" "deterministic consecutive-rounds shim exists"
 assert_contains "monitor detects harness matrix path" "$MONITOR" "enterprise-e2e/matrix.sh"
 assert_contains "monitor detects live harness entry" "$MONITOR" "enterprise-e2e/live-test"
-# Host-track ledger/protocol templates remain on enterprise-e2e/{codex,cursor} branches only.
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md" "ROUND-CODEX-1-LEDGER template exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md" "ROUND-CURSOR-1-LEDGER template exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md" "CODEX-TUI-PROTOCOL exists"
+assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/CURSOR-TUI-PROTOCOL.md" "CURSOR-TUI-PROTOCOL exists"
 
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_LIVE_RUNTIME=codex

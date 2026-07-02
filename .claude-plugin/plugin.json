@@ -18,5 +18,6 @@
     "deploy-gate",
     "ci-cd"
   ],
-  "skills": "./agents/claude"
+  "skills": "./agents/claude",
+  "agents": "./agents/claude"
 }

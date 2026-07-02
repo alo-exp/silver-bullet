@@ -27,7 +27,7 @@ These four criteria are **mandatory** for matrix row PASS and strict-clean round
 
 ---
 
-## Criteria (27)
+## Criteria (28)
 
 ### OUT-TAILOR-01 — Dynamic workflow tailoring
 

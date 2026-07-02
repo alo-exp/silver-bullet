@@ -208,8 +208,6 @@ if [[ "${SILVER_BULLET_RUNTIME:-}" == "task host" ]] || [[ -d "${HOME}/.task hos
   python3 "${PLUGIN_ROOT}/scripts/lib/install-task host/merge-task host-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 else
   python3 "${PLUGIN_ROOT}/scripts/lib/install-primary host/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
-
-Re-register hooks on the Kay host surface with `merge-cursor-hooks.py` (`scripts/lib/install-cursor/merge-cursor-hooks.py`); see `docs/RUNTIME-COMPATIBILITY.md`.
 fi
 ```
 

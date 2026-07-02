@@ -111,10 +111,11 @@ if should_check("claude"):
     else:
         data = json.loads(manifest.read_text())
         skills = data.get("skills", "")
+        agents = data.get("agents", "")
         if skills != "./agents/claude":
             fail("claude", f".claude-plugin skills path must be ./agents/claude — got {skills!r}")
-        if data.get("agents"):
-            fail("claude", ".claude-plugin must not declare agents (skills path is sufficient; Claude schema rejects agents)")
+        if agents and agents != "./agents/claude":
+            fail("claude", f".claude-plugin agents path must be ./agents/claude — got {agents!r}")
         if "commands" in data:
             fail("claude", ".claude-plugin must not declare commands (Codex-only surface)")
 

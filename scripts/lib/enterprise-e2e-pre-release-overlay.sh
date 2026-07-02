@@ -46,6 +46,7 @@ pre_release_overlay_run_feature_checks() {
   validation_overlay_check_help_catalog_sot "$root"
   validation_overlay_check_help_tri_host "$root"
   validation_overlay_check_tri_host_install "$root"
+  validation_overlay_check_host_install_surface "$root"
   validation_overlay_check_hook_surface "$root"
   validation_overlay_check_sb_diagnostics "$root"
   validation_overlay_check_apo_invariants "$root"

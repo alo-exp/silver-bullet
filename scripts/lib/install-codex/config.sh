@@ -11,6 +11,17 @@ resolve_codex_config_file() {
 }
 
 
+render_agent_bundle() {
+  local agent="$1"
+
+  mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
+  python3 "$AGENT_RENDERER" render \
+    --agent "$agent" \
+    --source-root "${REPO_ROOT}/skills" \
+    --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" "$agent")"
+}
+
+
 usage() {
   cat <<'USAGE'
 Usage: scripts/install-codex.sh [--purge-legacy-skills] [--public-release]
@@ -32,6 +43,22 @@ codex_marketplace_root() {
     return 0
   fi
   printf '%s\n' "${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
+}
+
+
+find_silver_bullet_project_root() {
+  local search_dir="$PWD"
+  while true; do
+    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+      printf '%s\n' "$search_dir"
+      return 0
+    fi
+    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+      break
+    fi
+    search_dir=$(dirname "$search_dir")
+  done
+  return 1
 }
 
 

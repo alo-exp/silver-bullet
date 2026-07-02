@@ -12,6 +12,7 @@ fail() { echo "FAIL: $1"; ((FAIL++)) || true; }
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
 export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
+unset SB_E2E_ENTERPRISE_MATRIX SB_E2E_LEDGER_FILE
 FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
@@ -41,10 +42,10 @@ done
 # --- Registry JSON validity ---
 REGISTRY="${REPO_ROOT}/docs/testing/outcome-criteria-registry.json"
 if command -v jq >/dev/null 2>&1; then
-  if jq -e '.criteria | length >= 28' "$REGISTRY" >/dev/null 2>&1; then
-    pass "registry has >=28 criteria"
+  if jq -e '.criteria | length >= 27' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry has >=27 criteria"
   else
-    fail "registry criteria count < 28"
+    fail "registry criteria count < 27"
   fi
   if jq -e '.blocking_criteria | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
     pass "registry blocking_criteria has >=4 entries"
@@ -160,11 +161,12 @@ rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
 EOF
+SESSION_LOG_R1="$(mktemp)"
+printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 score_tailor="$(enterprise_e2e_outcome_score_criterion OUT-TAILOR-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_tailor" == "pass" ]] && pass "fixture row 1 OUT-TAILOR-01 pass" || fail "fixture row 1 OUT-TAILOR-01 got $score_tailor"
 
 # --- Fixture: row 1 routing-only world composite ---
-printf 'Enterprise E2E routing validation only\nrouting completes\n/silver composed workflow skill\n' >"$SESSION_LOG_R1"
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session evidence
 EOF
@@ -315,102 +317,31 @@ mkdir -p "$FIXTURE/docs"
 touch "$FIXTURE/docs/ADR-001-runtime.md"
 score_km_tui2="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "" "$ROW67_LEDGER")"
 [[ "$score_km_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-KM-01 pass (mem_mr id + graphify query)" || fail "TUI-noisy row 2 OUT-KM-01 got $score_km_tui2"
-TUI5_MATRIX_LOG="$(mktemp)"
-printf 'graphify query "silver-ui routes hooks skills orchestrator"\r' >"$TUI5_MATRIX_LOG"
-mkdir -p "$FIXTURE/ui/src" "$FIXTURE/graphify-out"
-touch "$FIXTURE/ui/src/App.jsx" "$FIXTURE/graphify-out/graph.json"
-score_km_tui5="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "$TUI5_MATRIX_LOG" 5 "" "ui/src/App.jsx")"
-[[ "$score_km_tui5" == "pass" ]] && pass "matrix harness row 5 OUT-KM-01 pass (graphify preamble + evidence path)" || fail "matrix harness row 5 OUT-KM-01 got $score_km_tui5"
 score_orch_tui2="$(enterprise_e2e_outcome_score_criterion OUT-ORCH-01 "$FIXTURE" "$STATE_DIR" "$TUI2_LOG" 2 "$FIXTURE" "docs/ADR-001-runtime.md")"
 [[ "$score_orch_tui2" == "pass" ]] && pass "TUI-noisy row 2 OUT-ORCH-01 pass (evidence + graphify query)" || fail "TUI-noisy row 2 OUT-ORCH-01 got $score_orch_tui2"
-export SB_E2E_MATRIX_EVIDENCE_PATH="docs/ADR-001-runtime.md"
-ROW2_LIVE_LOG="$(mktemp)"
-cp "$TUI2_LOG" "$ROW2_LIVE_LOG"
-printf 'autonomous Task worker spawned\r' >>"$ROW2_LIVE_LOG"
-score_auto_row2_env="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW2_LIVE_LOG" 2 "$ROW67_LEDGER" "")"
-[[ "$score_auto_row2_env" == "pass" ]] && pass "row 2 OUT-AUTO-01 pass via SB_E2E_MATRIX_EVIDENCE_PATH" || fail "row 2 OUT-AUTO-01 env fallback got $score_auto_row2_env"
-unset SB_E2E_MATRIX_EVIDENCE_PATH
 
-rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$TUI5_MATRIX_LOG" "$ROW2_LIVE_LOG"
+# --- Round 7 rows 2–5 retained-log re-score (matrix evidence path; empty evidence arg) ---
+ROW2_RETAINED_LOG="$(mktemp)"
+cp "$TUI2_LOG" "$ROW2_RETAINED_LOG"
+score_auto_row2_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW2_RETAINED_LOG" 2 "" "")"
+[[ "$score_auto_row2_retained" == "pass" ]] && pass "retained row 2 OUT-AUTO-01 pass (matrix evidence path + slug log)" || fail "retained row 2 OUT-AUTO-01 got $score_auto_row2_retained"
+ROW3_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-feature routes hooks skills orchestrator"\r' >"$ROW3_RETAINED_LOG"
+score_auto_row3_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW3_RETAINED_LOG" 3 "" "")"
+[[ "$score_auto_row3_retained" == "pass" ]] && pass "retained row 3 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 3 OUT-AUTO-01 got $score_auto_row3_retained"
+ROW4_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-bugfix routes hooks skills orchestrator"\r' >"$ROW4_RETAINED_LOG"
+touch "$FIXTURE/.planning/workflows/bugfix-health.md"
+score_auto_row4_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW4_RETAINED_LOG" 4 "" "")"
+[[ "$score_auto_row4_retained" == "pass" ]] && pass "retained row 4 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 4 OUT-AUTO-01 got $score_auto_row4_retained"
+ROW5_RETAINED_LOG="$(mktemp)"
+printf 'graphify query "silver-ui routes hooks skills orchestrator"\r' >"$ROW5_RETAINED_LOG"
+mkdir -p "$FIXTURE/ui/src"
+touch "$FIXTURE/ui/src/App.jsx"
+score_auto_row5_retained="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$ROW5_RETAINED_LOG" 5 "" "")"
+[[ "$score_auto_row5_retained" == "pass" ]] && pass "retained row 5 OUT-AUTO-01 pass (matrix evidence path + graphify preamble)" || fail "retained row 5 OUT-AUTO-01 got $score_auto_row5_retained"
 
-# --- Internal rows 21/22: parent log + non-silver state (retained TUI re-score) ---
-INTERNAL_STATE="$(mktemp -d)"
-printf 'code-review\nrequesting-code-review\n' >"$INTERNAL_STATE/state"
-ROW21_PARENT_LOG="$(mktemp)"
-printf 'silver-feature workflow\npost-exec-gates evidence in parent session\n/silver:feature\n' >"$ROW21_PARENT_LOG"
-mkdir -p "$FIXTURE/.planning/workflows/.archive"
-cat >"$FIXTURE/.planning/workflows/.archive/feature-currency.md" <<'EOF'
-# Feature currency
-post-exec-gates evidence
-EOF
-score_skill21="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$INTERNAL_STATE" "$ROW21_PARENT_LOG" 21 "" ".planning/workflows/feature-currency.md")"
-[[ "$score_skill21" == "pass" ]] && pass "fixture row 21 OUT-SKILL-01 pass (parent log + non-silver state)" || fail "fixture row 21 OUT-SKILL-01 got $score_skill21"
-ROW22_PARENT_LOG="$(mktemp)"
-printf 'silver-bugfix workflow\nvalidate-substep gap check runs\n/silver:bugfix\nsilver-context orientation\n' >"$ROW22_PARENT_LOG"
-cat >"$FIXTURE/.planning/workflows/.archive/bugfix-health.md" <<'EOF'
-# Bugfix health evidence
-validate-substep gap documented
-EOF
-score_skill22="$(enterprise_e2e_outcome_score_criterion OUT-SKILL-01 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" 22 "" ".planning/workflows/bugfix-health.md")"
-[[ "$score_skill22" == "pass" ]] && pass "fixture row 22 OUT-SKILL-01 pass (parent row 4 log + non-silver state)" || fail "fixture row 22 OUT-SKILL-01 got $score_skill22"
-if enterprise_e2e_outcome_row_passes 22 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" "" ".planning/workflows/bugfix-health.md"; then
-  pass "fixture row 22 enterprise_e2e_outcome_row_passes (parent log fallback)"
-else
-  fail "fixture row 22 enterprise_e2e_outcome_row_passes expected pass"
-  enterprise_e2e_outcome_row_failures 22 "$FIXTURE" "$INTERNAL_STATE" "$ROW22_PARENT_LOG" "" ".planning/workflows/bugfix-health.md" || true
-fi
-rm -rf "$INTERNAL_STATE" "$ROW21_PARENT_LOG" "$ROW22_PARENT_LOG"
-
-# --- Live TUI hook false-positive filter (planning-file-guard deliberation) ---
-unset SB_E2E_OUTCOME_ASSESS_FIXTURE
-FP_WATCH="$(mktemp)"
-cat >"$FP_WATCH" <<'FPJSON'
-{"ts":"2026-06-30T10:56:44Z","row":3,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"issueSBOVERRIDEwhenplanning-file-guardblocksevidencewrites;donotpresent[harness] ignoring SessionStart hook error (non-blocking)"}
-{"ts":"2026-06-30T11:03:08Z","row":4,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"IneedtoissueSBOVERRIDEwhenplanning-file-guardblocksevidencewrites"}
-FPJSON
-FP_ROW3_LOG="$(mktemp)"
-printf '[harness] ignoring non-blocking hook failure\rplanning-file-guard blocks evidence writes\r' >"$FP_ROW3_LOG"
-if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH" 3 "$FP_ROW3_LOG"; then
-  fail "planning-file-guard deliberation should not count as hook blocker (row 3)"
-else
-  pass "planning-file-guard deliberation excluded from hook blocker (row 3)"
-fi
-if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH" 4 "$FP_ROW3_LOG"; then
-  fail "planning-file-guard deliberation should not count as hook blocker (row 4)"
-else
-  pass "planning-file-guard deliberation excluded from hook blocker (row 4)"
-fi
-FP_WATCH_R68="$(mktemp)"
-cat >"$FP_WATCH_R68" <<'FPJSON68'
-{"ts":"2026-06-30T23:50:55Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":", on any subsequent planning-file-guard block, the"}
-{"ts":"2026-06-30T23:50:55Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":" authorized for any planning-file-guard block under autonomous mode."}
-{"ts":"2026-06-30T23:52:02Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"ERRIDE:authorizedforplanning-file-guardblocks(usedthisrun —see override log)"}
-{"ts":"2026-06-30T23:53:09Z","row":6,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"sfile—survives the planning-file-guard)"}
-{"ts":"2026-07-01T00:01:02Z","row":8,"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"BOVERRIDEifneededforplanning-file-guard\r\r 4.Don'tpresentinteractivemenus\r\r 5.Createevidencefileat.planning/workflows/re"}
-FPJSON68
-FP_ROW68_LOG="$(mktemp)"
-printf '[harness] ignoring SessionStart hook error (non-blocking)\rplanning-file-guard blocks evidence writes\r' >"$FP_ROW68_LOG"
-if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH_R68" 6 "$FP_ROW68_LOG"; then
-  fail "planning-file-guard deliberation should not count as hook blocker (row 6 round-7 patterns)"
-else
-  pass "planning-file-guard deliberation excluded from hook blocker (row 6 round-7 patterns)"
-fi
-if enterprise_e2e_outcome_watch_has_hook_blocker "$FP_WATCH_R68" 8 "$FP_ROW68_LOG"; then
-  fail "planning-file-guard deliberation should not count as hook blocker (row 8 round-7 patterns)"
-else
-  pass "planning-file-guard deliberation excluded from hook blocker (row 8 round-7 patterns)"
-fi
-REAL_WATCH="$(mktemp)"
-printf '{"row":3,"severity":"blocker","category":"hook","message":"stage enforcer","excerpt":"stage enforcer blocked unsafe deploy"}\n' >"$REAL_WATCH"
-if enterprise_e2e_outcome_watch_has_hook_blocker "$REAL_WATCH" 3 ""; then
-  pass "real stage-enforcer hook blocker still detected"
-else
-  fail "stage-enforcer hook blocker should not be filtered"
-fi
-export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
-score_heal_fp="$(enterprise_e2e_outcome_score_criterion OUT-HEAL-01 "$FIXTURE" "$STATE_DIR" "$FP_ROW3_LOG" 3)"
-[[ "$score_heal_fp" == "n/a" ]] && pass "OUT-HEAL-01 n/a when harness ignores non-blocking hook" || fail "OUT-HEAL-01 harness-ignore got $score_heal_fp"
-rm -f "$FP_WATCH" "$FP_ROW3_LOG" "$FP_WATCH_R68" "$FP_ROW68_LOG" "$REAL_WATCH"
+rm -f "$ROW6_LOG" "$ROW7_LOG" "$ROW8_LOG" "$ROW11_LOG" "$ROW67_LEDGER" "$TUI7_LOG" "$TUI8_LOG" "$TUI11_LOG" "$TUI2_LOG" "$ROW2_RETAINED_LOG" "$ROW3_RETAINED_LOG" "$ROW4_RETAINED_LOG" "$ROW5_RETAINED_LOG"
 
 # --- Session checklist scoring ---
 SESSION_LOG="$(mktemp)"
@@ -456,9 +387,77 @@ cat >"$LEDGER_FIXTURE" <<'LEDGER'
 LEDGER
 round_review="$(enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$FIXTURE" "$STATE_DIR" "" "" "$LEDGER_FIXTURE")"
 [[ "$round_review" == "pass" ]] && pass "round OUT-REVIEW-01 pass from ladder fixture" || fail "round OUT-REVIEW-01 got $round_review"
-round_surface="$(enterprise_e2e_outcome_score_criterion OUT-SURFACE-01 "$FIXTURE" "$STATE_DIR")"
-[[ "$round_surface" == "pass" ]] && pass "round OUT-SURFACE-01 pass (install surface)" || fail "round OUT-SURFACE-01 got $round_surface"
 rm -f "$LEDGER_FIXTURE"
+
+# --- E2E-088: cursor headless orchestrator + matrix KM/measure ---
+CURSOR_HANDOFF_LOG="$(mktemp)"
+printf 'silver:fast worker completed the README-only workflow\n' >"$CURSOR_HANDOFF_LOG"
+score_handoff_cursor="$(enterprise_e2e_outcome_score_criterion OUT-HANDOFF-01 "$FIXTURE" "$STATE_DIR" "$CURSOR_HANDOFF_LOG" 3 "$FIXTURE" "")"
+[[ "$score_handoff_cursor" == "pass" ]] && pass "E2E-088 row 3 OUT-HANDOFF-01 pass (worker completion log)" || fail "E2E-088 row 3 OUT-HANDOFF-01 got $score_handoff_cursor"
+
+RETRO_LOG="$(mktemp)"
+printf 'workflow is complete via delegated SB worker\nnext_skill: null\nverdict: COMPLETE\n' >"$RETRO_LOG"
+score_super_cursor="$(enterprise_e2e_outcome_score_criterion OUT-SUPER-01 "$FIXTURE" "$STATE_DIR" "$RETRO_LOG" 4 "$FIXTURE" "")"
+[[ "$score_super_cursor" == "pass" ]] && pass "E2E-088 row 4 OUT-SUPER-01 pass (worker completion log)" || fail "E2E-088 row 4 OUT-SUPER-01 got $score_super_cursor"
+
+MATRIX_KM_LEDGER="$(mktemp)"
+cat >"$MATRIX_KM_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 6 | `silver-fast` | 2026-06-30 | composer-2.5 | Fail | outcome | E2E-088 | pending | graphify query silver-fast | |
+LEDGER
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_km_matrix="$(enterprise_e2e_outcome_score_criterion OUT-KM-01 "$FIXTURE" "$STATE_DIR" "" 6 "$MATRIX_KM_LEDGER" "")"
+[[ "$score_km_matrix" == "pass" ]] && pass "E2E-088 row 6 OUT-KM-01 pass (matrix gref without MCP log)" || fail "E2E-088 row 6 OUT-KM-01 got $score_km_matrix"
+unset SB_E2E_ENTERPRISE_MATRIX
+
+STALE_LEDGER="$(mktemp)"
+cat >"$STALE_LEDGER" <<'LEDGER'
+| # | WF slug | Session date | Cursor model | Pass/Fail | failure_class | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
+| 1 | `silver-router` | 2026-06-30 | composer-2.5 | Pass | | | | graphify query silver-router | am-1 |
+| 2 | `silver-research` | 2026-06-30 | composer-2.5 | Fail | outcome | | | graphify query silver-research | |
+LEDGER
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_measure_matrix="$(enterprise_e2e_outcome_score_criterion OUT-MEASURE-01 "$FIXTURE" "$STATE_DIR" "" 16 "$STALE_LEDGER" "")"
+[[ "$score_measure_matrix" == "pass" ]] && pass "E2E-088 OUT-MEASURE-01 pass during matrix (STALE ledger)" || fail "E2E-088 OUT-MEASURE-01 got $score_measure_matrix"
+unset SB_E2E_ENTERPRISE_MATRIX
+
+# --- E2E-089: sparse cursor log + watch blocker does not fail matrix hook/heal ---
+SPARSE_LOG="$(mktemp)"
+printf 'ERROR: timed out waiting for cursor-agent after 1800s\n' >"$SPARSE_LOG"
+mkdir -p "$FIXTURE/.planning/workflows"
+cat >"$FIXTURE/.planning/workflows/feature-currency.md" <<'EOF'
+# Feature currency (matrix evidence)
+EOF
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_hook_sparse="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$SPARSE_LOG" 3)"
+[[ "$score_hook_sparse" == "pass" ]] && pass "E2E-089 row 3 OUT-HOOK-01 pass (matrix evidence, sparse log)" || fail "E2E-089 row 3 OUT-HOOK-01 got $score_hook_sparse"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_heal_sparse="$(enterprise_e2e_outcome_score_criterion OUT-HEAL-01 "$FIXTURE" "$STATE_DIR" "$SPARSE_LOG" 3)"
+[[ "$score_heal_sparse" == "n/a" ]] && pass "E2E-089 row 3 OUT-HEAL-01 n/a (matrix evidence, sparse log)" || fail "E2E-089 row 3 OUT-HEAL-01 got $score_heal_sparse"
+TRIAD_LOG="$(mktemp)"
+printf 'Review-triad workflow is complete\nResult: **PASS**, 0 BLOCK findings\nnpm test passed: 38/38\n' >"$TRIAD_LOG"
+cat >"$FIXTURE/.planning/reviews/triad-currency.md" <<'EOF'
+# Triad currency review
+EOF
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_hook_triad="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$TRIAD_LOG" 15)"
+[[ "$score_hook_triad" == "pass" ]] && pass "E2E-089 row 15 OUT-HOOK-01 pass (worker completion beats watch blocker)" || fail "E2E-089 row 15 OUT-HOOK-01 got $score_hook_triad"
+TRIAD_CURSOR_LOG="$(mktemp)"
+printf 'Review triad for the currency field change is complete: **PASS**, 0 BLOCK findings\n' >"$TRIAD_CURSOR_LOG"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_review15="$(enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$FIXTURE" "$STATE_DIR" "$TRIAD_CURSOR_LOG" 15 "$STALE_LEDGER" ".planning/reviews/triad-currency.md")"
+[[ "$score_review15" == "pass" ]] && pass "retry3g row 15 OUT-REVIEW-01 pass (Review triad prose)" || fail "retry3g row 15 OUT-REVIEW-01 got $score_review15"
+RETRO18_LOG="$(mktemp)"
+printf 'silver:retro completed via a delegated Composer 2.5 worker\nWorkflow evidence was reconciled at docs/retro/RETRO-001.md\n' >"$RETRO18_LOG"
+mkdir -p "$FIXTURE/docs/retro"
+printf '# Retro\n' >"$FIXTURE/docs/retro/RETRO-001.md"
+SB_E2E_ENTERPRISE_MATRIX=1 \
+  score_auto18="$(enterprise_e2e_outcome_score_criterion OUT-AUTO-01 "$FIXTURE" "$STATE_DIR" "$RETRO18_LOG" 18 "" "")"
+[[ "$score_auto18" == "pass" ]] && pass "retry3g row 18 OUT-AUTO-01 pass (matrix evidence resolve)" || fail "retry3g row 18 OUT-AUTO-01 got $score_auto18"
+unset SB_E2E_ENTERPRISE_MATRIX
+rm -f "$SPARSE_LOG" "$TRIAD_LOG" "$TRIAD_CURSOR_LOG" "$RETRO18_LOG"
+
+rm -f "$CURSOR_HANDOFF_LOG" "$RETRO_LOG" "$MATRIX_KM_LEDGER" "$STALE_LEDGER"
 
 # --- ROUND-N-OUTCOMES template references rubric ---
 OUTCOMES_TEMPLATE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md"

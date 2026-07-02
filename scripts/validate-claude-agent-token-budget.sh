@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      printf 'validate-claude-agent-token-budget: unknown argument: %s\n' "$1" >&2
+      printf 'validate-claude-agent-token-budget: unknown argument: %s\n' >&2
       exit 2
       ;;
   esac

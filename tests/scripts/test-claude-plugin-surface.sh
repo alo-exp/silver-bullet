@@ -43,9 +43,14 @@ else
 fi
 
 if jq -e '.agents' "$PLUGIN_JSON" >/dev/null 2>&1; then
-  fail "Claude plugin manifest must not declare agents (skills path is sufficient; Claude schema rejects agents)"
+  agents_path="$(jq -r '.agents // ""' "$PLUGIN_JSON")"
+  if [[ "$agents_path" == "./agents/claude" ]]; then
+    pass "Claude plugin manifest points agents at agents/claude"
+  else
+    fail "Claude plugin manifest points agents at agents/claude — got [$agents_path]"
+  fi
 else
-  pass "Claude plugin manifest does not declare agents"
+  fail "Claude plugin manifest should declare agents path"
 fi
 
 cross_host_dirs="$(find "${REPO_ROOT}/agents" -mindepth 1 -maxdepth 1 -type d ! -name 'claude' 2>/dev/null | wc -l | tr -d ' ')"

@@ -2,7 +2,7 @@
 
 **Generalizes:** [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) (Claude R6 keeps that file for backward compat)
 
-**Architecture:** [SHARED-HARNESS.md](./SHARED-HARNESS.md) · **Host paths:** [HOST-CONFIG.md](./HOST-CONFIG.md) · **Certification methodology:** [`docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) (on `main` — share with all host agents)
+**Architecture:** [SHARED-HARNESS.md](./SHARED-HARNESS.md) · **Host paths:** [HOST-CONFIG.md](./HOST-CONFIG.md)
 
 **Execution prompts:**
 

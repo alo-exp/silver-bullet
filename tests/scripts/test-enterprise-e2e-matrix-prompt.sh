@@ -55,6 +55,7 @@ assert_not_contains "row 1 prompt avoids evidence boilerplate" "$row1_prompt" 'C
 assert_contains "row 2 prompt starts with /silver router slash command" "$row2_prompt" '/silver Should we use Postgres'
 assert_contains "row 2 prompt names workflow slug" "$row2_prompt" 'silver-research workflow'
 assert_contains "row 2 prompt names evidence path" "$row2_prompt" 'docs/ADR-001-runtime.md'
+assert_contains "row 2 prompt includes matrix autonomous clarify policy" "$row2_prompt" 'Matrix autonomous mode'
 assert_not_contains "row 2 prompt avoids native /silver:research subcommand" "$row2_prompt" '/silver:research'
 assert_not_contains "row 2 prompt avoids legacy skill markdown link form" "$row2_prompt" 'Use the ['
 
@@ -64,7 +65,7 @@ assert_contains "row 5 prompt names ui artifact evidence path" "$row5_prompt" 'u
 assert_not_contains "row 5 prompt avoids native /silver:ui subcommand" "$row5_prompt" '/silver:ui'
 assert_not_contains "row 5 prompt avoids stale workflow md evidence" "$row5_prompt" 'ui-version-badge.md'
 
-matrix_row5="$(grep -F "silver-ui" "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" | head -1)"
+matrix_row5="$(grep -F "silver-ui" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" | head -1 || true)"
 assert_contains "matrix harness row 5 evidence matches WORKFLOW_E2E_MATRIX.md" "$matrix_row5" 'ui/src/App.jsx'
 
 echo ""
