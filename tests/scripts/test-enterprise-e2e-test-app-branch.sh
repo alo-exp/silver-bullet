@@ -61,11 +61,19 @@ export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-8-LEDGER.
 export SB_E2E_LIVE_RUNTIME=claude
 assert_eq "round from ROUND-8 ledger" "8" "$(enterprise_e2e_test_app_round_from_ledger)"
 
-unset SB_E2E_TEST_APP_BRANCH
+unset SB_E2E_TEST_APP_BRANCH SB_E2E_LEDGER_FILE
 export SB_E2E_LIVE_RUNTIME=cursor
 enterprise_e2e_apply_test_app_branch_defaults
 assert_eq "hosts.json default cursor test app branch" \
   "enterprise-e2e/round-1-cursor" \
+  "${SB_E2E_TEST_APP_BRANCH:-}"
+
+unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
+export SB_E2E_LIVE_RUNTIME=cursor
+export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
+enterprise_e2e_apply_test_app_branch_defaults
+assert_eq "ledger-derived cursor round-3 test app branch" \
+  "enterprise-e2e/round-3-cursor" \
   "${SB_E2E_TEST_APP_BRANCH:-}"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
