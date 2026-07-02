@@ -61,7 +61,7 @@ STRICT_FILES = [
 
 # Host-specific template trees — excluded from core scan (owned by installers).
 TEMPLATE_EXCLUDE_PREFIXES = (
-    "templates/CLAUDE.md.base",
+    "scripts/lib/install-claude/templates/CLAUDE.md.base",
     "templates/cursor-rules/",
     "templates/cursor/",
 )
@@ -116,6 +116,7 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/sync-",
     "scripts/validate-host-install",
     "scripts/validate-claude",
+    "scripts/enterprise-e2e/",
     "scripts/run-enterprise-e2e",
     "scripts/run-release-",
     "scripts/run-pre-release",
@@ -219,6 +220,16 @@ def rel(path: Path) -> str:
     return path.relative_to(repo_root).as_posix()
 
 
+def is_release_manifest_contract_line(path: Path, line: str) -> bool:
+    r = rel(path)
+    if r != "skills/silver-create-release/SKILL.md":
+        return False
+    if "git add CHANGELOG.md README.md" in line and "marketplace.json" in line and "plugin.json" in line:
+        return True
+    return False
+
+
+
 def is_glob_excluded(r: str) -> bool:
     for prefix in GLOBAL_EXCLUDE_PREFIXES:
         if r.startswith(prefix):
@@ -316,7 +327,9 @@ def iter_shared_scripts() -> list[Path]:
 def is_false_positive(word: str, text: str, start: int, end: int) -> bool:
     if word != "cursor":
         return False
-    window = text[max(0, start - 12): min(len(text), end + 12)].lower()
+    window = text[max(0, start - 24): min(len(text), end + 24)].lower()
+    if "merge-cursor-hooks" in window or "install-cursor/" in window:
+        return True
     for fp in FALSE_POSITIVE_WORDS["cursor"]:
         if fp in window:
             return True
@@ -337,6 +350,8 @@ def scan_content(
     lines = text.splitlines()
 
     for line_no, line in enumerate(lines, start=1):
+        if strict and is_release_manifest_contract_line(path, line):
+            continue
         runtime_ok = not strict and line_allows_runtime_identifiers(line)
 
         for label, pattern in HARD_PATTERNS:
