@@ -19,7 +19,7 @@ source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 export SB_ROOT
 enterprise_e2e_apply_matrix_host_defaults
 MATRIX_HOST="$(enterprise_e2e_matrix_host)"
-FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 # shellcheck disable=SC2034  # documented matrix doc path for operators
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"

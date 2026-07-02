@@ -17,10 +17,12 @@ assert_ok() {
 }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-FIXTURE="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-matrix-evidence.XXXXXX")"
-trap 'rm -rf "$STATE_DIR"' EXIT
+# shellcheck source=tests/scripts/lib/enterprise-e2e-fixture.sh
+source "${REPO_ROOT}/tests/scripts/lib/enterprise-e2e-fixture.sh"
+enterprise_e2e_test_fixture_init "$REPO_ROOT"
+trap 'rm -rf "$STATE_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 export HOME="$STATE_DIR/home"
 mkdir -p "$HOME/.claude/.silver-bullet"
