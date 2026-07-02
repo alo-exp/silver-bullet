@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-# Poll codex-r3-force36 driver until exit; frozen row 1 PASS + rescore rows 3,6.
-# tmux-stable: run inside codex-r3-force36:poll window (not nohup background).
+# Poll codex-r3-force3 driver until exit; frozen row 1 PASS + rescore rows 3,6 with §5b gate.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 DRIVER_PID="${1:?driver pid required}"
 INTERVAL="${2:-75}"
-POLL_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-force36-poll.log"
-RESCORE_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-force36-rescore.log"
+POLL_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-force3-poll.log"
+RESCORE_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-force3-rescore.log"
 TIERB_RESCORE_LOG="${ROOT}/.planning/enterprise-e2e/.codex-r3-tierb-rescore.log"
 FROZEN_SHA="${SB_E2E_FROZEN_BASELINE_SHA:-4412bb01}"
 MATRIX_LOG="${ROOT}/.e2e-matrix-codex-live.log"
 LEDGER="${ROOT}/.planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md"
-CHECKPOINT="${ROOT}/.planning/enterprise-e2e/.codex-r3-force36-checkpoint.md"
+CHECKPOINT="${ROOT}/.planning/enterprise-e2e/.codex-r3-force3-checkpoint.md"
 
 log_line() {
   printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >>"$POLL_LOG"
@@ -82,6 +81,8 @@ run_tierb_rescore() {
   export SB_E2E_ENTERPRISE_MATRIX=1
   export SB_E2E_PRODUCT_WORK_GATE=1
   export SB_E2E_TEST_APP_BASELINE_SHA="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
+  export SB_E2E_ROW6_FROZEN_COMMIT="${SB_E2E_ROW6_FROZEN_COMMIT:-b22b730}"
+  export SB_E2E_ROW3_PRODUCT_ANCHOR_SHA="${SB_E2E_ROW6_FROZEN_COMMIT}"
   # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
   source "${ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
   # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
@@ -145,20 +146,21 @@ pass_count="$(run_tierb_rescore)"
 log_line "TIERB rescore pass=${pass_count}/3 log=${RESCORE_LOG}"
 
 {
-  printf '# codex-r3-force36 checkpoint\n\n'
+  printf '# codex-r3-force3 checkpoint\n\n'
   printf -- '- **When:** %s *(EXIT)*\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf -- '- **Branch:** enterprise-e2e/codex @ %s\n' "$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
   printf -- '- **Frozen row 1:** PASS @ `%s`\n' "$FROZEN_SHA"
+  printf -- '- **Row 6 anchor:** `%s`\n' "${SB_E2E_ROW6_FROZEN_COMMIT:-b22b730}"
   printf -- '- **Driver PID:** %s EXITED\n' "$DRIVER_PID"
-  printf -- '- **Tier B rescore:** %s/3 — [.codex-r3-force36-rescore.log](./.codex-r3-force36-rescore.log)\n' "$pass_count"
+  printf -- '- **Tier B rescore:** %s/3 — [.codex-r3-force3-rescore.log](./.codex-r3-force3-rescore.log)\n' "$pass_count"
 } >"$CHECKPOINT"
 
 {
-  printf '\n### Poll checkpoint %s (force36 exit @ %s)\n\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  printf '\n### Poll checkpoint %s (force3 exit @ %s)\n\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
   printf '| Field | Value |\n|-------|-------|\n'
-  printf '| **Policy** | One pass — frozen row **1** PASS; FORCE rows **3,6** only |\n'
+  printf '| **Policy** | One pass — frozen row **1** PASS; FORCE rows **3,6**; row6 outcome-only @ `%s` |\n' "${SB_E2E_ROW6_FROZEN_COMMIT:-b22b730}"
   printf '| **Driver** | EXITED PID **%s** |\n' "$DRIVER_PID"
-  printf '| **Tier B rescore** | **%s/3** — [.codex-r3-force36-rescore.log](./.codex-r3-force36-rescore.log) |\n' "$pass_count"
+  printf '| **Tier B rescore** | **%s/3** — [.codex-r3-force3-rescore.log](./.codex-r3-force3-rescore.log) |\n' "$pass_count"
   if [[ "$pass_count" -eq 3 ]]; then
     printf '| **Tier C** | **READY** — launch [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |\n'
   else

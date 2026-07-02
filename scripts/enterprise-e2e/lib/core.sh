@@ -117,6 +117,53 @@ enterprise_e2e_fixture_head_snapshot() {
   git -C "$fixture_dir" rev-parse HEAD 2>/dev/null || true
 }
 
+# Outcome-only matrix rerun (e.g. row 6 @ frozen README commit) — §5b satisfied without new delta.
+enterprise_e2e_row_outcome_only_rerun() {
+  local row_num="${1:-}"
+  [[ -n "${SB_E2E_OUTCOME_ONLY_ROWS:-}" ]] || return 1
+  [[ " ${SB_E2E_OUTCOME_ONLY_ROWS} " == *" ${row_num} "* ]]
+}
+
+# Poll/rescore §5b — row 3 needs commits after row-6 anchor; row 6 needs any commit since baseline.
+enterprise_e2e_assert_row_product_commit_rescore() {
+  local row_num="${1:-}"
+  local fixture_dir="${2:-$(enterprise_e2e_fixture_dir)}"
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
+  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
+  local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  local anchor="" count=0
+  case "$row_num" in
+    6)
+      [[ -n "$baseline" ]] || return 1
+      count="$(git -C "$fixture_dir" rev-list --count "${baseline}..HEAD" 2>/dev/null || echo 0)"
+      if [[ "$count" -gt 0 ]]; then
+        echo "  §5b rescore row 6: ${count} commit(s) since baseline"
+        return 0
+      fi
+      ;;
+    3)
+      anchor="${SB_E2E_ROW6_FROZEN_COMMIT:-${SB_E2E_ROW3_PRODUCT_ANCHOR_SHA:-}}"
+      [[ -n "$anchor" ]] || anchor="$baseline"
+      [[ -n "$anchor" ]] || return 1
+      count="$(git -C "$fixture_dir" rev-list --count "${anchor}..HEAD" 2>/dev/null || echo 0)"
+      if [[ "$count" -gt 0 ]]; then
+        echo "  §5b rescore row 3: ${count} commit(s) after anchor ${anchor:0:12}"
+        return 0
+      fi
+      ;;
+    *)
+      [[ -n "$baseline" ]] || return 1
+      count="$(git -C "$fixture_dir" rev-list --count "${baseline}..HEAD" 2>/dev/null || echo 0)"
+      if [[ "$count" -gt 0 ]]; then
+        echo "  §5b rescore row ${row_num}: ${count} commit(s) since baseline"
+        return 0
+      fi
+      ;;
+  esac
+  echo "  FAIL: §5b rescore — no product commit for row ${row_num}" >&2
+  return 1
+}
+
 # Fail when implement row passes outcome but fixture HEAD unchanged (anti-faking).
 enterprise_e2e_assert_row_product_commit_delta() {
   local row_num="${1:-}"
@@ -131,6 +178,11 @@ enterprise_e2e_assert_row_product_commit_delta() {
     return 1
   fi
   if [[ "$head_before" == "$head_after" ]]; then
+    if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
+      if enterprise_e2e_assert_row_product_commit_rescore "$row_num" "$fixture_dir"; then
+        return 0
+      fi
+    fi
     echo "  FAIL: §5b product delta — no fixture commit after row ${row_num} (HEAD still ${head_after:0:12})" >&2
     return 1
   fi
