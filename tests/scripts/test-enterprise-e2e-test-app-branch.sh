@@ -126,6 +126,29 @@ assert_contains "matrix.sh install-version skip" \
   "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" \
   "ROW_ALREADY_PASSED_SAME_INSTALL"
 
+DEFAULT_FIXTURE_ROOT="$(cd "${REPO_ROOT}/../.." && pwd)/enterprise-grade-test-app"
+FIXTURE_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$DEFAULT_FIXTURE_ROOT}"
+if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
+  if git -C "$FIXTURE_ROOT" show-ref --verify --quiet "refs/heads/enterprise-e2e/round-8-codex" 2>/dev/null; then
+    pass "fixture repo has enterprise-e2e/round-8-codex branch"
+  else
+    fail "fixture repo missing enterprise-e2e/round-8-codex branch"
+  fi
+  if git -C "$FIXTURE_ROOT" cat-file -e "enterprise-e2e/round-8-codex:.planning/ship-readiness/checklist.md" 2>/dev/null; then
+    pass "round-8-codex has row-16 ship-readiness evidence committed"
+  else
+    fail "round-8-codex missing .planning/ship-readiness/checklist.md (row 16 dry-run)"
+  fi
+  baseline_sha="${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"
+  if git -C "$FIXTURE_ROOT" merge-base --is-ancestor "$baseline_sha" enterprise-e2e/round-8-codex 2>/dev/null; then
+    pass "round-8-codex contains baseline $baseline_sha"
+  else
+    fail "round-8-codex must contain baseline $baseline_sha"
+  fi
+else
+  pass "fixture repo check skipped (no git at $FIXTURE_ROOT)"
+fi
+
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

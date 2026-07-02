@@ -31,7 +31,13 @@ enterprise_e2e_sb_root() {
 }
 
 enterprise_e2e_fixture_dir() {
-  printf '%s\n' "${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
+    printf '%s\n' "$SB_TEST_ENTERPRISE_APP_ROOT"
+    return 0
+  fi
+  local sb_root
+  sb_root="$(enterprise_e2e_sb_root)"
+  printf '%s\n' "$(cd "${sb_root}/../.." && pwd)/enterprise-grade-test-app"
 }
 
 # claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
