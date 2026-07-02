@@ -24,6 +24,7 @@ export SB_E2E_MONITOR_AUTO_RESTART=0
 export SB_E2E_SURFACE_SKIP=0
 export SB_E2E_SESSION0_SKIP=1
 export SB_E2E_SESSION0_SKIP_REASON="Codex-3 REAL @ $(git -C "$SB_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+export SB_E2E_SKIP_CODEX_INSTALL=1
 export RTK_DISABLED=1
 export SB_E2E_MATRIX_LOG="${SB_ROOT}/.e2e-matrix-codex-live.log"
 export SB_E2E_MATRIX_BATCH_PID_FILE="${SB_ROOT}/.e2e-matrix-codex-batch.pid"
