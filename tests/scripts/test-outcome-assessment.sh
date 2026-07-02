@@ -15,16 +15,10 @@ export SB_E2E_OUTCOME_ASSESS_FIXTURE=1
 TMPDIR="${TMPDIR:-/tmp}"
 STATE_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-assess.XXXXXX")"
 OUT_DIR="$(mktemp -d "${TMPDIR}/sb-outcome-out.XXXXXX")"
-FIXTURE_CLEANUP=""
-if [[ -n "${SB_TEST_ENTERPRISE_APP_ROOT:-}" ]]; then
-  FIXTURE="$SB_TEST_ENTERPRISE_APP_ROOT"
-elif [[ -d "/Users/shafqat/projects/enterprise-grade-test-app" ]]; then
-  FIXTURE="/Users/shafqat/projects/enterprise-grade-test-app"
-else
-  FIXTURE="$(mktemp -d "${TMPDIR}/sb-outcome-fixture.XXXXXX")"
-  FIXTURE_CLEANUP=1
-fi
-trap 'rm -rf "$STATE_DIR" "$OUT_DIR"; [[ -n "$FIXTURE_CLEANUP" ]] && rm -rf "$FIXTURE"' EXIT
+# shellcheck source=tests/scripts/lib/enterprise-e2e-fixture.sh
+source "${REPO_ROOT}/tests/scripts/lib/enterprise-e2e-fixture.sh"
+enterprise_e2e_test_fixture_init "$REPO_ROOT"
+trap 'rm -rf "$STATE_DIR" "$OUT_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
 source "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
