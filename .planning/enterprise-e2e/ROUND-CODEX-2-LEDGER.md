@@ -96,14 +96,22 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 
 | Phase | Status | Driver / artifact |
 |-------|--------|-------------------|
-| Tier A offline | **PENDING** | [codex-r2-tiera-offline.sh](./codex-r2-tiera-offline.sh) |
-| Tier B smoke (rows 1,3,6) | **PENDING** | [codex-r2-tierb-smoke-driver.sh](./codex-r2-tierb-smoke-driver.sh) |
+| Tier A offline | **PASS** @ `77f9ac35` — [.codex-r2-tiera-offline.log](./.codex-r2-tiera-offline.log) |
+| Tier B smoke (rows 1,3,6) | **RUNNING** — batch PID **10118** — [codex-r2-tierb-smoke-driver.sh](./codex-r2-tierb-smoke-driver.sh) |
 | Tier C full matrix (22/22) | **PENDING** | [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) |
 | Phase C gates | **PENDING** | outcome + run-all + RCS ≥85 |
 
-**Quota:** CLEAR (Jul 2 14:02 AEST). **Prior round:** Codex-1 CLOSED Pass @ `fbb38851`.
+### Poll checkpoint 2026-07-02T04:10Z (Round Codex-2 Tier B launch @ `77f9ac35`)
 
-**Next action:**
+| Field | Value |
+|-------|-------|
+| **Tier A** | **PASS** — [.codex-r2-tiera-offline.log](./.codex-r2-tiera-offline.log) |
+| **Tier B driver** | **RUNNING** — batch PID **10118** |
+| **Monitor** | relaunched — see `.codex-r2-tierb-monitor.log` |
+| **Poll-exit** | PID **96676** → [.codex-r2-tierb-poll-exit.sh](./.codex-r2-tierb-poll-exit.sh) `10118` |
+| **Fixture** | `enterprise-e2e/round-8-codex@baadf87` |
+| **agentmemory** | `mem_mr2zhzf6_63921d2e42a7` |
+
 
 - Tier A green → Tier B rows 1,3,6 → post-invoke rescore → Tier C full matrix → Phase C → gates **2/2**.
 - If **not** strict-clean → pair resets; re-run Round Codex-2 from Phase A.
