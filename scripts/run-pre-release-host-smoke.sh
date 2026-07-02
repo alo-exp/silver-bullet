@@ -208,8 +208,13 @@ if [[ "$FAIL" -eq 0 ]]; then
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
     mkdir -p "$(dirname "${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke")"
-    cp "$marker_file" "${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke"
-    printf 'Copied marker to %s\n' "${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke"
+    dest_marker="${SB_RUNTIME_STATE_DIR}/pre-release-host-smoke"
+    if [[ "$marker_file" -ef "$dest_marker" ]]; then
+      printf 'Marker already at %s (isolated runtime state)\n' "$dest_marker"
+    else
+      cp "$marker_file" "$dest_marker"
+      printf 'Copied marker to %s\n' "$dest_marker"
+    fi
   fi
 fi
 
