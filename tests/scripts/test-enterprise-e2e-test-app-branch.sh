@@ -28,7 +28,7 @@ METHODOLOGY="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODO
 
 assert_contains "core lib defines enterprise_e2e_fixture_branch" "$HARNESS_CORE" "enterprise_e2e_fixture_branch()"
 assert_contains "core lib defines enterprise_e2e_fixture_ensure_branch" "$HARNESS_CORE" "enterprise_e2e_fixture_ensure_branch()"
-assert_contains "core lib honors SB_E2E_FIXTURE_BRANCH_PIN" "$HARNESS_CORE" "SB_E2E_FIXTURE_BRANCH_PIN"
+assert_contains "core lib defines enterprise_e2e_assert_row_product_commit_delta" "$HARNESS_CORE" "enterprise_e2e_assert_row_product_commit_delta()"
 assert_contains "methodology documents fixture branch pattern" "$METHODOLOGY" "enterprise-e2e/round-"
 assert_contains "methodology documents SB_E2E_TEST_APP_BRANCH" "$METHODOLOGY" "SB_E2E_TEST_APP_BRANCH"
 
@@ -53,10 +53,10 @@ source "$HARNESS_CORE"
 export SB_E2E_LIVE_RUNTIME=codex
 export SILVER_BULLET_RUNTIME=codex
 codex_branch="$(enterprise_e2e_fixture_branch)"
-if [[ "$codex_branch" == "enterprise-e2e/round-8-codex" ]]; then
+if [[ "$codex_branch" == "enterprise-e2e/round-9-codex" ]]; then
   pass "enterprise_e2e_fixture_branch resolves codex → $codex_branch"
 else
-  fail "enterprise_e2e_fixture_branch codex expected enterprise-e2e/round-8-codex (got: ${codex_branch:-empty})"
+  fail "enterprise_e2e_fixture_branch codex expected enterprise-e2e/round-9-codex (got: ${codex_branch:-empty})"
 fi
 
 export SB_E2E_LIVE_RUNTIME=cursor
@@ -71,21 +71,24 @@ fi
 DEFAULT_FIXTURE_ROOT="$(cd "${REPO_ROOT}/../.." && pwd)/enterprise-grade-test-app"
 FIXTURE_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$DEFAULT_FIXTURE_ROOT}"
 if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
-  if git -C "$FIXTURE_ROOT" show-ref --verify --quiet "refs/heads/enterprise-e2e/round-8-codex" 2>/dev/null; then
-    pass "fixture repo has enterprise-e2e/round-8-codex branch"
+  if git -C "$FIXTURE_ROOT" show-ref --verify --quiet "refs/heads/enterprise-e2e/round-9-codex" 2>/dev/null; then
+    pass "fixture repo has enterprise-e2e/round-9-codex branch"
   else
-    fail "fixture repo missing enterprise-e2e/round-8-codex branch"
+    fail "fixture repo missing enterprise-e2e/round-9-codex branch"
   fi
-  if git -C "$FIXTURE_ROOT" cat-file -e "enterprise-e2e/round-8-codex:.planning/ship-readiness/checklist.md" 2>/dev/null; then
-    pass "round-8-codex has row-16 ship-readiness evidence committed"
+  baseline_sha="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
+  if git -C "$FIXTURE_ROOT" merge-base --is-ancestor "$baseline_sha" enterprise-e2e/round-9-codex 2>/dev/null; then
+    pass "round-9-codex contains baseline $baseline_sha"
   else
-    fail "round-8-codex missing .planning/ship-readiness/checklist.md (row 16 dry-run)"
+    fail "round-9-codex must contain baseline $baseline_sha"
   fi
-  baseline_sha="${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"
-  if git -C "$FIXTURE_ROOT" merge-base --is-ancestor "$baseline_sha" enterprise-e2e/round-8-codex 2>/dev/null; then
-    pass "round-8-codex contains baseline $baseline_sha"
-  else
-    fail "round-8-codex must contain baseline $baseline_sha"
+  if git -C "$FIXTURE_ROOT" rev-parse enterprise-e2e/round-9-codex 2>/dev/null | grep -q .; then
+    head_sha="$(git -C "$FIXTURE_ROOT" rev-parse --short enterprise-e2e/round-9-codex 2>/dev/null || true)"
+    if git -C "$FIXTURE_ROOT" merge-base --is-ancestor 826cb5c enterprise-e2e/round-9-codex 2>/dev/null; then
+      fail "round-9-codex must not include pre-seed 826cb5c (got HEAD $head_sha)"
+    else
+      pass "round-9-codex excludes pre-seed 826cb5c (honest product baseline)"
+    fi
   fi
 else
   pass "fixture repo check skipped (no git at $FIXTURE_ROOT)"

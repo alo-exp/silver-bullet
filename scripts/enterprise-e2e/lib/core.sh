@@ -70,6 +70,41 @@ enterprise_e2e_fixture_ensure_branch() {
   echo "Fixture branch: ${branch} @ $(git -C "$fixture_dir" rev-parse --short HEAD)"
 }
 
+# §5b product-work gate — rows that must produce a fixture-branch commit (Codex-3 REAL).
+enterprise_e2e_row_requires_product_commit() {
+  local row_num="${1:-}"
+  case "$row_num" in
+    1|15|21|22) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+enterprise_e2e_fixture_head_snapshot() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  git -C "$fixture_dir" rev-parse HEAD 2>/dev/null || true
+}
+
+# Fail when implement row passes outcome but fixture HEAD unchanged (anti-faking).
+enterprise_e2e_assert_row_product_commit_delta() {
+  local row_num="${1:-}"
+  local head_before="${2:-}"
+  local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
+  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
+  local head_after
+  head_after="$(enterprise_e2e_fixture_head_snapshot "$fixture_dir")"
+  if [[ -z "$head_before" || -z "$head_after" ]]; then
+    echo "  FAIL: §5b product delta — cannot read fixture HEAD (row ${row_num})" >&2
+    return 1
+  fi
+  if [[ "$head_before" == "$head_after" ]]; then
+    echo "  FAIL: §5b product delta — no fixture commit after row ${row_num} (HEAD still ${head_after:0:12})" >&2
+    return 1
+  fi
+  echo "  §5b product delta: ${head_before:0:12} → ${head_after:0:12} ($(git -C "$fixture_dir" log -1 --format='%s' "$head_after" 2>/dev/null || echo commit))"
+  return 0
+}
+
 # claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
 
 # Default host-isolated artifact paths (Claude keeps legacy names for Round 6).
