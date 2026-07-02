@@ -20,3 +20,8 @@
 - incident: 10:41Z bad relaunch killed driver 67166 (missing SB_ENTERPRISE_E2E_LIVE); recovered via `.r8-resume-housekeeping-launch-inner.sh`
 - artifacts: `.e2e-r8-batch2-timeline.md`, `.e2e-r8-batch2-final.txt`
 - install-claude blocker: re-test in flight on SB_ROOT @ checkpoint
+
+## Follow-up (2026-07-02T11:36Z)
+- install-claude.sh exit 0 from main+SB_ROOT env (~74s) and from SB_ROOT tree (~245s); no agents-manifest error in log
+- graphify update: 2044/2044 files AST
+- post-checkpoint: driver 47527 still alive, advanced to row 16 ship-readiness; registry still 12/22
