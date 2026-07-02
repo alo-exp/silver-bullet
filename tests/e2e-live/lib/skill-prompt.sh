@@ -16,6 +16,13 @@ matrix_route_prompt() {
 # Rows 2-20: Claude TUI registers /silver from agents/claude/silver (skills manifest).
 # Codex-only commands/silver.md is not copied into the Claude plugin cache.
 # The expect harness must wait for the ❯ prompt before submitting slash routes.
+matrix_product_commit_clause() {
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
+  local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
+  printf '§5b product gate: implement real product code (not planning-only) and git-commit on fixture branch %s before ending — evidence without a fixture commit FAILs the row.' \
+    "$branch"
+}
+
 matrix_router_workflow_prompt() {
   local slug="$1"
   local prompt_card="$2"

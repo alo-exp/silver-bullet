@@ -2,7 +2,7 @@
 
 **Host:** Codex TUI — **honest product certification** (voids Codex-1/2 harness-only 22/22)  
 **Updated:** 2026-07-02  
-**SB HEAD:** `25d373a6`  
+**SB HEAD:** `4412bb01`  
 **Test app:** `enterprise-e2e/round-9-codex` @ `09f8d1a`  
 **Ledger:** [ROUND-CODEX-3-LEDGER.md](./ROUND-CODEX-3-LEDGER.md)  
 **Prior rounds:** Codex-1/2 harness PASS — **void for product work** per [CODEX-TEST-APP-PRODUCT-AUDIT.md](./CODEX-TEST-APP-PRODUCT-AUDIT.md)
@@ -31,9 +31,10 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 | Gate | Status |
 |------|--------|
 | Fixture `round-9-codex` @ `09f8d1a` (no `826cb5c`) | **PASS** |
-| Harness product-commit gate landed | **PASS** |
+| Fixture branch lock | `enterprise_e2e_fixture_assert_branch_lock` pre/post each row |
+| Harness product-commit gate landed | **PASS** @ `4412bb01` |
 | Tier A offline (all structural) | **PASS** @ `25d373a6` |
-| Tier B smoke rows 1, 3, 6 | **RUNNING** (batch PID 60854) |
+| Tier B smoke rows 1, 3, 6 | **FORCE36 RUNNING** — row 1 frozen PASS; FORCE 3,6 @ `4412bb01` |
 | review-fix-ladder 8/8 | *pending* |
 | Matrix 22/22 live + §5b per row | *pending* |
 | Phase C (run-all-tests, overlays, reconcile, RCS) | *pending* |

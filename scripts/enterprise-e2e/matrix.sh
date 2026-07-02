@@ -203,8 +203,21 @@ build_matrix_prompt() {
       "$route" "$prompt_card"
     return 0
   fi
-  # Native /silver:* subcommands are not registered in Claude TUI — route via /silver + workflow card.
-  matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
+  # Claude TUI: /silver:* subcommands are not registered — always use /silver + slug in prose.
+  # Codex TUI: use $silver (slash→dollar); subcommand tokens are not registered.
+  local workflow_route="/silver"
+  if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+  fi
+  local prompt
+  prompt="$(matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route")"
+  if [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
+     [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
+     enterprise_e2e_row_requires_product_commit "$row_num"; then
+    # shellcheck source=tests/e2e-live/lib/skill-prompt.sh
+    prompt="${prompt} $(matrix_product_commit_clause)"
+  fi
+  printf '%s' "$prompt"
 }
 
 claude_routing_state_file() {
