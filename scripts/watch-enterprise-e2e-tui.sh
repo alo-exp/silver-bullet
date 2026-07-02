@@ -43,7 +43,7 @@ utc_now() { date -u '+%Y-%m-%dT%H:%M:%SZ'; }
 log() { printf '%s %s\n' "$(utc_now)" "$*" | tee -a "$WATCH_LOG"; }
 
 echo $$ >"$WATCH_PID_FILE"
-log "tui-watch started pid=$$ max_runtime=${MAX_RUNTIME}s poll=${POLL_MIN}-${POLL_MAX}s"
+log "tui-watch started pid=$$ host=${MATRIX_HOST} max_runtime=${MAX_RUNTIME}s poll=${POLL_MIN}-${POLL_MAX}s"
 
 [[ -f "$OFFSETS_FILE" ]] || echo '{}' >"$OFFSETS_FILE"
 touch "$FINDINGS_FILE"

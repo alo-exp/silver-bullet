@@ -120,14 +120,14 @@ Failed to run: Plugin directorydo | row 3; tui-watch @ 2026-06-29T18:00:33Z |
  ⎿  Failed to run: Plugindirecry do | row 3; tui-watch @ 2026-06-29T18:00:33Z |
 | E2E-072 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed to run: Plugindirecry does nt exist:
-  /Users/shafqat/.claude/plugin/cache/alo-labs/ | row 3; tui-watch @ 2026-06-29T17:59:22Z |
+  $HOME/.claude/plugin/cache/alo-labs/ | row 3; tui-watch @ 2026-06-29T17:59:22Z |
 | E2E-071 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed to run: Plugindirecry does nt exist:
-  /Users/shafqat/.claude/plugins/cache/alo-labs | row 3; tui-watch @ 2026-06-29T17:59:22Z |
+  $HOME/.claude/plugin/cache/alo-labs/ | row 3; tui-watch @ 2026-06-29T17:59:22Z |
 | E2E-070 | annoyance | hook | PreToolUse:Read hook error | row 3; tui-watch @ 2026-06-29T17:59:21Z |
 | E2E-069 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed to run: Plugindirecry doesnotexist:
-  /Users/shafqat/.claude/plugins/cache/alo-labs/ | row 3; tui-watch @ 2026-06-29T17:59:21Z |
+  $HOME/.claude/plugins/cache/alo-labs/ | row 3; tui-watch @ 2026-06-29T17:59:21Z |
 | E2E-068 | annoyance | orchestrator | sfromyourclipboard
 
  
@@ -349,10 +349,10 @@ feld "hookEventName" | row 2; tui-watch @ 2026-06-29T17:52:46Z |
   /Users/shafqt/.claud/hoks/gsd-validate-commit.sh:N | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-035 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed with non-blocing statuscode:bash:
-  /Users/shafqat/.claude/hooks/gsd-vaidate-commit. | row 2; tui-watch @ 2026-06-29T17:52:46Z |
+  $HOME/.claude/hooks/gsd-vaidate-commit. | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-034 | annoyance | hook | PreToolUse:Bashhookerror
  ⎿  Failed with non-blocing statuscode:bash:
-  /Users/shafqat/.claude/hooks/gsd-vaidate-commit. | row 2; tui-watch @ 2026-06-29T17:52:46Z |
+  $HOME/.claude/hooks/gsd-vaidate-commit. | row 2; tui-watch @ 2026-06-29T17:52:46Z |
 | E2E-032 | annoyance | stall | ft+tabtocycle)·←foragents     0 tokens
 
  ○low·/effort

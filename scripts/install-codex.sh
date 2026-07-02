@@ -1707,6 +1707,7 @@ rewrite_codex_bundle_host_paths() {
 
   python3 - "$marketplace_root" "$package_root" "${CODEX_HOME_ROOT}/.codex/plugins/cache" <<'PY'
 import json
+import os
 import pathlib
 import re
 import sys
@@ -1888,6 +1889,10 @@ for root in targets:
         updated = updated.replace("$HOME/.claude", "$HOME/.codex")
         updated = updated.replace("${HOME}/.claude", "${HOME}/.codex")
         updated = path_segment_re.sub("/.codex", updated)
+        home = os.path.expanduser("~")
+        if home:
+            updated = updated.replace(f"{home}/.codex", "$HOME/.codex")
+            updated = updated.replace(f"{home}/.claude", "$HOME/.codex")
 
         if updated != text:
             file_path.write_text(updated)
