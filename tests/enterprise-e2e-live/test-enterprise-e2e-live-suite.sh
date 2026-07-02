@@ -466,7 +466,11 @@ fi
 assert_contains "rcs wires consecutive rounds env" "${REPO_ROOT}/scripts/enterprise-e2e-rcs.sh" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 assert_contains "live test wires consecutive rounds env" "$LIVE" "SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS"
 
+# E2E-092: cursor matrix must enforce ≥1800s agent timeout (not inherit legacy 900s).
+assert_contains "matrix cursor enforces 1800s minimum timeout" "$HARNESS_MATRIX" 'CLAUDE_INTERACTIVE_TIMEOUT}" -lt 1800'
+assert_contains "matrix cursor syncs CURSOR_AGENT_TIMEOUT" "$HARNESS_MATRIX" 'CURSOR_AGENT_TIMEOUT'
+assert_executable "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "cursor3 REAL live driver executable"
+assert_contains "cursor3 driver exports 1800s timeout" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "CLAUDE_INTERACTIVE_TIMEOUT=1800"
 
-echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

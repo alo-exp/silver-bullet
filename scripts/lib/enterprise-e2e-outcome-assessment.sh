@@ -403,8 +403,22 @@ enterprise_e2e_outcome_score_clarify() {
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify|\$silver:clarify|silver-clarify' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
+  # Row 1 (silver-router) is routing-only — clarify not required when route is correct.
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" ""; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/silver.*(feature|fast)' "$row_log" 2>/dev/null; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
+      printf 'n/a\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
   case "$row_num" in
-    1|2|3) printf 'fail\n' ;;
+    2|3) printf 'fail\n' ;;
     *) printf 'n/a\n' ;;
   esac
 }

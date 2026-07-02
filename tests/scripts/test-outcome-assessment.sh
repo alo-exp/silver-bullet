@@ -166,6 +166,7 @@ rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
 printf 'silver-context\n' >"$STATE_DIR/state"
+rm -f "$FIXTURE/.planning/CLARIFY.md" 2>/dev/null || true
 rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
@@ -185,6 +186,8 @@ score_handoff="$(enterprise_e2e_outcome_score_criterion OUT-HANDOFF-01 "$FIXTURE
 [[ "$score_handoff" == "n/a" ]] && pass "fixture row 1 OUT-HANDOFF-01 n/a (routing-only)" || fail "fixture row 1 OUT-HANDOFF-01 got $score_handoff"
 score_hook="$(enterprise_e2e_outcome_score_criterion OUT-HOOK-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
 [[ "$score_hook" == "pass" ]] && pass "fixture row 1 OUT-HOOK-01 pass (routing-only)" || fail "fixture row 1 OUT-HOOK-01 got $score_hook"
+score_clarify_r1="$(enterprise_e2e_outcome_score_criterion OUT-CLARIFY-01 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" 1)"
+[[ "$score_clarify_r1" == "n/a" ]] && pass "fixture row 1 OUT-CLARIFY-01 n/a (routing-only)" || fail "fixture row 1 OUT-CLARIFY-01 got $score_clarify_r1 (expected n/a)"
 if enterprise_e2e_outcome_row_passes 1 "$FIXTURE" "$STATE_DIR" "$SESSION_LOG_R1" "" ".planning/workflows/router-session.md"; then
   pass "fixture row 1 enterprise_e2e_outcome_row_passes (routing-only)"
 else

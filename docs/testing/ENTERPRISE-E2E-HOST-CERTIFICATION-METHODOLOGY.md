@@ -4,7 +4,7 @@
 > `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`  
 > Canonical on **`main`** — host tracks cherry-pick or link; do not fork per-host copies.
 
-**Status:** Active — 2026-07-01  
+**Status:** Active — 2026-07-02  
 **Audience:** Codex, Cursor, and Claude operator sessions certifying Silver Bullet on `enterprise-grade-test-app`  
 **Authority:** Supersedes ad-hoc “run 22 rows first” loops; complements [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](./ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)
 
@@ -34,6 +34,9 @@
 | **Monitor “22/22 COMPLETE” without ledger reconcile** | **Anti-pattern** — observed Round 3 drift |
 | **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) |
 | **Repeat matrix/ladder/T1 rows at same install** | **Deprecated** — one clean pass per row/criterion @ install version (see §11) |
+| **Rescore / evidence-only PASS without live rerun** | **Disqualifying** for certification credit (see §5a, §6) |
+| **Inherited baseline / pre-existing fixture artifacts** | **Disqualifying** without live agent authorship (see §5a) |
+| **ROW_ALREADY_PASSED_SAME_INSTALL on first host certification** | **Disqualifying** — install-skip only after first strict-clean pair @ install version (see §5a, §6a) |
 
 **Honest scope:** This program certifies SB harness + workflow routing on a fixture app with operator supervision. It does **not** prove homepage marketing stats, cold-install SLOs, or statistical reliability across providers without additional claims mapping (see registries below).
 
@@ -56,6 +59,23 @@
 ## 3. Tier A / B / C gate model
 
 Gates are **sequential**. Do not start Tier B until Tier A is green. Do not start Tier C until Tier B smoke passes.
+
+### Phase ordering (mandatory)
+
+Execute in this order — do not skip ahead or claim certification credit from later phases without completing earlier ones:
+
+| Phase | Alias | What runs |
+|-------|-------|-----------|
+| **T0** | Tier A structural | Offline harness, outcome tests, surface validation, dry-run matrix (§3 Tier A) |
+| **T1** | Tier B row 1 | Single live `silver-router` FORCE @ install version — routing smoke with outcome PASS |
+| **T2** | Tier B smoke | Live rows **1, 3, 6** (router + feature parent + fast path) |
+| **Phase A** | review-fix-ladder | 8/8 rungs — one live pass per rung @ install version |
+| **Full matrix** | Tier C | Live rows **1–22** — one pass per row @ install version |
+| **Phase C** | Release gates | Outcome harness, run-all-tests, validation/pre-release overlays, ledger reconcile, RCS ≥ 85 |
+
+**Rescore ≠ strict-clean.** Post-invoke rescoring may flip harness evidence for debugging; only **live strict-clean invocations** count toward host certification and consecutive-round pairs.
+
+**Ship-readiness consistency:** Row 16 (`ship-readiness`) outcome must match fixture state — `NOT_MERGE_READY` (or equivalent) **cannot** be scored PASS. Audit-only triad docs (row 15) without product delta is **not** certified delivery.
 
 ### Summary table
 
@@ -151,15 +171,54 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 
 ---
 
+## 5a. Anti-faking and disqualifying evidence
+
+Operators **must not** declare a row PASS for host certification unless the row satisfies **§5b required evidence gates**. The following categories are **forbidden** or **disqualifying** — if observed, mark the row **FAIL** (or void the round) and re-run live strict-clean:
+
+| # | Category | Description | Operator action |
+|---|----------|-------------|-----------------|
+| 1 | **Pre-existing evidence** | Row passes on inherited baseline commits (e.g. `826cb5c`, `8482e60`) or fixture files present before the live agent session without live agent authoring that deliverable | Reset fixture branch to baseline SHA; re-run row with `SB_E2E_MATRIX_FORCE=1`; require committed delta or documented brownfield waiver |
+| 2 | **Harness rescoring** | E2E-089-style log rescoring flipping FAIL→PASS without a live strict-clean rerun (evidence-only rescoring after timeout/empty logs) | Rescore is diagnostic only — **does not** grant certification credit; live rerun required |
+| 3 | **Timeout / empty logs** | FORCE passes with **0–148 B** logs (timeout-only, connection noise, no captured workflow output) | FAIL row; fix harness (E2E-086 headless log streaming) or extend timeout; re-run live |
+| 4 | **Audit-only sessions** | Agent ran but **zero product delta**: routing-only row 1 with no routing artifact; verify-only row 7; triad docs-only row 15; ship-readiness `NOT_MERGE_READY` still PASS | FAIL row — dirty tree with no commits = not certified product delivery |
+| 5 | **Install-skip on first certification** | `ROW_ALREADY_PASSED_SAME_INSTALL` or `evidence_present` reusing prior-round evidence when certifying host for the **first** time at an install fingerprint | Install-skip allowed **only after** the first strict-clean pair @ install version (§6a); first certification requires live invocations |
+| 6 | **Internal gates without parent live work** | Rows 21–22 passing on parent markers when parent rows 3/4 were not live strict-clean at current install fingerprint | Re-run parent rows 3/4 live; internal rows inherit parent evidence only from live strict-clean parents |
+
+**Cross-host contamination** (E2E-090): matrix rows executed on another host's fixture branch (e.g. Claude rows on `round-8-codex`) **disqualify the round** — reset fixture, verify `enterprise_e2e_assert_host_git_branch`, use per-host worktree.
+
+**Brownfield waiver (narrow):** Pre-existing artifact may count only when operator documents **file:line** evidence that the artifact existed before the row prompt and the row's contract explicitly allows verification-without-mutation. Default: **no waiver** — live authorship required.
+
+---
+
+## 5b. Required evidence gates (per row)
+
+Every row claimed **PASS** for certification must satisfy **all** gates:
+
+| Gate | Requirement |
+|------|-------------|
+| **Log size floor** | Row attempt log **> 2048 bytes** substantive workflow output, **or** explicit brownfield waiver in ledger with file:line pre-existence proof |
+| **Live strict-clean only** | Row invoked via live matrix driver (`SB_ENTERPRISE_E2E_LIVE=1`) at current install fingerprint — not rescore-only, not dry-run, not monitor replay |
+| **Product delta** | **Committed delta** on fixture branch (`git log` shows row-session commit) **or** documented brownfield waiver — uncommitted dirty tree alone is insufficient |
+| **Host-agent authorship** | Outcome checklist attests **host-agent** (`cursor-agent`, Codex TUI, Claude TUI) authored the deliverable — operator parent routing-only does not satisfy implement rows |
+| **Outcome PASS** | `enterprise_e2e_outcome_row_passes` with no `partial` on blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`) |
+| **Ship-readiness match** | Row 16 verdict aligns with merge-readiness state — `NOT_MERGE_READY` → row FAIL |
+
+Ledger template columns must record: `log_bytes`, `live_invoke` (yes/no), `commit_sha` (or `brownfield_waiver`), `host_agent_attestation`.
+
+---
+
 ## 6. Scorer / rescore policy
 
 | Event | Action |
 |-------|--------|
-| **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log |
-| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then rescore — does **not** bypass install-version registry |
+| **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log — **diagnostic**; certification credit requires live strict-clean (§5a) |
+| **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then **live rerun** — rescore alone does **not** bypass install-version registry or grant certification credit |
 | **Full re-run same install** | `SB_E2E_MATRIX_FORCE_ALL=1` overrides `.row-pass-registry.json` skip |
-| **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until rescore passes or issue filed |
+| **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until **live rerun** passes or issue filed — rescoring FAIL→PASS without live rerun is **disqualifying** (E2E-089) |
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
+| **Rescore-only 22/22** | **Not strict-clean** — Cursor-1 retry2 produced rescored 21–22/22 without live agent work on several rows; void for release sign-off |
+
+**Certification rule:** Only **live matrix invocations** at the current install fingerprint count toward strict-clean and consecutive-round pairs. Rescore may reconcile harness bugs but never substitutes for a missing live session.
 
 Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md) before scoring. All **27 criteria** + blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`).
 
@@ -197,8 +256,8 @@ Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
 
 | Message | Class | Counts toward 22/22? | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` |
 |---------|-------|----------------------|--------------------------------|
-| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) | **Allowed** — does not fail |
-| `SKIP: evidence already present` | Evidence reuse | No (SKIP) | **Fails** when set |
+| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) after first strict-clean pair @ `install_fp` | **Disqualifying on first host certification** @ install_fp (§5a #5) |
+| `SKIP: evidence already present` | Evidence reuse | No (SKIP) | **Fails** when set — never certification credit |
 
 | Override | Effect |
 |----------|--------|
@@ -234,9 +293,13 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 | Drivers per host | **1** — no parallel matrix operators |
 | `SB_E2E_MONITOR_AUTO_RESTART` | **0** |
 | Healthy driver | Do not kill **< 45 min** unless confirmed stuck/dead |
-| Watchers | Prefer **durable daemon** (`run-enterprise-e2e-matrix.sh` / tmux batch) — not agent-shell poll loops as primary driver |
-| Parent orchestrator | One `composer-2.5` background worker; resume same worker ID |
+| Watchers | Prefer **tmux** durable daemon (`run-enterprise-e2e-matrix.sh` / tmux batch) — **not** `nohup` background shells as primary driver |
+| Parent orchestrator | One **`composer-2.5`** background worker (`Task` tool); **never** `composer-2.5-fast` for subagents; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
+| **ENOTFOUND / network** | Exponential backoff on poll — transient DNS failures are not auth failures |
+| **Stdout buffering** | Cursor headless logs may show **0 B for ~30 min** while agent is working — buffering is normal but **does not** satisfy §5b log floor; wait or fix E2E-086 streaming |
+| **Cursor auth** | Keychain / interactive Cursor auth — **not** `CURSOR_API_KEY` for live matrix drivers |
+| **Per-row timeouts** | Row **8** (`silver-refactor`): `SB_E2E_ROW8_TIMEOUT=3600`; row **11** (`silver-devops`): `SB_E2E_ROW11_TIMEOUT=5400` (E2E-087) |
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
 
@@ -251,8 +314,10 @@ When Claude Round 6, Codex, and Cursor run in parallel:
 3. **Separate locks** — `.e2e-live-test.lock` (Claude), `.e2e-live-test-codex.lock`, `.e2e-live-test-cursor.lock`.
 4. **Never** `pkill` another host's monitor/driver PIDs.
 5. **Never** remove another host's lock unless that host's driver PID is confirmed dead.
-6. **Cursor worktree** when shared clone is dirty on another branch ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
+6. **Cursor worktree** when shared clone is dirty on another branch — `enterprise-grade-test-app-cursor` @ `enterprise-e2e/round-N-cursor` ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
 7. **Single workspace per host** for SB fixes — test app is matrix CWD only.
+8. **Branch guard:** `enterprise_e2e_assert_host_git_branch` in `matrix.sh` / `live-test.sh` — matrix aborts on SB harness branch mismatch.
+9. **Cross-host contamination** on shared clone (Codex batch on Cursor branch, wrong `test_app_git_branch`) **voids the round** — reset fixture, verify worktree isolation (E2E-090).
 
 ---
 
@@ -304,6 +369,24 @@ SKIP: row N already pass @ install <version>
 
 **Cross-round skip:** `matrix.sh` consults `ROUND-CURSOR-*-LEDGER.md` + pass registry; if Cursor-1 row Pass and ledger SB SHA matches current install key, Cursor-2 skips that row.
 
+**First certification @ install_fp:** Single-pass skip applies **only after** the host has completed at least one **live strict-clean** round at that install fingerprint. Prior rescored or inherited-evidence passes do not seed the registry for first certification.
+
+---
+
+## 11a. Cursor E2E harness fixes (E2E-086 – E2E-090)
+
+Operators must understand these fixes — misreading them caused false PASS claims in Cursor-1/Cursor-2:
+
+| ID | Issue | Fix | Operator implication |
+|----|-------|-----|----------------------|
+| **E2E-086** | Cursor row logs stayed 0 B — `cursor-agent --print` ignored log file | `tests/live/agents/cursor/agent.sh` headless log streaming | 0 B logs → FAIL until streaming fix verified; check log bytes in §5b |
+| **E2E-087** | Rows 2/3/5/8/11 hit 900s timeout | Default 1800s; rows **8→3600s**, **11→5400s** in `matrix.sh` | Extend before declaring timeout FAIL on long workflows |
+| **E2E-088** | Outcome rubric false fails (handoff, super, KM, measure) | Scorer updates @ `8feda5fc`+ | Evidence PASS + outcome FAIL → fix harness, then **live rerun** |
+| **E2E-089** | Rescore flipped rows to PASS without live agent work | Log resolver + scorer fixes — **rescore ≠ strict-clean** | Rescored 22/22 without live sessions is **void** for release |
+| **E2E-090** | Parallel hosts shared one test-app checkout | `hosts.json` per-host `test_app_git_branch` + worktree | Always use host worktree; wrong branch **disqualifies round** |
+| **E2E-091** | Row 1 `OUT-CLARIFY-01` false fail on routing-only sessions | `enterprise_e2e_outcome_score_clarify` returns `n/a` when routing evidence present | Routing-only row 1 without clarify is **not** a blocking fail |
+| **E2E-092** | Row 6 timeout @ 900s when tmux/shell inherited legacy timeout | `matrix.sh` enforces cursor ≥1800s; `cursor3-real-driver.sh` exports timeout env | Use driver or export `CLAUDE_INTERACTIVE_TIMEOUT=1800` before matrix |
+
 ---
 
 ## Appendix A — Codex-1 status (do not re-duplicate harness work)
@@ -339,3 +422,35 @@ SB_E2E_LIVE_RUNTIME="$SB_E2E_LIVE_RUNTIME" bash tests/e2e-live/hook-delivery-pre
 bash scripts/run-enterprise-e2e-live-test.sh --host "$SB_E2E_LIVE_RUNTIME" --preflight-only
 SB_E2E_MATRIX_DRY_RUN=1 bash scripts/run-enterprise-e2e-matrix.sh
 ```
+
+---
+
+## Appendix C — Anti-faking checklist (operator paste)
+
+Before marking any row PASS in a ledger:
+
+- [ ] Log file **> 2048 B** (or brownfield waiver with file:line)
+- [ ] Live invoke (`SB_ENTERPRISE_E2E_LIVE=1`) at current `install_fp` — not rescore-only
+- [ ] Fixture **commit SHA** on host branch (or documented brownfield waiver)
+- [ ] `enterprise_e2e_outcome_row_passes` — no blocking gate partial
+- [ ] Row 16: ship-readiness state matches outcome (not `NOT_MERGE_READY` + PASS)
+- [ ] Rows 21–22: parent rows 3/4 live strict-clean @ same `install_fp`
+- [ ] Test-app branch = `enterprise-e2e/round-N-{host}` via worktree — not shared clone contamination
+- [ ] Host-agent authorship attested — not operator-only routing for implement rows
+
+---
+
+## Appendix D — Cursor track lessons (Rounds Cursor-1/2 — void patterns)
+
+Documented **disqualifying patterns** from Cursor E2E sessions — do not repeat:
+
+| Pattern | Example | Verdict |
+|---------|---------|---------|
+| Inherited baseline PASS | Rows passing on `8482e60` artifacts without live session | **Void** |
+| Rescore-only 22/22 | E2E-089 retry2 rescored evidence without live reruns | **Not strict-clean** |
+| 148 B timeout PASS | Row 4 `silver-bugfix` PASS with 148 B + timeout | **Void** — §5a #3 |
+| Install-skip first cert | Cursor-2 rows 2–6, 9–14, 17–20 `evidence_present` skip on first Cursor-2 @ new install | **Void** unless Cursor-1 was live strict-clean @ same `install_fp` |
+| Audit-only row 7 | Verify-only with no product mutation | **Not certified delivery** |
+| Wrong fixture branch | R8 Claude rows on `round-8-codex` instead of `round-8-claude` | **Round disqualified** |
+
+**Real certification** (Cursor-3+): reset fixture to baseline SHA, T0 → T1 live row 1 → T2 smoke or one full workflow row with **committed delta**, ledger per [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md).
