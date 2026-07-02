@@ -406,3 +406,29 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **§5b** | ON for rows 14,16,19; exempt 1,15,21,22 |
 | **Fail targets** | 14 OUT-RELEASE-01 partial; 15 OUT-REVIEW-01+OUT-RELEASE-01; 16 OUT-RELEASE-01; 19 OUT-FORENS-01 partial |
 | **Rows 21–22** | Internal PASS (frozen from rows 3/4) — verify on rescore |
+
+### Poll checkpoint 2026-07-02T21:51:09Z (force141619 exit @ dead1460)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen 18 PASS @ `e4e8f814`; FORCE **14,15,16,19** live |
+| **Driver** | EXITED PID **6768** |
+| **Rescore** | **19/22** — [.codex-r3-force141619-rescore.log](./.codex-r3-force141619-rescore.log) |
+| **Phase C** | **BLOCKED** — 19/22 |
+
+### Poll checkpoint 2026-07-02T22:08:44Z (force1416 exit @ 132b29e3)
+
+| Field | Value |
+|-------|-------|
+| **Policy** | One pass — frozen **19 PASS** @ force141619; FORCE **14,15,16** live |
+| **Driver** | EXITED PID **89880** |
+| **Rescore** | **19/22** — [.codex-r3-force1416-rescore.log](./.codex-r3-force1416-rescore.log) |
+| **Phase C** | **BLOCKED** — 19/22 |
+
+### Poll checkpoint 2026-07-03T08:12Z (force1416 SIGTERM 98417 investigation + relaunch)
+
+| Field | Value |
+|-------|-------|
+| **SIGTERM 98417** | External kill mid row 14 @ `132b29e3` — matrix child SIGTERM (not codex idle/quiet timeout; ~12m < 900s workflow quiet). Same class as **52051**: parent/tmux abort, not matrix self-kill |
+| **Harness fix** | `codex-r3-force1416-launch.sh` — refuse `tmux kill-session` when `enterprise_e2e_matrix_batch_running` unless `SB_E2E_LAUNCH_FORCE=1`; prune stale driver.pid |
+| **Remediation** | stale locks cleared; fixture @ `3ca685f`; frozen 19 rows @ force141619 rescore; relaunch rows **14,15,16** |
