@@ -208,7 +208,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 ## Workflow matrix (22 rows)
 
-*In progress — 16/22 rows PASS; rows 15–22 pending.*
+*In progress — 14/22 rows PASS; rows 15–22 pending.*
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
@@ -276,7 +276,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T2 batch 2 (2,4,5,9,10) | **PASS** — 5/5 @E2E-096 |
 | T2 batches 3–6 (11–22) | pending |
 | Phase A ladder | **PASS** 8/8 @668a9f13 |
-| Full matrix 22/22 | pending (16/22 PASS) |
+| Full matrix 22/22 | pending (14/22 PASS) |
 | Phase C | pending |
 
 **Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10; [`922f9ba`](https://github.com/alo-exp/enterprise-grade-test-app/commit/922f9ba) row 11; [`06d2738`](https://github.com/alo-exp/enterprise-grade-test-app/commit/06d2738) row 12; [`76b2fc2`](https://github.com/alo-exp/enterprise-grade-test-app/commit/76b2fc2) row 13; [`d17d950`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d17d950) row 14. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
