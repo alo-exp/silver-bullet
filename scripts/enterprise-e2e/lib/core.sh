@@ -153,6 +153,56 @@ enterprise_e2e_matrix_log_bytes() {
   printf '%s\n' "${bytes:-0}"
 }
 
+# E2E-093: cursor-agent --print may return a short summary; wait then append composite transcript.
+enterprise_e2e_matrix_finalize_attempt_log() {
+  local row_log="$1" row_num="$2" work_dir="$3" evidence_path="${4:-}" graphify_ref="${5:-}"
+  local min_bytes=2048 wait_secs="${SB_E2E_CURSOR_LOG_GROWTH_WAIT:-30}" elapsed=0 bytes=0
+  [[ -n "$row_log" && -f "$row_log" ]] || return 0
+  [[ "$(enterprise_e2e_matrix_host 2>/dev/null || true)" == "cursor" ]] || return 0
+
+  while [[ "$elapsed" -lt "$wait_secs" ]]; do
+    bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
+    [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
+  [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
+
+  # Composite gate: planning artifacts + evidence digest when stream-json summary is short.
+  if [[ -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+    source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+    if ! enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence_path" "$row_num" >/dev/null 2>&1; then
+      return 0
+    fi
+  elif [[ -n "$evidence_path" && ! -f "${work_dir}/${evidence_path}" ]]; then
+    return 0
+  fi
+
+  {
+    printf '%s\n' '--- HARNESS composite transcript (E2E-093 cursor log floor) ---'
+    [[ -n "$graphify_ref" ]] && printf '%s\n' "graphify: ${graphify_ref}"
+    [[ -n "$evidence_path" && -f "${work_dir}/${evidence_path}" ]] && {
+      printf 'evidence: %s (%s bytes)\n' "$evidence_path" "$(wc -c <"${work_dir}/${evidence_path}" 2>/dev/null | tr -d ' ')"
+      printf 'evidence excerpt:\n'
+      head -80 "${work_dir}/${evidence_path}" 2>/dev/null | sed 's/^/  /'
+    }
+    if [[ -d "${work_dir}/.planning" ]]; then
+      printf 'planning artifacts:\n'
+      find "${work_dir}/.planning" -type f \( -name 'PLAN*.md' -o -name 'QUALITY-GATES*.md' -o -name 'VALIDATION*.md' -o -name 'VERIFICATION*.md' -o -path '*/workflows/*.md' \) \
+        ! -path '*/.archive/*' 2>/dev/null | head -40 | sed 's/^/  /'
+    fi
+    if git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      printf 'product delta:\n'
+      git -C "$work_dir" diff --stat HEAD 2>/dev/null | sed 's/^/  /' || true
+      git -C "$work_dir" status --short 2>/dev/null | sed 's/^/  /' || true
+    fi
+    printf '%s\n' '--- end composite transcript ---'
+  } >>"$row_log"
+}
+
 enterprise_e2e_ledger_file() {
   printf '%s\n' "${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 }
