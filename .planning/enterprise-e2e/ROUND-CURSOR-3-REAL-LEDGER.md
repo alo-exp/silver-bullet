@@ -208,7 +208,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 
 ## Workflow matrix (22 rows)
 
-*In progress — 15/22 rows PASS; rows 14–22 pending.*
+*In progress — 16/22 rows PASS; rows 15–22 pending.*
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
@@ -225,6 +225,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | 11 | `silver-devops` | **PASS** | 669649 | `922f9ba` | batch3 live; 19-flow devops-cycle; terraform validate+plan |
 | 12 | `silver-deploy` | **PASS** | 829084 | `06d2738` | batch3 live; deploy-cycle; docs/DEPLOY.md |
 | 13 | `silver-canary` | **PASS** | 1001575 | `76b2fc2` | batch3 live; canary-cycle; docs/CANARY.md |
+| 14 | `silver-release` | **PASS** | 646604 | `d17d950` | E2E-097 rescored; v0.2.0 CHANGELOG + GitHub release |
 
 ---
 
@@ -259,6 +260,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | **E2E-094** | Row 6 `OUT-ORCH-01` session fail after live retry | **fixed** — fast-path n/a when evidence present |
 | **E2E-095** | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` (row 2 initial 0 B) | **fixed** — drivers export `FORCE` + `FORCE_ALL` |
 | **E2E-096** | Row 10 outcome FAIL — negated "operator pauses" + prompt SB OVERRIDE instruction false positives | **fixed** — babysitting exclusion + `SB OVERRIDE:` detector |
+| **E2E-097** | Row 14 OUT-RELEASE-01 partial — silver-release lacks ship-readiness dir | **fixed** — row 14 uses CHANGELOG + release phase SHIP |
 
 ---
 
@@ -274,7 +276,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T2 batch 2 (2,4,5,9,10) | **PASS** — 5/5 @E2E-096 |
 | T2 batches 3–6 (11–22) | pending |
 | Phase A ladder | **PASS** 8/8 @668a9f13 |
-| Full matrix 22/22 | pending (15/22 PASS) |
+| Full matrix 22/22 | pending (16/22 PASS) |
 | Phase C | pending |
 
-**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10; [`922f9ba`](https://github.com/alo-exp/enterprise-grade-test-app/commit/922f9ba) row 11; [`06d2738`](https://github.com/alo-exp/enterprise-grade-test-app/commit/06d2738) row 12; [`76b2fc2`](https://github.com/alo-exp/enterprise-grade-test-app/commit/76b2fc2) row 13. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
+**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10; [`922f9ba`](https://github.com/alo-exp/enterprise-grade-test-app/commit/922f9ba) row 11; [`06d2738`](https://github.com/alo-exp/enterprise-grade-test-app/commit/06d2738) row 12; [`76b2fc2`](https://github.com/alo-exp/enterprise-grade-test-app/commit/76b2fc2) row 13; [`d17d950`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d17d950) row 14. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
