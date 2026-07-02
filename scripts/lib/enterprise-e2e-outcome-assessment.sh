@@ -1187,7 +1187,7 @@ enterprise_e2e_outcome_assess_round() {
   local ledger_file="$1"
   local sb_root work_dir
   sb_root="$(enterprise_e2e_outcome_repo_root)"
-  work_dir="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+  work_dir="${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "$(enterprise_e2e_outcome_repo_root)/../.." && pwd)/enterprise-grade-test-app}"
   enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$work_dir" "${SB_RUNTIME_STATE_DIR:-/tmp}" "" "" "$ledger_file"
   printf 'OUT-MEASURE-01 %s\n' "$(enterprise_e2e_outcome_score_measure "$ledger_file" "$sb_root")"
   printf 'OUT-KM-01 %s\n' "$(enterprise_e2e_outcome_score_km "$ledger_file" "0")"
@@ -1196,7 +1196,7 @@ enterprise_e2e_outcome_assess_round() {
 # Write per-workflow checklist markdown (workflow scope)
 enterprise_e2e_outcome_write_workflow_checklist() {
   local row_num="$1" out_file="$2" work_dir="${3:-}" state_dir="${4:-}" row_log="${5:-}" ledger="${6:-}" evidence="${7:-}"
-  work_dir="${work_dir:-${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}}"
+  work_dir="${work_dir:-${SB_TEST_ENTERPRISE_APP_ROOT:-$(cd "$(enterprise_e2e_outcome_repo_root)/../.." && pwd)/enterprise-grade-test-app}}"
   state_dir="${state_dir:-${SB_RUNTIME_STATE_DIR:-/tmp}}"
   mkdir -p "$(dirname "$out_file")"
   {
