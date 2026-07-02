@@ -224,6 +224,7 @@ Minimum **2 consecutive clean rounds**:
 3. **`bash tests/run-all-tests.sh`** → 0 failures
 4. **`graphify update .`** in SB repo post-fixes
 5. No open MUST-FIX issues
+Harness (optional): `SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host <claude|codex|cursor>` enforces **2/2** strict-clean PASS from the host gate file pair.
 
 ---
 

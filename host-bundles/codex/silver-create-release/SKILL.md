@@ -28,7 +28,7 @@ Shell execution is limited to:
 - `git tag -l` (list tags)
 - `git tag` (create tag)
 - `git tag -s` (create signed tag)
-- `git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json` (stage release doc + marketplace updates — Step 5c)
+- `git add CHANGELOG.md README.md host plugin manifest/marketplace.json plugins/silver-bullet/host plugin manifest/plugin.json` (stage release doc + marketplace updates — Step 5c)
 - `git commit` (commit CHANGELOG + badge updates — Step 5c)
 - `git push` (push tag or commits)
 - `git remote get-url origin` (detect GitHub repo — piped to `grep` for GitHub detection)
@@ -209,7 +209,7 @@ bash scripts/sync-release-marketplace-versions.sh "$VERSION"
 
 This step is required even if the marketplace version already appears to match. It makes the release process self-correcting and keeps both marketplace surfaces aligned with the tagged release.
 
-After the wrapper runs, every marketplace manifest updated by `scripts/sync-release-marketplace-versions.sh` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
+After the wrapper runs, the version in `host plugin manifest/marketplace.json` must match `host plugin manifest/plugin.json`, the version in `plugins/silver-bullet/host plugin manifest/plugin.json` must match `$VERSION`, and both upstream marketplace repos must have the same version committed and pushed.
 
 ---
 
@@ -218,7 +218,7 @@ After the wrapper runs, every marketplace manifest updated by `scripts/sync-rele
 Commit the CHANGELOG, README, and marketplace manifest changes before creating the tag:
 
 ```bash
-git add CHANGELOG.md README.md .claude-plugin/marketplace.json plugins/silver-bullet/.codex-plugin/plugin.json
+git add CHANGELOG.md README.md host plugin manifest/marketplace.json plugins/silver-bullet/host plugin manifest/plugin.json
 git commit -m "chore(release): update CHANGELOG, README badge, and marketplaces for <version>"
 git push
 ```

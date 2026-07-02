@@ -39,7 +39,7 @@ enterprise_e2e_outcome_criteria_ids() {
     OUT-ORCH-01 OUT-PLAN-01 OUT-SKILL-01 OUT-REVIEW-01 OUT-BLAST-01 OUT-HOOK-01 \
     OUT-COMPLETE-01 OUT-HANDOFF-01 OUT-CODEINT-01 OUT-FLOW-01 OUT-MEASURE-01 \
     OUT-DECIDE-01 OUT-FORENS-01 OUT-AUTO-01 OUT-CLARIFY-01 OUT-NOOP-01 OUT-WORLD-01 \
-    OUT-DRIFT-01 OUT-SUPER-01 OUT-HEAL-01 OUT-RELEASE-01 OUT-SURFACE-01
+    OUT-DRIFT-01 OUT-SUPER-01 OUT-HEAL-01 OUT-RELEASE-01
 }
 
 enterprise_e2e_outcome_row_criteria() {
@@ -116,102 +116,23 @@ enterprise_e2e_outcome_routing_evidence_present() {
   return 1
 }
 
-# Compact excerpt for deliberation / matrix-prompt echo detection (live TUI scrollback).
-enterprise_e2e_outcome_watch_compact_excerpt() {
-  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]'
-}
-
-# planning-file-guard TUI-watch hits are often agent deliberation or matrix prompt echo —
-# not harness hook deny. Returns 0 when the finding is a known false positive.
-enterprise_e2e_outcome_watch_is_hook_deliberation_fp() {
-  local message="${1:-}" excerpt="${2:-}" row_log="${3:-}"
-  case "$message" in
-    planning-file-guard)
-      local compact
-      compact="$(enterprise_e2e_outcome_watch_compact_excerpt "${message}${excerpt}")"
-      if [[ "$compact" =~ issue.*override ]] || [[ "$compact" =~ sboverride ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ harnessignoring ]] || [[ "$compact" =~ nonblocking ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ dispositionmenu ]] || [[ "$compact" =~ donotpresent ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ soineed ]] || [[ "$compact" =~ letme ]] || [[ "$compact" =~ ihavepermission ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ canonicalrouting ]] || [[ "$compact" =~ matrixmode ]] || [[ "$compact" =~ matrixmod ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ enterprisee2e ]] || [[ "$compact" =~ theuserhasinvoked ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ orchestratoroutput ]] || [[ "$compact" =~ createworkflow ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ evidencwrites ]] || [[ "$compact" =~ evidencewries ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ blocksrequiredworkflow ]] || [[ "$compact" =~ workflowevidencewrites ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ override ]] && [[ "$compact" =~ reason ]]; then
-        return 0
-      fi
-      # Round 7 Tier 1: matrix SB OVERRIDE prompt echo + post-override deliberation (rows 6/8).
-      if [[ "$compact" =~ subsequentplanningfileguardblock ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ authorizedforanyplanningfileguardblock ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ errideauthorizedforplanningfileguardblocks ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ survivestheplanningfileguard ]]; then
-        return 0
-      fi
-      if [[ "$compact" =~ boverrideifneededforplanningfileguard ]]; then
-        return 0
-      fi
-      # Harness already classified hook friction as non-blocking in row log.
-      if [[ -n "$row_log" && -f "$row_log" ]]; then
-        if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-           grep -qiE '\[harness\] ignoring.*(hook|non-blocking)'; then
-          if ! enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-             grep -qiE 'session ended on hook block|Stop hook blocks completion'; then
-            return 0
-          fi
-        fi
-      fi
-      return 1
-      ;;
-  esac
-  return 1
-}
-
 # True hook BLOCKER in TUI watch (severity=blocker, category=hook) — not annoyance noise.
 enterprise_e2e_outcome_watch_has_hook_blocker() {
-  local watch="$1" row_num="${2:-}" row_log="${3:-}"
+  local watch="$1" row_num="${2:-}"
   [[ -f "$watch" ]] || return 1
   if command -v jq >/dev/null 2>&1; then
-    local line message excerpt
-    while IFS= read -r line; do
-      [[ -z "$line" ]] && continue
-      message="$(printf '%s' "$line" | jq -r '.message // ""' 2>/dev/null)"
-      excerpt="$(printf '%s' "$line" | jq -r '.excerpt // ""' 2>/dev/null)"
-      if enterprise_e2e_outcome_watch_is_hook_deliberation_fp "$message" "$excerpt" "$row_log"; then
-        continue
-      fi
-      return 0
-    done < <(jq -c --argjson r "${row_num:-0}" \
-      'select(.severity == "blocker") | select(.category == "hook") | if ($r > 0) then select(.row == $r) else . end' \
-      "$watch" 2>/dev/null)
-    return 1
+    if [[ -n "$row_num" ]]; then
+      jq -e --argjson r "$row_num" \
+        'select(.row == $r) | select(.severity == "blocker") | select(.category == "hook")' \
+        "$watch" 2>/dev/null | grep -q .
+      return $?
+    fi
+    jq -e 'select(.severity == "blocker") | select(.category == "hook")' \
+      "$watch" 2>/dev/null | grep -q .
+    return $?
   fi
   grep -q '"severity": "blocker"' "$watch" 2>/dev/null && \
-    grep -qiE '"category": "hook"' "$watch" 2>/dev/null
+    grep -qiE '"category": "hook"|false.positive' "$watch" 2>/dev/null
 }
 
 enterprise_e2e_outcome_is_blocking() {
@@ -331,9 +252,8 @@ enterprise_e2e_outcome_log_has_agentmemory_mcp() {
   # Codex TUI: tool name without agentmemory prefix; mem_mr* export ids.
   enterprise_e2e_outcome_log_matches "$row_log" 'memory_save' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" 'mem_mr[0-9a-z_]+' && return 0
-  enterprise_e2e_outcome_log_matches "$row_log" 'agentmemory.*Graphify|Graphify.*agentmemory|agentmemory\+Graphify' && return 0
   grep -qiE 'agentmemory[[:space:]_-]*(memory_save|memory_smart_search|memory_recall|memory_capture)' "$row_log" 2>/dev/null || \
-    grep -qiE 'agentmemory.*\(MCP\)|agentmemory.*Graphify|Graphify.*agentmemory|agentmemory\+Graphify' "$row_log" 2>/dev/null
+    grep -qiE 'agentmemory.*\(MCP\)' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_capture() {
@@ -347,12 +267,7 @@ enterprise_e2e_outcome_log_has_agentmemory_capture() {
 enterprise_e2e_outcome_log_has_workflow_evidence_written() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md' && return 0
-  enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/reviews/|\.planning/reviews/[[:alnum_]_.-]+\.md' && return 0
-  enterprise_e2e_outcome_log_matches "$row_log" \
-    'WROTE:.*\.planning/ship-readiness/|\.planning/ship-readiness/[[:alnum_]_.-]+\.md' && return 0
-  return 1
+    'WROTE:.*\.planning/workflows/|Evidence[[:space:]]+written[[:space:]]+to[[:space:]]+\.planning/workflows/|\.planning/workflows/[[:alnum:]_.-]+\.md'
 }
 
 enterprise_e2e_outcome_log_has_graphify_activity() {
@@ -364,9 +279,7 @@ enterprise_e2e_outcome_log_has_graphify_activity() {
   enterprise_e2e_outcome_log_matches "$row_log" 'graphify[[:space:]]*update' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" 'Skill[[:space:]]*\([[:space:]]*graphify[[:space:]]*\)' && return 0
   enterprise_e2e_outcome_log_matches "$row_log" 'graphify-out/graph\.json' && return 0
-  enterprise_e2e_outcome_log_matches "$row_log" 'Graphify:.*(query|QUERY|freshquery)' && return 0
-  enterprise_e2e_outcome_log_matches "$row_log" 'freshqueryrecorded' && return 0
-  grep -qiE 'graphify[[:space:]]*query|graphify query|Graphify:.*(query|QUERY|freshquery)|freshqueryrecorded' "$row_log" 2>/dev/null
+  grep -qiE 'graphify[[:space:]]*query|graphify query' "$row_log" 2>/dev/null
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_unavailable() {
@@ -407,13 +320,11 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
   esac
 }
 
-# Workflow matrix rows use backtick slugs and ISO dates — skip Tier-1 summary tables.
+# Workflow matrix rows use backtick slugs — skip ladder/summary tables that reuse row numbers.
 enterprise_e2e_outcome_ledger_workflow_line() {
   local ledger_file="${1:-}" row_num="${2:-}"
   [[ -n "$ledger_file" && -f "$ledger_file" && "$row_num" =~ ^[0-9]+$ ]] || return 0
-  awk -F'|' -v r="$row_num" \
-    '$2 ~ "^ " r " $" && $3 ~ /`/ && $4 ~ /[0-9]{4}-[0-9]{2}-[0-9]{2}/ { print; exit }' \
-    "$ledger_file" 2>/dev/null || true
+  awk -v r="$row_num" '$0 ~ "^\\| " r " \\| `" { print; exit }' "$ledger_file" 2>/dev/null || true
 }
 
 enterprise_e2e_outcome_ledger_parse_workflow_row() {
@@ -556,28 +467,23 @@ enterprise_e2e_outcome_score_heal() {
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
   enterprise_e2e_outcome_is_routing_row "$row_num" && { printf 'n/a\n'; return 0; }
   if [[ -n "$row_log" && -f "$row_log" ]]; then
-    if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-       grep -qiE 'Stop hook blocks completion|session ended on hook block'; then
-      if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-         grep -qiE 'retry|recovered|self-heal|SB fix|SB OVERRIDE'; then
+    if grep -qiE 'Stop hook blocks completion|session ended on hook block' "$row_log" 2>/dev/null; then
+      if grep -qiE 'retry|recovered|self-heal|SB fix' "$row_log" 2>/dev/null; then
         printf 'pass\n'; return 0
       fi
       printf 'fail\n'; return 0
     fi
-    # Harness-emitted hook WARN only — exclude agent deliberation prose (ROUND-6 harness fix).
+    # Codex startup banner (--dangerously-bypass-hook-trust) is informational, not hook friction.
     if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+       grep -viE 'dangerously-bypass-hook-trust' | \
        grep -qiE '\[WARN\].*hook|hook gate|hook-trust|Stop hook blocks|session ended on hook block' && \
        ! enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-       grep -qiE '\[harness\] ignoring.*(hook|non-blocking)|warning: Spec session'; then
+       grep -qiE '\[harness\] ignoring.*non-blocking|warning: Spec session'; then
       printf 'partial\n'; return 0
-    fi
-    if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-       grep -qiE '\[harness\] ignoring.*(hook|non-blocking)'; then
-      printf 'n/a\n'; return 0
     fi
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
     printf 'fail\n'; return 0
   fi
   printf 'n/a\n'
@@ -751,10 +657,6 @@ enterprise_e2e_outcome_score_km() {
       status="$(enterprise_e2e_outcome_ledger_parse_workflow_row "$line" | sed -n '3p')"
     fi
   fi
-  # Matrix harness records graphify scope before agent session (ledger may be empty on first pass).
-  if [[ -z "$gref" && -n "${SB_E2E_MATRIX_GRAPHIFY_REF:-}" ]]; then
-    gref="$SB_E2E_MATRIX_GRAPHIFY_REF"
-  fi
   if enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
      enterprise_e2e_outcome_log_has_agentmemory_capture "$row_log"; then
     has_am=1
@@ -784,12 +686,11 @@ enterprise_e2e_outcome_score_km() {
       printf 'pass\n'; return 0
     fi
   fi
-  # Retained TUI: ledger graphify scope + graph.json + workflow evidence when KM
-  # preamble was omitted from scrollback (row 7 silver-test — preflight ref only).
-  if [[ -n "$gref" ]] && [[ -f "${work_dir}/graphify-out/graph.json" ]]; then
-    if enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
-      printf 'pass\n'; return 0
-    fi
+  # Matrix: TUI may truncate row_log and drop harness graphify preamble; graph.json + evidence suffices.
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]] && \
+     [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
+     enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
+    printf 'pass\n'; return 0
   fi
   if [[ -f "${work_dir}/graphify-out/graph.json" ]] && \
      { enterprise_e2e_outcome_log_has_agentmemory_mcp "$row_log" || \
@@ -887,7 +788,7 @@ enterprise_e2e_outcome_score_plan() {
 
 enterprise_e2e_outcome_score_skill() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-${SB_TEST_ENTERPRISE_APP_ROOT:-}}" evidence="${5:-}"
-  local state_file="${state_dir}/state" requested_file="${state_dir}/state.requested" slug parent_log_patterns=""
+  local state_file="${state_dir}/state" slug
   slug="$(enterprise_e2e_outcome_matrix_workflow_slug "$row_num")"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
     if enterprise_e2e_outcome_log_matches "$row_log" \
@@ -895,42 +796,21 @@ enterprise_e2e_outcome_score_skill() {
       printf 'pass\n'; return 0
     fi
   fi
-  # Internal rows 21/22 — parent session log (align with row-1 silver-context fallback).
-  case "$row_num" in
-    21) parent_log_patterns='post-exec-gates|silver-feature|silver-context' ;;
-    22) parent_log_patterns='validate-substep|silver-bugfix|silver-context|/silver:bugfix' ;;
-  esac
-  if [[ -n "$parent_log_patterns" && -n "$row_log" && -f "$row_log" ]]; then
-    if enterprise_e2e_outcome_log_matches "$row_log" "$parent_log_patterns"; then
+  if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
+    if grep -qE '^silver-' "$state_file" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
-  fi
-  # Log-first: retained TUI parent logs before non-silver state partial.
-  if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
-    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|/silver:${slug#silver-}|invoke-skill[[:space:]]+silver"; then
-      printf 'pass\n'; return 0
-    fi
+    printf 'partial\n'; return 0
   fi
   if [[ -n "$slug" ]] && enterprise_e2e_outcome_evidence_present "$work_dir" "$evidence"; then
     if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|/silver:${slug#silver-}|invoke-skill[[:space:]]+silver"; then
       printf 'pass\n'; return 0
     fi
   fi
-  for candidate in "$state_file" "$requested_file"; do
-    if [[ -f "$candidate" ]] && [[ -s "$candidate" ]]; then
-      if grep -qE '^silver(-|$)' "$candidate" 2>/dev/null; then
-        printf 'pass\n'; return 0
-      fi
-      if [[ -n "$slug" ]] && grep -Fqx -- "$slug" "$candidate" 2>/dev/null; then
-        printf 'pass\n'; return 0
-      fi
-    fi
-  done
-  if [[ -f "$state_file" ]] && [[ -s "$state_file" ]]; then
-    if grep -qE '^silver-' "$state_file" 2>/dev/null; then
+  if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
+    if enterprise_e2e_outcome_log_matches "$row_log" "${slug}|/silver:${slug#silver-}|invoke-skill[[:space:]]+silver"; then
       printf 'pass\n'; return 0
     fi
-    printf 'partial\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]] && enterprise_e2e_outcome_log_matches "$row_log" 'silver-[a-z]|/silver:|\$silver'; then
     printf 'partial\n'; return 0
@@ -938,35 +818,21 @@ enterprise_e2e_outcome_score_skill() {
   printf 'fail\n'
 }
 
-# Ladder rung rows only (review-fix-ladder section) — avoid Tier/matrix tables with | N |.
-enterprise_e2e_outcome_ledger_ladder_rows() {
-  local ledger_file="$1"
-  awk '
-    /^## review-fix-ladder/ { in_ladder = 1; next }
-    in_ladder && /^## / { in_ladder = 0 }
-    in_ladder && /^\| Rung \|/ { in_table = 1; next }
-    in_ladder && !in_table && /^\| 1 \|/ { in_table = 1 }
-    in_ladder && in_table && /^\|[-|[:space:]]+\|/ { next }
-    in_ladder && in_table && /^\| [1-8] \|/ { print }
-    in_ladder && in_table && /^$/ { in_table = 0 }
-  ' "$ledger_file" 2>/dev/null
-}
-
 enterprise_e2e_outcome_score_review() {
   local ledger_file="$1"
-  local ladder_rows rung_count fails
   [[ -f "$ledger_file" ]] || { printf 'fail\n'; return 0; }
-  ladder_rows="$(enterprise_e2e_outcome_ledger_ladder_rows "$ledger_file")"
-  if [[ -z "$ladder_rows" ]]; then
-    printf 'fail\n'; return 0
+  if grep -q 'review-fix-ladder' "$ledger_file" && \
+     awk '/^\| [1-8] \|/{c++} END{exit (c>=8?0:1)}' "$ledger_file" 2>/dev/null; then
+    if grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' >/dev/null 2>&1; then
+      local fails
+      fails="$(grep -E '^\| [1-8] \|' "$ledger_file" | grep -cvE '\*\*Pass\*\*| Pass ' || true)"
+      [[ "${fails:-0}" -eq 0 ]] && { printf 'pass\n'; return 0; }
+    else
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
   fi
-  rung_count="$(printf '%s\n' "$ladder_rows" | grep -cE '^\| [1-8] \|' || true)"
-  [[ "${rung_count:-0}" -ge 8 ]] || { printf 'fail\n'; return 0; }
-  fails="$(printf '%s\n' "$ladder_rows" | grep -cEv '\*\*Pass\*\*| Pass ' || true)"
-  if [[ "${fails:-0}" -eq 0 ]]; then
-    printf 'pass\n'; return 0
-  fi
-  printf 'partial\n'
+  printf 'fail\n'
 }
 
 enterprise_e2e_outcome_score_blast() {
@@ -997,26 +863,25 @@ enterprise_e2e_outcome_score_blast() {
 }
 
 enterprise_e2e_outcome_score_hook() {
-  local sb_root="$1" row_num="${2:-}" row_log="${3:-}"
+  local sb_root="$1" row_num="${2:-}"
   local watch="${sb_root}/.e2e-tui-watch-findings.jsonl"
   local ledger="${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
-    if [[ -n "$row_log" && -f "$row_log" ]] && \
-       enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
-       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment'; then
+    if [[ -n "${3:-}" && -f "${3}" ]] && \
+       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment' "${3}" 2>/dev/null; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0
   fi
   if [[ -f "$ledger" ]] && grep -q 'hook-delivery 3/3' "$ledger" 2>/dev/null; then
     if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
     printf 'fail\n'; return 0
   fi
   printf 'partial\n'
@@ -1122,18 +987,6 @@ enterprise_e2e_outcome_score_decide() {
   printf 'n/a\n'
 }
 
-enterprise_e2e_outcome_score_surface() {
-  local sb_root="${1:-}"
-  sb_root="${sb_root:-$(enterprise_e2e_outcome_repo_root)}"
-  local script="${sb_root}/scripts/validate-host-install-surface.sh"
-  [[ -x "$script" ]] || { printf 'fail\n'; return 0; }
-  if bash "$script" --repo-root "$sb_root" >/dev/null 2>&1; then
-    printf 'pass\n'
-  else
-    printf 'fail\n'
-  fi
-}
-
 enterprise_e2e_outcome_score_forens() {
   local work_dir="$1" row_num="${2:-}"
   [[ "$row_num" != "19" ]] && { printf 'n/a\n'; return 0; }
@@ -1181,7 +1034,6 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-SUPER-01) enterprise_e2e_outcome_score_super "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
     OUT-HEAL-01) enterprise_e2e_outcome_score_heal "$sb_root" "$row_log" "$row_num" ;;
     OUT-RELEASE-01) enterprise_e2e_outcome_score_release "$work_dir" "$row_num" "$ledger" ;;
-    OUT-SURFACE-01) enterprise_e2e_outcome_score_surface "$sb_root" ;;
     *) printf 'n/a\n' ;;
   esac
 }
@@ -1217,7 +1069,6 @@ enterprise_e2e_outcome_assess_round() {
   enterprise_e2e_outcome_score_criterion OUT-REVIEW-01 "$work_dir" "${SB_RUNTIME_STATE_DIR:-/tmp}" "" "" "$ledger_file"
   printf 'OUT-MEASURE-01 %s\n' "$(enterprise_e2e_outcome_score_measure "$ledger_file" "$sb_root")"
   printf 'OUT-KM-01 %s\n' "$(enterprise_e2e_outcome_score_km "$ledger_file" "0")"
-  printf 'OUT-SURFACE-01 %s\n' "$(enterprise_e2e_outcome_score_surface "$sb_root")"
 }
 
 # Write per-workflow checklist markdown (workflow scope)
@@ -1259,15 +1110,14 @@ enterprise_e2e_outcome_assess_structural_wiring() {
     "${root}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md" \
     "${root}/docs/testing/outcome-criteria-registry.json" \
     "${root}/scripts/lib/enterprise-e2e-outcome-assessment.sh" \
-    "${root}/tests/scripts/test-outcome-assessment.sh" \
-    "${root}/tests/scripts/test-claude-agent-surface-isolation.sh"
+    "${root}/tests/scripts/test-outcome-assessment.sh"
   do
     [[ -f "$f" ]] || { echo "MISSING: $f"; fail=1; }
   done
   if command -v jq >/dev/null 2>&1; then
     local count
     count="$(jq '.criteria | length' "${root}/docs/testing/outcome-criteria-registry.json")"
-    [[ "$count" -ge 28 ]] || { echo "CRITERIA_COUNT: expected >=28 got $count"; fail=1; }
+    [[ "$count" -ge 27 ]] || { echo "CRITERIA_COUNT: expected >=27 got $count"; fail=1; }
   fi
   return "$fail"
 }

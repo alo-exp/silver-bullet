@@ -1,8 +1,5 @@
 # Enterprise E2E Shared Harness
 
-> **Canonical host certification methodology (share with all agents — do not fork):**  
-> [`docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) on **`main`**
-
 **Branch:** `enterprise-e2e/multi-host` (extends to `enterprise-e2e/harness-shared`)  
 **Canonical code:** [`scripts/enterprise-e2e/`](../../scripts/enterprise-e2e/)
 
@@ -63,7 +60,7 @@ export SB_E2E_LIVE_RUNTIME=codex   # or claude | cursor
 bash scripts/run-enterprise-e2e-live-test.sh --host cursor
 ```
 
-Defaults and artifact paths: [`config/hosts.json`](../../scripts/enterprise-e2e/config/hosts.json). Full env matrix: [HOST-CONFIG.md](./HOST-CONFIG.md) on host branches (`enterprise-e2e/codex`, `enterprise-e2e/cursor`, `enterprise-e2e/round6`).
+Defaults and artifact paths: [`config/hosts.json`](../../scripts/enterprise-e2e/config/hosts.json) and [HOST-CONFIG.md](./HOST-CONFIG.md).
 
 **Claude Round 6:** `legacy_paths: true` — unchanged `.e2e-live-test.lock`, `.e2e-matrix-live.log`, `.e2e-row{N}-attempt.log`.
 
@@ -73,8 +70,7 @@ Defaults and artifact paths: [`config/hosts.json`](../../scripts/enterprise-e2e/
 
 | Doc | Audience |
 |-----|----------|
-| [**HOST-CERTIFICATION-METHODOLOGY**](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) | **All hosts** — Tier A/B/C gates, fixture isolation, rescore (canonical on `main`) |
-| [HOST-CONFIG.md](./HOST-CONFIG.md) | Env matrix all hosts (host branches) |
+| [HOST-CONFIG.md](./HOST-CONFIG.md) | Env matrix all hosts |
 | [OPERATIONAL-ADDENDUM.md](./OPERATIONAL-ADDENDUM.md) | Cross-host ops (strict-clean, friction) |
 | [CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md](./CLAUDE-ROUND6-SHARED-HARNESS-ADDENDUM.md) | Active Claude R6 session only |
 | [CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md](./CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md) | Codex fresh session |
