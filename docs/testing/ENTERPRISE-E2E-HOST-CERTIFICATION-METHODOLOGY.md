@@ -373,9 +373,9 @@ SKIP: row N already pass @ install <version>
 
 ---
 
-## 11a. Cursor E2E harness fixes (E2E-086 – E2E-090)
+## 11a. Cursor E2E harness fixes (E2E-086 – E2E-100)
 
-Operators must understand these fixes — misreading them caused false PASS claims in Cursor-1/Cursor-2:
+Operators must understand these fixes — misreading them caused false PASS claims in Cursor-1/Cursor-2 (both **void**; see Appendix D):
 
 | ID | Issue | Fix | Operator implication |
 |----|-------|-----|----------------------|
@@ -388,6 +388,12 @@ Operators must understand these fixes — misreading them caused false PASS clai
 | **E2E-092** | Row 6 timeout @ 900s when tmux/shell inherited legacy timeout | `matrix.sh` enforces cursor ≥1800s; `cursor3-real-driver.sh` exports timeout env | Use driver or export `CLAUDE_INTERACTIVE_TIMEOUT=1800` before matrix |
 | **E2E-093** | §5b log floor (<2048 B) — cursor-agent `--print` summary-only + harness truncate | `agent.sh` preserves harness prefix, `stream-json` + `stdbuf`; `enterprise_e2e_matrix_finalize_attempt_log` composite transcript when evidence present | Short summary alone does **not** PASS §5b unless composite footer appended after evidence verify |
 | **E2E-094** | Row 6 `OUT-ORCH-01` false fail on silver-fast fast-path | `enterprise_e2e_outcome_score_orch` returns `n/a` when row 6 evidence + `silver-fast` state present | Fast-path rows do not require orchestrator parent/worker chain |
+| **E2E-095** | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` | `cursor3-real-driver.sh` + pipeline driver export `FORCE` + `FORCE_ALL` | First live FORCE on brownfield rows requires explicit force — inherited artifact alone is **not** strict-clean |
+| **E2E-096** | Row 10 autonomy scorer false-negative on negated "operator pauses" + prompt `SB OVERRIDE` instruction | Babysitting exclusion + `SB OVERRIDE:` colon-required detector in outcome scorer | Rescore on genuine live log OK; do not rerun row when product delta already committed |
+| **E2E-097** | Row 14 `OUT-RELEASE-01` partial — `silver-release` lacks ship-readiness dir | Row 14 uses CHANGELOG + release phase SHIP evidence path | Release workflow ≠ ship-readiness checklist row |
+| **E2E-098** | Row 14 `OUT-KM-01` partial — matrix graphify preamble without agentmemory MCP | Matrix graphify preamble + MCP-disabled env → pass | Matrix TUI often disables agentmemory MCP — graphify preamble satisfies KM gate |
+| **E2E-099** | Row 15 `OUT-RELEASE-01` partial on `review-triad` | `triad-currency.md` triad evidence path | Review-triad ≠ release workflow — triad artifact chain satisfies gate |
+| **E2E-100** | Rows 21–22 internal gates lack attempt logs (<2048 B) | `.cursor3-monitor-loop.sh` exempts internal harness rows | Internal rows verify via parent rows 3/4 markers — no standalone §5b log floor |
 
 ---
 
@@ -442,17 +448,20 @@ Before marking any row PASS in a ledger:
 
 ---
 
-## Appendix D — Cursor track lessons (Rounds Cursor-1/2 — void patterns)
+## Appendix D — Cursor track lessons (Rounds Cursor-1/2 — **void**; Cursor-3 REAL canonical)
 
-Documented **disqualifying patterns** from Cursor E2E sessions — do not repeat:
+**Policy (2026-07-03):** Rounds **Cursor-1** and **Cursor-2** are **void** for host certification and release sign-off. Their ledgers, rescored outcome files, install-skip rows, and inherited-evidence passes **must not** be cited as strict-clean certification. The **canonical honest Cursor certification** is **Round Cursor-3 REAL** — [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md) — **22/22 strict-clean** under §5a/§5b anti-faking methodology with harness fixes E2E-091–E2E-100.
+
+Documented **disqualifying patterns** from void Cursor-1/Cursor-2 sessions — do not repeat:
 
 | Pattern | Example | Verdict |
 |---------|---------|---------|
+| **Cursor-1/Cursor-2 round claims** | Any 22/22 or "strict-clean YES" on Cursor-1 or Cursor-2 ledgers | **Void** — superseded by Cursor-3 REAL |
 | Inherited baseline PASS | Rows passing on `8482e60` artifacts without live session | **Void** |
-| Rescore-only 22/22 | E2E-089 retry2 rescored evidence without live reruns | **Not strict-clean** |
+| Rescore-only 22/22 | E2E-089 retry2 rescored evidence without live reruns | **Not strict-clean** — **Void** for certification |
 | 148 B timeout PASS | Row 4 `silver-bugfix` PASS with 148 B + timeout | **Void** — §5a #3 |
-| Install-skip first cert | Cursor-2 rows 2–6, 9–14, 17–20 `evidence_present` skip on first Cursor-2 @ new install | **Void** unless Cursor-1 was live strict-clean @ same `install_fp` |
+| Install-skip first cert | Cursor-2 rows 2–6, 9–14, 17–20 `evidence_present` skip on first Cursor-2 @ new install | **Void** — install-skip without prior live strict-clean @ same `install_fp` |
 | Audit-only row 7 | Verify-only with no product mutation | **Not certified delivery** |
 | Wrong fixture branch | R8 Claude rows on `round-8-codex` instead of `round-8-claude` | **Round disqualified** |
 
-**Real certification** (Cursor-3+): reset fixture to baseline SHA, T0 → T1 live row 1 → T2 smoke or one full workflow row with **committed delta**, ledger per [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md).
+**Real certification** (Cursor-3+ only): reset fixture to baseline SHA on `enterprise-e2e/round-N-cursor`, T0 → T1 live row 1 → T2 smoke or one full workflow row with **committed delta**, live FORCE on brownfield rows (`SB_E2E_MATRIX_FORCE=1`), ledger per [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md). Harness rescoring (E2E-096/097/099) is permitted **only** on genuine live logs with committed product deltas — never on inherited or rescore-only evidence.
