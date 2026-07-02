@@ -60,6 +60,8 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | **E2E-092** | Cursor matrix enforces ≥1800s timeout (ignores inherited 900s); `cursor3-real-driver.sh` | `scripts/enterprise-e2e/matrix.sh`, `.planning/enterprise-e2e/cursor3-real-driver.sh` |
 | **E2E-093** | §5b log floor — preserve harness prefix; `stream-json` headless capture; composite transcript footer; stream-json scoring surface | `tests/live/agents/cursor/agent.sh`, `scripts/enterprise-e2e/lib/core.sh`, `scripts/enterprise-e2e/matrix.sh`, `scripts/lib/enterprise-e2e-outcome-assessment.sh` |
 | **E2E-094** | Row 6 `OUT-ORCH-01` → `n/a` when silver-fast evidence + state present (fast-path) | `scripts/lib/enterprise-e2e-outcome-assessment.sh` |
+| **E2E-095** | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` | `scripts/enterprise-e2e/matrix.sh`, drivers |
+| **E2E-096** | Row 10 outcome false-negative — negated "operator pauses" + prompt `SB OVERRIDE` instruction | `scripts/lib/enterprise-e2e-outcome-assessment.sh` |
 | **branch** | Ledger-derived `round-N-{host}` overrides `hosts.json` default in `apply_test_app_branch_defaults` | `scripts/enterprise-e2e/lib/test-app-branch.sh` |
 
 ---
@@ -180,7 +182,15 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | 4 | `silver-bugfix` | `cursor3-real-driver.sh 4` | [`.e2e-cursor3-row4-live.log`](../../.e2e-cursor3-row4-live.log) | 549858 | `d736a71` | **PASS** | Zero-diff brownfield execute; validate-substep documented |
 | 5 | `silver-ui` | `cursor3-real-driver.sh 5` | [`.e2e-cursor3-row5-live.log`](../../.e2e-cursor3-row5-live.log) | 662685 | `f6a80dd` | **PASS** | Badge marker in `ui/src/App.jsx`; 36/36 tests |
 | 9 | `silver-benchmark` | `cursor3-real-driver.sh 9` | [`.e2e-cursor3-row9-live.log`](../../.e2e-cursor3-row9-live.log) | 788480 | `a2fbef1` | **PASS** | run-4 benchmark; concurrent p95 env WARN (loadavg ~58) |
-| 10 | `silver-content` | `cursor3-real-driver.sh 10` | [`.e2e-cursor3-row10-live.log`](../../.e2e-cursor3-row10-live.log) | 206034 | *(uncommitted)* | **FAIL** | OUT-AUTO-01 partial, OUT-NOOP-01 partial, OUT-WORLD-01 fail — brownfield `docs/API.md` |
+| 10 | `silver-content` | `cursor3-real-driver.sh 10` | [`.e2e-cursor3-row10-live.log`](../../.e2e-cursor3-row10-live.log) | 427233 | `73bd359` | **PASS** | E2E-096 rescored @e1ff9580; metadata refresh + export note in docs/API.md |
+
+### Row 10 retry (E2E-096)
+
+| Field | Value |
+|-------|-------|
+| Root cause | Harness false-negative: stream-json autonomy summary "no clarify menus or operator pauses" matched `operator pause` babysitting regex; matrix prompt "issue SB OVERRIDE when…" matched `SB OVERRIDE` grep |
+| Fix | **E2E-096** — negated autonomy exclusion + `SB OVERRIDE:` colon-required override detector |
+| Rescore | Existing live log 427233 B → outcome **PASS** (no fake PASS; genuine `docs/API.md` delta committed `73bd359`) |
 
 ### Evidence gates (§5b) — batch 2
 
@@ -192,13 +202,13 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | Host-agent authorship | **yes** | **yes** | **yes** | **yes** | **yes** |
 | Outcome PASS | **PASS** | **PASS** | **PASS** | **PASS** | **FAIL** |
 
-**T2 batch 2 verdict:** **PARTIAL** — 4/5 PASS (rows 2,4,5,9); row 10 outcome FAIL (no fake PASS)
+**T2 batch 2 verdict:** **PASS** — 5/5 PASS (rows 2,4,5,9,10 after E2E-096 row 10 rescored)
 
 ---
 
 ## Workflow matrix (22 rows)
 
-*In progress — 11/22 rows PASS; row 10 FAIL; rows 11–22 pending.*
+*In progress — 12/22 rows PASS; rows 11–22 pending.*
 
 | # | WF slug | Pass/Fail | log_bytes | commit_sha | Notes |
 |---|---------|-----------|-----------|------------|-------|
@@ -211,7 +221,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | 7 | `silver-test` | **PASS** | 1063695 | `b2daab9` | brownfield product @826cb5c; live verify |
 | 8 | `silver-refactor` | **PASS** | 724000 | `4609c19` | brownfield product @826cb5c; live refactor |
 | 9 | `silver-benchmark` | **PASS** | 788480 | `a2fbef1` | batch 2; run-4 env WARN |
-| 10 | `silver-content` | **FAIL** | 206034 | — | OUT-WORLD-01 fail; autonomy partial |
+| 10 | `silver-content` | **PASS** | 427233 | `73bd359` | E2E-096 rescored; docs/API.md metadata refresh |
 
 ---
 
@@ -226,6 +236,7 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | **E2E-093** | §5b log floor (<2048 B) on rows 1+6 despite live agent work | **fixed** — stream-json + composite transcript + scoring surface |
 | **E2E-094** | Row 6 `OUT-ORCH-01` session fail after live retry | **fixed** — fast-path n/a when evidence present |
 | **E2E-095** | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` (row 2 initial 0 B) | **fixed** — drivers export `FORCE` + `FORCE_ALL` |
+| **E2E-096** | Row 10 outcome FAIL — negated "operator pauses" + prompt SB OVERRIDE instruction false positives | **fixed** — babysitting exclusion + `SB OVERRIDE:` detector |
 
 ---
 
@@ -238,9 +249,10 @@ Prior Cursor-1/Cursor-2 passes that relied on inherited evidence, rescoring, or 
 | T2 row 6 smoke retry | **PASS** (524236 B; outcome PASS) |
 | **T2 overall** | **PASS** (rows 1+6) |
 | T2 smoke expansion (3,7,8) | **PASS** |
-| T2 batch 2 (2,4,5,9,10) | **PARTIAL** — 4/5 PASS; row 10 FAIL |
+| T2 batch 2 (2,4,5,9,10) | **PASS** — 5/5 @E2E-096 |
+| T2 batches 3–6 (11–22) | pending |
 | Phase A ladder | **PASS** 8/8 @668a9f13 |
-| Full matrix 22/22 | pending (11/22 PASS, 1 FAIL) |
+| Full matrix 22/22 | pending (12/22 PASS) |
 | Phase C | pending |
 
-**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c). Row 10: outcome FAIL — no fixture commit.
+**Commits on fixture:** [`d798937`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d798937) row 2; [`d736a71`](https://github.com/alo-exp/enterprise-grade-test-app/commit/d736a71) row 4; [`f6a80dd`](https://github.com/alo-exp/enterprise-grade-test-app/commit/f6a80dd) row 5; [`a2fbef1`](https://github.com/alo-exp/enterprise-grade-test-app/commit/a2fbef1) row 9; [`650e4bc`](https://github.com/alo-exp/enterprise-grade-test-app/commit/650e4bc) row 6; [`0e36609`](https://github.com/alo-exp/enterprise-grade-test-app/commit/0e36609) row 3; [`b2daab9`](https://github.com/alo-exp/enterprise-grade-test-app/commit/b2daab9) row 7; [`4609c19`](https://github.com/alo-exp/enterprise-grade-test-app/commit/4609c19) row 8; [`73bd359`](https://github.com/alo-exp/enterprise-grade-test-app/commit/73bd359) row 10. Product brownfield baseline: [`826cb5c`](https://github.com/alo-exp/enterprise-grade-test-app/commit/826cb5c).
