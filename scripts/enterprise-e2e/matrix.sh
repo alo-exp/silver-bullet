@@ -531,6 +531,20 @@ run_matrix_row() {
       if [[ "$quota_retries" -gt 0 ]]; then
         echo "  PASS: succeeded after ${quota_retries} quota retry(ies)"
       fi
+      # §5b early gate: fail planning-only rows before outcome scorer awards partial credit.
+      if enterprise_e2e_row_requires_product_commit "$row_num"; then
+        if ! enterprise_e2e_assert_row_product_commit_delta "$row_num" "$fixture_head_before" "$FIXTURE_DIR"; then
+          echo "  FAIL: §5b product delta (early gate — evidence without fixture commit)"
+          FAIL_ROWS=$((FAIL_ROWS + 1))
+          row_telemetry_result="fail"
+          SB_E2E_TELEMETRY_ROW="$row_num" \
+            SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+            SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+            SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+            enterprise_e2e_telemetry_append "matrix_row" || true
+          break
+        fi
+      fi
       if [[ -f "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh" ]]; then
         # shellcheck source=scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh
         source "${SB_ROOT}/scripts/enterprise-e2e/lib/deterministic/outcome-assessment.sh"
