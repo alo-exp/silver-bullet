@@ -105,6 +105,36 @@ enterprise_e2e_apply_matrix_host_defaults() {
   enterprise_e2e_apply_host_path_default SB_E2E_LEDGER_FILE ledger_file
 }
 
+# Fail fast when SB harness is not on the host track branch (hosts.json git_branch).
+enterprise_e2e_assert_host_git_branch() {
+  local host expected current sb_root
+  if [[ "${SB_E2E_HOST_GIT_BRANCH_ENFORCE:-1}" == "0" ]]; then
+    echo "Harness git branch preflight: skipped (SB_E2E_HOST_GIT_BRANCH_ENFORCE=0)"
+    return 0
+  fi
+  host="$(enterprise_e2e_matrix_host)"
+  expected="$(enterprise_e2e_host_config_get git_branch "$host" 2>/dev/null || true)"
+  if [[ -z "$expected" ]]; then
+    return 0
+  fi
+  sb_root="${SB_ROOT:-}"
+  if [[ -z "$sb_root" ]]; then
+    if declare -f enterprise_e2e_sb_root >/dev/null 2>&1; then
+      sb_root="$(enterprise_e2e_sb_root)"
+    else
+      sb_root="$(cd "$(enterprise_e2e_harness_root)/.." && pwd)"
+    fi
+  fi
+  [[ -d "${sb_root}/.git" ]] || enterprise_e2e_preflight_fail "SB harness is not a git repo: ${sb_root}"
+  current="$(git -C "$sb_root" branch --show-current 2>/dev/null || true)"
+  echo "Harness git branch preflight: want=${expected} have=${current:-detached} host=${host}"
+  if [[ "$current" != "$expected" ]]; then
+    enterprise_e2e_preflight_fail \
+      "SB harness on '${current:-detached}' — expected '${expected}' for host=${host} (see hosts.json git_branch)"
+  fi
+  echo "  OK on ${expected} @ $(git -C "$sb_root" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+}
+
 enterprise_e2e_row_attempt_log() {
   local row="$1" attempt="${2:-1}" host sb_root suffix
   host="$(enterprise_e2e_matrix_host)"
