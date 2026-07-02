@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.50.1] — 2026-07-02
+
+Patch release: test harness fixes for Claude plugin manifest, install-surface validation, outcomes-check isolation, orchestrator parent guard, plugin-cache uninstall cleanup, and local Claude install materialization fallback.
+
+## Bug Fixes
+- Remove invalid `agents` field from `.claude-plugin/plugin.json` (Claude schema rejects agents)
+- Source `path-canonical.sh` in `plugin-cache-guard.sh` for F-07 uninstall cleanup
+- Fix `test-outcomes-check.sh` isolated state dir and `run_hook` env propagation
+- Fix `test-orchestrator-non-sb-workspace-guard.sh` to use non-readonly Bash for parent block assertion
+- Materialize local Claude plugin cache when `claude plugin install` cannot fetch GitHub
+- Restore agent-neutral `silver-migrate` hook-merge docs with `merge-cursor-hooks` coverage
+- Seed Codex workspace trust in enterprise matrix `setup_workspace`
+
+---
+
 ## [0.50.0] — 2026-07-02
 
 Multi-host enterprise E2E harness merge: integrates `enterprise-e2e/cursor` Phase C strict-clean fixes, Codex sibling cherry-picks from `origin/main`, and Claude/round6 harness already on main.
