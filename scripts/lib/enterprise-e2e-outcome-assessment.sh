@@ -671,6 +671,14 @@ enterprise_e2e_outcome_score_release() {
     fi
     printf 'fail\n'; return 0
   fi
+  # E2E-099: row 15 review-triad — triad review artifact chain, not release/ship-readiness.
+  if [[ "$row_num" == "15" ]]; then
+    if [[ -f "${work_dir}/.planning/reviews/triad-currency.md" ]] || \
+       compgen -G "${work_dir}/.planning/reviews/triad"*.md >/dev/null 2>&1; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
+  fi
   if [[ "$has_ledger" -eq 1 && "$has_ship" -eq 1 ]]; then
     if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
       printf 'partial\n'; return 0
