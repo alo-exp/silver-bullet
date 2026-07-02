@@ -368,6 +368,10 @@ enterprise_e2e_matrix_ensure_internal_gate_markers() {
   done
 }
 
+matrix_force_rerun() {
+  [[ "${SB_E2E_MATRIX_FORCE:-}" == "1" || "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]]
+}
+
 run_matrix_row() {
   local row_num="$1"
   local slug="$2"
@@ -413,8 +417,8 @@ run_matrix_row() {
     return 0
   fi
 
-  if [[ "${SB_E2E_MATRIX_FORCE:-}" != "1" ]] && verify_row_success "$row_num" "$evidence_path"; then
-    echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
+  if ! matrix_force_rerun && verify_row_success "$row_num" "$evidence_path"; then
+    echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 or SB_E2E_MATRIX_FORCE_ALL=1 to re-run)"
     SKIP_ROWS=$((SKIP_ROWS + 1))
     SB_E2E_TELEMETRY_ROW="$row_num" \
       SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
