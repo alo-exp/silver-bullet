@@ -84,6 +84,8 @@ Squashed logical groups from `enterprise-e2e/cursor` @ `5d56b2ca` (Cursor-2 Phas
 | `2d08e423` | Site fix already on `main` as `b48eec67` |
 | Poll docs (`81dd7ebd`, etc.) | Round-only checkpoints — not merged to `main` |
 
+| 2026-07-03 | `enterprise-e2e/cursor` merge `c507f1c` | `c507f1c` | Cursor-3 REAL: E2E-091–100 harness, methodology void Cursor-1/2, ROUND-CURSOR-3-REAL-LEDGER 22/22 |
+
 ## Test app
 
 Cherry-pick test-app commits only when they change matrix fixtures or docs the harness reads. On 2026-06-30, `8482e60` on round6 was docs-only for blocking criteria — optional follow-up if `main` needs parity.
