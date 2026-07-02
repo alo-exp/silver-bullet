@@ -13,7 +13,7 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 | Round | Codex-2 |
 | Host | `codex` |
 | Prior round | [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) — must be **strict-clean Pass** |
-| SB repo SHA | `fbb38851` *(pending post-closure commit)* |
+| SB repo SHA | `71f93a3f` |
 | Test app SHA | `baadf87` (`enterprise-e2e/round-8-codex`) |
 | Codex plugin install | `fbb38851` |
 | Codex model (frozen) | gpt-5.4 / gpt-5.5 (ladder rungs 1–8) |
@@ -97,9 +97,23 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 | Phase | Status | Driver / artifact |
 |-------|--------|-------------------|
 | Tier A offline | **PASS** @ `77f9ac35` — [.codex-r2-tiera-offline.log](./.codex-r2-tiera-offline.log) |
-| Tier B smoke (rows 1,3,6) | **RUNNING** — batch PID **10118** — [codex-r2-tierb-smoke-driver.sh](./codex-r2-tierb-smoke-driver.sh) |
+| Tier B smoke (rows 1,3,6) | **RUNNING** — driver **46904** batch **87814** @ `71f93a3f` — [codex-r2-tierb-smoke-driver.sh](./codex-r2-tierb-smoke-driver.sh) |
 | Tier C full matrix (22/22) | **PENDING** | [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) |
 | Phase C gates | **PENDING** | outcome + run-all + RCS ≥85 |
+
+### Poll checkpoint 2026-07-02T04:22Z (Round Codex-2 Tier B relaunch @ `71f93a3f`)
+
+| Field | Value |
+|-------|-------|
+| **Prior failure** | Driver **60323** died at `codex-sync` preflight; batch **10118** MISBOUND (Claude `sb-main-row11-fp`); poll **96676** dead; rescore **3/3 STALE** (R1 logs Jul 1) |
+| **Remediation** | `install-codex.sh --purge-legacy-skills` PASS; cleared misbound `.e2e-matrix-codex-batch.pid`; fresh Tier B only @ `71f93a3f` |
+| **Tier B driver** | **RUNNING** PID **46904** — tmux `codex-r2-tierb-smoke:driver` cwd `/private/tmp/sb-codex-force4-wt` |
+| **Batch** | **87814** — rows 1,3,6 (`matrix.sh`) |
+| **Poll-exit** | PID **50671** → [.codex-r2-tierb-poll-exit.sh](./.codex-r2-tierb-poll-exit.sh) `46904` |
+| **Monitor** | PID **2885** — [.codex-r2-tierb-monitor.log](./.codex-r2-tierb-monitor.log) |
+| **TUI watch** | PID **52603** |
+| **Tier C chain** | On fresh **3/3** rescore → auto-launch [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) + [.codex-r2-matrix-poll-exit.sh](./.codex-r2-matrix-poll-exit.sh) |
+| **Untouched** | Claude batch **10118** (`sb-main-row11-fp`); cursor lock **7549** (not running) |
 
 ### Poll checkpoint 2026-07-02T04:10Z (Round Codex-2 Tier B launch @ `77f9ac35`)
 
@@ -116,3 +130,56 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 - Tier A green → Tier B rows 1,3,6 → post-invoke rescore → Tier C full matrix → Phase C → gates **2/2**.
 - If **not** strict-clean → pair resets; re-run Round Codex-2 from Phase A.
 - If **strict-clean** → update [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md) **2 consecutive strict clean rounds = PASS (2/2)**.
+
+### Poll checkpoint 2026-07-02T04:15:23Z (Round Codex-2 Tier B exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **60323** |
+| **Tier B rescore** | **3/3** — [.codex-r2-tierb-rescore.log](./.codex-r2-tierb-rescore.log) |
+| **Tier C** | **READY** — launch [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:56Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:56Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:56Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:56Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:57Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:27:57Z |
+
+### Poll checkpoint 2026-07-02T04:32:11Z (Round Codex-2 Tier B exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **46904** |
+| **Tier B rescore** | **3/3** — [.codex-r2-tierb-rescore.log](./.codex-r2-tierb-rescore.log) |
+| **Tier C** | **READY** — launch [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:32:13Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:37:48Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:37:48Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:37:48Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T04:37:48Z |
+
+### Poll checkpoint 2026-07-02T07:05:16Z (Round Codex-2 Tier C exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **4527** |
+| **Matrix rescore** | **20/22** — [.codex-r2-matrix-rescore.log](./.codex-r2-matrix-rescore.log) |
+| **Phase C** | **BLOCKED** — 20/22 |
+
+### Diagnosis checkpoint 2026-07-02T07:15Z (rows 15, 16 @ `71f93a3f`)
+
+| Field | Value |
+|-------|-------|
+| **Row 15** | FAIL — OUT-REVIEW-01 partial, OUT-WORLD-01 fail; SessionStart `core-rules.md` integrity pin mismatch on installed Codex cache (stale `core-rules.md` vs pin); agent stuck in orchestrator parent (`spawn_agent` directive, no triad evidence) |
+| **Row 16** | FAIL live (12KB log, session aborted); rescore **PASS** with `SB_E2E_ENTERPRISE_MATRIX=1` (LEDGER_MISMATCH harness — same as R1 `fe8a5589`) |
+| **Harness gaps** | (1) Installed Codex cache hooks out of sync — `install-codex.sh --purge-legacy-skills` remediation; (2) `.codex-r2-matrix-poll-exit.sh` missing `SB_E2E_ENTERPRISE_MATRIX=1` (Tier B had it) |
+| **R1 parity** | Same pattern as R1 rows 15/16: spawn_agent + Bash adapter + LEDGER_MISMATCH; fixes already @ `181f174e`/`fe8a5589` in tree — failure was stale install + rescore flag |
+| **Remediation** | Reinstall Codex hooks; FORCE rows **15, 16** only via [codex-r2-force1516-driver.sh](./codex-r2-force1516-driver.sh) + frozen-merge [.codex-r2-force1516-poll-exit.sh](./.codex-r2-force1516-poll-exit.sh) |
+| **Policy** | One-pass @ `71f93a3f` — do NOT re-run rows 1–14, 17–22 (frozen from [.codex-r2-matrix-rescore.log](./.codex-r2-matrix-rescore.log)) |
