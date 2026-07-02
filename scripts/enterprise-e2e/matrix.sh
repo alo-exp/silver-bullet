@@ -459,6 +459,10 @@ run_matrix_row() {
     11) agent_timeout="${SB_E2E_ROW11_TIMEOUT:-5400}" ;;
   esac
   local attempt=0 quota_retries=0 row_log output routing_row_env="0"
+  local fixture_head_before=""
+  if enterprise_e2e_row_requires_product_commit "$row_num"; then
+    fixture_head_before="$(enterprise_e2e_fixture_head_snapshot "$FIXTURE_DIR")"
+  fi
   if [[ "$row_num" == "1" ]]; then
     routing_row_env="1"
   fi
@@ -550,6 +554,16 @@ run_matrix_row() {
           break
         fi
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
+      fi
+      if ! enterprise_e2e_assert_row_product_commit_delta "$row_num" "$fixture_head_before" "$FIXTURE_DIR"; then
+        FAIL_ROWS=$((FAIL_ROWS + 1))
+        row_telemetry_result="fail"
+        SB_E2E_TELEMETRY_ROW="$row_num" \
+          SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+          SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+          SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+          enterprise_e2e_telemetry_append "matrix_row" || true
+        break
       fi
       enterprise_e2e_record_row_pass_at_install_version "$row_num" "${SB_E2E_LEDGER_FILE:-}" "$row_log"
       PASS_ROWS=$((PASS_ROWS + 1))
