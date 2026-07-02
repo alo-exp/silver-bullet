@@ -111,11 +111,24 @@ cursor_github_marketplace_gitpath_root() {
 
 resolve_install_commit_sha() {
   local source_root="$1"
-  if [[ -d "${source_root}/.git" ]]; then
+  if git -C "$source_root" rev-parse HEAD >/dev/null 2>&1; then
     git -C "$source_root" rev-parse HEAD
     return 0
   fi
   git -C "$REPO_ROOT" rev-parse HEAD
+}
+
+cursor_git_common_dir() {
+  local source_root="$1"
+  local git_dir=""
+
+  git_dir="$(git -C "$source_root" rev-parse --git-common-dir 2>/dev/null || true)"
+  [[ -n "$git_dir" ]] || git_dir="$(git -C "$source_root" rev-parse --git-dir 2>/dev/null || true)"
+  [[ -n "$git_dir" ]] || return 1
+  if [[ "$git_dir" != /* ]]; then
+    git_dir="$(cd "$source_root" && cd "$git_dir" && pwd)"
+  fi
+  printf '%s' "$git_dir"
 }
 
 ensure_cursor_github_marketplace_gitpath() {
@@ -138,8 +151,17 @@ ensure_cursor_github_marketplace_gitpath() {
   fi
   mkdir -p "$(dirname "$base_root")"
 
-  if [[ -d "${source_root}/.git" ]] && [[ "$(git -C "$source_root" rev-parse HEAD)" == "$commit_sha" ]]; then
-    git clone --local "$source_root" "$dest_root" >/dev/null
+  if git -C "$source_root" rev-parse HEAD >/dev/null 2>&1 \
+    && [[ "$(git -C "$source_root" rev-parse HEAD)" == "$commit_sha" ]]; then
+    local git_common_dir=""
+    git_common_dir="$(cursor_git_common_dir "$source_root" 2>/dev/null || true)"
+    if [[ -n "$git_common_dir" ]]; then
+      git clone --local "$git_common_dir" "$dest_root" >/dev/null 2>&1 || \
+        git clone --local "$source_root" "$dest_root" >/dev/null
+    else
+      git clone --local "$source_root" "$dest_root" >/dev/null
+    fi
+    git -C "$dest_root" checkout -f "$commit_sha" >/dev/null 2>&1 || true
     return 0
   fi
 
@@ -279,7 +301,7 @@ fi
 
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 ln -sfn "$DEST_ROOT" "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
-if [[ -z "$INSTALL_COMMIT_SHA" && -d "$REPO_ROOT/.git" ]]; then
+if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/dev/null 2>&1; then
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
 fi
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
