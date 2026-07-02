@@ -150,6 +150,17 @@ enterprise_e2e_matrix_log_bytes() {
   printf '%s\n' "${bytes:-0}"
 }
 
+# Skip matrix row when install-version pass registry records outcome_pass for current install_fp.
+enterprise_e2e_matrix_should_skip_row_at_version() {
+  local row="$1"
+  [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]] && return 1
+  if declare -f enterprise_e2e_row_pass_registry_should_skip >/dev/null 2>&1; then
+    enterprise_e2e_row_pass_registry_should_skip "$row"
+    return $?
+  fi
+  return 1
+}
+
 enterprise_e2e_ledger_file() {
   printf '%s\n' "${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 }

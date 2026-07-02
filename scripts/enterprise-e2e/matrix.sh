@@ -19,7 +19,8 @@ source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 export SB_ROOT
 enterprise_e2e_apply_matrix_host_defaults
 MATRIX_HOST="$(enterprise_e2e_matrix_host)"
-FIXTURE_DIR="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app}"
+enterprise_e2e_assert_host_git_branch || exit 1
+FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
 LEDGER_FILE="${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 # shellcheck disable=SC2034  # documented matrix doc path for operators
 MATRIX_DOC="${FIXTURE_DIR}/docs/WORKFLOW_E2E_MATRIX.md"
@@ -87,6 +88,8 @@ source "${SB_ROOT}/tests/e2e-live/lib/skill-prompt.sh"
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-matrix-quiesce.sh"
 # shellcheck source=hooks/lib/e2e-matrix-routing.sh
 source "${SB_ROOT}/hooks/lib/e2e-matrix-routing.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/row-pass-registry.sh
+source "${SB_ROOT}/scripts/enterprise-e2e/lib/row-pass-registry.sh"
 
 declare -a MATRIX_ROWS=(
   '1|silver-router|/silver|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
@@ -114,6 +117,7 @@ declare -a MATRIX_ROWS=(
 PASS_ROWS=0
 FAIL_ROWS=0
 SKIP_ROWS=0
+INSTALL_PASS_SKIP_ROWS=0
 ROUTING_STATE_SNAPSHOT=""
 
 usage() {
@@ -128,7 +132,9 @@ Environment:
   SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME   claude (default) | codex | cursor
   SB_E2E_MATRIX_LOG / SB_E2E_MATRIX_BATCH_PID_FILE / SB_E2E_LIVE_TEST_LOCK_FILE  host-isolated defaults
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
-  SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
+  SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists (not install-version pass)
+  SB_E2E_MATRIX_FORCE_ALL=1    Re-run all rows including install-version pass registry
+  SB_E2E_MATRIX_FAIL_ON_SKIP=1 Fail on evidence SKIP (not on ROW_ALREADY_PASSED_SAME_INSTALL)
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
   SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 0; set 1 for OAuth-only)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
@@ -370,6 +376,19 @@ run_matrix_row() {
   echo "  graphify: ${graphify_ref}"
   echo "  evidence: ${evidence_path}"
 
+  if enterprise_e2e_matrix_should_skip_row_at_version "$row_num"; then
+    echo "  SKIP: ROW_ALREADY_PASSED_SAME_INSTALL (install_fp=$(enterprise_e2e_install_fingerprint); set SB_E2E_MATRIX_FORCE_ALL=1 to re-run)"
+    SKIP_ROWS=$((SKIP_ROWS + 1))
+    INSTALL_PASS_SKIP_ROWS=$((INSTALL_PASS_SKIP_ROWS + 1))
+    PASS_ROWS=$((PASS_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="skip_install_pass" \
+      SB_E2E_TELEMETRY_ROW_LOG="$(enterprise_e2e_row_attempt_log "$row_num")" \
+      enterprise_e2e_telemetry_append "matrix_row_install_pass_skip" || true
+    return 0
+  fi
+
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" == "1" ]]; then
     if verify_row_evidence "$evidence_path"; then
       echo "  DRY RUN PASS: evidence present"
@@ -575,6 +594,8 @@ main() {
     echo "ERROR: fixture not found at ${FIXTURE_DIR}" >&2
     exit 1
   fi
+
+  enterprise_e2e_ensure_test_app_branch "$FIXTURE_DIR"
 
   echo "=== Enterprise E2E Matrix Runner ==="
   echo "SB_ROOT:    ${SB_ROOT}"
