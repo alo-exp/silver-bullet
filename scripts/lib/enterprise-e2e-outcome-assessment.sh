@@ -202,8 +202,25 @@ enterprise_e2e_outcome_log_matches() {
 
 enterprise_e2e_outcome_log_has_babysitting() {
   local row_log="${1:-}"
-  enterprise_e2e_outcome_log_matches "$row_log" \
-    'waiting for (your|user)( input| to)|operator pause|need your input before|babysit'
+  if enterprise_e2e_outcome_log_matches "$row_log" \
+    'waiting for (your|user)( input| to)|need your input before|babysit'; then
+    return 0
+  fi
+  # operator pause(s) — exclude negated autonomy summaries (row 10 stream-json false positive).
+  if enterprise_e2e_outcome_log_matches "$row_log" 'operator pause'; then
+    if enterprise_e2e_outcome_log_matches "$row_log" \
+      'no (clarify|operator)|without operator pause|autonomous_default'; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
+}
+
+# Audited override usage (not matrix prompt instructions like "issue SB OVERRIDE when …").
+enterprise_e2e_outcome_log_has_sb_override() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" 'SB OVERRIDE:[[:space:]]'
 }
 
 enterprise_e2e_outcome_log_has_autonomous() {
@@ -471,7 +488,7 @@ enterprise_e2e_outcome_score_clarify() {
 enterprise_e2e_outcome_score_noop() {
   local work_dir="$1" row_log="${2:-}"
   if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
-    if [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'SB OVERRIDE' "$row_log" 2>/dev/null; then
+    if enterprise_e2e_outcome_log_has_sb_override "$row_log"; then
       printf 'partial\n'; return 0
     fi
     printf 'fail\n'; return 0

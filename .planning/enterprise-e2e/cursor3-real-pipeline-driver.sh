@@ -102,4 +102,108 @@ for ROW in 2 4 5 9 10; do
   fi
 done
 
-log "=== Round Cursor-3 REAL pipeline (Phase A + rows 2,3,4,5,7,8,9,10) finished ==="
+# --- T2 batch 3: rows 11-14 ---
+for ROW in 11 12 13 14; do
+  PHASE_KEY="ROW_${ROW}"
+  if phase_done "$PHASE_KEY"; then
+    log "ROW ${ROW} already done — skip"
+    continue
+  fi
+  log "=== ROW ${ROW} start ==="
+  if bash .planning/enterprise-e2e/cursor3-real-driver.sh "$ROW" 2>&1 | tee -a "$LOG"; then
+    ATTEMPT_LOG="${SB_ROOT}/.e2e-row${ROW}-cursor-attempt.log"
+    if [[ -f "$ATTEMPT_LOG" ]]; then
+      BYTES=$(wc -c <"$ATTEMPT_LOG" | tr -d ' ')
+      log "ROW ${ROW} attempt log: ${BYTES} B"
+      if [[ "$BYTES" -lt 2048 ]]; then
+        log "ROW ${ROW} FAIL — §5b log floor (${BYTES} B < 2048)"
+        exit 1
+      fi
+    fi
+    mark_done "$PHASE_KEY"
+    log "ROW ${ROW} driver exit 0"
+  else
+    log "ROW ${ROW} driver exit non-zero"
+    exit 1
+  fi
+done
+
+# --- T2 batch 4: rows 15-18 ---
+for ROW in 15 16 17 18; do
+  PHASE_KEY="ROW_${ROW}"
+  if phase_done "$PHASE_KEY"; then
+    log "ROW ${ROW} already done — skip"
+    continue
+  fi
+  log "=== ROW ${ROW} start ==="
+  if bash .planning/enterprise-e2e/cursor3-real-driver.sh "$ROW" 2>&1 | tee -a "$LOG"; then
+    ATTEMPT_LOG="${SB_ROOT}/.e2e-row${ROW}-cursor-attempt.log"
+    if [[ -f "$ATTEMPT_LOG" ]]; then
+      BYTES=$(wc -c <"$ATTEMPT_LOG" | tr -d ' ')
+      log "ROW ${ROW} attempt log: ${BYTES} B"
+      if [[ "$BYTES" -lt 2048 ]]; then
+        log "ROW ${ROW} FAIL — §5b log floor (${BYTES} B < 2048)"
+        exit 1
+      fi
+    fi
+    mark_done "$PHASE_KEY"
+    log "ROW ${ROW} driver exit 0"
+  else
+    log "ROW ${ROW} driver exit non-zero"
+    exit 1
+  fi
+done
+
+# --- T2 batch 5: rows 19-20 ---
+for ROW in 19 20; do
+  PHASE_KEY="ROW_${ROW}"
+  if phase_done "$PHASE_KEY"; then
+    log "ROW ${ROW} already done — skip"
+    continue
+  fi
+  log "=== ROW ${ROW} start ==="
+  if bash .planning/enterprise-e2e/cursor3-real-driver.sh "$ROW" 2>&1 | tee -a "$LOG"; then
+    ATTEMPT_LOG="${SB_ROOT}/.e2e-row${ROW}-cursor-attempt.log"
+    if [[ -f "$ATTEMPT_LOG" ]]; then
+      BYTES=$(wc -c <"$ATTEMPT_LOG" | tr -d ' ')
+      log "ROW ${ROW} attempt log: ${BYTES} B"
+      if [[ "$BYTES" -lt 2048 ]]; then
+        log "ROW ${ROW} FAIL — §5b log floor (${BYTES} B < 2048)"
+        exit 1
+      fi
+    fi
+    mark_done "$PHASE_KEY"
+    log "ROW ${ROW} driver exit 0"
+  else
+    log "ROW ${ROW} driver exit non-zero"
+    exit 1
+  fi
+done
+
+# --- T2 batch 6: rows 21-22 (internal gate rows) ---
+for ROW in 21 22; do
+  PHASE_KEY="ROW_${ROW}"
+  if phase_done "$PHASE_KEY"; then
+    log "ROW ${ROW} already done — skip"
+    continue
+  fi
+  log "=== ROW ${ROW} start ==="
+  if bash .planning/enterprise-e2e/cursor3-real-driver.sh "$ROW" 2>&1 | tee -a "$LOG"; then
+    ATTEMPT_LOG="${SB_ROOT}/.e2e-row${ROW}-cursor-attempt.log"
+    if [[ -f "$ATTEMPT_LOG" ]]; then
+      BYTES=$(wc -c <"$ATTEMPT_LOG" | tr -d ' ')
+      log "ROW ${ROW} attempt log: ${BYTES} B"
+      if [[ "$BYTES" -lt 2048 ]]; then
+        log "ROW ${ROW} FAIL — §5b log floor (${BYTES} B < 2048)"
+        exit 1
+      fi
+    fi
+    mark_done "$PHASE_KEY"
+    log "ROW ${ROW} driver exit 0"
+  else
+    log "ROW ${ROW} driver exit non-zero"
+    exit 1
+  fi
+done
+
+log "=== Round Cursor-3 REAL pipeline (Phase A + rows 2-22) finished ==="
