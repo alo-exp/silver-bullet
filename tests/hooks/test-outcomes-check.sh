@@ -10,6 +10,12 @@ fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
 
+TEST_RUN_ID="$$"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/outcomes-check-${TEST_RUN_ID}"
+export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
+mkdir -p "$SB_TEST_DIR"
+
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/outcomes-check.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PASS=0
@@ -20,9 +26,6 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
 fi
 
-SB_TEST_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
-mkdir -p "$SB_TEST_DIR"
-
 setup() {
   TMPDIR_TEST=$(mktemp -d)
   mkdir -p "$TMPDIR_TEST/.planning/workflows"
@@ -30,6 +33,7 @@ setup() {
 {"sb_initiated":true,"project":{"name":"test","active_workflow":"full-dev-cycle"},"skills":{"required_planning":["silver-quality-gates"]}}
 JSON
   cp "$REPO_ROOT/silver-bullet.md" "$TMPDIR_TEST/silver-bullet.md"
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
   export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
   export SILVER_BULLET_STATE_FILE="${SB_TEST_DIR}/state-$$"
   export SILVER_BULLET_BRANCH_FILE="${SB_TEST_DIR}/branch-$$"
@@ -40,13 +44,17 @@ JSON
 teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$SILVER_BULLET_STATE_FILE" "$SILVER_BULLET_BRANCH_FILE" \
-    "${SB_TEST_DIR}/outcomes-session.json"
+    "${SB_TEST_DIR}/outcomes-session.json" "${SB_TEST_DIR}/orchestrator-directive.json" \
+    "${SB_TEST_DIR}/orchestrator-intent.txt" "${SB_TEST_DIR}/project-root"
 }
+
+trap 'rm -rf "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/outcomes-check-${TEST_RUN_ID}" 2>/dev/null || true' EXIT
 
 run_hook() {
   local event="$1" prompt="$2"
   jq -n --arg e "$event" --arg p "$prompt" '{hook_event_name:$e, prompt:$p}' \
-    | ( cd "$TMPDIR_TEST" && bash "$HOOK" 2>/dev/null )
+    | ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_RUNTIME_STATE_DIR}" \
+        SILVER_BULLET_STATE_FILE="${SILVER_BULLET_STATE_FILE:-}" bash "$HOOK" 2>/dev/null )
 }
 
 assert_contains() {

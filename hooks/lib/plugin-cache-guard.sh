@@ -2,6 +2,12 @@
 # Allow deliberate third-party plugin uninstall cache cleanup when the host
 # registry no longer references the target path (GitHub issue #222).
 
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/path-canonical.sh" ]]; then
+  # shellcheck source=path-canonical.sh
+  source "$_lib_dir/path-canonical.sh"
+fi
+
 sb_plugin_cache_registry_file() {
   printf '%s/plugins/installed_plugins.json' "${SB_RUNTIME_HOME_ROOT}"
 }

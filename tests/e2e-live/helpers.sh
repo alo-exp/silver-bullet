@@ -538,6 +538,8 @@ setup_workspace() {
       bootstrap_claude_dependencies
       ;;
     codex)
+      # Pre-trust fixture workspace before interactive Codex matrix turns
+      trust_runtime_workspace
       bash "${SB_ROOT}/scripts/install-codex.sh" --purge-legacy-skills >/dev/null
       ;;
     cursor)

@@ -121,6 +121,52 @@ ensure_marketplace_ready() {
   fi
 }
 
+# Materialize Silver Bullet into the Claude plugin cache from a local checkout when
+# `claude plugin install` cannot fetch GitHub (schema drift, offline, etc.).
+materialize_local_silver_bullet_plugin_cache() {
+  local version plugin_cache_root version_dir stable_alias registry
+  version="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo 0.0.0)"
+  plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  version_dir="${plugin_cache_root}/${version}"
+  stable_alias="${plugin_cache_root}/current"
+  registry="${HOME}/.claude/plugins/installed_plugins.json"
+
+  mkdir -p "$version_dir/.claude-plugin" "${version_dir}/agents/claude" "${version_dir}/hooks"
+  install -m 644 "${REPO_ROOT}/.claude-plugin/plugin.json" "${version_dir}/.claude-plugin/plugin.json"
+  rsync -a --delete "${REPO_ROOT}/hooks/" "${version_dir}/hooks/"
+  rsync -a --delete "${REPO_ROOT}/agents/claude/" "${version_dir}/agents/claude/"
+  ln -sfn "agents/claude" "${version_dir}/skills"
+  rm -rf "${version_dir}/commands" 2>/dev/null || true
+  prune_claude_cross_host_agent_surfaces "$version_dir"
+
+  python3 - "$registry" "$version" "$stable_alias" <<'PY'
+import json
+import pathlib
+import sys
+
+registry = pathlib.Path(sys.argv[1])
+version = sys.argv[2]
+stable = pathlib.Path(sys.argv[3]).resolve()
+
+data = {"plugins": {}}
+if registry.is_file():
+    try:
+        data = json.loads(registry.read_text())
+    except Exception:
+        data = {"plugins": {}}
+plugins = data.setdefault("plugins", {})
+plugins["silver-bullet@alo-labs"] = [{
+    "version": version,
+    "installPath": str(stable),
+    "scope": "user",
+}]
+registry.parent.mkdir(parents=True, exist_ok=True)
+registry.write_text(json.dumps(data, indent=2) + "\n")
+PY
+
+  refresh_silver_bullet_install_alias
+}
+
 render_agent_bundle() {
   local agent="$1"
 
@@ -273,7 +319,14 @@ refresh_plugin_install() {
   done < <(plugin_scopes "$CLAUDE_BIN" "$plugin_id")
 
   purge_plugin_cache "$plugin_id"
-  "$CLAUDE_BIN" plugin install "$plugin_id" --scope user >/dev/null
+  if "$CLAUDE_BIN" plugin install "$plugin_id" --scope user >/dev/null 2>&1; then
+    return 0
+  fi
+  if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 && "$CLAUDE_SB_MARKETPLACE_SOURCE" == /* ]]; then
+    materialize_local_silver_bullet_plugin_cache
+    return 0
+  fi
+  return 1
 }
 
 sync_silver_bullet_hook_cache() {
