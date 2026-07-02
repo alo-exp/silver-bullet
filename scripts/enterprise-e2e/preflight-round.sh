@@ -106,20 +106,9 @@ else
     enterprise_e2e_assert_test_app_branch
 fi
 
-echo ""
-echo "=== Gate 1: dry-run matrix ==="
-set +e
-env SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME="$HOST" SILVER_BULLET_RUNTIME="$HOST" \
-  bash "${SB_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
-dry_run_rc=$?
-set -e
-if [[ "$dry_run_rc" -ne 0 ]]; then
-  if [[ "${SB_ENTERPRISE_E2E_LIVE:-}" == "1" ]]; then
-    echo "WARN: Gate 1 dry-run exit ${dry_run_rc} — clean fixture expected; live matrix will create evidence"
-  else
-    exit "$dry_run_rc"
-  fi
-fi
+run_step "Gate 1: dry-run matrix" \
+  env SB_E2E_MATRIX_DRY_RUN=1 SB_E2E_LIVE_RUNTIME="$HOST" SILVER_BULLET_RUNTIME="$HOST" \
+    bash "${SB_ROOT}/scripts/run-enterprise-e2e-matrix.sh"
 
 run_step "Gate 1: host live preflight" \
   bash "${SB_ROOT}/scripts/run-enterprise-e2e-live-test.sh" --preflight-only
