@@ -13,15 +13,15 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 | Round | Codex-2 |
 | Host | `codex` |
 | Prior round | [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) — must be **strict-clean Pass** |
-| SB repo SHA | `<!-- git rev-parse HEAD in silver-bullet repo -->` |
-| Test app SHA | `<!-- git rev-parse HEAD in enterprise-grade-test-app -->` |
-| Codex plugin install | `<!-- commit SHA used by install-codex.sh -->` |
-| Codex model (frozen) | `<!-- e.g. o4-mini -->` |
-| Operator | `<!-- name -->` |
-| Start date | YYYY-MM-DD |
+| SB repo SHA | `fbb38851` *(pending post-closure commit)* |
+| Test app SHA | `baadf87` (`enterprise-e2e/round-8-codex`) |
+| Codex plugin install | `fbb38851` |
+| Codex model (frozen) | gpt-5.4 / gpt-5.5 (ladder rungs 1–8) |
+| Operator | Cursor Composer (Codex E2E subagent) |
+| Start date | 2026-07-02 |
 | End date | YYYY-MM-DD |
-| Round clean? | Pass / Fail |
-| Consecutive pair | ___ / 2 *(2/2 required — see [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md))* |
+| Round clean? | Pending |
+| Consecutive pair | **1 / 2** *(Codex-1 Pass — need Codex-2 Pass for 2/2)* |
 
 **Harness artifacts (Codex-isolated):** same paths as Round Codex-1 — archive prior `.e2e-matrix-codex-live.log` before fresh Phase B.
 
@@ -92,7 +92,27 @@ Copy from [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md) template at round
 
 **Graphify post-round:** `graphify update .` in SB repo.
 
-**Next action:**
+## Round Codex-2 — execution plan
 
-- If **not** strict-clean → pair resets; re-run Round Codex-2 from Phase A (Round Codex-1 Pass alone is insufficient for release).
-- If **strict-clean** → update [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md) **2 consecutive strict clean rounds = PASS (2/2)** → Codex host release readiness.
+| Phase | Status | Driver / artifact |
+|-------|--------|-------------------|
+| Tier A offline | **PASS** @ `77f9ac35` — [.codex-r2-tiera-offline.log](./.codex-r2-tiera-offline.log) |
+| Tier B smoke (rows 1,3,6) | **RUNNING** — batch PID **10118** — [codex-r2-tierb-smoke-driver.sh](./codex-r2-tierb-smoke-driver.sh) |
+| Tier C full matrix (22/22) | **PENDING** | [codex-r2-matrix-driver.sh](./codex-r2-matrix-driver.sh) |
+| Phase C gates | **PENDING** | outcome + run-all + RCS ≥85 |
+
+### Poll checkpoint 2026-07-02T04:10Z (Round Codex-2 Tier B launch @ `77f9ac35`)
+
+| Field | Value |
+|-------|-------|
+| **Tier A** | **PASS** — [.codex-r2-tiera-offline.log](./.codex-r2-tiera-offline.log) |
+| **Tier B driver** | **RUNNING** — batch PID **10118** |
+| **Monitor** | relaunched — see `.codex-r2-tierb-monitor.log` |
+| **Poll-exit** | PID **96676** → [.codex-r2-tierb-poll-exit.sh](./.codex-r2-tierb-poll-exit.sh) `10118` |
+| **Fixture** | `enterprise-e2e/round-8-codex@baadf87` |
+| **agentmemory** | `mem_mr2zhzf6_63921d2e42a7` |
+
+
+- Tier A green → Tier B rows 1,3,6 → post-invoke rescore → Tier C full matrix → Phase C → gates **2/2**.
+- If **not** strict-clean → pair resets; re-run Round Codex-2 from Phase A.
+- If **strict-clean** → update [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md) **2 consecutive strict clean rounds = PASS (2/2)**.
