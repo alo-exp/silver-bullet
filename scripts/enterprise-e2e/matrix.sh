@@ -472,6 +472,26 @@ run_matrix_row() {
   fi
   export SB_E2E_MATRIX_GRAPHIFY_REF="$graphify_ref"
 
+  if ! enterprise_e2e_fixture_ensure_branch; then
+    echo "  FAIL: cannot pin fixture branch before row ${row_num}" >&2
+    FAIL_ROWS=$((FAIL_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="fail" \
+      SB_E2E_TELEMETRY_ROW_LOG="" \
+      enterprise_e2e_telemetry_append "matrix_row" || true
+    return 0
+  fi
+  if ! enterprise_e2e_fixture_assert_branch_lock "$FIXTURE_DIR" "pre-invoke fixture branch (row ${row_num})"; then
+    FAIL_ROWS=$((FAIL_ROWS + 1))
+    SB_E2E_TELEMETRY_ROW="$row_num" \
+      SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+      SB_E2E_TELEMETRY_ROW_RESULT="fail" \
+      SB_E2E_TELEMETRY_ROW_LOG="" \
+      enterprise_e2e_telemetry_append "matrix_row" || true
+    return 0
+  fi
+
   while true; do
     attempt=$((attempt + 1))
     row_log="$(enterprise_e2e_row_attempt_log "$row_num" "$attempt")"
@@ -559,6 +579,16 @@ run_matrix_row() {
         fi
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
+      if ! enterprise_e2e_fixture_assert_branch_lock "$FIXTURE_DIR" "post-invoke fixture branch (row ${row_num})"; then
+        FAIL_ROWS=$((FAIL_ROWS + 1))
+        row_telemetry_result="fail"
+        SB_E2E_TELEMETRY_ROW="$row_num" \
+          SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+          SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+          SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+          enterprise_e2e_telemetry_append "matrix_row" || true
+        break
+      fi
       if ! enterprise_e2e_assert_row_product_commit_delta "$row_num" "$fixture_head_before" "$FIXTURE_DIR"; then
         FAIL_ROWS=$((FAIL_ROWS + 1))
         row_telemetry_result="fail"
@@ -619,6 +649,7 @@ run_matrix_row() {
 main() {
   local requested=("$@")
   local row slug route prompt_card evidence_path row_num
+  local _matrix_batch_pid_file=""
 
   if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
     usage
@@ -640,7 +671,6 @@ main() {
   echo ""
 
   if [[ "${SB_E2E_MATRIX_DRY_RUN:-}" != "1" ]]; then
-  local _matrix_batch_pid_file=""
   if declare -f enterprise_e2e_matrix_batch_pid_file >/dev/null 2>&1; then
     _matrix_batch_pid_file="$(enterprise_e2e_matrix_batch_pid_file)"
     printf '%s\n' "$$" >"$_matrix_batch_pid_file"
@@ -654,6 +684,15 @@ main() {
   enterprise_e2e_matrix_quiesce_orchestrator_queue "$SB_ROOT"
   fi
   WORK_DIR="${WORK_DIR:-$FIXTURE_DIR}"
+
+  if ! enterprise_e2e_fixture_ensure_branch; then
+    echo "ERROR: cannot pin fixture branch before matrix" >&2
+    exit 1
+  fi
+  if ! enterprise_e2e_fixture_assert_branch_lock "$FIXTURE_DIR" "matrix-start fixture branch"; then
+    echo "ERROR: fixture branch lock failed before matrix — reset test app to host branch" >&2
+    exit 1
+  fi
 
   if should_run_row 21 "${requested[@]+"${requested[@]}"}" || should_run_row 22 "${requested[@]+"${requested[@]}"}"; then
     enterprise_e2e_matrix_ensure_internal_gate_markers
