@@ -48,10 +48,16 @@ if [[ "${SB_E2E_MATRIX_CLEAN_ENV}" == "1" ]]; then
 fi
 export CLAUDE_MODEL="${CLAUDE_MODEL:-haiku}"
 export CLAUDE_PERMISSION_MODE="${CLAUDE_PERMISSION_MODE:-bypassPermissions}"
-export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
-# Cursor composer-2.5 workflow rows routinely exceed 15m (orchestrator + graphify + MCP).
+# E2E-087/E2E-092: cursor rows exceed 15m; never inherit legacy 900s from shell/tmux.
 if [[ "$MATRIX_HOST" == "cursor" ]]; then
-  export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-1800}"
+  if [[ -z "${CLAUDE_INTERACTIVE_TIMEOUT:-}" || "${CLAUDE_INTERACTIVE_TIMEOUT}" -lt 1800 ]]; then
+    export CLAUDE_INTERACTIVE_TIMEOUT=1800
+  fi
+  if [[ -z "${CURSOR_AGENT_TIMEOUT:-}" || "${CURSOR_AGENT_TIMEOUT}" -lt 1800 ]]; then
+    export CURSOR_AGENT_TIMEOUT="$CLAUDE_INTERACTIVE_TIMEOUT"
+  fi
+else
+  export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-900}"
 fi
 export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300}"
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
@@ -488,6 +494,7 @@ run_matrix_row() {
       printf '%s\n' "$output" >>"$row_log"
       printf '%s\n' "$output" | tail -20
     fi
+    enterprise_e2e_matrix_finalize_attempt_log "$row_log" "$row_num" "$WORK_DIR" "$evidence_path" "$graphify_ref"
 
     if verify_row_success "$row_num" "$evidence_path" "$output" "$row_log"; then
       if [[ "$row_num" == "1" ]] && ! verify_row_evidence "$evidence_path"; then

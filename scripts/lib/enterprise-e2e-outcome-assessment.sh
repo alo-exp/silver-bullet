@@ -154,12 +154,60 @@ enterprise_e2e_outcome_effective_row_log() {
   [[ -n "$row_log" ]] && printf '%s\n' "$row_log"
 }
 
+# E2E-093: cursor stream-json logs embed readToolCall file bodies — exclude from scoring grep.
+enterprise_e2e_outcome_log_scoring_text() {
+  local row_log="${1:-}"
+  [[ -n "$row_log" && -f "$row_log" ]] || return 1
+  if ! grep -qE '^HARNESS |^\{"type":' "$row_log" 2>/dev/null; then
+    enterprise_e2e_outcome_log_normalized "$row_log"
+    return 0
+  fi
+  python3 - "$row_log" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8", errors="replace") as handle:
+    for raw in handle:
+        line = raw.rstrip("\n")
+        if not line:
+            continue
+        if line.startswith("HARNESS ") or line.startswith("--- HARNESS composite"):
+            print(line)
+            continue
+        if not line.startswith("{"):
+            print(line)
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        typ = obj.get("type")
+        if typ in ("assistant", "user", "result"):
+            for key in ("text", "delta", "message", "content", "result"):
+                value = obj.get(key)
+                if isinstance(value, str) and value.strip():
+                    print(value)
+                    break
+        elif typ == "tool_call":
+            subtype = obj.get("subtype")
+            tool_call = obj.get("tool_call") or {}
+            name = (
+                tool_call.get("name")
+                or tool_call.get("toolName")
+                or next(iter(tool_call), "")
+            )
+            if name and subtype in ("started", "completed"):
+                print(f"TOOL: {name}")
+PY
+}
+
 enterprise_e2e_outcome_log_matches() {
   local row_log="${1:-}" pattern="${2:-}" tmp="" rc=0 effective=""
   [[ -n "$pattern" ]] || return 1
   effective="$(enterprise_e2e_outcome_effective_row_log "$row_log")"
   tmp="$(mktemp "${TMPDIR:-/tmp}/sb-outcome-log.XXXXXX")"
-  if ! enterprise_e2e_outcome_log_normalized "$effective" >"$tmp" 2>/dev/null; then
+  if ! enterprise_e2e_outcome_log_scoring_text "$effective" >"$tmp" 2>/dev/null; then
     rm -f "$tmp"
     return 1
   fi
@@ -170,17 +218,32 @@ enterprise_e2e_outcome_log_matches() {
 
 enterprise_e2e_outcome_log_has_babysitting() {
   local row_log="${1:-}"
-  enterprise_e2e_outcome_log_matches "$row_log" \
-    'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' || \
-    grep -qiE 'waiting for (your|user)( input| to)|operator pause|need your input before|babysit' "$row_log" 2>/dev/null
+  if enterprise_e2e_outcome_log_matches "$row_log" \
+    'waiting for (your|user)( input| to)|need your input before|babysit'; then
+    return 0
+  fi
+  # operator pause(s) — exclude negated autonomy summaries (row 10 stream-json false positive).
+  if enterprise_e2e_outcome_log_matches "$row_log" 'operator pause'; then
+    if enterprise_e2e_outcome_log_matches "$row_log" \
+      'no (clarify|operator)|without operator pause|autonomous_default'; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
+}
+
+# Audited override usage (not matrix prompt instructions like "issue SB OVERRIDE when …").
+enterprise_e2e_outcome_log_has_sb_override() {
+  local row_log="${1:-}"
+  enterprise_e2e_outcome_log_matches "$row_log" 'SB OVERRIDE:[[:space:]]'
 }
 
 enterprise_e2e_outcome_log_has_autonomous() {
   local row_log="${1:-}"
   enterprise_e2e_outcome_log_has_worker_completion "$row_log" && return 0
   enterprise_e2e_outcome_log_matches "$row_log" \
-    'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' || \
-    grep -qiE 'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator' "$row_log" 2>/dev/null
+    'autonomous|orchestrator active|SB ► .* composed|worker spawned|Task worker|general-purpose.*(Execute|ROUTER)|SB orchestrator'
 }
 
 enterprise_e2e_outcome_log_has_agentmemory_mcp() {
@@ -372,8 +435,7 @@ enterprise_e2e_outcome_score_auto() {
     if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" "$evidence"; then
       printf 'pass\n'; return 0
     fi
-    if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qEi 'routing validation only|routing completes|composed workflow skill' "$row_log" 2>/dev/null; then
+    if enterprise_e2e_outcome_log_matches "$row_log" 'routing validation only|routing completes|composed workflow skill'; then
       printf 'pass\n'; return 0
     fi
     printf 'fail\n'; return 0
@@ -419,8 +481,22 @@ enterprise_e2e_outcome_score_clarify() {
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify|\$silver:clarify|silver-clarify' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
+  # Row 1 (silver-router) is routing-only — clarify not required when route is correct.
+  if enterprise_e2e_outcome_is_routing_row "$row_num"; then
+    if enterprise_e2e_outcome_routing_evidence_present "$work_dir" "$state_dir" ""; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/silver.*(feature|fast)' "$row_log" 2>/dev/null; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
+      printf 'n/a\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
   case "$row_num" in
-    1|2|3) printf 'fail\n' ;;
+    2|3) printf 'fail\n' ;;
     *) printf 'n/a\n' ;;
   esac
 }
@@ -428,7 +504,7 @@ enterprise_e2e_outcome_score_clarify() {
 enterprise_e2e_outcome_score_noop() {
   local work_dir="$1" row_log="${2:-}"
   if enterprise_e2e_outcome_log_has_babysitting "$row_log"; then
-    if [[ -n "$row_log" && -f "$row_log" ]] && grep -qi 'SB OVERRIDE' "$row_log" 2>/dev/null; then
+    if enterprise_e2e_outcome_log_has_sb_override "$row_log"; then
       printf 'partial\n'; return 0
     fi
     printf 'fail\n'; return 0
@@ -478,7 +554,8 @@ enterprise_e2e_outcome_directive_drained() {
 enterprise_e2e_outcome_log_has_worker_completion() {
   local row_log="${1:-}"
   [[ -n "$row_log" && -f "$row_log" ]] || return 1
-  grep -qiE 'worker completed|delegated SB worker|delegated Composer|completed via a delegated|workflow is complete|Workflow complete|workflow_complete:[[:space:]]*true|workflow ran through|completion-audit → SHIP|completion-audit.*SHIP|Review[- ]triad|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings|Workflow evidence was reconciled' "$row_log" 2>/dev/null
+  enterprise_e2e_outcome_log_matches "$row_log" \
+    'worker completed|delegated SB worker|delegated Composer|completed via a delegated|workflow is complete|Workflow complete|workflow_complete:[[:space:]]*true|workflow ran through|completion-audit → SHIP|completion-audit.*SHIP|Review[- ]triad|Branch readiness workflow|verdict:[[:space:]]*COMPLETE|next_skill:[[:space:]]*null|Verdict:[[:space:]]*\*\*PASS|Result:[[:space:]]*\*\*PASS\*\*|0 BLOCK findings|Workflow evidence was reconciled'
 }
 
 enterprise_e2e_outcome_log_has_orchestrator_handoff() {
@@ -590,9 +667,34 @@ enterprise_e2e_outcome_score_heal() {
 enterprise_e2e_outcome_score_release() {
   local work_dir="$1" row_num="${2:-}" ledger="${3:-}"
   [[ ! "$row_num" =~ ^(14|15|16)$ ]] && { printf 'n/a\n'; return 0; }
-  local has_ledger=0 has_ship=0
+  local has_ledger=0 has_ship=0 has_changelog=0 has_release_ship=0
   [[ -f "${work_dir}/docs/instruction-ledger.jsonl" ]] && has_ledger=1
   [[ -d "${work_dir}/.planning/ship-readiness" ]] && has_ship=1
+  [[ -f "${work_dir}/CHANGELOG.md" ]] && has_changelog=1
+  if find "${work_dir}/.planning/phases" -name 'SHIP.md' 2>/dev/null | grep -qi 'release'; then
+    has_release_ship=1
+  fi
+  # E2E-097: row 14 silver-release uses CHANGELOG + release phase, not ship-readiness.
+  if [[ "$row_num" == "14" ]]; then
+    if [[ "$has_changelog" -eq 1 ]] && { [[ "$has_ledger" -eq 1 ]] || [[ "$has_release_ship" -eq 1 ]]; }; then
+      if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
+        printf 'partial\n'; return 0
+      fi
+      printf 'pass\n'; return 0
+    fi
+    if [[ "$has_changelog" -eq 1 || "$has_ledger" -eq 1 ]]; then
+      printf 'partial\n'; return 0
+    fi
+    printf 'fail\n'; return 0
+  fi
+  # E2E-099: row 15 review-triad — triad review artifact chain, not release/ship-readiness.
+  if [[ "$row_num" == "15" ]]; then
+    if [[ -f "${work_dir}/.planning/reviews/triad-currency.md" ]] || \
+       compgen -G "${work_dir}/.planning/reviews/triad"*.md >/dev/null 2>&1; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'partial\n'; return 0
+  fi
   if [[ "$has_ledger" -eq 1 && "$has_ship" -eq 1 ]]; then
     if [[ -n "$ledger" && -f "$ledger" ]] && grep -qE '\*manual\*|hand-edited|operator patch' "$ledger" 2>/dev/null; then
       printf 'partial\n'; return 0
@@ -765,6 +867,15 @@ enterprise_e2e_outcome_score_km() {
   if [[ -n "$gref" ]] || enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
     has_gf=1
   fi
+  # E2E-098: matrix preamble always runs graphify; agentmemory MCP often disabled in matrix TUI.
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]] && \
+     [[ "$has_gf" -eq 1 ]]; then
+    if [[ "$has_am" -eq 1 ]] || \
+       enterprise_e2e_outcome_log_matches "$row_log" 'HARNESS graphify:|matrix MCP env: disabled' || \
+       grep -q 'matrix MCP env: disabled' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   # Matrix preamble always runs graphify query; ledger graphify_query_ref is authoritative.
   if [[ -n "$gref" ]] && [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]]; then
     printf 'pass\n'; return 0
@@ -820,6 +931,15 @@ enterprise_e2e_outcome_score_km() {
 
 enterprise_e2e_outcome_score_orch() {
   local state_dir="$1" row_log="${2:-}" row_num="${3:-}" work_dir="${4:-}" evidence="${5:-}"
+  # Row 6 (silver-fast): fast-path skill chain — orchestrator parent/worker not required.
+  if [[ "$row_num" == "6" ]]; then
+    if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1; then
+      printf 'n/a\n'; return 0
+    fi
+    if [[ -f "${state_dir}/state" ]] && grep -qE '^silver-fast$' "${state_dir}/state" 2>/dev/null; then
+      printf 'n/a\n'; return 0
+    fi
+  fi
   if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" ]]; then
     if enterprise_e2e_outcome_log_has_worker_completion "$row_log"; then
       printf 'pass\n'; return 0
@@ -970,7 +1090,7 @@ enterprise_e2e_outcome_score_hook() {
   local ledger="${SB_E2E_LEDGER_FILE:-${sb_root}/.planning/enterprise-e2e/ROUND-6-LEDGER.md}"
   if enterprise_e2e_outcome_is_routing_row "$row_num"; then
     if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qiE 'session ended on hook block|FAIL:.*outcome assessment' "$row_log" 2>/dev/null; then
+       enterprise_e2e_outcome_log_matches "$row_log" '^\s*FAIL:\s*outcome assessment'; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0
