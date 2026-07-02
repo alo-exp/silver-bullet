@@ -124,7 +124,55 @@ enterprise_e2e_row_outcome_only_rerun() {
   [[ " ${SB_E2E_OUTCOME_ONLY_ROWS} " == *" ${row_num} "* ]]
 }
 
-# Poll/rescore §5b — row 3 needs commits after row-6 anchor; row 6 needs any commit since baseline.
+# Row 3 §5b — at least one fixture commit after anchor touching api/currency paths.
+enterprise_e2e_commit_touches_api_currency() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local sha="${2:-}"
+  [[ -n "$sha" ]] || return 1
+  local paths
+  paths="$(git -C "$fixture_dir" diff-tree --no-commit-id --name-only -r "$sha" 2>/dev/null || true)"
+  if printf '%s\n' "$paths" | grep -qE '^api/.*(currency|orders)|^api/src/(orders|currency)'; then
+    return 0
+  fi
+  if printf '%s\n' "$paths" | grep -qE '^api/' && \
+     git -C "$fixture_dir" log -1 --format='%s' "$sha" 2>/dev/null | grep -qiE 'currency|orders'; then
+    return 0
+  fi
+  return 1
+}
+
+enterprise_e2e_row3_api_currency_commit_count() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local from_sha="${2:-}"
+  local to_sha="${3:-HEAD}"
+  [[ -n "$from_sha" ]] || return 1
+  local sha count=0
+  for sha in $(git -C "$fixture_dir" rev-list "${from_sha}..${to_sha}" 2>/dev/null); do
+    if enterprise_e2e_commit_touches_api_currency "$fixture_dir" "$sha"; then
+      count=$((count + 1))
+    fi
+  done
+  printf '%s' "$count"
+  [[ "$count" -gt 0 ]]
+}
+
+enterprise_e2e_assert_row3_api_currency_commit() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local anchor="${2:-}"
+  anchor="${anchor:-${SB_E2E_ROW3_PRODUCT_ANCHOR_SHA:-${SB_E2E_ROW6_FROZEN_COMMIT:-}}}"
+  [[ -n "$anchor" ]] || anchor="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  [[ -n "$anchor" ]] || return 1
+  local count
+  count="$(enterprise_e2e_row3_api_currency_commit_count "$fixture_dir" "$anchor" HEAD 2>/dev/null || echo 0)"
+  if [[ "$count" -gt 0 ]]; then
+    echo "  §5b row 3: ${count} api/currency commit(s) after anchor ${anchor:0:12}"
+    return 0
+  fi
+  echo "  FAIL: §5b row 3 — no api/currency fixture commit after anchor ${anchor:0:12}" >&2
+  return 1
+}
+
+# Poll/rescore §5b — row 3 needs api/currency commits after anchor; row 6 needs any commit since baseline.
 enterprise_e2e_assert_row_product_commit_rescore() {
   local row_num="${1:-}"
   local fixture_dir="${2:-$(enterprise_e2e_fixture_dir)}"
@@ -142,14 +190,7 @@ enterprise_e2e_assert_row_product_commit_rescore() {
       fi
       ;;
     3)
-      anchor="${SB_E2E_ROW6_FROZEN_COMMIT:-${SB_E2E_ROW3_PRODUCT_ANCHOR_SHA:-}}"
-      [[ -n "$anchor" ]] || anchor="$baseline"
-      [[ -n "$anchor" ]] || return 1
-      count="$(git -C "$fixture_dir" rev-list --count "${anchor}..HEAD" 2>/dev/null || echo 0)"
-      if [[ "$count" -gt 0 ]]; then
-        echo "  §5b rescore row 3: ${count} commit(s) after anchor ${anchor:0:12}"
-        return 0
-      fi
+      enterprise_e2e_assert_row3_api_currency_commit "$fixture_dir"
       ;;
     *)
       [[ -n "$baseline" ]] || return 1
@@ -171,7 +212,7 @@ enterprise_e2e_assert_row_product_commit_delta() {
   local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
   enterprise_e2e_row_requires_product_commit "$row_num" || return 0
-  local head_after
+  local head_after count=0
   head_after="$(enterprise_e2e_fixture_head_snapshot "$fixture_dir")"
   if [[ -z "$head_before" || -z "$head_after" ]]; then
     echo "  FAIL: §5b product delta — cannot read fixture HEAD (row ${row_num})" >&2
@@ -185,6 +226,15 @@ enterprise_e2e_assert_row_product_commit_delta() {
     fi
     echo "  FAIL: §5b product delta — no fixture commit after row ${row_num} (HEAD still ${head_after:0:12})" >&2
     return 1
+  fi
+  if [[ "$row_num" == "3" ]]; then
+    count="$(enterprise_e2e_row3_api_currency_commit_count "$fixture_dir" "$head_before" "$head_after" 2>/dev/null || echo 0)"
+    if [[ "$count" -eq 0 ]]; then
+      echo "  FAIL: §5b product delta — row 3 requires api/currency commit (${head_before:0:12} → ${head_after:0:12}, docs/planning-only insufficient)" >&2
+      return 1
+    fi
+    echo "  §5b product delta row 3: ${count} api/currency commit(s) ${head_before:0:12} → ${head_after:0:12}"
+    return 0
   fi
   echo "  §5b product delta: ${head_before:0:12} → ${head_after:0:12} ($(git -C "$fixture_dir" log -1 --format='%s' "$head_after" 2>/dev/null || echo commit))"
   return 0
