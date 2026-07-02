@@ -51,7 +51,7 @@ fi
 printf '\n=== codex-r3-real %s rows %s @ SB %s fixture %s@%s ===\n' \
   "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${ROWS[*]}" "$(git rev-parse --short HEAD)" \
   "${SB_E2E_TEST_APP_BRANCH}" "$(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-echo "  install=$(enterprise_e2e_sb_install_version_key)"
+echo "  SB_SHA=$(git rev-parse --short HEAD) fixture=$(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 echo "  §5b product gate=ON exempt rows 1,15,21,22"
 
 exec env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight "${ROWS[@]}" \
