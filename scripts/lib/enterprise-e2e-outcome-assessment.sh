@@ -1257,8 +1257,11 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-KM-01) enterprise_e2e_outcome_score_km "$ledger" "$row_num" "$row_log" "$work_dir" ;;
     OUT-ORCH-01) enterprise_e2e_outcome_score_orch "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
     OUT-PLAN-01) enterprise_e2e_outcome_score_plan "$work_dir" ;;
-    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" "$work_dir" ;;
-    OUT-REVIEW-01) enterprise_e2e_outcome_score_review "$ledger" "$row_num" "$row_log" "$work_dir" ;;
+    OUT-SKILL-01) enterprise_e2e_outcome_score_skill "$state_dir" "$row_log" "$row_num" "$work_dir" "$evidence" ;;
+    OUT-REVIEW-01)
+      local review_ledger="${SB_E2E_REVIEW_LADDER_LEDGER:-$ledger}"
+      enterprise_e2e_outcome_score_review "$review_ledger" "$row_num" "$row_log" "$work_dir"
+      ;;
     OUT-BLAST-01) enterprise_e2e_outcome_score_blast "$work_dir" "$row_num" ;;
     OUT-HOOK-01) enterprise_e2e_outcome_score_hook "$sb_root" "$row_num" "$row_log" ;;
     OUT-COMPLETE-01) enterprise_e2e_outcome_score_complete "$work_dir" "$row_num" ;;

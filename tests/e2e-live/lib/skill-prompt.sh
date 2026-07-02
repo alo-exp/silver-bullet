@@ -43,6 +43,35 @@ matrix_row3_outcome_only_clause() {
     "$frozen"
 }
 
+# Row 14 release — OUT-RELEASE-01, OUT-TRACE-01, OUT-COMPLETE-01, OUT-GATES-01.
+matrix_row14_outcome_clause() {
+  printf 'Release outcome gate (mandatory): create and git-commit on the fixture branch: CHANGELOG.md with v0.2.0 ship notes, docs/instruction-ledger.jsonl (spec-to-release trace entries linking currency feature → release), and ensure .planning/ship-readiness/ exists with checklist evidence. OUT-RELEASE-01 requires BOTH instruction-ledger.jsonl AND ship-readiness dir — partial on either alone FAILs. Issue SB OVERRIDE if planning-file-guard blocks .planning writes.'
+}
+
+# Row 14 outcome-only — product frozen @ ROW14_FROZEN_COMMIT (CHANGELOG commit).
+matrix_row14_outcome_only_clause() {
+  local frozen="${SB_E2E_ROW14_FROZEN_COMMIT:-4ac2570}"
+  printf 'Outcome-only row 14: release product work is frozen @ %s — do NOT modify CHANGELOG.md or api/ source. Create and commit outcome artifacts only: docs/instruction-ledger.jsonl and .planning/ship-readiness/ checklist updates. §5b satisfied without new product delta.' \
+    "$frozen"
+}
+
+# Row 15 review-triad — OUT-REVIEW-01, OUT-RELEASE-01, OUT-VLOOP-01, OUT-GATES-01.
+matrix_row15_outcome_clause() {
+  printf 'Review-triad outcome gate (mandatory): create and git-commit on the fixture branch: .planning/reviews/triad-currency.md (currency field review with approve/block disposition), docs/instruction-ledger.jsonl, .planning/ship-readiness/ checklist, and .planning/VALIDATION-triad-currency.md (or .planning/VALIDATION-*.md). OUT-REVIEW-01 is satisfied by ROUND-3-LEDGER review-fix-ladder 8/8 PASS — do NOT re-run the ladder; focus on triad evidence. OUT-RELEASE-01 requires BOTH instruction-ledger.jsonl AND ship-readiness dir. Issue SB OVERRIDE if planning-file-guard blocks evidence writes.'
+}
+
+# Row 16 ship-readiness — OUT-RELEASE-01, OUT-TRACE-01, OUT-MEASURE-01, OUT-COMPLETE-01.
+matrix_row16_outcome_clause() {
+  printf 'Ship-readiness outcome gate (mandatory): create and git-commit on the fixture branch: .planning/ship-readiness/checklist.md with all gates checked, docs/instruction-ledger.jsonl (traceability chain), and token-telemetry references in SB ledger if OUT-MEASURE-01 applies. OUT-RELEASE-01 requires BOTH instruction-ledger.jsonl AND ship-readiness dir — update checklist with merge-ready verdict. Issue SB OVERRIDE if planning-file-guard blocks .planning writes.'
+}
+
+# Row 16 outcome-only — product frozen @ ROW16_FROZEN_COMMIT (ship-readiness evidence commit).
+matrix_row16_outcome_only_clause() {
+  local frozen="${SB_E2E_ROW16_FROZEN_COMMIT:-5f6fb68}"
+  printf 'Outcome-only row 16: ship-readiness product work is frozen @ %s — do NOT add new api/ or CHANGELOG commits. Create and commit outcome artifacts only: docs/instruction-ledger.jsonl and .planning/ship-readiness/checklist.md updates. §5b satisfied without new product delta.' \
+    "$frozen"
+}
+
 matrix_router_workflow_prompt() {
   local slug="$1"
   local prompt_card="$2"
