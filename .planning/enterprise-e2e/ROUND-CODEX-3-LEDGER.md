@@ -15,7 +15,7 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 | Round | Codex-3 REAL |
 | Host | `codex` |
 | SB harness branch | `enterprise-e2e/codex` |
-| SB repo SHA | `25d373a6` (fixture reset + §5b gate) |
+| SB repo SHA | `4412bb01` (fixture branch lock + Tier B relaunch) |
 | Test-app branch | `enterprise-e2e/round-9-codex` |
 | Test app baseline SHA | `09f8d1a` (pre-`826cb5c` — **no matrix pre-seed**) |
 | Test-app CWD | `/Users/shafqat/projects/enterprise-grade-test-app` |
@@ -72,9 +72,49 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 
 ## Tier B — live smoke (rows 1, 3, 6)
 
-**Driver:** live-test PID **56356** (lock); monitor **59054**; tui-watch **59069** — [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `5d304de5`  
+**Driver:** tmux `codex-r3-real-tierb` pane **6228**; live-test lock **6358**; matrix **14143**; poll-exit → [.codex-r3-tierb-poll-exit.sh](./.codex-r3-tierb-poll-exit.sh) `6228`  
+**Launch:** [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `c8e2f002`  
 **Launch log:** [.codex-r3-tierb-launch.nohup](./.codex-r3-tierb-launch.nohup)  
-**Status:** **RUNNING** (Codex plugin install + row 1 invoke)
+**Friction monitor:** PID **8072** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log)  
+**Status:** **RUNNING** (Row 1 live invoke — past tui-watch stall)
+
+### Poll checkpoint 2026-07-03T00:56Z (fixture branch lock + Tier B relaunch @ `4412bb01`)
+
+| Field | Value |
+|-------|-------|
+| **Harness fix** | `4412bb01` — `enterprise_e2e_fixture_assert_branch_lock`; pre/post-invoke branch pin in matrix; duplicate-batch guard in driver |
+| **Root cause** | Agent `git checkout` to `round-9-claude` @ `8482e60` during row 1 (826cb5c pre-seed §5b violation) |
+| **SIGTERM 52051** | Duplicate driver relaunch @ `5002b568` killed prior batch mid-row 3 — operator relaunch, not matrix bug |
+| **Remediation** | fixture hard-reset `enterprise-e2e/round-9-codex` @ `09f8d1a`; row logs 1/3 purged; stale workflow evidence cleared |
+| **Tier B driver** | **RUNNING** tmux `codex-r3-real-tierb` pane **67803** @ `4412bb01` |
+| **Poll-exit** | PID **68831** → [.codex-r3-tierb-poll-exit.sh](./.codex-r3-tierb-poll-exit.sh) `67803` |
+| **Chain monitor** | PID **68833** — [.codex-r3-chain-monitor.log](./.codex-r3-chain-monitor.log) |
+| **Friction monitor** | PID **68835** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log) |
+| **§5b product gate** | **ON** — exempt rows 1,15,21,22 |
+
+### Poll checkpoint 2026-07-03T00:28Z (FORCE_ALL harness fix + Tier B relaunch @ `5002b568`)
+
+| Field | Value |
+|-------|-------|
+| **Harness fix** | `5002b568` — `matrix_force_rerun()` honors `SB_E2E_MATRIX_FORCE_ALL=1`; EXIT trap captures batch pid path |
+| **Blockers cleared** | stale Codex-2 evidence skip; `_matrix_batch_pid_file` unbound on EXIT |
+| **Remediation** | fixture reset `09f8d1a`; Tier B workflow evidence purged; row logs 1/3/6 cleared |
+| **Tier B driver** | **RUNNING** tmux `codex-r3-real-tierb` pane **43664** cwd `/private/tmp/sb-codex-force4-wt` |
+| **Matrix** | PID **52051** — Row 1 live invoke (no SKIP) |
+| **Poll-exit** | PID **44643** → [.codex-r3-tierb-poll-exit.sh](./.codex-r3-tierb-poll-exit.sh) `43664` |
+| **Friction monitor** | PID **44764** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log) |
+| **§5b product gate** | **ON** — exempt rows 1,15,21,22 |
+
+### Poll checkpoint 2026-07-02T14:18Z (Round Codex-3 REAL Tier B relaunch @ `c8e2f002`)
+
+| Field | Value |
+|-------|-------|
+| **Blockers cleared** | stale lock PID 2916; orphan monitors 6454/7280/59054; misbound batch.pid |
+| **Remediation** | `install-codex.sh --purge-legacy-skills` PASS; fixture reset `09f8d1a` |
+| **Tier B driver** | **RUNNING** tmux `codex-r3-real-tierb` pane **6228** cwd `/private/tmp/sb-codex-force4-wt` |
+| **Poll-exit** | PID bound → [.codex-r3-tierb-poll-exit.sh](./.codex-r3-tierb-poll-exit.sh) `6228` |
+| **§5b product gate** | **ON** — exempt rows 1,15,21,22 |
+| **Tier C chain** | On fresh **3/3** rescore → auto-launch [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) + [.codex-r3-matrix-poll-exit.sh](./.codex-r3-matrix-poll-exit.sh) |
 
 | # | WF slug | Pass/Fail | log_bytes | live_invoke | commit_sha | Notes |
 |---|---------|-----------|-----------|-------------|------------|-------|
@@ -82,7 +122,20 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 | 3 | `silver-feature` | *pending* | | | | **product commit required** |
 | 6 | `silver-fast` | *pending* | | | | **product commit required** |
 
-**Tier B verdict:** *pending*
+**Tier B verdict:** *pending* (force36 relaunch @ `4412bb01` — row 1 frozen PASS; FORCE 3,6)
+
+### Poll checkpoint 2026-07-03T01:10Z (force36 relaunch @ `4412bb01`)
+
+| Field | Value |
+|-------|-------|
+| **Root cause rows 3,6** | Codex wrote planning-only evidence; **0 fixture commits** — §5b FAIL |
+| **Poll-exit 68831** | Early death — `pipefail` + `pgrep` no-match; fixed in tierb/force36 poll scripts |
+| **Harness fix** | `matrix_product_commit_clause` in invoke prompts (codex implement rows); [codex-r3-force36-driver.sh](./codex-r3-force36-driver.sh) + [.codex-r3-force36-poll-exit.sh](./.codex-r3-force36-poll-exit.sh) tmux-stable |
+| **Policy** | One pass — frozen row **1** PASS; FORCE rows **3,6** only |
+| **Tier B driver** | tmux `codex-r3-force36:driver` @ `4412bb01` |
+| **Poll-exit** | tmux `codex-r3-force36:poll` → [.codex-r3-force36-poll-exit.sh](./.codex-r3-force36-poll-exit.sh) |
+| **§5b product gate** | **ON** — exempt rows 1,15,21,22 |
+| **Tier C chain** | On **3/3** rescore → auto [codex-r3-matrix-driver.sh](./codex-r3-matrix-driver.sh) |
 
 ---
 
@@ -143,7 +196,33 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Fixture reset (round-9 @ 09f8d1a) | **PASS** |
 | Harness §5b product gate | **landed** |
 | Tier A offline | **PASS** @ `25d373a6` |
-| Tier B smoke 1,3,6 | **RUNNING** (live-test PID 56356) |
+| Tier B smoke 1,3,6 | **RUNNING** (lock PID 6358, matrix 14143 @ `c8e2f002`) |
 | Full matrix 22/22 | *pending* |
 | Phase C | *pending* |
 | Product audit | *pending* |
+
+### Poll checkpoint 2026-07-02T14:21:48Z (Round Codex-3 REAL Tier B exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **6228** |
+| **Tier B rescore** | **0/3** — [.codex-r3-tierb-rescore.log](./.codex-r3-tierb-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
+
+### Poll checkpoint 2026-07-02T14:46:44Z (Round Codex-3 REAL Tier B exit)
+
+| Field | Value |
+|-------|-------|
+| **Driver** | EXITED PID **43664** |
+| **Tier B rescore** | **1/3** — [.codex-r3-tierb-rescore.log](./.codex-r3-tierb-rescore.log) |
+| **Tier C** | **BLOCKED** — fix Tier B failures first |
+| 1 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T15:04:54Z |
+| 1 | blocker | hook | Stage enforcer | tui-watch 2026-07-02T15:04:54Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:04:54Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:04:54Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:04:55Z |
+| 1 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:04:55Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:03Z |
+| 3 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |
+| 6 | blocker | hook | planning-file-guard | tui-watch 2026-07-02T15:06:04Z |

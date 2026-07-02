@@ -61,6 +61,14 @@ Score **all 27 criteria** in rubric / `outcome-criteria-registry.json`, includin
 
 Any mandatory outcome failure = **row FAIL** = round **not** strict-clean. Run `enterprise_e2e_outcome_row_passes` after each row; re-score after `SB_E2E_MATRIX_FORCE=1`.
 
+### §5b product commit gate (Codex-3 REAL)
+
+When `SB_E2E_PRODUCT_WORK_GATE=1` (default on Codex-3 REAL), **implement rows** must produce a **git commit on the fixture branch** (`enterprise-e2e/round-9-codex` @ baseline `09f8d1a`). Planning-only workflow evidence **without** product code + commit = **row FAIL**.
+
+- Matrix invoke prompts append: *implement real product code and git-commit on fixture branch before ending*.
+- Exempt: row 1 (routing), row 15 (triad audit), rows 21–22 (internal inherit).
+- Codex parent/orchestrator must **delegate implementation to workers** and ensure workers **commit product deltas** — not stop at `.planning/workflows/*.md` alone.
+
 ---
 
 ## Deterministic preflight (mandatory before live)
