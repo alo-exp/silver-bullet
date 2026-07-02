@@ -367,7 +367,7 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 #### Step 2 — Ask when `null`
 
-Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** secondary host uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
+Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBenefits: automatic PreToolUse rewrite for git, npm, cargo, kubectl, etc.\n\n**Note:** Codex uses AGENTS.md awareness only (no live Bash rewrite yet).\n\nEnable RTK for this project?"
 
 - **Yes** → `enabled_by_user: true`
 - **No** → `enabled_by_user: false`
