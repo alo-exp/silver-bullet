@@ -448,6 +448,21 @@ validate_silver_bullet_skill_surface() {
   done
 }
 
+regenerate_core_rules_pin() {
+  local hooks_dir="$1"
+  local core_rules="${hooks_dir}/core-rules.md"
+  local pin_file="${hooks_dir}/core-rules.sha256"
+
+  [[ -f "$core_rules" ]] || return 0
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$core_rules" | awk '{print $1}' >"$pin_file"
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$core_rules" | awk '{print $1}' >"$pin_file"
+  else
+    return 1
+  fi
+}
+
 sanitize_codex_package_surface() {
   local marketplace_root
   local package_root
@@ -463,6 +478,9 @@ sanitize_codex_package_surface() {
     printf 'ERROR: codex sanitizer helper missing at %s\n' "${SCRIPT_DIR}/codex-sanitize-package.sh" >&2
     exit 1
   fi
+
+  # Codex sanitizer rewrites hooks/core-rules.md for runtime wording; refresh L-02 pin.
+  regenerate_core_rules_pin "${package_root}/hooks"
 }
 
 sync_codex_cache_package_surface() {
@@ -481,6 +499,7 @@ sync_codex_cache_package_surface() {
 
   mkdir -p "${package_root}/${package_version}"
   rsync -a --delete "${marketplace_package_root}/" "${package_root}/${package_version}/"
+  regenerate_core_rules_pin "${package_root}/${package_version}/hooks"
   validate_silver_bullet_skill_surface "installed package" "${package_root}/${package_version}"
 
   shopt -s nullglob
