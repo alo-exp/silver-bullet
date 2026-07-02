@@ -22,7 +22,7 @@ export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-cursor
 export SB_ENTERPRISE_E2E_LIVE=1 SB_E2E_SKIP_CURSOR_INSTALL=1
 export SB_E2E_SURFACE_SKIP=0 SB_LIVE_CURSOR_FORCE_HEADLESS=1
-export SB_E2E_MATRIX_FORCE_ALL=1
+export SB_E2E_MATRIX_FORCE_ALL=1 SB_E2E_MATRIX_FORCE=1
 export SB_E2E_TEST_APP_ROUND=3
 export RTK_DISABLED=1
 # E2E-087/E2E-092: explicit — matrix also enforces ≥1800 for cursor host.
