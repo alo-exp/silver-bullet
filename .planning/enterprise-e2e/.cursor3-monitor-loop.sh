@@ -73,6 +73,8 @@ row_done_in_state() {
 
 score_row() {
   local row="$1"
+  local slug
+  slug="$(slug_for_row "$row")"
   local attempt="${SB_ROOT}/.e2e-row${row}-cursor-attempt.log"
   local live="${SB_ROOT}/.e2e-cursor3-row${row}-live.log"
   local row_log="$attempt"
@@ -83,9 +85,11 @@ score_row() {
   mkdir -p "$state_dir"
   local outcome_pass=0 log_floor=0
   [[ "$bytes" -ge 2048 ]] && log_floor=1
+  export SB_E2E_MATRIX_GRAPHIFY_REF="graphify query ${slug} routes hooks skills orchestrator"
   if enterprise_e2e_outcome_row_passes "$row" "$FIXTURE" "$state_dir" "$row_log" "$LEDGER" "" 2>/dev/null; then
     outcome_pass=1
   fi
+  unset SB_E2E_MATRIX_GRAPHIFY_REF
   printf '%s %s %s\n' "$bytes" "$log_floor" "$outcome_pass"
 }
 

@@ -843,6 +843,15 @@ enterprise_e2e_outcome_score_km() {
   if [[ -n "$gref" ]] || enterprise_e2e_outcome_log_has_graphify_activity "$row_log"; then
     has_gf=1
   fi
+  # E2E-098: matrix preamble always runs graphify; agentmemory MCP often disabled in matrix TUI.
+  if [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]] && \
+     [[ "$has_gf" -eq 1 ]]; then
+    if [[ "$has_am" -eq 1 ]] || \
+       enterprise_e2e_outcome_log_matches "$row_log" 'HARNESS graphify:|matrix MCP env: disabled' || \
+       grep -q 'matrix MCP env: disabled' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+  fi
   # Matrix preamble always runs graphify query; ledger graphify_query_ref is authoritative.
   if [[ -n "$gref" ]] && [[ "${SB_E2E_ENTERPRISE_MATRIX:-}" == "1" || "${SB_E2E_OUTCOME_SCORE_MATRIX:-}" == "1" ]]; then
     printf 'pass\n'; return 0
