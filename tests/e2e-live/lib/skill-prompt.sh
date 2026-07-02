@@ -31,6 +31,18 @@ matrix_row3_product_commit_clause() {
     "$branch"
 }
 
+# Row 3 outcome methodology — scored by OUT-PLAN-01, OUT-GATES-01, OUT-TRACE-01, OUT-VLOOP-01.
+matrix_row3_outcome_clause() {
+  printf 'Outcome methodology gate (mandatory): create and git-commit on the fixture branch: .planning/PLAN-feature.md (or .planning/PLAN-*.md), .planning/SPEC-feature.md (or .planning/*SPEC*), .planning/QUALITY-GATES-feature.md (or .planning/QUALITY-GATES-*.md), .planning/VALIDATION-feature.md (or .planning/VALIDATION-*.md), and update .planning/workflows/feature-currency.md to include post-exec-gates in the Flow Log. Workflow evidence alone FAILs OUT-PLAN-01 OUT-GATES-01 OUT-TRACE-01 OUT-VLOOP-01. Issue SB OVERRIDE if planning-file-guard blocks .planning writes.'
+}
+
+# Row 3 outcome-only rerun — product frozen; planning artifacts only.
+matrix_row3_outcome_only_clause() {
+  local frozen="${SB_E2E_ROW3_FROZEN_COMMIT:-HEAD}"
+  printf 'Outcome-only row 3: api/currency product work is frozen @ %s — do NOT modify api/ source. Create and commit planning methodology artifacts only (.planning/PLAN-feature.md, SPEC-feature.md, QUALITY-GATES-feature.md, VALIDATION-feature.md, feature-currency.md with post-exec-gates). §5b satisfied without new product delta.' \
+    "$frozen"
+}
+
 matrix_router_workflow_prompt() {
   local slug="$1"
   local prompt_card="$2"
