@@ -28,7 +28,10 @@ METHODOLOGY="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODO
 
 assert_contains "core lib defines enterprise_e2e_fixture_branch" "$HARNESS_CORE" "enterprise_e2e_fixture_branch()"
 assert_contains "core lib defines enterprise_e2e_fixture_ensure_branch" "$HARNESS_CORE" "enterprise_e2e_fixture_ensure_branch()"
+assert_contains "core lib defines enterprise_e2e_fixture_assert_branch_lock" "$HARNESS_CORE" "enterprise_e2e_fixture_assert_branch_lock()"
 assert_contains "core lib defines enterprise_e2e_assert_row_product_commit_delta" "$HARNESS_CORE" "enterprise_e2e_assert_row_product_commit_delta()"
+assert_contains "matrix calls fixture_ensure_branch before row invoke" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" "enterprise_e2e_fixture_ensure_branch"
+assert_contains "matrix calls fixture_assert_branch_lock post-invoke" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" "post-invoke fixture branch"
 assert_contains "methodology documents fixture branch pattern" "$METHODOLOGY" "enterprise-e2e/round-"
 assert_contains "methodology documents SB_E2E_TEST_APP_BRANCH" "$METHODOLOGY" "SB_E2E_TEST_APP_BRANCH"
 

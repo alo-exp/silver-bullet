@@ -41,6 +41,13 @@ fi
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 
 cd "$SB_ROOT"
+if declare -f enterprise_e2e_matrix_batch_running >/dev/null 2>&1 && enterprise_e2e_matrix_batch_running; then
+  batch_pid="$(enterprise_e2e_matrix_batch_pid 2>/dev/null || true)"
+  echo "ERROR: matrix batch already running (pid ${batch_pid:-unknown}) — refuse duplicate Tier B launch" >&2
+  echo "       Stop tmux codex-r3-real-tierb or wait for batch exit." >&2
+  exit 1
+fi
+
 current_branch="$(git branch --show-current 2>/dev/null || true)"
 if [[ "$current_branch" != "$SB_E2E_BRANCH" ]]; then
   git checkout "$SB_E2E_BRANCH" >/dev/null 2>&1 || true

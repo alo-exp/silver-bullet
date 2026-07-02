@@ -70,6 +70,39 @@ enterprise_e2e_fixture_ensure_branch() {
   echo "Fixture branch: ${branch} @ $(git -C "$fixture_dir" rev-parse --short HEAD)"
 }
 
+# Verify fixture stayed on host-isolated branch (anti-contamination after agent git checkout).
+enterprise_e2e_fixture_assert_branch_lock() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local label="${2:-fixture branch lock}"
+  [[ "${SB_E2E_FIXTURE_BRANCH_LOCK:-1}" != "0" ]] || return 0
+  [[ "${SB_E2E_FIXTURE_BRANCH_PIN:-1}" != "0" ]] || return 0
+
+  local expected_branch current_branch current_sha exclude_ancestor
+  expected_branch="$(enterprise_e2e_fixture_branch)"
+  [[ -n "$expected_branch" ]] || return 0
+  [[ -d "$fixture_dir/.git" ]] || {
+    echo "  FAIL: ${label} — not a git repo: ${fixture_dir}" >&2
+    return 1
+  }
+
+  current_branch="$(git -C "$fixture_dir" branch --show-current 2>/dev/null || true)"
+  current_sha="$(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || true)"
+
+  if [[ "$current_branch" != "$expected_branch" ]]; then
+    echo "  FAIL: ${label} — expected branch ${expected_branch}, got ${current_branch:-detached} @ ${current_sha}" >&2
+    return 1
+  fi
+
+  exclude_ancestor="${SB_E2E_TEST_APP_EXCLUDE_ANCESTOR:-826cb5c}"
+  if [[ -n "$exclude_ancestor" ]] && git -C "$fixture_dir" merge-base --is-ancestor "$exclude_ancestor" HEAD 2>/dev/null; then
+    echo "  FAIL: ${label} — HEAD includes forbidden ancestor ${exclude_ancestor} (§5b pre-seed contamination)" >&2
+    return 1
+  fi
+
+  echo "  fixture branch lock: ${expected_branch} @ ${current_sha}"
+  return 0
+}
+
 # §5b product-work gate — rows that must produce a fixture-branch commit (Codex-3 REAL).
 enterprise_e2e_row_requires_product_commit() {
   local row_num="${1:-}"
