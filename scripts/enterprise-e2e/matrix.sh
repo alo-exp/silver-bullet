@@ -129,6 +129,7 @@ Environment:
   SB_E2E_MATRIX_LOG / SB_E2E_MATRIX_BATCH_PID_FILE / SB_E2E_LIVE_TEST_LOCK_FILE  host-isolated defaults
   SB_E2E_MATRIX_DRY_RUN=1     Verify evidence only, skip Claude sessions
   SB_E2E_MATRIX_FORCE=1        Re-run rows even when evidence exists
+  SB_E2E_MATRIX_FORCE_ALL=1    Same as FORCE=1 (used by REAL round drivers)
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
   SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 0; set 1 for OAuth-only)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
@@ -368,6 +369,10 @@ verify_row_internal() {
   return 1
 }
 
+matrix_force_rerun() {
+  [[ "${SB_E2E_MATRIX_FORCE:-}" == "1" || "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]]
+}
+
 run_matrix_row() {
   local row_num="$1"
   local slug="$2"
@@ -400,8 +405,8 @@ run_matrix_row() {
     return 0
   fi
 
-  if [[ "${SB_E2E_MATRIX_FORCE:-}" != "1" ]] && verify_row_success "$row_num" "$evidence_path"; then
-    echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
+  if ! matrix_force_rerun && verify_row_success "$row_num" "$evidence_path"; then
+    echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 or SB_E2E_MATRIX_FORCE_ALL=1 to re-run)"
     SKIP_ROWS=$((SKIP_ROWS + 1))
     SB_E2E_TELEMETRY_ROW="$row_num" \
       SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
@@ -618,7 +623,7 @@ main() {
   fi
   setup_workspace
   if [[ -n "$_matrix_batch_pid_file" ]]; then
-    trap 'rm -f "$_matrix_batch_pid_file"; cleanup_workspace' EXIT
+    trap "rm -f '$_matrix_batch_pid_file'; cleanup_workspace" EXIT
   else
     trap cleanup_workspace EXIT
   fi
