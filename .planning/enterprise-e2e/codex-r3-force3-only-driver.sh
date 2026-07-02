@@ -23,6 +23,8 @@ export SB_E2E_SESSION0_SKIP=0
 export SB_E2E_SESSION0_SKIP_REASON=""
 export SB_E2E_ROW6_FROZEN_COMMIT="${SB_E2E_ROW6_FROZEN_COMMIT:-5072735}"
 export SB_E2E_ROW3_PRODUCT_ANCHOR_SHA="${SB_E2E_ROW3_PRODUCT_ANCHOR_SHA:-5072735}"
+export SB_E2E_ROW3_FROZEN_COMMIT="${SB_E2E_ROW3_FROZEN_COMMIT:-}"
+export SB_E2E_OUTCOME_ONLY_ROWS="${SB_E2E_OUTCOME_ONLY_ROWS:-}"
 export SB_E2E_FROZEN_BASELINE_SHA="${SB_E2E_FROZEN_BASELINE_SHA:-4412bb01}"
 export SB_E2E_FROZEN_ROW6_SHA="${SB_E2E_ROW6_FROZEN_COMMIT}"
 export SB_E2E_SKIP_CODEX_INSTALL=1
@@ -58,6 +60,15 @@ if [[ -d "${fixture_dir}/.git" ]]; then
     git -C "$fixture_dir" reset --hard "$SB_E2E_ROW6_FROZEN_COMMIT" 2>/dev/null || true
     echo "  fixture pinned @ ${frozen_head} (rows 1+6 frozen; row 3 api/currency anchor)"
   fi
+  # Outcome-only row 3: preserve product commit @ ROW3_FROZEN when set.
+  if [[ -n "${SB_E2E_OUTCOME_ONLY_ROWS:-}" && " ${SB_E2E_OUTCOME_ONLY_ROWS} " == *" 3 "* ]] && \
+     [[ -n "${SB_E2E_ROW3_FROZEN_COMMIT:-}" ]]; then
+    row3_frozen="$(git -C "$fixture_dir" rev-parse --short "$SB_E2E_ROW3_FROZEN_COMMIT" 2>/dev/null || true)"
+    if [[ -n "$row3_frozen" ]]; then
+      git -C "$fixture_dir" reset --hard "$SB_E2E_ROW3_FROZEN_COMMIT" 2>/dev/null || true
+      echo "  fixture outcome-only row 3 @ ${row3_frozen} (product frozen; PLAN/GATES/TRACE rerun)"
+    fi
+  fi
   if [[ -f "${fixture_dir}/.silver-bullet.json" ]]; then
     jq '.recommended_tools.graphify.enabled_by_user = true | .recommended_tools.agentmemory.enabled_by_user = true' \
       "${fixture_dir}/.silver-bullet.json" >"${fixture_dir}/.silver-bullet.json.tmp" && \
@@ -68,9 +79,11 @@ if [[ -d "${fixture_dir}/.git" ]]; then
     (cd "$fixture_dir" && graphify update . --no-cluster >/dev/null 2>&1) || true
   fi
   rm -f \
-    "${fixture_dir}/.planning/workflows/feature-currency.md" \
     "${fixture_dir}/.planning/enterprise-e2e/outcomes/row-3-outcomes.md" \
     2>/dev/null || true
+  if [[ -z "${SB_E2E_OUTCOME_ONLY_ROWS:-}" || " ${SB_E2E_OUTCOME_ONLY_ROWS} " != *" 3 "* ]]; then
+    rm -f "${fixture_dir}/.planning/workflows/feature-currency.md" 2>/dev/null || true
+  fi
 fi
 
 printf '\n=== codex-r3-force3-only FORCE %s rows %s @ SB %s fixture %s@%s ===\n' \
@@ -78,6 +91,9 @@ printf '\n=== codex-r3-force3-only FORCE %s rows %s @ SB %s fixture %s@%s ===\n'
   "${SB_E2E_TEST_APP_BRANCH}" "$(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 echo "  SB_SHA=$(git rev-parse --short HEAD) fixture=$(git -C "$fixture_dir" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 echo "  policy=frozen rows 1+6 PASS; FORCE row 3 only; anchor=${SB_E2E_ROW3_PRODUCT_ANCHOR_SHA:0:12}"
+if [[ -n "${SB_E2E_OUTCOME_ONLY_ROWS:-}" ]]; then
+  echo "  outcome-only rows: ${SB_E2E_OUTCOME_ONLY_ROWS} (product frozen @ ${SB_E2E_ROW3_FROZEN_COMMIT:-HEAD})"
+fi
 echo "  §5b product gate=ON early-fail; row 3 requires api/currency commit after anchor"
 
 exec env RTK_DISABLED=1 bash scripts/run-enterprise-e2e-live-test.sh --skip-code-intel-preflight "${ROWS[@]}" \

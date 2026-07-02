@@ -191,6 +191,7 @@ enterprise_e2e_assert_row_product_commit_rescore() {
       ;;
     3)
       enterprise_e2e_assert_row3_api_currency_commit "$fixture_dir"
+      return $?
       ;;
     *)
       [[ -n "$baseline" ]] || return 1
