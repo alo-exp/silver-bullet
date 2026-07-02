@@ -72,7 +72,7 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 
 ## Tier B — live smoke (rows 1, 3, 6)
 
-**Driver:** batch PID **60854** — [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `25d373a6`  
+**Driver:** live-test PID **56356** (lock); monitor **59054**; tui-watch **59069** — [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `5d304de5`  
 **Launch log:** [.codex-r3-tierb-launch.nohup](./.codex-r3-tierb-launch.nohup)  
 **Status:** **RUNNING** (Codex plugin install + row 1 invoke)
 
@@ -143,7 +143,7 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Fixture reset (round-9 @ 09f8d1a) | **PASS** |
 | Harness §5b product gate | **landed** |
 | Tier A offline | **PASS** @ `25d373a6` |
-| Tier B smoke 1,3,6 | **RUNNING** (batch PID 60854) |
+| Tier B smoke 1,3,6 | **RUNNING** (live-test PID 56356) |
 | Full matrix 22/22 | *pending* |
 | Phase C | *pending* |
 | Product audit | *pending* |
