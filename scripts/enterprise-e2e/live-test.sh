@@ -153,7 +153,18 @@ else
 fi
 # install-claude.sh runs below; avoid duplicate bootstrap during hook-delivery prepare_workspace.
 export SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP=1
-bash tests/e2e-live/hook-delivery-preflight.sh
+_hook_delivery_rc=1
+for _hook_attempt in 1 2 3; do
+  if bash tests/e2e-live/hook-delivery-preflight.sh; then
+    _hook_delivery_rc=0
+    break
+  fi
+  echo "WARN: hook-delivery preflight attempt ${_hook_attempt}/3 failed; retrying..." >&2
+  sleep 2
+done
+if ((_hook_delivery_rc)); then
+  exit 1
+fi
 (cd "$FIXTURE_DIR" && git status --short && npm test)
 
 # Session-start from test app (cursor-hook-bridge / branch scope — cursor runtime only).
