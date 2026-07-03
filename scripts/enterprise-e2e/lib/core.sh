@@ -314,15 +314,6 @@ enterprise_e2e_assert_row_product_commit_delta() {
   return 0
 }
 
-# claude | codex | cursor — honors pre-set SB_E2E_LIVE_RUNTIME / SILVER_BULLET_RUNTIME.
-
-# Default host-isolated artifact paths (Claude keeps legacy names for Round 6).
-
-
-
-
-# Translate MATRIX_ROWS route column for non-Claude hosts.
-
 enterprise_e2e_matrix_log() {
   local host="${SB_E2E_LIVE_RUNTIME:-${SILVER_BULLET_RUNTIME:-}}"
   if [[ -z "${SB_E2E_MATRIX_LOG:-}" && -n "$host" && "$host" != "claude" ]]; then

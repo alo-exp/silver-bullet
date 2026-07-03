@@ -19,10 +19,6 @@ export SB_ROOT
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-ledger-reconcile.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-ledger-reconcile.sh"
-# shellcheck source=scripts/enterprise-e2e/lib/host.sh
-source "${SB_ROOT}/scripts/enterprise-e2e/lib/host.sh"
-# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
-source "${SB_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh"
 
 APPEND_FILE=""
 while [[ $# -gt 0 ]]; do
@@ -74,7 +70,8 @@ fi
 last_row="${SB_E2E_CHECKPOINT_LAST_ROW:-}"
 if [[ -z "$last_row" ]]; then
   for n in $(seq 22 -1 1); do
-    if [[ -f "${SB_ROOT}/.e2e-row${n}-attempt.log" ]]; then
+    row_log="$(enterprise_e2e_row_attempt_log "$n" 2>/dev/null || true)"
+    if [[ -n "$row_log" && -f "$row_log" ]]; then
       last_row="$n"
       break
     fi

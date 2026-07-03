@@ -22,10 +22,6 @@ export SB_RTK_COMPAT_MODE=verbatim
 source "${SB_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
-# shellcheck source=scripts/enterprise-e2e/lib/host.sh
-source "${SB_ROOT}/scripts/enterprise-e2e/lib/host.sh"
-# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
-source "${SB_ROOT}/scripts/enterprise-e2e/lib/test-app-branch.sh"
 
 HOST="$(enterprise_e2e_matrix_host)"
 HARNESS_ONLY=0
