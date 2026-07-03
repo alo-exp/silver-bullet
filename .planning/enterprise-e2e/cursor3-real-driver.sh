@@ -38,6 +38,8 @@ esac
 # shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
 
+enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT" || true
+
 cd "$SB_ROOT"
 current_branch="$(git branch --show-current 2>/dev/null || true)"
 if [[ "$current_branch" != "$SB_E2E_BRANCH" ]]; then
