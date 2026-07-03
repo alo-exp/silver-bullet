@@ -1,8 +1,8 @@
 # Round Codex-3 REAL — Gate checklist
 
 **Host:** Codex TUI — **honest product certification** (voids Codex-1/2 harness-only 22/22)  
-**Updated:** 2026-07-03  
-**SB HEAD:** `89b76fec`  
+**Updated:** 2026-07-04  
+**SB HEAD (closure):** `fa68e40b` · **post-main-merge:** `56dc2374` (`origin/main` @ `ba77d1b0`)  
 **Test app:** `enterprise-e2e/round-9-codex` @ `97f0677` (baseline `09f8d1a`)  
 **Ledger:** [ROUND-CODEX-3-LEDGER.md](./ROUND-CODEX-3-LEDGER.md)  
 **Prior rounds:** Codex-1/2 harness PASS — **void for product work** per [CODEX-TEST-APP-PRODUCT-AUDIT.md](./CODEX-TEST-APP-PRODUCT-AUDIT.md)
@@ -51,4 +51,20 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 
 ### Release verdict
 
-**Not applicable** — Codex-3 REAL is a **product honesty reset**, not a consecutive-pair release round. Codex-1/2 harness pair remains documented separately; **first honest Codex product certification** completes with this gate file **CLOSED Pass**.
+**Codex-3 alone satisfies §5b** — first honest Codex product certification on clean `09f8d1a` baseline (**19** commits, 17/17 implement rows with evidence). **Does not satisfy release pair.**
+
+| Policy gate | Codex-3 REAL | Codex-4 needed? |
+|-------------|--------------|-----------------|
+| §5b honest product-work (per round) | **PASS** — voids Codex-1/2 pre-seed fraud | **No** — certification complete |
+| 2 consecutive **strict-clean** rounds (release sign-off) | **1 / 2** — Codex-1/2 void; only Codex-3 counts | **Yes** — Round **Codex-4** required for 2/2 release pair |
+| Harness cherry-pick to `main` | **21 commits** @ `3c2c07a8`…`ba77d1b0` | N/A — branch merge @ `56dc2374` |
+
+**Verdict:** Codex-3 REAL **CLOSED Pass** for honest product certification. **Codex-4** is the next round if operators seek **2/2 consecutive strict-clean** Codex release sign-off per [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md).
+
+### Post-closure sync (2026-07-04)
+
+| Step | Status |
+|------|--------|
+| Merge `origin/main` → `enterprise-e2e/codex` | **DONE** @ `56dc2374` |
+| Pre-release validation harness | **RUNNING** — [.codex-prerelease-validation.log](./.codex-prerelease-validation.log) |
+| CI on branch HEAD | pending push |
