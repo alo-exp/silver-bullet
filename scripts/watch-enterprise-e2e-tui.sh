@@ -94,6 +94,9 @@ append_finding() {
 
 append_ledger_ux() {
   local row="$1" severity="$2" component="$3" quote="$4"
+  if [[ "${SB_E2E_LEDGER_NO_UX_APPEND:-}" == "1" ]]; then
+    return 0
+  fi
   local marker="tui-watch|row${row}|${component}|${quote:0:40}"
   if grep -qF "$marker" "$LEDGER" 2>/dev/null; then
     return 0
@@ -151,12 +154,23 @@ for pat in [
     for m in re.finditer(pat, text, re.I):
         emit("blocker", "skill", m.group(0), text[max(0,m.start()-40):m.end()+40])
 
+def is_planning_guard_fp(ctx):
+    compact = re.sub(r'[^a-z0-9]', '', ctx.lower())
+    fp_markers = (
+        'sboverride', 'issueoverride', 'boverrideifneededforplanningfileguard',
+        'planningfileguardblocks', 'planningfileguardblocksevidence',
+        'harnessignoring', 'nonblocking', 'matrixmode', 'enterprisee2e',
+        'donotpresent', 'dispositionmenu', 'evidencewrites',
+    )
+    return any(m in compact for m in fp_markers)
+
 # --- Hook errors ---
 for pat in [
     (r'hookEventName', 'hook', 'annoyance'),
     (r'Stop hook error', 'hook', 'annoyance'),
     (r'stage enforcer', 'hook', 'blocker'),
-    (r'planning-file-guard', 'hook', 'blocker'),
+    (r'node:internal/modules/cjs/loader', 'hook', 'annoyance'),
+    (r'gsd-session-state\.sh', 'hook', 'annoyance'),
     (r'PostToolUse:.*hook error', 'hook', 'annoyance'),
     (r'PreToolUse:.*hook error', 'hook', 'annoyance'),
 ]:
@@ -164,6 +178,11 @@ for pat in [
     for m in re.finditer(rx, text, re.I):
         ctx = text[max(0,m.start()-20):m.end()+80].replace('\n', ' ')
         emit(sev, cat, m.group(0), ctx)
+
+for m in re.finditer(r'planning-file-guard', text, re.I):
+    ctx = text[max(0,m.start()-20):m.end()+80].replace('\n', ' ')
+    sev = 'annoyance' if is_planning_guard_fp(ctx) else 'blocker'
+    emit(sev, 'hook', m.group(0), ctx)
 
 # --- UX friction ---
 for pat, cat, sev in [

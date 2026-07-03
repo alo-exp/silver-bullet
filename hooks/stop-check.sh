@@ -43,6 +43,14 @@ fi
 stop_input="$(cat 2>/dev/null || true)"
 stop_hook_event="$(printf '%s' "$stop_input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 
+if [[ -f "$_lib_dir_early/stop-coalesce.sh" ]]; then
+  # shellcheck source=lib/stop-coalesce.sh
+  source "$_lib_dir_early/stop-coalesce.sh"
+  if [[ "$stop_hook_event" == "Stop" ]] && declare -f sb_stop_coalesce_reset >/dev/null 2>&1; then
+    sb_stop_coalesce_reset
+  fi
+fi
+
 # ── Error handler: warn and exit 0 on unexpected failure ─────────────────────
 # Intentionally overrides the silent ERR trap set at line 3 — this hook
 # emits a visible warning rather than failing open silently, so the user
@@ -384,6 +392,9 @@ state_contents=""
 emit_stop_block() {
   local reason="$1"
   local json_reason
+  if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
+    sb_stop_coalesce_record "$reason"
+  fi
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   printf '{"decision":"block","reason":%s}' "$json_reason"
 }
@@ -655,6 +666,9 @@ if [[ -n "$missing" ]]; then
     reason=$(printf '%s\n\nThese required skills are not installed anywhere invocable and were ignored:\n%s\nInstall them if you want them enforced.' "$reason" "$unavailable_lines")
   fi
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
+    sb_stop_coalesce_record "$reason"
+  fi
   printf '{"decision":"block","reason":%s}' "$json_reason"
 elif [[ -n "$uninstalled" ]]; then
   run_doc_scheme_task_gate "$search_dir"
