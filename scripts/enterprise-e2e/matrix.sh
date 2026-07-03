@@ -198,9 +198,14 @@ build_matrix_prompt() {
   local slug="${5:-}"
   route="$(enterprise_e2e_matrix_host_route "$route")"
   if [[ "$row_num" == "1" ]]; then
-    # Row 1 validates interactive routing only — same scope as the direct /silver probe.
-    printf '%s %s Enterprise E2E routing validation only. Route this request through the Silver Bullet orchestrator and invoke the composed workflow skill. Stop when routing completes.' \
-      "$route" "$prompt_card"
+    local workflow_route="/silver"
+    if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
+      workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+    fi
+    local prompt
+    prompt="$(matrix_router_workflow_prompt "silver-router" "$prompt_card" "$evidence_path" "$workflow_route")"
+    prompt="${prompt} $(matrix_row1_evidence_clause)"
+    printf '%s' "$prompt"
     return 0
   fi
   # Claude TUI: /silver:* subcommands are not registered — always use /silver + slug in prose.
@@ -216,9 +221,18 @@ build_matrix_prompt() {
     if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
       prompt="${prompt} $(matrix_row3_outcome_only_clause)"
     elif [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
-         [[ "$(enterprise_e2e_matrix_host)" == "codex" ]] && \
          enterprise_e2e_row_requires_product_commit "$row_num"; then
       prompt="${prompt} $(matrix_row3_product_commit_clause)"
+    fi
+  elif [[ "$row_num" == "6" ]]; then
+    if [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
+         enterprise_e2e_row_requires_product_commit "$row_num"; then
+      prompt="${prompt} $(matrix_row6_product_commit_clause)"
+    fi
+  elif [[ "$row_num" == "11" ]]; then
+    if [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
+         enterprise_e2e_row_requires_product_commit "$row_num"; then
+      prompt="${prompt} $(matrix_row11_product_commit_clause)"
     fi
   elif [[ "$row_num" == "14" ]]; then
     prompt="${prompt} $(matrix_row14_outcome_clause)"
