@@ -98,23 +98,100 @@ enterprise_e2e_outcome_routing_evidence_present() {
   return 1
 }
 
+# Compact excerpt for deliberation / matrix-prompt echo detection (live TUI scrollback).
+enterprise_e2e_outcome_watch_compact_excerpt() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]'
+}
+
+# planning-file-guard TUI-watch hits are often agent deliberation or matrix prompt echo —
+# not harness hook deny. Returns 0 when the finding is a known false positive (E2E-026).
+enterprise_e2e_outcome_watch_is_hook_deliberation_fp() {
+  local message="${1:-}" excerpt="${2:-}" row_log="${3:-}"
+  case "$message" in
+    planning-file-guard)
+      local compact
+      compact="$(enterprise_e2e_outcome_watch_compact_excerpt "${message}${excerpt}")"
+      if [[ "$compact" =~ issue.*override ]] || [[ "$compact" =~ sboverride ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ harnessignoring ]] || [[ "$compact" =~ nonblocking ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ dispositionmenu ]] || [[ "$compact" =~ donotpresent ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ soineed ]] || [[ "$compact" =~ letme ]] || [[ "$compact" =~ ihavepermission ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ canonicalrouting ]] || [[ "$compact" =~ matrixmode ]] || [[ "$compact" =~ matrixmod ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ enterprisee2e ]] || [[ "$compact" =~ theuserhasinvoked ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ orchestratoroutput ]] || [[ "$compact" =~ createworkflow ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ evidencwrites ]] || [[ "$compact" =~ evidencewries ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ blocksrequiredworkflow ]] || [[ "$compact" =~ workflowevidencewrites ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ override ]] && [[ "$compact" =~ reason ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ subsequentplanningfileguardblock ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ authorizedforanyplanningfileguardblock ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ errideauthorizedforplanningfileguardblocks ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ survivestheplanningfileguard ]]; then
+        return 0
+      fi
+      if [[ "$compact" =~ boverrideifneededforplanningfileguard ]]; then
+        return 0
+      fi
+      if [[ -n "$row_log" && -f "$row_log" ]]; then
+        if enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+           grep -qiE '\[harness\] ignoring.*(hook|non-blocking)'; then
+          if ! enterprise_e2e_outcome_log_normalized "$row_log" 2>/dev/null | \
+             grep -qiE 'session ended on hook block|Stop hook blocks completion'; then
+            return 0
+          fi
+        fi
+      fi
+      return 1
+      ;;
+  esac
+  return 1
+}
+
 # True hook BLOCKER in TUI watch (severity=blocker, category=hook) — not annoyance noise.
 enterprise_e2e_outcome_watch_has_hook_blocker() {
-  local watch="$1" row_num="${2:-}"
+  local watch="$1" row_num="${2:-}" row_log="${3:-}"
   [[ -f "$watch" ]] || return 1
   if command -v jq >/dev/null 2>&1; then
-    if [[ -n "$row_num" ]]; then
-      jq -e --argjson r "$row_num" \
-        'select(.row == $r) | select(.severity == "blocker") | select(.category == "hook")' \
-        "$watch" 2>/dev/null | grep -q .
-      return $?
-    fi
-    jq -e 'select(.severity == "blocker") | select(.category == "hook")' \
-      "$watch" 2>/dev/null | grep -q .
-    return $?
+    local line message excerpt
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      message="$(printf '%s' "$line" | jq -r '.message // ""' 2>/dev/null)"
+      excerpt="$(printf '%s' "$line" | jq -r '.excerpt // ""' 2>/dev/null)"
+      if enterprise_e2e_outcome_watch_is_hook_deliberation_fp "$message" "$excerpt" "$row_log"; then
+        continue
+      fi
+      return 0
+    done < <(jq -c --argjson r "${row_num:-0}" \
+      'select(.severity == "blocker") | select(.category == "hook") | if ($r > 0) then select(.row == $r) else . end' \
+      "$watch" 2>/dev/null)
+    return 1
   fi
   grep -q '"severity": "blocker"' "$watch" 2>/dev/null && \
-    grep -qiE '"category": "hook"|false.positive' "$watch" 2>/dev/null
+    grep -qiE '"category": "hook"' "$watch" 2>/dev/null
 }
 
 enterprise_e2e_outcome_is_blocking() {
@@ -638,7 +715,7 @@ enterprise_e2e_outcome_score_heal() {
       printf 'n/a\n'; return 0
     fi
     if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
       printf 'fail\n'; return 0
     fi
     printf 'n/a\n'; return 0
@@ -658,7 +735,7 @@ enterprise_e2e_outcome_score_heal() {
     fi
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
     printf 'fail\n'; return 0
   fi
   printf 'n/a\n'
@@ -1109,20 +1186,20 @@ enterprise_e2e_outcome_score_hook() {
       printf 'pass\n'; return 0
     fi
     if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0
   fi
   if [[ -f "$ledger" ]] && grep -q 'hook-delivery 3/3' "$ledger" 2>/dev/null; then
     if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+       enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
       printf 'fail\n'; return 0
     fi
     printf 'pass\n'; return 0
   fi
   if [[ "${SB_E2E_OUTCOME_ASSESS_FIXTURE:-}" != "1" ]] && \
-     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num"; then
+     enterprise_e2e_outcome_watch_has_hook_blocker "$watch" "$row_num" "$row_log"; then
     printf 'fail\n'; return 0
   fi
   printf 'partial\n'

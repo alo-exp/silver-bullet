@@ -128,13 +128,26 @@ summary="$(sb_outcomes_pending_summary)"
 if [[ -z "$summary" && "$_sb_outcomes_have_jq" != true ]]; then
   summary="Outstanding per-prompt outcomes (jq unavailable — inspect outcomes-session.json)"
 fi
+if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
+  # shellcheck source=lib/stop-coalesce.sh
+  source "$_lib_dir/stop-coalesce.sh"
+  if sb_stop_coalesce_suppress_secondary_block 2>/dev/null; then
+    exit 0
+  fi
+fi
 reason=$(printf 'Cannot complete — per-prompt outcome checklist incomplete.\n\n%s\n\nUpdate %s (mark outcomes done with evidence) or complete the missing work.' \
   "$summary" "$(sb_outcomes_session_file)")
 if [[ "$_sb_outcomes_have_jq" == true ]]; then
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+  if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
+    sb_stop_coalesce_record "$reason"
+  fi
   printf '{"decision":"block","reason":%s}' "$json_reason"
 else
   json_reason=$(printf '%s' "$reason" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')
+  if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
+    sb_stop_coalesce_record "$reason"
+  fi
   printf '{"decision":"block","reason":%s}' "$json_reason"
 fi
 exit 0

@@ -928,6 +928,12 @@ expect {
     dismiss_claude_splash
     exp_continue
   }
+  -re {shift\+tab|tab to cycle|for agents.*0 tokens|low.effort.*0 tokens} {
+    log_harness_keys "\[harness\] 0-token mode banner — wake TUI with Enter (E2E-081)"
+    send -- "\r"
+    after 800
+    exp_continue
+  }
   -re {SessionStart:.*hook error|startup hook error|SessionStart:clear hook error} {
     log_harness_keys "\[harness\] ignoring SessionStart hook error (non-blocking)"
     exp_continue

@@ -74,7 +74,7 @@ if enterprise_e2e_assert_row_product_commit_delta 11 "$HEAD_SHA" "$TMP_CUM"; the
 else
   fail "§5b cumulative should pass row 11 rescore on fixture with product commit"
 fi
-unset SB_E2E_PRODUCT_WORK_CUMULATIVE
+unset SB_E2E_PRODUCT_WORK_CUMULATIVE SB_E2E_TEST_APP_BASELINE_SHA
 rm -rf "$TMP_CUM"
 
 assert_contains "core lib defines enterprise_e2e_assert_row_matrix_baseline_rev_increase" "$HARNESS_CORE" "enterprise_e2e_assert_row_matrix_baseline_rev_increase()"
@@ -190,11 +190,11 @@ if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
   else
     fail "fixture repo missing enterprise-e2e/round-9-codex branch"
   fi
-  baseline_sha="${SB_E2E_TEST_APP_BASELINE_SHA:-09f8d1a}"
+  baseline_sha="09f8d1a"
   if git -C "$FIXTURE_ROOT" merge-base --is-ancestor "$baseline_sha" enterprise-e2e/round-9-codex 2>/dev/null; then
     pass "round-9-codex contains baseline $baseline_sha"
   else
-    fail "round-9-codex must contain baseline $baseline_sha"
+    fail "round-9-codex must contain baseline $baseline_sha (Codex-3 REAL seed — see ROUND-CODEX-3-LEDGER.md)"
   fi
   if git -C "$FIXTURE_ROOT" rev-parse enterprise-e2e/round-9-codex 2>/dev/null | grep -q .; then
     head_sha="$(git -C "$FIXTURE_ROOT" rev-parse --short enterprise-e2e/round-9-codex 2>/dev/null || true)"

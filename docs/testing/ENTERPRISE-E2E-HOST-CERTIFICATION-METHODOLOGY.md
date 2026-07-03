@@ -397,6 +397,68 @@ Operators must understand these fixes — misreading them caused false PASS clai
 
 ---
 
+## 11b. Codex & Claude harness fixes (E2E-101 – E2E-115)
+
+Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates. **All hosts** must apply these operator rules — not only Cursor.
+
+| ID | Issue | Fix | Operator implication |
+|----|-------|-----|----------------------|
+| **E2E-101** | Wrong test-app branch during matrix — evidence clobber across hosts | `enterprise_e2e_fixture_assert_branch_lock` pre/post invoke @ `b3e036b3` | **Never** `git checkout` fixture to another host's branch mid-round; verify lock lines in matrix log |
+| **E2E-102** | Install-pass SKIP without live rerun; batch pid EXIT trap | `SB_E2E_MATRIX_FORCE_ALL=1` + EXIT trap @ `59ec1456` | First live cert requires `FORCE=1` on brownfield rows; `FORCE_ALL` for full re-run |
+| **E2E-103** | Row 3 stub-only (planning file without api/currency commits) | force3 + PLAN/GATES/TRACE invoke @ `356e87ec`, `b40f44fc` | Row 3 **must** show §5b api/currency commits — workflow stub alone is **FAIL** |
+| **E2E-104** | Rows 14/15/16 outcome partial without product delta | force1416 drivers @ `968a8008`, `7f822474` | Outcome-only rescues require live drivers — not ledger hand-edit |
+| **E2E-105** | Claude routing state bleed between rows | Isolated state roots @ `80438bda` | Each Claude row uses fresh `${SB_RUNTIME_STATE_DIR}` — do not share parent state across rows |
+| **E2E-106** | §5b smoke rows 6/11 baseline rev / printf gaps | Matrix §5b gate @ `8219477f`, `da61d5fb` | Smoke subset rows **6, 11, 21, 22** must pass §5b before full Tier C |
+| **E2E-107** | Bracketed-paste collapsed — slash prompt not submitted | Expect paste confirm @ `d3ea981a` | If row log stops at `Queued follow-up`, check paste expand — re-run with harness fix |
+| **E2E-108** | Slow Codex install every driver launch | `SB_E2E_SKIP_CODEX_INSTALL=1` on REAL drivers @ `7a625546` | Codex REAL: hook-trust seed only per row after Session 0 — not full install each row |
+| **E2E-109** | Row 3 pilot mkdir before fixture root set | Export fixture root @ `4815d4b4` | Drivers must `export SB_TEST_ENTERPRISE_APP_ROOT` before any fixture mkdir |
+| **E2E-110** | Custom API key disclaimer blocked launch | Inherit-keys bypass @ `6935a7c0` | Claude matrix: export `ANTHROPIC_API_KEY` or inherit-keys before driver |
+| **E2E-111** | Hook audit on isolated Claude state | Allow isolated roots @ `5e5590cc` | Hook-delivery preflight uses row-scoped state — not global `~/.claude` only |
+| **E2E-112** | Pilot row_passed stale log slice | Latest log slice @ `ba77d1b0` | Rescore uses **latest** `.e2e-rowN-*-attempt.log` by mtime — not first match |
+| **E2E-113** | Strict-clean ledger pass summary | `$LEDGER` variable @ `b20a31f7` | Gate 3 resume checks ledger path from driver env |
+| **E2E-114** | Codex-3 §5a/§5b product audit | Methodology + fixture reset @ `d0a271fb` | Codex cert requires committed product delta per §5b — same anti-faking as Cursor |
+| **E2E-115** | CI fixture path writability | CI-writable paths @ `f86cb6a5` | Script tests use temp dirs — not operator home paths in CI |
+
+### Operator rules — all registered issue classes (E2E-086 – E2E-115)
+
+| Rule | Prevents |
+|------|----------|
+| **Fixture branch lock** — `enterprise-e2e/round-N-{host}` worktree only; assert pre/post every row | E2E-090, E2E-101 |
+| **`SB_E2E_MATRIX_FORCE=1`** on first live brownfield row; **`FORCE_ALL=1`** only for deliberate full re-run | E2E-095, E2E-102 |
+| **§5b log floor >2048 B** (or composite footer) before PASS | E2E-086, E2E-093, E2E-100 |
+| **Rescore ≠ strict-clean** — live rerun required for certification credit | E2E-089 |
+| **Planning-file-guard TUI hits** — matrix prompt echo is annoyance, not blocker (SB OVERRIDE instruction) | E2E-026 |
+| **SessionStart stale hooks** — run `install-claude.sh` after harness merge; prune removes `gsd-*` | E2E-010, E2E-003 |
+| **Stop coalesce** — first gate reason only; do not interpret downstream Stop hooks as new defects | E2E-014 |
+| **`SB_E2E_LEDGER_NO_UX_APPEND=1`** — friction to findings jsonl + issues doc, not human ledger | E2E-015 |
+| **0-token mode banner** — harness sends Enter; extend quiet timeout before FAIL | E2E-081, E2E-087 |
+| **Agent mode only** in matrix — no Plan/Debug mid-row | E2E-013 |
+| **Codex install skip** on REAL drivers after Session 0 | E2E-108 |
+| **Claude isolated state** per matrix row | E2E-105 |
+| **Row 3 api/currency §5b** — not docs-only stub | E2E-103 |
+
+### Codex / Claude §5a / §5b gates (mirror Cursor)
+
+| Gate | Codex | Claude | Cursor |
+|------|-------|--------|--------|
+| **§5a anti-faking** | No inherited baseline PASS; no rescore-only 22/22 | Same | Same (Appendix D void Cursor-1/2) |
+| **§5b log floor** | `codex-interactive-invoke.py` transcript + attempt log | `claude-interactive-invoke.expect` + bracketed-paste | `cursor/agent.sh` stream-json |
+| **§5b product delta** | `git log` on fixture branch per row | Same | Same |
+| **Smoke rows** | Tier B: 1, 3, 6, 11 + gates 21–22 | Gate 3: rows 1, 6, 11 sequential | Cursor-3 REAL: full 22 @ install_fp |
+| **FORCE / install-skip** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0; `FORCE_ALL` for registry override | Full `install-claude.sh` after hook fix; isolated state per row | `FORCE`+`FORCE_ALL` in cursor3 driver; install-pass skip only after first strict-clean @ install_fp |
+
+### Post-merge sibling session — re-certification required
+
+When harness changes land on `main` from a **sibling agent session** (Cursor, Claude, or Codex track):
+
+1. **Pull `main`** and re-run host install (`install-{claude,codex,cursor}.sh`).
+2. **Re-run Tier A** structural suite (`test-enterprise-e2e-*.sh`, `test-outcome-assessment.sh`).
+3. **Re-certify §5b smoke** (rows **1, 6, 11, 21, 22**) under the **new install fingerprint** — prior PASS @ old `install_fp` does **not** carry forward after harness fixes.
+4. Update ledgers with new commit SHA; cite E2E-101+ fix IDs when closing rows.
+5. **Do not** claim host certification until smoke §5b GREEN on current `main` HEAD.
+
+---
+
 ## Appendix A — Codex-1 status (do not re-duplicate harness work)
 
 **Round:** Codex-1 on `enterprise-e2e/codex`  

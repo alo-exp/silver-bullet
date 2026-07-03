@@ -74,7 +74,17 @@ if sb_instruction_ledger_all_resolved; then
 fi
 
 summary="$(sb_instruction_ledger_pending_summary)"
+if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
+  # shellcheck source=lib/stop-coalesce.sh
+  source "$_lib_dir/stop-coalesce.sh"
+  if sb_stop_coalesce_suppress_secondary_block 2>/dev/null; then
+    exit 0
+  fi
+fi
 reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nResolve each item or defer to project planning before Stop.' "$summary")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
+if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
+  sb_stop_coalesce_record "$reason"
+fi
 printf '{"decision":"block","reason":%s}' "$json_reason"
 exit 0
