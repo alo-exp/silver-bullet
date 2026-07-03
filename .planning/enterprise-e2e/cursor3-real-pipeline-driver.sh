@@ -22,6 +22,10 @@ export SB_E2E_TEST_APP_ROUND=3
 export RTK_DISABLED=1 CLAUDE_INTERACTIVE_TIMEOUT=1800 CURSOR_AGENT_TIMEOUT=1800
 export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
 
+# shellcheck source=scripts/lib/enterprise-e2e-live-common.sh
+source "${SB_ROOT}/scripts/lib/enterprise-e2e-live-common.sh"
+enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT" || true
+
 log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" | tee -a "$LOG"; }
 
 phase_done() { grep -q "^${1}:DONE" "$PIPELINE_MARKER" 2>/dev/null; }
