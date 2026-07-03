@@ -8,6 +8,14 @@ _claude_matrix_auth_backup=""
 _claude_matrix_auth_prepared=0
 
 claude_matrix_settings_path() {
+  if [[ -n "${CLAUDE_SETTINGS_FILE:-}" && -f "${CLAUDE_SETTINGS_FILE}" ]]; then
+    printf '%s\n' "${CLAUDE_SETTINGS_FILE}"
+    return
+  fi
+  if [[ -n "${CLAUDE_CONFIG_DIR:-}" && -f "${CLAUDE_CONFIG_DIR}/settings.json" ]]; then
+    printf '%s/settings.json\n' "${CLAUDE_CONFIG_DIR}"
+    return
+  fi
   printf '%s/.claude/settings.json\n' "${HOME}"
 }
 
