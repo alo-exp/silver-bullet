@@ -42,7 +42,13 @@ proc load_claude_settings_env {} {
   if {$home eq ""} {
     return
   }
-  set settings "$home/.claude/settings.json"
+  set settings [env_or_default CLAUDE_SETTINGS_FILE ""]
+  if {$settings eq "" && [info exists ::env(CLAUDE_CONFIG_DIR)] && $::env(CLAUDE_CONFIG_DIR) ne ""} {
+    set settings "$::env(CLAUDE_CONFIG_DIR)/settings.json"
+  }
+  if {$settings eq ""} {
+    set settings "$home/.claude/settings.json"
+  }
   if {![file exists $settings]} {
     return
   }
@@ -93,13 +99,10 @@ proc bypass_disclaimer_visible {buffer} {
   if {![regexp {code\.claude\.com/docs/en/security} $plain]} {
     return 0
   }
-  if {![regexp -nocase {No,exit|No, exit} $plain]} {
-    return 0
-  }
   if {![regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
     return 0
   }
-  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm|Esctocancel|Esc to cancel} $plain]} {
     return 0
   }
   return 1
@@ -107,10 +110,10 @@ proc bypass_disclaimer_visible {buffer} {
 
 proc bypass_disclaimer_menu_ready {buffer} {
   set plain [strip_ansi $buffer]
-  if {![regexp -nocase {No,exit|No, exit} $plain]} {
+  if {![regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
     return 0
   }
-  if {![regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
+  if {![regexp -nocase {1\.\s*exit|No,exit|No, exit|Esctocancel|Esc to cancel} $plain]} {
     return 0
   }
   if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
@@ -119,9 +122,33 @@ proc bypass_disclaimer_menu_ready {buffer} {
   return 1
 }
 
+proc bypass_disclaimer_confirm_only {buffer} {
+  global bypass_disclaimer_menu_open
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Esctocancel|Esc to cancel} $plain]} {
+    return 0
+  }
+  if {$bypass_disclaimer_menu_open} {
+    return 1
+  }
+  if {[regexp -nocase {Yes,Iaccept|Yes, I accept} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {Bypass} $plain] && [regexp -nocase {Permissions} $plain]} {
+    return 1
+  }
+  return 0
+}
+
 proc should_accept_bypass_disclaimer {buffer} {
   global bypass_disclaimer_menu_open
   if {$bypass_disclaimer_menu_open} {
+    return 1
+  }
+  if {[bypass_disclaimer_confirm_only $buffer]} {
     return 1
   }
   if {[bypass_disclaimer_menu_ready $buffer]} {
@@ -131,6 +158,11 @@ proc should_accept_bypass_disclaimer {buffer} {
     return 1
   }
   return 0
+}
+
+proc reset_ready_timeout {} {
+  global ready_timeout
+  set timeout $ready_timeout
 }
 
 proc log_harness_keys {message} {
@@ -151,7 +183,7 @@ proc accept_bypass_permissions_disclaimer {} {
     return
   }
   incr bypass_disclaimer_accept_attempts
-  set strategy [env_or_default CLAUDE_INTERACTIVE_BYPASS_STRATEGY "keys"]
+  set strategy [env_or_default CLAUDE_INTERACTIVE_BYPASS_STRATEGY "arrow"]
   log_harness_keys "\[harness\] accept_bypass_permissions_disclaimer: strategy=$strategy attempt=$bypass_disclaimer_accept_attempts"
   if {$strategy eq "arrow"} {
     send -- "\033\[B"
@@ -324,6 +356,69 @@ proc maybe_finish_on_matrix_evidence {} {
   return 0
 }
 
+proc parse_token_count_from_marker {marker} {
+  set m [string trim $marker]
+  if {$m eq ""} {
+    return 0
+  }
+  if {[regexp {^([0-9][0-9.,]*)([kKmM])?} $m -> num suffix]} {
+    set num [string map {, ""} $num]
+    if {$num eq ""} {
+      return 0
+    }
+    set value [expr {double($num)}]
+    if {[info exists suffix] && $suffix ne ""} {
+      switch -nocase $suffix {
+        k { set value [expr {$value * 1000.0}] }
+        m { set value [expr {$value * 1000000.0}] }
+      }
+    }
+    return [expr {int($value)}]
+  }
+  return 0
+}
+
+proc workflow_response_complete_ok {} {
+  global peak_token_count prompt_submitted_at workflow_quiet_timeout require_final_marker prompt_submitted
+  if {$require_final_marker == 1} {
+    return 1
+  }
+  if {$peak_token_count > 0} {
+    return 1
+  }
+  if {[matrix_evidence_ready]} {
+    return 1
+  }
+  if {$prompt_submitted && $peak_token_count == 0 && [info exists ::env(SB_E2E_ENTERPRISE_MATRIX)] && $::env(SB_E2E_ENTERPRISE_MATRIX) eq "1"} {
+    return 0
+  }
+  if {$prompt_submitted_at > 0} {
+    set elapsed [expr {[clock seconds] - $prompt_submitted_at}]
+    if {$elapsed >= $workflow_quiet_timeout} {
+      return 1
+    }
+  }
+  return 0
+}
+
+proc extend_workflow_wait_timeout {} {
+  global workflow_quiet_timeout prompt_submitted_at peak_token_count
+  if {$prompt_submitted_at <= 0} {
+    set timeout 60
+    return
+  }
+  set elapsed [expr {[clock seconds] - $prompt_submitted_at}]
+  set remaining [expr {$workflow_quiet_timeout - $elapsed}]
+  if {$remaining < 10} {
+    set remaining 10
+  }
+  if {$remaining > 120} {
+    set remaining 120
+  }
+  log_harness_keys "\[harness\] 0-token quiet hold (peak=$peak_token_count elapsed=${elapsed}s) — retry in ${remaining}s"
+  set timeout $remaining
+}
+
 proc context_exhaustion_visible {buffer} {
   set plain [strip_ansi $buffer]
   if {[regexp -nocase {100%\s*context\s*used} $plain]} {
@@ -354,10 +449,14 @@ proc recover_from_context_exhaustion {} {
 }
 
 proc extend_quiet_on_new_token_marker {plain_text} {
-  global quiet_timeout last_token_marker context_full_stalled_at
+  global quiet_timeout last_token_marker context_full_stalled_at peak_token_count
   set marker ""
   if {![regexp {([0-9][0-9.,kKmM]*[^0-9]{0,12}tokens)} $plain_text match marker]} {
     return
+  }
+  set parsed [parse_token_count_from_marker $marker]
+  if {$parsed > $peak_token_count} {
+    set peak_token_count $parsed
   }
   if {[context_exhaustion_visible $plain_text]} {
     if {$context_full_stalled_at == 0} {
@@ -395,6 +494,33 @@ proc token_gateway_configured {} {
   return 0
 }
 
+proc pasted_prompt_collapsed_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {[regexp -nocase {\[Pasted|Pasted text} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {paste again to expand} $plain]} {
+    return 1
+  }
+  return 0
+}
+
+proc confirm_pasted_prompt_submit {} {
+  global paste_confirm_attempts
+  if {![info exists paste_confirm_attempts]} {
+    set paste_confirm_attempts 0
+  }
+  if {$paste_confirm_attempts >= 8} {
+    return
+  }
+  incr paste_confirm_attempts
+  log_harness_keys "\[harness\] pasted prompt collapsed — Enter to expand/submit (attempt=$paste_confirm_attempts)"
+  send -- "\r"
+  after 500
+  send -- "\r"
+  after 500
+}
+
 proc input_prompt_ready {buffer} {
   set plain [strip_ansi $buffer]
   return [regexp {❯} $plain]
@@ -414,7 +540,14 @@ proc maybe_submit_prompt {buffer} {
     after $slash_pause_ms
   }
   if {[submit_prompt $command_name $prompt_body]} {
+    if {[pasted_prompt_collapsed_visible $buffer]} {
+      confirm_pasted_prompt_submit
+    }
     set prompt_submitted 1
+    global prompt_submitted_at
+    if {$prompt_submitted_at == 0} {
+      set prompt_submitted_at [clock seconds]
+    }
     set timeout $quiet_timeout
     return 1
   }
@@ -430,10 +563,24 @@ proc submit_prompt {command_name prompt_body} {
     send -- "/$command_name"
     if {[string length $prompt_body] > 0} {
       send -- " "
-      send -- $prompt_body
+      set body_len [string length $prompt_body]
+      set paste_threshold [expr {int([env_or_default CLAUDE_INTERACTIVE_PASTE_THRESHOLD 400])}]
+      if {$body_len > $paste_threshold} {
+        global type_delay_ms
+        type_slow $prompt_body $type_delay_ms
+      } else {
+        send -- $prompt_body
+      }
     }
   } elseif {[string length $prompt_body] > 0} {
-    send -- $prompt_body
+    set body_len [string length $prompt_body]
+    set paste_threshold [expr {int([env_or_default CLAUDE_INTERACTIVE_PASTE_THRESHOLD 400])}]
+    if {$body_len > $paste_threshold} {
+      global type_delay_ms
+      type_slow $prompt_body $type_delay_ms
+    } else {
+      send -- $prompt_body
+    }
   }
   if {$command_name ne "" || [string length $prompt_body] > 0} {
     after 250
@@ -457,8 +604,12 @@ set debug_log [env_or_default CLAUDE_INTERACTIVE_LOG_FILE ""]
 set evidence_path [env_or_default SB_E2E_MATRIX_EVIDENCE_PATH ""]
 set debug_trace [env_or_default CLAUDE_INTERACTIVE_DEBUG "0"]
 set post_prompt_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_DELAY_MS 1000])}]
-set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 60])}]
+set ready_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_READY_TIMEOUT 300])}]
 set quiet_timeout [expr {int([env_or_default CLAUDE_INTERACTIVE_QUIET_TIMEOUT 5])}]
+set workflow_quiet_timeout [expr {int([env_or_default SB_E2E_WORKFLOW_QUIET_TIMEOUT 600])}]
+if {$workflow_quiet_timeout < $quiet_timeout} {
+  set workflow_quiet_timeout $quiet_timeout
+}
 set type_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TYPE_DELAY_MS 15])}]
 set slash_pause_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_SLASH_PAUSE_MS 250])}]
 
@@ -507,6 +658,9 @@ if {$permission_mode eq "bypassPermissions"} {
 }
 set home [env_or_default HOME ""]
 set settings_file [env_or_default CLAUDE_SETTINGS_FILE ""]
+if {$settings_file eq "" && [info exists ::env(CLAUDE_CONFIG_DIR)] && $::env(CLAUDE_CONFIG_DIR) ne ""} {
+  set settings_file "$::env(CLAUDE_CONFIG_DIR)/settings.json"
+}
 if {$settings_file eq "" && $home ne ""} {
   set settings_file "$home/.claude/settings.json"
 }
@@ -539,6 +693,8 @@ set final_marker_seen 0
 set require_final_marker 0
 set saw_not_logged_in 0
 set last_token_marker ""
+set peak_token_count 0
+set prompt_submitted_at 0
 set context_recovery_attempts 0
 set context_full_stalled_at 0
 set session_started [clock seconds]
@@ -561,7 +717,38 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
-  -re {Enter.*to.*confirm} {
+  -re {RTK\.md} {
+    log_harness_keys "\[harness\] onboarding: RTK.md import dialog — confirm allow"
+    send -- "\r"
+    after 800
+    reset_ready_timeout
+    exp_continue
+  }
+  -re {Bypass Permissions mode|running in Bypass|Bypa[s ]{1,3}s Permissions|Permissions mode} {
+    set bypass_disclaimer_menu_open 1
+    reset_ready_timeout
+    exp_continue
+  }
+  -re {Gaccept|Yes, I accept|Yes,I accept|I accept the risk} {
+    set bypass_disclaimer_menu_open 1
+    accept_bypass_permissions_disclaimer
+    set bypass_disclaimer_menu_open 0
+    reset_ready_timeout
+    exp_continue
+  }
+  -re {Yes, I accept|Yes,I accept|I accept the risk} {
+    set bypass_disclaimer_menu_open 1
+    reset_ready_timeout
+    exp_continue
+  }
+  -re {Allow external imports|external CLAUDE\.md imports|RTK\.md} {
+    log_harness_keys "\[harness\] onboarding: allow external CLAUDE.md imports (yes)"
+    send -- "1\r"
+    after 800
+    reset_ready_timeout
+    exp_continue
+  }
+  -re {Enterto confirm|Enter to confirm|Entertoconfirm|Gto.{0,12}Gconfirm|to.{0,8}confirm} {
     if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
       accept_custom_api_key_disclaimer
       set custom_api_key_disclaimer_menu_open 0
@@ -572,6 +759,7 @@ expect {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
       after 800
+      reset_ready_timeout
       exp_continue
     }
     exp_continue
@@ -583,6 +771,21 @@ expect {
     exp_continue
   }
   -re {Esc.*to.*cancel} {
+    if {[regexp -nocase {allowexternal|externalimports|RTK\.md} $expect_out(buffer)]} {
+      log_harness_keys "\[harness\] onboarding: allow external CLAUDE.md imports"
+      send -- "\r"
+      after 800
+      reset_ready_timeout
+      exp_continue
+    }
+    if {$bypass_disclaimer_menu_open} {
+      log_harness_keys "\[harness\] bypass disclaimer: confirm (esc footer)"
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      after 500
+      reset_ready_timeout
+      exp_continue
+    }
     if {$prompt_submitted && [blocking_decision_picker_visible $expect_out(buffer)]} {
       resolve_blocking_decision_picker
       set timeout $quiet_timeout
@@ -598,6 +801,7 @@ expect {
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
       after 500
+      reset_ready_timeout
       exp_continue
     }
     exp_continue
@@ -615,8 +819,66 @@ expect {
     }
     exp_continue
   }
+
+  -re {Select login method|Claude account with subscription.*Anthropic Console} {
+    if {[token_gateway_configured]} {
+      log_harness_keys "\[harness\] login method: Anthropic Console (token gateway)"
+      send -- "2\r"
+      after 900
+      exp_continue
+    }
+    log_harness_keys "\[harness\] onboarding: dismiss login method (use env API key / gateway)"
+    send -- "\033"
+    after 900
+    exp_continue
+  }
+  -re {Browser didn't open\?|oauth/authorize\?code} {
+    log_harness_keys "\[harness\] blocking OAuth gate — token gateway expected (set CLAUDE_SETTINGS_FILE env or clear isolated config session)"
+    send -- "\033"
+    after 500
+    exp_continue
+  }
+  -re {Using 3rd-party platforms|Amazon Bedrock.*Microsoft Foundry} {
+    if {[token_gateway_configured]} {
+      log_harness_keys "\[harness\] 3rd-party menu: go back (token gateway)"
+      send -- "4\r"
+      after 900
+      exp_continue
+    }
+    log_harness_keys "\[harness\] onboarding: back from 3rd-party menu"
+    send -- "4\r"
+    after 900
+    exp_continue
+  }
+  -re {microsoft-foundry|code\.claude\.com/docs/en/microsoft-foundry} {
+    if {[token_gateway_configured]} {
+      log_harness_keys "\[harness\] closing Foundry docs overlay (token gateway)"
+      send -- "\033"
+      after 400
+      send -- "4\r"
+      after 900
+      exp_continue
+    }
+    exp_continue
+  }
+  -re {Syntax theme|Dark mode.*Light mode|Auto \(match terminal\)} {
+    log_harness_keys "\[harness\] onboarding: syntax theme dark"
+    send -- "2\r"
+    after 900
+    exp_continue
+  }
+  -re {Bypass Permissions mode|running in Bypass|Bypa[s ]{1,3}s Permissions} {
+    set bypass_disclaimer_menu_open 1
+    if {[should_accept_bypass_disclaimer $expect_out(buffer)]} {
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      after 800
+    }
+    exp_continue
+  }
   -re {code.claude.com/docs/en/security} {
     set bypass_disclaimer_menu_open 1
+    reset_ready_timeout
     exp_continue
   }
   -re {Bypass Permissions mode.*2\. Yes, I accept} {
@@ -625,6 +887,13 @@ expect {
   }
   -re {2\. Yes, I accept.*Enter.*to.*confirm} {
     accept_bypass_permissions_disclaimer
+    exp_continue
+  }
+  -re {Press Enter to continue|Security notes:|Claude can make mistakes} {
+    log_harness_keys "\[harness\] onboarding: security notes — continue"
+    send -- "\r"
+    after 600
+    reset_ready_timeout
     exp_continue
   }
   -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
@@ -665,6 +934,18 @@ expect {
   }
   -re {Failed with non-blocking status code} {
     log_harness_keys "\[harness\] ignoring non-blocking hook failure"
+    exp_continue
+  }
+  -re {\[Pasted|Pasted text|paste again to expand} {
+    confirm_pasted_prompt_submit
+    if {!$prompt_submitted} {
+      set prompt_submitted 1
+      global prompt_submitted_at
+      if {$prompt_submitted_at == 0} {
+        set prompt_submitted_at [clock seconds]
+      }
+    }
+    set timeout $quiet_timeout
     exp_continue
   }
   -re {bypass.*permissions.*on} {
@@ -804,6 +1085,27 @@ expect {
     exp_continue
   }
   timeout {
+    if {$bypass_disclaimer_menu_open && $bypass_disclaimer_accept_attempts < 6} {
+      log_harness_keys "\[harness\] timeout bypass retry"
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      reset_ready_timeout
+      exp_continue
+    }
+    set plain [strip_ansi $expect_out(buffer)]
+    if {[regexp -nocase {Bypass} $plain] && [regexp -nocase {Permissions} $plain] && [regexp -nocase {accept|confirm|Gaccept} $plain]} {
+      log_harness_keys "\[harness\] timeout bypass detected in buffer"
+      accept_bypass_permissions_disclaimer
+      set bypass_disclaimer_menu_open 0
+      reset_ready_timeout
+      exp_continue
+    }
+    if {[regexp -nocase {RTK\.md|external imports} $plain] && [regexp -nocase {confirm|cancel} $plain]} {
+      log_harness_keys "\[harness\] timeout external imports retry"
+      send -- "1\r"
+      reset_ready_timeout
+      exp_continue
+    }
     if {$require_final_marker == 1} {
       if {$final_marker_seen} {
         # The session has returned to a prompt and gone quiet after the
@@ -812,8 +1114,20 @@ expect {
         puts stderr "ERROR: timed out waiting for Silver Bullet init to complete"
         exit 1
       }
-    } elseif {$saw_prompt} {
-      # The session has returned to a prompt and gone quiet, so the response is complete.
+    } elseif {$saw_prompt || $prompt_submitted} {
+      if {$peak_token_count == 0 && [pasted_prompt_collapsed_visible $expect_out(buffer)]} {
+        log_harness_keys "\[harness\] timeout: pasted prompt still collapsed — retry Enter"
+        confirm_pasted_prompt_submit
+        reset_ready_timeout
+        exp_continue
+      }
+      if {![workflow_response_complete_ok]} {
+        extend_workflow_wait_timeout
+        exp_continue
+      }
+      if {$peak_token_count == 0 && ![matrix_evidence_ready]} {
+        puts stderr "WARNING: workflow completed after ${workflow_quiet_timeout}s with 0 tokens and no matrix evidence"
+      }
     } elseif {$prompt_submitted} {
       puts stderr "ERROR: timed out waiting for Claude response"
       exit 1
