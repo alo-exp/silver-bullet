@@ -338,3 +338,19 @@ Harness: `SB_E2E_PRODUCT_WORK_CUMULATIVE=1` — [`scripts/enterprise-e2e/lib/cor
 
 **Next:** Gate 3 — full matrix **22/22** on same install FP ([ROUND-9-GATES.md](./ROUND-9-GATES.md)); do **not** launch until operator approves full-matrix driver.
 
+
+## Gate 3 — full matrix 22/22 (IN FLIGHT)
+
+**Started:** 2026-07-03T09:50:57Z  
+**SB_ROOT:** [`/private/tmp/sb-main-row11-fp`](file:///private/tmp/sb-main-row11-fp) @ [b20a31f7](https://github.com/alo-exp/silver-bullet/commit/4b305f74) (ff-merge from Gate 2 smoke closure).  
+**Install FP:** `claude@b20a31f7e4fb+596e99deab17` — registry **6/22** (migrated) (rows **1, 3, 6, 11, 21, 22** migrated from `claude@ba77d1b0ed19+596e99deab17`).  
+**Driver:** tmux `r9-claude-driver` pid **77270** (resume); monitor [`.e2e-r9-claude-monitor-loop.pid`](../../.e2e-r9-claude-monitor-loop.pid) (90m / 90s poll).  
+**Harness:** `SB_E2E_SURFACE_SKIP=0`, `SB_E2E_PRODUCT_WORK_CUMULATIVE=1`, isolated [`.r9-claude-config`](.r9-claude-config), test-app `enterprise-e2e/round-9-claude@8482e60`.  
+**Rows to execute:** **16** (2,4,5,7–10,12–20); **6** registry skips on `b20a31f7` FP.  
+**Timeline:** [`.e2e-r9-claude-timeline.md`](../../.e2e-r9-claude-timeline.md).  
+**Checkpoint (2026-07-03T09:57:20Z):** strict-clean [`$LEDGER`](../../scripts/enterprise-e2e/strict-clean-check.sh) fix committed [b20a31f7](https://github.com/alo-exp/silver-bullet/commit/b20a31f7); **SB_ROOT** ff-merged to same HEAD. Channel poll operator [`.e2e-r9-gate3-channel-poll.sh`](../../.e2e-r9-gate3-channel-poll.sh) (90m cap, 60m row-stuck relaunch); monitor loop restarted. **Strict-clean:** runnable post-matrix (no `ledger` unbound).
+
+**Strict-clean (pre-matrix):** **not claimed** — superseded by checkpoint above. — `strict-clean-check.sh` still errors (`ledger: unbound variable` @ line 54); run after matrix completes.
+
+**Poll checkpoint (2026-07-03T11:28:00Z):** Channel operator hit **90m** cap (`POLL_TIMEOUT 5400s`). **Matrix summary:** **N** (driver **98190** still on row **2**). **Install FP** after SB_ROOT ff-merge: `claude@b20a31f7e4fb+596e99deab17` — registry **1/22** (row **1** re-passed post-merge); prior Gate3 launch FP `claude@4b305f749675+596e99deab17` remains **6/22** in [`.row-pass-registry.json`](.row-pass-registry.json). **Stuck handler:** `STUCK_ROW_60m` killed driver **22982** @ 10:57:24Z; tmux relaunch **98190**. **New row pass in channel:** row **1** on `b20a31f7` FP (registry 0→1). Row **2** still **IN FLIGHT** (interactive). **Strict-clean:** not run (matrix incomplete). Timeline: [`.e2e-r9-claude-timeline.md`](../../.e2e-r9-claude-timeline.md); poll result: [`.e2e-r9-gate3-channel-poll-result.json`](../../.e2e-r9-gate3-channel-poll-result.json).
+**Resume checkpoint (2026-07-03T11:33:58Z):** Killed stuck Gate3 driver **98190** / row **2** interactive hang (~90m poll timeout). **Registry migrate:** rows **1, 3, 6, 11, 21, 22** copied from `claude@4b305f749675+596e99deab17` → **`claude@b20a31f7e4fb+596e99deab17`** (ledger log refs; **6/22**). **SB_ROOT pinned** @ [b20a31f7](https://github.com/alo-exp/silver-bullet/commit/b20a31f7) — **no ff-merge** during matrix (`SB_ROOT_PIN_SHA` guard). Registry file unified via `SB_E2E_ROW_PASS_REGISTRY` → MAIN [`.row-pass-registry.json`](.row-pass-registry.json). **Driver relaunch:** tmux `r9-claude-driver` pid **77270**; rows **16** (2,4,5,7–10,12–20). Channel poll + monitor loop restarted (90m / 90s). Timeline: [`.e2e-r9-claude-timeline.md`](../../.e2e-r9-claude-timeline.md).
