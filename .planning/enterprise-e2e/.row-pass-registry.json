@@ -151,6 +151,49 @@
           "source": "matrix"
         }
       }
+    },
+    "claude@ba77d1b0ed19+596e99deab17": {
+      "host": "claude",
+      "sb_sha": "ba77d1b0ed19",
+      "install_fp": "claude@ba77d1b0ed19+596e99deab17",
+      "rows": {
+        "1": {
+          "passed_at": "2026-07-03T08:40:02Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-1-6-11-sequential.log",
+          "outcome_pass": true,
+          "source": "r9-ledger-migrate"
+        },
+        "6": {
+          "passed_at": "2026-07-03T08:40:02Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-rows-6-11-sequential.log",
+          "outcome_pass": true,
+          "source": "r9-ledger-migrate"
+        },
+        "21": {
+          "passed_at": "2026-07-03T08:40:02Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "outcome_pass": true,
+          "source": "r9-ledger-migrate"
+        },
+        "22": {
+          "passed_at": "2026-07-03T08:40:02Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-claude-launch.nohup",
+          "outcome_pass": true,
+          "source": "r9-ledger-migrate"
+        },
+        "3": {
+          "passed_at": "2026-07-03T09:37:06Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "outcome_pass": true,
+          "source": "r9-pilot-row3-then-11"
+        },
+        "11": {
+          "passed_at": "2026-07-03T09:37:06Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-r9-pilot-row3-then-11-live.log",
+          "outcome_pass": true,
+          "source": "r9-pilot-row3-then-11"
+        }
+      }
     }
   }
 }

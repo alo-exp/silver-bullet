@@ -230,6 +230,7 @@ build_matrix_prompt() {
       prompt="${prompt} $(matrix_row6_product_commit_clause)"
     fi
   elif [[ "$row_num" == "11" ]]; then
+    prompt="${prompt} $(matrix_row11_outcome_clause)"
     if [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] && \
          enterprise_e2e_row_requires_product_commit "$row_num"; then
       prompt="${prompt} $(matrix_row11_product_commit_clause)"

@@ -52,6 +52,31 @@ assert_contains "core lib defines enterprise_e2e_fixture_branch" "$HARNESS_CORE"
 assert_contains "core lib defines enterprise_e2e_fixture_ensure_branch" "$HARNESS_CORE" "enterprise_e2e_fixture_ensure_branch()"
 assert_contains "core lib defines enterprise_e2e_fixture_assert_branch_lock" "$HARNESS_CORE" "enterprise_e2e_fixture_assert_branch_lock()"
 assert_contains "core lib defines enterprise_e2e_assert_row_product_commit_delta" "$HARNESS_CORE" "enterprise_e2e_assert_row_product_commit_delta()"
+
+# --- §5b cumulative product-work (FP re-pilot) ---
+TMP_CUM="$(mktemp -d)"
+export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
+export SB_E2E_PRODUCT_WORK_CUMULATIVE=1
+git -C "$TMP_CUM" init -q
+git -C "$TMP_CUM" config user.email "e2e@test"
+git -C "$TMP_CUM" config user.name "e2e"
+echo base >"$TMP_CUM/README.md"
+git -C "$TMP_CUM" add README.md
+git -C "$TMP_CUM" commit -q -m "baseline"
+BASE_SHA="$(git -C "$TMP_CUM" rev-parse HEAD)"
+export SB_E2E_TEST_APP_BASELINE_SHA="$BASE_SHA"
+echo product >>"$TMP_CUM/README.md"
+git -C "$TMP_CUM" add README.md
+git -C "$TMP_CUM" commit -q -m "product"
+HEAD_SHA="$(git -C "$TMP_CUM" rev-parse HEAD)"
+if enterprise_e2e_assert_row_product_commit_delta 11 "$HEAD_SHA" "$TMP_CUM"; then
+  pass "§5b cumulative allows unchanged HEAD when baseline commits exist"
+else
+  fail "§5b cumulative should pass row 11 rescore on fixture with product commit"
+fi
+unset SB_E2E_PRODUCT_WORK_CUMULATIVE
+rm -rf "$TMP_CUM"
+
 assert_contains "core lib defines enterprise_e2e_assert_row_matrix_baseline_rev_increase" "$HARNESS_CORE" "enterprise_e2e_assert_row_matrix_baseline_rev_increase()"
 assert_contains "matrix calls baseline rev gate before product delta" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" "enterprise_e2e_assert_row_matrix_baseline_rev_increase"
 assert_contains "matrix calls fixture_ensure_branch before row invoke" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" "enterprise_e2e_fixture_ensure_branch"
