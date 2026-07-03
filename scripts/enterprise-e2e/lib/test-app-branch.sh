@@ -4,7 +4,11 @@
 set -euo pipefail
 
 enterprise_e2e_test_app_default_baseline_sha() {
-  printf '%s\n' "${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"
+  local default="8482e60"
+  if [[ "${SB_E2E_PRODUCT_WORK_GATE:-0}" == "1" ]]; then
+    default="09f8d1a"
+  fi
+  printf '%s\n' "${SB_E2E_TEST_APP_BASELINE_SHA:-$default}"
 }
 
 enterprise_e2e_test_app_round_from_ledger() {

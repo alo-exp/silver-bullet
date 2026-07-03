@@ -40,7 +40,9 @@
       "tui_findings": ".e2e-tui-watch-codex-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-codex-offsets.json",
       "row_attempt_pattern": ".e2e-row{row}-codex-attempt{suffix}.log",
-      "fixture_branch": "enterprise-e2e/round-9-codex"
+      "fixture_branch": "enterprise-e2e/round-9-codex",
+      "git_branch": "main",
+      "test_app_git_baseline_sha": "09f8d1a"
     },
     "cursor": {
       "adapter": "cursor",

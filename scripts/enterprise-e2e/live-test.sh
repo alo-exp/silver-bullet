@@ -54,7 +54,7 @@ Environment:
   SB_TEST_ENTERPRISE_APP_ROOT  Test app path (default: enterprise-grade-test-app)
   SB_E2E_TEST_APP_BRANCH       Expected isolated test-app branch (e.g. enterprise-e2e/round-8-claude)
   SB_E2E_TEST_APP_ROUND        Round number for auto branch name (with host → round-N-host)
-  SB_E2E_TEST_APP_BASELINE_SHA Baseline SHA when creating branch (default: 8482e60)
+  SB_E2E_TEST_APP_BASELINE_SHA Baseline SHA when creating branch (default: 8482e60; 09f8d1a when SB_E2E_PRODUCT_WORK_GATE=1 or codex hosts.json)
   SB_E2E_TEST_APP_BRANCH_ENFORCE  0 to skip branch preflight (default: 1)
   SB_E2E_LEDGER_FILE           Ledger path (default: host-specific ROUND-*-LEDGER.md)
   SB_E2E_MATRIX_LOG            Matrix batch log (default: host-isolated)

@@ -92,6 +92,10 @@ assert_contains "hosts.json cursor test app branch" \
   "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
   "enterprise-e2e/round-1-cursor"
 
+assert_contains "hosts.json codex honest baseline sha" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
+  '"test_app_git_baseline_sha": "09f8d1a"'
+
 assert_contains "policy doc exists" \
   "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" \
   "enterprise-e2e/round-1-cursor"
@@ -145,7 +149,12 @@ assert_eq "expected branch cursor r1 derived" \
   "enterprise-e2e/round-1-cursor" \
   "$(enterprise_e2e_test_app_expected_branch)"
 
-assert_eq "default baseline sha" "8482e60" "$(enterprise_e2e_test_app_default_baseline_sha)"
+assert_eq "default baseline sha (legacy)" "8482e60" "$(enterprise_e2e_test_app_default_baseline_sha)"
+
+unset SB_E2E_TEST_APP_BASELINE_SHA
+export SB_E2E_PRODUCT_WORK_GATE=1
+assert_eq "default baseline sha (product gate)" "09f8d1a" "$(enterprise_e2e_test_app_default_baseline_sha)"
+unset SB_E2E_PRODUCT_WORK_GATE
 
 # --- install-version single-pass skip (structural) ---
 TMP_E2E="$(mktemp -d)"

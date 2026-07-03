@@ -112,6 +112,8 @@ Run **all** green before `SB_ENTERPRISE_E2E_LIVE=1`.
 
 **Registries:** validation overlay = 6 outcome/telemetry gate claims; pre-release overlay = feature/install claims (tri-host, catalog, hooks). See [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) §Validation vs pre-release.
 
+**Pre-release live baseline alignment:** `test-enterprise-e2e-test-app-branch.sh` and pre-release `--live` paths assert the test-app baseline SHA. For **honest product rounds**, set `SB_E2E_TEST_APP_BASELINE_SHA=09f8d1a` (or rely on codex `hosts.json` + `SB_E2E_PRODUCT_WORK_GATE=1`) **before** running pre-release `--live`. Using legacy `8482e60` causes false FAIL on honest-round fixtures ([ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md) — 5050/5057 at closure). Dry-run pre-release passes without live baseline coupling.
+
 ### Tier B — live smoke (rows 1, 3, 6)
 
 | Row | WF slug | Why smoke |
@@ -360,7 +362,7 @@ Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
 When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 
 1. **Do not kill** a healthy driver to avoid duplicate TUI spend on rows already in flight.
-2. Seed registry for smoke-passed rows (1, 3, 6, 11, 21, 22) **before** next resume launch.
+2. Seed registry for smoke-passed rows **before** next resume launch. **Tier B smoke** = rows **1, 3, 6** only. Rows **11, 21, 22** appear in **resume seeding** after partial matrix progress or post-harness-fix §5b re-cert — not part of initial Tier B.
 3. On resume after driver exit, rows 3 and 11 (if seeded) emit `ROW_ALREADY_PASSED_SAME_INSTALL` — run only missing rows.
 
 `bash scripts/enterprise-e2e/strict-clean-check.sh` requires install registry **22/22** for current `install_fp` plus ledger reconcile and outcome assessment.

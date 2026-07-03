@@ -130,3 +130,19 @@ The **Codex harness is not 100% production-ready** for unattended real product w
 ---
 
 *Audit generated 2026-07-04 on `main` @ `668a2a6d`. Evidence: local structural tests, CI run 28683318305, cross-read of methodology + Codex product audits + gate closure + harness source.*
+
+---
+
+## Follow-up remediation (2026-07-04)
+
+Post-audit harness fixes on `main` (uncommitted at write time):
+
+| Blocker | Fix |
+|---------|-----|
+| B1 default `8482e60` | `hosts.json` codex `test_app_git_baseline_sha: 09f8d1a`; `enterprise_e2e_test_app_default_baseline_sha()` returns `09f8d1a` when `SB_E2E_PRODUCT_WORK_GATE=1` |
+| B2 stale execution prompt | [CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md](../../.planning/enterprise-e2e/CODEX-ENTERPRISE-E2E-EXECUTION-PROMPT.md) v3 — Codex-4 REAL mission, `main` branch, honest baseline |
+| B3 deleted `enterprise-e2e/codex` | All `codex-r3-*` drivers default `SB_E2E_BRANCH=main`; new [codex-r4-real-driver.sh](../../.planning/enterprise-e2e/codex-r4-real-driver.sh) |
+| MISS pre-release baseline | Methodology §3 Tier A — pre-release `--live` baseline alignment note |
+| PARTIAL Tier B rows | Methodology §6 — Tier B = 1,3,6 vs resume seeding 11,21,22 clarified |
+
+**Remaining:** B5 CI shellcheck; B4 pre-release `--live` still needs operator env at run time; Codex-4 round execution not yet run.
