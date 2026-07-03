@@ -32,8 +32,8 @@ rm -f "${SB_ROOT}/.e2e-live-test.lock"
 printf '%s\n' "$$" >"$PIDFILE"
 
 export SB_ROOT
-mkdir -p "${SB_TEST_ENTERPRISE_APP_ROOT}/.agentmemory/memory"
 export SB_TEST_ENTERPRISE_APP_ROOT=/Users/shafqat/projects/enterprise-grade-test-app-round9-claude
+mkdir -p "${SB_TEST_ENTERPRISE_APP_ROOT}/.agentmemory/memory"
 export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-9-claude
 export SB_E2E_TEST_APP_BASELINE_SHA=8482e60
 export SB_E2E_TEST_APP_EXCLUDE_ANCESTOR=
