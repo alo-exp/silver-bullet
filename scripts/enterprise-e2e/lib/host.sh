@@ -191,6 +191,9 @@ enterprise_e2e_row_attempt_log_glob() {
 }
 
 enterprise_e2e_routing_state_file() {
+  if [[ "${SB_E2E_ISOLATED_CLAUDE_CONFIG:-}" == "1" && -n "${CLAUDE_CONFIG_DIR:-}" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
+    enterprise_e2e_apply_isolated_claude_runtime_paths 2>/dev/null || true
+  fi
   if [[ -f "${SB_ROOT:-}/hooks/lib/runtime-paths.sh" && -z "${SB_RUNTIME_STATE_DIR:-}" ]]; then
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
