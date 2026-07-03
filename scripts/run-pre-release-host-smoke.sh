@@ -27,6 +27,8 @@ SMOKE_SKILL_CANONICAL="silver-verify"
 
 # shellcheck source=scripts/lib/pre-release-host-isolation.sh
 source "${SCRIPT_DIR}/lib/pre-release-host-isolation.sh"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${SCRIPT_DIR}/lib/agent-bundle-paths.sh"
 
 # Pin smoke root once for the whole run (subscripts must not create sibling roots).
 SB_PRE_RELEASE_SMOKE_ROOT="$(sb_smoke_root)"
@@ -74,7 +76,7 @@ assert_invoke_route() {
 
 smoke_codex() {
   printf '\n=== Codex host smoke (isolated) ===\n'
-  assert_invoke_route "codex" "${REPO_ROOT}/agents/codex"
+  assert_invoke_route "codex" "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
 
   sb_smoke_begin_codex
   local root
@@ -125,7 +127,7 @@ smoke_claude() {
 
 smoke_cursor() {
   printf '\n=== Cursor host smoke (isolated) ===\n'
-  assert_invoke_route "cursor" "${REPO_ROOT}/agents/cursor"
+  assert_invoke_route "cursor" "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
 
   sb_smoke_begin_cursor
   export SB_CURSOR_SMOKE_USE_CURRENT_ENV=1
@@ -154,6 +156,20 @@ smoke_cursor() {
 printf '=== Pre-release host smoke ===\n'
 printf 'REPO_ROOT=%s\n' "$REPO_ROOT"
 printf 'SB_PRE_RELEASE_SMOKE_ROOT=%s\n' "$(sb_smoke_root)"
+
+printf '\n=== Host-agnostic core (SB contract) ===\n'
+if bash "${REPO_ROOT}/scripts/validate-host-agnostic-core.sh" --repo-root "$REPO_ROOT"; then
+  smoke_pass "structural: validate-host-agnostic-core.sh"
+else
+  smoke_fail "structural: validate-host-agnostic-core.sh"
+fi
+
+printf '\n=== Structural install surface (all hosts) ===\n'
+if bash "${REPO_ROOT}/scripts/validate-host-install-surface.sh" --repo-root "$REPO_ROOT"; then
+  smoke_pass "structural: validate-host-install-surface.sh"
+else
+  smoke_fail "structural: validate-host-install-surface.sh"
+fi
 
 printf '\n=== Structural skill surface (all hosts) ===\n'
 if bash "${REPO_ROOT}/scripts/validate-host-skill-surface.sh" --repo-root "$REPO_ROOT"; then

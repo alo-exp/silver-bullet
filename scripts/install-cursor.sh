@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 VERSION="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/package.json" 2>/dev/null || echo 0.0.0)"
 PUBLIC_RELEASE_ONLY=0
 CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
@@ -14,7 +16,7 @@ CURSOR_GITHUB_REPO_SLUG="${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
 CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/silver-bullet.git}"
 DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
 INSTALL_COMMIT_SHA=""
-MERGE_HOOKS="${REPO_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py"
+MERGE_HOOKS="${REPO_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py"
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 usage() {
@@ -70,9 +72,11 @@ sync_plugin_tree_from_checkout() {
   rsync -a --delete "${source_root}/skills/" "${dest}/skills/"
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
-  if [[ -d "${source_root}/agents/cursor" ]]; then
+  local cursor_bundle
+  cursor_bundle="$(sb_agent_bundle_root "$source_root" cursor)"
+  if [[ -d "$cursor_bundle" ]]; then
     mkdir -p "${dest}/agents/cursor"
-    rsync -a --delete "${source_root}/agents/cursor/" "${dest}/agents/cursor/"
+    rsync -a --delete "${cursor_bundle}/" "${dest}/agents/cursor/"
   fi
   python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
@@ -238,11 +242,11 @@ PY
 sync_plugin_tree() {
   local dest
 
-  mkdir -p "${REPO_ROOT}/agents"
+  mkdir -p "${REPO_ROOT}/host-bundles"
   python3 "$AGENT_RENDERER" render \
     --agent cursor \
     --source-root "${REPO_ROOT}/skills" \
-    --dest-root "${REPO_ROOT}/agents/cursor" >/dev/null 2>&1 || true
+    --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)" >/dev/null 2>&1 || true
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
   dest="$(sync_plugin_tree_from_checkout "$REPO_ROOT" "$VERSION")"
   ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
@@ -262,11 +266,11 @@ sync_plugin_tree_from_public_release() {
       https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null 2>&1 || \
     git clone --depth 1 https://github.com/alo-exp/silver-bullet.git "$checkout_dir" >/dev/null
 
-  mkdir -p "${checkout_dir}/agents"
+  mkdir -p "${checkout_dir}/host-bundles"
   python3 "$AGENT_RENDERER" render \
     --agent cursor \
     --source-root "${checkout_dir}/skills" \
-    --dest-root "${checkout_dir}/agents/cursor" >/dev/null
+    --dest-root "$(sb_agent_bundle_root "$checkout_dir" cursor)" >/dev/null
 
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$checkout_dir")"
   VERSION="$release_version"
@@ -305,6 +309,16 @@ if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/de
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
 fi
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
+
+# Record install version key for enterprise E2E single-pass-at-version skip (matrix / T1).
+if [[ -f "${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh" ]]; then
+  # shellcheck source=scripts/enterprise-e2e/lib/core.sh
+  source "${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh"
+  SB_ROOT="$REPO_ROOT"
+  export SB_ROOT
+  _install_ver="$(enterprise_e2e_write_sb_install_version "$REPO_ROOT" "$VERSION" "$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo "${INSTALL_COMMIT_SHA:0:8}")")"
+  printf 'SB install version key: %s (see .e2e-cursor-install-version.txt)\n' "$_install_ver"
+fi
 
 printf '\nCursor hook merge complete. SB hooks are in %s/hooks.json.\n' "$CURSOR_HOME"
 printf 'If skills do not appear, reload the window or run: bash scripts/install-cursor.sh --merge-hooks-only\n'

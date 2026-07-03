@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve host-aware medium-reasoning models for silver:multi-ai-task.
+"""Resolve host-aware medium-reasoning models for silver:multi-ai.
 
 Uses the same model inventory as silver:review-fix-ladder (review-fix-ladder.py)
 but pins reasoning effort to medium only. When OpenCode Go (OCG) is available,
@@ -31,6 +31,18 @@ resolve_ladder = _ladder.resolve_ladder
 
 MEDIUM = "medium"
 OCG_PREFIX = "opencode-go/"
+
+# OCG-Lite: budget-friendly model replacements.
+# Keys are the full OCG model refs from the standard set;
+# values are their lite replacements. Models mapped to None are excluded.
+OCG_LITE_MODEL_MAP: dict[str, str | None] = {
+    "opencode-go/minimax-m3": "opencode-go/minimax-m3",
+    "opencode-go/qwen3.7-max": "opencode-go/qwen3.7-plus",
+    "opencode-go/deepseek-v4-pro": "opencode-go/deepseek-v4-flash",
+    "opencode-go/glm-5.2": None,
+    "opencode-go/kimi-k2.6": "opencode-go/kimi-k2.7-code",
+    "opencode-go/mimo-v2.5-pro": "opencode-go/mimo-v2.5",
+}
 
 
 def _load_opencode_config() -> dict[str, Any] | None:
@@ -100,7 +112,21 @@ def medium_rungs_from_ladder(host: str, codex_home: Path | None = None) -> list[
     return rungs
 
 
-def resolve_multi_ai_models(host: str, codex_home: Path | None = None) -> dict[str, Any]:
+def apply_lite_mapping(models: list[dict[str, str]]) -> list[dict[str, str]]:
+    mapped: list[dict[str, str]] = []
+    for entry in models:
+        model = entry["model"]
+        if model in OCG_LITE_MODEL_MAP:
+            replacement = OCG_LITE_MODEL_MAP[model]
+            if replacement is None:
+                continue
+            mapped.append({**entry, "model": replacement, "source": "ocg-lite"})
+        else:
+            mapped.append(entry)
+    return mapped
+
+
+def resolve_multi_ai_models(host: str, codex_home: Path | None = None, *, lite: bool = False) -> dict[str, Any]:
     host = host.lower()
     ladder_models = medium_rungs_from_ladder(host, codex_home=codex_home)
     ocg_models: list[dict[str, str]] = []
@@ -118,6 +144,10 @@ def resolve_multi_ai_models(host: str, codex_home: Path | None = None) -> dict[s
         models = ladder_models
         plan = "ladder-medium-only"
 
+    if lite:
+        models = apply_lite_mapping(models)
+        plan = "ocg-lite"
+
     return {
         "host": host,
         "plan": plan,
@@ -127,22 +157,23 @@ def resolve_multi_ai_models(host: str, codex_home: Path | None = None) -> dict[s
             "When using OpenCode Go (Mechanism 1), define one subagent per model in "
             "~/.config/opencode/opencode.json(c) under agent.<name>.model (e.g. "
             "opencode-go/minimax-m3) and allow it in permission.task. "
-            "See skills/silver-multi-ai-task/rules/dispatch-mechanics.md."
+            "See skills/silver-multi-ai/rules/dispatch-mechanics.md."
         ),
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Resolve silver:multi-ai-task models (medium reasoning, ladder-aligned)."
+        description="Resolve silver:multi-ai models (medium reasoning, ladder-aligned)."
     )
     parser.add_argument("--host", choices=("cursor", "codex", "claude"), help="Override host detection")
     parser.add_argument("--json", action="store_true", help="Emit JSON only")
     parser.add_argument("--codex-home", type=Path, help="Override CODEX_HOME (tests)")
+    parser.add_argument("--lite", action="store_true", help="OCG-Lite: budget-friendly model replacements")
     args = parser.parse_args()
 
     host = args.host or detect_host()
-    payload = resolve_multi_ai_models(host, codex_home=args.codex_home)
+    payload = resolve_multi_ai_models(host, codex_home=args.codex_home, lite=args.lite)
 
     if args.json:
         print(json.dumps(payload, indent=2))

@@ -1,49 +1,31 @@
-=== Matrix monitor poll 2026-06-30T07:14:02Z ===
-batch PID: none — WAIT_OPERATOR
-elapsed batch: ?
-current row (log): 11
-matrix log bytes: 26059
-issues (recent): FAIL
+=== Matrix monitor poll 2026-07-01T06:02:34Z ===
+batch PID: 7549 — RUNNING
+elapsed batch: 22:15
+current row (log): ?
+matrix log bytes: 20336263
+issues (recent): none
 claude/expect:
-  
-  row1-attempt.log: 175171 bytes (2026-06-30 12:04)
-  row5-attempt.log: 3759 bytes (2026-06-30 10:24)
-  row7-attempt.log: 382919 bytes (2026-06-30 14:34)
-  row8-attempt.log: 316914 bytes (2026-06-30 14:45)
-  row9-attempt.log: 3765 bytes (2026-06-30 10:29)
-  row10-attempt.log: 3750 bytes (2026-06-30 10:30)
-  row11-attempt.log: 472350 bytes (2026-06-30 14:57)
-  row12-attempt.log: 3746 bytes (2026-06-30 10:32)
-  row13-attempt.log: 3749 bytes (2026-06-30 10:34)
-  row14-attempt.log: 3746 bytes (2026-06-30 10:35)
-  row15-attempt.log: 3795 bytes (2026-06-30 10:36)
-  row16-attempt.log: 355 bytes (2026-06-30 10:37)
-  row17-attempt.log: 355 bytes (2026-06-30 10:37)
-  row18-attempt.log: 355 bytes (2026-06-30 10:37)
-  row19-attempt.log: 355 bytes (2026-06-30 10:37)
-  row20-attempt.log: 355 bytes (2026-06-30 10:37)
+  73390 expect /Users/shafqat/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
+  73747 /Users/shafqat/.local/bin/claude --model haiku --effort low --permission-mode bypassPermissions --verbose --allow-dangerously-skip-permissions --settings /Users/shafqat/.claude/settings.json
+  row1-attempt.log: 338024 bytes (2026-07-01 16:01)
+  row5-attempt.log: 2790898 bytes (2026-07-01 15:10)
+  row7-attempt.log: 361621 bytes (2026-07-01 09:58)
+  row8-attempt.log: 108285 bytes (2026-07-01 10:00)
+  row9-attempt.log: 318241 bytes (2026-07-01 10:44)
+  row10-attempt.log: 1086593 bytes (2026-07-01 11:00)
+  row11-attempt.log: 34993 bytes (2026-07-01 10:00)
+  row12-attempt.log: 1600844 bytes (2026-07-01 11:22)
+  row13-attempt.log: 1043126 bytes (2026-07-01 11:35)
+  row14-attempt.log: 6963772 bytes (2026-07-01 13:14)
+  row15-attempt.log: 63747 bytes (2026-07-01 13:27)
+  row16-attempt.log: 63683 bytes (2026-07-01 13:27)
+  row17-attempt.log: 636014 bytes (2026-07-01 13:35)
+  row18-attempt.log: 1982523 bytes (2026-07-01 08:41)
+  row19-attempt.log: 639764 bytes (2026-07-01 09:06)
+  row20-attempt.log: 391512 bytes (2026-07-01 09:23)
 log tail:
 
-  
-  
-  
-  
-  
-  
-  
-  
-  [2C[6A
-    PASS: evidence at .planning/workflows/devops-terraform-validation.md
-    OUTCOMES: checklist at .planning/enterprise-e2e/outcomes/row-11-outcomes.md
-    FAIL: outcome assessment — mandatory criteria not all pass (evidence alone insufficient)
-      OUTCOME-FAIL: OUT-KM-01 partial
-      OUTCOME-FAIL: OUT-WORLD-01 fail
-  
-  === Matrix summary ===
-  Pass:  1
-  Fail:  3
-  Skip:  0
-  Total: 4 / 22
+
 retry policy: 429→60s; ENOTFOUND→120-300s; DRY_RUN unset
-monitor PID: 16907
+monitor PID: 41491
 poll interval: 300s; stall=2700s; hung=5400s

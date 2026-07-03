@@ -117,6 +117,20 @@ validation_overlay_check_help_workflow_coverage() {
   fi
 }
 
+validation_overlay_check_host_install_surface() {
+  local root="$1"
+  local script="${root}/scripts/validate-host-install-surface.sh"
+  if [[ ! -x "$script" ]]; then
+    validation_overlay_fail "validate-host-install-surface.sh missing"
+    return
+  fi
+  if bash "$script" --repo-root "$root" >/dev/null 2>&1; then
+    validation_overlay_pass "host install surface isolation (validate-host-install-surface)"
+  else
+    validation_overlay_fail "host install surface isolation failed (validate-host-install-surface)"
+  fi
+}
+
 validation_overlay_check_tri_host_install() {
   local root="$1"
   local ok=1
