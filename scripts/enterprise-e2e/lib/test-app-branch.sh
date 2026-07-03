@@ -36,14 +36,16 @@ enterprise_e2e_apply_test_app_branch_defaults() {
   host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
   if [[ -z "${SB_E2E_TEST_APP_BRANCH:-}" ]]; then
     round="${SB_E2E_TEST_APP_ROUND:-}"
-    if [[ -z "$round" ]]; then
-      round="$(enterprise_e2e_test_app_round_from_ledger "${SB_E2E_LEDGER_FILE:-}" 2>/dev/null || true)"
-    fi
     if [[ -n "$round" ]]; then
       export SB_E2E_TEST_APP_BRANCH="enterprise-e2e/round-${round}-${host}"
     else
       branch="$(enterprise_e2e_host_config_get test_app_git_branch "$host" 2>/dev/null || true)"
-      [[ -n "$branch" ]] && export SB_E2E_TEST_APP_BRANCH="$branch"
+      if [[ -n "$branch" ]]; then
+        export SB_E2E_TEST_APP_BRANCH="$branch"
+      else
+        round="$(enterprise_e2e_test_app_round_from_ledger "${SB_E2E_LEDGER_FILE:-}" 2>/dev/null || true)"
+        [[ -n "$round" ]] && export SB_E2E_TEST_APP_BRANCH="enterprise-e2e/round-${round}-${host}"
+      fi
     fi
   fi
   if [[ -z "${SB_E2E_TEST_APP_BASELINE_SHA:-}" ]]; then
@@ -53,7 +55,7 @@ enterprise_e2e_apply_test_app_branch_defaults() {
   return 0
 }
 
-# Priority: explicit env → derived round-N-host → hosts.json default.
+# Priority: explicit env → SB_E2E_TEST_APP_ROUND derived → hosts.json → ledger derived.
 enterprise_e2e_test_app_expected_branch() {
   if [[ -n "${SB_E2E_TEST_APP_BRANCH:-}" ]]; then
     printf '%s\n' "$SB_E2E_TEST_APP_BRANCH"
@@ -61,9 +63,6 @@ enterprise_e2e_test_app_expected_branch() {
   fi
   local round host from_config
   round="${SB_E2E_TEST_APP_ROUND:-}"
-  if [[ -z "$round" ]]; then
-    round="$(enterprise_e2e_test_app_round_from_ledger "${SB_E2E_LEDGER_FILE:-}" 2>/dev/null || true)"
-  fi
   if [[ -n "$round" ]]; then
     host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
     printf 'enterprise-e2e/round-%s-%s\n' "$round" "$host"
@@ -72,6 +71,12 @@ enterprise_e2e_test_app_expected_branch() {
   from_config="$(enterprise_e2e_host_config_get test_app_git_branch 2>/dev/null || true)"
   if [[ -n "$from_config" ]]; then
     printf '%s\n' "$from_config"
+    return 0
+  fi
+  round="$(enterprise_e2e_test_app_round_from_ledger "${SB_E2E_LEDGER_FILE:-}" 2>/dev/null || true)"
+  if [[ -n "$round" ]]; then
+    host="$(enterprise_e2e_matrix_host 2>/dev/null || echo claude)"
+    printf 'enterprise-e2e/round-%s-%s\n' "$round" "$host"
     return 0
   fi
   return 1

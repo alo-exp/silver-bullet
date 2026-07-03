@@ -42,6 +42,7 @@
       "row_attempt_pattern": ".e2e-row{row}-codex-attempt{suffix}.log",
       "fixture_branch": "enterprise-e2e/round-9-codex",
       "git_branch": "main",
+      "test_app_git_branch": "enterprise-e2e/round-9-codex",
       "test_app_git_baseline_sha": "09f8d1a"
     },
     "cursor": {
