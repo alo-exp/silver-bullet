@@ -471,6 +471,8 @@ assert_contains "matrix cursor enforces 1800s minimum timeout" "$HARNESS_MATRIX"
 assert_contains "matrix cursor syncs CURSOR_AGENT_TIMEOUT" "$HARNESS_MATRIX" 'CURSOR_AGENT_TIMEOUT'
 assert_executable "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "cursor3 REAL live driver executable"
 assert_contains "cursor3 driver exports 1800s timeout" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "CLAUDE_INTERACTIVE_TIMEOUT=1800"
+assert_contains "cursor3 driver resets tui offsets" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-driver.sh" "enterprise_e2e_reset_tui_monitor_offsets"
+assert_contains "cursor3 pipeline driver resets tui offsets" "${REPO_ROOT}/.planning/enterprise-e2e/cursor3-real-pipeline-driver.sh" "enterprise_e2e_reset_tui_monitor_offsets"
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
