@@ -188,6 +188,7 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
 4. **Fixture branch lock:** `enterprise_e2e_fixture_assert_branch_lock` runs **pre- and post-invoke** on every row (E2E-101). Fail on drift to sibling host branch or wrong SHA.
 5. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
+6. **Ledger-derived branch override:** When `SB_E2E_TEST_APP_BRANCH` and `SB_E2E_TEST_APP_ROUND` are unset, `enterprise_e2e_test_app_round_from_ledger` parses `SB_E2E_LEDGER_FILE` basename (`ROUND-CURSOR-3-REAL` → round **3**, `ROUND-CODEX-9` → round **9**) and sets `enterprise-e2e/round-N-{host}` — **overriding** stale `hosts.json` defaults. Priority: explicit env → `SB_E2E_TEST_APP_ROUND` → `hosts.json` → ledger-derived (Cursor-3 REAL lesson — [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md)).
 
 ---
 
@@ -394,6 +395,7 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 | **Stdout buffering** | Cursor headless logs may show **0 B for ~30 min** while agent is working — buffering is normal but **does not** satisfy §5b log floor; wait or fix E2E-086 streaming |
 | **Cursor auth** | Keychain / interactive Cursor auth — **not** `CURSOR_API_KEY` for live matrix drivers |
 | **Per-row timeouts** | Row **8** (`silver-refactor`): `SB_E2E_ROW8_TIMEOUT=3600`; row **11** (`silver-devops`): `SB_E2E_ROW11_TIMEOUT=5400` (E2E-087) |
+| **TUI monitor offset reset** | **Mandatory at round start** — `enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"` seeks `.e2e-tui-watch-{host}-offsets.json` and `.tui-monitor-agent-offset.json` to EOF of existing attempt logs so historical rows are not replayed as new issues (E2E-086+ false-positive-replay). Called by `live-test.sh`, all `*-matrix-driver.sh`, and Cursor/Codex REAL drivers — **not** mid-batch inside `matrix.sh` |
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
 
@@ -530,9 +532,28 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | Rule | Prevents |
 |------|----------|
 | **Fixture branch lock** — `enterprise-e2e/round-N-{host}` worktree only; assert pre/post every row | E2E-090, E2E-101 |
+| **Ledger-derived fixture branch** — set `SB_E2E_LEDGER_FILE` so `round-N-{host}` derives from ledger basename when env unset | E2E-090, E2E-101 |
 | **`SB_E2E_MATRIX_FORCE=1`** on first live brownfield row; **`FORCE_ALL=1`** only for deliberate full re-run | E2E-095, E2E-102 |
 | **§5b log floor >2048 B** (or composite footer) before PASS | E2E-086, E2E-093, E2E-100 |
+| **TUI monitor offset reset at round start** — `enterprise_e2e_reset_tui_monitor_offsets` before first live row | E2E-086 false-positive-replay |
 | **Rescore ≠ strict-clean** — live rerun required for certification credit | E2E-089 |
+| **Outcome scorer harness fixes** — evidence PASS + outcome FAIL → fix scorer @ `8feda5fc`+, then **live rerun**; do not claim PASS on stale outcome files | E2E-088 |
+| **Routing-only clarify n/a** — row 1 `silver-router` without CLARIFY is not `OUT-CLARIFY-01` fail | E2E-091 |
+| **Cursor timeout ≥1800s** — export in driver/tmux; matrix enforces; never inherit 900s shell default | E2E-087, E2E-092 |
+| **Fast-path orch n/a** — row 6 `silver-fast` does not require orchestrator parent/worker chain | E2E-094 |
+| **Row 14 release evidence** — CHANGELOG + release SHIP path; not ship-readiness checklist dir | E2E-097 |
+| **Row 14 KM via graphify preamble** — matrix TUI may disable agentmemory MCP; graphify preamble satisfies `OUT-KM-01` | E2E-098 |
+| **Row 15 triad evidence** — `triad-currency.md` + instruction-ledger; review-triad ≠ release workflow | E2E-099 |
+| **Rows 14/15/16 live drivers** — outcome partials require `force1416`/`force141619` drivers, not ledger hand-edit | E2E-104 |
+| **§5b smoke before Tier C** — rows **6, 11** (plus **21–22** internal) must pass §5b before full matrix claim | E2E-106 |
+| **Bracketed-paste confirm** — if log stops at `Queued follow-up`, re-run with paste-expand harness fix | E2E-107 |
+| **Fixture root before mkdir** — `export SB_TEST_ENTERPRISE_APP_ROOT` before any pilot/fixture mkdir | E2E-109 |
+| **Claude inherit-keys bypass** — export `ANTHROPIC_API_KEY` or inherit-keys before matrix launch | E2E-110 |
+| **Hook audit on isolated state** — hook-delivery preflight must allow row-scoped `${SB_RUNTIME_STATE_DIR}` | E2E-111 |
+| **Latest attempt log for rescore** — use newest `.e2e-rowN-*-attempt.log` by mtime, not first glob match | E2E-112 |
+| **`$LEDGER` in strict-clean summary** — Gate 3 resume checks driver-exported ledger path | E2E-113 |
+| **CI-writable fixture paths** — script tests use temp dirs, not operator home paths | E2E-115 |
+| **Internal rows 21–22** — inherit parent rows **3/4** live strict-clean @ `install_fp`; exempt §5b log floor when parent markers present (E2E-100) | E2E-100, §5a #6 |
 | **Planning-file-guard TUI hits** — matrix prompt echo is annoyance, not blocker (SB OVERRIDE instruction) | E2E-026 |
 | **SessionStart stale hooks** — run `install-claude.sh` after harness merge; prune removes `gsd-*` | E2E-010, E2E-003 |
 | **Stop coalesce** — first gate reason only; do not interpret downstream Stop hooks as new defects | E2E-014 |
@@ -542,6 +563,11 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **Codex install skip** on REAL drivers after Session 0 | E2E-108 |
 | **Claude isolated state** per matrix row | E2E-105 |
 | **Row 3 api/currency §5b** — not docs-only stub | E2E-103 |
+| **Composer 2.5 only** for Cursor subagents — never `composer-2.5-fast` in matrix drivers | Cursor-3 REAL policy |
+| **Keychain Cursor auth** — `cursor-agent login`; not `CURSOR_API_KEY` for live matrix | §8 Cursor auth |
+| **Post-merge re-cert** — pull `main`, re-install host, Tier A + §5b smoke on new `install_fp` | §11b post-merge sibling |
+| **Codex branch lock** — never commit Codex harness to Cursor/Claude branches | §9 |
+| **Claude state isolation** — fresh `${SB_RUNTIME_STATE_DIR}` per row | E2E-105 |
 
 ### Codex / Claude §5a / §5b gates (mirror Cursor)
 
@@ -610,7 +636,8 @@ Before marking any row PASS in a ledger:
 - [ ] Fixture **commit SHA** on host branch (or documented brownfield waiver)
 - [ ] `enterprise_e2e_outcome_row_passes` — no blocking gate partial
 - [ ] Row 16: ship-readiness state matches outcome (not `NOT_MERGE_READY` + PASS)
-- [ ] Rows 21–22: parent rows 3/4 live strict-clean @ same `install_fp`
+- [ ] **Internal gates 21–22:** parent rows **3** (`silver-feature`) and **4** (`silver-bugfix`) live strict-clean @ same `install_fp` — internal rows verify orchestrator parent/worker markers only; **no standalone §5b log floor** when parent evidence present (E2E-100); **FAIL** if parents were install-skip, rescore-only, or inherited-baseline
+- [ ] Rows 21–22: `OUT-ORCH-01` / internal gate criteria pass via parent chain — not standalone product commits
 - [ ] Test-app branch = `enterprise-e2e/round-N-{host}` via worktree — not shared clone contamination
 - [ ] Host-agent authorship attested — not operator-only routing for implement rows
 - [ ] **Evidence type** recorded (`live-committed`, not `inherited-baseline` / `harness-rescore-only` / `frozen-merge` without round authorship)
