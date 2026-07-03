@@ -14,7 +14,7 @@ Audits whether local SB installation is correct for the active host and whether 
 - Before Wave 1+ implementation work or after `/silver:update`
 - When hooks appear inactive or plugin version is stale
 - After migrating a project with `/silver:migrate` + `/silver:init` update mode
-- When Cursor may have an imported Claude-native SB install (contamination check)
+- When task host may have an imported primary host-native SB install (contamination check)
 
 ## Process
 
@@ -46,14 +46,22 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 
 ### Step 3: Fix FAILs inline
 
+```bash
+bash scripts/sb-doctor.sh --fix
+```
+
 | Check | Typical fix |
 |-------|-------------|
-| D2/D3 plugin stale | `/silver:update` or `bash scripts/install-cursor.sh` (Cursor) |
-| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
+| D2/D3 plugin stale | `/silver:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` (task host) |
+| D4 hooks missing | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/silver:migrate` |
 | D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
-| D8 orchestrator rule | Cursor only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
-| D13 cross-host import | Cursor: purge `.codex/plugins` from hooks; Claude/Codex: reinstall native host plugin |
+| D8 orchestrator rule | task host only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
+| D13 manifest paths | Host install script for active runtime |
+| D14 cache bleed | `bash scripts/install-{primary host,Codex,task host}.sh` or `sb-doctor.sh --fix` |
+| D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
+| D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
+| D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
 
 Log friction in `$HOME/.codex/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -63,25 +71,31 @@ Log friction in `$HOME/.codex/.silver-bullet/sb-friction-log.md` when doctor sur
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D13)
-
-See plan Section B and `scripts/sb-doctor.sh` for the authoritative check list:
+## Check catalog (D1–D17)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
 - D3 plugin cache `current` symlink + hooks manifest
-- D4 host hooks manifest (Cursor `hooks.json`, Codex `config.toml`, Claude `settings.json`)
+- D4 host hooks manifest (task host `hooks.json`, Codex `config.toml`, primary host `settings.json`)
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
-- D8 Cursor orchestrator rule (**Cursor host only** — N/A on Claude/Codex)
-- D9 workflow tracker (`scripts/workflows.sh`, `docs/workflows/`)
-- D10 recommended tools when `enabled_by_user: true`
-- D11 hook smoke (`session-start`, `outcomes-check`, `stop-check`)
+- D8 task host orchestrator rule (**task host host only**)
+- D9 workflow tracker
+- D10 recommended tools when opted in
+- D11 hook smoke
 - D12 `$HOME/.codex/.silver-bullet` writable
-- D13 cross-host plugin contamination (host-scoped manifest + `agents/<host>/` in active cache)
+- D13 cross-host manifest paths + expected cache bundle
+- D14 foreign agent namespaces in plugin cache
+- D15 primary host agent description token budget
+- D16 repo install surface (`validate-host-install-surface.sh`)
+- D17 host-agnostic SB core (`validate-host-agnostic-core.sh`)
 
-Host detection uses `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, plugin root env vars) — **not** presence of other hosts' config files on disk.
+```bash
+bash scripts/validate-host-install-surface.sh
+bash scripts/validate-host-agnostic-core.sh
+bash scripts/sb-doctor.sh --fix
+```
 
 ## Tests
 

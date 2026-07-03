@@ -10,7 +10,16 @@ FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" file="$3"
-  if grep -qE "$needle" "$file"; then
+  # Fixed-string when needle looks like a flag (BSD grep treats "--fix" as an option).
+  if [[ "$needle" == --* ]]; then
+    if grep -Fq -- "$needle" "$file"; then
+      echo "PASS: $desc"
+      PASS=$((PASS + 1))
+    else
+      echo "FAIL: $desc — missing [$needle] in $file"
+      FAIL=$((FAIL + 1))
+    fi
+  elif grep -qE "$needle" "$file"; then
     echo "PASS: $desc"
     PASS=$((PASS + 1))
   else
@@ -49,6 +58,11 @@ assert_executable "sb-doctor.sh executable" "$DOCTOR"
 assert_contains "documents sb-doctor.sh" "sb-doctor\\.sh" "$SKILL"
 assert_contains "documents D1 jq check" "D1" "$SKILL"
 assert_contains "documents D13 Claude import" "claude/plugins|D13" "$SKILL"
+assert_contains "documents D14 cache bleed" "D14" "$SKILL"
+assert_contains "documents --fix flag" "--fix" "$SKILL"
+for id in D14 D15 D16; do
+  grep -q "${id}" "$DOCTOR" && echo "PASS: sb-doctor.sh references check ${id}" && PASS=$((PASS + 1)) || { echo "FAIL: sb-doctor.sh missing check ${id}"; FAIL=$((FAIL + 1)); }
+done
 assert_contains "documents zero FAIL for PASS" "zero FAIL" "$SKILL"
 assert_contains "documents friction log" "sb-friction-log" "$SKILL"
 

@@ -3,6 +3,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 FAIL=0
 
 check_file() {
@@ -44,10 +46,10 @@ done
 
 THINNED_COMPOSERS=(silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release)
 for composer in "${THINNED_COMPOSERS[@]}"; do
-  src="${REPO_ROOT}/agents/codex/${composer}/SKILL.md"
+  src="$(sb_agent_bundle_root "$REPO_ROOT" codex)/${composer}/SKILL.md"
   dst="${REPO_ROOT}/plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
   if [[ ! -f "$src" ]]; then
-    echo "MISSING codex bundle: agents/codex/${composer}/SKILL.md"
+    echo "MISSING codex bundle: host-bundles/codex/${composer}/SKILL.md"
     FAIL=1
     continue
   fi

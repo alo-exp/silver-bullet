@@ -12,7 +12,7 @@ If Phase 0 determined this is an update:
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
-3. If the project already has a project instruction file (`CLAUDE.md` in Claude, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
+3. If the project already has a project instruction file (`project instruction file` in primary host, `AGENTS.md` in Codex), strip any SB-owned sections from it (migration from pre-v0.7.0). Check for headings matching `## N. <Known SB Title>` where N is 0–9 (titles: Session Startup, Automated Enforcement, Active Workflow, NON-NEGOTIABLE, Review Loop, Session Mode, Model Routing, Legacy Lifecycle, File Safety, Third-Party, Pre-Release). If found, remove these sections (from heading to next `## ` or EOF), preserving all non-SB content. Also remove old-style reference lines that do not mention silver-bullet.md.
 4. If the project instruction file already exists, verify it contains a reference line mentioning "silver-bullet.md". If not, add at the very top of the file: `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 5. Run conflict detection (same as step 3.1c below).
 5a. Run step 3.7.5 to re-register or refresh SB hooks in `$HOME/.codex/settings.json`.
@@ -47,11 +47,11 @@ Perform these placeholder replacements on the copied file:
 
 ### Runtime-aware bootstrap note
 
-Keep user-facing bootstrap language runtime-neutral. In Codex, describe the local instruction surface as a project instruction file and avoid runtime-specific model-routing jargon; when the repository actually uses `AGENTS.md`, reconcile that file in place rather than synthesizing a new one.
+Keep user-facing bootstrap language runtime-neutral. On this runtime, describe the local instruction surface as a project instruction file and avoid runtime-specific model-routing jargon; when the repository actually uses `AGENTS.md`, reconcile that file in place rather than synthesizing a new one.
 
 ### 3.1b Handle optional project instruction file
 
-Check if a project instruction file exists in the project root (`CLAUDE.md` or `AGENTS.md`, depending on the runtime).
+Check if a project instruction file exists in the project root (`project instruction file` or `AGENTS.md`, depending on the runtime).
 
 **If NO existing project instruction file**: do not create a new agent instruction file during Codex initialization. Silver Bullet's own instructions live in `silver-bullet.md`; a project instruction file is optional.
 
@@ -63,7 +63,7 @@ Silver Bullet sections are identified by headings matching `## N. <Known SB Titl
 
 Run via shell to detect SB sections:
 ```bash
-grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|Legacy Lifecycle|File Safety|Third-Party|Pre-Release)' CLAUDE.md AGENTS.md 2>/dev/null || echo "NO_SB_SECTIONS"
+grep -nE '^## [0-9]+[a-z]?\. (Session Startup|Automated Enforcement|Active Workflow|NON-NEGOTIABLE|Review Loop|Session Mode|Model Routing|Legacy Lifecycle|File Safety|Third-Party|Pre-Release)' project instruction file AGENTS.md 2>/dev/null || echo "NO_SB_SECTIONS"
 ```
 
 If `NO_SB_SECTIONS` → skip to Step 2.
@@ -89,7 +89,7 @@ Then run conflict detection (step 3.1c).
 
 Scan the project instruction file for patterns that conflict with `silver-bullet.md` rules. Check for these conflict patterns:
 
-1. **Model routing overrides**: regex `(always|default|prefer|use).*(claude-opus|claude-sonnet|opus|sonnet)` on directive-like lines (conflicts with SB Section 5)
+1. **Model routing overrides**: regex `(always|default|prefer|use).*(primary host-opus|primary host-sonnet|opus|sonnet)` on directive-like lines (conflicts with SB Section 5)
 2. **Execution preferences**: regex `(always|never|must).*(subagent-driven|executing-plans)` on directive-like lines (conflicts with SB Section 6)
 3. **Review loop overrides**: regex `(skip|disable|no).*(review.*loop|code.review)|approved.*(once|single)` on directive-like lines (conflicts with SB Section 3a)
 4. **Workflow overrides**: regex `(override|replace|ignore).*(workflow|silver.bullet)` on directive-like lines (conflicts with SB Section 2)
@@ -107,16 +107,16 @@ If user selects A, use the active runtime file-editing mechanism to remove the l
 ### 3.2 Create directories
 
 ```bash
-mkdir -p docs/specs docs/workflows .cursor/rules
+mkdir -p docs/specs docs/workflows host rules directory (install guide)
 ```
 
-### 3.2.1 Install Cursor orchestrator rule
+### 3.2.1 Install task host orchestrator rule
 
-When the active runtime is Cursor **or** `.cursor/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
+When the active runtime is task host **or** `.task host/` already exists in the project, copy the SB orchestrator rule so agents see the directive contract even before hook injection:
 
 ```bash
-mkdir -p .cursor/rules
-cp "${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc" .cursor/rules/silver-orchestrator.mdc
+mkdir -p host rules directory (install guide)
+cp "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc" host rules path (see install guide) silver-orchestrator.mdc
 ```
 
 Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).
@@ -145,7 +145,7 @@ If no CI workflow exists, create `.github/workflows/` and generate `ci.yml` base
 
 Applies only when an existing project instruction file was found in step 3.1b. If none was found, skip this step — Silver Bullet does not synthesize a new project instruction file during Codex init.
 
-Read `${PLUGIN_ROOT}/templates/CLAUDE.md.base`, perform replacements, write back to the existing filename (`CLAUDE.md` or `AGENTS.md`):
+Read `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction file.base`, perform replacements, write back to the existing filename (`project instruction file` or `AGENTS.md`):
 - `{{PROJECT_NAME}}` → the detected/confirmed project name
 - `{{TECH_STACK}}` → the detected/confirmed tech stack
 - `{{GIT_REPO}}` → the detected/confirmed repo URL
@@ -156,15 +156,15 @@ Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PR
 
 ### 3.4.1 Context Mode instruction fragment (when opted in)
 
-When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`CLAUDE.md` or `AGENTS.md`):
+When Phase 1.1f opts in, inject `templates/context-mode-hint.md.base` into `silver-bullet.md` and the project instruction file (`project instruction file` or `AGENTS.md`):
 
 1. If sentinel `<!-- BEGIN context-mode hint (do not edit) -->` exists, replace the block idempotently (drop old block, append fresh template).
 2. Otherwise append the template block to each file.
-3. Copy upstream `context-mode.mdc` to `.cursor/rules/context-mode.mdc` on Cursor hosts (see `docs/CONTEXT-MODE.md`).
+3. Copy upstream `context-mode.mdc` to `host rules path (see install guide) context-mode.mdc` on task host hosts (see `docs/CONTEXT-MODE.md`).
 
 ### 3.4.2 RTK awareness (Codex / optional)
 
-On Codex hosts when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
+On active host when RTK is opted in, merge `templates/rtk-awareness.md.base` into `AGENTS.md` if not already present (after Context Mode routing template when both are enabled).
 
 ### 3.5 Copy workflow files
 
@@ -212,8 +212,8 @@ silver:ensure-docs --recover-scheme
 
 ```bash
 git add silver-bullet.md .silver-bullet.json docs/
-if test -f CLAUDE.md; then
-  git add CLAUDE.md
+if test -f project instruction file; then
+  git add project instruction file
 fi
 if test -f AGENTS.md; then
   git add AGENTS.md
@@ -271,14 +271,14 @@ fi
 **Merge hooks idempotently:**
 
 ```bash
-if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
-  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH"
+if [[ "${SILVER_BULLET_RUNTIME:-}" == "task host" ]]; then
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
 else
-  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH"
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/merge-hooks.py" "$INSTALL_PATH"
 fi
 ```
 
-`scripts/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
+`scripts/lib/install-<runtime>/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
 > ⚠️  Could not auto-register hooks in the host settings file. Run `/silver:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
 
 Idempotent — re-running `/silver:init` adds no duplicate entries.

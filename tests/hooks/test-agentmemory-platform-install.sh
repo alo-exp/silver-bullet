@@ -72,7 +72,7 @@ source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
 [[ "$(SILVER_BULLET_RUNTIME=hermes sb_agentmemory_platform_artifact_path "$TMP")" == "${HOME}/.hermes/config.yaml" ]] && pass "hermes artifact path" || fail "hermes artifact path"
 [[ "$(SILVER_BULLET_RUNTIME=goose sb_agentmemory_platform_artifact_path "$TMP")" == "${HOME}/.config/goose/config.yaml" ]] && pass "goose artifact path" || fail "goose artifact path"
 
-assert_grep "silver-init agentmemory section" "$REPO_ROOT/skills/silver-init/SKILL.md" "### 1.1b agentmemory"
+assert_grep "silver-init agentmemory section" "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" "### 1.1b agentmemory"
 assert_grep "silver-update agentmemory retry" "$REPO_ROOT/skills/silver-update/SKILL.md" "Step 8b: agentmemory"
 assert_grep "docs AGENTMEMORY" "$REPO_ROOT/docs/AGENTMEMORY.md" "Graphify Synergy"
 assert_grep "GRAPHIFY synergy section" "$REPO_ROOT/docs/GRAPHIFY.md" "agentmemory Synergy"

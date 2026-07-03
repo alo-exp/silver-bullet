@@ -2,8 +2,8 @@
 
 Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy:** TUI monitor scripts and operators append new issues here — not the human ledger ([ROUND-4-LEDGER.md](../../.planning/enterprise-e2e/ROUND-4-LEDGER.md) is run metadata only).
 
-**Last updated:** 2026-06-30  
-**SB repo HEAD at update:** `6bd631b8` (prior: `c2fc21a1`, `c4c71a80`, `95bc8c49`, `5c39d1c3`, `7f8e757f`)
+**Last updated:** 2026-07-03  
+**SB repo HEAD at update:** `cca0ffc0` (prior: `6bd631b8`, `c2fc21a1`, `c4c71a80`, `95bc8c49`, `5c39d1c3`)
 
 ---
 
@@ -48,7 +48,21 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 
 | ID | Severity | Component | Issue | Notes |
 |----|----------|-----------|-------|-------|
-| E2E-085 | annoyance | stall | ft+tabtocycle)·←foragents     0 tokens
+| E2E-086 | friction→fixed | harness/cursor | Cursor matrix row attempt logs stayed 0 bytes — `cursor-agent --print` ignored `CLAUDE_INTERACTIVE_LOG_FILE`; OUT-SKILL-01/OUT-WORLD-01 false fails | `tests/live/agents/cursor/agent.sh` writes log file; matrix tees output + seeds state slug; outcome scorer checks `state.requested` @ cursor branch |
+| E2E-087 | friction→fixed | harness/cursor | `silver-research`/`silver-feature` hit `CLAUDE_INTERACTIVE_TIMEOUT` 900s — evidence present but OUT-KM-01/OUT-WORLD-01 fail | 2b197be9: cursor matrix default timeout 1800s |
+| E2E-088 | friction→fixed | outcome/cursor | Post-retry @1800s: 12/22 fail on OUT-HANDOFF-01/OUT-SUPER-01 (3–4), OUT-KM-01 session partial (6–7,12,14–16,18,20), OUT-MEASURE-01 (16), internal gates 21–22 | SB harness @8feda5fc; retry2 completed ~4h — evidence PASS 9/12 agent rows; outcome files still FAIL |
+| E2E-089 | friction→fixed | harness/cursor | Retry2 row logs 0–317B (timeout/connection noise); matrix evidence PASS but outcome FAIL; row 20 timeout; parallel codex batch regressed rows 9–10–13–17 outcome files | Headless log streaming in `cursor/agent.sh`; matrix evidence resolver + hook/heal/super scorer @3d4ef10e; rescore harness **21–22/22** — **not** strict-clean (evidence-only rows) |
+| E2E-090 | gap→fixed | harness | Parallel Codex/Cursor/Claude matrix tracks shared one test-app checkout — row 21–22 evidence clobber risk | `hosts.json` `test_app_git_branch` + `enterprise_e2e_ensure_test_app_branch`; pattern `enterprise-e2e/round-N-{host}`; see [TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md) |
+| E2E-091 | gap→fixed | outcome/cursor | Row 1 `OUT-CLARIFY-01` false fail on routing-only `silver-router` session | `enterprise_e2e_outcome_score_clarify` → `n/a` when routing evidence present @ `32231c44` |
+| E2E-092 | gap→fixed | harness/cursor | tmux driver inherited 900s timeout vs 1800s cursor matrix default — row 6 timeout + 124 B log | `matrix.sh` enforces cursor ≥1800s; `cursor3-real-driver.sh` exports timeout env @ `32231c44` |
+| E2E-093 | gap→fixed | harness/cursor | §5b log floor fail — `cursor-agent --print` summary-only; harness truncated attempt log; stream-json / composite transcript missing | `tests/live/agents/cursor/agent.sh` stream-json + `stdbuf`; `enterprise_e2e_matrix_finalize_attempt_log` composite footer; outcome scoring surface @ `5fa5d2fc` |
+| E2E-094 | gap→fixed | outcome/cursor | Row 6 `OUT-ORCH-01` false fail on `silver-fast` fast-path after live retry | `enterprise_e2e_outcome_score_orch` → `n/a` when row 6 evidence + `silver-fast` state present @ `5fa5d2fc` |
+| E2E-095 | gap→fixed | harness/cursor | Brownfield evidence SKIP without `SB_E2E_MATRIX_FORCE=1` — row 2 initial 0 B skip | `cursor3-real-driver.sh` + pipeline driver export `FORCE` + `FORCE_ALL` @ `d02b8584` |
+| E2E-096 | gap→fixed | outcome/cursor | Row 10 autonomy scorer false-negative — negated "operator pauses" in stream-json summary + matrix prompt "SB OVERRIDE" instruction tripped babysitting regex | Babysitting exclusion + `SB OVERRIDE:` colon-required detector @ `e1ff9580`; rescored live log 427233 B |
+| E2E-097 | gap→fixed | outcome/cursor | Row 14 `OUT-RELEASE-01` partial — `silver-release` lacks ship-readiness dir | Row 14 uses CHANGELOG + release phase SHIP evidence path @ `0420501d` |
+| E2E-098 | gap→fixed | outcome/cursor | Row 14 `OUT-KM-01` partial — matrix graphify preamble without agentmemory MCP in TUI | Matrix graphify preamble + MCP-disabled env → pass @ `87c4228f` |
+| E2E-099 | gap→fixed | outcome/cursor | Row 15 `OUT-RELEASE-01` partial on `review-triad` — lacks ship-readiness/CHANGELOG | `triad-currency.md` triad evidence path @ `e371d311` |
+| E2E-100 | gap→fixed | harness/cursor | Rows 21–22 internal gates lack attempt logs (<2048 B §5b floor) | `.cursor3-monitor-loop.sh` exempts internal harness rows 21–22 @ `cca0ffc0` |
 
  ○low·/effort
 

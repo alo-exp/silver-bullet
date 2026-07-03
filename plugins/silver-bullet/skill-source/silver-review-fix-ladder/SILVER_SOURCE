@@ -70,7 +70,7 @@ From the project root:
 python3 scripts/review-fix-ladder.py --json
 ```
 
-Add `--host cursor` (or `claude` / `codex`) when the host is known.
+Add `--host <runtime> (from `SILVER_BULLET_RUNTIME`) when the host is known.
 
 Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`) before executing.
 
@@ -86,7 +86,7 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 | Separate verify invocations | `verify_1` and `verify_2` were **separate** subagent `Task` calls — not one combined prompt |
 | Orchestrator grep | Orchestrator ran **every** charter verification signal between verify passes and logged command + output + pass/fail |
 | Scope | No reads, edits, or commands touched paths outside locked scope |
-| Readonly verify | Both verify subagents used `readonly: true` (Cursor) or explicit verify-only directive |
+| Readonly verify | Both verify subagents used `readonly: true` (Task-capable hosts) or explicit verify-only directive |
 | No parallel rungs | No other rung's audit-fix or verify was launched while this rung was incomplete |
 | Advance gate | Advanced to next rung **only** after orchestrator confirmed **two consecutive clean** verify passes |
 
@@ -147,7 +147,7 @@ rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2
    - **FORBIDDEN** to combine passes into one subagent prompt (e.g. "do 2 passes" in a single Task).
    - **FORBIDDEN** to advance after only one clean verify pass.
 
-3. **Verify-only passes** — Subagents on verify passes MUST NOT edit files. Use `readonly: true` on Cursor `Task` or explicit "verify only, no edits" in the prompt. **FORBIDDEN** for verify subagents to apply fixes.
+3. **Verify-only passes** — Subagents on verify passes MUST NOT edit files. Use `readonly: true` on the host `Task` tool or explicit "verify only, no edits" in the prompt. **FORBIDDEN** for verify subagents to apply fixes.
 
 4. **Orchestrator evidence** — The orchestrator MUST run charter verification signals (grep/checks) between verify passes and record pass/fail with command output. **FORBIDDEN** to advance on subagent self-reported PASS alone. Subagent reports are input; orchestrator grep is the gate.
 
@@ -194,9 +194,9 @@ Report:
 
 | Host | Delegation |
 |------|------------|
-| **Cursor** | `Task` subagent with `model` set to the **composite slug** from `cursor_task_slug()` in `scripts/review-fix-ladder.py` (reasoning effort is encoded in the slug — there is no separate Task reasoning parameter). Ladder order: Composer low → medium → high → xhigh, then GPT-5.5 low → medium → high → xhigh. **All Composer rungs map to `composer-2.5` only** — never `composer-2.5-fast` (global subagent policy). GPT-5.5 maps to `gpt-5.5` for low and `gpt-5.5-extra-high` for medium/high/xhigh by model-lock substitution (not `gpt-5.5-medium`, `gpt-5.5-high`, or `gpt-5.5-xhigh`). Verify passes: `readonly: true`. **Note:** host model picker pinning may filter the Task enum; if a slug is rejected, document the rejection and apply model-lock substitution per rung. |
-| **Claude Code** | Subagent with model `claude-sonnet-4-6`, `claude-opus-4-7`, or `claude-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
-| **Codex** | `codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
+| **Task-capable host** | `Task` subagent with `model` set to the **composite slug** from `cursor_task_slug()` in `scripts/review-fix-ladder.py` (reasoning effort is encoded in the slug — there is no separate Task reasoning parameter). Ladder order: Composer low → medium → high → xhigh, then GPT-5.5 low → medium → high → xhigh. **All Composer rungs map to `composer-2.5` only** — never `composer-2.5-fast` (global subagent policy). GPT-5.5 maps to `gpt-5.5` for low and `gpt-5.5-extra-high` for medium/high/xhigh by model-lock substitution (not `gpt-5.5-medium`, `gpt-5.5-high`, or `gpt-5.5-xhigh`). Verify passes: `readonly: true`. **Note:** host model picker pinning may filter the Task enum; if a slug is rejected, document the rejection and apply model-lock substitution per rung. |
+| **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
+| **Secondary host agent** | `Codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
 
 Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-bullet.md`.
 

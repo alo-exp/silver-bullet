@@ -109,7 +109,9 @@ assert_file_contains "Claude interactive harness passes settings for api_key aut
 assert_file_contains "Claude interactive harness recovers from context exhaustion" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'recover_from_context_exhaustion'
 assert_file_contains "Claude interactive harness detects context-full stall" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'context_exhaustion_visible'
 assert_file_contains "Claude interactive harness resolves blocking clarify picker" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'resolve_blocking_decision_picker'
-assert_file_contains "Claude interactive harness detects blocking clarify picker" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'blocking_decision_picker_visible'
+assert_file_contains "Claude interactive harness detects blocking clarify picker"
+assert_file_contains "Claude interactive harness confirms collapsed paste submit" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'confirm_pasted_prompt_submit'
+assert_file_contains "Claude interactive harness detects collapsed paste buffer" "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'paste again to expand' "${REPO_ROOT}/scripts/claude-interactive-invoke.expect" 'blocking_decision_picker_visible'
 assert_file_contains "enterprise matrix row 1 accepts routing state fallback" "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh" 'verify_row_routing_state_delta'
 assert_file_contains "live doc scheme uses Claude-native Bash wording" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'Use the Bash tool to run exactly'
 assert_file_contains "live doc scheme has deterministic script fallback" "${REPO_ROOT}/tests/live/test-live-doc-scheme.sh" 'bash "\./\.live-doc-step\.sh"'

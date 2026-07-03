@@ -12,7 +12,7 @@
 | Validate JSON files | `plugin.json`, `marketplace.json`, `hooks.json`, `templates/silver-bullet.config.json.default`, `package.json` pass `jq empty` | Malformed JSON |
 | Check hook executability | All `hooks/*.sh` and `scripts/*.sh` are `chmod +x` | Non-executable hook |
 | Verify hooks.json references | Every `command` value in `hooks.json` points to an existing file | Missing hook script |
-| Check template placeholders | `CLAUDE.md.base`, `silver-bullet.md.base`, `silver-bullet.config.json.default` contain required `{{…}}` tokens | Placeholder stripped during edit |
+| Check template placeholders | `scripts/lib/install-claude/templates/CLAUDE.md.base`, `silver-bullet.md.base`, `silver-bullet.config.json.default` contain required `{{…}}` tokens | Placeholder stripped during edit |
 | Lint shell scripts | `shellcheck --exclude=SC2317,SC1091,SC2329 hooks/*.sh hooks/lib/*.sh scripts/*.sh` | ShellCheck errors |
 | Run hook unit tests | All `tests/hooks/test-*.sh` pass | Any test failure |
 | Run integration tests | All `tests/integration/test-*.sh` pass | Any test failure |

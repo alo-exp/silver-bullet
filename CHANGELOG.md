@@ -1,5 +1,120 @@
 # Changelog
 
+## [0.50.2] — 2026-07-03
+
+Patch release: Cursor-3 REAL enterprise E2E certification (22/22 strict-clean), anti-faking methodology (void Cursor-1/2), and harness fixes E2E-091–E2E-100.
+
+## Features
+- `feat(e2e/cursor): Phase A ladder + rows 3/7/8 smoke expansion drivers` (63355ec5)
+- `feat(e2e/cursor): batch 2 rows 2/4/5/9 PASS; E2E-095 FORCE brownfield skip fix` (d02b8584)
+
+## Bug Fixes
+- `fix(e2e): E2E-091 clarify n/a for routing row 1; E2E-092 cursor 1800s timeout` (32231c44)
+- `fix(e2e/cursor): E2E-093 stream-json log capture; E2E-094 fast-path OUT-ORCH-01 n/a` (5fa5d2fc)
+- `fix(e2e): E2E-096 row 10 outcome false-negative on autonomy summary` (e1ff9580)
+- `fix(e2e): E2E-097 row 14 OUT-RELEASE-01 false partial` (0420501d)
+- `fix(e2e): E2E-098 matrix graphify preamble satisfies OUT-KM-01` (87c4228f)
+- `fix(e2e): E2E-099 row 15 review-triad triad evidence for OUT-RELEASE-01` (e371d311)
+- `fix(codex-e2e): clear pre-release blockers for enterprise-e2e/codex` (5e40e2b4)
+- `fix(codex-e2e): skip absent validate-host-install-surface in prerelease harness` (365bea43)
+- `fix(ci): use CI-writable enterprise E2E fixture paths in script tests` (55a67ccb)
+- `fix(ci): seed silver-bullet.json in outcome assessment temp fixture` (703eaf00)
+
+## Documentation
+- `docs(e2e): register E2E-091–100 and void Cursor-1/2 in methodology` (2834fe3d)
+- `docs(e2e): cursor-3 REAL 22/22 strict-clean + Phase C RCS 100` (cca0ffc0)
+- Merge `enterprise-e2e/cursor` → `main` (c507f1c) — ROUND-CURSOR-3-REAL-LEDGER, cursor3 drivers, §11a + Appendix D
+
+---
+
+## [0.50.1] — 2026-07-02
+
+Patch release: test harness fixes for Claude plugin manifest, install-surface validation, outcomes-check isolation, orchestrator parent guard, plugin-cache uninstall cleanup, and local Claude install materialization fallback.
+
+## Bug Fixes
+- Remove invalid `agents` field from `.claude-plugin/plugin.json` (Claude schema rejects agents)
+- Source `path-canonical.sh` in `plugin-cache-guard.sh` for F-07 uninstall cleanup
+- Fix `test-outcomes-check.sh` isolated state dir and `run_hook` env propagation
+- Fix `test-orchestrator-non-sb-workspace-guard.sh` to use non-readonly Bash for parent block assertion
+- Materialize local Claude plugin cache when `claude plugin install` cannot fetch GitHub
+- Restore agent-neutral `silver-migrate` hook-merge docs with `merge-cursor-hooks` coverage
+- Seed Codex workspace trust in enterprise matrix `setup_workspace`
+
+---
+
+## [0.50.0] — 2026-07-02
+
+Multi-host enterprise E2E harness merge: integrates `enterprise-e2e/cursor` Phase C strict-clean fixes, Codex sibling cherry-picks from `origin/main`, and Claude/round6 harness already on main.
+
+## Features
+- `feat(e2e): install-version row pass registry (one-pass-per-version)` (89e2ab8f)
+- `feat(e2e): merge host certification methodology and gate harness on main` (38102e26)
+- `feat(e2e): test-app branch isolation policy and harness preflight` (00d2ff30)
+- `feat(e2e): wire JSON row-pass registry with install-version skip` (9ae769be)
+- `feat(core): enforce host-agnostic SB core with pre-release validator` (06485ea6)
+
+## Bug Fixes
+- `fix(e2e/cursor): Phase C driver retry + Cursor-2 strict-clean green` (5d56b2ca)
+- `fix(e2e/codex): spinner-immune idle watchdog + reliable hard timeout` (158556e4)
+- `fix(e2e/codex): honor matrix ROWS argv order; pin baadf87 fixture` (1f035575)
+- `fix(e2e/codex): TUI-aware KM/ORCH/HEAL outcome scoring` (be769ddd)
+- `fix(e2e): cherry-pick Cursor strict-clean harness from enterprise-e2e/cursor` (6f86e144)
+- `fix(e2e): cherry-pick harness registry skip and outcome scoring onto main` (dca46dad)
+- `fix(e2e): Gate 2 smoke fails when matrix rows SKIP` (82437f6a)
+- `fix(e2e): OUT-SKILL routing row 1 pass + T1 driver` (f901f1fa)
+- `fix(tests): silver-doctor --fix grep on BSD/macOS` (0cc001ad)
+- `fix(tests): use grep -Fq -- for flag needles in silver-doctor` (ee74f598)
+- `fix(ci): restore create-release marketplace git-add paths` (fa47e747)
+
+## Documentation
+- Merge commit `62aa0de3` — enterprise-e2e/cursor harness and Phase C matrix fixes
+- Merge commit `e9146308` — Codex sibling cherry-picks from origin/main
+
+---
+
+## [0.49.1] — 2026-07-01
+
+## Bug Fixes
+- `fix(ci): restore create-release marketplace git-add paths` (fa47e747)
+- `fix(ci): seed graphify config in outcome assessment fixture` (28527b61)
+- `fix(ci): use temp fixture when enterprise app path absent` (de78be98)
+- `fix(ci): allow merge-cursor-hooks refs in host-agnostic scan` (201857a3)
+- `fix(ci): sync site v0.49.0 and silver-migrate Cursor hook docs` (42fb4923)
+- `fix(ci): codex runtime state pinning and sb-doctor test paths` (bad9a7c9)
+- `fix(ci): align bundle tests with host-bundles layout and test bugs` (33e9523d)
+- `fix(ci): resolve ShellCheck warnings blocking CI on main` (54ca5029)
+- `fix(release): unblock v0.49.0 CI and Claude plugin install` (066806cf)
+
+## Tests
+- `test: align recommended-tools contracts with skill reference split` (db5d31d1)
+- `test: point silver-init agentmemory checks at reference doc` (c7276f5a)
+
+---
+
+## [0.49.0] — 2026-07-01
+
+## Features
+- `feat(hooks): run SB update check on SessionStart startup/clear` (fee7ede2)
+- `feat(core): enforce host-agnostic SB core with pre-release validator` (807b6871)
+- `feat(e2e): enforce autonomy outcome criteria in matrix harness` (dfb451d8)
+- `refactor(hooks): completion-audit policy pipeline + hook-bootstrap` (7490bd69)
+- `refactor(install): decompose install-codex.sh into lib modules` (9ed84aac)
+- `refactor: close thermo-nuclear WARN monoliths on main` (bfd77344)
+
+## Bug Fixes
+- `fix(hooks): canonicalize shell write paths for macOS /var symlinks` (b0670b53)
+- `fix(install): cross-host surface audit, host-bundles isolation, doctor D14-D17` (4ccea894)
+- `fix(install): align codex tests and bundles with host-bundles layout` (f99eae52)
+- `fix(release): host-bundles smoke paths + classify dedup + hook-bootstrap` (95c50892)
+- `fix(install): restore validate-host-install-surface.sh for D16 gate` (9bbbcf88)
+- `fix(site): contain mobile horizontal overflow on help docs` (667114ef)
+- `fix(e2e): routing-only row 1 outcome scoring without WBS supervisor` (ee62a820)
+
+## Other
+- Enterprise E2E harness, matrix, and site polish commits since v0.48.9 (50 commits total)
+
+---
+
 ## [0.48.9] — 2026-06-30
 
 ### Enterprise E2E (main)

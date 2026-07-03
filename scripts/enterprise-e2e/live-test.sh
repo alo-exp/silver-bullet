@@ -52,6 +52,10 @@ Constraints (from Round 1/2 learnings):
 Environment:
   SB_ENTERPRISE_E2E_LIVE=1     Required opt-in (unless --preflight-only)
   SB_TEST_ENTERPRISE_APP_ROOT  Test app path (default: enterprise-grade-test-app)
+  SB_E2E_TEST_APP_BRANCH       Expected isolated test-app branch (e.g. enterprise-e2e/round-8-claude)
+  SB_E2E_TEST_APP_ROUND        Round number for auto branch name (with host → round-N-host)
+  SB_E2E_TEST_APP_BASELINE_SHA Baseline SHA when creating branch (default: 8482e60)
+  SB_E2E_TEST_APP_BRANCH_ENFORCE  0 to skip branch preflight (default: 1)
   SB_E2E_LEDGER_FILE           Ledger path (default: host-specific ROUND-*-LEDGER.md)
   SB_E2E_MATRIX_LOG            Matrix batch log (default: host-isolated)
   SB_E2E_LIVE_RUNTIME          claude | codex | cursor (see --host)
@@ -98,6 +102,7 @@ if [[ -n "$MATRIX_HOST_ARG" ]]; then
 fi
 enterprise_e2e_apply_matrix_host_defaults
 MATRIX_HOST="$(enterprise_e2e_matrix_host)"
+enterprise_e2e_assert_host_git_branch || exit 1
 FIXTURE_DIR="$(enterprise_e2e_fixture_dir)"
 LEDGER_FILE="$(enterprise_e2e_ledger_file)"
 MATRIX_LOG="$(enterprise_e2e_matrix_log)"
@@ -135,6 +140,8 @@ if [[ ! -d "$FIXTURE_DIR" ]]; then
   exit 1
 fi
 
+enterprise_e2e_assert_test_app_branch "$FIXTURE_DIR"
+
 # --- Preflight ---
 echo "--- Preflight ---"
 cd "$SB_ROOT"
@@ -146,7 +153,18 @@ else
 fi
 # install-claude.sh runs below; avoid duplicate bootstrap during hook-delivery prepare_workspace.
 export SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP=1
-bash tests/e2e-live/hook-delivery-preflight.sh
+_hook_delivery_rc=1
+for _hook_attempt in 1 2 3; do
+  if bash tests/e2e-live/hook-delivery-preflight.sh; then
+    _hook_delivery_rc=0
+    break
+  fi
+  echo "WARN: hook-delivery preflight attempt ${_hook_attempt}/3 failed; retrying..." >&2
+  sleep 2
+done
+if ((_hook_delivery_rc)); then
+  exit 1
+fi
 (cd "$FIXTURE_DIR" && git status --short && npm test)
 
 # Session-start from test app (cursor-hook-bridge / branch scope — cursor runtime only).
@@ -221,16 +239,20 @@ export SB_E2E_MATRIX_LOG="$MATRIX_LOG"
 if ((${#MATRIX_ARGS[@]} > 0)); then
   export SB_E2E_MATRIX_ROWS="${MATRIX_ARGS[*]}"
 fi
-start_harness_background \
-  "matrix-monitor" \
-  "monitor-enterprise-e2e-matrix.sh" \
-  "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
-  "$MONITOR_PID_FILE"
-start_harness_background \
-  "tui-watch" \
-  "watch-enterprise-e2e-tui.sh" \
-  "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
-  "$WATCH_PID_FILE"
+if [[ "${SB_E2E_MATRIX_MONITOR:-1}" != "0" ]]; then
+  start_harness_background \
+    "matrix-monitor" \
+    "monitor-enterprise-e2e-matrix.sh" \
+    "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
+    "$MONITOR_PID_FILE"
+  start_harness_background \
+    "tui-watch" \
+    "watch-enterprise-e2e-tui.sh" \
+    "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
+    "$WATCH_PID_FILE"
+else
+  echo "matrix-monitor: skipped (SB_E2E_MATRIX_MONITOR=0)"
+fi
 
 echo ""
 enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
@@ -256,7 +278,7 @@ fi
   env -u SB_E2E_MATRIX_DRY_RUN \
     SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0 \
     SB_E2E_MATRIX_CLEAN_ENV=0 \
-    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow \
+    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}" \
     SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}" \
     SB_E2E_MATRIX_FORCE_ALL="${SB_E2E_MATRIX_FORCE_ALL:-}" \
     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR" \

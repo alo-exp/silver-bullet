@@ -227,7 +227,7 @@
     "FS-SILVER_MIGRATE": [
       "AF-PHASE-MANAGE"
     ],
-    "FS-SILVER_MULTI_AI_TASK": [
+    "FS-SILVER_MULTI_AI": [
       "AF-DECIDE"
     ],
     "FS-SILVER_ORCHESTRATOR": [

@@ -42,6 +42,25 @@ else
   fail "Codex package commands directory exists"
 fi
 
+if jq -e '.agents' "$PLUGIN_JSON" >/dev/null 2>&1; then
+  fail "Claude plugin manifest must not declare agents (skills path is sufficient; Claude schema rejects agents)"
+else
+  pass "Claude plugin manifest does not declare agents"
+fi
+
+cross_host_dirs="$(find "${REPO_ROOT}/agents" -mindepth 1 -maxdepth 1 -type d ! -name 'claude' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "$cross_host_dirs" == "0" ]]; then
+  pass "repo agents/ contains only Claude bundle (no codex/cursor siblings)"
+else
+  fail "repo agents/ contains only Claude bundle — found $cross_host_dirs foreign host dirs"
+fi
+
+if [[ -d "${REPO_ROOT}/host-bundles/codex" && -d "${REPO_ROOT}/host-bundles/cursor" ]]; then
+  pass "Codex and Cursor bundles live under host-bundles/"
+else
+  fail "Codex and Cursor bundles live under host-bundles/"
+fi
+
 if grep -qE '^name: silver:feature$' "${REPO_ROOT}/agents/claude/silver:feature/SKILL.md"; then
   pass "Claude bundle exposes silver:feature skill name"
 else

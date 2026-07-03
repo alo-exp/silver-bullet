@@ -19,8 +19,7 @@
       "monitor_status_file": ".e2e-matrix-monitor-status.txt",
       "tui_findings": ".e2e-tui-watch-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-offsets.json",
-      "row_attempt_pattern": ".e2e-row{row}-attempt{suffix}.log",
-      "fixture_branch": "enterprise-e2e/round6"
+      "row_attempt_pattern": ".e2e-row{row}-attempt{suffix}.log"
     },
     "codex": {
       "adapter": "codex",
@@ -61,7 +60,10 @@
       "tui_findings": ".e2e-tui-watch-cursor-findings.jsonl",
       "tui_offsets": ".e2e-tui-watch-cursor-offsets.json",
       "row_attempt_pattern": ".e2e-row{row}-cursor-attempt{suffix}.log",
-      "fixture_branch": "enterprise-e2e/round-cursor-1"
+      "git_branch": "enterprise-e2e/cursor",
+      "test_app_root": "/Users/shafqat/projects/enterprise-grade-test-app-cursor",
+      "test_app_git_branch": "enterprise-e2e/round-1-cursor",
+      "test_app_git_baseline_sha": "8482e60"
     }
   },
   "route_map": {

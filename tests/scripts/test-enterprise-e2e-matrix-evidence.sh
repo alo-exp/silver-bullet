@@ -27,6 +27,7 @@ trap 'rm -rf "$STATE_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_t
 export HOME="$STATE_DIR/home"
 mkdir -p "$HOME/.claude/.silver-bullet"
 export SB_RUNTIME_STATE_DIR="$HOME/.claude/.silver-bullet"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_E2E_ENTERPRISE_MATRIX=1
 export WORK_DIR="$FIXTURE"
 export SB_ROOT="$REPO_ROOT"
