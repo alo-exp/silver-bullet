@@ -96,6 +96,10 @@ assert_contains "hosts.json codex honest baseline sha" \
   "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
   '"test_app_git_baseline_sha": "09f8d1a"'
 
+assert_contains "hosts.json codex test app branch" \
+  "${REPO_ROOT}/scripts/enterprise-e2e/config/hosts.json" \
+  '"test_app_git_branch": "enterprise-e2e/round-9-codex"'
+
 assert_contains "policy doc exists" \
   "${REPO_ROOT}/.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md" \
   "enterprise-e2e/round-1-cursor"
@@ -124,8 +128,16 @@ unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
 export SB_E2E_LIVE_RUNTIME=cursor
 export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md"
 enterprise_e2e_apply_test_app_branch_defaults
-assert_eq "ledger-derived cursor round-3 test app branch" \
-  "enterprise-e2e/round-3-cursor" \
+assert_eq "hosts.json wins over ledger cursor round-3" \
+  "enterprise-e2e/round-1-cursor" \
+  "${SB_E2E_TEST_APP_BRANCH:-}"
+
+unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
+export SB_E2E_LIVE_RUNTIME=codex
+export SB_E2E_LEDGER_FILE="${REPO_ROOT}/.planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md"
+enterprise_e2e_apply_test_app_branch_defaults
+assert_eq "hosts.json wins over ledger codex round-3" \
+  "enterprise-e2e/round-9-codex" \
   "${SB_E2E_TEST_APP_BRANCH:-}"
 
 unset SB_E2E_TEST_APP_BRANCH SB_E2E_TEST_APP_ROUND SB_E2E_LEDGER_FILE
