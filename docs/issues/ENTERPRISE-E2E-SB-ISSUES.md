@@ -2,8 +2,8 @@
 
 Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy:** TUI monitor scripts and operators append new issues here — not the human ledger ([ROUND-4-LEDGER.md](../../.planning/enterprise-e2e/ROUND-4-LEDGER.md) is run metadata only).
 
-**Last updated:** 2026-07-03  
-**SB repo HEAD at update:** `cca0ffc0` (prior: `6bd631b8`, `c2fc21a1`, `c4c71a80`, `95bc8c49`, `5c39d1c3`)
+**Last updated:** 2026-07-04  
+**SB repo HEAD at update:** `52022bf6`
 
 ---
 
@@ -29,20 +29,42 @@ Continuous issue log for enterprise E2E matrix sessions (Rounds 1–4). **Policy
 | E2E-003 | annoyance→fixed | hooks/runtime | Residual `gsd-session-state.sh` SessionStart errors in TUI monitor | Removed GSD references from runtime; TUI monitor matches generic SessionStart missing-script |
 | E2E-004 | friction→fixed | stop-check | Stop denials lacked actionable next step | Block reasons now include skill to invoke, worker template, or SessionStart guidance |
 | E2E-005 | chore→fixed | runtime | GSD namespace strings in hooks, templates, APO catalog | Purged from runtime surfaces; `legacy_flow_alias_to_entity` replaces `gsd_alias_to_entity` |
+| E2E-010 | annoyance→fixed | SessionStart | `node:internal/modules/cjs/loader` errors on some rows | `scripts/prune-stale-claude-user-hooks.sh` + `install-claude.sh`; TUI watch downgrades to annoyance when harness ignores |
 | E2E-011 | gap→fixed | recommended_tools | Enterprise Session 0 must opt-in all five tools with preflight enforcement | `enterprise_e2e_assert_all_recommended_tools_opted_in` + alumnium preflight in `enterprise_e2e_code_intel_preflight` |
+| E2E-013 | gap→fixed | host modes | Plan/Debug mode interaction with SB hooks undocumented at runtime | Documented in `docs/ORCHESTRATOR.md` §Host modes — Plan/Debug; matrix runs Agent mode only |
+| E2E-014 | friction→fixed | stop-check | Repeated Stop churn when multiple gates fire sequentially | `hooks/lib/stop-coalesce.sh` — first Stop block wins; downstream hooks suppress (E2E-014) |
+| E2E-015 | open→fixed | ledger | Round 4 friction no longer appends to human ledger (`SB_E2E_LEDGER_NO_UX_APPEND=1`) | Policy enforced: `watch-enterprise-e2e-tui.sh` respects env; friction → findings jsonl + **this file** |
 | E2E-016 | gap→fixed | wbs-supervision | No cross-cutting WBS meta-supervision over host agent / subagent loop | MVP `b378026e`: `hooks/lib/wbs-supervisor.sh`, Stop + PostToolUse + SessionStart + subagent handoff; [WBS-META-SUPERVISION.md](../architecture/WBS-META-SUPERVISION.md) |
+| E2E-026 | blocker→fixed | hook | planning-file-guard blocked write (TUI-watch false positive on matrix prompt echo) | `enterprise_e2e_outcome_watch_is_hook_deliberation_fp` + TUI watch FP filter @ `52022bf6` |
+| E2E-081 | blocker→fixed | harness | 0-token stall — no workflow progress (MCP auth / mode banner) | `claude-interactive-invoke.expect` dismisses 0-token mode banner + Enter wake @ `52022bf6` |
 
 ### Open
 
 | ID | Severity | Component | Issue | Recommendation |
 |----|----------|-----------|-------|----------------|
-| E2E-081 | blocker | harness | 0-token stall — no workflow progress | row 6; tui-watch @ 2026-06-29T18:10:33Z |
-| E2E-034 | friction→fixed | harness | Interactive picker menu (↑/↓ navigate) not matched by expect regex — row 2 stall | Broadened regex in `claude-interactive-invoke.expect` @ 8af4b9ac |
-| E2E-026 | blocker | hook | planning-file-guard blocked write | row 19; tui-watch @ 2026-06-29T17:45:17Z |
-| E2E-010 | annoyance | SessionStart | `node:internal/modules/cjs/loader` errors on some rows | Audit PostToolUse hooks that `require()` missing modules; fail-open with visible message |
-| E2E-013 | gap | host modes | Plan/Debug mode interaction with SB hooks undocumented at runtime | See §Plan & Debug mode — no hook detection yet; document + future `SwitchMode` branch in router |
-| E2E-014 | friction | stop-check | Repeated Stop churn when multiple gates fire sequentially | Consider consolidating first-block reason; agent already gets one block per Stop event |
-| E2E-015 | open | ledger | Round 4 friction no longer appends to human ledger (`SB_E2E_LEDGER_NO_UX_APPEND=1`) | Correct policy — friction → status jsonl + **this file** only |
+| *(none)* | — | — | All previously open blockers addressed in this session | Re-verify on next matrix row |
+
+### Post-v0.50.2 harness fixes (E2E-101 – E2E-115)
+
+Registered from `git log 779464af..HEAD` and Codex/Claude REAL ledgers. See [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) §11a–§11b.
+
+| ID | Severity | Component | Symptom | Fix SHA | Status |
+|----|----------|-----------|---------|---------|--------|
+| E2E-101 | gap→fixed | harness/codex | Codex matrix checked out wrong test-app branch — row evidence clobber | `b3e036b3`, `4412bb01` | **fixed** — `enterprise_e2e_fixture_assert_branch_lock` |
+| E2E-102 | gap→fixed | harness/codex | Stale evidence SKIP without live rerun; batch EXIT trap | `59ec1456` | **fixed** — `SB_E2E_MATRIX_FORCE_ALL` + pid trap |
+| E2E-103 | blocker→fixed | harness/codex | Row 3 stub-only — 84B planning file, no api/currency commits | `356e87ec`, `b40f44fc` | **fixed** — force3 row + PLAN/GATES/TRACE invoke clause |
+| E2E-104 | gap→fixed | harness/codex | Rows 14/15/16 outcome partials without live product delta | `968a8008`, `7f822474`, `8e748967` | **fixed** — force1416/141619 outcome drivers |
+| E2E-105 | gap→fixed | harness/claude | Claude routing state bleed across matrix rows | `80438bda` | **fixed** — isolated Claude state roots per row |
+| E2E-106 | gap→fixed | harness/claude | §5b smoke rows 6/11 missing baseline rev / printf clauses | `8219477f`, `da61d5fb` | **fixed** — matrix §5b baseline rev gate |
+| E2E-107 | friction→fixed | harness/claude | Bracketed-paste matrix prompts collapsed — slash route not submitted | `d3ea981a` | **fixed** — collapsed paste confirm in expect |
+| E2E-108 | gap→fixed | harness/codex | Slow Codex install on every REAL driver launch | `7a625546`, `ab822e00` | **fixed** — session0 skip + `SB_E2E_SKIP_CODEX_INSTALL` |
+| E2E-109 | gap→fixed | harness | Row3 pilot mkdir before fixture root exported | `4815d4b4` | **fixed** — export fixture root before pilot |
+| E2E-110 | gap→fixed | harness/claude | Custom API key disclaimer blocked matrix launch | `6935a7c0` | **fixed** — inherit keys API-key bypass in matrix env |
+| E2E-111 | gap→fixed | harness | Hook audit failed on isolated Claude state roots | `5e5590cc` | **fixed** — allow audit on isolated state |
+| E2E-112 | gap→fixed | harness | Pilot `row_passed` used stale log slice | `ba77d1b0` | **fixed** — latest matrix log slice |
+| E2E-113 | gap→fixed | harness | Strict-clean ledger pass summary wrong variable | `b20a31f7` | **fixed** — `$LEDGER` in pass summary |
+| E2E-114 | gap→fixed | harness/codex | Codex-3 REAL §5a/§5b product audit methodology missing | `d0a271fb`, `d57274f8` | **fixed** — docs + fixture reset |
+| E2E-115 | gap→fixed | ci | Enterprise E2E script tests used non-writable fixture paths in CI | `f86cb6a5` | **fixed** — CI-writable paths |
 
 ### Friction (accepted / monitor)
 
