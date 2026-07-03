@@ -4,7 +4,7 @@
 > `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`  
 > Canonical on **`main`** — host tracks cherry-pick or link; do not fork per-host copies.
 
-**Status:** Active — 2026-07-02  
+**Status:** Active — 2026-07-04 (Codex R1–3 REAL learnings integrated)  
 **Audience:** Codex, Cursor, and Claude operator sessions certifying Silver Bullet on `enterprise-grade-test-app`  
 **Authority:** Supersedes ad-hoc “run 22 rows first” loops; complements [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](./ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)
 
@@ -19,6 +19,9 @@
 | Operator prompt | [`scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md`](../../scripts/ENTERPRISE-E2E-OPERATOR-PROMPT.md) |
 | Fixture branch policy | [`.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md`](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md) |
 | Cherry-pick policy | [`docs/testing/ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) |
+| Codex product audit (R1/2 void) | [`.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md`](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md) |
+| Codex-3 REAL product audit | [`.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md`](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md) |
+| Codex-3 gate checklist | [`.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md`](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md) |
 
 ---
 
@@ -32,7 +35,8 @@
 | **Full 22-row matrix as first loop** | **Deprecated** for bring-up and mid-round debug |
 | **Structural / offline suite** | **Highly effective** — catches script/doc/registry drift without TUI |
 | **Monitor “22/22 COMPLETE” without ledger reconcile** | **Anti-pattern** — observed Round 3 drift |
-| **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) |
+| **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) — see **§3 release pair** for harness vs product counters |
+| **Harness 22/22 without §5b product audit** | **Disqualifying** for product-work certification — harness PASS ≠ product certification (§5a) |
 | **Repeat matrix/ladder/T1 rows at same install** | **Deprecated** — one clean pass per row/criterion @ install version (see §11) |
 | **Rescore / evidence-only PASS without live rerun** | **Disqualifying** for certification credit (see §5a, §6) |
 | **Inherited baseline / pre-existing fixture artifacts** | **Disqualifying** without live agent authorship (see §5a) |
@@ -141,24 +145,47 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
 
 **Release:** 2 consecutive strict-clean rounds per host ([`ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md)).
 
+### Release pair gates — harness vs honest product (Codex R1–3 lesson)
+
+Operators track **two independent counters**. Do not conflate them.
+
+| Counter | What it measures | Certification credit |
+|---------|------------------|----------------------|
+| **Harness consecutive** | 2× matrix 22/22 + Phase C @ same or successive install fingerprints | Harness routing/scoring only — **not** product delivery |
+| **Honest product consecutive** | 2× rounds each passing §5b product audit (committed deltas per implement row) on **honest** fixture baseline | Required for **release sign-off** |
+
+**Codex example:** Codex-1 + Codex-2 achieved harness 22/22 twice on pre-seeded `8482e60` / `826cb5c` baseline — **0/22** row-mapped product commits ([CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md)). That is **void** for product certification. Codex-3 REAL on `09f8d1a` baseline = **1/2** honest product — [ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md). **Codex-4** is required for 2/2 product release pair.
+
+**Mandatory before product claim:** Run host-specific product audit (pattern: `CODEX-*-TEST-APP-PRODUCT-AUDIT.md`) and confirm §5a/§5b gates — matrix ledger 22/22 alone is insufficient.
+
 ---
 
 ## 4. Fixture branch rules
 
 Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB `main`).
 
-| Host | SB harness branch | Test-app fixture branch | Baseline SHA |
-|------|-------------------|-------------------------|--------------|
-| Claude | `enterprise-e2e/round6` | `enterprise-e2e/round-8-claude` | `8482e60` |
-| Codex | `enterprise-e2e/codex` | `enterprise-e2e/round-8-codex` | `8482e60` |
-| Cursor | `enterprise-e2e/cursor` | `enterprise-e2e/round-1-cursor` (worktree) | `8482e60` |
+### Baseline SHA policy — honest product rounds
+
+| Baseline class | Example SHAs | Use |
+|----------------|----------------|-----|
+| **Pre-seeded matrix** | `826cb5c`, `8482e60` | Harness bring-up / legacy rounds only — artifacts pre-populate implement-row touch surfaces |
+| **Honest minimal** | `09f8d1a` | **Required** for strict-clean **product** certification — excludes matrix pre-seed |
+
+**Rule:** Honest product rounds **must not** use `826cb5c`/`8482e60` full-surface baselines. Reset fixture to honest minimal SHA before first live row. Pre-seeded baseline PASS without live agent authorship is **disqualifying** (§5a #1). Codex-3 REAL validated this on `enterprise-e2e/round-9-codex` @ `09f8d1a` — **19** product commits ([CODEX-3-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md)).
+
+| Host | SB harness branch | Test-app fixture branch | Baseline SHA (honest) | Legacy pre-seed |
+|------|-------------------|-------------------------|----------------------|-----------------|
+| Claude | `enterprise-e2e/round6` | `enterprise-e2e/round-9-claude` | `09f8d1a` | `8482e60` (R8 only) |
+| Codex | `enterprise-e2e/codex` | `enterprise-e2e/round-9-codex` | `09f8d1a` | `8482e60` (R1/2 — **void**) |
+| Cursor | `enterprise-e2e/cursor` | `enterprise-e2e/round-N-cursor` (worktree) | `09f8d1a` | `8482e60` (R1/2 — **void**) |
 
 **Rules:**
 
-1. **Day-0:** create fixture branch from baseline SHA; never target test-app `main` for live rows.
+1. **Day-0:** create fixture branch from **honest** baseline SHA; never target test-app `main` for live rows.
 2. **No stomp:** never `checkout -B` another host's fixture branch on a shared clone.
 3. **Dirty + correct branch:** OK (matrix in progress). **Dirty + wrong branch:** fail-fast — use worktree ([TEST-APP-BRANCH-POLICY.md](../../.planning/enterprise-e2e/TEST-APP-BRANCH-POLICY.md)).
-4. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
+4. **Fixture branch lock:** `enterprise_e2e_fixture_assert_branch_lock` runs **pre- and post-invoke** on every row (E2E-101). Fail on drift to sibling host branch or wrong SHA.
+5. Env overrides: `SB_E2E_TEST_APP_BRANCH`, `SB_E2E_TEST_APP_BASELINE_SHA`, `SB_E2E_TEST_APP_ROUND`.
 
 ---
 
@@ -168,10 +195,15 @@ Pattern: **`enterprise-e2e/round-<N>-<host>`** @ baseline SHA (test app, not SB 
 - **Verified fixes** cherry-pick to `main` per [`ENTERPRISE-E2E-CHERRY-PICK.md`](./ENTERPRISE-E2E-CHERRY-PICK.md) — paths only when mixed with ledger noise.
 - **Do not** switch live matrix driver to `main` mid-round for deploy; re-run host install (`install-codex.sh`, etc.) from pinned SB SHA on host branch.
 - **Docs on `main`** (this file) are the cross-agent share surface; host prompts link here.
+- **Branch closure after merge:** When host round closes, merge `enterprise-e2e/{host}` → `main` (fast-forward or cherry-pick per policy), then close fixture branch. Codex-3 example: harness landed on `main` @ `56dc2374`; fixture `round-9-codex` @ `97f0677` retained for audit. **No release tag** required for methodology/harness merge alone.
 
 ---
 
 ## 5a. Anti-faking and disqualifying evidence
+
+### Harness PASS ≠ product certification
+
+Matrix **22/22 harness PASS** and Phase C green are **necessary but not sufficient** for host **product-work certification**. Operators **must** complete a §5b product audit (see [CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md) / [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md) pattern) **before** claiming strict-clean product delivery. Harness-only rounds with zero row-mapped product commits are **void** for product sign-off even when ledgers show 22/22.
 
 Operators **must not** declare a row PASS for host certification unless the row satisfies **§5b required evidence gates**. The following categories are **forbidden** or **disqualifying** — if observed, mark the row **FAIL** (or void the round) and re-run live strict-clean:
 
@@ -183,8 +215,19 @@ Operators **must not** declare a row PASS for host certification unless the row 
 | 4 | **Audit-only sessions** | Agent ran but **zero product delta**: routing-only row 1 with no routing artifact; verify-only row 7; triad docs-only row 15; ship-readiness `NOT_MERGE_READY` still PASS | FAIL row — dirty tree with no commits = not certified product delivery |
 | 5 | **Install-skip on first certification** | `ROW_ALREADY_PASSED_SAME_INSTALL` or `evidence_present` reusing prior-round evidence when certifying host for the **first** time at an install fingerprint | Install-skip allowed **only after** the first strict-clean pair @ install version (§6a); first certification requires live invocations |
 | 6 | **Internal gates without parent live work** | Rows 21–22 passing on parent markers when parent rows 3/4 were not live strict-clean at current install fingerprint | Re-run parent rows 3/4 live; internal rows inherit parent evidence only from live strict-clean parents |
+| 7 | **Frozen-merge without round authorship** | Round closure rescored rows from prior-round logs/commits without live authorship in **this** round's session window | Frozen-merge valid **only** when product commits were authored in earlier live batches **within the same round** (one-pass policy); cross-round frozen-merge is **disqualifying** |
 
-**Cross-host contamination** (E2E-090): matrix rows executed on another host's fixture branch (e.g. Claude rows on `round-8-codex`) **disqualify the round** — reset fixture, verify `enterprise_e2e_assert_host_git_branch`, use per-host worktree.
+**Evidence types** — ledger must record which applies per row:
+
+| Type | Description | Product certification credit |
+|------|-------------|------------------------------|
+| `live-committed` | Live TUI invoke + fixture commit in session window | **Yes** — primary |
+| `harness-rescore` | PASS from scorer/harness fix without live re-run | **No** — diagnostic only (§5a #2) |
+| `inherited-baseline` | Artifact at `826cb5c`/`8482e60` before live invoke | **No** — disqualifying (§5a #1) |
+| `install-skip` | `ROW_ALREADY_PASSED_SAME_INSTALL` / `evidence_present` on first cert | **No** on first certification (§5a #5) |
+| `frozen-merge` | One-pass closure: rescore merges prior live batch evidence same round | **Conditional** — only when commits exist from earlier live batches in round |
+
+**Cross-host contamination** (E2E-090): matrix rows executed on another host's fixture branch (e.g. Claude rows on `round-8-codex`) **disqualify the round** — reset fixture, verify `enterprise_e2e_fixture_assert_branch_lock`, use per-host worktree.
 
 **Brownfield waiver (narrow):** Pre-existing artifact may count only when operator documents **file:line** evidence that the artifact existed before the row prompt and the row's contract explicitly allows verification-without-mutation. Default: **no waiver** — live authorship required.
 
@@ -198,12 +241,58 @@ Every row claimed **PASS** for certification must satisfy **all** gates:
 |------|-------------|
 | **Log size floor** | Row attempt log **> 2048 bytes** substantive workflow output, **or** explicit brownfield waiver in ledger with file:line pre-existence proof |
 | **Live strict-clean only** | Row invoked via live matrix driver (`SB_ENTERPRISE_E2E_LIVE=1`) at current install fingerprint — not rescore-only, not dry-run, not monitor replay |
-| **Product delta** | **Committed delta** on fixture branch (`git log` shows row-session commit) **or** documented brownfield waiver — uncommitted dirty tree alone is insufficient |
+| **Product delta** | **Committed delta** on fixture branch (`git log` shows row-session commit) **or** documented brownfield waiver — uncommitted dirty tree alone is insufficient. Harness enforces via `enterprise_e2e_assert_row_product_commit_delta` when `SB_E2E_PRODUCT_WORK_GATE=1` (E2E-103, E2E-114) |
 | **Host-agent authorship** | Outcome checklist attests **host-agent** (`cursor-agent`, Codex TUI, Claude TUI) authored the deliverable — operator parent routing-only does not satisfy implement rows |
 | **Outcome PASS** | `enterprise_e2e_outcome_row_passes` with no `partial` on blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`) |
 | **Ship-readiness match** | Row 16 verdict aligns with merge-readiness state — `NOT_MERGE_READY` → row FAIL |
 
-Ledger template columns must record: `log_bytes`, `live_invoke` (yes/no), `commit_sha` (or `brownfield_waiver`), `host_agent_attestation`.
+Ledger template columns must record: `log_bytes`, `live_invoke` (yes/no), `commit_sha` (or `brownfield_waiver`), `evidence_type`, `host_agent_attestation`.
+
+### Product-commit gate — implement rows vs exempt
+
+| Row class | Rows | Product commit required |
+|-----------|------|-------------------------|
+| **Implement** | 2–14, 16–20 | **Yes** — committed delta on fixture branch after live invoke |
+| **Routing exempt** | 1 | Workflow evidence only (`.planning/workflows/router-session.md`) — no api/ edits |
+| **Triad audit exempt** | 15 | Triad doc + instruction-ledger + ship-readiness — see row-specific paths |
+| **Internal inherit** | 21–22 | Inherit from live strict-clean parents 3/4 — no standalone product commit |
+
+**Outcome-only reruns:** When product is frozen at a prior commit (`SB_E2E_ROW3_FROZEN_COMMIT`, `SB_E2E_ROW14_FROZEN_COMMIT`), rows may re-run for outcome artifacts only — §5b satisfied without new product delta. Use `matrix_row*_outcome_only_clause` in invoke prompt.
+
+### Row-specific product paths (§5b touch surfaces)
+
+| Row | WF slug | Required product evidence (committed) |
+|-----|---------|--------------------------------------|
+| 3 | `silver-feature` | `api/` orders currency field + tests; planning chain: CLARIFY → PLAN/SPEC/QUALITY-GATES/VALIDATION → `feature-currency.md` |
+| 6 | `silver-fast` | `README.md` or `docs/` install fix + `fast-readme.md` workflow evidence |
+| 11 | `silver-devops` | `infra/` or `terraform/` env validation + `devops-terraform-validation.md` |
+| 14 | `silver-release` | `CHANGELOG.md` v0.2.0 + `instruction-ledger.jsonl` + `.planning/ship-readiness/` |
+| 15 | `review-triad` | `.planning/reviews/triad-currency.md` + instruction-ledger + ship-readiness |
+| 16 | `ship-readiness` | Ship-readiness checklist state must match outcome — `NOT_MERGE_READY` → FAIL |
+
+Docs-only or planning-stub without api/infra/product commits **FAIL** §5b for implement rows (Codex-1/2 lesson: row 3 stub-only).
+
+### Invoke prompt clauses (product + outcome)
+
+Matrix drivers append row-specific clauses from `tests/e2e-live/lib/skill-prompt.sh` (and host invoke scripts). Operators must verify clauses are active when `SB_E2E_PRODUCT_WORK_GATE=1`:
+
+| Clause function | Purpose |
+|-----------------|---------|
+| `matrix_product_commit_clause` | Generic §5b commit-on-fixture-branch |
+| `matrix_row3_product_commit_clause` | Row 3 api/currency — not planning-only |
+| `matrix_row3_outcome_clause` | CLARIFY → PLAN/SPEC/QUALITY-GATES/VALIDATION ordering |
+| `matrix_row3_outcome_only_clause` | Product frozen — planning artifacts only |
+| `matrix_row6_product_commit_clause` | README product fix |
+| `matrix_row11_product_commit_clause` | Terraform/IaC delta |
+| `matrix_row14_outcome_clause` | Release trace artifacts |
+| `matrix_row14_outcome_only_clause` | CHANGELOG frozen — outcome only |
+| `matrix_row15_outcome_clause` | Triad + instruction-ledger + ship-readiness |
+
+Feature rows (3+) require **both** product commits and outcome methodology artifacts in invoke prompt — not product alone.
+
+### OUT-REVIEW-01 — review-fix-ladder ledger
+
+Row 15 and ladder scoring require **8/8** review-fix-ladder PASS in a populated ledger. Set `SB_E2E_REVIEW_LADDER_LEDGER` to the correct ladder ledger path when matrix ledger differs. Empty or wrong ledger → `OUT-REVIEW-01` partial → row 15 blocked (Codex-3 unblocked after ladder 8/8).
 
 ---
 
@@ -214,6 +303,8 @@ Ledger template columns must record: `log_bytes`, `live_invoke` (yes/no), `commi
 | **Default after every row invoke** | Post-invoke rescore: `enterprise_e2e_outcome_row_passes` on row attempt log — **diagnostic**; certification credit requires live strict-clean (§5a) |
 | **After harness fix** | `SB_E2E_MATRIX_FORCE=1` on affected row(s), then **live rerun** — rescore alone does **not** bypass install-version registry or grant certification credit |
 | **Full re-run same install** | `SB_E2E_MATRIX_FORCE_ALL=1` overrides `.row-pass-registry.json` skip |
+| **One-pass per install SHA** | Do **not** re-run rows already PASS at same `install_fp` — `FORCE` for fail-rows only; frozen-merge rescore for round closure when live batches already authored commits |
+| **Stale evidence skip anti-pattern** | `SKIP: evidence already present` without `SB_E2E_MATRIX_FORCE=1` on brownfield fixture — **disqualifying** on first certification |
 | **Evidence PASS + outcome FAIL** | Treat as scorer/harness bug until **live rerun** passes or issue filed — rescoring FAIL→PASS without live rerun is **disqualifying** (E2E-089) |
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
 | **Rescore-only 22/22** | **Not strict-clean** — Cursor-1 retry2 produced rescored 21–22/22 without live agent work on several rows; void for release sign-off |
@@ -261,8 +352,8 @@ Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
 
 | Override | Effect |
 |----------|--------|
-| `SB_E2E_MATRIX_FORCE=1` | Re-run despite evidence SKIP; **does not** bypass install-version registry |
-| `SB_E2E_MATRIX_FORCE_ALL=1` | Full re-run including registry-passed rows |
+| `SB_E2E_MATRIX_FORCE=1` | Re-run fail-rows / brownfield rows despite evidence SKIP; **does not** bypass install-version registry for already-passed rows |
+| `SB_E2E_MATRIX_FORCE_ALL=1` | Full re-run including registry-passed rows — use only for deliberate full re-certification |
 
 ### Driver coordination (Round 8 example)
 
@@ -293,6 +384,7 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 | Drivers per host | **1** — no parallel matrix operators |
 | `SB_E2E_MONITOR_AUTO_RESTART` | **0** |
 | Healthy driver | Do not kill **< 45 min** unless confirmed stuck/dead |
+| **Duplicate-driver guard** | Before launching new driver, SIGTERM stale batch PIDs — duplicate drivers corrupt ledger/registry (Codex-3 SIGTERM remediation) |
 | Watchers | Prefer **tmux** durable daemon (`run-enterprise-e2e-matrix.sh` / tmux batch) — **not** `nohup` background shells as primary driver |
 | Parent orchestrator | One **`composer-2.5`** background worker (`Task` tool); **never** `composer-2.5-fast` for subagents; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
@@ -302,6 +394,16 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 | **Per-row timeouts** | Row **8** (`silver-refactor`): `SB_E2E_ROW8_TIMEOUT=3600`; row **11** (`silver-devops`): `SB_E2E_ROW11_TIMEOUT=5400` (E2E-087) |
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
+
+### Codex operational prerequisites (R1–3)
+
+| Step | Requirement |
+|------|-------------|
+| **Session 0** | Full `bash scripts/install-codex.sh` before first live matrix — seeds hook trust, core-rules integrity |
+| **REAL drivers** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0 — hook-trust seed per row, not full install each launch (E2E-108) |
+| **core-rules.sha256** | Regenerate after Codex sanitize in `install-codex.sh` when `core-rules.md` changes — mismatch blocks session start (`dfa364c9`) |
+| **Poll-exit pipefail** | Monitor/poll scripts must use `set -o pipefail` and export `SB_E2E_ENTERPRISE_MATRIX=1` on poll-exit — silent false-green otherwise |
+| **Quota 429** | Retry same row every 60s — not auth churn; schedule resume, do not rotate keys mid-row |
 
 ---
 
@@ -418,6 +520,8 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **E2E-113** | Strict-clean ledger pass summary | `$LEDGER` variable @ `b20a31f7` | Gate 3 resume checks ledger path from driver env |
 | **E2E-114** | Codex-3 §5a/§5b product audit | Methodology + fixture reset @ `d0a271fb` | Codex cert requires committed product delta per §5b — same anti-faking as Cursor |
 | **E2E-115** | CI fixture path writability | CI-writable paths @ `f86cb6a5` | Script tests use temp dirs — not operator home paths in CI |
+| **E2E-116** | `core-rules.sha256` drift after Codex sanitize | Regenerate pin in `install-codex.sh` @ `dfa364c9` | Run full `install-codex.sh` Session 0; verify pin matches `core-rules.md` before live matrix |
+| **E2E-117** | Poll-exit silent false-green | `pipefail` + `SB_E2E_ENTERPRISE_MATRIX=1` on monitor exit @ `dfa364c9` | Monitor scripts must fail loudly on pipeline errors |
 
 ### Operator rules — all registered issue classes (E2E-086 – E2E-115)
 
@@ -459,18 +563,18 @@ When harness changes land on `main` from a **sibling agent session** (Cursor, Cl
 
 ---
 
-## Appendix A — Codex-1 status (do not re-duplicate harness work)
+## Appendix A — Codex-1 status (historical — void for product)
 
-**Round:** Codex-1 on `enterprise-e2e/codex`  
-**Ledger:** [`.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md)
+**Round:** Codex-1 on `enterprise-e2e/codex` @ pre-seeded `8482e60`  
+**Ledger:** [`.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md)  
+**Product audit:** [CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md) — **0/22** row-mapped product commits — **void for product certification** (Appendix E)
 
 | Item | Status |
 |------|--------|
-| Ladder 8/8 | **Complete** |
-| Matrix | **3/22** strict-clean (rows 1, 6, 7); rows 2–5 in flight / FAIL at last checkpoint |
-| Harness fixes landed | `959de0ea` quiet timeout + scorer; `b4f471b3` TUI-aware outcome; `d24207e3` hook trust; `ac4b9322` OUT-SKILL-01 |
-| **Retry force4** ([`6519e3ae`](../../.planning/enterprise-e2e/)) | Checkpoint in flight on codex branch — **do not re-implement** unless commits are dead/reverted. Resume via Tier A→B→C per this doc. |
-| Next Codex action | Tier A green → Tier B rows 1,3,6 on `enterprise-e2e/round-8-codex@8482e60` → post-invoke rescore → Tier C |
+| Ladder 8/8 | **Complete** (harness) |
+| Matrix harness | Up to 22/22 via rescore/frozen-merge — **not** product strict-clean |
+| Harness fixes landed | `959de0ea` quiet timeout + scorer; `b4f471b3` TUI-aware outcome; `d24207e3` hook trust; `ac4b9322` OUT-SKILL-01; `dfa364c9` core-rules.sha256 |
+| **Canonical resume** | Do **not** re-run on `8482e60`. Use honest `09f8d1a` baseline per §4 — Codex-3 REAL is canonical (Appendix E) |
 
 ---
 
@@ -507,6 +611,10 @@ Before marking any row PASS in a ledger:
 - [ ] Rows 21–22: parent rows 3/4 live strict-clean @ same `install_fp`
 - [ ] Test-app branch = `enterprise-e2e/round-N-{host}` via worktree — not shared clone contamination
 - [ ] Host-agent authorship attested — not operator-only routing for implement rows
+- [ ] **Evidence type** recorded (`live-committed`, not `inherited-baseline` / `harness-rescore-only` / `frozen-merge` without round authorship)
+- [ ] **Honest baseline** — fixture excludes `826cb5c` pre-seed for product certification rounds
+- [ ] **Product audit** completed before round product claim (host-specific `*-TEST-APP-PRODUCT-AUDIT.md`)
+- [ ] Row 15: `OUT-REVIEW-01` — ladder ledger 8/8 or `SB_E2E_REVIEW_LADDER_LEDGER` pointed correctly
 
 ---
 
@@ -527,3 +635,22 @@ Documented **disqualifying patterns** from void Cursor-1/Cursor-2 sessions — d
 | Wrong fixture branch | R8 Claude rows on `round-8-codex` instead of `round-8-claude` | **Round disqualified** |
 
 **Real certification** (Cursor-3+ only): reset fixture to baseline SHA on `enterprise-e2e/round-N-cursor`, T0 → T1 live row 1 → T2 smoke or one full workflow row with **committed delta**, live FORCE on brownfield rows (`SB_E2E_MATRIX_FORCE=1`), ledger per [`.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md). Harness rescoring (E2E-096/097/099) is permitted **only** on genuine live logs with committed product deltas — never on inherited or rescore-only evidence.
+
+---
+
+## Appendix E — Codex track lessons (Rounds Codex-1/2 — **void**; Codex-3 REAL canonical)
+
+**Policy (2026-07-04):** Rounds **Codex-1** and **Codex-2** are **void** for host **product** certification and release sign-off. Their ledgers show harness 22/22 but [CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md) records **0/22** row-mapped product commits on pre-seeded `8482e60`/`826cb5c` baseline. The **canonical honest Codex product certification** is **Round Codex-3 REAL** — [`.planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md`](../../.planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md) + [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — **19** product commits on `09f8d1a` honest baseline.
+
+Documented **disqualifying patterns** from void Codex-1/Codex-2 sessions — do not repeat:
+
+| Pattern | Example | Verdict |
+|---------|---------|---------|
+| **Codex-1/2 harness 22/22 cited as product cert** | Ledgers PASS on pre-seeded fixture | **Void** for product — harness only |
+| Pre-seeded baseline PASS | Rows passing on `826cb5c`/`8482e60` artifacts without live session | **Void** — §5a #1 |
+| Frozen-merge confirmation round | Codex-2: 20/22 rows frozen from R1 rescore; only row 15 late live | **Not strict-clean product** |
+| Rescore-only row 16 | R1 row 16 PASS via harness fix without live re-run (quota wall) | **Void** — §5a #2 |
+| Operator snapshot commit | `baadf87` — 560 files of session artifacts, not row product | **Not product delta** |
+| Row 3 stub-only | Planning file without `api/` currency commits | **FAIL** §5b — E2E-103 |
+
+**Real certification** (Codex-3+ only): reset fixture to **`09f8d1a`** on `enterprise-e2e/round-N-codex`, T0 → Tier B smoke → ladder 8/8 with `OUT-REVIEW-01` ledger → live FORCE on brownfield rows, §5b product audit before product claim. Frozen-merge round closure permitted when commits authored in earlier live batches **same round** (Codex-3 force1416 rescore). **Release pair:** Codex-3 = **1/2** honest product — [ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md); **Codex-4** required for 2/2.
