@@ -5,7 +5,7 @@ set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT
-export SB_E2E_BRANCH=enterprise-e2e/codex
+export SB_E2E_BRANCH="${SB_E2E_BRANCH:-main}"
 export SILVER_BULLET_RUNTIME=codex SB_E2E_LIVE_RUNTIME=codex SB_LIVE_RUNTIME=codex
 export SB_E2E_LEDGER_FILE="$SB_ROOT/.planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md"
 export SB_E2E_REVIEW_LADDER_LEDGER="${SB_E2E_REVIEW_LADDER_LEDGER:-$SB_ROOT/.planning/enterprise-e2e/ROUND-3-LEDGER.md}"
