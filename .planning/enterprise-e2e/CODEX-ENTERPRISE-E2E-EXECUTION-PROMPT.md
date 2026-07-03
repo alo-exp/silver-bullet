@@ -1,25 +1,39 @@
-# Codex Host — Enterprise E2E Fresh Session Execution Prompt (v2)
+# Codex Host — Enterprise E2E Fresh Session Execution Prompt (v3 — Codex-4 REAL)
+
+**Canonical methodology:** [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) — **read this first**; this prompt is the Codex operator companion, not a substitute.
 
 **Harness:** Shared host-agnostic tree — [SHARED-HARNESS.md](./SHARED-HARNESS.md) · [HOST-CONFIG.md](./HOST-CONFIG.md) · `scripts/enterprise-e2e/`
 
 **Host identity:** OpenAI **Codex TUI** (`codex` CLI) — `$silver:*` slash skills, `codex-interactive-invoke.*` harness.
 
-**Parallel track:** Runs **in parallel** with ongoing Claude [ROUND-6-OPERATIONAL-ADDENDUM.md](./ROUND-6-OPERATIONAL-ADDENDUM.md) — this is the **Codex host track**, not a 5-row smoke.
+**Status (2026-07-04):** Codex-1 and Codex-2 are **void** for product certification (pre-seeded baseline). Codex-3 REAL is **1/2** honest product. **Round Codex-4** is the next required round for 2/2 product release pair.
 
-**Cross-links (reference — operational behavior is inlined below; paste this prompt only for fresh sessions):**
+**Cross-links:**
 
 - [SHARED-HARNESS.md](./SHARED-HARNESS.md) — deterministic vs live layers, shared `scripts/enterprise-e2e/`
 - [OUTCOME-ASSESSMENT-RUBRIC.md](./OUTCOME-ASSESSMENT-RUBRIC.md) — **mandatory read before row scoring** (27 criteria + WBS)
 - [ENTERPRISE-E2E-LIVE-TEST.md](../../docs/ENTERPRISE-E2E-LIVE-TEST.md) — canonical live test runbook
+- [CODEX-METHODOLOGY-HARNESS-READINESS-AUDIT.md](../../docs/testing/CODEX-METHODOLOGY-HARNESS-READINESS-AUDIT.md) — harness readiness checklist
 - [WORKFLOW_E2E_MATRIX.md](https://github.com/alo-exp/enterprise-grade-test-app/blob/main/docs/WORKFLOW_E2E_MATRIX.md) — 22-row prompt cards (test app)
 
 ---
 
 ## Mission
 
-Deliver **2 consecutive strict-clean rounds** on the **Codex host track** (Round Codex-1, then Round Codex-2). Strict-clean criteria are defined in **§Mission** above — adapted for Codex TUI instead of Claude TUI.
+Deliver **Round Codex-4 REAL** — the **second** honest product certification round (2/2 release pair) on the Codex host track.
 
-**SB git branch (mandatory):** All harness fixes, ledgers, and operator commits live on a Codex-named branch — default **`enterprise-e2e/codex-round1`** (must contain `codex`; e.g. `enterprise-e2e/codex-track`). Create or checkout at session start. Cherry-pick verified fixes to `main` per cherry-pick policy; **never** commit Codex harness work to `enterprise-e2e/round6`, `enterprise-e2e/multi-host`, or Cursor/Claude branches.
+**SB git branch:** Harness is merged to **`main`** (post Codex-3 closure). Run matrix drivers from `main` @ current HEAD. Optional: create `enterprise-e2e/codex-round4` for ledger-only commits; cherry-pick verified fixes to `main` per cherry-pick policy.
+
+**Honest baseline (mandatory):** `09f8d1a` on fixture branch `enterprise-e2e/round-N-codex` — **never** `8482e60`/`826cb5c` pre-seed for product rounds.
+
+```bash
+export SB_E2E_TEST_APP_BASELINE_SHA=09f8d1a
+export SB_E2E_PRODUCT_WORK_GATE=1
+export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-10-codex   # or next round-N-codex
+export SB_E2E_BRANCH=main
+```
+
+**Driver template:** `bash .planning/enterprise-e2e/codex-r4-real-driver.sh 1 3 6` (Tier B) then full 22.
 
 **Strict-clean** = ALL of:
 
@@ -43,7 +57,7 @@ Evidence-only PASS or SKIP rows **do not** count strict-clean.
 - **No** `claude auth login/logout` — this track is Codex-only.
 - **429 / quota:** retry every **60s** (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL=60`); not auth failure.
 - Re-run `bash scripts/install-codex.sh --purge-legacy-skills` after every SB harness/hook fix.
-- **SB branch:** `enterprise-e2e/codex-round1` (or other `*codex*` branch) — verify with `git branch --show-current` before every commit; never commit harness work to Claude Round 6 or Cursor branches.
+- **SB branch:** `main` (harness merged post Codex-3) — verify with `git branch --show-current`; override with `SB_E2E_BRANCH` if using a round-specific ledger branch.
 - Recommended tools **opted-in and verified:** Graphify, agentmemory, RTK, Context Mode, Alumnium.
 
 ---
@@ -104,7 +118,7 @@ On any friction:
 | Role | Path |
 |------|------|
 | **Session workspace root (SB fixes, harness, ledger)** | `/Users/shafqat/projects/silver-bullet/repo` |
-| **SB git branch (Codex harness work)** | `enterprise-e2e/codex-round1` (default; any branch with `codex` in the name) |
+| **SB git branch (Codex harness work)** | `main` (default post Codex-3 merge; optional `enterprise-e2e/codex-round4` for ledger-only) |
 | **Codex TUI CWD (matrix rows, Session 0)** | `/Users/shafqat/projects/enterprise-grade-test-app` |
 
 **Never** use the test app as SB workspace root. **Never** use Cursor global config as session root.
@@ -115,7 +129,7 @@ On any friction:
 
 ## Cross-host isolation (mandatory when Claude Round 6 active)
 
-- **Git branches:** Claude Round 6 uses `enterprise-e2e/round6` (or its Round 6 branch). Codex uses `enterprise-e2e/codex-*` only. **Never** commit Codex harness work to `enterprise-e2e/round6`, `enterprise-e2e/cursor-*`, or `main` (except via cherry-pick after verification).
+- **Git branches:** Harness lives on **`main`** post Codex-3 closure. Optional round ledger branch `enterprise-e2e/codex-round4`. **Never** commit Codex harness work to `enterprise-e2e/round6`, `enterprise-e2e/cursor-*`, or Claude branches.
 - Do **NOT** remove `.e2e-live-test.lock` unless Round 6 Claude driver is confirmed dead.
 - Codex track uses `.e2e-live-test-codex.lock` — never steal Claude's lock.
 - Set before matrix/monitor/watch launch (or rely on harness defaults when `SB_E2E_LIVE_RUNTIME=codex`):
@@ -142,7 +156,7 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 | Resource | Path |
 |----------|------|
 | SB repo root | `/Users/shafqat/projects/silver-bullet/repo` |
-| SB git branch (Codex) | `enterprise-e2e/codex-round1` (default; `*codex*` required) |
+| SB git branch (Codex) | `main` (default) |
 | Test app (Codex CWD) | `/Users/shafqat/projects/enterprise-grade-test-app` |
 | Codex install script | `/Users/shafqat/projects/silver-bullet/repo/scripts/install-codex.sh` |
 | Codex live adapter | `/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/codex/agent.sh` |
@@ -169,11 +183,12 @@ TUI protocol: [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md)
 
 ```bash
 export SB_ROOT=/Users/shafqat/projects/silver-bullet/repo
-export SB_E2E_BRANCH=enterprise-e2e/codex-round1   # must contain "codex"
+export SB_E2E_BRANCH=main
 cd "$SB_ROOT"
 git fetch origin
-git checkout "$SB_E2E_BRANCH" 2>/dev/null || git checkout -b "$SB_E2E_BRANCH" origin/main
-git branch --show-current   # must show *codex* — abort if on round6/cursor/multi-host
+git checkout main
+git pull --ff-only origin main 2>/dev/null || true
+git branch --show-current   # must be main (or explicit SB_E2E_BRANCH)
 ```
 
 ### Install & runtime
