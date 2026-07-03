@@ -865,6 +865,15 @@ enterprise_e2e_apply_isolated_claude_runtime_paths() {
   export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   mkdir -p "$SB_RUNTIME_STATE_DIR"
+  # Hook audit + state guards only accept state-scoped paths (runtime-paths.sh).
+  if [[ -n "${SB_RUNTIME_EXTRA_STATE_ROOTS:-}" ]]; then
+    case ":${SB_RUNTIME_EXTRA_STATE_ROOTS}:" in
+      *":${SB_RUNTIME_STATE_DIR}:"*) ;;
+      *) export SB_RUNTIME_EXTRA_STATE_ROOTS="${SB_RUNTIME_EXTRA_STATE_ROOTS}:${SB_RUNTIME_STATE_DIR}" ;;
+    esac
+  else
+    export SB_RUNTIME_EXTRA_STATE_ROOTS="${SB_RUNTIME_STATE_DIR}"
+  fi
 }
 
 enterprise_e2e_export_live_defaults() {
