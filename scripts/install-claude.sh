@@ -440,6 +440,9 @@ done
 
 refresh_silver_bullet_install_alias
 sync_silver_bullet_settings_paths
+if [[ -x "${REPO_ROOT}/scripts/prune-stale-claude-user-hooks.sh" ]]; then
+  bash "${REPO_ROOT}/scripts/prune-stale-claude-user-hooks.sh" >&2 || true
+fi
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   sync_silver_bullet_hook_cache
 fi

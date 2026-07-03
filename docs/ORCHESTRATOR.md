@@ -80,6 +80,21 @@ Workers should run with `SB_ORCHESTRATOR_WORKER=1` (set in Task prompt) so hooks
 
 Guidance only — `templates/cursor-rules/silver-orchestrator.mdc` + directive injection. Tier 2+ required for mechanical parent blocks.
 
+## Host modes — Plan & Debug (E2E-013)
+
+Silver Bullet hooks do **not** read host mode from stdin today. Operators and agents should treat modes as follows:
+
+| Host mode | Parent may | SB enforcement |
+|-----------|------------|----------------|
+| **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
+| **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
+| **Debug** | Route to `silver:debug` / `silver:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
+| **Ask** | Read-only tools | Aligns with parent read-only subset |
+
+**Enterprise E2E:** Matrix rows run in autonomous Agent mode. Do not switch to Plan/Debug mid-row — outcome scorers expect worker completion markers.
+
+**Future:** SessionStart may inject `SB PLAN MODE` context when hosts expose mode hints reliably.
+
 ## SubagentStop semantics
 
 - **Worker SubagentStop:** Clears `orchestrator-worker-active.json`; does not block (parent continues).

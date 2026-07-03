@@ -183,6 +183,20 @@ else
 fi
 rm -f "$ROW10_FP_LOG" "$PROMPT_OVERRIDE_LOG"
 
+# E2E-026: planning-file-guard TUI-watch deliberation is false positive for OUT-HOOK-01
+WATCH_FP="$(mktemp)"
+cat >"$WATCH_FP" <<'JSON'
+{"severity":"blocker","category":"hook","message":"planning-file-guard","excerpt":"Issue SB OVERRIDE if planning-file-guard blocks evidence writes","row":19}
+JSON
+DELIB_LOG="$(mktemp)"
+printf 'matrix autonomous mode\n[harness] ignoring non-blocking hook failure\n' >"$DELIB_LOG"
+if enterprise_e2e_outcome_watch_has_hook_blocker "$WATCH_FP" 19 "$DELIB_LOG"; then
+  fail "E2E-026 matrix prompt echo should not count as hook blocker"
+else
+  pass "E2E-026 planning-file-guard deliberation FP filtered"
+fi
+rm -f "$WATCH_FP" "$DELIB_LOG"
+
 # E2E-098: matrix graphify preamble without agentmemory MCP → OUT-KM-01 pass
 ROW14_KM_LOG="$(mktemp)"
 cat >"$ROW14_KM_LOG" <<'LOG'
