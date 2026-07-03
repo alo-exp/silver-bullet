@@ -256,7 +256,9 @@ fi
 
 echo ""
 enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
-enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
+if [[ "$(enterprise_e2e_matrix_host)" == "claude" ]] && declare -f enterprise_e2e_prepare_matrix_mcp_env >/dev/null 2>&1; then
+  enterprise_e2e_prepare_matrix_mcp_env "$FIXTURE_DIR"
+fi
 
 echo "--- Launching interactive matrix (live) ---"
 echo "Log: ${MATRIX_LOG}"
