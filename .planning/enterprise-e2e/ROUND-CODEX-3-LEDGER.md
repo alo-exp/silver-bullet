@@ -76,7 +76,7 @@ Contrast pattern: [ROUND-CURSOR-3-REAL-LEDGER.md](../../.planning/enterprise-e2e
 **Launch:** [codex-r3-real-driver.sh](./codex-r3-real-driver.sh) rows 1,3,6 @ `c8e2f002`  
 **Launch log:** [.codex-r3-tierb-launch.nohup](./.codex-r3-tierb-launch.nohup)  
 **Friction monitor:** PID **8072** — [.tui-monitor-agent-run.log](./.tui-monitor-agent-run.log)  
-**Status:** **RUNNING** (Row 1 live invoke — past tui-watch stall)
+**Status:** **PASS** (force36 closure @ `4412bb01` — rows 1,3,6)
 
 ### Poll checkpoint 2026-07-03T00:56Z (fixture branch lock + Tier B relaunch @ `4412bb01`)
 
@@ -196,7 +196,7 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | Fixture reset (round-9 @ 09f8d1a) | **PASS** |
 | Harness §5b product gate | **landed** |
 | Tier A offline | **PASS** @ `25d373a6` |
-| Tier B smoke 1,3,6 | **RUNNING** (lock PID 6358, matrix 14143 @ `c8e2f002`) |
+| Tier B smoke 1,3,6 | **PASS** (force36 closure @ `4412bb01`) |
 | Full matrix 22/22 | **PASS** @ `f9ed398f` |
 | Phase C | **PASS** |
 | Product audit | [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — **19** commits |
