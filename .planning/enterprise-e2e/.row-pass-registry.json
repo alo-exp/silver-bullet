@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "fingerprint_scheme": "host@sb_git_sha12+surface_hash12",
+  "surface_hash_inputs": [
+    "hooks/hooks.json sha256[:16]",
+    "package.json version"
+  ],
+  "created_at": "2026-07-01T12:00:00Z",
+  "installs": {
+    "claude@30558b37c1ac+9a58159041c7": {
+      "host": "claude",
+      "sb_sha": "30558b37c1ac",
+      "install_fp": "claude@30558b37c1ac+9a58159041c7",
+      "seed_note": "Round 8 smoke live+outcome passes on main @ 30558b37",
+      "rows": {
+        "1": {
+          "passed_at": "2026-07-01T09:30:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "3": {
+          "passed_at": "2026-07-01T09:35:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "6": {
+          "passed_at": "2026-07-01T09:45:00Z",
+          "log_ref": ".e2e-r8-claude-smoke-live.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "11": {
+          "passed_at": "2026-07-01T10:15:00Z",
+          "log_ref": ".e2e-matrix-round2.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "21": {
+          "passed_at": "2026-07-01T09:50:00Z",
+          "log_ref": ".e2e-r8-smoke-rows21-22-verify.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        },
+        "22": {
+          "passed_at": "2026-07-01T09:50:00Z",
+          "log_ref": ".e2e-r8-smoke-rows21-22-verify.log",
+          "outcome_pass": true,
+          "source": "r8-smoke-seed"
+        }
+      }
+    },
+    "cursor@26cf687fbe54+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "26cf687fbe54",
+      "install_fp": "cursor@26cf687fbe54+ff940b08e724",
+      "rows": {
+        "7": {
+          "passed_at": "2026-07-01T14:00:28Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row7-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "cursor@d572f53f3928+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "d572f53f3928",
+      "install_fp": "cursor@d572f53f3928+ff940b08e724",
+      "rows": {
+        "21": {
+          "passed_at": "2026-07-01T15:38:23Z",
+          "log_ref": ".e2e-matrix-cursor-c2-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "22": {
+          "passed_at": "2026-07-01T15:38:23Z",
+          "log_ref": ".e2e-matrix-cursor-c2-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "8": {
+          "passed_at": "2026-07-01T16:37:53Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row8-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "11": {
+          "passed_at": "2026-07-01T17:13:32Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row11-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "15": {
+          "passed_at": "2026-07-01T17:30:25Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row15-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "16": {
+          "passed_at": "2026-07-01T17:38:40Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row16-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "claude@62aa0de356e9+cb146a0bba2a": {
+      "host": "claude",
+      "sb_sha": "62aa0de356e9",
+      "install_fp": "claude@62aa0de356e9+cb146a0bba2a",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-02T08:14:28Z",
+          "log_ref": "/private/tmp/sb-cherry-pick-to-main/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-02T08:14:53Z",
+          "log_ref": "/private/tmp/sb-cherry-pick-to-main/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "cursor@5d5ef7c854ab+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "5d5ef7c854ab",
+      "install_fp": "cursor@5d5ef7c854ab+ff940b08e724",
+      "rows": {
+        "1": {
+          "passed_at": "2026-07-02T12:34:05Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row1-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "cursor@32231c4436d7+ff940b08e724": {
+      "host": "cursor",
+      "sb_sha": "32231c4436d7",
+      "install_fp": "cursor@32231c4436d7+ff940b08e724",
+      "rows": {
+        "6": {
+          "passed_at": "2026-07-02T13:25:25Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-row6-cursor-attempt.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    }
+  }
+}

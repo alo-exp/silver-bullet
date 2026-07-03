@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/agent-bundle-paths.sh
+source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 
@@ -24,10 +26,13 @@ tmp="$(mktemp)"
 jq --arg v "$plugin_version" '.version = $v' "$DEST_DIR/.codex-plugin/plugin.json" > "$tmp"
 mv "$tmp" "$DEST_DIR/.codex-plugin/plugin.json"
 
-mkdir -p "${REPO_ROOT}/agents"
-python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skills" --dest-root "${REPO_ROOT}/agents/claude"
-python3 "$AGENT_RENDERER" render --agent codex --source-root "${REPO_ROOT}/skills" --dest-root "${REPO_ROOT}/agents/codex"
-python3 "$AGENT_RENDERER" render --agent cursor --source-root "${REPO_ROOT}/skills" --dest-root "${REPO_ROOT}/agents/cursor"
+mkdir -p "${REPO_ROOT}/agents" "${REPO_ROOT}/host-bundles"
+python3 "$AGENT_RENDERER" render --agent claude --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" claude)"
+python3 "$AGENT_RENDERER" render --agent codex --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" codex)"
+python3 "$AGENT_RENDERER" render --agent cursor --source-root "${REPO_ROOT}/skills" --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
+
+# Legacy render paths under agents/{codex,cursor} must not remain in the checkout.
+rm -rf "${REPO_ROOT}/agents/codex" "${REPO_ROOT}/agents/cursor"
 
 shopt -s dotglob nullglob
 for entry in "${DEST_DIR}"/*; do
@@ -83,7 +88,7 @@ fi
 # user-facing picker surface is the native ~/.codex/skills mirror.
 rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source" "${DEST_DIR}/.generated-skills" "${DEST_DIR}/agents"
 mkdir -p -- "${DEST_DIR}/skill-source"
-rsync -a --delete "${REPO_ROOT}/agents/codex/" "${DEST_DIR}/skill-source/"
+rsync -a --delete "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${DEST_DIR}/skill-source/"
 find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
   for path do
     mv "$path" "$(dirname "$path")/SILVER_SOURCE"

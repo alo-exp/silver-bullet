@@ -2,7 +2,7 @@
 
 Optional live validation of Silver Bullet against the `enterprise-grade-test-app` fixture via **interactive Claude TUI**. Not run in default CI or `bash tests/run-all-tests.sh` unless explicitly opted in.
 
-**See also:** `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
+**See also:** `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md` (staged Tier A/B/C gates — **share with Codex, Cursor, Claude agents**); `docs/testing/ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md` (effectiveness scoring and iteration criteria).
 
 ---
 

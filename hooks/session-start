@@ -486,7 +486,7 @@ if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
 
 ---
 
-}Cursor: merge ~/.cursor/hooks.json via skills/silver-init/scripts/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
+}Task host: merge host hooks manifest via scripts/lib/install-cursor/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
   fi
 fi
 
