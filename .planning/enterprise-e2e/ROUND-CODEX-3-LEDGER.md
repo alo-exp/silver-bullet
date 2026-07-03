@@ -466,3 +466,12 @@ Target: [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md)
 | **RCS** | **PASS** ≥85 (`SB_E2E_RCS_TRIHOST=full`) |
 | **Product audit** | [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](./CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — **19** commits since `09f8d1a` |
 | **Round strict-clean** | **PASS** — [ROUND-CODEX-3-GATES.md](./ROUND-CODEX-3-GATES.md) **CLOSED Pass** |
+
+### Post-closure housekeeping (2026-07-04)
+
+| Step | Status |
+|------|--------|
+| Merge `origin/main` → `enterprise-e2e/codex` | **DONE** @ `56dc2374` |
+| Pre-release validation harness | **FAIL** @ `6aebf12d` — [.codex-prerelease-validation.log](./.codex-prerelease-validation.log) |
+| Branch push | **DONE** @ `d8d4909f` |
+| CI on pushed HEAD | **FAIL** @ `d8d4909f` — [CI run 28682806671](https://github.com/alo-exp/silver-bullet/actions/runs/28682806671) |

@@ -72,3 +72,4 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 | Release / tag | **None** — user directive: no further E2E round |
 | Pre-release validation harness | **FAIL** @ `6aebf12d` — [.codex-prerelease-validation.log](./.codex-prerelease-validation.log) (5050/5057 run-all-tests; Tier A structural; test-app baseline `8482e60`) |
 | CI on `main` | **FAIL** (pre-existing shellcheck @ `ba77d1b0`); Secret Scan **PASS** @ `a968dd0a` |
+| CI on housekeeping push `d8d4909f` | **FAIL** — [CI run 28682806671](https://github.com/alo-exp/silver-bullet/actions/runs/28682806671) (validate/shellcheck) |
