@@ -2,7 +2,7 @@
 
 **Host:** Codex TUI — **honest product certification** (voids Codex-1/2 harness-only 22/22)  
 **Updated:** 2026-07-04  
-**SB HEAD (closure):** `fa68e40b` · **post-main-merge:** `56dc2374` (`origin/main` @ `ba77d1b0`)  
+**SB HEAD (closure):** `fa68e40b` · **`main` post-merge:** `874c4a07`  
 **Test app:** `enterprise-e2e/round-9-codex` @ `97f0677` (baseline `09f8d1a`)  
 **Ledger:** [ROUND-CODEX-3-LEDGER.md](./ROUND-CODEX-3-LEDGER.md)  
 **Prior rounds:** Codex-1/2 harness PASS — **void for product work** per [CODEX-TEST-APP-PRODUCT-AUDIT.md](./CODEX-TEST-APP-PRODUCT-AUDIT.md)
@@ -66,5 +66,8 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 | Step | Status |
 |------|--------|
 | Merge `origin/main` → `enterprise-e2e/codex` | **DONE** @ `56dc2374` |
-| Pre-release validation harness | **RUNNING** — [.codex-prerelease-validation.log](./.codex-prerelease-validation.log) |
-| CI on branch HEAD | pending push |
+| Merge `enterprise-e2e/codex` → `main` | **DONE** — fast-forward to `6aebf12d` + Gate3 cherry-picks → `874c4a07` |
+| Conflicts | **None** |
+| Post-merge tests | `test-enterprise-e2e-matrix-force.sh` **7/7**; `test-outcome-assessment.sh` **67/68** (pre-existing E2E-096 row 10 on codex base) |
+| Release / tag | **None** — user directive: no further E2E round |
+| CI on `main` | pending push |
