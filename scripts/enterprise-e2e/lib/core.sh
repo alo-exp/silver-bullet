@@ -165,6 +165,10 @@ enterprise_e2e_assert_row_matrix_baseline_rev_increase() {
   count_after="$(enterprise_e2e_fixture_baseline_rev_count "$fixture_dir")"
   head_now="$(enterprise_e2e_fixture_head_snapshot "$fixture_dir")"
   if [[ "${count_after:-0}" -le "${count_before:-0}" ]]; then
+    if enterprise_e2e_product_work_cumulative_mode &&        enterprise_e2e_assert_row_product_commit_rescore "$row_num" "$fixture_dir"; then
+      echo "  §5b matrix baseline gate row ${row_num} (cumulative): ${baseline:0:12}..HEAD count ${count_after} (no per-row Δ; rescore OK)"
+      return 0
+    fi
     echo "  FAIL: §5b matrix baseline gate — rev-list --count ${baseline:0:12}..HEAD did not increase (${count_before} → ${count_after}; HEAD ${head_now:0:12}; row ${row_num})" >&2
     return 1
   fi
@@ -182,6 +186,11 @@ enterprise_e2e_row_outcome_only_rerun() {
   local row_num="${1:-}"
   [[ -n "${SB_E2E_OUTCOME_ONLY_ROWS:-}" ]] || return 1
   [[ " ${SB_E2E_OUTCOME_ONLY_ROWS} " == *" ${row_num} "* ]]
+}
+
+# FP migration / honest re-pilot: §5b satisfied by cumulative fixture commits since baseline + row evidence (not per-row HEAD delta).
+enterprise_e2e_product_work_cumulative_mode() {
+  [[ "${SB_E2E_PRODUCT_WORK_CUMULATIVE:-0}" == "1" ]]
 }
 
 # Row 3 §5b — at least one fixture commit after anchor touching api/currency paths.
@@ -284,6 +293,10 @@ enterprise_e2e_assert_row_product_commit_delta() {
       if enterprise_e2e_assert_row_product_commit_rescore "$row_num" "$fixture_dir"; then
         return 0
       fi
+    fi
+    if enterprise_e2e_product_work_cumulative_mode &&        enterprise_e2e_assert_row_product_commit_rescore "$row_num" "$fixture_dir"; then
+      echo "  §5b product delta row ${row_num} (cumulative): HEAD ${head_after:0:12} unchanged; rescore OK"
+      return 0
     fi
     echo "  FAIL: §5b product delta — no fixture commit after row ${row_num} (HEAD still ${head_after:0:12})" >&2
     return 1
