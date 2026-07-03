@@ -12,7 +12,7 @@ Migrates an older mid-milestone project to the current Silver Bullet contract:
 - `docs/learnings/` terminology (replaces `docs/lessons/`)
 - agent-neutral `silver-bullet.md` and project instruction files
 - current `.silver-bullet.json` defaults from `templates/silver-bullet.config.json.default`
-- orchestrator parent mode (`orchestrator_mode: parent`, worker templates, Cursor rule)
+- orchestrator parent mode (`orchestrator_mode: parent`, worker templates, task host rule)
 - `scripts/workflows.sh` and `docs/workflows/*.md` when absent (parity with `/silver:init`)
 - `.gitignore` entry for `.planning/workflows/` (local runtime state)
 - runtime parity awareness (evidence schema, diagnostics, bootstrap probes)
@@ -98,7 +98,7 @@ Re-stamp from the bundled template without host-specific leaks. Silver Bullet ow
    - `{{PROJECT_NAME}}` → project name from config or directory basename
    - `{{ACTIVE_WORKFLOW}}` → active workflow from config
 
-4. Scan the refreshed file for stale host-specific literals (for example hardcoded host skill channel names, host home paths, or Claude model names). If any remain in the stamped output, report a plugin packaging defect — the canonical template should be host-neutral per phase 058.
+4. Scan the refreshed file for stale host-specific literals (for example hardcoded host skill channel names, host home paths, or primary host model names). If any remain in the stamped output, report a plugin packaging defect — the canonical template should be host-neutral per phase 058.
 
 ### Step 2: Upgrade `.silver-bullet.json` to Current Defaults
 
@@ -143,7 +143,7 @@ This script (idempotent) runs `sb-migrate-config.sh`, `sb-migrate-orchestrator-p
 If the script is unavailable, perform the same steps manually:
 
 1. Set `orchestrator_mode: parent` and copy `${PLUGIN_ROOT}/templates/orchestrator-workers/` → `.silver-bullet/orchestrator-workers/`.
-2. When **Cursor** is the active host or `.cursor/rules/` exists, refresh `.cursor/rules/silver-orchestrator.mdc` from `${PLUGIN_ROOT}/templates/cursor-rules/silver-orchestrator.mdc`. (Claude/Codex hosts: skip — orchestrator uses hook directive injection.)
+2. When the active host supports orchestrator parent mode or `host rules path (see install guide) ` exists, refresh `host rules path (see install guide) silver-orchestrator.mdc` from `${PLUGIN_ROOT}/scripts/lib/install-task host/templates/task host-rules/silver-orchestrator.mdc`. (other hosts: skip — orchestrator uses hook directive injection.)
 3. Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (`chmod +x`) when absent.
 4. `mkdir -p .planning/workflows/.archive docs/workflows`.
 5. Copy workflow docs from `${PLUGIN_ROOT}/templates/workflows/` only when the destination file is absent (back up before any explicit user-requested refresh).
@@ -156,8 +156,8 @@ Report what was installed vs already present.
 Regenerate stale host instruction files from the init contract when they predate agent-neutral separation.
 
 1. Detect the active host instruction file per `docs/RUNTIME-COMPATIBILITY.md`:
-   - Claude Code → `CLAUDE.md` when present
-   - Codex / Cursor → `AGENTS.md` when present
+   - the active host agent → `primary host.md` when present
+   - secondary host / task host → `AGENTS.md` when present
    - If neither exists, skip this step (SB does not require creating one during migrate).
 
 2. Determine staleness — refresh when any of:
@@ -170,7 +170,7 @@ Regenerate stale host instruction files from the init contract when they predate
 
 4. Strip SB-owned sections from the existing file (headings `## N.` through next `## ` or EOF). Preserve all user-owned sections.
 
-5. Merge in missing neutral sections from `${PLUGIN_ROOT}/templates/CLAUDE.md.base`:
+5. Merge in missing neutral sections from `${PLUGIN_ROOT}/scripts/lib/install-primary host/templates/primary host.md.base`:
    - **User-owned** sections (heading exists only in project file): keep unchanged
    - **New from template** (heading exists only in template): append
    - **SB-owned overlap**: prefer template neutral wording; ask the user directly when content conflicts materially
@@ -178,9 +178,9 @@ Regenerate stale host instruction files from the init contract when they predate
 6. Ensure the reference line at top:
    `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**`
 
-7. Do not create `CLAUDE.md` on Codex-only projects or `AGENTS.md` on Claude-only projects unless the user explicitly requests it.
+7. Do not create `primary host.md` on secondary host-only projects or `AGENTS.md` on primary host-only projects unless the user explicitly requests it.
 
-### Step 4: Runtime Support, Cursor Hooks, and Parity Artifacts
+### Step 4: Runtime Support, task host Hooks, and Parity Artifacts
 
 Surface runtime parity expectations and refresh host hook delivery when applicable.
 
@@ -202,16 +202,18 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 Re-register SB hooks in the active host settings file (same contract as `/silver:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
 
+Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`, `merge-cursor-hooks.py`).
+
 ```bash
 INSTALL_PATH="${INSTALL_PATH:-${PLUGIN_ROOT}}"
-if [[ "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]] || [[ -d "${HOME}/.cursor" && -f "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" ]]; then
-  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-cursor-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+if [[ -f "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" ]]; then
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 else
-  python3 "${PLUGIN_ROOT}/skills/silver-init/scripts/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
+  python3 "${PLUGIN_ROOT}/scripts/lib/install-primary host/merge-hooks.py" "$INSTALL_PATH" 2>/dev/null || true
 fi
 ```
 
-Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-claude.sh`, `install-codex.sh`, or `install-cursor.sh`).
+Confirm merged entries in the host hooks manifest. If merge fails, advise the host-specific install path from `docs/RUNTIME-COMPATIBILITY.md` (`install-<runtime>.sh`).
 
 #### 4.2a v1 hook incompatibility check
 
@@ -302,9 +304,9 @@ if [[ -x scripts/workflows.sh ]]; then
 else
   SB_WORKFLOWS_BIN="$(
     for root in \
-      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current" \
+      "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet/current" \
       "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current" \
-      "$HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet"/* \
+      "$HOME/.secondary host/plugins/cache/alo-labs-secondary host/silver-bullet"/* \
       "${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet"/*; do
       if [[ -x "$root/scripts/workflows.sh" ]]; then
         printf "%s\n" "$root/scripts/workflows.sh"
@@ -350,9 +352,9 @@ Recommend `/silver:init` in update mode when hook registration or full doc boots
 - refreshed `silver-bullet.md` from agent-neutral template
 - merged `.silver-bullet.json` with current default fields (`sb_initiated: true`, `orchestrator_mode: parent`)
 - `scripts/workflows.sh` and missing `docs/workflows/*.md` when absent
-- `.silver-bullet/orchestrator-workers/` and `.cursor/rules/silver-orchestrator.mdc` when applicable
+- `.silver-bullet/orchestrator-workers/` and `host rules path (see install guide) silver-orchestrator.mdc` when applicable
 - `.gitignore` entry for `.planning/workflows/` when missing
-- reconciled `CLAUDE.md` or `AGENTS.md` when stale
+- reconciled `primary host.md` or `AGENTS.md` when stale
 - `docs/learnings/` — current portable learnings path
 - updated `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` when present
 - `.planning/interface/STATE.md` for UI projects when absent
@@ -363,4 +365,4 @@ Recommend `/silver:init` in update mode when hook registration or full doc boots
 - If a legacy `.planning/WORKFLOW.md` exists, leave it untouched and treat it as historical evidence only.
 - If inferred state is ambiguous, choose the safer pending status and let SB resume from `.planning/STATE.md`.
 - Do not leave new writes pointed at `docs/lessons/`. Read legacy `docs/lessons/` only as migration input.
-- Canonical skill text stays host-neutral; run `python3 scripts/render-agent-bundle.py render --agent {claude,codex,cursor} --source-root skills --dest-root agents/<agent>` and `bash scripts/sync-codex-package.sh` after editing this file in the SB source repo.
+- Canonical skill text stays host-neutral; run `python3 scripts/render-agent-bundle.py render --agent {primary host,secondary host,task host} --source-root skills --dest-root agents/<agent>` and `bash scripts/sync-secondary host-package.sh` after editing this file in the SB source repo.

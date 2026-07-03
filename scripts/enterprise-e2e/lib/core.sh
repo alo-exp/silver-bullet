@@ -6,6 +6,13 @@ set -euo pipefail
 _E2E_HARNESS_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/enterprise-e2e/lib/host.sh
 source "${_E2E_HARNESS_LIB}/host.sh"
+# shellcheck source=scripts/enterprise-e2e/lib/test-app-branch.sh
+source "${_E2E_HARNESS_LIB}/test-app-branch.sh"
+_sb_e2e_registry_lib="$(cd "${_E2E_HARNESS_LIB}/../../lib" && pwd)/enterprise-e2e-row-pass-registry.sh"
+if [[ -f "$_sb_e2e_registry_lib" ]]; then
+  # shellcheck source=scripts/lib/enterprise-e2e-row-pass-registry.sh
+  source "$_sb_e2e_registry_lib"
+fi
 
 
 # Bash 3.2 (macOS): mapfile/readarray unavailable
@@ -47,13 +54,19 @@ enterprise_e2e_fixture_branch() {
   enterprise_e2e_host_config_get fixture_branch 2>/dev/null || true
 }
 
+
+enterprise_e2e_fixture_is_git_repo() {
+  local fixture_dir="$1"
+  git -C "$fixture_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1
+}
+
 enterprise_e2e_fixture_ensure_branch() {
   local fixture_dir branch current
   [[ "${SB_E2E_FIXTURE_BRANCH_PIN:-1}" != "0" ]] || return 0
   fixture_dir="$(enterprise_e2e_fixture_dir)"
   branch="$(enterprise_e2e_fixture_branch)"
   [[ -n "$branch" ]] || return 0
-  [[ -d "$fixture_dir/.git" ]] || {
+  enterprise_e2e_fixture_is_git_repo "$fixture_dir" || {
     echo "WARN: fixture branch pin skipped — not a git repo: ${fixture_dir}" >&2
     return 0
   }
@@ -80,7 +93,7 @@ enterprise_e2e_fixture_assert_branch_lock() {
   local expected_branch current_branch current_sha exclude_ancestor
   expected_branch="$(enterprise_e2e_fixture_branch)"
   [[ -n "$expected_branch" ]] || return 0
-  [[ -d "$fixture_dir/.git" ]] || {
+  enterprise_e2e_fixture_is_git_repo "$fixture_dir" || {
     echo "  FAIL: ${label} — not a git repo: ${fixture_dir}" >&2
     return 1
   }
@@ -93,7 +106,11 @@ enterprise_e2e_fixture_assert_branch_lock() {
     return 1
   fi
 
-  exclude_ancestor="${SB_E2E_TEST_APP_EXCLUDE_ANCESTOR:-826cb5c}"
+  if [[ "${SB_E2E_TEST_APP_EXCLUDE_ANCESTOR+set}" == set ]]; then
+    exclude_ancestor="$SB_E2E_TEST_APP_EXCLUDE_ANCESTOR"
+  else
+    exclude_ancestor="826cb5c"
+  fi
   if [[ -n "$exclude_ancestor" ]] && git -C "$fixture_dir" merge-base --is-ancestor "$exclude_ancestor" HEAD 2>/dev/null; then
     echo "  FAIL: ${label} — HEAD includes forbidden ancestor ${exclude_ancestor} (§5b pre-seed contamination)" >&2
     return 1
@@ -110,6 +127,49 @@ enterprise_e2e_row_requires_product_commit() {
     1|15|21|22) return 1 ;;
     *) return 0 ;;
   esac
+}
+
+
+# Rows 6/11 matrix §5b — require rev-list count from test-app baseline to increase during the row.
+enterprise_e2e_row_uses_matrix_baseline_rev_gate() {
+  local row_num="${1:-}"
+  case "$row_num" in
+    6|11) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+enterprise_e2e_fixture_baseline_rev_count() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  [[ -n "$baseline" ]] || { printf '0'; return 1; }
+  git -C "$fixture_dir" rev-list --count "${baseline}..HEAD" 2>/dev/null || printf '0'
+}
+
+enterprise_e2e_assert_row_matrix_baseline_rev_increase() {
+  local row_num="${1:-}"
+  local count_before="${2:-0}"
+  local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
+  enterprise_e2e_row_uses_matrix_baseline_rev_gate "$row_num" || return 0
+  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
+  if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
+    return 0
+  fi
+  local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  local count_after head_now
+  if [[ -z "$baseline" ]]; then
+    echo "  FAIL: §5b matrix baseline gate — SB_E2E_TEST_APP_BASELINE_SHA unset (row ${row_num})" >&2
+    return 1
+  fi
+  count_after="$(enterprise_e2e_fixture_baseline_rev_count "$fixture_dir")"
+  head_now="$(enterprise_e2e_fixture_head_snapshot "$fixture_dir")"
+  if [[ "${count_after:-0}" -le "${count_before:-0}" ]]; then
+    echo "  FAIL: §5b matrix baseline gate — rev-list --count ${baseline:0:12}..HEAD did not increase (${count_before} → ${count_after}; HEAD ${head_now:0:12}; row ${row_num})" >&2
+    return 1
+  fi
+  echo "  §5b matrix baseline gate row ${row_num}: ${baseline:0:12}..HEAD count ${count_before} → ${count_after} (HEAD ${head_now:0:12})"
+  return 0
 }
 
 enterprise_e2e_fixture_head_snapshot() {
@@ -360,6 +420,56 @@ enterprise_e2e_matrix_log_bytes() {
   printf '%s\n' "${bytes:-0}"
 }
 
+# E2E-093: cursor-agent --print may return a short summary; wait then append composite transcript.
+enterprise_e2e_matrix_finalize_attempt_log() {
+  local row_log="$1" row_num="$2" work_dir="$3" evidence_path="${4:-}" graphify_ref="${5:-}"
+  local min_bytes=2048 wait_secs="${SB_E2E_CURSOR_LOG_GROWTH_WAIT:-30}" elapsed=0 bytes=0
+  [[ -n "$row_log" && -f "$row_log" ]] || return 0
+  [[ "$(enterprise_e2e_matrix_host 2>/dev/null || true)" == "cursor" ]] || return 0
+
+  while [[ "$elapsed" -lt "$wait_secs" ]]; do
+    bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
+    [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  bytes="$(wc -c <"$row_log" 2>/dev/null | tr -d ' ' || echo 0)"
+  [[ "${bytes:-0}" -ge "$min_bytes" ]] && return 0
+
+  # Composite gate: planning artifacts + evidence digest when stream-json summary is short.
+  if [[ -f "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" ]]; then
+    # shellcheck source=scripts/lib/enterprise-e2e-outcome-assessment.sh
+    source "${SB_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
+    if ! enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence_path" "$row_num" >/dev/null 2>&1; then
+      return 0
+    fi
+  elif [[ -n "$evidence_path" && ! -f "${work_dir}/${evidence_path}" ]]; then
+    return 0
+  fi
+
+  {
+    printf '%s\n' '--- HARNESS composite transcript (E2E-093 cursor log floor) ---'
+    [[ -n "$graphify_ref" ]] && printf '%s\n' "graphify: ${graphify_ref}"
+    [[ -n "$evidence_path" && -f "${work_dir}/${evidence_path}" ]] && {
+      printf 'evidence: %s (%s bytes)\n' "$evidence_path" "$(wc -c <"${work_dir}/${evidence_path}" 2>/dev/null | tr -d ' ')"
+      printf 'evidence excerpt:\n'
+      head -80 "${work_dir}/${evidence_path}" 2>/dev/null | sed 's/^/  /'
+    }
+    if [[ -d "${work_dir}/.planning" ]]; then
+      printf 'planning artifacts:\n'
+      find "${work_dir}/.planning" -type f \( -name 'PLAN*.md' -o -name 'QUALITY-GATES*.md' -o -name 'VALIDATION*.md' -o -name 'VERIFICATION*.md' -o -path '*/workflows/*.md' \) \
+        ! -path '*/.archive/*' 2>/dev/null | head -40 | sed 's/^/  /'
+    fi
+    if git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      printf 'product delta:\n'
+      git -C "$work_dir" diff --stat HEAD 2>/dev/null | sed 's/^/  /' || true
+      git -C "$work_dir" status --short 2>/dev/null | sed 's/^/  /' || true
+    fi
+    printf '%s\n' '--- end composite transcript ---'
+  } >>"$row_log"
+}
+
 enterprise_e2e_ledger_file() {
   printf '%s\n' "${SB_E2E_LEDGER_FILE:-${SB_ROOT}/.planning/enterprise-e2e/ROUND-1-LEDGER.md}"
 }
@@ -433,6 +543,130 @@ enterprise_e2e_incomplete_rows() {
   fi
 }
 
+# Install version key: SB_CURSOR_PLUGIN_VERSION @ git HEAD short SHA at last install-cursor.sh.
+# Stored in ${SB_ROOT}/.e2e-cursor-install-version.txt; row passes recorded in pass-at-version registry.
+enterprise_e2e_install_version_file() {
+  local root="${SB_ROOT:-}"
+  [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  printf '%s\n' "${root}/.e2e-cursor-install-version.txt"
+}
+
+enterprise_e2e_pass_at_version_registry() {
+  local root="${SB_ROOT:-}"
+  [[ -n "$root" ]] || root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+  printf '%s\n' "${root}/.e2e-matrix-pass-at-version.tsv"
+}
+
+enterprise_e2e_sb_install_version_key() {
+  if [[ -n "${SB_E2E_INSTALL_VERSION_KEY:-}" ]]; then
+    printf '%s\n' "$SB_E2E_INSTALL_VERSION_KEY"
+    return 0
+  fi
+  local file plugin sha
+  file="$(enterprise_e2e_install_version_file)"
+  if [[ -f "$file" ]]; then
+  # shellcheck disable=SC1090
+    source "$file" 2>/dev/null || true
+    if [[ -n "${SB_INSTALL_VERSION_KEY:-}" ]]; then
+      printf '%s\n' "$SB_INSTALL_VERSION_KEY"
+      return 0
+    fi
+    if [[ -n "${SB_CURSOR_PLUGIN_VERSION:-}" && -n "${SB_INSTALL_SHA:-}" ]]; then
+      printf '%s@%s\n' "$SB_CURSOR_PLUGIN_VERSION" "$SB_INSTALL_SHA"
+      return 0
+    fi
+  fi
+  plugin="$(jq -r '.version // "0.0.0"' "${SB_ROOT:-}/package.json" 2>/dev/null || echo 0.0.0)"
+  sha="$(git -C "${SB_ROOT:-.}" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  printf '%s@%s\n' "$plugin" "$sha"
+}
+
+enterprise_e2e_write_sb_install_version() {
+  local root="${1:-${SB_ROOT:-}}" plugin="${2:-}" sha="${3:-}" file key
+  [[ -n "$root" && -d "$root" ]] || return 1
+  plugin="${plugin:-$(jq -r '.version // "0.0.0"' "${root}/package.json" 2>/dev/null || echo 0.0.0)}"
+  sha="${sha:-$(git -C "$root" rev-parse --short HEAD 2>/dev/null || echo unknown)}"
+  key="${plugin}@${sha}"
+  file="$(enterprise_e2e_install_version_file)"
+  mkdir -p "$(dirname "$file")" 2>/dev/null || true
+  cat >"$file" <<EOF
+SB_CURSOR_PLUGIN_VERSION=${plugin}
+SB_INSTALL_SHA=${sha}
+SB_INSTALL_VERSION_KEY=${key}
+EOF
+  printf '%s\n' "$key"
+}
+
+enterprise_e2e_matrix_force_active() {
+  [[ "${SB_E2E_MATRIX_FORCE:-}" == "1" ]] && return 0
+  [[ "${SB_E2E_FORCE_ROW:-}" == "1" ]] && return 0
+  return 1
+}
+
+enterprise_e2e_record_row_pass_at_install_version() {
+  local row="$1" ledger="${2:-${SB_E2E_LEDGER_FILE:-}}" log_ref="${3:-}" ver reg
+  [[ "$row" =~ ^[0-9]+$ ]] || return 1
+  ver="$(enterprise_e2e_sb_install_version_key)"
+  reg="$(enterprise_e2e_pass_at_version_registry)"
+  mkdir -p "$(dirname "$reg")" 2>/dev/null || true
+  if [[ -f "$reg" ]] && grep -qE "^${row}[[:space:]]+${ver//\./\\.}[[:space:]]" "$reg" 2>/dev/null; then
+    :
+  else
+    printf '%s\t%s\t%s\t%s\n' "$row" "$ver" "$ledger" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$reg"
+  fi
+  if declare -f enterprise_e2e_row_pass_registry_record >/dev/null 2>&1; then
+    log_ref="${log_ref:-${SB_E2E_MATRIX_LOG:-}}"
+    enterprise_e2e_row_pass_registry_record "$row" "$log_ref" true "matrix" || true
+  fi
+}
+
+enterprise_e2e_ledger_sb_sha() {
+  local ledger="$1" sha=""
+  [[ -f "$ledger" ]] || return 1
+  sha="$(awk -F'|' '/SB repo SHA/ { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3; exit }' "$ledger" 2>/dev/null || true)"
+  sha="${sha//\`/}"
+  sha="${sha// /}"
+  [[ -n "$sha" ]] || return 1
+  printf '%s\n' "$sha"
+}
+
+enterprise_e2e_row_passed_at_install_version() {
+  local row="$1" ver="${2:-}" reg ledger
+  [[ "$row" =~ ^[0-9]+$ ]] || return 1
+  if declare -f enterprise_e2e_row_pass_registry_has_pass >/dev/null 2>&1; then
+    enterprise_e2e_row_pass_registry_has_pass "$row" && return 0
+  fi
+  ver="${ver:-$(enterprise_e2e_sb_install_version_key)}"
+  reg="$(enterprise_e2e_pass_at_version_registry)"
+  if [[ -f "$reg" ]] && awk -v r="$row" -v v="$ver" '$1 == r && $2 == v { found = 1 } END { exit found ? 0 : 1 }' "$reg" 2>/dev/null; then
+    return 0
+  fi
+  _enterprise_e2e_ensure_ledger_reconcile_sourced
+  local root="${SB_ROOT:-}" plugin="${ver%%@*}"
+  for ledger in "${root}"/.planning/enterprise-e2e/ROUND-CURSOR-*-LEDGER.md; do
+    [[ -f "$ledger" ]] || continue
+    enterprise_e2e_ledger_row_is_pass "$row" "$ledger" || continue
+    local ledger_sha
+    ledger_sha="$(enterprise_e2e_ledger_sb_sha "$ledger" 2>/dev/null || true)"
+    [[ -n "$ledger_sha" ]] || continue
+    if [[ "${ver}" == "${plugin}@${ledger_sha}" ]]; then
+      enterprise_e2e_record_row_pass_at_install_version "$row" "$ledger"
+      return 0
+    fi
+  done
+  return 1
+}
+
+enterprise_e2e_matrix_should_skip_row_at_version() {
+  local row="$1"
+  [[ "${SB_E2E_MATRIX_FORCE_ALL:-}" == "1" ]] && return 1
+  if declare -f enterprise_e2e_row_pass_registry_should_skip >/dev/null 2>&1; then
+    enterprise_e2e_row_pass_registry_should_skip "$row"
+    return $?
+  fi
+  enterprise_e2e_row_passed_at_install_version "$row"
+}
+
 enterprise_e2e_assert_no_auth_mutations() {
   local script="$1"
   if grep -vE '^[[:space:]]*#' "$script" 2>/dev/null | grep -qE 'claude auth (login|logout)|claude /logout|setup-token|/login|/logout'; then
@@ -492,13 +726,18 @@ enterprise_e2e_run_install_claude() {
   local pid deadline
   [[ -n "$sb_root" && -d "$sb_root" ]] || return 1
   enterprise_e2e_prepend_harness_path
+  if grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
+    echo "Plugin install (cached — see ${log}):"
+    tail -2 "$log" || true
+    return 0
+  fi
   echo "Plugin install (latest SB checkout):"
   if [[ -t 1 && -t 0 ]]; then
     (cd "$sb_root" && bash scripts/install-claude.sh)
     return $?
   fi
   : >"$log"
-  pid="$(sb_run_detached --log "$log" -- bash -c "cd $(printf '%q' "$sb_root") && exec bash scripts/install-claude.sh </dev/null")"
+  pid="$(sb_run_detached_pty --log "$log" -- bash -c "cd $(printf '%q' "$sb_root") && exec bash scripts/install-claude.sh </dev/null")"
   deadline=$((SECONDS + 300))
   while (( SECONDS < deadline )); do
     if grep -qE 'Claude marketplaces registered|Claude marketplace refreshed' "$log" 2>/dev/null; then
@@ -655,9 +894,35 @@ PY
 
 
 
+
+# Pin SB plugin routing/state under isolated CLAUDE_CONFIG_DIR (honest R9 matrix).
+enterprise_e2e_apply_isolated_claude_runtime_paths() {
+  [[ "${SB_E2E_ISOLATED_CLAUDE_CONFIG:-}" == "1" ]] || return 0
+  [[ -n "${CLAUDE_CONFIG_DIR:-}" ]] || return 0
+  local config_root="$CLAUDE_CONFIG_DIR"
+  if [[ -d "${config_root}/.claude" ]]; then
+    export SB_RUNTIME_HOME_ROOT="${config_root}/.claude"
+  else
+    export SB_RUNTIME_HOME_ROOT="${config_root}"
+  fi
+  export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  mkdir -p "$SB_RUNTIME_STATE_DIR"
+  # Hook audit + state guards only accept state-scoped paths (runtime-paths.sh).
+  if [[ -n "${SB_RUNTIME_EXTRA_STATE_ROOTS:-}" ]]; then
+    case ":${SB_RUNTIME_EXTRA_STATE_ROOTS}:" in
+      *":${SB_RUNTIME_STATE_DIR}:"*) ;;
+      *) export SB_RUNTIME_EXTRA_STATE_ROOTS="${SB_RUNTIME_EXTRA_STATE_ROOTS}:${SB_RUNTIME_STATE_DIR}" ;;
+    esac
+  else
+    export SB_RUNTIME_EXTRA_STATE_ROOTS="${SB_RUNTIME_STATE_DIR}"
+  fi
+}
+
 enterprise_e2e_export_live_defaults() {
   enterprise_e2e_prepend_harness_path
   enterprise_e2e_apply_matrix_host_defaults
+  enterprise_e2e_apply_isolated_claude_runtime_paths
   export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
   export SB_E2E_MATRIX_DRY_RUN="${SB_E2E_MATRIX_DRY_RUN:-}"
   unset SB_E2E_MATRIX_DRY_RUN 2>/dev/null || true

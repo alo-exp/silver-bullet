@@ -1,5 +1,23 @@
 # Cherry-pick log — enterprise E2E round 6
 
+## 2026-07-02 — wire row-pass registry after cursor cherry-pick
+
+| Field | Value |
+|-------|-------|
+| Fix | `fix(e2e): wire row-pass registry after cursor cherry-pick` |
+| main base | `6f86e144` (cherry-pick Cursor strict-clean harness) |
+| Files | `tests/scripts/test-claude-agent-surface-isolation.sh`, `docs/testing/outcome-criteria-registry.json`, `.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md` |
+
+**Why:** Cherry-pick `6f86e144` wired structural checks for `test-claude-agent-surface-isolation.sh` and OUT-SURFACE-01 scoring in `enterprise-e2e-outcome-assessment.sh` but omitted the test script and registry/rubric entry (27/28 criteria). `test-outcome-assessment.sh` failed 84/86.
+
+**Verify:**
+
+```bash
+bash tests/scripts/test-outcome-assessment.sh          # 87/87
+bash tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh  # 184/184
+bash tests/scripts/test-enterprise-e2e-test-app-branch.sh       # 21/21
+```
+
 ## 2026-06-30 — routing-only row 1 outcome scoring
 
 | Field | Value |

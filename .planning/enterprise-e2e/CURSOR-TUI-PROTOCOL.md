@@ -62,7 +62,7 @@ export SB_E2E_LIVE_TEST_LOCK_FILE="$SB_ROOT/.e2e-live-test-cursor.lock"
 
 | Env | Default | Purpose |
 |-----|---------|---------|
-| `CURSOR_AGENT_TIMEOUT` | 900 | Row hard timeout (adapter) |
+| `CURSOR_AGENT_TIMEOUT` | 1800 | Row hard timeout (adapter; matrix enforces ≥1800 for cursor — E2E-087/E2E-092) |
 | `SB_E2E_WORKFLOW_QUIET_TIMEOUT` | 600 | Workflow rows quiet window |
 | `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL` | 60 | Rate-limit backoff |
 
