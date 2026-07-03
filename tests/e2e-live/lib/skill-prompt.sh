@@ -51,9 +51,15 @@ matrix_row11_product_commit_clause() {
   printf '§5b row 11 gate: add environment variable validation in Terraform (infra/ or terraform/ source change + tests if present). Parent orchestrator MUST execute silver-devops workers — do NOT exit after audit-only workflow markdown. Require ≥1 git commit on fixture branch %s touching infra/ or terraform/; then create .planning/workflows/devops-terraform-validation.md. Ending with 0 commits, planning-only commits, or workflow-evidence without IaC fixture commit FAIL.' "$branch"
 }
 
+# Row 11 devops outcome — OUT-BLAST-01, OUT-PLAN-01, workflow evidence.
+matrix_row11_outcome_clause() {
+  printf 'Devops outcome gate (mandatory): create .planning/workflows/devops-terraform-validation.md documenting Terraform environment variable validation and blast-radius / IaC impact (keywords: blast radius, terraform validation, environment variable). Update infra/terraform/main.tf (or terraform/) with env var validation and git-commit on fixture branch. Parent orchestrator MUST run silver-devops workers to completion (OUT-HOOK-01); end with Workflow complete — no Stop hook blocks. Missing devops-terraform-validation.md or BLAST evidence FAILs OUT-BLAST-01 OUT-WORLD-01. Issue SB OVERRIDE if planning-file-guard blocks evidence writes.'
+}
+
+
 # Row 3 outcome methodology — scored by OUT-PLAN-01, OUT-GATES-01, OUT-TRACE-01, OUT-VLOOP-01.
 matrix_row3_outcome_clause() {
-  printf 'Outcome methodology gate (mandatory, strict order): BEFORE any api/ product code edits — (1) create .planning/CLARIFY.md with locked decisions (must include decision_class locked), git-commit on fixture branch; (2) create .planning/PLAN-*.md, .planning/*SPEC*, .planning/QUALITY-GATES-*.md, .planning/VALIDATION-*.md, git-commit. Then implement orders API currency under api/ (source + tests) and git-commit. Finally update .planning/workflows/feature-currency.md (post-exec-gates in Flow Log) and commit. Zero fixture git commits or workflow-evidence-only FAILs OUT-PLAN-01 OUT-CLARIFY-01 OUT-WORLD-01 OUT-GATES-01 OUT-TRACE-01 OUT-VLOOP-01. Issue SB OVERRIDE if planning-file-guard blocks .planning writes.'
+  printf 'Outcome methodology gate (mandatory, strict order): BEFORE any api/ product code edits — (1) create .planning/CLARIFY.md with locked decisions (must include decision_class locked), git-commit on fixture branch; (2) create .planning/PLAN-*.md, .planning/*SPEC*, .planning/QUALITY-GATES-*.md, .planning/VALIDATION-*.md, git-commit. Then implement orders API currency under api/ (source + tests) and git-commit. Finally update .planning/workflows/feature-currency.md (post-exec-gates in Flow Log) and commit — Flow Log MUST document any implementation deviation, drift, and course-correct realignment (OUT-DRIFT-01). Parent orchestrator MUST spawn delegated silver-feature workers to completion (OUT-HOOK-01 / OUT-HEAL-01); do not end on hook blocks — run hook-delivery preflight and finish with an explicit Workflow complete line in the session. Zero fixture git commits or workflow-evidence-only FAILs OUT-PLAN-01 OUT-CLARIFY-01 OUT-WORLD-01 OUT-GATES-01 OUT-TRACE-01 OUT-VLOOP-01 OUT-DRIFT-01. Issue SB OVERRIDE if planning-file-guard blocks .planning writes.'
 }
 
 # Row 3 outcome-only rerun — product frozen; planning artifacts only.
