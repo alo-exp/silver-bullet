@@ -342,6 +342,10 @@ sb_orchestrator_parent_bash_allowed() {
     return $?
   fi
 
+  if [[ "$command_str" == *agent-codex-delegate.sh* ]]; then
+    return 0
+  fi
+
   local _tool_input_lib
   _tool_input_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/tool-input.sh"
   if [[ -f "$_tool_input_lib" ]]; then
@@ -364,7 +368,7 @@ sb_orchestrator_parent_skill_allowed() {
     canonical="${canonical//:/-}"
   fi
   case "$canonical" in
-    silver|silver-orchestrator) return 0 ;;
+    silver|silver-orchestrator|silver-agent-codex) return 0 ;;
     *) return 1 ;;
   esac
 }
