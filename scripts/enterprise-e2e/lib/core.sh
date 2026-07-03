@@ -129,6 +129,49 @@ enterprise_e2e_row_requires_product_commit() {
   esac
 }
 
+
+# Rows 6/11 matrix §5b — require rev-list count from test-app baseline to increase during the row.
+enterprise_e2e_row_uses_matrix_baseline_rev_gate() {
+  local row_num="${1:-}"
+  case "$row_num" in
+    6|11) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+enterprise_e2e_fixture_baseline_rev_count() {
+  local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
+  local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  [[ -n "$baseline" ]] || { printf '0'; return 1; }
+  git -C "$fixture_dir" rev-list --count "${baseline}..HEAD" 2>/dev/null || printf '0'
+}
+
+enterprise_e2e_assert_row_matrix_baseline_rev_increase() {
+  local row_num="${1:-}"
+  local count_before="${2:-0}"
+  local fixture_dir="${3:-$(enterprise_e2e_fixture_dir)}"
+  [[ "${SB_E2E_PRODUCT_WORK_GATE:-1}" == "1" ]] || return 0
+  enterprise_e2e_row_uses_matrix_baseline_rev_gate "$row_num" || return 0
+  enterprise_e2e_row_requires_product_commit "$row_num" || return 0
+  if enterprise_e2e_row_outcome_only_rerun "$row_num"; then
+    return 0
+  fi
+  local baseline="${SB_E2E_TEST_APP_BASELINE_SHA:-}"
+  local count_after head_now
+  if [[ -z "$baseline" ]]; then
+    echo "  FAIL: §5b matrix baseline gate — SB_E2E_TEST_APP_BASELINE_SHA unset (row ${row_num})" >&2
+    return 1
+  fi
+  count_after="$(enterprise_e2e_fixture_baseline_rev_count "$fixture_dir")"
+  head_now="$(enterprise_e2e_fixture_head_snapshot "$fixture_dir")"
+  if [[ "${count_after:-0}" -le "${count_before:-0}" ]]; then
+    echo "  FAIL: §5b matrix baseline gate — rev-list --count ${baseline:0:12}..HEAD did not increase (${count_before} → ${count_after}; HEAD ${head_now:0:12}; row ${row_num})" >&2
+    return 1
+  fi
+  echo "  §5b matrix baseline gate row ${row_num}: ${baseline:0:12}..HEAD count ${count_before} → ${count_after} (HEAD ${head_now:0:12})"
+  return 0
+}
+
 enterprise_e2e_fixture_head_snapshot() {
   local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
   git -C "$fixture_dir" rev-parse HEAD 2>/dev/null || true
