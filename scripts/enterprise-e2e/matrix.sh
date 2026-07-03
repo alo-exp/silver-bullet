@@ -523,8 +523,13 @@ run_matrix_row() {
   esac
   local attempt=0 quota_retries=0 row_log output routing_row_env="0"
   local fixture_head_before=""
+  local fixture_baseline_rev_before=0
   if enterprise_e2e_row_requires_product_commit "$row_num"; then
     fixture_head_before="$(enterprise_e2e_fixture_head_snapshot "$FIXTURE_DIR")"
+  fi
+  if enterprise_e2e_row_uses_matrix_baseline_rev_gate "$row_num"; then
+    fixture_baseline_rev_before="$(enterprise_e2e_fixture_baseline_rev_count "$FIXTURE_DIR")"
+    echo "  §5b row ${row_num} start: baseline ${SB_E2E_TEST_APP_BASELINE_SHA:-unset} rev-count=${fixture_baseline_rev_before} HEAD=${fixture_head_before:0:12}"
   fi
   if [[ "$row_num" == "1" ]]; then
     routing_row_env="1"
@@ -606,6 +611,17 @@ run_matrix_row() {
       fi
       # §5b early gate: fail planning-only rows before outcome scorer awards partial credit.
       if enterprise_e2e_row_requires_product_commit "$row_num"; then
+        if ! enterprise_e2e_assert_row_matrix_baseline_rev_increase "$row_num" "$fixture_baseline_rev_before" "$FIXTURE_DIR"; then
+          echo "  FAIL: §5b matrix baseline rev gate (early — no commit since row start)"
+          FAIL_ROWS=$((FAIL_ROWS + 1))
+          row_telemetry_result="fail"
+          SB_E2E_TELEMETRY_ROW="$row_num" \
+            SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+            SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+            SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+            enterprise_e2e_telemetry_append "matrix_row" || true
+          break
+        fi
         if ! enterprise_e2e_assert_row_product_commit_delta "$row_num" "$fixture_head_before" "$FIXTURE_DIR"; then
           echo "  FAIL: §5b product delta (early gate — evidence without fixture commit)"
           FAIL_ROWS=$((FAIL_ROWS + 1))
@@ -653,6 +669,16 @@ run_matrix_row() {
         echo "  OUTCOMES: all applicable criteria pass (OUT-WORLD-01 composite)"
       fi
       if ! enterprise_e2e_fixture_assert_branch_lock "$FIXTURE_DIR" "post-invoke fixture branch (row ${row_num})"; then
+        FAIL_ROWS=$((FAIL_ROWS + 1))
+        row_telemetry_result="fail"
+        SB_E2E_TELEMETRY_ROW="$row_num" \
+          SB_E2E_TELEMETRY_ROW_SLUG="$slug" \
+          SB_E2E_TELEMETRY_ROW_RESULT="$row_telemetry_result" \
+          SB_E2E_TELEMETRY_ROW_LOG="$row_log" \
+          enterprise_e2e_telemetry_append "matrix_row" || true
+        break
+      fi
+      if ! enterprise_e2e_assert_row_matrix_baseline_rev_increase "$row_num" "$fixture_baseline_rev_before" "$FIXTURE_DIR"; then
         FAIL_ROWS=$((FAIL_ROWS + 1))
         row_telemetry_result="fail"
         SB_E2E_TELEMETRY_ROW="$row_num" \
