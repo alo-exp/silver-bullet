@@ -70,4 +70,5 @@ Every implement row (2–14, 16–20) **must** satisfy **all** of:
 | Conflicts | **None** |
 | Post-merge tests | `test-enterprise-e2e-matrix-force.sh` **7/7**; `test-outcome-assessment.sh` **67/68** (pre-existing E2E-096 row 10 on codex base) |
 | Release / tag | **None** — user directive: no further E2E round |
+| Pre-release validation harness | **FAIL** @ `6aebf12d` — [.codex-prerelease-validation.log](./.codex-prerelease-validation.log) (5050/5057 run-all-tests; Tier A structural; test-app baseline `8482e60`) |
 | CI on `main` | **FAIL** (pre-existing shellcheck @ `ba77d1b0`); Secret Scan **PASS** @ `a968dd0a` |
