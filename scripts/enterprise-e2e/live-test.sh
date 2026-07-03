@@ -228,16 +228,20 @@ export SB_E2E_MATRIX_LOG="$MATRIX_LOG"
 if ((${#MATRIX_ARGS[@]} > 0)); then
   export SB_E2E_MATRIX_ROWS="${MATRIX_ARGS[*]}"
 fi
-start_harness_background \
-  "matrix-monitor" \
-  "monitor-enterprise-e2e-matrix.sh" \
-  "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
-  "$MONITOR_PID_FILE"
-start_harness_background \
-  "tui-watch" \
-  "watch-enterprise-e2e-tui.sh" \
-  "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
-  "$WATCH_PID_FILE"
+if [[ "${SB_E2E_MATRIX_MONITOR:-1}" != "0" ]]; then
+  start_harness_background \
+    "matrix-monitor" \
+    "monitor-enterprise-e2e-matrix.sh" \
+    "${SB_ROOT}/scripts/monitor-enterprise-e2e-matrix.sh" \
+    "$MONITOR_PID_FILE"
+  start_harness_background \
+    "tui-watch" \
+    "watch-enterprise-e2e-tui.sh" \
+    "${SB_ROOT}/scripts/watch-enterprise-e2e-tui.sh" \
+    "$WATCH_PID_FILE"
+else
+  echo "matrix-monitor: skipped (SB_E2E_MATRIX_MONITOR=0)"
+fi
 
 echo ""
 enterprise_e2e_ensure_matrix_log "$MATRIX_LOG"
@@ -263,7 +267,7 @@ fi
   env -u SB_E2E_MATRIX_DRY_RUN \
     SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0 \
     SB_E2E_MATRIX_CLEAN_ENV=0 \
-    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=arrow \
+    CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY="${CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY:-keys}" \
     SB_E2E_MATRIX_FORCE="${SB_E2E_MATRIX_FORCE:-}" \
     SB_E2E_MATRIX_FORCE_ALL="${SB_E2E_MATRIX_FORCE_ALL:-}" \
     SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE_DIR" \
