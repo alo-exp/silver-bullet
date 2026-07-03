@@ -182,3 +182,36 @@ enterprise_e2e_row_pass_registry_complete() {
   count="$(enterprise_e2e_row_pass_registry_pass_count)"
   [[ "${count:-0}" -ge 22 ]]
 }
+
+# True when the latest "=== Row N:" slice in matrix/pilot log shows pass (not first slice).
+enterprise_e2e_pilot_log_row_passed() {
+  local n="${1:?row number}"
+  local log_file="${2:?log path}"
+  local slice
+  slice="$(awk -v n="$n" '
+    /^=== Row [0-9]+:/ {
+      rid = $0
+      sub(/^=== Row /, "", rid)
+      sub(/:.*$/, "", rid)
+      if (rid == n) { buf = ""; collecting = 1 }
+      else if (collecting) { collecting = 0 }
+      next
+    }
+    /^=== PILOT row/ {
+      if (collecting) { collecting = 0 }
+      next
+    }
+    collecting { buf = buf $0 ORS }
+    END { printf "%s", buf }
+  ' "$log_file" 2>/dev/null || true)"
+  if printf '%s\n' "$slice" | grep -q "  FAIL:"; then
+    return 1
+  fi
+  if printf '%s\n' "$slice" | grep -q "OUTCOMES: all applicable criteria pass"; then
+    return 0
+  fi
+  if printf '%s\n' "$slice" | grep -q "  PASS: evidence at"; then
+    return 0
+  fi
+  return 1
+}
