@@ -19,16 +19,14 @@ matrix_route_prompt() {
 matrix_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
-  printf '§5b product gate: implement real product code (not planning-only) and git-commit on fixture branch %s before ending — evidence without a fixture commit FAILs the row.' \
-    "$branch"
+  printf '§5b product gate: implement real product code (not planning-only) and git-commit on fixture branch %s before ending — evidence without a fixture commit FAILs the row.' "$branch"
 }
 
 # Row 3 Codex: require api/currency implementation commits, not planning stubs or docs-only.
 matrix_row3_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
-  printf '§5b row 3 gate: after CLARIFY+PLAN commits, implement orders API currency field under api/ (source + tests). Parent orchestrator MUST spawn silver-feature workers — do NOT exit after queuing the prompt or writing planning-only evidence. Require ≥1 git commit on fixture branch %s touching api/ or tests; ending with 0 commits or docs/planning-only commits FAIL.' \
-    "$branch"
+  printf '§5b row 3 gate: after CLARIFY+PLAN commits, implement orders API currency field under api/ (source + tests). Parent orchestrator MUST spawn silver-feature workers — do NOT exit after queuing the prompt or writing planning-only evidence. Require ≥1 git commit on fixture branch %s touching api/ or tests; ending with 0 commits or docs/planning-only commits FAIL.' "$branch"
 }
 
 
@@ -36,24 +34,21 @@ matrix_row3_product_commit_clause() {
 matrix_row1_evidence_clause() {
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
   local state_hint="${SB_RUNTIME_STATE_DIR:-${CLAUDE_CONFIG_DIR:-}/.silver-bullet}"
-  printf '§5b row 1 gate: routing-only — invoke /silver silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.claude/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.'
-    "$branch" "$state_hint"
+  printf '§5b row 1 gate: routing-only — invoke /silver silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.claude/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.' "$branch" "$state_hint"
 }
 
 # Row 6 fast path — README product fix + workflow evidence.
 matrix_row6_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
-  printf '§5b row 6 gate: fix README install instructions (real README.md or docs/ change, not planning-only). Parent orchestrator MUST execute silver-fast workers. Git-commit product README fix on fixture branch %s AND create .planning/workflows/fast-readme.md; ending with workflow evidence only or 0 commits FAIL.'
-    "$branch"
+  printf '§5b row 6 gate: fix README install instructions (real README.md or docs/ product change — not planning-only). Parent orchestrator MUST execute silver-fast workers — do NOT exit after queuing the prompt or writing .planning/workflows/fast-readme.md alone. Require ≥1 git commit on fixture branch %s touching README.md or docs/ (install instructions); then create .planning/workflows/fast-readme.md. Ending with 0 commits, docs/planning-only commits, or workflow-evidence-only FAIL.' "$branch"
 }
 
 # Row 11 devops — Terraform/env validation product delta.
 matrix_row11_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
-  printf '§5b row 11 gate: add environment variable validation in Terraform (infra/ or terraform/ source change + tests if present). Parent orchestrator MUST execute silver-devops workers. Git-commit IaC/product change on fixture branch %s AND .planning/workflows/devops-terraform-validation.md; audit-only workflow markdown without fixture commit FAIL.'
-    "$branch"
+  printf '§5b row 11 gate: add environment variable validation in Terraform (infra/ or terraform/ source change + tests if present). Parent orchestrator MUST execute silver-devops workers — do NOT exit after audit-only workflow markdown. Require ≥1 git commit on fixture branch %s touching infra/ or terraform/; then create .planning/workflows/devops-terraform-validation.md. Ending with 0 commits, planning-only commits, or workflow-evidence without IaC fixture commit FAIL.' "$branch"
 }
 
 # Row 3 outcome methodology — scored by OUT-PLAN-01, OUT-GATES-01, OUT-TRACE-01, OUT-VLOOP-01.
