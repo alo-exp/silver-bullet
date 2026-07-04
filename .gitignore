@@ -35,6 +35,8 @@ docs/sessions/
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/
 tests/test-app/.planning/
+.planning/agent-codex/
+.planning/agent-codex-smoke/
 tests/test-app/.silver-bullet.json
 tests/forge-test-app/node_modules/
 tests/test-app/silver-bullet.md
