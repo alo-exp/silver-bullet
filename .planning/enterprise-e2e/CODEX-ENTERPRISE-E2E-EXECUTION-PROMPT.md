@@ -1,4 +1,4 @@
-# Codex Host — Enterprise E2E Fresh Session Execution Prompt (v3 — Codex-4 REAL)
+# Codex Host — Enterprise E2E Fresh Session Execution Prompt (v4 — single-round release candidate)
 
 **Canonical methodology:** [ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md) — **read this first**; this prompt is the Codex operator companion, not a substitute.
 
@@ -6,7 +6,7 @@
 
 **Host identity:** OpenAI **Codex TUI** (`codex` CLI) — `$silver:*` slash skills, `codex-interactive-invoke.*` harness.
 
-**Status (2026-07-04):** Codex-1 and Codex-2 are **void** for product certification (pre-seeded baseline). Codex-3 REAL is **1/2** honest product. **Round Codex-4** is the next required round for 2/2 product release pair.
+**Status (2026-07-04):** Codex-1 and Codex-2 are **void** for product certification (pre-seeded baseline). **Codex-3 REAL** @ `f9ed398f` is **CLOSED Pass** and satisfies **single-round release candidate sign-off** ([Appendix F](../../docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md#appendix-f--release-candidate-sign-off-status--codex-host)). **Codex-4 was not executed** — run a new round only when re-certifying a **new** `install_fp` (post-merge sibling session).
 
 **Cross-links:**
 
@@ -20,20 +20,22 @@
 
 ## Mission
 
-Deliver **Round Codex-4 REAL** — the **second** honest product certification round (2/2 release pair) on the Codex host track.
+**Default:** Codex host product certification is **already signed off** via Codex-3 REAL — do **not** start Codex-4 unless re-certifying a **new release candidate** `install_fp` (harness merge, surface hash change, or §11b post-merge sibling session).
 
-**SB git branch:** Harness is merged to **`main`** (post Codex-3 closure). Run matrix drivers from `main` @ current HEAD. Optional: create `enterprise-e2e/codex-round4` for ledger-only commits; cherry-pick verified fixes to `main` per cherry-pick policy.
+**When re-cert is required:** Deliver one strict-clean round @ the new `install_fp` — ladder 8/8 + matrix 22/22 live + §5b product audit + outcome PASS + Phase C green (methodology §3).
+
+**SB git branch:** Harness is on **`main`**. Run matrix drivers from `main` @ current HEAD. Optional: create `enterprise-e2e/codex-roundN` for ledger-only commits; cherry-pick verified fixes to `main` per cherry-pick policy.
 
 **Honest baseline (mandatory):** `09f8d1a` on fixture branch `enterprise-e2e/round-N-codex` — **never** `8482e60`/`826cb5c` pre-seed for product rounds.
 
 ```bash
 export SB_E2E_TEST_APP_BASELINE_SHA=09f8d1a
 export SB_E2E_PRODUCT_WORK_GATE=1
-export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-10-codex   # or next round-N-codex
+export SB_E2E_TEST_APP_BRANCH=enterprise-e2e/round-N-codex   # next round only when re-certing
 export SB_E2E_BRANCH=main
 ```
 
-**Driver template:** `bash .planning/enterprise-e2e/codex-r4-real-driver.sh 1 3 6` (Tier B) then full 22.
+**Driver template (re-cert only):** `bash .planning/enterprise-e2e/codex-r4-real-driver.sh 1 3 6` (Tier B) then full 22 — or reuse `codex-r3-real-driver.sh` pattern with new ledger.
 
 **Strict-clean** = ALL of:
 
@@ -407,33 +409,28 @@ bash scripts/lib/enterprise-e2e-ledger-reconcile.sh .e2e-matrix-codex-live.log
 SB_E2E_RCS_TRIHOST=full SB_E2E_RCS_VALIDATION_OVERLAY=pass RTK_DISABLED=1 bash scripts/enterprise-e2e-rcs.sh
 ```
 
-**Release pair:** Round Codex-1 strict-clean + Round Codex-2 strict-clean (consecutive) before Codex host release sign-off.
+**Release candidate gate:** One strict-clean round @ release candidate `install_fp` satisfies Codex host sign-off. Codex-3 REAL @ `f9ed398f` is the canonical certifying round — see [ROUND-CODEX-3-GATES.md](./ROUND-CODEX-3-GATES.md) and methodology Appendix F.
 
 ---
 
-## Two-round release gate (Codex host)
+## Single-round release candidate gate (Codex host)
 
-**Do not tag or sign off** until **both** rounds are strict-clean **back-to-back** (Round Codex-2 immediately follows a strict-clean Round Codex-1 — no intervening dirty round or skipped Phase A–C).
+**Do not tag or sign off** a **new** SB release candidate until **one** strict-clean round passes all gates @ that candidate's `install_fp`:
 
-| Step | Action |
-|------|--------|
-| 1 | Complete **Round Codex-1** Phases A → B → C; set `Round clean? = Pass` in [ROUND-CODEX-1-LEDGER.md](./ROUND-CODEX-1-LEDGER.md). |
-| 2 | Update [ROUND-CODEX-1-GATES.md](./ROUND-CODEX-1-GATES.md): all gates green including **2 consecutive strict clean rounds = PENDING (1/2)**. |
-| 3 | **Fresh Round Codex-2:** copy ledger template → [ROUND-CODEX-2-LEDGER.md](./ROUND-CODEX-2-LEDGER.md); reset matrix log (archive Codex-1 log); re-run **full** Phase A (ladder 8/8 × 2 verify) + Phase B (22/22) + Phase C. |
-| 4 | Pin `SB_E2E_LEDGER_FILE=.planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md` for Round 2 only. |
-| 5 | After Round Codex-2 strict-clean: update [ROUND-CODEX-2-GATES.md](./ROUND-CODEX-2-GATES.md) — **2 consecutive strict clean rounds = PASS (2/2)**. |
-| 6 | **Release readiness:** both gate files show Round N strict-clean + consecutive pair PASS; RCS ≥ 85 with `SB_E2E_RCS_TRIHOST=full`; pre-release overlay dry-run green. |
+| Gate | Requirement |
+|------|-------------|
+| Tier A | All structural checks green (§3) |
+| Tier B | Live smoke rows **1, 3, 6** PASS |
+| Phase A | review-fix-ladder **8/8** |
+| Phase B | Matrix **22/22** live + §5b per row |
+| Phase C | `test-outcome-assessment.sh`, `run-all-tests.sh`, overlays, ledger reconcile, RCS ≥ 85 |
+| Product audit | Host-specific `*-TEST-APP-PRODUCT-AUDIT.md` — committed deltas on honest `09f8d1a` baseline |
 
-**Failure between rounds:** If Round Codex-2 is not strict-clean, the pair resets — fix SB, re-run Round Codex-2 from Phase A (do not claim release until a **new** consecutive pair completes).
+**Codex-3 REAL (closed):** All gates **PASS** @ `f9ed398f` — [ROUND-CODEX-3-LEDGER.md](./ROUND-CODEX-3-LEDGER.md). No Codex-4 required under current policy.
 
-**Cross-round check:**
+**Re-cert trigger:** New `install_fp` after `install-codex.sh` on updated `main` — re-run full Phase A→C; prior Codex-3 PASS does **not** carry forward.
 
-```bash
-RTK_DISABLED=1 bash scripts/lib/enterprise-e2e-consecutive-rounds-check.sh --host codex
-# Or on live-test exit: SB_E2E_REQUIRE_CONSECUTIVE_ROUNDS=1
-```
-
-Harness does **not** auto-enforce the pair — operator + gate files are authoritative ([ROUND-N-GATES.md](./ROUND-N-GATES.md) row **2 consecutive strict clean rounds**).
+**Deprecated:** 2/2 consecutive strict-clean pair (Codex-1 + Codex-2 model) — superseded 2026-07-04. `enterprise-e2e-consecutive-rounds-check.sh` remains for historical Cursor tracks only.
 
 ---
 

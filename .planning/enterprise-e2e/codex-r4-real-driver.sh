@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Round Codex-4 REAL live driver — §5a/§5b honest product certification (2/2 release pair).
+# Round Codex-4 REAL live driver — optional re-cert @ new install_fp (NOT required for sign-off; Codex-3 REAL is canonical).
 # Usage:
 #   bash .planning/enterprise-e2e/codex-r4-real-driver.sh 1 3 6
 #   bash .planning/enterprise-e2e/codex-r4-real-driver.sh 1 2 3 ... 22
