@@ -180,6 +180,10 @@ agent_invoke() {
     hook_trust_bypass="${SB_LIVE_CODEX_BYPASS_HOOK_TRUST:-1}"
     auto_trust_hooks="${SB_LIVE_CODEX_AUTO_TRUST_HOOKS:-1}"
   fi
+  if [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-0}" == "1" || "${SB_AGENT_CODEX_DELEGATE:-0}" == "1" ]]; then
+    hook_trust_bypass="${CODEX_BYPASS_HOOK_TRUST:-1}"
+    auto_trust_hooks="${CODEX_AUTO_TRUST_HOOKS:-1}"
+  fi
   if [[ "${CODEX_AUTO_TRUST_HOOKS:-}" == "1" ]]; then
     auto_trust_hooks=1
     hook_trust_bypass=1
@@ -224,6 +228,11 @@ agent_invoke() {
       cd "$WORK_DIR" && \
         CODEX_EXEC_CLI="$cli" \
         CODEX_EXEC_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}" \
+        SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-}" \
+        SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-}" \
+        SB_AGENT_CODEX_DELEGATE="${SB_AGENT_CODEX_DELEGATE:-}" \
+        SB_AGENT_CODEX_LIGHTWEIGHT="${SB_AGENT_CODEX_LIGHTWEIGHT:-}" \
+        CODEX_HOME="${CODEX_HOME:-}" \
         python3 - "${exec_args[@]}" <<'PY'
 import os
 import subprocess
@@ -232,10 +241,22 @@ import sys
 cli = os.environ["CODEX_EXEC_CLI"]
 timeout = int(os.environ.get("CODEX_EXEC_TIMEOUT") or "300")
 args = [cli, *sys.argv[1:]]
+child_env = os.environ.copy()
+for key in (
+    "SB_ORCHESTRATOR_WORKER",
+    "SB_ORCHESTRATOR_PARENT",
+    "SB_AGENT_CODEX_DELEGATE",
+    "SB_AGENT_CODEX_LIGHTWEIGHT",
+    "CODEX_HOME",
+):
+    value = os.environ.get(key)
+    if value is not None:
+        child_env[key] = value
 
 try:
     result = subprocess.run(
         args,
+        env=child_env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
