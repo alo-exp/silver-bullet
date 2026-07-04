@@ -1,5 +1,6 @@
 {
   "atomic_flow_ids": [
+    "AF-AGENT-DELEGATE",
     "AF-BLAST-RADIUS",
     "AF-BOOTSTRAP",
     "AF-BRANCH-FINISH",
@@ -83,6 +84,45 @@
     "FS-ARTIFACT_REVIEW_ASSESSOR": [
       "AF-REVIEW"
     ],
+    "FS-DELEGATE-BRIEF": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CHECKPOINT": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CODEX-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CODEX-ROUTE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-ROUTE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-GUARD_OFF": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-GUARD_ON": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-MENTOR": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-RELAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-VERIFY": [
+      "AF-AGENT-DELEGATE"
+    ],
     "FS-DEVOPS_QUALITY_GATES": [
       "AF-QUALITY-GATE"
     ],
@@ -145,6 +185,12 @@
     ],
     "FS-SILVER_ADD": [
       "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_AGENT_CODEX": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_CURSOR": [
+      "AF-AGENT-DELEGATE"
     ],
     "FS-SILVER_BENCHMARK": [
       "AF-FAST-PATH"
@@ -337,6 +383,7 @@
     ]
   },
   "worker_templates": {
+    "AF-AGENT-DELEGATE": "templates/orchestrator-workers/AGENT-DELEGATE.md",
     "AF-BLAST-RADIUS": "templates/orchestrator-workers/BLAST-RADIUS.md",
     "AF-BOOTSTRAP": "templates/orchestrator-workers/BOOTSTRAP.md",
     "AF-BRANCH-FINISH": "templates/orchestrator-workers/BRANCH-FINISH.md",

@@ -4,6 +4,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/agent-delegate-common.sh
+source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
 
 usage() {
   cat <<'EOF'
@@ -37,29 +39,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$WORK_DIR" && -d "$WORK_DIR" ]] || {
-  printf 'ERROR: --work-dir must point to an existing directory\n' >&2
-  exit 2
-}
+agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
+agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
-  [[ -f "$BRIEF_FILE" ]] || { printf 'ERROR: brief file not found: %s\n' "$BRIEF_FILE" >&2; exit 2; }
-  [[ "$BRIEF_FILE" != /* ]] && BRIEF_FILE="$(cd "$(dirname "$BRIEF_FILE")" && pwd)/$(basename "$BRIEF_FILE")"
-  PROMPT_TEXT="$(cat "$BRIEF_FILE")"
-elif [[ -n "$PROMPT_FILE" ]]; then
-  [[ -f "$PROMPT_FILE" ]] || { printf 'ERROR: prompt file not found: %s\n' "$PROMPT_FILE" >&2; exit 2; }
-  [[ "$PROMPT_FILE" != /* ]] && PROMPT_FILE="$(cd "$(dirname "$PROMPT_FILE")" && pwd)/$(basename "$PROMPT_FILE")"
-  PROMPT_TEXT="$(cat "$PROMPT_FILE")"
+  BRIEF_FILE="$(agent_delegate_canonicalize_path "$BRIEF_FILE")"
+fi
+if [[ -n "$PROMPT_FILE" ]]; then
+  PROMPT_FILE="$(agent_delegate_canonicalize_path "$PROMPT_FILE")"
+fi
+if [[ -n "$LOG_FILE" ]]; then
+  LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
 
-[[ -n "$PROMPT_TEXT" ]] || {
-  printf 'ERROR: provide --prompt, --prompt-file, or --brief-file\n' >&2
-  exit 2
-}
-
-if [[ -n "$LOG_FILE" && "$LOG_FILE" != /* ]]; then
-  LOG_FILE="$(cd "$(dirname "$LOG_FILE")" && pwd)/$(basename "$LOG_FILE")"
-fi
+PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 
 AGENT_SH="${SB_ROOT}/tests/live/agents/cursor/agent.sh"
 [[ -f "$AGENT_SH" ]] || {
@@ -67,44 +60,10 @@ AGENT_SH="${SB_ROOT}/tests/live/agents/cursor/agent.sh"
   exit 1
 }
 
-unset SB_E2E_ENTERPRISE_MATRIX SB_E2E_LEDGER_FILE SB_E2E_MATRIX_BATCH_PID 2>/dev/null || true
-
 quota_retry_interval="${AGENT_CURSOR_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="${AGENT_CURSOR_QUOTA_RETRY_MAX:-5}"
 log_floor="${SB_AGENT_CURSOR_LOG_FLOOR:-2048}"
 attempt=0
-
-is_quota_error() {
-  local blob="$1"
-  grep -qiE '429|rate[[:space:]]*limit|token[[:space:]]*plan|quota' <<<"$blob"
-}
-
-redact_log_output() {
-  local blob="$1"
-  printf '%s' "$blob" | sed -E \
-    -e 's/(api[_-]?key|token|password|secret|authorization)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1=[REDACTED]/gi' \
-    -e 's/sk-[A-Za-z0-9_-]{8,}/sk-[REDACTED]/g' \
-    -e 's/ghp_[A-Za-z0-9]{20,}/ghp_[REDACTED]/g'
-}
-
-redact_log_file() {
-  local path="$1"
-  [[ -f "$path" ]] || return 0
-  local tmp
-  tmp="$(mktemp "${TMPDIR:-/tmp}/agent-cursor-log-XXXXXX")"
-  redact_log_output "$(cat "$path")" >"$tmp"
-  mv "$tmp" "$path"
-}
-
-agent_cursor_write_log_header() {
-  [[ -n "$LOG_FILE" ]] || return 0
-  mkdir -p "$(dirname "$LOG_FILE")"
-  {
-    printf '=== agent-cursor-delegate %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    printf 'work_dir=%s\nsb_root=%s\nattempt=%s\nmodel=%s\n\n' \
-      "$WORK_DIR" "$SB_ROOT" "$attempt" "${CURSOR_AGENT_MODEL:-composer-2.5}"
-  } >>"$LOG_FILE"
-}
 
 agent_cursor_apply_policy_env() {
   export SB_AGENT_CURSOR_DELEGATE=1
@@ -158,26 +117,24 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
 
   if [[ -n "$LOG_FILE" ]]; then
     : >"$LOG_FILE"
-    agent_cursor_write_log_header
+    agent_delegate_write_log_header "$LOG_FILE" "agent-cursor-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" \
+      "model=${CURSOR_AGENT_MODEL:-composer-2.5}"
   fi
 
   final_output="$(agent_cursor_invoke_once)" && final_exit=0 || final_exit=$?
 
   if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
-    redact_log_file "$LOG_FILE"
-    log_bytes="$(wc -c <"$LOG_FILE" | tr -d ' ')"
-    printf '[agent-cursor] log: %s (%s B)\n' "$LOG_FILE" "$log_bytes" >&2
-    if [[ "$log_bytes" -lt "$log_floor" ]]; then
-      printf '[agent-cursor] ERROR: log below floor (%s B < %s B) — failure_class=log-floor\n' \
-        "$log_bytes" "$log_floor" >&2
+    agent_delegate_redact_log_file "$LOG_FILE"
+    if ! agent_delegate_check_log_floor "$LOG_FILE" "$log_floor" "agent-cursor"; then
       final_exit=1
     fi
+    agent_delegate_write_log_footer "$LOG_FILE" "$final_exit" "$attempt" "agent-cursor-delegate"
   fi
 
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! is_quota_error "$final_output"; then
+  if ! agent_delegate_is_quota_error "$final_output"; then
     break
   fi
   if [[ "$attempt" -gt "$quota_retry_max" ]]; then
@@ -185,12 +142,6 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     break
   fi
 done
-
-if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
-  {
-    printf '\n=== agent-cursor-delegate complete exit=%s attempt=%s ===\n' "$final_exit" "$attempt"
-  } >>"$LOG_FILE"
-fi
 
 printf '%s' "$final_output"
 exit "$final_exit"

@@ -26,3 +26,4 @@
 | `WF-SILVER-TEST` | `specialized` | false | `atomic_flow:AF-PLAN`<br>`atomic_flow:AF-EXECUTE`<br>`atomic_flow:AF-VERIFY` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
 | `WF-SILVER-FORENSICS` | `specialized` | false | `atomic_flow:AF-DEBUG`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-VALIDATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
 | `WF-PROCESS-MAINTENANCE` | `specialized` | false | `atomic_flow:AF-PHASE-MANAGE`<br>`atomic_flow:AF-DOCUMENT`<br>`atomic_flow:AF-VALIDATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
+| `WF-AGENT-DELEGATE-ENTRY` | `specialized` | false | `atomic_flow:AF-AGENT-DELEGATE` | `prune`, `insert`, `substitute`, `parallelize`, `loop` |
