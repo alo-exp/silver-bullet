@@ -6,7 +6,7 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session.
 
 ## Gate
 
-Entire worker path requires **`SB_AGENT_DELEGATE_V2=1`** (session or env). When unset, stop and report that host must use legacy degraded path.
+Worker path is **default-on** (`SB_AGENT_DELEGATE_V2` unset → enabled). Set **`SB_AGENT_DELEGATE_V2=0`** to rollback; when disabled, stop and report that host must use legacy degraded path.
 
 ## Mandatory tooling (worker)
 

@@ -214,7 +214,15 @@ fi
 rm -rf "$FAKE_BIN"
 rm -rf "$WORK3" 2>/dev/null || true
 
-# Delegate wrapper: V2=1 requires DIRECT_FALLBACK for parent bash
+# Delegate wrapper: stage 6 requires DIRECT_FALLBACK (default-on V2)
+unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK
+if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp'; then
+  echo "FAIL: unset V2 must block direct delegate without fallback"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: unset V2 blocks direct delegate without fallback (default-on)"
+  PASS=$((PASS + 1))
+fi
 export SB_AGENT_DELEGATE_V2=1
 unset SB_AGENT_DELEGATE_DIRECT_FALLBACK
 if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp'; then

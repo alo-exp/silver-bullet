@@ -66,15 +66,15 @@ Legend: `P` pass · `F` fail
 | 25 | Delegation invariant (AF entity, worker skill/template, artifacts) | `check-apo-invariants.py agent-delegation-contract` | P | `AGENT-DELEGATE.md` + `silver-agent-worker` |
 | 26 | Delegate wrapper parity (matrix env clear, redaction, log floor) | `test-agent-delegate-common.sh` | P | `scripts/lib/agent-delegate-common.sh` |
 
-**Runtime flags (opt-in at flip):**
+**Runtime flags (stage 5 default-on):**
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `SB_AGENT_DELEGATE_V2` | unset (legacy) | When `1`, host skills use `AF-AGENT-DELEGATE` → `AGENT-DELEGATE` worker path |
+| `SB_AGENT_DELEGATE_V2` | on (unset → worker path) | Set `0` to rollback worker path; host skills use `AF-AGENT-DELEGATE` → `AGENT-DELEGATE` worker when enabled |
 | `SB_AGENT_DELEGATE_GUARD` | on when V2 active | Set `0` to disable active delegation guard hooks |
-| `SB_AGENT_DELEGATE_DIRECT_FALLBACK` | unset | When `1` (with V2), allows degraded direct wrapper Bash from parent orchestrator |
+| `SB_AGENT_DELEGATE_DIRECT_FALLBACK` | unset | When `1`, allows degraded direct wrapper Bash from parent orchestrator (emits `EV-DELEGATE-DEGRADED-FALLBACK`) |
 
-Rollback: set `SB_AGENT_DELEGATE_V2=0` for legacy routing; revert `migration_map` host skills to `AF-EXECUTE` only with full catalog revert. See `tests/scripts/test-agent-delegation-rollback.sh`.
+Rollback: set `SB_AGENT_DELEGATE_V2=0` for legacy worker-path routing; direct parent delegate Bash always requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or audited `SB OVERRIDE:` (stage 6). Revert `migration_map` host skills to `AF-EXECUTE` only with full catalog revert. See `tests/scripts/test-agent-delegation-rollback.sh`.
 
 ## How to execute
 
@@ -108,7 +108,7 @@ bash tests/scripts/test-canonical-alias-mapping.sh
 1. Read the skill's `SKILL.md` to classify intent (route, execute, verify, etc.).
 2. Confirm the target entity exists in `docs/apo-catalog.json` → `atomic_flows` or `workflows`.
 3. Add `"<skill-name>": "<AF-…>"` under `migration_map.skill_to_entity`.
-4. Cross-host delegation skills (`silver-agent-codex`, `silver-agent-cursor`) map to **`AF-AGENT-DELEGATE`** — canonical external-agent delegation AF (Phase 4 flip). `SB_AGENT_DELEGATE_V2=1` selects the native worker path; flag remains opt-in. See [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md).
+4. Cross-host delegation skills (`silver-agent-codex`, `silver-agent-cursor`) map to **`AF-AGENT-DELEGATE`** — canonical external-agent delegation AF (Phase 4 flip). `SB_AGENT_DELEGATE_V2` defaults on (stage 5); set `0` to rollback worker path. See [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md).
 5. Regenerate derived views: `python3 scripts/generate-apo-artifacts.py`
 6. Re-run: `bash scripts/run-apo-authoring-compliance.sh`
 
@@ -145,10 +145,15 @@ Commit both `docs/apo-catalog.json` and regenerated files under `docs/composable
 
 ## Audit log
 
+### 2026-07-05 — Stage 5/6 delegation default-on + whitelist tightening
+
+- **Changed:** `SB_AGENT_DELEGATE_V2` default-on when unset (`agent-delegation-state.sh`); `SB_AGENT_DELEGATE_V2=0` documented as rollback.
+- **Changed:** Stage 6 — removed unconditional parent delegate-wrapper allowlist; direct Bash only with `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or audited `SB OVERRIDE:`.
+- **Updated:** rollback test expectations + compliance flag docs.
+
 ### 2026-07-05 — Phase 4 delegation map flip
 
 - **Changed:** `migration_map.skill_to_entity` — `silver-agent-codex`, `silver-agent-cursor` → `AF-AGENT-DELEGATE` (was `AF-EXECUTE`).
-- **Kept:** `SB_AGENT_DELEGATE_V2` opt-in (not default-on).
 - **Added:** delegation contract rows (#24–26) to compliance suite.
 - **Regenerated:** catalog + derived views via `generate-apo-catalog.py` + `generate-apo-artifacts.py`.
 

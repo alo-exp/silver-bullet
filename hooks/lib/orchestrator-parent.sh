@@ -340,14 +340,9 @@ sb_orchestrator_parent_delegate_bash_allowed() {
     return 1
   fi
 
-  if [[ "${SB_AGENT_DELEGATE_V2:-0}" == "1" ]]; then
-    if [[ "${SB_AGENT_DELEGATE_DIRECT_FALLBACK:-0}" == "1" ]]; then
-      return 0
-    fi
-    return 1
-  fi
-
-  return 0
+  # Stage 6: direct parent delegate Bash only via degraded fallback (SB OVERRIDE bypasses at guard layer).
+  [[ "${SB_AGENT_DELEGATE_DIRECT_FALLBACK:-0}" == "1" ]] && return 0
+  return 1
 }
 
 # Parent may use Bash for Codex invoke-skill router adapter or read-only state inspection.

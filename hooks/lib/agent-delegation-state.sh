@@ -9,8 +9,9 @@ sb_agent_delegation_guard_disabled() {
   [[ "${SB_AGENT_DELEGATE_GUARD:-1}" == "0" ]]
 }
 
+# Default-on (stage 5): unset → V2 enabled. Explicit SB_AGENT_DELEGATE_V2=0 rolls back worker path.
 sb_agent_delegation_v2_enabled() {
-  [[ "${SB_AGENT_DELEGATE_V2:-0}" == "1" ]]
+  [[ "${SB_AGENT_DELEGATE_V2:-1}" != "0" ]]
 }
 
 sb_agent_delegation_is_active() {

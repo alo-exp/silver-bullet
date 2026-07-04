@@ -6,6 +6,8 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CATALOG="$REPO_ROOT/docs/apo-catalog.json"
 # shellcheck source=hooks/lib/orchestrator-parent.sh
 source "$REPO_ROOT/hooks/lib/orchestrator-parent.sh"
+# shellcheck source=hooks/lib/agent-delegation-state.sh
+source "$REPO_ROOT/hooks/lib/agent-delegation-state.sh"
 
 PASS=0
 FAIL=0
@@ -25,11 +27,22 @@ echo "=== agent-delegation rollback tests ==="
 
 command -v jq >/dev/null 2>&1 || { echo "SKIP: jq required"; exit 0; }
 
-# V2=0: legacy delegate bash allowed without fallback flag
+# Stage 5 default-on: unset V2 enables worker path
 unset SB_AGENT_DELEGATE_V2
+sb_agent_delegation_v2_enabled \
+  && check "unset V2 defaults worker path on" pass || check "unset V2 defaults worker path on" fail
+
+# Stage 6: direct delegate bash blocked without DIRECT_FALLBACK (any V2)
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=0
-sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
-  && check "V2=0 allows delegate bash" pass || check "V2=0 allows delegate bash" fail
+! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
+  && check "unset V2 blocks direct delegate without fallback" pass || check "unset V2 blocks direct delegate without fallback" fail
+
+# V2=0 rollback: worker path off; direct delegate still requires fallback (stage 6)
+export SB_AGENT_DELEGATE_V2=0
+! sb_agent_delegation_v2_enabled \
+  && check "V2=0 disables worker path (rollback)" pass || check "V2=0 disables worker path (rollback)" fail
+! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
+  && check "V2=0 blocks direct delegate without fallback" pass || check "V2=0 blocks direct delegate without fallback" fail
 
 # V2=1 without fallback: blocked
 export SB_AGENT_DELEGATE_V2=1

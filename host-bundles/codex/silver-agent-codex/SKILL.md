@@ -64,9 +64,11 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 ---
 
-## AF-AGENT-DELEGATE worker path (`SB_AGENT_DELEGATE_V2=1`)
+## AF-AGENT-DELEGATE worker path (default-on)
 
-When **`SB_AGENT_DELEGATE_V2=1`**, use the canonical delegation atomic flow instead of direct wrapper supervision:
+**`SB_AGENT_DELEGATE_V2`** defaults on (unset → worker path). Set **`SB_AGENT_DELEGATE_V2=0`** to rollback to legacy routing without the native worker gate.
+
+Use the canonical delegation atomic flow instead of direct wrapper supervision:
 
 1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
 2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=codex`, `task_id`, `brief_path`, ownership JSON).
@@ -74,7 +76,7 @@ When **`SB_AGENT_DELEGATE_V2=1`**, use the canonical delegation atomic flow inst
 4. Worker launches `agent-codex-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
 5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
 
-**Degraded fallback only:** direct `agent-codex-delegate.sh` from parent requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or audited `SB OVERRIDE:` (emits `EV-DELEGATE-DEGRADED-FALLBACK`). Not the happy path when V2=1.
+**Degraded fallback only:** direct `agent-codex-delegate.sh` from parent requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or audited `SB OVERRIDE:` (emits `EV-DELEGATE-DEGRADED-FALLBACK`). Not the happy path.
 
 ---
 
