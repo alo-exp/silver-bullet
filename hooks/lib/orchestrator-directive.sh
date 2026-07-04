@@ -290,3 +290,34 @@ sb_orchestrator_directive_from_pending_outcome() {
   esac
   sb_orchestrator_directive_write "$skill" "" "$reason" true
 }
+
+# Standalone on-demand delegation bootstrap (outside composer flow_queue).
+sb_orchestrator_seed_delegation_directive() {
+  local host="$1" task_id="$2" brief_path="$3" ownership_scope_json="${4:-[]}"
+  [[ "$host" == "codex" || "$host" == "cursor" ]] || return 1
+  [[ -n "$task_id" && -n "$brief_path" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  local skill args_json reason
+  skill="silver-agent-${host}"
+  args_json="$(jq -n \
+    --arg atomic_flow_id "AF-AGENT-DELEGATE" \
+    --arg host "$host" \
+    --arg task_id "$task_id" \
+    --arg brief_path "$brief_path" \
+    --argjson ownership_scope "$ownership_scope_json" \
+    '{atomic_flow_id:$atomic_flow_id,host:$host,task_id:$task_id,brief_path:$brief_path,ownership_scope:$ownership_scope}')"
+  reason="Delegation AF — spawn AGENT-DELEGATE worker for ${host}"
+
+  local lib_dir
+  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [[ -f "${lib_dir}/agent-delegation-state.sh" ]]; then
+    # shellcheck source=lib/agent-delegation-state.sh
+    source "${lib_dir}/agent-delegation-state.sh"
+    if declare -f sb_agent_delegation_activate >/dev/null 2>&1; then
+      sb_agent_delegation_activate "$host" "$task_id" "$(dirname "$brief_path")" "$ownership_scope_json" ""
+    fi
+  fi
+
+  sb_orchestrator_directive_write "$skill" "$args_json" "$reason" true "AGENT-DELEGATE"
+}
