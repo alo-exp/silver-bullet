@@ -12,7 +12,7 @@
 # Never uses macOS Keychain (cursor-user) or cursor-agent login/status.
 #
 # Usage:
-#   CURSOR_API_KEY=... RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
+#   CURSOR_API_KEY=... (or HOST_API_KEY=...) RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
 #   RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh --host cursor
 #
 # Claude host is skipped when claude CLI is unavailable (operator must run locally).
