@@ -113,6 +113,7 @@ resolve_silver_alias() {
     silver:blast-radius)        echo "silver-blast-radius" ;;
     silver:silver-blast-radius) echo "silver-blast-radius" ;;
     silver:agent-codex)         echo "silver-agent-codex" ;;
+    silver:agent-cursor)        echo "silver-agent-cursor" ;;
     silver:devops-skill-router) echo "devops-skill-router" ;;
     silver:devops-quality-gates) echo "devops-quality-gates" ;;
     silver:create-release)      echo "silver-create-release" ;;

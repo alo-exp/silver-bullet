@@ -342,7 +342,7 @@ sb_orchestrator_parent_bash_allowed() {
     return $?
   fi
 
-  if [[ "$command_str" == *agent-codex-delegate.sh* ]]; then
+  if [[ "$command_str" == *agent-codex-delegate.sh* || "$command_str" == *agent-cursor-delegate.sh* ]]; then
     return 0
   fi
 
@@ -368,7 +368,7 @@ sb_orchestrator_parent_skill_allowed() {
     canonical="${canonical//:/-}"
   fi
   case "$canonical" in
-    silver|silver-orchestrator|silver-agent-codex) return 0 ;;
+    silver|silver-orchestrator|silver-agent-codex|silver-agent-cursor) return 0 ;;
     *) return 1 ;;
   esac
 }
