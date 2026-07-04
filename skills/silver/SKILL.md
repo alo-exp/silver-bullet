@@ -161,6 +161,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "undo phase", "revert phase", "roll back phase", "undo plan", "revert commits for phase" | `silver:undo` | Safe phase/plan git revert with dependency checks and artifact cleanup |
 | "thread", "track this topic across sessions", "cross-session note", "track this concern" | `silver:thread` | Lightweight cross-session context threads for topic-specific tracking |
 | "delegate to codex", "run in codex", "codex subagent", "codex tui", "have codex implement", host supervises Codex executes | `silver:agent-codex` | On-demand single-task Codex TUI delegation — not enterprise E2E matrix |
+| "delegate to cursor", "run in cursor", "cursor subagent", "cursor-agent", "have cursor implement", host supervises Cursor executes | `silver:agent-cursor` | On-demand single-task Cursor agent TUI delegation — not enterprise E2E matrix |
 | Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
 
 ### Step 5: Apply ship/release disambiguation
