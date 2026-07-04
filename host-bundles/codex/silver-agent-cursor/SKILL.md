@@ -64,9 +64,11 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 ---
 
-## AF-AGENT-DELEGATE worker path (`SB_AGENT_DELEGATE_V2=1`)
+## AF-AGENT-DELEGATE worker path (default-on)
 
-When **`SB_AGENT_DELEGATE_V2=1`**, use the canonical delegation atomic flow:
+**`SB_AGENT_DELEGATE_V2`** defaults on (unset → worker path). Set **`SB_AGENT_DELEGATE_V2=0`** to rollback to legacy routing without the native worker gate.
+
+Use the canonical delegation atomic flow:
 
 1. **FS-DELEGATE-BRIEF** — brief + `ownership_scope` path prefixes.
 2. **`sb_orchestrator_seed_delegation_directive`** (`host=cursor`, `task_id`, `brief_path`, ownership JSON).
@@ -74,7 +76,7 @@ When **`SB_AGENT_DELEGATE_V2=1`**, use the canonical delegation atomic flow:
 4. Worker runs `agent-cursor-delegate.sh`; child loads **`silver-agent-worker`** (`composer-2.5` only on nested Tasks).
 5. **FS-DELEGATE-MENTOR** — host verifies evidence vs brief.
 
-**Degraded fallback:** parent direct wrapper requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or `SB OVERRIDE:` when V2=1.
+**Degraded fallback:** parent direct wrapper requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or `SB OVERRIDE:` (not the happy path).
 
 ---
 

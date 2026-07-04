@@ -43,7 +43,7 @@ grep -q 'stream-json' "$SKILL" && check "documents stream-json capture" pass || 
 grep -q 'agentmemory' "$SKILL" && check "documents agentmemory capture" pass || check "documents agentmemory capture" fail
 grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check "documents graphify capture" fail
 grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
-grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 opt-in flag" pass || check "documents V2 opt-in flag" fail
+grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" pass || check "documents V2 default-on flag" fail
 grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 grep -q 'SB_AGENT_CURSOR_LOG_FLOOR' "$SKILL" && check "documents log floor gate" pass || check "documents log floor gate" fail
 
