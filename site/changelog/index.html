@@ -89,6 +89,26 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-50-4">
+      <div class="release-header">
+        <h2>v0.50.4</h2>
+        <time class="release-date" datetime="2026-07-05">2026-07-05</time>
+      </div>
+      <p class="release-summary">Pre-release test hardening: full test suite must be green before patch release. Fixes delegation fallout and version-alignment drift from v0.50.3.</p>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(tests)</code>: outcomes-check stop-coalesce teardown + jq-less Stop state-dir preservation</li>
+        <li><code>fix(hooks)</code>: SEC-04 <code>rm -f --</code> hardening in delegation and stop-coalesce libs</li>
+        <li><code>fix(validate)</code>: host-agnostic allowlist for AF-AGENT-DELEGATE surfaces</li>
+        <li><code>fix(release)</code>: config/site/sentinel version alignment; agent skill scenarios + SENTINEL audits</li>
+      </ul>
+      <h3>Verification</h3>
+      <ul>
+        <li><code>run-all-tests.sh</code> — 5349 passed, 0 failed (6/6 suites green)</li>
+        <li><code>run-apo-authoring-compliance.sh</code> — 26/26 PASS</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-48-9">
       <div class="release-header">
         <h2>v0.48.9</h2>
