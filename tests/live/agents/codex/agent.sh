@@ -180,6 +180,10 @@ agent_invoke() {
     hook_trust_bypass="${SB_LIVE_CODEX_BYPASS_HOOK_TRUST:-1}"
     auto_trust_hooks="${SB_LIVE_CODEX_AUTO_TRUST_HOOKS:-1}"
   fi
+  if [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-0}" == "1" || "${SB_AGENT_CODEX_DELEGATE:-0}" == "1" ]]; then
+    hook_trust_bypass="${CODEX_BYPASS_HOOK_TRUST:-1}"
+    auto_trust_hooks="${CODEX_AUTO_TRUST_HOOKS:-1}"
+  fi
   if [[ "${CODEX_AUTO_TRUST_HOOKS:-}" == "1" ]]; then
     auto_trust_hooks=1
     hook_trust_bypass=1
@@ -224,32 +228,122 @@ agent_invoke() {
       cd "$WORK_DIR" && \
         CODEX_EXEC_CLI="$cli" \
         CODEX_EXEC_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-300}" \
+        CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}" \
+        SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-}" \
+        SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-}" \
+        SB_AGENT_CODEX_DELEGATE="${SB_AGENT_CODEX_DELEGATE:-}" \
+        SB_AGENT_CODEX_LIGHTWEIGHT="${SB_AGENT_CODEX_LIGHTWEIGHT:-}" \
+        CODEX_HOME="${CODEX_HOME:-}" \
         python3 - "${exec_args[@]}" <<'PY'
 import os
+import re
+import select
 import subprocess
 import sys
+import time
 
 cli = os.environ["CODEX_EXEC_CLI"]
 timeout = int(os.environ.get("CODEX_EXEC_TIMEOUT") or "300")
+tail_idle = int(os.environ.get("CODEX_EXEC_TAIL_IDLE_TIMEOUT") or "45")
 args = [cli, *sys.argv[1:]]
+child_env = os.environ.copy()
+for key in (
+    "SB_ORCHESTRATOR_WORKER",
+    "SB_ORCHESTRATOR_PARENT",
+    "SB_AGENT_CODEX_DELEGATE",
+    "SB_AGENT_CODEX_LIGHTWEIGHT",
+    "CODEX_HOME",
+):
+    value = os.environ.get(key)
+    if value is not None:
+        child_env[key] = value
 
-try:
-    result = subprocess.run(
-        args,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        timeout=timeout,
-        check=False,
-    )
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    sys.exit(result.returncode)
-except subprocess.TimeoutExpired as exc:
-    if exc.stdout:
-        sys.stdout.write(exc.stdout if isinstance(exc.stdout, str) else exc.stdout.decode(errors="replace"))
+
+def exec_output_shows_product_evidence(text: str) -> bool:
+    if re.search(r"(?i)the commit succeeded", text):
+        return True
+    if re.search(r"\[[^\]]+ [0-9a-f]{7,}\] .+", text):
+        return True
+    if "create mode " in text and "diff --git" in text:
+        return True
+    return False
+
+
+def drain_stdout(proc: subprocess.Popen) -> str:
+    chunks = []
+    fd = proc.stdout.fileno()
+    while True:
+        ready, _, _ = select.select([fd], [], [], 0)
+        if not ready:
+            break
+        data = os.read(fd, 65536)
+        if not data:
+            break
+        chunks.append(data.decode(errors="replace"))
+    return "".join(chunks)
+
+
+def terminate_child(proc: subprocess.Popen) -> None:
+    if proc.poll() is not None:
+        return
+    proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait(timeout=5)
+
+
+proc = subprocess.Popen(
+    args,
+    env=child_env,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+)
+hard_deadline = time.monotonic() + timeout
+stdout_parts = []
+evidence_at = None
+fd = proc.stdout.fileno()
+
+while proc.poll() is None:
+    now = time.monotonic()
+    if now >= hard_deadline:
+        break
+    if evidence_at is not None and now - evidence_at >= tail_idle:
+        break
+    wait = 0.2
+    if evidence_at is not None:
+        wait = min(wait, max(0.05, tail_idle - (now - evidence_at)))
+    ready, _, _ = select.select([fd], [], [], wait)
+    if ready:
+        data = os.read(fd, 65536)
+        if not data:
+            break
+        chunk = data.decode(errors="replace")
+        stdout_parts.append(chunk)
+        combined = "".join(stdout_parts)
+        if evidence_at is None and exec_output_shows_product_evidence(combined):
+            evidence_at = time.monotonic()
+
+combined = "".join(stdout_parts)
+remainder = drain_stdout(proc)
+if remainder:
+    combined += remainder
+
+if combined:
+    sys.stdout.write(combined)
+
+if proc.poll() is None:
+    if evidence_at is not None:
+        terminate_child(proc)
+        sys.exit(0)
+    terminate_child(proc)
+    if exec_output_shows_product_evidence(combined):
+        sys.exit(0)
     sys.stdout.write(f"\nERROR: timed out waiting for codex exec after {timeout}s\n")
     sys.exit(124)
+
+sys.exit(proc.returncode or 0)
 PY
     )" || true
     rm -f -- "$last_message_file" "$prompt_file" "$prompt_seed_file" "$transcript_file"
