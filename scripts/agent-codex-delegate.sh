@@ -135,6 +135,7 @@ agent_codex_invoke_once() {
   # Model/MCP boot can exceed the harness default ready timeout (20s).
   export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
   export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
+  export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}"
   # shellcheck source=tests/live/agents/codex/agent.sh
   source "$AGENT_SH"
   agent_invoke "$MODE" "$PROMPT_TEXT"

@@ -44,6 +44,9 @@ grep -q 'tests/live/agents/codex/agent.sh' "$WRAPPER" && check "wrapper uses liv
 grep -q 'scripts/lib/codex-cli.sh' "$WRAPPER" && check "wrapper sources scripts/lib codex-cli" pass || check "wrapper sources scripts/lib codex-cli" fail
 grep -q 'AGENT_CODEX_QUOTA_RETRY' "$WRAPPER" && check "wrapper quota retry env" pass || check "wrapper quota retry env" fail
 grep -q 'SB_AGENT_CODEX_MODEL_READY_TIMEOUT' "$WRAPPER" && check "wrapper model-ready timeout env" pass || check "wrapper model-ready timeout env" fail
+grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "$WRAPPER" && check "wrapper exec tail idle timeout env" pass || check "wrapper exec tail idle timeout env" fail
+grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec tail idle timeout" pass || check "adapter exec tail idle timeout" fail
+grep -q 'exec_output_shows_product_evidence' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec product evidence detection" pass || check "adapter exec product evidence detection" fail
 grep -q 'SB_AGENT_CODEX_LIGHTWEIGHT' "$WRAPPER" && check "wrapper lightweight env default" pass || check "wrapper lightweight env default" fail
 grep -q 'SB_ORCHESTRATOR_WORKER' "$WRAPPER" && check "wrapper orchestrator worker bypass" pass || check "wrapper orchestrator worker bypass" fail
 grep -q 'RTK_DISABLED=1' "$WRAPPER" && check "wrapper disables RTK for logs" pass || check "wrapper disables RTK for logs" fail
