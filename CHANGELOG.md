@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.50.3] — 2026-07-05
+
+Patch release: AF-AGENT-DELEGATE migration stage 5/6 — `SB_AGENT_DELEGATE_V2` default-on, parent delegate-wrapper whitelist removed (degraded fallback only).
+
+## Features
+- `feat(delegation): SB_AGENT_DELEGATE_V2 default-on when unset; SB_AGENT_DELEGATE_V2=0 rollback` — `agent-delegation-state.sh`
+- `feat(delegation): stage 6 parent guard — direct delegate Bash requires SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` — `orchestrator-parent.sh`
+
+## Documentation
+- Updated host skills, AGENT-DELEGATE worker template, and APO authoring compliance for default-on V2
+- RFL close-out: `.planning/reviews/AGENT-DELEGATE-AF-RFL-CLOSEOUT.md`
+
+## Verification
+- Dual-host live smoke (unset V2) on enterprise-e2e temp branches: Cursor `502ebe0`, Codex `6ffe2d9`
+- Delegation structural suite + `run-apo-authoring-compliance.sh` 26/26 PASS
+
+---
+
 ## [0.50.2] — 2026-07-03
 
 Patch release: Cursor-3 REAL enterprise E2E certification (22/22 strict-clean), anti-faking methodology (void Cursor-1/2), and harness fixes E2E-091–E2E-100.
