@@ -95,6 +95,9 @@ agent_codex_invoke_once() {
   export SB_LIVE_CODEX_USE_EXEC="$USE_EXEC"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
   export RTK_DISABLED=1
+  # Model/MCP boot can exceed the harness default ready timeout (20s).
+  export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
+  export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
   # shellcheck source=tests/live/agents/codex/agent.sh
   source "$AGENT_SH"
   agent_invoke "$MODE" "$PROMPT_TEXT"
