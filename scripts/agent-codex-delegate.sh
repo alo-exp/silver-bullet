@@ -88,7 +88,44 @@ redact_log_output() {
     -e 's/ghp_[A-Za-z0-9]{20,}/ghp_[REDACTED]/g'
 }
 
+agent_codex_apply_lightweight_env() {
+  [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-1}" == "1" ]] || return 0
+
+  export SB_AGENT_CODEX_DELEGATE=1
+  # Codex child must execute directly — not re-delegate via parent orchestrator hooks.
+  export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
+  export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
+  export CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-1}"
+  export CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-1}"
+
+  if [[ "${SB_AGENT_CODEX_SKIP_MCP:-1}" == "1" && -z "${SB_AGENT_CODEX_CODEX_HOME_RESTORE:-}" ]]; then
+    local lightweight_home
+    lightweight_home="$(mktemp -d "${TMPDIR:-/tmp}/agent-codex-codex-home-XXXXXX")"
+    agent_codex_prepare_lightweight_codex_home "${CODEX_HOME:-${HOME}/.codex}" "$lightweight_home"
+    SB_AGENT_CODEX_CODEX_HOME_RESTORE="${CODEX_HOME:-}"
+    export CODEX_HOME="$lightweight_home"
+    export SB_AGENT_CODEX_CODEX_HOME_RESTORE
+    printf '[agent-codex] lightweight CODEX_HOME (MCP stripped): %s\n' "$lightweight_home" >&2
+  fi
+}
+
+agent_codex_cleanup_lightweight_env() {
+  if [[ -n "${SB_AGENT_CODEX_CODEX_HOME_RESTORE+x}" ]]; then
+    if [[ -n "${CODEX_HOME:-}" && -d "${CODEX_HOME}" ]]; then
+      rm -rf "${CODEX_HOME}" 2>/dev/null || true
+    fi
+    if [[ -n "${SB_AGENT_CODEX_CODEX_HOME_RESTORE}" ]]; then
+      export CODEX_HOME="${SB_AGENT_CODEX_CODEX_HOME_RESTORE}"
+    else
+      unset CODEX_HOME
+    fi
+    unset SB_AGENT_CODEX_CODEX_HOME_RESTORE
+  fi
+}
+
 agent_codex_invoke_once() {
+  agent_codex_apply_lightweight_env
+  trap agent_codex_cleanup_lightweight_env RETURN
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export CODEX_BIN="$CLI"

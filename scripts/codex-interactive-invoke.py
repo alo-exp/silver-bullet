@@ -93,10 +93,13 @@ def sanitized_child_env(base_env: dict[str, str]) -> dict[str, str]:
 
 def native_prompt_ready(text: str) -> bool:
     compact = compact_text(text)
+    lightweight = os.environ.get("SB_AGENT_CODEX_LIGHTWEIGHT", "0") == "1"
     if "use/skillstolistavailableskills" in compact:
         return True
     if "openaicodex" not in compact:
         return False
+    if lightweight and "directory:" in compact and ("›" in text or "❯" in text):
+        return True
     if "directory:" not in compact and "bootingmcpserver:" not in compact:
         return False
     return "›" in text or "❯" in text
