@@ -56,6 +56,8 @@ assert_pass "cursor CLI uses --plugin-dir" assert_contains "$cursor_body" "--plu
 assert_pass "cursor CLI uses --workspace" assert_contains "$cursor_body" "--workspace"
 assert_pass "cursor CLI uses AGENT_CLI_CREDENTIAL_STORE=memory" assert_contains "$cursor_body" "AGENT_CLI_CREDENTIAL_STORE=memory"
 assert_pass "cursor CLI passes --api-key" assert_contains "$cursor_body" "api-key"
+assert_pass "isolation accepts HOST_API_KEY alias" assert_contains "$isolation_body" "HOST_API_KEY"
+assert_pass "isolation supports operator cursor-api-key file" assert_contains "$isolation_body" ".silver-bullet/cursor-api-key"
 assert_pass "cursor CLI forbids login" assert_contains "$cursor_body" "Do not use cursor-agent login"
 assert_pass "cursor CLI forbids status" assert_contains "$cursor_body" "Never calls"
 assert_pass "quality gate doc documents official cursor isolation" assert_contains "$gate_doc" "CURSOR_CONFIG_DIR"
