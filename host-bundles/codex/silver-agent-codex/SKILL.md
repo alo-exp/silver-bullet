@@ -113,8 +113,9 @@ Set explicitly — **fixture vs real project**:
 |-----|---------|---------|
 | `CODEX_INTERACTIVE_TIMEOUT` | 900 | Hard PTY timeout (seconds) |
 | `CODEX_INTERACTIVE_QUIET_TIMEOUT` | 300 | Quiet-after-activity complete |
-| `CODEX_INTERACTIVE_READY_TIMEOUT` | 20 | Prompt acceptance |
-| `CODEX_INTERACTIVE_IDLE_TIMEOUT` | 1800 | Idle watchdog |
+| `CODEX_INTERACTIVE_READY_TIMEOUT` | 20 (harness); **120** via delegate | Prompt acceptance |
+| `SB_AGENT_CODEX_MODEL_READY_TIMEOUT` | 120 | Delegate override for `CODEX_INTERACTIVE_READY_TIMEOUT` when model/MCP boot is slow |
+| `CODEX_INTERACTIVE_IDLE_TIMEOUT` | 1800 (harness); **3600** via delegate | Idle watchdog |
 | `AGENT_CODEX_QUOTA_RETRY_INTERVAL` | 60 | 429 / quota backoff |
 | `AGENT_CODEX_QUOTA_RETRY_MAX` | 5 | Max quota retries |
 | `CODEX_AUTO_TRUST_HOOKS` | 1 | Auto-accept hook trust when isolated |
