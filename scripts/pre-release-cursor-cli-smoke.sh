@@ -39,7 +39,8 @@ if ! "$cli" --version >/dev/null 2>&1; then
 fi
 
 if ! sb_smoke_cursor_cli_auth_env; then
-  printf 'ERROR: CURSOR_API_KEY required (env or %s/.cursor-api-key in smoke root)\n' "$(sb_smoke_root)" >&2
+  printf 'ERROR: CURSOR_API_KEY required (env HOST_API_KEY/CURSOR_API_KEY, %s/.cursor-api-key, or ~/.silver-bullet/cursor-api-key)\n' "$(sb_smoke_root)" >&2
+  printf 'Mint a user API key at https://cursor.com/dashboard/integrations (cursor_... prefix).\n' >&2
   printf 'Do not use cursor-agent login — Keychain storage is disabled for pre-release smoke.\n' >&2
   exit 1
 fi

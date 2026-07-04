@@ -155,6 +155,8 @@ sb_smoke_begin_cursor() {
 }
 
 # Cursor CLI credential store: in-memory only — never Keychain / cursor-user.
+# Auth resolution order: CURSOR_API_KEY → HOST_API_KEY (doc alias) → smoke-root
+# file → operator file ~/.silver-bullet/cursor-api-key (gitignored, local only).
 sb_smoke_cursor_cli_auth_env() {
   export AGENT_CLI_CREDENTIAL_STORE=memory
 
@@ -162,13 +164,22 @@ sb_smoke_cursor_cli_auth_env() {
     return 0
   fi
 
-  local key_file
-  key_file="$(sb_smoke_root)/.cursor-api-key"
-  if [[ -f "$key_file" ]]; then
-    CURSOR_API_KEY="$(<"$key_file")"
+  if [[ -n "${HOST_API_KEY:-}" ]]; then
+    CURSOR_API_KEY="$HOST_API_KEY"
     export CURSOR_API_KEY
     return 0
   fi
+
+  local key_file
+  for key_file in \
+    "$(sb_smoke_root)/.cursor-api-key" \
+    "${HOME}/.silver-bullet/cursor-api-key"; do
+    if [[ -f "$key_file" ]]; then
+      CURSOR_API_KEY="$(<"$key_file")"
+      export CURSOR_API_KEY
+      return 0
+    fi
+  done
 
   return 1
 }
