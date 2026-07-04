@@ -63,7 +63,7 @@ sb_agent_delegation_activate() {
 sb_agent_delegation_deactivate() {
   local file
   file="$(sb_agent_delegation_state_file)"
-  rm -f "$file" 2>/dev/null || true
+  rm -f -- "$file" 2>/dev/null || true
 }
 
 sb_agent_delegation_normalize_path() {

@@ -45,7 +45,8 @@ teardown() {
   rm -rf "$TMPDIR_TEST"
   rm -f "$SILVER_BULLET_STATE_FILE" "$SILVER_BULLET_BRANCH_FILE" \
     "${SB_TEST_DIR}/outcomes-session.json" "${SB_TEST_DIR}/orchestrator-directive.json" \
-    "${SB_TEST_DIR}/orchestrator-intent.txt" "${SB_TEST_DIR}/project-root"
+    "${SB_TEST_DIR}/orchestrator-intent.txt" "${SB_TEST_DIR}/project-root" \
+    "${SB_TEST_DIR}/stop-coalesce-block" "${SB_TEST_DIR}/trivial"
 }
 
 trap 'rm -rf "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/outcomes-check-${TEST_RUN_ID}" 2>/dev/null || true' EXIT
@@ -181,7 +182,7 @@ exit 1
 SH
 chmod +x "$FAKE_BIN/jq"
 out=$(cd "$TMPDIR_TEST" && printf '{"hook_event_name":"Stop","prompt":""}' \
-  | env PATH="$FAKE_BIN:$PATH" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SILVER_BULLET_STATE_FILE="$SILVER_BULLET_STATE_FILE" bash "$HOOK" 2>/dev/null)
+  | env PATH="$FAKE_BIN:$PATH" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" SILVER_BULLET_STATE_FILE="$SILVER_BULLET_STATE_FILE" bash "$HOOK" 2>/dev/null)
 if printf '%s' "$out" | grep -q '"decision":"block"'; then
   echo "  ok: outcomes-check Stop fails closed without jq when pending"
   PASS=$((PASS + 1))

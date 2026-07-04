@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.50.4] — 2026-07-05
+
+Patch release: **pre-release test hardening** — full `run-all-tests.sh` green gate (5349/5349) before ship; fixes delegation v0.50.3 fallout and version-alignment drift.
+
+## Fixes
+- `fix(tests): outcomes-check teardown clears stop-coalesce state; jq-less Stop preserves SB_RUNTIME_STATE_DIR`
+- `fix(hooks): SEC-04 hardened rm -f -- in agent-delegation-state and stop-coalesce`
+- `fix(tests): e2e-live suite assert_file_contains arity for clarify-picker check`
+- `fix(tests): flow-step V-loop excludes catalog pseudo-skills (distribution-only, pipe-composites)`
+- `fix(tests): no-gsd-runtime allowlist for legacy GSD cleanup scripts`
+- `fix(validate): host-agnostic allowlist for AF-AGENT-DELEGATE skills, worker template, delegate scripts`
+- `fix(release): config/site version alignment to package.json; sentinel manifest 90 skills clean`
+- `fix(tests): skill scenarios for silver-agent-codex, silver-agent-cursor, silver-agent-worker`
+
+## Verification
+- `bash tests/run-all-tests.sh` — **5349 passed, 0 failed (6/6 suites green)**
+- `bash scripts/run-apo-authoring-compliance.sh` — 26/26 PASS
+- ShellCheck on hooks/scripts — PASS
+- `test-site-content-freshness.sh` + `test-site-doc-freshness.sh` — PASS
+
+---
+
 ## [0.50.3] — 2026-07-05
 
 Patch release: AF-AGENT-DELEGATE migration stage 5/6 — `SB_AGENT_DELEGATE_V2` default-on, parent delegate-wrapper whitelist removed (degraded fallback only).

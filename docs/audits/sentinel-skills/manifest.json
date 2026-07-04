@@ -322,6 +322,48 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "silver-agent-codex",
+    "path": "skills/silver-agent-codex/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-codex.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-05",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "8ef06de94782be50112577a87df2b25e605fd238a7058e75ed25a6b444a3f0b7",
+    "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Codex parent skill (v0.50.3)."
+  },
+  {
+    "skill": "silver-agent-cursor",
+    "path": "skills/silver-agent-cursor/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-cursor.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-05",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "0fd9d6d25d002117d64513cd0441ba85577fca3f89ba99a737b1a6d82ee2e4b4",
+    "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Cursor parent skill (v0.50.3)."
+  },
+  {
+    "skill": "silver-agent-worker",
+    "path": "skills/silver-agent-worker/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-worker.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-05",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "fdffdae9e271c6d8f541f7582351acab55f7ab2fb0702c78a55f351e3b9a6e14",
+    "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE worker contract skill (v0.50.3)."
+  },
+  {
     "skill": "silver-benchmark",
     "path": "skills/silver-benchmark/SKILL.md",
     "sentinel_version": "2.3.0",

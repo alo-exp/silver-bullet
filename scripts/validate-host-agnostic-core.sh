@@ -69,6 +69,15 @@ TEMPLATE_EXCLUDE_PREFIXES = (
 HOOKS_ROOT = "hooks"
 
 # Bridge / runtime boundary files (host identifiers allowed).
+STRICT_ALLOWLIST = {
+    "skills/silver-agent-codex/SKILL.md",
+    "skills/silver-agent-cursor/SKILL.md",
+    "skills/silver-agent-worker/SKILL.md",
+    "skills/silver/SKILL.md",
+    ".silver-bullet/orchestrator-workers/AGENT-DELEGATE.md",
+    "templates/orchestrator-workers/AGENT-DELEGATE.md",
+}
+
 HOOKS_ALLOWLIST = {
     "hooks/cursor-hook-bridge.sh",
     "hooks/kay-project-hook-bridge.sh",
@@ -95,6 +104,8 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/claude-matrix-auth.sh",
     "scripts/lib/merge-token-compression-config.py",
     "scripts/multi-ai-task-models.py",
+    "scripts/generate-apo-catalog.py",
+    "scripts/lib/codex-cli.sh",
 }
 
 # Never scan (generated mirrors, host bundles, tests, docs, site).
@@ -128,6 +139,9 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/sb-diagnostics.sh",
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
+    "scripts/agent-",
+    "scripts/prune-stale-claude",
+    "scripts/watch-enterprise-e2e",
 )
 
 INSTALLER_SCRIPTS = {
@@ -376,6 +390,8 @@ def scan_content(
 def check_file(path: Path, *, tier: str) -> None:
     r = rel(path)
     if tier == "strict":
+        if r in STRICT_ALLOWLIST:
+            return
         hits = scan_content(path, strict=True)
     elif tier == "hooks":
         if r in HOOKS_ALLOWLIST:

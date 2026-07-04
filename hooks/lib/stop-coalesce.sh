@@ -13,7 +13,7 @@ sb_stop_coalesce_file() {
 sb_stop_coalesce_reset() {
   local f
   f="$(sb_stop_coalesce_file)"
-  rm -f "$f" 2>/dev/null || true
+  rm -f -- "$f" 2>/dev/null || true
 }
 
 sb_stop_coalesce_record() {

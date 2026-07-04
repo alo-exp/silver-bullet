@@ -44,7 +44,11 @@ def full_v_loop(step):
     ])
 
 missing_skills = sorted(set(repo_skills) - set(step_skills))
-extra_skills = sorted(set(step_skills) - set(repo_skills))
+pseudo_skills = {"distribution-only"}
+extra_skills = sorted(
+    skill for skill in set(step_skills) - set(repo_skills)
+    if skill not in pseudo_skills and "|" not in (skill or "")
+)
 bad_vloops = [step.get("id") for step in steps if not full_v_loop(step)]
 bad_reuse = [
     step.get("id")
