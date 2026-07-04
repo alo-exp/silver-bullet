@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=scripts/lib/codex-cli.sh
 source "${REPO_ROOT}/scripts/lib/codex-cli.sh"
+# shellcheck source=scripts/lib/agent-delegate-common.sh
+source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
 
 usage() {
   cat <<'EOF'
@@ -41,23 +43,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-[[ -n "$WORK_DIR" && -d "$WORK_DIR" ]] || {
-  printf 'ERROR: --work-dir must point to an existing directory\n' >&2
-  exit 2
-}
+agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
+agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then
-  [[ -f "$BRIEF_FILE" ]] || { printf 'ERROR: brief file not found: %s\n' "$BRIEF_FILE" >&2; exit 2; }
-  PROMPT_TEXT="$(cat "$BRIEF_FILE")"
-elif [[ -n "$PROMPT_FILE" ]]; then
-  [[ -f "$PROMPT_FILE" ]] || { printf 'ERROR: prompt file not found: %s\n' "$PROMPT_FILE" >&2; exit 2; }
-  PROMPT_TEXT="$(cat "$PROMPT_FILE")"
+  BRIEF_FILE="$(agent_delegate_canonicalize_path "$BRIEF_FILE")"
+fi
+if [[ -n "$PROMPT_FILE" ]]; then
+  PROMPT_FILE="$(agent_delegate_canonicalize_path "$PROMPT_FILE")"
+fi
+if [[ -n "$LOG_FILE" ]]; then
+  LOG_FILE="$(agent_delegate_canonicalize_path "$LOG_FILE")"
 fi
 
-[[ -n "$PROMPT_TEXT" ]] || {
-  printf 'ERROR: provide --prompt, --prompt-file, or --brief-file\n' >&2
-  exit 2
-}
+PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 
 AGENT_SH="${SB_ROOT}/tests/live/agents/codex/agent.sh"
 [[ -f "$AGENT_SH" ]] || {
@@ -73,26 +72,13 @@ CLI="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
 
 quota_retry_interval="${AGENT_CODEX_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="${AGENT_CODEX_QUOTA_RETRY_MAX:-5}"
+log_floor="${SB_AGENT_CODEX_LOG_FLOOR:-512}"
 attempt=0
-
-is_quota_error() {
-  local blob="$1"
-  grep -qiE '429|rate[[:space:]]*limit|token[[:space:]]*plan|quota' <<<"$blob"
-}
-
-redact_log_output() {
-  local blob="$1"
-  printf '%s' "$blob" | sed -E \
-    -e 's/(api[_-]?key|token|password|secret|authorization)[[:space:]]*[:=][[:space:]]*[^[:space:]]+/\1=[REDACTED]/gi' \
-    -e 's/sk-[A-Za-z0-9_-]{8,}/sk-[REDACTED]/g' \
-    -e 's/ghp_[A-Za-z0-9]{20,}/ghp_[REDACTED]/g'
-}
 
 agent_codex_apply_lightweight_env() {
   [[ "${SB_AGENT_CODEX_LIGHTWEIGHT:-1}" == "1" ]] || return 0
 
   export SB_AGENT_CODEX_DELEGATE=1
-  # Codex child must execute directly — not re-delegate via parent orchestrator hooks.
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
   export CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-1}"
@@ -132,7 +118,6 @@ agent_codex_invoke_once() {
   export SB_LIVE_CODEX_USE_EXEC="$USE_EXEC"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
   export RTK_DISABLED=1
-  # Model/MCP boot can exceed the harness default ready timeout (20s).
   export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
   export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
   export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}"
@@ -151,12 +136,32 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     sleep "$quota_retry_interval"
   fi
 
+  if [[ -n "$LOG_FILE" ]]; then
+    : >"$LOG_FILE"
+    agent_delegate_write_log_header "$LOG_FILE" "agent-codex-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt"
+  fi
+
   final_output="$(agent_codex_invoke_once)" && final_exit=0 || final_exit=$?
+
+  if [[ -n "$LOG_FILE" && "$USE_EXEC" == "1" ]]; then
+    agent_delegate_append_invoke_output "$LOG_FILE" "$final_output"
+  fi
+
+  if [[ -n "$LOG_FILE" && -f "$LOG_FILE" ]]; then
+    agent_delegate_redact_log_file "$LOG_FILE"
+    if ! agent_delegate_check_log_floor "$LOG_FILE" "$log_floor" "agent-codex"; then
+      final_exit=1
+    fi
+    agent_delegate_write_log_footer "$LOG_FILE" "$final_exit" "$attempt" "agent-codex-delegate"
+  elif [[ -n "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
+    agent_delegate_write_fallback_log "$LOG_FILE" "agent-codex-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" "$final_exit" "$final_output"
+    printf '[agent-codex] log written: %s\n' "$LOG_FILE" >&2
+  fi
 
   if [[ "$final_exit" -eq 0 ]]; then
     break
   fi
-  if ! is_quota_error "$final_output"; then
+  if ! agent_delegate_is_quota_error "$final_output"; then
     break
   fi
   if [[ "$attempt" -gt "$quota_retry_max" ]]; then
@@ -164,17 +169,6 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     break
   fi
 done
-
-if [[ -n "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
-  mkdir -p "$(dirname "$LOG_FILE")"
-  {
-    printf '=== agent-codex-delegate %s ===\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    printf 'work_dir=%s\nsb_root=%s\nattempt=%s\nexit=%s\n\n' "$WORK_DIR" "$SB_ROOT" "$attempt" "$final_exit"
-    redact_log_output "$final_output"
-    printf '\n'
-  } >"$LOG_FILE"
-  printf '[agent-codex] log written: %s\n' "$LOG_FILE" >&2
-fi
 
 printf '%s' "$final_output"
 exit "$final_exit"
