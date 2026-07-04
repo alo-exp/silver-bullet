@@ -38,6 +38,9 @@ grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$SKILL" && check "excludes matrix env" pass 
 grep -q 'agent-codex-delegate.sh' "$SKILL" && check "references delegate wrapper" pass || check "references delegate wrapper" fail
 grep -q 'agentmemory' "$SKILL" && check "documents agentmemory capture" pass || check "documents agentmemory capture" fail
 grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check "documents graphify capture" fail
+grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
+grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 opt-in flag" pass || check "documents V2 opt-in flag" fail
+grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
 grep -q 'tests/live/agents/codex/agent.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail

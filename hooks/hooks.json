@@ -77,6 +77,12 @@
           },
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
             "async": false,
             "timeout": 10

@@ -80,6 +80,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-doctor`, `silver-migrate`, `silver-phase` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
+| `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-cursor` |
 
 ## Skill-Dispatched Worker Templates
 
@@ -361,6 +362,14 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 - atomic_flow: `AF-DOCUMENT`
 - atomic_flow: `AF-VALIDATE`
 
+### `WF-AGENT-DELEGATE-ENTRY`
+
+- Slug: `agent-delegate-entry`
+- Type: `specialized`
+- Final intent gate: `INTENT-GATE-DEFAULT`
+
+- atomic_flow: `AF-AGENT-DELEGATE`
+
 ## Runtime Queue Tokens
 
 | Runtime Token | Catalog Entity |
@@ -405,6 +414,19 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-AI_LLM_SAFETY` | `ai-llm-safety` | `AF-SECURE` | `EV-FS-AI_LLM_SAFETY` |
 | `FS-ARTIFACT_REVIEWER` | `artifact-reviewer` | `AF-REVIEW` | `EV-FS-ARTIFACT_REVIEWER` |
 | `FS-ARTIFACT_REVIEW_ASSESSOR` | `artifact-review-assessor` | `AF-REVIEW` | `EV-FS-ARTIFACT_REVIEW_ASSESSOR` |
+| `FS-DELEGATE-BRIEF` | `silver-agent-codex|silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-BRIEF` |
+| `FS-DELEGATE-CHECKPOINT` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-CHECKPOINT` |
+| `FS-DELEGATE-CODEX-LAUNCH` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-CODEX-ROUTE` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-CURSOR-LAUNCH` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-CURSOR-ROUTE` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-CURSOR-SUBAGENT-POLICY` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-GUARD_OFF` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-GUARD_OFF` |
+| `FS-DELEGATE-GUARD_ON` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-GUARD_ON` |
+| `FS-DELEGATE-LAUNCH` | `silver-agent-worker` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-LAUNCH` |
+| `FS-DELEGATE-MENTOR` | `silver-agent-codex|silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-MENTOR` |
+| `FS-DELEGATE-RELAUNCH` | `silver-agent-worker` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-RELAUNCH` |
+| `FS-DELEGATE-VERIFY` | `distribution-only` | `AF-AGENT-DELEGATE` | `EV-FS-DELEGATE-VERIFY` |
 | `FS-DEVOPS_QUALITY_GATES` | `devops-quality-gates` | `AF-QUALITY-GATE` | `EV-FS-DEVOPS_QUALITY_GATES` |
 | `FS-DEVOPS_SKILL_ROUTER` | `devops-skill-router` | `AF-DEVOPS-ROUTE` | `EV-FS-DEVOPS_SKILL_ROUTER` |
 | `FS-EXTENSIBILITY` | `extensibility` | `AF-QUALITY-GATE` | `EV-FS-EXTENSIBILITY` |
@@ -426,6 +448,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SECURITY` | `security` | `AF-SECURE` | `EV-FS-SECURITY` |
 | `FS-SILVER` | `silver` | `AF-ROUTE` | `EV-FS-SILVER` |
 | `FS-SILVER_ADD` | `silver-add` | `AF-PHASE-MANAGE` | `EV-FS-SILVER_ADD` |
+| `FS-SILVER_AGENT_CODEX` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CODEX` |
+| `FS-SILVER_AGENT_CURSOR` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CURSOR` |
 | `FS-SILVER_BENCHMARK` | `silver-benchmark` | `AF-FAST-PATH` | `EV-FS-SILVER_BENCHMARK` |
 | `FS-SILVER_BLAST_RADIUS` | `silver-blast-radius` | `AF-BLAST-RADIUS` | `EV-FS-SILVER_BLAST_RADIUS` |
 | `FS-SILVER_BOOTSTRAP_MILESTONE` | `silver-bootstrap-milestone` | `AF-BOOTSTRAP` | `EV-FS-SILVER_BOOTSTRAP_MILESTONE` |
@@ -536,6 +560,9 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `security` | `AF-SECURE` |
 | `silver` | `AF-ROUTE` |
 | `silver-add` | `AF-PHASE-MANAGE` |
+| `silver-agent-codex` | `AF-AGENT-DELEGATE` |
+| `silver-agent-cursor` | `AF-AGENT-DELEGATE` |
+| `silver-agent-worker` | `AF-AGENT-DELEGATE` |
 | `silver-benchmark` | `AF-FAST-PATH` |
 | `silver-blast-radius` | `AF-BLAST-RADIUS` |
 | `silver-bootstrap-milestone` | `AF-BOOTSTRAP` |

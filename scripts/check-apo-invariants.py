@@ -271,6 +271,29 @@ def site_doc_freshness(catalog: dict) -> list[tuple[str, str, str]]:
     ]
 
 
+def agent_delegation_contract(catalog: dict) -> list[tuple[str, str, str]]:
+    flows = {flow["id"] for flow in catalog.get("atomic_flows", [])}
+    workflows = {workflow["id"] for workflow in catalog.get("workflows", [])}
+    skill_map = catalog.get("migration_map", {}).get("skill_to_entity", {})
+    artifacts = {item["id"] for item in catalog.get("artifacts", [])}
+    steps = {step["id"] for step in catalog.get("flow_steps", [])}
+    delegate_flow = next((f for f in catalog["atomic_flows"] if f["id"] == "AF-AGENT-DELEGATE"), None)
+    worker_skill = (SKILLS_DIR / "silver-agent-worker" / "SKILL.md").exists()
+    worker_template = (WORKERS_DIR / "AGENT-DELEGATE.md").exists()
+    return [
+        check("AF-AGENT-DELEGATE in catalog", "AF-AGENT-DELEGATE" in flows, ""),
+        check("WF-AGENT-DELEGATE-ENTRY references delegation AF", "WF-AGENT-DELEGATE-ENTRY" in workflows, ""),
+        check("silver-agent-worker maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-worker") == "AF-AGENT-DELEGATE", ""),
+        check("silver-agent-codex maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-codex") == "AF-AGENT-DELEGATE", ""),
+        check("silver-agent-cursor maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-cursor") == "AF-AGENT-DELEGATE", ""),
+        check("ART-AGENT-DELEGATE registered", "ART-AGENT-DELEGATE" in artifacts, ""),
+        check("core FS-DELEGATE steps present", {"FS-DELEGATE-BRIEF", "FS-DELEGATE-LAUNCH", "FS-DELEGATE-VERIFY"} <= steps, ""),
+        check("delegation AF not parallelizable", bool(delegate_flow and not delegate_flow.get("execution", {}).get("parallelizable", True)), ""),
+        check("silver-agent-worker skill exists", worker_skill, ""),
+        check("AGENT-DELEGATE worker template exists", worker_template, ""),
+    ]
+
+
 CHECKS = {
     "derived-views": derived_views,
     "worker-template-parity": worker_template_parity,
@@ -287,6 +310,7 @@ CHECKS = {
     "user-intent-coverage": user_intent_coverage,
     "router-coverage": router_coverage,
     "site-doc-freshness": site_doc_freshness,
+    "agent-delegation-contract": agent_delegation_contract,
 }
 
 

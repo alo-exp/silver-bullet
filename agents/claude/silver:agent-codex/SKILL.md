@@ -63,6 +63,20 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 ---
 
+## AF-AGENT-DELEGATE worker path (`SB_AGENT_DELEGATE_V2=1`)
+
+When **`SB_AGENT_DELEGATE_V2=1`**, use the canonical delegation atomic flow instead of direct wrapper supervision:
+
+1. Complete **FS-DELEGATE-BRIEF** (brief + `ownership_scope` path prefixes).
+2. Call **`sb_orchestrator_seed_delegation_directive`** (`host=codex`, `task_id`, `brief_path`, ownership JSON).
+3. Spawn native worker **`.silver-bullet/orchestrator-workers/AGENT-DELEGATE.md`** (Task subagent).
+4. Worker launches `agent-codex-delegate.sh`; external agent loads **`silver-agent-worker`** contract.
+5. Host runs **FS-DELEGATE-MENTOR** — verify evidence vs brief before user report.
+
+**Degraded fallback only:** direct `agent-codex-delegate.sh` from parent requires `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` or audited `SB OVERRIDE:` (emits `EV-DELEGATE-DEGRADED-FALLBACK`). Not the happy path when V2=1.
+
+---
+
 ## Step 1 — Brief (parent)
 
 Produce a delegation brief before invoke:
@@ -221,6 +235,7 @@ Delegation is **PASS** only when **all** hold:
 
 ## References
 
+- Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/silver:agent-<host>` on other hosts
 - Harness: `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
 - Live adapter: `tests/live/agents/codex/agent.sh`
 - E2E adapter (matrix only): `scripts/enterprise-e2e/lib/adapters/codex.sh`

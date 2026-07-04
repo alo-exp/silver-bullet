@@ -50,6 +50,11 @@
         "matcher": "Edit|Write|MultiEdit"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/agent-delegation-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/phase-lock-claim.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit"

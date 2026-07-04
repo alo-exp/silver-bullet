@@ -42,6 +42,9 @@ grep -q 'CURSOR_API_KEY' "$SKILL" && check "documents Keychain auth policy" pass
 grep -q 'stream-json' "$SKILL" && check "documents stream-json capture" pass || check "documents stream-json capture" fail
 grep -q 'agentmemory' "$SKILL" && check "documents agentmemory capture" pass || check "documents agentmemory capture" fail
 grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check "documents graphify capture" fail
+grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
+grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 opt-in flag" pass || check "documents V2 opt-in flag" fail
+grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pass || check "documents native worker template" fail
 grep -q 'SB_AGENT_CURSOR_LOG_FLOOR' "$SKILL" && check "documents log floor gate" pass || check "documents log floor gate" fail
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
@@ -52,7 +55,7 @@ grep -q 'SB_ORCHESTRATOR_WORKER' "$WRAPPER" && check "wrapper orchestrator worke
 grep -q 'RTK_DISABLED=1' "$WRAPPER" && check "wrapper disables RTK for logs" pass || check "wrapper disables RTK for logs" fail
 grep -q 'composer-2.5' "$WRAPPER" && check "wrapper composer-2.5 default" pass || check "wrapper composer-2.5 default" fail
 ! grep -qE 'export SB_E2E_ENTERPRISE_MATRIX|SB_E2E_ENTERPRISE_MATRIX=1' "$WRAPPER" && check "wrapper omits matrix env export" pass || check "wrapper omits matrix env export" fail
-grep -q 'unset SB_E2E_ENTERPRISE_MATRIX' "$WRAPPER" && check "wrapper clears inherited matrix env" pass || check "wrapper clears inherited matrix env" fail
+grep -q 'agent_delegate_clear_matrix_env' "$WRAPPER" && check "wrapper clears inherited matrix env" pass || check "wrapper clears inherited matrix env" fail
 grep -q 'SB_AGENT_CURSOR_LOG_FLOOR' "$WRAPPER" && check "wrapper log floor check" pass || check "wrapper log floor check" fail
 
 grep -q 'SB_AGENT_CURSOR_STREAM_JSON' "$ADAPTER" && check "adapter stream-json delegate flag" pass || check "adapter stream-json delegate flag" fail
