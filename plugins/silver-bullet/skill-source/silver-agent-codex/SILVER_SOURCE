@@ -103,6 +103,8 @@ Set explicitly — **fixture vs real project**:
 | `CODEX_WORK_DIR` | Target repo root (e.g. `enterprise-grade-test-app`) | Fixture clone path |
 | `SB_ROOT` | SB install path (for harness scripts) | SB repo checkout |
 | `SB_AGENT_CODEX_FIXTURE` | `0` (default) | `1` — enables live-test guard patterns |
+| `SB_AGENT_CODEX_LIGHTWEIGHT` | `1` (delegate default) | `0` — keep full MCP boot + orchestrator context in Codex child |
+| `SB_AGENT_CODEX_SKIP_MCP` | `1` when lightweight | `0` — do not strip `[mcp_servers.*]` from ephemeral `CODEX_HOME` |
 | `SB_LIVE_CODEX_ISOLATION_ACTIVE` | `0` unless isolating Codex home | `1` for hermetic live tests |
 
 **Do not set** `SB_E2E_ENTERPRISE_MATRIX`, `SB_E2E_LEDGER_FILE`, or matrix batch PID files for normal delegation.
@@ -121,6 +123,8 @@ Set explicitly — **fixture vs real project**:
 | `CODEX_AUTO_TRUST_HOOKS` | 1 | Auto-accept hook trust when isolated |
 | `CODEX_BYPASS_HOOK_TRUST` | 1 | Bypass hook trust prompt when pre-seeded |
 | `RTK_DISABLED` | 1 | Set during delegate.sh for readable ops logs |
+| `SB_ORCHESTRATOR_WORKER` | 1 (lightweight) | Codex child executes directly — hooks must not spawn parent Task workers |
+| `SB_ORCHESTRATOR_PARENT` | 0 (lightweight) | Paired with worker flag for exec/PTY subprocess |
 
 Optional: `CODEX_MODEL`, `CODEX_MODEL_PROVIDER`, `CODEX_REASONING_EFFORT`.
 
