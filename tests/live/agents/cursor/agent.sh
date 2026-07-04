@@ -189,7 +189,8 @@ model = os.environ.get("CURSOR_AGENT_MODEL") or ""
 mode = os.environ.get("CURSOR_AGENT_MODE") or "default"
 log_path = os.environ.get("CLAUDE_INTERACTIVE_LOG_FILE") or ""
 matrix_mode = os.environ.get("SB_E2E_ENTERPRISE_MATRIX") == "1"
-output_format = "stream-json" if matrix_mode else "text"
+delegate_stream = os.environ.get("SB_AGENT_CURSOR_STREAM_JSON") == "1"
+output_format = "stream-json" if (matrix_mode or delegate_stream) else "text"
 
 args = [
     cli,
@@ -199,7 +200,7 @@ args = [
     "--workspace", os.getcwd(),
     "--output-format", output_format,
 ]
-if matrix_mode:
+if matrix_mode or delegate_stream:
     args.append("--stream-partial-output")
 if model:
     args.extend(["--model", model])
