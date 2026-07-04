@@ -4,7 +4,7 @@
 > `docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md`  
 > Canonical on **`main`** — host tracks cherry-pick or link; do not fork per-host copies.
 
-**Status:** Active — 2026-07-04 (Codex R1–3 REAL learnings integrated)  
+**Status:** Active — 2026-07-04 (Codex R1–3 REAL learnings; **single-round release candidate gate** effective)  
 **Audience:** Codex, Cursor, and Claude operator sessions certifying Silver Bullet on `enterprise-grade-test-app`  
 **Authority:** Supersedes ad-hoc “run 22 rows first” loops; complements [ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md](./ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md)
 
@@ -35,12 +35,12 @@
 | **Full 22-row matrix as first loop** | **Deprecated** for bring-up and mid-round debug |
 | **Structural / offline suite** | **Highly effective** — catches script/doc/registry drift without TUI |
 | **Monitor “22/22 COMPLETE” without ledger reconcile** | **Anti-pattern** — observed Round 3 drift |
-| **2 consecutive strict-clean rounds** | **Still required** for host release sign-off (unchanged) — see **§3 release pair** for harness vs product counters |
+| **Single-round release candidate gate** | **Required** for host release sign-off @ a release candidate version — one strict-clean round @ `install_fp` with 22/22 live + §5b product audit + outcome PASS + Phase C green (§3) |
 | **Harness 22/22 without §5b product audit** | **Disqualifying** for product-work certification — harness PASS ≠ product certification (§5a) |
 | **Repeat matrix/ladder/T1 rows at same install** | **Deprecated** — one clean pass per row/criterion @ install version (see §11) |
 | **Rescore / evidence-only PASS without live rerun** | **Disqualifying** for certification credit (see §5a, §6) |
 | **Inherited baseline / pre-existing fixture artifacts** | **Disqualifying** without live agent authorship (see §5a) |
-| **ROW_ALREADY_PASSED_SAME_INSTALL on first host certification** | **Disqualifying** — install-skip only after first strict-clean pair @ install version (see §5a, §6a) |
+| **ROW_ALREADY_PASSED_SAME_INSTALL on first host certification** | **Disqualifying** — install-skip only after first strict-clean round @ install version (see §5a, §6a) |
 
 **Honest scope:** This program certifies SB harness + workflow routing on a fixture app with operator supervision. It does **not** prove homepage marketing stats, cold-install SLOs, or statistical reliability across providers without additional claims mapping (see registries below).
 
@@ -77,7 +77,7 @@ Execute in this order — do not skip ahead or claim certification credit from l
 | **Full matrix** | Tier C | Live rows **1–22** — one pass per row @ install version |
 | **Phase C** | Release gates | Outcome harness, run-all-tests, validation/pre-release overlays, ledger reconcile, RCS ≥ 85 |
 
-**Rescore ≠ strict-clean.** Post-invoke rescoring may flip harness evidence for debugging; only **live strict-clean invocations** count toward host certification and consecutive-round pairs.
+**Rescore ≠ strict-clean.** Post-invoke rescoring may flip harness evidence for debugging; only **live strict-clean invocations** count toward host certification and release candidate sign-off.
 
 **Ship-readiness consistency:** Row 16 (`ship-readiness`) outcome must match fixture state — `NOT_MERGE_READY` (or equivalent) **cannot** be scored PASS. Audit-only triad docs (row 15) without product delta is **not** certified delivery.
 
@@ -87,7 +87,7 @@ Execute in this order — do not skip ahead or claim certification credit from l
 |------|-------|------|---------|
 | **A** | Offline / pre-release structural | **No** | Wiring, registries, surface isolation, outcome harness |
 | **B** | Live smoke (rows **1, 3, 6**) | **Yes** | Router + feature + fast paths before full burn |
-| **C** | Full matrix **22/22** + Phase C strict-clean | **Yes** | Release pair gate (2 consecutive strict-clean rounds) |
+| **C** | Full matrix **22/22** + Phase C strict-clean | **Yes** | Release candidate gate (one strict-clean round @ `install_fp`) |
 
 ### Tier A — offline / pre-release (no TUI)
 
@@ -145,18 +145,20 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1 3 6
 
 **Strict-clean** = ladder 8/8 + matrix 22/22 + every row `enterprise_e2e_outcome_row_passes` + blocking autonomy gates + Phase C green + **0 new issues** vs baseline (`docs/issues/ENTERPRISE-E2E-SB-ISSUES.md`).
 
-**Release:** 2 consecutive strict-clean rounds per host ([`ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md)).
+**Release:** One strict-clean round @ release candidate `install_fp` satisfies host sign-off when all gates below pass ([`ROUND-N-GATES.md`](../../.planning/enterprise-e2e/ROUND-N-GATES.md) — update gate row **release candidate sign-off**).
 
-### Release pair gates — harness vs honest product (Codex R1–3 lesson)
+### Release candidate gate — harness vs honest product (Codex R1–3 lesson)
 
-Operators track **two independent counters**. Do not conflate them.
+Operators track **two independent dimensions**. Do not conflate them.
 
-| Counter | What it measures | Certification credit |
-|---------|------------------|----------------------|
-| **Harness consecutive** | 2× matrix 22/22 + Phase C @ same or successive install fingerprints | Harness routing/scoring only — **not** product delivery |
-| **Honest product consecutive** | 2× rounds each passing §5b product audit (committed deltas per implement row) on **honest** fixture baseline | Required for **release sign-off** |
+| Dimension | What it measures | Release sign-off credit |
+|-----------|------------------|-------------------------|
+| **Harness strict-clean** | Ladder 8/8 + matrix 22/22 + Phase C @ `install_fp` | Routing/scoring only — **not** product delivery without §5b |
+| **Honest product strict-clean** | Same round passes §5b product audit (committed deltas per implement row) on **honest** fixture baseline `09f8d1a` | **Required** for product certification @ release candidate version |
 
-**Codex example:** Codex-1 + Codex-2 achieved harness 22/22 twice on pre-seeded `8482e60` / `826cb5c` baseline — **0/22** row-mapped product commits ([CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md)). That is **void** for product certification. Codex-3 REAL on `09f8d1a` baseline = **1/2** honest product — [ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md). **Codex-4** is required for 2/2 product release pair.
+**Policy (effective 2026-07-04):** **One** strict-clean round @ the release candidate `install_fp` is sufficient for host **product certification sign-off** — no second confirmation round (historical 2/2 pair **deprecated**).
+
+**Codex example:** Codex-1 + Codex-2 achieved harness 22/22 twice on pre-seeded `8482e60` / `826cb5c` baseline — **0/22** row-mapped product commits ([CODEX-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-TEST-APP-PRODUCT-AUDIT.md)). That is **void** for product certification. **Codex-3 REAL** on `09f8d1a` baseline @ SB `f9ed398f` satisfies the **new** single-round policy — [ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md), [CODEX-3-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md) — see **Appendix F**. Round **Codex-4** was **not executed**; it is **not required** under the current policy (optional re-cert @ a new `install_fp` only).
 
 **Mandatory before product claim:** Run host-specific product audit (pattern: `CODEX-*-TEST-APP-PRODUCT-AUDIT.md`) and confirm §5a/§5b gates — matrix ledger 22/22 alone is insufficient.
 
@@ -216,7 +218,7 @@ Operators **must not** declare a row PASS for host certification unless the row 
 | 2 | **Harness rescoring** | E2E-089-style log rescoring flipping FAIL→PASS without a live strict-clean rerun (evidence-only rescoring after timeout/empty logs) | Rescore is diagnostic only — **does not** grant certification credit; live rerun required |
 | 3 | **Timeout / empty logs** | FORCE passes with **0–148 B** logs (timeout-only, connection noise, no captured workflow output) | FAIL row; fix harness (E2E-086 headless log streaming) or extend timeout; re-run live |
 | 4 | **Audit-only sessions** | Agent ran but **zero product delta**: routing-only row 1 with no routing artifact; verify-only row 7; triad docs-only row 15; ship-readiness `NOT_MERGE_READY` still PASS | FAIL row — dirty tree with no commits = not certified product delivery |
-| 5 | **Install-skip on first certification** | `ROW_ALREADY_PASSED_SAME_INSTALL` or `evidence_present` reusing prior-round evidence when certifying host for the **first** time at an install fingerprint | Install-skip allowed **only after** the first strict-clean pair @ install version (§6a); first certification requires live invocations |
+| 5 | **Install-skip on first certification** | `ROW_ALREADY_PASSED_SAME_INSTALL` or `evidence_present` reusing prior-round evidence when certifying host for the **first** time at an install fingerprint | Install-skip allowed **only after** the first strict-clean round @ install version (§6a); first certification requires live invocations |
 | 6 | **Internal gates without parent live work** | Rows 21–22 passing on parent markers when parent rows 3/4 were not live strict-clean at current install fingerprint | Re-run parent rows 3/4 live; internal rows inherit parent evidence only from live strict-clean parents |
 | 7 | **Frozen-merge without round authorship** | Round closure rescored rows from prior-round logs/commits without live authorship in **this** round's session window | Frozen-merge valid **only** when product commits were authored in earlier live batches **within the same round** (one-pass policy); cross-round frozen-merge is **disqualifying** |
 
@@ -312,7 +314,7 @@ Row 15 and ladder scoring require **8/8** review-fix-ladder PASS in a populated 
 | **Ledger vs monitor mismatch** | Ledger wins; run `enterprise-e2e-ledger-reconcile.sh` |
 | **Rescore-only 22/22** | **Not strict-clean** — Cursor-1 retry2 produced rescored 21–22/22 without live agent work on several rows; void for release sign-off |
 
-**Certification rule:** Only **live matrix invocations** at the current install fingerprint count toward strict-clean and consecutive-round pairs. Rescore may reconcile harness bugs but never substitutes for a missing live session.
+**Certification rule:** Only **live matrix invocations** at the current install fingerprint count toward strict-clean and release candidate sign-off. Rescore may reconcile harness bugs but never substitutes for a missing live session.
 
 Read [OUTCOME-ASSESSMENT-RUBRIC.md](../../.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md) before scoring. All **27 criteria** + blocking gates (`OUT-AUTO-01`, `OUT-CLARIFY-01`, `OUT-NOOP-01`, `OUT-WORLD-01`).
 
@@ -350,7 +352,7 @@ Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
 
 | Message | Class | Counts toward 22/22? | `SB_E2E_MATRIX_FAIL_ON_SKIP=1` |
 |---------|-------|----------------------|--------------------------------|
-| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) after first strict-clean pair @ `install_fp` | **Disqualifying on first host certification** @ install_fp (§5a #5) |
+| `ROW_ALREADY_PASSED_SAME_INSTALL` | Install-version pass | **Yes** (PASS) after first strict-clean round @ `install_fp` | **Disqualifying on first host certification** @ install_fp (§5a #5) |
 | `SKIP: evidence already present` | Evidence reuse | No (SKIP) | **Fails** when set — never certification credit |
 
 | Override | Effect |
@@ -358,13 +360,22 @@ Before row *N*, if registry shows `outcome_pass: true` for current `install_fp`:
 | `SB_E2E_MATRIX_FORCE=1` | Re-run fail-rows / brownfield rows despite evidence SKIP; **does not** bypass install-version registry for already-passed rows |
 | `SB_E2E_MATRIX_FORCE_ALL=1` | Full re-run including registry-passed rows — use only for deliberate full re-certification |
 
+### Tier B vs §5b smoke subsets (unified)
+
+| Phase | Rows | When | Purpose |
+|-------|------|------|---------|
+| **Tier B smoke** | **1, 3, 6** | Initial live bring-up before Tier C | Router + feature parent + fast path — cheapest structural live signal |
+| **§5b smoke re-cert** | **1, 6, 11** + internal **21–22** | Post-merge / new `install_fp` only | Re-verify product-commit surfaces + internal inherit chain after harness surface change |
+
+**Rule:** Tier B = **1, 3, 6** only. Rows **11, 21, 22** are **not** Tier B — they appear in **resume seeding** (after partial matrix progress) or in **post-merge §5b re-cert** (§11b sibling session). Do not conflate the two lists.
+
 ### Driver coordination (Round 8 example)
 
 When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 
 1. **Do not kill** a healthy driver to avoid duplicate TUI spend on rows already in flight.
-2. Seed registry for smoke-passed rows **before** next resume launch. **Tier B smoke** = rows **1, 3, 6** only. Rows **11, 21, 22** appear in **resume seeding** after partial matrix progress or post-harness-fix §5b re-cert — not part of initial Tier B.
-3. On resume after driver exit, rows 3 and 11 (if seeded) emit `ROW_ALREADY_PASSED_SAME_INSTALL` — run only missing rows.
+2. Seed registry for smoke-passed rows **before** next resume launch per table above.
+3. On resume after driver exit, seeded rows emit `ROW_ALREADY_PASSED_SAME_INSTALL` — run only missing rows.
 
 `bash scripts/enterprise-e2e/strict-clean-check.sh` requires install registry **22/22** for current `install_fp` plus ledger reconcile and outcome assessment.
 
@@ -387,7 +398,7 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 | Drivers per host | **1** — no parallel matrix operators |
 | `SB_E2E_MONITOR_AUTO_RESTART` | **0** |
 | Healthy driver | Do not kill **< 45 min** unless confirmed stuck/dead |
-| **Duplicate-driver guard** | Before launching new driver, SIGTERM stale batch PIDs — duplicate drivers corrupt ledger/registry (Codex-3 SIGTERM remediation) |
+| **Duplicate-driver guard** | Before launching new driver, SIGTERM stale batch PIDs — duplicate drivers corrupt ledger/registry (Codex-3 SIGTERM remediation). **Runbook:** see §8 step-by-step below |
 | Watchers | Prefer **tmux** durable daemon (`run-enterprise-e2e-matrix.sh` / tmux batch) — **not** `nohup` background shells as primary driver |
 | Parent orchestrator | One **`composer-2.5`** background worker (`Task` tool); **never** `composer-2.5-fast` for subagents; resume same worker ID |
 | Poll cadence | 60–90s substantive checkpoints |
@@ -399,6 +410,33 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 
 Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOST-CONFIG.md).
 
+### SIGTERM / duplicate-driver runbook (step-by-step)
+
+When resuming after crash, quota wall, or operator interrupt — **before** launching any new matrix driver:
+
+1. **Identify host** — `export SB_E2E_LIVE_RUNTIME=<claude|codex|cursor>`.
+2. **Check batch PID file** — `${SB_ROOT}/.e2e-matrix-${host}-batch.pid` (Codex: `.e2e-matrix-codex-batch.pid`). If missing, skip to step 5.
+3. **Verify process alive** — `kill -0 "$(cat .e2e-matrix-${host}-batch.pid)" 2>/dev/null` or `enterprise_e2e_matrix_batch_running` in driver preflight.
+4. **If alive and log growing** (< 45 min since last substantive log line): **do not SIGTERM** — poll-only resume (§7).
+5. **If dead or stuck** (no log growth ≥ 45 min, or confirmed zombie):
+   - `kill -TERM "$(cat .e2e-matrix-${host}-batch.pid)" 2>/dev/null; sleep 5`
+   - `kill -KILL "$(cat .e2e-matrix-${host}-batch.pid)" 2>/dev/null` only if TERM ignored
+   - Remove stale PID file: `rm -f .e2e-matrix-${host}-batch.pid`
+6. **Sweep orphan matrix children** — `pgrep -f "run-enterprise-e2e-matrix.sh.*${host}"` (or host-specific driver name); SIGTERM each stale PID **for this host only** — never `pkill` another host (§9).
+7. **Reconcile ledger** — `bash scripts/lib/enterprise-e2e-ledger-reconcile.sh <matrix-log>` before re-launch.
+8. **Reset TUI monitor offsets** — `enterprise_e2e_reset_tui_monitor_offsets "$SB_ROOT"` at round resume (not mid-batch).
+9. **Launch single driver** — one tmux session or `codex-r*-real-driver.sh`; confirm `enterprise_e2e_matrix_batch_running` returns false before start.
+
+### Poll-exit `pipefail` — monitor vs poll scripts
+
+| Script class | Location | `pipefail` requirement | Notes |
+|--------------|----------|------------------------|-------|
+| **Matrix monitor** | `scripts/monitor-enterprise-e2e-matrix.sh` | `set -uo pipefail` (no `-e` by design) | Watches batch PID + ledger reconcile; pipeline errors must propagate via `pipefail` |
+| **Poll-exit wrappers** | `.planning/enterprise-e2e/.codex-r*-poll-exit.sh`, `.cursor3-monitor-loop.sh` | **`set -euo pipefail`** + export `SB_E2E_ENTERPRISE_MATRIX=1` | Poll until driver exit; silent false-green if `pipefail` omitted (E2E-117) |
+| **REAL drivers** | `.planning/enterprise-e2e/codex-r*-real-driver.sh`, `cursor3-real-driver.sh` | `set -euo pipefail` | Call `enterprise_e2e_matrix_batch_running` before launch |
+
+**Operator rule:** Never wrap poll-exit in `bash -c '... | tee ...'` without `set -o pipefail` in the subshell — a failing pipeline upstream of `tee` can exit 0 otherwise.
+
 ### Codex operational prerequisites (R1–3)
 
 | Step | Requirement |
@@ -406,7 +444,7 @@ Host-isolated artifacts: see [HOST-CONFIG.md](../../.planning/enterprise-e2e/HOS
 | **Session 0** | Full `bash scripts/install-codex.sh` before first live matrix — seeds hook trust, core-rules integrity |
 | **REAL drivers** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0 — hook-trust seed per row, not full install each launch (E2E-108) |
 | **core-rules.sha256** | Regenerate after Codex sanitize in `install-codex.sh` when `core-rules.md` changes — mismatch blocks session start (`dfa364c9`) |
-| **Poll-exit pipefail** | Monitor/poll scripts must use `set -o pipefail` and export `SB_E2E_ENTERPRISE_MATRIX=1` on poll-exit — silent false-green otherwise |
+| **Poll-exit pipefail** | Poll-exit wrappers: `set -euo pipefail` + `SB_E2E_ENTERPRISE_MATRIX=1`. Monitor: `set -uo pipefail` — see §8 table |
 | **Quota 429** | Retry same row every 60s — not auth churn; schedule resume, do not rotate keys mid-row |
 
 ---
@@ -469,7 +507,7 @@ SKIP: row N already pass @ install <version>
 | `SB_E2E_MATRIX_FORCE=1` | Re-run all requested rows |
 | `SB_E2E_FORCE_ROW=1` | Re-run despite pass-at-version |
 
-**Release pair unchanged:** 2 consecutive **strict-clean rounds** (Cursor-1 + Cursor-2) still required. Within each round, rows already Pass @ install version are skipped — the round still must complete Phase A→C for any not-yet-passed rows/criteria.
+**Release candidate gate:** One strict-clean round @ release candidate `install_fp` is sufficient for host sign-off. Within that round, rows already Pass @ install version are skipped — the round still must complete Phase A→C for any not-yet-passed rows/criteria.
 
 **T1 row 1:** single FORCE run when not already Pass @ version (replaces T1 FORCE×2).
 
@@ -545,7 +583,7 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **Row 14 KM via graphify preamble** — matrix TUI may disable agentmemory MCP; graphify preamble satisfies `OUT-KM-01` | E2E-098 |
 | **Row 15 triad evidence** — `triad-currency.md` + instruction-ledger; review-triad ≠ release workflow | E2E-099 |
 | **Rows 14/15/16 live drivers** — outcome partials require `force1416`/`force141619` drivers, not ledger hand-edit | E2E-104 |
-| **§5b smoke before Tier C** — rows **6, 11** (plus **21–22** internal) must pass §5b before full matrix claim | E2E-106 |
+| **§5b smoke before Tier C** | Rows **6, 11** (plus **21–22** internal) must pass §5b before full matrix claim — Tier B bring-up uses **1, 3, 6** only | E2E-106 |
 | **Bracketed-paste confirm** — if log stops at `Queued follow-up`, re-run with paste-expand harness fix | E2E-107 |
 | **Fixture root before mkdir** — `export SB_TEST_ENTERPRISE_APP_ROOT` before any pilot/fixture mkdir | E2E-109 |
 | **Claude inherit-keys bypass** — export `ANTHROPIC_API_KEY` or inherit-keys before matrix launch | E2E-110 |
@@ -576,7 +614,7 @@ Post-v0.50.2 (`779464af`) fixes from Round Codex-3 REAL and Round 9 Claude gates
 | **§5a anti-faking** | No inherited baseline PASS; no rescore-only 22/22 | Same | Same (Appendix D void Cursor-1/2) |
 | **§5b log floor** | `codex-interactive-invoke.py` transcript + attempt log | `claude-interactive-invoke.expect` + bracketed-paste | `cursor/agent.sh` stream-json |
 | **§5b product delta** | `git log` on fixture branch per row | Same | Same |
-| **Smoke rows** | Tier B: 1, 3, 6, 11 + gates 21–22 | Gate 3: rows 1, 6, 11 sequential | Cursor-3 REAL: full 22 @ install_fp |
+| **Smoke rows** | Tier B: **1, 3, 6**; post-merge §5b: **1, 6, 11** + **21–22** | Gate 3: **1, 6, 11** sequential | Full 22 @ `install_fp` (Cursor-3 REAL canonical) |
 | **FORCE / install-skip** | `SB_E2E_SKIP_CODEX_INSTALL=1` after Session 0; `FORCE_ALL` for registry override | Full `install-claude.sh` after hook fix; isolated state per row | `FORCE`+`FORCE_ALL` in cursor3 driver; install-pass skip only after first strict-clean @ install_fp |
 
 ### Post-merge sibling session — re-certification required
@@ -585,7 +623,7 @@ When harness changes land on `main` from a **sibling agent session** (Cursor, Cl
 
 1. **Pull `main`** and re-run host install (`install-{claude,codex,cursor}.sh`).
 2. **Re-run Tier A** structural suite (`test-enterprise-e2e-*.sh`, `test-outcome-assessment.sh`).
-3. **Re-certify §5b smoke** (rows **1, 6, 11, 21, 22**) under the **new install fingerprint** — prior PASS @ old `install_fp` does **not** carry forward after harness fixes.
+3. **Re-certify §5b smoke** (rows **1, 6, 11** + verify internal **21–22** inherit) under the **new install fingerprint** — prior PASS @ old `install_fp` does **not** carry forward after harness fixes. *(Distinct from initial Tier B smoke **1, 3, 6** — see §6a table.)*
 4. Update ledgers with new commit SHA; cite E2E-101+ fix IDs when closing rows.
 5. **Do not** claim host certification until smoke §5b GREEN on current `main` HEAD.
 
@@ -682,4 +720,25 @@ Documented **disqualifying patterns** from void Codex-1/Codex-2 sessions — do 
 | Operator snapshot commit | `baadf87` — 560 files of session artifacts, not row product | **Not product delta** |
 | Row 3 stub-only | Planning file without `api/` currency commits | **FAIL** §5b — E2E-103 |
 
-**Real certification** (Codex-3+ only): reset fixture to **`09f8d1a`** on `enterprise-e2e/round-N-codex`, T0 → Tier B smoke → ladder 8/8 with `OUT-REVIEW-01` ledger → live FORCE on brownfield rows, §5b product audit before product claim. Frozen-merge round closure permitted when commits authored in earlier live batches **same round** (Codex-3 force1416 rescore). **Release pair:** Codex-3 = **1/2** honest product — [ROUND-CODEX-3-GATES.md](../../.planning/enterprise-e2e/ROUND-CODEX-3-GATES.md); **Codex-4** required for 2/2.
+**Real certification** (Codex-3+ only): reset fixture to **`09f8d1a`** on `enterprise-e2e/round-N-codex`, T0 → Tier B smoke (**1, 3, 6**) → ladder 8/8 with `OUT-REVIEW-01` ledger → live FORCE on brownfield rows, §5b product audit before product claim. Frozen-merge round closure permitted when commits authored in earlier live batches **same round** (Codex-3 force1416 rescore). **Release candidate sign-off:** Codex-3 REAL @ `f9ed398f` satisfies the single-round policy — [Appendix F](#appendix-f--release-candidate-sign-off-status--codex-host).
+
+---
+
+## Appendix F — Release candidate sign-off status — Codex host
+
+**Policy:** Single-round release candidate gate (§3) — one strict-clean round @ release candidate `install_fp` with 22/22 live + §5b product audit + outcome PASS + Phase C green.
+
+**Round Codex-4 executed?** **NO** — no `ROUND-CODEX-4-LEDGER.md`, no `ROUND-CODEX-4*` gate artifacts, no matrix/poll logs from a Codex-4 driver run. Only a prepared driver template exists ([`codex-r4-real-driver.sh`](../../.planning/enterprise-e2e/codex-r4-real-driver.sh)); it was never launched to completion.
+
+| Item | Codex-3 REAL @ closure | Meets new 1-round policy? |
+|------|------------------------|---------------------------|
+| SB closure SHA | `f9ed398f` (harness); `main` post-merge `874c4a07` | Yes — release candidate version |
+| Fixture | `enterprise-e2e/round-9-codex` @ `09f8d1a` honest baseline | Yes — excludes pre-seed fraud |
+| Matrix 22/22 live + §5b | **PASS** — [.codex-r3-force1416-rescore.log](../../.planning/enterprise-e2e/.codex-r3-force1416-rescore.log) | Yes |
+| Product audit | **PASS** — **19** commits ([CODEX-3-TEST-APP-PRODUCT-AUDIT.md](../../.planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md)) | Yes |
+| Phase C | **PASS** — 5067/5067 run-all-tests; ledger reconcile COMPLETE; RCS ≥ 85 | Yes |
+| Outcome assessment | **PASS** 79/79 @ Phase C | Yes |
+
+**Verdict:** **Codex host product certification sign-off — PASS** @ SB `f9ed398f` / Codex-3 closure. Codex-3 REAL is the certifying round under the current policy. Codex-4 is **not required**; run Codex-4 (or any new round) only when re-certifying a **new** release candidate `install_fp` after harness surface change or post-merge sibling session (§11b).
+
+**Historical note:** Under the deprecated 2/2 pair policy, Codex-3 counted as 1/2 and Codex-4 would have been required. That policy is superseded as of 2026-07-04.
