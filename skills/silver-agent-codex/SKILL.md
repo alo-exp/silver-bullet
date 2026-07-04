@@ -221,6 +221,7 @@ Delegation is **PASS** only when **all** hold:
 
 ## References
 
+- Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/silver:agent-<host>` on other hosts
 - Harness: `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
 - Live adapter: `tests/live/agents/codex/agent.sh`
 - E2E adapter (matrix only): `scripts/enterprise-e2e/lib/adapters/codex.sh`
