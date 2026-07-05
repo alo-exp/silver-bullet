@@ -117,11 +117,41 @@ OPENAI_API_KEY = "<your-key>"
 ALUMNIUM_MODEL = "openai/MiniMax-M3"
 ```
 
+### MiniMax vision proxy (Alumnium v0.21.0)
+
+MiniMax returns `"parsed": true` (boolean) in Responses API payloads. Alumnium's LangChain layer expects `parsed` to be a **record or absent** (`LchainSchema.MessageDataAdditionalKwargs`, bundled in `alumnium` `src/client/index.js` ~line 4943).
+
+**Fix:** run the local proxy and point `OPENAI_CUSTOM_URL` at it.
+
+```bash
+bash scripts/start-minimax-openai-proxy.sh
+
+# ~/.config/alumnium/env
+export OPENAI_API_KEY='<your-minimax-key>'
+export OPENAI_CUSTOM_URL='http://127.0.0.1:18721/v1'
+export ALUMNIUM_MODEL='openai/MiniMax-M3'
+```
+
+| Artifact | Role |
+|----------|------|
+| [`scripts/minimax-openai-proxy.mjs`](../scripts/minimax-openai-proxy.mjs) | Rewrites `parsed: true` → `parsed: {}`, fixes missing `logprobs` |
+| [`scripts/start-minimax-openai-proxy.sh`](../scripts/start-minimax-openai-proxy.sh) | Start proxy on `127.0.0.1:18721` |
+| [`scripts/patch-alumnium-minimax.mjs`](../scripts/patch-alumnium-minimax.mjs) | Post-`npm install` — coerce MiniMax plain-text retriever output |
+
+**Verify:**
+
+```bash
+bash tests/scripts/test-minimax-proxy.sh
+ALUMNIUM_CHECKS=1 ALUMNIUM_QUICK=1 bash /path/to/sidekick/.visual-audit/run-alumnium-pixel-pass.sh
+```
+
+**Cursor MCP** — set `OPENAI_CUSTOM_URL` to `http://127.0.0.1:18721/v1`; start proxy before Cursor.
+
 ### Verified behavior (v0.21.0)
 
 - Auth against MiniMax OpenAI-compatible API returns HTTP 200.
 - Alumnium `start` works with this configuration.
-- `check` / `do` may fail with a LangChain serialization error when MiniMax returns reasoning-format responses — an upstream compatibility issue, not an authentication problem.
+- `check` / `do` with vision require the proxy above (direct MiniMax URL fails LangChain serialization on `parsed: true`).
 
 ## SB Skill Integration
 
