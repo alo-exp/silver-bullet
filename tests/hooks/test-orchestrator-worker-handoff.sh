@@ -50,7 +50,7 @@ assert_eq "next_skill preserved" "$(jq -r '.next_skill' "${SB_TEST_DIR}/orchestr
 assert_eq "flow quality gate template" "$(sb_orchestrator_worker_template_for_skill 'FLOW-QUALITY-GATE')" "QUALITY-GATE"
 assert_eq "plan template" "$(sb_orchestrator_worker_template_for_skill 'silver-plan')" "PLAN"
 assert_eq "devops quality gates skill mapping" "$(sb_orchestrator_flow_to_skill 'devops-quality-gates')" "devops-quality-gates"
-assert_eq "research decide template" "$(sb_orchestrator_worker_template_for_skill 'silver-research')" "DECIDE"
+assert_eq "deep research decide template" "$(sb_orchestrator_worker_template_for_skill 'silver-deep-research')" "DECIDE"
 assert_eq "design handoff template" "$(sb_orchestrator_worker_template_for_skill 'silver-handoff')" "DESIGN-HANDOFF"
 assert_eq "flow design handoff token" "$(sb_orchestrator_worker_template_for_skill 'FLOW-DESIGN-HANDOFF')" "DESIGN-HANDOFF"
 assert_eq "design handoff flow to skill" "$(sb_orchestrator_flow_to_skill 'FLOW-DESIGN-HANDOFF')" "silver-handoff"

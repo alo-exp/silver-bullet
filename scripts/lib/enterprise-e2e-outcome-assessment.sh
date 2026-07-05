@@ -382,7 +382,7 @@ enterprise_e2e_outcome_matrix_workflow_slug() {
   local row_num="${1:-}"
   case "$row_num" in
     1) printf 'silver-router\n' ;;
-    2) printf 'silver-research\n' ;;
+    2) printf 'silver-deep-research\n' ;;
     3) printf 'silver-feature\n' ;;
     4) printf 'silver-bugfix\n' ;;
     5) printf 'silver-ui\n' ;;

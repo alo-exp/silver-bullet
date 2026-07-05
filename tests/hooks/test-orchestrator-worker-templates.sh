@@ -75,7 +75,7 @@ source "$REPO_ROOT/hooks/lib/orchestrator-directive.sh"
 
 echo "=== orchestrator worker template coverage ==="
 
-for composer in silver-feature silver-ui silver-devops silver-bugfix silver-research silver-fast silver-release; do
+for composer in silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-fast silver-release; do
   assert_queue_matches_catalog "$composer"
   echo "--- $composer queue ---"
   while IFS= read -r skill; do

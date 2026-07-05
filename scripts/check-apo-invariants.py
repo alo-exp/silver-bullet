@@ -229,7 +229,7 @@ def user_intent_coverage(catalog: dict) -> list[tuple[str, str, str]]:
 
 def router_coverage(catalog: dict) -> list[tuple[str, str, str]]:
     router = next((workflow for workflow in catalog["workflows"] if workflow["id"] == "WF-SILVER-ROUTER"), None)
-    top_routes = {"WF-SILVER-FEATURE", "WF-SILVER-UI", "WF-SILVER-DEVOPS", "WF-SILVER-BUGFIX", "WF-SILVER-RESEARCH", "WF-SILVER-RELEASE", "WF-SILVER-FAST"}
+    top_routes = {"WF-SILVER-FEATURE", "WF-SILVER-UI", "WF-SILVER-DEVOPS", "WF-SILVER-BUGFIX", "WF-SILVER-DEEP-RESEARCH", "WF-SILVER-RELEASE", "WF-SILVER-FAST"}
     workflows = {workflow["id"] for workflow in catalog["workflows"]}
     return [
         check("router workflow exists", router is not None, ""),

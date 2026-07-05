@@ -18,18 +18,31 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Follow **`skills/silver-research/SKILL.md`** Steps 2–3 (research path + apply-to-design clarify).
+Follow **`skills/silver-deep-research/SKILL.md`** for the selected FLOW 4
+research depth. The flow step is `FS-SILVER_DEEP_RESEARCH`.
 
-**Do NOT** invoke the `silver:research` composer skill — the parent already seeded the queue. Re-invoking it resets orchestrator state.
+The deep-research engine is a nested workflow inside this flow step. Execute the
+mode-appropriate internal steps (`DR-SCOPE`, `DR-PLAN`, `DR-RETRIEVE`,
+`DR-TRIANGULATE`, `DR-OUTLINE`, `DR-SYNTHESIZE`, `DR-CRITIQUE`,
+`DR-REFINE`, `DR-PACKAGE`) and record their local V-loop results in
+`vloop-rollup.json`.
+
+**Do NOT** invoke the `silver:deep-research` composer skill — the parent already
+seeded the queue. Re-invoking it resets orchestrator state.
+
+There is no MultAI branch in AF-DECIDE.
 
 ## Acceptance criteria
 
 - Research artifact exists under `.planning/research/`
+- `vloop-rollup.json` shows every required internal phase V-loop passed or was
+  explicitly skipped by the selected mode
 - Decision-ready handoff notes exist for the implementation workflow
 
 ## Handoff artifacts
 
 - `.planning/research/<date>-<topic>/` report file(s)
+- `.planning/research/<date>-<topic>/decision-record.md`
 - Clarify handoff from Step 3
 
 ## Exit

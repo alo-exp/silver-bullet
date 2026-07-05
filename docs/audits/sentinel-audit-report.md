@@ -27,7 +27,7 @@ Checked files:
 - `skills/silver-bugfix/SKILL.md` — clean
 - `skills/silver-ui/SKILL.md` — clean
 - `skills/silver-devops/SKILL.md` — clean
-- `skills/silver-research/SKILL.md` — clean
+- `skills/silver-deep-research/SKILL.md` — clean
 - `skills/silver-release/SKILL.md` — clean
 - `skills/silver-init/SKILL.md` — clean
 - `skills/silver-update/SKILL.md` — clean
@@ -139,7 +139,7 @@ recon_notes {
 
 #### F1-01 — MEDIUM — $ARGUMENTS Passed Without Sanitization to Chained Skills
 
-**Location:** `skills/silver/SKILL.md` Step 5; all workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-research, silver-release, silver-fast)
+**Location:** `skills/silver/SKILL.md` Step 5; all workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-deep-research, silver-release, silver-fast)
 
 **Description:** The `$ARGUMENTS` variable containing raw user input is passed directly to downstream sub-skill invocations. No sanitization, length-limiting, or allowlist filtering is applied before the argument reaches chained skills (gsd-do, gsd-fast, multai:orchestrator, etc.).
 
@@ -159,7 +159,7 @@ recon_notes {
 
 #### F1-02 — MEDIUM — silver-bullet.md §10 Read via Unquoted grep (Preference Injection)
 
-**Location:** All workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-research, silver-release) — Pre-flight step
+**Location:** All workflow skills (silver-feature, silver-bugfix, silver-ui, silver-devops, silver-deep-research, silver-release) — Pre-flight step
 
 **Description:** All workflow skills read `silver-bullet.md §10` using:
 ```bash
@@ -469,7 +469,7 @@ The episodic memory MCP (`mcp__plugin_episodic-memory_episodic-memory__read/sear
 
 #### F8-02 — LOW — Research Artifacts Written to .planning/research/ Include Full MultAI Output
 
-**Location:** `skills/silver-research/SKILL.md` — Artifact Output Protocol
+**Location:** `skills/silver-deep-research/SKILL.md` — Artifact Output Protocol
 
 **Description:** Research results from MultAI (which may include competitive intelligence, architecture decisions, technology comparisons) are written to `.planning/research/<date>-<topic>/`. These are committed to the git repository and potentially pushed to remote (public or shared). If sensitive technical decisions are captured here, they become part of the git history.
 

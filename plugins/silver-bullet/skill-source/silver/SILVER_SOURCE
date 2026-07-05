@@ -128,7 +128,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `silver:content --mode fix` | **Default route** for public site/help work — use site batch protocol (Composer 2.5 workers) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
-| "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
+| "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach", "deep research", "state of the art" | `silver:deep-research` | Rigorous research/decision artifact, then handoff |
 | "create workflow", "new workflow", "add workflow", "workflow authoring", "convert skill to workflow", "promote workflow", path to `skills/*/SKILL.md` for SB conversion | `silver:new-workflow` | Meta workflow authoring — create or convert workflows/AFs into catalog |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users" | `silver:release` | Milestone-level only |
 | "merge this", "push this PR", "ship this feature" with active phase context and no version signal | `silver:ship` | Phase-level ship |
@@ -182,7 +182,7 @@ First strong match wins after complexity triage and conflict resolution.
 | Conflict | Winner | Rationale |
 |----------|--------|-----------|
 | `silver:bugfix` + any other | `silver:bugfix` | Broken things block everything |
-| `silver:research` + implementation | `silver:research` first | Research informs implementation |
+| `silver:deep-research` + implementation | `silver:deep-research` first | Research informs implementation |
 | `silver:spec` + `silver:feature` | `silver:spec` first | Spec before implementation |
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
 | `silver:devops` + `silver:feature` | Ask user | App vs infra boundary is material |
@@ -231,7 +231,7 @@ If two or more destinations have similar confidence and the consequence is **blo
 >
 > A. `silver:feature` — compose SB quality/review gates around SB implementation
 > B. SB lifecycle step — route directly to `silver:context`, `silver:plan`, `silver:execute`, `silver:verify`, or `silver:ship`
-> C. `silver:research` — produce a decision artifact before implementation
+> C. `silver:deep-research` — produce a decision artifact before implementation
 > D. Something else — describe the target
 
 ### Step 9: Show routing banner
