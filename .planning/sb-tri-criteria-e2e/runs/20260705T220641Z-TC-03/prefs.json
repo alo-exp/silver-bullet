@@ -1,0 +1,8 @@
+{
+  "session_scope": "net_new_workflow",
+  "branch": "feature/tc03-compliance-snapshot",
+  "require_new_workflow_worker": true,
+  "expected_worker_template": "NEW-WORKFLOW",
+  "expected_skill": "silver-new-workflow",
+  "blocking_decisions_only": true
+}
