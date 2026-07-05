@@ -63,6 +63,7 @@ tests/live/agents/*/transcripts/
 # never committed. The .archive/ subdir keeps completed workflow files for
 # postmortem reference and is also gitignored.
 .planning/workflows/
+.planning/.context-cache/
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore

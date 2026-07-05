@@ -337,7 +337,7 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
 
-  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-(codex|claude)/invoke\.sh([[:space:]]|$)'; then
+  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor|claude)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)'; then
     return 1
   fi
 
