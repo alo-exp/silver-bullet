@@ -21,6 +21,14 @@ _agent_codex_source_common() {
   [[ -f "$common" ]] && source "$common"
 }
 
+# RTK + interactive timeout defaults (invoke.sh and direct delegate.sh paths).
+agent_codex_apply_runtime_env() {
+  export RTK_DISABLED="${RTK_DISABLED:-1}"
+  export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
+  export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
+  export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}"
+}
+
 # Default env for on-demand Codex delegation (not matrix).
 agent_codex_apply_delegate_env() {
   _agent_codex_source_common
@@ -32,10 +40,7 @@ agent_codex_apply_delegate_env() {
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
   export CODEX_AUTO_TRUST_HOOKS="${CODEX_AUTO_TRUST_HOOKS:-1}"
   export CODEX_BYPASS_HOOK_TRUST="${CODEX_BYPASS_HOOK_TRUST:-1}"
-  export RTK_DISABLED="${RTK_DISABLED:-1}"
-  export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
-  export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
-  export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}"
+  agent_codex_apply_runtime_env
 }
 
 # Vars exported by agent_codex_apply_delegate_env (for env.sh --export).

@@ -8,6 +8,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${REPO_ROOT}/scripts/lib/codex-cli.sh"
 # shellcheck source=scripts/lib/agent-delegate-common.sh
 source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
+# shellcheck source=scripts/agent-codex/lib.sh
+source "${REPO_ROOT}/scripts/agent-codex/lib.sh"
 
 usage() {
   cat <<'EOF'
@@ -110,6 +112,7 @@ agent_codex_cleanup_lightweight_env() {
 }
 
 agent_codex_invoke_once() {
+  agent_codex_apply_runtime_env
   agent_codex_apply_lightweight_env
   trap agent_codex_cleanup_lightweight_env RETURN
   export SB_ROOT
@@ -117,13 +120,6 @@ agent_codex_invoke_once() {
   export CODEX_BIN="$CLI"
   export SB_LIVE_CODEX_USE_EXEC="$USE_EXEC"
   export CLAUDE_INTERACTIVE_LOG_FILE="${LOG_FILE:-}"
-  # Env defaults applied by invoke.sh / agent_codex_apply_delegate_env when present.
-  if [[ "${SB_AGENT_CODEX_DELEGATE:-0}" != "1" ]]; then
-    export RTK_DISABLED=1
-    export CODEX_INTERACTIVE_READY_TIMEOUT="${CODEX_INTERACTIVE_READY_TIMEOUT:-${SB_AGENT_CODEX_MODEL_READY_TIMEOUT:-120}}"
-    export CODEX_INTERACTIVE_IDLE_TIMEOUT="${CODEX_INTERACTIVE_IDLE_TIMEOUT:-3600}"
-    export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-45}"
-  fi
   # shellcheck source=tests/live/agents/codex/agent.sh
   source "$AGENT_SH"
   agent_preflight
