@@ -121,7 +121,76 @@ agent_claude_prepare_lightweight_config_dir() {
   export SB_RUNTIME_STATE_DIR="${lightweight_config}/.silver-bullet-state"
   mkdir -p "$SB_RUNTIME_STATE_DIR"
   agent_claude_seed_folder_trust "${CLAUDE_WORK_DIR:-${WORK_DIR:-}}" "$lightweight_config"
+  agent_claude_seed_lightweight_settings "$lightweight_config"
   printf '[agent-claude] lightweight CLAUDE_CONFIG_DIR: %s\n' "$lightweight_config" >&2
+}
+
+# Copy global Claude settings into ephemeral config, stripping broken user hook refs.
+agent_claude_seed_lightweight_settings() {
+  local config_dir="${1:-${CLAUDE_CONFIG_DIR:-}}"
+  local global_settings="${HOME}/.claude/settings.json"
+  local dest_settings="${config_dir}/settings.json"
+  [[ -n "$config_dir" ]] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+
+  python3 - "$global_settings" "$dest_settings" <<'PY'
+import json
+import os
+import pathlib
+import re
+import sys
+
+src = pathlib.Path(sys.argv[1])
+dest = pathlib.Path(sys.argv[2])
+dest.parent.mkdir(parents=True, exist_ok=True)
+
+doc = {}
+if src.is_file():
+    try:
+        doc = json.loads(src.read_text())
+    except json.JSONDecodeError:
+        doc = {}
+
+hook_re = re.compile(r'gsd-session-state|gsd-[a-z-]+\.sh', re.I)
+
+
+def hook_command_broken(cmd):
+    if not isinstance(cmd, str):
+        return False
+    if hook_re.search(cmd):
+        return True
+    m = re.search(r'(["\'])([^"\']+\.(?:sh|js|mjs))\1', cmd)
+    if m:
+        p = os.path.expanduser(m.group(2))
+        if not os.path.isfile(p):
+            return True
+    return False
+
+
+def filter_hooks(hooks):
+    if not isinstance(hooks, list):
+        return hooks
+    kept = []
+    for entry in hooks:
+        if not isinstance(entry, dict):
+            kept.append(entry)
+            continue
+        inner = entry.get("hooks") or []
+        new_inner = [h for h in inner if not hook_command_broken((h or {}).get("command", ""))]
+        if new_inner:
+            entry = dict(entry)
+            entry["hooks"] = new_inner
+            kept.append(entry)
+    return kept
+
+hooks = doc.get("hooks")
+if isinstance(hooks, dict):
+    for event, groups in list(hooks.items()):
+        if isinstance(groups, list):
+            hooks[event] = filter_hooks(groups)
+
+dest.write_text(json.dumps(doc, indent=2) + "\n")
+PY
 }
 
 agent_claude_cleanup_lightweight_config_dir() {
@@ -136,4 +205,22 @@ agent_claude_cleanup_lightweight_config_dir() {
     fi
     unset SB_AGENT_CLAUDE_CONFIG_DIR_RESTORE SB_E2E_ISOLATED_CLAUDE_CONFIG
   fi
+}
+
+# Ensure Claude plugin cache current alias + hooks exist before delegation.
+agent_claude_ensure_plugin_cache() {
+  local repo_root="${1:-${SB_ROOT:-$(agent_claude_repo_root)}}"
+  local plugin_lib="${repo_root}/scripts/lib/plugin-cache-version.sh"
+  [[ -f "$plugin_lib" ]] || {
+    printf 'WARN: plugin-cache-version helper missing — run install-claude.sh\n' >&2
+    return 1
+  }
+  # shellcheck source=scripts/lib/plugin-cache-version.sh
+  source "$plugin_lib"
+  if sb_claude_ensure_plugin_cache_ready "$repo_root"; then
+    printf 'OK: Claude plugin cache ready (current alias + hooks)\n' >&2
+    return 0
+  fi
+  printf 'ERROR: Claude plugin cache not ready — run bash scripts/install-claude.sh\n' >&2
+  return 1
 }
