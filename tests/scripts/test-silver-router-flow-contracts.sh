@@ -49,7 +49,7 @@ for file in \
   "$REPO_ROOT/skills/silver-ui/SKILL.md" \
   "$REPO_ROOT/skills/silver-devops/SKILL.md" \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
-  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
   assert_not_contains "no stale silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
   assert_not_contains "no stale INTEL/BRAINSTORM flow labels in ${file#$REPO_ROOT/}" "FLOW 2 \\(INTEL\\)|FLOW 3 \\(BRAINSTORM\\)" "$file"
@@ -63,7 +63,7 @@ for file in \
   "$REPO_ROOT/skills/silver-ui/SKILL.md" \
   "$REPO_ROOT/skills/silver-devops/SKILL.md" \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
-  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
   assert_contains "composer references flow contracts in ${file#$REPO_ROOT/}" "composable-flows-contracts" "$file"
 done
@@ -77,14 +77,14 @@ for file in \
   assert_contains "composer declares standard chain in ${file#$REPO_ROOT/}" "Standard composition chain" "$file"
 done
 
-assert_contains "research declares standard composition chain" "Standard composition chain" "$REPO_ROOT/skills/silver-research/SKILL.md"
+assert_contains "deep research declares standard composition chain" "Standard Composition Chain" "$REPO_ROOT/skills/silver-deep-research/SKILL.md"
 
 for file in \
   "$REPO_ROOT/skills/silver-feature/SKILL.md" \
   "$REPO_ROOT/skills/silver-ui/SKILL.md" \
   "$REPO_ROOT/skills/silver-devops/SKILL.md" \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
-  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
   assert_not_contains "no Invoke silver: bloat in ${file#$REPO_ROOT/}" "[Ii]nvoke \`silver:" "$file"
 done
@@ -109,25 +109,20 @@ done
 for file in "$template" "$root_rules"; do
   assert_contains "template states SB lifecycle authority in ${file#$REPO_ROOT/}" "Silver Bullet owns the default lifecycle through SB-owned skills" "$file"
   assert_contains "template uses silver:scan in ${file#$REPO_ROOT/}" "silver:scan" "$file"
-  assert_contains "template keeps MultAI optional for research in ${file#$REPO_ROOT/}" "optional multi-AI only when user-requested" "$file"
+  assert_contains "template names search-cli for deep research in ${file#$REPO_ROOT/}" "search-cli" "$file"
   assert_not_contains "template has no silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
 done
 
-for file in \
-  "$REPO_ROOT/skills/silver-research/SKILL.md"; do
-  assert_contains "research skill defaults to direct research in ${file#$REPO_ROOT/}" "Default mode is direct research" "$file"
-  assert_contains "research skill keeps MultAI opt-in in ${file#$REPO_ROOT/}" "Only opt into MultAI" "$file"
-  assert_contains "research skill requires current-task explicit request in ${file#$REPO_ROOT/}" "current task" "$file"
-  assert_not_contains "research skill ignores stored-preference MultAI activation in ${file#$REPO_ROOT/}" "stored preference opts in|stored user workflow preference explicitly opts into MultAI for research" "$file"
-  assert_not_contains "research skill no longer treats MultAI as mandatory in ${file#$REPO_ROOT/}" "Run the relevant MultAI research path" "$file"
-done
+assert_contains "deep research skill records nested V-loop discipline" "Nested SB Flow Discipline" "$REPO_ROOT/skills/silver-deep-research/SKILL.md"
+assert_contains "deep research skill forbids Documents output" "FORBIDDEN: writing research output" "$REPO_ROOT/skills/silver-deep-research/SKILL.md"
+assert_contains "DECIDE worker removes MultAI branch" "There is no MultAI branch" "$REPO_ROOT/templates/orchestrator-workers/DECIDE.md"
 
 for file in \
   "$REPO_ROOT/skills/silver-feature/SKILL.md" \
   "$REPO_ROOT/skills/silver-ui/SKILL.md" \
   "$REPO_ROOT/skills/silver-devops/SKILL.md" \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
-  "$REPO_ROOT/skills/silver-research/SKILL.md" \
+  "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
   assert_not_contains "workflow does not route to missing SB-local MultAI skill in ${file#$REPO_ROOT/}" "silver:multai" "$file"
 done

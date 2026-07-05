@@ -101,7 +101,7 @@ sb_orchestrator_worker_template_for_skill() {
     FLOW-BOOTSTRAP|BOOTSTRAP|silver-init) printf 'BOOTSTRAP' ;;
     FLOW-ORIENT|ORIENT|silver-context|silver-scan) printf 'ORIENT' ;;
     FLOW-CLARIFY|CLARIFY|silver-clarify) printf 'CLARIFY' ;;
-    FLOW-DECIDE|DECIDE|silver-research) printf 'DECIDE' ;;
+    FLOW-DECIDE|DECIDE|silver-deep-research) printf 'DECIDE' ;;
     FLOW-SPECIFY|SPECIFY|silver-spec|silver-ingest) printf 'SPECIFY' ;;
     devops-skill-router) printf 'DEVOPS-SKILL-ROUTER' ;;
     FLOW-REVIEW-REQUEST|REVIEW-REQUEST|REVIEW\ REQUEST|silver-review-request) printf 'REVIEW-REQUEST' ;;

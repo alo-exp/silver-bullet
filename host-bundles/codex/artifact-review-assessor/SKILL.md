@@ -58,7 +58,7 @@ The assessor is not an artifact — it produces a classified list, not a documen
 | REQUIREMENTS.md | REQ-XX format rules in silver:spec SKILL.md step 8 |
 | CONTEXT.md | Locked decisions format in silver:context workflow |
 | PLAN.md | Wave structure + task format in silver:plan workflow |
-| RESEARCH.md | Evidence + confidence format in silver:research workflow |
+| RESEARCH.md | Evidence + confidence format in silver:deep-research workflow |
 | DESIGN.md | SB design template in silver:spec SKILL.md step 9 |
 | UI-SPEC.md | Design contract format in silver:ui-contract workflow |
 | REVIEW.md | Code quality finding format in silver:review workflow |

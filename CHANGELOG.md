@@ -334,7 +334,7 @@ Post-release APO runtime alignment, orchestrator queue fixes, and help-center re
 
 ## Bug Fixes
 - Fixed `silver-devops` orchestrator post-exec queue token (`FLOW-QUALITY-GATE-PRESHIP` instead of stale `FLOW-DEVOPS-QUALITY-GATE-PRESHIP`).
-- Registered `silver-research` and `silver-ensure-docs` as flow atoms and extended the `silver-research` default queue with documentation and validation steps.
+- Registered `silver-deep-research` and `silver-ensure-docs` as flow atoms and extended the `silver-deep-research` default queue with documentation and validation steps.
 
 ## Tests
 - Added orchestrator queue-order and worker-template parity coverage for research and devops flows.
@@ -770,7 +770,7 @@ Launch-readiness follow-up: closes GitHub #222 and remaining adversarial review 
 - `feat(silver-bugfix): complete deploy chain with validate, branch-finish, completion-audit`
 - `fix(silver-ui): canonical security → silver:secure order`
 - `fix(silver-feature): remove stale VERIFY skip from composition context scan`
-- `fix(silver-research): align workflow-chain guard with clarify + research markers`
+- `fix(silver-deep-research): align workflow-chain guard with clarify + research markers`
 
 ## Config / Docs
 - `chore(config): remove tdd from required_deploy_devops; align config_version and version to 0.43.0`
@@ -1769,7 +1769,7 @@ Seven items deferred to future milestones via `.planning/seeds/`: SEED-001 (#68 
 - **Strict `SB_WORKFLOW_ID` final-delivery gate** — `completion-audit.sh` now blocks `gh release create` / `gh pr create` / `gh pr merge` / `deploy` when `.planning/workflows/` has active files unless: (a) `SB_WORKFLOW_ID` is set, (b) it matches an active file, (c) the matched file's Flow Log is 100% complete. Backward-compatible: when no `.planning/workflows/` exists, the legacy required-skills gate continues unchanged.
 - **Section-scoped Flow Log counting** — `hooks/lib/workflow-utils.sh` row-counters (`count_flow_log_rows`, `count_complete_flow_rows`) now scope to the `## Flow Log` heading and stop at the next `## ` heading. Closes the digit-row inflation hole (S4 regression guard) where Phase Iterations / Autonomous Decisions tables in the same file would falsely inflate Flow Log counts.
 - **`compliance-status.sh` flow progress** — when `SB_WORKFLOW_ID` matches an active workflow, the status line now surfaces `FLOW <complete>/<total> (id=<id>)` instead of just an active count.
-- **Composer integration** — 6 silver-* skills (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-research`, `silver-release`) replace their legacy "Create WORKFLOW.md" step with workflows.sh-based start/complete-flow/complete instructions. Each skill instructs Claude to capture and export `SB_WORKFLOW_ID`.
+- **Composer integration** — 6 silver-* skills (`silver-feature`, `silver-bugfix`, `silver-ui`, `silver-devops`, `silver-deep-research`, `silver-release`) replace their legacy "Create WORKFLOW.md" step with workflows.sh-based start/complete-flow/complete instructions. Each skill instructs Claude to capture and export `SB_WORKFLOW_ID`.
 
 ## Tests
 
@@ -2512,7 +2512,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 ## [0.9.0] — 2026-04-08
 
 ### Added
-- 7 named SB orchestration skill files: silver:feature, silver:bugfix, silver:ui, silver:devops, silver:research, silver:release, silver:fast
+- 7 named SB orchestration skill files: silver:feature, silver:bugfix, silver:ui, silver:devops, silver:deep-research, silver:release, silver:fast
 - §2h SB Orchestrated Workflows enforcement section in silver-bullet.md and template
 - §10 User Workflow Preferences schema (10a–10e) in silver-bullet.md and template
 - /silver router expanded: 17+ routes, complexity triage, ship disambiguation, conflict resolution

@@ -36,14 +36,11 @@ At the very start of any new session, perform these steps automatically:
    SB-owned. Do not install or update legacy lifecycle-overlap plugins during
    SB setup unless the user explicitly requests an external plugin.
 
-   **5.4 MultAI (optional, only if installed)**
+   **5.4 search-cli (optional, only if configured)**
    ```bash
-   cat "${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json" | jq -r '.plugins["multai@multai"][0].version // "unknown"'
+   command -v search >/dev/null && search --version || true
    ```
-   MultAI is optional. `silver:research` works without it and only uses it when the user explicitly asks for multi-AI perspectives in the current task.
-   Compare to the latest entry in `${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/CHANGELOG.md` only when a version is installed. If installed version is outdated, display:
-   - "MultAI v{installed} appears outdated. Update manually with `/multai:update` if you plan to use optional multi-AI perspectives in this session."
-   If the plugin is missing or the version is unknown: output "MultAI not installed. Optional; skipping." and continue.
+   `silver:deep-research` works without search-cli, but uses it first when configured for broader multi-provider retrieval. For deep/ultradeep research, recommend configuring the relevant provider class only when available fallback sources cannot satisfy the evidence threshold.
 
    **5.5 Alumnium (optional visual/browser companion)**
    Alumnium is optional. SB routes to it for visual-heavy clarify sessions and browser-backed UI verification when the user has configured the [Alumnium](https://alumnium.ai/) MCP server. See §8.1 for hook points, fallback hierarchy, and install reference.
@@ -409,12 +406,12 @@ SB is the lifecycle authority. Semver, milestones, phases, planning, execution, 
 
 | Workflow | Entry triggers | Standard composition chain |
 |----------|---------------|---------------------------|
-| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | FLOW 3 (CLARIFY) → handoff to `silver:feature` / `silver:devops` / `silver:research` |
+| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | FLOW 3 (CLARIFY) → handoff to `silver:feature` / `silver:devops` / `silver:deep-research` |
 | `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | FLOW 1–5 (conditional) → FLOW 13 (pre-plan) → FLOW 6 → [FLOW 7 if UI] → FLOW 8 → post-execution chain |
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | FLOW 15 (DEBUG) → FLOW 6 → FLOW 8 → post-execution chain |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | FLOW 1–6 (conditional) → FLOW 7 → FLOW 8 → FLOW 9 → post-execution chain |
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | FLOW 2 → [3–4] → blast-radius → devops-skill-router → FLOW 13 → FLOW 6 → FLOW 8 → post-execution chain |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | FLOW 3 → FLOW 4 → [FLOW 5] → handoff to `silver:feature` / `silver:devops` |
+| `silver:deep-research` | "how should we", "which technology", "compare X vs Y", "spike", "state of the art" | FLOW 3 → FLOW 4 → FLOW 16 → FLOW 13/VALIDATE → handoff to `silver:feature` / `silver:devops` |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | FLOW 13 → FLOW 12 (UAT audit) → FLOW 18 (milestone audit + gap closure) → FLOW 16–17 → delivery tail → `silver:create-release` |
 | `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
 
@@ -458,8 +455,8 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 |------|------|---------|
 | FLOW 1 | BOOTSTRAP | Project setup — `silver:init`, workflow initialization |
 | FLOW 2 | ORIENT | Codebase intelligence — `silver:scan`, `silver:context`, optional `silver:review-stats` |
-| FLOW 3 | CLARIFY | Discovery and framing — `silver:clarify`, optional multi-AI only when user-requested |
-| FLOW 4 | DECIDE | Option synthesis — `silver:research`, optional spike or external research connector |
+| FLOW 3 | CLARIFY | Discovery and framing — `silver:clarify` |
+| FLOW 4 | DECIDE | Option synthesis — `silver:deep-research`, optional spike, or external research connector |
 | FLOW 5 | SPECIFY | Spec creation — `silver:ingest`, `silver:spec`, `silver:validate` |
 | FLOW 6 | PLAN | Phase planning — `silver:context`, `silver:plan`, optional `silver:validate` |
 | FLOW 7 | DESIGN CONTRACT | UI/UX design — `silver:ui-contract` plus optional design lenses |
@@ -663,7 +660,7 @@ canonical marker automatically:
 
 These markers allow `compliance-status.sh` to display lifecycle progress.
 
-They also feed the workflow-chain guard: when a composed `silver:feature`, `silver:ui`, or `silver:research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
+They also feed the workflow-chain guard: when a composed `silver:feature`, `silver:ui`, or `silver:deep-research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
 
 > **Anti-Skip:** You are violating this rule if you invoke an SB lifecycle skill outside the active runtime's SB-recognized skill invocation channel. Markers are recorded only by supported invocation events or receipts, and manual state writes are blocked.
 
@@ -915,7 +912,7 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 | **Alumnium** | [alumnium.ai](https://alumnium.ai/) · [alumnium-hq/alumnium](https://github.com/alumnium-hq/alumnium) | Visual companion in `silver:clarify`; browser evidence in `silver:ui-review` and `silver:verify` | **Incorporate now** |
 | **Sidekick** | [alo-exp/sidekick](https://github.com/alo-exp/sidekick) | Cross-AI plan review / replan loop (`--reviews`, plan convergence) | **Deferred** |
 | **InstaDecks** | [alo-exp/instadecks](https://github.com/alo-exp/instadecks) | Presentation generation (`zuvo:presentation` parity) | **Deferred** |
-| **MultAI** | multai plugin | Multi-AI research perspectives when user-requested | Optional (existing) |
+| **search-cli** | [199-biotechnologies/search-cli](https://github.com/199-biotechnologies/search-cli) | Optional multi-provider retrieval for `silver:deep-research` | Optional |
 
 **Alumnium integration contract:** When Alumnium MCP is configured, SB may invoke it for natural-language browser actions (`do`), assertions (`check`), data extraction (`get`), and waits (`wait`) against a running app or mockup URL. Alumnium wraps Playwright, Selenium, or Appium via accessibility trees and optional screenshots — it augments SB skills; it does not replace them. Install: `host mcp add (see install guide) alumnium --env OPENAI_API_KEY=... -- npx alumnium mcp` (or `uvx alumnium mcp`; provider keys per [Alumnium docs](https://alumnium.ai/docs)). Do not block core workflows when Alumnium is absent.
 
@@ -987,9 +984,9 @@ Last updated: 2026-05-06
 | Decision point | Preferred tool | Since |
 |----------------|---------------|-------|
 
-### 9d. MultAI Preferences
-| Trigger | Disposition | Since |
-|---------|-------------|-------|
+### 9d. Deep Research Preferences
+| Trigger | Research depth / provider preference | Since |
+|---------|--------------------------------------|-------|
 
 ### 9e. Mode Preferences
 | Setting | Value | Since |

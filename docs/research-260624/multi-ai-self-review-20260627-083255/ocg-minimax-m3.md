@@ -17,7 +17,7 @@ Let me verify some referenced paths exist and check for additional context.
 - The "What this skill does NOT do" bullets (lines 24-28) draw clean boundaries — better than most skills I see.
 
 **What is missing or wrong**
-- **Broken cross-references in "See also"** (lines 188-191): "`deep-research` skill (Claude/Codex)" and "`find-skills`" are both referenced, but neither `skills/deep-research/SKILL.md` nor `skills/find-skills/SKILL.md` exists in this repo. The only research skill present is `skills/silver-research/SKILL.md` (a different composition spec, not a per-model prompt). This propagates to all 3 mirrored surfaces (`agents/codex/multi-ai-task/SKILL.md:190`, `agents/claude/multi-ai-task/SKILL.md:189`, `agents/cursor/multi-ai-task/SKILL.md:189`) — a single broken `see also` has been synced 4× by the mirroring scripts.
+- **Broken cross-references in "See also"** (lines 188-191): "`deep-research` skill (Claude/Codex)" and "`find-skills`" are both referenced, but neither `skills/deep-research/SKILL.md` nor `skills/find-skills/SKILL.md` exists in this repo. The only research skill present is `skills/silver-deep-research/SKILL.md` (a different composition spec, not a per-model prompt). This propagates to all 3 mirrored surfaces (`agents/codex/multi-ai-task/SKILL.md:190`, `agents/claude/multi-ai-task/SKILL.md:189`, `agents/cursor/multi-ai-task/SKILL.md:189`) — a single broken `see also` has been synced 4× by the mirroring scripts.
 - **"All 4 scoring matrices" claim is ambiguous** (line 180): "**All 4 scoring matrices** extracted and aggregated (median + range per dimension)". The actual run produced **8-dimension** scoring matrices from 4 of 6 agents (per `docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md:147` and `SB_PRIOR_ART_USER_PROMPT.md:40`). A reader who hasn't seen the report will assume 4 dimensions. The correct phrasing is: "**4 of 6 agents produced 8-dimensional scoring matrices** (median + range per dimension × per item); 2 produced qualitative comparisons; 1 produced only the rubric."
 - **`--mode` parameter is underdocumented** (line 66): "`quick` (no dedup, just merge) / `standard` (dedup + conflict resolution) / `thorough` (adds cross-source verification)". No file documents what `thorough` actually does beyond that one-line hint — searching the rules/ directory for `thorough` returns zero results. The mode is a contract without a spec.
 - **Frontmatter description embeds task examples** (line 3): "Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.)". The parenthetical embeds a list of task types in the trigger description — risks pattern-matching on examples rather than the actual contract.
@@ -223,14 +223,14 @@ These are honest gaps. The skill is *good* at parent/worker split and at catalog
   - - `deep-research` skill (Claude/Codex) — 8-phase research methodology that can be invoked as the per-model prompt
   - - `silver-bullet` — for managing the SDLC workflow that may consume multi-ai-task's outputs
   - - `find-skills` — to discover related SB skills
-  + - `silver-research` — SB queue builder for tech decisions (alternative to inline deep-research methodology)
+  + - `silver-deep-research` — SB queue builder for tech decisions (alternative to inline deep-research methodology)
   + - `silver-bullet` — for managing the SDLC workflow that may consume multi-ai-task's outputs
   + - If the host has the `deep-research` skill (Claude/Codex), it can be invoked as the per-model prompt; otherwise, inline the 8-phase methodology in the dispatch prompt
   ```
   And in `rules/examples/research-prior-art.md:146`:
   ```diff
   - - **Add the deep-research skill per model** — if each model has the `deep-research` skill available, instruct it to use that methodology for the per-model execution phase
-  + - **Add a deep-research skill per model** — if each model has the `silver-research` or `deep-research` skill available, instruct it to use that methodology; otherwise, inline the methodology in the dispatch prompt
+  + - **Add a deep-research skill per model** — if each model has the `silver-deep-research` or `deep-research` skill available, instruct it to use that methodology; otherwise, inline the methodology in the dispatch prompt
   ```
   Then re-run `bash scripts/sync-codex-package.sh` to propagate.
 - **Effort** Low
@@ -353,7 +353,7 @@ These are the questions a more confident review would need answered:
 
 6. **Why are the 3 example files in `rules/examples/` (per the file listing I did) and not in a top-level `examples/` directory?** This is a structural question — `AGENTS.md` says "85 canonical skills live under `skills/`" but doesn't say where example files belong. The current location is fine but should be consistent with other skills.
 
-7. **What is the relationship between this skill and the `silver-research` skill?** `silver-research` is described as an "SB queue builder" with FLOW 3-5 composition. `multi-ai-task` is an orchestration pattern. The two could be combined (`silver-research` *uses* `multi-ai-task` as a worker) but the skill files don't describe the integration.
+7. **What is the relationship between this skill and the `silver-deep-research` skill?** `silver-deep-research` is described as an "SB queue builder" with FLOW 3-5 composition. `multi-ai-task` is an orchestration pattern. The two could be combined (`silver-deep-research` *uses* `multi-ai-task` as a worker) but the skill files don't describe the integration.
 
 8. **What is the deprecation policy for the alias table?** Aliases are added "as you encounter them" but never removed. Over time, the table grows; eventually it will include stale aliases (e.g., if a product renames). There's no audit or refresh cadence.
 

@@ -577,15 +577,15 @@ fi
 journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Route-smoke the ingest surface for the todo-app journey. The harness owns deterministic scaffold recovery; do not explore the codebase.')"
 journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
 wait_for_state_contains "silver:scan recorded in workflow state" "silver:scan"
-research_prompt="$(skill_prompt 'silver:research' 'Route-smoke the research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"
-journey_turn "silver:research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
-research_log="${TURN_LOG_DIR}/silver-research.txt"
-assert_no_local_skill_source_bypass "silver:research avoided local codex-plugins skill sources" "$research_log"
-if grep -Eqi 'MultAI plugin is not installed|required for silver:research|missing MultAI dependency' "$research_log"; then
-  echo "FAIL: silver:research did not require MultAI in the isolated runtime"
+research_prompt="$(skill_prompt 'silver:deep-research' 'Route-smoke the deep research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"
+journey_turn "silver:deep-research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
+research_log="${TURN_LOG_DIR}/silver-deep-research.txt"
+assert_no_local_skill_source_bypass "silver:deep-research avoided local codex-plugins skill sources" "$research_log"
+if grep -Eqi 'MultAI plugin is not installed|required for silver:deep-research|missing MultAI dependency' "$research_log"; then
+  echo "FAIL: silver:deep-research did not require MultAI in the isolated runtime"
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: silver:research did not require MultAI in the isolated runtime"
+  echo "PASS: silver:deep-research did not require MultAI in the isolated runtime"
   PASS=$((PASS + 1))
 fi
 

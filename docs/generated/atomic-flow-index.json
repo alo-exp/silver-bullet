@@ -47,13 +47,13 @@
     "silver-context": "AF-ORIENT",
     "silver-create-release": "AF-RELEASE",
     "silver-debug": "AF-DEBUG",
+    "silver-deep-research": "AF-DECIDE",
     "silver-ensure-docs": "AF-DOCUMENT",
     "silver-execute": "AF-EXECUTE",
     "silver-handoff": "AF-DOCUMENT",
     "silver-new-workflow": "AF-PLAN",
     "silver-plan": "AF-PLAN",
     "silver-quality-gates": "AF-QUALITY-GATE",
-    "silver-research": "AF-DECIDE",
     "silver-review": "AF-REVIEW",
     "silver-review-fix-ladder": "AF-REVIEW-TRIAGE",
     "silver-review-request": "AF-REVIEW-REQUEST",
@@ -243,6 +243,9 @@
     "FS-SILVER_DEBUG": [
       "AF-DEBUG"
     ],
+    "FS-SILVER_DEEP_RESEARCH": [
+      "AF-DECIDE"
+    ],
     "FS-SILVER_DEPLOY": [
       "AF-SHIP"
     ],
@@ -285,9 +288,6 @@
     "FS-SILVER_MIGRATE": [
       "AF-PHASE-MANAGE"
     ],
-    "FS-SILVER_MULTI_AI": [
-      "AF-DECIDE"
-    ],
     "FS-SILVER_NEW_WORKFLOW": [
       "AF-PLAN"
     ],
@@ -317,9 +317,6 @@
     ],
     "FS-SILVER_REMOVE": [
       "AF-PHASE-MANAGE"
-    ],
-    "FS-SILVER_RESEARCH": [
-      "AF-DECIDE"
     ],
     "FS-SILVER_RETRO": [
       "AF-DOCUMENT"
@@ -444,6 +441,12 @@
       "silver-completion-audit",
       "silver-ship"
     ],
+    "silver-deep-research": [
+      "silver-clarify",
+      "silver-deep-research",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
     "silver-devops": [
       "silver-blast-radius",
       "devops-skill-router",
@@ -493,7 +496,7 @@
     "silver-new-workflow": [
       "silver-clarify",
       "silver-scan",
-      "silver-research",
+      "silver-deep-research",
       "silver-plan",
       "silver-review-fix-ladder",
       "silver-execute",
@@ -514,12 +517,6 @@
       "silver-completion-audit",
       "silver-ship",
       "silver-create-release"
-    ],
-    "silver-research": [
-      "silver-clarify",
-      "silver-research",
-      "silver-ensure-docs",
-      "silver-validate"
     ],
     "silver-ui": [
       "FLOW-QUALITY-GATE",

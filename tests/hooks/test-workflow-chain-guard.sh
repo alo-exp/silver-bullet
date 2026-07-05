@@ -148,18 +148,18 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:ui legacy UI markers satisfy SB-owned aliases" "$out"
 teardown
 
-# Research workflow: clarify + research markers are required.
+# Deep research workflow: clarify + deep-research markers are required.
 setup
 touch "$TMPDIR_TEST/src/app.js"
-start_workflow "/silver:research" "research gate test" "clarify,research,hand-off"
+start_workflow "/silver:deep-research" "research gate test" "clarify,research,hand-off"
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:research blocks without clarify marker" "$out"
+assert_blocks "silver:deep-research blocks without clarify marker" "$out"
 write_state_markers silver-clarify
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:research blocks with only clarify marker (research missing)" "$out"
-write_state_markers silver-clarify silver-research
+assert_blocks "silver:deep-research blocks with only clarify marker (research missing)" "$out"
+write_state_markers silver-clarify silver-deep-research
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:research passes after clarify + research markers exist" "$out"
+assert_passes "silver:deep-research passes after clarify + research markers exist" "$out"
 teardown
 
 # Multiple active workflows: SB_WORKFLOW_ID scopes the guard to one workflow file.

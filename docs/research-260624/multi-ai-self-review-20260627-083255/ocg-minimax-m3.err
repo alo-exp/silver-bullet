@@ -299,7 +299,7 @@ silver-refactor/
 silver-release/
 silver-rem/
 silver-remove/
-silver-research/
+silver-deep-research/
 silver-retro/
 silver-review/
 silver-review-fix-ladder/
@@ -331,16 +331,16 @@ verify-tests/
 [0m$ [0mrtk find /Users/shafqat/projects/silver-bullet -type d -name "deep-research" 2>/dev/null | head -5
 0 for 'deep-research'
 [0m
-[0m$ [0mrtk cat /Users/shafqat/projects/silver-bullet/repo/skills/silver-research/SKILL.md 2>&1 | head -20
+[0m$ [0mrtk cat /Users/shafqat/projects/silver-bullet/repo/skills/silver-deep-research/SKILL.md 2>&1 | head -20
 ---
-name: silver-research
+name: silver-deep-research
 description: >
   This skill should be used for SB-orchestrated research workflow: clarify → direct research by default, optional MultAI augmentation only when user-requested → clarify → hand off to silver:feature or silver:devops
 argument-hint: "<research question or technology decision>"
 version: 0.2.0
 ---
 
-# /silver:research — Research Composition Spec
+# /silver:deep-research — Research Composition Spec
 
 SB **queue builder** for tech decisions and spikes. Workers produce artifacts; parent
 does not write research inline.

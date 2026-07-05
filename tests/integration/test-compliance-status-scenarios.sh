@@ -182,7 +182,7 @@ printf 'silver-quality-gates\n' >> "$TMPSTATE"
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 touch "$TMPDIR_TEST/.planning/workflows/20260428T010000Z-AAAAAA-silver-feature.md"
 touch "$TMPDIR_TEST/.planning/workflows/20260428T011000Z-BBBBBB-silver-bugfix.md"
-touch "$TMPDIR_TEST/.planning/workflows/20260428T012000Z-CCCCCC-silver-research.md"
+touch "$TMPDIR_TEST/.planning/workflows/20260428T012000Z-CCCCCC-silver-deep-research.md"
 touch "$TMPDIR_TEST/.planning/workflows/20260428T013000Z-DDDDDD-silver-ui.md"
 
 out=$(run_compliance_status)

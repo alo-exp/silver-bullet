@@ -36,7 +36,7 @@ sb_orchestrator_flow_to_skill() {
       printf 'silver-clarify'
       ;;
     FLOW-DECIDE|DECIDE)
-      printf 'silver-research'
+      printf 'silver-deep-research'
       ;;
     FLOW-SPECIFY|SPECIFY)
       printf 'silver-spec'

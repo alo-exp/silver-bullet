@@ -170,23 +170,23 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-research_q="$(sb_orchestrator_default_queue_for_composer silver-research)"
-if [[ "$research_q" == "silver-clarify,silver-research,silver-ensure-docs,silver-validate" ]]; then
-  echo "PASS: silver-research clarify → research → document → validate queue"
+research_q="$(sb_orchestrator_default_queue_for_composer silver-deep-research)"
+if [[ "$research_q" == "silver-clarify,silver-deep-research,silver-ensure-docs,silver-validate" ]]; then
+  echo "PASS: silver-deep-research clarify → research → document → validate queue"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: silver-research queue incorrect (got: $research_q)"
+  echo "FAIL: silver-deep-research queue incorrect (got: $research_q)"
   FAIL=$((FAIL + 1))
 fi
 if printf '%s' "$research_q" | grep -q 'silver-execute'; then
-  echo "FAIL: silver-research queue must not include silver-execute"
+  echo "FAIL: silver-deep-research queue must not include silver-execute"
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: silver-research excludes execute atom"
+  echo "PASS: silver-deep-research excludes execute atom"
   PASS=$((PASS + 1))
 fi
-if sb_orchestrator_is_flow_atom silver-research && sb_orchestrator_is_flow_atom silver-ensure-docs; then
-  echo "PASS: silver-research and silver-ensure-docs are flow atoms"
+if sb_orchestrator_is_flow_atom silver-deep-research && sb_orchestrator_is_flow_atom silver-ensure-docs; then
+  echo "PASS: silver-deep-research and silver-ensure-docs are flow atoms"
   PASS=$((PASS + 1))
 else
   echo "FAIL: orchestrator flow_atom missing research or ensure-docs"

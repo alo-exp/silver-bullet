@@ -9,9 +9,9 @@ activate at each SDLC stage. This is SB's authoritative coverage matrix.
 
 | SDLC Stage | SB Skills | Artifacts Produced | Enforcement Active | Coverage |
 |------------|-----------|-------------------|--------------------|----------|
-| **Ideation** | `silver:clarify`, `silver:research`, `silver:spec` | Clarification brief, research notes, SPEC.md | Spec reviewer, artifact reviewers | Full |
+| **Ideation** | `silver:clarify`, `silver:deep-research`, `silver:spec` | Clarification brief, research notes, SPEC.md | Spec reviewer, artifact reviewers | Full |
 | **Requirements** | `silver:spec`, `silver:ingest`, `silver:validate` | REQUIREMENTS.md, INGESTION_MANIFEST.md, VALIDATION.md | Requirements reviewer, cross-artifact reviewer, spec floor gate | Full |
-| **Architecture** | `silver:context`, `silver:research`, `silver:plan`, `silver:domain-audit` | CONTEXT.md, decision notes, PLAN.md, DOMAIN-AUDIT.md | Context reviewer, plan checker, architecture/domain pack | Full |
+| **Architecture** | `silver:context`, `silver:deep-research`, `silver:plan`, `silver:domain-audit` | CONTEXT.md, decision notes, PLAN.md, DOMAIN-AUDIT.md | Context reviewer, plan checker, architecture/domain pack | Full |
 | **Planning** | `silver:context`, `silver:plan`, `silver:validate`, `silver:quality-gates` | PLAN.md, assumptions, dependency notes, quality gaps | Dev-cycle gate Stage A/B, artifact review | Full |
 | **Implementation** | `tdd`, `silver:execute`, `silver:refactor`, `silver:worktree` | Code, tests, implementation summary, REFACTOR.md, WORKTREE.md | Dev-cycle gate, TDD freshness invalidation, skill recording | Full |
 | **Code Review** | `silver:review-request`, `silver:review`, `silver:review-triage` | REVIEW.md, triage notes, fix commits | Code reviewer, dev-cycle gate Stage C, completion audit | Full |

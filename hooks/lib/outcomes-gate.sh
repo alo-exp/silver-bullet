@@ -94,7 +94,7 @@ sb_outcomes_auto_evaluate() {
   command -v jq >/dev/null 2>&1 || return 0
 
   # route: composer or router skill recorded (not merely planning-floor skills)
-  if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
+  if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-deep-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
     sb_outcomes_jq_update "$outfile" \
       '(.outcomes[] | select(.id=="route") | .status) = "done"
         | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /silver router recorded"'

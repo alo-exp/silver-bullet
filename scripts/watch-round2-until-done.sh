@@ -27,7 +27,7 @@ log() { printf '%s %s\n' "$(utc_now)" "$*" | tee -a "$WATCH_LOG"; }
 
 slug_for_row() {
   case "$1" in
-    1) echo silver-router ;; 2) echo silver-research ;; 3) echo silver-feature ;;
+    1) echo silver-router ;; 2) echo silver-deep-research ;; 3) echo silver-feature ;;
     4) echo silver-bugfix ;; 5) echo silver-ui ;; 6) echo silver-fast ;;
     7) echo silver-test ;; 8) echo silver-refactor ;; 9) echo silver-benchmark ;;
     10) echo silver-content ;; 11) echo silver-devops ;; 12) echo silver-deploy ;;

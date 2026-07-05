@@ -10,4 +10,4 @@ Validate SB-owned repeatable benchmark and adversarial evaluation workflow.
 - Defines repeatable fixture, constraints, rubric, and compared candidates before running.
 - Records correctness, evidence quality, safety, cost, latency, and tool-use data.
 - Applies `silver:domain-audit --pack benchmark-eval`.
-- Routes decisions into `silver:research`, `silver:review`, or implementation planning.
+- Routes decisions into `silver:deep-research`, `silver:review`, or implementation planning.

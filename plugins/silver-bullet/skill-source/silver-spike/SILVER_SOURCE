@@ -16,7 +16,7 @@ implementation strategy — not research notes, but running code that proves
 or disproves an approach. Each experiment is minimal, targeted, and leaves
 no production footprint.
 
-Do NOT use this skill for general research (`silver:research`) or for full
+Do NOT use this skill for general research (`silver:deep-research`) or for full
 feature planning (`silver:feature`). A spike answers a specific yes/no or
 comparison question. If the question is broad enough to require a PLAN.md,
 use `silver:plan` instead.

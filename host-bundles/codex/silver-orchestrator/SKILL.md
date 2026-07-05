@@ -58,7 +58,7 @@ When spawning Task, include:
 
 ## Composer specs
 
-`silver-feature`, `silver-ui`, `silver-devops`, `silver-bugfix`, `silver-research`, `silver-fast` are **queue builders** — parent invokes them only to seed `orchestrator.json` / `workflows.sh`, then runs atoms via workers. On tier-2 hosts, composer specs describe worker prompts; the parent never invokes flow-atom skills directly.
+`silver-feature`, `silver-ui`, `silver-devops`, `silver-bugfix`, `silver-deep-research`, `silver-fast` are **queue builders** — parent invokes them only to seed `orchestrator.json` / `workflows.sh`, then runs atoms via workers. On tier-2 hosts, composer specs describe worker prompts; the parent never invokes flow-atom skills directly.
 
 ## Overrides
 

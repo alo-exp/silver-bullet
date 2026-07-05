@@ -71,7 +71,7 @@ The orchestrator **delegates all implementation to the host agent**. SB sequence
 |---------------|-------------|-------------|------------------------------|
 | User needs / concept | `silver:clarify`, `silver:spec` | Soft (skill-only) | No validated stakeholder sign-off gate |
 | Requirements | SPEC.md, REQUIREMENTS.md, `silver:validate`, `review-*` | Artifact reviewers optional; spec-floor on commit | Requirements not blocked before all src edits |
-| Architectural design | `silver:context`, `silver:research`, `silver:domain-audit` | Pre-plan quality gates (partial) | No formal ADR gate in required_deploy |
+| Architectural design | `silver:context`, `silver:deep-research`, `silver:domain-audit` | Pre-plan quality gates (partial) | No formal ADR gate in required_deploy |
 | Detailed design | PLAN.md, UI-SPEC | `dev-cycle-check` Stage A/B | PLAN existence checked; content quality not mechanical |
 | Implementation | `silver:execute`, `tdd` | TDD in required_deploy; alias `silver-tdd`→`tdd` | TDD optional per plan; not proven at hook level |
 | Unit test | `verify-tests`, project test runners | Freshness marker at delivery | No coverage threshold; exit code only |
@@ -240,13 +240,13 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Missing** | Mechanical "all ROADMAP phases complete" hook beyond freshness |
 | **Redundant** | Overlaps `silver:ship` + `silver:create-release` |
 
-### `silver:research` / `silver:clarify` / `silver:spec`
+### `silver:deep-research` / `silver:clarify` / `silver:spec`
 
 | | |
 |--|--|
 | **Intended** | Front-end of lifecycle; spec before feature |
 | **Actual** | `silver:spec` before `silver:feature` per conflict rules; clarify produces brief not machine checklist |
-| **Issues** | `silver-research` chain-guard only requires `silver-clarify` — weak |
+| **Issues** | `silver-deep-research` chain-guard only requires `silver-clarify` — weak |
 | **Missing** | Gate: no PLAN/execute until `silver:validate` BLOCK cleared |
 | **Redundant** | — |
 
@@ -284,7 +284,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 
 10. **User §10b permanent skip of quality-gates** — Documented escape hatch in skills; hooks may still require marker if skill invoked once vacuously.
 
-11. **Research task writes code** — `workflow-chain-guard` for `silver-research` only needs `silver-clarify` marker → implementation edits allowed after clarify only.
+11. **Research task writes code** — `workflow-chain-guard` for `silver-deep-research` only needs `silver-clarify` marker → implementation edits allowed after clarify only.
 
 12. **Phase PR without UAT** — `uat-gate` only on `silver:release`; `gh pr create` allowed without `.planning/UAT.md`.
 

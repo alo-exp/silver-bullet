@@ -43,7 +43,7 @@ classifies intent and dispatches to the appropriate workflow.
 | `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
 | `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |
 | `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
-| `silver:research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
+| `silver:deep-research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
 | `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
 
 **Workflow enforcement rules:**
@@ -124,7 +124,7 @@ Includes: product-brainstorming → gsd-ui-phase → writing-plans (frontend-des
 *silver:devops (no brainstorm — 12 steps):*
 Includes: gsd-intel → silver:blast-radius → silver:devops-skill-router → silver:devops-quality-gates (7 IaC dimensions) → gsd-discuss-phase → plan → execute (no TDD) → gsd-review → silver:security → devops-quality-gates pre-ship → ship
 
-*silver:research (5 steps):*
+*silver:deep-research (5 steps):*
 Includes: gsd-explore → MultAI path (landscape/tech-selection/competitive) → artifact at .planning/research/ → silver:brainstorm → hand off to silver:feature or silver:devops
 
 *silver:release (10 steps — milestone-level):*
@@ -289,7 +289,7 @@ Replace the existing "Step 2: Match intent against routing table" section with:
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
-| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:research` | Tech decisions, architecture choices |
+| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:deep-research` | Tech decisions, architecture choices |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only — see disambiguation below |
 | "merge this", "push this PR", "ship this feature" [active phase context] | `gsd-ship` (in-workflow) | Phase-level only |
 | "trivial", "quick fix", "typo", "one-liner", "config value", ≤3 files | `silver:fast` (gsd-fast) | No planning overhead |
@@ -320,7 +320,7 @@ Replace the existing "Step 2: Match intent against routing table" section with:
 | `silver:bugfix` + any other | `silver:bugfix` | Broken things block everything |
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
 | `silver:devops` + `silver:feature` | Ask user (A/B) | Both equally valid |
-| `silver:research` + any | `silver:research` first | Research informs implementation |
+| `silver:deep-research` + any | `silver:deep-research` first | Research informs implementation |
 | `silver:fast` + domain workflow | Check scope: if truly ≤3 files → `silver:fast`; if domain signals strong → domain workflow; if ambiguous → ask user "A. Treat as trivial  B. Route to [domain]" |
 
 **MultAI auto-offer:** Proactively offer MultAI research before brainstorming when:
@@ -343,7 +343,7 @@ If input matches two or more destinations with similar confidence, use AskUserQu
 > B. `silver:bugfix` — fix something that's broken
 > C. `silver:ui` — UI, frontend, or design work
 > D. `silver:devops` — infrastructure, CI/CD, or deployment
-> E. `silver:research` — technology decision or spike
+> E. `silver:deep-research` — technology decision or spike
 > F. `silver:release` — publish a milestone release
 > G. `silver:fast` — trivial one-liner or config change
 > H. Something else — describe it
@@ -370,7 +370,7 @@ Wait for selection, then route accordingly using Step 5.
 - [ ] **Step 5: Verify**
 
 ```bash
-grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:research\|silver:release" skills/silver/SKILL.md
+grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:deep-research\|silver:release" skills/silver/SKILL.md
 ```
 
 Expected: ≥6
@@ -402,7 +402,7 @@ ${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/skills/orchestrator/SKILL.md
 ```
 
 If no file found, output exactly:
-> ❌ MultAI plugin not found. Required for silver:research and multi-AI perspectives.
+> ❌ MultAI plugin not found. Required for silver:deep-research and multi-AI perspectives.
 > Install: `/plugin install` from the MultAI marketplace
 
 STOP. Do not proceed.
@@ -712,19 +712,19 @@ git commit -m "feat: add silver:devops orchestration skill"
 
 ---
 
-### Task B5: Create skills/silver-research/SKILL.md
+### Task B5: Create skills/silver-deep-research/SKILL.md
 
 **Files:**
-- Create: `skills/silver-research/SKILL.md`
+- Create: `skills/silver-deep-research/SKILL.md`
 
 Orchestrates spec Section 4.5: explore → MultAI research (3 paths: landscape / tech-selection / competitive) → brainstorm → hand off to silver:feature or silver:devops with artifacts at `.planning/research/<date>-<topic>/`.
 
-- [ ] **Step 1: Write skills/silver-research/SKILL.md** with three MultAI research path branches and artifact handoff protocol
+- [ ] **Step 1: Write skills/silver-deep-research/SKILL.md** with three MultAI research path branches and artifact handoff protocol
 
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -c "multai:landscape-researcher\|multai:orchestrator\|multai:comparator\|multai:solution-researcher\|\.planning/research" skills/silver-research/SKILL.md
+grep -c "multai:landscape-researcher\|multai:orchestrator\|multai:comparator\|multai:solution-researcher\|\.planning/research" skills/silver-deep-research/SKILL.md
 ```
 
 Expected: ≥5 (each of the 5 grep terms should appear at least once)
@@ -732,8 +732,8 @@ Expected: ≥5 (each of the 5 grep terms should appear at least once)
 - [ ] **Step 3: Commit**
 
 ```bash
-git add skills/silver-research/SKILL.md
-git commit -m "feat: add silver:research orchestration skill"
+git add skills/silver-deep-research/SKILL.md
+git commit -m "feat: add silver:deep-research orchestration skill"
 ```
 
 ---
@@ -810,13 +810,13 @@ git commit -m "feat: add silver:fast trivial change fast-path skill"
 - [ ] `grep -c "2h\. SB Orchestrated Workflows" templates/silver-bullet.md.base` → 1
 - [ ] `grep -c "10\. User Workflow Preferences" silver-bullet.md` → 1
 - [ ] `grep -c "10\. User Workflow Preferences" templates/silver-bullet.md.base` → 1
-- [ ] `grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:research\|silver:release" skills/silver/SKILL.md` → ≥6
+- [ ] `grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:deep-research\|silver:release" skills/silver/SKILL.md` → ≥6
 - [ ] `grep -c "MultAI\|gsd-new-project\|gsd-map-codebase" skills/silver-init/SKILL.md` → ≥3
-- [ ] `ls skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-research skills/silver-release skills/silver-fast` → 7 directories exist
+- [ ] `ls skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-deep-research skills/silver-release skills/silver-fast` → 7 directories exist
 - [ ] Each Phase B skill file contains ≥5 skill references — run:
 
 ```bash
-for f in skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-research skills/silver-release skills/silver-fast; do
+for f in skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-deep-research skills/silver-release skills/silver-fast; do
   echo "$f: $(grep -c "silver:\|gsd-\|multai:" $f/SKILL.md) skill references"
 done
 ```

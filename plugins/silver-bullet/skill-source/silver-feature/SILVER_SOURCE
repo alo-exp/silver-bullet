@@ -37,14 +37,14 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 | `.planning/` missing | Include FLOW 1 (BOOTSTRAP) |
 | Brownfield / unfamiliar codebase | FLOW 2 deeper `silver:scan` |
 | Fuzzy intent or empty `$ARGUMENTS` | FLOW 3 (CLARIFY) |
-| Architecture/stack/API choice | FLOW 4 (DECIDE) via `silver:research` |
+| Architecture/stack/API choice | FLOW 4 (DECIDE) via `silver:deep-research` |
 | No `.planning/SPEC.md` | FLOW 5 (SPECIFY) — enforced by `workflow-chain-guard` |
 | Existing SPEC.md | Skip FLOW 5 |
 | Existing phase PLAN.md | Skip FLOW 6 for that phase |
 | UI files in scope | FLOW 7 + FLOW 9 |
 | Execution/CI/test failure | FLOW 15 (DEBUG) |
 | Last phase of milestone | FLOW 18 (RELEASE) after user confirms |
-| User requests MultAI / second opinion | Optional external research/review — feeds SB artifacts only |
+| User requests second opinion | Optional external review — feeds SB artifacts only |
 | `docs/doc-scheme.md` present | FLOW 17 doc-scheme checks before FLOW 14 |
 | Trivial (≤3 files, typo, config) | **STOP** — route to `silver:fast` |
 

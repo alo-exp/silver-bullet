@@ -15,8 +15,8 @@ input=$(cat 2>/dev/null || true)
 skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // ""' 2>/dev/null || true)
 
 case "${skill:-}" in
-  silver:execute|silver:plan|silver:context|silver:research|\
-  silver-execute|silver-plan|silver-context|silver-research) ;;
+  silver:execute|silver:plan|silver:context|silver:deep-research|\
+  silver-execute|silver-plan|silver-context|silver-deep-research) ;;
   *) exit 0 ;;
 esac
 

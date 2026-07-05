@@ -33,8 +33,6 @@ EXTERNAL_SKILLS=(
   "superpowers:finishing-a-development-branch"
   "superpowers:requesting-code-review" "superpowers:receiving-code-review"
   "superpowers:systematic-debugging"
-  "multai:orchestrator" "multai:landscape-researcher" "multai:consolidator"
-  "multai:comparator" "multai:solution-researcher"
   "testing-strategy" "/artifact-reviewer"
   "episodic-memory:remembering-conversations"
   "design:design-system" "design:ux-copy" "design:accessibility-review"
@@ -88,7 +86,6 @@ resolve_silver_alias() {
     silver:tdd)                 echo "tdd" ;;
     silver:request-review)      echo "silver-review-request" ;;
     silver:receive-review)      echo "silver-review-triage" ;;
-    silver:multai)              echo "multai:orchestrator" ;;
     silver:quality-gates)       echo "silver-quality-gates" ;;
     silver:silver-quality-gates) echo "silver-quality-gates" ;;
     silver:security)            echo "security" ;;
@@ -96,7 +93,7 @@ resolve_silver_alias() {
     silver:feature)             echo "silver-feature" ;;
     silver:devops)              echo "silver-devops" ;;
     silver:bugfix)              echo "silver-bugfix" ;;
-    silver:research)            echo "silver-research" ;;
+    silver:deep-research)       echo "silver-deep-research" ;;
     silver:release)             echo "silver-release" ;;
     silver:test)                echo "silver-test" ;;
     silver:deploy)              echo "silver-deploy" ;;
@@ -158,7 +155,7 @@ echo ""
 echo "=== Group 1: Sub-skill Reference Integrity ==="
 
 ORCHESTRATION_SKILLS=(
-  silver-feature silver-devops silver-bugfix silver-ui silver-research silver-release silver-clarify
+  silver-feature silver-devops silver-bugfix silver-ui silver-deep-research silver-release silver-clarify
   silver-quality-gates artifact-reviewer
 )
 
@@ -184,7 +181,7 @@ ORCH_LIB="${REPO_ROOT}/hooks/lib/orchestrator-state.sh"
 source "$ORCH_LIB"
 
 COMPOSER_SKILLS=(
-  silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release silver-fast
+  silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-release silver-fast
 )
 
 for skill in "${COMPOSER_SKILLS[@]}"; do
@@ -388,7 +385,7 @@ ALIAS_NAMES=(
   "silver:feature"
   "silver:devops"
   "silver:bugfix"
-  "silver:research"
+  "silver:deep-research"
   "silver:release"
   "silver:silver-forensics"
   "silver:validate"
@@ -416,7 +413,7 @@ ALIAS_TARGETS=(
   "silver-feature"
   "silver-devops"
   "silver-bugfix"
-  "silver-research"
+  "silver-deep-research"
   "silver-release"
   "silver-forensics"
   "silver-validate"

@@ -40,7 +40,7 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - `/silver:bugfix` — Bug investigation and fixes (SB triage → systematic-debugging → gsd:debug)
 - `/silver:ui` — UI/UX work (intel → product-brainstorm → silver:brainstorm → gsd-ui-phase)
 - `/silver:devops` — Infrastructure and DevOps (intel → blast-radius → devops-skill-router)
-- `/silver:research` — Technology decisions and spikes (silver:explore → MultAI → silver:brainstorm)
+- `/silver:deep-research` — Technology decisions and spikes (silver:explore → MultAI → silver:brainstorm)
 - `/silver:release` — Release preparation (quality-gates → gsd-audit-uat → gsd-audit-milestone)
 - `/silver:fast` — Quick trivial tasks (gsd-fast)
 
@@ -49,7 +49,7 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - `site/help/workflows/silver-bugfix.html` — 600-800 words
 - `site/help/workflows/silver-ui.html` — 700-900 words
 - `site/help/workflows/silver-devops.html` — 700-900 words
-- `site/help/workflows/silver-research.html` — 600-800 words
+- `site/help/workflows/silver-deep-research.html` — 600-800 words
 - `site/help/workflows/silver-release.html` — 600-800 words
 - `site/help/workflows/silver-fast.html` — 400-500 words
 
@@ -350,7 +350,7 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 | NEW | `site/help/workflows/silver-bugfix.html` | Missing | 600-800w | CRITICAL |
 | NEW | `site/help/workflows/silver-ui.html` | Missing | 700-900w | CRITICAL |
 | NEW | `site/help/workflows/silver-devops.html` | Missing | 700-900w | CRITICAL |
-| NEW | `site/help/workflows/silver-research.html` | Missing | 600-800w | CRITICAL |
+| NEW | `site/help/workflows/silver-deep-research.html` | Missing | 600-800w | CRITICAL |
 | NEW | `site/help/workflows/silver-release.html` | Missing | 600-800w | CRITICAL |
 | NEW | `site/help/workflows/silver-fast.html` | Missing | 400-500w | CRITICAL |
 | NEW | `site/help/concepts/routing-logic.html` | Missing | 1500-2000w | CRITICAL |
@@ -395,7 +395,7 @@ site/help/
 │   ├── silver-bugfix.html       (NEW)
 │   ├── silver-ui.html           (NEW)
 │   ├── silver-devops.html       (NEW)
-│   ├── silver-research.html     (NEW)
+│   ├── silver-deep-research.html     (NEW)
 │   ├── silver-release.html      (NEW)
 │   └── silver-fast.html         (NEW)
 ```

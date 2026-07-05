@@ -21,7 +21,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
 
 | AS1 capability family | SB-owned route or contract | Evidence artifact | Parity status |
 |---|---|---|---|
-| Brainstorm/problem exploration | `silver:clarify`, `silver:research`, `silver:scan` | `.planning/CLARIFY.md`, research/context artifacts | Superset: SB adds lifecycle handoff and traceability |
+| Brainstorm/problem exploration | `silver:clarify`, `silver:deep-research`, `silver:scan` | `.planning/CLARIFY.md`, research/context artifacts | Superset: SB adds lifecycle handoff and traceability |
 | Plan/TDD task decomposition | `silver:context`, `silver:plan`, `tdd`, `testability` | PLAN, context, TDD evidence | Superset: SB gates plan before execution |
 | Execute with review gates | `silver:execute`, `silver:review`, `silver:review-triage`, `silver:verify` | SUMMARY, REVIEW, VERIFICATION | Superset: SB adds completion-audit and hook-backed markers |
 | Worktree isolation and finish | `silver:worktree`, `silver:branch-finish`, `silver:ship` | `.planning/WORKTREE.md`, branch-finish/ship evidence | Covered by new SB route |
@@ -51,7 +51,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
 | Article/help content writing | `silver:content --mode write` | CONTENT with sources/frontmatter/review | Covered by new SB route |
 | Design and design review | `silver:ui`, `silver:ui-contract`, `silver:ui-review` | UI-SPEC, UI-REVIEW | Superset through UI lifecycle gates |
 | Durable design/interface state | `silver:ui-contract`, `silver:ui-review` | `.planning/interface/STATE.md` | Covered by updated SB UI contract |
-| Architecture review/ADR | `silver:research`, `silver:domain-audit --pack architecture-adr` | decision artifact / DOMAIN-AUDIT | Covered |
+| Architecture review/ADR | `silver:deep-research`, `silver:domain-audit --pack architecture-adr` | decision artifact / DOMAIN-AUDIT | Covered |
 | Ship/pre-merge release path | `silver:ship`, `silver:release`, `silver:create-release` | ship/release artifacts and GitHub Release | Superset: stronger release governance |
 | Platform-aware deployment | `silver:deploy`, `silver:devops` | `.planning/DEPLOYMENT.md` | Covered by new SB route |
 | Post-deploy canary | `silver:canary` | `.planning/CANARY.md` | Covered by new SB route |
