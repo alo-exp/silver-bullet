@@ -32,6 +32,15 @@ docs/sessions/
 .e2e-matrix-pass-at-version.tsv
 .run-all-tests-*.log
 
+# Visual QA capture outputs — ignore new dated runs; golden sets stay tracked
+.visual-audit/responsive-full/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+!.visual-audit/responsive-full/2026-06-30-post-fix/
+!.visual-audit/responsive-full/2026-06-30-pipeline-proof/
+.visual-audit/proof-test-results-*.json
+.visual-audit/responsive-full/*/capture-manifest.json
+!.visual-audit/responsive-full/2026-06-30-post-fix/capture-manifest.json
+!.visual-audit/responsive-full/2026-06-30-pipeline-proof/capture-manifest.json
+
 # E2E test app -- SB-generated artifacts (excluded from SB repo)
 tests/test-app/node_modules/
 tests/test-app/.planning/
