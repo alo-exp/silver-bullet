@@ -7,7 +7,7 @@ SKILLS_DIR="${REPO_ROOT}/skills"
 OUT_DIR="${REPO_ROOT}/plugins/silver-bullet/commands"
 
 # Composer routes with command stubs (extend as new top-level routes ship).
-COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release silver-fast)
+COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-research silver-release silver-fast silver-new-workflow)
 
 mkdir -p "$OUT_DIR"
 
