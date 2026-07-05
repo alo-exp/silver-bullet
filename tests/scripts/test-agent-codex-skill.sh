@@ -49,13 +49,14 @@ grep -q 'agent_delegate_canonicalize_path' "$WRAPPER" && check "wrapper canonica
 grep -q 'absolute' "$SKILL" && check "documents absolute path policy" pass || check "documents absolute path policy" fail
 grep -q 'scripts/lib/codex-cli.sh' "$WRAPPER" && check "wrapper sources scripts/lib codex-cli" pass || check "wrapper sources scripts/lib codex-cli" fail
 grep -q 'AGENT_CODEX_QUOTA_RETRY' "$WRAPPER" && check "wrapper quota retry env" pass || check "wrapper quota retry env" fail
-grep -q 'SB_AGENT_CODEX_MODEL_READY_TIMEOUT' "$WRAPPER" && check "wrapper model-ready timeout env" pass || check "wrapper model-ready timeout env" fail
-grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "$WRAPPER" && check "wrapper exec tail idle timeout env" pass || check "wrapper exec tail idle timeout env" fail
+LIB="${REPO_ROOT}/scripts/agent-codex/lib.sh"
+grep -q 'SB_AGENT_CODEX_MODEL_READY_TIMEOUT' "$LIB" && check "harness model-ready timeout env" pass || check "harness model-ready timeout env" fail
+grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "$LIB" && check "harness exec tail idle timeout env" pass || check "harness exec tail idle timeout env" fail
 grep -q 'CODEX_EXEC_TAIL_IDLE_TIMEOUT' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec tail idle timeout" pass || check "adapter exec tail idle timeout" fail
 grep -q 'exec_output_shows_product_evidence' "${REPO_ROOT}/tests/live/agents/codex/agent.sh" && check "adapter exec product evidence detection" pass || check "adapter exec product evidence detection" fail
 grep -q 'SB_AGENT_CODEX_LIGHTWEIGHT' "$WRAPPER" && check "wrapper lightweight env default" pass || check "wrapper lightweight env default" fail
 grep -q 'SB_ORCHESTRATOR_WORKER' "$WRAPPER" && check "wrapper orchestrator worker bypass" pass || check "wrapper orchestrator worker bypass" fail
-grep -q 'RTK_DISABLED=1' "$WRAPPER" && check "wrapper disables RTK for logs" pass || check "wrapper disables RTK for logs" fail
+grep -q 'agent_codex_apply_runtime_env' "$LIB" && check "harness disables RTK for logs" pass || check "harness disables RTK for logs" fail
 ! grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$WRAPPER" && check "wrapper omits matrix env" pass || check "wrapper omits matrix env" fail
 
 grep -q 'scripts/agent-codex/' "$SKILL" && check "references agent-codex harness dir" pass || check "references agent-codex harness dir" fail
@@ -87,6 +88,23 @@ grep -q 'agent-codex/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
   && check "orchestrator allows invoke.sh" pass || check "orchestrator allows invoke.sh" fail
 
 bash -n "$WRAPPER" && check "wrapper shell syntax" pass || check "wrapper shell syntax" fail
+
+# Behavioral: direct delegate path (AGENT-DELEGATE worker) applies runtime env without invoke.sh
+runtime_out="$(
+  bash -c '
+    set -euo pipefail
+    source "'"${REPO_ROOT}"'/scripts/agent-codex/lib.sh"
+    unset RTK_DISABLED CODEX_INTERACTIVE_READY_TIMEOUT CODEX_INTERACTIVE_IDLE_TIMEOUT CODEX_EXEC_TAIL_IDLE_TIMEOUT
+    agent_codex_apply_runtime_env
+    printf "RTK=%s READY=%s IDLE=%s TAIL=%s\n" \
+      "${RTK_DISABLED:-}" "${CODEX_INTERACTIVE_READY_TIMEOUT:-}" \
+      "${CODEX_INTERACTIVE_IDLE_TIMEOUT:-}" "${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-}"
+  '
+)"
+grep -q 'RTK=1' <<<"$runtime_out" && check "direct path RTK_DISABLED=1" pass || check "direct path RTK_DISABLED=1" fail
+grep -q 'READY=120' <<<"$runtime_out" && check "direct path model-ready timeout default" pass || check "direct path model-ready timeout default" fail
+grep -q 'agent_codex_apply_runtime_env' "$WRAPPER" \
+  && check "delegate calls agent_codex_apply_runtime_env" pass || check "delegate calls agent_codex_apply_runtime_env" fail
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
