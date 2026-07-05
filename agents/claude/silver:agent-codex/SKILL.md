@@ -3,7 +3,7 @@ name: silver:agent-codex
 description: On-demand parent-supervised delegation of a single real task to Codex TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Claude, or Codex parent) should supervise while Codex CLI executes in a target project CWD. Not for enterprise E2E matrix runs.
 argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--checkpoint <n>]"
 user-invocable: true
-version: 0.1.0
+version: 0.2.0
 ---
 
 # /silver:agent-codex — Codex TUI Subagent Delegation
@@ -42,7 +42,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
 2. Parent invokes **`/silver:agent-codex`** with a structured brief (below).
-3. Parent runs `bash scripts/agent-codex-delegate.sh` (or equivalent env setup) **once per delegation wave**.
+3. Parent runs `bash scripts/agent-codex/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
 No session-persistent marker is written. Each invocation is independent.
@@ -53,7 +53,7 @@ No session-persistent marker is written. Each invocation is independent.
 
 When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
-1. Parent **may** invoke this skill directly (host→Codex bridge; hook allows `agent-codex-delegate.sh`).
+1. Parent **may** invoke this skill directly (host→Codex bridge; hook allows `agent-codex/invoke.sh` with degraded fallback or `agent-codex-delegate.sh`).
 2. Parent **must not** Edit/Write project source for work delegated to Codex — supervise only.
 3. Alternative: `silver-bullet invoke-skill silver-agent-codex` then run delegate.sh.
 4. For SB-repo harness fixes blocking delegation, spawn a worker or use `SB OVERRIDE:` with audit reason.
@@ -140,6 +140,9 @@ Set explicitly — **fixture vs real project**:
 | `RTK_DISABLED` | 1 | Set during delegate.sh for readable ops logs |
 | `SB_ORCHESTRATOR_WORKER` | 1 (lightweight) | Codex child executes directly — hooks must not spawn parent Task workers |
 | `SB_ORCHESTRATOR_PARENT` | 0 (lightweight) | Paired with worker flag for exec/PTY subprocess |
+| `SB_AGENT_CODEX_LOG_FLOOR` | 512 | Minimum log bytes for PASS evidence (§5b adapted) |
+| `AGENT_CODEX_MONITOR_INTERVAL` | 30 | Parent `monitor.sh` poll interval (seconds) |
+| `CODEX_EXEC_TAIL_IDLE_TIMEOUT` | 45 | Exec-mode tail quiet-after-work |
 
 Optional: `CODEX_MODEL`, `CODEX_MODEL_PROVIDER`, `CODEX_REASONING_EFFORT`.
 
@@ -147,11 +150,19 @@ Optional: `CODEX_MODEL`, `CODEX_MODEL_PROVIDER`, `CODEX_REASONING_EFFORT`.
 
 ## Step 3 — Invoke (parent)
 
+**Preflight (mandatory):**
+
 ```bash
 export SB_ROOT=/path/to/silver-bullet/repo
+bash scripts/agent-codex/preflight.sh --sb-root "$SB_ROOT"
+```
+
+**Launch (recommended path):**
+
+```bash
 export CODEX_WORK_DIR=/path/to/target/project
 
-bash scripts/agent-codex-delegate.sh \
+bash scripts/agent-codex/invoke.sh \
   --work-dir "$CODEX_WORK_DIR" \
   --brief-file .planning/agent-codex/<task-id>/brief.md \
   --log .planning/agent-codex/<task-id>/codex-run.log
@@ -160,19 +171,29 @@ bash scripts/agent-codex-delegate.sh \
 Inline prompt (small tasks):
 
 ```bash
-bash scripts/agent-codex-delegate.sh \
+bash scripts/agent-codex/invoke.sh \
   --work-dir "$CODEX_WORK_DIR" \
   --prompt "Add GET /api/health returning {status: ok}. Run tests. Commit on branch feature/..." \
   --log .planning/agent-codex/smoke/codex-run.log
 ```
 
+**Parent monitor (channel timeline)** — run in a second terminal while Codex works:
+
+```bash
+bash scripts/agent-codex/monitor.sh --log .planning/agent-codex/<task-id>/codex-run.log
+```
+
+Monitor emits checkpoint bullets: prompt submitted, byte growth, log-floor status, stall/auth/quota signals. Do **not** claim PASS on 0-byte or sub-floor logs.
+
 **Headless fallback** when PTY TUI stalls (model loading, no quiet-complete):
 
 ```bash
-bash scripts/agent-codex-delegate.sh --use-exec --work-dir "$CODEX_WORK_DIR" --brief-file ...
+bash scripts/agent-codex/invoke.sh --use-exec --work-dir "$CODEX_WORK_DIR" --brief-file ...
 ```
 
 Parent should prefer interactive TUI for supervision; use `--use-exec` only after a `stuck`/`harness` timeout or when automation requires non-PTY.
+
+Direct `scripts/agent-codex-delegate.sh` remains for worker/orchestrator paths; production parents should use `invoke.sh`.
 
 Codex route prefix in prompts: use `$silver:*` (Codex picker), not `/silver:*`.
 
@@ -201,21 +222,38 @@ Sidekick-inspired **single-task** lifecycle:
 | **Hook trust** | `hooks need review`, trust prompt surfaced | Run `bash scripts/install-codex.sh --hook-trust-seed-only` from `SB_ROOT`; retry |
 | **Harness** | `ERROR:` from `codex-interactive-invoke.py` | Fix SB harness; file issue if reproducible |
 | **Product** | Codex completed but acceptance fails | New brief with gap list; do not claim PASS |
+| **Log floor** | Log < `SB_AGENT_CODEX_LOG_FLOOR` bytes with no brownfield waiver | FAIL — extend timeout or fix harness path; do not claim PASS on 0-token / empty log |
+| **0-token stall** | MCP banner, mode banner, no post-submit tokens | Harness Enter-wake (E2E-081); strip MCP in lightweight `CODEX_HOME`; operator auth if banner blocks submit |
 
 Escalate to user when: auth required, two stuck retries fail, or acceptance criteria impossible without locked decision.
 
+### R9 harness learnings (production delegation)
+
+| Learning | Delegation application |
+|----------|------------------------|
+| **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `$silver:*` route submit — harness sends wake then paste; parent verifies `prompt submitted` in log before checkpoint 2 |
+| **Stale locks** | Do not reuse `.e2e-live-test*.lock` from matrix; delegation clears matrix env; use per-task log under `.planning/agent-codex/` only |
+| **SB-only plugins** | `preflight.sh` validates Codex install surface; child uses SB marketplace package — no third-party skill pollution in ephemeral `CODEX_HOME` |
+| **Hook preflight** | `install-codex.sh --hook-trust-seed-only` before invoke; `CODEX_BYPASS_HOOK_TRUST=1` when pre-seeded |
+| **No false completion on 0-token** | PASS requires log floor + product evidence; monitor warns below floor; outcome FAIL if delegate exit 0 but acceptance unmet |
+| **Channel timeline** | Parent runs `monitor.sh` bullets between checkpoints — not matrix batch PID polling |
+
 ---
 
-## Step 5 — Completion criteria
+## Step 5 — Completion criteria (§5b adapted for production delegation)
 
 Delegation is **PASS** only when **all** hold:
 
 1. Log ends without harness `ERROR:` (exit 0 from delegate.sh).
-2. Every acceptance criterion checked with evidence (commit SHA, test command output, or file paths).
-3. Parent recorded summary in `.planning/agent-codex/<task-id>/result.md` or agentmemory.
-4. `graphify update .` run in repos Codex modified (when graphify enabled).
+2. Log size ≥ `SB_AGENT_CODEX_LOG_FLOOR` (default 512 B) **or** documented brownfield waiver with file:line pre-existence proof.
+3. Every acceptance criterion checked with evidence (commit SHA, test command output, or file paths).
+4. **Committed product delta** on target branch when brief requires code change — uncommitted dirty tree alone is insufficient.
+5. Parent recorded summary in `.planning/agent-codex/<task-id>/result.md` or agentmemory.
+6. `graphify update .` run in repos Codex modified (when graphify enabled).
 
-**FAIL** if any criterion unmet — document `failure_class`: `stuck` | `quota` | `auth` | `hook-trust` | `harness` | `product`.
+**FAIL** if any criterion unmet — document `failure_class`: `stuck` | `quota` | `auth` | `hook-trust` | `harness` | `product` | `log-floor` | `0-token`.
+
+Honest outcomes: do not claim PASS on timeout-only logs, inherited baseline artifacts, or parent-routing-only with zero worker delta.
 
 ---
 
@@ -223,6 +261,21 @@ Delegation is **PASS** only when **all** hold:
 
 **agentmemory:** delegation brief, log path, commit SHA, PASS/FAIL, escalation taken.  
 **Graphify:** `graphify query "agent-codex delegation outcomes"` after save + update.
+
+---
+
+## Security (delegation boundary)
+
+| Risk | Mitigation |
+|------|------------|
+| **Secrets in brief/log** | `agent-delegate-common.sh` rejects briefs with `api_key`/`sk-` patterns; logs redacted before persist |
+| **Matrix env bleed** | `agent-codex/env.sh` clears `SB_E2E_*` ledger/lock vars — never inherit matrix certification state |
+| **Hook trust bypass** | `CODEX_BYPASS_HOOK_TRUST` only when `install-codex.sh --hook-trust-seed-only` ran; parent audits trust state on hook-trust failures |
+| **Ephemeral CODEX_HOME** | Lightweight mode strips `[mcp_servers.*]` to reduce MCP auth attack surface; destroyed after task |
+| **Credential rotation in prompt** | Forbidden — auth failures escalate to user; never paste API keys into Codex prompt |
+| **SB-only plugin surface** | Preflight validates host install; child must not load unvetted marketplace skills into delegation session |
+
+Run `security` / SENTINEL lens on harness changes under `scripts/agent-codex/` before merge. Delegation logs live under `.planning/agent-codex/` (gitignored) — do not commit.
 
 ---
 
@@ -238,7 +291,7 @@ Delegation is **PASS** only when **all** hold:
 ## References
 
 - Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/silver:agent-<host>` on other hosts
-- Harness: `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
+- Harness: `scripts/agent-codex/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
 - Live adapter: `tests/live/agents/codex/agent.sh`
 - E2E adapter (matrix only): `scripts/enterprise-e2e/lib/adapters/codex.sh`
 - Protocol (matrix): `.planning/enterprise-e2e/CODEX-TUI-PROTOCOL.md`
