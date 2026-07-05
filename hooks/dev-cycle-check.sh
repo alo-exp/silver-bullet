@@ -27,7 +27,7 @@ if ! command -v jq >/dev/null 2>&1; then
   if declare -f sb_jq_enforcement_block_sb_initiated >/dev/null 2>&1; then
     sb_jq_enforcement_block_sb_initiated "dev-cycle-check" "emit_block_jq_missing"
   fi
-  printf '{"hookSpecificOutput":{"message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"⚠️ Silver Bullet hooks require jq. Install: brew install jq (macOS) / apt install jq (Linux)"}}'
   exit 0
 fi
 
@@ -38,6 +38,12 @@ main() {
 
   # Detect hook event type (PreToolUse vs PostToolUse)
   hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PostToolUse"')
+
+  # Advisory-only hook output (Claude requires hookEventName in hookSpecificOutput)
+  emit_advisory() {
+    local msg="$1"
+    jq -n --arg m "$msg" --arg he "$hook_event"       '{hookSpecificOutput:{hookEventName:$he, message:$m}}'
+  }
 
   # Emit a block in the correct format for the hook event type
   emit_block() {
@@ -528,8 +534,7 @@ PY
     stored_branch=$(cat "$sb_branch_file" 2>/dev/null || true)
     current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
     if [[ -n "$stored_branch" && -n "$current_branch" && "$stored_branch" != "$current_branch" ]]; then
-      jq -n --arg s "$stored_branch" --arg c "$current_branch" \
-        '{"hookSpecificOutput":{"message":"Warning: Branch mismatch -- state recorded for [\($s)] but current branch is [\($c)]. Restart the session or clear runtime context to reset."}}'
+      emit_advisory "Warning: Branch mismatch -- state recorded for [$stored_branch] but current branch is [$current_branch]. Restart the session or clear runtime context to reset."
       # Warning only -- do not exit, let the rest of the hook proceed
     fi
   fi
@@ -538,7 +543,7 @@ PY
   if [[ -n "$command_str" ]] && [[ ! -f "$trivial_file" || -L "$trivial_file" ]]; then
     if printf '%s' "$command_str" | grep -qE '\b(rm|mv)\b' && \
        ! printf '%s' "$command_str" | grep -qE "(${plugin_cache}|\.silver-bullet/|/tmp/|\.${SB_RUNTIME_NAME}/)"; then
-      printf '{"hookSpecificOutput":{"message":"Warning: Destructive command detected (rm/mv on project files). Verify this is intentional before proceeding."}}'
+      emit_advisory "Warning: Destructive command detected (rm/mv on project files). Verify this is intentional before proceeding."
       # Warning only -- do not block
     fi
   fi
@@ -626,14 +631,14 @@ PY
     if [[ "$active_workflow" == "devops-cycle" ]]; then
       case "$file_path" in
         *.md|*.txt|*.css|*.svg|*.env|*.env.*|*.ini|*.cfg|*.conf|*.lock)
-          printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+          emit_advisory "ℹ️ Non-logic file — enforcement skipped for this edit."
           exit 0
           ;;
       esac
     else
       case "$file_path" in
         *.json|*.yml|*.yaml|*.md|*.txt|*.css|*.svg|*.env|*.env.*|*.toml|*.ini|*.cfg|*.conf|*.lock)
-          printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+          emit_advisory "ℹ️ Non-logic file — enforcement skipped for this edit."
           exit 0
           ;;
       esac
@@ -646,7 +651,7 @@ PY
       new_str_len=$(printf '%s' "$input" | jq -r '.tool_input.new_string // "" | length')
       combined_len=$((old_str_len + new_str_len))
       if [[ $combined_len -gt 0 && $combined_len -lt 100 ]]; then
-        printf '{"hookSpecificOutput":{"message":"ℹ️ Small edit (%d chars) — enforcement skipped for this edit."}}'  "$combined_len"
+        emit_advisory "ℹ️ Small edit ($combined_len chars) — enforcement skipped for this edit."
         exit 0
       fi
     fi
@@ -667,7 +672,7 @@ PY
       [[ "$shell_non_logic_only" == true ]] || break
     done
     if [[ "$shell_non_logic_only" == true ]]; then
-      printf '{"hookSpecificOutput":{"message":"ℹ️ Non-logic file — enforcement skipped for this edit."}}'
+      emit_advisory "ℹ️ Non-logic file — enforcement skipped for this edit."
       exit 0
     fi
   fi
@@ -732,8 +737,7 @@ PY
               logic_edit=true
             fi
             if [[ "$logic_edit" == true ]]; then
-              jq -n --arg m '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /silver:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.' \
-                '{"hookSpecificOutput":{"message":$m}}'
+              emit_advisory '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /silver:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.'
             fi
           fi
         fi
@@ -803,7 +807,7 @@ PY
     done
     stage_a_msg=$(printf '⚠️ Planning skills not installed anywhere invocable, so they were not enforced:\n%s\nProceeding with source edits.' "$unavailable_display")
     sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "$stage_a_msg" "${file_path:-${command_str:-}}"
-    jq -n --arg m "$stage_a_msg" '{"hookSpecificOutput":{"message":$m}}'
+    emit_advisory "$stage_a_msg"
     exit 0
   fi
 
@@ -842,10 +846,10 @@ PY
     # post-implementation/final-delivery gate and must not block execution.
     if [[ "$has_finalization" == true ]]; then
       sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified, but finalization markers exist before silver-review." "${file_path:-${command_str:-}}"
-      printf '{"hookSpecificOutput":{"message":"⚠️ Planning verified, but finalization markers exist before silver-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."}}'
+      emit_advisory "⚠️ Planning verified, but finalization markers exist before silver-review. Source edits are allowed so fixes can proceed; final delivery remains blocked until review/verification gates pass in order."
     else
       sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "Planning verified. Implementation edits allowed." "${file_path:-${command_str:-}}"
-      printf '{"hookSpecificOutput":{"message":"✅ Planning verified. Implementation edits allowed. Code review, verification, and finalization remain required before delivery."}}'
+      emit_advisory "✅ Planning verified. Implementation edits allowed. Code review, verification, and finalization remain required before delivery."
     fi
     exit 0
   fi
@@ -853,18 +857,18 @@ PY
   if ! has_skill "silver-branch-finish"; then
     # Stage C: has silver-review, finalization remaining
     sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "SB code review recorded. Source edits remain allowed." "${file_path:-${command_str:-}}"
-    printf '{"hookSpecificOutput":{"message":"✅ SB code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."}}'
+    emit_advisory "✅ SB code review recorded. Source edits remain allowed; finalization, verification, and delivery gates still apply."
     exit 0
   fi
 
   # Stage D: all phases complete
   sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "All workflow phases complete. Proceed freely." "${file_path:-${command_str:-}}"
-  printf '{"hookSpecificOutput":{"message":"✅ All workflow phases complete. Proceed freely."}}'
+  emit_advisory "✅ All workflow phases complete. Proceed freely."
   exit 0
 }
 
 # Run main, catch any errors
 if ! main; then
-  printf '{"hookSpecificOutput":{"message":"⚠️ dev-cycle-check.sh encountered an error — continuing without blocking."}}'
+  printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","message":"⚠️ dev-cycle-check.sh encountered an error — continuing without blocking."}}'
   exit 0
 fi
