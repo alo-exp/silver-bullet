@@ -82,6 +82,191 @@ Matrix-native **hard gaps** = rows where a stack tool has a **native ✓** and L
 
 ---
 
+## Critical gap assessment — are any gaps super critical?
+
+**Verdict:** For most serious agentic coding, **none of the 17 hard gaps is a universal super-critical dealbreaker.** LeanCTX (+ optional RTK addon) already covers compression, sandbox analysis, graph query, and memory capture at roughly **87–99%** per incumbent tool (see Section 1). Two gaps become **super-critical only for specific personas:** fetch-hardening depth (`CTX_FETCH_STRICT`) for corporate/regulated agents, and agentmemory’s **multi-agent orchestration primitives** for ops-at-scale workflows.
+
+### Super critical (persona-conditional)
+
+| Gap | Leader | When it becomes super-critical |
+|-----|--------|--------------------------------|
+| **`CTX_FETCH_STRICT`** (RFC1918/loopback block mode) | Context Mode | **Security / regulated / corporate** agents that must treat SSRF and internal-network fetch as a hard compliance control — not a nice-to-have hook policy. |
+| **53-tool orchestration MCP surface** (action DAG, frontier, lease, mesh) | agentmemory | **Ops-at-scale / multi-agent** workflows where coordination, leasing, and frontier scheduling are the product — not single-session coding. |
+
+### Important but not super critical
+
+These gaps matter for production hardening or specialist stacks, but they rarely block a capable solo or team coding agent if LeanCTX (+ RTK where needed) is the baseline:
+
+| Gap | Leader | Why important, not universal |
+|-----|--------|------------------------------|
+| Hook-layer **WebFetch deny** + **curl/wget redirect** depth | Context Mode | Stronger default fetch governance; LeanCTX has hooks and sandbox fetch — gap is **published parity depth**, not absence of control. |
+| **Gitleaks** scan on memory export | agentmemory | Valuable for secret hygiene on exports; mitigated by repo policy and pre-export review for many teams. |
+| Sandbox **credential passthrough** for approved CLIs | Context Mode | Needed for some CI/automation personas; many coding loops never touch passthrough sandboxes. |
+| **Multimodal corpus graph** as primary deliverable | Graphify | Matters when vision ingest + community-scale `/raw` retrieval is the workflow; structural code graph parity is already ~99%. |
+| **Sentinel** event-driven unblocking | agentmemory | High value for long-running orchestration; optional for interactive coding sessions. |
+| **`memory_verify`** citation chain verification | agentmemory | Trust/audit persona; capture + graph query cover most “remember and retrieve” needs. |
+| **Shell compression depth** | RTK (via addon) | **Mitigated by documented RTK addon (²)** — deepest per-CLI compressors composed, not missing. |
+
+### Niche / optional
+
+Fine-grained or host-specific surfaces; absence rarely changes day-to-day coding outcomes:
+
+- **`afterAgentResponse`** hook (Context Mode) — host lifecycle nicety, not core analysis path.
+- **`ctx_insight`** dashboard launcher (Context Mode) — observability UX, not capability floor.
+- **Editable memory slots**, **`memory_relations`**, **`memory_reflect`** (agentmemory) — power-user graph ergonomics.
+- **Claude MEMORY.md bridge sync** (agentmemory) — host-specific bridge, not generic agent memory.
+- **Sketch → promote**, **crystallize**, **`memory_diagnose` + `memory_heal`** (agentmemory) — exploratory / maintenance orchestration, not baseline capture.
+
+### Partial (✓¹) gaps — persona lens
+
+Partial cells mean LeanCTX matches **intent** with thinner or composable parity (¹/²). Severity depends on persona:
+
+| Area | LeanCTX vs stack | Persona note |
+|------|------------------|--------------|
+| **SSRF / fetch hardening** | Partial vs CM strict tiers | Rises to **super-critical** only for **security/compliance** persona; otherwise **important**. |
+| **Shell / RTK** | Native + **RTK addon (²)** | **Not super-critical** — addon path is explicit; RTK remains the shell specialist. |
+| **Graph retrieval** | ~**99%** vs Graphify | **Partial (¹)** on multimodal/git workflow story; **not** a coding-agent dealbreaker for typical repos. |
+| **Session KB / search** | FTS + graph tooling vs CM RRF/throttle | Partial on CM session SQLite behaviors; sufficient for most sandboxed analysis loops. |
+| **Orchestration memory** | Capture + `ctx_graph` vs sentinels/sketch/crystallize | **Super-critical** only when orchestration **is** the workload (see 53-tool row). |
+
+### Bottom line
+
+- **Simplification-first persona** (single binary, compression, sandbox, graph, memory): LeanCTX (+ RTK addon when shell depth matters) is **credible for serious agentic coding**; treat the 17 hard gaps as **specialist overlays**, not blockers.
+- **Security / regulated persona**: budget **Context Mode–grade fetch strictness** (`CTX_FETCH_STRICT` and related hook depth) as **non-negotiable** — this is the main persona-conditional super-critical gap.
+- **Multi-agent ops-at-scale persona**: budget **agentmemory’s orchestration MCP surface** (53-tool DAG/frontier/lease/mesh) as **non-negotiable** — the second persona-conditional super-critical gap.
+
+## Token optimization — LeanCTX vs four-stack
+
+### Verdict
+
+**Mixed — neither is clearly better overall on tokens.** LeanCTX is **likely better** when the workload is read-heavy (AST fidelity modes, adaptive routing, ~13-token cached re-reads) and when the **wire/request proxy** is enabled, because it compresses at the read path *and* on every outbound request (prompt, history, tool results) — a surface the four-stack does not offer. The **RTK + Context Mode + agentmemory + Graphify** stack is **likely better** when orientation is graph-first (`graphify query` / `path` / `explain` scoped subgraphs), analysis stays in Context Mode's **11-tool** MCP sandbox, shell work hits RTK's mature per-CLI compressors, and session memory stays off the hot path (save via agentmemory, retrieve via Graphify). Both approaches pay a **standing overhead tax** (rules + MCP tool schemas); LeanCTX's **81 documented MCP tools** can easily erase single-binary simplicity unless you route through its **5 high-level tools**. Ultradeep research found **no controlled head-to-head benchmark** — vendor percentages (LeanCTX 60–90% per read; Context Mode ~94% vs raw fetch in README examples) are **uncorroborated**.
+
+### By compression surface
+
+| Surface | LeanCTX | Four-stack | Token lean |
+|---|---|---|---|
+| **Shell** | Native shell hooks + optional RTK addon | RTK PreToolUse rewrite (allow-list gated on Cursor) | **Tie → slight RTK edge** for deepest per-CLI compressors when allow-listed; LeanCTX native shell is comparable but not proven deeper |
+| **Read / large files** | 10 fidelity modes (full → AST), ModePredictor, read *before* model | Context Mode: cooperative `ctx_execute_file` / rules; SB Read deny above 5 KB — no AST modes | **LeanCTX** — only stack with native read-path AST compression |
+| **MCP / analysis output** | Sandbox stdout-only (partial parity); ~81 MCP tools | Context Mode: subprocess sandbox is the architectural center; **11 focused tools** | **Four-stack (CM)** — tighter tool surface + proven sandbox-first design |
+| **Wire / request proxy** | Optional local proxy; prompt-cache-safe ordering | None | **LeanCTX only** — largest potential win on long multi-turn sessions |
+| **Web fetch** | Universal intake → compact facts | `ctx_fetch_and_index` + hook **deny WebFetch** / redirect curl | **Slight four-stack (CM)** on hook-enforced fetch discipline; compression quality unbenchmarked |
+
+### Re-read / cache efficiency
+
+- **LeanCTX:** Vendor claim of **~13 tokens per cached compressed re-read**; bounce detection when agents "bounce" back to full fidelity.
+- **Context Mode:** FTS5 + `ctx_search` with progressive throttling; raw fetch/analysis never enters context — only indexed snippets/stdout.
+- **Graphify:** Budget-limited **scoped subgraph** (typically far smaller than `GRAPH_REPORT.md` or serial `Read`).
+- **agentmemory + Graphify synergy:** Capture can be verbose on save, but SB's **retrieve-via-Graphify** pattern avoids dumping raw `.agentmemory/` exports into context — a real token win when followed.
+- **LeanCTX unified memory graph** overlaps CM FTS + Graphify subgraph conceptually, but Graphify's **AST + INFERRED code edges** remain the four-stack's retrieval strength for codebase orientation.
+
+### Overhead (rules, hooks, MCP schemas)
+
+- **Four-stack:** 4 MCP servers (CM ~11 + agentmemory ~53 + Graphify + hooks-only RTK) plus SB rules (`graphify.mdc`, `context-mode.mdc`, `agentmemory.mdc`, `recommended-tools.mdc`, instruction fragments). Persistent **rules tax every turn**; CM fragment is mandatory for savings.
+- **LeanCTX:** One binary, one setup — **lower orchestration friction** — but **81 MCP tool descriptors** can inflate the tool-definition context unless gateway/high-level tool mode is used. Research notes **5 unified high-level MCP tools** as the lean path.
+- **Net:** Single-binary ≠ lower tokens if the full 81-tool catalog is exposed; four-stack can be **leaner per MCP call** despite more servers.
+
+### When LeanCTX likely wins on tokens
+
+- Repeated reads of the same files (cached compressed re-read).
+- Exploration that can use **AST/signature** modes instead of full file bodies.
+- Long sessions with **wire proxy** compressing history + tool results every request.
+- Agents that need **runtime** read/shell enforcement (PathJail) vs instruction-only CM routing.
+- Workflows where one unified cache beats four separate indexes.
+
+### When the four-stack likely wins on tokens
+
+- **Codebase orientation** via Graphify subgraph before broad `Read`/`Grep`.
+- **MCP-heavy analysis** (`ctx_execute` / `ctx_batch_execute`) with minimal tool-schema surface.
+- **Shell-heavy** dev loops with RTK-rewritten `git`/`gh`/`rg`/test output.
+- **PreCompact** session recovery (Context Mode-specific) reducing re-bootstrap reads after compaction.
+- Disciplined **save agentmemory → retrieve Graphify** (avoids memory re-read bloat).
+
+### Honest uncertainty
+
+Ultradeep runs (2026-07-05 context-mode vs LeanCTX research, feature-coverage matrix audit, and this capability gist) explicitly state: **no end-to-end install, no identical-task benchmark, vendor metrics uncorroborated**. Co-installation token effects (LeanCTX + four-stack, or LeanCTX + RTK addon) are **untested**. Real outcomes depend on agent rule compliance, which MCP tools the host exposes, Cursor allow-list coverage for RTK, and whether LeanCTX's wire proxy is actually enabled — none of which were measured head-to-head. Treat any single-number savings claim as **directional marketing**, not evidence.
+
+---
+
+## LeanCTX as mainstay — must any incumbent remain?
+
+**One-sentence verdict:** LeanCTX alone suffices for most serious agentic coding; keep Context Mode only for regulated/corporate SSRF (`CTX_FETCH_STRICT`); keep agentmemory only for multi-agent orchestration-at-scale; RTK and Graphify are optional addons, not universal must-keeps.
+
+### Per-tool table (critical gaps only)
+
+| Tool | Keep? | Critical gap if dropped | Addon vs must-keep |
+|------|-------|-------------------------|-------------------|
+| **RTK** | **Optional** | None universal. Deepest per-CLI shell compressors when Cursor allow-list is thin; LeanCTX native shell + documented RTK addon (²) covers ~97%. | **Addon** when shell-heavy; standalone RTK not required. |
+| **Context Mode** | **Optional** (persona: **Keep** for corp security) | **`CTX_FETCH_STRICT`** RFC1918/loopback block—only audited hard gap that is compliance-critical. WebFetch deny, PreCompact, 11-tool sandbox are partial (¹) or important-not-critical; LeanCTX has hooks + sandbox fetch. | **Must-keep** only for regulated/corporate agents; otherwise drop. |
+| **agentmemory** | **Optional** (persona: **Keep** for multi-agent ops) | **53-tool orchestration** (action DAG, frontier, lease, mesh)—only super-critical when coordination *is* the workload. Gitleaks export scan, sentinels, crystallize, verify are hardening/audit, not baseline blockers. | **Must-keep** for ops-at-scale orchestration; solo/interactive coding can drop. |
+| **Graphify** | **Not necessary** | None for typical code agents—~**99%** structural parity (`query`/`path`/`explain`). Postgres-backed extract and multimodal corpus-as-primary are niche matrix rows, not coding-floor gaps. | **Optional** only for Postgres-extract or vision/community-scale retrieval personas. |
+
+### Minimum viable stack
+
+| Stack | When |
+|-------|------|
+| **LeanCTX alone** | Default simplification-first: compression, sandbox, graph query, memory capture at 87–99% coverage. |
+| **LeanCTX + RTK (addon)** | Shell-heavy dev loops needing deepest `git`/`gh`/`rg`/test compressors beyond LeanCTX native. |
+| **LeanCTX + Context Mode** | Corp/regulated: non-negotiable `CTX_FETCH_STRICT` + published fetch-governance depth. |
+| **LeanCTX + agentmemory** | Multi-agent ops-at-scale: frontier scheduling, leasing, mesh—not single-session coding. |
+| **LeanCTX + Graphify** | Rare: Postgres extract or multimodal `/raw`-scale corpus as primary deliverable. |
+
+**Smallest critical set beyond LeanCTX:** **zero** for solo/team coding; **+1** for regulated fetch (CM) or orchestration-at-scale (agentmemory)—never both unless you hit both personas.
+
+### Persona matrix
+
+| Persona | Minimum stack | Incumbent to retain (critical only) |
+|---------|---------------|-------------------------------------|
+| **Solo dev** | LeanCTX alone | None; RTK addon if shell output dominates |
+| **Corp security** | LeanCTX + Context Mode | **Context Mode** (`CTX_FETCH_STRICT`) |
+| **Multi-agent ops** | LeanCTX + agentmemory | **agentmemory** (53-tool orchestration surface) |
+| **Code-heavy SB-style** | LeanCTX alone | None required; Graphify optional for INFERRED-edge/git `graph.json` workflow; RTK addon optional for shell |
+
+**Token note (non-critical):** LeanCTX wins read-path + wire proxy; the four-stack wins graph-first orientation + tight 11-tool MCP surface—that shapes token economics, not capability floor; no incumbent is token-mandatory.
+
+---
+
+## Small mixed team (5–10 devs + non-devs)
+
+### Verdict
+
+For a **5–10 person mixed team**, choose **LeanCTX as mainstay + agentmemory** — not LeanCTX-only, and not the full RTK + Context Mode + agentmemory + Graphify four-stack. Solo conclusions still hold on capability (~90% overlap, persona-conditional gaps), but team scale shifts the decision toward **operational simplicity** and **human-readable shared memory**. LeanCTX’s single-binary setup cuts onboarding friction for non-devs and reduces hook/MCP maintenance across seats; its read-cache and wire proxy help the repeated “fresh chat” orientation tax that multiplies with headcount. **agentmemory** stays not for 53-tool ops-at-scale orchestration, but as the **team memory layer**: git-backed `.agentmemory/` exports, `team_share` / `team_feed`, mesh for parallel agents, session viewer, and **gitleaks-scanned** shared exports. Add **Context Mode** only if corporate/regulated (`CTX_FETCH_STRICT`). Drop standalone **RTK** (LeanCTX native or documented RTK addon if shell-heavy) and standalone **Graphify** unless you depend on SB’s `graph.json` INFERRED-edge git workflow — LeanCTX graph query covers ~99% for code orientation.
+
+### Recommended minimum stack
+
+| Layer | Tool | Why |
+|-------|------|-----|
+| **Core** | **LeanCTX** | Unified compression, sandbox, graph query, hooks, one setup path |
+| **Team memory** | **agentmemory** | Shared decisions/handoffs, team feed, git-exported markdown, export secret scanning |
+| **Conditional** | **Context Mode** | Corp/regulated fetch only (`CTX_FETCH_STRICT`) |
+| **Optional** | **RTK addon** | Shell-heavy dev loops only |
+| **Skip** | **Graphify standalone** | Unless INFERRED-edge / multimodal corpus is a primary workflow |
+
+### Why non-devs change the calculus
+
+Non-devs don’t change *which compression tool wins* — they change *what “memory” must look like*. PMs, designers, and ops need **durable prose artifacts** (exported markdown, team feed, viewer UI), not `graphify query` or `ctx_execute` discipline. That makes **setup consistency** (one binary vs four tools) and **export hygiene** (gitleaks on shared git memory) first-class requirements rather than nice-to-haves. LeanCTX partial (¹) on team share/feed is workable for devs; agentmemory’s mature team surface + SB’s save→export→browse pattern is what makes handoffs legible to people who never open the repo’s source tree.
+
+### Team dynamics (5–10 mixed seats)
+
+- **Shared memory / handoffs:** Both stacks cover handoffs in the matrix; agentmemory + git-exported `.agentmemory/` wins for non-dev-readable decision capture; LeanCTX alone is thinner on team feed maturity (partial ¹).
+- **Setup consistency:** Single LeanCTX binary per seat beats four MCP servers × mixed skill levels; one maintainer can template `~/.cursor/mcp.json` + project consent instead of debugging four install paths per person.
+- **Security / compliance:** Corp → add Context Mode (`CTX_FETCH_STRICT`); any shared memory in git → keep agentmemory’s **gitleaks bridge** (hard gap vs LeanCTX); LeanCTX lacks export secret scanning.
+- **Token cost at team scale:** Mixed — LeanCTX wire proxy + cached re-reads help many fresh sessions; four-stack graph-first orientation helps devs only; disable `INJECT_CONTEXT` on agentmemory for non-dev seats to avoid multiplying injection tax.
+- **Collaboration / parallel agents:** `team_share`, `team_feed`, and `mesh_sync` exist in both (LeanCTX partial); agentmemory is the safer bet for review loops and decision capture until LeanCTX team features prove out in your workflow.
+- **Operational burden:** At 5–10 seats, four-stack ops (Node agentmemory + npm CM + pip Graphify + RTK hooks + SB rules) concentrates failure on one person; LeanCTX + agentmemory is the smallest stack that still serves devs *and* non-devs.
+
+### Risks (small mixed teams)
+
+- **Partial parity:** LeanCTX team share/feed/mesh marked ¹ in the capability matrix above — validate before dropping agentmemory.
+- **Shared export secrets:** Without gitleaks + bridge discipline, `.agentmemory/` in git is a team-wide leak vector.
+- **Discipline drift:** Non-devs won’t follow cooperative CM rules; rely on hooks + exported artifacts, not agent self-policing.
+- **Maintainer bottleneck:** One person owns template rollout, server health (`:3111`), and hook freshness across macOS/Linux seats.
+
+### Practical rollout
+
+Pilot **LeanCTX + agentmemory** on 2 devs + 1 non-dev with a shared `.agentmemory/` export root and team feed enabled; add Context Mode only after a security review flags internal-network fetch. Roll the winning template to remaining seats via one scripted setup — don’t migrate the full four-stack unless a pilot seat hits a documented hard gap.
+
+---
+
 ## Complete feature comparison matrix
 
 ### Context Tools — Comprehensive Feature Coverage Matrix
