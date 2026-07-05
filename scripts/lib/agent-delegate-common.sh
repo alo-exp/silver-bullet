@@ -15,7 +15,9 @@ agent_delegate_canonicalize_path() {
 # Production delegation must not inherit matrix certification env.
 agent_delegate_clear_matrix_env() {
   unset SB_E2E_ENTERPRISE_MATRIX SB_E2E_LEDGER_FILE SB_E2E_MATRIX_BATCH_PID \
-    SB_E2E_MATRIX_FORCE 2>/dev/null || true
+    SB_E2E_MATRIX_FORCE SB_E2E_MATRIX_MONITOR_PID_FILE \
+    SB_E2E_MATRIX_MONITOR_STATUS_FILE SB_E2E_TUI_FINDINGS SB_E2E_TUI_OFFSETS \
+    SB_E2E_LIVE_TEST_LOCK_FILE 2>/dev/null || true
 }
 
 agent_delegate_is_quota_error() {
@@ -66,8 +68,16 @@ agent_delegate_resolve_prompt() {
     [[ -f "$prompt_file" ]] || { printf 'ERROR: prompt file not found: %s\n' "$prompt_file" >&2; return 2; }
     prompt_file="$(agent_delegate_canonicalize_path "$prompt_file")"
     resolved="$(cat "$prompt_file")"
+    if agent_delegate_brief_has_secrets "$resolved"; then
+      printf 'ERROR: prompt file contains secret patterns — remove credentials before launch\n' >&2
+      return 2
+    fi
   else
     resolved="$prompt_text"
+    if agent_delegate_brief_has_secrets "$resolved"; then
+      printf 'ERROR: prompt contains secret patterns — remove credentials before launch\n' >&2
+      return 2
+    fi
   fi
 
   [[ -n "$resolved" ]] || {

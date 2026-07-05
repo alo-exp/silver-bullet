@@ -55,6 +55,34 @@ grep -q 'SB_ORCHESTRATOR_WORKER' "$WRAPPER" && check "wrapper orchestrator worke
 grep -q 'RTK_DISABLED=1' "$WRAPPER" && check "wrapper disables RTK for logs" pass || check "wrapper disables RTK for logs" fail
 ! grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$WRAPPER" && check "wrapper omits matrix env" pass || check "wrapper omits matrix env" fail
 
+grep -q 'scripts/agent-codex/' "$SKILL" && check "references agent-codex harness dir" pass || check "references agent-codex harness dir" fail
+grep -q 'SB_AGENT_CODEX_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail
+grep -q 'Security (delegation boundary)' "$SKILL" && check "security section" pass || check "security section" fail
+grep -q 'E2E-081' "$SKILL" && check "R9 E2E-081 learning" pass || check "R9 E2E-081 learning" fail
+
+AGENT_CODEX_DIR="${REPO_ROOT}/scripts/agent-codex"
+for script in lib.sh env.sh preflight.sh monitor.sh invoke.sh; do
+  path="${AGENT_CODEX_DIR}/${script}"
+  if [[ -f "$path" ]]; then
+    check "agent-codex/${script} exists" pass
+    bash -n "$path" && check "agent-codex/${script} shell syntax" pass || check "agent-codex/${script} shell syntax" fail
+  else
+    check "agent-codex/${script} exists" fail
+  fi
+done
+
+bash "${AGENT_CODEX_DIR}/preflight.sh" --dry-run >/dev/null 2>&1 && check "preflight dry-run" pass || check "preflight dry-run" fail
+bash "${AGENT_CODEX_DIR}/env.sh" >/dev/null 2>&1 && check "env.sh runs" pass || check "env.sh runs" fail
+TMP_LOG="$(mktemp "${TMPDIR:-/tmp}/agent-codex-monitor-XXXXXX")"
+printf 'Submitted prompt\nactivity\n' >"$TMP_LOG"
+monitor_out="$(bash "${AGENT_CODEX_DIR}/monitor.sh" --log "$TMP_LOG" --once 2>/dev/null || true)"
+grep -q 'prompt submitted' <<<"$monitor_out" \
+  && check "monitor --once smoke" pass || check "monitor --once smoke" fail
+rm -f "$TMP_LOG"
+
+grep -q 'agent-codex/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
+  && check "orchestrator allows invoke.sh" pass || check "orchestrator allows invoke.sh" fail
+
 bash -n "$WRAPPER" && check "wrapper shell syntax" pass || check "wrapper shell syntax" fail
 
 echo "Results: $PASS passed, $FAIL failed"
