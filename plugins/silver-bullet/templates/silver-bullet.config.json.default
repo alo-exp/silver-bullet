@@ -196,7 +196,7 @@
       "graph_path": "graphify-out/graph.json",
       "query_ttl_seconds": 1800,
       "query_budget": 2000,
-      "query_state_file": "$HOME/.codex/.silver-bullet/graphify-query",
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
       "optimization": {
         "profile": "synergy_max",
         "last_applied_at": null,
@@ -232,7 +232,7 @@
         "cursor": {
           "pre_index": [],
           "post_index": [
-            "Verify agentmemory MCP is configured in $HOME/.codex/mcp.json (see docs/AGENTMEMORY.md)"
+            "Verify agentmemory MCP is configured in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)"
           ]
         },
         "opencode": {
@@ -257,7 +257,7 @@
       "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
       "health_url": "http://localhost:3111/agentmemory/health",
       "usage_ttl_seconds": 1800,
-      "usage_state_file": "$HOME/.codex/.silver-bullet/agentmemory-usage",
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
       "export_root": ".agentmemory",
       "optimization": {
         "profile": "synergy_max",
@@ -285,7 +285,7 @@
         },
         "cursor": {
           "pre_index": [
-            "Merge alumnium MCP into $HOME/.codex/mcp.json per docs/ALUMNIUM.md"
+            "Merge alumnium MCP into ~/.cursor/mcp.json per docs/ALUMNIUM.md"
           ],
           "post_index": []
         },
@@ -396,8 +396,8 @@
     "wshobson": false
   },
   "state": {
-    "state_file": "$HOME/.codex/.silver-bullet/state",
-    "trivial_file": "$HOME/.codex/.silver-bullet/trivial"
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
   },
   "issue_tracker": "local",
   "release": {
@@ -405,7 +405,7 @@
     "profile": "generic",
     "require_plugin_runtime_matrix": true,
     "require_pre_release_quality_gate": true,
-    "quality_gate_state_file": "$HOME/.codex/.silver-bullet/quality-gate-state"
+    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
   },
   "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
   "semantic_compression": {
