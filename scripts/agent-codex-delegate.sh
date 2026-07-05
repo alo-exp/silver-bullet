@@ -126,6 +126,7 @@ agent_codex_invoke_once() {
   fi
   # shellcheck source=tests/live/agents/codex/agent.sh
   source "$AGENT_SH"
+  agent_preflight
   agent_invoke "$MODE" "$PROMPT_TEXT"
 }
 
