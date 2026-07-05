@@ -1,0 +1,1 @@
+Add order validation to the API so invalid orders are rejected with clear error messages. Use Silver Bullet autonomous mode — route and drive the full development workflow yourself. Commit on a feature branch when done.

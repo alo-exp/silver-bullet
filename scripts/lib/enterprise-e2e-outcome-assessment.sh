@@ -296,7 +296,15 @@ enterprise_e2e_outcome_log_matches() {
 enterprise_e2e_outcome_log_has_babysitting() {
   local row_log="${1:-}"
   if enterprise_e2e_outcome_log_matches "$row_log" \
-    'waiting for (your|user)( input| to)|need your input before|babysit'; then
+    'waiting for (your|user)( input| to)|need your input before'; then
+    return 0
+  fi
+  # babysit — exclude negated acceptance-criteria / autonomy summaries (agent-claude brief echo).
+  if enterprise_e2e_outcome_log_matches "$row_log" 'babysit'; then
+    if enterprise_e2e_outcome_log_matches "$row_log" \
+      'without[[:space:]]*(operator[[:space:]]+)?babysit|no[[:space:]]*(operator[[:space:]]+)?babysit|withoutbabysit|withoutoperatorbabysit|nobabysit|nooperatorbabysit'; then
+      return 1
+    fi
     return 0
   fi
   # operator pause(s) — exclude negated autonomy summaries (row 10 stream-json false positive).
@@ -844,7 +852,17 @@ enterprise_e2e_outcome_row_failures() {
 enterprise_e2e_outcome_score_tailor() {
   local work_dir="$1" state_dir="$2" row_log="$3" row_num="${4:-}"
   local state_file="${state_dir}/state"
-  [[ "$row_num" == "6" ]] && { printf 'n/a\n'; return 0; }
+  if [[ "$row_num" == "6" ]]; then
+    if [[ -f "${work_dir}/.planning/workflows/fast-readme.md" ]] || \
+       [[ -f "${work_dir}/.planning/orchestrator-composition-log.jsonl" ]]; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ -n "$row_log" && -f "$row_log" ]] && \
+       grep -qEi '/silver:fast|silver-fast|fast-readme|catalog workflow' "$row_log" 2>/dev/null; then
+      printf 'pass\n'; return 0
+    fi
+    printf 'n/a\n'; return 0
+  fi
   if [[ -f "$state_file" ]] && grep -qE 'silver-context|silver-router|silver-feature' "$state_file" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi

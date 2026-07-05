@@ -4,7 +4,9 @@
 set -euo pipefail
 
 MAIN="${SB_E2E_MAIN_REPO:-/Users/shafqat/projects/silver-bullet/repo}"
-SB_ROOT="${SB_ROOT:-/private/tmp/sb-main-row11-fp}"
+# shellcheck source=scripts/lib/enterprise-e2e-sb-root-resolve.sh
+source "${MAIN}/scripts/lib/enterprise-e2e-sb-root-resolve.sh"
+SB_ROOT="${SB_ROOT:-$(enterprise_e2e_resolve_sb_root)}"
 WT="${SB_TEST_ENTERPRISE_APP_ROOT:-/Users/shafqat/projects/enterprise-grade-test-app-round9-claude}"
 export SB_TEST_ENTERPRISE_APP_ROOT="$WT"
 BASELINE_SHA="${SB_E2E_TEST_APP_BASELINE_SHA:-8482e60}"

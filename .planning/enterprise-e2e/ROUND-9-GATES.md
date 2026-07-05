@@ -78,7 +78,16 @@ Rows 1, 3, 6, 11, 21, 22 with `SB_E2E_SURFACE_SKIP=0`.
 
 ### Next step (Gate 3 — full matrix)
 
-1. Confirm SB_ROOT [`/private/tmp/sb-main-row11-fp`](file:///private/tmp/sb-main-row11-fp) ff-merged to main HEAD (harness + pilot scripts).
-2. Run [`round9-matrix-driver.sh`](round9-matrix-driver.sh) (or matrix harness) for remaining **16** rows on `claude@ba77d1b0ed19+596e99deab17` with honest fixture worktree + isolated `CLAUDE_CONFIG_DIR`.
-3. Update [ROUND-9-LEDGER.md](./ROUND-9-LEDGER.md) per-row as `enterprise_e2e_row_pass_registry_record` fires; target **22/22** before release checklist.
+**One command (canonical @ main HEAD):**
+
+```bash
+RTK_DISABLED=1 bash scripts/enterprise-e2e/round9-gate3-driver.sh --preflight-only
+RTK_DISABLED=1 bash scripts/enterprise-e2e/round9-gate3-driver.sh --tmux
+```
+
+1. **SB_ROOT** resolves to main checkout via [`scripts/lib/enterprise-e2e-sb-root-resolve.sh`](../../scripts/lib/enterprise-e2e-sb-root-resolve.sh) — legacy `/private/tmp/sb-main-row11-fp` only if still present.
+2. Optional smoke migrate when surface hash unchanged: `SB_E2E_REGISTRY_MIGRATE_FROM=claude@ba77d1b0ed19+596e99deab17` (see [`registry-migrate-install.sh`](../../scripts/enterprise-e2e/registry-migrate-install.sh)).
+3. Driver runs remaining rows @ current `install_fp`; updates [ROUND-9-LEDGER.md](./ROUND-9-LEDGER.md) via matrix harness; target **22/22** + `strict-clean-check.sh` exit 0 before certification upgrade.
+
+Legacy smoke driver: [`round9-matrix-driver.sh`](round9-matrix-driver.sh) (rows 1,3,6,11,21,22 only).
 

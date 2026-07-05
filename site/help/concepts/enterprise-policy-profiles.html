@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Enterprise Policy Profiles — Silver Bullet Help</title>
+<meta name="description" content="Enterprise policy profile scaffolding in .silver-bullet.json: supervised, autonomous-safe, regulated, and internal-dogfood postures for onboarding and trust.">
+<meta property="og:title" content="Enterprise Policy Profiles — Silver Bullet Help">
+<meta property="og:description" content="Declare team posture in enterprise_policy — advisory scaffolding until runtime consumes profile fields.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/help/concepts/enterprise-policy-profiles.html">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:620px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:.95rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:.92rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Enterprise Policy Profiles</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Enterprise Policy Profiles</h1>
+    <p>Declare how much autonomy Silver Bullet should assume for a project: supervised default, autonomous-safe onboarding, regulated gates, or internal dogfood. Profiles live in <code>.silver-bullet.json</code> as <strong>advisory scaffolding</strong> today.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#schema">Config Schema</a></li>
+        <li><a href="#profiles">Built-in Profiles</a></li>
+        <li><a href="#onboarding">Safe Onboarding</a></li>
+        <li><a href="#runtime-status">Runtime Status</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Why Policy Profiles?</h2>
+      <p>Enterprise buyers need a single place to answer: <em>How autonomous is this project allowed to be?</em> Policy profiles document that posture in version-controlled config instead of tribal knowledge. They align onboarding docs, clarify behavior, and future runtime schedulers without changing hook contracts overnight.</p>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="alert-triangle"></i></span>
+        <div class="callout-body"><strong>Honest scope:</strong> <code>enterprise_policy</code> auto-sets session mode on tier&nbsp;2+ hosts for <code>autonomous_safe</code> and <code>internal_dogfood</code>. Supervised and regulated profiles default interactive. Production deploy stays human-gated. See <a href="autonomous-enterprise-status.html">status page</a> for proof levels.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="schema">Config Schema</h2>
+      <p>New projects receive the block from <code>templates/silver-bullet.config.json.default</code>. <code>/silver:init</code> and <code>scripts/sb-migrate-config.sh</code> merge it forward on upgrade.</p>
+
+      <div class="code-block">"enterprise_policy": {
+  "active_profile": "supervised",
+  "profiles": {
+    "supervised": { ... },
+    "autonomous_safe": { ... },
+    "regulated": { ... },
+    "internal_dogfood": { ... }
+  }
+}</div>
+
+      <p>Set <code>active_profile</code> to the key your team adopts. Individual profile objects may include:</p>
+      <ul>
+        <li><code>session_mode_default</code> — <code>interactive</code> or <code>autonomous</code> (target onboarding default)</li>
+        <li><code>clarify_auto</code> — whether <code>/silver:clarify --auto</code> is the expected clarify path</li>
+        <li><code>production_deploy_requires_human</code> — production promotion stays human-gated (always <code>true</code> today)</li>
+        <li><code>evidence_schema_strict</code> — aligns with <code>hooks.evidence_schema.strict</code> for regulated teams</li>
+        <li><code>non_production_deploy_autonomy</code> — dogfood-only hint for staging/sandbox deploys</li>
+        <li><code>orchestrator_mode</code> — always <code>parent</code> (only supported value)</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="profiles">Built-in Profiles</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Profile key</th><th>Label</th><th>Intended use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>supervised</td><td>Supervised default</td><td>Interactive sessions; blocking decisions escalated; safest onboarding for new teams.</td></tr>
+          <tr><td>autonomous_safe</td><td>Autonomous-safe</td><td>Autonomous session default with bounded clarify-auto; still human-gated for production.</td></tr>
+          <tr><td>regulated</td><td>Regulated</td><td>Maximum human gates for ship/release/deploy; strict evidence schema emphasis.</td></tr>
+          <tr><td>internal_dogfood</td><td>Internal dogfood</td><td>SB team posture — autonomous defaults, non-prod deploy autonomy documented, prod still gated.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="onboarding">Autonomous-Safe Onboarding Path</h2>
+      <p>Recommended flow for teams moving toward enterprise autonomy <strong>without</strong> removing safeguards:</p>
+      <ol>
+        <li>Install SB on a tier&nbsp;2+ host (Cursor recommended for parent/worker Task support).</li>
+        <li>Run <code>/silver:init</code> — confirm <code>orchestrator_mode: parent</code> and review <code>enterprise_policy</code>.</li>
+        <li>Start with <code>active_profile: supervised</code>; complete one full <code>/silver:feature</code> cycle with evidence.</li>
+        <li>When comfortable, switch to <code>autonomous_safe</code> on a tier&nbsp;2+ host — SessionStart writes <code>autonomous</code> to the mode file automatically (no interactive prompt).</li>
+        <li>Track certification progress on the <a href="autonomous-enterprise-status.html">status page</a> — do not treat profile selection as proof of enterprise autonomy.</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Process packs:</strong> Catalog <code>PP-*</code> entries can overlay gates and tool requirements per team. Policy profiles complement — not replace — process-pack authority in <code>docs/apo-catalog.json</code>.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="runtime-status">Runtime Status</h2>
+      <p><strong>Wired today:</strong> <code>hooks/session-start</code> reads <code>active_profile</code>, persists <code>enterprise-policy-active</code>, and on tier&nbsp;2+ hosts auto-writes the session mode file for <code>autonomous_safe</code>/<code>internal_dogfood</code> (supervised/regulated default interactive). Deploy, clarify, and evidence strict markers surface in session context when profile fields demand them.</p>
+      <p><strong>Still partial / not fully runtime-enforced:</strong></p>
+      <ul>
+        <li><code>clarify_auto</code>, <code>evidence_schema_strict</code>, and deploy-autonomy profile fields</li>
+        <li>Twelve enforcement layers and V-loop evidence requirements (global contract)</li>
+        <li>Parent-only implementation ban at tier&nbsp;2+</li>
+        <li>Blocking <code>decision_class</code> escalation rules</li>
+        <li>Sequential orchestrator queue (DAG scheduler in progress)</li>
+      </ul>
+      <p>When runtime code consumes profiles, changes will ship with hook tests and enterprise E2E rows — not silent behavior drift.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="orchestrator-mode.html">Parent / Worker Orchestrator Mode</a></li>
+        <li><a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a></li>
+        <li><a href="../reference/#config">.silver-bullet.json reference</a></li>
+        <li><a href="../getting-started/#first-run">First workflow run</a></li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="orchestrator-mode.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">Orchestrator Mode</span>
+        </a>
+        <a href="autonomous-enterprise-status.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">Enterprise Status</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

@@ -50,6 +50,44 @@
       ],
       "conflict_resolution": "catalog safety gates override user shortcuts; explicit user scope can choose a smaller workflow when dynamic rules permit",
       "versioning": "catalog_version governs migration; process pack changes require migration_map update"
+    },
+    {
+      "id": "PP-SB-REGULATED",
+      "name": "Regulated enterprise process pack",
+      "process_ref": "PROC-SB-SE-DEVOPS",
+      "workflow_refs": [
+        "WF-SILVER-FEATURE",
+        "WF-SILVER-BUGFIX",
+        "WF-SILVER-RELEASE",
+        "WF-SILVER-DEEP-RESEARCH"
+      ],
+      "override_rules": [
+        "exclude WF-SILVER-FAST from default router recommendations",
+        "mandate INTENT-GATE-DEFAULT and VR-WORKFLOW-DEFAULT on every delivery workflow",
+        "pair with enterprise_policy.active_profile regulated and evidence_schema_strict",
+        "require human approval for ship, release, and production deploy atomic flows"
+      ],
+      "conflict_resolution": "regulated gates and catalog safety gates override speed shortcuts; WF-SILVER-FAST requires explicit user scope",
+      "versioning": "catalog_version governs migration; regulated overlays require compliance review before promotion"
+    },
+    {
+      "id": "PP-SB-STARTUP-FAST",
+      "name": "Startup fast-path process pack",
+      "process_ref": "PROC-SB-SE-DEVOPS",
+      "workflow_refs": [
+        "WF-SILVER-FAST",
+        "WF-SILVER-FEATURE",
+        "WF-SILVER-BUGFIX",
+        "WF-SILVER-UI"
+      ],
+      "override_rules": [
+        "prefer WF-SILVER-FAST for greenfield features under three-day scope",
+        "defer WF-SILVER-DEEP-RESEARCH and WF-SILVER-DEVOPS unless risk triggers fire",
+        "pair with enterprise_policy.active_profile autonomous_safe on tier 2+ hosts",
+        "skip optional bootstrap/orient atoms when dynamic rules permit"
+      ],
+      "conflict_resolution": "fast-path shortcuts yield to catalog safety gates and blocking decision_class outcomes",
+      "versioning": "catalog_version governs migration; startup-fast overlays documented in enterprise onboarding"
     }
   ],
   "workflows": [
