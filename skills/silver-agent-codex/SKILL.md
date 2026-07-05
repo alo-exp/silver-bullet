@@ -150,6 +150,8 @@ Optional: `CODEX_MODEL`, `CODEX_MODEL_PROVIDER`, `CODEX_REASONING_EFFORT`.
 
 ## Step 3 — Invoke (parent)
 
+**Path policy:** `--log` and `--brief-file` may be repo-relative; `agent-codex-delegate.sh` canonicalizes them to **absolute paths** before read/write (relative paths resolve from their parent directory, not `CODEX_WORK_DIR`). Prefer absolute paths in briefs and automation to avoid ambiguity.
+
 **Preflight (mandatory):**
 
 ```bash
