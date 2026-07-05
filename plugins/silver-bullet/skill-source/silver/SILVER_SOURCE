@@ -129,6 +129,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach" | `silver:research` | Research/decision artifact, then handoff |
+| "create workflow", "new workflow", "add workflow", "workflow authoring", "convert skill to workflow", "promote workflow", path to `skills/*/SKILL.md` for SB conversion | `silver:new-workflow` | Meta workflow authoring — create or convert workflows/AFs into catalog |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users" | `silver:release` | Milestone-level only |
 | "merge this", "push this PR", "ship this feature" with active phase context and no version signal | `silver:ship` | Phase-level ship |
 | "where are we", "what's left", "show progress", "current status" | SB status/progress path | Read SB planning state and workflow trackers |
@@ -163,6 +164,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "thread", "track this topic across sessions", "cross-session note", "track this concern" | `silver:thread` | Lightweight cross-session context threads for topic-specific tracking |
 | "delegate to codex", "run in codex", "codex subagent", "codex tui", "have codex implement", host supervises Codex executes | `silver:agent-codex` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Codex executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | "delegate to cursor", "run in cursor", "cursor subagent", "cursor-agent", "have cursor implement", host supervises Cursor executes | `silver:agent-cursor` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Cursor executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
+| "delegate to claude", "run in claude", "claude subagent", "claude code", "have claude implement", host supervises Claude executes | `silver:agent-claude` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Claude executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
 
 ### Step 5: Apply ship/release disambiguation

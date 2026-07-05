@@ -234,10 +234,17 @@ else
 fi
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=1
 if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp'; then
-  echo "PASS: V2=1 allows delegate with DIRECT_FALLBACK"
+  echo "PASS: V2=1 allows cursor delegate with DIRECT_FALLBACK"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: V2=1 should allow delegate with DIRECT_FALLBACK"
+  echo "FAIL: V2=1 should allow cursor delegate with DIRECT_FALLBACK"
+  FAIL=$((FAIL + 1))
+fi
+if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-claude-delegate.sh --work-dir /tmp'; then
+  echo "PASS: V2=1 allows claude delegate with DIRECT_FALLBACK"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: V2=1 should allow claude delegate with DIRECT_FALLBACK"
   FAIL=$((FAIL + 1))
 fi
 if sb_orchestrator_parent_delegate_bash_allowed 'echo fake agent-codex-delegate.sh'; then

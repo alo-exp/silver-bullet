@@ -50,12 +50,15 @@
     "silver-ensure-docs": "AF-DOCUMENT",
     "silver-execute": "AF-EXECUTE",
     "silver-handoff": "AF-DOCUMENT",
+    "silver-new-workflow": "AF-PLAN",
     "silver-plan": "AF-PLAN",
     "silver-quality-gates": "AF-QUALITY-GATE",
     "silver-research": "AF-DECIDE",
     "silver-review": "AF-REVIEW",
+    "silver-review-fix-ladder": "AF-REVIEW-TRIAGE",
     "silver-review-request": "AF-REVIEW-REQUEST",
     "silver-review-triage": "AF-REVIEW-TRIAGE",
+    "silver-scan": "AF-ORIENT",
     "silver-secure": "AF-SECURE",
     "silver-ship": "AF-SHIP",
     "silver-spec": "AF-SPECIFY",
@@ -88,6 +91,12 @@
       "AF-AGENT-DELEGATE"
     ],
     "FS-DELEGATE-CHECKPOINT": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CLAUDE-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CLAUDE-ROUTE": [
       "AF-AGENT-DELEGATE"
     ],
     "FS-DELEGATE-CODEX-LAUNCH": [
@@ -186,6 +195,9 @@
     "FS-SILVER_ADD": [
       "AF-PHASE-MANAGE"
     ],
+    "FS-SILVER_AGENT_CLAUDE": [
+      "AF-AGENT-DELEGATE"
+    ],
     "FS-SILVER_AGENT_CODEX": [
       "AF-AGENT-DELEGATE"
     ],
@@ -275,6 +287,9 @@
     ],
     "FS-SILVER_MULTI_AI": [
       "AF-DECIDE"
+    ],
+    "FS-SILVER_NEW_WORKFLOW": [
+      "AF-PLAN"
     ],
     "FS-SILVER_ORCHESTRATOR": [
       "AF-ROUTE"
@@ -474,6 +489,17 @@
       "silver-branch-finish",
       "silver-completion-audit",
       "silver-ship"
+    ],
+    "silver-new-workflow": [
+      "silver-clarify",
+      "silver-scan",
+      "silver-research",
+      "silver-plan",
+      "silver-review-fix-ladder",
+      "silver-execute",
+      "silver-verify",
+      "silver-validate",
+      "silver-ensure-docs"
     ],
     "silver-release": [
       "FLOW-QUALITY-GATE",

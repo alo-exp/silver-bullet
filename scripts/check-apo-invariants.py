@@ -18,6 +18,8 @@ GENERATOR = REPO_ROOT / "scripts" / "generate-apo-artifacts.py"
 SKILLS_DIR = REPO_ROOT / "skills"
 WORKERS_DIR = REPO_ROOT / "templates" / "orchestrator-workers"
 PLUGIN_WORKERS_DIR = REPO_ROOT / "plugins" / "silver-bullet" / "templates" / "orchestrator-workers"
+# Composer-only worker prompts (not 1:1 with atomic-flow worker_template paths).
+COMPOSER_ONLY_WORKER_TEMPLATES = frozenset({"NEW-WORKFLOW.md"})
 
 
 def load_catalog() -> dict:
@@ -69,8 +71,9 @@ def worker_template_parity(catalog: dict) -> list[tuple[str, str, str]]:
             workers.add(Path(tmpl).name)
     source = {path.name for path in WORKERS_DIR.glob("*.md")}
     plugin = {path.name for path in PLUGIN_WORKERS_DIR.glob("*.md")}
+    source_af = source - COMPOSER_ONLY_WORKER_TEMPLATES
     return [
-        check("one source worker template per atomic flow", workers == source, f"missing={sorted(workers-source)} extra={sorted(source-workers)}"),
+        check("one source worker template per atomic flow", workers == source_af, f"missing={sorted(workers-source_af)} extra={sorted(source_af-workers)}"),
         check("plugin worker mirror matches source", source == plugin, f"missing={sorted(source-plugin)} extra={sorted(plugin-source)}"),
     ]
 
@@ -286,6 +289,7 @@ def agent_delegation_contract(catalog: dict) -> list[tuple[str, str, str]]:
         check("silver-agent-worker maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-worker") == "AF-AGENT-DELEGATE", ""),
         check("silver-agent-codex maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-codex") == "AF-AGENT-DELEGATE", ""),
         check("silver-agent-cursor maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-cursor") == "AF-AGENT-DELEGATE", ""),
+        check("silver-agent-claude maps to AF-AGENT-DELEGATE", skill_map.get("silver-agent-claude") == "AF-AGENT-DELEGATE", ""),
         check("ART-AGENT-DELEGATE registered", "ART-AGENT-DELEGATE" in artifacts, ""),
         check("core FS-DELEGATE steps present", {"FS-DELEGATE-BRIEF", "FS-DELEGATE-LAUNCH", "FS-DELEGATE-VERIFY"} <= steps, ""),
         check("delegation AF not parallelizable", bool(delegate_flow and not delegate_flow.get("execution", {}).get("parallelizable", True)), ""),

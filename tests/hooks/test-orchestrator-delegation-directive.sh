@@ -59,6 +59,12 @@ af="$(jq -r '.args' "$(sb_orchestrator_directive_file)" | jq -r '.atomic_flow_id
   && check "mapper codex AGENT-DELEGATE" pass || check "mapper codex AGENT-DELEGATE" fail
 [[ "$(sb_orchestrator_worker_template_for_skill silver-agent-cursor)" == "AGENT-DELEGATE" ]] \
   && check "mapper cursor AGENT-DELEGATE" pass || check "mapper cursor AGENT-DELEGATE" fail
+[[ "$(sb_orchestrator_worker_template_for_skill silver-agent-claude)" == "AGENT-DELEGATE" ]] \
+  && check "mapper claude AGENT-DELEGATE" pass || check "mapper claude AGENT-DELEGATE" fail
+
+sb_orchestrator_seed_delegation_directive claude task-claude "$brief" "$scopes" && check "seed claude returns success" pass || check "seed claude returns success" fail
+skill_claude="$(jq -r '.next_skill' "$(sb_orchestrator_directive_file)")"
+[[ "$skill_claude" == "silver-agent-claude" ]] && check "next_skill host claude" pass || check "next_skill host claude" fail
 
 rm -rf "$WORK"
 echo "Results: $PASS passed, $FAIL failed"

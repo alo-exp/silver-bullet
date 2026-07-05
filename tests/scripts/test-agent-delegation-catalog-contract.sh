@@ -46,10 +46,13 @@ map_codex="$(jq -r '.migration_map.skill_to_entity["silver-agent-codex"]' "$CATA
 map_cursor="$(jq -r '.migration_map.skill_to_entity["silver-agent-cursor"]' "$CATALOG")"
 map_worker="$(jq -r '.migration_map.skill_to_entity["silver-agent-worker"]' "$CATALOG")"
 
+map_claude="$(jq -r '.migration_map.skill_to_entity["silver-agent-claude"]' "$CATALOG")"
 [[ "$map_codex" == "AF-AGENT-DELEGATE" ]] && check "silver-agent-codex maps AF-AGENT-DELEGATE" pass \
   || check "silver-agent-codex maps AF-AGENT-DELEGATE" fail
 [[ "$map_cursor" == "AF-AGENT-DELEGATE" ]] && check "silver-agent-cursor maps AF-AGENT-DELEGATE" pass \
   || check "silver-agent-cursor maps AF-AGENT-DELEGATE" fail
+[[ "$map_claude" == "AF-AGENT-DELEGATE" ]] && check "silver-agent-claude maps AF-AGENT-DELEGATE" pass \
+  || check "silver-agent-claude maps AF-AGENT-DELEGATE" fail
 [[ "$map_worker" == "AF-AGENT-DELEGATE" ]] && check "silver-agent-worker maps AF-AGENT-DELEGATE" pass \
   || check "silver-agent-worker maps AF-AGENT-DELEGATE" fail
 
