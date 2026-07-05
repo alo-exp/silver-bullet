@@ -8,6 +8,8 @@ export SB_RTK_COMPAT_MODE=verbatim
 source "${REPO_ROOT}/hooks/lib/rtk-compat.sh"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
+# shellcheck source=scripts/lib/plugin-cache-version.sh
+source "${REPO_ROOT}/scripts/lib/plugin-cache-version.sh"
 PURGE_LEGACY_PLUGINS=0
 PUBLIC_RELEASE_ONLY=0
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
@@ -225,7 +227,7 @@ sync_silver_bullet_settings_paths() {
   [[ -f "$settings_file" ]] || return 0
   [[ -d "$plugin_cache_root" ]] || return 0
 
-  current_version_dir="$(find "$plugin_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  current_version_dir="$(sb_plugin_cache_latest_version_dir "$plugin_cache_root" 2>/dev/null || true)"
   [[ -n "$current_version_dir" ]] || return 0
 
   python3 - "$settings_file" "$plugin_cache_root" "$stable_install_path" <<'PY'
@@ -283,30 +285,9 @@ PY
 
 refresh_silver_bullet_install_alias() {
   local plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
-  local current_version_dir=""
-  local stable_alias="${plugin_cache_root}/current"
-
   [[ -d "$plugin_cache_root" ]] || return 0
-  current_version_dir="$(find "$plugin_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
-  [[ -n "$current_version_dir" ]] || return 0
-
-  python3 - "$current_version_dir" "$stable_alias" <<'PY'
-import pathlib
-import shutil
-import sys
-
-target = pathlib.Path(sys.argv[1])
-alias_path = pathlib.Path(sys.argv[2])
-
-alias_path.parent.mkdir(parents=True, exist_ok=True)
-if alias_path.exists() or alias_path.is_symlink():
-    if alias_path.is_dir() and not alias_path.is_symlink():
-        shutil.rmtree(alias_path)
-    else:
-        alias_path.unlink()
-
-alias_path.symlink_to(target)
-PY
+  sb_plugin_cache_prune_orphaned_dirs "$plugin_cache_root"
+  sb_plugin_cache_refresh_current_alias "$plugin_cache_root"
 }
 
 refresh_plugin_install() {
@@ -334,7 +315,7 @@ sync_silver_bullet_hook_cache() {
   local current_version_dir=""
 
   [[ -d "$cache_root" ]] || return 0
-  current_version_dir="$(find "$cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  current_version_dir="$(sb_plugin_cache_latest_version_dir "$cache_root" 2>/dev/null || true)"
   [[ -n "$current_version_dir" ]] || return 0
 
   install -d -m 755 "${current_version_dir}/hooks"
@@ -365,7 +346,7 @@ sync_silver_bullet_skill_cache() {
   source_root="$(sb_agent_bundle_root "$REPO_ROOT" claude)"
 
   [[ -d "$cache_root" ]] || return 0
-  current_version_dir="$(find "$cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+  current_version_dir="$(sb_plugin_cache_latest_version_dir "$cache_root" 2>/dev/null || true)"
   [[ -n "$current_version_dir" ]] || return 0
 
   rm -rf "${current_version_dir}/commands"
