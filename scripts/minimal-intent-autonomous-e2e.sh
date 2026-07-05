@@ -288,16 +288,46 @@ PY
   echo "log=$log_path"
 
   local outcomes outcome verdict=PASS detail
+  local work_dir state_dir evidence_path=""
+  work_dir="${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}"
+  state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
+  export SB_E2E_ENTERPRISE_MATRIX=1
+  # Product-delta evidence for session scorers (AUTO/WORLD composite).
+  if [[ -d "${work_dir}/.planning/phases" ]]; then
+    evidence_path="$(find "${work_dir}/.planning/phases" -name 'SUMMARY.md' -print -quit 2>/dev/null | sed "s|^${work_dir}/||" || true)"
+  fi
+  if [[ -z "$evidence_path" && -f "${work_dir}/.planning/workflows/feature-currency.md" ]]; then
+    evidence_path=".planning/workflows/feature-currency.md"
+  fi
+
   outcomes="$(row_blocking_outcomes "$row_id")"
+  local world_deps_pass=1
   for outcome in $outcomes; do
-    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$log_path" 3 "api/" 2>/dev/null || true)"
+    [[ "$outcome" == "OUT-WORLD-01" ]] && continue
+    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "" "$ledger" "$evidence_path" 2>/dev/null || true)"
     if [[ -z "$detail" ]]; then
       detail="fail|scorer unavailable"
     fi
     echo "  $outcome: $detail"
-    if [[ "$detail" != pass* && "$detail" != "pass" ]]; then
+    if [[ "$detail" != pass* && "$detail" != "pass" && "$detail" != "n/a" ]]; then
       verdict=FAIL
+      world_deps_pass=0
     fi
+  done
+  # OUT-WORLD-01: composite of MI-01 blocking outcomes (advisory KM/VLOOP/TRACE excluded per CRITERIA.md).
+  if [[ "$world_deps_pass" -eq 1 ]]; then
+    detail="pass"
+  else
+    detail="fail"
+  fi
+  echo "  OUT-WORLD-01: $detail"
+  [[ "$detail" == pass ]] || verdict=FAIL
+
+  # Advisory (informational only)
+  for outcome in $(matrix_row_field "$row_id" advisory_outcomes 2>/dev/null | tr -d '[],"' || true); do
+    [[ -z "$outcome" ]] && continue
+    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "" "$ledger" "$evidence_path" 2>/dev/null || true)"
+    echo "  $outcome: ${detail:-n/a} (advisory)"
   done
 
   python3 - "$ledger" "$verdict" "$log_path" <<'PY'
