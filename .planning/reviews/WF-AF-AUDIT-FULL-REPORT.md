@@ -254,3 +254,28 @@ Flow steps exist in catalog but are not listed in any AF `flow_steps[]`:
 - [`docs/APO-AUTHORING-COMPLIANCE.md`](../docs/APO-AUTHORING-COMPLIANCE.md)
 - [`docs/apo-catalog.json`](../docs/apo-catalog.json)
 - [`skills/silver-new-workflow/SKILL.md`](../skills/silver-new-workflow/SKILL.md) — Audit mode
+
+## Re-audit 2026-07-05
+
+Re-ran `scripts/audit-workflow-compliance.sh --target` for the 10 workflows that failed in the original full catalog audit (post-remediation commit [26edd496](https://github.com/alo-exp/silver-bullet/commit/26edd496)).
+
+Also re-ran `scripts/audit-atomic-flow-compliance.sh --target` for P2 delegate agent flow steps.
+
+| Entity | VERDICT | Notes |
+|--------|---------|-------|
+| WF-SILVER-ROUTER | PASS | AF-ROUTE / VL-AF-ROUTE |
+| WF-SILVER-BENCHMARK | PASS | AF-FAST-PATH |
+| WF-SILVER-CANARY | PASS | AF-SHIP |
+| WF-SILVER-CONTENT | PASS | AF-DOCUMENT |
+| WF-SILVER-DEPLOY | PASS | AF-SHIP |
+| WF-SILVER-FORENSICS | PASS | AF-DEBUG |
+| WF-SILVER-INCIDENT | PASS | AF-FAST-PATH |
+| WF-SILVER-REFACTOR | PASS | AF-EXECUTE |
+| WF-SILVER-RETRO | PASS | AF-DOCUMENT |
+| WF-SILVER-TEST | PASS | AF-VERIFY |
+| FS-SILVER_AGENT_CLAUDE | PASS | VL-FS-SILVER_AGENT_CLAUDE |
+| FS-SILVER_AGENT_CODEX | PASS | VL-FS-SILVER_AGENT_CODEX |
+| FS-SILVER_AGENT_CURSOR | PASS | VL-FS-SILVER_AGENT_CURSOR |
+
+**Summary:** **10/10** previously failing workflows **PASS**. **3/3** P2 agent flow steps **PASS**. No failures; no remediation required on branch `wf-af-audit` at HEAD `26edd496`.
+
