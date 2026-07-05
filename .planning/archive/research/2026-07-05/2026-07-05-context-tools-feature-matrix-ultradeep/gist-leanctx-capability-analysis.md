@@ -267,6 +267,48 @@ Pilot **LeanCTX + agentmemory** on 2 devs + 1 non-dev with a shared `.agentmemor
 
 ---
 
+## What the four-stack lacks — LeanCTX super-critical wins
+
+### Verdict
+
+The RTK + Context Mode + agentmemory + Graphify stack is **not** gap-free vs LeanCTX on super-critical axes. From the ultradeep **200-row feature matrix** (Section 7 below) and the Context Mode vs LeanCTX capability comparison pass, LeanCTX has **five genuinely super-critical capabilities** the four-stack lacks entirely (LeanCTX ✓, all four incumbents —). The stack compensates with graph-first retrieval (Graphify), MCP sandbox analysis (Context Mode), and orchestration memory (agentmemory)—but those are different surfaces. On **wire savings, enforced read-path compression, runtime filesystem/shell governance, and cryptographic audit**, LeanCTX is materially ahead.
+
+### Super-critical — missing from four-stack
+
+| Capability | Why super-critical | Matrix signal |
+|---|---|---|
+| **Wire / request-path compression proxy** | Compresses **every outbound model request** (system prompt, history, tool results) with prompt-cache-safe ordering—the largest uncaptured savings surface on long multi-turn sessions. RTK/CM only compress post-tool outputs. | LeanCTX ✓; RTK, CM, agentmemory, Graphify all — |
+| **Native read-path AST compression (10+ fidelity modes)** | Intercepts **Read before tokens reach the model** (full → AST signatures), not cooperative `ctx_execute_file`/rules. CM has sandbox analysis, not hook-enforced fidelity routing; agentmemory `memory_compress_file` is export-only. | 10+ modes, ModePredictor, `mode=auto`: LeanCTX-only rows |
+| **PathJail + deny-by-default shell allowlist** | **Runtime enforcement** of workspace-root file confinement and shell allowlisting. Four-stack relies on rules + CM subprocess sandbox—no filesystem jail on native Read/Shell paths. | PathJail + shell allowlist: LeanCTX ✓; all four — |
+| **Ed25519 hash-chained savings ledger + offline verification** | **Provable, tamper-evident audit** of token economics. RTK `rtk gain` and CM `ctx_stats` are session metrics, not cryptographically verifiable ledgers. | Ledger + batch verify CLI: LeanCTX ✓; all four — |
+| **Prompt-injection detection (pre-model)** | Security gate on content **before** it enters model context. No incumbent row covers this. | LeanCTX ✓; all four — |
+
+### Important but not super-critical
+
+- **Cached compressed re-read (~13 tokens) + bounce detection** — read-path efficiency and honest savings reporting; important for token economics, not security/audit floor
+- **IDE config-dir jail** (`~/.claude`, `~/.codex`, …) — security hardening, narrower than PathJail
+- **MCP Tool-Catalog Gateway** — caps downstream MCP tool-schema bloat; wire-adjacent but not mandatory
+- **Context Time Machine** (`ctxpkg` restore/share) — continuity UX, not runtime enforcement
+- **Adaptive read routing** (ModePredictor, `mode=auto`) — optimizes read-path modes; subsumed under AST compression story
+- **Compression preview / compare, cost heatmap MCP tools** — observability, not proof
+- **LSP refactor / architecture-review MCP tools** — code intelligence niches (Graphify covers structural graph)
+- **Cross-archive FTS (`ctx_expand`)** — retrieval convenience
+
+### Honest bottom line
+
+**The four-stack does have super-critical gaps vs LeanCTX**—unlikely to be zero, and the matrix confirms it. The highest-impact missing pieces are:
+
+1. **Wire proxy** (history + tool results every turn)
+2. **Enforced read-path compression** (not rules-only)
+3. **Runtime PathJail/shell governance** (not instruction-only)
+4. **Cryptographic savings proof** (not `rtk gain` / `ctx_stats`)
+
+What the four-stack **does** cover well (inverse of this section, covered above): Context Mode `CTX_FETCH_STRICT` + hook-level WebFetch deny, Graphify scoped subgraph retrieval, agentmemory 53-tool orchestration, gitleaks export scanning.
+
+**Uncertainty:** Ultradeep research found **no controlled head-to-head benchmark**; vendor token claims (60–90% per read, ~13-token re-read) are uncorroborated. Tiering is from architectural surface area, not measured savings.
+
+---
+
 ## Complete feature comparison matrix
 
 ### Context Tools — Comprehensive Feature Coverage Matrix
