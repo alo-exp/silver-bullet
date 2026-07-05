@@ -1,0 +1,26 @@
+
+============================================================
+VALIDATING REPORT: research_report.md
+============================================================
+
+⏳ Checking: Executive Summary... ✅ PASS
+⏳ Checking: Required Sections... ✅ PASS
+⏳ Checking: Citations... ✅ PASS
+⏳ Checking: Bibliography... ✅ PASS
+⏳ Checking: Placeholder Text... ✅ PASS
+⏳ Checking: Content Truncation... ✅ PASS
+⏳ Checking: Word Count... ✅ PASS
+⏳ Checking: Source Count... ✅ PASS
+⏳ Checking: Broken Links... ✅ PASS
+
+============================================================
+VALIDATION SUMMARY
+============================================================
+
+⚠️  WARNINGS (3):
+   • Executive summary too short: 42 words (should be ≥50)
+   • Missing recommended sections (for academic rigor): Counterevidence Register, Claims-Evidence Table
+   • Report is very short: 427 words (consider expanding)
+
+✅ VALIDATION PASSED (with warnings)
+

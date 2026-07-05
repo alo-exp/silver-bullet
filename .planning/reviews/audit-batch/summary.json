@@ -1,0 +1,163 @@
+{
+  "summary": {
+    "workflow": {
+      "PASS": 14,
+      "FAIL": 10
+    },
+    "atomic_flow": {
+      "PASS": 28,
+      "FAIL": 0
+    },
+    "flow_step": {
+      "PASS": 102,
+      "FAIL": 3
+    }
+  },
+  "failures": [
+    {
+      "kind": "flow_step",
+      "id": "FS-SILVER_AGENT_CLAUDE",
+      "fails": [
+        "FAIL [composition]: not owned by any atomic flow flow_steps[]"
+      ]
+    },
+    {
+      "kind": "flow_step",
+      "id": "FS-SILVER_AGENT_CODEX",
+      "fails": [
+        "FAIL [composition]: not owned by any atomic flow flow_steps[]"
+      ]
+    },
+    {
+      "kind": "flow_step",
+      "id": "FS-SILVER_AGENT_CURSOR",
+      "fails": [
+        "FAIL [composition]: not owned by any atomic flow flow_steps[]"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-BENCHMARK",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-benchmark",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-BENCHMARK",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-CANARY",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-canary",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-CANARY",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-CONTENT",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-content",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-CONTENT",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-DEPLOY",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-deploy",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-DEPLOY",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-FORENSICS",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-forensics",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-FORENSICS",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-INCIDENT",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-incident",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-INCIDENT",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-REFACTOR",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-refactor",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-REFACTOR",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-RETRO",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-retro",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-RETRO",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-ROUTER",
+      "fails": [
+        "FAIL: missing skills/silver-router/SKILL.md",
+        "FAIL: skill_to_entity missing silver-router",
+        "FAIL: orchestrator-state missing silver-router",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [migration_map]: skill_to_entity missing for silver-router",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-ROUTER",
+        "FAIL [triple_alignment]: missing skills/silver-router/SKILL.md",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh",
+        "FAIL [flow_steps]: skill_to_entity empty for composer silver-router"
+      ]
+    },
+    {
+      "kind": "workflow",
+      "id": "WF-SILVER-TEST",
+      "fails": [
+        "FAIL: orchestrator-state missing silver-test",
+        "FAIL [structural]: validate-workflow-authoring.sh",
+        "FAIL [catalog]: enforcement_queue missing for WF-SILVER-TEST",
+        "FAIL [triple_alignment]: SKILL pre-exec markers not parseable",
+        "FAIL [triple_alignment]: guard [] != orchestrator [context,plan]",
+        "FAIL [orchestrator]: composer missing from orchestrator-state.sh"
+      ]
+    }
+  ],
+  "total": 157
+}
