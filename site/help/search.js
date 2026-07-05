@@ -131,6 +131,48 @@ var IDX = [
   },
   {
     "page": "Core Concepts",
+    "url": "/help/concepts/orchestrator-mode.html",
+    "anchor": "overview",
+    "title": "Parent worker orchestrator mode",
+    "text": "Parent-only orchestration: parent session schedules Task workers from orchestrator-directive.json and .silver-bullet/orchestrator-workers templates; workers implement atomic flows. Blocking decision_class outcomes require human approval. Tier 2+ parent cannot Edit Write Bash on source. Sequential runtime queue today; DAG scheduler in progress."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/orchestrator-mode.html",
+    "anchor": "blocking-decisions",
+    "title": "Blocking decisions human gates",
+    "text": "Autonomous mode suppresses non-blocking clarify questions. decision_class blocking outcomes pause the queue until the user resolves them or logs SB OVERRIDE reason. Production deploy and release remain human-gated. silver:clarify --auto frames scope without removing blocking gates."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/enterprise-policy-profiles.html",
+    "anchor": "overview",
+    "title": "Enterprise policy profiles",
+    "text": "enterprise_policy in .silver-bullet.json declares supervised, autonomous_safe, regulated, and internal_dogfood postures. active_profile documents team autonomy defaults: session_mode_default, clarify_auto, production_deploy_requires_human. Advisory scaffolding until runtime scheduler consumes profiles."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/enterprise-policy-profiles.html",
+    "anchor": "onboarding",
+    "title": "Autonomous safe onboarding",
+    "text": "Safe enterprise onboarding: install on tier 2+ host, run silver:init, start with supervised profile, complete one silver:feature cycle with evidence, then switch to autonomous_safe when ready. Policy profiles document posture; they are not proof of enterprise autonomy."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/autonomous-enterprise-status.html",
+    "anchor": "proof-levels",
+    "title": "Autonomous enterprise proof levels",
+    "text": "Customer-facing certification vocabulary: Shipped structural proof, Live E2E partial tri-host matrix, In progress runtime gaps, Planned future vision. Distinguishes proven parent orchestrator and APO catalog from in-progress DAG scheduler and durable event log."
+  },
+  {
+    "page": "Core Concepts",
+    "url": "/help/concepts/autonomous-enterprise-status.html",
+    "anchor": "capability-matrix",
+    "title": "Autonomous enterprise capability status",
+    "text": "Status page for enterprise autonomy: parent orchestrator shipped, policy profile config shipped advisory, 22-row E2E partial Cursor strongest, parallel DAG scheduler in progress, generated certification and SOC2 export planned. Links docs/evidence-schema.md and outcome-criteria-registry."
+  },
+  {
+    "page": "Core Concepts",
     "url": "/help/concepts/artifact-review-assessor.html",
     "anchor": "overview",
     "title": "Artifact review assessor",

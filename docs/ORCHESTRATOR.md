@@ -25,6 +25,10 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json` | Session/branch | **Mandatory next skill** + `next_worker_template` when `blocking: true` |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-intent.txt` | Session | Latest user intent (first line) |
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-worker-active.json` | Session | Parent Task spawn handoff metadata |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl` | Session | Durable append-only orchestration event log (dispatch, join, advance, stop_block, saga) |
+| `${SB_RUNTIME_STATE_DIR}/orchestrator-saga.json` | Session | Active ship/deploy saga ledger + rollback hints |
+| `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Session | Human sign-off marker when enterprise policy blocks production delivery |
+| `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
 | `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `silver:init`) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
 | `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail |
@@ -42,7 +46,33 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 }
 ```
 
-Written by `flow-advance.sh`, `orchestrator-state.sh`, `outcomes-check.sh`. Cleared by `record-skill.sh` or audited `SB OVERRIDE:`.
+When the catalog scheduler groups multiple dependency-ready atoms into one batch, `batch_dispatch` is added (shell hooks cannot spawn host Task workers — the parent reads this and spawns workers):
+
+```json
+{
+  "batch_dispatch": {
+    "batch_index": 0,
+    "dispatch_mode": "parallel",
+    "host_parallel_capable": true,
+    "status": "pending_dispatch",
+    "handoffs": [
+      {
+        "atomic_flow_id": "AF-ORIENT",
+        "next_skill": "silver-context",
+        "next_worker_template": "ORIENT",
+        "dispatch_status": "pending",
+        "join_status": "pending"
+      }
+    ]
+  }
+}
+```
+
+Hosts without multitask/subagent support (`SB_ORCHESTRATOR_PARALLEL_DISPATCH=0` or tier &lt; 2) get `dispatch_mode: "sequential"` — only the first pending handoff is surfaced via `next_skill` while join gates still apply.
+
+**Parent Task spawn (required on tier ≥ 2):** Shell hooks **cannot** invoke the host `Task` tool. When `blocking: true` and `batch_dispatch` is present, the **parent session must spawn Task workers** (one per pending handoff on parallel-capable hosts). `stop-check.sh` blocks parent Stop until handoffs are dispatched and joined. Reading the directive alone does not satisfy the contract — only recorded worker skill invocation + join state advance the queue.
+
+**Batch join gate:** When `.scheduler.batch_dispatch` has unjoined handoffs, `sb_orchestrator_advance_on_atom` records `last_completed` but **does not** advance `current_flow` or overwrite the batch directive until every handoff in the active batch joins. Sequential behavior is unchanged when scheduler state is absent. Handoff join matching resolves skills through `migration_map` (`runtime_queue_tokens`, `skill_to_entity`, `gsd_alias_to_entity`), `FLOW-*` normalization, and slug fallbacks (`hooks/lib/orchestrator-skill-atom.sh`).
 
 ## Parent loop
 
@@ -50,7 +80,7 @@ Written by `flow-advance.sh`, `orchestrator-state.sh`, `outcomes-check.sh`. Clea
 User intent → /silver or silver-orchestrator
   → composer spec seeds orchestrator.json + workflows.sh
   → directive: next_skill + next_worker_template
-  → parent spawns Task with .silver-bullet/orchestrator-workers/<TEMPLATE>.md
+  → parent **must spawn Task** with `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` (hooks cannot spawn)
   → worker invokes next_skill → implements flow
   → SubagentStop clears worker marker
   → flow-advance writes next directive
@@ -65,14 +95,34 @@ Each worker template (`templates/orchestrator-workers/`) includes:
 - Mandatory skill invocation
 - Acceptance criteria and handoff artifacts
 
-Workers should run with `SB_ORCHESTRATOR_WORKER=1` (set in Task prompt) so hooks apply worker directive-guard semantics.
+Workers should run with `SB_ORCHESTRATOR_WORKER=1` (set in Task prompt) so hooks apply worker directive-guard semantics. Ship/deploy workers should call `sb_orchestrator_saga_begin` / `sb_orchestrator_saga_complete` (via scheduler event-log helpers) so rollback hints are durable on failure.
+
+## Enterprise policy runtime (Phase B+D)
+
+When `enterprise_policy.active_profile` is set in `.silver-bullet.json`:
+
+| Field | Runtime consumer |
+|-------|------------------|
+| `clarify_auto` | `session-start` injects `/silver:clarify --auto` hint |
+| `evidence_schema_strict` | `completion-audit` delivery gate strictness (with `hooks.evidence_schema.strict`) |
+| `production_deploy_requires_human` | Blocks `gh pr create`, `gh release create`, `deploy` unless `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` exists |
+| `non_production_deploy_autonomy` | Allows staging/non-prod deploy commands when profile permits (e.g. `internal_dogfood`) |
+
+## Durable event log + resume
+
+| API (`hooks/lib/orchestrator-event-log.sh`) | Purpose |
+|--------------------------------------------|---------|
+| `sb_orchestrator_event_record_*` | Append dispatch/join/advance/stop_block/retry/saga events |
+| `sb_orchestrator_event_resume_hints_json` | Crash/resume snapshot from `orchestrator.json` + event tail |
+| `sb_orchestrator_event_apply_resume_checkpoint` | Restore scheduler `active_batch_index` from last dispatch event |
+| `sb_orchestrator_saga_rollback_hint` | Minimal rollback guidance for ship/deploy workers |
 
 ## Enforcement (tier ≥ 2)
 
 | Hook | Parent behavior | Worker behavior |
 |------|-----------------|-----------------|
 | `orchestrator-directive-guard.sh` | Blocks Edit/Write/Bash; allows Task; blocks direct flow Skill | Blocks until `next_skill` recorded |
-| `stop-check.sh` | Blocks Stop while `current_flow` pending | SubagentStop clears worker marker |
+| `stop-check.sh` | Blocks Stop while `current_flow` pending **or** scheduler batch dispatch/join pending (blocked join gates, undispatched handoffs, failed step V-loops) | SubagentStop clears worker marker |
 | `prompt-reminder.sh` | Injects directive + parent mode banner | Injects directive |
 | `session-start` | Parent mode context | Worker when `SB_ORCHESTRATOR_WORKER=1` |
 
@@ -98,7 +148,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 ## SubagentStop semantics
 
 - **Worker SubagentStop:** Clears `orchestrator-worker-active.json`; does not block (parent continues).
-- **Parent Stop:** Blocked while orchestrator queue has pending `current_flow` — parent must spawn next Task worker.
+- **Parent Stop:** Blocked while orchestrator queue has pending `current_flow` **or** scheduler runtime work remains (pending batch handoffs, dispatched-but-unjoined workers, blocked join gates, failing step V-loops) — parent must spawn next Task worker(s) per `orchestrator-directive.json` `batch_dispatch`.
 
 ### Skill recording from workers
 

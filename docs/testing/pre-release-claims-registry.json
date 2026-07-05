@@ -27,8 +27,10 @@
       "surface": "homepage",
       "text": "Claude Code, Codex, or Cursor",
       "verification_tier": "tri_host_smoke",
+      "proof_level": "structurally_tested",
       "check_id": "tri-host-install-smoke",
-      "test_ids": ["tri-host-install-smoke", "install-claude", "install-codex", "install-cursor"]
+      "test_ids": ["tri-host-install-smoke", "install-claude", "install-codex", "install-cursor"],
+      "notes": "Install smoke only — not live_e2e_proven for all hosts; see CERTIFICATION-STATUS.json"
     },
     {
       "claim_id": "help-tri-host",
@@ -67,8 +69,10 @@
       "surface": "homepage",
       "text": "Dynamic Workflow Composition",
       "verification_tier": "matrix_overlay",
+      "proof_level": "live_e2e_partial",
       "check_id": "help-page-exists-silver-router",
-      "test_ids": ["enterprise-e2e-row-1"]
+      "test_ids": ["enterprise-e2e-row-1"],
+      "notes": "Row 1 proven on Cursor/Codex canonical tracks; tri-host parity incomplete"
     },
     {
       "claim_id": "code-intel-stack",

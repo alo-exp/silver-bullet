@@ -442,6 +442,41 @@ if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
 }${et_banner}"
 fi
 
+# Enterprise policy profile — persist marker, auto-set session mode when tier-safe, inject banner.
+if [[ -f "$_lib_dir/enterprise-policy.sh" && -n "${sb_project_root:-}" ]]; then
+  # shellcheck source=lib/enterprise-policy.sh
+  source "$_lib_dir/enterprise-policy.sh"
+  sb_enterprise_policy_persist_active_marker "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" 2>/dev/null || true
+  if [[ "$sb_should_mutate" == true ]]; then
+    sb_enterprise_policy_apply_session_mode_default \
+      "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" "$sb_session_source" 2>/dev/null || true
+  fi
+  ep_banner="$(sb_enterprise_policy_session_banner "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" 2>/dev/null || true)"
+  if [[ -n "$ep_banner" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_banner}"
+  fi
+  ep_clarify="$(sb_enterprise_policy_clarify_hint_block "$sb_project_root/.silver-bullet.json" 2>/dev/null || true)"
+  if [[ -n "$ep_clarify" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_clarify}"
+  fi
+  ep_evidence="$(sb_enterprise_policy_evidence_strict_marker "$sb_project_root/.silver-bullet.json" 2>/dev/null || true)"
+  if [[ -n "$ep_evidence" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_evidence}"
+  fi
+fi
+
 # Orchestrator directive at session start (P0)
 if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
   # shellcheck source=lib/orchestrator-directive.sh
