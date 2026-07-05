@@ -51,7 +51,11 @@ export SB_AGENT_DELEGATE_V2=1
 
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=1
 sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp' \
-  && check "V2=1 allows delegate with DIRECT_FALLBACK" pass || check "V2=1 allows delegate with DIRECT_FALLBACK" fail
+  && check "V2=1 allows cursor delegate with DIRECT_FALLBACK" pass || check "V2=1 allows cursor delegate with DIRECT_FALLBACK" fail
+sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-claude-delegate.sh --work-dir /tmp' \
+  && check "V2=1 allows claude delegate with DIRECT_FALLBACK" pass || check "V2=1 allows claude delegate with DIRECT_FALLBACK" fail
+sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-claude/invoke.sh --work-dir /tmp' \
+  && check "V2=1 allows claude invoke with DIRECT_FALLBACK" pass || check "V2=1 allows claude invoke with DIRECT_FALLBACK" fail
 
 # Substring spoof blocked
 ! sb_orchestrator_parent_delegate_bash_allowed 'echo agent-codex-delegate.sh not a real invoke' \
@@ -63,6 +67,9 @@ map_cursor="$(jq -r '.migration_map.skill_to_entity["silver-agent-cursor"]' "$CA
   && check "post-flip codex maps AF-AGENT-DELEGATE" pass || check "post-flip codex maps AF-AGENT-DELEGATE" fail
 [[ "$map_cursor" == "AF-AGENT-DELEGATE" ]] \
   && check "post-flip cursor maps AF-AGENT-DELEGATE" pass || check "post-flip cursor maps AF-AGENT-DELEGATE" fail
+map_claude="$(jq -r '.migration_map.skill_to_entity["silver-agent-claude"]' "$CATALOG")"
+[[ "$map_claude" == "AF-AGENT-DELEGATE" ]] \
+  && check "post-flip claude maps AF-AGENT-DELEGATE" pass || check "post-flip claude maps AF-AGENT-DELEGATE" fail
 
 # Legacy map check (pre-flip or post-flip rollback)
 [[ "$map_codex" == "AF-EXECUTE" || "$map_codex" == "AF-AGENT-DELEGATE" ]] \

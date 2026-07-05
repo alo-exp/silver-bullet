@@ -113,7 +113,7 @@ parse_guard_pre_exec() {
   done
 
   case "$composer" in
-    silver-feature|silver-ui|silver-devops|silver-fast)
+    silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow)
       markers+=("silver-validate")
       ;;
   esac
@@ -141,6 +141,10 @@ parse_orchestrator_pre_exec() {
       to_sorted_csv silver-clarify silver-research
       return
       ;;
+    silver-new-workflow)
+      to_sorted_csv silver-clarify silver-scan silver-plan silver-validate
+      return
+      ;;
   esac
 
   IFS=',' read -ra parts <<< "$queue"
@@ -159,6 +163,7 @@ COMPOSERS=(
   silver-research
   silver-fast
   silver-release
+  silver-new-workflow
 )
 
 echo "=== composition triple alignment ==="

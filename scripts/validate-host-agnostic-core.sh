@@ -72,6 +72,7 @@ HOOKS_ROOT = "hooks"
 STRICT_ALLOWLIST = {
     "skills/silver-agent-codex/SKILL.md",
     "skills/silver-agent-cursor/SKILL.md",
+    "skills/silver-agent-claude/SKILL.md",
     "skills/silver-agent-worker/SKILL.md",
     "skills/silver/SKILL.md",
     ".silver-bullet/orchestrator-workers/AGENT-DELEGATE.md",

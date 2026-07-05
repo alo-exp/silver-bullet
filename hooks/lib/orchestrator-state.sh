@@ -12,7 +12,7 @@ sb_orchestrator_composition_log() {
 
 sb_orchestrator_is_composer_skill() {
   case "$1" in
-    silver-feature|silver-ui|silver-devops|silver-bugfix|silver-research|silver-release|silver-fast)
+    silver-feature|silver-ui|silver-devops|silver-bugfix|silver-research|silver-release|silver-fast|silver-new-workflow)
       return 0
       ;;
     *)
@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-secure|silver-validate|silver-clarify|silver-research|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-agent-codex|silver-agent-cursor)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-review-fix-ladder|silver-secure|silver-validate|silver-clarify|silver-research|silver-scan|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-agent-codex|silver-agent-cursor)
       return 0
       ;;
     *)
@@ -63,6 +63,9 @@ sb_orchestrator_default_queue_for_composer() {
       ;;
     silver-research)
       printf '%s' 'silver-clarify,silver-research,silver-ensure-docs,silver-validate'
+      ;;
+    silver-new-workflow)
+      printf '%s' 'silver-clarify,silver-scan,silver-research,silver-plan,silver-review-fix-ladder,silver-execute,silver-verify,silver-validate,silver-ensure-docs'
       ;;
     silver-fast)
       printf '%s' 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'
