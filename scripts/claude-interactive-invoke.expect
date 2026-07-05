@@ -122,9 +122,36 @@ proc bypass_disclaimer_menu_ready {buffer} {
   return 1
 }
 
+proc folder_trust_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {[regexp -nocase {Quick.{0,12}safety.{0,12}check} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {trust.{0,24}folder|safety.{0,12}check:.{0,40}project} $plain]} {
+    if {[regexp -nocase {Yes.{0,8}trust|1\.\s*Yes} $plain]} {
+      return 1
+    }
+  }
+  return 0
+}
+
+proc accept_folder_trust {} {
+  global folder_trust_accept_attempts
+  if {$folder_trust_accept_attempts >= 6} {
+    return
+  }
+  incr folder_trust_accept_attempts
+  log_harness_keys "\[harness\] accept_folder_trust: sending 1\\r attempt=$folder_trust_accept_attempts"
+  send -- "1\r"
+  after 900
+}
+
 proc bypass_disclaimer_confirm_only {buffer} {
   global bypass_disclaimer_menu_open
   set plain [strip_ansi $buffer]
+  if {[folder_trust_visible $buffer]} {
+    return 0
+  }
   if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
     return 0
   }
@@ -145,6 +172,9 @@ proc bypass_disclaimer_confirm_only {buffer} {
 
 proc should_accept_bypass_disclaimer {buffer} {
   global bypass_disclaimer_menu_open
+  if {[folder_trust_visible $buffer]} {
+    return 0
+  }
   if {$bypass_disclaimer_menu_open} {
     return 1
   }
@@ -178,7 +208,11 @@ proc log_harness_keys {message} {
 }
 
 proc accept_bypass_permissions_disclaimer {} {
-  global bypass_disclaimer_accept_attempts
+  global bypass_disclaimer_accept_attempts expect_out
+  if {[info exists expect_out(buffer)] && [folder_trust_visible $expect_out(buffer)]} {
+    accept_folder_trust
+    return
+  }
   if {$bypass_disclaimer_accept_attempts >= 6} {
     return
   }
@@ -706,6 +740,7 @@ set bypass_disclaimer_accept_attempts 0
 set custom_api_key_disclaimer_menu_open 0
 set custom_api_key_disclaimer_accept_attempts 0
 set picker_resolve_attempts 0
+set folder_trust_accept_attempts 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -717,6 +752,14 @@ if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
 }
 
 expect {
+  -re {Quick safety check:|trust this folder|Accessing.{0,20}workspace} {
+    if {[folder_trust_visible $expect_out(buffer)]} {
+      accept_folder_trust
+      reset_ready_timeout
+      exp_continue
+    }
+    exp_continue
+  }
   -re {RTK\.md} {
     log_harness_keys "\[harness\] onboarding: RTK.md import dialog — confirm allow"
     send -- "\r"
@@ -730,6 +773,11 @@ expect {
     exp_continue
   }
   -re {Gaccept|Yes, I accept|Yes,I accept|I accept the risk} {
+    if {[folder_trust_visible $expect_out(buffer)]} {
+      accept_folder_trust
+      reset_ready_timeout
+      exp_continue
+    }
     set bypass_disclaimer_menu_open 1
     accept_bypass_permissions_disclaimer
     set bypass_disclaimer_menu_open 0
@@ -737,6 +785,11 @@ expect {
     exp_continue
   }
   -re {Yes, I accept|Yes,I accept|I accept the risk} {
+    if {[folder_trust_visible $expect_out(buffer)]} {
+      accept_folder_trust
+      reset_ready_timeout
+      exp_continue
+    }
     set bypass_disclaimer_menu_open 1
     reset_ready_timeout
     exp_continue
@@ -749,6 +802,12 @@ expect {
     exp_continue
   }
   -re {Enterto confirm|Enter to confirm|Entertoconfirm|Gto.{0,12}Gconfirm|to.{0,8}confirm} {
+    if {[folder_trust_visible $expect_out(buffer)]} {
+      accept_folder_trust
+      after 800
+      reset_ready_timeout
+      exp_continue
+    }
     if {[should_accept_custom_api_key_disclaimer $expect_out(buffer)]} {
       accept_custom_api_key_disclaimer
       set custom_api_key_disclaimer_menu_open 0
@@ -771,6 +830,12 @@ expect {
     exp_continue
   }
   -re {Esc.*to.*cancel} {
+    if {[folder_trust_visible $expect_out(buffer)]} {
+      accept_folder_trust
+      after 500
+      reset_ready_timeout
+      exp_continue
+    }
     if {[regexp -nocase {allowexternal|externalimports|RTK\.md} $expect_out(buffer)]} {
       log_harness_keys "\[harness\] onboarding: allow external CLAUDE.md imports"
       send -- "\r"
@@ -877,7 +942,9 @@ expect {
     exp_continue
   }
   -re {code.claude.com/docs/en/security} {
-    set bypass_disclaimer_menu_open 1
+    if {![folder_trust_visible $expect_out(buffer)]} {
+      set bypass_disclaimer_menu_open 1
+    }
     reset_ready_timeout
     exp_continue
   }
@@ -896,10 +963,9 @@ expect {
     reset_ready_timeout
     exp_continue
   }
-  -re {Quick safety check:|Yes, I trust this folder|1\. Yes, I trust this folder} {
-    # Newer Claude builds ask for an explicit trust confirmation before the
-    # session starts. Pick the trust option so the live harness can continue.
-    send -- "1\r"
+  -re {Quick safety check:|trust this folder|Yes, I trust this folder|1\. Yes, I trust this folder} {
+    accept_folder_trust
+    reset_ready_timeout
     exp_continue
   }
   -re {What's new|What.s new|Internal infrastructur|/release-notes for more} {
@@ -1107,6 +1173,12 @@ expect {
       log_harness_keys "\[harness\] timeout bypass detected in buffer"
       accept_bypass_permissions_disclaimer
       set bypass_disclaimer_menu_open 0
+      reset_ready_timeout
+      exp_continue
+    }
+    if {[folder_trust_visible $plain]} {
+      log_harness_keys "\[harness\] timeout folder trust retry"
+      accept_folder_trust
       reset_ready_timeout
       exp_continue
     }
