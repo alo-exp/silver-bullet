@@ -55,7 +55,7 @@
   "workflows": [
     {
       "id": "WF-SILVER-ROUTER",
-      "slug": "silver-router",
+      "slug": "silver",
       "type": "dynamic_route",
       "triggers": [
         "/silver",
@@ -86,6 +86,9 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-context"
+      ],
       "owning_skill": "silver"
     },
     {
@@ -816,6 +819,15 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-blast-radius",
+        "silver-plan",
+        "silver-execute",
+        "silver-verify",
+        "security",
+        "silver-secure",
+        "silver-ship"
+      ],
       "owning_skill": "silver-deploy"
     },
     {
@@ -848,6 +860,13 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-blast-radius",
+        "silver-plan",
+        "silver-execute",
+        "silver-verify",
+        "silver-ship"
+      ],
       "owning_skill": "silver-canary"
     },
     {
@@ -888,6 +907,16 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-blast-radius",
+        "silver-debug",
+        "silver-plan",
+        "silver-execute",
+        "security",
+        "silver-secure",
+        "silver-verify",
+        "silver-ensure-docs"
+      ],
       "owning_skill": "silver-incident"
     },
     {
@@ -929,6 +958,13 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-clarify",
+        "silver-plan",
+        "silver-execute",
+        "silver-verify",
+        "silver-ensure-docs"
+      ],
       "owning_skill": "silver-content"
     },
     {
@@ -961,6 +997,11 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-context",
+        "silver-execute",
+        "silver-ensure-docs"
+      ],
       "owning_skill": "silver-retro"
     },
     {
@@ -997,6 +1038,13 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-context",
+        "silver-plan",
+        "silver-execute",
+        "silver-verify",
+        "silver-ensure-docs"
+      ],
       "owning_skill": "silver-benchmark"
     },
     {
@@ -1033,6 +1081,22 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-plan",
+        "silver-validate",
+        "silver-execute",
+        "silver-review-request",
+        "silver-review",
+        "silver-review-triage",
+        "silver-verify",
+        "security",
+        "silver-secure",
+        "silver-validate",
+        "FLOW-QUALITY-GATE-PRESHIP",
+        "silver-branch-finish",
+        "silver-completion-audit",
+        "silver-ship"
+      ],
       "owning_skill": "silver-refactor"
     },
     {
@@ -1066,6 +1130,12 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-plan",
+        "silver-validate",
+        "silver-execute",
+        "silver-verify"
+      ],
       "owning_skill": "silver-test"
     },
     {
@@ -1098,6 +1168,12 @@
         "loop"
       ],
       "final_intent_gate": "INTENT-GATE-DEFAULT",
+      "enforcement_queue": [
+        "silver-debug",
+        "silver-execute",
+        "silver-ensure-docs",
+        "silver-validate"
+      ],
       "owning_skill": "silver-forensics"
     },
     {
@@ -3697,11 +3773,14 @@
         "FS-DELEGATE-LAUNCH",
         "FS-DELEGATE-CODEX-LAUNCH",
         "FS-DELEGATE-CODEX-ROUTE",
+        "FS-SILVER_AGENT_CODEX",
         "FS-DELEGATE-CURSOR-LAUNCH",
         "FS-DELEGATE-CURSOR-ROUTE",
         "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
+        "FS-SILVER_AGENT_CURSOR",
         "FS-DELEGATE-CLAUDE-LAUNCH",
         "FS-DELEGATE-CLAUDE-ROUTE",
+        "FS-SILVER_AGENT_CLAUDE",
         "FS-DELEGATE-CHECKPOINT",
         "FS-DELEGATE-VERIFY",
         "FS-DELEGATE-RELAUNCH",

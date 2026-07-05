@@ -14,6 +14,14 @@ version: 0.1.0
 SB-owned refactoring workflow for moving, splitting, renaming, simplifying, or
 untangling code while preserving external behavior.
 
+**Pre-execution** (blocks refactor edits until recorded):
+
+`silver:plan` → `silver:validate`
+
+**Post-execution:** same canonical chain as `silver:feature` after `silver:execute`.
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-refactor` composer).
+
 ## Output
 
 Write or update `.planning/REFACTOR.md`.

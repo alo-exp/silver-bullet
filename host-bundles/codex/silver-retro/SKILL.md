@@ -13,6 +13,14 @@ version: 0.1.0
 SB-owned retrospective workflow for turning delivery history into concrete
 process improvements.
 
+**Pre-execution** (blocks retro artifact edits until recorded):
+
+`silver:context`
+
+**Post-execution:** `silver:execute` → `silver:ensure-docs`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-retro` composer).
+
 ## Output
 
 Write or update `.planning/RETRO.md`.
