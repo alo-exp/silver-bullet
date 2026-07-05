@@ -1,9 +1,9 @@
 ---
 name: silver:new-workflow
 description: >
-  This skill should be used to create or promote Silver Bullet workflows and atomic flows from user intent — analyzes reusable catalog AFs/workflows, plans with review-fix-ladder, implements in a selected repo, validates catalog compliance, and registers locally
-argument-hint: "<workflow intent or path to existing skill/workflow to convert>"
-version: 0.1.0
+  This skill should be used to create, convert, or audit Silver Bullet workflows and atomic flows — analyzes reusable catalog AFs/workflows, plans with review-fix-ladder, implements in a selected repo, validates catalog compliance, and registers locally; Audit mode is read-only compliance for existing workflows
+argument-hint: "<workflow intent | --audit <target> | path to existing skill/workflow to convert>"
+version: 0.2.0
 ---
 
 # /silver:new-workflow — Workflow Authoring Meta Workflow
@@ -20,12 +20,67 @@ mode.
 | Mode | When | Primary outcome |
 |------|------|-----------------|
 | **Create** | User describes a new workflow intent | New composer skill + `WF-*` catalog entry + hooks/tests |
-| **Convert** | User names an existing skill or workflow path | Gap review → compliant SB workflow/AF + catalog registration |
+| **Convert** | User names an existing skill or workflow path (no audit intent) | Gap review → compliant SB workflow/AF + catalog registration |
+| **Audit** | User names an existing workflow id (`WF-*`), composer slug (`silver-feature`), or path to `SKILL.md` with audit intent | Read-only compliance report; no create/convert/plan/RFL/implement |
 
-Detect mode from `$ARGUMENTS`: filesystem path or `skills/…/SKILL.md` → **Convert**;
-otherwise → **Create**.
+### Mode detection (`$ARGUMENTS`)
+
+1. **Audit** when any of:
+   - `--audit`, `--validate`, or `audit` / `validate` prefix
+   - Workflow id matching `WF-SILVER-*`
+   - Existing composer slug (`silver-feature`, `feature`, etc.) with audit intent
+   - Path to `skills/…/SKILL.md` **with** audit intent (`--audit`, `validate`, etc.)
+2. **Convert** when `$ARGUMENTS` is a filesystem path or `skills/…/SKILL.md` **without** audit intent.
+3. **Create** otherwise.
+
+## Audit mode (read-only)
+
+Audit mode runs **inline** — no orchestrator queue, no plan/RFL/execute. Orient → validate → document.
+
+### Audit Step 1 — Resolve target
+
+From `$ARGUMENTS`, derive `slug`, `wf_id`, and `skill`:
+
+| Input | Example | Resolved |
+|-------|---------|----------|
+| Workflow id | `WF-SILVER-FEATURE` | `silver-feature`, `WF-SILVER-FEATURE` |
+| Composer slug | `silver-feature` or `feature` | `silver-feature`, `WF-SILVER-FEATURE` |
+| SKILL path | `skills/silver-new-workflow/SKILL.md` | `silver-new-workflow`, `WF-SILVER-NEW-WORKFLOW` |
+
+### Audit Step 2 — Run compliance suite
+
+```bash
+bash scripts/audit-workflow-compliance.sh --target "<resolved-target>"
+# or
+bash scripts/validate-workflow-authoring.sh --audit --target "<resolved-target>"
+```
+
+Checks (PASS/FAIL per category + remediation links):
+
+- **structural** — skill, catalog generator, workflow entry, orchestrator registration
+- **migration_map** — `skill_to_entity` mapping
+- **catalog** — `composition_tree`, `enforcement_queue`
+- **triple_alignment** — SKILL pre-exec ↔ `workflow-chain-guard.sh` ↔ orchestrator pre-execute
+- **orchestrator** — composer in `hooks/lib/orchestrator-state.sh`
+- **flow_steps** — mapped entity V-loop / flow-step contract
+
+Optional broader suite:
+
+```bash
+bash scripts/run-apo-authoring-compliance.sh
+```
+
+### Audit Step 3 — Document
+
+Write `.planning/workflow-audit-<slug>-<date>.md` with verdict, per-category results, and remediation links. **No file edits** to skills, hooks, or catalog.
+
+### Audit output contract
+
+Return: target (`slug`, `wf_id`, `skill`), per-category PASS/FAIL, overall VERDICT, remediation links, blockers.
 
 ## Step 0 — Target repo (HARD)
+
+**Create / Convert only** — skip for Audit mode.
 
 1. Default target repo: current workspace / project root (`PWD` when SB is active).
 2. Ask unless the user already named an absolute path:
@@ -79,8 +134,10 @@ Update SB source: skill, `scripts/generate-apo-catalog.py`, hooks, router, tests
 
 ```bash
 bash scripts/validate-workflow-authoring.sh --slug <slug>
+bash scripts/audit-workflow-compliance.sh --slug <slug>
 bash scripts/run-apo-authoring-compliance.sh
 bash tests/scripts/test-silver-new-workflow.sh
+bash tests/scripts/test-silver-new-workflow-audit.sh
 ```
 
 ## Step 6 — Convert mode
@@ -107,6 +164,8 @@ Full chain: `silver:clarify` → `silver:scan` → `silver:deep-research` → `s
 
 **Post-execution:** `silver:verify`, `silver:ensure-docs`
 
+**Audit mode** does not use the enforcement queue — read-only checks only.
+
 ## Routing and pre-flight
 
 1. Banner: `SB ► new-workflow: {$ARGUMENTS} [mode=$MODE repo=$TARGET_REPO]`
@@ -114,8 +173,10 @@ Full chain: `silver:clarify` → `silver:scan` → `silver:deep-research` → `s
 
 ## Non-skippable
 
-Target repo confirmation, plan RFL, `run-apo-authoring-compliance.sh` before handoff.
+- **Create/Convert:** target repo confirmation, plan RFL, `run-apo-authoring-compliance.sh` before handoff.
+- **Audit:** compliance suite execution and documented verdict.
 
 ## Output contract
 
-Return: plan path + RFL status, catalog workflow id, files changed, tests, ready route, blockers.
+- **Create/Convert:** plan path + RFL status, catalog workflow id, files changed, tests, ready route, blockers.
+- **Audit:** compliance report path, per-category PASS/FAIL, overall VERDICT, remediation links.

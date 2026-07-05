@@ -130,6 +130,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach", "deep research", "state of the art" | `silver:deep-research` | Rigorous research/decision artifact, then handoff |
 | "create workflow", "new workflow", "add workflow", "workflow authoring", "convert skill to workflow", "promote workflow", path to `skills/*/SKILL.md` for SB conversion | `silver:new-workflow` | Meta workflow authoring — create or convert workflows/AFs into catalog |
+| "audit workflow", "validate workflow compliance", "workflow compliance audit", `/silver:new-workflow --audit`, `WF-SILVER-*` with audit intent | `silver:new-workflow --audit <target>` | Read-only compliance audit of existing catalog-backed workflow |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users" | `silver:release` | Milestone-level only |
 | "merge this", "push this PR", "ship this feature" with active phase context and no version signal | `silver:ship` | Phase-level ship |
 | "where are we", "what's left", "show progress", "current status" | SB status/progress path | Read SB planning state and workflow trackers |

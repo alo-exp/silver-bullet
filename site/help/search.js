@@ -327,6 +327,13 @@ var IDX = [
   },
   {
     "page": "Workflows",
+    "url": "/help/workflows/silver-new-workflow.html",
+    "anchor": "overview",
+    "title": "/silver:new-workflow",
+    "text": "/silver:new-workflow WF-SILVER-NEW-WORKFLOW meta workflow authoring. Create Convert Audit modes. --audit WF-SILVER-FEATURE silver-feature slug SKILL.md path. Read-only compliance audit-workflow-compliance.sh validate-workflow-authoring structural migration_map catalog triple_alignment orchestrator flow_steps. docs/NEW-WORKFLOW.md."
+  },
+  {
+    "page": "Workflows",
     "url": "/help/workflows/silver-router.html",
     "anchor": "overview",
     "title": "/silver",
