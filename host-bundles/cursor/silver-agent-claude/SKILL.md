@@ -1,6 +1,6 @@
 ---
 name: silver:agent-claude
-description: On-demand parent-supervised delegation of a single real task to Claude TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while Cursor executes in a target project CWD. Not for enterprise E2E matrix runs.
+description: On-demand parent-supervised delegation of a single real task to Claude TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while Claude Code executes in a target project CWD. Not for enterprise E2E matrix runs.
 argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--checkpoint <n>]"
 user-invocable: true
 version: 0.1.0
@@ -12,7 +12,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/silver:agent-codex` and `/silver:agent-cursor`:** Tri-host on-demand delegation siblings. Use **agent-claude** when Cursor TUI is the intended executor; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
+**Contrast with `/silver:agent-codex` and `/silver:agent-cursor`:** Tri-host on-demand delegation siblings. Use **agent-claude** when Claude Code TUI is the intended executor; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
 
 **Contrast with enterprise E2E matrix:** Reuses proven Claude invoke harness (`claude-interactive-invoke.expect`, OAuth auth, idle/quiet timeouts, 429 retry, isolated `CLAUDE_CONFIG_DIR`). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 

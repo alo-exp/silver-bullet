@@ -301,10 +301,21 @@ def runtime_placeholders(agent: str) -> list[tuple[str, str]]:
 def sanitize_cursor_text(text: str) -> str:
     # Preserve cross-host delegation rows — do not rewrite Claude Code host label to Cursor.
     host_row_token = "__SB_CURSOR_HOST_ROW_CLAUDE_CODE__"
+    delegate_executor_tui = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_TUI__"
+    delegate_executor_runs = "__SB_CURSOR_DELEGATE_CLAUDE_CODE_EXECUTES__"
     updated = resolve_cursor_host_agnostic_terms(text).replace("| **Claude Code** |", f"| **{host_row_token}** |")
+    updated = updated.replace(
+        "when Claude Code TUI is the intended executor", delegate_executor_tui
+    )
+    updated = updated.replace("while Claude Code executes", delegate_executor_runs)
     for old, new in CURSOR_REPLACEMENTS:
         updated = updated.replace(old, new)
-    return updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
+    updated = updated.replace(f"| **{host_row_token}** |", "| **Claude Code** |")
+    updated = updated.replace(
+        delegate_executor_tui, "when Claude Code TUI is the intended executor"
+    )
+    updated = updated.replace(delegate_executor_runs, "while Claude Code executes")
+    return updated
 
 
 def sanitize_codex_text(text: str) -> str:
