@@ -52,5 +52,6 @@
 ## Release artifact
 
 - **Version:** 0.50.5
-- **Commit:** (see `git log -1` on tag)
-- **Tag:** `v0.50.5`
+- **Commit:** [349f8400](https://github.com/alo-exp/silver-bullet/commit/349f84009e612c5627bbbd4c871f6b8196b535eb)
+- **Tag:** [`v0.50.5`](https://github.com/alo-exp/silver-bullet/releases/tag/v0.50.5)
+- **Status:** **RELEASED** 2026-07-05
