@@ -6,6 +6,10 @@ Aligned with [`docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md`](../../docs/PRODUCT
 
 Prove **inverted human/agent roles** on current SB `install_fp`: Claude (via agent-claude) drives SB workflows autonomously; human intervenes only on **blocking** decisions (auth, credentials, locked forks).
 
+## Complexity policy (mandatory)
+
+**Autonomous proof requires complex multi-workflow goals only** — not smoke (`npm test` only), not single API/file tweaks, not install verification without workflow execution. Prior Codex/Cursor smoke runs under auto-e2e are **weak proof** and flagged for re-run. Canonical bar: auto-e2e `.planning/auto-e2e-note-app/CURSOR-MULTIWF-CRITERIA.md`. All agent-claude matrix rows must meet: multi-workflow DAG, one vision paragraph, `.planning/` artifacts, substantive commits.
+
 ## Entry intent (session)
 
 Operator supplies a **single vague-to-bounded intent** per matrix row. Harness writes the delegation brief; parent does not implement product code.

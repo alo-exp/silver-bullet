@@ -2,6 +2,10 @@
 
 Aligned with [`docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md`](../../docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md) inverted human/agent roles.
 
+## Complexity policy (mandatory)
+
+**Autonomous proof requires complex multi-workflow goals only** — not smoke (`npm test` only), not single-file tweaks, not health-check or install-only verification. See auto-e2e [CURSOR-MULTIWF-CRITERIA.md](https://github.com/alo-exp/auto-e2e/blob/main/.planning/auto-e2e-note-app/CURSOR-MULTIWF-CRITERIA.md) for the canonical bar. MI-01 and all future agent-* tracks must meet: multi-workflow DAG (clarify/spec → plan → execute → verify+), one vision paragraph input, multiple `.planning/` artifacts, substantive commits.
+
 ## Entry contract
 
 | Input | Required | Description |
