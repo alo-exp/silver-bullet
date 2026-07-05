@@ -15,6 +15,14 @@ SB-owned deployment orchestration for production or staging rollout. It is a
 DevOps/release workflow surface, not a shortcut around `silver:devops`,
 `silver:ship`, or `silver:release`.
 
+**Pre-execution** (blocks deploy actions until recorded):
+
+`silver:blast-radius` → `devops-quality-gates` → `silver:plan`
+
+**Post-execution:** `silver:execute` → `silver:verify` → `security` → `silver:secure` → `silver:ship`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-deploy` composer).
+
 ## Output
 
 Write or update `.planning/DEPLOYMENT.md`.

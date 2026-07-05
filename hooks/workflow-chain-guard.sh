@@ -166,6 +166,36 @@ case "$composer_slug" in
     # Milestone release: Step 0 is quality-gates before any release artifact edits.
     required_markers=(silver-quality-gates)
     ;;
+  silver)
+    required_markers=(silver-context)
+    ;;
+  silver-benchmark)
+    required_markers=(silver-context silver-plan)
+    ;;
+  silver-canary)
+    required_markers=(silver-blast-radius silver-plan)
+    ;;
+  silver-content)
+    required_markers=(silver-clarify silver-plan)
+    ;;
+  silver-deploy)
+    required_markers=(silver-blast-radius devops-quality-gates silver-plan)
+    ;;
+  silver-forensics)
+    required_markers=(silver-debug)
+    ;;
+  silver-incident)
+    required_markers=(silver-blast-radius silver-debug silver-plan)
+    ;;
+  silver-refactor)
+    required_markers=(silver-plan silver-validate)
+    ;;
+  silver-retro)
+    required_markers=(silver-context)
+    ;;
+  silver-test)
+    required_markers=(silver-plan silver-validate)
+    ;;
   *)
     exit 0
     ;;
@@ -180,7 +210,7 @@ fi
 
 # Post-plan validation gate for feature/ui/devops/fast composers.
 case "$composer_slug" in
-  silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow)
+  silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow|silver-refactor|silver-test)
     required_markers+=("silver-validate")
     ;;
 esac

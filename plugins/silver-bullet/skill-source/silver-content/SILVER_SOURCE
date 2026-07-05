@@ -15,6 +15,14 @@ blog/article drafts, search metadata, AI-citation readiness, and content
 migrations. It works with `silver:ensure-docs` for governed project docs and
 `silver:domain-audit --pack content-search` for public-facing quality.
 
+**Pre-execution** (blocks content edits until recorded):
+
+`silver:clarify` → `silver:plan`
+
+**Post-execution:** `silver:execute` → `silver:verify` → `silver:ensure-docs`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-content` composer).
+
 ## Output
 
 Write or update `.planning/CONTENT.md`.

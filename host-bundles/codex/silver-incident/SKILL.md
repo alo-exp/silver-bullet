@@ -14,6 +14,14 @@ SB-owned incident workflow for active runtime failures, release regressions, and
 customer-impacting defects. It extends `silver:forensics` with impact, response,
 and corrective-action ownership.
 
+**Pre-execution** (blocks incident response edits until recorded):
+
+`silver:blast-radius` → `silver:debug` → `silver:plan`
+
+**Post-execution:** `silver:execute` → `security` → `silver:secure` → `silver:verify` → `silver:ensure-docs`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-incident` composer).
+
 ## Output
 
 Write or update `.planning/INCIDENT.md`.
