@@ -136,11 +136,12 @@ proc folder_trust_visible {buffer} {
 }
 
 proc accept_folder_trust {} {
-  global folder_trust_accept_attempts
+  global folder_trust_accept_attempts folder_trust_confirmed
   if {$folder_trust_accept_attempts >= 6} {
     return
   }
   incr folder_trust_accept_attempts
+  set folder_trust_confirmed 1
   set strategy [env_or_default CLAUDE_INTERACTIVE_TRUST_STRATEGY "enter"]
   log_harness_keys "\[harness\] accept_folder_trust: strategy=$strategy attempt=$folder_trust_accept_attempts"
   if {$strategy eq "keys"} {
@@ -154,6 +155,34 @@ proc accept_folder_trust {} {
   after 500
   send -- "\r"
   after 900
+}
+
+proc respawn_after_folder_trust {} {
+  global cli args folder_trust_respawn_count folder_trust_accept_attempts
+  global ready_timeout post_prompt_delay_ms permission_mode continue_flag
+  set max_respawn [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_RESPAWN_MAX 2])}]
+  if {$folder_trust_respawn_count >= $max_respawn} {
+    return 0
+  }
+  incr folder_trust_respawn_count
+  log_harness_keys "\[harness\] respawn after folder trust (respawn=$folder_trust_respawn_count/$max_respawn)"
+  catch {close}
+  catch {wait}
+  after 2000
+  spawn -noecho $cli {*}$args
+  if {$continue_flag eq "0"} {
+    set trust_delay_ms [expr {int([env_or_default CLAUDE_INTERACTIVE_TRUST_DELAY_MS 2000])}]
+    after $trust_delay_ms
+    if {$permission_mode ne "bypassPermissions"} {
+      dismiss_claude_splash
+    }
+  } else {
+    after 200
+  }
+  after $post_prompt_delay_ms
+  set folder_trust_accept_attempts 0
+  set timeout $ready_timeout
+  return 1
 }
 
 proc bypass_disclaimer_confirm_only {buffer} {
@@ -751,6 +780,8 @@ set custom_api_key_disclaimer_menu_open 0
 set custom_api_key_disclaimer_accept_attempts 0
 set picker_resolve_attempts 0
 set folder_trust_accept_attempts 0
+set folder_trust_confirmed 0
+set folder_trust_respawn_count 0
 if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
@@ -1229,6 +1260,13 @@ expect {
     }
   }
   eof {
+    if {$folder_trust_confirmed && !$prompt_submitted && !$saw_prompt} {
+      if {[respawn_after_folder_trust]} {
+        exp_continue
+      }
+      puts stderr "ERROR: Claude exited after folder trust before prompt became ready"
+      exit 1
+    }
     # Some sessions exit cleanly after the response. Accept that.
   }
 }
