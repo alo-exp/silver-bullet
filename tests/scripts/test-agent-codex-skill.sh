@@ -44,6 +44,9 @@ grep -q 'AGENT-DELEGATE' "$SKILL" && check "documents native worker template" pa
 
 [[ -x "$WRAPPER" ]] && check "delegate wrapper executable" pass || check "delegate wrapper executable" fail
 grep -q 'tests/live/agents/codex/agent.sh' "$WRAPPER" && check "wrapper uses live agent adapter" pass || check "wrapper uses live agent adapter" fail
+grep -q 'agent_preflight' "$WRAPPER" && check "wrapper calls agent_preflight" pass || check "wrapper calls agent_preflight" fail
+grep -q 'agent_delegate_canonicalize_path' "$WRAPPER" && check "wrapper canonicalizes log/brief paths" pass || check "wrapper canonicalizes log/brief paths" fail
+grep -q 'absolute' "$SKILL" && check "documents absolute path policy" pass || check "documents absolute path policy" fail
 grep -q 'scripts/lib/codex-cli.sh' "$WRAPPER" && check "wrapper sources scripts/lib codex-cli" pass || check "wrapper sources scripts/lib codex-cli" fail
 grep -q 'AGENT_CODEX_QUOTA_RETRY' "$WRAPPER" && check "wrapper quota retry env" pass || check "wrapper quota retry env" fail
 grep -q 'SB_AGENT_CODEX_MODEL_READY_TIMEOUT' "$WRAPPER" && check "wrapper model-ready timeout env" pass || check "wrapper model-ready timeout env" fail
