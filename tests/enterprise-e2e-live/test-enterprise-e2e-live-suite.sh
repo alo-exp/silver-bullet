@@ -195,6 +195,10 @@ assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUB
 assert_file_exists "${REPO_ROOT}/.planning/enterprise-e2e/ROUND-N-OUTCOMES.md" "ROUND-N-OUTCOMES template exists"
 assert_file_exists "${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh" "outcome assessment lib exists"
 assert_file_exists "${REPO_ROOT}/tests/scripts/test-outcome-assessment.sh" "outcome assessment test exists"
+assert_file_exists "${REPO_ROOT}/docs/testing/host-certification-sources.json" "host certification sources registry exists"
+assert_file_exists "${REPO_ROOT}/docs/testing/autonomous-enterprise-proof-baseline.json" "autonomous enterprise proof baseline exists"
+assert_executable "${REPO_ROOT}/scripts/enterprise-e2e-certification-status.sh" "certification status generator executable"
+assert_file_exists "${REPO_ROOT}/tests/scripts/test-enterprise-e2e-certification-status.sh" "certification status test exists"
 assert_executable "${REPO_ROOT}/tests/tui-contract/test-bypass-disclaimer.sh" "bypass disclaimer contract test exists"
 
 # Ledger template includes failure_class column
