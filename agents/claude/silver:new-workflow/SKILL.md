@@ -97,7 +97,7 @@ FLOW 3 (CLARIFY) → FLOW 2 (ORIENT) → FLOW 4 (DECIDE) → FLOW 6 (PLAN)
 
 ## Enforcement queue
 
-Full chain: `silver:clarify` → `silver:scan` → `silver:research` → `silver:plan`
+Full chain: `silver:clarify` → `silver:scan` → `silver:deep-research` → `silver:plan`
 → `silver:review-fix-ladder` → `silver:execute` → `silver:verify`
 → `silver:validate` → `silver:ensure-docs`
 

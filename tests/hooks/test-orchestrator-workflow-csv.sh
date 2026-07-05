@@ -97,7 +97,7 @@ assert_eq "silver-ensure-docs label maps to document" "DOCUMENT" "$(sb_orchestra
 assert_eq "flow document token label" "DOCUMENT" "$(sb_orchestrator_flow_label_for_token FLOW-DOCUMENT)"
 assert_eq "security atom label maps to security" "SECURITY" "$(sb_orchestrator_flow_label_for_token security)"
 assert_eq "silver-secure atom label maps to secure" "SECURE" "$(sb_orchestrator_flow_label_for_token silver-secure)"
-assert_eq "silver-research csv uses document label" "CLARIFY,RESEARCH,DOCUMENT,VALIDATE" "$(sb_orchestrator_flow_csv_for_workflows silver-research)"
+assert_eq "silver-deep-research csv uses document label" "CLARIFY,RESEARCH,DOCUMENT,VALIDATE" "$(sb_orchestrator_flow_csv_for_workflows silver-deep-research)"
 
 WORK_NO_SPEC=$(mktemp -d)
 git -C "$WORK_NO_SPEC" init -q

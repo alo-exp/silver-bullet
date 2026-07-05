@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 # workflows.
 #
 # The workflow tracker (.planning/workflows/<id>.md) is the admission ticket.
-# Once a silver:feature / silver:ui / silver:devops / silver:research
+# Once a silver:feature / silver:ui / silver:devops / silver:deep-research
 # composition is active, this hook blocks implementation edits until the
 # pre-execution dependency chain has been recorded in the Silver Bullet state
 # file. It deliberately does not require execute, review, verify, or ship
@@ -143,8 +143,8 @@ case "$composer_slug" in
   silver-devops)
     required_markers=(silver-blast-radius devops-skill-router devops-quality-gates security silver-context silver-plan)
     ;;
-  silver-research)
-    required_markers=(silver-clarify silver-research)
+  silver-deep-research)
+    required_markers=(silver-clarify silver-deep-research)
     ;;
   silver-new-workflow)
     required_markers=(silver-clarify silver-scan silver-plan)

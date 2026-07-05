@@ -14,7 +14,7 @@ SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:validate`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:research` when signals match |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:validate`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:deep-research` when signals match |
 | **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
 
 > **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /silver:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
@@ -94,14 +94,14 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 | Gate | Signal words in $ARGUMENTS |
 |------|---------------------------|
 | `silver:context` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
-| `silver:research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
+| `silver:deep-research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
 
 **Gate composition rules:**
 - Any combination is valid.
 - Always invoke `silver:plan`, `silver:validate`, `silver:execute`, and `silver:verify` for Tier 2.
 - Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
 - When `.planning/SPEC.md` is absent, `silver:validate` runs in **plan-only mode** (PLAN.md completeness — see `skills/silver-validate/SKILL.md` Step 0). Do not run `/silver:spec` unless product requirements need a formal SPEC.
-- Invoke `silver:context` or `silver:research` only when triggered by the signal table above.
+- Invoke `silver:context` or `silver:deep-research` only when triggered by the signal table above.
 - `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
 
 Display detected signals:
@@ -110,7 +110,7 @@ Display detected signals:
 Detected signals:
   Ambiguity: {yes/no} {reason if yes}
   Novel domain: {yes/no} {reason if yes}
-Gates: {silver:context silver:research | (none)} + silver:plan silver:validate silver:execute silver:verify (always)
+Gates: {silver:context silver:deep-research | (none)} + silver:plan silver:validate silver:execute silver:verify (always)
 ```
 
 Invoke the selected SB lifecycle slice with $ARGUMENTS.

@@ -119,7 +119,7 @@ The coverage registry should include at least these groups:
 | Group | Representative SB surfaces | How the todo-app run should exercise them |
 |------|-----------------------------|-------------------------------------------|
 | Install / bootstrap | `silver:init`, `silver:add`, `silver:remove` | Install SB into the desktop session, scaffold the todo app, file an issue when something feels off, and retire at least one temporary artifact or issue during cleanup |
-| Discovery / framing | `silver:explore`, `gsd-scan`, `silver:research`, `silver:blast-radius` | Use them before the first feature and again before any larger change or risky tweak |
+| Discovery / framing | `silver:explore`, `gsd-scan`, `silver:deep-research`, `silver:blast-radius` | Use them before the first feature and again before any larger change or risky tweak |
 | Feature delivery | `silver:feature`, `silver:ui`, `silver:fast` | Build at least one real user-visible enhancement, one UI refinement, and one trivial change that is genuinely small enough for the fast path |
 | Defect handling | `silver:bugfix`, `silver:forensics`, `tdd` | Deliberately surface or reproduce a bug, reconstruct it, write a regression test, and fix it |
 | Governance / quality | `silver:quality-gates`, `requesting-code-review`, `receiving-code-review` | Run quality checks before moving forward, then review the work and respond to findings |

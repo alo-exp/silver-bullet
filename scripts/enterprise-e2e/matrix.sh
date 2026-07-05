@@ -103,7 +103,7 @@ source "${SB_ROOT}/scripts/lib/enterprise-e2e-row-pass-registry.sh"
 
 declare -a MATRIX_ROWS=(
   '1|silver-router|/silver|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
-  '2|silver-research|/silver:research|Should we use Postgres or SQLite for orders?|docs/ADR-001-runtime.md'
+  '2|silver-deep-research|/silver:deep-research|Should we use Postgres or SQLite for orders?|docs/ADR-001-runtime.md'
   '3|silver-feature|/silver:feature|Add currency field to orders API + tests.|.planning/workflows/feature-currency.md'
   '4|silver-bugfix|/silver:bugfix|Health endpoint returns 500 when version is missing.|.planning/workflows/bugfix-health.md'
   '5|silver-ui|/silver:ui|Show API version in the admin UI badge.|ui/src/App.jsx'

@@ -40,7 +40,7 @@ The report must include:
 5. Use an adversarial review pass for top candidates when the result will
    influence architecture, release, security, or high-cost work.
 6. Invoke or apply `silver:domain-audit --pack benchmark-eval`.
-7. Normalize findings into `silver:review` or `silver:research` when the
+7. Normalize findings into `silver:review` or `silver:deep-research` when the
    benchmark drives implementation.
 
 ## Exit Gate

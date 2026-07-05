@@ -192,8 +192,8 @@ After the standard smoke test, verify composer-specific behavior. Each checklist
 - [ ] Diagnosis-first: DEBUG → PLAN → EXECUTE (no pre-plan quality-gates/context)
 - [ ] Post-chain matches feature ship tail
 
-### silver:research
-- [ ] Queue: `silver:clarify` → `silver:research` only (no EXECUTE atom)
+### silver:deep-research
+- [ ] Queue: `silver:clarify` → `silver:deep-research` → `silver:ensure-docs` → `silver:validate` (no EXECUTE atom)
 - [ ] Default direct research; MultAI only when user explicitly requests in current task
 - [ ] Handoff offers feature / devops / research-only paths
 
