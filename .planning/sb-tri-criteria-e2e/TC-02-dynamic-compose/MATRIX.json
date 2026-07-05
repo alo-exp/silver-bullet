@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "track": "TC-02-dynamic-compose",
+  "criterion": "dynamic-workflow-composition",
+  "host": "cursor",
+  "orchestrator_mode": "parent",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "fixture": {
+    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "vision_template": "fixtures/TC-02-vision.md",
+    "prefs_template": "fixtures/TC-02-prefs.json"
+  },
+  "rows": [
+    {
+      "id": "TC-02",
+      "title": "README badge — force dynamic tailor",
+      "intent_class": "ambiguous-narrow-doc",
+      "route_hint": "Must NOT run default WF-SILVER-FEATURE full queue",
+      "min_dynamic_ops": 2,
+      "blocking_outcomes": [
+        "OUT-DYNAMIC-01",
+        "OUT-TAILOR-01",
+        "OUT-ORCH-01",
+        "OUT-AUTO-01",
+        "OUT-NOOP-01",
+        "OUT-WORLD-01"
+      ],
+      "advisory_outcomes": ["OUT-KM-01", "OUT-TRACE-01", "OUT-FLOW-01"],
+      "acceptance": [
+        "shields.io badge in README.md",
+        "≥2 composition_log ops with catalog_rule_ref",
+        "No spurious PLAN/execute artifacts from full feature chain"
+      ],
+      "vision_template": "fixtures/TC-02-vision.md",
+      "prefs_template": "fixtures/TC-02-prefs.json"
+    }
+  ]
+}

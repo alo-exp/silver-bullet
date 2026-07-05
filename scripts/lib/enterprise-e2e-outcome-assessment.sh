@@ -1326,6 +1326,188 @@ enterprise_e2e_outcome_score_decide() {
   printf 'n/a\n'
 }
 
+# --- Tri-criteria E2E scorers (TC-01/02/03) ---
+
+enterprise_e2e_outcome_composition_log_path() {
+  local work_dir="$1"
+  printf '%s/.planning/orchestrator-composition-log.jsonl' "$work_dir"
+}
+
+enterprise_e2e_outcome_event_log_path() {
+  local state_dir="${1:-${SB_RUNTIME_STATE_DIR:-/tmp}}"
+  printf '%s/orchestrator-events.jsonl' "$state_dir"
+}
+
+enterprise_e2e_outcome_count_distinct_workflow_ids() {
+  local work_dir="$1" state_dir="${2:-${SB_RUNTIME_STATE_DIR:-/tmp}}"
+  local comp_log state_file event_file
+  comp_log="$(enterprise_e2e_outcome_composition_log_path "$work_dir")"
+  state_file="${state_dir}/orchestrator.json"
+  event_file="$(enterprise_e2e_outcome_event_log_path "$state_dir")"
+  command -v jq >/dev/null 2>&1 || { printf '0'; return 0; }
+  python3 - "$comp_log" "$state_file" "$event_file" <<'PY'
+import json, sys
+from pathlib import Path
+
+comp_log, state_file, event_file = sys.argv[1:4]
+ids = set()
+
+def add(val):
+    if not val or not isinstance(val, str):
+        return
+    v = val.strip()
+    if v.startswith("WF-"):
+        ids.add(v)
+
+if Path(comp_log).is_file():
+    for line in Path(comp_log).read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            doc = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        add(doc.get("selected_workflow"))
+        for op in doc.get("operations") or []:
+            ref = op.get("target_ref") or ""
+            if ref.startswith("WF-"):
+                ids.add(ref)
+
+if Path(state_file).is_file():
+    try:
+        doc = json.loads(Path(state_file).read_text(encoding="utf-8"))
+        add(doc.get("workflow_id"))
+        add(doc.get("selected_workflow"))
+        for key in ("completed_flows", "flow_queue"):
+            val = doc.get(key)
+            if isinstance(val, list):
+                for item in val:
+                    if isinstance(item, str) and item.startswith("WF-"):
+                        ids.add(item)
+    except (json.JSONDecodeError, OSError):
+        pass
+
+if Path(event_file).is_file():
+    for line in Path(event_file).read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            doc = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        payload = doc.get("payload") or {}
+        for key in ("workflow_id", "selected_workflow", "next_flow"):
+            add(payload.get(key))
+
+print(len(ids))
+PY
+}
+
+enterprise_e2e_outcome_score_multiwf() {
+  local work_dir="$1" state_dir="$2" row_log="${3:-}"
+  local min_ids="${SB_TRI_CRITERIA_MIN_WORKFLOW_IDS:-3}"
+  local count adv_count=0
+  count="$(enterprise_e2e_outcome_count_distinct_workflow_ids "$work_dir" "$state_dir")"
+  if command -v jq >/dev/null 2>&1; then
+    local event_file
+    event_file="$(enterprise_e2e_outcome_event_log_path "$state_dir")"
+    if [[ -f "$event_file" ]]; then
+      adv_count="$(jq -s '[.[] | select(.type=="advance")] | length' "$event_file" 2>/dev/null || echo 0)"
+    fi
+  fi
+  if [[ "${count:-0}" -ge "$min_ids" ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ "${count:-0}" -ge 2 && "${adv_count:-0}" -ge 2 ]] && \
+     [[ -n "$row_log" && -f "$row_log" ]] && \
+     grep -qEi 'WF-SILVER-(FEATURE|DEVOPS|RELEASE|UI|DEPLOY)|multi.?workflow|workflow.?chain' "$row_log" 2>/dev/null; then
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
+enterprise_e2e_outcome_score_dynamic() {
+  local work_dir="$1" state_dir="${2:-}" row_log="${3:-}"
+  local comp_log sb_root valid_ops=0 distinct_ops=0 bad_refs=0
+  comp_log="$(enterprise_e2e_outcome_composition_log_path "$work_dir")"
+  sb_root="$(enterprise_e2e_outcome_repo_root)"
+  if [[ ! -f "$comp_log" ]]; then
+    printf 'fail\n'; return 0
+  fi
+  if command -v jq >/dev/null 2>&1; then
+    valid_ops="$(jq -s '
+      [.[] | .operations[]? |
+        select((.catalog_rule_ref // "") != "" and (.rationale // "") != "")] | length
+    ' "$comp_log" 2>/dev/null || echo 0)"
+    distinct_ops="$(jq -s '
+      [.[] | .operations[]?.op] | unique | length
+    ' "$comp_log" 2>/dev/null || echo 0)"
+    if [[ -f "${sb_root}/docs/apo-catalog.json" ]]; then
+      bad_refs="$(jq -s --slurpfile cat "${sb_root}/docs/apo-catalog.json" '
+        def ids: [$cat[0].dynamic_rules[]?.id];
+        [.[] | .operations[]? | select((.catalog_rule_ref // "") != "") |
+          select(.catalog_rule_ref as $r | (ids | index($r)) | not)] | length
+      ' "$comp_log" 2>/dev/null || echo 1)"
+    fi
+    if [[ "${valid_ops:-0}" -ge 2 && "${distinct_ops:-0}" -ge 2 && "${bad_refs:-1}" -eq 0 ]]; then
+      printf 'pass\n'; return 0
+    fi
+    if [[ "${valid_ops:-0}" -ge 1 ]]; then
+      printf 'partial\n'; return 0
+    fi
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && \
+     grep -qEi 'DR-(PRUNE|INSERT|SUBSTITUTE|PARALLELIZE|LOOP)|catalog_rule_ref|dynamic.?compos' "$row_log" 2>/dev/null; then
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
+enterprise_e2e_outcome_score_newwf() {
+  local work_dir="$1" state_dir="${2:-${SB_RUNTIME_STATE_DIR:-/tmp}}" row_log="${3:-}"
+  local has_worker=0 has_artifact=0 event_file
+  event_file="$(enterprise_e2e_outcome_event_log_path "$state_dir")"
+  if [[ -f "$event_file" ]] && command -v jq >/dev/null 2>&1; then
+    if jq -e '
+      [.[] | select(.type=="dispatch" and (
+        (.payload.worker_template // "") == "NEW-WORKFLOW" or
+        (.payload.skill // "") == "silver-new-workflow"
+      ))] | length > 0
+    ' "$event_file" >/dev/null 2>&1; then
+      has_worker=1
+    fi
+  fi
+  if [[ -n "$row_log" && -f "$row_log" ]] && \
+     grep -qEi 'NEW-WORKFLOW|silver-new-workflow|net.?new.?workflow' "$row_log" 2>/dev/null; then
+    has_worker=1
+  fi
+  if [[ -f "${state_dir}/orchestrator.json" ]] && \
+     grep -qE 'NEW-WORKFLOW|silver-new-workflow' "${state_dir}/orchestrator.json" 2>/dev/null; then
+    has_worker=1
+  fi
+  if find "${work_dir}/.planning/workflows" -name '*.md' 2>/dev/null | head -1 | grep -q .; then
+    if find "${work_dir}/.planning/workflows" -name '*.md' -exec grep -lEi 'compliance.?snapshot|WF-.*COMPLIANCE|net.?new|Flow Log' {} + 2>/dev/null | grep -q .; then
+      has_artifact=1
+    fi
+  fi
+  if [[ -d "${work_dir}/docs/apo-catalog.d" ]] && compgen -G "${work_dir}/docs/apo-catalog.d/*.json" >/dev/null 2>&1; then
+    has_artifact=1
+  fi
+  if compgen -G "${work_dir}/.planning/compliance/*.md" >/dev/null 2>&1 && \
+     compgen -G "${work_dir}/scripts/*compliance*" >/dev/null 2>&1; then
+    has_artifact=1
+  fi
+  if [[ "$has_worker" -eq 1 && "$has_artifact" -eq 1 ]]; then
+    printf 'pass\n'; return 0
+  fi
+  if [[ "$has_worker" -eq 1 || "$has_artifact" -eq 1 ]]; then
+    printf 'partial\n'; return 0
+  fi
+  printf 'fail\n'
+}
+
 enterprise_e2e_outcome_score_forens() {
   local work_dir="$1" row_num="${2:-}"
   [[ "$row_num" != "19" ]] && { printf 'n/a\n'; return 0; }
@@ -1374,6 +1556,9 @@ enterprise_e2e_outcome_score_criterion() {
     OUT-SUPER-01) enterprise_e2e_outcome_score_super "$state_dir" "$row_log" "$row_num" ;;
     OUT-HEAL-01) enterprise_e2e_outcome_score_heal "$sb_root" "$row_log" "$row_num" ;;
     OUT-RELEASE-01) enterprise_e2e_outcome_score_release "$work_dir" "$row_num" "$ledger" ;;
+    OUT-MULTIWF-01) enterprise_e2e_outcome_score_multiwf "$work_dir" "$state_dir" "$row_log" ;;
+    OUT-DYNAMIC-01) enterprise_e2e_outcome_score_dynamic "$work_dir" "$state_dir" "$row_log" ;;
+    OUT-NEWWF-01) enterprise_e2e_outcome_score_newwf "$work_dir" "$state_dir" "$row_log" ;;
     *) printf 'n/a\n' ;;
   esac
 }

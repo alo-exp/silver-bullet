@@ -7,7 +7,9 @@
 
 ## Complexity policy (mandatory)
 
-Autonomous certification requires **complex multi-workflow goals** — never smoke-only (`npm test`), single-step tasks, or health-check verification. See auto-e2e `CURSOR-MULTIWF-CRITERIA.md`. Codex smoke runs flagged for re-run under this bar.
+Autonomous certification requires **complex multi-workflow goals** — never smoke-only (`npm test`), single-step tasks, or health-check verification. See [`.planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md`](../sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md). Codex smoke runs flagged for re-run under this bar.
+
+**Related:** [SB tri-criteria E2E](../sb-tri-criteria-e2e/) — TC-03 can use agent-claude as alternate host for net-new workflow proof.
 
 ## Why a fresh track
 
