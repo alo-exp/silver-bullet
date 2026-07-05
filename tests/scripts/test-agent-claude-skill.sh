@@ -95,7 +95,7 @@ grep -q 'prompt submitted' <<<"$monitor_out" \
   && check "monitor --once smoke" pass || check "monitor --once smoke" fail
 rm -f "$TMP_LOG"
 
-grep -qE 'agent-\(codex\|claude\)/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
+grep -q 'agent-claude/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
   && check "orchestrator allows invoke.sh" pass || check "orchestrator allows invoke.sh" fail
 grep -q 'silver-agent-claude' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
   && check "orchestrator skill allowlist" pass || check "orchestrator skill allowlist" fail
