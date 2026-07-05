@@ -46,6 +46,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$HOOK_TRUST_SEED_ONLY" -eq 1 ]]; then
+  # End-user `codex plugin add` installs raw plugin hooks (no adapter wrap).
+  # Refresh Codex hook surface from marketplace/cache when present so
+  # codex-hook-adapter.sh wraps SB hooks before trust seeding.
+  marketplace_root="$(codex_marketplace_root)"
+  if [[ -d "${marketplace_root}/plugins/silver-bullet" ]]; then
+    rewrite_codex_bundle_host_paths
+    normalize_codex_hook_async_flags
+  fi
   SB_PROJECT_ROOT=""
   if SB_PROJECT_ROOT="$(find_silver_bullet_project_root)"; then
     seed_silver_bullet_hook_trust_state
