@@ -64,6 +64,16 @@ grep -q 'scripts/agent-claude/' "$SKILL" && check "references agent-claude harne
 grep -q 'SB_AGENT_CLAUDE_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail
 grep -q 'Security (delegation boundary)' "$SKILL" && check "security section" pass || check "security section" fail
 
+CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/silver-agent-claude/SKILL.md"
+if [[ -f "$CURSOR_BUNDLE" ]]; then
+  grep -q 'when Claude Code TUI is the intended executor' "$CURSOR_BUNDLE" \
+    && check "cursor bundle names Claude executor" pass || check "cursor bundle names Claude executor" fail
+  ! grep -q 'when Cursor TUI is the intended executor' "$CURSOR_BUNDLE" \
+    && check "cursor bundle no Cursor-as-executor typo" pass || check "cursor bundle no Cursor-as-executor typo" fail
+else
+  check "cursor bundle exists" fail
+fi
+
 AGENT_CLAUDE_DIR="${REPO_ROOT}/scripts/agent-claude"
 for script in lib.sh env.sh preflight.sh monitor.sh invoke.sh; do
   path="${AGENT_CLAUDE_DIR}/${script}"
