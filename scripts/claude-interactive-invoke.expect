@@ -1260,6 +1260,9 @@ expect {
     }
   }
   eof {
+    if {$folder_trust_accept_attempts > 0 || $folder_trust_confirmed} {
+      log_harness_keys "\[harness\] eof after folder trust (confirmed=$folder_trust_confirmed submitted=$prompt_submitted saw_prompt=$saw_prompt)"
+    }
     if {$folder_trust_confirmed && !$prompt_submitted && !$saw_prompt} {
       if {[respawn_after_folder_trust]} {
         exp_continue

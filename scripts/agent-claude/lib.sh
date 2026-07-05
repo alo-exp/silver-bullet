@@ -52,18 +52,22 @@ agent_claude_delegate_env_names() {
     CLAUDE_INTERACTIVE_QUIET_TIMEOUT CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY
 }
 
-# Seed hasTrustDialogAccepted for work_dir in ephemeral CLAUDE_CONFIG_DIR/.claude.json
-# so first-run Quick safety check does not exit the PTY before prompt submission.
+# Seed hasTrustDialogAccepted for work_dir so Quick safety check does not EOF
+# before prompt submission. Claude reads project trust from ~/.claude.json;
+# ephemeral CLAUDE_CONFIG_DIR/.claude.json is mirrored for isolated parity.
 agent_claude_seed_folder_trust() {
   local work_dir="${1:-${CLAUDE_WORK_DIR:-${WORK_DIR:-}}}"
   local config_dir="${2:-${CLAUDE_CONFIG_DIR:-}}"
-  [[ -n "$work_dir" && -n "$config_dir" ]] || return 0
+  [[ -n "$work_dir" ]] || return 0
   [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST:-1}" == "1" ]] || return 0
   command -v python3 >/dev/null 2>&1 || return 0
 
-  local claude_json="${config_dir}/.claude.json"
-  mkdir -p "$config_dir"
-  python3 - "$claude_json" "$work_dir" <<'PY'
+  _agent_claude_seed_folder_trust_json() {
+    local json_path="$1"
+    local target_dir="$2"
+    [[ -n "$json_path" && -n "$target_dir" ]] || return 0
+    mkdir -p "$(dirname "$json_path")"
+    python3 - "$json_path" "$target_dir" <<'PY'
 import json
 import pathlib
 import sys
@@ -91,7 +95,15 @@ for project_path in paths:
 
 path.write_text(json.dumps(data, indent=2) + "\n")
 PY
-  printf '[agent-claude] seeded folder trust for %s in %s\n' "$work_dir" "$claude_json" >&2
+    printf '[agent-claude] seeded folder trust for %s in %s\n' "$target_dir" "$json_path" >&2
+  }
+
+  if [[ -n "$config_dir" ]]; then
+    _agent_claude_seed_folder_trust_json "${config_dir}/.claude.json" "$work_dir"
+  fi
+  if [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL:-1}" == "1" && -n "${HOME:-}" ]]; then
+    _agent_claude_seed_folder_trust_json "${HOME}/.claude.json" "$work_dir"
+  fi
 }
 
 # Ephemeral CLAUDE_CONFIG_DIR + runtime state (E2E-105 parity for production delegation).
