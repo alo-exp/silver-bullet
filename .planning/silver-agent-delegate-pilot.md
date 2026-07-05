@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-05  
 **Gate:** Phase 4 `migration_map` flip requires both hosts **PASS** with `SB_AGENT_DELEGATE_V2=1` on AGENT-DELEGATE worker path  
-**Plan:** Phase 3b — [agent-delegation-af plan](file:///Users/shafqat/.cursor/plans/agent-delegation-af_f2849554.plan.md)
+**Plan:** Phase 3b — [agent-delegation-af plan](file:///Users/shafqat/.cursor/plans/agent-delegation-af_f2849554.plan.md)  
+**Live rollups:** [AGENT-CURSOR-LIVE-VALIDATION.md](AGENT-CURSOR-LIVE-VALIDATION.md) · [AGENT-CODEX-LIVE-VALIDATION.md](AGENT-CODEX-LIVE-VALIDATION.md) · [AGENT-CLAUDE-LIVE-VALIDATION.md](AGENT-CLAUDE-LIVE-VALIDATION.md)
 
 ## Per-host results
 
@@ -12,6 +13,8 @@
 | **Codex** | Worker + `SB_AGENT_DELEGATE_V2=1` | **PASS** | 0 | 27,066 | ✓ | `8437fb5` | block | absent |
 
 ### Cursor — PASS (V2 worker path, live 2026-07-05)
+
+**AF live validation (2026-07-05):** [AGENT-CURSOR-LIVE-VALIDATION.md](AGENT-CURSOR-LIVE-VALIDATION.md) — branch `agent-cursor-af-live-20260705-live`, commit **`fb68b45`**, log **51,543 B**, exit **0**.
 
 Prior direct-wrapper baseline (no V2): [silver-agent-cursor-pilot.md](silver-agent-cursor-pilot.md) — commit `54527d2`, 2026-07-04.
 
@@ -37,6 +40,8 @@ bash scripts/agent-cursor-delegate.sh \
 ```
 
 ### Codex — PASS (V2 worker path, re-run 2026-07-05)
+
+**AF live validation (2026-07-05):** [AGENT-CODEX-LIVE-VALIDATION.md](AGENT-CODEX-LIVE-VALIDATION.md) — branch `agent-codex-af-live-20260705-live`, commit **`ec44459`**, log **76,436 B**, exit **0** (`--use-exec`, real `CODEX_HOME`).
 
 Prior attempt: harness FAIL on exec log floor (231 B) despite product commit `05b60c2`.
 
@@ -86,9 +91,17 @@ bash scripts/agent-codex-delegate.sh --use-exec \
 | Cursor parent | advise | `sb_agent_delegation_parent_host_tier` + live Cursor delegate |
 | Codex parent | block | structural guard tests |
 
+## Tri-host flip gate (Phase 3b)
+
+| Host | V2 worker path | AF live rollup | Status |
+|------|----------------|----------------|--------|
+| Cursor | AGENT-DELEGATE | [AGENT-CURSOR-LIVE-VALIDATION.md](AGENT-CURSOR-LIVE-VALIDATION.md) | **PASS** |
+| Codex | AGENT-DELEGATE | [AGENT-CODEX-LIVE-VALIDATION.md](AGENT-CODEX-LIVE-VALIDATION.md) | **PASS** |
+| Claude | AGENT-DELEGATE | [AGENT-CLAUDE-LIVE-VALIDATION.md](AGENT-CLAUDE-LIVE-VALIDATION.md) | **PASS** |
+
 ## Phase 4 flip decision
 
-**GATE SATISFIED** — Both hosts PASS with `SB_AGENT_DELEGATE_V2=1` on AGENT-DELEGATE worker path. **Do not flip `migration_map` in this change** — flip remains a separate user decision after structural tests stay green.
+**GATE SATISFIED** — All three hosts PASS with `SB_AGENT_DELEGATE_V2=1` on AGENT-DELEGATE worker path. **Do not flip `migration_map` in this change** — flip remains a separate user decision after structural tests stay green.
 
 **Fix shipped (Codex exec log floor):**
 
