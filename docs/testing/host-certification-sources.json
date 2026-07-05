@@ -14,7 +14,27 @@
         ".planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md",
         ".planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md"
       ],
-      "methodology_appendix": "Appendix D"
+      "methodology_appendix": "Appendix D",
+      "minimal_intent_e2e_matrix": {
+        "runbook": ".planning/minimal-intent-e2e/RUNBOOK.md",
+        "criteria": ".planning/minimal-intent-e2e/CRITERIA.md",
+        "matrix": ".planning/minimal-intent-e2e/MATRIX.json",
+        "matrix_ledger": ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",
+        "harness": "scripts/minimal-intent-autonomous-e2e.sh",
+        "status": "matrix_pass_1_of_1",
+        "matrix_verdict": "PASS",
+        "install_fp": "claude@e2da8f2bf9a5+2717f916398e",
+        "sb_git_sha_at_pass": "e2da8f2bf9a5",
+        "rows_passed": ["MI-01"],
+        "canonical_runs": {
+          "MI-01": "20260705T175518Z-MI-01"
+        },
+        "product_delta": {
+          "fixture_repo": "alo-exp/enterprise-grade-test-app",
+          "pr": "https://github.com/alo-exp/enterprise-grade-test-app/pull/26"
+        },
+        "notes": "Fresh 1-row minimal-intent track via /silver:feature — 1/1 PASS on current install_fp; does not supersede ROUND-CURSOR-3 ledger or 22/22 tri-host claims"
+      }
     },
     "codex": {
       "canonical_ledger": ".planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md",
