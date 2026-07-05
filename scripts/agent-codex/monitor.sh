@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --once) ONCE=1; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) printf 'ERROR: unknown argument: %s\n' >&2; usage >&2; exit 2 ;;
+    *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
