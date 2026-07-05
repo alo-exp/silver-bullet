@@ -52,6 +52,48 @@ agent_claude_delegate_env_names() {
     CLAUDE_INTERACTIVE_QUIET_TIMEOUT CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY
 }
 
+# Seed hasTrustDialogAccepted for work_dir in ephemeral CLAUDE_CONFIG_DIR/.claude.json
+# so first-run Quick safety check does not exit the PTY before prompt submission.
+agent_claude_seed_folder_trust() {
+  local work_dir="${1:-${CLAUDE_WORK_DIR:-${WORK_DIR:-}}}"
+  local config_dir="${2:-${CLAUDE_CONFIG_DIR:-}}"
+  [[ -n "$work_dir" && -n "$config_dir" ]] || return 0
+  [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST:-1}" == "1" ]] || return 0
+  command -v python3 >/dev/null 2>&1 || return 0
+
+  local claude_json="${config_dir}/.claude.json"
+  mkdir -p "$config_dir"
+  python3 - "$claude_json" "$work_dir" <<'PY'
+import json
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+raw = pathlib.Path(sys.argv[2])
+resolved = raw.resolve()
+paths = []
+for candidate in (raw, resolved):
+    text = str(candidate)
+    if text not in paths:
+        paths.append(text)
+
+data = {}
+if path.is_file():
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        data = {}
+
+projects = data.setdefault("projects", {})
+for project_path in paths:
+    entry = projects.setdefault(project_path, {})
+    entry["hasTrustDialogAccepted"] = True
+
+path.write_text(json.dumps(data, indent=2) + "\n")
+PY
+  printf '[agent-claude] seeded folder trust for %s in %s\n' "$work_dir" "$claude_json" >&2
+}
+
 # Ephemeral CLAUDE_CONFIG_DIR + runtime state (E2E-105 parity for production delegation).
 agent_claude_prepare_lightweight_config_dir() {
   if [[ -n "${SB_AGENT_CLAUDE_CONFIG_DIR_RESTORE+x}" ]]; then
@@ -66,6 +108,7 @@ agent_claude_prepare_lightweight_config_dir() {
   export SB_E2E_ISOLATED_CLAUDE_CONFIG=1
   export SB_RUNTIME_STATE_DIR="${lightweight_config}/.silver-bullet-state"
   mkdir -p "$SB_RUNTIME_STATE_DIR"
+  agent_claude_seed_folder_trust "${CLAUDE_WORK_DIR:-${WORK_DIR:-}}" "$lightweight_config"
   printf '[agent-claude] lightweight CLAUDE_CONFIG_DIR: %s\n' "$lightweight_config" >&2
 }
 
