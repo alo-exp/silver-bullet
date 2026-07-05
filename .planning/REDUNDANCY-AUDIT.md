@@ -201,7 +201,7 @@ skills/ ──render-agent-bundle.py──► agents/claude/
 | `silver-bootstrap-milestone` alias | Thin bootstrap marker skill | LOW |
 | Skills without hook refs | `artifact-review-assessor`, `progressive-review-loop` — orchestration-only | LOW |
 | `gsd-vmodel-gap.svg` at repo root | Planning artifact | LOW |
-| `scripts/session-transcript-viewer.html` | 4.3M single file in scripts/ | LOW |
+| `docs/forensics/session-transcript-viewer.html` | 4.3M single file in scripts/ | LOW |
 
 ### 3.6 site/ vs docs/ content overlap
 
