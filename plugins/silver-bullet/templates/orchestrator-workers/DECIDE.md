@@ -20,7 +20,12 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 Follow **`skills/silver-research/SKILL.md`** Steps 2–3 (research path + apply-to-design clarify).
 
-**Do NOT** invoke the `silver:research` composer skill — the parent already seeded the queue. Re-invoking it resets orchestrator state.
+When the user **explicitly requested MultAI in the current task**, follow
+**`skills/silver-multi-ai/SKILL.md`** instead for the FLOW 4 dispatch path; then
+return to the research apply-to-design clarify pass.
+
+**Do NOT** invoke the `silver:research` or `silver:multi-ai` composer skills — the
+parent already seeded the queue. Re-invoking them resets orchestrator state.
 
 ## Acceptance criteria
 
