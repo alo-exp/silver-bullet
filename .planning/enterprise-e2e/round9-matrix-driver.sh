@@ -2,7 +2,10 @@
 # Round 9 Claude honest smoke/full matrix driver.
 set -euo pipefail
 MAIN="${SB_E2E_MAIN_REPO:-/Users/shafqat/projects/silver-bullet/repo}"
-SB_ROOT="${SB_ROOT:-/private/tmp/sb-main-row11-fp}"
+# shellcheck source=scripts/lib/enterprise-e2e-sb-root-resolve.sh
+source "${MAIN}/scripts/lib/enterprise-e2e-sb-root-resolve.sh"
+SB_ROOT="${SB_ROOT:-$(enterprise_e2e_resolve_sb_root)}"
+export SB_ROOT SB_E2E_MAIN_REPO="$MAIN"
 cd "$SB_ROOT"
 # shellcheck source=tests/live/lib/detach-background.sh
 source "${SB_ROOT}/tests/live/lib/detach-background.sh"

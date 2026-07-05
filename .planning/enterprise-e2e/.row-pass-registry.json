@@ -453,6 +453,25 @@
           "source": "matrix"
         }
       }
+    },
+    "claude@609ee0a1812c+2717f916398e": {
+      "host": "claude",
+      "sb_sha": "609ee0a1812c",
+      "install_fp": "claude@609ee0a1812c+2717f916398e",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-05T16:41:05Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-05T16:41:08Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
     }
   }
 }

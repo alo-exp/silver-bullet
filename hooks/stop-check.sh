@@ -193,6 +193,10 @@ fi
     # shellcheck source=lib/orchestrator-directive.sh
     source "$lib_dir/orchestrator-directive.sh"
   fi
+  if [[ -f "$lib_dir/orchestrator-scheduler.sh" ]]; then
+    # shellcheck source=lib/orchestrator-scheduler.sh
+    source "$lib_dir/orchestrator-scheduler.sh"
+  fi
   if [[ "$stop_hook_event" == "SubagentStop" ]] && sb_orchestrator_is_worker_session 2>/dev/null; then
     sb_orchestrator_clear_worker_marker 2>/dev/null || true
     exit 0
@@ -223,6 +227,17 @@ fi
     fi
     parent_reason="Orchestrator parent: flow queue pending (${cur_flow:-unknown}). Spawn Task worker (${tmpl:-WORKER}.md) for /${next_skill:-next-skill} before ending session."
     json_reason=$(printf '%s' "$parent_reason" | jq -Rs '.')
+    printf '{"decision":"block","reason":%s}' "$json_reason"
+    exit 0
+  fi
+  if sb_orchestrator_is_parent_session 2>/dev/null \
+    && declare -f sb_scheduler_parent_stop_blocked >/dev/null 2>&1 \
+    && sb_scheduler_parent_stop_blocked "$_stop_project_root" 2>/dev/null; then
+    sched_reason="$(sb_scheduler_parent_stop_block_reason "$_stop_project_root" 2>/dev/null || printf 'Orchestrator scheduler: pending batch dispatch or join.')"
+    if declare -f sb_orchestrator_event_record_stop_block >/dev/null 2>&1; then
+      sb_orchestrator_event_record_stop_block "$sched_reason" 2>/dev/null || true
+    fi
+    json_reason=$(printf '%s' "$sched_reason" | jq -Rs '.')
     printf '{"decision":"block","reason":%s}' "$json_reason"
     exit 0
   fi

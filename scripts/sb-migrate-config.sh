@@ -53,6 +53,13 @@ merged="$(jq \
   | .release = ($t.release * ($e.release // {}))
   | .semantic_compression = ($t.semantic_compression * ($e.semantic_compression // {}))
   | .multi_agent = ($t.multi_agent * ($e.multi_agent // {}))
+  | .enterprise_policy = (
+      ($t.enterprise_policy // {}) * ($e.enterprise_policy // {})
+      | if (($t.enterprise_policy.profiles // null) != null) or (($e.enterprise_policy.profiles // null) != null) then
+          .profiles = (($t.enterprise_policy.profiles // {}) * (.profiles // {}))
+        else .
+        end
+    )
   | .state = ($t.state * ($e.state // {}))
   | .compactPrompt = ($e.compactPrompt // $t.compactPrompt)
   | .issue_tracker = (

@@ -209,7 +209,17 @@ run_evidence_schema_delivery_gate() {
   EVIDENCE_SCHEMA_WARN=""
   local strict="${SILVER_BULLET_EVIDENCE_SCHEMA_STRICT:-}"
   if [[ -z "$strict" && -n "${config_file:-}" && -f "$config_file" ]]; then
-    strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+    if [[ -f "${_lib_dir}/enterprise-policy.sh" ]]; then
+      # shellcheck source=lib/enterprise-policy.sh
+      source "${_lib_dir}/enterprise-policy.sh"
+      if sb_enterprise_policy_evidence_schema_strict "$config_file"; then
+        strict="1"
+      else
+        strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+      fi
+    else
+      strict=$(jq -r '.hooks.evidence_schema.strict // "true"' "$config_file" 2>/dev/null || echo "true")
+    fi
   fi
   if [[ -z "$strict" ]]; then
     strict="1"

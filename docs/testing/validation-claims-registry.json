@@ -32,9 +32,10 @@
       "surface": "homepage",
       "text": "stays out of the way for the work that should be fast",
       "verification_tier": "matrix_overlay",
+      "proof_level": "live_e2e_partial",
       "check_id": "autonomous-delivery-outcome",
-      "test_ids": ["test-outcome-assessment", "enterprise-e2e-outcome-assess"],
-      "notes": "Blocking criteria OUT-AUTO-01, OUT-NOOP-01, OUT-WORLD-01 per row"
+      "test_ids": ["test-outcome-assessment", "enterprise-e2e-outcome-assess", "enterprise-e2e-certification-status"],
+      "notes": "Blocking OUT-AUTO-01, OUT-NOOP-01, OUT-ORCH-01, OUT-WORLD-01 — proven on fixture rows only; not enterprise cold-start"
     },
     {
       "claim_id": "hero-clarify-gate",

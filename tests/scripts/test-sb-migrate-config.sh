@@ -58,6 +58,46 @@ assert_contains_skill "custom skill preserved" "custom-skill" "$CFG"
 assert_contains_skill "template skill present" "silver-orchestrator" "$CFG"
 assert_eq "required_release present" "silver-create-release" "$(jq -r '.skills.required_release[0]' "$CFG")"
 
+# --- enterprise_policy migration ---
+assert_eq "enterprise_policy active_profile default" "supervised" "$(jq -r '.enterprise_policy.active_profile' "$CFG")"
+assert_eq "enterprise_policy has supervised profile" "interactive" "$(jq -r '.enterprise_policy.profiles.supervised.session_mode_default' "$CFG")"
+assert_eq "enterprise_policy has autonomous_safe profile" "autonomous" "$(jq -r '.enterprise_policy.profiles.autonomous_safe.session_mode_default' "$CFG")"
+assert_eq "enterprise_policy has regulated profile" "true" "$(jq -r '.enterprise_policy.profiles.regulated.evidence_schema_strict' "$CFG")"
+assert_eq "enterprise_policy has internal_dogfood profile" "true" "$(jq -r '.enterprise_policy.profiles.internal_dogfood.non_production_deploy_autonomy' "$CFG")"
+
+WORK_EP=$(mktemp -d)
+trap 'rm -rf "$WORK" "$WORK_EP"' EXIT
+git -C "$WORK_EP" init -q
+cp "$TEMPLATE" "$WORK_EP/.silver-bullet.json"
+jq '.project.name = "policy-legacy" | .enterprise_policy.active_profile = "autonomous_safe" | .enterprise_policy.profiles.autonomous_safe.clarify_auto = false | del(.enterprise_policy.profiles.internal_dogfood)' \
+  "$WORK_EP/.silver-bullet.json" >"${WORK_EP}/.silver-bullet.json.tmp" \
+  && mv "${WORK_EP}/.silver-bullet.json.tmp" "$WORK_EP/.silver-bullet.json"
+
+if (cd "$WORK_EP" && bash "$SCRIPT" >/dev/null); then
+  echo "PASS: sb-migrate-config enterprise_policy merge exits 0"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: sb-migrate-config enterprise_policy merge failed"
+  FAIL=$((FAIL + 1))
+fi
+
+EP_CFG="$WORK_EP/.silver-bullet.json"
+assert_eq "enterprise_policy active_profile preserved" "autonomous_safe" "$(jq -r '.enterprise_policy.active_profile' "$EP_CFG")"
+assert_eq "enterprise_policy profile override preserved" "false" "$(jq -r '.enterprise_policy.profiles.autonomous_safe.clarify_auto' "$EP_CFG")"
+assert_eq "enterprise_policy missing built-in re-merged" "true" "$(jq -r '.enterprise_policy.profiles.internal_dogfood.non_production_deploy_autonomy' "$EP_CFG")"
+assert_eq "enterprise_policy regulated template field" "true" "$(jq -r '.enterprise_policy.profiles.regulated.evidence_schema_strict' "$EP_CFG")"
+
+WORK_EP2=$(mktemp -d)
+git -C "$WORK_EP2" init -q
+cp "$TEMPLATE" "$WORK_EP2/.silver-bullet.json"
+jq 'del(.enterprise_policy)' "$WORK_EP2/.silver-bullet.json" >"${WORK_EP2}/.silver-bullet.json.tmp" \
+  && mv "${WORK_EP2}/.silver-bullet.json.tmp" "$WORK_EP2/.silver-bullet.json"
+(cd "$WORK_EP2" && bash "$SCRIPT" >/dev/null)
+EP2_CFG="$WORK_EP2/.silver-bullet.json"
+assert_eq "enterprise_policy injected when absent" "supervised" "$(jq -r '.enterprise_policy.active_profile' "$EP2_CFG")"
+assert_eq "enterprise_policy profiles count when absent" "4" "$(jq '.enterprise_policy.profiles | keys | length' "$EP2_CFG")"
+rm -rf "$WORK_EP2"
+
 echo
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

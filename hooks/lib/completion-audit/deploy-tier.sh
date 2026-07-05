@@ -3,6 +3,14 @@
 ca_run_deploy_tier_gate() {
 project_root="$(dirname "$config_file")"
 [[ -z "$project_root" ]] && project_root="$PWD"
+if [[ -f "${_lib_dir}/enterprise-policy.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/enterprise-policy.sh
+  source "${_lib_dir}/enterprise-policy.sh"
+  if sb_enterprise_policy_delivery_blocked "$config_file" "${cmd_first_line:-$cmd}"; then
+    emit_block "$(sb_enterprise_policy_delivery_block_message "$config_file")"
+    exit 0
+  fi
+fi
 run_enforcement_tier_delivery_gate
 run_workflow_strict_gate "$project_root"
 run_doc_scheme_delivery_gate "$project_root"

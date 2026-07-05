@@ -781,7 +781,9 @@ Or for safer auto-approval (recommended for non-isolated environments):
 ```
 This is a host runtime platform setting, not a Silver Bullet setting.
 
-At the start of every session, before any work begins, ask the user directly:
+**Enterprise policy auto-default:** When `.silver-bullet.json` has `enterprise_policy.active_profile` set to `autonomous_safe` or `internal_dogfood` on a tier 2+ host, SessionStart writes `autonomous` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode` automatically (no mode file yet, or after `/clear`). Skip the interactive/autonomous question in that case; log "Autonomous mode auto-set: enterprise_policy profile <name>". Supervised and regulated profiles default `interactive` when the mode file is absent.
+
+**Unless enterprise policy or bypass-permissions already set mode**, at the start of every session, before any work begins, ask the user directly:
 - Question: "Run this session interactively or autonomously?"
 - Options:
   - "A. Interactive (default) — pause at decision points and phase gates"

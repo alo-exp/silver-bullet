@@ -460,5 +460,45 @@
     ],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
+  },
+  "enterprise_policy": {
+    "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",
+    "active_profile": "supervised",
+    "profiles": {
+      "supervised": {
+        "label": "Supervised default",
+        "description": "Interactive session default; parent escalates blocking decisions; non-blocking preferences may still be confirmed.",
+        "session_mode_default": "interactive",
+        "clarify_auto": false,
+        "production_deploy_requires_human": true,
+        "orchestrator_mode": "parent"
+      },
+      "autonomous_safe": {
+        "label": "Autonomous-safe",
+        "description": "Autonomous session default with bounded silver:clarify --auto; decision_class blocking outcomes still require human approval.",
+        "session_mode_default": "autonomous",
+        "clarify_auto": true,
+        "production_deploy_requires_human": true,
+        "orchestrator_mode": "parent"
+      },
+      "regulated": {
+        "label": "Regulated",
+        "description": "Maximum human gates for ship, release, and production deploy; hooks.evidence_schema.strict remains enforced.",
+        "session_mode_default": "interactive",
+        "clarify_auto": false,
+        "production_deploy_requires_human": true,
+        "evidence_schema_strict": true,
+        "orchestrator_mode": "parent"
+      },
+      "internal_dogfood": {
+        "label": "Internal dogfood",
+        "description": "SB team posture: autonomous defaults and non-production deploy autonomy; production promotion stays human-gated.",
+        "session_mode_default": "autonomous",
+        "clarify_auto": true,
+        "production_deploy_requires_human": true,
+        "non_production_deploy_autonomy": true,
+        "orchestrator_mode": "parent"
+      }
+    }
   }
 }

@@ -23,7 +23,7 @@ sb_orchestrator_is_composer_skill() {
 
 sb_orchestrator_is_flow_atom() {
   case "$1" in
-    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-review-fix-ladder|silver-secure|silver-validate|silver-clarify|silver-deep-research|silver-scan|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-agent-codex|silver-agent-cursor)
+    silver-quality-gates|silver-context|silver-plan|silver-execute|silver-verify|silver-ship|silver-review|silver-review-request|silver-review-triage|silver-review-fix-ladder|silver-secure|silver-validate|silver-clarify|silver-deep-research|silver-scan|silver-ensure-docs|silver-handoff|silver-spec|silver-debug|silver-ui-contract|silver-ui-review|silver-blast-radius|devops-quality-gates|devops-skill-router|silver-branch-finish|silver-completion-audit|silver-create-release|security|silver-agent-codex|silver-agent-cursor|silver-fixture-read-a|silver-fixture-read-b)
       return 0
       ;;
     *)
@@ -322,6 +322,28 @@ sb_orchestrator_on_composer_start() {
       >>"$logfile" 2>/dev/null || true
   fi
 
+  # Phase B: catalog-driven scheduler plan + dispatch records (runtime proof; parent Task spawn required).
+  local _sched_lib _evt_lib
+  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
+  if [[ -f "$_sched_lib" ]]; then
+    # shellcheck source=lib/orchestrator-scheduler.sh
+    source "$_sched_lib"
+    local sched_plan
+    sched_plan="$(sb_scheduler_plan_queue_from_state "$repo_root" 2>/dev/null || true)"
+    if [[ -n "$sched_plan" && -n "$repo_root" && -d "$repo_root/.planning" ]]; then
+      sb_scheduler_append_composition_log "$repo_root" "$sched_plan" 2>/dev/null || true
+      sb_scheduler_refresh_active_batch_dispatch "$repo_root" 2>/dev/null || true
+    fi
+  fi
+  _evt_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-event-log.sh"
+  if [[ -f "$_evt_lib" ]]; then
+    # shellcheck source=lib/orchestrator-event-log.sh
+    source "$_evt_lib"
+    sb_orchestrator_event_append "composer_start" "$(jq -nc \
+      --arg composer "$composer_skill" --arg intent "$intent" --arg wid "${wf_id:-}" \
+      '{composer: $composer, intent: $intent, workflow_id: $wid}')" 2>/dev/null || true
+  fi
+
   printf '%s' "$wf_id"
 }
 
@@ -393,6 +415,36 @@ sb_orchestrator_advance_on_atom() {
     return 0
   fi
 
+  local _sched_lib hold_for_batch=false
+  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
+  if [[ -f "$_sched_lib" ]]; then
+    # shellcheck source=lib/orchestrator-scheduler.sh
+    source "$_sched_lib"
+    sb_scheduler_mark_handoff_joined "" "$atom_skill" 2>/dev/null || true
+    local catalog_file atom_id
+    catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
+    if [[ -n "$catalog_file" ]]; then
+      atom_id="$(sb_scheduler_resolve_atom_id "$catalog_file" "$atom_skill" 2>/dev/null || true)"
+      [[ -n "$atom_id" ]] && sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" 2>/dev/null || true
+    fi
+    if sb_scheduler_active_batch_has_pending_joins 2>/dev/null; then
+      hold_for_batch=true
+    fi
+  fi
+
+  now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  if [[ "$hold_for_batch" == true ]]; then
+    updated="$(jq --arg completed "$atom_skill" --arg now "$now" --argjson idx "$idx" \
+      '.last_completed = $completed | .last_completed_index = $idx | .updated_at = $now' \
+      "$file" 2>/dev/null || true)"
+    [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+    if declare -f sb_orchestrator_event_record_advance >/dev/null 2>&1; then
+      sb_orchestrator_event_record_advance "$atom_skill" "$(jq -r '.current_flow // ""' <<<"$updated")" true 2>/dev/null || true
+    fi
+    sb_scheduler_write_batch_directive "$repo_root" 2>/dev/null || true
+    return 0
+  fi
+
   next_idx=$((idx + 1))
   if [[ "$next_idx" -ge "$queue_len" ]]; then
     next_flow=""
@@ -400,11 +452,13 @@ sb_orchestrator_advance_on_atom() {
     next_flow="$(jq -r --argjson i "$next_idx" '.flow_queue[$i] // ""' "$file" 2>/dev/null || true)"
   fi
 
-  now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   updated="$(jq --arg completed "$atom_skill" --arg next "$next_flow" --arg now "$now" --argjson idx "$idx" \
     '.current_flow = $next | .last_completed = $completed | .last_completed_index = $idx | .updated_at = $now' \
     "$file" 2>/dev/null || true)"
   [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+  if declare -f sb_orchestrator_event_record_advance >/dev/null 2>&1; then
+    sb_orchestrator_event_record_advance "$atom_skill" "$next_flow" false 2>/dev/null || true
+  fi
 
   if [[ -n "$next_flow" ]]; then
     msg="SB orchestrator ► Next flow: ${next_flow} (auto-chained; invoke without user prompt)"

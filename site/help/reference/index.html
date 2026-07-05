@@ -575,9 +575,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
   <span class="key">"state"</span>: {
     <span class="key">"state_file"</span>: <span class="str">"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state"</span>,
     <span class="key">"trivial_file"</span>: <span class="str">"${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"</span>
+  },
+  <span class="key">"enterprise_policy"</span>: {
+    <span class="key">"active_profile"</span>: <span class="str">"supervised"</span>,
+    <span class="key">"profiles"</span>: {
+      <span class="str">"supervised"</span>: { <span class="comment">"session_mode_default: interactive</span> },
+      <span class="str">"autonomous_safe"</span>: { <span class="comment">"session_mode_default: autonomous, clarify_auto: true</span> },
+      <span class="str">"regulated"</span>: { <span class="comment">"evidence_schema_strict: true</span> },
+      <span class="str">"internal_dogfood"</span>: { <span class="comment">"non_production_deploy_autonomy: true</span> }
+    }
   }
 }</div>
 
+      <p>See <a href="../concepts/enterprise-policy-profiles.html">Enterprise Policy Profiles</a> for profile semantics. <code>enterprise_policy</code> is mostly advisory; SessionStart injects the recommended <code>session_mode_default</code> — other profile fields are runtime handoff TODO.</p>
       <p>Two-tier enforcement is intentional: commits and pushes only require the planning floor, while PR creation, deploys, and releases require the full delivery list. That lets SB make incremental development commits without weakening final delivery gates.</p>
 
       <div class="divider"></div>

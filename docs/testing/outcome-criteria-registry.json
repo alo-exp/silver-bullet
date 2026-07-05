@@ -10,7 +10,9 @@
     "OUT-AUTO-01",
     "OUT-CLARIFY-01",
     "OUT-NOOP-01",
-    "OUT-WORLD-01"
+    "OUT-ORCH-01",
+    "OUT-WORLD-01",
+    "OUT-MEASURE-01"
   ],
   "composite_criteria": {
     "OUT-WORLD-01": {
@@ -82,6 +84,7 @@
     {
       "id": "OUT-ORCH-01",
       "title": "Orchestrator parent/worker routing",
+      "blocking": true,
       "scope": "session",
       "homepage_source": "README: Orchestrator parent mode",
       "primary_rows": [1, 3, 4, 5],
@@ -182,6 +185,7 @@
     {
       "id": "OUT-MEASURE-01",
       "title": "Measurement integrity",
+      "blocking": true,
       "scope": "round",
       "homepage_source": "ENTERPRISE-E2E-EFFECTIVENESS-PLAN: ledger drift P0",
       "primary_rows": [],

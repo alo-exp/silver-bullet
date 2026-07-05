@@ -162,6 +162,51 @@ sb_orchestrator_directive_write() {
   printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
 }
 
+# Write directive including scheduler batch_dispatch handoff metadata (parent Task contract).
+sb_orchestrator_directive_write_batch() {
+  local next_skill="$1"
+  local args="${2:-}"
+  local reason="${3:-Orchestrator queued next flow}"
+  local blocking="${4:-true}"
+  local next_worker_template="${5:-}"
+  local batch_json="${6:-}"
+  [[ -n "$next_skill" && -n "$batch_json" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+
+  [[ -n "$next_worker_template" ]] || sb_orchestrator_ensure_worker_template_mapper
+  if [[ -z "$next_worker_template" ]] && declare -f sb_orchestrator_worker_template_for_skill >/dev/null 2>&1; then
+    next_worker_template="$(sb_orchestrator_worker_template_for_skill "$next_skill")"
+  fi
+
+  local now file dir json batch_parsed
+  now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  file="$(sb_orchestrator_directive_file)"
+  dir="$(dirname "$file")"
+  mkdir -p "$dir" 2>/dev/null || true
+  batch_parsed="$(jq -c . <<<"$batch_json" 2>/dev/null || true)"
+  [[ -n "$batch_parsed" ]] || return 1
+
+  json="$(jq -n \
+    --arg next_skill "$next_skill" \
+    --arg args "$args" \
+    --arg reason "$reason" \
+    --arg next_worker_template "$next_worker_template" \
+    --argjson blocking "$([[ "$blocking" == true || "$blocking" == 1 ]] && echo true || echo false)" \
+    --argjson batch_dispatch "$batch_parsed" \
+    --arg updated_at "$now" \
+    '{
+      next_skill: $next_skill,
+      args: $args,
+      reason: $reason,
+      next_worker_template: (if $next_worker_template != "" then $next_worker_template else null end),
+      blocking: $blocking,
+      batch_dispatch: $batch_dispatch,
+      updated_at: $updated_at
+    }' 2>/dev/null || true)"
+  [[ -n "$json" ]] || return 1
+  printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+}
+
 sb_orchestrator_directive_clear() {
   local file
   file="$(sb_orchestrator_directive_file)"
@@ -211,6 +256,11 @@ sb_orchestrator_directive_context_block() {
       "  next_skill: " + .next_skill + "\n" +
       (if (.next_worker_template // "") != "" and .next_worker_template != null then
         "  next_worker_template: " + .next_worker_template + ".md\n"
+      else "" end) +
+      (if (.batch_dispatch // null) != null then
+        "  batch_dispatch: " + (.batch_dispatch.dispatch_mode // "sequential") +
+        " batch (" + ((.batch_dispatch.handoffs // []) | length | tostring) + " handoff(s); " +
+        ((.batch_dispatch.handoffs // []) | map(select(.join_status != "joined")) | length | tostring) + " pending join)\n"
       else "" end) +
       (if (.args // "") != "" then "  args: " + .args + "\n" else "" end) +
       "  reason: " + (.reason // "queued flow") + "\n" +

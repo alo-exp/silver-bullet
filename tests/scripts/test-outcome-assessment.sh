@@ -48,10 +48,20 @@ if command -v jq >/dev/null 2>&1; then
   else
     fail "registry criteria count < 27"
   fi
-  if jq -e '.blocking_criteria | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
-    pass "registry blocking_criteria has >=4 entries"
+  if jq -e '.blocking_criteria | length >= 6' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry blocking_criteria has >=6 entries"
   else
-    fail "registry blocking_criteria missing"
+    fail "registry blocking_criteria missing (need OUT-AUTO-01, OUT-CLARIFY-01, OUT-NOOP-01, OUT-ORCH-01, OUT-WORLD-01, OUT-MEASURE-01)"
+  fi
+  if jq -e '.blocking_criteria | index("OUT-ORCH-01")' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry blocking includes OUT-ORCH-01"
+  else
+    fail "registry blocking missing OUT-ORCH-01"
+  fi
+  if jq -e '.blocking_criteria | index("OUT-MEASURE-01")' "$REGISTRY" >/dev/null 2>&1; then
+    pass "registry blocking includes OUT-MEASURE-01"
+  else
+    fail "registry blocking missing OUT-MEASURE-01"
   fi
   if jq -e '.workflow_row_map["1"] | length >= 4' "$REGISTRY" >/dev/null 2>&1; then
     pass "registry workflow_row_map row 1 populated"
@@ -182,6 +192,16 @@ else
   pass "E2E-096 matrix prompt instruction not counted as SB OVERRIDE"
 fi
 rm -f "$ROW10_FP_LOG" "$PROMPT_OVERRIDE_LOG"
+
+# E2E-097: negated babysitting in brief/acceptance must not trip babysitting (agent-claude AUTO-C01)
+BABYSIT_FP_LOG="$(mktemp)"
+printf 'Session log shows autonomous / orchestrator markers without babysitting\n' >"$BABYSIT_FP_LOG"
+if enterprise_e2e_outcome_log_has_babysitting "$BABYSIT_FP_LOG"; then
+  fail "E2E-097 negated babysitting acceptance line should not trigger babysitting"
+else
+  pass "E2E-097 negated babysitting acceptance line does not trigger babysitting"
+fi
+rm -f "$BABYSIT_FP_LOG"
 
 # E2E-026: planning-file-guard TUI-watch deliberation is false positive for OUT-HOOK-01
 WATCH_FP="$(mktemp)"

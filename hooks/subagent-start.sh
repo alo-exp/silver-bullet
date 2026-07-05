@@ -54,6 +54,14 @@ jq -n \
   '{spawned_at:$at, subagent_type:$st, assigned_skill:$skill, prompt_preview:$preview, source:"subagent-start"}' \
   >"${marker_file}.tmp" 2>/dev/null && mv "${marker_file}.tmp" "$marker_file"
 
+if [[ -f "$_lib_dir/orchestrator-scheduler.sh" ]]; then
+  # shellcheck source=lib/orchestrator-scheduler.sh
+  source "$_lib_dir/orchestrator-scheduler.sh"
+  if [[ -n "$assigned_skill" ]]; then
+    sb_scheduler_mark_handoff_dispatched "" "$assigned_skill" 2>/dev/null || true
+  fi
+fi
+
 banner="SB WORKER SUBAGENT (mandatory)
   Set SB_ORCHESTRATOR_WORKER=1 for this session.
   1. graphify query before exploration (never skip when graphify-out/ exists).
