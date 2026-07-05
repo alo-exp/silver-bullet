@@ -61,6 +61,8 @@ DELEGATE_FLOW_STEP_ORDER = [
     "FS-DELEGATE-CURSOR-LAUNCH",
     "FS-DELEGATE-CURSOR-ROUTE",
     "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
+    "FS-DELEGATE-CLAUDE-LAUNCH",
+    "FS-DELEGATE-CLAUDE-ROUTE",
     "FS-DELEGATE-CHECKPOINT",
     "FS-DELEGATE-VERIFY",
     "FS-DELEGATE-RELAUNCH",
@@ -70,7 +72,7 @@ DELEGATE_FLOW_STEP_ORDER = [
 
 DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     "FS-DELEGATE-BRIEF": {
-        "skill": "silver-agent-codex|silver-agent-cursor",
+        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
         "purpose": "Host prepares bounded brief, ownership scope, and acceptance criteria.",
         "classification": "flow-step-skill",
         "evidence_suffix": "BRIEF",
@@ -117,6 +119,18 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "classification": "flow-step-skill",
         "evidence_suffix": "LAUNCH",
     },
+    "FS-DELEGATE-CLAUDE-LAUNCH": {
+        "skill": "silver-agent-claude",
+        "purpose": "Spawn agent-claude-delegate.sh with CLAUDE_CONFIG_DIR isolation and OAuth auth.",
+        "classification": "flow-step-skill",
+        "evidence_suffix": "LAUNCH",
+    },
+    "FS-DELEGATE-CLAUDE-ROUTE": {
+        "skill": "silver-agent-claude",
+        "purpose": "Inject /silver:* route syntax into external agent brief.",
+        "classification": "flow-step-skill",
+        "evidence_suffix": "LAUNCH",
+    },
     "FS-DELEGATE-CHECKPOINT": {
         "skill": "distribution-only",
         "purpose": "Record checkpoint evidence from delegate supervision.",
@@ -136,7 +150,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "evidence_suffix": "RELAUNCH",
     },
     "FS-DELEGATE-MENTOR": {
-        "skill": "silver-agent-codex|silver-agent-cursor",
+        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
         "purpose": "Host mentor capture and user-facing report preparation.",
         "classification": "flow-step-skill",
         "evidence_suffix": "MENTOR",
@@ -245,17 +259,19 @@ SKILL_TO_FLOW = {
     "silver-update": "AF-PHASE-MANAGE",
     "silver-migrate": "AF-PHASE-MANAGE",
     "silver-fast": "AF-FAST-PATH",
+    "silver-new-workflow": "AF-PLAN",
     "silver-feature": "AF-FAST-PATH",
     "silver-benchmark": "AF-FAST-PATH",
     "silver-incident": "AF-FAST-PATH",
     "silver-agent-codex": "AF-AGENT-DELEGATE",
     "silver-agent-cursor": "AF-AGENT-DELEGATE",
+    "silver-agent-claude": "AF-AGENT-DELEGATE",
     "silver-agent-worker": "AF-AGENT-DELEGATE",
 }
 
 PRECOMPOSED = {
     "silver-feature", "silver-ui", "silver-devops", "silver-bugfix", "silver-research",
-    "silver-release", "silver-fast", "silver-incident", "silver-deploy", "silver-canary",
+    "silver-release", "silver-fast", "silver-new-workflow", "silver-incident", "silver-deploy", "silver-canary",
     "silver-content", "silver-retro", "silver-benchmark", "silver-refactor",
     "silver-test", "silver-forensics",
 }
@@ -443,7 +459,7 @@ def merge_delegate_catalog(
     for flow in atomic_flows:
         if flow.get("id") != "AF-AGENT-DELEGATE":
             continue
-        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor"]
+        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor", "silver-agent-claude"]
         flow["flow_steps"] = list(DELEGATE_FLOW_STEP_ORDER)
         flow["artifacts"] = ["ART-AGENT-DELEGATE"]
         flow["execution"]["parallelizable"] = False
@@ -553,6 +569,22 @@ def build_workflows() -> list[dict]:
         workflow("WF-SILVER-DEVOPS", "silver-devops", "precomposed", [n("AF-BLAST-RADIUS"), n("AF-DEVOPS-ROUTE"), n("AF-QUALITY-GATE"), n("AF-SECURE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-devops", triggers=["devops", "infra"], queue=["silver-blast-radius", "devops-skill-router", "devops-quality-gates", "security", "silver-context", "silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:]),
         workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-ORIENT", optional=True), n("AF-DEBUG"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=["silver-debug", "silver-plan", "silver-execute"] + feature_queue[5:]),
         workflow("WF-SILVER-RESEARCH", "silver-research", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-research", triggers=["research", "decide"], queue=["silver-clarify", "silver-research", "silver-ensure-docs", "silver-validate"]),
+        workflow(
+            "WF-SILVER-NEW-WORKFLOW",
+            "silver-new-workflow",
+            "precomposed",
+            [
+                n("AF-CLARIFY"), n("AF-ORIENT"), n("AF-DECIDE"), n("AF-PLAN"),
+                n("AF-REVIEW-TRIAGE"), n("AF-EXECUTE"), n("AF-VERIFY"), n("AF-VALIDATE"), n("AF-DOCUMENT"),
+            ],
+            owner="silver-new-workflow",
+            triggers=["new workflow", "create workflow", "workflow authoring", "convert workflow"],
+            queue=[
+                "silver-clarify", "silver-scan", "silver-research", "silver-plan",
+                "silver-review-fix-ladder", "silver-execute", "silver-verify",
+                "silver-validate", "silver-ensure-docs",
+            ],
+        ),
         workflow("WF-SILVER-FAST", "silver-fast", "precomposed", [n("AF-FAST-PATH"), n("AF-QUALITY-GATE"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-fast", triggers=["fast", "small change"], queue=["FLOW-QUALITY-GATE", "silver-plan", "silver-validate", "silver-execute", "silver-verify"]),
         workflow("WF-SILVER-RELEASE", "silver-release", "precomposed", [n("AF-QUALITY-GATE"), n("AF-REVIEW-REQUEST"), n("AF-REVIEW"), n("AF-REVIEW-TRIAGE"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-VALIDATE"), n("AF-BRANCH-FINISH"), n("AF-COMPLETION-AUDIT"), n("AF-SHIP"), n("AF-RELEASE")], owner="silver-release", triggers=["release"], queue=["FLOW-QUALITY-GATE", "silver-review-request", "silver-review", "silver-review-triage", "silver-verify", "security", "silver-secure", "silver-validate", "silver-branch-finish", "silver-completion-audit", "silver-ship", "silver-create-release"]),
         workflow("WF-SILVER-DEPLOY", "silver-deploy", "specialized", [n("AF-BLAST-RADIUS"), n("AF-VERIFY"), n("AF-SECURE"), n("AF-SHIP")], owner="silver-deploy", triggers=["deploy"]),
@@ -565,7 +597,7 @@ def build_workflows() -> list[dict]:
         workflow("WF-SILVER-TEST", "silver-test", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-test", triggers=["test", "test hardening"]),
         workflow("WF-SILVER-FORENSICS", "silver-forensics", "specialized", [n("AF-DEBUG"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-forensics", triggers=["forensics"]),
         workflow("WF-PROCESS-MAINTENANCE", "process-maintenance", "specialized", [n("AF-PHASE-MANAGE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], triggers=["phase", "thread", "backlog", "migration"]),
-        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-cursor"]),
+        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-cursor", "agent-claude"]),
     ]
     return workflows
 
@@ -717,7 +749,8 @@ def build_catalog() -> dict:
                 "silver-ui-contract": "AF-DESIGN-CONTRACT", "silver-ui-review": "AF-UI-QUALITY", "silver-blast-radius": "AF-BLAST-RADIUS",
                 "devops-quality-gates": "AF-QUALITY-GATE", "devops-skill-router": "AF-DEVOPS-ROUTE", "silver-spec": "AF-SPECIFY",
                 "silver-clarify": "AF-CLARIFY", "silver-research": "AF-DECIDE", "silver-ensure-docs": "AF-DOCUMENT",
-                "silver-handoff": "AF-DOCUMENT",
+                "silver-handoff": "AF-DOCUMENT", "silver-scan": "AF-ORIENT",
+                "silver-review-fix-ladder": "AF-REVIEW-TRIAGE", "silver-new-workflow": "AF-PLAN",
             },
         },
     }

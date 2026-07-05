@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared delegate wrapper behavior for agent-codex-delegate.sh and agent-cursor-delegate.sh.
+# Shared delegate wrapper behavior for agent-codex-delegate.sh, agent-cursor-delegate.sh, and agent-claude-delegate.sh.
 # shellcheck shell=bash
 
 # Canonicalize a repo-relative path to absolute.
@@ -199,7 +199,7 @@ agent_delegate_normalize_failure_class() {
   if [[ -n "$log_file" && -f "$log_file" ]]; then
     local log_bytes
     log_bytes="$(wc -c <"$log_file" | tr -d ' ')"
-    local floor="${SB_AGENT_CODEX_LOG_FLOOR:-${SB_AGENT_DELEGATE_LOG_FLOOR:-512}}"
+    local floor="${SB_AGENT_CODEX_LOG_FLOOR:-${SB_AGENT_CURSOR_LOG_FLOOR:-${SB_AGENT_CLAUDE_LOG_FLOOR:-${SB_AGENT_DELEGATE_LOG_FLOOR:-512}}}}"
     if [[ "$log_bytes" -lt "$floor" ]]; then
       printf 'log-floor'
       return 0

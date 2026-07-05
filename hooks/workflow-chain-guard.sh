@@ -146,6 +146,9 @@ case "$composer_slug" in
   silver-research)
     required_markers=(silver-clarify silver-research)
     ;;
+  silver-new-workflow)
+    required_markers=(silver-clarify silver-scan silver-plan)
+    ;;
   silver-bugfix)
     # Bugfix is diagnosis-first: the documented pre-execution chain is
     # ORIENT → DEBUG → PLAN (see skills/silver-bugfix/SKILL.md). Quality-gates
@@ -177,7 +180,7 @@ fi
 
 # Post-plan validation gate for feature/ui/devops/fast composers.
 case "$composer_slug" in
-  silver-feature|silver-ui|silver-devops|silver-fast)
+  silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow)
     required_markers+=("silver-validate")
     ;;
 esac
