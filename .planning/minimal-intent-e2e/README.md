@@ -9,6 +9,7 @@
 | Enterprise 22-row matrix | Per-row harness prompts | Host TUI (historically babysat) |
 | Agent-claude 3-row | Harness brief → Claude delegate | Claude TUI via `/silver:agent-claude` |
 | **Minimal-intent (this)** | User vision paragraph + optional prefs | **Cursor parent orchestrator** + Task workers |
+| [**Tri-criteria E2E**](../sb-tri-criteria-e2e/) | Three orthogonal criteria (chain / dynamic / net-new) | Cursor parent per track |
 
 ## North star
 
@@ -16,7 +17,7 @@ Prove SB can drive a **development lifecycle end-to-end** from **minimal user in
 
 ## Complexity policy (mandatory)
 
-**Do not score autonomous proof on smoke or single-step tasks.** Valid MI-01 runs must span a multi-workflow DAG with substantive product delta and `.planning/` artifacts — never `npm test` only, health-check smoke, or one-file tweaks. Canonical rule: auto-e2e `.planning/auto-e2e-note-app/CURSOR-MULTIWF-CRITERIA.md`.
+**Do not score autonomous proof on smoke or single-step tasks.** Valid MI-01 runs must span a multi-workflow DAG with substantive product delta and `.planning/` artifacts — never `npm test` only, health-check smoke, or one-file tweaks. Canonical rule: [`.planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md`](../sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md) (mirrors auto-e2e upstream).
 
 ## Artifacts
 
