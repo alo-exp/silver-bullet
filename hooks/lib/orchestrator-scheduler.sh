@@ -293,6 +293,61 @@ sb_scheduler_record_composition_operation() {
   sb_scheduler_append_composition_log "$repo_root" "$entry"
 }
 
+# Map composer skill slug to catalog workflow id (WF-SILVER-*).
+sb_scheduler_composer_catalog_workflow_id() {
+  local composer="${1#silver:}"
+  composer="${composer//:/-}"
+  case "$composer" in
+    silver-feature) printf 'WF-SILVER-FEATURE' ;;
+    silver-fast) printf 'WF-SILVER-FAST' ;;
+    silver-devops) printf 'WF-SILVER-DEVOPS' ;;
+    silver-release) printf 'WF-SILVER-RELEASE' ;;
+    silver-new-workflow) printf 'WF-SILVER-NEW-WORKFLOW' ;;
+    silver-ui) printf 'WF-SILVER-UI' ;;
+    silver-bugfix) printf 'WF-SILVER-BUGFIX' ;;
+    silver-router) printf 'WF-SILVER-ROUTER' ;;
+    silver-research) printf 'WF-SILVER-DEEP-RESEARCH' ;;
+    silver-ship) printf 'WF-SILVER-SHIP' ;;
+    silver-*)
+      local slug="${composer#silver-}"
+      slug="$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')"
+      printf 'WF-SILVER-%s' "$slug"
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+# Doc-only / README-badge intents should not run the full feature pipeline.
+sb_scheduler_detect_doc_only_intent() {
+  local intent="${1:-}"
+  [[ -n "$intent" ]] || return 1
+  printf '%s' "$intent" | grep -qiE \
+    'documentation-only|doc-only|README badge|shields\.io|static README badge|readme only|badge visible in rendered README' \
+    && return 0
+  return 1
+}
+
+# Runtime dynamic composition: substitute feature → fast for narrow doc-only work.
+sb_scheduler_apply_doc_only_tailoring() {
+  local repo_root="$1" composer_skill="$2" intent="${3:-}"
+  [[ -n "$repo_root" && -n "$composer_skill" ]] || return 1
+  sb_scheduler_detect_doc_only_intent "$intent" || return 0
+  local from_wf to_wf
+  from_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-feature" 2>/dev/null || printf 'WF-SILVER-FEATURE')"
+  to_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-fast" 2>/dev/null || printf 'WF-SILVER-FAST')"
+  if [[ "$composer_skill" == "silver-fast" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "$to_wf" "substitute" "$from_wf" \
+      "DR-SUBSTITUTE-LEANER-WORKFLOW" "README badge is documentation-only; substitute leaner workflow" 2>/dev/null || true
+    sb_scheduler_record_composition_operation "$repo_root" "$to_wf" "prune" "AF-PLAN" \
+      "DR-PRUNE-SATISFIED-ATOM" "No planning atoms required for shields.io badge" 2>/dev/null || true
+    return 0
+  fi
+  if [[ "$composer_skill" == "silver-feature" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "$from_wf" "substitute" "$to_wf" \
+      "DR-SUBSTITUTE-LEANER-WORKFLOW" "README badge is documentation-only; substitute lean fast path" 2>/dev/null || true
+  fi
+}
+
 # Owned flow-step ids for an atomic flow from catalog.
 sb_scheduler_owned_step_ids_json() {
   local catalog_file="$1" atom_id="$2"

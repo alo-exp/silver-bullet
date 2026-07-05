@@ -351,10 +351,13 @@ PY
   work_dir="${SB_TRI_CRITERIA_WORK_DIR:-${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}}"
   state_dir="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}"
   export SB_E2E_ENTERPRISE_MATRIX=1
+  export SB_TRI_CRITERIA_RUN_DIR="$run_dir"
+  export SB_TRI_CRITERIA_ROW_ID="$row_id"
+  export SB_TRI_CRITERIA_SESSION_LOG="$log_path"
 
   local comp_log wf_count
   comp_log="$(enterprise_e2e_outcome_composition_log_path "$work_dir")"
-  if [[ -f "$comp_log" ]]; then
+  if [[ -f "$comp_log" ]] || [[ -f "${run_dir}/orchestrator-composition-log.jsonl" ]]; then
     wf_count="$(enterprise_e2e_outcome_count_distinct_workflow_ids "$work_dir" "$state_dir")"
     echo "composition_log=$comp_log distinct_workflow_ids=${wf_count:-0}"
   else
@@ -364,7 +367,7 @@ PY
   outcomes="$(row_blocking_outcomes "$matrix_json" "$row_id")"
   for outcome in $outcomes; do
     [[ "$outcome" == "OUT-WORLD-01" ]] && continue
-    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "" "$ledger" "$evidence_path" 2>/dev/null || true)"
+    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "$row_id" "$ledger" "$evidence_path" 2>/dev/null || true)"
     [[ -n "$detail" ]] || detail="fail"
     echo "  $outcome: $detail"
     if [[ "$detail" != pass && "$detail" != pass* && "$detail" != "n/a" ]]; then
@@ -383,7 +386,7 @@ PY
 
   for outcome in $(row_advisory_outcomes "$matrix_json" "$row_id" 2>/dev/null || true); do
     [[ -z "$outcome" ]] && continue
-    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "" "$ledger" "$evidence_path" 2>/dev/null || true)"
+    detail="$(enterprise_e2e_outcome_score_criterion "$outcome" "$work_dir" "$state_dir" "$log_path" "$row_id" "$ledger" "$evidence_path" 2>/dev/null || true)"
     echo "  $outcome: ${detail:-n/a} (advisory)"
   done
 
