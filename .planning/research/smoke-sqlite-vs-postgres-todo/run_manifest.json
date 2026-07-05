@@ -1,0 +1,22 @@
+{
+  "version": "3.0.0",
+  "query": "SQLite vs Postgres for a toy todo app",
+  "mode": "quick",
+  "started_at": "2026-07-05T12:00:00Z",
+  "finished_at": "2026-07-05T12:05:00Z",
+  "workflow_id": "WF-SILVER-DEEP-RESEARCH",
+  "atomic_flow": "AF-DECIDE",
+  "flow_step": "FS-SILVER_DEEP_RESEARCH",
+  "search_cli": {
+    "status": "unavailable",
+    "providers_available": []
+  },
+  "fallback_reason": "contract smoke: host search tools simulated",
+  "report_dir": "/Users/shafqat/projects/silver-bullet/repo/.planning/research/smoke-sqlite-vs-postgres-todo",
+  "artifact_paths": {
+    "sources": "sources.jsonl",
+    "evidence": "evidence.jsonl",
+    "claims": "claims.jsonl",
+    "report": "research_report.md"
+  }
+}
