@@ -60,6 +60,16 @@ Flow steps exist in catalog but are not listed in any AF `flow_steps[]`:
 - **6 reusable-component workflows** PASS (`WF-POST-EXEC-GATES`, `WF-VALIDATE-SUBSTEP`, `WF-REVIEW-TRIAD`, `WF-SHIP-READINESS`, `WF-PROCESS-MAINTENANCE`, `WF-AGENT-DELEGATE-ENTRY`).
 - **13 primary composer workflows** PASS (feature, ui, devops, fast, bugfix, deep-research, release, new-workflow, etc.).
 
+## Remediation closeout (2026-07-05)
+
+**Status: 157/157 PASS** — see [WF-AF-AUDIT-CLOSEOUT.md](WF-AF-AUDIT-CLOSEOUT.md).
+
+| Priority | Items | Resolution |
+|----------|-------|------------|
+| P0 | `WF-SILVER-ROUTER` | Slug remapped to `silver`; enforcement surfaces aligned to `skills/silver/SKILL.md` |
+| P1 | 9 secondary composers | Triple alignment: catalog `enforcement_queue` + orchestrator + guard + SKILL pre-exec |
+| P2 | 3 orphan FS steps | Added to `AF-AGENT-DELEGATE.flow_steps[]` |
+
 ## Per-entity results
 
 ### Workflows

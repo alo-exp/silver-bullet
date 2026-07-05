@@ -29,7 +29,13 @@ if [[ "$audit_mode" -eq 1 ]]; then
 fi
 
 skill="silver-${slug}"
+if [[ -f "skills/${slug}/SKILL.md" ]]; then
+  skill="$slug"
+fi
 wf_id="WF-SILVER-$(printf '%s' "$slug" | tr '[:lower:]' '[:upper:]')"
+if [[ "$skill" == "silver" ]]; then
+  wf_id="WF-SILVER-ROUTER"
+fi
 fail=0
 pass() { echo "PASS: $1"; }
 fail_msg() { echo "FAIL: $1" >&2; fail=1; }

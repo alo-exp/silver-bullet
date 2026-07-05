@@ -11,6 +11,14 @@ Use this skill when the root cause of a failure is **unknown and must be reconst
 from evidence**. This covers: completed sessions that left things broken, abandoned or
 timed-out sessions, step 7 verification failures, and mid-session stalls.
 
+**Pre-execution** (blocks investigation edits until recorded):
+
+`silver:debug`
+
+**Post-execution:** `silver:execute` → `silver:ensure-docs` → `silver:validate`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-forensics` composer).
+
 **If you have an active error with a known cause**, use `/silver:debug`
 instead. `/silver:forensics` is for reconstruction, not live debugging.
 

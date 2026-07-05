@@ -26,6 +26,14 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json` (the only supporte
 
 Cooperative single-agent execution (parent invokes `silver:plan` / `silver:execute` directly) is **disabled**.
 
+**Pre-execution** (routing-only; composed workflows own implementation gates):
+
+`silver:context`
+
+**Post-execution:** composed child workflow queues own implementation and ship gates.
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver` router).
+
 ## Core Positioning
 
 SB is the lifecycle and quality orchestration engine for software-engineering work. It owns routing, composition, context, plans, execution gates, reviews, safety checks, verification, and ship/release decisions.
