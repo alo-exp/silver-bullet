@@ -112,7 +112,7 @@
       "silver-release",
       "silver-rem",
       "silver-remove",
-      "silver-research",
+      "silver-deep-research",
       "silver-retro",
       "silver-review",
       "silver-review-request",
@@ -297,6 +297,31 @@
         }
       },
       "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
+    },
+    "search_cli": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": false,
+      "binary": "search",
+      "install_commands": [
+        "brew tap 199-biotechnologies/tap && brew install search-cli"
+      ],
+      "provider_classes": {
+        "web_breadth": [
+          "Brave",
+          "Serper"
+        ],
+        "semantic": [
+          "Exa"
+        ],
+        "extraction": [
+          "Jina",
+          "Firecrawl"
+        ]
+      },
+      "benefits_summary": "Optional multi-provider retrieval for silver:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
     },
     "rtk": {
       "enabled_by_user": null,

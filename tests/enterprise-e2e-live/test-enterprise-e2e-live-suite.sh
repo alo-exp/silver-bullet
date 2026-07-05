@@ -274,7 +274,7 @@ trap cleanup_tmp EXIT
 {
   echo "=== Row 1: silver-router (/silver) ==="
   echo "  PASS: evidence at .planning/workflows/router-session.md"
-  echo "=== Row 2: silver-research (/silver:research) ==="
+  echo "=== Row 2: silver-deep-research (/silver:deep-research) ==="
   echo "  SKIP: evidence already present (set SB_E2E_MATRIX_FORCE=1 to re-run)"
 } >"$TMP_LOG"
 LEDGER_RESUME_FIXTURE="$(mktemp)"
@@ -282,7 +282,7 @@ cat >"$LEDGER_RESUME_FIXTURE" <<'LEDGER'
 | # | WF slug | Session date | Claude model | Pass/Fail | Issues | SB fix commit | graphify_query_ref | agentmemory_export_ref |
 |---|---------|--------------|--------------|-----------|--------|---------------|--------------------|------------------------|
 | 1 | `silver-router` | 2026-06-28 | haiku | **Pass** | | | | |
-| 2 | `silver-research` | | | | | | | |
+| 2 | `silver-deep-research` | | | | | | | |
 | 3 | `silver-feature` | | | Fail | | | | |
 LEDGER
 inc="$(enterprise_e2e_incomplete_rows "$TMP_LOG" "$LEDGER_RESUME_FIXTURE" | tr '\n' ' ' | xargs)"

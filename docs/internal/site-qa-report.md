@@ -59,8 +59,8 @@ All 11 steps are present and correctly described. The 7 IaC quality dimensions a
 
 ---
 
-### 5. site/help/workflows/silver-research.html
-**Source:** skills/silver-research/SKILL.md  
+### 5. site/help/workflows/silver-deep-research.html
+**Source:** skills/silver-deep-research/SKILL.md  
 **Verdict: ISSUES FOUND**
 
 **Issue 5-A — "When MultAI is auto-offered" section omits the 4th trigger signal:**  
@@ -98,7 +98,7 @@ No missing steps. Steps 0–8 are all present. Non-skippable gates callout corre
 **Source:** skills/silver-fast/SKILL.md  
 **Verdict: PASS**
 
-All 4 steps are present and accurately described. The §10 preferences note (deliberately NOT read in silver:fast) is correctly explained. The complexity triage gate (Step 0), scope expansion STOP condition (Step 2) including the verbatim banner text, and the non-trivial escalation options (silver:feature / silver:bugfix / silver:ui / silver:devops / silver:research in Step 0 vs silver:feature / silver:bugfix / silver:devops / stop in Step 2) are correctly reproduced. The "When NOT to use" section matches the SKILL.md's "Not appropriate for" list exactly. Bottom navigation links are correct.
+All 4 steps are present and accurately described. The §10 preferences note (deliberately NOT read in silver:fast) is correctly explained. The complexity triage gate (Step 0), scope expansion STOP condition (Step 2) including the verbatim banner text, and the non-trivial escalation options (silver:feature / silver:bugfix / silver:ui / silver:devops / silver:deep-research in Step 0 vs silver:feature / silver:bugfix / silver:devops / stop in Step 2) are correctly reproduced. The "When NOT to use" section matches the SKILL.md's "Not appropriate for" list exactly. Bottom navigation links are correct.
 
 ---
 
@@ -111,7 +111,7 @@ All 7 workflows are present:
 - `/silver:bugfix` → `./silver-bugfix.html` ✓
 - `/silver:ui` → `./silver-ui.html` ✓
 - `/silver:devops` → `./silver-devops.html` ✓
-- `/silver:research` → `./silver-research.html` ✓
+- `/silver:deep-research` → `./silver-deep-research.html` ✓
 - `/silver:release` → `./silver-release.html` ✓
 - `/silver:fast` → `./silver-fast.html` ✓
 
@@ -180,7 +180,7 @@ The Silver Bullet Skills table entry for `/quality-gates` reads: *"8-dimension q
 **Issue 13-E — Ship disambiguation table uses `gsd:ship` (colon) instead of `gsd-ship` (hyphen):**  
 Same inconsistency as Issue 6-A, present in the reference page's ship disambiguation table. The term used throughout the SKILL.md files is `gsd-ship`.
 
-**All 7 new workflow skills + silver:update are present:** silver:feature, silver:bugfix, silver:ui, silver:devops, silver:research, silver:release, silver:fast, silver:update — all 8 entries exist in the skills table. ✓
+**All 7 new workflow skills + silver:update are present:** silver:feature, silver:bugfix, silver:ui, silver:devops, silver:deep-research, silver:release, silver:fast, silver:update — all 8 entries exist in the skills table. ✓
 
 ---
 
@@ -195,7 +195,7 @@ The Workflows card is present (line ~274):
   <p>The seven pre-designed workflows …</p>
 ```
 
-The card links to `workflows/` with the correct relative path. It lists silver:feature, silver:bugfix, silver:ui, silver:devops, and silver:release in the bullet topics (silver:research and silver:fast are not listed but this is acceptable as it is a summary card, not an exhaustive list). The badge shows "v0.13.0" which is consistent with the workflows being new in that release.
+The card links to `workflows/` with the correct relative path. It lists silver:feature, silver:bugfix, silver:ui, silver:devops, and silver:release in the bullet topics (silver:deep-research and silver:fast are not listed but this is acceptable as it is a summary card, not an exhaustive list). The badge shows "v0.13.0" which is consistent with the workflows being new in that release.
 
 ---
 
@@ -204,7 +204,7 @@ The card links to `workflows/` with the correct relative path. It lists silver:f
 | # | Page | Severity | Issue |
 |---|------|----------|-------|
 | 3-A | silver-ui.html | Medium | Step 16 (Milestone Completion) is entirely missing |
-| 5-A | silver-research.html | Low | 4th MultAI auto-offer trigger ("Change affects public API or data model") is missing |
+| 5-A | silver-deep-research.html | Low | 4th MultAI auto-offer trigger ("Change affects public API or data model") is missing |
 | 6-A | silver-release.html | Low | Ship disambiguation table uses `gsd:ship` (colon) — should be `gsd-ship` (hyphen) |
 | 6-B | silver-release.html | Very Low | Step 5 "Blocks if README is stale" — accurate but misattributed to SKILL.md rather than §3 |
 | 10-A | verification.html | Medium | silver:feature step numbers wrong — says "Step 9" for gsd-verify-work; SKILL.md says Step 8 |
@@ -221,7 +221,7 @@ The card links to `workflows/` with the correct relative path. It lists silver:f
 ## Overall Summary
 
 - **9 pages PASS** with no content errors
-- **5 pages have ISSUES** (silver-ui.html, silver-research.html, silver-release.html, verification.html, reference/index.html)
+- **5 pages have ISSUES** (silver-ui.html, silver-deep-research.html, silver-release.html, verification.html, reference/index.html)
 - **12 distinct issues found**, ranging in severity from Medium to Very Low
 - **Most critical issues:** The invented `accessibility-review` step appearing in two places on the reference page (13-A, 13-B), the wrong step number for gsd-verify-work on the verification concepts page (10-A), the stale quality-gates count that needed correction to "8 core dimensions plus conditional gates" (13-D), and the missing Step 16 on the silver:ui page (3-A)
 - **No pages contain information that directly contradicts the actual workflow behavior** — all issues are either omissions, wrong step numbers, or invented/imprecise descriptions

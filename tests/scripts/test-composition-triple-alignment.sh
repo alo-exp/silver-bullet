@@ -135,10 +135,10 @@ parse_orchestrator_pre_exec() {
       to_sorted_csv "$(printf '%s' "$queue" | cut -d, -f1)"
       return
       ;;
-    silver-research)
+    silver-deep-research)
       # Research has no implementation execute atom. The chain guard only gates
       # the pre-artifact clarify/decide portion so the documentation atom can edit.
-      to_sorted_csv silver-clarify silver-research
+      to_sorted_csv silver-clarify silver-deep-research
       return
       ;;
     silver-new-workflow)
@@ -160,7 +160,7 @@ COMPOSERS=(
   silver-ui
   silver-devops
   silver-bugfix
-  silver-research
+  silver-deep-research
   silver-fast
   silver-release
   silver-new-workflow

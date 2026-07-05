@@ -162,7 +162,7 @@ var IDX = [
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog from docs/apo-catalog.json: 27 AF-* atomic flows, 22 WF-* workflows, 85 flow steps, V-loop contracts, composer routes /silver:feature /silver:bugfix /silver:ui /silver:devops /silver:research /silver:release /silver:fast plus /silver:spec /silver:ingest /silver:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
+    "text": "Workflow catalog from docs/apo-catalog.json: 27 AF-* atomic flows, 22 WF-* workflows, 85 flow steps, V-loop contracts, composer routes /silver:feature /silver:bugfix /silver:ui /silver:devops /silver:deep-research /silver:release /silver:fast plus /silver:spec /silver:ingest /silver:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
   },
   {
     "page": "Workflows",
@@ -285,9 +285,9 @@ var IDX = [
   },
   {
     "page": "Workflows",
-    "url": "/help/workflows/silver-research.html",
+    "url": "/help/workflows/silver-deep-research.html",
     "anchor": "overview",
-    "title": "/silver:research",
+    "title": "/silver:deep-research",
     "text": "Research workflow clarifies the question, runs direct evidence-based research by default, uses optional MultAI only when explicitly requested, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, silver:plan, or stops as research-only."
   },
   {

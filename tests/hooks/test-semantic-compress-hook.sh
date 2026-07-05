@@ -34,9 +34,9 @@ assert_eq "silver:plan without planning: no output" "" "$result"
 result=$(printf '{"tool_input":{"skill":"silver:context"}}' | "$HOOK" 2>/dev/null || true)
 assert_eq "silver:context without planning: no output" "" "$result"
 
-# Test 5: silver:research → same
-result=$(printf '{"tool_input":{"skill":"silver:research"}}' | "$HOOK" 2>/dev/null || true)
-assert_eq "silver:research without planning: no output" "" "$result"
+# Test 5: silver:deep-research → same
+result=$(printf '{"tool_input":{"skill":"silver:deep-research"}}' | "$HOOK" 2>/dev/null || true)
+assert_eq "silver:deep-research without planning: no output" "" "$result"
 
 # Test 6: hyphenated silver-execute → same
 result=$(printf '{"tool_input":{"skill":"silver-execute"}}' | "$HOOK" 2>/dev/null || true)

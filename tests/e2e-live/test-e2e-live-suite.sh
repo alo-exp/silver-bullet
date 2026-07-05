@@ -149,7 +149,7 @@ assert_file_contains "route-smoke transcript validator normalizes bash -lc adapt
 assert_executable "route-smoke transcript unit test is executable" "${SCRIPT_DIR}/test-route-smoke-transcript.sh"
 assert_file_contains "full-surface journey seeds full planning floor" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'silver-context silver-plan'
 assert_file_contains "full-surface journey shortens route-smoke workflow-doc wait" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'workflow_docs_deadline=\$\(\(SECONDS \+ 2\)\)'
-assert_file_contains "full-surface journey always executes silver:research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:research"'
+assert_file_contains "full-surface journey always executes silver:deep-research" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'journey_turn "silver:deep-research"'
 assert_file_contains "full-surface source scanner ignores collapsed negative prompts" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'donotreadoruselocal'
 assert_file_contains "full-surface source scanner ignores explicit non-use denials" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'didnotreadoruse'
 assert_file_contains "full-surface source scanner normalizes punctuation and whitespace" "${SCRIPT_DIR}/scenarios/test-e2e-live-full-surface-journey.sh" 'compact_for_negative_context'

@@ -140,7 +140,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 
 **`devops-quality-gates` dimensions (7):** reliability, security, scalability, modularity, testability, observability, change-safety. Usability is omitted (no user-facing interface in IaC). Extensibility is omitted (IaC is declarative, not extensible). These 7 are used at both the pre-plan gate (Step 3) and the pre-ship gate (Step 10) — the standard 9-dimension sweep does not apply to devops workflows.
 
-> **No brainstorming phase:** `silver:devops` omits `/product-brainstorming` and `silver:brainstorm`. Infrastructure changes are driven by operational requirements established upstream (in `silver:feature` or `silver:research`). Blast-radius analysis (Step 1) replaces the product/engineering brainstorm for this workflow class.
+> **No brainstorming phase:** `silver:devops` omits `/product-brainstorming` and `silver:brainstorm`. Infrastructure changes are driven by operational requirements established upstream (in `silver:feature` or `silver:deep-research`). Blast-radius analysis (Step 1) replaces the product/engineering brainstorm for this workflow class.
 
 | Step | Skill(s) | Purpose |
 |------|----------|---------|
@@ -161,7 +161,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 
 ---
 
-### 4.5 `silver:research` — Tech Decisions, Architecture Spikes, Comparisons
+### 4.5 `silver:deep-research` — Tech Decisions, Architecture Spikes, Comparisons
 
 **Entry triggers:** "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for"
 
@@ -233,7 +233,7 @@ The following plugins must be added as formal SB dependencies, checked at `silve
 | "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
 | "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
 | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
-| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:research` | Tech decisions, architecture choices |
+| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:deep-research` | Tech decisions, architecture choices |
 | "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only |
 | "merge this", "push this PR", "ship this feature" [active phase context] | `gsd-ship` (in-workflow) | Phase-level only |
 | "trivial", "quick fix", "typo", "one-liner", "config value", ≤3 files | `silver:fast` (gsd-fast) | No planning overhead |
@@ -286,7 +286,7 @@ When an instruction matches multiple workflows:
 | `silver:bugfix` + any other | `silver:bugfix` | Fixes take precedence — broken things block everything |
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific; feature is the fallback |
 | `silver:devops` + `silver:feature` | Ask user | Both equally valid; neither is a subset of the other |
-| `silver:research` + any | `silver:research` first | Research informs the implementation workflow |
+| `silver:deep-research` + any | `silver:deep-research` first | Research informs the implementation workflow |
 | `silver:fast` + any domain workflow | Check scope first | If truly ≤3 files and self-contained → `silver:fast`. If domain signals are strong (e.g. "quick fix to the deploy pipeline" touches IaC) → route to domain workflow with a note that execution may be lightweight. When ambiguous, ask: "A. Treat as trivial (silver:fast)  B. Route to [domain workflow]" |
 
 ---
@@ -407,7 +407,7 @@ Each skill file maps folder name → slash command: `skills/silver-feature/SKILL
 - `skills/silver-bugfix/SKILL.md`
 - `skills/silver-ui/SKILL.md`
 - `skills/silver-devops/SKILL.md`
-- `skills/silver-research/SKILL.md`
+- `skills/silver-deep-research/SKILL.md`
 - `skills/silver-release/SKILL.md`
 
 ---

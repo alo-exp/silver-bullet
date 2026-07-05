@@ -17,4 +17,4 @@
 2. User says "the login is broken" → silver-bugfix
 3. User says "improve the UI" → silver-ui
 4. User says "setup CI" → silver-devops
-5. User says "research databases" → silver-research
+5. User says "research databases" → silver-deep-research

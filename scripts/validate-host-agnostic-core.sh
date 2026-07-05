@@ -104,7 +104,6 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/rtk-cm-hosts.json",
     "scripts/lib/claude-matrix-auth.sh",
     "scripts/lib/merge-token-compression-config.py",
-    "scripts/multi-ai-task-models.py",
     "scripts/generate-apo-catalog.py",
     "scripts/lib/codex-cli.sh",
 }
