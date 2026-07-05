@@ -141,8 +141,18 @@ proc accept_folder_trust {} {
     return
   }
   incr folder_trust_accept_attempts
-  log_harness_keys "\[harness\] accept_folder_trust: sending 1\\r attempt=$folder_trust_accept_attempts"
-  send -- "1\r"
+  set strategy [env_or_default CLAUDE_INTERACTIVE_TRUST_STRATEGY "enter"]
+  log_harness_keys "\[harness\] accept_folder_trust: strategy=$strategy attempt=$folder_trust_accept_attempts"
+  if {$strategy eq "keys"} {
+    type_slow "1" 40
+    after 500
+    send -- "\r"
+  } else {
+    # Trust menu pre-selects option 1 (❯); Enter confirms.
+    send -- "\r"
+  }
+  after 500
+  send -- "\r"
   after 900
 }
 
