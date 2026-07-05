@@ -59,7 +59,11 @@ if isinstance(hook_specific, dict):
         payload.pop("hookSpecificOutput", None)
     else:
         hook_specific.setdefault("hookEventName", event_name)
-        if hook_specific:
+        # Codex rejects hookSpecificOutput that only carries hookEventName (no
+        # permissionDecision, additionalContext, updatedInput, etc.). After
+        # promoting Claude "message" to top-level systemMessage, drop the shell.
+        meaningful = {k: v for k, v in hook_specific.items() if k != "hookEventName"}
+        if meaningful:
             payload["hookSpecificOutput"] = hook_specific
         else:
             payload.pop("hookSpecificOutput", None)
