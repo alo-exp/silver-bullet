@@ -259,6 +259,39 @@
       "signals_fail": ["any-applicable-partial-or-fail"]
     },
     {
+      "id": "OUT-MULTIWF-01",
+      "title": "Autonomous multi-workflow chaining",
+      "scope": "session",
+      "blocking": true,
+      "homepage_source": "sb-tri-criteria-e2e: TC-01",
+      "primary_rows": "TC-01",
+      "signals_pass": ["composition_log:>=3 workflow_id", "orchestrator-events:advance-chain"],
+      "signals_partial": ["2 workflow_id with advance events"],
+      "signals_fail": ["single-workflow-only", "operator-manual-routing"]
+    },
+    {
+      "id": "OUT-DYNAMIC-01",
+      "title": "Dynamic workflow composition with catalog rule refs",
+      "scope": "session",
+      "blocking": true,
+      "homepage_source": "sb-tri-criteria-e2e: TC-02",
+      "primary_rows": "TC-02",
+      "signals_pass": ["composition_log:>=2 ops with catalog_rule_ref", "apo-catalog rule id match"],
+      "signals_partial": ["single dynamic op recorded"],
+      "signals_fail": ["default queue unchanged", "missing catalog_rule_ref"]
+    },
+    {
+      "id": "OUT-NEWWF-01",
+      "title": "Net-new workflow creation via NEW-WORKFLOW worker",
+      "scope": "session",
+      "blocking": true,
+      "homepage_source": "sb-tri-criteria-e2e: TC-03",
+      "primary_rows": "TC-03",
+      "signals_pass": ["NEW-WORKFLOW dispatch", "net-new workflow spec artifact"],
+      "signals_partial": ["worker OR artifact only"],
+      "signals_fail": ["pre-existing workflow force-fit", "no silver-new-workflow"]
+    },
+    {
       "id": "OUT-DRIFT-01",
       "title": "Intent drift course correction",
       "scope": "workflow",
