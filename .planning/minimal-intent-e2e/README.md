@@ -14,6 +14,10 @@
 
 Prove SB can drive a **development lifecycle end-to-end** from **minimal user intent** — one paragraph vision plus optional preferences file — with the parent orchestrator composing and advancing clarify/spec → plan → implement → verify → review → ship (subset justified per session).
 
+## Complexity policy (mandatory)
+
+**Do not score autonomous proof on smoke or single-step tasks.** Valid MI-01 runs must span a multi-workflow DAG with substantive product delta and `.planning/` artifacts — never `npm test` only, health-check smoke, or one-file tweaks. Canonical rule: auto-e2e `.planning/auto-e2e-note-app/CURSOR-MULTIWF-CRITERIA.md`.
+
 ## Artifacts
 
 | File | Purpose |
