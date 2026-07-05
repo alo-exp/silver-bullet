@@ -150,7 +150,7 @@ Optional: `CLAUDE_MODEL` (default `sonnet`), `CLAUDE_EFFORT` (default `low`).
 - **OAuth / Keychain** via `claude auth login` — preflight checks auth status.
 - **No mid-delegation key rotation** — auth failures escalate to user.
 - **No inherit-keys shortcuts** (E2E-110) — do not paste API keys into briefs; `agent-delegate-common.sh` rejects secret patterns.
-- Proxy/MiniMax hosts: document `~/.claude/settings.json` env; delegate inherits caller auth (not `env -i` clean-env).
+- Proxy/MiniMax hosts: document Claude host settings env (under isolated `CLAUDE_CONFIG_DIR`); delegate inherits caller auth (not `env -i` clean-env).
 
 ---
 
