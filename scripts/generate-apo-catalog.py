@@ -56,8 +56,6 @@ DELEGATE_FLOW_STEP_ORDER = [
     "FS-DELEGATE-BRIEF",
     "FS-DELEGATE-GUARD_ON",
     "FS-DELEGATE-LAUNCH",
-    "FS-DELEGATE-CODEX-LAUNCH",
-    "FS-DELEGATE-CODEX-ROUTE",
     "FS-DELEGATE-CURSOR-LAUNCH",
     "FS-DELEGATE-CURSOR-ROUTE",
     "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
@@ -70,7 +68,7 @@ DELEGATE_FLOW_STEP_ORDER = [
 
 DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     "FS-DELEGATE-BRIEF": {
-        "skill": "silver-agent-codex|silver-agent-cursor",
+        "skill": "silver-agent-cursor|silver-agent-claude",
         "purpose": "Host prepares bounded brief, ownership scope, and acceptance criteria.",
         "classification": "flow-step-skill",
         "evidence_suffix": "BRIEF",
@@ -85,18 +83,6 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "skill": "silver-agent-worker",
         "purpose": "Native worker launches external CLI with implementer contract.",
         "classification": "atomic-flow-implementation",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CODEX-LAUNCH": {
-        "skill": "silver-agent-codex",
-        "purpose": "Spawn agent-codex-delegate.sh with CODEX_HOME isolation and hook-trust.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CODEX-ROUTE": {
-        "skill": "silver-agent-codex",
-        "purpose": "Inject $silver:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
         "evidence_suffix": "LAUNCH",
     },
     "FS-DELEGATE-CURSOR-LAUNCH": {
@@ -136,7 +122,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
         "evidence_suffix": "RELAUNCH",
     },
     "FS-DELEGATE-MENTOR": {
-        "skill": "silver-agent-codex|silver-agent-cursor",
+        "skill": "silver-agent-cursor|silver-agent-claude",
         "purpose": "Host mentor capture and user-facing report preparation.",
         "classification": "flow-step-skill",
         "evidence_suffix": "MENTOR",
@@ -248,8 +234,8 @@ SKILL_TO_FLOW = {
     "silver-feature": "AF-FAST-PATH",
     "silver-benchmark": "AF-FAST-PATH",
     "silver-incident": "AF-FAST-PATH",
-    "silver-agent-codex": "AF-AGENT-DELEGATE",
     "silver-agent-cursor": "AF-AGENT-DELEGATE",
+    "silver-agent-claude": "AF-AGENT-DELEGATE",
     "silver-agent-worker": "AF-AGENT-DELEGATE",
 }
 
@@ -443,7 +429,7 @@ def merge_delegate_catalog(
     for flow in atomic_flows:
         if flow.get("id") != "AF-AGENT-DELEGATE":
             continue
-        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor"]
+        flow["owning_skills"] = ["silver-agent-cursor", "silver-agent-claude"]
         flow["flow_steps"] = list(DELEGATE_FLOW_STEP_ORDER)
         flow["artifacts"] = ["ART-AGENT-DELEGATE"]
         flow["execution"]["parallelizable"] = False
@@ -565,7 +551,7 @@ def build_workflows() -> list[dict]:
         workflow("WF-SILVER-TEST", "silver-test", "specialized", [n("AF-PLAN"), n("AF-EXECUTE"), n("AF-VERIFY")], owner="silver-test", triggers=["test", "test hardening"]),
         workflow("WF-SILVER-FORENSICS", "silver-forensics", "specialized", [n("AF-DEBUG"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-forensics", triggers=["forensics"]),
         workflow("WF-PROCESS-MAINTENANCE", "process-maintenance", "specialized", [n("AF-PHASE-MANAGE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], triggers=["phase", "thread", "backlog", "migration"]),
-        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-codex", "agent-cursor"]),
+        workflow("WF-AGENT-DELEGATE-ENTRY", "agent-delegate-entry", "specialized", [n("AF-AGENT-DELEGATE")], owner="silver-agent", triggers=["agent-delegate", "agent-cursor", "agent-claude"]),
     ]
     return workflows
 

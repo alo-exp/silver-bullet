@@ -1068,8 +1068,8 @@
       "type": "specialized",
       "triggers": [
         "agent-delegate",
-        "agent-codex",
-        "agent-cursor"
+        "agent-cursor",
+        "agent-claude"
       ],
       "composition_tree": [
         {
@@ -3613,15 +3613,13 @@
       },
       "tools": [],
       "owning_skills": [
-        "silver-agent-codex",
-        "silver-agent-cursor"
+        "silver-agent-cursor",
+        "silver-agent-claude"
       ],
       "flow_steps": [
         "FS-DELEGATE-BRIEF",
         "FS-DELEGATE-GUARD_ON",
         "FS-DELEGATE-LAUNCH",
-        "FS-DELEGATE-CODEX-LAUNCH",
-        "FS-DELEGATE-CODEX-ROUTE",
         "FS-DELEGATE-CURSOR-LAUNCH",
         "FS-DELEGATE-CURSOR-ROUTE",
         "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
@@ -3817,7 +3815,7 @@
     },
     {
       "id": "FS-DELEGATE-BRIEF",
-      "skill": "silver-agent-codex|silver-agent-cursor",
+      "skill": "silver-agent-cursor|silver-agent-claude",
       "purpose": "Host prepares bounded brief, ownership scope, and acceptance criteria.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
@@ -3912,110 +3910,6 @@
         },
         "evidence_refs": [
           "EV-FS-DELEGATE-CHECKPOINT"
-        ]
-      },
-      "reusable_by_flows": [
-        "AF-AGENT-DELEGATE"
-      ],
-      "canonical_catalog_entity": "AF-AGENT-DELEGATE"
-    },
-    {
-      "id": "FS-DELEGATE-CODEX-LAUNCH",
-      "skill": "silver-agent-codex",
-      "purpose": "Spawn agent-codex-delegate.sh with CODEX_HOME isolation and hook-trust.",
-      "hierarchy_level": "flow_step",
-      "classification": "flow-step-skill",
-      "inputs": [
-        "delegation brief",
-        "host selection",
-        "ownership scope"
-      ],
-      "outputs": [
-        "step evidence",
-        "delegate.log excerpt or checkpoint"
-      ],
-      "v_loop": {
-        "id": "VL-FS-DELEGATE-CODEX-LAUNCH",
-        "rollup_target": "flow_step",
-        "input_contract": "FS-DELEGATE-CODEX-LAUNCH receives bounded delegation context from AF-AGENT-DELEGATE.",
-        "work_product": "Spawn agent-codex-delegate.sh with CODEX_HOME isolation and hook-trust.",
-        "verification": {
-          "methods": [
-            "inspection",
-            "analysis"
-          ],
-          "artifact_refs": [
-            "ART-AGENT-DELEGATE"
-          ]
-        },
-        "validation": {
-          "target": "delegation brief intent",
-          "methods": [
-            "trace to brief and ownership scope"
-          ]
-        },
-        "repair": {
-          "behavior": "rerun delegate sub-loop via native worker",
-          "max_attempts": 2
-        },
-        "escalation": {
-          "condition": "step cannot satisfy contract after repair",
-          "blocker_artifact": ".planning/BLOCKERS.md"
-        },
-        "evidence_refs": [
-          "EV-FS-DELEGATE-LAUNCH"
-        ]
-      },
-      "reusable_by_flows": [
-        "AF-AGENT-DELEGATE"
-      ],
-      "canonical_catalog_entity": "AF-AGENT-DELEGATE"
-    },
-    {
-      "id": "FS-DELEGATE-CODEX-ROUTE",
-      "skill": "silver-agent-codex",
-      "purpose": "Inject $silver:* route syntax into external agent brief.",
-      "hierarchy_level": "flow_step",
-      "classification": "flow-step-skill",
-      "inputs": [
-        "delegation brief",
-        "host selection",
-        "ownership scope"
-      ],
-      "outputs": [
-        "step evidence",
-        "delegate.log excerpt or checkpoint"
-      ],
-      "v_loop": {
-        "id": "VL-FS-DELEGATE-CODEX-ROUTE",
-        "rollup_target": "flow_step",
-        "input_contract": "FS-DELEGATE-CODEX-ROUTE receives bounded delegation context from AF-AGENT-DELEGATE.",
-        "work_product": "Inject $silver:* route syntax into external agent brief.",
-        "verification": {
-          "methods": [
-            "inspection",
-            "analysis"
-          ],
-          "artifact_refs": [
-            "ART-AGENT-DELEGATE"
-          ]
-        },
-        "validation": {
-          "target": "delegation brief intent",
-          "methods": [
-            "trace to brief and ownership scope"
-          ]
-        },
-        "repair": {
-          "behavior": "rerun delegate sub-loop via native worker",
-          "max_attempts": 2
-        },
-        "escalation": {
-          "condition": "step cannot satisfy contract after repair",
-          "blocker_artifact": ".planning/BLOCKERS.md"
-        },
-        "evidence_refs": [
-          "EV-FS-DELEGATE-LAUNCH"
         ]
       },
       "reusable_by_flows": [
@@ -4337,7 +4231,7 @@
     },
     {
       "id": "FS-DELEGATE-MENTOR",
-      "skill": "silver-agent-codex|silver-agent-cursor",
+      "skill": "silver-agent-cursor|silver-agent-claude",
       "purpose": "Host mentor capture and user-facing report preparation.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
@@ -5563,9 +5457,9 @@
       "canonical_catalog_entity": "AF-PHASE-MANAGE"
     },
     {
-      "id": "FS-SILVER_AGENT_CODEX",
-      "skill": "silver-agent-codex",
-      "purpose": "Execute the silver-agent-codex skill as a catalog-backed step in AF-AGENT-DELEGATE.",
+      "id": "FS-SILVER_AGENT_CLAUDE",
+      "skill": "silver-agent-claude",
+      "purpose": "Execute the silver-agent-claude skill as a catalog-backed step in AF-AGENT-DELEGATE.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
       "inputs": [
@@ -5574,20 +5468,20 @@
         "relevant artifacts and state"
       ],
       "outputs": [
-        "silver-agent-codex work product or routing decision",
+        "silver-agent-claude work product or routing decision",
         "local step evidence"
       ],
       "v_loop": {
-        "id": "VL-FS-SILVER_AGENT_CODEX",
+        "id": "VL-FS-SILVER_AGENT_CLAUDE",
         "rollup_target": "flow_step",
-        "input_contract": "silver-agent-codex receives the parent flow intent and only the artifacts needed for its local responsibility.",
-        "work_product": "silver-agent-codex produces its documented skill output and evidence marker.",
+        "input_contract": "silver-agent-claude receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-agent-claude produces its documented skill output and evidence marker.",
         "verification": {
           "methods": [
             "testing"
           ],
           "artifact_refs": [
-            "skills/silver-agent-codex/SKILL.md"
+            "skills/silver-agent-claude/SKILL.md"
           ]
         },
         "validation": {
@@ -5605,7 +5499,7 @@
           "blocker_artifact": ".planning/BLOCKERS.md"
         },
         "evidence_refs": [
-          "EV-FS-SILVER_AGENT_CODEX"
+          "EV-FS-SILVER_AGENT_CLAUDE"
         ]
       },
       "reusable_by_flows": [
@@ -10247,22 +10141,6 @@
     },
     {
       "id": "EV-FS-DELEGATE-LAUNCH",
-      "producer": "FS-DELEGATE-CODEX-LAUNCH",
-      "artifact_or_tool_ref": ".planning/agent-<host>/<task-id>/",
-      "sufficiency_class": "inspection",
-      "staleness_key": "catalog-version+entity-contract",
-      "satisfies_v_loop_ref": "VL-FS-DELEGATE-CODEX-LAUNCH"
-    },
-    {
-      "id": "EV-FS-DELEGATE-LAUNCH",
-      "producer": "FS-DELEGATE-CODEX-ROUTE",
-      "artifact_or_tool_ref": ".planning/agent-<host>/<task-id>/",
-      "sufficiency_class": "inspection",
-      "staleness_key": "catalog-version+entity-contract",
-      "satisfies_v_loop_ref": "VL-FS-DELEGATE-CODEX-ROUTE"
-    },
-    {
-      "id": "EV-FS-DELEGATE-LAUNCH",
       "producer": "FS-DELEGATE-CURSOR-LAUNCH",
       "artifact_or_tool_ref": ".planning/agent-<host>/<task-id>/",
       "sufficiency_class": "inspection",
@@ -10478,12 +10356,12 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_ADD"
     },
     {
-      "id": "EV-FS-SILVER_AGENT_CODEX",
-      "producer": "FS-SILVER_AGENT_CODEX",
-      "artifact_or_tool_ref": "skills/silver-agent-codex/SKILL.md",
+      "id": "EV-FS-SILVER_AGENT_CLAUDE",
+      "producer": "FS-SILVER_AGENT_CLAUDE",
+      "artifact_or_tool_ref": "skills/silver-agent-claude/SKILL.md",
       "sufficiency_class": "testing",
       "staleness_key": "catalog-version+entity-contract",
-      "satisfies_v_loop_ref": "VL-FS-SILVER_AGENT_CODEX"
+      "satisfies_v_loop_ref": "VL-FS-SILVER_AGENT_CLAUDE"
     },
     {
       "id": "EV-FS-SILVER_AGENT_CURSOR",
@@ -11062,8 +10940,6 @@
         "VL-FS-ARTIFACT_REVIEW_ASSESSOR",
         "VL-FS-DELEGATE-BRIEF",
         "VL-FS-DELEGATE-CHECKPOINT",
-        "VL-FS-DELEGATE-CODEX-LAUNCH",
-        "VL-FS-DELEGATE-CODEX-ROUTE",
         "VL-FS-DELEGATE-CURSOR-LAUNCH",
         "VL-FS-DELEGATE-CURSOR-ROUTE",
         "VL-FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
@@ -11094,7 +10970,7 @@
         "VL-FS-SECURITY",
         "VL-FS-SILVER",
         "VL-FS-SILVER_ADD",
-        "VL-FS-SILVER_AGENT_CODEX",
+        "VL-FS-SILVER_AGENT_CLAUDE",
         "VL-FS-SILVER_AGENT_CURSOR",
         "VL-FS-SILVER_BENCHMARK",
         "VL-FS-SILVER_BLAST_RADIUS",
@@ -11331,7 +11207,7 @@
       "security": "AF-SECURE",
       "silver": "AF-ROUTE",
       "silver-add": "AF-PHASE-MANAGE",
-      "silver-agent-codex": "AF-AGENT-DELEGATE",
+      "silver-agent-claude": "AF-AGENT-DELEGATE",
       "silver-agent-cursor": "AF-AGENT-DELEGATE",
       "silver-agent-worker": "AF-AGENT-DELEGATE",
       "silver-benchmark": "AF-FAST-PATH",

@@ -34,19 +34,19 @@ sb_agent_delegation_v2_enabled \
 
 # Stage 6: direct delegate bash blocked without DIRECT_FALLBACK (any V2)
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=0
-! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
+! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp' \
   && check "unset V2 blocks direct delegate without fallback" pass || check "unset V2 blocks direct delegate without fallback" fail
 
 # V2=0 rollback: worker path off; direct delegate still requires fallback (stage 6)
 export SB_AGENT_DELEGATE_V2=0
 ! sb_agent_delegation_v2_enabled \
   && check "V2=0 disables worker path (rollback)" pass || check "V2=0 disables worker path (rollback)" fail
-! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
+! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp' \
   && check "V2=0 blocks direct delegate without fallback" pass || check "V2=0 blocks direct delegate without fallback" fail
 
 # V2=1 without fallback: blocked
 export SB_AGENT_DELEGATE_V2=1
-! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp' \
+! sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp' \
   && check "V2=1 blocks direct delegate without fallback" pass || check "V2=1 blocks direct delegate without fallback" fail
 
 export SB_AGENT_DELEGATE_DIRECT_FALLBACK=1
@@ -54,19 +54,15 @@ sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate
   && check "V2=1 allows delegate with DIRECT_FALLBACK" pass || check "V2=1 allows delegate with DIRECT_FALLBACK" fail
 
 # Substring spoof blocked
-! sb_orchestrator_parent_delegate_bash_allowed 'echo agent-codex-delegate.sh not a real invoke' \
+! sb_orchestrator_parent_delegate_bash_allowed 'echo agent-cursor-delegate.sh not a real invoke' \
   && check "substring spoof blocked" pass || check "substring spoof blocked" fail
 
-map_codex="$(jq -r '.migration_map.skill_to_entity["silver-agent-codex"]' "$CATALOG")"
 map_cursor="$(jq -r '.migration_map.skill_to_entity["silver-agent-cursor"]' "$CATALOG")"
-[[ "$map_codex" == "AF-AGENT-DELEGATE" ]] \
-  && check "post-flip codex maps AF-AGENT-DELEGATE" pass || check "post-flip codex maps AF-AGENT-DELEGATE" fail
+map_claude="$(jq -r '.migration_map.skill_to_entity["silver-agent-claude"]' "$CATALOG")"
 [[ "$map_cursor" == "AF-AGENT-DELEGATE" ]] \
   && check "post-flip cursor maps AF-AGENT-DELEGATE" pass || check "post-flip cursor maps AF-AGENT-DELEGATE" fail
-
-# Legacy map check (pre-flip or post-flip rollback)
-[[ "$map_codex" == "AF-EXECUTE" || "$map_codex" == "AF-AGENT-DELEGATE" ]] \
-  && check "codex maps to known AF" pass || check "codex maps to known AF" fail
+[[ "$map_claude" == "AF-AGENT-DELEGATE" ]] \
+  && check "post-flip claude maps AF-AGENT-DELEGATE" pass || check "post-flip claude maps AF-AGENT-DELEGATE" fail
 
 worker_map="$(jq -r '.migration_map.skill_to_entity["silver-agent-worker"]' "$CATALOG")"
 [[ "$worker_map" == "AF-AGENT-DELEGATE" ]] && check "worker skill maps delegation AF" pass || check "worker skill maps delegation AF" fail

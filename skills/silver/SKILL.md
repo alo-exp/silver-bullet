@@ -160,8 +160,8 @@ First strong match wins after complexity triage and conflict resolution.
 | "add phase", "insert phase", "remove phase", "edit phase", "phase list", "add to roadmap", "new phase in roadmap" | `silver:phase` | Phase CRUD in ROADMAP.md — sanctioned path to mutate the phase list |
 | "undo phase", "revert phase", "roll back phase", "undo plan", "revert commits for phase" | `silver:undo` | Safe phase/plan git revert with dependency checks and artifact cleanup |
 | "thread", "track this topic across sessions", "cross-session note", "track this concern" | `silver:thread` | Lightweight cross-session context threads for topic-specific tracking |
-| "delegate to codex", "run in codex", "codex subagent", "codex tui", "have codex implement", host supervises Codex executes | `silver:agent-codex` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Codex executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | "delegate to cursor", "run in cursor", "cursor subagent", "cursor-agent", "have cursor implement", host supervises Cursor executes | `silver:agent-cursor` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Cursor executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
+| "delegate to claude", "run in claude", "claude subagent", "claude tui", "have claude implement", host supervises Claude executes | `silver:agent-claude` | On-demand `AF-AGENT-DELEGATE` — host briefs and supervises native `AGENT-DELEGATE` worker; external Claude TUI executes (V2 default-on; `SB_AGENT_DELEGATE_V2=0` rollback) |
 | Any explicit legacy lifecycle request | SB equivalent unless the user explicitly requires an external plugin | Examples: plan phase -> `silver:plan`, execute phase -> `silver:execute`, verify -> `silver:verify`, ship -> `silver:ship` |
 
 ### Step 5: Apply ship/release disambiguation

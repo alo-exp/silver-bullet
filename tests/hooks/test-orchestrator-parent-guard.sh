@@ -216,7 +216,7 @@ rm -rf "$WORK3" 2>/dev/null || true
 
 # Delegate wrapper: stage 6 requires DIRECT_FALLBACK (default-on V2)
 unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK
-if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp'; then
+if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp'; then
   echo "FAIL: unset V2 must block direct delegate without fallback"
   FAIL=$((FAIL + 1))
 else
@@ -225,7 +225,7 @@ else
 fi
 export SB_AGENT_DELEGATE_V2=1
 unset SB_AGENT_DELEGATE_DIRECT_FALLBACK
-if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-codex-delegate.sh --work-dir /tmp'; then
+if sb_orchestrator_parent_delegate_bash_allowed 'bash scripts/agent-cursor-delegate.sh --work-dir /tmp'; then
   echo "FAIL: V2=1 must block direct delegate without fallback"
   FAIL=$((FAIL + 1))
 else
@@ -240,7 +240,7 @@ else
   echo "FAIL: V2=1 should allow delegate with DIRECT_FALLBACK"
   FAIL=$((FAIL + 1))
 fi
-if sb_orchestrator_parent_delegate_bash_allowed 'echo fake agent-codex-delegate.sh'; then
+if sb_orchestrator_parent_delegate_bash_allowed 'echo fake agent-cursor-delegate.sh'; then
   echo "FAIL: substring spoof must not allow delegate bash"
   FAIL=$((FAIL + 1))
 else

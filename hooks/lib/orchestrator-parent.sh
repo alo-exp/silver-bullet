@@ -126,7 +126,7 @@ sb_orchestrator_worker_template_for_skill() {
     silver-validate) printf 'VALIDATE' ;;
     silver-fast) printf 'FAST' ;;
     silver|silver-orchestrator) printf 'ROUTER' ;;
-    silver-agent-codex|silver-agent-cursor) printf 'AGENT-DELEGATE' ;;
+    silver-agent-cursor|silver-agent-claude) printf 'AGENT-DELEGATE' ;;
     *)
       if [[ "$skill" == silver-* ]]; then
         printf '%s' "$(printf '%s' "${skill#silver-}" | tr '[:lower:]' '[:upper:]')"
@@ -336,7 +336,7 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
 
-  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(codex|cursor)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-codex/invoke\.sh([[:space:]]|$)'; then
+  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/])(\./)?scripts/agent-(cursor|claude)-delegate\.sh([[:space:]]|$)|(^|[[:space:]/])(\./)?scripts/agent-claude/invoke\.sh([[:space:]]|$)'; then
     return 1
   fi
 
@@ -383,7 +383,7 @@ sb_orchestrator_parent_skill_allowed() {
     canonical="${canonical//:/-}"
   fi
   case "$canonical" in
-    silver|silver-orchestrator|silver-agent-codex|silver-agent-cursor) return 0 ;;
+    silver|silver-orchestrator|silver-agent-cursor|silver-agent-claude) return 0 ;;
     *) return 1 ;;
   esac
 }

@@ -90,12 +90,6 @@
     "FS-DELEGATE-CHECKPOINT": [
       "AF-AGENT-DELEGATE"
     ],
-    "FS-DELEGATE-CODEX-LAUNCH": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-DELEGATE-CODEX-ROUTE": [
-      "AF-AGENT-DELEGATE"
-    ],
     "FS-DELEGATE-CURSOR-LAUNCH": [
       "AF-AGENT-DELEGATE"
     ],
@@ -186,7 +180,7 @@
     "FS-SILVER_ADD": [
       "AF-PHASE-MANAGE"
     ],
-    "FS-SILVER_AGENT_CODEX": [
+    "FS-SILVER_AGENT_CLAUDE": [
       "AF-AGENT-DELEGATE"
     ],
     "FS-SILVER_AGENT_CURSOR": [

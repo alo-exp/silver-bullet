@@ -62,7 +62,7 @@ sb_agent_delegation_deactivate
 
 # shellcheck source=scripts/lib/agent-delegate-common.sh
 source "$REPO_ROOT/scripts/lib/agent-delegate-common.sh"
-artifact_dir="$WORK/.planning/agent-codex/task-2"
+artifact_dir="$WORK/.planning/agent-cursor/task-2"
 agent_delegate_write_degraded_fallback_evidence "$artifact_dir" codex task-2 SB_AGENT_DELEGATE_DIRECT_FALLBACK "harness test"
 [[ -f "$artifact_dir/degraded-fallback.jsonl" ]] && check "degraded fallback evidence written" pass || check "degraded fallback evidence written" fail
 grep -q 'EV-DELEGATE-DEGRADED-FALLBACK' "$artifact_dir/degraded-fallback.jsonl" \

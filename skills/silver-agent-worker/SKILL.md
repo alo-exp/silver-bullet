@@ -1,13 +1,13 @@
 ---
 name: silver-agent-worker
-description: Internal external-agent implementer contract for Codex/Cursor delegation child sessions. Not user-invocable — loaded by delegate wrappers when SB_AGENT_DELEGATE_V2=1.
+description: Internal external-agent implementer contract for Cursor/Claude delegation child sessions. Not user-invocable — loaded by delegate wrappers when SB_AGENT_DELEGATE_V2=1.
 user-invocable: false
 version: 0.1.0
 ---
 
 # silver-agent-worker — External Implementer Contract
 
-You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via `agent-codex-delegate.sh` or `agent-cursor-delegate.sh`. The host parent supervises; you execute only the bounded brief.
+You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via `agent-cursor-delegate.sh` or `agent-claude-delegate.sh`. The host parent supervises; you execute only the bounded brief.
 
 ## Role
 

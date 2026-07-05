@@ -23,8 +23,8 @@ Entire worker path requires **`SB_AGENT_DELEGATE_V2=1`** (session or env). When 
 
 1. `FS-DELEGATE-BRIEF` — verify brief.md exists, no secret patterns
 2. `FS-DELEGATE-GUARD_ON` — activate delegation guard via state lib
-3. `FS-DELEGATE-LAUNCH` — invoke host wrapper (`agent-codex-delegate.sh` or `agent-cursor-delegate.sh`)
-4. Host extensions: Codex (`FS-DELEGATE-CODEX-*`) or Cursor (`FS-DELEGATE-CURSOR-*`)
+3. `FS-DELEGATE-LAUNCH` — invoke host wrapper (`agent-cursor-delegate.sh` or `agent-claude-delegate.sh`)
+4. Host extensions: Cursor (`FS-DELEGATE-CURSOR-*`) or Claude (`FS-DELEGATE-CLAUDE-*`)
 5. `FS-DELEGATE-CHECKPOINT` — supervise logs, redacted progress only
 6. `FS-DELEGATE-VERIFY` — audit STATUS block vs brief; external success is a claim
 7. `FS-DELEGATE-RELAUNCH` — on verify fail, relaunch with `NEXT_RETRY_PROMPT` (max 2 attempts)

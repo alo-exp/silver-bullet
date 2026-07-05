@@ -4,7 +4,6 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 COMMON="${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
-CODEX="${REPO_ROOT}/scripts/agent-codex-delegate.sh"
 CURSOR="${REPO_ROOT}/scripts/agent-cursor-delegate.sh"
 
 PASS=0
@@ -62,16 +61,11 @@ grep -q 'exec stdout line 1' "$append_log" && grep -q 'test-delegate' "$append_l
 rm -f "$append_log"
 
 # Wrapper sourcing
-grep -q 'agent-delegate-common.sh' "$CODEX" && check "codex sources common lib" pass || check "codex sources common lib" fail
 grep -q 'agent-delegate-common.sh' "$CURSOR" && check "cursor sources common lib" pass || check "cursor sources common lib" fail
-grep -q 'agent_delegate_clear_matrix_env' "$CODEX" && check "codex clears matrix env" pass || check "codex clears matrix env" fail
 grep -q 'agent_delegate_clear_matrix_env' "$CURSOR" && check "cursor clears matrix env" pass || check "cursor clears matrix env" fail
-grep -q 'SB_AGENT_CODEX_LOG_FLOOR' "$CODEX" && check "codex log floor env" pass || check "codex log floor env" fail
-grep -q 'agent_delegate_append_invoke_output' "$CODEX" && check "codex exec log append" pass || check "codex exec log append" fail
-! grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$CODEX" && check "codex no inline matrix unset" pass || check "codex no inline matrix unset" fail
+! grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$CURSOR" && check "cursor no inline matrix unset" pass || check "cursor no inline matrix unset" fail
 
 bash -n "$COMMON" && check "common lib shell syntax" pass || check "common lib shell syntax" fail
-bash -n "$CODEX" && check "codex wrapper shell syntax" pass || check "codex wrapper shell syntax" fail
 bash -n "$CURSOR" && check "cursor wrapper shell syntax" pass || check "cursor wrapper shell syntax" fail
 
 echo "Results: $PASS passed, $FAIL failed"
