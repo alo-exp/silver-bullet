@@ -40,7 +40,7 @@ grep -q 'agentmemory' "$SKILL" && check "documents agentmemory capture" pass || 
 grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check "documents graphify capture" fail
 grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
 grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" pass || check "documents V2 default-on flag" fail
-grep -q 'silver-agent-cursor' "$SKILL" && check "contrast with agent-cursor sibling" pass || check "contrast with agent-cursor sibling" fail
+grep -q 'silver-agent-codex' "$SKILL" && check "contrast with agent-codex sibling" pass || check "contrast with agent-codex sibling" fail
 grep -q 'E2E-081' "$SKILL" && check "R9 E2E-081 learning" pass || check "R9 E2E-081 learning" fail
 grep -q 'E2E-110' "$SKILL" && check "E2E-110 auth policy" pass || check "E2E-110 auth policy" fail
 
@@ -84,7 +84,7 @@ grep -q 'prompt submitted' <<<"$monitor_out" \
   && check "monitor --once smoke" pass || check "monitor --once smoke" fail
 rm -f "$TMP_LOG"
 
-grep -q 'agent-claude/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
+grep -qF 'agent-(codex|claude)/invoke' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
   && check "orchestrator allows invoke.sh" pass || check "orchestrator allows invoke.sh" fail
 grep -q 'silver-agent-claude' "${REPO_ROOT}/hooks/lib/orchestrator-parent.sh" \
   && check "orchestrator skill allowlist" pass || check "orchestrator skill allowlist" fail

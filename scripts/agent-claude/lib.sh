@@ -54,8 +54,6 @@ agent_claude_delegate_env_names() {
 
 # Ephemeral CLAUDE_CONFIG_DIR + runtime state (E2E-105 parity for production delegation).
 agent_claude_prepare_lightweight_config_dir() {
-  local restore_var="${SB_AGENT_CLAUDE_CONFIG_DIR_RESTORE:-}"
-  [[ -z "$restore_var" && -z "${CLAUDE_CONFIG_DIR+x}" ]] || [[ -n "$restore_var" ]] || true
   if [[ -n "${SB_AGENT_CLAUDE_CONFIG_DIR_RESTORE+x}" ]]; then
     return 0
   fi

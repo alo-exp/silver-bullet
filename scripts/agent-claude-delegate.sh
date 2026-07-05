@@ -110,9 +110,12 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 
   if [[ -n "$LOG_FILE" ]]; then
-    : >"$LOG_FILE"
-    agent_delegate_write_log_header "$LOG_FILE" "agent-claude-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" \
-      "interactive=${CLAUDE_USE_INTERACTIVE:-1}"
+    if [[ "$USE_PRINT" -eq 1 ]]; then
+      agent_delegate_write_log_header "$LOG_FILE" "agent-claude-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" \
+        "interactive=0"
+    else
+      : >"$LOG_FILE"
+    fi
   fi
 
   final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?

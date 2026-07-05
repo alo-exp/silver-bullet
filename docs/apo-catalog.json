@@ -3613,6 +3613,7 @@
       },
       "tools": [],
       "owning_skills": [
+        "silver-agent-codex",
         "silver-agent-cursor",
         "silver-agent-claude"
       ],
@@ -11207,6 +11208,7 @@
       "security": "AF-SECURE",
       "silver": "AF-ROUTE",
       "silver-add": "AF-PHASE-MANAGE",
+      "silver-agent-codex": "AF-AGENT-DELEGATE",
       "silver-agent-claude": "AF-AGENT-DELEGATE",
       "silver-agent-cursor": "AF-AGENT-DELEGATE",
       "silver-agent-worker": "AF-AGENT-DELEGATE",

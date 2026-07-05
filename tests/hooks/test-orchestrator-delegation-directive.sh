@@ -55,10 +55,10 @@ af="$(jq -r '.args' "$(sb_orchestrator_directive_file)" | jq -r '.atomic_flow_id
 [[ "$template" == "AGENT-DELEGATE" ]] && check "worker template AGENT-DELEGATE" pass || check "worker template AGENT-DELEGATE" fail
 [[ "$af" == "AF-AGENT-DELEGATE" ]] && check "args atomic_flow_id" pass || check "args atomic_flow_id" fail
 
+[[ "$(sb_orchestrator_worker_template_for_skill silver-agent-codex)" == "AGENT-DELEGATE" ]] \
+  && check "mapper codex AGENT-DELEGATE" pass || check "mapper codex AGENT-DELEGATE" fail
 [[ "$(sb_orchestrator_worker_template_for_skill silver-agent-cursor)" == "AGENT-DELEGATE" ]] \
   && check "mapper cursor AGENT-DELEGATE" pass || check "mapper cursor AGENT-DELEGATE" fail
-[[ "$(sb_orchestrator_worker_template_for_skill silver-agent-claude)" == "AGENT-DELEGATE" ]] \
-  && check "mapper claude AGENT-DELEGATE" pass || check "mapper claude AGENT-DELEGATE" fail
 [[ "$(sb_orchestrator_worker_template_for_skill silver-agent-claude)" == "AGENT-DELEGATE" ]] \
   && check "mapper claude AGENT-DELEGATE" pass || check "mapper claude AGENT-DELEGATE" fail
 

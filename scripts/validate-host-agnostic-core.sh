@@ -70,6 +70,7 @@ HOOKS_ROOT = "hooks"
 
 # Bridge / runtime boundary files (host identifiers allowed).
 STRICT_ALLOWLIST = {
+    "skills/silver-agent-claude/SKILL.md",
     "skills/silver-agent-cursor/SKILL.md",
     "skills/silver-agent-worker/SKILL.md",
     "skills/silver/SKILL.md",

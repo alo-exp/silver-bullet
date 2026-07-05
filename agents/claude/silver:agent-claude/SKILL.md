@@ -12,7 +12,7 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/silver:agent-cursor`:** Cursor was merged first as a reference sibling host — both coexist. Use **agent-claude** when Claude Code TUI is the intended executor; use **agent-cursor** for Cursor CLI. Do not delete or conflate the two.
+**Contrast with `/silver:agent-codex`:** Codex was merged first as a reference sibling host — both coexist. Use **agent-claude** when Claude Code TUI is the intended executor; use **agent-codex** for Codex CLI. Do not delete or conflate the two.
 
 **Contrast with enterprise E2E matrix:** Reuses proven Claude invoke harness (`claude-interactive-invoke.expect`, OAuth auth, idle/quiet timeouts, 429 retry, isolated `CLAUDE_CONFIG_DIR`). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
@@ -297,7 +297,7 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-claude/` 
 ## References
 
 - Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md)
-- Cursor sibling (coexists): [`skills/silver-agent-cursor/SKILL.md`](../silver-agent-cursor/SKILL.md)
+- Codex sibling (coexists): [`skills/silver-agent-codex/SKILL.md`](../silver-agent-codex/SKILL.md)
 - Harness: `scripts/agent-claude/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/claude-interactive-invoke.expect`, `scripts/agent-claude-delegate.sh`
 - Live adapter: `tests/live/agents/claude/agent.sh`
 - Auth: `scripts/lib/claude-matrix-auth.sh`
