@@ -57,6 +57,23 @@ if [[ -f "${SB_ROOT}/scripts/validate-host-install-surface.sh" ]]; then
 fi
 
 if [[ "$DRY_RUN" != "1" ]]; then
+  if agent_claude_ensure_plugin_cache "$SB_ROOT"; then
+    :
+  else
+    PREFLIGHT_OK=0
+  fi
+else
+  printf 'SKIP (dry-run): plugin cache ensure\n'
+fi
+
+if [[ "$DRY_RUN" != "1" && -x "${SB_ROOT}/scripts/prune-stale-claude-user-hooks.sh" ]]; then
+  bash "${SB_ROOT}/scripts/prune-stale-claude-user-hooks.sh" >/dev/null 2>&1 || true
+  printf 'OK: pruned stale Claude user hooks\n'
+elif [[ "$DRY_RUN" == "1" ]]; then
+  :
+fi
+
+if [[ "$DRY_RUN" != "1" ]]; then
   auth_status="$("$CLI" auth status 2>/dev/null || true)"
   if printf '%s' "$auth_status" | grep -qiE 'not logged|unauthenticated|login required'; then
     printf 'ERROR: Claude not authenticated — run claude auth login before delegation\n' >&2

@@ -60,6 +60,8 @@ trap 'rm -rf "$TMP"' EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/install-claude.sh"
+# shellcheck source=scripts/lib/plugin-cache-version.sh
+source "${REPO_ROOT}/scripts/lib/plugin-cache-version.sh"
 HOME_DIR="$TMP/home"
 mkdir -p "$HOME_DIR"
 
@@ -139,7 +141,7 @@ else
   (( FAIL++ )) || true
 fi
 
-CURRENT_SB_CACHE_DIR="$(find "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
+CURRENT_SB_CACHE_DIR="$(sb_plugin_cache_latest_version_dir "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet" 2>/dev/null || true)"
 STABLE_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/current"
 if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$STABLE_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json"; then
   echo "PASS: Silver Bullet hook paths refreshed to stable alias in Claude settings"
