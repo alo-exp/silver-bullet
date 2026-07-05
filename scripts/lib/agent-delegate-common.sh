@@ -251,3 +251,34 @@ agent_delegate_write_degraded_fallback_evidence() {
     "$host" "$trigger" "$task_id" "$ts" "$(printf '%s' "$reason" | sed 's/"/\\"/g')" \
     >>"${artifact_dir}/degraded-fallback.jsonl"
 }
+
+# Pre-delegation bootstrap for opted-in Graphify + agentmemory (Claude/Codex/Cursor delegates).
+# Ensures graphify index/query freshness and agentmemory server/export exist before substantive edits.
+agent_delegate_preflight_recommended_tools() {
+  local work_dir="${1:-}" sb_root="${2:-}" host="${3:-claude}"
+  [[ -n "$work_dir" && -d "$work_dir" ]] || return 0
+  [[ -n "$sb_root" && -d "$sb_root" ]] || return 0
+
+  local core="${sb_root}/scripts/enterprise-e2e/lib/core.sh"
+  [[ -f "$core" ]] || {
+    printf '[agent-delegate] WARN: missing enterprise preflight lib at %s\n' "$core" >&2
+    return 0
+  }
+
+  # shellcheck source=scripts/enterprise-e2e/lib/core.sh
+  source "$core"
+  export SILVER_BULLET_RUNTIME="$host"
+  export SB_RUNTIME_HOST="$host"
+
+  if ! enterprise_e2e_code_intel_preflight "$sb_root" "$work_dir" 0; then
+    printf '[agent-delegate] ERROR: recommended-tools preflight failed (host=%s work_dir=%s)\n' \
+      "$host" "$work_dir" >&2
+    return 1
+  fi
+
+  local config_file="${work_dir}/.silver-bullet.json"
+  if [[ -f "$config_file" ]] && declare -f sb_agentmemory_record_usage >/dev/null 2>&1; then
+    sb_agentmemory_record_usage "$config_file" || true
+  fi
+  return 0
+}
