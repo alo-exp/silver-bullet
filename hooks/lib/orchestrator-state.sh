@@ -308,6 +308,14 @@ sb_orchestrator_on_composer_start() {
   [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
 
   # M-05: committed composition log artifact
+  local catalog_wf="" _sched_lib _evt_lib
+  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
+  if [[ -f "$_sched_lib" ]]; then
+    # shellcheck source=lib/orchestrator-scheduler.sh
+    source "$_sched_lib"
+    catalog_wf="$(sb_scheduler_composer_catalog_workflow_id "$composer_skill" 2>/dev/null || true)"
+    sb_scheduler_apply_doc_only_tailoring "$repo_root" "$composer_skill" "$intent" 2>/dev/null || true
+  fi
   if [[ -n "$repo_root" && -d "$repo_root/.planning" ]]; then
     local logfile
     logfile="$(sb_orchestrator_composition_log "$repo_root")"
@@ -318,16 +326,13 @@ sb_orchestrator_on_composer_start() {
       --arg intent "$intent" \
       --arg wid "$wf_id" \
       --arg flows "$flows_csv" \
-      '{at:$at, composer:$composer, intent:$intent, workflow_id:$wid, flows:$flows, mode:"autonomous"}' \
+      --arg swf "${catalog_wf:-}" \
+      '{at:$at, composer:$composer, intent:$intent, workflow_id:$wid, selected_workflow:(if $swf != "" then $swf else null end), flows:$flows, mode:"autonomous"}' \
       >>"$logfile" 2>/dev/null || true
   fi
 
   # Phase B: catalog-driven scheduler plan + dispatch records (runtime proof; parent Task spawn required).
-  local _sched_lib _evt_lib
-  _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
   if [[ -f "$_sched_lib" ]]; then
-    # shellcheck source=lib/orchestrator-scheduler.sh
-    source "$_sched_lib"
     local sched_plan
     sched_plan="$(sb_scheduler_plan_queue_from_state "$repo_root" 2>/dev/null || true)"
     if [[ -n "$sched_plan" && -n "$repo_root" && -d "$repo_root/.planning" ]]; then
@@ -340,8 +345,8 @@ sb_orchestrator_on_composer_start() {
     # shellcheck source=lib/orchestrator-event-log.sh
     source "$_evt_lib"
     sb_orchestrator_event_append "composer_start" "$(jq -nc \
-      --arg composer "$composer_skill" --arg intent "$intent" --arg wid "${wf_id:-}" \
-      '{composer: $composer, intent: $intent, workflow_id: $wid}')" 2>/dev/null || true
+      --arg composer "$composer_skill" --arg intent "$intent" --arg wid "${wf_id:-}" --arg swf "${catalog_wf:-}" \
+      '{composer: $composer, intent: $intent, workflow_id: $wid, selected_workflow: (if $swf != "" then $swf else null end)}')" 2>/dev/null || true
   fi
 
   printf '%s' "$wf_id"
