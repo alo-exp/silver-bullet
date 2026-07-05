@@ -57,12 +57,22 @@ bash scripts/agent-codex/invoke.sh --use-exec \
 
 ## Ship gates (SB-repo harness)
 
-| Gate | Status |
-|------|--------|
-| thermo-nuclear-code-quality | **Pending** — run before merge |
-| thermo-nuclear-review | **Pending** — run before merge |
-| security-review | **Pending** — run before merge |
-| Sentinel re-audit | **Pending** — hooks/scripts touched |
+| Gate | Status | Notes |
+|------|--------|-------|
+| thermo-nuclear-code-quality | **PASS** (post-fix) | Initial FAIL: `SB_AGENT_CODEX_DELEGATE` guard skipped RTK/timeouts on direct worker path. Fixed via `agent_codex_apply_runtime_env` in [`lib.sh`](../scripts/agent-codex/lib.sh). |
+| thermo-nuclear-review | **PASS** (post-fix) | Same Medium regression; resolved in fixes commit. Low items: `--skip-preflight` docs, invoke.sh orchestrator test gap — accepted. |
+| security-review | **PASS** | No medium+ findings; prompt secret scan + matrix env isolation validated. |
+| Sentinel re-audit | **PASS** | Harness/scripts re-audit — no CRITICAL/HIGH/MEDIUM; see [SENTINEL audit](../docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-codex.md). |
+
+**Structural tests:** 49/49 PASS (`bash tests/scripts/test-agent-codex-skill.sh`, exit 0) — includes behavioral direct-delegate runtime env assertions.
+
+---
+
+## Review fixes (2026-07-05)
+
+1. Extracted `agent_codex_apply_runtime_env` in `lib.sh`; delegate calls it before lightweight env (fixes AGENT-DELEGATE worker path).
+2. Aliased `SB_AGENT_CODEX_LOG_FLOOR` in `agent_delegate_normalize_failure_class`.
+3. Added behavioral tests for direct delegate RTK/timeout defaults.
 
 ---
 
