@@ -1,0 +1,77 @@
+#!/usr/bin/expect -f
+# PTY contract: folder trust prompt detection (no live Claude API).
+# Validates trust prompt is NOT classified as bypass disclaimer.
+
+proc strip_ansi {text} {
+  regsub -all {\x1b\[[0-9;?]*[ -/]*[@-~]} $text "" text
+  regsub -all {\x1b\][^\x07]*(\x07|\x1b\\)} $text "" text
+  regsub -all {\x1b.} $text "" text
+  return $text
+}
+
+proc folder_trust_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {[regexp -nocase {Quick.{0,12}safety.{0,12}check} $plain]} {
+    return 1
+  }
+  if {[regexp -nocase {trust.{0,24}folder|safety.{0,12}check:.{0,40}project} $plain]} {
+    if {[regexp -nocase {Yes.{0,8}trust|1\.\s*Yes} $plain]} {
+      return 1
+    }
+  }
+  return 0
+}
+
+proc bypass_disclaimer_confirm_only {buffer} {
+  set plain [strip_ansi $buffer]
+  if {[folder_trust_visible $buffer]} {
+    return 0
+  }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} {
+    return 0
+  }
+  if {![regexp -nocase {Esctocancel|Esc to cancel} $plain]} {
+    return 0
+  }
+  if {[regexp -nocase {Bypass} $plain] && [regexp -nocase {Permissions} $plain]} {
+    return 1
+  }
+  return 0
+}
+
+proc should_accept_bypass_disclaimer {buffer} {
+  if {[folder_trust_visible $buffer]} {
+    return 0
+  }
+  if {[bypass_disclaimer_confirm_only $buffer]} {
+    return 1
+  }
+  return 0
+}
+
+set fixture [file normalize [file join [file dirname $argv0] .. fixtures folder-trust-prompt.ansi]]
+if {![file exists $fixture]} {
+  puts stderr "FAIL: missing fixture $fixture"
+  exit 1
+}
+
+set fh [open $fixture r]
+fconfigure $fh -translation binary
+set bytes [read $fh]
+close $fh
+
+if {![folder_trust_visible $bytes]} {
+  puts stderr "FAIL: folder_trust_visible did not match fixture"
+  exit 1
+}
+if {[should_accept_bypass_disclaimer $bytes]} {
+  puts stderr "FAIL: trust prompt misclassified as bypass disclaimer"
+  exit 1
+}
+if {[bypass_disclaimer_confirm_only $bytes]} {
+  puts stderr "FAIL: bypass_disclaimer_confirm_only matched trust prompt"
+  exit 1
+}
+
+puts "PASS: folder trust contract (fixture bytes, no live API)"
+exit 0

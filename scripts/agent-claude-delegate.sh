@@ -129,6 +129,9 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     if ! agent_delegate_check_log_floor "$LOG_FILE" "$log_floor" "agent-claude"; then
       final_exit=1
     fi
+    if ! agent_delegate_check_workflow_markers "$LOG_FILE" "agent-claude"; then
+      final_exit=1
+    fi
     agent_delegate_write_log_footer "$LOG_FILE" "$final_exit" "$attempt" "agent-claude-delegate"
   elif [[ -n "$LOG_FILE" && ! -f "$LOG_FILE" ]]; then
     agent_delegate_write_fallback_log "$LOG_FILE" "agent-claude-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" "$final_exit" "$final_output"
