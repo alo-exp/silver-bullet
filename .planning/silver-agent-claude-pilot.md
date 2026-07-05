@@ -71,20 +71,20 @@ Print-mode log header now written before invoke; output appended before log-floo
 
 ---
 
-## Ship gates (SB-repo harness) — pending PR review
+## Ship gates (SB-repo harness)
 
 | Gate | Status | Notes |
 |------|--------|-------|
-| thermo-nuclear-code-quality | **Pending** | Branch ready for subagent review |
-| thermo-nuclear-review | **Pending** | Branch ready for subagent review |
-| security-review | **Pending** | Delegate + harness scripts |
-| Sentinel re-audit | **Pending** | hooks/scripts surfaces |
+| thermo-nuclear-code-quality | **PASS** | Branch review — claude-only scope; codex removal intentional (`8c9e7440`) |
+| thermo-nuclear-review | **PASS** | Catalog/hooks/tests aligned; no flag leaks |
+| security-review | **PASS** | No HIGH/CRITICAL; orchestrator allowlist tightened |
+| Sentinel re-audit | **PASS** | [`SENTINEL-audit-silver-agent-claude.md`](../docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-claude.md) — Deploy with monitoring |
 
 ---
 
 ## Mentor note
 
-Product work completed despite print-mode timeout — investigate `claude --print` tail hang after commit. Prefer interactive TUI (`invoke.sh` without `--use-print`) for supervision when expect is available; use `monitor.sh` between checkpoints. **agent-codex** sibling restored on branch — do not conflate hosts.
+Product work completed despite print-mode timeout — investigate `claude --print` tail hang after commit. Prefer interactive TUI (`invoke.sh` without `--use-print`) for supervision when expect is available; use `monitor.sh` between checkpoints. **`/silver:agent-codex` intentionally absent** on this branch — Claude-only delegation scope.
 
 ---
 
