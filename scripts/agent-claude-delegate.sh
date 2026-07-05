@@ -58,6 +58,11 @@ fi
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 
+if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "claude"; then
+  printf 'ERROR: recommended-tools preflight failed — fix Graphify/agentmemory before delegation\n' >&2
+  exit 2
+fi
+
 AGENT_SH="${SB_ROOT}/tests/live/agents/claude/agent.sh"
 [[ -f "$AGENT_SH" ]] || {
   printf 'ERROR: missing Claude live adapter at %s (full SB checkout required)\n' "$AGENT_SH" >&2
