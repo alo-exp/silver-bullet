@@ -5,6 +5,10 @@
 **Mechanism:** [`/silver:agent-claude`](../../skills/silver-agent-claude/SKILL.md) — **not** legacy Round 9 Gate 3 matrix  
 **Vision anchor:** [`docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md`](../../docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md)
 
+## Complexity policy (mandatory)
+
+Autonomous certification requires **complex multi-workflow goals** — never smoke-only (`npm test`), single-step tasks, or health-check verification. See auto-e2e `CURSOR-MULTIWF-CRITERIA.md`. Codex smoke runs flagged for re-run under this bar.
+
 ## Why a fresh track
 
 Prior Claude enterprise E2E (6/22 registry, possible 22/22 narrative) exercised the **matrix harness** with operator babysitting. That is **not** the autonomous vision proof target per PRODUCT-VISION §6.2.
