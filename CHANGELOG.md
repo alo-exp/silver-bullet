@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.50.5] — 2026-07-05
+
+Patch release: **tri-host pre-release smoke gate** — mandatory 12/12 isolated host smoke before tag (closes v0.50.4 gap); agent-codex harness improvements; Cursor CLI smoke timeout aligned to live API latency.
+
+## Features
+- `feat(agent-codex)`: v0.2.0 harness dir, R9 learnings, pilot PASS (`5ad16128`)
+
+## Fixes
+- `fix(agent-codex)`: close sibling-prompt gaps from compliance audit (`b7d3b76e`)
+- `fix(agent-codex)`: unify runtime env for direct delegate worker path (`da752ec5`)
+- `fix(pre-release)`: HOST_API_KEY alias and operator `~/.silver-bullet/cursor-api-key` fallback (`7b451552`)
+- `fix(pre-release)`: Cursor CLI smoke default timeout 120s → 300s for live API routing check
+
+## Verification
+- `RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh` — **12/12 PASS** (tri-host isolated smoke)
+- `bash tests/run-all-tests.sh` — **5068 passed, 0 failed (6/6 suites green)**
+- `bash scripts/run-apo-authoring-compliance.sh` — 26/26 PASS
+- `test-site-content-freshness.sh` + `test-site-doc-freshness.sh` — PASS
+
+---
+
 ## [0.50.4] — 2026-07-05
 
 Patch release: **pre-release test hardening** — full `run-all-tests.sh` green gate (5349/5349) before ship; fixes delegation v0.50.3 fallout and version-alignment drift.

@@ -56,7 +56,7 @@ if [[ ! -d "$plugin_dir" ]]; then
   exit 1
 fi
 
-timeout_seconds="${CURSOR_AGENT_TIMEOUT:-120}"
+timeout_seconds="${CURSOR_AGENT_TIMEOUT:-300}"
 model="${CURSOR_AGENT_MODEL:-${CURSOR_MODEL:-}}"
 
 out="$(
@@ -78,7 +78,7 @@ import sys
 cli = os.environ["CURSOR_AGENT_CLI"]
 api_key = os.environ["CURSOR_API_KEY"]
 prompt = os.environ["CURSOR_AGENT_PROMPT"]
-timeout = int(os.environ.get("CURSOR_AGENT_TIMEOUT") or "120")
+timeout = int(os.environ.get("CURSOR_AGENT_TIMEOUT") or "300")
 model = os.environ.get("CURSOR_AGENT_MODEL") or ""
 workspace = os.environ["CURSOR_AGENT_WORKSPACE"]
 plugin_dir = os.environ["CURSOR_AGENT_PLUGIN_DIR"]
