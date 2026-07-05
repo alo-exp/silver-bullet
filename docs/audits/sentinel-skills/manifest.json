@@ -322,6 +322,20 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "silver-agent-claude",
+    "path": "skills/silver-agent-claude/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-claude.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-05",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "0e4a4f5c290ae8ae2a872ffaea9cc819094738d7bae2f82f7a35c1264b2fc731",
+    "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Claude parent skill."
+  },
+  {
     "skill": "silver-agent-codex",
     "path": "skills/silver-agent-codex/SKILL.md",
     "sentinel_version": "2.3.0",
@@ -754,6 +768,20 @@
     "agent_bundles_parity": "verified",
     "content_sha256": "96a831a2faf5b942aac9a2f396c280bbd2d46e19c4cbc13655294ddbecc80edc",
     "evidence_note": "Initial sentinel row for multi-ai-task skill added in v0.48.3 cycle."
+  },
+  {
+    "skill": "silver-new-workflow",
+    "path": "skills/silver-new-workflow/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-new-workflow.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-05",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "dce86017db9e772a1db9b48c7bf50e2663a0d85fdc9ab5e4d1682f255ed50577",
+    "evidence_note": "Greenfield SENTINEL pass for meta-workflow authoring skill."
   },
   {
     "skill": "silver-orchestrator",
