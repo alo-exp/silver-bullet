@@ -1,18 +1,105 @@
 ---
 name: silver-multi-ai
-description: Use this skill to dispatch any task across multiple LLM models in parallel and consolidate their outputs into a single artifact. Handles cross-model deduplication, conflict resolution, and result aggregation. Use when (a) you want ≥2 independent answers to triangulate, (b) a task benefits from model diversity (research, code review, fact-checking, ideation, writing critique, etc.), or (c) you need one consolidated artifact merging N model outputs with conflict resolution.
+description: >
+  SB catalog-backed AF-DECIDE flow step (FS-SILVER_MULTI_AI): dispatch any task across multiple LLM models in parallel and consolidate outputs into a single artifact with dedup, conflict resolution, and evidence markers. Use when (a) ≥2 independent answers triangulate, (b) model diversity helps (research, code review, fact-checking, ideation), or (c) one consolidated artifact must merge N model outputs.
 argument-hint: "<task-prompt> [--models m1,m2,...] [--out <dir>] [--schema <json|file>] [--mode quick|standard|thorough] [--no-auto-inject] [--lite]"
 user-invocable: false
-version: 2.3.0
+version: 2.4.0
 ---
 
 # /silver:multi-ai — Multi-Model Orchestration
 
-Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM models in parallel, capture each response, then merge into a single artifact.
+SB **parent orchestrator** for parallel multi-model dispatch within **AF-DECIDE**
+(`FS-SILVER_MULTI_AI`). Parent dispatches N model workers in parallel and
+consolidates locally; do not run per-model execution inline in parent orchestrator
+mode.
 
-**Task-agnostic.** Works for any task the user wants done — research, code review, fact-checking, ideation, translation verification, writing critique, decision support, etc. The task content is whatever the user provides as the prompt.
+**Canonical contracts:** `docs/composable-flows-contracts.md` (FLOW 4),
+`docs/apo-catalog.json` (`FS-SILVER_MULTI_AI`, `EV-FS-SILVER_MULTI_AI`),
+`docs/APO-AUTHORING-COMPLIANCE.md`.
 
-**What this skill does:**
+**Catalog:** flow step `FS-SILVER_MULTI_AI` · atomic flow `AF-DECIDE` ·
+evidence `EV-FS-SILVER_MULTI_AI` · V-loop `VL-FS-SILVER_MULTI_AI`.
+
+Generic multi-model orchestration + consolidation. Dispatch the same task to N LLM
+models in parallel, capture each response, then merge into a single artifact.
+
+**Task-agnostic.** Works for any task the user provides — research, code review,
+fact-checking, ideation, translation verification, writing critique, decision
+support, etc.
+
+## Standard composition chain
+
+When invoked from **`silver:research`** or other AF-DECIDE parents:
+
+```
+FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → [silver:multi-ai when user explicitly requests MultAI]
+→ FLOW 3 apply pass → handoff to silver:feature | silver:devops | done
+```
+
+MultAI is **opt-in only** for the current task (see `skills/silver-research/SKILL.md`).
+Standalone `/silver:multi-ai` invocation skips the research composer queue.
+
+## Parent/worker routing
+
+| Role | Responsibility |
+|------|----------------|
+| **Parent orchestrator** | Resolve models, dispatch prompt, capture outputs, run consolidation phases, write evidence |
+| **Model workers** | One isolated execution per model; workers do not see each other |
+| **Consolidation subprocess** | Parent-owned; may use extractor/verifier models in `thorough` mode |
+
+Subagents spawned via the host `Task` tool MUST use **`composer-2.5` only** (never Fast).
+
+## Step 0 — Resolve scope and models (HARD)
+
+1. Parse `$ARGUMENTS` / task prompt; confirm `--out` directory (default `./multi-ai-out/<timestamp>/`).
+2. Resolve models before dispatch:
+
+```bash
+python3 scripts/multi-ai-task-models.py --json
+```
+
+Print `host`, `plan`, and the resolved model list. Use `--lite` or `--models` overrides per flags below.
+3. Record session scope:
+
+```bash
+mkdir -p "$OUT_DIR"
+jq -n \
+  --arg prompt "$TASK_PROMPT" \
+  --arg mode "${MODE:-standard}" \
+  --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  '{task_prompt:$prompt, mode:$mode, started_at:$at}' \
+  > "$OUT_DIR/.multi-ai-session.json"
+```
+
+4. **FORBIDDEN** to dispatch before model resolution completes.
+5. On abort: preserve partial `<model-slug>.md` files; note failures in `run-manifest.json`.
+
+## Enforcement queue
+
+**Within `silver:research`:** parent queue is `silver:clarify` → optional `silver:multi-ai`
+(user-requested MultAI only) → `silver:clarify` apply before implementation handoff.
+
+**Standalone:** Step 0 → dispatch → consolidate → output contract. No implementation
+atoms run until a parent composer records its own pre-exec markers.
+
+## Routing and pre-flight
+
+1. Banner: `SB ► multi-ai: {$ARGUMENTS} [AF-DECIDE FS-SILVER_MULTI_AI]`
+2. Mandatory Graphify when exploring repo context for the task prompt:
+
+```bash
+graphify query "context related to <task topic>" --graph graphify-out/graph.json --budget 2000
+```
+
+3. When opted in, save decisions via agentmemory MCP; run `graphify update .` after repo edits triggered by consolidation follow-ups.
+
+## Non-skippable
+
+Model resolution (Step 0), output directory creation, `run-manifest.json` with
+`phases_completed`, and `consolidated.md` for `standard`/`thorough` modes.
+
+## What this skill does
 1. Dispatches the user's prompt to N LLM models in parallel
 2. Captures each model's full response
 3. Extracts structured items from each response (rows, claims, candidates, etc.)
@@ -71,13 +158,7 @@ Generic multi-model orchestration + consolidation. Dispatch the same task to N L
 
 ### Default model discovery
 
-**Step 0 — resolve models (medium reasoning only):**
-
-```bash
-python3 scripts/multi-ai-task-models.py --json
-```
-
-This uses the **same model inventory as `/silver:review-fix-ladder`** for the active host (from `SILVER_BULLET_RUNTIME`) but pins **reasoning effort to `medium` only**. Print `host`, `plan`, and the resolved model list before dispatching.
+See **Step 0 — Resolve scope and models** above. Additional resolver details:
 
 | Host | Source | Notes |
 |------|--------|-------|
@@ -331,8 +412,28 @@ A self-review run (also on 2026-06-27) used the skill recursively to review itse
 
 ---
 
+## Output contract
+
+Return (V-loop `VL-FS-SILVER_MULTI_AI` / evidence `EV-FS-SILVER_MULTI_AI`):
+
+| Field | Requirement |
+|-------|-------------|
+| `--out` path | Directory with all phase artifacts |
+| `run-manifest.json` | Models, timing, mode, `schema_auto_injected`, `phases_completed` |
+| `consolidated.md` | Required for `standard`/`thorough`; optional for `quick` |
+| `conflicts.md` | Required when conflicts were resolved (`standard`/`thorough`) |
+| Per-model raw outputs | `<model-slug>.md` for each successful dispatch |
+| Blockers | Any failed models noted in `run-manifest.json → models_failed` |
+
+Hand consolidated artifact path to the parent AF-DECIDE composer (e.g. `silver:research`
+apply pass) when invoked from a workflow queue.
+
+---
+
 ## See also
 
-- `silver-bullet` — for managing the SDLC workflow that may consume `silver:multi-ai` outputs
-- `find-skills` — to discover other SB skills
-- For a deep 8-phase research methodology (when invoking a per-model prompt for research), use the host `deep-research` skill skill if available, or inline the methodology in the dispatch prompt
+- `docs/composable-flows-contracts.md` — AF-DECIDE / FLOW 4 catalog
+- `skills/silver-research/SKILL.md` — parent composer that optionally invokes MultAI
+- `silver-bullet` — SDLC workflow that may consume `silver:multi-ai` outputs
+- `find-skills` — discover other SB skills
+- For deep 8-phase research methodology per model, use the host `deep-research` skill or inline methodology in the dispatch prompt
