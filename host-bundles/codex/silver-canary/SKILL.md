@@ -14,6 +14,14 @@ SB-owned post-deploy confidence gate. It observes the released system after a
 deployment and records evidence instead of treating a green deploy command as
 user safety.
 
+**Pre-execution** (blocks runtime watch edits until recorded):
+
+`silver:blast-radius` → `silver:plan`
+
+**Post-execution:** `silver:execute` → `silver:verify` → `silver:ship`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-canary` composer).
+
 ## Output
 
 Write or update `.planning/CANARY.md`.

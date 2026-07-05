@@ -15,6 +15,14 @@ SB-owned test engineering for creating, repairing, auditing, and proving tests.
 It complements `tdd`, `testability`, `verify-tests`, and `silver:verify`; it
 does not replace the final verification gate.
 
+**Pre-execution** (blocks test edits until recorded):
+
+`silver:plan` → `silver:validate`
+
+**Post-execution:** `silver:execute` → `silver:verify`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-test` composer).
+
 Use this skill when the user asks to add tests, generate browser tests, repair
 broken tests, audit test quality, speed up a test suite, or challenge a suite
 with mutation-style cases.

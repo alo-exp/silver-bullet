@@ -113,7 +113,7 @@ parse_guard_pre_exec() {
   done
 
   case "$composer" in
-    silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow)
+    silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow|silver-refactor|silver-test)
       markers+=("silver-validate")
       ;;
   esac
@@ -156,6 +156,7 @@ parse_orchestrator_pre_exec() {
 }
 
 COMPOSERS=(
+  silver
   silver-feature
   silver-ui
   silver-devops
@@ -164,6 +165,15 @@ COMPOSERS=(
   silver-fast
   silver-release
   silver-new-workflow
+  silver-benchmark
+  silver-canary
+  silver-content
+  silver-deploy
+  silver-forensics
+  silver-incident
+  silver-refactor
+  silver-retro
+  silver-test
 )
 
 echo "=== composition triple alignment ==="

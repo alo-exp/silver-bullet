@@ -15,6 +15,14 @@ SB-owned benchmark workflow for repeatable evaluation. External providers may
 enrich the run only when installed and requested; SB owns the fixture, scoring,
 evidence, and final decision.
 
+**Pre-execution** (blocks benchmark runs until recorded):
+
+`silver:context` → `silver:plan`
+
+**Post-execution:** `silver:execute` → `silver:verify` → `silver:ensure-docs`
+
+Queue source: `hooks/lib/orchestrator-state.sh` (`silver-benchmark` composer).
+
 ## Output
 
 Write or update `.planning/BENCHMARK.md`.

@@ -52,10 +52,18 @@ resolve_target() {
 
   if [[ "$raw" =~ ^WF- ]]; then
     wf_id="$raw"
-    local catalog_slug
+    local catalog_slug owning_skill
     catalog_slug="$(jq -r --arg id "$wf_id" '.workflows[] | select(.id == $id) | .slug // empty' "$CATALOG")"
+    owning_skill="$(jq -r --arg id "$wf_id" '.workflows[] | select(.id == $id) | .owning_skill // empty' "$CATALOG")"
     [[ -z "$catalog_slug" ]] && return 1
-    if [[ "$wf_id" =~ ^WF-SILVER- ]]; then
+    if [[ -n "$owning_skill" ]]; then
+      skill="$owning_skill"
+      if [[ "$skill" == silver-* ]]; then
+        slug="${skill#silver-}"
+      else
+        slug="$skill"
+      fi
+    elif [[ "$wf_id" =~ ^WF-SILVER- ]]; then
       slug="${catalog_slug#silver-}"
       if [[ "$catalog_slug" == silver-* ]]; then
         skill="$catalog_slug"
@@ -273,7 +281,7 @@ parse_guard_pre_exec() {
   done
 
   case "$composer" in
-    silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow)
+    silver-feature|silver-ui|silver-devops|silver-fast|silver-new-workflow|silver-refactor|silver-test)
       markers+=("silver-validate")
       ;;
   esac

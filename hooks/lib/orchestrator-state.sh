@@ -12,7 +12,7 @@ sb_orchestrator_composition_log() {
 
 sb_orchestrator_is_composer_skill() {
   case "$1" in
-    silver-feature|silver-ui|silver-devops|silver-bugfix|silver-deep-research|silver-release|silver-fast|silver-new-workflow)
+    silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-deep-research|silver-release|silver-fast|silver-new-workflow|silver-benchmark|silver-canary|silver-content|silver-deploy|silver-forensics|silver-incident|silver-refactor|silver-retro|silver-test)
       return 0
       ;;
     *)
@@ -73,6 +73,37 @@ sb_orchestrator_default_queue_for_composer() {
     silver-release)
       # FLOW 18 delivery tail — audit/gap steps are parent-driven (see silver:release SKILL.md).
       printf '%s' 'FLOW-QUALITY-GATE,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
+      ;;
+    silver)
+      printf '%s' 'silver-context'
+      ;;
+    silver-benchmark)
+      printf '%s' 'silver-context,silver-plan,silver-execute,silver-verify,silver-ensure-docs'
+      ;;
+    silver-canary)
+      printf '%s' 'silver-blast-radius,silver-plan,silver-execute,silver-verify,silver-ship'
+      ;;
+    silver-content)
+      printf '%s' 'silver-clarify,silver-plan,silver-execute,silver-verify,silver-ensure-docs'
+      ;;
+    silver-deploy)
+      printf '%s' 'silver-blast-radius,devops-quality-gates,silver-plan,silver-execute,silver-verify,security,silver-secure,silver-ship'
+      ;;
+    silver-forensics)
+      printf '%s' 'silver-debug,silver-execute,silver-ensure-docs,silver-validate'
+      ;;
+    silver-incident)
+      printf '%s' 'silver-blast-radius,silver-debug,silver-plan,silver-execute,security,silver-secure,silver-verify,silver-ensure-docs'
+      ;;
+    silver-refactor)
+      post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
+      printf '%s' "silver-plan,silver-validate,silver-execute,${post_exec}"
+      ;;
+    silver-retro)
+      printf '%s' 'silver-context,silver-execute,silver-ensure-docs'
+      ;;
+    silver-test)
+      printf '%s' 'silver-plan,silver-validate,silver-execute,silver-verify'
       ;;
     *)
       post_exec="$(sb_orchestrator_post_exec_queue 'FLOW-QUALITY-GATE-PRESHIP')"
