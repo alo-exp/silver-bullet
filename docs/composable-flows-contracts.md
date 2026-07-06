@@ -97,7 +97,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 
 ### `WF-SILVER-ROUTER`
 
-- Slug: `silver-router`
+- Slug: `silver`
 - Type: `dynamic_route`
 - Final intent gate: `INTENT-GATE-DEFAULT`
 
