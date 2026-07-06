@@ -41,7 +41,7 @@ assert_ok "detects usage limit in log" is_quota_failure "" "$TMPLOG"
 assert_fail "rejects unrelated timeout" is_quota_failure "ERROR: timed out waiting for Claude response" ""
 
 script_body="$(cat "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh")"
-if printf '%s' "$script_body" | grep -qF 'SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL'; then
+if grep -qF 'SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL' <<<"$script_body"; then
   echo "PASS: matrix script documents quota retry interval"
   ((PASS++)) || true
 else
