@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.51.2] — 2026-07-06
+
+Patch release: semantic-compress hook test isolation, agent bundle mirror sync, Stage 4a site scan completion, and pre-release gate site freshness wiring.
+
+## Fixes
+- `fix(test)`: isolate `test-semantic-compress-hook.sh` from active repo `.planning/` E2E state (`a8403113`)
+
+## Chores
+- `chore(sync)`: regenerate agent bundle mirrors and template base after create-release skill doc sync (`a8403113`)
+- `docs(site)`: complete Stage 4a public site scan — changelog, release workflow, orchestrator, enterprise status (`1315ceed`)
+- `docs(site)`: wire site freshness tests into `scripts/pre-release-gate.sh` (`1315ceed`)
+
+---
+
 ## [0.51.1] — 2026-07-06
 
 Patch release: CI green gate enforcement, scheduler stdout leak fix, completion-audit enterprise policy alignment, and CI runner compatibility for agent/E2E structural tests.
