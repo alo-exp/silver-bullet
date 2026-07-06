@@ -171,6 +171,8 @@ rm -f "$BAD_LOG"
 rm -f "$STATE_DIR/orchestrator-worker-active.json"
 
 # E2E-096: negated autonomy summary must not trip babysitting (row 10 stream-json)
+mkdir -p "$FIXTURE/docs"
+touch "$FIXTURE/docs/API.md"
 ROW10_FP_LOG="$(mktemp)"
 cat >"$ROW10_FP_LOG" <<'LOG'
 HARNESS graphify: graphify query "silver-content routes hooks skills orchestrator"

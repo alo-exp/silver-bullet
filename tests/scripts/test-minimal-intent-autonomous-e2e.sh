@@ -51,7 +51,9 @@ done
 
 bash "$DRIVER" --help >/dev/null 2>&1 && check "driver --help" pass || check "driver --help" fail
 
-dry_out="$(bash "$DRIVER" start --row MI-01 --dry-run 2>&1)" || true
+dry_work_dir="$(mktemp -d "${TMPDIR:-/tmp}/minimal-intent-dry-XXXXXX")"
+trap 'rm -rf "$dry_work_dir"' EXIT
+dry_out="$(bash "$DRIVER" start --row MI-01 --dry-run --work-dir "$dry_work_dir" 2>&1)" || true
 grep -q 'run_id=' <<<"$dry_out" && check "start dry-run creates run_id" pass || check "start dry-run creates run_id" fail
 grep -q 'vision.md' <<<"$dry_out" && check "dry-run copies vision" pass || check "dry-run copies vision" fail
 
