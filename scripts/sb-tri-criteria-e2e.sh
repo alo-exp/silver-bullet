@@ -3,7 +3,7 @@
 #
 # Usage:
 #   bash scripts/sb-tri-criteria-e2e.sh preflight [--track TC-01|TC-02|TC-03]
-#   bash scripts/sb-tri-criteria-e2e.sh start --track TC-01 [--dry-run]
+#   bash scripts/sb-tri-criteria-e2e.sh live --track TC-01 [--host cursor|claude|codex]
 #   bash scripts/sb-tri-criteria-e2e.sh score --run <run-id> --track TC-01 [--log PATH]
 #   bash scripts/sb-tri-criteria-e2e.sh status [--run <run-id>]
 #
@@ -33,6 +33,11 @@ Commands:
   score --run ID     Score blocking outcomes from session log
   live --track ID    Live verify via flow-advance + product gate
   cold --track ID    Cold verify via flow-advance (no bootstrap)
+
+Host (--host on live):
+  cursor (default)   Cursor parent orchestrator + Task worker markers
+  claude             agent-claude delegation + orchestrator drain
+  codex              agent-codex delegation (--use-exec) + orchestrator drain
   status [--run ID]  Show run ledger(s)
 
 Options:
@@ -40,6 +45,7 @@ Options:
   --run ID           Run directory name under runs/
   --log PATH         Override session log for score
   --work-dir PATH    Override fixture work dir
+  --host HOST        cursor | claude | codex (live only; default cursor)
   --dry-run          Prepare run dir only (start only)
   --no-bootstrap     Alias for cold mode (deprecated name)
 EOF
@@ -146,10 +152,27 @@ PY
 
 write_ledger_stub() {
   local run_dir="$1" track_id="$2" row_id="$3" install_fp="$4" sb_sha="$5" status="$6"
-  python3 - "$run_dir/ledger.json" "$track_id" "$row_id" "$install_fp" "$sb_sha" "$status" <<'PY'
+  local host="${SB_TRI_CRITERIA_HOST:-cursor}"
+  local mechanism orchestrator_mode
+  case "$host" in
+    claude)
+      mechanism="/silver:agent-claude + runtime orchestrator drain"
+      orchestrator_mode="delegation"
+      ;;
+    codex)
+      mechanism="/silver:agent-codex + runtime orchestrator drain"
+      orchestrator_mode="delegation"
+      ;;
+    *)
+      mechanism="silver-orchestrator parent + Task workers"
+      orchestrator_mode="parent"
+      host="cursor"
+      ;;
+  esac
+  python3 - "$run_dir/ledger.json" "$track_id" "$row_id" "$install_fp" "$sb_sha" "$status" "$host" "$mechanism" "$orchestrator_mode" <<'PY'
 import json, sys
 from datetime import datetime, timezone
-path, track_id, row_id, install_fp, sb_sha, status = sys.argv[1:7]
+path, track_id, row_id, install_fp, sb_sha, status, host, mechanism, orchestrator_mode = sys.argv[1:10]
 doc = {
     "schema_version": 1,
     "track": "sb-tri-criteria-e2e",
@@ -158,10 +181,10 @@ doc = {
     "install_fp": install_fp,
     "sb_git_sha": sb_sha,
     "status": status,
-    "host": "cursor",
-    "orchestrator_mode": "parent",
+    "host": host,
+    "orchestrator_mode": orchestrator_mode,
     "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "mechanism": "silver-orchestrator parent + Task workers",
+    "mechanism": mechanism,
     "harness": "scripts/sb-tri-criteria-e2e.sh",
     "design_doc": ".planning/sb-tri-criteria-e2e/DESIGN.md",
     "verdict": None,
@@ -415,18 +438,25 @@ PY
 }
 
 cmd_live() {
-  local track_id="" work_dir=""
+  local track_id="" work_dir="" host="${SB_TRI_CRITERIA_HOST:-cursor}"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --track) track_id="$2"; shift 2 ;;
       --work-dir) work_dir="$2"; shift 2 ;;
+      --host) host="$2"; shift 2 ;;
       *) echo "Unknown live arg: $1" >&2; exit 2 ;;
     esac
   done
 
   [[ -n "$track_id" ]] || { echo "ERROR: --track required (TC-01, TC-02, TC-03)" >&2; exit 2; }
+  case "$host" in
+    cursor|claude|codex) ;;
+    *) echo "ERROR: --host must be cursor, claude, or codex (got: $host)" >&2; exit 2 ;;
+  esac
 
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  export SB_TRI_CRITERIA_HOST="$host"
+  unset SB_RUNTIME_STATE_DIR
   work_dir="${work_dir:-${SB_TRI_CRITERIA_WORK_DIR:-${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}}}"
   export SB_TRI_CRITERIA_WORK_DIR="$work_dir"
 
@@ -450,19 +480,41 @@ cmd_live() {
   cp "${run_dir}/vision.md" "${run_dir}/INTENT-SEED.txt"
   write_ledger_stub "$run_dir" "$track_id" "$row_id" "$install_fp" "$sb_sha" "live-running"
 
-  local live_script="${PLANNING_DIR}/scripts/live-verify-track.sh"
+  local live_script
+  case "$host" in
+    cursor)
+      live_script="${PLANNING_DIR}/scripts/live-verify-track.sh"
+      ;;
+    claude|codex)
+      live_script="${PLANNING_DIR}/scripts/live-verify-track-host.sh"
+      ;;
+  esac
   chmod +x "$live_script" 2>/dev/null || true
   [[ -f "$live_script" ]] || { echo "ERROR: missing $live_script" >&2; exit 1; }
 
   echo "=== sb-tri-criteria E2E live verify ==="
-  echo "run_id=$run_id track_id=$track_id work_dir=$work_dir"
+  echo "run_id=$run_id track_id=$track_id host=$host work_dir=$work_dir"
   echo "NOTE: bootstrap-orchestrator*.sh NOT used; product gate required"
 
-  bash "$live_script" "$track_id" "$run_dir"
+  case "$host" in
+    cursor) bash "$live_script" "$track_id" "$run_dir" ;;
+    claude|codex) bash "$live_script" "$host" "$track_id" "$run_dir" ;;
+  esac
 
   export SB_TRI_CRITERIA_RUN_DIR="$run_dir"
   export SB_E2E_ENTERPRISE_MATRIX=1
-  export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet/tri-criteria-live-${run_id}}"
+  unset SB_RUNTIME_STATE_DIR
+  case "$host" in
+    cursor)
+      export SB_RUNTIME_STATE_DIR="${HOME}/.cursor/.silver-bullet/tri-criteria-live-${run_id}"
+      ;;
+    claude)
+      export SB_RUNTIME_STATE_DIR="${HOME}/.claude/.silver-bullet/tri-criteria-live-${run_id}"
+      ;;
+    codex)
+      export SB_RUNTIME_STATE_DIR="${HOME}/.codex/.silver-bullet/tri-criteria-live-${run_id}"
+      ;;
+  esac
   cmd_score --run "$run_id" --track "$track_id"
 }
 

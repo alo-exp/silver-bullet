@@ -21,6 +21,10 @@ EOF
 
 [[ -n "$TRACK" && -n "$RUN_DIR" && -d "$RUN_DIR" ]] || { usage >&2; exit 2; }
 
+# shellcheck source=fixture-checkout.sh
+source "${SB_ROOT}/.planning/sb-tri-criteria-e2e/scripts/fixture-checkout.sh"
+tri_criteria_checkout_fixture "$WORK_DIR" "$TRACK" || exit 1
+
 RUN_TAG="$(basename "$RUN_DIR")"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet/tri-criteria-live-${RUN_TAG}}"
@@ -45,6 +49,7 @@ if [[ ! -f "${WORK_DIR}/.silver-bullet.json" ]]; then
     >"${WORK_DIR}/.silver-bullet.json"
 fi
 [[ -f "${WORK_DIR}/silver-bullet.md" ]] || echo '# SB' >"${WORK_DIR}/silver-bullet.md"
+mkdir -p "${WORK_DIR}/.agentmemory/memory"
 
 LOG="${RUN_DIR}/parent-session.log"
 SB_SHA="$(git -C "$SB_ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
