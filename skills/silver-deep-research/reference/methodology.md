@@ -79,7 +79,7 @@ Use the returned year for all date-filtered queries and recency checks. Do NOT a
 - Example: `search "quantum computing 2025" -m academic --json -c 15`
 - For page content extraction: `search "URL" -m extract --json`
 - For scraping: `search "URL" -m scrape --json`
-- Run via Bash tool: `search "query" --json -c 10`
+- Run via shell: `search "query" --json -c 10`
 
 **Fallback: WebSearch (if search-cli fails or is unavailable)**
 - Built-in Claude web search, no setup required
@@ -119,7 +119,7 @@ Evidence must not live only in model context — it must be persisted to `eviden
 
 **Example parallel execution (using search-cli via Bash):**
 ```
-[Single message with multiple Bash tool calls]
+[Single message with multiple shell search invocations]
 - Bash: search "quantum computing 2026 state of the art" --json -c 10
 - Bash: search "quantum computing limitations challenges" --json -c 10
 - Bash: search "quantum computing commercial applications 2026" -m news --json -c 10

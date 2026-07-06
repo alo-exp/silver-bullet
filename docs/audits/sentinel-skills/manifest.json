@@ -560,6 +560,20 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "silver-deep-research",
+    "path": "skills/silver-deep-research/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-deep-research.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-06-20",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "a2d73c7ee25fe0fa3fd962c9a23d88004472978689d94139b4ae22a4902233bb",
+    "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
+  },
+  {
     "skill": "silver-deploy",
     "path": "skills/silver-deploy/SKILL.md",
     "sentinel_version": "2.3.0",
@@ -893,20 +907,6 @@
     "findings_open": 0,
     "agent_bundles_parity": "verified",
     "content_sha256": "e4ac75ba4d14e4219b2d03c4db82792f28ffba5d7b8bf00a884c8ea147568a2d",
-    "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
-  },
-  {
-    "skill": "silver-deep-research",
-    "path": "skills/silver-deep-research/SKILL.md",
-    "sentinel_version": "2.3.0",
-    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-deep-research.md",
-    "status": "clean",
-    "verdict": "Deploy with monitoring",
-    "audited_at": "2026-06-20",
-    "release_tag": "v0.45.0",
-    "findings_open": 0,
-    "agent_bundles_parity": "verified",
-    "content_sha256": "a2d73c7ee25fe0fa3fd962c9a23d88004472978689d94139b4ae22a4902233bb",
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {

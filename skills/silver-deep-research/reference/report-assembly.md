@@ -24,7 +24,7 @@
 
 ## Progressive Section Generation
 
-**Core Strategy:** Generate and write each section individually using Write/Edit tools. This allows unlimited report length while keeping each generation manageable.
+**Core Strategy:** Generate and write each section individually using host file-write tools. This allows unlimited report length while keeping each generation manageable.
 
 ### Phase 8.1: Setup
 

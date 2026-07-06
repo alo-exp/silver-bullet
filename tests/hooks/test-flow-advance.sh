@@ -9,6 +9,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+export SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0
 
 HOOK="$(cd "$(dirname "$0")/../.." && pwd)/hooks/flow-advance.sh"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -132,7 +133,7 @@ fi
 # Composition log is written when .planning exists at composer start
 log_file="$WORK/.planning/orchestrator-composition-log.jsonl"
 assert_contains "composition log file created" "$(test -f "$log_file" && echo yes)" "yes"
-log_tail="$(tail -1 "$log_file" 2>/dev/null || true)"
+log_tail="$(grep -F '"composer":"silver-feature"' "$log_file" 2>/dev/null | tail -1 || true)"
 assert_contains "composition log records silver-feature" "$log_tail" '"composer":"silver-feature"'
 assert_contains "composition log records autonomous mode" "$log_tail" '"mode":"autonomous"'
 

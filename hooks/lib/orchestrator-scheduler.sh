@@ -16,8 +16,17 @@ if [[ -f "${_sb_scheduler_lib_dir}/orchestrator-event-log.sh" ]]; then
   source "${_sb_scheduler_lib_dir}/orchestrator-event-log.sh"
 fi
 
+# Runtime scheduler (catalog batches / join gates). Set SB_ORCHESTRATOR_RUNTIME_SCHEDULER=0 to disable.
+sb_scheduler_runtime_enabled() {
+  case "${SB_ORCHESTRATOR_RUNTIME_SCHEDULER:-1}" in
+    0|false|no|FALSE|NO|off|OFF) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
 sb_scheduler_catalog_file() {
   local repo_root="${1:-}"
+  sb_scheduler_runtime_enabled || return 1
   if [[ -n "${SB_APO_CATALOG_FILE:-}" && -f "${SB_APO_CATALOG_FILE}" ]]; then
     printf '%s' "${SB_APO_CATALOG_FILE}"
     return 0

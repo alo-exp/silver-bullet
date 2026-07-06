@@ -11635,7 +11635,7 @@
     {
       "id": "TP-SEARCH-CLI",
       "tool_id": "search_cli",
-      "policy_name": "optional-primary-when-configured",
+      "policy_name": "once-opted-in-then-mandatory-when-relevant",
       "opt_in_state_source": ".silver-bullet.json recommended_tools.search_cli",
       "relevance_rules": [
         "deep research retrieval",

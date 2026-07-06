@@ -27,7 +27,7 @@ These four criteria are **mandatory** for matrix row PASS and strict-clean round
 
 ---
 
-## Criteria (28)
+## Criteria (31)
 
 ### OUT-TAILOR-01 — Dynamic workflow tailoring
 
@@ -271,6 +271,39 @@ These four criteria are **mandatory** for matrix row PASS and strict-clean round
 | **Partial** | Single recoverable pause with documented `SB OVERRIDE`. |
 | **Fail** | Repeated operator prompts for automatable decisions; ledger notes manual intervention mid-row. |
 | **Artifacts** | Row log, `.planning/CLARIFY.md`, outcomes hook state |
+
+### OUT-MULTIWF-01 — Autonomous multi-workflow chaining *(blocking, TC-01)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | Parent orchestrator chains ≥3 distinct `workflow_id` values without operator manual routing between composers. |
+| **Pass signals** | Composition log and/or orchestrator events show ≥3 unique `workflow_id`; `composer_chain` advance events. |
+| **Partial** | Two workflow ids with advance events only. |
+| **Fail** | Single-workflow-only run; parent implements inline; operator manual routing between composers. |
+| **Artifacts** | `.planning/orchestrator-composition-log.jsonl`, `orchestrator-events.jsonl` |
+
+### OUT-DYNAMIC-01 — Dynamic workflow composition *(blocking, TC-02)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | Runtime scheduler records ≥2 dynamic composition ops with valid `catalog_rule_ref` ids from `docs/apo-catalog.json`. |
+| **Pass signals** | Composition log `scheduler_decisions` or dynamic ops with matching `DR-*` rule refs; queue differs from default composer template. |
+| **Partial** | Single dynamic op recorded. |
+| **Fail** | Default queue unchanged; missing or fake `catalog_rule_ref`. |
+| **Artifacts** | `.planning/orchestrator-composition-log.jsonl`, `docs/apo-catalog.json` |
+
+### OUT-NEWWF-01 — Net-new workflow creation *(blocking, TC-03)*
+
+| Field | Value |
+|-------|-------|
+| **Scope** | session |
+| **Definition** | `silver-new-workflow` / `NEW-WORKFLOW` worker dispatches and produces a net-new workflow spec artifact — not force-fit to pre-existing workflow. |
+| **Pass signals** | `NEW-WORKFLOW` in orchestrator queue/events; new workflow markdown/spec under `.planning/workflows/`. |
+| **Partial** | Worker dispatch OR artifact only (not both). |
+| **Fail** | Pre-existing workflow reused; no `silver-new-workflow` dispatch. |
+| **Artifacts** | `orchestrator-events.jsonl`, `.planning/workflows/*.md`, parent session log |
 
 ### OUT-WORLD-01 — World-class composite gate *(blocking)*
 

@@ -79,6 +79,14 @@ STRICT_ALLOWLIST = {
     "templates/orchestrator-workers/AGENT-DELEGATE.md",
 }
 
+# Ported research engine subtree — host-specific script paths; SKILL.md remains strict.
+STRICT_ALLOWLIST_PREFIXES = (
+    "skills/silver-deep-research/reference/",
+    "skills/silver-deep-research/scripts/",
+    "skills/silver-deep-research/templates/",
+    "skills/silver-deep-research/UPSTREAM.md",
+)
+
 HOOKS_ALLOWLIST = {
     "hooks/cursor-hook-bridge.sh",
     "hooks/kay-project-hook-bridge.sh",
@@ -106,6 +114,7 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/merge-token-compression-config.py",
     "scripts/generate-apo-catalog.py",
     "scripts/lib/codex-cli.sh",
+    "scripts/lib/plugin-cache-version.sh",
 }
 
 # Never scan (generated mirrors, host bundles, tests, docs, site).
@@ -391,6 +400,8 @@ def check_file(path: Path, *, tier: str) -> None:
     r = rel(path)
     if tier == "strict":
         if r in STRICT_ALLOWLIST:
+            return
+        if any(r.startswith(prefix) for prefix in STRICT_ALLOWLIST_PREFIXES):
             return
         hits = scan_content(path, strict=True)
     elif tier == "hooks":
