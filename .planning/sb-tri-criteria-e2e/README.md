@@ -1,6 +1,6 @@
 # SB Tri-Criteria E2E Framework
 
-**Status:** scaffold only — **not yet run** (structural preflight only)  
+**Status:** **tri-host live complete** — 9/9 PASS ([TRI-HOST-RESULT-20260706.md](TRI-HOST-RESULT-20260706.md))  
 **Vision anchor:** [`docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md`](../../docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md)  
 **Canonical multi-workflow bar:** [CURSOR-MULTIWF-CRITERIA.md](CURSOR-MULTIWF-CRITERIA.md) (mirrors auto-e2e)
 
