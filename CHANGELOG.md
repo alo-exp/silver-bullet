@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.51.0] — 2026-07-06
+
+Minor release: **tri-criteria E2E validation harness** — live/cold matrix across Cursor, Claude, and Codex; multi-workflow orchestrator scheduler; greenfield 6/6 PASS with harness drain fix.
+
+## Features
+- `feat(tri-criteria)`: live/cold validation harness and multi-WF orchestrator scheduler (`69988bda`)
+- `feat(tri-criteria)`: Claude/Codex host live harness and PASS evidence (`8fb6417d`)
+- `feat(tri-criteria)`: complete tri-host live matrix (cursor+claude+codex) (`97522629`)
+- `feat(tri-criteria)`: greenfield 6/6 matrix PASS with harness drain fix (`d728037b`)
+- `feat(autonomous-enterprise)`: agent-claude track and orchestrator scheduler (`e2da8f2b`)
+- `feat(audit)`: AF/FS compliance script and full catalog audit report (`3e2b3748`)
+- `feat(new-workflow)`: Audit mode for catalog compliance checks (`7a0919a5`)
+- `feat(skills)`: replace silver-research/multi-ai with silver-deep-research (`7c667aef`)
+- `test(tri-criteria)`: sb-tri-criteria E2E framework scaffold for three orthogonal SB proof criteria (`11de816a`)
+
+## Fixes
+- `fix(tri-criteria)`: E2E scorer false fails and runtime composition wiring (`55017821`)
+- `fix(agent-codex)`: preflight graphify and agentmemory before delegate (`d4640973`)
+- `fix(agent-claude)`: preflight graphify and agentmemory before delegate (`61e95c7f`)
+- `fix(agent-claude)`: folder trust seeding, ephemeral trust respawn, plugin cache alias (`0b9c2fcd`–`ed0d26ac`)
+- `fix(codex)`: valid PostToolUse JSON on end-user plugin install (`8ff55d3b`)
+- `fix(hooks)`: include hookEventName in dev-cycle-check advisories (`864e242b`)
+- `fix(catalog)`: remediate 13 WF/AF audit failures to 157/157 PASS (`26edd496`)
+- `fix(minimal-intent-e2e)`: score cmd passes work_dir and evidence to orchestrator (`1293cfff`)
+
+## Documentation
+- `docs(tri-criteria)`: exhaustive raw log sweep with zero remaining findings (`66fe3f1b`)
+- `docs(proof)`: integrate MI-01 minimal-intent E2E PASS at live_e2e_proven (`87e15be8`)
+- `docs`: require complex multi-workflow goals for autonomous proof (`cbc7d5cf`)
+
+## Verification
+- Tri-criteria greenfield matrix — **6/6 PASS** (cursor+claude+codex)
+- `bash tests/scripts/test-release-version-alignment.sh` — PASS
+- `bash tests/scripts/test-silver-bullet-template-parity.sh` — PASS
+- `bash tests/scripts/test-render-agent-bundle-freshness.sh` — PASS
+- `test-site-content-freshness.sh` + `test-site-doc-freshness.sh` — PASS
+
+---
+
 ## [0.50.5] — 2026-07-05
 
 Patch release: **tri-host pre-release smoke gate** — mandatory 12/12 isolated host smoke before tag (closes v0.50.4 gap); agent-codex harness improvements; Cursor CLI smoke timeout aligned to live API latency.
