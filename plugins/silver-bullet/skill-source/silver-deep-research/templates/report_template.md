@@ -5,7 +5,7 @@ PROGRESSIVE FILE ASSEMBLY STRATEGY (2025 - Unlimited Length):
 
 This report is generated section-by-section using progressive file assembly.
 Each section is generated to APPROPRIATE depth (however many words needed) and
-written to file immediately using Write/active runtime file-editing mechanisms.
+written to file immediately using host file-write tools.
 
 WHY: Manages output token limits while maintaining quality throughout
 RESULT: Large reports (up to 20,000 words per skill run) - sections sized naturally by content

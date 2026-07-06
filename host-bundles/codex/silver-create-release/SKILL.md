@@ -50,9 +50,13 @@ Do not execute other shell commands.
 
 Before determining version, verify the working tree is releasable:
 
-0. **CI green (mandatory):** run `bash scripts/pre-release-gate.sh` (or
+0. **CI green + site freshness (mandatory):** run `bash scripts/pre-release-gate.sh` (runs
+   `test-site-content-freshness.sh`, `test-site-doc-freshness.sh`, then
    `bash tests/run-all-tests.sh`). **STOP** if any test fails — never tag or
    `gh release create` on red CI (see v0.51.0 counterexample in `docs/RELEASE.md`).
+   Stage 4a also requires a **100% manual review** of every `site/**` page for
+   release-claim accuracy before recording `quality-gate-stage-3` — automated tests
+   alone are not sufficient.
 
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."

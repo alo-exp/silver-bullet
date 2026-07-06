@@ -5,4 +5,4 @@ description: Parent-only Silver Bullet orchestrator — reads intent and directi
 argument-hint: <user intent or continue queue>
 ---
 
-Invoke the Silver Bullet `silver-orchestrator` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.
+Invoke the Silver Bullet `silver-orchestrator` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel.
