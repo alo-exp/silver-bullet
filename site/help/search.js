@@ -526,7 +526,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "config",
     "title": "Configuration",
-    "text": "Current .silver-bullet.json config_version 0.50.5 version 0.50.5 includes project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, recommended_tools Graphify agentmemory RTK Context Mode opt-in, and state paths under SB_RUNTIME_HOME_ROOT."
+    "text": "Current .silver-bullet.json config_version 0.51.0 version 0.51.0 includes project active_workflow, skills required_planning and required_deploy, all_tracked skills, devops_plugins, release gates, recommended_tools Graphify agentmemory RTK Context Mode opt-in, and state paths under SB_RUNTIME_HOME_ROOT."
   },
   {
     "page": "Reference",
