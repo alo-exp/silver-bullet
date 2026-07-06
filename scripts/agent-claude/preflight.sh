@@ -31,10 +31,14 @@ done
 
 [[ -d "$SB_ROOT" ]] || { printf 'ERROR: SB_ROOT not a directory: %s\n' "$SB_ROOT" >&2; exit 1; }
 
-CLI="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || true)}"
-[[ -n "$CLI" ]] || { printf 'ERROR: Claude CLI not found on PATH\n' >&2; exit 1; }
-"$CLI" --version >/dev/null 2>&1 || { printf 'ERROR: Claude CLI not working: %s\n' "$CLI" >&2; exit 1; }
-printf 'OK: Claude CLI %s\n' "$("$CLI" --version 2>/dev/null | head -1)"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf 'SKIP (dry-run): Claude CLI check\n'
+else
+  CLI="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || true)}"
+  [[ -n "$CLI" ]] || { printf 'ERROR: Claude CLI not found on PATH\n' >&2; exit 1; }
+  "$CLI" --version >/dev/null 2>&1 || { printf 'ERROR: Claude CLI not working: %s\n' "$CLI" >&2; exit 1; }
+  printf 'OK: Claude CLI %s\n' "$("$CLI" --version 2>/dev/null | head -1)"
+fi
 
 EXPECT_SCRIPT="${SB_ROOT}/scripts/claude-interactive-invoke.expect"
 [[ -x "$EXPECT_SCRIPT" ]] || { printf 'ERROR: expect harness missing: %s\n' "$EXPECT_SCRIPT" >&2; PREFLIGHT_OK=0; }
