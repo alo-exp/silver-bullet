@@ -336,7 +336,7 @@ sb_orchestrator_on_composer_start() {
   fi
 
   # Phase B: catalog-driven scheduler plan + dispatch records (runtime proof; parent Task spawn required).
-  if [[ -f "$_sched_lib" ]]; then
+  if [[ -f "$_sched_lib" ]] && declare -f sb_scheduler_runtime_enabled >/dev/null 2>&1 && sb_scheduler_runtime_enabled; then
     local sched_plan
     sched_plan="$(sb_scheduler_plan_queue_from_state "$repo_root" 2>/dev/null || true)"
     if [[ -n "$sched_plan" && -n "$repo_root" && -d "$repo_root/.planning" ]]; then
@@ -453,7 +453,7 @@ sb_orchestrator_advance_on_atom() {
 
   local _sched_lib hold_for_batch=false
   _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
-  if [[ -f "$_sched_lib" ]]; then
+  if [[ -f "$_sched_lib" ]] && declare -f sb_scheduler_runtime_enabled >/dev/null 2>&1 && sb_scheduler_runtime_enabled; then
     # shellcheck source=lib/orchestrator-scheduler.sh
     source "$_sched_lib"
     sb_scheduler_mark_handoff_joined "" "$atom_skill" 2>/dev/null || true
@@ -461,7 +461,7 @@ sb_orchestrator_advance_on_atom() {
     catalog_file="$(sb_scheduler_catalog_file "$repo_root" 2>/dev/null || true)"
     if [[ -n "$catalog_file" ]]; then
       atom_id="$(sb_scheduler_resolve_atom_id "$catalog_file" "$atom_skill" 2>/dev/null || true)"
-      [[ -n "$atom_id" ]] && sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" 2>/dev/null || true
+      [[ -n "$atom_id" ]] && sb_scheduler_refresh_join_gate "$repo_root" "$atom_id" >/dev/null 2>&1 || true
     fi
     if sb_scheduler_active_batch_has_pending_joins 2>/dev/null; then
       hold_for_batch=true
