@@ -71,11 +71,17 @@ CI enforces `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`te
 1. **Before tag / `gh release create`:** run the full validation suite and confirm green:
    ```bash
    bash scripts/pre-release-gate.sh
-   # equivalent: bash tests/run-all-tests.sh
+   # runs site freshness tests, then bash tests/run-all-tests.sh
    ```
-2. **Remote CI:** after the release commit is pushed, wait for GitHub Actions on that
+2. **100% site scan (Stage 4a):** before any plugin release, manually review **every**
+   `site/**` page (homepage, help, changelog, reference tables, version strings,
+   workflow catalog SDLC order, search index) for claims matching the version being
+   shipped. Run `bash tests/scripts/test-site-content-freshness.sh` and
+   `bash tests/scripts/test-site-doc-freshness.sh` — both must pass. Automated tests
+   do not replace the full checklist in `docs/internal/pre-release-quality-gate.md` §4a.
+3. **Remote CI:** after the release commit is pushed, wait for GitHub Actions on that
    commit to finish green (`bash scripts/verify-release-commit-ci.sh`) before tagging.
-3. **Never release on red CI.** v0.51.0 is the counterexample: the validate job failed
+4. **Never release on red CI.** v0.51.0 is the counterexample: the validate job failed
    on `tests/hooks/test-completion-audit.sh` (44 failures — enterprise-policy block
    shadowing delivery-gate assertions) while the release was still cut.
 

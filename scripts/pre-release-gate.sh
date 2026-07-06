@@ -13,7 +13,32 @@ fi
 
 cat <<'EOF'
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  PRE-RELEASE GATE — CI green required before tag/release
+  PRE-RELEASE GATE — CI green + site freshness required before tag/release
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EOF
+
+# Stage 4a — public site freshness (100% site/ scan per pre-release-quality-gate.md §4a)
+cat <<'EOF'
+
+  Stage 4a — Site content freshness (site/**)
+  Running: test-site-content-freshness.sh + test-site-doc-freshness.sh
+EOF
+
+if ! bash "${REPO_ROOT}/tests/scripts/test-site-content-freshness.sh"; then
+  echo "🛑 PRE-RELEASE GATE FAILED — site content freshness test failed." >&2
+  exit 1
+fi
+
+if ! bash "${REPO_ROOT}/tests/scripts/test-site-doc-freshness.sh"; then
+  echo "🛑 PRE-RELEASE GATE FAILED — site doc freshness test failed." >&2
+  exit 1
+fi
+
+echo "✓ Site freshness tests passed."
+
+cat <<'EOF'
+
+  Full CI-equivalent suite
   Running: bash tests/run-all-tests.sh
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF

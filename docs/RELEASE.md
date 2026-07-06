@@ -21,8 +21,13 @@ Run the local CI-equivalent gate before any version bump, marketplace sync, tag,
 bash scripts/pre-release-gate.sh
 ```
 
-This runs `bash tests/run-all-tests.sh` and exits non-zero on any failure. Audited bypass
+This runs `test-site-content-freshness.sh`, `test-site-doc-freshness.sh`, then
+`bash tests/run-all-tests.sh` and exits non-zero on any failure. Audited bypass
 only: `SB_SKIP_PRE_RELEASE_GATE=1` (do not use for normal releases).
+
+**100% site scan (Stage 4a):** plugin releases require a manual review of every
+`site/**` page for release-claim accuracy in addition to the automated freshness
+tests. See `docs/internal/pre-release-quality-gate.md` §4a checklist.
 
 After the release commit is pushed, also wait for GitHub Actions green on that commit:
 

@@ -114,6 +114,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#ship-disambiguation">Ship disambiguation</a></li>
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#gap-closure">Gap-closure loop</a></li>
+        <li><a href="#four-stage-gate">4-stage pre-release gate</a></li>
         <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
@@ -181,6 +182,25 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h3>Delivery tail (orchestrator parent mode)</h3>
       <p>When <code>orchestrator_mode</code> is <code>parent</code>, the catalog delivery tail runs automatically (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="four-stage-gate">4-Stage Pre-Release Quality Gate</h2>
+      <p>Before <code>/silver:create-release</code> or <code>gh release create</code>, the current session must complete all four stages in <code>docs/internal/pre-release-quality-gate.md</code> and record hook markers in <code>quality-gate-state</code>.</p>
+      <table class="ref-table">
+        <thead><tr><th>Stage</th><th>Requirement</th><th>Marker</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>ENHANCED adversarial review — 2× DISCOVERY clean on 1177-row manifest</td><td><code>adversarial-review-clean</code></td></tr>
+          <tr><td>2</td><td>SENTINEL per-skill — 1 clean pass per <code>skills/*/SKILL.md</code> (85 skills)</td><td><code>sentinel-skills-clean</code></td></tr>
+          <tr><td>3</td><td>Code security — <code>security</code> skill on <code>hooks/</code> and <code>scripts/</code></td><td>(in <code>required_deploy</code>)</td></tr>
+          <tr><td>4a</td><td><strong>100% public site scan</strong> — every <code>site/**</code> page reviewed for release claims; both freshness tests green</td><td><code>quality-gate-stage-3</code></td></tr>
+          <tr><td>4b</td><td>Verification bundle — <code>/verify-tests</code>, live matrix, tri-host smoke, full test rerun</td><td><code>full-test-suite-rerun</code></td></tr>
+        </tbody>
+      </table>
+      <p><strong>Stage 4a site scan (mandatory):</strong> update homepage, Help Center, changelog, reference tables, version strings, workflow catalog order, and <code>site/help/search.js</code> when pages change. Run both scripts before recording the marker:</p>
+      <div class="code-block">bash tests/scripts/test-site-content-freshness.sh
+bash tests/scripts/test-site-doc-freshness.sh</div>
+      <p><strong>CI green gate (v0.51.1+):</strong> <code>bash scripts/pre-release-gate.sh</code> runs site freshness tests plus <code>bash tests/run-all-tests.sh</code> — never tag on red CI (v0.51.0 counterexample).</p>
 
       <div class="divider"></div>
 
