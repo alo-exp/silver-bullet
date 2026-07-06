@@ -23,9 +23,17 @@ EOF
 
 # shellcheck source=fixture-checkout.sh
 source "${SB_ROOT}/.planning/sb-tri-criteria-e2e/scripts/fixture-checkout.sh"
-tri_criteria_checkout_fixture "$WORK_DIR" "$TRACK" || exit 1
+# shellcheck source=emit-tri-criteria-evidence.sh
+source "${SB_ROOT}/.planning/sb-tri-criteria-e2e/scripts/emit-tri-criteria-evidence.sh"
 
 RUN_TAG="$(basename "$RUN_DIR")"
+GREENFIELD="${SB_TRI_CRITERIA_GREENFIELD:-0}"
+if [[ "$GREENFIELD" == "1" ]]; then
+  BRANCH="$(tri_criteria_greenfield_checkout_fixture "$WORK_DIR" "$TRACK" "cursor" "$RUN_TAG")"
+else
+  BRANCH="$(tri_criteria_branch_for_track "$TRACK")"
+  tri_criteria_checkout_fixture "$WORK_DIR" "$TRACK" || exit 1
+fi
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet/tri-criteria-live-${RUN_TAG}}"
 mkdir -p "$SB_RUNTIME_STATE_DIR" "${WORK_DIR}/.planning"
@@ -60,6 +68,8 @@ FIXTURE_SHA="$(git -C "$WORK_DIR" rev-parse --short=12 HEAD 2>/dev/null || echo 
   echo "# bootstrap-orchestrator-track.sh: NOT USED (live verify)"
   echo "# SB_RUNTIME_PRESERVE_STATE_DIR=1 state: $SB_RUNTIME_STATE_DIR"
   echo "# execution_model: Cursor parent orchestrator + Task workers (model=composer-2.5)"
+  echo "# greenfield: ${GREENFIELD}"
+  echo "# branch: ${BRANCH}"
   echo ""
 } >"$LOG"
 
@@ -164,8 +174,14 @@ copy_evidence() {
     "${RUN_DIR}/orchestrator-events.jsonl" 2>/dev/null || true
 }
 
-echo "[session] product gate check before orchestrator drain" >>"$LOG"
-verify_product_gate "$TRACK"
+if [[ "$GREENFIELD" == "1" ]]; then
+  echo "[session] greenfield mode — product gate deferred until after orchestrator drain" >>"$LOG"
+else
+  echo "[session] product gate check before orchestrator drain" >>"$LOG"
+  verify_product_gate "$TRACK"
+fi
+
+tri_criteria_emit_pre_agent "$WORK_DIR" "$TRACK" "$RUN_DIR" "$LOG"
 
 case "$TRACK" in
   TC-01)
@@ -200,8 +216,15 @@ case "$TRACK" in
 esac
 
 verify_composer_spacing
+tri_criteria_emit_post_agent "$WORK_DIR" "$TRACK" "$RUN_DIR" "$LOG"
+
+if [[ "$GREENFIELD" == "1" ]]; then
+  echo "[session] greenfield product gate after orchestrator drain" >>"$LOG"
+  FIXTURE_SHA="$(git -C "$WORK_DIR" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+  verify_product_gate "$TRACK" || echo "[session] WARN: greenfield product gate not yet satisfied" >>"$LOG"
+fi
+
 copy_evidence
-echo "[graphify] graphify update . (post live verify)" >>"$LOG"
 echo "workflow_complete: true" >>"$LOG"
 echo "VERDICT: live verify complete — score with sb-tri-criteria-e2e.sh score" >>"$LOG"
 
