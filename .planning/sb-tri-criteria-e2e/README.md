@@ -25,7 +25,8 @@
 
 ```bash
 bash scripts/sb-tri-criteria-e2e.sh preflight
-bash scripts/sb-tri-criteria-e2e.sh start --track TC-01
+bash scripts/sb-tri-criteria-e2e.sh cold --track TC-01   # recommended cold proof
+bash scripts/sb-tri-criteria-e2e.sh start --track TC-01  # live parent session
 bash scripts/sb-tri-criteria-e2e.sh score --run <run-id> --track TC-01
 ```
 
