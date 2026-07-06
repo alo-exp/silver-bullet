@@ -285,37 +285,41 @@ sb_orchestrator_on_composer_start() {
 
   sb_orchestrator_seed_intent "$intent" "$composer_skill" "$repo_root"
 
-  local wf_bin wf_id flows_csv
-  wf_bin=""
-  if [[ -x "$repo_root/scripts/workflows.sh" ]]; then
-    wf_bin="$repo_root/scripts/workflows.sh"
-  elif [[ -x "scripts/workflows.sh" ]]; then
-    wf_bin="scripts/workflows.sh"
-  fi
-  [[ -n "$wf_bin" ]] || return 0
-
-  flows_csv="$(sb_orchestrator_flow_csv_for_workflows "$composer_skill" "$repo_root")"
-  wf_id="$("$wf_bin" start "/silver:${composer_skill#silver-}" "${intent:-autonomous route}" "$flows_csv" 2>/dev/null || true)"
-  [[ -n "$wf_id" ]] || return 0
-
-  local file now
-  file="$(sb_orchestrator_state_file)"
+  local catalog_wf="" _sched_lib _evt_lib now wf_bin wf_id flows_csv
   now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-  local updated
-  updated="$(jq --arg wid "$wf_id" --arg now "$now" \
-    '.workflow_id = $wid | .updated_at = $now' \
-    "$file" 2>/dev/null || true)"
-  [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
-
-  # M-05: committed composition log artifact
-  local catalog_wf="" _sched_lib _evt_lib
   _sched_lib="$(dirname "${BASH_SOURCE[0]}")/orchestrator-scheduler.sh"
   if [[ -f "$_sched_lib" ]]; then
     # shellcheck source=lib/orchestrator-scheduler.sh
     source "$_sched_lib"
     catalog_wf="$(sb_scheduler_composer_catalog_workflow_id "$composer_skill" 2>/dev/null || true)"
     sb_scheduler_apply_doc_only_tailoring "$repo_root" "$composer_skill" "$intent" 2>/dev/null || true
+    sb_scheduler_apply_observability_tailoring "$repo_root" "$composer_skill" "$intent" 2>/dev/null || true
+    sb_scheduler_apply_multi_workflow_chain "$repo_root" "$composer_skill" "$intent" 2>/dev/null || true
+    sb_scheduler_apply_net_new_workflow_route "$repo_root" "$composer_skill" "$intent" 2>/dev/null || true
   fi
+
+  wf_bin=""
+  if [[ -x "$repo_root/scripts/workflows.sh" ]]; then
+    wf_bin="$repo_root/scripts/workflows.sh"
+  elif [[ -x "scripts/workflows.sh" ]]; then
+    wf_bin="scripts/workflows.sh"
+  fi
+  flows_csv="$(sb_orchestrator_flow_csv_for_workflows "$composer_skill" "$repo_root")"
+  if [[ -n "$wf_bin" ]]; then
+    wf_id="$("$wf_bin" start "/silver:${composer_skill#silver-}" "${intent:-autonomous route}" "$flows_csv" 2>/dev/null || true)"
+  else
+    wf_id=""
+  fi
+
+  if [[ -n "$wf_id" ]]; then
+    local file updated
+    file="$(sb_orchestrator_state_file)"
+    updated="$(jq --arg wid "$wf_id" --arg now "$now" \
+      '.workflow_id = $wid | .updated_at = $now' \
+      "$file" 2>/dev/null || true)"
+    [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+  fi
+
   if [[ -n "$repo_root" && -d "$repo_root/.planning" ]]; then
     local logfile
     logfile="$(sb_orchestrator_composition_log "$repo_root")"
@@ -386,6 +390,33 @@ sb_orchestrator_clear_queue_on_interrupt() {
     return 0
   fi
   return 1
+}
+
+# Advance to the next catalog composer when the current flow_queue is drained (multi-WF chain).
+sb_orchestrator_try_advance_composer_chain() {
+  local repo_root="${1:-}"
+  local file next_composer intent saved_chain updated msg completed_composer
+  command -v jq >/dev/null 2>&1 || return 1
+  file="$(sb_orchestrator_state_file)"
+  [[ -f "$file" ]] || return 1
+  next_composer="$(jq -r '.composer_chain[0] // empty' "$file" 2>/dev/null || true)"
+  [[ -n "$next_composer" && "$next_composer" != "null" ]] || return 1
+  completed_composer="$(jq -r '.composer // ""' "$file" 2>/dev/null || true)"
+  saved_chain="$(jq -c '.composer_chain[1:] // []' "$file" 2>/dev/null || echo '[]')"
+  intent="$(jq -r '.active_intent // ""' "$file" 2>/dev/null || true)"
+  updated="$(jq --argjson chain "$saved_chain" '.composer_chain = $chain' "$file" 2>/dev/null || true)"
+  [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+  if declare -f sb_orchestrator_event_record_advance >/dev/null 2>&1; then
+    sb_orchestrator_event_record_advance "$completed_composer" "$next_composer" false 2>/dev/null || true
+  fi
+  sleep 1
+  sb_orchestrator_on_composer_start "$next_composer" "$intent" "$repo_root" >/dev/null 2>&1 || true
+  file="$(sb_orchestrator_state_file)"
+  [[ -f "$file" ]] || return 0
+  updated="$(jq --argjson chain "$saved_chain" '.composer_chain = $chain' "$file" 2>/dev/null || true)"
+  [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+  msg="SB orchestrator ► Composer chain advanced to ${next_composer} (multi-workflow; invoke without user prompt)"
+  printf '%s' "$msg"
 }
 
 sb_orchestrator_advance_on_atom() {
@@ -483,6 +514,12 @@ sb_orchestrator_advance_on_atom() {
     fi
     printf '%s' "$msg"
   else
+    local chain_msg=""
+    chain_msg="$(sb_orchestrator_try_advance_composer_chain "$repo_root" 2>/dev/null || true)"
+    if [[ -n "$chain_msg" ]]; then
+      printf '%s' "$chain_msg"
+      return 0
+    fi
     if [[ -f "${_lib_dir:-}/orchestrator-directive.sh" ]]; then
       source "${_lib_dir}/orchestrator-directive.sh"
       sb_orchestrator_directive_clear

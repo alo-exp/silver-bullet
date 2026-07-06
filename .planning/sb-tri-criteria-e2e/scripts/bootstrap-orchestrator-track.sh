@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # Bootstrap SB orchestrator runtime evidence for tri-criteria E2E tracks.
+# FIXTURE PREP ONLY — blocked for proof runs unless SB_TRI_CRITERIA_ALLOW_BOOTSTRAP=1.
 set -euo pipefail
+
+if [[ "${SB_TRI_CRITERIA_ALLOW_BOOTSTRAP:-}" != "1" ]]; then
+  echo "ERROR: bootstrap-orchestrator-track.sh blocked for cold proof runs." >&2
+  echo "Use: .planning/sb-tri-criteria-e2e/scripts/cold-verify-track.sh" >&2
+  echo "Or set SB_TRI_CRITERIA_ALLOW_BOOTSTRAP=1 for explicit fixture prep only." >&2
+  exit 3
+fi
 
 TRACK="${1:-TC-01}"
 WORK_DIR="${2:-/Users/shafqat/projects/enterprise-grade-test-app}"
