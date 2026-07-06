@@ -89,6 +89,23 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-2">
+      <div class="release-header">
+        <h2>v0.51.2</h2>
+        <time class="release-date" datetime="2026-07-06">2026-07-06</time>
+      </div>
+      <p class="release-summary">Patch release: semantic-compress hook test isolation, bundle mirror sync, and Stage 4a site scan completion with pre-release gate site freshness wiring.</p>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(test)</code>: isolate <code>test-semantic-compress-hook.sh</code> from active repo <code>.planning/</code> E2E state</li>
+      </ul>
+      <h3>Chores</h3>
+      <ul>
+        <li><code>chore(sync)</code>: regenerate agent bundle mirrors after create-release skill doc sync</li>
+        <li><code>docs(site)</code>: complete Stage 4a public site scan; wire site freshness into <code>pre-release-gate.sh</code></li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-51-1">
       <div class="release-header">
         <h2>v0.51.1</h2>
