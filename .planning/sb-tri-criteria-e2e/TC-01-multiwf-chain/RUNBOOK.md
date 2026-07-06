@@ -21,6 +21,10 @@ Operator: open Cursor **parent orchestrator** in `work_dir`, paste vision from `
 ## Score
 
 ```bash
+# Cold verify (recommended — no bootstrap)
+bash scripts/sb-tri-criteria-e2e.sh cold --track TC-01
+
+# Or manual live session + score
 bash scripts/sb-tri-criteria-e2e.sh score --run <run-id> --track TC-01
 ```
 

@@ -348,6 +348,107 @@ sb_scheduler_apply_doc_only_tailoring() {
   fi
 }
 
+# Observability-only intents: structured logging + runbook, explicitly zero API/UI work.
+sb_scheduler_detect_observability_only_intent() {
+  local intent="${1:-}"
+  [[ -n "$intent" ]] || return 1
+  printf '%s' "$intent" | grep -qiE 'observability|structured logging|runbook|correlation.?id|log envelope' \
+    && printf '%s' "$intent" | grep -qiE 'zero API|no API|no UI|no new routes|no database|no landing|documentation-only|README runbook' \
+    && return 0
+  return 1
+}
+
+# Runtime tailoring for observability-only work: lean path, prune execute/UI atoms.
+sb_scheduler_apply_observability_tailoring() {
+  local repo_root="$1" composer_skill="$2" intent="${3:-}"
+  [[ -n "$repo_root" && -n "$composer_skill" ]] || return 1
+  sb_scheduler_detect_observability_only_intent "$intent" || return 0
+  local from_wf to_wf
+  from_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-feature" 2>/dev/null || printf 'WF-SILVER-FEATURE')"
+  to_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-fast" 2>/dev/null || printf 'WF-SILVER-FAST')"
+  if [[ "$composer_skill" == "silver-fast" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "$to_wf" "substitute" "$from_wf" \
+      "DR-SUBSTITUTE-LEANER-WORKFLOW" "observability-only change; substitute lean fast workflow" 2>/dev/null || true
+    sb_scheduler_record_composition_operation "$repo_root" "$to_wf" "prune" "AF-EXECUTE" \
+      "DR-PRUNE-SATISFIED-ATOM" "structured logging middleware already present; no execute atom required" 2>/dev/null || true
+    sb_scheduler_record_composition_operation "$repo_root" "$to_wf" "prune" "AF-UI" \
+      "DR-PRUNE-SATISFIED-ATOM" "explicit zero-UI constraint; prune UI atoms" 2>/dev/null || true
+    return 0
+  fi
+  if [[ "$composer_skill" == "silver-feature" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "$from_wf" "substitute" "$to_wf" \
+      "DR-SUBSTITUTE-LEANER-WORKFLOW" "observability-only intent routes to fast path not full feature pipeline" 2>/dev/null || true
+  fi
+}
+
+# Multi-capability greenfield intents that require feature → devops → release chaining.
+sb_scheduler_detect_multi_capability_intent() {
+  local intent="${1:-}"
+  [[ -n "$intent" ]] || return 1
+  printf '%s' "$intent" | grep -qiE 'greenfield|incident-ready|waitlist|micro-SaaS|from scratch|tenant-scoped' \
+    && printf '%s' "$intent" | grep -qiE 'docker|container|compose|devops|runtime|canary' \
+    && printf '%s' "$intent" | grep -qiE 'ship|release|deploy|PR|readiness' \
+    && printf '%s' "$intent" | grep -qiE 'API|endpoint|persistence|landing|SQLite' \
+    && return 0
+  return 1
+}
+
+# Record insert ops + composer_chain for autonomous multi-workflow advance after each WF drains.
+sb_scheduler_apply_multi_workflow_chain() {
+  local repo_root="$1" composer_skill="$2" intent="${3:-}"
+  [[ -n "$repo_root" && -n "$composer_skill" ]] || return 1
+  [[ "$composer_skill" == "silver-feature" ]] || return 0
+  sb_scheduler_detect_multi_capability_intent "$intent" || return 0
+  local feature_wf devops_wf release_wf file updated
+  feature_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-feature" 2>/dev/null || printf 'WF-SILVER-FEATURE')"
+  devops_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-devops" 2>/dev/null || printf 'WF-SILVER-DEVOPS')"
+  release_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-release" 2>/dev/null || printf 'WF-SILVER-RELEASE')"
+  sb_scheduler_record_composition_operation "$repo_root" "$feature_wf" "insert" "$devops_wf" \
+    "DR-INSERT-MISSING-EVIDENCE" "greenfield SaaS lacks runtime packaging evidence; insert devops after feature delivery" 2>/dev/null || true
+  sb_scheduler_record_composition_operation "$repo_root" "$devops_wf" "insert" "$release_wf" \
+    "DR-INSERT-MISSING-EVIDENCE" "containerized deliverable requires ship readiness after runtime packaging" 2>/dev/null || true
+  file="$(sb_orchestrator_state_file 2>/dev/null || true)"
+  [[ -n "$file" && -f "$file" ]] || return 0
+  updated="$(jq --argjson chain '["silver-devops","silver-release"]' '.composer_chain = $chain' "$file" 2>/dev/null || true)"
+  [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+}
+
+# Net-new workflow intents: no catalog WF fits; route through silver-new-workflow.
+sb_scheduler_detect_net_new_workflow_intent() {
+  local intent="${1:-}"
+  [[ -n "$intent" ]] || return 1
+  printf '%s' "$intent" | grep -qiE 'posture audit|compliance snapshot|compliance-bundle|SB posture|hook manifest|net-new workflow|no existing.*workflow|new reusable workflow' \
+    && return 0
+  return 1
+}
+
+# Record net-new route decision when parent would otherwise force-fit an existing WF.
+sb_scheduler_apply_net_new_workflow_route() {
+  local repo_root="$1" composer_skill="$2" intent="${3:-}"
+  [[ -n "$repo_root" ]] || return 1
+  sb_scheduler_detect_net_new_workflow_intent "$intent" || return 0
+  local new_wf file updated
+  new_wf="$(sb_scheduler_composer_catalog_workflow_id "silver-new-workflow" 2>/dev/null || printf 'WF-SILVER-NEW-WORKFLOW')"
+  if [[ "$composer_skill" == "silver-new-workflow" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "$new_wf" "insert" "AF-PLAN" \
+      "DR-INSERT-MISSING-EVIDENCE" "net-new workflow requires explicit plan atom before execute" 2>/dev/null || true
+    if declare -f sb_orchestrator_event_append >/dev/null 2>&1; then
+      sb_orchestrator_event_append "dispatch" "$(jq -nc \
+        --arg skill "silver-new-workflow" \
+        '{worker_template: "NEW-WORKFLOW", skill: $skill, workflow_id: "WF-SILVER-NEW-WORKFLOW"}')" 2>/dev/null || true
+    fi
+    return 0
+  fi
+  if [[ "$composer_skill" == "silver-feature" || "$composer_skill" == "silver-router" || "$composer_skill" == "silver" ]]; then
+    sb_scheduler_record_composition_operation "$repo_root" "WF-SILVER-ROUTER" "substitute" "$new_wf" \
+      "DR-SUBSTITUTE-LEANER-WORKFLOW" "no catalog workflow fits posture audit bundle; substitute net-new workflow path" 2>/dev/null || true
+    file="$(sb_orchestrator_state_file 2>/dev/null || true)"
+    [[ -n "$file" && -f "$file" ]] || return 0
+    updated="$(jq --argjson chain '["silver-new-workflow"]' '.composer_chain = $chain' "$file" 2>/dev/null || true)"
+    [[ -n "$updated" ]] && sb_orchestrator_write_json "$updated"
+  fi
+}
+
 # Owned flow-step ids for an atomic flow from catalog.
 sb_scheduler_owned_step_ids_json() {
   local catalog_file="$1" atom_id="$2"

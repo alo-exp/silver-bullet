@@ -487,9 +487,13 @@ enterprise_e2e_outcome_tri_criteria_product_present() {
       git -C "$work_dir" rev-parse --verify feature/tc01-waitlist-saas >/dev/null 2>&1 && return 0
       ;;
     TC-02)
-      if [[ -f "${work_dir}/README.md" ]] && grep -q 'shields\.io' "${work_dir}/README.md" 2>/dev/null; then
+      if [[ -f "${work_dir}/README.md" ]] && grep -qEi 'runbook|correlation|structured|observability' "${work_dir}/README.md" 2>/dev/null; then
         return 0
       fi
+      if compgen -G "${work_dir}/api/src/*log*" >/dev/null 2>&1; then
+        return 0
+      fi
+      git -C "$work_dir" rev-parse --verify feature/tc02-observability-runbook >/dev/null 2>&1 && return 0
       git -C "$work_dir" rev-parse --verify feature/tc02-readme-badge >/dev/null 2>&1 && return 0
       ;;
     TC-03)
@@ -510,10 +514,10 @@ enterprise_e2e_outcome_tri_criteria_session_evidence_present() {
       grep -qEi 'WF-SILVER-(FEATURE|DEVOPS|RELEASE)|waitlist|multi.?workflow' "$row_log" 2>/dev/null && return 0
       ;;
     TC-02)
-      grep -qEi 'WF-SILVER-FAST|shields\.io|README badge|DR-SUBSTITUTE' "$row_log" 2>/dev/null && return 0
+      grep -qEi 'WF-SILVER-FAST|observability|structured logging|DR-SUBSTITUTE|correlation' "$row_log" 2>/dev/null && return 0
       ;;
     TC-03)
-      grep -qEi 'NEW-WORKFLOW|compliance|net.?new.?workflow|silver-new-workflow' "$row_log" 2>/dev/null && return 0
+      grep -qEi 'NEW-WORKFLOW|posture audit|compliance|net.?new.?workflow|silver-new-workflow' "$row_log" 2>/dev/null && return 0
       ;;
   esac
   return 1

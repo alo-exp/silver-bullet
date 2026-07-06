@@ -31,14 +31,17 @@ Commands:
   preflight          Verify harness wiring and structural tests
   start --track ID   Prepare run dir (TC-01, TC-02, TC-03)
   score --run ID     Score blocking outcomes from session log
+  live --track ID    Live verify via flow-advance + product gate
+  cold --track ID    Cold verify via flow-advance (no bootstrap)
   status [--run ID]  Show run ledger(s)
 
 Options:
-  --track ID         TC-01 | TC-02 | TC-03 (required for start/score)
+  --track ID         TC-01 | TC-02 | TC-03 (required for start/score/cold)
   --run ID           Run directory name under runs/
   --log PATH         Override session log for score
   --work-dir PATH    Override fixture work dir
-  --dry-run          Prepare run dir only
+  --dry-run          Prepare run dir only (start only)
+  --no-bootstrap     Alias for cold mode (deprecated name)
 EOF
 }
 
@@ -411,6 +414,112 @@ PY
   [[ "$verdict" == PASS ]] || exit 1
 }
 
+cmd_live() {
+  local track_id="" work_dir=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --track) track_id="$2"; shift 2 ;;
+      --work-dir) work_dir="$2"; shift 2 ;;
+      *) echo "Unknown live arg: $1" >&2; exit 2 ;;
+    esac
+  done
+
+  [[ -n "$track_id" ]] || { echo "ERROR: --track required (TC-01, TC-02, TC-03)" >&2; exit 2; }
+
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  work_dir="${work_dir:-${SB_TRI_CRITERIA_WORK_DIR:-${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}}}"
+  export SB_TRI_CRITERIA_WORK_DIR="$work_dir"
+
+  local run_id run_dir
+  run_id="$(run_id_new)-${track_id}"
+  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  mkdir -p "$run_dir"
+
+  local track_dir row_id install_fp sb_sha
+  track_dir="$(track_dir_for "$track_id")" || exit 1
+  row_id="$track_id"
+  install_fp="$(enterprise_e2e_install_fingerprint)"
+  sb_sha="$(git -C "$SB_ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+
+  local tpl_line vision_src prefs_src
+  tpl_line="$(row_templates "$track_dir" "$row_id")" || exit 1
+  vision_src="${tpl_line%%$'\t'*}"
+  prefs_src="${tpl_line#*$'\t'}"
+  cp "$vision_src" "${run_dir}/vision.md"
+  cp "$prefs_src" "${run_dir}/prefs.json"
+  cp "${run_dir}/vision.md" "${run_dir}/INTENT-SEED.txt"
+  write_ledger_stub "$run_dir" "$track_id" "$row_id" "$install_fp" "$sb_sha" "live-running"
+
+  local live_script="${PLANNING_DIR}/scripts/live-verify-track.sh"
+  chmod +x "$live_script" 2>/dev/null || true
+  [[ -f "$live_script" ]] || { echo "ERROR: missing $live_script" >&2; exit 1; }
+
+  echo "=== sb-tri-criteria E2E live verify ==="
+  echo "run_id=$run_id track_id=$track_id work_dir=$work_dir"
+  echo "NOTE: bootstrap-orchestrator*.sh NOT used; product gate required"
+
+  bash "$live_script" "$track_id" "$run_dir"
+
+  export SB_TRI_CRITERIA_RUN_DIR="$run_dir"
+  export SB_E2E_ENTERPRISE_MATRIX=1
+  export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet/tri-criteria-live-${run_id}}"
+  cmd_score --run "$run_id" --track "$track_id"
+}
+
+cmd_cold() {
+  local track_id="" work_dir=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --track) track_id="$2"; shift 2 ;;
+      --work-dir) work_dir="$2"; shift 2 ;;
+      --no-bootstrap) shift ;;
+      *) echo "Unknown cold arg: $1" >&2; exit 2 ;;
+    esac
+  done
+
+  [[ -n "$track_id" ]] || { echo "ERROR: --track required (TC-01, TC-02, TC-03)" >&2; exit 2; }
+
+  export SB_RUNTIME_PRESERVE_STATE_DIR=1
+  work_dir="${work_dir:-${SB_TRI_CRITERIA_WORK_DIR:-${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}}}"
+  export SB_TRI_CRITERIA_WORK_DIR="$work_dir"
+
+  local run_id run_dir
+  run_id="$(run_id_new)-${track_id}"
+  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  mkdir -p "$run_dir"
+
+  # Prepare vision/prefs/ledger via start dry path
+  local track_dir matrix_json row_id install_fp sb_sha
+  track_dir="$(track_dir_for "$track_id")" || exit 1
+  matrix_json="${track_dir}/MATRIX.json"
+  row_id="$track_id"
+  install_fp="$(enterprise_e2e_install_fingerprint)"
+  sb_sha="$(git -C "$SB_ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+
+  local tpl_line vision_src prefs_src
+  tpl_line="$(row_templates "$track_dir" "$row_id")" || exit 1
+  vision_src="${tpl_line%%$'\t'*}"
+  prefs_src="${tpl_line#*$'\t'}"
+  cp "$vision_src" "${run_dir}/vision.md"
+  cp "$prefs_src" "${run_dir}/prefs.json"
+  cp "${run_dir}/vision.md" "${run_dir}/INTENT-SEED.txt"
+  write_ledger_stub "$run_dir" "$track_id" "$row_id" "$install_fp" "$sb_sha" "cold-running"
+
+  local cold_script="${PLANNING_DIR}/scripts/cold-verify-track.sh"
+  [[ -x "$cold_script" ]] || chmod +x "$cold_script" 2>/dev/null || true
+  [[ -f "$cold_script" ]] || { echo "ERROR: missing $cold_script" >&2; exit 1; }
+
+  echo "=== sb-tri-criteria E2E cold verify ==="
+  echo "run_id=$run_id track_id=$track_id work_dir=$work_dir"
+  echo "NOTE: bootstrap-orchestrator*.sh NOT used"
+
+  bash "$cold_script" "$track_id" "$run_dir"
+
+  export SB_TRI_CRITERIA_RUN_DIR="$run_dir"
+  export SB_E2E_ENTERPRISE_MATRIX=1
+  cmd_score --run "$run_id" --track "$track_id"
+}
+
 cmd_status() {
   local run_id=""
   while [[ $# -gt 0 ]]; do
@@ -446,6 +555,8 @@ main() {
     preflight) cmd_preflight "$@" ;;
     start) cmd_start "$@" ;;
     score) cmd_score "$@" ;;
+    live) cmd_live "$@" ;;
+    cold) cmd_cold "$@" ;;
     status) cmd_status "$@" ;;
     -h|--help|help|"") usage ;;
     *) echo "Unknown command: $cmd" >&2; usage; exit 2 ;;
