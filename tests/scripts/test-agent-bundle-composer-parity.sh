@@ -9,7 +9,7 @@ RENDER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 PASS=0
 FAIL=0
 
-COMPOSERS=(feature ui devops bugfix research release)
+COMPOSERS=(feature ui devops bugfix deep-research release)
 AGENTS=(claude codex cursor)
 
 TMP_BASE="$(mktemp -d)"
