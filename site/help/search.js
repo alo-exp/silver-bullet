@@ -134,7 +134,7 @@ var IDX = [
     "url": "/help/concepts/orchestrator-mode.html",
     "anchor": "overview",
     "title": "Parent worker orchestrator mode",
-    "text": "Parent-only orchestration: parent session schedules Task workers from orchestrator-directive.json and .silver-bullet/orchestrator-workers templates; workers implement atomic flows. Blocking decision_class outcomes require human approval. Tier 2+ parent cannot Edit Write Bash on source. Sequential runtime queue today; DAG scheduler in progress."
+    "text": "Parent-only orchestration: parent session schedules Task workers from orchestrator-directive.json and .silver-bullet/orchestrator-workers templates; workers implement atomic flows. composer_chain multi-workflow scheduler (v0.51.0+) advances silver-devops then silver-release after queue drain. Blocking decision_class outcomes require human approval. Tier 2+ parent cannot Edit Write Bash on source. Sequential runtime queue today; DAG scheduler in progress."
   },
   {
     "page": "Core Concepts",
@@ -337,7 +337,7 @@ var IDX = [
     "url": "/help/workflows/silver-release.html",
     "anchor": "overview",
     "title": "/silver:release",
-    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs quality gates, UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, silver:ship, milestone archival, /silver:create-release, then a post-release items summary."
+    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs the 4-stage pre-release quality gate (adversarial, SENTINEL, security, 100% site scan + verification bundle), UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, silver:ship, milestone archival, /silver:create-release, then a post-release items summary. scripts/pre-release-gate.sh enforces CI green before tag."
   },
   {
     "page": "Workflows",
