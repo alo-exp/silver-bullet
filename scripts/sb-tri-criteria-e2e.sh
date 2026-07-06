@@ -46,6 +46,7 @@ Options:
   --log PATH         Override session log for score
   --work-dir PATH    Override fixture work dir
   --host HOST        cursor | claude | codex (live only; default cursor)
+  --greenfield       Reset fixture to main baseline; fresh branch per run (live only)
   --dry-run          Prepare run dir only (start only)
   --no-bootstrap     Alias for cold mode (deprecated name)
 EOF
@@ -190,6 +191,10 @@ doc = {
     "verdict": None,
     "blocking_outcomes": {},
     "live_session_run": False,
+    "greenfield": False,
+    "graphify_query_ref": None,
+    "agentmemory_export_ref": None,
+    "fixture_branch": None,
 }
 with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, indent=2)
@@ -438,12 +443,13 @@ PY
 }
 
 cmd_live() {
-  local track_id="" work_dir="" host="${SB_TRI_CRITERIA_HOST:-cursor}"
+  local track_id="" work_dir="" host="${SB_TRI_CRITERIA_HOST:-cursor}" greenfield=0
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --track) track_id="$2"; shift 2 ;;
       --work-dir) work_dir="$2"; shift 2 ;;
       --host) host="$2"; shift 2 ;;
+      --greenfield) greenfield=1; shift ;;
       *) echo "Unknown live arg: $1" >&2; exit 2 ;;
     esac
   done
@@ -456,6 +462,7 @@ cmd_live() {
 
   export SB_RUNTIME_PRESERVE_STATE_DIR=1
   export SB_TRI_CRITERIA_HOST="$host"
+  export SB_TRI_CRITERIA_GREENFIELD="$greenfield"
   unset SB_RUNTIME_STATE_DIR
   work_dir="${work_dir:-${SB_TRI_CRITERIA_WORK_DIR:-${SB_MINIMAL_INTENT_WORK_DIR:-$(default_work_dir)}}}"
   export SB_TRI_CRITERIA_WORK_DIR="$work_dir"
@@ -479,6 +486,10 @@ cmd_live() {
   cp "$prefs_src" "${run_dir}/prefs.json"
   cp "${run_dir}/vision.md" "${run_dir}/INTENT-SEED.txt"
   write_ledger_stub "$run_dir" "$track_id" "$row_id" "$install_fp" "$sb_sha" "live-running"
+  if [[ "$greenfield" -eq 1 ]] && command -v jq >/dev/null 2>&1; then
+    jq '.greenfield = true' "${run_dir}/ledger.json" >"${run_dir}/ledger.json.tmp" && \
+      mv "${run_dir}/ledger.json.tmp" "${run_dir}/ledger.json"
+  fi
 
   local live_script
   case "$host" in
@@ -493,7 +504,7 @@ cmd_live() {
   [[ -f "$live_script" ]] || { echo "ERROR: missing $live_script" >&2; exit 1; }
 
   echo "=== sb-tri-criteria E2E live verify ==="
-  echo "run_id=$run_id track_id=$track_id host=$host work_dir=$work_dir"
+  echo "run_id=$run_id track_id=$track_id host=$host work_dir=$work_dir greenfield=$greenfield"
   echo "NOTE: bootstrap-orchestrator*.sh NOT used; product gate required"
 
   case "$host" in
@@ -516,6 +527,16 @@ cmd_live() {
       ;;
   esac
   cmd_score --run "$run_id" --track "$track_id"
+
+  if command -v jq >/dev/null 2>&1; then
+    local fixture_branch fixture_sha
+    fixture_branch="$(git -C "$work_dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+    fixture_sha="$(git -C "$work_dir" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+    jq --arg b "$fixture_branch" --arg s "$fixture_sha" \
+      '.fixture_branch = $b | .fixture_sha = $s' \
+      "${run_dir}/ledger.json" >"${run_dir}/ledger.json.tmp" && \
+      mv "${run_dir}/ledger.json.tmp" "${run_dir}/ledger.json"
+  fi
 }
 
 cmd_cold() {
