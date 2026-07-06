@@ -63,6 +63,25 @@ CI enforces `silver-bullet.md` ↔ `templates/silver-bullet.md.base` parity (`te
 - Prefer targeted tests before the full suite when iterating locally.
 - If a change affects installation or bootstrap behavior, verify both fresh-install and upgrade paths.
 
+## Release Policy
+
+**CI green is mandatory before any plugin release.** Never create a git tag or
+`gh release` while CI (or the local equivalent) is failing.
+
+1. **Before tag / `gh release create`:** run the full validation suite and confirm green:
+   ```bash
+   bash scripts/pre-release-gate.sh
+   # equivalent: bash tests/run-all-tests.sh
+   ```
+2. **Remote CI:** after the release commit is pushed, wait for GitHub Actions on that
+   commit to finish green (`bash scripts/verify-release-commit-ci.sh`) before tagging.
+3. **Never release on red CI.** v0.51.0 is the counterexample: the validate job failed
+   on `tests/hooks/test-completion-audit.sh` (44 failures — enterprise-policy block
+   shadowing delivery-gate assertions) while the release was still cut.
+
+`scripts/sync-release-marketplace-versions.sh` invokes `pre-release-gate.sh` at startup.
+Site/help-only publishes (no version bump) are exempt — see Working Rules below.
+
 ## Transferable Notes
 
 - `jq` is a required runtime dependency for the hooks.

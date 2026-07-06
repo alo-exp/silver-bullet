@@ -16,6 +16,9 @@ if [[ -z "$release_version" ]]; then
   exit 1
 fi
 
+# Hard gate: local CI-equivalent suite must be green before version bump/sync.
+bash "${SCRIPT_DIR}/pre-release-gate.sh"
+
 claude_sync_script="${SB_SYNC_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-marketplace-version.sh}"
 codex_sync_script="${SB_SYNC_CODEX_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-codex-marketplace-version.sh}"
 cursor_sync_script="${SB_SYNC_CURSOR_MARKETPLACE_VERSION_SCRIPT:-${SCRIPT_DIR}/sync-cursor-marketplace-version.sh}"
