@@ -114,12 +114,20 @@ done and both freshness tests pass.
 
 #### Gate entry (mandatory)
 
-Run both scripts; both MUST pass before you record the Stage 4a marker:
+Run both scripts; both MUST pass before you record the Stage 4a marker.
+`bash scripts/pre-release-gate.sh` invokes these tests automatically before
+`run-all-tests.sh` — use it as the single entry point before tag/release.
 
 ```bash
 bash tests/scripts/test-site-content-freshness.sh
 bash tests/scripts/test-site-doc-freshness.sh
 ```
+
+**100% site scan:** automated tests do not cover every release claim. You MUST
+also manually review **all** pages under `site/` (homepage, help, changelog,
+reference tables, workflow catalog SDLC order, version strings, feature lists)
+for accuracy against the version being shipped. Log updated pages in the release
+audit artifact when gaps are found.
 
 Re-run both after all content edits in this stage (or confirm they still pass).
 

@@ -83,6 +83,13 @@ assert_not_contains "public site does not mention stale v0.37.16" "v?0\\.37\\.16
 assert_not_contains "Help Center install docs do not advertise retired runtime installer paths" "forge-sb-install|silver-init|Forge Runtime" "$REPO_ROOT/site/help"
 assert_not_contains "public workflow docs do not route to missing SB-local MultAI skill" "silver:multai" "$REPO_ROOT/site"
 assert_not_contains "package metadata does not advertise stale fixed-step Claude-only workflow" "20-step|24-step|for Claude Code\\." "$REPO_ROOT/package.json"
+assert_contains "changelog lists v0.51.1 release article" 'id="v0-51-1"' "$REPO_ROOT/site/changelog/index.html"
+assert_contains "changelog lists v0.51.0 release article" 'id="v0-51-0"' "$REPO_ROOT/site/changelog/index.html"
+assert_contains "release workflow documents 4-stage pre-release gate" 'id="four-stage-gate"' "$REPO_ROOT/site/help/workflows/silver-release.html"
+assert_contains "release workflow documents 100% site scan" "100% public site scan|100% site scan" "$REPO_ROOT/site/help/workflows/silver-release.html"
+assert_contains "orchestrator mode documents composer_chain" "composer_chain" "$REPO_ROOT/site/help/concepts/orchestrator-mode.html"
+assert_contains "enterprise status documents tri-criteria harness" "Tri-criteria E2E harness" "$REPO_ROOT/site/help/concepts/autonomous-enterprise-status.html"
+assert_contains "pre-release gate script runs site freshness" "test-site-content-freshness.sh" "$REPO_ROOT/scripts/pre-release-gate.sh"
 
 bash "$REPO_ROOT/tests/scripts/test-site-chrome-regression.sh"
 
