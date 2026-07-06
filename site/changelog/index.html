@@ -89,6 +89,33 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-0">
+      <div class="release-header">
+        <h2>v0.51.0</h2>
+        <time class="release-date" datetime="2026-07-06">2026-07-06</time>
+      </div>
+      <p class="release-summary">Tri-criteria E2E validation harness: live/cold matrix across Cursor, Claude, and Codex; multi-workflow orchestrator scheduler; greenfield 6/6 PASS.</p>
+      <h3>Features</h3>
+      <ul>
+        <li><code>feat(tri-criteria)</code>: live/cold validation harness, tri-host live matrix, greenfield 6/6 PASS</li>
+        <li><code>feat(autonomous-enterprise)</code>: agent-claude track and orchestrator scheduler</li>
+        <li><code>feat(audit)</code>: AF/FS compliance script; Audit mode for catalog compliance</li>
+        <li><code>feat(skills)</code>: silver-deep-research replaces silver-research/multi-ai</li>
+      </ul>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(tri-criteria)</code>: E2E scorer false fails and runtime composition wiring</li>
+        <li><code>fix(agent-codex/agent-claude)</code>: graphify and agentmemory preflight before delegate</li>
+        <li><code>fix(agent-claude)</code>: folder trust seeding and plugin cache alias resolution</li>
+        <li><code>fix(catalog)</code>: remediate WF/AF audit failures to 157/157 PASS</li>
+      </ul>
+      <h3>Verification</h3>
+      <ul>
+        <li>Tri-criteria greenfield matrix — 6/6 PASS (cursor+claude+codex)</li>
+        <li>Release version alignment, template parity, render freshness — PASS</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-50-5">
       <div class="release-header">
         <h2>v0.50.5</h2>
