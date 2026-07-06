@@ -50,6 +50,10 @@ Do not execute other shell commands.
 
 Before determining version, verify the working tree is releasable:
 
+0. **CI green (mandatory):** run `bash scripts/pre-release-gate.sh` (or
+   `bash tests/run-all-tests.sh`). **STOP** if any test fails — never tag or
+   `gh release create` on red CI (see v0.51.0 counterexample in `docs/RELEASE.md`).
+
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."
 2. Check upstream tracking: `git rev-parse --abbrev-ref @{upstream} 2>/dev/null`

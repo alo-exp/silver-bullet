@@ -11,6 +11,8 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+# Enterprise policy human-deploy gate is on by default; tests assert delivery gates, not EP.
+export SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOK="$REPO_ROOT/hooks/completion-audit.sh"

@@ -8,6 +8,30 @@
 
 ## Release Steps
 
+### 0. CI Green Required (Mandatory — run first)
+
+**Never cut a release on red CI.** v0.51.0 shipped while the validate job failed on
+`tests/hooks/test-completion-audit.sh` (enterprise-policy block shadowing 44 delivery-gate
+assertions). That must not recur.
+
+Run the local CI-equivalent gate before any version bump, marketplace sync, tag, or
+`gh release create`:
+
+```bash
+bash scripts/pre-release-gate.sh
+```
+
+This runs `bash tests/run-all-tests.sh` and exits non-zero on any failure. Audited bypass
+only: `SB_SKIP_PRE_RELEASE_GATE=1` (do not use for normal releases).
+
+After the release commit is pushed, also wait for GitHub Actions green on that commit:
+
+```bash
+bash scripts/verify-release-commit-ci.sh
+```
+
+`scripts/sync-release-marketplace-versions.sh` calls `pre-release-gate.sh` automatically.
+
 ### 1. Pre-Release Quality Gate (Mandatory)
 
 Four effective stages must pass in the **current session**. See
