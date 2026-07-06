@@ -5,4 +5,4 @@ description: DEPRECATED — use silver-scan for retrospective session scan or si
 argument-hint: <task description>
 ---
 
-Invoke the Silver Bullet `silver-orient` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host Skill tool.
+Invoke the Silver Bullet `silver-orient` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel.
