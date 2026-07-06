@@ -19,7 +19,7 @@ assert_ok() {
 
 script_body="$(cat "${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh")"
 
-if printf '%s' "$script_body" | grep -qF 'matrix_force_rerun()'; then
+if grep -qF 'matrix_force_rerun()' <<<"$script_body"; then
   echo "PASS: matrix defines matrix_force_rerun helper"
   ((PASS++)) || true
 else
@@ -27,7 +27,7 @@ else
   ((FAIL++)) || true
 fi
 
-if printf '%s' "$script_body" | grep -qF 'SB_E2E_MATRIX_FORCE_ALL'; then
+if grep -qF 'SB_E2E_MATRIX_FORCE_ALL' <<<"$script_body"; then
   echo "PASS: matrix documents SB_E2E_MATRIX_FORCE_ALL"
   ((PASS++)) || true
 else
@@ -35,7 +35,7 @@ else
   ((FAIL++)) || true
 fi
 
-if printf '%s' "$script_body" | grep -qF 'if ! matrix_force_rerun && verify_row_success'; then
+if grep -qF 'if ! matrix_force_rerun && verify_row_success' <<<"$script_body"; then
   echo "PASS: skip gate uses matrix_force_rerun"
   ((PASS++)) || true
 else
@@ -43,7 +43,7 @@ else
   ((FAIL++)) || true
 fi
 
-if printf '%s' "$script_body" | grep -qF "trap \"rm -f '\$_matrix_batch_pid_file'; cleanup_workspace\" EXIT"; then
+if grep -qF "trap \"rm -f '\$_matrix_batch_pid_file'; cleanup_workspace\" EXIT" <<<"$script_body"; then
   echo "PASS: batch pid EXIT trap captures path at registration"
   ((PASS++)) || true
 else

@@ -34,10 +34,14 @@ done
 
 [[ -d "$SB_ROOT" ]] || { printf 'ERROR: SB_ROOT not a directory: %s\n' "$SB_ROOT" >&2; exit 1; }
 
-CLI="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
-[[ -n "$CLI" ]] || { printf 'ERROR: native Codex CLI not found\n' >&2; exit 1; }
-"$CLI" --version >/dev/null 2>&1 || { printf 'ERROR: Codex CLI not working: %s\n' "$CLI" >&2; exit 1; }
-printf 'OK: Codex CLI %s\n' "$("$CLI" --version 2>/dev/null | head -1)"
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  printf 'SKIP (dry-run): Codex CLI check\n'
+else
+  CLI="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
+  [[ -n "$CLI" ]] || { printf 'ERROR: native Codex CLI not found\n' >&2; exit 1; }
+  "$CLI" --version >/dev/null 2>&1 || { printf 'ERROR: Codex CLI not working: %s\n' "$CLI" >&2; exit 1; }
+  printf 'OK: Codex CLI %s\n' "$("$CLI" --version 2>/dev/null | head -1)"
+fi
 
 if [[ -f "${SB_ROOT}/scripts/install-codex.sh" && "$SKIP_HOOK_TRUST" != "1" ]]; then
   if [[ "$DRY_RUN" -eq 1 ]]; then
