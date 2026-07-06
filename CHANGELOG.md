@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.51.1] — 2026-07-06
+
+Patch release: CI green gate enforcement, scheduler stdout leak fix, completion-audit enterprise policy alignment, and CI runner compatibility for agent/E2E structural tests.
+
+## Fixes
+- `fix(ci)`: scheduler test isolation and orchestrator join-gate stdout leak (`d659c4d7`)
+- `fix(ci)`: completion-audit enterprise policy shadowing + pre-release CI gate (`45b352b6`)
+- `fix(ci)`: regen `atomic-flow-index.json`, agent preflight dry-run without host CLIs, matrix grep pipefail (`2f04515d`)
+- `fix(ci)`: CI-safe mktemp work-dir for minimal-intent/tri-criteria dry-runs; E2E-096 fixture seed (`d367741b`)
+
+## Documentation
+- CI policy: never tag/release on red CI (`docs/RELEASE.md`, `AGENTS.md`)
+
 ## [0.51.0] — 2026-07-06
 
 Minor release: **tri-criteria E2E validation harness** — live/cold matrix across Cursor, Claude, and Codex; multi-workflow orchestrator scheduler; greenfield 6/6 PASS with harness drain fix.
