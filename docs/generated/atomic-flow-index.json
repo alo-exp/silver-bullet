@@ -425,6 +425,16 @@
     "AF-VERIFY": "templates/orchestrator-workers/VERIFY.md"
   },
   "workflow_enforcement_queues": {
+    "silver": [
+      "silver-context"
+    ],
+    "silver-benchmark": [
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
     "silver-bugfix": [
       "silver-debug",
       "silver-plan",
@@ -441,11 +451,34 @@
       "silver-completion-audit",
       "silver-ship"
     ],
+    "silver-canary": [
+      "silver-blast-radius",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship"
+    ],
+    "silver-content": [
+      "silver-clarify",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
     "silver-deep-research": [
       "silver-clarify",
       "silver-deep-research",
       "silver-ensure-docs",
       "silver-validate"
+    ],
+    "silver-deploy": [
+      "silver-blast-radius",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-ship"
     ],
     "silver-devops": [
       "silver-blast-radius",
@@ -493,6 +526,22 @@
       "silver-completion-audit",
       "silver-ship"
     ],
+    "silver-forensics": [
+      "silver-debug",
+      "silver-execute",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
+    "silver-incident": [
+      "silver-blast-radius",
+      "silver-debug",
+      "silver-plan",
+      "silver-execute",
+      "security",
+      "silver-secure",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
     "silver-new-workflow": [
       "silver-clarify",
       "silver-scan",
@@ -503,6 +552,22 @@
       "silver-verify",
       "silver-validate",
       "silver-ensure-docs"
+    ],
+    "silver-refactor": [
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
     ],
     "silver-release": [
       "FLOW-QUALITY-GATE",
@@ -517,6 +582,17 @@
       "silver-completion-audit",
       "silver-ship",
       "silver-create-release"
+    ],
+    "silver-retro": [
+      "silver-context",
+      "silver-execute",
+      "silver-ensure-docs"
+    ],
+    "silver-test": [
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-verify"
     ],
     "silver-ui": [
       "FLOW-QUALITY-GATE",
