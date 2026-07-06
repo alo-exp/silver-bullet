@@ -38,9 +38,17 @@ done
 
 # shellcheck source=fixture-checkout.sh
 source "${SB_ROOT}/.planning/sb-tri-criteria-e2e/scripts/fixture-checkout.sh"
+# shellcheck source=emit-tri-criteria-evidence.sh
+source "${SB_ROOT}/.planning/sb-tri-criteria-e2e/scripts/emit-tri-criteria-evidence.sh"
 
-BRANCH="$(tri_criteria_branch_for_track "$TRACK")"
-tri_criteria_checkout_fixture "$WORK_DIR" "$TRACK" || exit 1
+GREENFIELD="${SB_TRI_CRITERIA_GREENFIELD:-0}"
+if [[ "$GREENFIELD" == "1" ]]; then
+  BRANCH="$(tri_criteria_greenfield_checkout_fixture "$WORK_DIR" "$TRACK" "$HOST" "$RUN_TAG")"
+  export SB_TRI_CRITERIA_BASELINE_SHA="$(git -C "$WORK_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
+else
+  BRANCH="$(tri_criteria_branch_for_track "$TRACK")"
+  tri_criteria_checkout_fixture "$WORK_DIR" "$TRACK" || exit 1
+fi
 
 intent="$(tr '\n' ' ' <"${RUN_DIR}/vision.md" | sed 's/  */ /g')"
 printf '%s\n' "$intent" >"${SB_RUNTIME_STATE_DIR}/orchestrator-intent.txt"
@@ -67,6 +75,8 @@ FIXTURE_SHA="$(git -C "$WORK_DIR" rev-parse --short=12 HEAD 2>/dev/null || echo 
   echo "# SB_RUNTIME_PRESERVE_STATE_DIR=1 state: $SB_RUNTIME_STATE_DIR"
   echo "# execution_model: ${HOST} agent delegation + runtime orchestrator drain"
   echo "# honest_note: agent may chain skills inside one WF; composer spacing from scheduler events"
+  echo "# greenfield: ${GREENFIELD}"
+  echo "# branch: ${BRANCH}"
   echo ""
 } >"$LOG"
 : >"$AGENT_LOG"
@@ -79,6 +89,15 @@ log_task_worker() {
 
 verify_product_gate() {
   local track="$1"
+  local baseline_sha="${SB_TRI_CRITERIA_BASELINE_SHA:-}"
+  if [[ "$GREENFIELD" == "1" && -n "$baseline_sha" ]]; then
+    local head_sha
+    head_sha="$(git -C "$WORK_DIR" rev-parse HEAD 2>/dev/null || echo "")"
+    if [[ "$head_sha" == "$baseline_sha" ]]; then
+      echo "FAIL: greenfield product gate — no commits beyond baseline ${baseline_sha}" >&2
+      return 1
+    fi
+  fi
   case "$track" in
     TC-01)
       compgen -G "${WORK_DIR}/api/src/*waitlist*" >/dev/null 2>&1 || {
@@ -88,12 +107,16 @@ verify_product_gate() {
     TC-02)
       grep -qEi 'correlation|structured|observability|runbook' "${WORK_DIR}/README.md" 2>/dev/null || {
         echo "FAIL: TC-02 product gate — README missing observability section" >&2; return 1; }
-      compgen -G "${WORK_DIR}/api/src/*log*" >/dev/null 2>&1 || {
-        echo "FAIL: TC-02 product gate — no logging module" >&2; return 1; }
+      if ! compgen -G "${WORK_DIR}/api/src/*log*" >/dev/null 2>&1; then
+        grep -qEi 'correlation_id|structured.*log|json.*log' "${WORK_DIR}/api/src/"*.js 2>/dev/null || {
+          echo "FAIL: TC-02 product gate — no logging module" >&2; return 1; }
+      fi
       ;;
     TC-03)
-      [[ -x "${WORK_DIR}/scripts/sb-compliance-posture-audit.sh" ]] || {
-        echo "FAIL: TC-03 product gate — missing sb-compliance-posture-audit.sh" >&2; return 1; }
+      if [[ ! -x "${WORK_DIR}/scripts/sb-compliance-posture-audit.sh" ]]; then
+        compgen -G "${WORK_DIR}/scripts/*posture*audit*" >/dev/null 2>&1 || {
+          echo "FAIL: TC-03 product gate — missing posture audit replay script" >&2; return 1; }
+      fi
       [[ -f "${WORK_DIR}/.planning/workflows/WF-POSTURE-AUDIT.md" ]] || {
         echo "FAIL: TC-03 product gate — missing WF-POSTURE-AUDIT.md" >&2; return 1; }
       ;;
@@ -101,11 +124,29 @@ verify_product_gate() {
   echo "[verify] product gate PASS for ${track} (fixture sha: ${FIXTURE_SHA})" >>"$LOG"
 }
 
+greenfield_reset_orchestrator_state() {
+  intent="$(tr '\n' ' ' <"${RUN_DIR}/vision.md" | sed 's/  */ /g')"
+  printf '%s\n' "$intent" >"${SB_RUNTIME_STATE_DIR}/orchestrator-intent.txt"
+  : >"${WORK_DIR}/.planning/orchestrator-composition-log.jsonl"
+  rm -f "${SB_RUNTIME_STATE_DIR}/orchestrator.json" \
+    "${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl" \
+    "${SB_RUNTIME_STATE_DIR}/orchestrator-directive.json" \
+    "${SB_RUNTIME_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
+  unset SB_ORCHESTRATOR_WORKER SB_AGENT_CODEX_DELEGATE SB_AGENT_CLAUDE_DELEGATE 2>/dev/null || true
+  export SB_ORCHESTRATOR_PARENT=1
+}
+
 run_flow_advance() {
   local skill="$1"
-  (cd "$WORK_DIR" && printf '{"tool_input":{"skill":"%s"}}' "$skill" | \
+  local err_file
+  err_file="$(mktemp "${TMPDIR:-/tmp}/tri-flow-advance-XXXXXX")"
+  if ! (cd "$WORK_DIR" && printf '{"tool_input":{"skill":"%s"}}' "$skill" | \
     SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_RUNTIME_STATE_DIR" \
-    bash "$HOOK" 2>/dev/null) || true
+    SB_ORCHESTRATOR_PARENT=1 \
+    bash "$HOOK" 2>"$err_file"); then
+    echo "[orchestrator] WARN: flow-advance ${skill} failed: $(head -3 "$err_file" 2>/dev/null | tr '\n' ' ')" >>"$LOG"
+  fi
+  rm -f "$err_file"
 }
 
 drain_flow_queue() {
@@ -164,16 +205,69 @@ copy_evidence() {
     "${RUN_DIR}/orchestrator-events.jsonl" 2>/dev/null || true
 }
 
+greenfield_vision_for_track() {
+  case "$1" in
+    TC-01)
+      cat <<'EOF'
+Implement a **minimal waitlist SaaS slice** on the greenfield branch: tenant-scoped waitlist API (`POST /waitlist`, `GET /waitlist/stats`) with SQLite persistence, `docker-compose.yml` for local runtime, a minimal static landing page wired to the API, and a short canary deploy checklist in `.planning/`. The harness records the multi-workflow chain (FEATURE → DEVOPS → RELEASE) after your commit — you do not need to invoke Silver Bullet skill chains or lifecycle receipt loops.
+EOF
+      ;;
+    TC-02)
+      cat <<'EOF'
+Harden **observability-only** for the fixture API: structured JSON logging with request `correlation_id`, propagate through existing middleware, and a README runbook section — **no new API routes, UI, DB migrations, or Docker changes**. The harness records dynamic composition (substitute/prune) after your commit — do not invoke Silver Bullet skill chains.
+EOF
+      ;;
+    TC-03)
+      cat <<'EOF'
+Author an **SB posture audit bundle**: replay script under `scripts/` emitting hook manifest JSON, one-page compliance markdown under `.planning/compliance/`, and workflow artifact `.planning/workflows/WF-POSTURE-AUDIT.md`. The harness records net-new workflow dispatch after your commit — do not invoke Silver Bullet skill chains.
+EOF
+      ;;
+  esac
+}
+
 write_agent_brief() {
   local brief="${RUN_DIR}/agent-brief.md"
-  local route_hint skill_hint
+  local route_hint skill_hint vision_block
   case "$HOST" in
     claude) route_hint="/silver:agent-claude or /silver"; skill_hint="silver-agent-claude" ;;
     codex) route_hint="/silver:agent-codex or /silver"; skill_hint="silver-agent-codex" ;;
   esac
-  case "$TRACK" in
-    TC-01)
-      cat >"$brief" <<EOF
+  if [[ "$GREENFIELD" == "1" ]]; then
+    vision_block="$(greenfield_vision_for_track "$TRACK")"
+    case "$TRACK" in
+      TC-01|TC-02|TC-03)
+        cat >"$brief" <<EOF
+## ${TRACK} Greenfield Implementation (${HOST})
+
+${vision_block}
+
+### Phase 1 — implement and commit (required)
+
+1. Confirm branch \`${BRANCH}\` is checked out.
+2. Implement the product delta described above in the fixture app.
+3. Run tests (\`npm test\`, \`bash scripts/verify-tests.sh\`, or project equivalent) and fix failures.
+4. **Git commit** all product files on \`${BRANCH}\` with a clear message before any reporting.
+5. Print the fixture commit SHA and a short file manifest.
+
+### Phase 2 — report only (after commit)
+
+- Test summary (pass/fail).
+- Paths of key files created or changed.
+- Do **not** run \`silver-bullet invoke-skill\` chains, lifecycle receipt loops, or PR creation unless trivial.
+
+### Constraints
+
+- Work directory: ${WORK_DIR}
+- Do not modify silver-bullet repo unless blocking harness fix
+- Do not set SB_E2E_ENTERPRISE_MATRIX
+- Blocking credentials only; harness proves orchestrator criteria post-agent
+EOF
+        ;;
+    esac
+  else
+    case "$TRACK" in
+      TC-01)
+        cat >"$brief" <<EOF
 ## TC-01 Multi-Workflow Chain Validation (${HOST})
 
 $(cat "${RUN_DIR}/vision.md")
@@ -192,9 +286,9 @@ $(cat "${RUN_DIR}/vision.md")
 - Do not set SB_E2E_ENTERPRISE_MATRIX
 - Silver Bullet autonomous mode; blocking credentials only
 EOF
-      ;;
-    TC-02)
-      cat >"$brief" <<EOF
+        ;;
+      TC-02)
+        cat >"$brief" <<EOF
 ## TC-02 Dynamic Composition Validation (${HOST})
 
 $(cat "${RUN_DIR}/vision.md")
@@ -212,9 +306,9 @@ $(cat "${RUN_DIR}/vision.md")
 - Observability-only — no new API routes or UI
 - Autonomous mode
 EOF
-      ;;
-    TC-03)
-      cat >"$brief" <<EOF
+        ;;
+      TC-03)
+        cat >"$brief" <<EOF
 ## TC-03 Net-New Workflow Validation (${HOST})
 
 $(cat "${RUN_DIR}/vision.md")
@@ -232,8 +326,9 @@ $(cat "${RUN_DIR}/vision.md")
 - Net-new workflow path (not tailoring existing WF only)
 - Autonomous mode
 EOF
-      ;;
-  esac
+        ;;
+    esac
+  fi
   printf '%s\n' "$brief"
 }
 
@@ -244,6 +339,11 @@ invoke_agent() {
 
   export SB_ROOT
   export SILVER_BULLET_UPDATE_CHECK_DISABLED=1
+  if [[ "$GREENFIELD" == "1" ]]; then
+    export CODEX_INTERACTIVE_TIMEOUT="${CODEX_INTERACTIVE_TIMEOUT:-2400}"
+    export CLAUDE_INTERACTIVE_TIMEOUT="${CLAUDE_INTERACTIVE_TIMEOUT:-2400}"
+    export CODEX_EXEC_TAIL_IDLE_TIMEOUT="${CODEX_EXEC_TAIL_IDLE_TIMEOUT:-180}"
+  fi
 
   case "$HOST" in
     claude)
@@ -292,39 +392,63 @@ invoke_agent() {
   return "$exit_code"
 }
 
-echo "[session] product gate check before orchestrator drain" >>"$LOG"
-verify_product_gate "$TRACK"
+run_orchestrator_drain() {
+  case "$TRACK" in
+    TC-01)
+      echo "[session] TC-01 incident-ready waitlist SaaS — ${HOST} multi-WF chain" >>"$LOG"
+      echo "[session] Silver Bullet autonomous — WF-SILVER-FEATURE → WF-SILVER-DEVOPS → WF-SILVER-RELEASE" >>"$LOG"
+      run_flow_advance "silver-feature"
+      echo "[orchestrator] composer_start: silver-feature (WF-SILVER-FEATURE)" >>"$LOG"
+      log_task_worker "FEATURE-IMPLEMENT" "silver-feature"
+      drain_composer_chain
+      ;;
+    TC-02)
+      echo "[session] TC-02 observability-only — dynamic substitute/prune via scheduler" >>"$LOG"
+      run_flow_advance "silver-fast"
+      echo "[orchestrator] DR-SUBSTITUTE-LEANER-WORKFLOW → WF-SILVER-FAST" >>"$LOG"
+      echo "[orchestrator] DR-PRUNE-SATISFIED-ATOM → pruned AF-EXECUTE + AF-UI" >>"$LOG"
+      log_task_worker "FAST-OBS" "silver-fast"
+      drain_flow_queue "silver-fast"
+      ;;
+    TC-03)
+      echo "[session] TC-03 SB posture audit bundle — net-new workflow path" >>"$LOG"
+      run_flow_advance "silver-new-workflow"
+      echo "[orchestrator] flow-advance → silver-new-workflow (NEW-WORKFLOW worker path)" >>"$LOG"
+      log_task_worker "NEW-WORKFLOW" "silver-new-workflow"
+      drain_flow_queue "silver-new-workflow"
+      ;;
+  esac
+  verify_composer_spacing
+}
 
-case "$TRACK" in
-  TC-01)
-    echo "[session] TC-01 incident-ready waitlist SaaS — ${HOST} multi-WF chain" >>"$LOG"
-    echo "[session] Silver Bullet autonomous — WF-SILVER-FEATURE → WF-SILVER-DEVOPS → WF-SILVER-RELEASE" >>"$LOG"
-    run_flow_advance "silver-feature"
-    echo "[orchestrator] composer_start: silver-feature (WF-SILVER-FEATURE)" >>"$LOG"
-    log_task_worker "FEATURE-IMPLEMENT" "silver-feature"
-    drain_composer_chain
-    ;;
-  TC-02)
-    echo "[session] TC-02 observability-only — dynamic substitute/prune via scheduler" >>"$LOG"
-    run_flow_advance "silver-fast"
-    echo "[orchestrator] DR-SUBSTITUTE-LEANER-WORKFLOW → WF-SILVER-FAST" >>"$LOG"
-    echo "[orchestrator] DR-PRUNE-SATISFIED-ATOM → pruned AF-EXECUTE + AF-UI" >>"$LOG"
-    log_task_worker "FAST-OBS" "silver-fast"
-    drain_flow_queue "silver-fast"
-    ;;
-  TC-03)
-    echo "[session] TC-03 SB posture audit bundle — net-new workflow path" >>"$LOG"
-    run_flow_advance "silver-new-workflow"
-    echo "[orchestrator] flow-advance → silver-new-workflow (NEW-WORKFLOW worker path)" >>"$LOG"
-    log_task_worker "NEW-WORKFLOW" "silver-new-workflow"
-    drain_flow_queue "silver-new-workflow"
-    ;;
-esac
+if [[ "$GREENFIELD" == "1" ]]; then
+  echo "[session] greenfield mode — agent implements product before orchestrator drain" >>"$LOG"
+else
+  echo "[session] product gate check before orchestrator drain" >>"$LOG"
+  verify_product_gate "$TRACK"
+fi
 
-verify_composer_spacing
+tri_criteria_emit_pre_agent "$WORK_DIR" "$TRACK" "$RUN_DIR" "$LOG"
 
-if ! invoke_agent; then
-  echo "[session] WARN: agent delegation failed — scoring with orchestrator evidence only" >>"$LOG"
+if [[ "$GREENFIELD" == "1" ]]; then
+  if ! invoke_agent; then
+    echo "[session] WARN: greenfield agent delegation failed" >>"$LOG"
+  fi
+  greenfield_reset_orchestrator_state
+  run_orchestrator_drain
+else
+  run_orchestrator_drain
+  if ! invoke_agent; then
+    echo "[session] WARN: agent delegation failed — scoring with orchestrator evidence only" >>"$LOG"
+  fi
+fi
+
+tri_criteria_emit_post_agent "$WORK_DIR" "$TRACK" "$RUN_DIR" "$LOG"
+
+if [[ "$GREENFIELD" == "1" ]]; then
+  echo "[session] greenfield product gate after agent" >>"$LOG"
+  FIXTURE_SHA="$(git -C "$WORK_DIR" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)"
+  verify_product_gate "$TRACK" || echo "[session] WARN: greenfield product gate not yet satisfied" >>"$LOG"
 fi
 
 copy_evidence

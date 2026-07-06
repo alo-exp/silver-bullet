@@ -45,6 +45,13 @@ grep -q 'enterprise_e2e_outcome_score_multiwf' "$ASSESS" && check "multiwf score
 grep -q 'enterprise_e2e_outcome_score_dynamic' "$ASSESS" && check "dynamic scorer fn" pass || check "dynamic scorer fn" fail
 grep -q 'enterprise_e2e_outcome_score_newwf' "$ASSESS" && check "newwf scorer fn" pass || check "newwf scorer fn" fail
 
+EVIDENCE="${PLANNING}/scripts/emit-tri-criteria-evidence.sh"
+FIXTURE="${PLANNING}/scripts/fixture-checkout.sh"
+[[ -f "$EVIDENCE" ]] && bash -n "$EVIDENCE" && check "emit-tri-criteria-evidence.sh syntax" pass || check "emit-tri-criteria-evidence.sh syntax" fail
+[[ -f "$FIXTURE" ]] && bash -n "$FIXTURE" && check "fixture-checkout.sh syntax" pass || check "fixture-checkout.sh syntax" fail
+grep -q 'tri_criteria_greenfield_checkout_fixture' "$FIXTURE" && check "greenfield checkout fn" pass || check "greenfield checkout fn" fail
+grep -q '\-\-greenfield' "$DRIVER" && check "driver --greenfield flag" pass || check "driver --greenfield flag" fail
+
 if command -v jq >/dev/null 2>&1; then
   jq -e '.tracks | length == 3' "${PLANNING}/MATRIX.json" >/dev/null 2>&1 \
     && check "umbrella matrix has 3 tracks" pass || check "umbrella matrix has 3 tracks" fail
