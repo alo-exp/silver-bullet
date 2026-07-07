@@ -309,6 +309,233 @@ What the four-stack **does** cover well (inverse of this section, covered above)
 
 ---
 
+## Multi-AI consolidated analysis (replacement vs 5-stack)
+
+**Date:** 2026-07-07 · **Profile:** OCG-Standard (6 models: minimax-m3, qwen3.7-max, deepseek-v4-pro, glm-5.2, kimi-k2.6, mimo-v2.5-pro) · **Source:** [followup-consolidated.md](.planning/archive/research/2026-07-05/2026-07-05-context-tools-feature-matrix-ultradeep/multi-ai-deep-research-out/followup-consolidated.md)
+
+### Executive consensus
+
+**6/6 models converge: do NOT add LeanCTX as a fifth parallel tool alongside SB's existing four.** A naive 5-tool co-install is operationally untenable — hook chains become non-deterministic, the `ctx_*` MCP namespace collision between LeanCTX and Context Mode is a **hard blocker**, shell output gets double-compressed, and the cumulative rules tax (8K–12K tokens/turn if all five load) erodes the savings LeanCTX targets.
+
+**The multi-AI recommendation is REPLACEMENT, not addition:** LeanCTX replaces RTK + Context Mode's compression/sandbox layer, yielding a **3-tool operational stack** — **LeanCTX + agentmemory + Graphify**. This eliminates 9 conflict domains by design.
+
+| Integration model | Models supporting | Conflict count | Maintainability |
+|-------------------|:----------------:|:--------------:|:---------------:|
+| 5-tool parallel | **0/6** | 9 (2 hard blockers) | Poor |
+| 3-tool replacement (LeanCTX + AM + GX) | **6/6** | 0 by design | Good |
+| Layered foundation (LeanCTX outer) | 2/6 | 4 config-level | Moderate |
+
+### 17 gaps — matrix + multi-AI synthesis
+
+The ultradeep **200-row feature matrix** (Section 7 below) documents **17 hard gaps** where LeanCTX does not fully replace the four-stack (13 cell-exact + 4 depth gaps). Multi-AI analysis adds a complementary lens:
+
+| Gap class | Count | Leader | Multi-AI reading |
+|-----------|:-----:|--------|------------------|
+| Context Mode fetch/hook depth | 4 | CM | `CTX_FETCH_STRICT`, credential passthrough, `afterAgentResponse`, `ctx_insight` |
+| agentmemory orchestration | 9 | AM | 53-tool DAG, sentinels, sketch→promote, crystallize, diagnose/heal, slots, gitleaks |
+| Graphify retrieval center | 1 | GX | Multimodal corpus graph as primary deliverable |
+| CM hook-layer WebFetch deny | 1 | CM | Published platform matrix for fetch redirect |
+| agentmemory secret scanning | 1 | AM | gitleaks bridge on export |
+| **LeanCTX novel (stack lacks)** | **5** | LeanCTX | Wire proxy, AST read modes, PathJail, Ed25519 ledger, prompt-injection detection |
+
+**Net:** LeanCTX is **not a full replacement** on capability parity (87–99% per-tool coverage above), but multi-AI judges the **3-tool stack** as the sweet spot — 95% coverage at 5% overlap vs 99% at 25% overlap for a 5-tool parallel install.
+
+### 3-tool vs 5-stack — diminishing returns
+
+| Stack size | Unique value | Overlap | Multi-AI verdict |
+|:----------:|:------------:|:-------:|------------------|
+| 3 tools (LeanCTX + AM + GX) | 95% coverage | 5% | **Sweet spot** |
+| 4 tools (+ RTK) | 97% coverage | 10% | RTK shell overlap with LeanCTX |
+| 5 tools (+ CM) | 99% coverage | 25% | `ctx_*` MCP namespace collision — hard blocker |
+
+The compress → sandbox → capture → retrieve pipeline is **preserved** in the 3-tool model: LeanCTX owns shell + read + sandbox + FTS5; agentmemory and Graphify are untouched.
+
+### Per-environment fidelity (multi-AI)
+
+| Environment | 3-stack fidelity | LeanCTX planes | Key constraint |
+|-------------|:----------------:|:--------------:|----------------|
+| Claude Code | Full | 5/5 | Richest hook system; ordered PreToolUse chains — **pilot target** |
+| Cursor | High | 4/5 | Allow-lists gate Bash rewrites; PathJail soft |
+| Codex | Limited | 3/5 | Deny-only hooks block AST read-path; wire proxy + ledger only — **stay on 4-stack** |
+| OpenCode | Full | 5/5 | MCP-first; Tool-Catalog Gateway ideal integration point |
+
+**Codex caveat:** `PreToolUse` supports `deny` but not `updatedInput` rewrite (openai/codex#18491). AST read-path compression is impossible on Codex; 5/6 models recommend Codex stays on legacy 4-stack indefinitely.
+
+### Multi-AI phased adoption (replacement path)
+
+| Phase | Scope | Gate |
+|-------|-------|------|
+| 0 — Preflight | Verify addon-mode, PathJail allowlists, read-deny whitelist | 3 checks pass on Claude Code |
+| 1 — Wire proxy only | 2 Claude Code instances; 4-stack unchanged | >10% session savings, <50ms latency |
+| 2 — Full 3-stack | Hook coordinator; disable RTK shell + CM FTS5/read-deny | All SB tests pass |
+| 3 — Cursor & OpenCode | Allow-list gating; Tool-Catalog Gateway | MCP verified |
+| 4 — Codex | Wire proxy + ledger only | No hook changes |
+| 5 — Docs & default | 3-stack default; 4-stack as `compliance_strict` | `silver-bullet.md` §2g updated |
+
+### What multi-AI says must NOT change
+
+- **agentmemory** — 53-tool orchestration, gitleaks, team memory
+- **Graphify** — multimodal corpus graph, `graph.json` git workflow
+- **`CTX_FETCH_STRICT`** — only audited SSRF compliance control for regulated users
+- **SB's 60-hook enforcement surface** — PathJail complements, does not replace
+- **Codex legacy stack** — deny-only hooks make AST read modes impossible
+
+---
+
+## Silver Bullet response — parallel routed 5-stack
+
+**Date:** 2026-07-07 · **SB verdict:** User-confirmed **Option B — parallel 5-stack with SB routing + tool-side configuration**, diverging from the multi-AI replacement consensus.
+
+Silver Bullet **rejects naive 5-tool co-install** but **also rejects wholesale removal of RTK and Context Mode** from the catalog. All five context tools remain in the recommended-tools registry; when LeanCTX is opted in it becomes **mandatory per existing `required_when_enabled` policy**, with **surface-level mutual exclusion** so overlapping compression/MCP paths never run concurrently.
+
+### Why SB diverges from multi-AI replacement
+
+| Factor | Multi-AI (3-tool replacement) | SB (parallel routed 5-stack) |
+|--------|------------------------------|------------------------------|
+| RTK + CM fate | Remove from default stack | **Stay in catalog**; surfaces routed exclusively |
+| `CTX_FETCH_STRICT` | Conditional add-on only | **First-class** — CM remains for compliance persona |
+| Codex | Stay on 4-stack permanently | 4-stack default; LeanCTX wire proxy + ledger opt-in |
+| Migration risk | Big-bang RTK/CM removal | Incremental opt-in; no forced deprecation |
+| Enforcement | Tool config toggles | **SB procedural rails** — hooks, coordinator, gates |
+
+SB's position: the **17 matrix gaps** and **regulated-user compliance surfaces** mean RTK and Context Mode cannot be retired from the catalog without breaking existing installs. LeanCTX's five novel capabilities (wire proxy, AST read, PathJail, Ed25519 ledger, injection detection) justify integration — but only with **SB-owned routing**, not tool-side hope-and-pray toggles.
+
+### Architectural model
+
+```mermaid
+flowchart TB
+  subgraph procedural [SB Procedural Rails]
+    SBHooks[hooks/hooks.json gates]
+    SBRules[.cursor/rules + silver-bullet.md]
+    StackCoord[stack-compression-coordinator]
+  end
+  subgraph physical [Physical Rails]
+    PathJail[LeanCTX PathJail]
+    FetchStrict[CM CTX_FETCH_STRICT optional]
+  end
+  subgraph routing [Compression Routing - exclusive surfaces]
+    Wire[LeanCTX wire proxy]
+    ReadAST[LeanCTX lctx_read_ast]
+    Shell[RTK shell rewrite]
+    Sandbox[CM ctx_execute slice]
+    Graph[Graphify query path explain]
+    Memory[agentmemory memory_save]
+  end
+  SBHooks --> StackCoord
+  StackCoord --> Wire
+  StackCoord --> ReadAST
+  StackCoord --> Shell
+  StackCoord --> Sandbox
+  physical --> SBHooks
+  Graph --> SBHooks
+  Memory --> SBHooks
+```
+
+### Surface routing table (`optimization_profiles.five_tool_routed`)
+
+| SB route | Owner | Incumbent tools disabled on that surface |
+|----------|-------|------------------------------------------|
+| `sb_wire` | LeanCTX | — |
+| `sb_read` | LeanCTX `lctx_read_ast` | CM read-deny bypass path; native Read for analysis |
+| `sb_shell` | RTK | LeanCTX shell hook OFF |
+| `sb_slice` | Context Mode | LeanCTX sandbox MCP OFF |
+| `sb_graph` | Graphify | LeanCTX `lctx_graph` advisory-only |
+| `sb_remember` | agentmemory | LeanCTX `lctx_remember` blocked |
+
+### `ctx_*` collision — hard blocker resolution
+
+LeanCTX and Context Mode both expose MCP tools named `ctx_execute`, `ctx_search`, `ctx_index`, `ctx_stats`, `ctx_doctor`, `ctx_upgrade`, `ctx_purge`. MCP resolves tools by name — identical names are ambiguous.
+
+**SB resolution:** Install LeanCTX with **`lctx_` prefix** via `scripts/install-leanctx-sb.sh`; never register raw `ctx_*` from LeanCTX when Context Mode is opted in. Merge script (`scripts/lib/merge-leanctx-mcp-config.py`) ensures namespace separation in `~/.cursor/mcp.json` / Codex TOML / OpenCode JSON.
+
+### Stack compression coordinator
+
+`hooks/lib/stack-compression-coordinator.sh` is the single authority for PreToolUse Read/Bash/WebFetch routing:
+
+1. Consults `sb_stack_surface_owner()` for the active surface
+2. **Denies second-pass compression** (e.g., RTK-rewritten Bash → deny LeanCTX shell rewrite)
+3. When `sb_read` → LeanCTX, `context-mode-read-deny.sh` **allows** LeanCTX-managed reads; CM deny applies only to raw Read
+4. Enforces hook ordering: workflow guards → SB policy guards → **leanctx-gate** → coordinator → compression rewrites
+
+### Codex profile (documented, not blocked)
+
+AST read-path requires `updatedInput` PreToolUse rewrite; Codex is deny-only. Codex profile runs **wire proxy + ledger + PathJail + injection detection** only; RTK + CM remain primary compressors on Codex until upstream supports rewrite.
+
+### Enforcement when `leanctx.enabled_by_user: true`
+
+1. **`leanctx-gate.sh`** blocks substantive edits if LeanCTX stale (TTL pattern mirrors graphify/agentmemory)
+2. **Stack coordinator** blocks double-compression
+3. **Rules** mandate routing table (`sb_graph` → `graphify query`, not `lctx_graph`)
+4. **`required_when_enabled: true`** — host agent must use LeanCTX for owned surfaces
+5. **`optimize-five-tool-stack.sh`** replaces ad-hoc `optimize-rtk-context-mode.sh` when all five opted in
+
+---
+
+## SB integration blueprint (conflicts + resolutions)
+
+**Date:** 2026-07-07 · **Scope:** 16 conflicts — 9 from multi-AI inventory + 7 SB-specific gaps missed by multi-AI analysis.
+
+| # | Conflict | Severity | Resolution |
+|---|----------|----------|------------|
+| 1 | `ctx_*` MCP namespace collision (CM vs LeanCTX) | **Hard** | Install LeanCTX with **`lctx_` prefix** via `scripts/install-leanctx-sb.sh`; never register raw `ctx_*` from LeanCTX when CM opted in |
+| 2 | Read: `context-mode-read-deny.sh` vs LeanCTX AST | High | `stack-compression-coordinator.sh`: when `sb_read`→LeanCTX, read-deny **allows** LeanCTX-managed reads; CM deny applies only to raw Read |
+| 3 | Bash: RTK + LeanCTX double-wrap | High | Coordinator: if RTK owns shell, LeanCTX shell hook **disabled** in SB install profile |
+| 4 | Hook ordering (57 scripts, 7 events) | High | Document ordered chain in coordinator; add **`hooks/leanctx-gate.sh`** after SB policy guards, before compression rewrites; test ordering in hook tests |
+| 5 | Triple FTS5 (CM + LeanCTX) | Medium | Profile flag: **primary_fts: context_mode**; LeanCTX FTS disabled in parallel mode |
+| 6 | Triple graph (GX + AM + LeanCTX) | Medium | Rules: Graphify authoritative for code; agentmemory for decisions; LeanCTX graph **session-scoped only** |
+| 7 | Token accounting (RTK gain / ctx_stats / ledger) | Medium | LeanCTX Ed25519 ledger **canonical** when enabled; existing recorders write cross-refs only |
+| 8 | Config file clobber (`.cursorrules`, `AGENTS.md`, settings) | High | **`lean-ctx init --library-mode`** (verify upstream); SB install script **never** runs full `lean-ctx init --agent *`; SB owns all host config writes |
+| 9 | **`optimize-rtk-context-mode.sh` auto-run** on init | **Missed by multi-AI** | When LeanCTX enabled, skip or gate RTK+CM optimize in `scripts/sb-init` path; new `scripts/optimize-five-tool-stack.sh` orchestrates |
+| 10 | **`token-compression-tools-gate.sh`** assumes 2 tools | **Missed** | Extend for LeanCTX freshness + mutual-exclusion state |
+| 11 | **`semantic-compress.sh`** skill list | **Missed** | Add leanctx awareness or exclude when stack coordinator active |
+| 12 | **PreCompact / Stop ordering** | Medium | Coordinator enforces: CM PreCompact → agentmemory snapshot → LeanCTX compact → SB stop-check |
+| 13 | **Evidence Schema + wire proxy** (Codex) | Medium | Codex profile: wire proxy must preserve JSON message ordering; add validator in install verify |
+| 14 | **`graphify-gate` + `agentmemory-gate`** unchanged but rules must forbid `lctx_remember` | Medium | Update `.cursor/rules/recommended-tools.mdc` + new `leanctx.mdc` |
+| 15 | **E2E / enterprise matrix** tool checks | **Missed** | Extend matrix rows for five-tool opt-in path |
+| 16 | **search_cli + LeanCTX fetch** overlap in deep-research | Low | Document: deep-research uses search_cli first; LeanCTX fetch for non-research flows only |
+
+### New hook/script artifacts
+
+| Artifact | Role |
+|----------|------|
+| `hooks/lib/leanctx-gate.sh` + `hooks/leanctx-gate.sh` | Install/wiring/usage freshness (mirror `hooks/lib/rtk-gate.sh`) |
+| `hooks/lib/stack-compression-coordinator.sh` | Surface ownership decisions for PreToolUse Read/Bash/WebFetch |
+| `hooks/record-leanctx-usage.sh` | Usage stamp for gate |
+| `scripts/install-leanctx-sb.sh` | Host-aware library-mode install + MCP merge |
+| `scripts/lib/merge-leanctx-mcp-config.py` | Merge `leanctx` server into host MCP configs |
+| `scripts/optimize-five-tool-stack.sh` | Replaces ad-hoc RTK+CM optimize when all five opted in |
+| `.cursor/rules/leanctx.mdc` | Routing rules for agents |
+
+### Config contract (`recommended_tools.leanctx`)
+
+```json
+"leanctx": {
+  "enabled_by_user": null,
+  "required_when_enabled": true,
+  "cli_command": "lean-ctx",
+  "stack_mode": "parallel_routed",
+  "mcp_server_name": "leanctx",
+  "mcp_tool_prefix": "lctx_",
+  "exclusive_surfaces": {
+    "wire_proxy": true,
+    "read_ast": true,
+    "pathjail": true,
+    "savings_ledger": true,
+    "injection_detection": true
+  }
+}
+```
+
+### Success criteria (implementation phases 1–6)
+
+- Gist contains multi-AI + SB parallel-routing sections (641+ lines) ✓
+- `leanctx` in `recommended_tools` with enforcement gates passing tests
+- All **16 conflicts** have code or config resolution (not docs-only)
+- Five-tool live cursor scenario passes via agent-cursor harness
+- No regression: existing RTK/CM/GX/AM gate tests green when LeanCTX disabled
+
+---
+
 ## Complete feature comparison matrix
 
 ### Context Tools — Comprehensive Feature Coverage Matrix
