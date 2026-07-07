@@ -24,6 +24,19 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from catalog_loader import load_catalog  # noqa: E402
+from github_skill_retrieval import enrich_github_search_hits  # noqa: E402
+
+
+
+def _github_branch_resolver() -> dict[str, str] | None:
+    """Optional offline/replay branch map via SB_DR_GITHUB_BRANCHES_JSON."""
+    path = os.environ.get("SB_DR_GITHUB_BRANCHES_JSON")
+    if not path:
+        return None
+    branch_path = Path(path)
+    if not branch_path.exists():
+        return None
+    return json.loads(branch_path.read_text(encoding="utf-8"))
 
 LANDSCAPE_TYPES = frozenset({"landscape", "skill-comparison"})
 
@@ -123,6 +136,11 @@ def orchestrate(
             else:
                 result = fetch_portal(portal_id, query, mock_responses)
             if result.get("status") == "ok":
+                if portal_id == "github" and isinstance(result.get("results"), list):
+                    result = dict(result)
+                    result["results"] = enrich_github_search_hits(
+                        result["results"], _github_branch_resolver(),
+                    )
                 portals_succeeded.append(portal_id)
                 partial_path = out_dir / f"portal-{portal_id}.json"
                 out_dir.mkdir(parents=True, exist_ok=True)

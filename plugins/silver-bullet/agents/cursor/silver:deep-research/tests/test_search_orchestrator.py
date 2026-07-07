@@ -73,3 +73,76 @@ class TestCatalogLoader(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class TestGithubSkillMdRetrieval(unittest.TestCase):
+    FIXTURE_BRANCHES = os.path.join(SKILL_ROOT, 'tests', 'fixtures', 'github_default_branches.json')
+    REPLAY_REPOS = os.path.join(
+        os.path.dirname(__file__), '..', '..', '..',
+        '.planning', 'research', '2026-07-08-v2-landscape-replay', 'gh-search-repos.json',
+    )
+
+    def _load_branches(self):
+        with open(self.FIXTURE_BRANCHES, encoding='utf-8') as f:
+            return json.load(f)
+
+    def test_weizhena_uses_master_not_naive_main(self):
+        sys.path.insert(0, os.path.join(SKILL_ROOT, 'scripts'))
+        from github_skill_retrieval import skill_md_retrieval_plan
+        branches = self._load_branches()
+        plan = skill_md_retrieval_plan('Weizhena/Deep-Research-skills', branches)
+        self.assertEqual(plan['default_branch'], 'master')
+        self.assertIn('/master/SKILL.md', plan['skill_md_url'])
+        self.assertIn('/main/SKILL.md', plan['naive_main_url'])
+        self.assertTrue(plan['use_corrected_url'])
+
+    def test_main_branch_repo_avoids_wrong_correction(self):
+        sys.path.insert(0, os.path.join(SKILL_ROOT, 'scripts'))
+        from github_skill_retrieval import skill_md_retrieval_plan
+        branches = self._load_branches()
+        plan = skill_md_retrieval_plan(
+            '199-biotechnologies/claude-deep-research-skill', branches,
+        )
+        self.assertEqual(plan['default_branch'], 'main')
+        self.assertEqual(plan['skill_md_url'], plan['naive_main_url'])
+        self.assertFalse(plan['use_corrected_url'])
+
+    def test_replay_fixture_enrichment_respects_default_branch(self):
+        sys.path.insert(0, os.path.join(SKILL_ROOT, 'scripts'))
+        from github_skill_retrieval import enrich_github_search_hits
+        with open(self.REPLAY_REPOS, encoding='utf-8') as f:
+            hits = json.load(f)
+        branches = self._load_branches()
+        enriched = enrich_github_search_hits(hits, branches)
+        by_name = {row['fullName']: row for row in enriched if row.get('fullName')}
+        weizhena = by_name['Weizhena/Deep-Research-skills']
+        self.assertEqual(weizhena['default_branch'], 'master')
+        self.assertNotIn('/main/SKILL.md', weizhena['skill_md_url'])
+        bio = by_name['199-biotechnologies/claude-deep-research-skill']
+        self.assertEqual(bio['default_branch'], 'main')
+
+    def test_github_mock_orchestrator_writes_branch_correct_urls(self):
+        with tempfile.TemporaryDirectory() as d:
+            hits = [{
+                'fullName': 'Weizhena/Deep-Research-skills',
+                'url': 'https://github.com/Weizhena/Deep-Research-skills',
+            }]
+            mock = {'github': hits}
+            branches_path = os.path.join(d, 'branches.json')
+            with open(branches_path, 'w', encoding='utf-8') as f:
+                json.dump(self._load_branches(), f)
+            mock_path = os.path.join(d, 'mock.json')
+            with open(mock_path, 'w', encoding='utf-8') as f:
+                json.dump(mock, f)
+            env = os.environ.copy()
+            env['SB_DR_GITHUB_BRANCHES_JSON'] = branches_path
+            result = subprocess.run(
+                [sys.executable, ORCHESTRATOR, '--query', 'deep research',
+                 '--dir', d, '--research-type', 'landscape', '--mock-portal-json', mock_path],
+                capture_output=True, text=True, env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            portal = json.load(open(os.path.join(d, 'portal-github.json')))
+            row = portal['results'][0]
+            self.assertEqual(row['default_branch'], 'master')
+            self.assertIn('/master/SKILL.md', row['skill_md_url'])
+
