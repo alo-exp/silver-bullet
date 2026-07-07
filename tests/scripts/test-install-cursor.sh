@@ -119,7 +119,7 @@ else
 fi
 
 if [[ -f "$registry_path" ]] && \
-   jq -e --arg path "$gitpath_root" \
+   jq -e --arg path "$(cd "$gitpath_root" && pwd -P)" \
      '(.plugins["silver-bullet@alo-labs"] | if type == "array" then .[0].gitPath else .gitPath end) == $path' \
      "$registry_path" >/dev/null 2>&1; then
   pass "install-cursor records gitPath in installed_plugins.json"
