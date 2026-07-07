@@ -94,7 +94,7 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
       source "$_rc_iso"
     fi
     if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! sb_smoke_rc_markers_complete 2>/dev/null; then
-      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh (cursor/codex/claude × fresh/upgrade) and ensure rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh locally on your dev machine (cursor/codex/claude × fresh/upgrade with host CLIs + your API keys). CI rc-validation.yml is diagnostic only — it does not satisfy this gate.\nEnsure six operator-local rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
       exit 0
     fi
   fi

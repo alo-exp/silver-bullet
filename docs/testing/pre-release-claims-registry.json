@@ -162,5 +162,16 @@
     "operator_doc": "docs/testing/FIVE-TOOL-PRERELEASE.md",
     "pre_release_gate_stage": "4c",
     "mandatory_when": "recommended_tools.leanctx.enabled_by_user == true"
+  },
+  "rc_validation": {
+    "script": "scripts/run-rc-validation-matrix.sh",
+    "test": "tests/scripts/test-rc-validation-matrix.sh",
+    "operator_doc": "docs/testing/RC-VALIDATION-MATRIX.md",
+    "ci_workflow": ".github/workflows/rc-validation.yml",
+    "ci_policy": "optional_non_blocking",
+    "ci_scope": "cursor live when CURSOR_API_KEY; codex/claude structural install only (SB_RC_CI_MODE=1)",
+    "operator_scope": "all six cells with host CLIs and operator API keys — required for release gate",
+    "release_gate": "release.require_rc_matrix via completion-audit deploy-tier",
+    "bypass": "SB_SKIP_RC_MATRIX=1"
   }
 }
