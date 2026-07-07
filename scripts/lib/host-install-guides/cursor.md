@@ -5,7 +5,7 @@ Host-specific commands are loaded from `.silver-bullet.json`
 
 ## Marketplace install
 
-- Marketplace `https://github.com/alo-labs/alo-labs-cursor-marketplace`, install
+- Marketplace `https://github.com/alo-labs/agent-plugins` (`alo-labs-cursor` catalog), install
   `silver-bullet`, or `bash scripts/install-cursor.sh --public-release`
 - Dev: `bash scripts/install-cursor.sh`
 

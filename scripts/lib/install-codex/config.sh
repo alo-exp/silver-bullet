@@ -26,8 +26,8 @@ usage() {
   cat <<'USAGE'
 Usage: scripts/install-codex.sh [--purge-legacy-skills] [--public-release]
 
-Synchronizes the local Codex plugin package and registers the shared
-`alo-labs/codex-plugins` marketplace with Codex.
+Synchronizes the local Codex plugin package and registers the unified
+`alo-labs/agent-plugins` marketplace with Codex.
 
 Options:
   --purge-legacy-skills  Remove SB skill directories already copied into ~/.agents/skills
@@ -37,12 +37,49 @@ USAGE
 
 
 codex_marketplace_root() {
-  local marketplace_root="${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
-  if [[ -d "$marketplace_root" ]]; then
-    printf '%s\n' "$marketplace_root"
-    return 0
+  local config_file
+  local default_root="${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
+  config_file="$(resolve_codex_config_file)"
+
+  if [[ -f "$config_file" ]]; then
+    local resolved
+    resolved="$(python3 - "$config_file" <<'PY'
+import pathlib
+import sys
+
+config_path = pathlib.Path(sys.argv[1])
+text = config_path.read_text()
+section = None
+source_type = None
+source = None
+
+for raw_line in text.splitlines():
+    line = raw_line.strip()
+    if line == "[marketplaces.alo-labs-codex]":
+        section = "alo-labs-codex"
+        source_type = None
+        source = None
+        continue
+    if section != "alo-labs-codex":
+        continue
+    if line.startswith("[") and line.endswith("]"):
+        break
+    if line.startswith("source_type ="):
+        source_type = line.split("=", 1)[1].strip().strip('"')
+    elif line.startswith("source ="):
+        source = line.split("=", 1)[1].strip().strip('"')
+
+if source_type == "local" and source:
+    print(source)
+PY
+)"
+    if [[ -n "$resolved" && -d "$resolved" ]]; then
+      printf '%s\n' "$resolved"
+      return 0
+    fi
   fi
-  printf '%s\n' "${CODEX_HOME_ROOT}/.codex/.tmp/marketplaces/alo-labs-codex"
+
+  printf '%s\n' "$default_root"
 }
 
 

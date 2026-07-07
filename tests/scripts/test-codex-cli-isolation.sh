@@ -89,7 +89,7 @@ sandbox_mode = "read-only"
 
 [marketplaces.alo-labs-codex]
 source_type = "git"
-source = "https://github.com/alo-labs/codex-plugins"
+source = "https://github.com/alo-labs/agent-plugins"
 
 [features]
 plugin_hooks = true

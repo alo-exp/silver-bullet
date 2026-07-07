@@ -275,7 +275,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="code-block"><span class="cmd">/silver:doctor</span></div>
 
       <h3>Cursor Plugin</h3>
-      <p>For normal Cursor use, add the public <code>alo-labs/alo-labs-cursor-marketplace</code> marketplace in Cursor and install <code>silver-bullet</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>
+      <p>For normal Cursor use, add the public <code>alo-labs/agent-plugins</code> marketplace in Cursor and install <code>silver-bullet</code> from <code>alo-labs-cursor</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>
       <div class="code-label">Cursor (public marketplace)</div>
       <div class="code-block"><span class="cmd">bash scripts/install-cursor.sh --public-release</span></div>
       <p>When developing Silver Bullet from a repository checkout, sync the plugin tree locally instead:</p>
@@ -284,12 +284,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Run <code>bash scripts/sb-diagnostics.sh</code> to confirm hook delivery.</p>
 
       <h3>Claude Code Plugin</h3>
-      <p>Install Silver Bullet from the host plugin manager or the public <code>alo-labs/claude-plugins</code> marketplace.</p>
+      <p>Install Silver Bullet from the host plugin manager or the public <code>alo-labs/agent-plugins</code> marketplace (<code>alo-labs</code> catalog).</p>
 <div class="code-label">Claude Code</div>
 <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span></div>
 
       <h3>Codex Marketplace Package</h3>
-      <p>For normal Codex use, install or refresh Silver Bullet from the public <code>alo-labs/codex-plugins</code> marketplace package. The Codex package is SB-only: it keeps internal <code>skill-source/</code> files out of plugin picker discovery, mirrors only the native <code>/silver:</code> picker surface, wires hooks through the package manifest, and installs supported dependencies from their official sources or thin marketplace wrappers.</p>
+      <p>For normal Codex use, install or refresh Silver Bullet from the public <code>alo-labs/agent-plugins</code> marketplace package (<code>alo-labs-codex</code> catalog). The Codex package is SB-only: it keeps internal <code>skill-source/</code> files out of plugin picker discovery, mirrors only the native <code>/silver:</code> picker surface, wires hooks through the package manifest, and installs supported dependencies from their official sources or thin marketplace wrappers.</p>
       <p>When developing Silver Bullet itself from a repository checkout, use the installer script. It refreshes the curated package from the checkout, registers the shared marketplace, removes stale SB skill copies and old marketplace cache versions, and verifies that the picker exposes only the <code>/silver:</code> namespace.</p>
       <div class="code-label">Development checkout only</div>
       <div class="code-block"><span class="cmd">./scripts/install-codex.sh --purge-legacy-skills</span></div>

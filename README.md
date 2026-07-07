@@ -81,9 +81,9 @@ Capability tiers per host are documented in [docs/RUNTIME-COMPATIBILITY.md](docs
 
 | Runtime | Status | Install surface |
 |---------|--------|-----------------|
-| Claude Code | Primary plugin runtime | `/plugin install alo-exp/silver-bullet` or `alo-labs/claude-plugins` marketplace |
-| Codex | Supported package runtime | Public `alo-labs/codex-plugins` marketplace; native `/silver:` namespace |
-| Cursor | Supported plugin runtime | Public `alo-labs/alo-labs-cursor-marketplace` or `bash scripts/install-cursor.sh --public-release` |
+| Claude Code | Primary plugin runtime | `/plugin install alo-exp/silver-bullet` or `alo-labs/agent-plugins` marketplace (`alo-labs` catalog) |
+| Codex | Supported package runtime | Public `alo-labs/agent-plugins` marketplace (`alo-labs-codex`); native `/silver:` namespace |
+| Cursor | Supported plugin runtime | Public `alo-labs/agent-plugins` (`alo-labs-cursor`) or `bash scripts/install-cursor.sh --public-release` |
 
 Hook-backed enforcement requires a runtime that supports the relevant hook events. In less capable runtimes, Silver Bullet still provides workflow guidance, but hard blocks depend on host support.
 
@@ -110,7 +110,7 @@ bash scripts/sb-diagnostics.sh          # claude | codex | cursor
 /plugin install alo-exp/silver-bullet
 ```
 
-Or use the public marketplace: `alo-labs/claude-plugins`.
+Or use the public marketplace: `alo-labs/agent-plugins` (`alo-labs` catalog).
 
 Optional code-intelligence tooling:
 
@@ -120,7 +120,7 @@ Optional code-intelligence tooling:
 
 ### Codex
 
-For normal use, install or refresh from the public `alo-labs/codex-plugins` marketplace. The package exposes native `/silver:` entries and hides internal `skill-source/` duplicates.
+For normal use, install or refresh from the public `alo-labs/agent-plugins` marketplace (`alo-labs-codex` catalog). The package exposes native `/silver:` entries and hides internal `skill-source/` duplicates.
 
 For local development from this checkout:
 
@@ -132,7 +132,7 @@ On Codex, use `silver-bullet invoke-skill <name>` when SB requires a recorded sk
 
 ### Cursor
 
-Install from the public `alo-labs/alo-labs-cursor-marketplace` package, or from a checkout:
+Install from the public `alo-labs/agent-plugins` package (`alo-labs-cursor` catalog), or from a checkout:
 
 ```bash
 bash scripts/install-cursor.sh --public-release
