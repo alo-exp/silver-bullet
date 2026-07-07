@@ -362,6 +362,38 @@ main() {
     fi
   fi
 
+  if [[ "$active_runtime" == "cursor" ]]; then
+    local cursor_home="${runtime_home}"
+    local reg="${cursor_home}/plugins/installed_plugins.json"
+    local cache_current="${cursor_home}/plugins/cache/alo-labs/silver-bullet/current"
+    local resolved_current registry_sha gitpath_root market_cache_link
+    if [[ -L "$cache_current" ]]; then
+      resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
+      if [[ -f "${resolved_current}/commands/init.md" ]]; then
+        record pass "cursor-commands" "plugin cache has composer command stubs"
+      else
+        record fail "cursor-commands" "commands/ missing — run: bash scripts/install-cursor.sh"
+      fi
+      if [[ -f "$reg" ]]; then
+        registry_sha="$(jq -r '.plugins["silver-bullet@alo-labs"][0].gitCommitSha // empty' "$reg" 2>/dev/null || true)"
+        if [[ -n "$registry_sha" ]]; then
+          gitpath_root="${cursor_home}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${registry_sha}"
+          market_cache_link="${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
+          if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1 \
+            && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
+            record pass "cursor-gitpath" "marketplace gitPath ready (${registry_sha:0:8})"
+          else
+            record fail "cursor-gitpath" "gitPath/cache symlink missing for ${registry_sha:0:8} — /silver commands will not load — run: bash scripts/install-cursor.sh"
+          fi
+        else
+          record warn "cursor-gitpath" "installed_plugins.json missing gitCommitSha"
+        fi
+      fi
+    else
+      record warn "cursor-plugin" "silver-bullet current symlink missing — run: bash scripts/install-cursor.sh"
+    fi
+  fi
+
   if [[ -f "${REPO_ROOT}/.codex-plugin/plugin.json" ]]; then
     sb_version="$(jq -r '.version // "unknown"' "${REPO_ROOT}/.codex-plugin/plugin.json" 2>/dev/null || echo unknown)"
   elif [[ -f "${REPO_ROOT}/plugins/silver-bullet/.codex-plugin/plugin.json" ]]; then
