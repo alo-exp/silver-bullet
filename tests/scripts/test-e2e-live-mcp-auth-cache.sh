@@ -32,10 +32,7 @@ trap 'rm -rf "$TMP"' EXIT
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ORIGINAL_HOME="$TMP/original-home"
-mkdir -p "$ORIGINAL_HOME/.claude"
-cat > "$ORIGINAL_HOME/.codex/mcp-needs-auth-cache.json" <<'EOF'
-{"plugin:test:server":{"timestamp":123}}
-EOF
+mkdir -p "$ORIGINAL_HOME/.claude" "$ORIGINAL_HOME/.codex"
 
 export HOME="$ORIGINAL_HOME"
 TODO_APP_ROOT="$TMP/todo-app"
@@ -45,6 +42,11 @@ export SB_E2E_LIVE_RUNTIME="claude"
 
 # shellcheck source=tests/e2e-live/helpers.sh
 source "${SCRIPT_DIR}/../e2e-live/helpers.sh"
+
+mkdir -p "$SB_RUNTIME_HOME_ROOT"
+cat > "${SB_RUNTIME_HOME_ROOT}/mcp-needs-auth-cache.json" <<'EOF'
+{"plugin:test:server":{"timestamp":123}}
+EOF
 
 backup_session_state
 
