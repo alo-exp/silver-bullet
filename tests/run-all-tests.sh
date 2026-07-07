@@ -86,6 +86,34 @@ if [[ "${SB_ENTERPRISE_E2E_LIVE:-}" == "1" ]]; then
   run_suite "Enterprise E2E Live Tests" "$SCRIPT_DIR/enterprise-e2e-live"
 fi
 
+# Five-tool live Cursor validation (agent-cursor harness). Offline hook/script tests above always run.
+# Set SB_FIVE_TOOL_LIVE=1 locally before push when five-tool stack is opted in.
+if [[ "${SB_FIVE_TOOL_LIVE:-}" == "1" ]]; then
+  printf '\n========================================\n'
+  printf '  Five-Tool Live Tests (Cursor)\n'
+  printf '========================================\n\n'
+  live_file="$SCRIPT_DIR/live/test-live-five-tool-stack-cursor.sh"
+  if [[ -f "$live_file" ]]; then
+    echo "[ $(basename "$live_file") ]"
+    live_exit=0
+    live_output=$(bash "$live_file" </dev/null 2>&1) || live_exit=$?
+    printf '%s\n' "$live_output"
+    lp=$(printf '%s' "$live_output" | grep -oE '[0-9]+ passed' | grep -oE '[0-9]+' | tail -1 || echo "0")
+    lf=$(printf '%s' "$live_output" | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' | tail -1 || echo "0")
+    lp=${lp:-0}
+    lf=${lf:-0}
+    TOTAL_PASS=$((TOTAL_PASS + lp))
+    TOTAL_FAIL=$((TOTAL_FAIL + lf))
+    if [[ $live_exit -ne 0 || "$lf" -gt 0 ]]; then
+      SUITE_FAIL=$((SUITE_FAIL + 1))
+      printf '  *** SUITE FAILED (exit %d) ***\n\n' "$live_exit"
+    else
+      SUITE_PASS=$((SUITE_PASS + 1))
+    fi
+    printf '\nFive-Tool Live: %d passed, %d failed\n' "$lp" "$lf"
+  fi
+fi
+
 # Run coverage matrix
 printf '\n========================================\n'
 printf '  Coverage Matrix\n'

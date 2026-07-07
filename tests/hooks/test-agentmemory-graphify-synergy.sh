@@ -95,6 +95,10 @@ cat >"$TMPCFG" <<EOF
     "agentmemory": {
       "enabled_by_user": true,
       "export_root": ".agentmemory"
+    },
+    "leanctx": {
+      "enabled_by_user": false,
+      "optimization_profile": "five_tool_routed"
     }
   },
   "state": { "state_file": "${SB_TEST_DIR}/state-${TEST_RUN_ID}" }
@@ -113,6 +117,13 @@ source "$REPO_ROOT/hooks/lib/graphify-gate.sh"
 source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
 sb_agentmemory_graphify_synergy_active "$TMPCFG" && pass "synergy helper detects active pair" || fail "synergy helper detects active pair"
 sb_graphify_query_is_fresh "$TMPCFG" && pass "graphify query fresh for synergy" || fail "graphify query fresh for synergy"
+
+# shellcheck source=hooks/lib/recommended-tools.sh
+source "$REPO_ROOT/hooks/lib/recommended-tools.sh"
+# shellcheck source=hooks/lib/stack-compression-coordinator.sh
+source "$REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"
+sb_stack_leanctx_active "$TMPCFG" && fail "leanctx inactive when disabled" || pass "leanctx inactive when disabled"
+sb_stack_coordinator_needed "$TMPCFG" || pass "coordinator not required without leanctx" || fail "coordinator not required without leanctx"
 
 input=$(jq -n --arg f "$TMPFILE" \
   '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
