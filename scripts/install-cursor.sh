@@ -11,6 +11,8 @@ CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
 CURSOR_MARKETPLACE_SOURCE="${CURSOR_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins}"
 CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="${CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins.git}"
 CURSOR_MARKETPLACE_NAME="${CURSOR_MARKETPLACE_NAME:-alo-labs-cursor}"
+CURSOR_BACKEND_MARKETPLACE_NAME="${CURSOR_BACKEND_MARKETPLACE_NAME:-alo-labs-agent-plugins}"
+CURSOR_PLUGIN_GIT_SUBPATH="${CURSOR_PLUGIN_GIT_SUBPATH:-plugins/silver-bullet}"
 CURSOR_MARKETPLACE_ROOT="${CURSOR_MARKETPLACE_ROOT:-${CURSOR_HOME}/plugins/marketplaces/${CURSOR_MARKETPLACE_NAME}}"
 CURSOR_GITHUB_REPO_SLUG="${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
 CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/silver-bullet.git}"
@@ -264,17 +266,19 @@ cursor_marketplace_plugin_cache_root() {
 ensure_cursor_marketplace_plugin_cache_symlink() {
   local dest="$1"
   local commit_sha="$2"
-  local cache_root link_path
+  local cache_root link_path marketplace_name
 
   [[ -n "$commit_sha" ]] || return 0
 
-  cache_root="$(cursor_marketplace_plugin_cache_root)"
-  link_path="${cache_root}/${commit_sha}"
-  mkdir -p "$cache_root"
-  if [[ -e "$link_path" && ! -L "$link_path" ]]; then
-    rm -rf "$link_path"
-  fi
-  ln -sfn "$dest" "$link_path"
+  for marketplace_name in "$CURSOR_MARKETPLACE_NAME" "$CURSOR_BACKEND_MARKETPLACE_NAME"; do
+    cache_root="${CURSOR_HOME}/plugins/cache/${marketplace_name}/silver-bullet"
+    link_path="${cache_root}/${commit_sha}"
+    mkdir -p "$cache_root"
+    if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+      rm -rf "$link_path"
+    fi
+    ln -sfn "$dest" "$link_path"
+  done
 }
 
 read_installed_plugins_git_sha() {
@@ -294,14 +298,14 @@ cursor_github_marketplace_gitpath_for_sha() {
   printf '%s/%s' "$(cursor_github_marketplace_gitpath_root)" "$commit_sha"
 }
 
-materialize_cursor_plugin_surface_in_gitpath() {
-  local dest="$1"
-  local commit_sha="$2"
-  local gitpath_root
+cursor_plugin_git_subpath_root() {
+  local commit_sha="$1"
+  printf '%s/%s' "$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")" "$CURSOR_PLUGIN_GIT_SUBPATH"
+}
 
-  [[ -n "$commit_sha" ]] || return 0
-  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
-  [[ -d "${gitpath_root}/.git" ]] || return 0
+materialize_cursor_plugin_surface_at_root() {
+  local dest="$1"
+  local gitpath_root="$2"
 
   if [[ -d "${dest}/commands" ]]; then
     mkdir -p "${gitpath_root}/commands"
@@ -320,6 +324,21 @@ materialize_cursor_plugin_surface_in_gitpath() {
   fi
 }
 
+materialize_cursor_plugin_surface_in_gitpath() {
+  local dest="$1"
+  local commit_sha="$2"
+  local gitpath_root surface_root
+
+  [[ -n "$commit_sha" ]] || return 0
+  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
+  [[ -d "${gitpath_root}/.git" ]] || return 0
+
+  surface_root="$(cursor_plugin_git_subpath_root "$commit_sha")"
+  mkdir -p "${surface_root}/.cursor-plugin"
+  materialize_cursor_plugin_surface_at_root "$dest" "$surface_root"
+  materialize_cursor_plugin_surface_at_root "$dest" "$gitpath_root"
+}
+
 cursor_plugin_gitpath_ready() {
   local commit_sha="$1"
   local gitpath_root
@@ -331,13 +350,13 @@ cursor_plugin_gitpath_ready() {
 
 cursor_plugin_gitpath_surface_ready() {
   local commit_sha="$1"
-  local gitpath_root
+  local surface_root
 
   cursor_plugin_gitpath_ready "$commit_sha" || return 1
-  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
-  [[ -f "${gitpath_root}/commands/init.md" ]] || return 1
-  [[ -f "${gitpath_root}/.cursor-plugin/plugin.json" ]] || return 1
-  jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1
+  surface_root="$(cursor_plugin_git_subpath_root "$commit_sha")"
+  [[ -f "${surface_root}/commands/init.md" ]] || return 1
+  [[ -f "${surface_root}/.cursor-plugin/plugin.json" ]] || return 1
+  jq -e '.commands == "./commands"' "${surface_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1
 }
 
 cursor_marketplace_cache_link_ready() {

@@ -51,3 +51,12 @@ agent_plugins_commit_push_if_dirty() {
     git -C "$root" push
   fi
 }
+
+agent_plugins_catalog_path() {
+  local repo_root="${1:-}"
+  if [[ -n "$repo_root" && -f "${repo_root}/scripts/lib/agent-plugins-catalog.json" ]]; then
+    printf '%s\n' "${repo_root}/scripts/lib/agent-plugins-catalog.json"
+    return 0
+  fi
+  printf '%s\n' "${AGENT_PLUGINS_CATALOG:-scripts/lib/agent-plugins-catalog.json}"
+}
