@@ -380,8 +380,12 @@ main() {
           gitpath_root="${cursor_home}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${registry_sha}"
           market_cache_link="${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
           if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1 \
-            && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
-            record pass "cursor-gitpath" "marketplace gitPath ready (${registry_sha:0:8})"
+            && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]] \
+            && [[ -f "${gitpath_root}/commands/init.md" ]] \
+            && jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+            record pass "cursor-gitpath" "marketplace gitPath ready with commands (${registry_sha:0:8})"
+          elif [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then
+            record fail "cursor-gitpath" "gitPath exists but commands surface missing for ${registry_sha:0:8} — run: bash scripts/install-cursor.sh"
           else
             record fail "cursor-gitpath" "gitPath/cache symlink missing for ${registry_sha:0:8} — /silver commands will not load — run: bash scripts/install-cursor.sh"
           fi
