@@ -13,6 +13,7 @@ source "${REPO_ROOT}/scripts/lib/plugin-cache-version.sh"
 PURGE_LEGACY_PLUGINS=0
 PUBLIC_RELEASE_ONLY=0
 CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"
+CLAUDE_SETTINGS_HOME="${CLAUDE_SETTINGS_HOME:-${HOME}/.claude}"
 CLAUDE_SB_PLUGIN_CACHE="${CLAUDE_SB_PLUGIN_CACHE:-${CLAUDE_HOME}/plugins/cache/alo-labs/silver-bullet}"
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
 CLAUDE_GIT_HTTPS_REWRITE="${CLAUDE_GIT_HTTPS_REWRITE:-1}"
@@ -59,7 +60,7 @@ plugin_scopes() {
 
 marketplace_registered() {
   local marketplace="$1"
-  local state_file="${HOME}/.codex/plugins/known_marketplaces.json"
+  local state_file="${CLAUDE_HOME}/plugins/known_marketplaces.json"
 
   [[ -f "$state_file" ]] || return 1
   jq -e --arg name "$marketplace" 'has($name)' "$state_file" >/dev/null 2>&1
@@ -68,7 +69,7 @@ marketplace_registered() {
 marketplace_catalog_has_plugin() {
   local marketplace="$1"
   local plugin_name="$2"
-  local marketplace_json="${HOME}/.codex/plugins/marketplaces/${marketplace}/.claude-plugin/marketplace.json"
+  local marketplace_json="${CLAUDE_HOME}/plugins/marketplaces/${marketplace}/.claude-plugin/marketplace.json"
 
   [[ -f "$marketplace_json" ]] || return 1
   jq -e --arg name "$plugin_name" 'any(.plugins[]?; .name == $name)' "$marketplace_json" >/dev/null 2>&1
@@ -77,7 +78,7 @@ marketplace_catalog_has_plugin() {
 marketplace_source_matches() {
   local marketplace="$1"
   local source="$2"
-  local state_file="${HOME}/.codex/plugins/known_marketplaces.json"
+  local state_file="${CLAUDE_HOME}/plugins/known_marketplaces.json"
 
   [[ -f "$state_file" ]] || return 1
 
@@ -133,7 +134,7 @@ materialize_local_silver_bullet_plugin_cache() {
   plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   version_dir="${plugin_cache_root}/${version}"
   stable_alias="${plugin_cache_root}/current"
-  registry="${HOME}/.codex/plugins/installed_plugins.json"
+  registry="${CLAUDE_HOME}/plugins/installed_plugins.json"
 
   mkdir -p "$version_dir/.claude-plugin" "${version_dir}/agents/claude" "${version_dir}/hooks"
   install -m 644 "${REPO_ROOT}/.claude-plugin/plugin.json" "${version_dir}/.claude-plugin/plugin.json"
@@ -204,7 +205,7 @@ purge_plugin_cache() {
   local plugin_id="$1"
   local marketplace="${plugin_id#*@}"
   local name="${plugin_id%@*}"
-  local cache_dir="${HOME}/.codex/plugins/cache/${marketplace}/${name}"
+  local cache_dir="${CLAUDE_HOME}/plugins/cache/${marketplace}/${name}"
   local attempt=0
 
   # Drop stable alias before purge — concurrent install / claude CLI can race with plain rm.
@@ -221,16 +222,16 @@ purge_plugin_cache() {
 }
 
 sync_silver_bullet_settings_paths() {
-  local settings_file="${HOME}/.codex/settings.json"
-  local plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
-  local stable_install_path="${plugin_cache_root}/current"
-  local current_version_dir=""
+  local settings_file plugin_cache_root stable_install_path current_version_dir
 
-  [[ -f "$settings_file" ]] || return 0
+  plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
+  stable_install_path="${plugin_cache_root}/current"
   [[ -d "$plugin_cache_root" ]] || return 0
-
   current_version_dir="$(sb_plugin_cache_latest_version_dir "$plugin_cache_root" 2>/dev/null || true)"
   [[ -n "$current_version_dir" ]] || return 0
+
+  for settings_file in "${CLAUDE_SETTINGS_HOME}/settings.json" "${CLAUDE_HOME}/settings.json"; do
+    [[ -f "$settings_file" ]] || continue
 
   python3 - "$settings_file" "$plugin_cache_root" "$stable_install_path" <<'PY'
 import json
@@ -283,6 +284,7 @@ def rewrite(value):
 updated = rewrite(data)
 settings_path.write_text(json.dumps(updated, indent=2) + "\n")
 PY
+  done
 }
 
 refresh_silver_bullet_install_alias() {

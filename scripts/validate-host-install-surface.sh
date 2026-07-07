@@ -166,9 +166,17 @@ if should_check("codex"):
 
     pkg = repo_root / "plugins" / "silver-bullet"
     if pkg.is_dir():
-        for forbidden in ("agents", "skills", ".generated-skills"):
+        for forbidden in ("skills", ".generated-skills"):
             if (pkg / forbidden).exists():
                 fail("codex", f"plugins/silver-bullet/{forbidden} must not ship in Codex package")
+        agents_pkg = pkg / "agents"
+        if agents_pkg.is_dir():
+            for child in agents_pkg.iterdir():
+                if child.is_dir() and child.name not in ("cursor",):
+                    fail(
+                        "codex",
+                        f"plugins/silver-bullet/agents/{child.name} must not ship in Codex package",
+                    )
         if not (pkg / "skill-source").is_dir():
             fail("codex", "plugins/silver-bullet/skill-source missing")
         if not (pkg / "commands").is_dir():
@@ -193,7 +201,10 @@ if should_check("cursor"):
             continue
         data = json.loads(manifest.read_text())
         skills = data.get("skills", "")
-        if skills != "./agents/cursor":
+        allowed = ("./agents/cursor",)
+        if label == "root":
+            allowed = ("./agents/cursor", "./host-bundles/cursor")
+        if skills not in allowed:
             fail(
                 "cursor",
                 f"{manifest.relative_to(repo_root)} skills path must be ./agents/cursor — got {skills!r}",
@@ -276,11 +287,16 @@ elif host == "cursor":
 
 elif host == "codex":
     forbid(agents / "claude", "agents/claude")
-    forbid(agents / "cursor", "agents/cursor")
+    forbid(agents / "codex", "agents/codex")
     forbid(cache_root / "host-bundles", "host-bundles")
-    # Codex package uses skill-source; agents/ at package root is legacy bleed.
-    if (cache_root / "agents").is_dir():
-        failures.append("[codex] cache bleed: agents/ tree (Codex uses skill-source/)")
+    if agents.is_dir():
+        foreign = [
+            child.name
+            for child in agents.iterdir()
+            if child.is_dir() and child.name != "cursor"
+        ]
+        for name in foreign:
+            failures.append(f"[codex] cache bleed: agents/{name}")
     if not (cache_root / "skill-source").is_dir() and not (cache_root / "hooks").is_dir():
         failures.append("[codex] cache missing skill-source/ and hooks/ — not a Codex package root")
 

@@ -586,16 +586,16 @@ teardown
 # `--ignored=traditional` previously over-caught routine session/runtime
 # artifacts, defeating HOOK-14's intent on every release. v0.30.0 filters
 # porcelain output through a transient-path allowlist before deciding
-# `tree_clean`. Defaults: .claude/scheduled_tasks.lock,
-# .claude/settings.local.json, .superpowers/, .planning/workflows/, REVIEW.md.
+# `tree_clean`. Defaults: .codex/scheduled_tasks.lock,
+# .codex/settings.local.json, .superpowers/, .planning/workflows/, REVIEW.md.
 
 echo "--- Test #88-A: built-in transient artifacts ignored — HOOK-14 fires ---"
 setup
 echo "silver-quality-gates" > "$TMPSTATE"
 # Add gitignored runtime/session artifacts that previously blocked HOOK-14
-mkdir -p "$TMPDIR_TEST/.claude" "$TMPDIR_TEST/.superpowers/brainstorm" "$TMPDIR_TEST/.planning/workflows"
+mkdir -p "$TMPDIR_TEST/.claude" "$TMPDIR_TEST/.codex" "$TMPDIR_TEST/.superpowers/brainstorm" "$TMPDIR_TEST/.planning/workflows"
 cat > "$TMPDIR_TEST/.gitignore" <<'GITIG'
-.claude/
+.codex/
 .superpowers/
 .planning/workflows/
 REVIEW.md
