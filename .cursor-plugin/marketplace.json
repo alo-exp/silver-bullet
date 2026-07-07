@@ -1,11 +1,11 @@
 {
   "name": "alo-labs-cursor",
   "owner": {
-    "name": "Ālo Labs",
+    "name": "\u0100lo Labs",
     "email": "hello@alolabs.io"
   },
   "metadata": {
-    "description": "Silver Bullet — Agentic Process Orchestrator for Claude Code, Codex, and Cursor",
+    "description": "Silver Bullet \u2014 Agentic Process Orchestrator for Claude Code, Codex, and Cursor",
     "version": "1.0.0"
   },
   "plugins": [
@@ -13,7 +13,9 @@
       "name": "silver-bullet",
       "source": {
         "source": "github",
-        "repo": "alo-exp/silver-bullet"
+        "repo": "alo-exp/silver-bullet",
+        "ref": "v0.51.2",
+        "sha": "8cfb66db85f46e8369c6a58b424bef254d2515b9"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
       "version": "0.51.2",
