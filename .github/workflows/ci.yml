@@ -22,7 +22,7 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json .agents/plugins/marketplace.json forge/agent-plugins/.agents/plugins/marketplace.json plugins/silver-bullet/.cursor-plugin/plugin.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json .agents/plugins/marketplace.json plugins/silver-bullet/.cursor-plugin/plugin.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
             jq empty "$f" || { echo "Invalid JSON: $f"; exit 1; }
             echo "Valid: $f"
           done

@@ -24,7 +24,7 @@ REMOTE="$TMP/remote.git"
 MARKETPLACE="$TMP/marketplace"
 mkdir -p "$MARKETPLACE/.cursor-plugin"
 
-cp "$REPO_ROOT/forge/agent-plugins/.cursor-plugin/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
+cp "$REPO_ROOT/.cursor-plugin/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
 jq '.plugins[] |= if .name == "silver-bullet" then .version = "0.0.1" else . end' \
   "$MARKETPLACE/.cursor-plugin/marketplace.json" > "$TMP/marketplace.json"
 mv "$TMP/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
