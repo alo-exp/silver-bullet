@@ -3,6 +3,7 @@ name: "silver:migrate"
 title: "Migrate"
 description: "This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults."
 version: 0.5.0
+user-invocable: false
 ---
 
 # silver:migrate
