@@ -138,10 +138,17 @@ else
   fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 fi
 
-if [[ -L "$backend_cache_link" ]] && [[ "$backend_cache_target" == "$resolved_current" ]]; then
-  pass "install-cursor seeds alo-labs-agent-plugins marketplace cache symlink"
+if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/init.md" ]]; then
+  pass "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 else
-  fail "install-cursor seeds alo-labs-agent-plugins marketplace cache symlink"
+  fail "install-cursor materializes alo-labs-agent-plugins backend cache directory"
+fi
+
+if [[ -f "${gitpath_root}/commands/init.md" ]] && \
+   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+  pass "install-cursor materializes commands at gitPath repo root for empty backend path"
+else
+  fail "install-cursor materializes commands at gitPath repo root for empty backend path"
 fi
 
 if jq -e '.version == 2 and (.plugins["silver-bullet@alo-labs"] | type) == "array"' "$registry_path" >/dev/null 2>&1; then
