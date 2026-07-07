@@ -9,7 +9,7 @@
 ## Repo Shape
 
 - Stack: Bash for hooks/scripts, Markdown for skills/templates/docs, JSON for config and manifests.
-- Main surfaces: `hooks/`, `skills/`, `scripts/`, `templates/`, `tests/`, `docs/`, `site/`, `forge/`, `plugins/`.
+- Main surfaces: `hooks/`, `skills/`, `scripts/`, `templates/`, `tests/`, `docs/`, `site/`, `plugins/`, `.claude-plugin/`, `.cursor-plugin/`, `.agents/plugins/`.
 - Never modify the installed plugin cache under `${SB_RUNTIME_HOME_ROOT}/plugins/cache/`; all behavior changes belong in this source repo.
 
 ## Useful Commands

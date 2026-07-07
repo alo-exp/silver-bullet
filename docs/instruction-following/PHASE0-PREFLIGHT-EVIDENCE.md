@@ -250,7 +250,7 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
 **If silver-bullet still shows Imported after window reload:**
 
 1. Settings → Plugins → disable/remove any **Imported** silver-bullet entry
-2. Add marketplace: `https://github.com/alo-labs/alo-labs-cursor-marketplace`
+2. Add marketplace: `https://github.com/alo-labs/agent-plugins`
 3. Install `silver-bullet` from that marketplace
 4. Reload window
 5. Re-run `bash scripts/sb-doctor.sh`
