@@ -83,11 +83,15 @@ for event, entries in list(existing_hooks.items()):
     else:
         del existing_hooks[event]
 
+def hook_entry_key(entry: dict) -> tuple[str, str]:
+    return (entry.get("command", ""), entry.get("matcher", ""))
+
+
 for event, entries in sb_hooks.items():
     event_list = existing_hooks.setdefault(event, [])
     for new_entry in entries:
-        new_cmd = new_entry.get("command", "")
-        if not any(entry.get("command", "") == new_cmd for entry in event_list):
+        new_key = hook_entry_key(new_entry)
+        if not any(hook_entry_key(entry) == new_key for entry in event_list):
             event_list.append(new_entry)
 
 pathlib.Path(settings_path).parent.mkdir(parents=True, exist_ok=True)

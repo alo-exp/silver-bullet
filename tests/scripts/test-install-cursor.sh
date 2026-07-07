@@ -120,6 +120,29 @@ else
   fail "install-cursor merges singly quoted SB hook commands"
 fi
 
+template_hook_count="$(jq '[.hooks | to_entries[] | .value[]] | length' "${REPO_ROOT}/hooks/cursor-hooks.json")"
+merged_sb_hook_count="$(jq '[.hooks | to_entries[] | .value[] | select(.command | test("silver-bullet"))] | length' "${CURSOR_HOME}/hooks.json")"
+if [[ "$merged_sb_hook_count" -eq "$template_hook_count" ]]; then
+  pass "install-cursor merges full SB hook count (${merged_sb_hook_count})"
+else
+  fail "install-cursor merges full SB hook count — template ${template_hook_count} vs merged ${merged_sb_hook_count}"
+fi
+
+odg_expected_matchers=("Edit|Write|MultiEdit" "Edit|Write|MultiEdit|Shell" "Task|Subagent|Agent")
+odg_missing=0
+for matcher in "${odg_expected_matchers[@]}"; do
+  if ! jq -e --arg m "$matcher" \
+    '.hooks.preToolUse[]? | select(.command | test("orchestrator-directive-guard")) | select(.matcher == $m)' \
+    "${CURSOR_HOME}/hooks.json" >/dev/null 2>&1; then
+    (( odg_missing++ )) || true
+  fi
+done
+if [[ "$odg_missing" -eq 0 ]]; then
+  pass "install-cursor preserves orchestrator-directive-guard matcher variants"
+else
+  fail "install-cursor preserves orchestrator-directive-guard matcher variants — missing ${odg_missing}"
+fi
+
 
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"
