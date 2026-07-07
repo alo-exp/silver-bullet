@@ -529,6 +529,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null
 export SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-codex}"
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
@@ -830,8 +831,8 @@ EOF
 cp "$FAKE_HOOKS_FIXTURE" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 cp "$FAKE_HOOKS_FIXTURE" "$FAKE_CACHE_ROOT/hooks/hooks.json"
 ln -s "$REPO_ROOT/README.md" "$FAKE_MARKETPLACE_ROOT/README.md"
-ln -s "../../hooks" "$FAKE_SB_PACKAGE_ROOT/hooks"
-ln -s "../../skill-source" "$FAKE_SB_PACKAGE_ROOT/skill-source"
+rsync -a "$REPO_ROOT/hooks/" "$FAKE_SB_PACKAGE_ROOT/hooks/"
+rsync -a "$REPO_ROOT/plugins/silver-bullet/skill-source/" "$FAKE_SB_PACKAGE_ROOT/skill-source/"
 
 python3 - "$HOME_DIR" "$FAKE_SB_INSTALL_ROOT" "$FAKE_SUPERPOWERS_ROOT" "$FAKE_LEGACY_ROOT" "$FAKE_SIDEKICK_ROOT" "$FAKE_ENGINEERING_ROOT" "$FAKE_DESIGN_ROOT" "$FAKE_PRODUCT_ROOT" "$FAKE_SIDEKICK_STALE_ROOT" "$FAKE_ENGINEERING_STALE_ROOT" "$FAKE_DESIGN_STALE_ROOT" "$FAKE_PRODUCT_STALE_ROOT" "$FAKE_SB_STALE_ROOT" "$FAKE_SB_STALE_ROOT_MIRROR" "$_LEGACY_VENDOR_ID" <<'PY'
 import json

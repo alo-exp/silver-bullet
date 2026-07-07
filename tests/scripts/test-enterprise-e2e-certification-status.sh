@@ -9,6 +9,8 @@ fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export SB_ROOT="$REPO_ROOT"
+TEST_TMP="$(mktemp -d)"
+trap 'rm -rf "$TEST_TMP"' EXIT
 
 assert_executable() {
   [[ -x "$1" ]] && pass "$2" || fail "$2 — not executable: $1"
@@ -57,8 +59,8 @@ assert_contains "certification script sources ledger reconcile" "$SCRIPT" "enter
 assert_contains "certification script uses strict-clean-check" "$SCRIPT" "strict-clean-check.sh"
 assert_contains "certification script reads host sources" "$SCRIPT" "host-certification-sources.json"
 
-TMP_ARTIFACT="$(mktemp "${TMPDIR:-/tmp}/cert-status.XXXXXX.json")"
-trap 'rm -f "$TMP_ARTIFACT"' EXIT
+TMP_ARTIFACT="$(mktemp "${TEST_TMP}/cert-status.XXXXXX.json")"
+trap 'rm -f "$TMP_ARTIFACT"; rm -rf "$TEST_TMP"' EXIT
 
 if RTK_DISABLED=1 bash "$SCRIPT" --json --write >/dev/null 2>&1; then
   pass "certification-status --json --write exits 0"
