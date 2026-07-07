@@ -5,7 +5,7 @@
     "email": "hello@alolabs.io"
   },
   "metadata": {
-    "description": "Silver Bullet — Agentic Process Orchestrator for Claude Code, Codex, and Cursor",
+    "description": "Ālo Labs plugins for Cursor — Sidekick delegation workflows and Silver Bullet orchestration",
     "version": "1.0.0"
   },
   "plugins": [
@@ -15,7 +15,8 @@
         "source": "github",
         "repo": "alo-exp/silver-bullet",
         "ref": "main",
-        "sha": "d98e6739c2e5c820af3ffe624c01cd81564fbc4c"
+        "sha": "f46b662e77df94eec0fd74b1a535ae2c66598479",
+        "path": "plugins/silver-bullet"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
       "version": "0.51.2",
@@ -35,7 +36,34 @@
         "ci-cd"
       ],
       "category": "development"
+    },
+    {
+      "name": "sidekick",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/sidekick",
+        "ref": "main",
+        "sha": "8496d3f171665e8b5aefe9c2b4c56fd420654d72"
+      },
+      "description": "Sidekick — AI coding-agent delegation workflows for Cursor. Kay installs through Sidekick, Codex delegates to the local OpenAI Codex CLI, and Cursor stays in the orchestrator role.",
+      "version": "0.8.4",
+      "author": {
+        "name": "Ālo Labs",
+        "url": "https://alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/sidekick",
+      "repository": "https://github.com/alo-exp/sidekick",
+      "license": "MIT",
+      "keywords": [
+        "sidekick",
+        "cursor",
+        "codex",
+        "kay",
+        "terminal-agent",
+        "coding-agent",
+        "orchestration"
+      ],
+      "category": "development"
     }
-  ],
-  "version": "0.50.3"
+  ]
 }

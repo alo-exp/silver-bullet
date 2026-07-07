@@ -62,10 +62,11 @@ update_marketplace_plugin_source() {
   source_ref="$(resolve_marketplace_source_ref "$version")"
   local tmp
   tmp=$(mktemp)
-  jq --arg v "$version" --arg ref "$source_ref" --arg sha "$release_sha" '
+  jq --arg v "$version" --arg ref "$source_ref" --arg sha "$release_sha" --arg path "plugins/silver-bullet" '
     (.plugins[] | select(.name=="silver-bullet") | .version) = $v
     | (.plugins[] | select(.name=="silver-bullet") | .source.ref) = $ref
     | (.plugins[] | select(.name=="silver-bullet") | .source.sha) = $sha
+    | (.plugins[] | select(.name=="silver-bullet") | .source.path) = $path
   ' "$manifest" > "$tmp"
   mv "$tmp" "$manifest"
   rm -f -- "$tmp"
