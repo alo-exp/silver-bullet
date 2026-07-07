@@ -30,7 +30,7 @@ if [[ -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
   rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/commands/" "${DEST_DIR}/commands/"
 fi
 
-python3 "${REPO_ROOT}/hooks/generate-cursor-hooks.py" >/dev/null
+python3 "${REPO_ROOT}/scripts/generate-cursor-hooks.py" >/dev/null
 install -m 644 "${REPO_ROOT}/hooks/cursor-hooks.json" "${DEST_DIR}/cursor-hooks.json"
 
 tmp="$(mktemp)"

@@ -143,7 +143,7 @@ sync_plugin_tree_from_checkout() {
   else
     rm -rf "${dest}/commands"
   fi
-  python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
+  python3 "${source_root}/scripts/generate-cursor-hooks.py" >/dev/null
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
   install_cursor_plugin_manifest "$dest" "$version" "$source_root"
   printf '%s\n' "$dest"
