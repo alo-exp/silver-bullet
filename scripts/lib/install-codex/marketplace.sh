@@ -147,11 +147,119 @@ cleanup_legacy_marketplace_picker_surfaces() {
     return 0
   fi
 
+  # Fat marketplace layouts symlink plugins/silver-bullet/skill-source to ../../skill-source.
+  if [[ -L "${marketplace_root}/plugins/silver-bullet/skill-source" ]]; then
+    return 0
+  fi
+
   rm -rf -- "${marketplace_root}/skills" "${marketplace_root}/agents" "${marketplace_root}/skill-source"
 }
 
 
+codex_marketplace_manifest_path() {
+  local marketplace_root
+  marketplace_root="$(codex_marketplace_root)"
+  printf '%s/.agents/plugins/marketplace.json\n' "$marketplace_root"
+}
+
+
+marketplace_has_fat_silver_bullet_package() {
+  local marketplace_root
+  marketplace_root="$(codex_marketplace_root)"
+  [[ -f "${marketplace_root}/plugins/silver-bullet/.codex-plugin/plugin.json" ]]
+}
+
+
+silver_bullet_cache_version_dir() {
+  local marketplace_root package_root package_version
+  marketplace_root="$(codex_marketplace_root)"
+  package_root="${marketplace_root}/plugins/silver-bullet"
+  if [[ -f "${package_root}/.codex-plugin/plugin.json" ]]; then
+    package_version="$(jq -r '.version // empty' "${package_root}/.codex-plugin/plugin.json" 2>/dev/null || true)"
+  else
+    package_version="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version // empty' "$(codex_marketplace_manifest_path)" 2>/dev/null || true)"
+  fi
+  [[ -n "$package_version" ]] || return 1
+  printf '%s/.codex/plugins/cache/alo-labs-codex/silver-bullet/%s\n' \
+    "$CODEX_HOME_ROOT" "$package_version"
+}
+
+
+hydrate_silver_bullet_from_thin_manifest() {
+  local marketplace_root manifest cache_dir
+  marketplace_root="$(codex_marketplace_root)"
+  manifest="$(codex_marketplace_manifest_path)"
+
+  [[ -f "$manifest" ]] || return 1
+  if marketplace_has_fat_silver_bullet_package; then
+    return 0
+  fi
+
+  cache_dir="$(silver_bullet_cache_version_dir)" || return 1
+  mkdir -p "$(dirname "$cache_dir")"
+
+  python3 - "$manifest" "$marketplace_root" "$cache_dir" <<'PY'
+import json
+import pathlib
+import shutil
+import subprocess
+import sys
+import tempfile
+
+manifest_path = pathlib.Path(sys.argv[1])
+marketplace_root = pathlib.Path(sys.argv[2])
+cache_dir = pathlib.Path(sys.argv[3])
+
+data = json.loads(manifest_path.read_text())
+plugin = next(item for item in data.get("plugins", []) if item.get("name") == "silver-bullet")
+source = plugin.get("source", {})
+source_type = source.get("source")
+
+if source_type == "local":
+    rel = pathlib.Path(source.get("path", ""))
+    src = (marketplace_root / rel).resolve()
+    if not src.is_dir():
+        raise SystemExit(f"ERROR: thin local Codex source missing: {src}")
+    if cache_dir.exists():
+        shutil.rmtree(cache_dir)
+    shutil.copytree(src, cache_dir, symlinks=True)
+    raise SystemExit(0)
+
+if source_type != "url":
+    raise SystemExit(f"ERROR: unsupported thin Codex source type: {source_type}")
+
+url = source.get("url", "")
+ref = source.get("ref", "")
+subpath = source.get("path", "")
+if not url or not subpath:
+    raise SystemExit("ERROR: thin Codex url source requires url and path")
+
+tmp = pathlib.Path(tempfile.mkdtemp(prefix="sb-codex-thin-"))
+clone_args = ["git", "clone", "--depth", "1"]
+if ref:
+    clone_args.extend(["--branch", ref])
+clone_args.extend([url, str(tmp)])
+subprocess.run(clone_args, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+src = (tmp / subpath).resolve()
+if not src.is_dir():
+    raise SystemExit(f"ERROR: thin Codex subpath missing after clone: {src}")
+
+if cache_dir.exists():
+    shutil.rmtree(cache_dir)
+shutil.copytree(src, cache_dir, symlinks=True)
+shutil.rmtree(tmp, ignore_errors=True)
+PY
+}
+
+
+legacy_marketplace_snapshot_enabled() {
+  [[ "${SB_CODEX_LEGACY_MARKETPLACE_SNAPSHOT:-0}" == "1" ]]
+}
+
+
 seed_marketplace_snapshot_if_missing() {
+  legacy_marketplace_snapshot_enabled || return 0
   local marketplace_root
   local package_root
 
@@ -244,7 +352,7 @@ sync_marketplace_package_snapshot() {
   # plugin snapshot. The snapshot intentionally stores skill sources as
   # extensionless SILVER_SOURCE files so Codex's picker cannot recursively
   # discover duplicate plugin-cache Markdown skills.
-  rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/" "${package_root}/"
+  rsync -aL --delete "${REPO_ROOT}/plugins/silver-bullet/" "${package_root}/"
 }
 
 

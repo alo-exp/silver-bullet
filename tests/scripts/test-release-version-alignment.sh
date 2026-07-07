@@ -34,7 +34,9 @@ done
 
 for marketplace in \
   "$REPO_ROOT/.claude-plugin/marketplace.json" \
-  "$REPO_ROOT/.cursor-plugin/marketplace.json"
+  "$REPO_ROOT/.cursor-plugin/marketplace.json" \
+  "$REPO_ROOT/.agents/plugins/marketplace.json" \
+  "$REPO_ROOT/forge/agent-plugins/.agents/plugins/marketplace.json"
 do
   name="$(basename "$marketplace")"
   check_eq "$name silver-bullet version matches package.json" "$PKG_V" \

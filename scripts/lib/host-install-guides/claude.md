@@ -5,7 +5,7 @@ Host-specific commands are loaded from `.silver-bullet.json`
 
 ## Marketplace install
 
-- Add marketplace `https://github.com/alo-labs/claude-plugins`
+- Add marketplace `https://github.com/alo-labs/agent-plugins`
 - `/plugin install silver-bullet@alo-labs`
 - Or: `bash scripts/install-claude.sh`
 

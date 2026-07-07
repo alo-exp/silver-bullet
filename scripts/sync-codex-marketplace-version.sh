@@ -3,9 +3,7 @@
 #
 # Updates BOTH:
 #   - plugins/silver-bullet/.codex-plugin/plugin.json (this repo's source copy)
-#   - The upstream Codex marketplace repo clone (defaults to
-#     ~/.codex/.tmp/marketplaces/alo-labs-codex), then commits/pushes the version
-#     bump there
+#   - The unified agent-plugins Codex manifest (.agents/plugins/marketplace.json)
 #
 # Usage: scripts/sync-codex-marketplace-version.sh [version]
 #
@@ -16,8 +14,11 @@ set -euo pipefail
 trap 'exit 1' ERR
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=scripts/lib/agent-plugins-common.sh
+source "${repo_root}/scripts/lib/agent-plugins-common.sh"
 codex_plugin_json="$repo_root/plugins/silver-bullet/.codex-plugin/plugin.json"
-codex_marketplace_repo_root="${CODEX_MARKETPLACE_REPO_ROOT:-${HOME}/.codex/.tmp/marketplaces/alo-labs-codex}"
+marketplace_repo_url="$(resolve_agent_plugins_repo_url codex)"
+marketplace_repo_root="${AGENT_PLUGINS_REPO_ROOT:-${CODEX_MARKETPLACE_REPO_ROOT:-}}"
 codex_package_sync_script="$repo_root/scripts/sync-codex-package.sh"
 requested_version="${1:-}"
 
@@ -46,17 +47,16 @@ update_version_file() {
   echo "✓ Updated version: $current_version → $plugin_v ($manifest)"
 }
 
-sync_marketplace_repo() {
+sync_codex_marketplace_manifest() {
   local root="$1"
-  local manifest="$root/plugins/silver-bullet/.codex-plugin/plugin.json"
+  local version="$2"
+  local manifest="$root/.agents/plugins/marketplace.json"
   local remote_before
   local remote_after
-  local upstream_ref
-  local upstream_remote
-  local upstream_branch
+  local release_ref="v${version}"
 
   [[ -d "$root/.git" ]] || {
-    echo "ERROR: Codex marketplace repo root is not a git repository: $root" >&2
+    echo "ERROR: marketplace repo root is not a git repository: $root" >&2
     exit 1
   }
   [[ -f "$manifest" ]] || {
@@ -64,31 +64,25 @@ sync_marketplace_repo() {
     exit 1
   }
 
-  remote_before=$(jq -r '.version' "$manifest")
-  sync_marketplace_package_surface "$root"
-  if [[ "$remote_before" != "$plugin_v" ]]; then
-    update_version_file "$manifest"
-  fi
+  remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
+  tmp=$(mktemp)
+  jq --arg v "$version" --arg ref "$release_ref" \
+    '(.plugins[] | select(.name=="silver-bullet") | .version) = $v
+     | (.plugins[] | select(.name=="silver-bullet") | .source.ref) = $ref' \
+    "$manifest" > "$tmp"
+  mv "$tmp" "$manifest"
+  rm -f -- "$tmp"
 
-  if git -C "$root" diff --quiet -- plugins/silver-bullet; then
-    echo "✓ Codex marketplace repo already at silver-bullet $plugin_v: $root"
+  if git -C "$root" diff --quiet -- .agents/plugins/marketplace.json; then
+    echo "✓ Codex marketplace manifest already at silver-bullet $version: $root"
     return 0
   fi
 
-  git -C "$root" add plugins/silver-bullet
-  git -C "$root" commit -m "Sync silver-bullet Codex package to $plugin_v"
+  git -C "$root" add .agents/plugins/marketplace.json
+  agent_plugins_commit_push_if_dirty "$root" "Bump silver-bullet Codex manifest to $version"
 
-  upstream_ref="$(git -C "$root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
-  if [[ "$upstream_ref" == */* ]]; then
-    upstream_remote="${upstream_ref%%/*}"
-    upstream_branch="${upstream_ref#*/}"
-    git -C "$root" push "$upstream_remote" "HEAD:${upstream_branch}"
-  else
-    git -C "$root" push
-  fi
-
-  remote_after=$(jq -r '.version' "$manifest")
-  echo "✓ Updated and pushed Codex marketplace repo: $remote_before → $remote_after"
+  remote_after=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
+  echo "✓ Updated Codex marketplace manifest: $remote_before → $remote_after"
 }
 
 update_version_file "$codex_plugin_json"
@@ -100,39 +94,20 @@ else
   exit 1
 fi
 
-sync_marketplace_package_surface() {
-  local root="$1"
-  local source_package="$repo_root/plugins/silver-bullet"
-  local dest_package="$root/plugins/silver-bullet"
-  local sanitizer="$repo_root/scripts/codex-sanitize-package.sh"
-
-  [[ -d "$source_package" ]] || {
-    echo "ERROR: source Codex package not found: $source_package" >&2
-    exit 1
-  }
-
-  mkdir -p "$dest_package"
-
-  # The Codex cache can drop symlink-backed package entries. Release the
-  # marketplace package as materialized files so skill-picker discovery does not
-  # depend on installer-side repair.
-  rsync -aL --delete --exclude '.git/' "${source_package}/" "${dest_package}/"
-
-  if [[ -x "$sanitizer" ]]; then
-    "$sanitizer" "$dest_package"
-  else
-    echo "ERROR: Codex package sanitizer not found or not executable: $sanitizer" >&2
-    exit 1
-  fi
-}
-
-sync_marketplace_repo "$codex_marketplace_repo_root"
+if [[ -n "$marketplace_repo_root" ]]; then
+  sync_codex_marketplace_manifest "$marketplace_repo_root" "$plugin_v"
+else
+  tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-agent-plugins-codex.XXXXXX")
+  trap 'rm -rf -- "$tmp_repo_root"' EXIT
+  git clone "$marketplace_repo_url" "$tmp_repo_root" >/dev/null
+  sync_codex_marketplace_manifest "$tmp_repo_root" "$plugin_v"
+fi
 
 cat <<EOF
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Codex marketplace sync complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The Codex marketplace repo was updated and pushed for v$plugin_v.
+The agent-plugins Codex manifest was updated for v$plugin_v.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
