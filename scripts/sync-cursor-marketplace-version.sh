@@ -3,7 +3,7 @@
 #
 # Updates BOTH:
 #   - .cursor-plugin/marketplace.json (self-hosted entry in this repo)
-#   - The upstream Cursor marketplace repo (defaults to alo-labs/alo-labs-cursor-marketplace),
+#   - The unified agent-plugins marketplace repo (defaults to alo-labs/agent-plugins),
 #     then commits and pushes the version bump there
 #
 # Usage: scripts/sync-cursor-marketplace-version.sh [version]
@@ -15,10 +15,12 @@ set -euo pipefail
 trap 'exit 1' ERR
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=scripts/lib/agent-plugins-common.sh
+source "${repo_root}/scripts/lib/agent-plugins-common.sh"
 plugin_json="$repo_root/.cursor-plugin/plugin.json"
 marketplace_json="$repo_root/.cursor-plugin/marketplace.json"
-marketplace_repo_url="${CURSOR_MARKETPLACE_REPO_URL:-https://github.com/alo-labs/alo-labs-cursor-marketplace.git}"
-marketplace_repo_root="${CURSOR_MARKETPLACE_REPO_ROOT:-}"
+marketplace_repo_url="$(resolve_agent_plugins_repo_url cursor)"
+marketplace_repo_root="${AGENT_PLUGINS_REPO_ROOT:-${CURSOR_MARKETPLACE_REPO_ROOT:-}}"
 requested_version="${1:-}"
 
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
@@ -69,7 +71,7 @@ sync_marketplace_repo() {
   local remote_after
 
   [[ -d "$root/.git" ]] || {
-    echo "ERROR: Cursor marketplace repo root is not a git repository: $root" >&2
+    echo "ERROR: marketplace repo root is not a git repository: $root" >&2
     exit 1
   }
   [[ -f "$manifest" ]] || {
@@ -87,22 +89,21 @@ sync_marketplace_repo() {
   fi
 
   if git -C "$root" diff --quiet -- .cursor-plugin/marketplace.json; then
-    echo "✓ Cursor marketplace repo already at silver-bullet $version: $root"
+    echo "✓ Cursor marketplace manifest already at silver-bullet $version: $root"
     return 0
   fi
 
   git -C "$root" add .cursor-plugin/marketplace.json
-  git -C "$root" commit -m "Bump silver-bullet to $version"
-  git -C "$root" push
+  agent_plugins_commit_push_if_dirty "$root" "Bump silver-bullet to $version"
 
   remote_after=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
-  echo "✓ Updated and pushed Cursor marketplace repo: $remote_before → $remote_after"
+  echo "✓ Updated Cursor marketplace manifest: $remote_before → $remote_after"
 }
 
 if [[ -n "$marketplace_repo_root" ]]; then
   sync_marketplace_repo "$marketplace_repo_root" "$plugin_v"
 else
-  tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-cursor-marketplace.XXXXXX")
+  tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-agent-plugins-cursor.XXXXXX")
   trap 'rm -rf -- "$tmp_repo_root"' EXIT
   git clone "$marketplace_repo_url" "$tmp_repo_root" >/dev/null
   sync_marketplace_repo "$tmp_repo_root" "$plugin_v"
@@ -113,6 +114,6 @@ cat <<EOF
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Cursor marketplace sync complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The Cursor marketplace repo was updated and pushed for v$plugin_v.
+The agent-plugins Cursor manifest was updated for v$plugin_v.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF

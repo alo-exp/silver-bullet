@@ -20,7 +20,13 @@ sanitize_codex_package_surface() {
   local package_root
 
   marketplace_root="$(codex_marketplace_root)"
-  package_root="${marketplace_root}/plugins/silver-bullet"
+  if marketplace_has_fat_silver_bullet_package; then
+    package_root="${marketplace_root}/plugins/silver-bullet"
+  elif cache_dir="$(silver_bullet_cache_version_dir 2>/dev/null || true)" && [[ -n "$cache_dir" && -d "$cache_dir" ]]; then
+    package_root="$cache_dir"
+  else
+    package_root="${marketplace_root}/plugins/silver-bullet"
+  fi
 
   [[ -d "$package_root" ]] || return 0
 
@@ -39,6 +45,16 @@ sanitize_codex_package_surface() {
 sync_codex_cache_package_surface() {
   local marketplace_root
   marketplace_root="$(codex_marketplace_root)"
+
+  if ! marketplace_has_fat_silver_bullet_package; then
+    local cache_dir
+    cache_dir="$(silver_bullet_cache_version_dir 2>/dev/null || true)"
+    [[ -n "$cache_dir" && -d "$cache_dir" ]] || return 0
+    regenerate_core_rules_pin "${cache_dir}/hooks"
+    validate_silver_bullet_skill_surface "installed package" "$cache_dir"
+    return 0
+  fi
+
   [[ -d "${marketplace_root}/plugins/silver-bullet" ]] || return 0
 
   local cache_root="${CODEX_HOME_ROOT}/.codex/plugins/cache"

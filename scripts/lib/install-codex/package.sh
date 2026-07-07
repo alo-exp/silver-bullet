@@ -5,7 +5,13 @@ materialize_silver_bullet_package() {
   local package_root
 
   marketplace_root="$(codex_marketplace_root)"
-  package_root="${marketplace_root}/plugins/silver-bullet"
+  if marketplace_has_fat_silver_bullet_package; then
+    package_root="${marketplace_root}/plugins/silver-bullet"
+  elif cache_dir="$(silver_bullet_cache_version_dir 2>/dev/null || true)" && [[ -n "$cache_dir" && -d "$cache_dir" ]]; then
+    package_root="$cache_dir"
+  else
+    package_root="${marketplace_root}/plugins/silver-bullet"
+  fi
 
   [[ -d "$package_root" ]] || return 0
 

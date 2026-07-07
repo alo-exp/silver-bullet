@@ -472,6 +472,82 @@
           "source": "matrix"
         }
       }
+    },
+    "claude@45b352b6c6b5+6266708d6551": {
+      "host": "claude",
+      "sb_sha": "45b352b6c6b5",
+      "install_fp": "claude@45b352b6c6b5+6266708d6551",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-06T11:04:40Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-06T11:04:45Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "claude@d659c4d7a5d9+6266708d6551": {
+      "host": "claude",
+      "sb_sha": "d659c4d7a5d9",
+      "install_fp": "claude@d659c4d7a5d9+6266708d6551",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-06T11:38:36Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-06T11:38:41Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "claude@1315ceed09eb+add302209e46": {
+      "host": "claude",
+      "sb_sha": "1315ceed09eb",
+      "install_fp": "claude@1315ceed09eb+add302209e46",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-06T13:52:01Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-06T13:52:04Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
+    },
+    "claude@8cfb66db85f4+c3b85fa76f78": {
+      "host": "claude",
+      "sb_sha": "8cfb66db85f4",
+      "install_fp": "claude@8cfb66db85f4+c3b85fa76f78",
+      "rows": {
+        "22": {
+          "passed_at": "2026-07-06T14:18:10Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        },
+        "21": {
+          "passed_at": "2026-07-06T14:18:12Z",
+          "log_ref": "/Users/shafqat/projects/silver-bullet/repo/.e2e-matrix-live.log",
+          "outcome_pass": true,
+          "source": "matrix"
+        }
+      }
     }
   }
 }
