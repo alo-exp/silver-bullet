@@ -1,0 +1,20 @@
+{
+  "workflow": "topgun-find-compare",
+  "query": "find top 10 best deep-research skills on GitHub and skills portals: deep research, deep-research skill, claude deep research",
+  "query_hash": "6c523cb4cb9fe59e18d0779686715005c7cc248f58935a6992cf9ddd81be106c",
+  "started_at": "2026-07-07T16:01:01Z",
+  "completed_at": "2026-07-07T16:06:48Z",
+  "registries_total": 16,
+  "registries_ok": 15,
+  "registries_unavailable": ["gitlab"],
+  "registries_zero_results": ["skillsmp", "huggingface", "opentools", "cursor-directory"],
+  "candidates_found": 76,
+  "scoring_version": "v2-subdecomposed",
+  "artifacts": {
+    "found_skills": "found-skills.json",
+    "comparison": "comparison.json",
+    "top10": "top10.md",
+    "partials": "partials/"
+  },
+  "prior_sb_landscape": ".planning/research/2026-07-07-deep-research-skills-landscape/"
+}

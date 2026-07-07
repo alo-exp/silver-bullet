@@ -147,7 +147,7 @@ fi
 
 `$STALE_CACHE` is constructed from a hardcoded template with no user-supplied components, and is prefixed with `$HOME` which is not user-controllable at this level. The path is additionally checked with `-d` before deletion. The risk is low.
 
-However, if `$HOME` is unset (unlikely but possible in some environments), `STALE_CACHE` becomes `//.claude/...` which would operate on `/`. The skill should guard against an empty `$HOME`:
+However, if `$HOME` is unset (unlikely but possible in some environments), `STALE_CACHE` becomes `//.codex/...` which would operate on `/`. The skill should guard against an empty `$HOME`:
 
 ```bash
 [[ -z "$HOME" ]] && { echo "ERROR: HOME is unset — aborting cleanup."; exit 1; }

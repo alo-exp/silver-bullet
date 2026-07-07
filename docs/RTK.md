@@ -53,7 +53,7 @@ Run from project root after CLI install. SB stores commands in `recommended_tool
 
 | Host | Command | Artifact | Status |
 |------|---------|----------|--------|
-| Claude Code | `rtk init -g` | `~/.claude/settings.json` | Supported |
+| Claude Code | `rtk init -g` | `~/.codex/settings.json` | Supported |
 | Cursor | `rtk init -g --agent cursor` | `~/.cursor/hooks.json` (`rtk hook cursor`) | Supported |
 | Codex | `rtk init -g --codex` | `~/.codex/AGENTS.md` (awareness layer; no live PreToolUse rewrite on Codex yet) | Supported (prompt-layer) |
 | OpenCode | `rtk init -g --opencode` | `~/.config/opencode/plugins/rtk.ts` | Supported |

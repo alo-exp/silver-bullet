@@ -440,7 +440,7 @@ No `-P` (no-follow) flag specified. A symlink in `docs/sessions/` named to match
 
 2. **ERR trap pattern**: Every hook has `trap 'exit 0' ERR` (or a visible warning variant). This fail-open design prevents enforcement hooks from blocking the user on unexpected errors. Correct for a developer tool.
 
-3. **Path validation for state files**: All hooks that read `SILVER_BULLET_STATE_FILE` validate it against `"$HOME"/.claude/*`. This prevents symlink-based attacks pointing state files outside the trusted directory.
+3. **Path validation for state files**: All hooks that read `SILVER_BULLET_STATE_FILE` validate it against `"$HOME"/.codex/*`. This prevents symlink-based attacks pointing state files outside the trusted directory.
 
 4. **Symlink write guard (SEC-02)**: `nofollow-guard.sh` is sourced in all state-writing hooks and implements `sb_guard_nofollow` consistently. The inline fallback definitions (when the lib is unavailable) match the canonical implementation.
 

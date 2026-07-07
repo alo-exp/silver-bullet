@@ -33,7 +33,7 @@ If SB is the cause, this is a P0 UX bug. Current evidence points to upstream Cla
 
 ## Implementation Sketch (when triggered)
 
-1. Capture the user's `${SB_RUNTIME_HOME_ROOT}/settings.json` and `<project>/.claude/settings.local.json` before and after a fresh Claude Code launch with Bypass Permissions selected.
+1. Capture the user's `${SB_RUNTIME_HOME_ROOT}/settings.json` and `<project>/.codex/settings.local.json` before and after a fresh Claude Code launch with Bypass Permissions selected.
 2. Run `hooks/session-start` and verify it does not mutate either file (already audited, expected to confirm).
 3. If SB is innocent: file upstream against Claude Code with the captured trace.
 4. If SB is the cause: write a regression test that asserts SB never writes to `${SB_RUNTIME_HOME_ROOT}/settings.json`.

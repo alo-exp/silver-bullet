@@ -168,5 +168,5 @@ bash scripts/graphify-am-global-setup.sh --host codex --apply --repo /path/to/pr
 
 ## Notes
 
-- The verification doc mirrors the Claude Code verification doc 1:1 except for host-specific paths and command substitutions (`~/.codex/` vs `~/.claude/`, `[mcp_servers.X]` TOML vs JSON, `AGENTS.md` vs `CLAUDE.md`).
+- The verification doc mirrors the Claude Code verification doc 1:1 except for host-specific paths and command substitutions (`~/.codex/` vs `~/.codex/`, `[mcp_servers.X]` TOML vs JSON, `AGENTS.md` vs `CLAUDE.md`).
 - See `docs/graphify-am/PLATFORM-MATRIX.md` for the canonical install command set and artifact paths.

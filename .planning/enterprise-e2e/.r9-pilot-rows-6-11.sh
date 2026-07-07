@@ -13,8 +13,8 @@ if [[ -f "$_ISO_CFG/settings.json" ]]; then
   ANTHROPIC_BASE_URL="$(jq -r '.env.ANTHROPIC_BASE_URL // empty' "$_ISO_CFG/settings.json")"
   [[ -n "$ANTHROPIC_BASE_URL" && "$ANTHROPIC_BASE_URL" != null ]] && export ANTHROPIC_BASE_URL
   _api_key="$(jq -r '.env.ANTHROPIC_API_KEY // empty' "$_ISO_CFG/settings.json")"
-  if [[ "$_api_key" == "PROXY_MANAGED" && -f "${HOME}/.claude/settings.json" ]]; then
-    _api_key="$(jq -r '.env.ANTHROPIC_API_KEY // empty' "${HOME}/.claude/settings.json")"
+  if [[ "$_api_key" == "PROXY_MANAGED" && -f "${HOME}/.codex/settings.json" ]]; then
+    _api_key="$(jq -r '.env.ANTHROPIC_API_KEY // empty' "${HOME}/.codex/settings.json")"
   fi
   [[ -n "$_api_key" && "$_api_key" != null && "$_api_key" != "PROXY_MANAGED" ]] && export ANTHROPIC_API_KEY="$_api_key"
 fi

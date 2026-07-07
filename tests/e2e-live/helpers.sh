@@ -439,7 +439,7 @@ prepare_workspace() {
   fi
 
   mkdir -p "${WORK_DIR}/.claude"
-  python3 - "${WORK_DIR}/.claude/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
+  python3 - "${WORK_DIR}/.codex/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
 from pathlib import Path
 import json
 import sys
@@ -973,7 +973,7 @@ verify_runtime_dependency_access() {
       PASS=$((PASS + 1))
     fi
     local claude_cache_root latest_claude_cache
-    claude_cache_root="${KAY_HOME:-$HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+    claude_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
       assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver:init/SKILL.md"

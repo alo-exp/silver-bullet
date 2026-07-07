@@ -63,8 +63,8 @@ install_codex_agents() {
 }
 
 install_claude_hint() {
-  if [[ -f "${HOME}/.claude/RTK.md" ]]; then
-    printf 'OK: ~/.claude/RTK.md present (from rtk init -g)\n'
+  if [[ -f "${HOME}/.codex/RTK.md" ]]; then
+    printf 'OK: ~/.codex/RTK.md present (from rtk init -g)\n'
   else
     printf 'WARN: run rtk init -g for Claude RTK wiring\n' >&2
   fi

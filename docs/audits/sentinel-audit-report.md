@@ -346,14 +346,14 @@ Additionally, the hook self-protection only covers `Edit/Write` and specific `Ba
 
 **Description:** The state tamper prevention whitelists legitimate state writes using:
 ```bash
-if printf '%s' "$command_str" | grep -qE "^echo ['\"]?(quality-gate-stage-[1-4]|verification-before-completion-stage-[1-4]|review-loop-pass-[12])['\"]? >> ~/\.claude/[^/]+/state$"; then
+if printf '%s' "$command_str" | grep -qE "^echo ['\"]?(quality-gate-stage-[1-4]|verification-before-completion-stage-[1-4]|review-loop-pass-[12])['\"]? >> ~/.codex/[^/]+/state$"; then
   is_whitelisted_append=true
 fi
 ```
 
 The `^` and `$` anchors in `grep -E` match beginning/end of line by default, not the entire string. A multi-line bash command embedded as a single `command_str` could potentially embed a whitelisted pattern on one line alongside malicious appends on another line. The `printf '%s'` without `-n` might handle this differently across platforms.
 
-Additionally, the path component `~/\.claude/[^/]+/state` uses `[^/]+` which matches any single path segment — including non-standard state file locations if an attacker can manipulate `SILVER_BULLET_STATE_FILE` env var (though the env var is validated to stay within `${SB_RUNTIME_HOME_ROOT}/`).
+Additionally, the path component `~/.codex/[^/]+/state` uses `[^/]+` which matches any single path segment — including non-standard state file locations if an attacker can manipulate `SILVER_BULLET_STATE_FILE` env var (though the env var is validated to stay within `${SB_RUNTIME_HOME_ROOT}/`).
 
 **CVSS 3.1:** AV:L/AC:H/PR:L/UI:N/S:U/C:N/I:M/A:N = **3.3 (Low)**
 

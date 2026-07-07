@@ -127,28 +127,30 @@ else
   fail "Cursor fixed ladder has 8 rungs — got $cursor_rungs"
 fi
 assert_jq_true "Cursor fixed starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$cursor_json"
-assert_jq_true "Cursor fixed ends gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh"}' "$cursor_json"
+assert_jq_true "Cursor fixed ends gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh","delegation":"agent-cursor","task_slug":"gpt-5.5-extra-high","agent_model":"gpt-5.5-xhigh"}' "$cursor_json"
+assert_jq_true "Cursor rung 1 uses task delegation" '.rungs[0].delegation == "task"' "$cursor_json"
+assert_jq_true "Cursor rung 1 task slug composer-2.5" '.rungs[0].task_slug == "composer-2.5"' "$cursor_json"
+assert_jq_true "Cursor rung 5 gpt-5.5 low uses task" '.rungs[4] == {"model":"gpt-5.5","reasoning":"low","delegation":"task","task_slug":"gpt-5.5","agent_model":"gpt-5.5"}' "$cursor_json"
+assert_jq_true "Cursor rung 6 gpt-5.5 medium uses agent-cursor" '.rungs[5].delegation == "agent-cursor"' "$cursor_json"
+assert_jq_true "Cursor rung 6 agent model gpt-5.5-medium" '.rungs[5].agent_model == "gpt-5.5-medium"' "$cursor_json"
+assert_jq_true "Cursor rung 7 agent model gpt-5.5-high" '.rungs[6].agent_model == "gpt-5.5-high"' "$cursor_json"
+
+phase_json="$(python3 "$RESOLVER" --host cursor --json --rung 7 --phase verify_1 --work-dir /tmp/rfl --sb-root "$REPO_ROOT")"
+assert_jq_true "Phase routing rung 7 verify_1 delegation agent-cursor" '.delegation == "agent-cursor"' "$phase_json"
+assert_jq_true "Phase routing includes delegate_command" '.delegate_command | test("agent-cursor-delegate.sh")' "$phase_json"
+assert_jq_true "Phase routing agent model gpt-5.5-high" '.agent_model == "gpt-5.5-high"' "$phase_json"
+
 cursor_text="$(python3 "$RESOLVER" --host cursor)"
-if printf '%s' "$cursor_text" | grep -q 'gpt-5.5-medium'; then
-  fail "Cursor ladder omits rejected gpt-5.5-medium slug"
+if printf '%s' "$cursor_text" | grep -q 'delegation: agent-cursor'; then
+  pass "Cursor text output documents agent-cursor delegation"
 else
-  pass "Cursor ladder omits rejected gpt-5.5-medium slug"
-fi
-if printf '%s' "$cursor_text" | grep -q 'gpt-5.5-high'; then
-  fail "Cursor ladder omits rejected gpt-5.5-high slug"
-else
-  pass "Cursor ladder omits rejected gpt-5.5-high slug"
-fi
-if printf '%s' "$cursor_text" | grep -q 'gpt-5.5 / medium (cursor slug: gpt-5.5-extra-high)'; then
-  pass "Cursor ladder substitutes medium with extra-high slug"
-else
-  fail "Cursor ladder substitutes medium with extra-high slug"
+  fail "Cursor text output documents agent-cursor delegation"
   printf '%s\n' "$cursor_text"
 fi
-if printf '%s' "$cursor_text" | grep -q 'gpt-5.5 / high (cursor slug: gpt-5.5-extra-high)'; then
-  pass "Cursor ladder substitutes high with extra-high slug"
+if printf '%s' "$cursor_text" | grep -q 'agent-cursor: gpt-5.5-high'; then
+  pass "Cursor text output shows gpt-5.5-high agent model"
 else
-  fail "Cursor ladder substitutes high with extra-high slug"
+  fail "Cursor text output shows gpt-5.5-high agent model"
   printf '%s\n' "$cursor_text"
 fi
 

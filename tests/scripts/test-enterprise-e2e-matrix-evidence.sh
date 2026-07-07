@@ -25,8 +25,8 @@ enterprise_e2e_test_fixture_init "$REPO_ROOT"
 trap 'rm -rf "$STATE_DIR" ${enterprise_e2e_test_fixture_temp:+"$enterprise_e2e_test_fixture_temp"}' EXIT
 
 export HOME="$STATE_DIR/home"
-mkdir -p "$HOME/.claude/.silver-bullet"
-export SB_RUNTIME_STATE_DIR="$HOME/.claude/.silver-bullet"
+mkdir -p "$HOME/.codex/.silver-bullet"
+export SB_RUNTIME_STATE_DIR="$HOME/.codex/.silver-bullet"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SB_E2E_ENTERPRISE_MATRIX=1
 export WORK_DIR="$FIXTURE"
@@ -80,7 +80,7 @@ else
   ((FAIL++)) || true
 fi
 
-printf 'silver-context\nsilver-feature\n' >"$HOME/.claude/.silver-bullet/state"
+printf 'silver-context\nsilver-feature\n' >"$HOME/.codex/.silver-bullet/state"
 matrix_write_router_session_evidence ".planning/workflows/router-session-test.md"
 assert_ok "router evidence stub written on routing-only pass" \
   test -f "$FIXTURE/.planning/workflows/router-session-test.md"

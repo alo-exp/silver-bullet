@@ -16,7 +16,7 @@ Bypass disclaimer: `398209d3` in `scripts/claude-interactive-invoke.expect`
 - **Bypass menu:** OK — disclaimer harness passes; `/silver` prompt reaches Claude TUI
 - **Do not duplicate runners** while 429 retry active (62086/62131/78519)
 - **429 nuance:** `API Error: Request rejected (429) · Weekly usage limit reached` from **OpenCode workspace proxy** (`opencod.a` billing link in TUI), **not** Cursor dashboard operator quota. Message: proxy may show ~13h until reset — ignore for scheduling; harness uses `SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL` (**60s**).
-- **Proxy config** (`~/.claude/settings.json`): `ANTHROPIC_BASE_URL=http://127.0.0.1:15721`, `ANTHROPIC_AUTH_TOKEN=PROXY_MANAGED` — all matrix Claude traffic goes through local OpenCode proxy.
+- **Proxy config** (`~/.codex/settings.json`): `ANTHROPIC_BASE_URL=http://127.0.0.1:15721`, `ANTHROPIC_AUTH_TOKEN=PROXY_MANAGED` — all matrix Claude traffic goes through local OpenCode proxy.
 - **Minimal probe (no auth changes):** `claude --print "Reply with exactly: pong"` **hung** ~35s with no response (killed); consistent with OpenCode/proxy path blocked during weekly limit, not a separate direct-API path.
 - **`--resume`:** **skipped** — PID `10138` dead; row 1 still **blocking** (environmental 429; 62086/62131 alive)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prune stale user-level Claude hooks that reference missing scripts (E2E-010).
 # Removes gsd-session-state.sh and other broken SessionStart entries from
-# ~/.claude/settings.json and deletes dangling files in ~/.claude/hooks/.
+# ~/.codex/settings.json and deletes dangling files in ~/.codex/hooks/.
 set -euo pipefail
 
 CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"

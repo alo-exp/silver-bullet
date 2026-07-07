@@ -34,8 +34,8 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 ### Hard constraints
 
 - **API key / token gateway auth only** — do **not** run `claude auth login`, `claude auth logout`, `claude /logout`, or `setup-token` during live runs.
-- The TUI may show **"Not logged in · Please run /login"** when using a custom API gateway (e.g. MiniMax M3 via `ANTHROPIC_BASE_URL` in `~/.claude/settings.json`). That banner is **cosmetic** — token-based access is valid; the harness ignores it and never instructs `/login`.
-- **`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0`** (default) — export `~/.claude/settings.json` env (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, etc.) into interactive TUI before spawn. Set `=1` only for direct claude.ai OAuth without settings env.
+- The TUI may show **"Not logged in · Please run /login"** when using a custom API gateway (e.g. MiniMax M3 via `ANTHROPIC_BASE_URL` in `~/.codex/settings.json`). That banner is **cosmetic** — token-based access is valid; the harness ignores it and never instructs `/login`.
+- **`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0`** (default) — export `~/.codex/settings.json` env (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, etc.) into interactive TUI before spawn. Set `=1` only for direct claude.ai OAuth without settings env.
 - **`CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys`** (default when export on) — accept custom API key disclaimer via keyboard `1` + Enter.
 - **Interactive TUI only** — use `/silver` and `/silver:*` slash commands (not legacy markdown skill links).
 - **Orchestrator parent** must not implement product code inline unless the workflow requires it.

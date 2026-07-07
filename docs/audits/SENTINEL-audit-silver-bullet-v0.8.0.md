@@ -208,7 +208,7 @@ fi
 
 **FC-5-B: `dev-cycle-check.sh` trivial_file path not validated within `${SB_RUNTIME_HOME_ROOT}/` (CONFIRMED — medium)**
 
-The `trivial_file` path in `dev-cycle-check.sh` is read from config (line 97-98) but there is no `case "$trivial_file" in "$HOME"/.claude/*)` validation guard, unlike the `state_file` which is validated (lines 105-108). A maliciously crafted `.silver-bullet.json` with `state.trivial_file` set to an arbitrary path (e.g., `/tmp/x`) could point the trivial check to a file outside the intended directory.
+The `trivial_file` path in `dev-cycle-check.sh` is read from config (line 97-98) but there is no `case "$trivial_file" in "$HOME"/.codex/*)` validation guard, unlike the `state_file` which is validated (lines 105-108). A maliciously crafted `.silver-bullet.json` with `state.trivial_file` set to an arbitrary path (e.g., `/tmp/x`) could point the trivial check to a file outside the intended directory.
 
 *Artifact:*
 ```bash
@@ -448,7 +448,7 @@ if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
 ```bash
 # Security: validate trivial file path stays within ${SB_RUNTIME_HOME_ROOT}/ (SB-002/SB-003)
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$HOME"/.codex/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 ```

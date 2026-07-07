@@ -39,7 +39,7 @@ I’m tracing every `tests/test-app` reference and grouping them by live surface
 ./docs/TESTING.md:143:| **Integration smoke** | Full harness runs all scenarios | `tests/forge-test-app/run-forge-sb-tests.sh` | <30s |
 ./docs/TESTING.md:162:cd tests/forge-test-app
 ./docs/TESTING.md:179:Create `tests/forge-test-app/SCENARIOS/{skill-name}.md`:
-./.claude/launch.json:14:      "cwd": "tests/test-app",
+./.codex/launch.json:14:      "cwd": "tests/test-app",
 ./tests/e2e-smoke-test.md:21:cd tests/test-app/
 ./tests/e2e-smoke-test.md:43:In Claude Code (with CWD = `tests/test-app/`):
 [2026-05-10T08:09:00] exec "rg -n --hidden --glob '"'!**/.git/**'"' --glob '"'!**/node_modules/**'"' --glob '"'!**/.planning/**'"' \"tests/live/helpers.sh|tests/e2e-live/helpers.sh|docs/TESTING.md|tests/e2e-live/README.md|tests/e2e-smoke-test.md|tests/live/README.md\" ." in /Users/shafqat/projects/silver-bullet/repo

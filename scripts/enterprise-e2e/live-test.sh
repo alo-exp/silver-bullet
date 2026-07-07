@@ -39,7 +39,7 @@ Usage: $(basename "$0") [--host claude|codex|cursor] [--preflight-only] [--resum
 Enterprise E2E live test — interactive agent TUI against enterprise-grade-test-app.
 
 Constraints (from Round 1/2 learnings):
-  - API key auth via ~/.claude/settings.json — NO login/logout
+  - API key auth via ~/.codex/settings.json — NO login/logout
   - SB_E2E_MATRIX_CLEAN_ENV=0 (inherit shell auth; default)
   - NO SB_E2E_MATRIX_DRY_RUN for live runs
   - 429 / Token Plan → retry every 60s (SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL)
