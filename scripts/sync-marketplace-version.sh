@@ -3,7 +3,7 @@
 #
 # Updates BOTH:
 #   - .claude-plugin/marketplace.json (self-hosted entry in this repo)
-#   - The upstream marketplace repo (defaults to alo-labs/claude-plugins),
+#   - The unified agent-plugins marketplace repo (defaults to alo-labs/agent-plugins),
 #     then commits and pushes the version bump there
 #
 # Usage: scripts/sync-marketplace-version.sh [version]
@@ -15,10 +15,12 @@ set -euo pipefail
 trap 'exit 1' ERR
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=scripts/lib/agent-plugins-common.sh
+source "${repo_root}/scripts/lib/agent-plugins-common.sh"
 plugin_json="$repo_root/.claude-plugin/plugin.json"
 marketplace_json="$repo_root/.claude-plugin/marketplace.json"
-marketplace_repo_url="${MARKETPLACE_REPO_URL:-https://github.com/alo-labs/claude-plugins.git}"
-marketplace_repo_root="${MARKETPLACE_REPO_ROOT:-}"
+marketplace_repo_url="$(resolve_agent_plugins_repo_url claude)"
+marketplace_repo_root="${AGENT_PLUGINS_REPO_ROOT:-${MARKETPLACE_REPO_ROOT:-}}"
 requested_version="${1:-}"
 
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
@@ -58,7 +60,7 @@ sync_marketplace_repo() {
     exit 1
   }
   [[ -f "$manifest" ]] || {
-    echo "ERROR: marketplace manifest not found in repo: $manifest" >&2
+    echo "ERROR: Claude marketplace manifest not found in repo: $manifest" >&2
     exit 1
   }
 
@@ -72,22 +74,21 @@ sync_marketplace_repo() {
   fi
 
   if git -C "$root" diff --quiet -- .claude-plugin/marketplace.json; then
-    echo "✓ Marketplace repo already at silver-bullet $version: $root"
+    echo "✓ Claude marketplace manifest already at silver-bullet $version: $root"
     return 0
   fi
 
   git -C "$root" add .claude-plugin/marketplace.json
-  git -C "$root" commit -m "Bump silver-bullet to $version"
-  git -C "$root" push
+  agent_plugins_commit_push_if_dirty "$root" "Bump silver-bullet to $version"
 
   remote_after=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
-  echo "✓ Updated and pushed marketplace repo: $remote_before → $remote_after"
+  echo "✓ Updated Claude marketplace manifest: $remote_before → $remote_after"
 }
 
 if [[ -n "$marketplace_repo_root" ]]; then
   sync_marketplace_repo "$marketplace_repo_root" "$plugin_v"
 else
-  tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-marketplace.XXXXXX")
+  tmp_repo_root=$(mktemp -d "${TMPDIR:-/tmp}/sb-agent-plugins.XXXXXX")
   trap 'rm -rf -- "$tmp_repo_root"' EXIT
   git clone "$marketplace_repo_url" "$tmp_repo_root" >/dev/null
   sync_marketplace_repo "$tmp_repo_root" "$plugin_v"
@@ -96,8 +97,8 @@ fi
 cat <<EOF
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Remote marketplace sync complete
+  Claude marketplace sync complete
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-The marketplace repo was updated and pushed for v$plugin_v.
+The agent-plugins Claude manifest was updated for v$plugin_v.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF

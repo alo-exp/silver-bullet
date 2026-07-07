@@ -24,7 +24,7 @@ REMOTE="$TMP/remote.git"
 MARKETPLACE="$TMP/marketplace"
 mkdir -p "$MARKETPLACE/.cursor-plugin"
 
-cp "$REPO_ROOT/.cursor-plugin/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
+cp "$REPO_ROOT/forge/agent-plugins/.cursor-plugin/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
 jq '.plugins[] |= if .name == "silver-bullet" then .version = "0.0.1" else . end' \
   "$MARKETPLACE/.cursor-plugin/marketplace.json" > "$TMP/marketplace.json"
 mv "$TMP/marketplace.json" "$MARKETPLACE/.cursor-plugin/marketplace.json"
@@ -40,7 +40,7 @@ git -C "$MARKETPLACE" remote add origin "$REMOTE"
 git -C "$MARKETPLACE" push -q -u origin HEAD:main
 
 plugin_v="$(jq -r '.version' "$REPO_ROOT/.cursor-plugin/plugin.json")"
-CURSOR_MARKETPLACE_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" "$plugin_v" >/dev/null
+AGENT_PLUGINS_REPO_ROOT="$MARKETPLACE" bash "$SCRIPT" "$plugin_v" >/dev/null
 
 remote_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$MARKETPLACE/.cursor-plugin/marketplace.json")"
 in_repo_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$REPO_ROOT/.cursor-plugin/marketplace.json")"

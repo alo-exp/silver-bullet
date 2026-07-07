@@ -125,7 +125,7 @@ Release closure is mandatory only after the following have succeeded:
 - Verify CI remained green on the release commit before the tag was created.
 - Confirm plugin cache update works via `/silver:update`.
 - Update site if needed (Stage 4 public content should have covered this).
-- Keep the shared `alo-labs/claude-plugins` and `alo-labs/codex-plugins`
+- Keep the unified `alo-labs/agent-plugins` marketplace manifests aligned across Claude, Codex, and Cursor
   marketplaces aligned with the SB package boundary whenever versioned wrappers
   change. Use `scripts/sync-release-marketplace-versions.sh` during release
   preparation so both repos stay in lockstep with the tagged release.

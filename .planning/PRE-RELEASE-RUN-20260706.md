@@ -48,6 +48,10 @@
 
 `scripts/pre-release-gate.sh` already runs Stage 4a site freshness tests before `run-all-tests.sh` (landed `1315ceed`). No additional wiring required this cycle.
 
-## Session markers (live release only — not recorded)
+## Release artifact
 
-Live `quality-gate-state` markers (`adversarial-review-clean`, `sentinel-skills-clean`, `quality-gate-stage-3`, `full-test-suite-rerun`) and live matrix markers were **not** written — no `gh release create` session; structural validators substituted for skipped live stages.
+- **Version:** 0.51.2
+- **Commit:** [8cfb66db](https://github.com/alo-exp/silver-bullet/commit/8cfb66db85f46e8369c6a58b424bef254d2515b9)
+- **Tag:** [`v0.51.2`](https://github.com/alo-exp/silver-bullet/releases/tag/v0.51.2)
+- **Remote CI:** **GREEN** on `8cfb66db` (CI + Secret Scan)
+- **Status:** **RELEASED** 2026-07-06

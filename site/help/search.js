@@ -15,7 +15,7 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or alo-labs/claude-plugins marketplace, the public alo-labs/codex-plugins Codex marketplace package, or the public alo-labs/alo-labs-cursor-marketplace Cursor marketplace package. Onboarding: bash scripts/sb-bootstrap.sh and bash scripts/sb-diagnostics.sh for capability tier 0-3. After /silver:update run /silver:doctor or bash scripts/sb-doctor.sh for host-aware install activation audit. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or alo-labs/agent-plugins marketplace (alo-labs catalog), the public alo-labs/agent-plugins Codex marketplace package (alo-labs-codex catalog), or the public alo-labs/agent-plugins Cursor marketplace package (alo-labs-cursor catalog). Onboarding: bash scripts/sb-bootstrap.sh and bash scripts/sb-diagnostics.sh for capability tier 0-3. After /silver:update run /silver:doctor or bash scripts/sb-doctor.sh for host-aware install activation audit. Checkout installers: ./scripts/install-codex.sh --purge-legacy-skills and ./scripts/install-cursor.sh --public-release for development refresh. Initialize projects with /silver:init."
   },
   {
     "page": "Getting Started",
@@ -484,7 +484,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "runtime-install",
     "title": "Three-host runtime install",
-    "text": "Claude Code alo-labs/claude-plugins install-claude.sh Codex alo-labs/codex-plugins install-codex.sh Cursor alo-labs/alo-labs-cursor-marketplace install-cursor.sh hooks.json cursor-hook-bridge sb-bootstrap sb-diagnostics capability tier hook-enforced"
+    "text": "Claude Code alo-labs/agent-plugins install-claude.sh Codex alo-labs/agent-plugins install-codex.sh Cursor alo-labs/agent-plugins install-cursor.sh hooks.json cursor-hook-bridge sb-bootstrap sb-diagnostics capability tier hook-enforced"
   },
   {
     "page": "Reference",

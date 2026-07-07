@@ -22,7 +22,7 @@ else
   MERGE_USER_HOOKS=0
 fi
 CODEX_BIN="${CODEX_BIN:-codex}"
-CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-labs/codex-plugins}"
+CODEX_MARKETPLACE_SOURCE="${CODEX_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins}"
 CODEX_MARKETPLACE_LEGACY_NAME="${CODEX_MARKETPLACE_LEGACY_NAME:-silver-bullet-local}"
 CODEX_HOME_ROOT="${KAY_HOME:-${HOME}}"
 
@@ -71,21 +71,29 @@ if ! command -v "${CODEX_BIN}" >/dev/null 2>&1; then
 fi
 
 remove_marketplace_if_present "${CODEX_MARKETPLACE_LEGACY_NAME}"
-ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
-if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
-  seed_marketplace_snapshot_if_missing
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
+  ensure_marketplace_registered "${CODEX_MARKETPLACE_SOURCE}"
+else
+  ensure_marketplace_registered "${SB_CODEX_LOCAL_MARKETPLACE_SOURCE:-$REPO_ROOT}"
 fi
+seed_marketplace_snapshot_if_missing
 refresh_marketplace "alo-labs-codex"
 cleanup_legacy_marketplace_picker_surfaces
 purge_legacy_silver_bullet_codex_alias
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
   render_agent_bundle "claude"
   render_agent_bundle "codex"
-  sync_marketplace_package_surface
-  sync_marketplace_package_snapshot
+  local_marketplace_root="$(codex_marketplace_root)"
+  if [[ "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$local_marketplace_root")" != "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$REPO_ROOT")" ]]; then
+    sync_marketplace_package_surface
+    sync_marketplace_package_snapshot
+  fi
+fi
+if ! marketplace_has_fat_silver_bullet_package; then
+  hydrate_silver_bullet_from_thin_manifest
 fi
 materialize_silver_bullet_package
-if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]]; then
+if [[ "$PUBLIC_RELEASE_ONLY" -eq 0 ]] && marketplace_has_fat_silver_bullet_package; then
   sync_materialized_package_surface
 fi
 sanitize_codex_package_surface

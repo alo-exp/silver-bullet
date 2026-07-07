@@ -70,6 +70,16 @@
         "matcher": "Task|Subagent|Agent"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Task|Subagent|Agent"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Skill"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
@@ -299,6 +309,11 @@
         "matcher": "Task|Subagent|Agent"
       },
       {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+        "timeout": 10,
+        "matcher": "Task|Subagent|Agent"
+      },
+      {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/semantic-compress.sh\"",
         "timeout": 30,
         "matcher": "Skill"
@@ -311,6 +326,11 @@
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
         "timeout": 15,
+        "matcher": "Skill|Shell"
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+        "timeout": 10,
         "matcher": "Skill|Shell"
       },
       {
@@ -389,6 +409,11 @@
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
         "matcher": ".*",
         "timeout": 15
+      },
+      {
+        "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+        "matcher": ".*",
+        "timeout": 10
       },
       {
         "command": "\"\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" afterShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/dev-cycle-check.sh\"",

@@ -5,7 +5,7 @@ Host-specific commands are loaded from `.silver-bullet.json`
 
 ## Marketplace install
 
-- Public `alo-labs/codex-plugins` marketplace via
+- Public `alo-labs/agent-plugins` marketplace (`alo-labs-codex` catalog) via
   `bash scripts/install-codex.sh --public-release`
 - Dev: `bash scripts/install-codex.sh --purge-legacy-skills`
 

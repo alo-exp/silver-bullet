@@ -2,7 +2,7 @@
 
 This guide explains how to package an Alo Labs plugin for Codex when the plugin is
 already maintained elsewhere, or when it only ships Claude-oriented artifacts today.
-The shared marketplace lives at `https://github.com/alo-labs/codex-plugins`.
+The shared marketplace lives at `https://github.com/alo-labs/agent-plugins` (Codex catalog: `alo-labs-codex`).
 
 ## Core rule
 

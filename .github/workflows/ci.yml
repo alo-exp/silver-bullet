@@ -22,7 +22,7 @@ jobs:
 
       - name: Validate JSON files
         run: |
-          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json plugins/silver-bullet/.cursor-plugin/plugin.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .cursor-plugin/plugin.json .cursor-plugin/marketplace.json .agents/plugins/marketplace.json forge/agent-plugins/.agents/plugins/marketplace.json plugins/silver-bullet/.cursor-plugin/plugin.json hooks/hooks.json templates/silver-bullet.config.json.default package.json; do
             jq empty "$f" || { echo "Invalid JSON: $f"; exit 1; }
             echo "Valid: $f"
           done
@@ -64,6 +64,16 @@ jobs:
             exit 1
           fi
           echo "Versions match: $plugin_v"
+
+      - name: Check Codex marketplace.json version matches plugin.json
+        run: |
+          plugin_v=$(jq -r '.version' plugins/silver-bullet/.codex-plugin/plugin.json)
+          market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' .agents/plugins/marketplace.json)
+          if [[ "$plugin_v" != "$market_v" ]]; then
+            echo "::error::Codex version drift — plugin.json=$plugin_v, marketplace.json=$market_v"
+            exit 1
+          fi
+          echo "Codex marketplace versions match: $plugin_v"
 
       - name: Check hook executability
         run: |

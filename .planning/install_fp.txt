@@ -1,0 +1,11 @@
+install_fp=codex@5adb13d05741+2717f916398e
+sb_git_sha=5adb13d05741
+sb_commits=unknown
+bootstrap_at=2026-07-05T20:44:07Z
+enterprise_policy=autonomous_safe
+install_method=codex plugin add silver-bullet@alo-labs-codex
+marketplace=https://github.com/alo-labs/codex-plugins
+plugin_version=0.50.5
+plugin_git_sha=unknown
+plugin_install_path=/Users/shafqat/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.50.5
+work_dir=/Users/shafqat/projects/auto-e2e

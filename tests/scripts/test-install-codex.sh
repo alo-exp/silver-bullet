@@ -988,6 +988,7 @@ cat > "$FAKE_MARKETPLACE_ROOT/CHANGELOG.md" <<'EOF'
 EOF
 
 cd "$REPO_ROOT"
+SB_CODEX_LOCAL_MARKETPLACE_SOURCE="$FAKE_MARKETPLACE_ROOT" \
 PATH="$BIN_DIR:$PATH" \
 HOME="$HOME_DIR" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
@@ -997,7 +998,7 @@ FAKE_CACHE_ROOT="$FAKE_SB_INSTALL_ALIAS"
 assert_file_absent "Codex installer does not bootstrap GSD" "$HOME_DIR/.codex/get-shit-done/VERSION"
 assert_not_contains "legacy marketplace removed from config" "[marketplaces.silver-bullet-local]" "$HOME_DIR/.codex/config.toml"
 assert_contains "shared marketplace registered in config" "[marketplaces.alo-labs-codex]" "$HOME_DIR/.codex/config.toml"
-assert_contains "shared marketplace source preserved" 'source = "https://github.com/alo-labs/codex-plugins"' "$HOME_DIR/.codex/config.toml"
+assert_contains "shared marketplace source preserved" "source = \"$FAKE_MARKETPLACE_ROOT\"" "$HOME_DIR/.codex/config.toml"
 assert_not_contains "superpowers marketplace not registered by default" "[marketplaces.superpowers-marketplace]" "$HOME_DIR/.codex/config.toml"
 assert_not_contains "GSD marketplace not registered by default" "[marketplaces.get-shit-done-marketplace]" "$HOME_DIR/.codex/config.toml"
 assert_not_contains "superpowers plugin not enabled by default" '[plugins."superpowers@superpowers-marketplace"]' "$HOME_DIR/.codex/config.toml"
@@ -1342,9 +1343,10 @@ DEFAULT_GSD_WORKDIR="$DEFAULT_GSD_TMP/workdir"
 mkdir -p "$DEFAULT_GSD_HOME/.codex" "$DEFAULT_GSD_WORKDIR"
 (
   cd "$DEFAULT_GSD_WORKDIR"
-  PATH="$BIN_DIR:$PATH" \
-  HOME="$DEFAULT_GSD_HOME" \
-    bash "$SCRIPT" --purge-legacy-skills >/dev/null
+SB_CODEX_LOCAL_MARKETPLACE_SOURCE="$FAKE_MARKETPLACE_ROOT" \
+PATH="$BIN_DIR:$PATH" \
+HOME="$DEFAULT_GSD_HOME" \
+  bash "$SCRIPT" --purge-legacy-skills >/dev/null
 )
 assert_file_absent "default install does not fetch GSD" "$DEFAULT_GSD_HOME/.codex/get-shit-done/VERSION"
 
@@ -1353,8 +1355,9 @@ NON_SB_WORKDIR="$TMP/non-sb-workdir"
 mkdir -p "$NON_SB_HOME/.codex" "$NON_SB_WORKDIR"
 (
   cd "$NON_SB_WORKDIR"
-  PATH="$BIN_DIR:$PATH" \
-  HOME="$NON_SB_HOME" \
+SB_CODEX_LOCAL_MARKETPLACE_SOURCE="$FAKE_MARKETPLACE_ROOT" \
+PATH="$BIN_DIR:$PATH" \
+HOME="$NON_SB_HOME" \
     bash "$SCRIPT" --purge-legacy-skills >/dev/null
 )
 
@@ -1379,22 +1382,26 @@ cat > "$SEED_HOME/.codex/config.toml" <<'EOF'
 [features]
 plugin_hooks = true
 EOF
+SB_CODEX_LEGACY_MARKETPLACE_SNAPSHOT=1 \
+SB_CODEX_LOCAL_MARKETPLACE_SOURCE="$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex" \
 PATH="$BIN_DIR:$PATH" \
 HOME="$SEED_HOME" \
   bash "$SCRIPT" --purge-legacy-skills >/dev/null
-assert_file_exists "Codex marketplace snapshot seeded when missing" "$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
+assert_file_exists "Codex marketplace snapshot seeded when legacy snapshot enabled" "$SEED_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin/plugin.json"
 
 PUBLIC_STALE_TMP="$(mktemp -d)"
 PUBLIC_STALE_HOME="$PUBLIC_STALE_TMP/home"
 PUBLIC_STALE_WORKDIR="$PUBLIC_STALE_TMP/workdir"
 PUBLIC_STALE_MARKETPLACE="$PUBLIC_STALE_HOME/.codex/.tmp/marketplaces/alo-labs-codex"
-PUBLIC_STALE_PACKAGE="$PUBLIC_STALE_MARKETPLACE/plugins/silver-bullet"
+PUBLIC_STALE_SB_SOURCE="$PUBLIC_STALE_TMP/sb-source"
+PUBLIC_STALE_SB_REMOTE="$PUBLIC_STALE_TMP/sb-source.git"
+PUBLIC_STALE_MARKETPLACE_REMOTE="$PUBLIC_STALE_TMP/remote.git"
 mkdir -p \
   "$PUBLIC_STALE_HOME/.codex" \
   "$PUBLIC_STALE_HOME/.codex/skills/writing-plans" \
   "$PUBLIC_STALE_WORKDIR" \
-  "$PUBLIC_STALE_PACKAGE" \
-  "$PUBLIC_STALE_MARKETPLACE/skills"
+  "$PUBLIC_STALE_SB_SOURCE/plugins/silver-bullet" \
+  "$PUBLIC_STALE_MARKETPLACE/.agents/plugins"
 cat > "$PUBLIC_STALE_HOME/.codex/skills/writing-plans/SKILL.md" <<'EOF'
 ---
 name: writing-plans
@@ -1403,42 +1410,46 @@ EOF
 cat > "$PUBLIC_STALE_HOME/.codex/skills/writing-plans/.silver-bullet-managed" <<'EOF'
 source=Silver Bullet
 EOF
-rsync -aL --delete "$REPO_ROOT/plugins/silver-bullet/" "$PUBLIC_STALE_PACKAGE/"
-rsync -a --delete "$PUBLIC_STALE_PACKAGE/skill-source/" "$PUBLIC_STALE_MARKETPLACE/skills/"
+rsync -aL --delete "$REPO_ROOT/plugins/silver-bullet/" "$PUBLIC_STALE_SB_SOURCE/plugins/silver-bullet/"
+git -C "$PUBLIC_STALE_SB_SOURCE" init -q
+git -C "$PUBLIC_STALE_SB_SOURCE" config user.email "tests@example.invalid"
+git -C "$PUBLIC_STALE_SB_SOURCE" config user.name "Tests"
+git -C "$PUBLIC_STALE_SB_SOURCE" add .
+git -C "$PUBLIC_STALE_SB_SOURCE" commit -q -m "seed sb source"
+git -C "$PUBLIC_STALE_SB_SOURCE" branch -M main
+git -C "$PUBLIC_STALE_TMP" init --bare -q "$PUBLIC_STALE_SB_REMOTE"
+git -C "$PUBLIC_STALE_SB_SOURCE" remote add origin "$PUBLIC_STALE_SB_REMOTE"
+git -C "$PUBLIC_STALE_SB_SOURCE" push -q -u origin HEAD:main
+package_v="$(jq -r '.version' "$PUBLIC_STALE_SB_SOURCE/plugins/silver-bullet/.codex-plugin/plugin.json")"
+jq -n \
+  --arg v "$package_v" \
+  --arg url "file://$PUBLIC_STALE_SB_REMOTE" \
+  '{
+    name: "alo-labs-codex",
+    plugins: [{
+      name: "silver-bullet",
+      source: {source: "url", url: $url, ref: "main", path: "plugins/silver-bullet"},
+      version: $v,
+      policy: {installation: "AVAILABLE"}
+    }]
+  }' > "$PUBLIC_STALE_MARKETPLACE/.agents/plugins/marketplace.json"
 git -C "$PUBLIC_STALE_MARKETPLACE" init -q
 git -C "$PUBLIC_STALE_MARKETPLACE" config user.email "tests@example.invalid"
 git -C "$PUBLIC_STALE_MARKETPLACE" config user.name "Tests"
 git -C "$PUBLIC_STALE_MARKETPLACE" add .
-git -C "$PUBLIC_STALE_MARKETPLACE" commit -q -m "seed clean public marketplace"
+git -C "$PUBLIC_STALE_MARKETPLACE" commit -q -m "seed thin public marketplace"
 git -C "$PUBLIC_STALE_MARKETPLACE" branch -M main
-PUBLIC_STALE_REMOTE="$PUBLIC_STALE_TMP/remote.git"
-git -C "$PUBLIC_STALE_TMP" init --bare -q "$PUBLIC_STALE_REMOTE"
-git -C "$PUBLIC_STALE_MARKETPLACE" remote add origin "$PUBLIC_STALE_REMOTE"
+git -C "$PUBLIC_STALE_TMP" init --bare -q "$PUBLIC_STALE_MARKETPLACE_REMOTE"
+git -C "$PUBLIC_STALE_MARKETPLACE" remote add origin "$PUBLIC_STALE_MARKETPLACE_REMOTE"
 git -C "$PUBLIC_STALE_MARKETPLACE" push -q -u origin HEAD:main
-mkdir -p \
-  "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate" \
-  "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans" \
-  "$PUBLIC_STALE_PACKAGE/skills/stale-delegate" \
-  "$PUBLIC_STALE_PACKAGE/skills/writing-plans"
-cat > "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate/SKILL.md" <<'EOF'
----
-name: stale-delegate
----
-EOF
-cat > "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" <<'EOF'
----
-name: writing-plans
----
-EOF
-cp "$PUBLIC_STALE_MARKETPLACE/skills/stale-delegate/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/stale-delegate/SKILL.md"
-cp "$PUBLIC_STALE_MARKETPLACE/skills/writing-plans/SKILL.md" "$PUBLIC_STALE_PACKAGE/skills/writing-plans/SKILL.md"
 (
   cd "$PUBLIC_STALE_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
   HOME="$PUBLIC_STALE_HOME" \
+  CODEX_MARKETPLACE_SOURCE="file://$PUBLIC_STALE_MARKETPLACE_REMOTE" \
     bash "$SCRIPT" --public-release >/dev/null
 )
-PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$(jq -r '.version' "$PUBLIC_STALE_PACKAGE/.codex-plugin/plugin.json")"
+PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$package_v"
 PUBLIC_STALE_ALIAS="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 assert_file_absent "public-release cache removes plugin picker skills directory" "$PUBLIC_STALE_CACHE/skills"
 assert_file_exists "public-release cache keeps Silver Bullet feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_CACHE" silver-feature)"
@@ -1465,33 +1476,67 @@ assert_file_absent "public-release native SB mirror excludes stale delegate skil
 assert_file_absent "public-release native SB mirror prunes stale managed writing-plans skill" "$PUBLIC_STALE_HOME/.codex/skills/writing-plans"
 assert_file_absent "public-release ignores stale marketplace delegate skill" "$PUBLIC_STALE_CACHE/skills/stale-delegate/SKILL.md"
 assert_file_absent "public-release ignores stale marketplace writing-plans skill" "$PUBLIC_STALE_CACHE/skills/writing-plans/SKILL.md"
+assert_file_absent "thin public marketplace does not vendor plugins/silver-bullet" "$PUBLIC_STALE_MARKETPLACE/plugins/silver-bullet"
 
 BROKEN_PUBLIC_TMP="$(mktemp -d)"
 BROKEN_PUBLIC_HOME="$BROKEN_PUBLIC_TMP/home"
 BROKEN_PUBLIC_WORKDIR="$BROKEN_PUBLIC_TMP/workdir"
 BROKEN_PUBLIC_MARKETPLACE="$BROKEN_PUBLIC_HOME/.codex/.tmp/marketplaces/alo-labs-codex"
-BROKEN_PUBLIC_PACKAGE="$BROKEN_PUBLIC_MARKETPLACE/plugins/silver-bullet"
+BROKEN_PUBLIC_SB_SOURCE="$BROKEN_PUBLIC_TMP/sb-source"
+BROKEN_PUBLIC_SB_REMOTE="$BROKEN_PUBLIC_TMP/sb-source.git"
+BROKEN_PUBLIC_MARKETPLACE_REMOTE="$BROKEN_PUBLIC_TMP/marketplace.git"
 BROKEN_PUBLIC_OUTPUT="$BROKEN_PUBLIC_TMP/install.out"
 mkdir -p \
   "$BROKEN_PUBLIC_HOME/.codex" \
   "$BROKEN_PUBLIC_WORKDIR" \
-  "$BROKEN_PUBLIC_PACKAGE/.codex-plugin" \
-  "$BROKEN_PUBLIC_PACKAGE/commands"
-cat > "$BROKEN_PUBLIC_PACKAGE/.codex-plugin/plugin.json" <<'EOF'
+  "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/.codex-plugin" \
+  "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands" \
+  "$BROKEN_PUBLIC_MARKETPLACE/.agents/plugins"
+cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/.codex-plugin/plugin.json" <<'EOF'
 {
   "name": "silver-bullet",
   "version": "0.37.4",
   "commands": "./commands/"
 }
 EOF
-cat > "$BROKEN_PUBLIC_PACKAGE/commands/init.md" <<'EOF'
+cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands/init.md" <<'EOF'
 # init
 EOF
+git -C "$BROKEN_PUBLIC_SB_SOURCE" init -q
+git -C "$BROKEN_PUBLIC_SB_SOURCE" config user.email "tests@example.invalid"
+git -C "$BROKEN_PUBLIC_SB_SOURCE" config user.name "Tests"
+git -C "$BROKEN_PUBLIC_SB_SOURCE" add .
+git -C "$BROKEN_PUBLIC_SB_SOURCE" commit -q -m "broken sb source"
+git -C "$BROKEN_PUBLIC_SB_SOURCE" branch -M main
+git -C "$BROKEN_PUBLIC_TMP" init --bare -q "$BROKEN_PUBLIC_SB_REMOTE"
+git -C "$BROKEN_PUBLIC_SB_SOURCE" remote add origin "$BROKEN_PUBLIC_SB_REMOTE"
+git -C "$BROKEN_PUBLIC_SB_SOURCE" push -q -u origin HEAD:main
+jq -n \
+  --arg url "file://$BROKEN_PUBLIC_SB_REMOTE" \
+  '{
+    name: "alo-labs-codex",
+    plugins: [{
+      name: "silver-bullet",
+      source: {source: "url", url: $url, ref: "main", path: "plugins/silver-bullet"},
+      version: "0.37.4",
+      policy: {installation: "AVAILABLE"}
+    }]
+  }' > "$BROKEN_PUBLIC_MARKETPLACE/.agents/plugins/marketplace.json"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" init -q
+git -C "$BROKEN_PUBLIC_MARKETPLACE" config user.email "tests@example.invalid"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" config user.name "Tests"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" add .
+git -C "$BROKEN_PUBLIC_MARKETPLACE" commit -q -m "broken thin marketplace"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" branch -M main
+git -C "$BROKEN_PUBLIC_TMP" init --bare -q "$BROKEN_PUBLIC_MARKETPLACE_REMOTE"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" remote add origin "$BROKEN_PUBLIC_MARKETPLACE_REMOTE"
+git -C "$BROKEN_PUBLIC_MARKETPLACE" push -q -u origin HEAD:main
 set +e
 (
   cd "$BROKEN_PUBLIC_WORKDIR"
   PATH="$BIN_DIR:$PATH" \
   HOME="$BROKEN_PUBLIC_HOME" \
+  CODEX_MARKETPLACE_SOURCE="file://$BROKEN_PUBLIC_MARKETPLACE_REMOTE" \
     bash "$SCRIPT" --public-release >"$BROKEN_PUBLIC_OUTPUT" 2>&1
 )
 broken_public_status=$?

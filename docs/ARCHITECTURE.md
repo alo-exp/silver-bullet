@@ -14,7 +14,7 @@ capability. Its enforcement layer prevents the runtime from skipping required wo
 
 Claude packaging remains the canonical host-integrated surface. The Codex bundle is SB-only and
 is synchronized from the repo root. Optional extension plugins that do not publish Codex artifacts
-are represented by thin wrappers in the shared `alo-labs/codex-plugins` marketplace, which fetches
+are represented by thin wrappers in the unified `alo-labs/agent-plugins` marketplace, which fetches
 upstream content at install time instead of vendoring it here.
 
 No server, no database — all state lives in flat files under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
@@ -30,7 +30,7 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 | Templates | `templates/` | Bootstrap files copied during `/silver:init` setup |
 | Codex bundle | `plugins/silver-bullet/` | Curated SB-only Codex package snapshot, refreshed from the repo root |
 | Codex installer | `scripts/install-codex.sh` | Registers the shared Codex marketplace and bootstraps official dependencies |
-| Shared Codex marketplace | `https://github.com/alo-labs/codex-plugins` | Thin wrappers for third-party plugins that lack native Codex packaging |
+| Unified agent marketplace | `https://github.com/alo-labs/agent-plugins` | Thin tri-host manifests; Codex entries fetch upstream at install time |
 | Live runtime matrix | `tests/live/` | Shared Claude/Codex E2E harness with runtime adapters |
 | Config | `.silver-bullet.json` | Project-level list of tracked/required skills |
 | State file | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Flat file recording invoked skills in this session |
