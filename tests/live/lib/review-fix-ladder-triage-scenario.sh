@@ -177,3 +177,101 @@ review_fix_ladder_assert_review_triage_separation() {
   fi
   return 0
 }
+
+review_fix_ladder_github_available() {
+  command -v gh >/dev/null 2>&1 || return 1
+  if [[ -n "${GITHUB_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
+    return 0
+  fi
+  gh auth status >/dev/null 2>&1
+}
+
+review_fix_ladder_github_owner_repo() {
+  local work_dir="$1"
+  local remote owner_repo
+  remote="$(git -C "$work_dir" remote get-url origin 2>/dev/null || true)"
+  if [[ "$remote" == /* || "$remote" == file:* ]]; then
+    printf '%s' "${SB_RFL_GITHUB_REPO:-alo-exp/enterprise-grade-test-app}"
+    return 0
+  fi
+  owner_repo="$(printf '%s' "$remote" | sed 's|https://github.com/||;s|.git$||;s|git@github.com:||;s|:|/|')"
+  printf '%s' "$owner_repo"
+}
+
+review_fix_ladder_seed_github_workspace() {
+  local work_dir="$1"
+  local fixture_dir="$2"
+  local resolver="$3"
+
+  if [[ ! -d "${work_dir}/.git" ]]; then
+    git -C "$work_dir" init -q
+    git -C "$work_dir" config user.email "triage-ladder-smoke@silver-bullet.test"
+    git -C "$work_dir" config user.name "Triage Ladder Smoke"
+  fi
+
+  review_fix_ladder_seed_workspace "$work_dir" "$fixture_dir" "$resolver"
+
+  cat >"${work_dir}/.silver-bullet.json" <<EOF
+{
+  "project": {"name": "triage-ladder-github", "active_workflow": "full-dev-cycle"},
+  "issue_tracker": "github",
+  "issue_tracker_adapter": {
+    "type": "github",
+    "create_issue_command": null,
+    "dedupe_command": null,
+    "payload_schema": "silver-triage-issue-v1"
+  },
+  "state": {"state_file": "${work_dir}/.silver-bullet/state", "trivial_file": "${work_dir}/.silver-bullet/trivial"}
+}
+EOF
+  mkdir -p "${work_dir}/.silver-bullet" "${work_dir}/docs/issues"
+  touch "${work_dir}/.silver-bullet/state" "${work_dir}/.silver-bullet/trivial"
+  git -C "$work_dir" add .silver-bullet.json .silver-bullet docs/issues
+  git -C "$work_dir" commit -q -m "triage scenario github adapter config" || true
+}
+
+review_fix_ladder_prepare_github_workdir() {
+  local app_root="$1"
+  local work_dir="$2"
+  rm -rf "$work_dir"
+  git clone --quiet "$app_root" "$work_dir"
+}
+
+review_fix_ladder_github_file_issue() {
+  local work_dir="$1"
+  local title="$2"
+  local body="$3"
+  local owner_repo label issue_url issue_num
+
+  owner_repo="$(review_fix_ladder_github_owner_repo "$work_dir")"
+  [[ -n "$owner_repo" ]] || return 1
+  label="${SB_RFL_GITHUB_ISSUE_LABEL:-rfl-triage-e2e}"
+
+  gh label create "$label" \
+    --color "FBCA04" \
+    --description "Review-fix-ladder triage E2E (auto)" \
+    --repo "$owner_repo" >/dev/null 2>&1 || true
+  gh label create "filed-by-silver-bullet" \
+    --color "5319E7" \
+    --description "Filed by Silver Bullet" \
+    --repo "$owner_repo" >/dev/null 2>&1 || true
+
+  issue_url="$(gh issue create \
+    --repo "$owner_repo" \
+    --title "$title" \
+    --body "$body" \
+    --label "$label" \
+    --label "filed-by-silver-bullet" 2>/dev/null || true)"
+  issue_url="$(printf '%s' "$issue_url" | grep -oE 'https://github.com/[^[:space:]]+/issues/[0-9]+' | tail -n 1 || true)"
+  [[ -n "$issue_url" ]] || return 1
+  printf '%s\n' "$issue_url"
+}
+
+review_fix_ladder_github_close_issue() {
+  local work_dir="$1"
+  local issue_num="$2"
+  local owner_repo
+  owner_repo="$(review_fix_ladder_github_owner_repo "$work_dir")"
+  [[ -n "$owner_repo" && -n "$issue_num" ]] || return 0
+  gh issue close "$issue_num" --repo "$owner_repo" --reason "not planned" >/dev/null 2>&1 || true
+}

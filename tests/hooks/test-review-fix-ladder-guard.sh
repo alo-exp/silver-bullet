@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+# Tests for hooks/review-fix-ladder-guard.sh — ladder state machine enforcement.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+HOOK="${REPO_ROOT}/hooks/review-fix-ladder-guard.sh"
+# shellcheck source=hooks/lib/runtime-paths.sh
+source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+# shellcheck source=hooks/lib/review-fix-ladder-state.sh
+source "${REPO_ROOT}/hooks/lib/review-fix-ladder-state.sh"
+
+PASS=0
+FAIL=0
+TEST_RUN_ID="$$"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/rfl-guard-${TEST_RUN_ID}"
+export SILVER_BULLET_RUNTIME=cursor
+export SB_REVIEW_FIX_LADDER_GUARD=1
+mkdir -p "$SB_RUNTIME_STATE_DIR"
+
+cleanup() {
+  sb_rfl_deactivate 2>/dev/null || true
+  rm -rf "$SB_RUNTIME_STATE_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+check() {
+  local desc="$1" result="$2"
+  if [[ "$result" == pass ]]; then
+    echo "  PASS: $desc"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $desc"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+is_denied() {
+  local output="$1"
+  [[ -n "$output" ]] && printf '%s' "$output" | grep -qE '"permissionDecision"\s*:\s*"deny"|"decision"\s*:\s*"block"'
+}
+
+run_hook() {
+  local event="$1" tool="$2" json="$3"
+  (cd "$WORK" && printf '%s' "$json" | env SILVER_BULLET_RUNTIME=cursor bash "$HOOK" 2>/dev/null)
+}
+
+WORK=$(mktemp -d)
+cat >"$WORK/silver-bullet.md" <<'EOF'
+# Silver Bullet test
+EOF
+cat >"$WORK/.silver-bullet.json" <<EOF
+{
+  "sb_initiated": true,
+  "state": {"state_file": "${SB_RUNTIME_STATE_DIR}/state"}
+}
+EOF
+touch "${SB_RUNTIME_STATE_DIR}/state"
+
+echo "=== review-fix-ladder guard tests ==="
+
+sb_rfl_deactivate
+out_inactive=$(run_hook PreToolUse Task "$(jq -n --arg p 'fix files' '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:$p,model:"composer-2.5"}}')")
+check "inactive ladder does not deny Task" "$(is_denied "$out_inactive" && echo fail || echo pass)"
+
+sb_rfl_activate 1 composer-2.5 composer-2.5 8
+
+sb_rfl_activate 1 composer-2.5 composer-2.5 8
+sb_rfl_is_active && check "activate sets active state" pass || check "activate sets active state" fail
+[[ "$(sb_rfl_read_field phase "")" == "review" ]] && check "initial phase review" pass || check "initial phase review" fail
+
+out_triage_in_review=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage classify VALID-NONBLOCKER",model:"composer-2.5"}}')")
+is_denied "$out_triage_in_review" && check "blocks triage Task during review phase" pass || check "blocks triage Task during review phase" fail
+
+sb_rfl_reset 1 composer-2.5 gpt-5.5
+sb_rfl_set_field phase triage
+sb_rfl_set_field rung_model composer-2.5
+sb_rfl_set_field host_model gpt-5.5
+
+out_rung_model_triage=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage on findings",model:"composer-2.5"}}')")
+is_denied "$out_rung_model_triage" && check "blocks triage at rung model when host differs" pass || check "blocks triage at rung model when host differs" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase fix_parallel
+sb_rfl_set_bool pm_filed false
+
+out_fix_before_file=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_fix_parallel fix divide()",model:"composer-2.5"}}')")
+is_denied "$out_fix_before_file" && check "blocks fix before PM filed" pass || check "blocks fix before PM filed" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase file_valid_issues
+sb_rfl_mark_pm_filed
+[[ "$(sb_rfl_read_field phase "")" == "fix_parallel" ]] && check "pm_filed advances to fix_parallel" pass || check "pm_filed advances to fix_parallel" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+out_combined_verify=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"verify_1 and verify_2 two consecutive verify passes",model:"composer-2.5",readonly:true}}')")
+is_denied "$out_combined_verify" && check "blocks combined verify passes" pass || check "blocks combined verify passes" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase verify_1
+out_verify_no_readonly=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"verify-only pass",model:"composer-2.5"}}')")
+is_denied "$out_verify_no_readonly" && check "blocks verify without readonly" pass || check "blocks verify without readonly" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase verify_1
+sb_rfl_set_field rung 2
+out_wrong_rung=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_verify_1 verify-only",model:"composer-2.5",readonly:true}}')")
+is_denied "$out_wrong_rung" && check "blocks parallel rung in prompt" pass || check "blocks parallel rung in prompt" fail
+
+sb_rfl_deactivate
+run_hook PostToolUse Skill "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"Skill",tool_input:{skill:"silver-review-fix-ladder"}}')" >/dev/null
+sb_rfl_is_active && check "skill invoke activates ladder" pass || check "skill invoke activates ladder" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase file_valid_issues
+run_hook PostToolUse Bash "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"Bash",tool_input:{command:"gh issue create --title test"}}')" >/dev/null
+[[ "$(sb_rfl_read_field pm_filed "")" == "true" ]] && check "gh issue create marks pm_filed" pass || check "gh issue create marks pm_filed" fail
+
+[[ -x "$HOOK" ]] && check "guard hook executable" pass || check "guard hook executable" fail
+grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/hooks.json" && check "registered in hooks.json" pass || check "registered in hooks.json" fail
+grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/cursor-hooks.json" && check "registered in cursor-hooks.json" pass || check "registered in cursor-hooks.json" fail
+bash -n "$HOOK" && check "guard shell syntax" pass || check "guard shell syntax" fail
+
+rm -rf "$WORK"
+echo "Results: $PASS passed, $FAIL failed"
+[[ $FAIL -eq 0 ]]

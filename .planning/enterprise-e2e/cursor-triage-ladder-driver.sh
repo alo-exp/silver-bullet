@@ -11,6 +11,10 @@ export RTK_DISABLED=1
 export SB_LIVE_REVIEW_FIX_LADDER_LIVE=1
 export SB_LIVE_REVIEW_FIX_LADDER_TRIAGE_SCENARIO=1
 export SB_LIVE_REVIEW_FIX_LADDER_LITE_PROMPT=0
+# Real GitHub PM filing when gh auth or GITHUB_TOKEN is available
+if command -v gh >/dev/null 2>&1 && { [[ -n "${GITHUB_TOKEN:-}${GH_TOKEN:-}" ]] || gh auth status >/dev/null 2>&1; }; then
+  export SB_RFL_GITHUB_E2E=1
+fi
 export CURSOR_AGENT=1 SB_LIVE_CURSOR_IN_SESSION=1
 export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
 

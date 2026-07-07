@@ -45,4 +45,8 @@ export CURSOR_AGENT="${CURSOR_AGENT:-1}"
 export SB_LIVE_CURSOR_IN_SESSION="${SB_LIVE_CURSOR_IN_SESSION:-1}"
 export SB_LIVE_REVIEW_FIX_LADDER_LIVE="${SB_LIVE_REVIEW_FIX_LADDER_LIVE:-1}"
 
+if command -v gh >/dev/null 2>&1 && { [[ -n "${GITHUB_TOKEN:-}${GH_TOKEN:-}" ]] || gh auth status >/dev/null 2>&1; }; then
+  export SB_RFL_GITHUB_E2E=1
+fi
+
 exec bash "${REPO_ROOT}/tests/live/test-live-review-fix-ladder-triage-scenario.sh"

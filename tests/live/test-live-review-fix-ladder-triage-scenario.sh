@@ -190,8 +190,68 @@ run_live_triage_scenario() {
   rm -rf "$work_dir"
 }
 
+run_github_enterprise_triage_scenario() {
+  if [[ "${SB_RFL_GITHUB_E2E:-0}" != "1" && "${SB_LIVE_REVIEW_FIX_LADDER_GITHUB:-0}" != "1" ]]; then
+    skip "github enterprise triage scenario (set SB_RFL_GITHUB_E2E=1 or SB_LIVE_REVIEW_FIX_LADDER_GITHUB=1)"
+    return 0
+  fi
+
+  if ! review_fix_ladder_github_available; then
+    skip "github enterprise triage scenario (gh auth or GITHUB_TOKEN required)"
+    return 0
+  fi
+
+  local app_root="${SB_TEST_ENTERPRISE_APP_ROOT:-}"
+  if [[ -z "$app_root" ]] || ! git -C "$app_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    skip "github enterprise triage scenario (SB_TEST_ENTERPRISE_APP_ROOT git repo required)"
+    return 0
+  fi
+
+  local host work_dir resolver owner_repo issue_url issue_num fp title body
+  host="$(review_fix_ladder_resolve_host "${SB_LIVE_RUNTIME:-cursor}")"
+  work_dir="$(mktemp -d)"
+  resolver="$RESOLVER"
+
+  printf '\n=== Review Fix Ladder Triage Scenario (GitHub PM, host=%s) ===\n' "$host"
+
+  review_fix_ladder_prepare_github_workdir "$app_root" "$work_dir"
+  review_fix_ladder_seed_github_workspace "$work_dir" "$FIXTURE_DIR" "$resolver"
+
+  owner_repo="$(review_fix_ladder_github_owner_repo "$work_dir")"
+  assert_output_contains "github workspace remote" "$owner_repo" 'alo-exp/enterprise-grade-test-app|github\.com'
+
+  tracker="$(jq -r '.issue_tracker' "${work_dir}/.silver-bullet.json")"
+  adapter_type="$(jq -r '.issue_tracker_adapter.type' "${work_dir}/.silver-bullet.json")"
+  if [[ "$tracker" == "github" && "$adapter_type" == "github" ]]; then
+    pass "github issue_tracker_adapter configured"
+  else
+    fail "github issue_tracker_adapter configured"
+  fi
+
+  fp="$(bash "$ADD_SCRIPT" fingerprint --domain test --scope smoke-target.py --finding 'divide zero guard rfl e2e')"
+  title="[RFL E2E] divide() zero check"
+  body="Automated review-fix-ladder triage E2E fingerprint:${fp}"
+
+  issue_url="$(review_fix_ladder_github_file_issue "$work_dir" "$title" "$body")"
+  assert_output_contains "github issue created" "$issue_url" 'https://github.com/.*/issues/[0-9]+'
+  issue_num="$(printf '%s' "$issue_url" | grep -oE '[0-9]+$')"
+
+  if [[ -n "$issue_num" ]]; then
+    gh issue view "$issue_num" --repo "$owner_repo" --json title,labels \
+      | jq -e '.labels[].name' >/dev/null 2>&1 && pass "github issue visible via gh" || fail "github issue visible via gh"
+  else
+    fail "github issue visible via gh"
+  fi
+
+  review_fix_ladder_github_close_issue "$work_dir" "$issue_num"
+  pass "github issue cleanup (closed)"
+
+  rm -rf "$work_dir"
+}
+
 export SB_LIVE_REVIEW_FIX_LADDER_TRIAGE_SCENARIO=1
 run_automated_triage_scenario
+run_github_enterprise_triage_scenario
 run_live_triage_scenario
 
 printf '\nResults: %d passed, %d failed, %d skipped\n' "$PASS" "$FAIL" "$SKIP"

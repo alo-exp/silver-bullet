@@ -103,6 +103,23 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -285,6 +302,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -313,6 +336,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/flow-advance.sh\"",
             "async": false,
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
