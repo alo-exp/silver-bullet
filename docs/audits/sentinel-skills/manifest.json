@@ -1092,6 +1092,20 @@
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
   },
   {
+    "skill": "silver-triage",
+    "path": "skills/silver-triage/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-triage.md",
+    "status": "clean",
+    "verdict": "Deploy with monitoring",
+    "audited_at": "2026-07-08",
+    "release_tag": "v0.45.0",
+    "findings_open": 0,
+    "agent_bundles_parity": "verified",
+    "content_sha256": "3615ce410790cb4c09b9cdf74cec3f3c300074197f12376ae70ffce2385c10ae",
+    "evidence_note": "SENTINEL pass for silver-triage required_deploy gate alignment."
+  },
+  {
     "skill": "silver-ui-contract",
     "path": "skills/silver-ui-contract/SKILL.md",
     "sentinel_version": "2.3.0",
