@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.51.3] — 2026-07-08
+
+Patch release: tri-host RC validation matrix green (cursor/codex/claude × fresh/upgrade), Cursor hook generator repairs, Claude home-path install alignment, Codex path-rewrite scoping, and LeanCTX five-tool stack foundation.
+
+## Fixes
+- `fix(cursor)`: hook generation, merge dedupe, marketplace gitPath, slash command materialization (`05fa57b5`…`72a4821f`)
+- `fix(hooks)`: restore canonical manifest; harden Claude/Codex install (`60d4e85e`)
+- `fix(install)`: scope Codex path-rewrite to plugin surfaces — stops corrupting test fixtures (`ea40b1e6`)
+- `fix(rc)`: cursor delegate smoke under `set -u`; Claude first-class RC host (`6500301e`, `b5c1eed4`)
+- `fix(tests)`: install-claude/codex/doctor fixtures; `record-leanctx-usage` hook coverage (`70904e7f`, `334bed8f`)
+
+## Features
+- `feat(leanctx)`: five-tool stack config, install/merge scripts, hook gates (`230310ee`…`d391e9dd`)
+- `feat(testing)`: five-tool pre-release gate via agent-cursor (`55d9ad52`)
+
+---
+
 ## [0.51.2] — 2026-07-06
 
 Patch release: semantic-compress hook test isolation, agent bundle mirror sync, Stage 4a site scan completion, and pre-release gate site freshness wiring.
@@ -1787,7 +1804,7 @@ Launch-hardening release. Remediates all blocker/high/medium findings from the p
 ## Bug fixes
 
 - **#86** — `count_complete_flow_rows` now treats `skipped` as terminal alongside `complete`. Workflows with legitimately-skipped flows (e.g. FLOW 9 UI QUALITY for a CLI-only tool) no longer block `gh release create` indefinitely. Fix applied to `hooks/lib/workflow-utils.sh` and three inline fallbacks. 3 regression tests (`WF-PASS2-I/J/K`).
-- **#88** — HOOK-14 filters porcelain output through a transient-path allowlist. Built-in defaults: `.claude/scheduled_tasks.lock`, `.claude/settings.local.json`, `.superpowers/`, `.planning/workflows/`, `REVIEW.md`. Project-configurable via `.silver-bullet.json` `hooks.stop_check.transient_path_ignore_patterns`. Closes the post-release infinite-loop where Stop kept blocking after a successful push because runtime artifacts kept the tree "dirty". 3 regression tests (`#88-A/B/C`).
+- **#88** — HOOK-14 filters porcelain output through a transient-path allowlist. Built-in defaults: `.codex/scheduled_tasks.lock`, `.codex/settings.local.json`, `.superpowers/`, `.planning/workflows/`, `REVIEW.md`. Project-configurable via `.silver-bullet.json` `hooks.stop_check.transient_path_ignore_patterns`. Closes the post-release infinite-loop where Stop kept blocking after a successful push because runtime artifacts kept the tree "dirty". 3 regression tests (`#88-A/B/C`).
 - **#85** — Stop hook applies the `required_planning` floor only (typically `silver-quality-gates`, or `silver-blast-radius` + `devops-quality-gates` for devops). The full `required_deploy` list remains enforced by `completion-audit.sh` at delivery commands per the documented two-tier model. Ad-hoc skill-file additions no longer demand `deploy-checklist` / `create-release` / `testing-strategy` / `documentation` / `tech-debt`. 3 regression tests (`#85-A/B/C`).
 - **#87** — SessionStart reads the `source` field from stdin (`startup`/`resume`/`clear`/`compact`). Only `startup` and `clear` mutate state; `resume` and `compact` are benign and no longer wipe `gsd-*` markers mid-feature. Branch-mismatch wipe path now requires BOTH `current_branch` and `stored_branch` non-empty, closing the Bug 3 data-loss path. Branch-file writes are verified post-write. 9 regression tests (`#87-A/B/C/D`).
 
@@ -2356,7 +2373,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 - **CONS-02** (P37, `0b86dc6`): reconciled `hooks.json` / `settings.json` schema drift; every hook entry now matches the Claude Code manifest schema and the registered hook script actually exists on disk.
 
 ### Ignore
-- **IGNORE-01** (P38, this release, closes [#20](https://github.com/alo-exp/silver-bullet/issues/20)): narrowed the project `.gitignore` blanket `.claude/` rule to runtime-only subpaths (`projects/`, `local/`, `.silver-bullet/`, `settings.local.json`, `worktrees/`). Committed plugin config (`.claude/settings.json`, `.claude/commands/`) now tracked. Supersedes the interim fix in `c8b161a`.
+- **IGNORE-01** (P38, this release, closes [#20](https://github.com/alo-exp/silver-bullet/issues/20)): narrowed the project `.gitignore` blanket `.codex/` rule to runtime-only subpaths (`projects/`, `local/`, `.silver-bullet/`, `settings.local.json`, `worktrees/`). Committed plugin config (`.codex/settings.json`, `.codex/commands/`) now tracked. Supersedes the interim fix in `c8b161a`.
 
 ### Docs
 - **DOC-02** (P38, this release, closes [#23](https://github.com/alo-exp/silver-bullet/issues/23)): public-surface refresh across every user-visible file.
@@ -2659,7 +2676,7 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 - SENTINEL audit doc updated: 8→7 layers, post-remediation note added
 - context.md updated: stale step counts, version, and branding
 - Missing Required badge on step 9 (/requesting-code-review) in dev cycle table
-- Stale worktree .claude/worktrees/agent-ad2bff3d removed
+- Stale worktree .codex/worktrees/agent-ad2bff3d removed
 - mkdir -p defense-in-depth added to completion-audit.sh
 - Plugin boundary check changed from substring grep to prefix match
 
