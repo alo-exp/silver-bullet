@@ -8,6 +8,14 @@ if [[ -f "$(dirname "${BASH_SOURCE[0]}")/context-mode-gate.sh" ]]; then
   # shellcheck source=context-mode-gate.sh
   source "$(dirname "${BASH_SOURCE[0]}")/context-mode-gate.sh"
 fi
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
+  # shellcheck source=recommended-tools.sh
+  source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
+fi
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh" ]]; then
+  # shellcheck source=stack-compression-coordinator.sh
+  source "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh"
+fi
 if [[ -f "$(dirname "${BASH_SOURCE[0]}")/tool-input.sh" ]]; then
   # shellcheck source=tool-input.sh
   source "$(dirname "${BASH_SOURCE[0]}")/tool-input.sh"
@@ -135,6 +143,13 @@ sb_context_mode_should_deny_read() {
     *) return 1 ;;
   esac
 
+  # Conflict #2: Grep stays on CM cooperative path when LeanCTX owns sb_read.
+  if [[ "$tool_name" == "Grep" ]] && declare -f sb_stack_leanctx_active >/dev/null 2>&1; then
+    if sb_stack_leanctx_active "$config_file"; then
+      return 1
+    fi
+  fi
+
   file_path="$(sb_context_mode_tool_read_path "$input")"
   [[ -n "$file_path" ]] || return 1
 
@@ -156,7 +171,13 @@ sb_context_mode_should_deny_read() {
 }
 
 sb_context_mode_read_deny_message() {
-  local file_path="${1:-}" size="${2:-}" threshold="${3:-}"
+  local file_path="${1:-}" size="${2:-}" threshold="${3:-}" config_file="${4:-}"
+  if [[ -n "$config_file" ]] && declare -f sb_stack_read_deny_defer_to_leanctx >/dev/null 2>&1; then
+    if sb_stack_read_deny_defer_to_leanctx "$config_file"; then
+      sb_stack_read_deny_message_leanctx "$file_path" "$size" "$threshold"
+      return 0
+    fi
+  fi
   cat <<EOF
 🚫 CONTEXT MODE — Read blocked (${size} bytes > ${threshold} byte threshold).
 
