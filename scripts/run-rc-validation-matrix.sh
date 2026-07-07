@@ -14,6 +14,9 @@ source "${REPO_ROOT}/tests/scripts/lib/five-tool-prerelease.sh"
 
 [[ "${SB_SKIP_RC_MATRIX:-0}" == "1" ]] && { echo "SKIP: SB_SKIP_RC_MATRIX=1"; exit 0; }
 
+RC_CI_MODE=0
+[[ "${SB_RC_CI_MODE:-0}" == "1" || "${GITHUB_ACTIONS:-}" == "true" ]] && RC_CI_MODE=1
+
 HOST_FILTER=all MODE_FILTER=all DRY_RUN=0 REQUIRE_LIVE="${SB_RC_MATRIX_REQUIRE_LIVE:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +44,12 @@ run_cell() {
   local host="$1" mode="$2"
   if [[ "$DRY_RUN" -eq 1 ]]; then
     sb_smoke_write_rc_marker "$host" "$mode" pass dry-run; PASS=$((PASS+1)); return
+  fi
+  # CI: no first-party Anthropic/Codex API keys — structural install only for codex/claude.
+  if [[ "$RC_CI_MODE" -eq 1 && "$host" != "cursor" ]]; then
+    RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/lib/host-smoke-cell.sh" --host "$host" --mode "$mode" --scope rc \
+      || { sb_smoke_write_rc_marker "$host" "$mode" fail install; FAIL=$((FAIL+1)); return; }
+    sb_smoke_write_rc_marker "$host" "$mode" skip ci-no-first-party-keys; SKIP=$((SKIP+1)); return
   fi
   if ! host_live "$host"; then
     [[ "$REQUIRE_LIVE" == "1" ]] && { sb_smoke_write_rc_marker "$host" "$mode" fail unavailable; FAIL=$((FAIL+1)); return; }

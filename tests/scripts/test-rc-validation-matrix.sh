@@ -54,8 +54,17 @@ test -f "$REPO_ROOT/.github/workflows/rc-validation.yml"
 assert_pass "rc-validation workflow exists" test $? -eq 0
 
 workflow_body="$(<"$REPO_ROOT/.github/workflows/rc-validation.yml")"
-assert_pass "workflow installs claude CLI" assert_contains "$workflow_body" '@anthropic-ai/claude-code'
-assert_pass "workflow passes ANTHROPIC_API_KEY" assert_contains "$workflow_body" 'ANTHROPIC_API_KEY'
+assert_pass "workflow is optional non-blocking" assert_contains "$workflow_body" 'continue-on-error: true'
+assert_pass "workflow sets SB_RC_CI_MODE" assert_contains "$workflow_body" 'SB_RC_CI_MODE=1'
+assert_not_contains() {
+  local haystack="$1" needle="$2"
+  ! printf '%s' "$haystack" | grep -qF -- "$needle"
+}
+
+assert_pass "workflow excludes ANTHROPIC_API_KEY" assert_not_contains "$workflow_body" 'ANTHROPIC_API_KEY'
+assert_pass "matrix supports SB_RC_CI_MODE" assert_contains "$matrix_body" 'RC_CI_MODE'
+assert_pass "matrix skips codex/claude live in CI" assert_contains "$matrix_body" 'ci-no-first-party-keys'
+assert_pass "deploy-tier mentions operator-local RC" assert_contains "$(<"$REPO_ROOT/hooks/lib/completion-audit/deploy-tier.sh")" 'operator-local'
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

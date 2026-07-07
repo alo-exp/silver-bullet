@@ -49,13 +49,11 @@ Do not execute other shell commands.
 
 Before determining version, verify the working tree is releasable:
 
-0. **CI green + site freshness (mandatory):** run `bash scripts/pre-release-gate.sh` (runs
-   `test-site-content-freshness.sh`, `test-site-doc-freshness.sh`, then
-   `bash tests/run-all-tests.sh`). **STOP** if any test fails — never tag or
-   `gh release create` on red CI (see v0.51.0 counterexample in `docs/RELEASE.md`).
-   Stage 4a also requires a **100% manual review** of every `site/**` page for
-   release-claim accuracy before recording `quality-gate-stage-3` — automated tests
-   alone are not sufficient.
+0. **CI green + RC matrix (mandatory):** run `bash scripts/pre-release-gate.sh` (site freshness,
+   five-tool pre-release when leanctx opted in, `run-all-tests.sh`, `run-rc-validation-matrix.sh`).
+   Six cells: cursor/codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
+   Codex/Claude live cells do not run in GitHub CI (no first-party keys). CI `rc-validation.yml` is
+   optional diagnostic only. **STOP** if any test fails — never tag or `gh release create` on red CI.
 
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."
@@ -260,19 +258,24 @@ host CLI uses `HOST_API_KEY` + `AGENT_CLI_CREDENTIAL_STORE=memory` (no Keychain)
 
 ---
 
-## Step 6 — Run Shared Live Matrix
+## Step 6 — RC Validation Matrix
 
-Before creating the release tag, run the repo-configured live matrix wrapper so
-the current session earns the release-live-matrix marker used by
-`completion-audit.sh`:
+```bash
+bash scripts/run-rc-validation-matrix.sh
+```
+
+Included in `pre-release-gate.sh`. Replaces legacy live matrix when `release.require_rc_matrix`.
+**Operator-local mandatory:** all six cells (cursor/codex/claude × fresh/upgrade) with host CLIs and
+your API keys on the release machine. Codex/Claude live TUI delegates are not CI-blockers — GitHub
+Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic; cursor
+live only when `CURSOR_API_KEY` present). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
+Bypass (audited): `SB_SKIP_RC_MATRIX=1`. See `docs/testing/RC-VALIDATION-MATRIX.md`.
+
+Optional legacy diagnostics:
 
 ```bash
 bash scripts/run-release-live-matrix.sh
 ```
-
-The matrix must complete successfully for the Kay-backed Cursor-compatible path
-(`matrix=Cursor-only`) in the current session. A full primary host/native-Cursor matrix
-remains optional diagnostic coverage when explicitly requested.
 
 ## Step 6b — Wait for Release CI to Go Green
 

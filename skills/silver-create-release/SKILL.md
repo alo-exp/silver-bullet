@@ -51,8 +51,9 @@ Before determining version, verify the working tree is releasable:
 
 0. **CI green + RC matrix (mandatory):** run `bash scripts/pre-release-gate.sh` (site freshness,
    five-tool pre-release when leanctx opted in, `run-all-tests.sh`, `run-rc-validation-matrix.sh`).
-   Six cells: cursor/codex/claude × fresh/upgrade. Claude runs when CLI + auth present.
-   **STOP** if any test fails — never tag or `gh release create` on red CI.
+   Six cells: cursor/codex/claude × fresh/upgrade — **operator-local** with host CLIs + your API keys.
+   Codex/Claude live cells do not run in GitHub CI (no first-party keys). CI `rc-validation.yml` is
+   optional diagnostic only. **STOP** if any test fails — never tag or `gh release create` on red CI.
 
 1. Check for uncommitted changes: `git status --porcelain`
    - If non-empty: **STOP**. "Uncommitted changes detected. Commit or stash before release."
@@ -264,8 +265,10 @@ bash scripts/run-rc-validation-matrix.sh
 ```
 
 Included in `pre-release-gate.sh`. Replaces legacy live matrix when `release.require_rc_matrix`.
-Runs all six cells (cursor/codex/claude × fresh/upgrade) when each host CLI and auth are available.
-Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth; cells skip only when genuinely unavailable.
+**Operator-local mandatory:** all six cells (cursor/codex/claude × fresh/upgrade) with host CLIs and
+your API keys on the release machine. Codex/Claude live TUI delegates are not CI-blockers — GitHub
+Actions has no first-party Anthropic/Codex keys (`rc-validation.yml` is optional diagnostic; cursor
+live only when `CURSOR_API_KEY` present). Claude requires `claude` CLI plus `ANTHROPIC_API_KEY` or OAuth.
 Bypass (audited): `SB_SKIP_RC_MATRIX=1`. See `docs/testing/RC-VALIDATION-MATRIX.md`.
 
 Optional legacy diagnostics:

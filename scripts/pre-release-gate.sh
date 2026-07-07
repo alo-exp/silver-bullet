@@ -84,7 +84,7 @@ echo "✓ Pre-release gate passed — local CI-equivalent suite is green."
 
 cat <<'EOF'
 
-  RC validation matrix (cursor/codex/claude × fresh/upgrade)
+  RC validation matrix (cursor/codex/claude × fresh/upgrade — operator-local)
   Running: bash scripts/run-rc-validation-matrix.sh
 EOF
 
