@@ -87,7 +87,7 @@ fi
 ```
 
 Three guards are present:
-1. `HOME` non-empty check — prevents `rm -rf /.claude/plugins/cache/silver-bullet/silver-bullet` if HOME is unset.
+1. `HOME` non-empty check — prevents `rm -rf /.codex/plugins/cache/silver-bullet/silver-bullet` if HOME is unset.
 2. `! -L "$STALE_CACHE"` — symlink check prevents following a symlink to an arbitrary directory.
 3. `"$STALE_CACHE" == "${HOME}/"*` — path prefix check ensures the resolved path starts with HOME.
 

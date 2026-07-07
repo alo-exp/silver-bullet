@@ -166,7 +166,7 @@ CONTEXT_MODE_PLATFORM=cursor context-mode doctor
 **Fail modes:**
 - `[FAIL]` or `[ERROR]` for any of the above → see the specific failure's remediation in the doctor output.
 - `▲ Cursor: WARN — vX.Y.Z, latest v1.0.x` → Context Mode is outdated. Run `/context-mode:ctx-upgrade` (in Cursor's chat) or `npm install -g context-mode@latest`.
-- `▲ Claude compatibility: WARN — Claude-compatible hooks detected; native Cursor hooks are the supported configuration` → A `~/.claude/settings.json` was detected with hooks. Native Cursor hooks take precedence in Cursor; this warning is informational only.
+- `▲ Claude compatibility: WARN — Claude-compatible hooks detected; native Cursor hooks are the supported configuration` → A `~/.codex/settings.json` was detected with hooks. Native Cursor hooks take precedence in Cursor; this warning is informational only.
 - All `[PASS]` → Check A passes. Proceed to Check B.
 
 **Note on `CONTEXT_MODE_PLATFORM=cursor`:** This env var forces the doctor to use Cursor's adapter (storage paths under `~/.cursor/context-mode/`) instead of guessing from process tree. **Always set it when running the doctor manually** — without it, the doctor may report low confidence or default to a wrong platform.
@@ -287,7 +287,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"/etc/passwd"}}' | rtk hook 
 rtk gain
 ```
 
-**Pass criteria:** A non-empty table with at least one row. Note: `rtk gain` may warn `[warn] No hook installed — run \`rtk init -g\` for automatic token savings` on Cursor — **this warning is misleading** on Cursor, since RTK tracks Cursor wirings via `~/.cursor/hooks.json` separately from Claude Code's `~/.claude/settings.json`. Savings still accrue when the hook rewrites commands.
+**Pass criteria:** A non-empty table with at least one row. Note: `rtk gain` may warn `[warn] No hook installed — run \`rtk init -g\` for automatic token savings` on Cursor — **this warning is misleading** on Cursor, since RTK tracks Cursor wirings via `~/.cursor/hooks.json` separately from Claude Code's `~/.codex/settings.json`. Savings still accrue when the hook rewrites commands.
 
 **Fail modes:**
 - Table is empty → no rewrites have fired yet. Run a Shell command via Cursor (e.g., `git status`) and re-check.
@@ -429,7 +429,7 @@ After running all checks, produce a summary table:
 - **Workspace team-shared hook configs.** Cursor supports team-shared hooks via `.cursor/hooks.json` in version-controlled workspaces. The doctor reports these as `SKIP — no team-shared hook configs found` when absent. If the user is in a workspace with team hooks, those take precedence over global `~/.cursor/hooks.json`.
 - **Leftover `.mcp.json` files.** Older Context Mode versions wrote `~/.mcp.json` (Claude Code format). Cursor ignores this file but it may confuse manual inspection. The doctor reports `SKIP — no plugin cache exists yet (Claude Code has not installed context-mode here)` when the file is absent; if it exists, the doctor does not flag it as a problem (Cursor ignores it).
 - **`rtk gain --agent cursor` does not exist.** `rtk gain` is a global tracker across all agents. The misleading "No hook installed" warning is upstream RTK behavior — it tracks Claude Code hook registration specifically. Cursor wiring is verified via `~/.cursor/hooks.json` (Check C.1) instead.
-- **The doctor env var `CONTEXT_MODE_PLATFORM=cursor`.** Without this env var, Context Mode guesses the platform from the process tree and may default to Claude Code's adapter (storage under `~/.claude/context-mode/`). On a fresh Cursor install with no Claude Code adapter, this guess may be wrong; the doctor reports low confidence. **Always set the env var for manual doctor runs.**
+- **The doctor env var `CONTEXT_MODE_PLATFORM=cursor`.** Without this env var, Context Mode guesses the platform from the process tree and may default to Claude Code's adapter (storage under `~/.codex/context-mode/`). On a fresh Cursor install with no Claude Code adapter, this guess may be wrong; the doctor reports low confidence. **Always set the env var for manual doctor runs.**
 
 ---
 

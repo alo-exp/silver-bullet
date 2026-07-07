@@ -211,7 +211,7 @@ No API keys, tokens, passwords, or private key markers in any new or existing ho
 
 **Applicability:** YES — prior findings remediated; 1 new finding
 
-**FINDING-5.1 (REMEDIATED):** State files moved from `/tmp/` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` with `umask 0077`. All hooks use `umask 0077` at the top. Path validation (`case "$state_file" in "$HOME"/.claude/*`) present in `stop-check.sh`, `prompt-reminder.sh`, `completion-audit.sh`, `dev-cycle-check.sh`. Symlink rejection present on bypass files (`-f "$trivial_file" && ! -L "$trivial_file"`). **CLOSED.**
+**FINDING-5.1 (REMEDIATED):** State files moved from `/tmp/` to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/` with `umask 0077`. All hooks use `umask 0077` at the top. Path validation (`case "$state_file" in "$HOME"/.codex/*`) present in `stop-check.sh`, `prompt-reminder.sh`, `completion-audit.sh`, `dev-cycle-check.sh`. Symlink rejection present on bypass files (`-f "$trivial_file" && ! -L "$trivial_file"`). **CLOSED.**
 
 **FINDING-5.2 (REMEDIATED):** `session-start` now emits a visible blocking warning when jq is missing. `stop-check.sh`, `completion-audit.sh`, `forbidden-skill-check.sh` all emit visible warnings on jq absence. `prompt-reminder.sh` exits silently — documented as intentional (speed requirement for UserPromptSubmit hooks). **CLOSED** (prompt-reminder silent exit is acceptable).
 

@@ -35,8 +35,8 @@ sb_context_mode_cli_path() {
 }
 
 sb_context_mode_claude_plugin_present() {
-  [[ -d "${HOME}/.claude/plugins/context-mode" ]] \
-    || [[ -d "${HOME}/.claude/plugins/mksglu-context-mode" ]]
+  [[ -d "${HOME}/.codex/plugins/context-mode" ]] \
+    || [[ -d "${HOME}/.codex/plugins/mksglu-context-mode" ]]
 }
 
 sb_context_mode_cli_available() {
@@ -69,7 +69,7 @@ sb_context_mode_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
-    *) printf '%s/.claude/plugins/context-mode' "${HOME}" ;;
+    *) printf '%s/.codex/plugins/context-mode' "${HOME}" ;;
   esac
 }
 

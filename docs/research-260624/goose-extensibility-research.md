@@ -439,7 +439,7 @@ Key modules in the Rust codebase:
 |---------|-------------|-------|
 | Hooks | `hooks.json` with pre/post tool events | `hooks/hooks.json` with 11 lifecycle events (observe-only) |
 | Tool blocking | Hooks can block via exit code | Adversary Mode (LLM-based) blocks tool calls; hooks cannot |
-| Skills | `SKILL.md` in `~/.claude/skills/` | `SKILL.md` in `~/.agents/skills/` (compatible format) |
+| Skills | `SKILL.md` in `~/.codex/skills/` | `SKILL.md` in `~/.agents/skills/` (compatible format) |
 | Config | `CLAUDE.md`, `.claude/` | `.goosehints`, `.gooseignore`, `config.yaml` |
 | Subagents | Task tool | Built-in subagent spawning (autonomous) |
 | MCP | Native integration | Native integration (extensions) |

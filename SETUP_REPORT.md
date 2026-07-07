@@ -45,7 +45,7 @@
 - `.gitignore` agentmemory managed block (**fixed** negation patterns: `!.agentmemory/memory/**` required for `git add` to work)
 
 ### Graphify
-- `graphify install` → `~/.claude/skills/graphify/SKILL.md`
+- `graphify install` → `~/.codex/skills/graphify/SKILL.md`
 - `graphify cursor install` → `REPO_ROOT/.cursor/rules/graphify.mdc`
 - Index: `graphify update . --no-cluster` → `graphify-out/graph.json` (14,393 nodes after memory export)
 

@@ -48,7 +48,7 @@ OK: matrix env cleared for delegation
 {"hookSpecificOutput":{"hookEventName":"PostToolUse","message":"blockedSB orchestrator ► Composer chain advanced to silver-release (multi-workflow; invoke without user prompt)"}}
 run_dir=/Users/shafqat/projects/silver-bullet/repo/.planning/sb-tri-criteria-e2e/runs/20260706T031302Z-TC-01
 host=claude
-state_dir=/Users/shafqat/.claude/.silver-bullet/tri-criteria-live-20260706T031302Z-TC-01
+state_dir=/Users/shafqat/.codex/.silver-bullet/tri-criteria-live-20260706T031302Z-TC-01
 fixture_sha=3d826af076c5
 distinct_workflow_ids=3
 agent_log=/Users/shafqat/projects/silver-bullet/repo/.planning/sb-tri-criteria-e2e/runs/20260706T031302Z-TC-01/agent-session.log

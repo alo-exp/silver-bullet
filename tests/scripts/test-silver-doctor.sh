@@ -107,16 +107,16 @@ cp "$REPO_ROOT/silver-bullet.md" "$MOCK_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$MOCK_PROJ/scripts/workflows.sh"
 chmod +x "$MOCK_PROJ/scripts/workflows.sh"
 # Simulate Cursor hooks present on disk (must not flip Claude host detection)
-printf '{"hooks":{"SessionStart":[{"command":"~/.claude/plugins/.claude/plugins/hook.sh"}]}}\n' >"$MOCK_HOME/.cursor/hooks.json"
-mkdir -p "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks" \
-  "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/agents/claude"
-ln -sfn "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7" \
-  "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/current"
-cp "$REPO_ROOT/hooks/hooks.json" "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks/hooks.json"
-jq -n --arg v "0.48.7" --arg p "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+printf '{"hooks":{"SessionStart":[{"command":"~/.codex/plugins/.codex/plugins/hook.sh"}]}}\n' >"$MOCK_HOME/.cursor/hooks.json"
+mkdir -p "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks" \
+  "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/0.48.7/agents/claude"
+ln -sfn "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+  "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"
+cp "$REPO_ROOT/hooks/hooks.json" "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks/hooks.json"
+jq -n --arg v "0.48.7" --arg p "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/0.48.7" \
   '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
-  >"$MOCK_HOME/.claude/plugins/installed_plugins.json"
-printf '{"hooks":{}}\n' >"$MOCK_HOME/.claude/settings.json"
+  >"$MOCK_HOME/.codex/plugins/installed_plugins.json"
+printf '{"hooks":{}}\n' >"$MOCK_HOME/.codex/settings.json"
 
 claude_out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
 if printf '%s' "$claude_out" | grep -q 'D8.*N/A.*claude'; then

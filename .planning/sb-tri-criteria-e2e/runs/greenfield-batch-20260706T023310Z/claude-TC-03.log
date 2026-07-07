@@ -18,7 +18,7 @@ OK: matrix env cleared for delegation
 FAIL: TC-03 product gate — missing sb-compliance-posture-audit.sh
 run_dir=/Users/shafqat/projects/silver-bullet/repo/.planning/sb-tri-criteria-e2e/runs/20260706T043536Z-TC-03
 host=claude
-state_dir=/Users/shafqat/.claude/.silver-bullet/tri-criteria-live-20260706T043536Z-TC-03
+state_dir=/Users/shafqat/.codex/.silver-bullet/tri-criteria-live-20260706T043536Z-TC-03
 fixture_sha=5313047013e1
 distinct_workflow_ids=2
 agent_log=/Users/shafqat/projects/silver-bullet/repo/.planning/sb-tri-criteria-e2e/runs/20260706T043536Z-TC-03/agent-session.log

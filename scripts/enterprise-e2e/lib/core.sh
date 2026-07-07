@@ -828,10 +828,10 @@ enterprise_e2e_prepend_harness_path() {
 # Disables unauthenticated plugin MCP servers so the TUI reaches the ❯ prompt and accrues tokens.
 enterprise_e2e_prepare_matrix_mcp_env() {
   local fixture_dir="${1:-$(enterprise_e2e_fixture_dir)}"
-  local mcp_cache="${HOME}/.claude/mcp-needs-auth-cache.json"
+  local mcp_cache="${HOME}/.codex/mcp-needs-auth-cache.json"
   local claude_bin="${CLAUDE_BIN:-${HOME}/.local/bin/claude}"
   mkdir -p "${fixture_dir}/.claude" "$(dirname "$mcp_cache")"
-  python3 - "$mcp_cache" "${fixture_dir}/.claude/settings.local.json" "$claude_bin" <<'PY'
+  python3 - "$mcp_cache" "${fixture_dir}/.codex/settings.local.json" "$claude_bin" <<'PY'
 import json
 import os
 import re
@@ -957,7 +957,7 @@ enterprise_e2e_preflight_claude_token_gateway() {
   settings_file="$(claude_matrix_settings_path)"
 
   if claude_matrix_auth_has_api_key_env "$settings_file"; then
-    echo "Token gateway preflight: OK (~/.claude/settings.json has ANTHROPIC_* env)"
+    echo "Token gateway preflight: OK (~/.codex/settings.json has ANTHROPIC_* env)"
     return 0
   fi
 
@@ -967,7 +967,7 @@ enterprise_e2e_preflight_claude_token_gateway() {
   fi
 
   enterprise_e2e_preflight_fail \
-    "Claude token gateway not configured — add ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY to ~/.claude/settings.json env (see docs/ENTERPRISE-E2E-LIVE-TEST.md). Prior SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 runs may have stripped keys via claude_matrix_auth_prepare without restore."
+    "Claude token gateway not configured — add ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY to ~/.codex/settings.json env (see docs/ENTERPRISE-E2E-LIVE-TEST.md). Prior SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1 runs may have stripped keys via claude_matrix_auth_prepare without restore."
 }
 
 # Session 0 gate — matrix rows require bootstrap unless explicitly skipped.

@@ -46,7 +46,7 @@ $ SILVER_BULLET_RUNTIME=cursor bash scripts/sb-diagnostics.sh | head -8
 | Capability | Claude | Codex | Cursor |
 |------------|--------|-------|--------|
 | Runtime detection | ✓ | ✓ | ✓ (`runtime-paths.sh`) |
-| State dir | `~/.claude/.silver-bullet` | `~/.codex/.silver-bullet` | `~/.cursor/.silver-bullet` |
+| State dir | `~/.codex/.silver-bullet` | `~/.codex/.silver-bullet` | `~/.cursor/.silver-bullet` |
 | Hook delivery | `settings.json` | plugin + optional merge | `~/.cursor/hooks.json` |
 | Skill recording | PostToolUse/Skill | invoke-skill receipt | PostToolUse/Skill + invoke-skill |
 | session-start | ✓ | ✓ | ✓ |
