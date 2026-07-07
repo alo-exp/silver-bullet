@@ -171,7 +171,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Invoke <code>/silver:clarify</code>. Socratic clarification defines the research question, success criteria, and constraints before evidence gathering begins.</p>
 
       <h3><code>AF-DECIDE</code> — Choose research path and gather evidence</h3>
-      <p>SB classifies the question type and runs direct evidence-based research using repository context, local artifacts, official docs, primary sources, and runtime evidence:</p>
+      <p>SB classifies the question type, selects a depth mode (<code>quick</code>, <code>standard</code>, <code>deep</code>, <code>ultradeep</code>) from <code>phases.yaml</code>, and runs evidence-based research using repository context, local artifacts, official docs, primary sources, and optional <code>search-cli</code> retrieval with host fallback:</p>
       <ul>
         <li><strong>A. Market/landscape</strong> — "What tools/solutions exist for X?", "What's the state of the art?"</li>
         <li><strong>B. Tech selection</strong> — "Should we use X or Y?", "Which library/framework is best for our case?"</li>
@@ -183,7 +183,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="research-paths">Research paths</h2>
 
       <h3>Path A — Market/landscape</h3>
-      <p>Landscape research: tools, solutions, and state of the art. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code>.</p>
+      <p>Landscape research: tools, solutions, and state of the art. Uses SB-owned portal descriptors (e.g. skills.sh API, GitHub) for <code>research_type: landscape</code> only — no TopGun dependency. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code> plus <code>portal-*.json</code> partials when applicable.</p>
 
       <h3>Path B — Tech selection</h3>
       <p>Comparative evaluation against weighted criteria with a concrete recommendation. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>

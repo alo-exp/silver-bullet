@@ -150,24 +150,26 @@ class ReportValidator:
         return True
 
     def _check_bibliography_tail(self) -> bool:
-        """Bibliography must be last substantive section before metadata."""
+        """Bibliography entries must be complete; only methodology may follow before metadata."""
         if not self.profile.get("bibliography_tail_required", True):
             return True
         bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
         meta_label = self.profile.get("section_labels", {}).get("metadata", "Report Metadata")
+        meth_label = self.profile.get("section_labels", {}).get("methodology", "Methodology")
         bib_m = re.search(rf'##\s*{re.escape(bib_label)}', self.content, re.IGNORECASE)
         meta_m = re.search(rf'##\s*{re.escape(meta_label)}', self.content, re.IGNORECASE)
         if not bib_m:
             return True
-        tail = self.content[bib_m.end():]
         if meta_m and meta_m.start() > bib_m.start():
             between = self.content[bib_m.end():meta_m.start()]
-            if re.search(r'^##\s+', between, re.MULTILINE):
-                self.errors.append("Sections found between Bibliography and Metadata")
-                return False
-        elif re.search(r'^##\s+(?!' + re.escape(meta_label) + r')', tail, re.MULTILINE | re.IGNORECASE):
-            self.errors.append("Bibliography is not the final section before metadata")
-            return False
+            allowed = re.compile(
+                rf'^##\s*({re.escape(meth_label)}|appendix|方法论附录)',
+                re.IGNORECASE | re.MULTILINE,
+            )
+            for heading in re.findall(r'^##\s+(.+)$', between, re.MULTILINE):
+                if not allowed.search(f'## {heading}'):
+                    self.errors.append(f"Unexpected section between Bibliography and Metadata: {heading}")
+                    return False
         return True
 
     def _check_required_sections(self) -> bool:
@@ -238,11 +240,12 @@ class ReportValidator:
 
     def _check_bibliography(self) -> bool:
         """Check bibliography exists, matches citations, and has no truncation placeholders"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
+        bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
+        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:
-            self.errors.append("Missing 'Bibliography' section")
+            self.errors.append(f"Missing '{bib_label}' section")
             return False
 
         bib_section = match.group(1)
@@ -348,7 +351,8 @@ class ReportValidator:
 
     def _check_source_count(self) -> bool:
         """Check minimum source count"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
+        bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
+        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:

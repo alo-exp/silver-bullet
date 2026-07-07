@@ -107,7 +107,7 @@ Every required phase has a local V-loop and must roll up before AF-DECIDE passes
 | `DR-TRIANGULATE` | Triangulate | `triangulation.md` | Claims cross-checked across independent sources |
 | `DR-OUTLINE` | Outline refinement | `outline.md` | Findings map tied to evidence ids |
 | `DR-SYNTHESIZE` | Synthesize | `research_report.md` draft | Major claims extracted to `claims.jsonl` |
-| `DR-CRITIQUE` | Critique | `critique.md` | Gaps, contradictions, and loopback decision |
+| `DR-CRITIQUE` | Adversarial review | `critique.md` | Multi-cycle critique per `reference/adversarial-review.md`; standard=0, deep=2, ultradeep=3 cycles max |
 | `DR-REFINE` | Refine | `research_report.md` final | Unsupported claims repaired or escalated |
 | `DR-PACKAGE` | Package | `decision-record.md`, `handoff.md` | ART-DECIDE rollup and validation logs |
 
@@ -146,7 +146,11 @@ Only recommend sign-up or provider setup when selected depth actually needs it:
 
 Load these references as needed:
 
-- `reference/methodology.md` for phases 1-7
+- `reference/methodology.md` for 9 phases
+- `phases.yaml` for mode→phase SSoT
+- `reference/report_profiles.json` for en/zh report assembly
+- `reference/adversarial-review.md` for DR-CRITIQUE cycles
+- `reference/human-checkpoints.md` for narrow pause conditions
 - `reference/report-assembly.md` for packaging
 - `reference/quality-gates.md` for validation loops
 - `reference/html-generation.md` for optional HTML
