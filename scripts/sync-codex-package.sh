@@ -8,6 +8,19 @@ source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 
+SYNC_LOCK_DIR="${REPO_ROOT}/.git/sb-sync-codex-package.lock.d"
+mkdir -p "$(dirname "$SYNC_LOCK_DIR")"
+_sync_lock_attempt=0
+while ! mkdir "$SYNC_LOCK_DIR" 2>/dev/null; do
+  _sync_lock_attempt=$((_sync_lock_attempt + 1))
+  if [[ "$_sync_lock_attempt" -ge 300 ]]; then
+    printf 'ERROR: timed out waiting for sync-codex-package lock\n' >&2
+    exit 1
+  fi
+  sleep 1
+done
+trap 'rmdir "$SYNC_LOCK_DIR" 2>/dev/null || true' EXIT
+
 log() {
   printf '[codex-sync] %s\n' "$*"
 }
@@ -86,12 +99,27 @@ fi
 # under the plugin package. Keep SB's packaged skill sources available for the
 # installer, but store them under an extensionless filename so the only
 # user-facing picker surface is the native ~/.codex/skills mirror.
-rm -rf -- "${DEST_DIR}/skills" "${DEST_DIR}/skill-source" "${DEST_DIR}/.generated-skills" "${DEST_DIR}/agents"
+python3 - "$DEST_DIR" <<'PY'
+import pathlib
+import shutil
+import sys
+
+dest = pathlib.Path(sys.argv[1])
+for name in ("skills", "skill-source", ".generated-skills", "agents"):
+    path = dest / name
+    if path.exists() or path.is_symlink():
+        shutil.rmtree(path)
+PY
 mkdir -p -- "${DEST_DIR}/skill-source"
 rsync -a --delete "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${DEST_DIR}/skill-source/"
 find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
   for path do
-    mv "$path" "$(dirname "$path")/SILVER_SOURCE"
+    dest="$(dirname "$path")/SILVER_SOURCE"
+    if [[ -e "$dest" ]]; then
+      rm -f "$path"
+    else
+      mv "$path" "$dest"
+    fi
   done
 ' sh {} +
 
