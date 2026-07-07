@@ -126,7 +126,7 @@ if [[ "$cursor_rungs" == "8" ]]; then
 else
   fail "Cursor fixed ladder has 8 rungs — got $cursor_rungs"
 fi
-assert_jq_true "Cursor fixed starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low"}' "$cursor_json"
+assert_jq_true "Cursor fixed starts composer-2.5 low" '.rungs[0] == {"model":"composer-2.5","reasoning":"low","delegation":"task","task_slug":"composer-2.5","agent_model":"composer-2.5"}' "$cursor_json"
 assert_jq_true "Cursor fixed ends gpt-5.5 xhigh" '.rungs[-1] == {"model":"gpt-5.5","reasoning":"xhigh","delegation":"agent-cursor","task_slug":"gpt-5.5-extra-high","agent_model":"gpt-5.5-xhigh"}' "$cursor_json"
 assert_jq_true "Cursor rung 1 uses task delegation" '.rungs[0].delegation == "task"' "$cursor_json"
 assert_jq_true "Cursor rung 1 task slug composer-2.5" '.rungs[0].task_slug == "composer-2.5"' "$cursor_json"

@@ -12,7 +12,7 @@
     },
     "canonical_locator": {
       "type": "string",
-      "description": "Canonical identifier: doi:10.1038/..., arxiv:2305.14251, or normalized URL (scheme+host+path, no fragment/tracking params)"
+      "description": "Canonical identifier: doi:10.1038/..., arxiv:2305.14251, or normalized URL"
     },
     "raw_url": {
       "type": "string",
@@ -34,10 +34,32 @@
       "type": "string",
       "enum": ["web", "academic", "documentation", "code", "news", "government", "book"]
     },
+    "source_class": {
+      "type": "string",
+      "enum": ["primary", "secondary", "tertiary", "portal", "unknown"],
+      "description": "Evidence role in triangulation"
+    },
     "metadata_status": {
       "type": "string",
       "enum": ["unverified", "doi_verified", "url_verified", "title_matched"],
       "description": "How far metadata has been verified"
+    },
+    "reliability_code": {
+      "type": "string",
+      "pattern": "^[A-F][1-6]$",
+      "description": "NATO Admiralty-style combined grade (e.g. A1, B2, D4)"
+    },
+    "authority_tier": {
+      "type": "string",
+      "enum": ["primary", "secondary", "tertiary", "unknown"]
+    },
+    "bias_flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["sensationalism", "commercial", "recency_risk", "single_perspective", "conflict_of_interest"]
+      },
+      "default": []
     },
     "registered_at": {
       "type": "string",
