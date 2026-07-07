@@ -375,6 +375,31 @@ SB recommends **RTK** and **Context Mode** as **separate** opt-in tools (`recomm
 
 Install and wiring: `docs/RTK.md`, `docs/CONTEXT-MODE.md`. Verification: `bash scripts/enable-rtk-context-mode.sh`. Host always-on rules: `host rules path (see install guide) recommended-tools.mdc`.
 
+### 2g-iii. Five-Tool Parallel Routing (LeanCTX)
+
+SB recommends **LeanCTX** as a separate opt-in tool (`recommended_tools.leanctx.enabled_by_user`) for parallel-routed compression alongside RTK and Context Mode. When opted in and not suspended, LeanCTX owns wire proxy, AST read-path, PathJail, savings ledger, and injection detection — with **surface-level mutual exclusion** so RTK shell rewrite and Context Mode sandbox never double-compress the same path.
+
+**MCP prefix:** LeanCTX tools use `lctx_*` — never raw `ctx_*` when Context Mode is also opted in.
+
+**Five-tool routing (`optimization_profiles.five_tool_routed`):**
+
+| SB route | Owner |
+|----------|-------|
+| `sb_wire` | LeanCTX |
+| `sb_read` | LeanCTX (`lctx_read_ast`) |
+| `sb_grep` | Context Mode |
+| `sb_shell` | RTK |
+| `sb_slice` | Context Mode |
+| `sb_webfetch` | Context Mode |
+| `sb_graph` | Graphify |
+| `sb_remember` | agentmemory |
+| `sb_pathjail` | LeanCTX |
+| `sb_injection` | LeanCTX |
+
+**Codex caveat:** AST read-path requires PreToolUse `updatedInput` rewrite; Codex is deny-only — wire proxy, ledger, PathJail, and injection detection run; RTK + Context Mode remain primary compressors until upstream supports rewrite.
+
+Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/optimize-five-tool-stack.sh`.
+
 <!-- BEGIN context-mode hint (do not edit) -->
 ## Context Mode usage
 
