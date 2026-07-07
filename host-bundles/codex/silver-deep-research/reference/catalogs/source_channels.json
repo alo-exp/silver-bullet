@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "channels": {
+    "web": {"provider": "search-cli", "mode": "general", "fallback": "host_web_search"},
+    "academic": {"provider": "search-cli", "mode": "academic", "fallback": "host_web_search"},
+    "gov": {"provider": "search-cli", "mode": "general", "domain_filter": ".gov"},
+    "docs": {"provider": "search-cli", "mode": "general", "domain_filter": "docs."},
+    "code": {"provider": "search-cli", "mode": "general", "domain_filter": "github.com"},
+    "stats": {"provider": "search-cli", "mode": "general", "fallback": "host_web_search"}
+  }
+}

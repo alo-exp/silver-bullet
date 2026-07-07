@@ -1,8 +1,21 @@
-# Deep Research Methodology: 8-Phase Pipeline
+# Deep Research Methodology: 9-Phase Pipeline
 
 ## Overview
 
-This document contains the detailed methodology for conducting deep research. The 8 phases represent a comprehensive approach to gathering, verifying, and synthesizing information from multiple sources.
+This document contains the detailed methodology for conducting deep research. The **9 phases**
+align with `phases.yaml` SSoT and SKILL.md `DR-*` steps:
+
+1. **SCOPE** — research framing
+2. **PLAN** — strategy formulation
+3. **RETRIEVE** — parallel information gathering
+4. **TRIANGULATE** — score sources (Admiralty) and cross-reference claims
+5. **OUTLINE** — evidence-driven outline refinement
+6. **SYNTHESIZE** — deep analysis and draft report
+7. **CRITIQUE** — adversarial review (deep/ultradeep; cycles per mode)
+8. **REFINE** — verify, refresh stale claims, repair gaps
+9. **PACKAGE** — decision record, handoff, validation
+
+Mode inclusion is defined in `phases.yaml` — not every mode runs every phase.
 
 ---
 
