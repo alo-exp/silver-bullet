@@ -6,6 +6,7 @@ description: >
   release, date range, incident cluster, or workflow history.
 argument-hint: "<range, release, or scope>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:retro - Engineering Retrospective

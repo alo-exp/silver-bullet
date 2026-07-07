@@ -4,7 +4,8 @@
 # Fails when a host exposes:
 #   - user-invocable skills without silver: prefix (except lone silver)
 #   - duplicate logical routes under different raw names
-#   - Claude silver-* hyphen directories alongside silver: routes
+#   - Claude/Cursor silver-* hyphen directories alongside silver: routes
+#   - Cursor/Codex user-invocable skills that duplicate plugin command stubs
 #
 # Usage:
 #   scripts/validate-host-skill-surface.sh [--repo-root PATH]
@@ -109,24 +110,47 @@ def fail(host: str, message: str) -> None:
 for host, surfaces in HOST_SURFACES.items():
     route_names: dict[str, set[str]] = defaultdict(set)
     route_entries: dict[str, list[str]] = defaultdict(list)
+    command_routes: set[str] = set()
 
     for rel_root, kind in surfaces:
+        if kind != "command":
+            continue
         root = repo_root / rel_root
         if not root.is_dir():
             fail(host, f"missing surface root: {rel_root}")
             continue
-
-        if kind == "skill":
-            paths = sorted(root.glob("*/SKILL.md"))
-        else:
-            paths = sorted(root.glob("*.md"))
-
-        for path in paths:
+        for path in sorted(root.glob("*.md")):
             meta = parse_frontmatter(path)
             name = meta.get("name", "").strip()
             if not name:
                 fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
                 continue
+            command_routes.add(name)
+
+    for rel_root, kind in surfaces:
+        if kind != "skill":
+            continue
+        root = repo_root / rel_root
+        if not root.is_dir():
+            fail(host, f"missing surface root: {rel_root}")
+            continue
+
+        for path in sorted(root.glob("*/SKILL.md")):
+            meta = parse_frontmatter(path)
+            name = meta.get("name", "").strip()
+            if not name:
+                fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
+                continue
+
+            if host in {"cursor", "codex"} and name in command_routes and is_user_invocable(meta):
+                rel = path.relative_to(repo_root)
+                fail(
+                    host,
+                    f"{rel}: user-invocable skill {name!r} duplicates plugin command stub "
+                    f"(set user-invocable: false on the rendered bundle skill)",
+                )
+                continue
+
             if not is_user_invocable(meta):
                 continue
 
@@ -147,7 +171,7 @@ for host, surfaces in HOST_SURFACES.items():
             route_names[route].add(name)
             route_entries[route].append(f"{rel} ({name!r})")
 
-            if host == "claude" and kind == "skill":
+            if host in {"claude", "cursor"}:
                 dir_name = path.parent.name
                 expected_dir = expected_claude_dir(name)
                 if expected_dir and dir_name != expected_dir:
@@ -165,20 +189,20 @@ for host, surfaces in HOST_SURFACES.items():
                 f"logical route {route!r} exposed under multiple names {sorted(names)!r}: {entries}",
             )
 
-    if host == "claude":
-        claude_root = repo_root / "agents/claude"
-        if claude_root.is_dir():
+    for host_name, rel_bundle in (("claude", "agents/claude"), ("cursor", "host-bundles/cursor")):
+        bundle_root = repo_root / rel_bundle
+        if bundle_root.is_dir():
             hyphen_dirs = sorted(
                 child.name
-                for child in claude_root.iterdir()
+                for child in bundle_root.iterdir()
                 if child.is_dir() and child.name.startswith("silver-")
             )
             for dirname in hyphen_dirs:
                 colon_name = "silver:" + dirname.removeprefix("silver-")
                 fail(
-                    host,
-                    f"redundant hyphen directory agents/claude/{dirname} "
-                    f"(use agents/claude/{colon_name})",
+                    host_name,
+                    f"redundant hyphen directory {rel_bundle}/{dirname} "
+                    f"(use {rel_bundle}/{colon_name})",
                 )
 
 print("validate-host-skill-surface: per-host summary")

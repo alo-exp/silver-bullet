@@ -5,6 +5,7 @@ description: >
   This skill should be used for 3-tier complexity triage: trivial → direct SB edit, medium → SB context/plan/execute/verify, complex → silver:feature escalation.
 argument-hint: "<description of change>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:fast — Complexity Triage (composition spec)

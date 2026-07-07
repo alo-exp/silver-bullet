@@ -5,6 +5,7 @@ description: >
   SB catalog-backed AF-DECIDE flow step (FS-SILVER_DEEP_RESEARCH) and `/silver:deep-research` workflow engine: rigorous multi-source research with phase-level evidence, nested V-loops, citation tracking, claim verification, optional search-cli retrieval, and `.planning/research/` artifacts.
 argument-hint: "<research question or technology decision> [--mode quick|standard|deep|ultradeep]"
 version: 1.0.0
+user-invocable: false
 ---
 
 # /silver:deep-research — Deep Research Workflow

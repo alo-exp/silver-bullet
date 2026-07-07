@@ -5,6 +5,7 @@ description: >
   This skill should be used for full SB-owned UI/frontend workflow: orient → clarify/decide → test strategy → silver:ui-contract → execute+TDD → silver:ui-review → review → verify → secure → ship
 argument-hint: "<UI feature or component description>"
 version: 0.2.0
+user-invocable: false
 ---
 
 # /silver:ui — UI Composition Spec

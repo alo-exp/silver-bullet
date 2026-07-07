@@ -4,6 +4,7 @@ title: "Execute"
 description: This skill executes an SB PLAN.md in controlled waves with TDD, evidence capture, and summary artifacts.
 argument-hint: "<plan path or execution scope>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:execute - Plan Execution
