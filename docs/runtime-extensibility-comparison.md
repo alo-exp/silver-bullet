@@ -115,7 +115,7 @@ Focused gaps where Goose, OpenCode, and OMP trail Claude/Cursor (and Codex where
 
 [^codex-skills]: Codex has a **native built-in Skill tool** documented at [Codex skills](https://developers.openai.com/codex/skills). Skills use `SKILL.md` files with progressive disclosure. SB's `invoke-skill` adapter is supplementary glue for SB-specific state recording, not a replacement for a missing feature.
 
-[^claude-marketplace]: Claude Code's official plugin marketplaces are `anthropics/claude-plugins-official` and `anthropics/claude-plugins-community`. The `alo-labs/claude-plugins` reference is SB-specific. See [Claude Code plugins docs](https://docs.anthropic.com/en/docs/claude-code/plugins).
+[^claude-marketplace]: Claude Code's official plugin marketplaces are `anthropics/claude-plugins-official` and `anthropics/claude-plugins-community`. SB uses `alo-labs/agent-plugins` (`alo-labs` marketplace ID). See [Claude Code plugins docs](https://docs.anthropic.com/en/docs/claude-code/plugins).
 
 ---
 
