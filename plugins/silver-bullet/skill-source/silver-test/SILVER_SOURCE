@@ -7,6 +7,7 @@ description: >
   mutation-style challenge workflows.
 argument-hint: "<scope> [--mode write|e2e|repair|audit|performance|mutation]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:test - Test Engineering Workflow

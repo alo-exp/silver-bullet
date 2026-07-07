@@ -5,6 +5,7 @@ description: >
   This skill should be used for pre-build gap analysis: validates SPEC.md coverage in PLAN.md, surfaces assumptions, emits machine-readable findings with BLOCK/WARN/INFO severity
 argument-hint: ""
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:validate — Pre-Build Gap Analysis

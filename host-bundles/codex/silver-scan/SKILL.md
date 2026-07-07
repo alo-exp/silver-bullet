@@ -3,6 +3,7 @@ name: "silver:scan"
 title: "Scan"
 description: This skill should be used to retrospectively scan project session sources for deferred work, unresolved questions, and knowledge or learnings candidates, then file or record approved findings through the scanner helper and project-management paths.
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:scan — Retrospective Session Scanner

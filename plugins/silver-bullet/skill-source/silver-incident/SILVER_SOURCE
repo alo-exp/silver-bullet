@@ -6,6 +6,7 @@ description: >
   corrective action filing, and release/process feedback loops.
 argument-hint: "<incident scope or symptoms>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:incident - Incident Response And Postmortem

@@ -5,6 +5,7 @@ description: >
   This skill should be used to create, convert, or audit Silver Bullet workflows and atomic flows — analyzes reusable catalog AFs/workflows, plans with review-fix-ladder, implements in a selected repo, validates catalog compliance, and registers locally; Audit mode is read-only compliance for existing workflows
 argument-hint: "<workflow intent | --audit <target> | path to existing skill/workflow to convert>"
 version: 0.2.0
+user-invocable: false
 ---
 
 # /silver:new-workflow — Workflow Authoring Meta Workflow

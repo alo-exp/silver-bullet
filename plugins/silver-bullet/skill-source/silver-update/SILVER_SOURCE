@@ -3,6 +3,7 @@ name: "silver:update"
 title: "Update"
 description: "This skill should be used when the user runs `/silver:update` or asks to update Silver Bullet — checks GitHub for the latest release, shows the changelog since the installed version, and installs the update after confirmation."
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:update — Update Silver Bullet

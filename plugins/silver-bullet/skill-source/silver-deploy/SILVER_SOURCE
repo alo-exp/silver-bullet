@@ -7,6 +7,7 @@ description: >
   release evidence.
 argument-hint: "<environment or deploy scope> [--dry-run|--execute]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:deploy - Deployment Workflow

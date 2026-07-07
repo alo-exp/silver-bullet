@@ -3,6 +3,7 @@ name: silver
 description: This skill should be used to route most non-trivial freeform user intent to the right Silver Bullet workflow or optional external enrichment skill automatically
 argument-hint: "<description of what you want to do>"
 version: 0.2.0
+user-invocable: false
 ---
 
 # /silver — Smart Skill Orchestrator

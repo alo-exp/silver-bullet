@@ -434,12 +434,13 @@ def sanitize_root(root: pathlib.Path, agent: str) -> None:
             rewrite_file(current, agent)
 
 
-def rename_claude_skill_directories(root: pathlib.Path) -> None:
-    """Align Claude skill folder names with silver: frontmatter routes.
+def rename_colon_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
+    """Align skill folder names with silver: frontmatter routes.
 
-    Claude lists skills from both directory names and SKILL.md ``name:`` fields.
+    Hosts list skills from both directory names and SKILL.md ``name:`` fields.
     Hyphen directories (``silver-feature``) plus colon names (``silver:feature``)
-    produce duplicate picker entries; rename dirs to the colon form only.
+    produce duplicate picker entries (skill vs subagent on Cursor); rename dirs
+    to the colon form only.
     """
     if not root.is_dir():
         return
@@ -453,8 +454,97 @@ def rename_claude_skill_directories(root: pathlib.Path) -> None:
         route = dirname.removeprefix("silver-")
         target = child.parent / f"silver:{route}"
         if target.exists():
-            raise SystemExit(f"claude skill rename collision: {dirname} -> {target.name}")
+            raise SystemExit(f"{host} skill rename collision: {dirname} -> {target.name}")
         child.rename(target)
+
+
+def read_skill_frontmatter(path: pathlib.Path) -> dict[str, str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        lines = path.read_text(errors="replace").splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+
+    meta: dict[str, str] = {}
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        match = re.match(r"^([A-Za-z0-9_-]+):\s*(.*)$", line)
+        if not match:
+            continue
+        meta[match.group(1)] = match.group(2).strip().strip('"').strip("'")
+    return meta
+
+
+def set_user_invocable_false(path: pathlib.Path) -> bool:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = path.read_text(errors="replace")
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return False
+
+    end = 1
+    while end < len(lines) and lines[end].strip() != "---":
+        end += 1
+    if end >= len(lines):
+        return False
+
+    fm_lines = lines[1:end]
+    body_lines = lines[end + 1 :]
+    found = False
+    updated_fm: list[str] = []
+    for line in fm_lines:
+        if line.startswith("user-invocable:"):
+            if line.strip() != "user-invocable: false":
+                updated_fm.append("user-invocable: false")
+            else:
+                updated_fm.append(line)
+            found = True
+        else:
+            updated_fm.append(line)
+    if not found:
+        updated_fm.append("user-invocable: false")
+
+    trailing_newline = "\n" if text.endswith("\n") else ""
+    updated = "---\n" + "\n".join(updated_fm) + "\n---"
+    if body_lines:
+        updated += "\n" + "\n".join(body_lines)
+    updated += trailing_newline
+    if updated == text:
+        return False
+    path.write_text(updated, encoding="utf-8")
+    return True
+
+
+def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
+    routes: set[str] = set()
+    if not commands_dir.is_dir():
+        return routes
+    for path in sorted(commands_dir.glob("*.md")):
+        name = read_skill_frontmatter(path).get("name", "").strip()
+        if name:
+            routes.add(name)
+    return routes
+
+
+def suppress_command_stub_skills_from_picker(root: pathlib.Path, commands_dir: pathlib.Path) -> None:
+    """Hide picker skills that already have plugin command stubs.
+
+    Cursor exposes plugin ``commands/`` as slash entries and ``skills/`` as
+    skill/subagent picker entries. Routes with both surfaces duplicate in the
+    menu; keep the slash command public and mark the mirrored skill internal.
+    """
+    routes = command_stub_routes(commands_dir)
+    if not routes:
+        return
+
+    for skill_md in sorted(root.glob("*/SKILL.md")):
+        name = read_skill_frontmatter(skill_md).get("name", "").strip()
+        if name in routes:
+            set_user_invocable_false(skill_md)
 
 
 def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str) -> None:
@@ -471,8 +561,11 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
             sanitize_root(staging, agent)
-            if agent == "claude":
-                rename_claude_skill_directories(staging)
+            if agent in {"claude", "cursor"}:
+                rename_colon_route_skill_directories(staging, host=agent)
+            if agent in {"cursor", "codex"}:
+                commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
+                suppress_command_stub_skills_from_picker(staging, commands_dir)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
         except Exception:

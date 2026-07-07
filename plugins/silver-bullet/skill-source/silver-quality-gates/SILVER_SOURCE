@@ -4,6 +4,7 @@ title: "Quality Gates"
 description: >
   This skill should be used for dual-mode: design-time checklist (pre-plan) or adversarial audit (pre-ship). Mode auto-detected from artifact state.
 version: 0.1.0
+user-invocable: false
 ---
 
 > **Recommended model:** Use the active host default. Quality gates are structured checklist evaluation, and Silver Bullet does not switch models automatically.

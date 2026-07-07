@@ -6,6 +6,7 @@ description: >
   merge/PR handoff, and cleanup safety.
 argument-hint: "create|finish <branch or scope>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:worktree - Isolated Branch Workspace

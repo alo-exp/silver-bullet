@@ -6,6 +6,7 @@ description: >
   search-readiness, migration, optimization, and article-writing workflows.
 argument-hint: "<content scope> [--mode audit|fix|migrate|optimize|write]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:content - Content And Search Workflow

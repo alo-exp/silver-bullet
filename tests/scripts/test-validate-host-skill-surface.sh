@@ -64,9 +64,9 @@ write_skill "$fixture_root/agents/claude" "silver" "silver"
 write_skill "$fixture_root/agents/claude" "silver:feature" "silver:feature"
 write_skill "$fixture_root/agents/claude" "modularity" "modularity" "false"
 write_skill "$fixture_root/host-bundles/codex" "silver" "silver"
-write_skill "$fixture_root/host-bundles/codex" "silver:feature" "silver:feature"
+write_skill "$fixture_root/host-bundles/codex" "silver:feature" "silver:feature" "false"
 write_skill "$fixture_root/host-bundles/cursor" "silver" "silver"
-write_skill "$fixture_root/host-bundles/cursor" "silver:feature" "silver:feature"
+write_skill "$fixture_root/host-bundles/cursor" "silver:feature" "silver:feature" "false"
 write_command "$fixture_root/plugins/silver-bullet/commands" "feature.md" "silver:feature"
 
 bad_prefix_root="$tmpdir/bad-prefix"
@@ -79,6 +79,10 @@ write_command "$dup_root/plugins/silver-bullet/commands" "feature.md" "silver:fe
 hyphen_root="$tmpdir/bad-hyphen"
 write_skill "$hyphen_root/agents/claude" "silver-feature" "silver:feature"
 
+overlap_root="$tmpdir/bad-overlap"
+write_skill "$overlap_root/host-bundles/cursor" "silver:feature" "silver:feature"
+write_command "$overlap_root/plugins/silver-bullet/commands" "feature.md" "silver:feature"
+
 echo "--- validate-host-skill-surface.sh (fixtures) ---"
 assert_pass "clean fixture passes" \
   bash "$SCRIPT" --repo-root "$fixture_root"
@@ -88,6 +92,8 @@ assert_fail "duplicate route names fail" \
   bash "$SCRIPT" --repo-root "$dup_root"
 assert_fail "claude hyphen directory fails" \
   bash "$SCRIPT" --repo-root "$hyphen_root"
+assert_fail "cursor command/skill overlap fails" \
+  bash "$SCRIPT" --repo-root "$overlap_root"
 
 echo "--- validate-host-skill-surface.sh (live repo) ---"
 assert_pass "live repo passes" \

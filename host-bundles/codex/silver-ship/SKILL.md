@@ -4,6 +4,7 @@ title: "Ship"
 description: "This skill performs SB phase shipping: final gates, branch/PR readiness, CI status, docs traceability, and handoff."
 argument-hint: "<phase or ship scope>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:ship - Phase Ship

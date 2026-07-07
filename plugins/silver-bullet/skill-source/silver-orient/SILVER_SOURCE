@@ -3,6 +3,7 @@ name: "silver:orient"
 title: "Orient"
 description: "DEPRECATED — use silver-scan for retrospective session scan or silver-context for phase context."
 version: 0.1.0
+user-invocable: false
 ---
 
 # silver:orient (deprecated alias)

@@ -3,6 +3,7 @@ name: "silver:add"
 title: "Add"
 description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github), local docs/issues/ markdown (when issue_tracker=local or absent), or a custom JSON adapter command (when issue_tracker=custom) — and return a stable, referenceable ID.
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:add — Classify and File Work Items

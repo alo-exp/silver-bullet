@@ -7,6 +7,7 @@ description: >
   approaches.
 argument-hint: "<benchmark task> [--providers <list>] [--rounds N]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:benchmark - Agent And Approach Evaluation
