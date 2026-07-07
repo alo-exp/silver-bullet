@@ -10,6 +10,7 @@ if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
 fi
 
 export SILVER_BULLET_TEST_HOOK_ENFORCED=1
+ORIGINAL_HOME="${HOME}"
 
 GATE_HOOK="$REPO_ROOT/hooks/leanctx-gate.sh"
 CURRENT_CONFIG_VERSION="$(jq -r '.config_version' "$REPO_ROOT/templates/silver-bullet.config.json.default")"
@@ -61,6 +62,13 @@ EOF
   export PATH="$MOCK_BIN:/usr/bin:/bin:/usr/sbin:/sbin"
 }
 
+isolate_home() {
+  TEST_HOME="$(mktemp -d)"
+  export HOME="$TEST_HOME" SILVER_BULLET_RUNTIME=cursor
+  export XDG_CONFIG_HOME="$TEST_HOME/.config"
+  export XDG_STATE_HOME="$TEST_HOME/.local/state"
+}
+
 wire_mcp() {
   TEST_HOME="$(mktemp -d)"
   mkdir -p "${TEST_HOME}/.cursor"
@@ -88,6 +96,8 @@ setup() {
   [[ -n "${TEST_HOME:-}" ]] && rm -rf "$TEST_HOME"
   TEST_HOME=""
   export PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+  export HOME="$ORIGINAL_HOME"
+  unset SB_LEANCTX_MCP_ARTIFACT 2>/dev/null || true
   mkdir -p "$(dirname "$TMPFILE")"
   touch "$TMPFILE"
   cat >"$TMPDIR_TEST/silver-bullet.md" <<'EOF'
@@ -127,6 +137,7 @@ run_edit() {
   input=$(jq -n --arg f "$TMPFILE" \
     '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"aaaaaaaaaa", new_string:"bbbbbbbbbb"}}')
   (cd "$TMPDIR_TEST" && export SILVER_BULLET_PROJECT_ROOT="$TMPDIR_TEST" \
+    HOME="${HOME:-${TEST_HOME:-$HOME}}" \
     SB_LEANCTX_MCP_ARTIFACT="${SB_LEANCTX_MCP_ARTIFACT:-}" \
     SILVER_BULLET_RUNTIME=cursor PATH="$PATH" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
 }
@@ -142,12 +153,14 @@ assert_allow "opted out allows edit" "$out"
 
 setup
 write_cfg true
+isolate_home
 out="$(run_edit)"
 assert_deny "opted in without CLI denies" "$out" "CLI not installed"
 
 setup
 write_cfg true
 install_mock_leanctx
+isolate_home
 out="$(run_edit)"
 assert_deny "opted in without MCP denies" "$out" "NOT WIRED"
 
