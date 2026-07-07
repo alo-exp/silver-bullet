@@ -19,7 +19,7 @@ Mode inclusion is defined in `phases.yaml` — not every mode runs every phase.
 
 ---
 
-## Phase 1: SCOPE - Research Framing
+## Phase 1 (DR-SCOPE): SCOPE — Research Framing
 
 **Objective:** Define research boundaries and success criteria
 
@@ -36,7 +36,7 @@ Mode inclusion is defined in `phases.yaml` — not every mode runs every phase.
 
 ---
 
-## Phase 2: PLAN - Strategy Formulation
+## Phase 2 (DR-PLAN): PLAN — Strategy Formulation
 
 **Objective:** Create an intelligent research roadmap
 
@@ -54,7 +54,7 @@ Mode inclusion is defined in `phases.yaml` — not every mode runs every phase.
 
 ---
 
-## Phase 3: RETRIEVE - Parallel Information Gathering
+## Phase 3 (DR-RETRIEVE): RETRIEVE — Parallel Information Gathering
 
 **Objective:** Systematically collect information from multiple sources using parallel execution for maximum speed
 
@@ -166,7 +166,7 @@ As results arrive:
 
 **Adaptive completion based on quality threshold:**
 
-**Quality gate:** Proceed to Phase 4 when FIRST threshold reached:
+**Quality gate:** Proceed to DR-TRIANGULATE (Phase 4) when FIRST threshold reached:
 - **Quick mode:** 10+ sources with avg credibility >60/100 OR 2 minutes elapsed
 - **Standard mode:** 15+ sources with avg credibility >60/100 OR 5 minutes elapsed
 - **Deep mode:** 25+ sources with avg credibility >70/100 OR 10 minutes elapsed
@@ -174,7 +174,7 @@ As results arrive:
 
 **Continue background searches:**
 - If threshold reached early, continue remaining parallel searches in background
-- Additional sources used in Phase 5 (SYNTHESIZE) for depth and diversity
+- Additional sources used in DR-SYNTHESIZE (Phase 6) for depth and diversity
 - Allows fast progression without sacrificing thoroughness
 
 ### Quality Standards
@@ -203,7 +203,7 @@ As results arrive:
 
 ---
 
-## Phase 4: TRIANGULATE - Cross-Reference Verification
+## Phase 4 (DR-TRIANGULATE): TRIANGULATE — Cross-Reference Verification
 
 **Objective:** Validate information across multiple independent sources
 
@@ -225,7 +225,7 @@ As results arrive:
 
 ---
 
-## Phase 4.5: OUTLINE REFINEMENT - Dynamic Evolution (WebWeaver 2025)
+## Phase 5 (DR-OUTLINE): OUTLINE — Evidence-Driven Refinement
 
 **Objective:** Adapt research direction based on evidence discovered
 
@@ -233,13 +233,13 @@ As results arrive:
 
 **When to Execute:**
 - **Standard/Deep/UltraDeep modes only** (Quick mode skips this)
-- After Phase 4 (TRIANGULATE) completes
-- Before Phase 5 (SYNTHESIZE)
+- After DR-TRIANGULATE (Phase 4) completes
+- Before DR-SYNTHESIZE (Phase 6)
 
 **Activities:**
 
 1. **Review Initial Scope vs. Actual Findings**
-   - Compare Phase 1 scope with Phase 3-4 discoveries
+   - Compare DR-SCOPE findings with DR-RETRIEVE and DR-TRIANGULATE discoveries
    - Identify unexpected patterns or contradictions
    - Note underexplored angles that emerged as critical
    - Flag overexplored areas that proved less important
@@ -274,7 +274,7 @@ As results arrive:
    3. Performance Benchmarks
    4. Conclusion
 
-   Refined after Phase 4 (evidence revealed security as critical):
+   Refined after DR-TRIANGULATE (evidence revealed security as critical):
    1. Introduction
    2. Technical Architecture
    3. **Security Vulnerabilities (NEW - major finding)**
@@ -316,7 +316,7 @@ As results arrive:
 
 ---
 
-## Phase 5: SYNTHESIZE - Deep Analysis
+## Phase 6 (DR-SYNTHESIZE): SYNTHESIZE — Deep Analysis
 
 **Objective:** Connect insights and generate novel understanding
 
@@ -334,7 +334,7 @@ As results arrive:
 
 ---
 
-## Phase 6: CRITIQUE - Quality Assurance
+## Phase 7 (DR-CRITIQUE): CRITIQUE — Adversarial Review
 
 **Objective:** Rigorously evaluate research quality
 
@@ -360,13 +360,13 @@ Simulate 2-3 specific critic personas relevant to the topic:
 - "Implementation Engineer" — Can these recommendations actually be executed?
 
 **Critical Gap Loop-Back:**
-If critique identifies a critical knowledge gap (not just a writing issue), return to Phase 3 with targeted "delta-queries" before proceeding to Phase 7. Time-box to 3-5 minutes. This prevents publishing reports with known blind spots.
+If critique identifies a critical knowledge gap (not just a writing issue), return to DR-RETRIEVE (Phase 3) with targeted "delta-queries" before proceeding to DR-REFINE (Phase 8). Time-box to 3-5 minutes. This prevents publishing reports with known blind spots.
 
 **Output:** Critique report with improvement recommendations
 
 ---
 
-## Phase 7: REFINE - Iterative Improvement
+## Phase 8 (DR-REFINE): REFINE — Verify and Refresh
 
 **Objective:** Address gaps and strengthen weak areas
 
@@ -382,7 +382,7 @@ If critique identifies a critical knowledge gap (not just a writing issue), retu
 
 ---
 
-## Phase 8: PACKAGE - Report Generation
+## Phase 9 (DR-PACKAGE): PACKAGE — Report Generation
 
 **Objective:** Deliver professional, actionable research
 
