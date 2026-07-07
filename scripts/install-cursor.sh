@@ -181,6 +181,45 @@ ensure_cursor_github_marketplace_gitpath() {
   git -C "$dest_root" checkout -f "$commit_sha" >/dev/null
 }
 
+resolve_remote_github_head_sha() {
+  git ls-remote "$CURSOR_GITHUB_REPO_URL" HEAD 2>/dev/null | awk 'NR==1 {print $1}'
+}
+
+cursor_marketplace_plugin_cache_root() {
+  printf '%s/plugins/cache/%s/silver-bullet\n' "$CURSOR_HOME" "$CURSOR_MARKETPLACE_NAME"
+}
+
+ensure_cursor_marketplace_plugin_cache_symlink() {
+  local dest="$1"
+  local commit_sha="$2"
+  local cache_root link_path
+
+  [[ -n "$commit_sha" ]] || return 0
+
+  cache_root="$(cursor_marketplace_plugin_cache_root)"
+  link_path="${cache_root}/${commit_sha}"
+  mkdir -p "$cache_root"
+  ln -sfn "$dest" "$link_path"
+}
+
+seed_cursor_marketplace_gitpaths() {
+  local dest="$1"
+  local primary_sha="$2"
+  local source_root="$3"
+  local remote_sha=""
+
+  [[ -n "$primary_sha" ]] || return 0
+
+  ensure_cursor_github_marketplace_gitpath "$primary_sha" "$source_root"
+  ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$primary_sha"
+
+  remote_sha="$(resolve_remote_github_head_sha)"
+  if [[ -n "$remote_sha" && "$remote_sha" != "$primary_sha" ]]; then
+    ensure_cursor_github_marketplace_gitpath "$remote_sha" "$source_root"
+    ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$remote_sha"
+  fi
+}
+
 ensure_cursor_installed_plugins_registry() {
   local dest="$1"
   local version="$2"
@@ -224,17 +263,16 @@ if commit_sha:
     entry["gitCommitSha"] = commit_sha
 
 existing = plugins.get(plugin_id)
-if isinstance(existing, list):
-    if existing:
-        existing[0].update(entry)
-    else:
-        plugins[plugin_id] = [entry]
-elif isinstance(existing, dict):
-    existing.update(entry)
+if isinstance(existing, list) and existing:
+    existing[0].update(entry)
     plugins[plugin_id] = existing
+elif isinstance(existing, dict):
+    entry = {**existing, **entry}
+    plugins[plugin_id] = [entry]
 else:
-    plugins[plugin_id] = entry
+    plugins[plugin_id] = [entry]
 
+data["version"] = 2
 registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 }
@@ -249,7 +287,7 @@ sync_plugin_tree() {
     --dest-root "$(sb_agent_bundle_root "$REPO_ROOT" cursor)" >/dev/null 2>&1 || true
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
   dest="$(sync_plugin_tree_from_checkout "$REPO_ROOT" "$VERSION")"
-  ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
+  seed_cursor_marketplace_gitpaths "$dest" "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
   printf '%s\n' "$dest"
 }
 
@@ -275,7 +313,7 @@ sync_plugin_tree_from_public_release() {
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$checkout_dir")"
   VERSION="$release_version"
   DEST_ROOT="$(sync_plugin_tree_from_checkout "$checkout_dir" "$release_version")"
-  ensure_cursor_github_marketplace_gitpath "$INSTALL_COMMIT_SHA" "$checkout_dir"
+  seed_cursor_marketplace_gitpaths "$DEST_ROOT" "$INSTALL_COMMIT_SHA" "$checkout_dir"
   rm -rf -- "$checkout_dir"
 }
 

@@ -25,6 +25,28 @@ requested_version="${1:-}"
 
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
 
+
+resolve_release_commit_sha() {
+  local version="$1"
+  git -C "$repo_root" rev-parse "v${version}^{commit}" 2>/dev/null     || git -C "$repo_root" rev-parse "v${version}" 2>/dev/null     || git -C "$repo_root" rev-parse HEAD
+}
+
+update_marketplace_plugin_source() {
+  local manifest="$1"
+  local version="$2"
+  local release_sha
+  release_sha="$(resolve_release_commit_sha "$version")"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg v "$version" --arg ref "v$version" --arg sha "$release_sha" '
+    (.plugins[] | select(.name=="silver-bullet") | .version) = $v
+    | (.plugins[] | select(.name=="silver-bullet") | .source.ref) = $ref
+    | (.plugins[] | select(.name=="silver-bullet") | .source.sha) = $sha
+  ' "$manifest" > "$tmp"
+  mv "$tmp" "$manifest"
+  rm -f -- "$tmp"
+}
+
 current_plugin_v=$(jq -r '.version' "$plugin_json")
 if [[ -n "$requested_version" ]]; then
   plugin_v="${requested_version#v}"
@@ -38,13 +60,10 @@ fi
 market_v=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$marketplace_json")
 
 if [[ "$plugin_v" == "$market_v" ]]; then
+  update_marketplace_plugin_source "$marketplace_json" "$plugin_v"
   echo "✓ Versions already in sync: $plugin_v"
 else
-  tmp=$(mktemp)
-  jq --arg v "$plugin_v" '(.plugins[] | select(.name=="silver-bullet") | .version) = $v' \
-    "$marketplace_json" > "$tmp"
-  mv "$tmp" "$marketplace_json"
-  rm -f -- "$tmp"
+  update_marketplace_plugin_source "$marketplace_json" "$plugin_v"
   echo "✓ Updated in-repo marketplace.json: $market_v → $plugin_v"
 fi
 
@@ -81,11 +100,7 @@ sync_marketplace_repo() {
 
   remote_before=$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest")
   if [[ "$remote_before" != "$version" ]]; then
-    tmp=$(mktemp)
-    jq --arg v "$version" '(.plugins[] | select(.name=="silver-bullet") | .version) = $v' \
-      "$manifest" > "$tmp"
-    mv "$tmp" "$manifest"
-    rm -f -- "$tmp"
+    update_marketplace_plugin_source "$manifest" "$version"
   fi
 
   if git -C "$root" diff --quiet -- .cursor-plugin/marketplace.json; then
