@@ -381,6 +381,46 @@
         }
       },
       "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
+    },
+    "leanctx": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "cli_command": "lean-ctx",
+      "install_commands": [
+        "curl -fsSL https://leanctx.com/install.sh | sh"
+      ],
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "$HOME/.codex/.silver-bullet/leanctx-usage",
+      "stack_mode": "parallel_routed",
+      "optimization_profile": "five_tool_routed",
+      "primary_fts": "context_mode",
+      "mcp_server_name": "leanctx",
+      "mcp_tool_prefix": "lctx_",
+      "exclusive_surfaces": {
+        "wire_proxy": true,
+        "read_ast": true,
+        "pathjail": true,
+        "savings_ledger": true,
+        "injection_detection": true
+      },
+      "platform_install_commands": {
+        "cursor": [
+          "bash scripts/install-leanctx-sb.sh --host cursor"
+        ],
+        "claude": [
+          "bash scripts/install-leanctx-sb.sh --host claude"
+        ],
+        "codex": [
+          "bash scripts/install-leanctx-sb.sh --host codex"
+        ],
+        "opencode": [
+          "bash scripts/install-leanctx-sb.sh --host opencode"
+        ]
+      },
+      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
     }
   },
   "hooks": {
@@ -458,6 +498,23 @@
         "auto_compress": false,
         "bridge_enabled": false,
         "server_persistence": "nohup"
+      }
+    },
+    "five_tool_routed": {
+      "extends": "synergy_max",
+      "stack_mode": "parallel_routed",
+      "primary_fts": "context_mode",
+      "routes": {
+        "sb_wire": "leanctx",
+        "sb_read": "leanctx",
+        "sb_grep": "context_mode",
+        "sb_shell": "rtk",
+        "sb_slice": "context_mode",
+        "sb_webfetch": "context_mode",
+        "sb_graph": "graphify",
+        "sb_remember": "agentmemory",
+        "sb_pathjail": "leanctx",
+        "sb_injection": "leanctx"
       }
     }
   },
