@@ -19,6 +19,48 @@ INSTALL_COMMIT_SHA=""
 MERGE_HOOKS="${REPO_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py"
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
+cursor_install_current_link() {
+  printf '%s/plugins/cache/alo-labs/silver-bullet/current' "$CURSOR_HOME"
+}
+
+# Never treat the `current` symlink path as the install root — resolve to the versioned dir.
+resolve_cursor_install_dest() {
+  local candidate="${1:-}"
+  local current_link resolved
+
+  current_link="$(cursor_install_current_link)"
+
+  if [[ -z "$candidate" ]]; then
+    candidate="$current_link"
+  fi
+
+  if [[ "$candidate" == "$current_link" || "$(basename "$candidate")" == "current" ]]; then
+    if [[ -L "$current_link" ]]; then
+      resolved="$(cd "$current_link" 2>/dev/null && pwd -P || true)"
+      if [[ -n "$resolved" && -d "$resolved" ]]; then
+        printf '%s\n' "$resolved"
+        return 0
+      fi
+    elif [[ -d "$current_link" ]]; then
+      resolved="$(cd "$current_link" && pwd -P)"
+      printf '%s\n' "$resolved"
+      return 0
+    fi
+    candidate="$(find "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet" -maxdepth 1 -type d -name '[0-9]*.[0-9]*' 2>/dev/null | sort -V | tail -1)"
+  fi
+
+  if [[ -n "$candidate" && -d "$candidate" ]]; then
+    (cd "$candidate" && pwd -P)
+  fi
+}
+
+cursor_plugin_commands_src() {
+  local source_root="$1"
+  if [[ -d "${source_root}/plugins/silver-bullet/commands" ]]; then
+    printf '%s/plugins/silver-bullet/commands\n' "$source_root"
+  fi
+}
+
 usage() {
   cat <<'USAGE'
 Usage: scripts/install-cursor.sh [--merge-hooks-only] [--public-release]
@@ -78,6 +120,14 @@ sync_plugin_tree_from_checkout() {
     mkdir -p "${dest}/agents/cursor"
     rsync -a --delete "${cursor_bundle}/" "${dest}/agents/cursor/"
   fi
+  local commands_src
+  commands_src="$(cursor_plugin_commands_src "$source_root" || true)"
+  if [[ -n "$commands_src" ]]; then
+    mkdir -p "${dest}/commands"
+    rsync -a --delete "${commands_src}/" "${dest}/commands/"
+  else
+    rm -rf "${dest}/commands"
+  fi
   python3 "${source_root}/hooks/generate-cursor-hooks.py" >/dev/null
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
   install_cursor_plugin_manifest "$dest" "$version" "$source_root"
@@ -99,11 +149,21 @@ install_cursor_plugin_manifest() {
   }
 
   tmp="$(mktemp)"
-  jq --arg v "$version" '
-    .version = $v
-    | .skills = "./agents/cursor"
-    | .hooks = "./cursor-hooks.json"
-  ' "$manifest_src" > "$tmp"
+  if [[ -d "${dest}/commands" ]]; then
+    jq --arg v "$version" '
+      .version = $v
+      | .skills = "./agents/cursor"
+      | .hooks = "./cursor-hooks.json"
+      | .commands = "./commands"
+    ' "$manifest_src" > "$tmp"
+  else
+    jq --arg v "$version" '
+      .version = $v
+      | .skills = "./agents/cursor"
+      | .hooks = "./cursor-hooks.json"
+      | del(.commands)
+    ' "$manifest_src" > "$tmp"
+  fi
   install -m 644 "$tmp" "${dest}/.cursor-plugin/plugin.json"
   rm -f -- "$tmp"
   install -m 644 "${dest}/hooks/cursor-hooks.json" "${dest}/cursor-hooks.json"
@@ -334,15 +394,16 @@ if [[ "$MERGE_ONLY" -eq 0 ]]; then
     DEST_ROOT="$(sync_plugin_tree)"
   fi
 else
-  DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
-  if [[ ! -d "$DEST_ROOT" ]]; then
-    printf 'ERROR: no installed Cursor plugin at %s; run without --merge-hooks-only first\n' "$DEST_ROOT" >&2
+  DEST_ROOT="$(resolve_cursor_install_dest "$(cursor_install_current_link)")"
+  if [[ -z "$DEST_ROOT" || ! -d "$DEST_ROOT" ]]; then
+    printf 'ERROR: no installed Cursor plugin at %s; run without --merge-hooks-only first\n' "$(cursor_install_current_link)" >&2
     exit 1
   fi
 fi
 
+DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
-ln -sfn "$DEST_ROOT" "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
+ln -sfn "$DEST_ROOT" "$(cursor_install_current_link)"
 if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/dev/null 2>&1; then
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
 fi
