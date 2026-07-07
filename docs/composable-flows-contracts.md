@@ -65,7 +65,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-UI-QUALITY` | ui_quality_review | `templates/orchestrator-workers/UI-QUALITY.md` | `silver-ui`, `silver-ui-review`, `usability` |
 | `AF-REVIEW-REQUEST` | review_request | `templates/orchestrator-workers/REVIEW-REQUEST.md` | `silver-review-request` |
 | `AF-REVIEW` | artifact_and_code_review | `templates/orchestrator-workers/REVIEW.md` | `artifact-reviewer`, `artifact-review-assessor`, `review-cross-artifact`, `review-roadmap` |
-| `AF-REVIEW-TRIAGE` | review_triage_and_fix | `templates/orchestrator-workers/REVIEW-TRIAGE.md` | `silver-review-fix-ladder`, `silver-review-triage` |
+| `AF-REVIEW-TRIAGE` | review_triage_and_fix | `templates/orchestrator-workers/REVIEW-TRIAGE.md` | `silver-review-fix-ladder`, `silver-review-triage`, `silver-triage` |
 | `AF-VERIFY` | verification_and_testing | `templates/orchestrator-workers/VERIFY.md` | `review-verification`, `silver-test`, `silver-verify`, `testability` |
 | `AF-SECURE` | security_and_llm_safety | `templates/orchestrator-workers/SECURE.md` | `ai-llm-safety`, `security`, `silver-secure` |
 | `AF-QUALITY-GATE` | cross_cutting_quality_gate | `templates/orchestrator-workers/QUALITY-GATE.md` | `devops-quality-gates`, `extensibility`, `modularity`, `reliability` |
@@ -421,6 +421,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-secure` | `AF-SECURE` |
 | `silver-ship` | `AF-SHIP` |
 | `silver-spec` | `AF-SPECIFY` |
+| `silver-triage` | `AF-REVIEW-TRIAGE` |
 | `silver-ui-contract` | `AF-DESIGN-CONTRACT` |
 | `silver-ui-review` | `AF-UI-QUALITY` |
 | `silver-validate` | `AF-VALIDATE` |
@@ -516,6 +517,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_REVIEW_REQUEST` | `silver-review-request` | `AF-REVIEW-REQUEST` | `EV-FS-SILVER_REVIEW_REQUEST` |
 | `FS-SILVER_REVIEW_STATS` | `silver-review-stats` | `AF-ORIENT` | `EV-FS-SILVER_REVIEW_STATS` |
 | `FS-SILVER_REVIEW_TRIAGE` | `silver-review-triage` | `AF-REVIEW-TRIAGE` | `EV-FS-SILVER_REVIEW_TRIAGE` |
+| `FS-SILVER_TRIAGE` | `silver-triage` | `AF-REVIEW-TRIAGE` | `EV-FS-SILVER_TRIAGE` |
 | `FS-SILVER_SCAN` | `silver-scan` | `AF-ORIENT` | `EV-FS-SILVER_SCAN` |
 | `FS-SILVER_SECURE` | `silver-secure` | `AF-SECURE` | `EV-FS-SILVER_SECURE` |
 | `FS-SILVER_SHIP` | `silver-ship` | `AF-SHIP` | `EV-FS-SILVER_SHIP` |
@@ -637,6 +639,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-spike` | `AF-EXECUTE` |
 | `silver-test` | `AF-VERIFY` |
 | `silver-thread` | `AF-PHASE-MANAGE` |
+| `silver-triage` | `AF-REVIEW-TRIAGE` |
 | `silver-ui` | `AF-UI-QUALITY` |
 | `silver-ui-contract` | `AF-DESIGN-CONTRACT` |
 | `silver-ui-review` | `AF-UI-QUALITY` |

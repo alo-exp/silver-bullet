@@ -67,6 +67,13 @@ merged="$(jq \
       else ($e.issue_tracker // $t.issue_tracker)
       end
     )
+  | .issue_tracker_adapter = (
+      if ($e.issue_tracker_adapter // null) != null then
+        ($t.issue_tracker_adapter // {}) * $e.issue_tracker_adapter
+      else
+        $t.issue_tracker_adapter
+      end
+    )
   | .sb_enforcement_tier = ($e.sb_enforcement_tier // $t.sb_enforcement_tier)
   | .verify_commands = ($e.verify_commands // null)
   | .config_version = $ver
