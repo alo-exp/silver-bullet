@@ -261,6 +261,7 @@ run_automated_smoke() {
   assert_output_contains "skill body documents scope resolution" "$invoke_out" "Resolve Scope"
   assert_output_contains "skill body documents resolver command" "$invoke_out" "review-fix-ladder\\.py --json"
   assert_output_contains "skill body documents charter derivation" "$invoke_out" "Derive Review Charter"
+  assert_output_contains "skill body documents triage state" "$invoke_out" "rung_N_triage|/silver:triage"
   assert_output_contains "charter names divide() zero goal" "$(cat "${work_dir}/CHARTER.md")" "divide\\(\\)"
 
   printf 'Automated phase complete (host=%s, rungs=%s)\n' \
@@ -276,8 +277,12 @@ run_live_agent_smoke() {
     return 0
   fi
   if [[ -z "$runtime" ]]; then
-    fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
-    return 0
+    if [[ "${CURSOR_AGENT:-}" == "1" || "${SILVER_BULLET_RUNTIME:-}" == "cursor" ]]; then
+      runtime="cursor"
+    else
+      fail "live agent phase requires SB_LIVE_RUNTIME or SB_LIVE_AGENT"
+      return 0
+    fi
   fi
 
   export SB_LIVE_AGENT="$runtime"
@@ -297,6 +302,9 @@ run_live_agent_smoke() {
       ;;
     claude)
       SILVER_BULLET_RUNTIME="claude"
+      ;;
+    cursor)
+      SILVER_BULLET_RUNTIME="cursor"
       ;;
     *)
       fail "unsupported live runtime: $runtime"
@@ -328,6 +336,9 @@ run_live_agent_smoke() {
   case "$runtime" in
     codex|kay)
       prompt="Run exactly this command as your first and only non-hook command: \`silver-bullet invoke-skill silver-review-fix-ladder smoke-target.py\`. After the adapter prints the skill, read only smoke-target.py and CHARTER.md. Reply with one sentence naming the divide() defect from the charter. Do not edit files, run tests, or invoke additional commands."
+      ;;
+    cursor)
+      prompt="Use /silver:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
       ;;
     *)
       prompt="Use /silver:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
