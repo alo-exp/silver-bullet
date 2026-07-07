@@ -115,6 +115,10 @@ refresh_marketplace() {
   local upstream_ref
   marketplace_root="$(codex_marketplace_root)"
 
+  if [[ "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$marketplace_root")" == "$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$REPO_ROOT")" ]]; then
+    return 0
+  fi
+
   if [[ -d "${marketplace_root}/.git" ]]; then
     git -C "$marketplace_root" fetch --all --prune >/dev/null 2>&1 || true
     upstream_ref="$(git -C "$marketplace_root" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"

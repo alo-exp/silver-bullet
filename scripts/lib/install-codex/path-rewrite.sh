@@ -20,7 +20,9 @@ marketplace_root = pathlib.Path(sys.argv[1])
 package_root = pathlib.Path(sys.argv[2])
 cache_roots = [pathlib.Path(arg) for arg in sys.argv[3:] if arg]
 
-targets = [marketplace_root, package_root]
+canonical_hooks_path = marketplace_root / "hooks" / "hooks.json"
+
+install_targets = [package_root]
 for cache_root in cache_roots:
     package_cache_root = cache_root / "alo-labs-codex" / "silver-bullet"
     if not package_cache_root.exists():
@@ -28,26 +30,33 @@ for cache_root in cache_roots:
     for version_dir in package_cache_root.iterdir():
         if version_dir.name == "current" or not version_dir.is_dir():
             continue
-        targets.append(version_dir)
+        install_targets.append(version_dir)
+
+path_rewrite_roots = [marketplace_root, package_root]
+path_rewrite_roots.extend(install_targets)
 
 path_segment_re = re.compile(r'/\.claude(?=/|$)')
 home_claude_replacements = (
-    ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
-    ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),
-    ("os.homedir() + '/.claude'", "os.homedir() + '/.codex'"),
-    ('os.homedir() + "/.claude"', 'os.homedir() + "/.codex"'),
+    ("os.homedir(), '.codex'", "os.homedir(), '.codex'"),
+    ('os.homedir(), ".codex"', 'os.homedir(), ".codex"'),
+    ("os.homedir() + '/.codex'", "os.homedir() + '/.codex'"),
+    ('os.homedir() + "/.codex"', 'os.homedir() + "/.codex"'),
 )
 
-def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
+
+def rewrite_hook_manifest(file_path, source_text=None):
+    if file_path.resolve() == canonical_hooks_path.resolve():
+        return False
+
     try:
-        data = json.loads(file_path.read_text())
+        data = json.loads(source_text if source_text is not None else file_path.read_text())
     except Exception:
         return False
 
     if not isinstance(data, dict) or "hooks" not in data:
         return False
 
-    changed = False
+    changed = source_text is not None
     adapter_path = str(package_root / "hooks" / "codex-hook-adapter.sh")
 
     def rewrite_value(value):
@@ -57,11 +66,11 @@ def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
             if file_path.name == "hooks.json":
                 for src, dst in home_claude_replacements:
                     updated = updated.replace(src, dst)
-                updated = updated.replace("\\.claude/", "\\.codex/")
-                updated = updated.replace(".claude/", ".codex/")
+                updated = updated.replace("\\.codex/", "\\.codex/")
+                updated = updated.replace(".codex/", ".codex/")
                 updated = updated.replace("~/\\.claude", "~/.codex")
-                updated = updated.replace("$HOME/.claude", "$HOME/.codex")
-                updated = updated.replace("${HOME}/.claude", "${HOME}/.codex")
+                updated = updated.replace("$HOME/.codex", "$HOME/.codex")
+                updated = updated.replace("${HOME}/.codex", "${HOME}/.codex")
                 updated = path_segment_re.sub("/.codex", updated)
             if updated != value:
                 changed = True
@@ -158,21 +167,16 @@ def rewrite_hook_manifest(file_path: pathlib.Path) -> bool:
         file_path.write_text(json.dumps(updated, indent=2) + "\n")
     return changed
 
-path_segment_re = re.compile(r'/\.claude(?=/|$)')
-home_claude_replacements = (
-    ("os.homedir(), '.claude'", "os.homedir(), '.codex'"),
-    ('os.homedir(), ".claude"', 'os.homedir(), ".codex"'),
-    ("os.homedir() + '/.claude'", "os.homedir() + '/.codex'"),
-    ('os.homedir() + "/.claude"', 'os.homedir() + "/.codex"'),
-)
 
-for root in targets:
+for root in path_rewrite_roots:
     for file_path in root.rglob("*"):
         if not file_path.is_file() or file_path.is_symlink():
             continue
         if ".git" in file_path.parts:
             continue
         if file_path.name == "runtime-paths.sh" and "hooks" in file_path.parts:
+            continue
+        if file_path.name == "hooks.json":
             continue
         try:
             text = file_path.read_text()
@@ -181,17 +185,14 @@ for root in targets:
         except Exception:
             continue
 
-        if file_path.name == "hooks.json" and rewrite_hook_manifest(file_path):
-            continue
-
         updated = text
         for src, dst in home_claude_replacements:
             updated = updated.replace(src, dst)
-        updated = updated.replace("\\.claude/", "\\.codex/")
-        updated = updated.replace(".claude/", ".codex/")
+        updated = updated.replace("\\.codex/", "\\.codex/")
+        updated = updated.replace(".codex/", ".codex/")
         updated = updated.replace("~/\\.claude", "~/.codex")
-        updated = updated.replace("$HOME/.claude", "$HOME/.codex")
-        updated = updated.replace("${HOME}/.claude", "${HOME}/.codex")
+        updated = updated.replace("$HOME/.codex", "$HOME/.codex")
+        updated = updated.replace("${HOME}/.codex", "${HOME}/.codex")
         updated = path_segment_re.sub("/.codex", updated)
         home = os.path.expanduser("~")
         if home:
@@ -201,20 +202,18 @@ for root in targets:
         if updated != text:
             file_path.write_text(updated)
 
-canonical_hooks_path = marketplace_root / "hooks" / "hooks.json"
 if canonical_hooks_path.is_file():
     try:
         canonical_hooks_text = canonical_hooks_path.read_text()
     except Exception:
         canonical_hooks_text = ""
     if canonical_hooks_text:
-        for root in targets:
+        for root in install_targets:
             hooks_path = root / "hooks" / "hooks.json"
-            if not hooks_path.is_file() or hooks_path == canonical_hooks_path:
+            if hooks_path.resolve() == canonical_hooks_path.resolve():
                 continue
-            if hooks_path.read_text() != canonical_hooks_text:
-                hooks_path.write_text(canonical_hooks_text)
+            hooks_path.parent.mkdir(parents=True, exist_ok=True)
+            rewrite_hook_manifest(hooks_path, canonical_hooks_text)
 PY
 }
-
 
