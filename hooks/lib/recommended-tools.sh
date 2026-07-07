@@ -205,7 +205,7 @@ sb_recommended_tool_platform_pre_index_commands() {
         printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
         ;;
       codex)
-        printf '%s\n' 'Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md'
+        printf '%s\n' 'Merge context-mode blocks into Codex config.toml and hooks.json per docs/CONTEXT-MODE.md'
         ;;
     esac
   elif [[ "$tool_id" == "leanctx" ]]; then

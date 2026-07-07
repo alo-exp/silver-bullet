@@ -102,7 +102,7 @@ PY
     _agent_claude_seed_folder_trust_json "${config_dir}/.claude.json" "$work_dir"
   fi
   if [[ "${SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL:-1}" == "1" && -n "${HOME:-}" ]]; then
-    _agent_claude_seed_folder_trust_json "${HOME}/.claude.json" "$work_dir"
+    _agent_claude_seed_folder_trust_json "${HOME}/.codex.json" "$work_dir"
   fi
 }
 

@@ -62,7 +62,7 @@ for agent in "${AGENTS[@]}"; do
     skill="silver-${comp}"
     canonical="${REPO_ROOT}/skills/${skill}/SKILL.md"
     bundle_dir="${skill}"
-    if [[ "$agent" == "claude" ]]; then
+    if [[ "$agent" == "claude" || "$agent" == "cursor" ]]; then
       bundle_dir="silver:${comp}"
     fi
     rendered="${dest}/${bundle_dir}/SKILL.md"

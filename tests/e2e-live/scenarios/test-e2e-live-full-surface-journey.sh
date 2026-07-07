@@ -272,7 +272,7 @@ resolve_silver_skill_path() {
   fi
 
   # Deterministic fallback for local dev runs when registry metadata is missing.
-  printf '%s\n' "/Users/shafqat/.codex/skills/silver/SKILL.md"
+  printf '%s\n' "$HOME/.codex/skills/silver/SKILL.md"
 }
 
 assert_no_local_skill_source_bypass() {
@@ -1095,19 +1095,19 @@ journey_turn "silver:release" "finish the release workflow" "no" "release turn r
 
 if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   release_artifacts_status=""
-  if release_artifacts_status="$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .claude/settings.local.json 2>/dev/null)"; then
+  if release_artifacts_status="$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .codex/settings.local.json 2>/dev/null)"; then
     :
   else
     release_artifacts_status=""
   fi
   if [[ -n "$release_artifacts_status" ]]; then
-    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .claude/settings.local.json >/dev/null 2>&1 || true
+    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .codex/settings.local.json >/dev/null 2>&1 || true
   fi
 
   release_status=""
   if release_status="$(
     git -C "$RELEASE_WORK_DIR" status --short 2>/dev/null \
-      | grep -Ev '^\?\? coverage-ledger\.md$|^\?\? \.claude/settings\.local\.json$' \
+      | grep -Ev '^\?\? coverage-ledger\.md$|^\?\? \.codex/settings\.local\.json$' \
       || true
   )"; then
     :
@@ -1160,8 +1160,8 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
     FAIL=$((FAIL + 1))
   fi
 
-  if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .claude/settings.local.json 2>/dev/null)" ]]; then
-    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .claude/settings.local.json >/dev/null 2>&1 || true
+  if [[ -n "$(git -C "$RELEASE_WORK_DIR" status --short -- coverage-ledger.md .codex/settings.local.json 2>/dev/null)" ]]; then
+    git -C "$RELEASE_WORK_DIR" stash push --include-untracked -m "post-release-cleanup harness artifacts" -- coverage-ledger.md .codex/settings.local.json >/dev/null 2>&1 || true
     echo "PASS: coverage ledger preserved outside the release workspace"
   else
     echo "PASS: coverage ledger already clean after release"

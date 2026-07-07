@@ -116,7 +116,7 @@ All files use same base name:
 - `research_report_20251104_topic_slug.html`
 - `research_report_20251104_topic_slug.pdf`
 
-**3. Also save copy to:** `$HOME/.cursor/research_output/` (internal tracking)
+**3. Also save copy to:** `.codex/research_output/` (internal tracking on Codex; optional elsewhere)
 
 ---
 

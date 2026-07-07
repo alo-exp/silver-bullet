@@ -104,6 +104,7 @@ prune_legacy_silver_bullet_picker_surfaces
 if [[ "$PURGE_LEGACY_SKILLS" -eq 1 ]]; then
   purge_legacy_silver_bullet_standalone_skills
 fi
+sync_silver_bullet_skill_cache
 sync_silver_bullet_native_codex_skill_mirror
 install_silver_bullet_codex_cli
 rewrite_codex_bundle_host_paths
@@ -130,7 +131,6 @@ if [[ -n "$SB_PROJECT_ROOT" ]]; then
   seed_silver_bullet_hook_trust_state
 fi
 
-sync_silver_bullet_skill_cache
 scrub_legacy_silver_bullet_traces
 
 if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then

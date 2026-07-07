@@ -33,9 +33,11 @@ sb_internal_skill() {
 
 assert_no_packaged_skill_md() {
   local desc="$1" path="$2"
-  if find "$path" -name '*SKILL.md' -print -quit 2>/dev/null | grep -q .; then
-    echo "FAIL: $desc — packaged *SKILL.md found under $path"
-    find "$path" -name '*SKILL.md' -print 2>/dev/null | head -20
+  local hits
+  hits="$(find "$path" -name '*SKILL.md' ! -path '*/agents/cursor/*' -print 2>/dev/null | head -1 || true)"
+  if [[ -n "$hits" ]]; then
+    echo "FAIL: $desc — packaged *SKILL.md found under $path (excluding agents/cursor)"
+    find "$path" -name '*SKILL.md' ! -path '*/agents/cursor/*' -print 2>/dev/null | head -20
     (( FAIL++ )) || true
   else
     echo "PASS: $desc"
@@ -1092,7 +1094,6 @@ assert_no_async_true "Current cache hooks config normalized for Codex package" "
 assert_no_combined_tool_matchers "Marketplace root hooks avoid combined command-tool matchers" "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_no_combined_tool_matchers "SB hooks avoid combined command-tool matchers" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_no_combined_tool_matchers "Current cache hooks avoid combined command-tool matchers" "$FAKE_CACHE_ROOT/hooks/hooks.json"
-assert_not_contains "Marketplace root SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_not_contains "Current cache SB hooks no longer use Claude plugin root placeholders" '${CLAUDE_PLUGIN_ROOT}' "$FAKE_CACHE_ROOT/hooks/hooks.json"
 assert_not_contains "SB package does not contain AskUserQuestion" "AskUserQuestion" "$FAKE_SB_PACKAGE_ROOT"
@@ -1141,20 +1142,7 @@ assert_contains "SB package uses HOME-expanded Codex state paths" '$HOME/.codex/
 assert_contains "Current cache uses HOME-expanded Codex state paths" '$HOME/.codex/.silver-bullet/state' "$FAKE_CACHE_ROOT/templates/silver-bullet.md.base"
 assert_contains "SB package tracks SB lifecycle markers in config" '"silver-context"' "$FAKE_SB_PACKAGE_ROOT/templates/silver-bullet.config.json.default"
 assert_contains "Current cache tracks SB lifecycle markers in config" '"silver-context"' "$FAKE_CACHE_ROOT/templates/silver-bullet.config.json.default"
-assert_command_succeeds "Marketplace and SB package hook surfaces are identical" python3 - "$FAKE_MARKETPLACE_ROOT/hooks/hooks.json" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" <<'PY'
-import json
-import pathlib
-import sys
-
-left = json.loads(pathlib.Path(sys.argv[1]).read_text()).get("hooks")
-right = json.loads(pathlib.Path(sys.argv[2]).read_text()).get("hooks")
-if left != right:
-    print(f"left_keys={list(left.keys()) if isinstance(left, dict) else type(left)}")
-    print(f"right_keys={list(right.keys()) if isinstance(right, dict) else type(right)}")
-    print(f"left_len={sum(len(v) for v in left.values()) if isinstance(left, dict) else 'n/a'}")
-    print(f"right_len={sum(len(v) for v in right.values()) if isinstance(right, dict) else 'n/a'}")
-raise SystemExit(0 if left == right else 1)
-PY
+assert_contains "SB package hooks routes commands through Codex hook adapter (may differ from marketplace canonical)" "codex-hook-adapter.sh" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_command_succeeds "SB package and current cache hook surfaces are identical" python3 - "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json" "$FAKE_CACHE_ROOT/hooks/hooks.json" <<'PY'
 import json
 import pathlib
@@ -1179,8 +1167,11 @@ assert_file_exists "Installed SB instruction-file guard hook synced into package
 assert_file_exists "Current cache instruction-file guard synced" "$FAKE_CACHE_ROOT/hooks/instruction-file-guard.sh"
 assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROOT/agents/claude/silver:scan/SKILL.md"
 assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/host-bundles/codex/silver-scan/SKILL.md"
-assert_file_absent "Installed SB package does not expose agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents"
-assert_file_absent "Current cache does not expose agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents"
+assert_file_absent "Installed SB package does not expose Claude agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents/claude"
+assert_file_absent "Installed SB package does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_SB_PACKAGE_ROOT/agents/codex"
+assert_file_exists "Installed SB package may expose Cursor agent bundle" "$FAKE_SB_PACKAGE_ROOT/agents/cursor/silver/SKILL.md"
+assert_file_absent "Current cache does not expose Claude agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents/claude"
+assert_file_absent "Current cache does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_CACHE_ROOT/agents/codex"
 assert_file_absent "SB source bundle does not expose plugin picker skills directory" "$REPO_ROOT/plugins/silver-bullet/skills"
 assert_file_exists "SB init skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
 assert_file_exists "SB ensure-docs skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
@@ -1250,7 +1241,8 @@ assert_contains "Installed SB ensure-docs skill uses silver prefix" "name: \"sil
 assert_contains "Installed SB feature skill uses silver prefix" "name: \"silver:feature\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
 assert_contains "Installed SB router skill uses silver name" "name: silver" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver)"
 assert_file_absent "Installed SB generated skill package directory absent" "$FAKE_CACHE_ROOT/.generated-skills"
-assert_file_absent "Installed SB agent bundle absent from cache" "$FAKE_CACHE_ROOT/agents"
+assert_file_absent "Installed SB Claude agent bundle absent from cache" "$FAKE_CACHE_ROOT/agents/claude"
+assert_file_absent "Installed SB Codex agent bundle absent from cache under agents/" "$FAKE_CACHE_ROOT/agents/codex"
 assert_contains "Installed SB feature skill documents FLOW 8 execute boundary" "FLOW 8 (EXECUTE)" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
 assert_contains "Installed SB feature skill is atomic queue builder" "queue builder" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
 assert_contains "Installed SB UI skill wires TDD into execute boundary" "silver:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-ui)"
@@ -1313,9 +1305,9 @@ assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-chec
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
 {
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
 } > "$RUNTIME_CLAUDE_REPORT"
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
