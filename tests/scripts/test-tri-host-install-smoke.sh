@@ -41,7 +41,7 @@ PLAN="${REPO_ROOT}/docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md"
 assert_contains "validation plan documents pre-release taxonomy" "$PLAN" "Pre-release"
 assert_contains "validation plan documents tri-host smoke" "$PLAN" "tri-host"
 
-# Codex + Cursor smoke (no live Claude CLI required in CI)
+# Codex + Cursor + Claude smoke (Claude skipped only when CLI unavailable)
 if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" --host codex >/tmp/sb-trihost-codex.log 2>&1; then
   pass "codex tri-host smoke executes"
 elif [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -54,6 +54,16 @@ if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" --ho
   pass "cursor tri-host smoke executes"
 else
   fail "cursor tri-host smoke failed — see /tmp/sb-trihost-cursor.log"
+fi
+
+if command -v claude >/dev/null 2>&1; then
+  if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" --host claude >/tmp/sb-trihost-claude.log 2>&1; then
+    pass "claude tri-host smoke executes"
+  else
+    fail "claude tri-host smoke failed — see /tmp/sb-trihost-claude.log"
+  fi
+else
+  pass "claude tri-host smoke skipped (CLI unavailable)"
 fi
 
 echo ""
