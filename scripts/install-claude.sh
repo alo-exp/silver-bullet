@@ -12,6 +12,8 @@ source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 source "${REPO_ROOT}/scripts/lib/plugin-cache-version.sh"
 PURGE_LEGACY_PLUGINS=0
 PUBLIC_RELEASE_ONLY=0
+CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"
+CLAUDE_SB_PLUGIN_CACHE="${CLAUDE_SB_PLUGIN_CACHE:-${CLAUDE_HOME}/plugins/cache/alo-labs/silver-bullet}"
 CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || echo "/Users/shafqat/.local/bin/claude")}"
 CLAUDE_GIT_HTTPS_REWRITE="${CLAUDE_GIT_HTTPS_REWRITE:-1}"
 SB_MARKETPLACE_NAME="${SB_MARKETPLACE_NAME:-alo-labs}"
@@ -128,7 +130,7 @@ ensure_marketplace_ready() {
 materialize_local_silver_bullet_plugin_cache() {
   local version plugin_cache_root version_dir stable_alias registry
   version="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo 0.0.0)"
-  plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
+  plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   version_dir="${plugin_cache_root}/${version}"
   stable_alias="${plugin_cache_root}/current"
   registry="${HOME}/.codex/plugins/installed_plugins.json"
@@ -220,7 +222,7 @@ purge_plugin_cache() {
 
 sync_silver_bullet_settings_paths() {
   local settings_file="${HOME}/.codex/settings.json"
-  local plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
+  local plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   local stable_install_path="${plugin_cache_root}/current"
   local current_version_dir=""
 
@@ -284,7 +286,7 @@ PY
 }
 
 refresh_silver_bullet_install_alias() {
-  local plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
+  local plugin_cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   [[ -d "$plugin_cache_root" ]] || return 0
   sb_plugin_cache_prune_orphaned_dirs "$plugin_cache_root"
   sb_plugin_cache_refresh_current_alias "$plugin_cache_root"
@@ -311,7 +313,7 @@ refresh_plugin_install() {
 }
 
 sync_silver_bullet_hook_cache() {
-  local cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
+  local cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   local current_version_dir=""
 
   [[ -d "$cache_root" ]] || return 0
@@ -340,7 +342,7 @@ prune_claude_cross_host_agent_surfaces() {
 }
 
 sync_silver_bullet_skill_cache() {
-  local cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
+  local cache_root="${CLAUDE_SB_PLUGIN_CACHE}"
   local current_version_dir=""
   local source_root
   source_root="$(sb_agent_bundle_root "$REPO_ROOT" claude)"
