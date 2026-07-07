@@ -20,6 +20,7 @@ DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
 INSTALL_COMMIT_SHA=""
 MERGE_HOOKS="${REPO_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py"
 LEGACY_MARKETPLACE_LIB="${REPO_ROOT}/scripts/lib/install-cursor/legacy-marketplace.sh"
+BACKEND_CACHE_LIB="${REPO_ROOT}/scripts/lib/install-cursor/backend-cache.sh"
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 cursor_install_current_link() {
@@ -266,19 +267,18 @@ cursor_marketplace_plugin_cache_root() {
 ensure_cursor_marketplace_plugin_cache_symlink() {
   local dest="$1"
   local commit_sha="$2"
-  local cache_root link_path marketplace_name
+  local cache_root link_path
 
   [[ -n "$commit_sha" ]] || return 0
 
-  for marketplace_name in "$CURSOR_MARKETPLACE_NAME" "$CURSOR_BACKEND_MARKETPLACE_NAME"; do
-    cache_root="${CURSOR_HOME}/plugins/cache/${marketplace_name}/silver-bullet"
-    link_path="${cache_root}/${commit_sha}"
-    mkdir -p "$cache_root"
-    if [[ -e "$link_path" && ! -L "$link_path" ]]; then
-      rm -rf "$link_path"
-    fi
-    ln -sfn "$dest" "$link_path"
-  done
+  cache_root="${CURSOR_HOME}/plugins/cache/${CURSOR_MARKETPLACE_NAME}/silver-bullet"
+  link_path="${cache_root}/${commit_sha}"
+  mkdir -p "$cache_root"
+  if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+    rm -rf "$link_path"
+  fi
+  ln -sfn "$dest" "$link_path"
+  ensure_cursor_backend_plugin_cache_dir "$dest" "$commit_sha"
 }
 
 read_installed_plugins_git_sha() {
@@ -353,6 +353,9 @@ cursor_plugin_gitpath_surface_ready() {
   local surface_root
 
   cursor_plugin_gitpath_ready "$commit_sha" || return 1
+  if cursor_plugin_gitpath_root_surface_ready "$commit_sha"; then
+    return 0
+  fi
   surface_root="$(cursor_plugin_git_subpath_root "$commit_sha")"
   [[ -f "${surface_root}/commands/init.md" ]] || return 1
   [[ -f "${surface_root}/.cursor-plugin/plugin.json" ]] || return 1
@@ -376,28 +379,25 @@ seed_cursor_marketplace_gitpaths() {
   local dest="$1"
   local primary_sha="$2"
   local source_root="$3"
-  local remote_sha registry_sha manifest_sha sha
+  local sha
 
-  manifest_sha="$(read_marketplace_manifest_sha)"
-  for sha in "$primary_sha" "$(read_installed_plugins_git_sha)" "$manifest_sha" "$(resolve_remote_github_head_sha)"; do
+  while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
     ensure_cursor_github_marketplace_gitpath "$sha" "$source_root"
     materialize_cursor_plugin_surface_in_gitpath "$dest" "$sha"
     ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$sha"
-  done
+  done < <(collect_cursor_plugin_seed_shas "$primary_sha" "")
 }
 
 verify_cursor_plugin_discovery_paths() {
   local dest="$1"
   local source_root="$2"
-  local primary_sha registry_sha remote_sha manifest_sha sha failures=0
+  local primary_sha backend_sha sha failures=0
 
   primary_sha="$(resolve_install_commit_sha "$source_root")"
-  registry_sha="$(read_installed_plugins_git_sha)"
-  remote_sha="$(resolve_remote_github_head_sha)"
-  manifest_sha="$(read_marketplace_manifest_sha)"
+  backend_sha="$(resolve_cursor_backend_plugin_sha "$primary_sha")"
 
-  for sha in "$primary_sha" "$registry_sha" "$manifest_sha" "$remote_sha"; do
+  while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
     if ! cursor_plugin_gitpath_ready "$sha"; then
       printf 'ERROR: Cursor gitPath missing for %s — plugin load fails after restart (see Cursor Plugins log)\n' "$sha" >&2
@@ -409,8 +409,12 @@ verify_cursor_plugin_discovery_paths() {
       printf 'ERROR: Cursor marketplace cache symlink missing for %s at %s/silver-bullet/%s\n' \
         "$sha" "$(cursor_marketplace_plugin_cache_root)" "$sha" >&2
       failures=1
+    elif ! cursor_backend_plugin_cache_ready "$dest" "$sha"; then
+      printf 'ERROR: Cursor backend marketplace cache missing for %s at %s/%s — /silver commands fail after reload\n' \
+        "$sha" "$(cursor_backend_plugin_cache_root)" "$sha" >&2
+      failures=1
     fi
-  done
+  done < <(collect_cursor_plugin_seed_shas "$primary_sha" "$backend_sha")
 
   return "$failures"
 }
@@ -527,6 +531,8 @@ MERGE_ONLY=0
 LEGACY_MARKETPLACE_UI_SWITCH=0
 # shellcheck source=scripts/lib/install-cursor/legacy-marketplace.sh
 source "$LEGACY_MARKETPLACE_LIB"
+# shellcheck source=scripts/lib/install-cursor/backend-cache.sh
+source "$BACKEND_CACHE_LIB"
 
 for arg in "$@"; do
   case "$arg" in
@@ -543,6 +549,7 @@ if legacy_cursor_marketplace_active; then
 fi
 
 ensure_marketplace_checkout "$CURSOR_UNIFIED_MARKETPLACE_SOURCE"
+ensure_agent_plugins_marketplace_clone
 
 if [[ "$MERGE_ONLY" -eq 0 ]]; then
   if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then

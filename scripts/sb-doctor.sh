@@ -481,20 +481,27 @@ run_doctor_checks() {
 
   # D18 — Cursor marketplace gitPath (required for /silver command discovery after restart)
   if [[ "$runtime" == "cursor" ]]; then
-    local registry_sha gitpath_root market_cache_link resolved_current
+    local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
     registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
     resolved_current="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
-    if [[ -n "$registry_sha" && "$registry_sha" != "null" ]]; then
-      gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${registry_sha}"
-      market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
-      if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then
-        if [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
-          record pass D18 "Cursor gitPath + marketplace cache symlink ready (${registry_sha:0:8})"
+    backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
+      | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
+      | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1)"
+    [[ -n "$backend_sha" ]] || backend_sha="$registry_sha"
+    if [[ -n "$backend_sha" && "$backend_sha" != "null" ]]; then
+      gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${backend_sha}"
+      market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${backend_sha}"
+      backend_cache_path="${HOME}/.cursor/plugins/cache/alo-labs-agent-plugins/silver-bullet/${backend_sha}"
+      if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
+        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/init.md" ]]; then
+          record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
+        elif [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
+          record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
         else
-          record fail D18 "missing alo-labs-cursor cache symlink for ${registry_sha:0:8} — run: bash scripts/install-cursor.sh"
+          record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
         fi
       else
-        record fail D18 "missing Cursor gitPath for ${registry_sha:0:8} — /silver commands fail to load — run: bash scripts/install-cursor.sh"
+        record fail D18 "missing Cursor gitPath for ${backend_sha:0:8} — /silver commands fail to load — run: bash scripts/install-cursor.sh"
       fi
     else
       record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
