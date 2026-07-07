@@ -161,6 +161,16 @@ else
   fail "install-cursor current symlink is not self-referential"
 fi
 
+# --merge-hooks-only must repair missing marketplace gitPath (Cursor restart blocker)
+rm -f "${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
+bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >/dev/null
+market_cache_target_after="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
+if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target_after" == "$resolved_current" ]]; then
+  pass "install-cursor --merge-hooks-only repairs marketplace cache symlink"
+else
+  fail "install-cursor --merge-hooks-only repairs marketplace cache symlink"
+fi
+
 bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >/dev/null
 resolved_after_merge="$(cd "$current_link" && pwd -P)"
 if [[ -f "${resolved_after_merge}/.cursor-plugin/plugin.json" ]] && \
