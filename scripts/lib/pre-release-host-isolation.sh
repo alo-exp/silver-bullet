@@ -196,3 +196,36 @@ sb_smoke_cleanup() {
   fi
   unset SB_PRE_RELEASE_SMOKE_ROOT
 }
+
+sb_smoke_resolve_previous_tag() {
+  [[ -n "${SB_RC_PREVIOUS_TAG:-}" ]] && { printf '%s\n' "$SB_RC_PREVIOUS_TAG"; return 0; }
+  local repo="${SB_PRE_RELEASE_REPO_ROOT:-}" tag
+  [[ -d "${repo}/.git" ]] || return 1
+  tag="$(git -C "$repo" tag --sort=-v:refname 2>/dev/null | sed -n '2p')"
+  [[ -n "$tag" ]] && printf '%s\n' "$tag"
+}
+
+sb_smoke_checkout_at_tag() {
+  local tag="$1" dest="$2" repo="${SB_PRE_RELEASE_REPO_ROOT:-}"
+  [[ -d "${repo}/.git" ]] || return 1
+  mkdir -p "$dest" && git -C "$repo" archive "$tag" | tar -x -C "$dest"
+}
+
+sb_smoke_rc_marker_dir() { printf '%s/rc-validation\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}"; }
+
+sb_smoke_write_rc_marker() {
+  local host="$1" mode="$2" status="${3:-pass}" artifact="${4:-}" dir file
+  dir="$(sb_smoke_rc_marker_dir)"; mkdir -p "$dir"; file="${dir}/${host}-${mode}"
+  { printf 'host=%s\nmode=%s\nstatus=%s\n' "$host" "$mode" "$status"
+    printf 'timestamp=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    [[ -n "$artifact" ]] && printf 'artifact=%s\n' "$artifact"; } >"$file"
+  printf '%s\n' "$file"
+}
+
+sb_smoke_rc_markers_complete() {
+  local host mode dir file; dir="$(sb_smoke_rc_marker_dir)"
+  for host in cursor codex claude; do for mode in fresh upgrade; do
+    file="${dir}/${host}-${mode}"
+    [[ -f "$file" ]] && grep -qE '^status=(pass|skip)$' "$file" || return 1
+  done; done
+}
