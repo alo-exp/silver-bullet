@@ -262,22 +262,75 @@ ensure_cursor_marketplace_plugin_cache_symlink() {
   ln -sfn "$dest" "$link_path"
 }
 
+read_installed_plugins_git_sha() {
+  local registry_file="${CURSOR_HOME}/plugins/installed_plugins.json"
+  [[ -f "$registry_file" ]] || return 0
+  jq -r '
+    .plugins["silver-bullet@alo-labs"] as $entry
+    | if $entry == null then empty
+      elif ($entry | type) == "array" then ($entry[0].gitCommitSha // empty)
+      else ($entry.gitCommitSha // empty)
+      end
+  ' "$registry_file" 2>/dev/null || true
+}
+
+cursor_plugin_gitpath_ready() {
+  local commit_sha="$1"
+  local gitpath_root
+
+  [[ -n "$commit_sha" ]] || return 1
+  gitpath_root="$(cursor_github_marketplace_gitpath_root)/${commit_sha}"
+  [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${commit_sha}^{commit}" >/dev/null 2>&1
+}
+
+cursor_marketplace_cache_link_ready() {
+  local dest="$1"
+  local commit_sha="$2"
+  local link_path resolved_dest resolved_link
+
+  [[ -n "$commit_sha" ]] || return 1
+  link_path="$(cursor_marketplace_plugin_cache_root)/${commit_sha}"
+  [[ -L "$link_path" ]] || return 1
+  resolved_dest="$(cd "$dest" && pwd -P)"
+  resolved_link="$(cd "$link_path" && pwd -P 2>/dev/null || true)"
+  [[ "$resolved_link" == "$resolved_dest" ]]
+}
+
 seed_cursor_marketplace_gitpaths() {
   local dest="$1"
   local primary_sha="$2"
   local source_root="$3"
-  local remote_sha=""
+  local remote_sha registry_sha sha
 
-  [[ -n "$primary_sha" ]] || return 0
+  for sha in "$primary_sha" "$(read_installed_plugins_git_sha)" "$(resolve_remote_github_head_sha)"; do
+    [[ -n "$sha" ]] || continue
+    ensure_cursor_github_marketplace_gitpath "$sha" "$source_root"
+    ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$sha"
+  done
+}
 
-  ensure_cursor_github_marketplace_gitpath "$primary_sha" "$source_root"
-  ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$primary_sha"
+verify_cursor_plugin_discovery_paths() {
+  local dest="$1"
+  local source_root="$2"
+  local primary_sha registry_sha remote_sha sha failures=0
 
+  primary_sha="$(resolve_install_commit_sha "$source_root")"
+  registry_sha="$(read_installed_plugins_git_sha)"
   remote_sha="$(resolve_remote_github_head_sha)"
-  if [[ -n "$remote_sha" && "$remote_sha" != "$primary_sha" ]]; then
-    ensure_cursor_github_marketplace_gitpath "$remote_sha" "$source_root"
-    ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$remote_sha"
-  fi
+
+  for sha in "$primary_sha" "$registry_sha" "$remote_sha"; do
+    [[ -n "$sha" ]] || continue
+    if ! cursor_plugin_gitpath_ready "$sha"; then
+      printf 'ERROR: Cursor gitPath missing for %s — plugin load fails after restart (see Cursor Plugins log)\n' "$sha" >&2
+      failures=1
+    elif ! cursor_marketplace_cache_link_ready "$dest" "$sha"; then
+      printf 'ERROR: Cursor marketplace cache symlink missing for %s at %s/silver-bullet/%s\n' \
+        "$sha" "$(cursor_marketplace_plugin_cache_root)" "$sha" >&2
+      failures=1
+    fi
+  done
+
+  return "$failures"
 }
 
 ensure_cursor_installed_plugins_registry() {
@@ -399,6 +452,11 @@ else
     printf 'ERROR: no installed Cursor plugin at %s; run without --merge-hooks-only first\n' "$(cursor_install_current_link)" >&2
     exit 1
   fi
+  INSTALL_COMMIT_SHA="$(read_installed_plugins_git_sha)"
+  if [[ -z "$INSTALL_COMMIT_SHA" ]]; then
+    INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
+  fi
+  seed_cursor_marketplace_gitpaths "$DEST_ROOT" "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
 fi
 
 DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
@@ -408,6 +466,10 @@ if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/de
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
 fi
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
+if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
+  printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
+  exit 1
+fi
 
 # Record install version key for enterprise E2E single-pass-at-version skip (matrix / T1).
 if [[ -f "${REPO_ROOT}/scripts/enterprise-e2e/lib/core.sh" ]]; then

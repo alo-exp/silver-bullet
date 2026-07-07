@@ -16,7 +16,7 @@ doctor_apply_fixes() {
   [[ "$FAIL" -eq 0 ]] && return 0
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
     case "$check_id" in
-      D13|D14|D16)
+      D13|D14|D16|D18|D19)
         install_script="$(doctor_host_install_script "$runtime" || true)"
         if [[ -n "$install_script" && -x "$install_script" ]]; then
           printf 'sb-doctor: --fix running %s for %s\n' "$install_script" "$check_id" >&2
