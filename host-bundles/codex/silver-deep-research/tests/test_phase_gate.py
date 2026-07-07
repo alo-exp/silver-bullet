@@ -69,13 +69,14 @@ class TestPhaseGate(unittest.TestCase):
 
 
 class TestSourceEvaluatorAdmiralty(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, os.path.join(SKILL_ROOT, 'scripts'))
+        from source_evaluator import SourceEvaluator  # noqa: E402
+        cls.SourceEvaluator = SourceEvaluator
+
     def test_high_authority_current_source(self):
-        from importlib.util import spec_from_loader, module_from_spec
-        from importlib.machinery import SourceFileLoader
-        spec = spec_from_loader('se', SourceFileLoader('se', SOURCE_EVAL))
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        ev = mod.SourceEvaluator()
+        ev = self.SourceEvaluator()
         score = ev.evaluate_source(
             url='https://www.nature.com/articles/s41586-2025-12345',
             title='Peer-reviewed breakthrough',
@@ -87,12 +88,7 @@ class TestSourceEvaluatorAdmiralty(unittest.TestCase):
         self.assertEqual(score.recommendation, 'high_trust')
 
     def test_stale_source_gets_recency_risk(self):
-        from importlib.util import spec_from_loader, module_from_spec
-        from importlib.machinery import SourceFileLoader
-        spec = spec_from_loader('se2', SourceFileLoader('se2', SOURCE_EVAL))
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        ev = mod.SourceEvaluator()
+        ev = self.SourceEvaluator()
         score = ev.evaluate_source(
             url='https://example.com/old-post',
             title='Old analysis',
@@ -101,12 +97,7 @@ class TestSourceEvaluatorAdmiralty(unittest.TestCase):
         self.assertIn('recency_risk', score.bias_flags)
 
     def test_biased_low_authority_source(self):
-        from importlib.util import spec_from_loader, module_from_spec
-        from importlib.machinery import SourceFileLoader
-        spec = spec_from_loader('se3', SourceFileLoader('se3', SOURCE_EVAL))
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        ev = mod.SourceEvaluator()
+        ev = self.SourceEvaluator()
         score = ev.evaluate_source(
             url='https://shocking-news.wordpress.com/post',
             title='SHOCKING! You Won\'t Believe This Discovery!',
@@ -116,12 +107,7 @@ class TestSourceEvaluatorAdmiralty(unittest.TestCase):
         self.assertIn('sensationalism', score.bias_flags)
 
     def test_conflicting_evidence_low_trust(self):
-        from importlib.util import spec_from_loader, module_from_spec
-        from importlib.machinery import SourceFileLoader
-        spec = spec_from_loader('se4', SourceFileLoader('se4', SOURCE_EVAL))
-        mod = module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        ev = mod.SourceEvaluator()
+        ev = self.SourceEvaluator()
         score = ev.evaluate_source(
             url='https://random-blog.blogspot.com/conflict',
             title='Unverified claim about quantum',

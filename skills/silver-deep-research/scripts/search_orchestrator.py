@@ -2,7 +2,7 @@
 """
 SB-owned search orchestrator — intent classify, provider route, portal dispatch.
 
-Landscape-only portal retrieval. No TopGun dependency.
+Landscape-only portal retrieval. SB-owned descriptors only.
 """
 
 from __future__ import annotations

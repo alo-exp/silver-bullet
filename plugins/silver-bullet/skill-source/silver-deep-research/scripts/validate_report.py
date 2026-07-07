@@ -5,17 +5,33 @@ Ensures research reports meet quality standards before delivery
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any, Optional
+
+
+SKILL_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_PROFILE_PATH = SKILL_ROOT / "reference" / "report_profiles.json"
+
+
+def load_report_profile(lang: str) -> dict[str, Any]:
+    path = DEFAULT_PROFILE_PATH
+    if not path.exists():
+        return {"section_labels": {}, "forecast_forbidden": []}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    profiles = data.get("profiles", {})
+    return profiles.get(lang, profiles.get(data.get("default", "en"), {}))
 
 
 class ReportValidator:
     """Validates research report quality"""
 
-    def __init__(self, report_path: Path):
+    def __init__(self, report_path: Path, lang: str = "en"):
         self.report_path = report_path
+        self.lang = lang
+        self.profile = load_report_profile(lang)
         self.content = self._read_report()
         self.errors: List[str] = []
         self.warnings: List[str] = []
@@ -38,6 +54,11 @@ class ReportValidator:
         checks = [
             ("Executive Summary", self._check_executive_summary),
             ("Required Sections", self._check_required_sections),
+            ("Language Profile", self._check_language_profile),
+            ("TOC Uniqueness", self._check_toc_uniqueness),
+            ("Metadata Block", self._check_metadata_block),
+            ("Forecast Wording", self._check_forecast_wording),
+            ("Bibliography Tail", self._check_bibliography_tail),
             ("Citations", self._check_citations),
             ("Bibliography", self._check_bibliography),
             ("Placeholder Text", self._check_placeholders),
@@ -59,13 +80,17 @@ class ReportValidator:
 
         return len(self.errors) == 0
 
+    def _executive_summary_label(self) -> str:
+        return self.profile.get("section_labels", {}).get("executive_summary", "Executive Summary")
+
     def _check_executive_summary(self) -> bool:
         """Check executive summary exists and is 200-400 words"""
-        pattern = r'## Executive Summary(.*?)(?=##|\Z)'
+        label = re.escape(self._executive_summary_label())
+        pattern = rf'##\s*{label}(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:
-            self.errors.append("Missing 'Executive Summary' section")
+            self.errors.append(f"Missing '{self._executive_summary_label()}' section")
             return False
 
         summary = match.group(1).strip()
@@ -79,17 +104,86 @@ class ReportValidator:
 
         return True
 
+    def _check_language_profile(self) -> bool:
+        """Verify profile section labels appear for selected language."""
+        labels = self.profile.get("section_labels", {})
+        if not labels:
+            return True
+        missing = []
+        for key in ("introduction", "bibliography", "recommendations"):
+            label = labels.get(key)
+            if label and not re.search(rf'##\s*{re.escape(label)}', self.content, re.IGNORECASE):
+                missing.append(label)
+        if missing:
+            self.errors.append(f"Missing profile sections ({self.lang}): {', '.join(missing)}")
+            return False
+        return True
+
+    def _check_toc_uniqueness(self) -> bool:
+        """Chapter/section headings at ### level must be unique."""
+        headings = re.findall(r'^###\s+(.+)$', self.content, re.MULTILINE)
+        seen: dict[str, int] = {}
+        for h in headings:
+            norm = h.strip().lower()
+            seen[norm] = seen.get(norm, 0) + 1
+        dupes = [h for h, c in seen.items() if c > 1]
+        if dupes:
+            self.errors.append(f"Duplicate TOC headings: {dupes[:5]}")
+            return False
+        return True
+
+    def _check_metadata_block(self) -> bool:
+        """Report metadata block required at tail."""
+        meta_label = self.profile.get("section_labels", {}).get("metadata", "Report Metadata")
+        if not re.search(rf'##\s*{re.escape(meta_label)}', self.content, re.IGNORECASE):
+            self.errors.append(f"Missing metadata block: '{meta_label}'")
+            return False
+        return True
+
+    def _check_forecast_wording(self) -> bool:
+        """Flag overconfident forecast phrasing per profile."""
+        forbidden = self.profile.get("forecast_forbidden", [])
+        found = [p for p in forbidden if p.lower() in self.content.lower()]
+        if found:
+            self.errors.append(f"Forbidden forecast wording ({self.lang}): {found}")
+            return False
+        return True
+
+    def _check_bibliography_tail(self) -> bool:
+        """Bibliography entries must be complete; only methodology may follow before metadata."""
+        if not self.profile.get("bibliography_tail_required", True):
+            return True
+        bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
+        meta_label = self.profile.get("section_labels", {}).get("metadata", "Report Metadata")
+        meth_label = self.profile.get("section_labels", {}).get("methodology", "Methodology")
+        bib_m = re.search(rf'##\s*{re.escape(bib_label)}', self.content, re.IGNORECASE)
+        meta_m = re.search(rf'##\s*{re.escape(meta_label)}', self.content, re.IGNORECASE)
+        if not bib_m:
+            return True
+        if meta_m and meta_m.start() > bib_m.start():
+            between = self.content[bib_m.end():meta_m.start()]
+            allowed = re.compile(
+                rf'^##\s*({re.escape(meth_label)}|appendix|方法论附录)',
+                re.IGNORECASE | re.MULTILINE,
+            )
+            for heading in re.findall(r'^##\s+(.+)$', between, re.MULTILINE):
+                if not allowed.search(f'## {heading}'):
+                    self.errors.append(f"Unexpected section between Bibliography and Metadata: {heading}")
+                    return False
+        return True
+
     def _check_required_sections(self) -> bool:
         """Check all required sections are present"""
+        labels = self.profile.get("section_labels", {})
         required = [
-            "Executive Summary",
-            "Introduction",
-            "Main Analysis",
-            "Synthesis",
-            "Limitations",
-            "Recommendations",
-            "Bibliography",
-            "Methodology"
+            labels.get("executive_summary", "Executive Summary"),
+            labels.get("introduction", "Introduction"),
+            labels.get("main_analysis", "Main Analysis"),
+            labels.get("synthesis", "Synthesis"),
+            labels.get("limitations", "Limitations"),
+            labels.get("recommendations", "Recommendations"),
+            labels.get("bibliography", "Bibliography"),
+            labels.get("methodology", "Methodology"),
         ]
 
         # Recommended sections (warnings if missing, not errors)
@@ -146,11 +240,12 @@ class ReportValidator:
 
     def _check_bibliography(self) -> bool:
         """Check bibliography exists, matches citations, and has no truncation placeholders"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
+        bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
+        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:
-            self.errors.append("Missing 'Bibliography' section")
+            self.errors.append(f"Missing '{bib_label}' section")
             return False
 
         bib_section = match.group(1)
@@ -256,7 +351,8 @@ class ReportValidator:
 
     def _check_source_count(self) -> bool:
         """Check minimum source count"""
-        pattern = r'## Bibliography(.*?)(?=##|\Z)'
+        bib_label = self.profile.get("section_labels", {}).get("bibliography", "Bibliography")
+        pattern = rf'##\s*{re.escape(bib_label)}(.*?)(?=##|\Z)'
         match = re.search(pattern, self.content, re.DOTALL | re.IGNORECASE)
 
         if not match:
@@ -335,6 +431,13 @@ Examples:
         required=True,
         help='Path to research report markdown file'
     )
+    parser.add_argument(
+        '--lang', '-l',
+        type=str,
+        default='en',
+        choices=['en', 'zh'],
+        help='Report language profile (default: en)'
+    )
 
     args = parser.parse_args()
 
@@ -344,7 +447,7 @@ Examples:
         print(f"❌ ERROR: Report file not found: {report_path}")
         sys.exit(1)
 
-    validator = ReportValidator(report_path)
+    validator = ReportValidator(report_path, lang=args.lang)
     passed = validator.validate()
 
     sys.exit(0 if passed else 1)

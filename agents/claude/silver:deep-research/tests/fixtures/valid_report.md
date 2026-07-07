@@ -112,3 +112,13 @@ All major claims verified across minimum 3 independent sources.
 
 ### Quality Control
 Automated validation plus manual review for accuracy and completeness.
+
+---
+
+## Report Metadata
+
+**Research Mode:** Standard
+**Total Sources:** 10
+**Word Count:** 800
+**Generated:** 2026-07-08
+**Validation Status:** Passed
