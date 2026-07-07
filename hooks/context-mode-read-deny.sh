@@ -91,5 +91,5 @@ fi
 
 threshold="$(sb_context_mode_read_deny_bytes "$config_file")"
 size="$(sb_context_mode_file_size_bytes "$deny_path" || echo 0)"
-emit_block "$(sb_context_mode_read_deny_message "$deny_path" "$size" "$threshold")"
+emit_block "$(sb_context_mode_read_deny_message "$deny_path" "$size" "$threshold" "$config_file")"
 exit 0

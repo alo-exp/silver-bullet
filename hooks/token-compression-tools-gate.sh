@@ -82,6 +82,13 @@ if [[ -n "$command_str" ]]; then
   fi
 fi
 
+if declare -f sb_stack_mutual_exclusion_required >/dev/null 2>&1; then
+  if sb_stack_mutual_exclusion_required "$config_file" && ! sb_stack_mutual_exclusion_is_clean "$config_file"; then
+    emit_block "$(sb_token_compression_mutual_exclusion_block_message)"
+    exit 0
+  fi
+fi
+
 tool_id="rtk"
 if sb_token_tool_enforced "$config_file" "$tool_id"; then
   if ! sb_token_tool_cli_available "$config_file" "$tool_id"; then
