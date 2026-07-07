@@ -47,6 +47,28 @@ five_tool_cursor_agent_authenticated() {
   printf '%s' "$status_out" | grep -qiE 'logged in as|email:|account:'
 }
 
+five_tool_claude_cli_path() {
+  local cli=""
+  cli="$(command -v claude 2>/dev/null || true)"
+  [[ -n "$cli" ]] && printf '%s' "$cli"
+}
+
+five_tool_claude_cli_authenticated() {
+  local cli auth_out=""
+  cli="$(five_tool_claude_cli_path)" || return 1
+  if ! "$cli" --version >/dev/null 2>&1; then
+    return 1
+  fi
+  if [[ -n "${ANTHROPIC_API_KEY:-}" || -n "${ANTHROPIC_AUTH_TOKEN:-}" ]]; then
+    return 0
+  fi
+  auth_out="$("$cli" auth status 2>&1 || true)"
+  if printf '%s' "$auth_out" | grep -qiE 'not logged in|not authenticated|authentication required'; then
+    return 1
+  fi
+  printf '%s' "$auth_out" | grep -qiE 'logged in|authenticated|claude\.ai|api_key|oauth'
+}
+
 five_tool_prerelease_marker_path() {
   local root="${SB_RUNTIME_STATE_DIR:-${SB_RUNTIME_HOME_ROOT:-$HOME}/.silver-bullet}"
   printf '%s/pre-release-five-tool-stack' "$root"

@@ -15,7 +15,7 @@
 #   CURSOR_API_KEY=... (or HOST_API_KEY=...) RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh
 #   RTK_DISABLED=1 bash scripts/run-pre-release-host-smoke.sh --host cursor
 #
-# Claude host is skipped when claude CLI is unavailable (operator must run locally).
+# Claude host is skipped only when claude CLI is unavailable (first-class when present).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -102,7 +102,7 @@ smoke_claude() {
 
   local claude_bin="${CLAUDE_BIN:-$(command -v claude 2>/dev/null || true)}"
   if [[ -z "$claude_bin" || ! -x "$claude_bin" ]]; then
-    smoke_skip "claude: CLI not available — run install-claude.sh locally before release"
+    smoke_skip "claude: CLI not available — install claude CLI or set CLAUDE_BIN"
     return
   fi
 

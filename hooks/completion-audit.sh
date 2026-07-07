@@ -129,6 +129,7 @@ required_planning_devops_cfg=""
 active_workflow="full-dev-cycle"
 release_require_plugin_runtime_matrix="false"
 release_require_pre_release_quality_gate="false"
+release_require_rc_matrix="false"
 
 sb_default_state="${SB_STATE_DIR}/state"
 sb_default_trivial="${SB_STATE_DIR}/trivial"
@@ -142,7 +143,8 @@ config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" 
   (.project.active_workflow // "full-dev-cycle"),
   (.release.quality_gate_state_file // ""),
   ((.release.require_plugin_runtime_matrix // false) | tostring),
-  ((.release.require_pre_release_quality_gate // false) | tostring)
+  ((.release.require_pre_release_quality_gate // false) | tostring),
+  ((.release.require_rc_matrix // false) | tostring)
 ] | join("\n")' "$config_file")
 
 state_file=$(printf '%s' "$config_vals" | sed -n '1p')
@@ -158,6 +160,7 @@ cfg_quality_gate_state_file=$(printf '%s' "$config_vals" | sed -n '8p')
 [[ -n "$cfg_quality_gate_state_file" ]] && quality_gate_state_file="${cfg_quality_gate_state_file/#\~/$HOME}"
 release_require_plugin_runtime_matrix=$(printf '%s' "$config_vals" | sed -n '9p')
 release_require_pre_release_quality_gate=$(printf '%s' "$config_vals" | sed -n '10p')
+release_require_rc_matrix=$(printf '%s' "$config_vals" | sed -n '11p')
 
 # Env var override for state file
 state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"

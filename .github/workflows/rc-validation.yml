@@ -1,0 +1,35 @@
+name: RC Validation
+on:
+  workflow_dispatch:
+    inputs:
+      require_live:
+        description: Fail if live delegate unavailable
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+jobs:
+  rc-matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install host CLIs and deps
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq expect jq
+      - name: Seed runtime env
+        run: |
+          source hooks/lib/runtime-paths.sh
+          echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR" >> "$GITHUB_ENV"
+      - name: Run RC matrix
+        run: |
+          [[ "${{ inputs.require_live }}" == "true" ]] && export SB_RC_MATRIX_REQUIRE_LIVE=1
+          bash scripts/run-rc-validation-matrix.sh
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -213,6 +213,17 @@ Optional automated checks at release time:
 
 ---
 
+## RC Validation Matrix
+
+When `release.require_rc_matrix` is true, run `bash scripts/run-rc-validation-matrix.sh` before release.
+Six cells: cursor, codex, and **claude** × fresh/upgrade. Claude is a first-class host — cells run when
+`claude` CLI and auth are available (`ANTHROPIC_API_KEY` or OAuth via `claude auth status`); skip only
+when CLI or auth is missing. Five-tool cursor scenarios fold into RC cursor cells.
+See `docs/testing/RC-VALIDATION-MATRIX.md`. Legacy `run-release-live-matrix.sh` is optional diagnostics.
+Bypass: `SB_SKIP_RC_MATRIX=1`.
+
+---
+
 ## Live Matrix Release Gate
 
 Before `gh release create` or `/silver-create-release`:

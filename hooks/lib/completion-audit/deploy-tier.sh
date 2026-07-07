@@ -87,6 +87,18 @@ if printf '%s' "$cmd_first_line" | grep -qE '\bgh release create\b'; then
     fi
   fi
 
+  if [[ "$release_require_rc_matrix" == "true" || "${SB_REQUIRE_RC_MATRIX:-0}" == "1" ]]; then
+    _rc_iso="${project_root}/scripts/lib/pre-release-host-isolation.sh"
+    if [[ -f "$_rc_iso" ]]; then
+      # shellcheck source=scripts/lib/pre-release-host-isolation.sh
+      source "$_rc_iso"
+    fi
+    if ! declare -F sb_smoke_rc_markers_complete >/dev/null 2>&1 || ! sb_smoke_rc_markers_complete 2>/dev/null; then
+      emit_block "$(printf '🛑 RELEASE BLOCKED — RC validation matrix incomplete.\n\nRun bash scripts/run-rc-validation-matrix.sh (cursor/codex/claude × fresh/upgrade) and ensure rc-validation markers exist under %s/rc-validation/.\nBypass (audited only): SB_SKIP_RC_MATRIX=1\nSee docs/testing/RC-VALIDATION-MATRIX.md.' "${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}")"
+      exit 0
+    fi
+  fi
+
   release_commit_sha=$(git -C "$project_root" rev-parse HEAD 2>/dev/null || true)
   if [[ -z "$release_commit_sha" ]]; then
     emit_block "$(printf '🛑 RELEASE BLOCKED — Unable to determine the current HEAD commit for this release session.\n\nRe-run the release flow from a valid git checkout after CI finishes.' )"

@@ -81,3 +81,17 @@ EOF
 fi
 
 echo "✓ Pre-release gate passed — local CI-equivalent suite is green."
+
+cat <<'EOF'
+
+  RC validation matrix (cursor/codex/claude × fresh/upgrade)
+  Running: bash scripts/run-rc-validation-matrix.sh
+EOF
+
+if ! bash "${REPO_ROOT}/scripts/run-rc-validation-matrix.sh"; then
+  echo "🛑 PRE-RELEASE GATE FAILED — RC validation matrix failed." >&2
+  echo "   See docs/testing/RC-VALIDATION-MATRIX.md (bypass: SB_SKIP_RC_MATRIX=1)." >&2
+  exit 1
+fi
+
+echo "✓ RC validation matrix passed."
