@@ -20,19 +20,35 @@ if [[ ! -f "$ROOT_MANIFEST" ]]; then
 fi
 
 plugin_version="$(jq -r '.version' "$ROOT_MANIFEST")"
-tmp="$(mktemp)"
-jq --arg v "$plugin_version" '
-  .version = $v
-  | .skills = "./agents/cursor"
-  | .hooks = "./cursor-hooks.json"
-' "$ROOT_MANIFEST" > "$tmp"
-mv "$tmp" "$DEST_DIR/.cursor-plugin/plugin.json"
 
 cursor_bundle="$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
 mkdir -p "${DEST_DIR}/agents/cursor"
 rsync -a --delete "${cursor_bundle}/" "${DEST_DIR}/agents/cursor/"
 
+if [[ -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
+  mkdir -p "${DEST_DIR}/commands"
+  rsync -a --delete "${REPO_ROOT}/plugins/silver-bullet/commands/" "${DEST_DIR}/commands/"
+fi
+
 python3 "${REPO_ROOT}/hooks/generate-cursor-hooks.py" >/dev/null
 install -m 644 "${REPO_ROOT}/hooks/cursor-hooks.json" "${DEST_DIR}/cursor-hooks.json"
+
+tmp="$(mktemp)"
+if [[ -d "${DEST_DIR}/commands" ]]; then
+  jq --arg v "$plugin_version" '
+    .version = $v
+    | .skills = "./agents/cursor"
+    | .hooks = "./cursor-hooks.json"
+    | .commands = "./commands"
+  ' "$ROOT_MANIFEST" > "$tmp"
+else
+  jq --arg v "$plugin_version" '
+    .version = $v
+    | .skills = "./agents/cursor"
+    | .hooks = "./cursor-hooks.json"
+    | del(.commands)
+  ' "$ROOT_MANIFEST" > "$tmp"
+fi
+mv "$tmp" "$DEST_DIR/.cursor-plugin/plugin.json"
 
 log "Cursor package manifest synchronized to ${DEST_DIR}"

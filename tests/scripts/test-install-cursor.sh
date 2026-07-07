@@ -143,6 +143,33 @@ else
   fail "install-cursor preserves orchestrator-directive-guard matcher variants — missing ${odg_missing}"
 fi
 
+if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/init.md" ]]; then
+  pass "install-cursor syncs composer command stubs to cache"
+else
+  fail "install-cursor syncs composer command stubs to cache"
+fi
+
+if jq -e '.commands == "./commands"' "${resolved_current}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+  pass "install-cursor plugin.json declares commands path"
+else
+  fail "install-cursor plugin.json declares commands path"
+fi
+
+if [[ "$(readlink "$current_link")" != "$current_link" ]]; then
+  pass "install-cursor current symlink is not self-referential"
+else
+  fail "install-cursor current symlink is not self-referential"
+fi
+
+bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >/dev/null
+resolved_after_merge="$(cd "$current_link" && pwd -P)"
+if [[ -f "${resolved_after_merge}/.cursor-plugin/plugin.json" ]] && \
+   [[ "$resolved_after_merge" == "$resolved_current" ]]; then
+  pass "install-cursor --merge-hooks-only preserves current symlink target"
+else
+  fail "install-cursor --merge-hooks-only preserves current symlink target"
+fi
+
 
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"

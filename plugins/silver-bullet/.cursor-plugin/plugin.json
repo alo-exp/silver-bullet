@@ -19,5 +19,6 @@
     "ci-cd"
   ],
   "skills": "./agents/cursor",
-  "hooks": "./cursor-hooks.json"
+  "hooks": "./cursor-hooks.json",
+  "commands": "./commands"
 }
