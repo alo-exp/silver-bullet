@@ -152,7 +152,7 @@ Read `${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/project instruction
 
 ### 3.4 Write config
 
-Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, and write to `.silver-bullet.json`. For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice; include suspension fields when install was attempted.
+Read `${PLUGIN_ROOT}/templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value (replacing default `/src/` if different), set **`sb_initiated` to `true`**, write `issue_tracker` from Phase 2.9 (`issue_tracker_value`), and merge `issue_tracker_adapter` from Phase 2.9 (`issue_tracker_adapter_value` or template default). Adapter `type` must match `issue_tracker` (`github`/`local`/`custom`). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always default `enabled_by_user` to `null` on fresh init until Phase 1.1 records an explicit user choice; include suspension fields when install was attempted.
 
 ### 3.4.1 Context Mode instruction fragment (when opted in)
 

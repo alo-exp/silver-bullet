@@ -62,6 +62,7 @@
     "silver-secure": "AF-SECURE",
     "silver-ship": "AF-SHIP",
     "silver-spec": "AF-SPECIFY",
+    "silver-triage": "AF-REVIEW-TRIAGE",
     "silver-ui-contract": "AF-DESIGN-CONTRACT",
     "silver-ui-review": "AF-UI-QUALITY",
     "silver-validate": "AF-VALIDATE",
@@ -356,6 +357,9 @@
     ],
     "FS-SILVER_THREAD": [
       "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_TRIAGE": [
+      "AF-REVIEW-TRIAGE"
     ],
     "FS-SILVER_UI": [
       "AF-UI-QUALITY"

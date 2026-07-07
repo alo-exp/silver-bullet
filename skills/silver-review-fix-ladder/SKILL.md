@@ -81,7 +81,10 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 
 | Check | Pass criterion |
 |-------|----------------|
-| Sequential rung | Previous rung completed all states in order: `audit_fix` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep |
+| Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep |
+| Review/triage separation | Review subagent did **not** triage or fix; triage subagent used **host model**, not rung model |
+| PM filing evidence | Valid findings filed or deduped via `/silver:add` before fix agents launched; triage table lists PM ids |
+| Fix model lock | Fix subagents used **host current model**, not rung model; parallel only per triage grouping |
 | Separate verify invocations | `verify_1` and `verify_2` were **separate** subagent `Task` calls — not one combined prompt |
 | Orchestrator grep | Orchestrator ran **every** charter verification signal between verify passes and logged command + output + pass/fail |
 | Scope | No reads, edits, or commands touched paths outside locked scope |
@@ -104,13 +107,13 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 STOP and do **not** advance when any of the following is true:
 
 1. **Compliance gate failure** — any row in the compliance gate table fails
-2. **Skipped state** — tempted to skip audit-fix, either verify pass, or orchestrator grep
+2. **Skipped state** — tempted to skip review, triage, PM filing, fix, either verify pass, or orchestrator grep
 3. **Combined verify passes** — one subagent asked to "do 2 passes" or verify_1 and verify_2 merged
 4. **Subagent-only gate** — advancing on subagent VERIFY_PASS without orchestrator grep evidence
 5. **Scope violation** — any command or edit outside locked paths
 6. **Parallel rungs** — multiple rung phases launched in one turn or overlapping
 7. **Verify subagent edited files** — verify pass was not readonly
-8. **Final rung complete** — the last resolved rung completed `audit_fix` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
+8. **Final rung complete** — the last resolved rung completed `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
 9. **User stop** — user directs halt or scope change
 
 ### Recovery Procedure (before resuming)
@@ -129,7 +132,7 @@ When STOP triggers for compliance (items 1–7):
 For rung N, the orchestrator MUST traverse these states in order:
 
 ```
-rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2 → [orchestrator grep] → rung_N+1_audit_fix
+rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_parallel → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2 → [orchestrator grep] → rung_N+1_review
 ```
 
 **STOP** if tempted to skip any state, combine verify passes, stop early because the charter is satisfied, or advance without orchestrator evidence.
@@ -139,12 +142,16 @@ rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2
 1. **One rung at a time** — **FORBIDDEN** to launch multiple ladder rungs in parallel. **FORBIDDEN** to batch `Task` calls for different rungs in one turn. Exactly one subagent `Task` per turn.
 
 2. **Two-pass gate** — Per rung:
-   - (a) audit+fix subagent
-   - (b) verify-only subagent pass 1 — if clean, proceed; if fail, return to (a) on **same** rung
-   - (c) verify-only subagent pass 2 — only if pass 1 was clean
+   - (a) review-only subagent (raw findings, no triage/fix)
+   - (b) triage subagent via `/silver:triage` — **host model**, not rung model
+   - (c) orchestrator files valid issues via `/silver:add` (or confirms dedupe links)
+   - (d) fix subagent(s) — **host model**, parallel only when triage parallel groups allow
+   - (e) verify-only subagent pass 1 — if clean, proceed; if fail, return to (d) on **same** rung
+   - (f) verify-only subagent pass 2 — only if pass 1 was clean
    - Advance to rung N+1 **only** if **both** verify passes are clean; after they are clean, advancement is mandatory unless N is the final resolved rung.
    - **FORBIDDEN** to combine passes into one subagent prompt (e.g. "do 2 passes" in a single Task).
    - **FORBIDDEN** to advance after only one clean verify pass.
+   - **FORBIDDEN** for review subagent to triage or fix its own findings.
 
 3. **Verify-only passes** — Subagents on verify passes MUST NOT edit files. Use `readonly: true` on the host `Task` tool or explicit "verify only, no edits" in the prompt. **FORBIDDEN** for verify subagents to apply fixes.
 
@@ -154,9 +161,11 @@ rung_N_audit_fix → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2
 
 6. **Model lock** — Each rung uses exactly the `model` + `reasoning` from resolver JSON. **FORBIDDEN** to substitute models unless the host rejects the slug — then document the rejection and use the nearest host-documented slug, one substitution per rung.
 
-7. **State machine** — Document current state in close-out (`rung_N_audit_fix`, `rung_N_verify_1`, etc.). **STOP** if tempted to skip.
+7. **State machine** — Document current state in close-out (`rung_N_review`, `rung_N_triage`, `rung_N_file_valid_issues`, `rung_N_fix_parallel`, `rung_N_verify_1`, etc.). **STOP** if tempted to skip.
 
-8. **No parallel rung launches** — **FORBIDDEN** to launch audit-fix for rung N+1 while rung N verify is incomplete.
+8. **No parallel rung launches** — **FORBIDDEN** to launch review for rung N+1 while rung N verify is incomplete.
+
+9. **Host-model triage and fix** — Triage and fix subagents MUST use the orchestrator's pinned host model (parent session model), **not** the rung `model` + `reasoning` from resolver JSON. Only the **review** subagent uses the rung model pair.
 
 ### Per-Rung Workflow (Orchestrator Checklist)
 
@@ -164,12 +173,15 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 
 | Step | State | Action |
 |------|-------|--------|
-| 1 | `rung_N_audit_fix` | Launch **one** audit+fix subagent (can edit scoped files) |
-| 2 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 (`readonly: true`) |
-| 3 | — | Orchestrator runs each charter verification signal; log pass/fail |
-| 4 | `rung_N_verify_2` | If step 3 clean: launch **one** verify-only subagent pass 2 (`readonly: true`) |
-| 5 | — | Orchestrator runs charter signals again; log pass/fail |
-| 6 | advance | If steps 3 **and** 5 are clean, advance to rung N+1 unless N is the final resolved rung; else return to step 1 |
+| 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only) |
+| 2 | `rung_N_triage` | Launch **one** triage subagent (`/silver:triage`) at **host model** |
+| 3 | `rung_N_file_valid_issues` | Orchestrator files valid items via `/silver:add`; record PM ids in triage table |
+| 4 | `rung_N_fix_parallel` | Launch fix subagent(s) at **host model** — parallel per triage groups only |
+| 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 (`readonly: true`) at rung model |
+| 6 | — | Orchestrator runs each charter verification signal; log pass/fail |
+| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 (`readonly: true`) |
+| 8 | — | Orchestrator runs charter signals again; log pass/fail |
+| 9 | advance | If steps 6 **and** 8 are clean, advance to rung N+1 unless N is the final resolved rung; else return to step 4 |
 
 ### Repo-wide mode (only after user confirms)
 
@@ -201,13 +213,13 @@ Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-b
 
 ## Subagent Prompt Templates
 
-### Template A — Audit+Fix (`rung_N_audit_fix`)
+### Template A — Review-Only (`rung_N_review`)
 
-Use for the audit+fix phase only. Subagent **may** edit files within scope.
+Use for the review phase only. Subagent **must not** triage or fix — report raw findings only.
 
 ```
 You are on rung {n}/{total}: model={model}, reasoning={reasoning}.
-Phase: AUDIT+FIX (rung_N_audit_fix)
+Phase: REVIEW-ONLY (rung_N_review)
 
 Scope (do not exceed — FORBIDDEN to touch any other path):
 {scope}
@@ -219,14 +231,55 @@ Review charter:
 
 Tasks:
 1. Audit scoped work against the charter goals.
-2. Fix confirmed gaps with the smallest safe change within scope only.
-3. Report raw findings, diffs, and what you changed.
+2. Report raw findings with line references and severity hints.
+3. Do NOT classify, triage, file issues, or apply fixes.
 
 FORBIDDEN behaviors:
-- Do NOT run verification passes (orchestrator runs those separately).
+- Do NOT triage findings (orchestrator runs /silver:triage separately).
+- Do NOT fix gaps — report only.
 - Do NOT read/edit/run commands outside locked scope.
 - Do NOT claim PASS or recommend advancing — orchestrator verifies.
 - Do NOT launch subagents or parallel work.
+```
+
+### Template A2 — Triage (`rung_N_triage`)
+
+Host orchestrator launches triage at **host model** (not rung model). Invoke `/silver:triage` behavior.
+
+```
+Phase: TRIAGE (rung_N_triage) — host model, NOT rung model
+
+Scope: {scope}
+Review charter: {goals}
+Raw findings from review subagent:
+{raw_findings}
+
+Tasks:
+1. Classify each finding (VALID-BLOCKER, VALID-NONBLOCKER, DUPLICATE, ALREADY-FIXED, FALSE-POSITIVE, NEEDS-USER-DECISION).
+2. Produce triage table with evidence and parallelization groups.
+3. Do NOT fix or file — orchestrator files via /silver:add next.
+
+FORBIDDEN: fixing files, filing to PM, combining with review pass.
+```
+
+### Template A3 — Fix (`rung_N_fix_parallel`)
+
+Host orchestrator launches fix agent(s) at **host model** after PM filing. One Task per parallel group when safe.
+
+```
+Phase: FIX (rung_N_fix_parallel) — host model, NOT rung model
+Parallel group: {group_id}
+
+Scope: {scope}
+Triage table / filed issues: {triage_summary}
+Fix workflow: {fix_workflow}  (e.g. /silver:bugfix, /silver:refactor)
+
+Tasks:
+1. Fix only issues in this parallel group within scope.
+2. Smallest safe change; cite PM id in commit/session notes.
+3. Report diffs and residual gaps.
+
+FORBIDDEN: re-triage, expand scope, launch other rung phases.
 ```
 
 ### Template B — Verify-Only (`rung_N_verify_1` or `rung_N_verify_2`)

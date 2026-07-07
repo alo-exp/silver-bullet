@@ -176,7 +176,8 @@ without consulting external lifecycle plugin files.
 | `/silver:verify` | Checks must-haves, runs automated tests, validates artifacts exist and connect correctly | VERIFICATION.md with pass/fail per truth |
 | `/silver:review-request` | Frames review scope and blocker criteria | REVIEW.md request section |
 | `/silver:review` | Performs code review and fix-loop evidence | REVIEW.md findings and outcomes |
-| `/silver:review-triage` | Accepts, rejects, fixes, or defers review findings | REVIEW.md triage section |
+| `/silver:review-triage` | Review-triad wrapper — delegates to `/silver:triage` | REVIEW.md triage section |
+| `/silver:triage` | Generic review-finding triage, PM filing, and fix routing | Triage table + PM ids |
 | `/silver:secure` | Verifies threat mitigation and security findings | SECURITY.md or phase security section |
 | `/silver:ship` | Runs deployment checklist, pushes to remote, confirms CI green, creates PR with auto-generated body | Deployed, CI-green codebase + pull request |
 
@@ -423,7 +424,7 @@ Per-flow steps, produces, and exit conditions live in `docs/composable-flows-con
 - `silver:devops` uses 7 IaC-adapted dimensions (`devops-quality-gates`) instead of the product sweep: reliability, security, scalability, modularity, testability, observability, and change-safety
 - TDD enforcement is hidden: implementation plans pass through the internal `tdd` gate before `silver:execute`; config/infra/doc plans skip TDD
 - Test strategy is captured inside `silver:plan`. `verify-tests` runs before final delivery so the test gate is fresh
-- Code review uses SB review artifacts plus `silver:review-request` before and `silver:review-triage` after
+- Code review uses SB review artifacts plus `silver:review-request` before and `silver:review-triage` or `silver:triage` after
 - External second-opinion review is optional and feeds into SB artifacts; it never replaces SB review
 - `silver:ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
 - When user selects Autonomous mode at session start, `silver:execute` drives all remaining phases
@@ -439,7 +440,7 @@ Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `silver:verify
 **Post-execution sequencing (after FLOW 8):** Flow numbers are stable identifiers — not always runtime order. For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the mandatory post-execute order is:
 
 1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected
-2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)
+2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:triage` via `silver:review-triage` wrapper)
 3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
 4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
 5. FLOW 13 (QUALITY GATE, pre-ship)
@@ -462,7 +463,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 | FLOW 7 | DESIGN CONTRACT | UI/UX design — `silver:ui-contract` plus optional design lenses |
 | FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `silver:execute` |
 | FLOW 9 | UI QUALITY | UI review — `silver:ui-review` plus optional design/accessibility lenses |
-| FLOW 10 | REVIEW | Code review — `silver:review-request` → `silver:review` → `silver:review-triage` |
+| FLOW 10 | REVIEW | Code review — `silver:review-request` → `silver:review` → `silver:triage` |
 | FLOW 11 | SECURE | Security — `security`, `silver:secure`, `silver:validate`, optional `silver:ai-llm-safety` |
 | FLOW 12 | VERIFY | Verification — `silver:verify`, `verify-tests`, `silver:completion-audit` |
 | FLOW 13 | QUALITY GATE | `silver:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
@@ -859,7 +860,7 @@ workflow instructions must use SB-owned skills.
 - **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
   External plugin default paths are not authoritative.
 - **Code review**: SB owns the authoritative `REVIEW.md` artifact through `/silver:review`.
-  `/silver:review-request` and `/silver:review-triage` are SB-owned review subflows.
+  `/silver:review-request`, `/silver:review-triage`, and `/silver:triage` are SB-owned review subflows.
   Optional external reviewers may add findings only by feeding REVIEW.md.
 
 > **Anti-Skip:** You are violating this rule if you use external execution plugins for project execution instead of `/silver:execute`.

@@ -2431,11 +2431,13 @@
       "tools": [],
       "owning_skills": [
         "silver-review-fix-ladder",
-        "silver-review-triage"
+        "silver-review-triage",
+        "silver-triage"
       ],
       "flow_steps": [
         "FS-SILVER_REVIEW_FIX_LADDER",
-        "FS-SILVER_REVIEW_TRIAGE"
+        "FS-SILVER_REVIEW_TRIAGE",
+        "FS-SILVER_TRIAGE"
       ],
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
@@ -8266,6 +8268,58 @@
       "canonical_catalog_entity": "AF-REVIEW-TRIAGE"
     },
     {
+      "id": "FS-SILVER_TRIAGE",
+      "skill": "silver-triage",
+      "purpose": "Execute the silver-triage skill as a catalog-backed generic review-finding triage step in AF-REVIEW-TRIAGE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "raw review findings",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-triage work product or routing decision",
+        "triage table with PM filing refs",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_TRIAGE",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-triage receives raw review findings and scope; must not be the same agent that produced the review.",
+        "work_product": "silver-triage produces classified findings, PM filing plan, and fix routing.",
+        "verification": {
+          "methods": [
+            "inspection"
+          ],
+          "artifact_refs": [
+            "skills/silver-triage/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_TRIAGE"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-REVIEW-TRIAGE"
+      ],
+      "canonical_catalog_entity": "AF-REVIEW-TRIAGE"
+    },
+    {
       "id": "FS-SILVER_SCAN",
       "skill": "silver-scan",
       "purpose": "Execute the silver-scan skill as a catalog-backed step in AF-ORIENT.",
@@ -11227,6 +11281,14 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_REVIEW_TRIAGE"
     },
     {
+      "id": "EV-FS-SILVER_TRIAGE",
+      "producer": "FS-SILVER_TRIAGE",
+      "artifact_or_tool_ref": "skills/silver-triage/SKILL.md",
+      "sufficiency_class": "inspection",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_TRIAGE"
+    },
+    {
       "id": "EV-FS-SILVER_SCAN",
       "producer": "FS-SILVER_SCAN",
       "artifact_or_tool_ref": "skills/silver-scan/SKILL.md",
@@ -11525,6 +11587,7 @@
         "VL-FS-SILVER_REVIEW_REQUEST",
         "VL-FS-SILVER_REVIEW_STATS",
         "VL-FS-SILVER_REVIEW_TRIAGE",
+        "VL-FS-SILVER_TRIAGE",
         "VL-FS-SILVER_SCAN",
         "VL-FS-SILVER_SECURE",
         "VL-FS-SILVER_SHIP",
@@ -11777,6 +11840,7 @@
       "silver-review-request": "AF-REVIEW-REQUEST",
       "silver-review-stats": "AF-ORIENT",
       "silver-review-triage": "AF-REVIEW-TRIAGE",
+      "silver-triage": "AF-REVIEW-TRIAGE",
       "silver-scan": "AF-ORIENT",
       "silver-secure": "AF-SECURE",
       "silver-ship": "AF-SHIP",
@@ -11830,6 +11894,7 @@
       "silver-review-request": "AF-REVIEW-REQUEST",
       "silver-review": "AF-REVIEW",
       "silver-review-triage": "AF-REVIEW-TRIAGE",
+      "silver-triage": "AF-REVIEW-TRIAGE",
       "silver-verify": "AF-VERIFY",
       "security": "AF-SECURE",
       "silver-secure": "AF-SECURE",
