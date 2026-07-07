@@ -246,6 +246,20 @@ Structural stages inside the smoke script (mandatory):
 Cursor install/hook smoke (included above): `release-live-matrix-cursor-smoke.sh`
 writes `matrix=cursor-smoke` when enabled.
 
+Five-tool stack pre-release (Stage 4c — when `recommended_tools.leanctx.enabled_by_user` is true):
+
+```bash
+export CURSOR_API_KEY=...   # or cursor-agent login
+bash scripts/pre-release-gate.sh
+# or explicitly:
+SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
+  bash tests/scripts/test-five-tool-prerelease-cursor.sh
+```
+
+Live scenarios S01/S02/S04/S06/S09 via `/silver:agent-cursor` (`agent-cursor-delegate.sh`, `composer-2.5` only).
+Writes `${SB_RUNTIME_STATE_DIR}/pre-release-five-tool-stack` on success.
+See [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../testing/FIVE-TOOL-PRERELEASE.md).
+
 ---
 
 ## Anti-Skip

@@ -44,10 +44,15 @@ SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 bash tests/live/test-live-five-t
 
 **Conclusion**
 
-Live validation is **structural PASS / delegate SKIP**. Full S01–S10 agent-cursor delegation requires interactive `cursor-agent` auth and a non-hanging delegate session. Re-run locally:
+Live validation: **S01 PASS** with timeout fix (`CURSOR_AGENT_TIMEOUT` aligned to scenario timeout). S02+ may still exceed budget on slow delegate — use `SB_FIVE_TOOL_SCENARIO_TIMEOUT=180` and `SB_FIVE_TOOL_MODE=prerelease` for release gate subset.
+
+Pre-release gate wired: `scripts/pre-release-gate.sh` Stage 4c → `tests/scripts/test-five-tool-prerelease-cursor.sh`.
+
+Re-run locally:
 
 ```bash
-SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 bash tests/live/test-live-five-tool-stack-cursor.sh
+SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
+  bash tests/scripts/test-five-tool-prerelease-cursor.sh
 ```
 
 ## Offline coverage (CI-safe)

@@ -6,6 +6,8 @@
 
 Plan reference: [`.planning/PLAN-leanctx-five-tool-integration.md`](../../.planning/PLAN-leanctx-five-tool-integration.md) Phase 4.
 
+Operator doc: [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../../docs/testing/FIVE-TOOL-PRERELEASE.md)
+
 | # | Scenario | Acceptance | Ledger |
 |---|----------|------------|--------|
 | S01 | Opt-in all five tools in temp project | Install script exits 0; MCP JSON valid; `lctx_` prefix confirmed | pending |
@@ -19,6 +21,22 @@ Plan reference: [`.planning/PLAN-leanctx-five-tool-integration.md`](../../.plann
 | S09 | Conflict regression | Coordinator returns `permission: deny` with `sb_stack_double_compression` when RTK-rewritten Bash re-offered to LeanCTX shell; same for CM-denied WebFetch → LeanCTX fetch MCP | pending |
 | S10 | PreCompact lifecycle | Ordering preserved: CM PreCompact → AM snapshot → LeanCTX compact → stop-check | pending |
 
+## Pre-release acceptance criteria
+
+Mandatory for every SB release when `recommended_tools.leanctx.enabled_by_user` is `true` (Stage 4c in `scripts/pre-release-gate.sh`).
+
+| Gate | Requirement |
+|------|-------------|
+| Offline bundle | All hook/script tests in [`tests/scripts/lib/five-tool-prerelease.sh`](../scripts/lib/five-tool-prerelease.sh) green in CI |
+| Structural wiring | `agent-cursor-delegate.sh`, `silver-agent-cursor` skill, claims registry claim `five-tool-stack-cursor` |
+| Live pre-release subset | **S01, S02, S04, S06, S09** via `agent-cursor-delegate.sh` with `composer-2.5` only |
+| Timeout | Per-scenario `SB_FIVE_TOOL_SCENARIO_TIMEOUT` (default 180s) — timeout is **FAIL** |
+| Auth | `CURSOR_API_KEY` or `cursor-agent login` when live required |
+| Skip semantics | SKIP allowed in CI when leanctx not opted in; **FAIL** when leanctx opted in and auth missing |
+| Success marker | `${SB_RUNTIME_STATE_DIR}/pre-release-five-tool-stack` |
+
+Post-release / diagnostic: run full S01–S10 with `SB_FIVE_TOOL_MODE=full`.
+
 ## Offline coverage (always in CI)
 
 | Test | Validates |
@@ -31,14 +49,26 @@ Plan reference: [`.planning/PLAN-leanctx-five-tool-integration.md`](../../.plann
 | [`tests/scripts/test-install-leanctx-sb.sh`](../scripts/test-install-leanctx-sb.sh) | Dry-run install; no config clobber |
 | [`tests/scripts/test-optimize-five-tool-stack.sh`](../scripts/test-optimize-five-tool-stack.sh) | Profile apply idempotency |
 | [`tests/hooks/test-agentmemory-graphify-synergy.sh`](../hooks/test-agentmemory-graphify-synergy.sh) | GX+AM synergy unchanged when LeanCTX present/disabled |
+| [`tests/scripts/test-five-tool-prerelease-cursor.sh`](../scripts/test-five-tool-prerelease-cursor.sh) | Pre-release wiring + offline bundle orchestration |
 
 ## Running live suite
+
+Pre-release (recommended):
+
+```bash
+bash scripts/pre-release-gate.sh
+# or when leanctx opted in:
+SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
+  bash tests/scripts/test-five-tool-prerelease-cursor.sh
+```
+
+Optional manual:
 
 ```bash
 SB_FIVE_TOOL_LIVE=1 bash tests/live/test-live-five-tool-stack-cursor.sh
 ```
 
-Skips automatically when `cursor-agent` is missing or unauthenticated (documents skip reason in output).
+Skips automatically when `cursor-agent` is missing or unauthenticated unless `SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1` (then FAIL).
 
 ## Host matrix notes
 

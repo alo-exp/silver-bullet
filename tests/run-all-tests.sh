@@ -87,7 +87,8 @@ if [[ "${SB_ENTERPRISE_E2E_LIVE:-}" == "1" ]]; then
 fi
 
 # Five-tool live Cursor validation (agent-cursor harness). Offline hook/script tests above always run.
-# Set SB_FIVE_TOOL_LIVE=1 locally before push when five-tool stack is opted in.
+# Pre-release gate (scripts/pre-release-gate.sh Stage 4c) invokes test-five-tool-prerelease-cursor.sh.
+# Optional manual full live: SB_FIVE_TOOL_LIVE=1 SB_FIVE_TOOL_LIVE_EXECUTE=1 SB_FIVE_TOOL_MODE=full
 if [[ "${SB_FIVE_TOOL_LIVE:-}" == "1" ]]; then
   printf '\n========================================\n'
   printf '  Five-Tool Live Tests (Cursor)\n'
