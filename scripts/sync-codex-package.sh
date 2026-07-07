@@ -19,7 +19,8 @@ while ! mkdir "$SYNC_LOCK_DIR" 2>/dev/null; do
   fi
   sleep 1
 done
-trap 'rmdir "$SYNC_LOCK_DIR" 2>/dev/null || true' EXIT
+skill_stage=""
+trap 'rm -rf "$skill_stage" 2>/dev/null || true; rmdir "$SYNC_LOCK_DIR" 2>/dev/null || true' EXIT
 
 log() {
   printf '[codex-sync] %s\n' "$*"
@@ -110,7 +111,8 @@ for name in ("skills", "skill-source", ".generated-skills", "agents"):
     if path.exists() or path.is_symlink():
         shutil.rmtree(path)
 PY
-skill_stage="$(mktemp -d "${DEST_DIR}/.skill-source.staging.XXXXXX")"
+find "${DEST_DIR}" -maxdepth 1 -type d -name '.skill-source.staging.*' -exec rm -rf {} + 2>/dev/null || true
+skill_stage="$(mktemp -d "${TMPDIR:-/tmp}/sb-skill-source.staging.XXXXXX")"
 rsync -a "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${skill_stage}/"
 find "${skill_stage}" -name SKILL.md -type f -exec sh -c '
   for path do
@@ -123,6 +125,7 @@ find "${skill_stage}" -name SKILL.md -type f -exec sh -c '
   done
 ' sh {} +
 mv "${skill_stage}" "${DEST_DIR}/skill-source"
+skill_stage=""
 
 if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
   "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"
