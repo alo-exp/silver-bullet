@@ -56,11 +56,23 @@ def sub_path(obj, root: str):
 
 sb_hooks = sub_path(sb_hooks, install_path)
 SB_HOOK_RE = re.compile(r"/silver-bullet/[^/]+/hooks/")
+DEV_CHECKOUT_RE = re.compile(r"/plugins/silver-bullet/hooks/")
+
+
+def is_malformed_sb_hook(entry: dict) -> bool:
+    command = entry.get("command", "")
+    if "codex-hook-adapter" in command:
+        return True
+    return 'codex-hook-adapter.sh"' in command and "cursor-hook-bridge" in command
 
 
 def is_stale_sb_hook(entry: dict) -> bool:
     command = entry.get("command", "")
+    if is_malformed_sb_hook(entry):
+        return True
     if "${CURSOR_PLUGIN_ROOT}/hooks/" in command:
+        return True
+    if DEV_CHECKOUT_RE.search(command) and install_path not in command:
         return True
     return bool(SB_HOOK_RE.search(command)) and install_path not in command
 
@@ -82,6 +94,7 @@ for event, entries in list(existing_hooks.items()):
         existing_hooks[event] = cleaned
     else:
         del existing_hooks[event]
+
 
 def hook_entry_key(entry: dict) -> tuple[str, str]:
     return (entry.get("command", ""), entry.get("matcher", ""))
