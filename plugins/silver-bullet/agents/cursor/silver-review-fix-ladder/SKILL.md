@@ -173,13 +173,13 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 
 | Step | State | Action |
 |------|-------|--------|
-| 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only) |
+| 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only). **Cursor:** use `delegation` from resolver JSON — `task` → `Task` with `task_slug`; `agent-cursor` → `/silver:agent-cursor` brief + `agent-cursor-delegate.sh` |
 | 2 | `rung_N_triage` | Launch **one** triage subagent (`/silver:triage`) at **host model** |
 | 3 | `rung_N_file_valid_issues` | Orchestrator files valid items via `/silver:add`; record PM ids in triage table |
 | 4 | `rung_N_fix_parallel` | Launch fix subagent(s) at **host model** — parallel per triage groups only |
-| 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 (`readonly: true`) at rung model |
+| 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same `delegation` routing as review (`task` or `agent-cursor`) |
 | 6 | — | Orchestrator runs each charter verification signal; log pass/fail |
-| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 (`readonly: true`) |
+| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 at rung model. **Cursor:** same `delegation` routing as review |
 | 8 | — | Orchestrator runs charter signals again; log pass/fail |
 | 9 | advance | If steps 6 **and** 8 are clean, advance to rung N+1 unless N is the final resolved rung; else return to step 4 |
 
@@ -203,9 +203,47 @@ Report:
 
 ## Host Delegation Notes
 
+### Cursor rung routing (Task vs agent-cursor)
+
+Resolve the ladder first (`python3 scripts/review-fix-ladder.py --json`). Each Cursor rung includes:
+
+| Field | Meaning |
+|-------|---------|
+| `delegation` | `task` — use host `Task` with `task_slug`; `agent-cursor` — use `/silver:agent-cursor` |
+| `task_slug` | Composite slug for `Task` `model` param (when `delegation: task`) |
+| `agent_model` | Native `CURSOR_AGENT_MODEL` for cursor-agent TUI (when `delegation: agent-cursor`) |
+
+**Routing rule:** When `task_slug` ≠ `agent_model` (same-family effort not exposed in Task enum — e.g. `gpt-5.5` / `high`), route **review** and **verify** phases via agent-cursor. Triage and fix always use the orchestrator's pinned host model.
+
+Phase routing detail:
+
+```bash
+python3 scripts/review-fix-ladder.py --host cursor --json --rung 7 --phase verify_1 --work-dir .
+```
+
+For `delegation: agent-cursor`:
+
+1. Write brief from Template A or B to `.planning/agent-cursor/rfl-rung-{N}-{phase}/brief.md`
+2. Run the emitted `delegate_command` (or):
+
+```bash
+mkdir -p .planning/agent-cursor/rfl-rung-7-verify_1
+# write brief.md from verify template
+export CURSOR_AGENT_MODEL=gpt-5.5-high
+bash scripts/agent-cursor-delegate.sh \
+  --work-dir "$(pwd)" \
+  --brief-file .planning/agent-cursor/rfl-rung-7-verify_1/brief.md \
+  --log .planning/agent-cursor/rfl-rung-7-verify_1/cursor-run.log
+```
+
+3. Record `result.md` + log bytes in close-out; verify brief constraints (verify-only: no edits).
+
+For `delegation: task`, use `Task` with `model: <task_slug>` and `readonly: true` on verify passes.
+
 | Host | Delegation |
 |------|------------|
-| **Task-capable host** | `Task` subagent with `model` set to the **composite slug** from `cursor_task_slug()` in `scripts/review-fix-ladder.py` (reasoning effort is encoded in the slug — there is no separate Task reasoning parameter). Ladder order: Composer low → medium → high → xhigh, then GPT-5.5 low → medium → high → xhigh. **All Composer rungs map to `composer-2.5` only** — never `composer-2.5-fast` (global subagent policy). GPT-5.5 maps to `gpt-5.5` for low and `gpt-5.5-extra-high` for medium/high/xhigh by model-lock substitution (not `gpt-5.5-medium`, `gpt-5.5-high`, or `gpt-5.5-xhigh`). Verify passes: `readonly: true`. **Note:** host model picker pinning may filter the Task enum; if a slug is rejected, document the rejection and apply model-lock substitution per rung. |
+| **Cursor (Task path)** | `Task` subagent with `model` set to `task_slug` from resolver JSON. **All Composer rungs** map to `composer-2.5` only — never `composer-2.5-fast`. Verify passes: `readonly: true`. |
+| **Cursor (agent-cursor path)** | `/silver:agent-cursor` + `agent-cursor-delegate.sh` with `CURSOR_AGENT_MODEL=<agent_model>`. Required when Task cannot express the rung's reasoning effort (e.g. `gpt-5.5` / `medium` → `gpt-5.5-medium`, `high` → `gpt-5.5-high`). Artifacts under `.planning/agent-cursor/rfl-rung-*`. |
 | **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Secondary host agent** | `Cursor exec -m <model> -c model_reasoning_effort=<reasoning>` (native Cursor binary, not Kay shim) |
 
