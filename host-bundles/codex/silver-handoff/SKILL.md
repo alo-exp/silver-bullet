@@ -4,6 +4,7 @@ title: "Handoff"
 description: This skill should be used when ending a session and needing a reusable, project-level handoff prompt for the next session. It summarizes project state, active milestone, key docs, constraints, verification/release status, and open follow-ups without defaulting to task-specific detail unless explicitly requested.
 argument-hint: "[optional focus area or 'include task details']"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver-handoff — Generate Project-Level Session Handoff Prompt

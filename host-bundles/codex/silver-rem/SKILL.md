@@ -3,6 +3,7 @@ name: "silver:rem"
 title: "Rem"
 description: "This skill should be used to capture a knowledge or learnings insight into the correct monthly doc file — appends to docs/knowledge/YYYY-MM.md for project-scoped insights (Architecture Patterns, Known Gotchas, Key Decisions, Recurring Patterns, Open Questions) or docs/learnings/YYYY-MM.md for portable insights (domain:, stack:, practice:, devops:, design:), creating the monthly file with the correct header if it does not yet exist and updating docs/knowledge/INDEX.md when a new monthly file is first created."
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:rem — Capture Knowledge and Learnings Insights

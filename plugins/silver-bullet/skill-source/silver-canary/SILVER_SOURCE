@@ -6,6 +6,7 @@ description: >
   evidence after releases, deploys, or high-risk runtime changes.
 argument-hint: "<live URL or runtime scope> [--duration <time>] [--interval <time>]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:canary - Post-Deploy Runtime Watch

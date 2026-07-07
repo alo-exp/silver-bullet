@@ -7,6 +7,7 @@ description: >
   regressed.
 argument-hint: "<refactor scope> [--plan-only|--continue|--batch <file>]"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:refactor - Behavior-Preserving Change Workflow
