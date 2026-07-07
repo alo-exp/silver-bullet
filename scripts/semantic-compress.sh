@@ -25,6 +25,24 @@ CONFIG="$REPO_ROOT/.silver-bullet.json"
 [[ -f "$CONFIG" ]] || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
+# Conflict #11: skip SB semantic compression when five-tool coordinator owns surfaces.
+_lib_hooks="${REPO_ROOT}/hooks/lib"
+if [[ -f "${_lib_hooks}/runtime-paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${_lib_hooks}/runtime-paths.sh"
+fi
+if [[ -f "${_lib_hooks}/recommended-tools.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${_lib_hooks}/recommended-tools.sh"
+fi
+if [[ -f "${_lib_hooks}/stack-compression-coordinator.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${_lib_hooks}/stack-compression-coordinator.sh"
+  if sb_stack_coordinator_needed "$CONFIG" 2>/dev/null; then
+    exit 0
+  fi
+fi
+
 # Read config
 enabled=$(jq -r 'if .semantic_compression.enabled == false then "false" else "true" end' "$CONFIG")
 if [[ "$enabled" == "false" ]]; then exit 0; fi
