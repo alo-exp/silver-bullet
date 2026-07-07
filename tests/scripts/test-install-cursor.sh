@@ -90,23 +90,23 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/commands/init.md" ]] && \
-   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+if [[ -f "${gitpath_root}/plugins/silver-bullet/commands/init.md" ]] && \
+   jq -e '.commands == "./commands"' "${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands in marketplace gitPath checkout"
 else
   fail "install-cursor materializes commands in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/agents/cursor/silver-init/SKILL.md" || -f "${gitpath_root}/agents/cursor/silver:init/SKILL.md" ]]; then
+if [[ -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver-init/SKILL.md" || -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver:init/SKILL.md" ]]; then
   pass "install-cursor materializes cursor skills in marketplace gitPath checkout"
 else
   fail "install-cursor materializes cursor skills in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/cursor-hooks.json" ]]; then
-  pass "install-cursor materializes root cursor-hooks.json in marketplace gitPath checkout"
+if [[ -f "${gitpath_root}/plugins/silver-bullet/cursor-hooks.json" ]]; then
+  pass "install-cursor materializes cursor-hooks.json in marketplace gitPath checkout"
 else
-  fail "install-cursor materializes root cursor-hooks.json in marketplace gitPath checkout"
+  fail "install-cursor materializes cursor-hooks.json in marketplace gitPath checkout"
 fi
 
 if [[ -f "$registry_path" ]] && \
@@ -129,11 +129,19 @@ fi
 
 repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 market_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
+backend_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/${repo_sha}"
 market_cache_target="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
+backend_cache_target="$(cd "$backend_cache_link" 2>/dev/null && pwd -P || true)"
 if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target" == "$resolved_current" ]]; then
   pass "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 else
   fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
+fi
+
+if [[ -L "$backend_cache_link" ]] && [[ "$backend_cache_target" == "$resolved_current" ]]; then
+  pass "install-cursor seeds alo-labs-agent-plugins marketplace cache symlink"
+else
+  fail "install-cursor seeds alo-labs-agent-plugins marketplace cache symlink"
 fi
 
 if jq -e '.version == 2 and (.plugins["silver-bullet@alo-labs"] | type) == "array"' "$registry_path" >/dev/null 2>&1; then
@@ -233,11 +241,18 @@ else
 fi
 
 manifest_v="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "${MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json")"
+manifest_path="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .source.path // empty' "${MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json")"
 pkg_v="$(jq -r '.version' "${REPO_ROOT}/package.json")"
 if [[ "$manifest_v" == "$pkg_v" ]]; then
   pass "marketplace manifest version matches package.json"
 else
   fail "marketplace manifest version matches package.json"
+fi
+
+if [[ "$manifest_path" == "plugins/silver-bullet" ]]; then
+  pass "marketplace manifest declares silver-bullet subpath"
+else
+  fail "marketplace manifest declares silver-bullet subpath"
 fi
 
 echo
