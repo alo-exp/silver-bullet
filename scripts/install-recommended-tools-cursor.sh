@@ -47,6 +47,7 @@ fi
 install_rule graphify.mdc "$RULES_DIR"
 install_rule agentmemory.mdc "$RULES_DIR"
 install_rule recommended-tools.mdc "$RULES_DIR"
+install_rule leanctx.mdc "$RULES_DIR"
 
 if [[ -f "${RULES_DIR}/context-mode.mdc" ]]; then
   :
