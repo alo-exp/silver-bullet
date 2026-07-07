@@ -90,6 +90,25 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
+if [[ -f "${gitpath_root}/commands/init.md" ]] && \
+   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+  pass "install-cursor materializes commands in marketplace gitPath checkout"
+else
+  fail "install-cursor materializes commands in marketplace gitPath checkout"
+fi
+
+if [[ -f "${gitpath_root}/agents/cursor/silver-init/SKILL.md" || -f "${gitpath_root}/agents/cursor/silver:init/SKILL.md" ]]; then
+  pass "install-cursor materializes cursor skills in marketplace gitPath checkout"
+else
+  fail "install-cursor materializes cursor skills in marketplace gitPath checkout"
+fi
+
+if [[ -f "${gitpath_root}/cursor-hooks.json" ]]; then
+  pass "install-cursor materializes root cursor-hooks.json in marketplace gitPath checkout"
+else
+  fail "install-cursor materializes root cursor-hooks.json in marketplace gitPath checkout"
+fi
+
 if [[ -f "$registry_path" ]] && \
    jq -e --arg sha "$repo_sha" \
      '(.plugins["silver-bullet@alo-labs"] | if type == "array" then .[0].gitCommitSha else .gitCommitSha end) == $sha' \
@@ -97,6 +116,15 @@ if [[ -f "$registry_path" ]] && \
   pass "install-cursor records gitCommitSha in installed_plugins.json"
 else
   fail "install-cursor records gitCommitSha in installed_plugins.json"
+fi
+
+if [[ -f "$registry_path" ]] && \
+   jq -e --arg path "$gitpath_root" \
+     '(.plugins["silver-bullet@alo-labs"] | if type == "array" then .[0].gitPath else .gitPath end) == $path' \
+     "$registry_path" >/dev/null 2>&1; then
+  pass "install-cursor records gitPath in installed_plugins.json"
+else
+  fail "install-cursor records gitPath in installed_plugins.json"
 fi
 
 repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
@@ -163,6 +191,7 @@ fi
 
 # --merge-hooks-only must repair missing marketplace gitPath (Cursor restart blocker)
 rm -f "${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
+mkdir -p "${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
 bash "${REPO_ROOT}/scripts/install-cursor.sh" --merge-hooks-only >/dev/null
 market_cache_target_after="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
 if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target_after" == "$resolved_current" ]]; then

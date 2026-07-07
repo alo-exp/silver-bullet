@@ -102,6 +102,13 @@ read_marketplace_version() {
   jq -r '.plugins[] | select(.name=="silver-bullet") | .version' "$manifest"
 }
 
+read_marketplace_manifest_sha() {
+  local manifest
+  manifest="$(marketplace_manifest_path)"
+  [[ -f "$manifest" ]] || return 0
+  jq -r '.plugins[] | select(.name=="silver-bullet") | .source.sha // empty' "$manifest" 2>/dev/null || true
+}
+
 sync_plugin_tree_from_checkout() {
   local source_root="$1"
   local version="$2"
@@ -259,6 +266,9 @@ ensure_cursor_marketplace_plugin_cache_symlink() {
   cache_root="$(cursor_marketplace_plugin_cache_root)"
   link_path="${cache_root}/${commit_sha}"
   mkdir -p "$cache_root"
+  if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+    rm -rf "$link_path"
+  fi
   ln -sfn "$dest" "$link_path"
 }
 
@@ -274,13 +284,55 @@ read_installed_plugins_git_sha() {
   ' "$registry_file" 2>/dev/null || true
 }
 
+cursor_github_marketplace_gitpath_for_sha() {
+  local commit_sha="$1"
+  printf '%s/%s' "$(cursor_github_marketplace_gitpath_root)" "$commit_sha"
+}
+
+materialize_cursor_plugin_surface_in_gitpath() {
+  local dest="$1"
+  local commit_sha="$2"
+  local gitpath_root
+
+  [[ -n "$commit_sha" ]] || return 0
+  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
+  [[ -d "${gitpath_root}/.git" ]] || return 0
+
+  if [[ -d "${dest}/commands" ]]; then
+    mkdir -p "${gitpath_root}/commands"
+    rsync -a --delete "${dest}/commands/" "${gitpath_root}/commands/"
+  fi
+  if [[ -d "${dest}/agents/cursor" ]]; then
+    mkdir -p "${gitpath_root}/agents/cursor"
+    rsync -a --delete "${dest}/agents/cursor/" "${gitpath_root}/agents/cursor/"
+  fi
+  if [[ -f "${dest}/cursor-hooks.json" ]]; then
+    install -m 644 "${dest}/cursor-hooks.json" "${gitpath_root}/cursor-hooks.json"
+  fi
+  if [[ -f "${dest}/.cursor-plugin/plugin.json" ]]; then
+    mkdir -p "${gitpath_root}/.cursor-plugin"
+    install -m 644 "${dest}/.cursor-plugin/plugin.json" "${gitpath_root}/.cursor-plugin/plugin.json"
+  fi
+}
+
 cursor_plugin_gitpath_ready() {
   local commit_sha="$1"
   local gitpath_root
 
   [[ -n "$commit_sha" ]] || return 1
-  gitpath_root="$(cursor_github_marketplace_gitpath_root)/${commit_sha}"
+  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
   [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${commit_sha}^{commit}" >/dev/null 2>&1
+}
+
+cursor_plugin_gitpath_surface_ready() {
+  local commit_sha="$1"
+  local gitpath_root
+
+  cursor_plugin_gitpath_ready "$commit_sha" || return 1
+  gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
+  [[ -f "${gitpath_root}/commands/init.md" ]] || return 1
+  [[ -f "${gitpath_root}/.cursor-plugin/plugin.json" ]] || return 1
+  jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1
 }
 
 cursor_marketplace_cache_link_ready() {
@@ -300,11 +352,13 @@ seed_cursor_marketplace_gitpaths() {
   local dest="$1"
   local primary_sha="$2"
   local source_root="$3"
-  local remote_sha registry_sha sha
+  local remote_sha registry_sha manifest_sha sha
 
-  for sha in "$primary_sha" "$(read_installed_plugins_git_sha)" "$(resolve_remote_github_head_sha)"; do
+  manifest_sha="$(read_marketplace_manifest_sha)"
+  for sha in "$primary_sha" "$(read_installed_plugins_git_sha)" "$manifest_sha" "$(resolve_remote_github_head_sha)"; do
     [[ -n "$sha" ]] || continue
     ensure_cursor_github_marketplace_gitpath "$sha" "$source_root"
+    materialize_cursor_plugin_surface_in_gitpath "$dest" "$sha"
     ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$sha"
   done
 }
@@ -312,16 +366,20 @@ seed_cursor_marketplace_gitpaths() {
 verify_cursor_plugin_discovery_paths() {
   local dest="$1"
   local source_root="$2"
-  local primary_sha registry_sha remote_sha sha failures=0
+  local primary_sha registry_sha remote_sha manifest_sha sha failures=0
 
   primary_sha="$(resolve_install_commit_sha "$source_root")"
   registry_sha="$(read_installed_plugins_git_sha)"
   remote_sha="$(resolve_remote_github_head_sha)"
+  manifest_sha="$(read_marketplace_manifest_sha)"
 
-  for sha in "$primary_sha" "$registry_sha" "$remote_sha"; do
+  for sha in "$primary_sha" "$registry_sha" "$manifest_sha" "$remote_sha"; do
     [[ -n "$sha" ]] || continue
     if ! cursor_plugin_gitpath_ready "$sha"; then
       printf 'ERROR: Cursor gitPath missing for %s — plugin load fails after restart (see Cursor Plugins log)\n' "$sha" >&2
+      failures=1
+    elif ! cursor_plugin_gitpath_surface_ready "$sha"; then
+      printf 'ERROR: Cursor gitPath plugin surface incomplete for %s — commands/ or plugin.json missing (run: bash scripts/install-cursor.sh)\n' "$sha" >&2
       failures=1
     elif ! cursor_marketplace_cache_link_ready "$dest" "$sha"; then
       printf 'ERROR: Cursor marketplace cache symlink missing for %s at %s/silver-bullet/%s\n' \
@@ -344,7 +402,7 @@ ensure_cursor_installed_plugins_registry() {
   now="$(date -u +%Y-%m-%dT%H:%M:%S.000Z)"
   mkdir -p "$(dirname "$registry_file")"
 
-  python3 - "$registry_file" "$dest" "$version" "$now" "$commit_sha" <<'PY'
+  python3 - "$registry_file" "$dest" "$version" "$now" "$commit_sha" "$CURSOR_HOME" <<'PY'
 import json
 import pathlib
 import sys
@@ -354,6 +412,7 @@ install_path = str(pathlib.Path(sys.argv[2]).resolve())
 version = sys.argv[3]
 now = sys.argv[4]
 commit_sha = sys.argv[5]
+cursor_home = pathlib.Path(sys.argv[6]).expanduser()
 plugin_id = "silver-bullet@alo-labs"
 
 data = {"version": 2, "plugins": {}}
@@ -374,6 +433,16 @@ entry = {
 }
 if commit_sha:
     entry["gitCommitSha"] = commit_sha
+    gitpath = (
+        cursor_home
+        / "plugins"
+        / "marketplaces"
+        / "github.com"
+        / "alo-exp"
+        / "silver-bullet"
+        / commit_sha
+    )
+    entry["gitPath"] = str(gitpath.resolve())
 
 existing = plugins.get(plugin_id)
 if isinstance(existing, list) and existing:
