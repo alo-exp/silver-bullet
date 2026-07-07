@@ -25,7 +25,7 @@ sb_recommended_tool_is_token_compression() {
   esac
 }
 
-# Compression-stack tools (RTK, Context Mode, LeanCTX) — LeanCTX is stack-routed, not shell-only.
+# Stack-routed compression tools (includes LeanCTX — not shell-only token_compression).
 sb_recommended_tool_is_compression_stack() {
   case "${1:-}" in
     rtk|context_mode|leanctx) return 0 ;;

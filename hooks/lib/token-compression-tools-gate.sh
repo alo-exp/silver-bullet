@@ -12,6 +12,10 @@ if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools-registry.sh" ]]; then
   # shellcheck source=recommended-tools-registry.sh
   source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools-registry.sh"
 fi
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh" ]]; then
+  # shellcheck source=stack-compression-coordinator.sh
+  source "$(dirname "${BASH_SOURCE[0]}")/stack-compression-coordinator.sh"
+fi
 
 sb_token_tool_cli_command() {
   local config_file="${1:-}" tool_id="${2:-}"
@@ -96,6 +100,19 @@ sb_token_tool_block_message() {
 🚫 ${display} USAGE REQUIRED — run ${cli} before substantive compression-sensitive work.
 
 When ${display} is opted in, invoke the CLI at least once every ${ttl}s before edits/commits that expand context. See silver-bullet.md §2g-i and docs/code-intelligence-contract.md.
+EOF
+}
+
+sb_token_compression_mutual_exclusion_block_message() {
+  if declare -f sb_stack_mutual_exclusion_block_message >/dev/null 2>&1; then
+    sb_stack_mutual_exclusion_block_message
+    return 0
+  fi
+  cat <<EOF
+🚫 STACK COMPRESSION CONFLICT — double-compression detected.
+
+Use routed surface owners only (RTK shell, LeanCTX AST read, Context Mode sandbox/webfetch).
+See docs/LEANCTX.md.
 EOF
 }
 
