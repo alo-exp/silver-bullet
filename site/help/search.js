@@ -456,7 +456,7 @@ var IDX = [
     "url": "/help/workflows/silver-review-triad.html",
     "anchor": "overview",
     "title": "/silver:review-triad",
-    "text": "/silver:review-triad WF-REVIEW-TRIAD reusable workflow component v0.50.0 APO catalog. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
+    "text": "/silver:review-triad WF-REVIEW-TRIAD reusable workflow component v0.50.0 APO catalog. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage /silver:triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
   },
   {
     "page": "Workflows",
@@ -512,7 +512,7 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "lifecycle-commands",
     "title": "SB lifecycle commands",
-    "text": "SB lifecycle commands include /silver, /silver:context, /silver:plan, /silver:execute, /silver:verify, /silver:review-request, /silver:review, /silver:review-triage, /silver:secure, /silver:ship, /silver:deploy, /silver:canary, /silver:release, /silver:debug, /silver:incident, and /silver:retro."
+    "text": "SB lifecycle commands include /silver, /silver:context, /silver:plan, /silver:execute, /silver:verify, /silver:review-request, /silver:review, /silver:review-triage, /silver:triage, /silver:secure, /silver:ship, /silver:deploy, /silver:canary, /silver:release, /silver:debug, /silver:incident, and /silver:retro."
   },
   {
     "page": "Reference",

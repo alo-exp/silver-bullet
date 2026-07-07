@@ -749,24 +749,34 @@ If already set to `auto` or `bypassPermissions` → skip silently.
 ### 2.9 Project management system
 
 Detect from the repo remote and hosting metadata first:
-- GitHub remote or GitHub-hosted repo → `"issue_tracker": "github"`
-- Local-only or non-GitHub repo → `"issue_tracker": "local"`
+- GitHub remote or GitHub-hosted repo → `"issue_tracker": "github"` with `issue_tracker_adapter.type: "github"`
+- Local-only or non-GitHub repo → `"issue_tracker": "local"` with `issue_tracker_adapter.type: "local"`
 
-Only use ask the user directly if the detection is genuinely ambiguous:
+Only ask the user directly if the detection is genuinely ambiguous:
 - Question: "Which project management system should Silver Bullet use when filing issues and backlog items?"
 - Options:
   - "A. GitHub Issues (this repo) — recommended for GitHub-hosted projects"
   - "B. Local docs/issues — use repository-local markdown tracking (default, no external system)"
+  - "C. Generic adapter — custom command or MCP bridge (JIRA, Linear, etc.)"
 
-Record the answer as `issue_tracker` in `.silver-bullet.json`:
-- Option A → `"issue_tracker": "github"`
-- Option B → `"issue_tracker": "local"`
+Record the answer in `.silver-bullet.json`:
 
-This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver:feature`, `silver:bugfix`, `silver:devops`, `silver:ui`) read this field and route issue creation accordingly:
+| Option | `issue_tracker` | `issue_tracker_adapter` |
+|--------|-----------------|-------------------------|
+| A | `"github"` | `{ "type": "github", "create_issue_command": null, "dedupe_command": null, "payload_schema": "silver-triage-issue-v1" }` |
+| B | `"local"` | `{ "type": "local", "create_issue_command": null, "dedupe_command": null, "payload_schema": "silver-triage-issue-v1" }` |
+| C | `"custom"` | Stub with `type: "custom"`, `create_issue_command: "REPLACE_ME"`, `dedupe_command: null`, `payload_schema: "silver-triage-issue-v1"` — **STOP until configured** |
+
+For option C, write the stub and display:
+
+> Configure `issue_tracker_adapter.create_issue_command` to a script that reads JSON from stdin and returns `{"id":"...","url":"...","status":"created|duplicate|failed"}`. See `/silver:add` and `silver-triage-issue-v1` payload schema. Do not file issues until the adapter is configured.
+
+This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver:feature`, `silver:bugfix`, `silver:devops`, `silver:ui`, `silver:triage`) read `issue_tracker` and `issue_tracker_adapter` and route issue creation accordingly:
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
 - `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
+- `custom` → invoke configured adapter command with JSON payload (stdin); no shell string interpolation of finding content
 
-Store the chosen value as `issue_tracker_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized to `"local"` by filing/removal skills.
+Store the chosen values as `issue_tracker_value` and `issue_tracker_adapter_value` for use in Phase 3.4. Default: `"github"` when the remote is GitHub, otherwise `"local"` if detection fails or the user skips the prompt. Legacy local-tracker values in existing configs are normalized to `"local"` by `scripts/sb-migrate-config.sh` and filing skills.
 
 ---
 

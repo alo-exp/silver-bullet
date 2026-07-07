@@ -1,6 +1,6 @@
 ---
 name: silver-add
-description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github) or local docs/issues/ markdown (when issue_tracker=local or absent) — and return a stable, referenceable ID.
+description: This skill should be used to classify and file any deferred or identified work item to the correct PM destination — GitHub Issues + project board (when issue_tracker=github), local docs/issues/ markdown (when issue_tracker=local or absent), or a custom JSON adapter command (when issue_tracker=custom) — and return a stable, referenceable ID.
 version: 0.1.0
 ---
 
@@ -28,6 +28,7 @@ Shell execution during this skill is limited to:
 - `mkdir -p docs/issues/`
 - `find docs/sessions -maxdepth 1 -name '*.md' -print | sort | tail -1`
 - `mktemp`, `mv` — atomic config rewrite (Step 4d)
+- `bash scripts/silver-add.sh adapter-dedup` / `adapter-create` — custom PM adapter (Step 4f)
 
 Do not execute other shell commands. Note requirements in output for human execution.
 
@@ -45,13 +46,15 @@ If `.silver-bullet.json` is not found after walking to the filesystem root (`/`)
 
 ```bash
 TRACKER=$(jq -r '.issue_tracker // "local"' .silver-bullet.json)
+ADAPTER_TYPE=$(jq -r '.issue_tracker_adapter.type // "local"' .silver-bullet.json)
 CACHE=$(jq -r '._github_project // empty' .silver-bullet.json)
 ```
 
-Display: "Filing via: [github | local docs/issues/]"
+Display: "Filing via: [github | local docs/issues/ | custom adapter]"
 
 - If `TRACKER` = `"github"` → proceed to Step 4 after classification.
 - If `TRACKER` = `"local"` or absent → proceed to Step 5 after classification.
+- If `TRACKER` = `"custom"` → proceed to Step 4f after classification.
 
 ---
 
@@ -318,6 +321,89 @@ gh project item-edit \
 ```
 
 Set `FILED_ID` to `"#${ISSUE_NUM}"`.
+
+---
+
+## Step 4f — File via custom PM adapter
+
+Execute only when `TRACKER` = `"custom"`.
+
+### Step 4f-1 — Validate adapter configuration
+
+```bash
+CREATE_CMD=$(jq -r '.issue_tracker_adapter.create_issue_command // empty' .silver-bullet.json)
+DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' .silver-bullet.json)
+```
+
+If `CREATE_CMD` is empty, null, or `REPLACE_ME`:
+
+> STOP: `issue_tracker_adapter.create_issue_command` is not configured. Run `/silver:init` Step 2.9 option C setup or edit `.silver-bullet.json` manually. Do not silently fall back to local or GitHub filing.
+
+### Step 4f-2 — Build JSON payload (no shell interpolation of finding body)
+
+Compute fingerprint when filing from triage or audit findings:
+
+```bash
+FP=$(bash scripts/silver-add.sh fingerprint \
+  --domain "<pack-or-scope>" \
+  --scope "<file-route-service-or-artifact>" \
+  --finding "<one-sentence finding>")
+```
+
+Build payload with `jq` only:
+
+```bash
+PAYLOAD=$(jq -n \
+  --arg schema "silver-triage-issue-v1" \
+  --arg title "$ITEM_TITLE" \
+  --arg body "$DESCRIPTION" \
+  --arg classification "${TRIAGE_CLASSIFICATION:-VALID-NONBLOCKER}" \
+  --arg skill "silver:triage" \
+  --arg artifact "${ARTIFACT_SCOPE:-}" \
+  --arg fingerprint "$FP" \
+  --arg item_type "$ITEM_TYPE" \
+  --arg item_label "$ITEM_LABEL" \
+  '{
+    schema: $schema,
+    title: $title,
+    body: $body,
+    classification: $classification,
+    item_type: $item_type,
+    item_label: $item_label,
+    source: {skill: $skill, artifact: $artifact},
+    fingerprint: $fingerprint
+  }')
+```
+
+### Step 4f-3 — Dedupe (mandatory when adapter supports it)
+
+When `DEDUPE_CMD` is non-empty:
+
+```bash
+bash scripts/silver-add.sh adapter-dedup --fingerprint "$FP" --root "$(pwd)"
+```
+
+If result is `duplicate:<id>` or adapter returns `{"status":"duplicate",...}`, set `FILED_ID` and `ISSUE_URL` from the existing item — do not create a duplicate.
+
+Otherwise run local dedup fallback:
+
+```bash
+bash scripts/silver-add.sh dedup --fingerprint "$FP"
+```
+
+### Step 4f-4 — Invoke create adapter
+
+```bash
+RESULT=$(bash scripts/silver-add.sh adapter-create --payload "$PAYLOAD" --root "$(pwd)")
+```
+
+Parse JSON response (required fields: `id`, `url`, `status`):
+
+- `status=created` → use returned `id` as `FILED_ID`, `url` as `ISSUE_URL`
+- `status=duplicate` → use returned `id`/`url`; do not re-file
+- `status=failed` or invalid JSON → STOP with adapter error; do not fall back
+
+Proceed to Step 6.
 
 ### Enterprise E2E journey tagging
 
