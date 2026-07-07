@@ -110,9 +110,9 @@ for name in ("skills", "skill-source", ".generated-skills", "agents"):
     if path.exists() or path.is_symlink():
         shutil.rmtree(path)
 PY
-mkdir -p -- "${DEST_DIR}/skill-source"
-rsync -a --delete "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${DEST_DIR}/skill-source/"
-find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
+skill_stage="$(mktemp -d "${DEST_DIR}/.skill-source.staging.XXXXXX")"
+rsync -a "$(sb_agent_bundle_root "$REPO_ROOT" codex)/" "${skill_stage}/"
+find "${skill_stage}" -name SKILL.md -type f -exec sh -c '
   for path do
     dest="$(dirname "$path")/SILVER_SOURCE"
     if [[ -e "$dest" ]]; then
@@ -122,6 +122,7 @@ find "${DEST_DIR}/skill-source" -name SKILL.md -type f -exec sh -c '
     fi
   done
 ' sh {} +
+mv "${skill_stage}" "${DEST_DIR}/skill-source"
 
 if [[ -x "${SCRIPT_DIR}/codex-sanitize-package.sh" ]]; then
   "${SCRIPT_DIR}/codex-sanitize-package.sh" "$DEST_DIR"

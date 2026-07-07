@@ -14,7 +14,7 @@ Host-specific commands are loaded from `.silver-bullet.json`
 | Phase | Commands | Artifact |
 |-------|----------|----------|
 | Pre-index | `graphify install --project` | — |
-| Post-index | `graphify claude install --project` | `.claude/settings.json` hooks |
+| Post-index | `graphify claude install --project` | `.codex/settings.json` hooks |
 
 ## Agentmemory
 

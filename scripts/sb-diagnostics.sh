@@ -47,7 +47,7 @@ detect_runtime_home() {
     printf '%s' "${SB_RUNTIME_HOME_ROOT}"
     return
   fi
-  printf '%s' "${HOME}/.claude"
+  printf '%s' "${HOME}/.codex"
 }
 
 runtime_tier() {

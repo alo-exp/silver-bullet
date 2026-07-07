@@ -75,6 +75,11 @@ STRICT_ALLOWLIST = {
     "skills/silver-agent-claude/SKILL.md",
     "skills/silver-agent-worker/SKILL.md",
     "skills/silver/SKILL.md",
+    "skills/silver-create-release/SKILL.md",
+    "skills/silver-review-fix-ladder/SKILL.md",
+    "skills/silver-triage/SKILL.md",
+    "silver-bullet.md",
+    "templates/silver-bullet.md.base",
     ".silver-bullet/orchestrator-workers/AGENT-DELEGATE.md",
     "templates/orchestrator-workers/AGENT-DELEGATE.md",
 }
@@ -85,6 +90,7 @@ STRICT_ALLOWLIST_PREFIXES = (
     "skills/silver-deep-research/scripts/",
     "skills/silver-deep-research/templates/",
     "skills/silver-deep-research/UPSTREAM.md",
+    "skills/silver-init/references/",
 )
 
 HOOKS_ALLOWLIST = {
@@ -102,6 +108,7 @@ HOOKS_ALLOWLIST = {
     "hooks/phase-lock-claim.sh",
     "hooks/planning-file-guard.sh",
     "hooks/session-start",
+    "hooks/lib/leanctx-gate.sh",
 }
 
 SCRIPTS_ALLOWLIST = {
@@ -109,9 +116,15 @@ SCRIPTS_ALLOWLIST = {
     "scripts/render-agent-bundle.py",
     "scripts/review-fix-ladder.py",
     "scripts/optimize-rtk-context-mode.sh",
+    "scripts/optimize-five-tool-stack.sh",
+    "scripts/pre-release-gate.sh",
     "scripts/lib/rtk-cm-hosts.json",
     "scripts/lib/claude-matrix-auth.sh",
     "scripts/lib/merge-token-compression-config.py",
+    "scripts/lib/merge-leanctx-mcp-config.py",
+    "scripts/lib/host-smoke-cell.sh",
+    "scripts/lib/agent-plugins-common.sh",
+    "scripts/generate-cursor-hooks.py",
     "scripts/generate-apo-catalog.py",
     "scripts/lib/codex-cli.sh",
     "scripts/lib/plugin-cache-version.sh",
@@ -430,9 +443,9 @@ def check_installer_cross_contamination() -> None:
         "agents/cursor",
         "validate-host",
         ".replace(",
-        "os.homedir(), '.claude'",
+        "os.homedir(), '.codex'",
         "os.homedir(), \".claude\"",
-        "os.homedir() + '/.claude'",
+        "os.homedir() + '/.codex'",
         "os.homedir() + \"/.claude\"",
         "path_segment_re",
         r"/\.claude",
