@@ -11,7 +11,8 @@
     "structural": "Repo files, install scripts, help page existence",
     "contract": "apo-catalog invariants, claims-audit, generated view freshness",
     "matrix_overlay": "Enterprise E2E matrix row pass criteria",
-    "tri_host_smoke": "Per-host install + sb-diagnostics + SB script invocations"
+    "tri_host_smoke": "Per-host install + sb-diagnostics + SB script invocations",
+    "five_tool_live": "Cursor /silver:agent-cursor live delegate when leanctx opted in"
   },
   "claims": [
     {
@@ -83,6 +84,23 @@
       "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
     },
     {
+      "claim_id": "five-tool-stack-cursor",
+      "surface": "homepage",
+      "text": "Five-tool parallel-routed compression stack (LeanCTX + RTK + Context Mode + Graphify + agentmemory)",
+      "verification_tier": "five_tool_live",
+      "proof_level": "live_e2e_partial",
+      "check_id": "five-tool-prerelease-cursor",
+      "test_ids": [
+        "test-five-tool-prerelease-cursor",
+        "test-live-five-tool-stack-cursor",
+        "test-five-tool-mutual-exclusion",
+        "test-optimize-five-tool-stack"
+      ],
+      "mandatory_when": "recommended_tools.leanctx.enabled_by_user == true",
+      "operator_doc": "docs/testing/FIVE-TOOL-PRERELEASE.md",
+      "notes": "Offline hook bundle always in CI; live S01/S02/S04/S06/S09 via agent-cursor-delegate.sh at pre-release when leanctx opted in"
+    },
+    {
       "claim_id": "proof-sb-diagnostics",
       "surface": "homepage",
       "text": "sb-diagnostics.sh",
@@ -134,5 +152,15 @@
     "script": "scripts/run-tri-host-install-smoke.sh",
     "test": "tests/scripts/test-tri-host-install-smoke.sh",
     "operator_doc": "docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md#pre-release-tri-host-smoke"
+  },
+  "five_tool_prerelease": {
+    "script": "tests/scripts/test-five-tool-prerelease-cursor.sh",
+    "live_harness": "tests/live/test-live-five-tool-stack-cursor.sh",
+    "delegate": "scripts/agent-cursor-delegate.sh",
+    "skill": "skills/silver-agent-cursor/SKILL.md",
+    "scenario_doc": "tests/skill-scenarios/silver-five-tool-stack.md",
+    "operator_doc": "docs/testing/FIVE-TOOL-PRERELEASE.md",
+    "pre_release_gate_stage": "4c",
+    "mandatory_when": "recommended_tools.leanctx.enabled_by_user == true"
   }
 }
