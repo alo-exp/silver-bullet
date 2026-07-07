@@ -17,6 +17,7 @@ CURSOR_GITHUB_REPO_URL="${CURSOR_GITHUB_REPO_URL:-https://github.com/alo-exp/sil
 DEST_ROOT="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
 INSTALL_COMMIT_SHA=""
 MERGE_HOOKS="${REPO_ROOT}/scripts/lib/install-cursor/merge-cursor-hooks.py"
+LEGACY_MARKETPLACE_LIB="${REPO_ROOT}/scripts/lib/install-cursor/legacy-marketplace.sh"
 AGENT_RENDERER="${REPO_ROOT}/scripts/render-agent-bundle.py"
 
 cursor_install_current_link() {
@@ -67,6 +68,10 @@ Usage: scripts/install-cursor.sh [--merge-hooks-only] [--public-release]
 
 Synchronizes the Silver Bullet plugin tree into the Cursor plugin cache and
 merges SB hooks into ~/.cursor/hooks.json.
+
+When the legacy alo-labs/alo-labs-cursor-marketplace clone is present, the
+installer removes it, seeds gitPath for backend-resolved SHAs, and prints UI
+steps to switch to https://github.com/alo-labs/agent-plugins.
 
 Options:
   --merge-hooks-only  Only merge hooks from the current install path
@@ -500,6 +505,10 @@ sync_plugin_tree_from_public_release() {
 }
 
 MERGE_ONLY=0
+LEGACY_MARKETPLACE_UI_SWITCH=0
+# shellcheck source=scripts/lib/install-cursor/legacy-marketplace.sh
+source "$LEGACY_MARKETPLACE_LIB"
+
 for arg in "$@"; do
   case "$arg" in
     --merge-hooks-only) MERGE_ONLY=1 ;;
@@ -508,6 +517,13 @@ for arg in "$@"; do
     *) echo "Unknown option: $arg" >&2; usage; exit 2 ;;
   esac
 done
+
+if legacy_cursor_marketplace_active; then
+  LEGACY_MARKETPLACE_UI_SWITCH=1
+  print_cursor_marketplace_migration_notice
+fi
+
+ensure_marketplace_checkout "$CURSOR_UNIFIED_MARKETPLACE_SOURCE"
 
 if [[ "$MERGE_ONLY" -eq 0 ]]; then
   if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
@@ -525,7 +541,11 @@ else
   if [[ -z "$INSTALL_COMMIT_SHA" ]]; then
     INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
   fi
-  seed_cursor_marketplace_gitpaths "$DEST_ROOT" "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
+  seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$INSTALL_COMMIT_SHA" "$REPO_ROOT"
+fi
+
+if [[ "$LEGACY_MARKETPLACE_UI_SWITCH" -eq 1 ]]; then
+  remove_legacy_cursor_marketplace_clones
 fi
 
 DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
@@ -534,7 +554,9 @@ ln -sfn "$DEST_ROOT" "$(cursor_install_current_link)"
 if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/dev/null 2>&1; then
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
 fi
-ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$INSTALL_COMMIT_SHA"
+REGISTRY_COMMIT_SHA="$(resolve_cursor_registry_git_commit_sha "$INSTALL_COMMIT_SHA" "$LEGACY_MARKETPLACE_UI_SWITCH")"
+ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$REGISTRY_COMMIT_SHA"
+seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
 if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
   printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
   exit 1
@@ -557,4 +579,10 @@ if [[ "$PUBLIC_RELEASE_ONLY" -eq 1 ]]; then
   printf 'Silver Bullet Cursor plugin refreshed from %s at %s\n' "$CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE" "$DEST_ROOT"
 else
   printf 'Silver Bullet Cursor plugin synced to %s\n' "$DEST_ROOT"
+fi
+
+if [[ "$LEGACY_MARKETPLACE_UI_SWITCH" -eq 1 ]]; then
+  printf 'Cursor marketplace: legacy clone removed — complete UI switch per notice above\n'
+else
+  printf 'Cursor marketplace: unified alo-labs/agent-plugins (%s)\n' "$CURSOR_MARKETPLACE_NAME"
 fi
