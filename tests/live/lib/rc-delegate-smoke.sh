@@ -10,7 +10,11 @@ rc_delegate_smoke_run() {
   export SB_AGENT_DELEGATE_LOG_FLOOR="${SB_AGENT_DELEGATE_LOG_FLOOR:-64}"
   export SB_AGENT_CLAUDE_LOG_FLOOR="${SB_AGENT_CLAUDE_LOG_FLOOR:-64}"
   case "$host" in
-    cursor) script="${repo}/scripts/agent-cursor-delegate.sh"; export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5 ;;
+    cursor)
+      script="${repo}/scripts/agent-cursor-delegate.sh"
+      export CURSOR_AGENT_MODEL=composer-2.5 CURSOR_MODEL=composer-2.5
+      export SB_AGENT_CURSOR_LOG_FLOOR="${SB_AGENT_CURSOR_LOG_FLOOR:-64}"
+      ;;
     codex) script="${repo}/scripts/agent-codex-delegate.sh" ;;
     claude)
       script="${repo}/scripts/agent-claude-delegate.sh"
@@ -19,7 +23,11 @@ rc_delegate_smoke_run() {
       ;;
     *) return 2 ;;
   esac
-  bash "$script" --work-dir "$wd" --prompt "$prompt" --log "$log" --mode permissive --sb-root "$repo" "${extra_args[@]}" && grep -q RC_SMOKE_OK "$log"
+  if ((${#extra_args[@]})); then
+    bash "$script" --work-dir "$wd" --prompt "$prompt" --log "$log" --mode permissive --sb-root "$repo" "${extra_args[@]}" && grep -q RC_SMOKE_OK "$log"
+  else
+    bash "$script" --work-dir "$wd" --prompt "$prompt" --log "$log" --mode permissive --sb-root "$repo" && grep -q RC_SMOKE_OK "$log"
+  fi
 }
 rc_delegate_five_tool_scenarios() {
   local repo="$1"
