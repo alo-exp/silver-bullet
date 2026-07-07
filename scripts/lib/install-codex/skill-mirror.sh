@@ -54,6 +54,14 @@ def is_silver_bullet_helper_picker_skill(dirname: str, skill_name: str) -> bool:
     return dirname in helper_picker_skills or skill_name in helper_picker_skills
 
 
+def is_silver_bullet_native_mirror_route(dirname: str, skill_name: str) -> bool:
+  return (
+      dirname == "silver"
+      or dirname == "silver-feature"
+      or skill_name in {"silver", "silver:feature"}
+  )
+
+
 def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
     return (
         dirname == "silver"
@@ -79,7 +87,7 @@ for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.nam
     skill_name = frontmatter.get("name", "")
     if not skill_name:
         continue
-    if not is_user_invocable(frontmatter) and not is_silver_bullet_helper_picker_skill(skill_dir.name, skill_name):
+    if not is_user_invocable(frontmatter) and not is_silver_bullet_helper_picker_skill(skill_dir.name, skill_name) and not is_silver_bullet_native_mirror_route(skill_dir.name, skill_name):
         continue
     if not is_silver_bullet_picker_skill(skill_dir.name, skill_name):
         continue

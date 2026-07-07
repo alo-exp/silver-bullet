@@ -398,10 +398,10 @@ run_doctor_checks() {
     cursor)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
       agent_cache_dir="$(sb_agent_cache_rel cursor)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -q '\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
-        record fail D13 "${hooks_manifest_path} contains .claude/plugins paths"
+      if [[ -f "$hooks_manifest_path" ]] && grep -q '\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
+        record fail D13 "${hooks_manifest_path} contains .codex/plugins paths"
       else
-        record pass D13 "no .claude/plugins contamination in Cursor hooks"
+        record pass D13 "no .codex/plugins contamination in Cursor hooks"
       fi
       ;;
     claude)
@@ -416,7 +416,7 @@ run_doctor_checks() {
     codex)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
       agent_cache_dir="$(sb_agent_cache_rel codex)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.claude/plugins' "$hooks_manifest_path" 2>/dev/null; then
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
         record pass D13 "no cross-host plugin paths in Codex config"

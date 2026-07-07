@@ -19,7 +19,7 @@ export SB_AGENT_CLAUDE_SEED_FOLDER_TRUST_GLOBAL=1
 
 agent_claude_seed_folder_trust "$WORK" "$CLAUDE_CONFIG_DIR"
 
-python3 - "$CLAUDE_CONFIG_DIR/.claude.json" "$HOME/.claude.json" "$WORK" <<'PY'
+python3 - "$CLAUDE_CONFIG_DIR/.claude.json" "$HOME/.codex.json" "$WORK" <<'PY'
 import json
 import pathlib
 import sys

@@ -4,7 +4,7 @@
 # ~/.codex/settings.json and deletes dangling files in ~/.codex/hooks/.
 set -euo pipefail
 
-CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.claude}"
+CLAUDE_HOME="${CLAUDE_HOME:-${HOME}/.codex}"
 SETTINGS="${CLAUDE_HOME}/settings.json"
 HOOKS_DIR="${CLAUDE_HOME}/hooks"
 pruned=0

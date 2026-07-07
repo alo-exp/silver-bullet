@@ -131,7 +131,7 @@ assert_blocked "S6.1: PR create blocked before finalization" "$out"
 
 # Record remaining required deploy skills
 for skill in silver-execute silver-verify silver-ship security silver-secure silver-validate \
-             silver-branch-finish verify-tests; do
+             silver-triage silver-branch-finish verify-tests; do
   run_record_skill "$skill" >/dev/null
 done
 seed_lifecycle_artifacts

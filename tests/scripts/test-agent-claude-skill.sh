@@ -65,7 +65,7 @@ grep -q 'scripts/agent-claude/' "$SKILL" && check "references agent-claude harne
 grep -q 'SB_AGENT_CLAUDE_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail
 grep -q 'Security (delegation boundary)' "$SKILL" && check "security section" pass || check "security section" fail
 
-CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/silver-agent-claude/SKILL.md"
+CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/silver:agent-claude/SKILL.md"
 if [[ -f "$CURSOR_BUNDLE" ]]; then
   grep -q 'when Claude Code TUI is the intended executor' "$CURSOR_BUNDLE" \
     && check "cursor bundle names Claude executor" pass || check "cursor bundle names Claude executor" fail

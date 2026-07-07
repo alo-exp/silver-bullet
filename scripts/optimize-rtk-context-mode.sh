@@ -59,7 +59,7 @@ detect_host() {
     printf '%s' "hermes"
     return 0
   fi
-  if [[ -d "${HOME}/.claude" ]]; then
+  if [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "claude"
     return 0
   fi

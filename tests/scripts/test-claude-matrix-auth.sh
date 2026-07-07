@@ -33,7 +33,7 @@ source "${REPO_ROOT}/scripts/lib/claude-matrix-auth.sh"
 TMP_HOME="$(mktemp -d)"
 trap 'rm -rf "$TMP_HOME"' EXIT
 export HOME="$TMP_HOME"
-mkdir -p "${HOME}/.claude"
+mkdir -p "${HOME}/.codex"
 cat > "${HOME}/.codex/settings.json" <<'EOF'
 {
   "env": {
