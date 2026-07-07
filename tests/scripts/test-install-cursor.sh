@@ -57,6 +57,20 @@ else
   fail "install-cursor installs Cursor plugin manifest"
 fi
 
+source_manifest="${REPO_ROOT}/.cursor-plugin/plugin.json"
+source_skills="$(jq -r '.skills // ""' "$source_manifest" | sed 's|^\./||')"
+source_hooks="$(jq -r '.hooks // ""' "$source_manifest" | sed 's|^\./||')"
+if [[ -n "$source_skills" && -d "${REPO_ROOT}/${source_skills}" ]]; then
+  pass "source Cursor plugin.json skills path exists in checkout"
+else
+  fail "source Cursor plugin.json skills path exists in checkout"
+fi
+if [[ -n "$source_hooks" && -f "${REPO_ROOT}/${source_hooks}" ]]; then
+  pass "source Cursor plugin.json hooks path exists in checkout"
+else
+  fail "source Cursor plugin.json hooks path exists in checkout"
+fi
+
 registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"
 resolved_current="$(cd "$current_link" && pwd -P)"
 if [[ -f "$registry_path" ]] && \
