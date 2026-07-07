@@ -170,5 +170,67 @@ assert_grep "silver-bullet 2g-ii token compression" \
   "$REPO_ROOT/templates/silver-bullet.md.base" \
   "### 2g-ii. Token Compression"
 
+assert_grep "silver-bullet 2g-iii leanctx routing" \
+  "$REPO_ROOT/templates/silver-bullet.md.base" \
+  "### 2g-iii. Five-Tool Parallel Routing (LeanCTX)"
+
+leanctx_template_null="$(jq -r '.recommended_tools.leanctx.enabled_by_user' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default")"
+[[ "$leanctx_template_null" == "null" ]] && pass "template leanctx enabled_by_user is null" || fail "template leanctx enabled_by_user is null"
+
+jq -e '.recommended_tools.leanctx.stack_mode == "parallel_routed"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx stack_mode parallel_routed" || fail "template leanctx stack_mode parallel_routed"
+
+jq -e '.recommended_tools.leanctx.mcp_tool_prefix == "lctx_"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx mcp_tool_prefix lctx_" || fail "template leanctx mcp_tool_prefix lctx_"
+
+jq -e '.recommended_tools.leanctx.platform_install_commands.cursor[0] == "bash scripts/install-leanctx-sb.sh --host cursor"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx cursor platform install" || fail "template leanctx cursor platform install"
+
+jq -e '.recommended_tools.leanctx.platform_install_commands.claude[0] == "bash scripts/install-leanctx-sb.sh --host claude"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx claude platform install" || fail "template leanctx claude platform install"
+
+jq -e '.recommended_tools.leanctx.platform_install_commands.codex[0] == "bash scripts/install-leanctx-sb.sh --host codex"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx codex platform install" || fail "template leanctx codex platform install"
+
+jq -e '.recommended_tools.leanctx.platform_install_commands.opencode[0] == "bash scripts/install-leanctx-sb.sh --host opencode"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template leanctx opencode platform install" || fail "template leanctx opencode platform install"
+
+jq -e '.optimization_profiles.five_tool_routed.routes | keys | length == 10' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template five_tool_routed has 10 routes" || fail "template five_tool_routed has 10 routes"
+
+jq -e '.optimization_profiles.five_tool_routed.routes.sb_read == "leanctx" and .optimization_profiles.five_tool_routed.routes.sb_shell == "rtk" and .optimization_profiles.five_tool_routed.routes.sb_webfetch == "context_mode"' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template five_tool_routed route owners" || fail "template five_tool_routed route owners"
+
+# Template parity: leanctx block matches between live config and template
+jq -S '.recommended_tools.leanctx' "$REPO_ROOT/templates/silver-bullet.config.json.default" > /tmp/sb-leanctx-template.json
+jq -S '.recommended_tools.leanctx' "$REPO_ROOT/.silver-bullet.json" > /tmp/sb-leanctx-live.json
+diff -q /tmp/sb-leanctx-template.json /tmp/sb-leanctx-live.json >/dev/null \
+  && pass "leanctx block parity template vs live" || fail "leanctx block parity template vs live"
+
+assert_grep "LEANCTX.md exists" \
+  "$REPO_ROOT/docs/LEANCTX.md" \
+  "five_tool_routed"
+
+assert_grep "recommended-tools-opt-in leanctx section" \
+  "$REPO_ROOT/skills/silver-init/references/recommended-tools-opt-in.md" \
+  "### 1.1g LeanCTX"
+
+assert_grep "registry leanctx compression stack helper" \
+  "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh" \
+  "sb_recommended_tool_is_compression_stack"
+
+assert_grep "recommended-tools stack surface owner" \
+  "$REPO_ROOT/hooks/lib/recommended-tools.sh" \
+  "sb_stack_surface_owner"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

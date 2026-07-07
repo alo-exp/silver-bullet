@@ -1,7 +1,7 @@
 # Recommended tools opt-in (silver:init Phase 1.1)
 
 Host-specific install matrices live in `scripts/lib/host-install-guides/<runtime>.md`.
-Load this reference when executing Phase 1.1a–§1.1f during `/silver:init` or update-mode retry.
+Load this reference when executing Phase 1.1a–§1.1g during `/silver:init` or update-mode retry.
 
 ### 1.1a Graphify (recommended tool — opt-in)
 
@@ -320,6 +320,45 @@ Include ELv2 license disclosure and MCP-value note in the question.
 6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install
 8. Run `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
+
+On success/failure: same jq pattern as Graphify/agentmemory.
+
+#### Step 4 — Opted out / already consented
+
+Same pattern as Graphify §1.1a Steps 4–5.
+
+### 1.1g LeanCTX (recommended tool — opt-in)
+
+LeanCTX powers SB's **five-tool parallel-routed compression stack** when all context tools are opted in. Separate consent from RTK and Context Mode. Config key: `recommended_tools.leanctx.enabled_by_user`.
+
+**Benefits:** Wire proxy, AST read-path, PathJail, savings ledger, and injection detection — with surface routing so RTK owns shell and Context Mode owns sandbox/webfetch/grep analysis.
+
+**Conflict warnings (present at consent):**
+- LeanCTX MCP tools use `lctx_*` prefix — never raw `ctx_*` when Context Mode is also enabled
+- When LeanCTX is enabled, `optimize-rtk-context-mode.sh` is **not** auto-run — use `optimize-five-tool-stack.sh` (Phase 2)
+- Codex: AST read-path unavailable (deny-only PreToolUse); wire proxy + ledger still run
+- Deep-research uses search_cli first; LeanCTX fetch for non-research flows only
+
+#### Step 1 — Read consent
+
+```bash
+jq -r '.recommended_tools.leanctx.enabled_by_user // "null"' .silver-bullet.json 2>/dev/null || echo null
+jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet.json 2>/dev/null || echo false
+```
+
+#### Step 2 — Ask when `null`
+
+Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression (wire proxy, AST read, PathJail, ledger).\n\n**Note:** Requires explicit surface routing with RTK and Context Mode — no double-compression.\n\nEnable LeanCTX for this project?"
+
+- **Yes** → `enabled_by_user: true`
+- **No** → `enabled_by_user: false`
+
+#### Step 3 — Install when opted in or retrying suspended
+
+1. Run `install_commands` from config (`curl -fsSL https://leanctx.com/install.sh | sh`)
+2. Verify: `lean-ctx --version`
+3. Run host `platform_install_commands` (`bash scripts/install-leanctx-sb.sh --host <runtime>`)
+4. **Phase 2:** Run `bash scripts/optimize-five-tool-stack.sh --host <runtime>|auto` instead of `optimize-rtk-context-mode.sh`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 

@@ -99,6 +99,9 @@ sb_recommended_tool_benefits() {
     context_mode)
       printf '%s' 'MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license).'
       ;;
+    leanctx)
+      printf '%s' 'Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — complements RTK and Context Mode via surface routing.'
+      ;;
     *)
       printf '%s' 'Improves SB workflow quality when enabled.'
       ;;
@@ -205,6 +208,12 @@ sb_recommended_tool_platform_pre_index_commands() {
         printf '%s\n' 'Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md'
         ;;
     esac
+  elif [[ "$tool_id" == "leanctx" ]]; then
+    case "$host" in
+      cursor|claude|codex|opencode)
+        printf '%s\n' "bash scripts/install-leanctx-sb.sh --host ${host}"
+        ;;
+    esac
   fi
 }
 
@@ -297,6 +306,9 @@ sb_recommended_tool_full_install_lines() {
   fi
   if [[ -z "$cli_lines" && "$tool_id" == "context_mode" ]]; then
     cli_lines='npm install -g context-mode'
+  fi
+  if [[ -z "$cli_lines" && "$tool_id" == "leanctx" ]]; then
+    cli_lines='curl -fsSL https://leanctx.com/install.sh | sh'
   fi
   platform_lines="$(sb_recommended_tool_platform_install_commands "$config_file" "$tool_id" "$host")"
   if [[ -n "$cli_lines" ]]; then
@@ -421,4 +433,57 @@ EOF
 # Graphify enforcement alias — used by graphify-gate.sh and record-graphify-query.sh
 sb_graphify_required() {
   sb_recommended_tool_enforced "${1:-}" "graphify"
+}
+
+# Five-tool parallel-routed stack helpers (Phase 1 config contract; coordinator enforces in Phase 2).
+sb_stack_leanctx_active() {
+  local config_file="${1:-}"
+  [[ -n "$config_file" && -f "$config_file" ]] || return 1
+  [[ "$(sb_recommended_tool_consent "$config_file" "leanctx")" == "enabled" ]] || return 1
+  if sb_recommended_tool_enforcement_suspended "$config_file" "leanctx"; then
+    return 1
+  fi
+  return 0
+}
+
+# Map host tool surface or sb_* route → owning tool id from optimization_profiles.five_tool_routed.
+# Surfaces: Read, Grep, Bash, WebFetch (or sb_* route names directly).
+sb_stack_surface_owner() {
+  local config_file="${1:-}" surface="${2:-}"
+  local route owner profile
+
+  [[ -n "$config_file" && -f "$config_file" && -n "$surface" ]] || return 1
+
+  case "$surface" in
+    Read) route="sb_read" ;;
+    Grep) route="sb_grep" ;;
+    Bash) route="sb_shell" ;;
+    WebFetch) route="sb_webfetch" ;;
+    sb_wire|sb_read|sb_grep|sb_shell|sb_slice|sb_webfetch|sb_graph|sb_remember|sb_pathjail|sb_injection)
+      route="$surface"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if sb_stack_leanctx_active "$config_file"; then
+    profile="$(jq -r '.recommended_tools.leanctx.optimization_profile // "five_tool_routed"' \
+      "$config_file" 2>/dev/null || echo "five_tool_routed")"
+    owner="$(jq -r --arg p "$profile" --arg r "$route" \
+      '.optimization_profiles[$p].routes[$r] // empty' "$config_file" 2>/dev/null || true)"
+    if [[ -n "$owner" && "$owner" != "null" ]]; then
+      printf '%s' "$owner"
+      return 0
+    fi
+  fi
+
+  # Legacy two-tool compression fallback when LeanCTX inactive.
+  case "$route" in
+    sb_read|sb_grep|sb_slice|sb_webfetch) printf 'context_mode'; return 0 ;;
+    sb_shell) printf 'rtk'; return 0 ;;
+    sb_graph) printf 'graphify'; return 0 ;;
+    sb_remember) printf 'agentmemory'; return 0 ;;
+    *) return 1 ;;
+  esac
 }
