@@ -15,7 +15,7 @@
         "source": "github",
         "repo": "alo-exp/silver-bullet",
         "ref": "main",
-        "sha": "8c24c1344c695f54bee805d97d918dc22b531548"
+        "sha": "d98e6739c2e5c820af3ffe624c01cd81564fbc4c"
       },
       "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
       "version": "0.51.2",

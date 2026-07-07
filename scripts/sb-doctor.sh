@@ -152,7 +152,7 @@ doctor_apply_fixes() {
   [[ "$FAIL" -eq 0 ]] && return 0
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
     case "$check_id" in
-      D13|D14|D16)
+      D13|D14|D16|D18|D19)
         install_script="$(doctor_host_install_script "$runtime" || true)"
         if [[ -n "$install_script" && -x "$install_script" ]]; then
           printf 'sb-doctor: --fix running %s for %s\n' "$install_script" "$check_id" >&2
@@ -477,6 +477,36 @@ run_doctor_checks() {
     record fail D17 "host-specific bleed in SB core — run: bash scripts/validate-host-agnostic-core.sh"
   else
     record warn D17 "validate-host-agnostic-core.sh not found; skipped"
+  fi
+
+  # D18 — Cursor marketplace gitPath (required for /silver command discovery after restart)
+  if [[ "$runtime" == "cursor" ]]; then
+    local registry_sha gitpath_root market_cache_link resolved_current
+    registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
+    resolved_current="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+    if [[ -n "$registry_sha" && "$registry_sha" != "null" ]]; then
+      gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${registry_sha}"
+      market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
+      if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then
+        if [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
+          record pass D18 "Cursor gitPath + marketplace cache symlink ready (${registry_sha:0:8})"
+        else
+          record fail D18 "missing alo-labs-cursor cache symlink for ${registry_sha:0:8} — run: bash scripts/install-cursor.sh"
+        fi
+      else
+        record fail D18 "missing Cursor gitPath for ${registry_sha:0:8} — /silver commands fail to load — run: bash scripts/install-cursor.sh"
+      fi
+    else
+      record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
+    fi
+    if [[ -f "${resolved_current}/commands/init.md" ]]; then
+      record pass D19 "composer /silver:* command stubs present in plugin cache"
+    else
+      record fail D19 "commands/ missing from plugin cache — slash menu will be empty"
+    fi
+  else
+    record pass D18 "Cursor gitPath check N/A (host=${runtime})"
+    record pass D19 "Cursor command stubs N/A (host=${runtime})"
   fi
 
   doctor_apply_fixes "$runtime"
