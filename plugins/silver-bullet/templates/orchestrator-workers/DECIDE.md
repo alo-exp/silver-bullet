@@ -21,6 +21,21 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 Follow **`skills/silver-deep-research/SKILL.md`** for the selected FLOW 4
 research depth. The flow step is `FS-SILVER_DEEP_RESEARCH`.
 
+## Mode selection (AF-DECIDE)
+
+Map decision risk to research mode using `phases.yaml`:
+
+| Risk / need | Mode |
+|-------------|------|
+| Low-risk scan, familiar topic | `quick` |
+| Default implementation-gating research | `standard` |
+| Architecture, security, conflicting evidence | `deep` |
+| Strategic, high blast radius, state-of-the-art | `ultradeep` |
+
+Recommend `search-cli` provider signup **only** at `deep` or `ultradeep` when
+fallback sources cannot meet evidence thresholds. Record `fallback_reason` in
+`run_manifest.json` when degrading.
+
 The deep-research engine is a nested workflow inside this flow step. Execute the
 mode-appropriate internal steps (`DR-SCOPE`, `DR-PLAN`, `DR-RETRIEVE`,
 `DR-TRIANGULATE`, `DR-OUTLINE`, `DR-SYNTHESIZE`, `DR-CRITIQUE`,
