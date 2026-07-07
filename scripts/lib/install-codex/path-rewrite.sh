@@ -32,8 +32,30 @@ for cache_root in cache_roots:
             continue
         install_targets.append(version_dir)
 
-path_rewrite_roots = [marketplace_root, package_root]
-path_rewrite_roots.extend(install_targets)
+path_rewrite_roots = [package_root]
+for cache_root in cache_roots:
+    package_cache_root = cache_root / "alo-labs-codex" / "silver-bullet"
+    if not package_cache_root.exists():
+        continue
+    for version_dir in package_cache_root.iterdir():
+        if version_dir.name == "current" or not version_dir.is_dir():
+            continue
+        path_rewrite_roots.append(version_dir)
+
+for optional_sub in ("host-bundles/codex", "agents/codex"):
+    optional_root = marketplace_root / optional_sub
+    if optional_root.is_dir():
+        path_rewrite_roots.append(optional_root)
+
+skip_path_parts = {
+    ".git",
+    "tests",
+    ".planning",
+    "node_modules",
+    "graphify-out",
+    ".agentmemory",
+    ".visual-audit",
+}
 
 path_segment_re = re.compile(r'/\.claude(?=/|$)')
 home_claude_replacements = (
@@ -172,7 +194,7 @@ for root in path_rewrite_roots:
     for file_path in root.rglob("*"):
         if not file_path.is_file() or file_path.is_symlink():
             continue
-        if ".git" in file_path.parts:
+        if skip_path_parts.intersection(file_path.parts):
             continue
         if file_path.name == "runtime-paths.sh" and "hooks" in file_path.parts:
             continue
