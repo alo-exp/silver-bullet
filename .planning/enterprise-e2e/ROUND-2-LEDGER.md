@@ -26,7 +26,7 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 |------|-----------|-------|
 | `bash scripts/install-claude.sh` | **Pass** | 2026-06-27; marketplace `alo-labs` refreshed from `main` @ `5788b277` |
 | `graphify update .` (SB repo) | **Pass** | Round start: 16623 nodes; post-round 2026-06-27: 18014 nodes (`graphify update .`, AST 1704 files) |
-| Branch-scoped session-start | **Pass** | Test app `devops-terraform-validation`; branch file `~/.claude/.silver-bullet/branch` confirmed |
+| Branch-scoped session-start | **Pass** | Test app `devops-terraform-validation`; branch file `~/.codex/.silver-bullet/branch` confirmed |
 | Interactive matrix 22/22 | **Pass** | 22/22 PASS — matrix log `.e2e-matrix-round2.log` (rows 5–22 post provider-change restart 2026-06-27T02:09Z) |
 | review-fix-ladder (8 rungs × 2 clean) | **Pass** | 2026-06-27 — locked scope: `hooks/lib/orchestrator-parent.sh`, `hooks/orchestrator-directive-guard.sh`, `tests/hooks/test-orchestrator-parent-guard.sh`, `tests/hooks/test-orchestrator-directive.sh`; rungs 1–3 full Task audit+2×verify; rungs 4–8 orchestrator grep (20/20 scoped tests × 2 clean); added `parent blocks Bash` test (uncommitted) |
 | `bash tests/run-all-tests.sh` | **Pass** | **4345 passed, 0 failed** (5/5 suites green, 2026-06-27 gate at `effeaccb`; log `.run-all-tests-round2-gate.log`) |
@@ -40,7 +40,7 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 | Step | Pass/Fail | Notes |
 |------|-----------|-------|
 | `claude --version` | **Pass** | `2.1.191 (Claude Code)` |
-| API key in `~/.claude/settings.json` | **Pass** | `ANTHROPIC_API_KEY` present; no login/logout |
+| API key in `~/.codex/settings.json` | **Pass** | `ANTHROPIC_API_KEY` present; no login/logout |
 | agentmemory health | **Pass** | Server healthy (v0.9.27) |
 
 ---
@@ -89,12 +89,12 @@ Evidence ledger for Round 2 supervised Claude TUI sessions. Template source: `RO
 
 | Field | Value |
 |-------|-------|
-| Reason | 3-hr quota wait; Claude provider changed in `~/.claude/settings.json` (proxy `127.0.0.1:15721`, MiMo models); Claude must restart for new provider |
+| Reason | 3-hr quota wait; Claude provider changed in `~/.codex/settings.json` (proxy `127.0.0.1:15721`, MiMo models); Claude must restart for new provider |
 | Last PASS | Row 4 `silver-bugfix` |
 | Active row | Row 5 `silver-ui` (in-flight, 429/Token Plan — no PASS) |
 | Stopped PIDs | watch 86217, batch 86235/88226/88307, monitor 86261, expect 88665, claude 88719 |
 | Provider verified | `ANTHROPIC_BASE_URL=http://127.0.0.1:15721`, `ANTHROPIC_AUTH_TOKEN=PROXY_MANAGED`, haiku/sonnet model aliases in settings |
-| Resume from | `bash scripts/run-enterprise-e2e-matrix.sh 5 6 7 … 22` with `--settings ~/.claude/settings.json` |
+| Resume from | `bash scripts/run-enterprise-e2e-matrix.sh 5 6 7 … 22` with `--settings ~/.codex/settings.json` |
 | Resume PIDs | watch 62293, batch 62318, monitor 62411 (2026-06-27T02:09Z provider-change restart) |
 
 ### Pause point (2026-06-27 — P1 worker-Bash fix)

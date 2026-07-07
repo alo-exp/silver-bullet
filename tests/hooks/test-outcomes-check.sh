@@ -194,7 +194,7 @@ rm -rf "$FAKE_BIN"
 teardown
 
 setup
-# Isolated state dir — preserve pin so runtime-paths.sh does not reset to ~/.claude/.silver-bullet.
+# Isolated state dir — preserve pin so runtime-paths.sh does not reset to ~/.codex/.silver-bullet.
 RACE_DIR=$(mktemp -d)
 export SB_RUNTIME_STATE_DIR="$RACE_DIR"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1

@@ -509,7 +509,7 @@ Shared harness (`enterprise-e2e/multi-host`) wires `--host`, `SB_E2E_LIVE_RUNTIM
 | Gap | Operator action |
 |-----|-----------------|
 | Codex-specific TUI friction | Adapt patterns in [CODEX-TUI-PROTOCOL.md](./CODEX-TUI-PROTOCOL.md); file SB issues |
-| Codex runtime state dir | Set `SB_RUNTIME_STATE_DIR` when not using `~/.claude/.silver-bullet` |
+| Codex runtime state dir | Set `SB_RUNTIME_STATE_DIR` when not using `~/.codex/.silver-bullet` |
 | Session 0 TUI-only path | Programmatic opt-in when TUI unavailable (same as Claude) |
 | Outcome re-score per row | Run `enterprise_e2e_outcome_row_passes` after each row FORCE retry |
 

@@ -1062,9 +1062,9 @@ prepare_release_work_dir() {
     npm --prefix "$RELEASE_WORK_DIR" install >/dev/null
   fi
 
-  if [[ -f "${WORK_DIR}/.claude/settings.local.json" ]]; then
+  if [[ -f "${WORK_DIR}/.codex/settings.local.json" ]]; then
     mkdir -p "${RELEASE_WORK_DIR}/.claude"
-    cp "${WORK_DIR}/.claude/settings.local.json" "${RELEASE_WORK_DIR}/.claude/settings.local.json"
+    cp "${WORK_DIR}/.codex/settings.local.json" "${RELEASE_WORK_DIR}/.codex/settings.local.json"
   fi
 }
 

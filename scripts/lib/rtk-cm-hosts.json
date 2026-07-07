@@ -4,11 +4,11 @@
       "status": "supported",
       "rtk": {
         "command": "rtk init -g",
-        "artifacts": ["~/.claude/settings.json", "~/.claude/RTK.md"]
+        "artifacts": ["~/.codex/settings.json", "~/.codex/RTK.md"]
       },
       "context_mode": {
         "command": "claude plugin install context-mode@context-mode",
-        "artifacts": ["~/.claude/plugins/context-mode"]
+        "artifacts": ["~/.codex/plugins/context-mode"]
       },
       "doctor_platform": "claude"
     },

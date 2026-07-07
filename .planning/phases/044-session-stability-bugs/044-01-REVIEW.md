@@ -129,7 +129,7 @@ printf '{"hookSpecificOutput":{"message":%s}}\n' "$(printf '%s' "$_msg" | jq -Rs
 **Issue:** After reading `state.trivial_file` from the project config and expanding `~`, the hook passes the value directly to `sb_trivial_bypass` with no path safety check. `stop-check.sh` applies an explicit guard (lines 88-93):
 ```bash
 case "$trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$HOME"/.codex/*) ;;
   *) trivial_file="${SB_STATE_DIR}/trivial" ;;
 esac
 ```
@@ -139,7 +139,7 @@ Without this guard, a `.silver-bullet.json` with `"state": {"trivial_file": "/tm
 ```bash
 # Security: validate trivial path stays within ${SB_RUNTIME_HOME_ROOT}/ (mirrors stop-check.sh SB-002)
 case "$_trivial_file" in
-  "$HOME"/.claude/*) ;;
+  "$HOME"/.codex/*) ;;
   *) _trivial_file="${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial" ;;
 esac
 ```

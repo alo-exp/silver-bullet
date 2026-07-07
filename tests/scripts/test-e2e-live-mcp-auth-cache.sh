@@ -33,7 +33,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 ORIGINAL_HOME="$TMP/original-home"
 mkdir -p "$ORIGINAL_HOME/.claude"
-cat > "$ORIGINAL_HOME/.claude/mcp-needs-auth-cache.json" <<'EOF'
+cat > "$ORIGINAL_HOME/.codex/mcp-needs-auth-cache.json" <<'EOF'
 {"plugin:test:server":{"timestamp":123}}
 EOF
 

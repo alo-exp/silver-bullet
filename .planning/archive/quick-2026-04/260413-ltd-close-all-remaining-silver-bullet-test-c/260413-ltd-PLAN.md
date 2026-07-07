@@ -83,7 +83,7 @@ Test scenarios (6 minimum):
 
 6. **model_for_agent routing**: Verify gsd-planner gets opus, gsd-security-auditor gets opus, any other gsd-*.md gets sonnet. Create gsd-planner.md, gsd-security-auditor.md, gsd-checker.md, gsd-executor.md all without model: lines. Run hook. Verify planner=opus, security-auditor=opus, checker=sonnet, executor=sonnet.
 
-Implementation approach: Override HOME to an isolated temp dir. Create $FAKE_HOME/.claude/agents/ and $FAKE_HOME/.claude/.silver-bullet/ directories. Write minimal .md files with frontmatter. Run the hook via `HOME="$FAKE_HOME" bash "$HOOK"`. Check results with grep.
+Implementation approach: Override HOME to an isolated temp dir. Create $FAKE_HOME/.codex/agents/ and $FAKE_HOME/.codex/.silver-bullet/ directories. Write minimal .md files with frontmatter. Run the hook via `HOME="$FAKE_HOME" bash "$HOOK"`. Check results with grep.
 
 Make the file executable (chmod +x).
 

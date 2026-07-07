@@ -127,7 +127,7 @@ RTK_DISABLED=1 bash scripts/run-enterprise-e2e-matrix.sh 1
 # Or re-score only if evidence retained:
 source scripts/lib/enterprise-e2e-outcome-assessment.sh
 enterprise_e2e_outcome_row_passes 1 "$SB_TEST_ENTERPRISE_APP_ROOT" \
-  "${HOME}/.claude/.silver-bullet" .e2e-row1-attempt.log \
+  "${HOME}/.codex/.silver-bullet" .e2e-row1-attempt.log \
   .planning/enterprise-e2e/ROUND-6-LEDGER.md .planning/workflows/router-session.md
 ```
 

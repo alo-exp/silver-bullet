@@ -200,10 +200,10 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
 | Source | Plugins |
 |--------|---------|
 | `~/.cursor/plugins/installed_plugins.json` | `silver-bullet@alo-labs` @ 0.48.6 |
-| `~/.claude/plugins/installed_plugins.json` | `context-mode@context-mode`, `design@knowledge-work-plugins`, `engineering@knowledge-work-plugins`, `product-management@knowledge-work-plugins`, `silver-bullet@alo-labs` |
+| `~/.codex/plugins/installed_plugins.json` | `context-mode@context-mode`, `design@knowledge-work-plugins`, `engineering@knowledge-work-plugins`, `product-management@knowledge-work-plugins`, `silver-bullet@alo-labs` |
 | Cursor UI (user report) | All five plugins showed **Imported** badge |
 
-**Root cause:** Cursor mirrors plugins from `~/.claude/plugins/installed_plugins.json` as "Imported". Knowledge Work plugins were never in Cursor's registry — only Claude's. Silver-bullet appeared Imported because it existed in **both** registries.
+**Root cause:** Cursor mirrors plugins from `~/.codex/plugins/installed_plugins.json` as "Imported". Knowledge Work plugins were never in Cursor's registry — only Claude's. Silver-bullet appeared Imported because it existed in **both** registries.
 
 ### Actions taken (CLI)
 
@@ -213,7 +213,7 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
    - `engineering@knowledge-work-plugins`
    - `product-management@knowledge-work-plugins`
    - `silver-bullet@alo-labs` (Claude only — Cursor native retained)
-3. `rm -rf ~/.claude/plugins/cache/knowledge-work-plugins/`
+3. `rm -rf ~/.codex/plugins/cache/knowledge-work-plugins/`
 4. Purged Cursor SB cache + registry; reinstalled:
    - `bash scripts/install-cursor.sh --public-release` → **0.45.0** (marketplace manifest stale)
    - `bash scripts/install-cursor.sh` (dev sync) → **0.48.6** (correct)
@@ -224,7 +224,7 @@ Path: `~/.cursor/.silver-bullet/sb-friction-log.md` (Cursor host `SB_RUNTIME_STA
 | Source | Plugins |
 |--------|---------|
 | `~/.cursor/plugins/installed_plugins.json` | `silver-bullet@alo-labs` @ 0.48.6, `installPath` under `~/.cursor/plugins/cache/` |
-| `~/.claude/plugins/installed_plugins.json` | `context-mode@context-mode` only |
+| `~/.codex/plugins/installed_plugins.json` | `context-mode@context-mode` only |
 | `~/.cursor/hooks.json` | 0 `.claude/plugins` paths; SB hooks via `cursor-hook-bridge.sh` |
 
 ### E0 re-verification

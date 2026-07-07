@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Matrix Claude auth helpers:
-# - Export ~/.claude/settings.json env for interactive TUI (api_key hosts).
+# - Export ~/.codex/settings.json env for interactive TUI (api_key hosts).
 # - Strip settings API-key env when claude.ai OAuth conflicts (clean-env path).
 # Shell unset / env -i alone is insufficient — interactive TUI needs exported env.
 
@@ -16,7 +16,7 @@ claude_matrix_settings_path() {
     printf '%s/settings.json\n' "${CLAUDE_CONFIG_DIR}"
     return
   fi
-  printf '%s/.claude/settings.json\n' "${HOME}"
+  printf '%s/.codex/settings.json\n' "${HOME}"
 }
 
 claude_matrix_auth_has_api_key_env() {
@@ -110,7 +110,7 @@ claude_matrix_auth_restore() {
   _claude_matrix_auth_prepared=0
 }
 
-# Export ~/.claude/settings.json env into the current shell so interactive Claude
+# Export ~/.codex/settings.json env into the current shell so interactive Claude
 # matches `claude --print` api_key auth. Project-level settings lack API keys;
 # the TUI does not inject global settings env unless it is exported here.
 claude_matrix_should_export_settings_env() {

@@ -77,7 +77,7 @@ Codex entry point.
 
 ### Packaging Boundaries
 
-- `/.planning/` and `/.claude/` are project-instance artifacts, not plugin content.
+- `/.planning/` and `/.codex/` are project-instance artifacts, not plugin content.
 - `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is a curated Codex snapshot, not a mirror of the whole repository.
 - `commands/` ships inside the SB bundle so Codex sees one Silver Bullet plugin, not a split command plugin.

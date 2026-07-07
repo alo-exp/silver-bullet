@@ -101,7 +101,7 @@ ga_agentmemory_commands() {
 ga_graphify_global_artifact_path() {
   local host="${1:-}"
   case "$host" in
-    claude) printf '%s/.claude/skills/graphify/SKILL.md' "${HOME}" ;;
+    claude) printf '%s/.codex/skills/graphify/SKILL.md' "${HOME}" ;;
     codex) printf '%s/.codex/skills/graphify/SKILL.md' "${HOME}" ;;
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     goose) printf '%s/.pi/agent/skills/graphify/SKILL.md' "${HOME}" ;;

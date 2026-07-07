@@ -520,7 +520,7 @@ cmd_live() {
       export SB_RUNTIME_STATE_DIR="${HOME}/.cursor/.silver-bullet/tri-criteria-live-${run_id}"
       ;;
     claude)
-      export SB_RUNTIME_STATE_DIR="${HOME}/.claude/.silver-bullet/tri-criteria-live-${run_id}"
+      export SB_RUNTIME_STATE_DIR="${HOME}/.codex/.silver-bullet/tri-criteria-live-${run_id}"
       ;;
     codex)
       export SB_RUNTIME_STATE_DIR="${HOME}/.codex/.silver-bullet/tri-criteria-live-${run_id}"

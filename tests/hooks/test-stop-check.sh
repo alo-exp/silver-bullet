@@ -603,8 +603,8 @@ GITIG
 git -C "$TMPDIR_TEST" add .gitignore
 git -C "$TMPDIR_TEST" commit -q -m "gitignore"
 # Now create the transient artifacts (untracked + ignored)
-touch "$TMPDIR_TEST/.claude/scheduled_tasks.lock"
-echo "{}" > "$TMPDIR_TEST/.claude/settings.local.json"
+touch "$TMPDIR_TEST/.codex/scheduled_tasks.lock"
+echo "{}" > "$TMPDIR_TEST/.codex/settings.local.json"
 touch "$TMPDIR_TEST/.superpowers/brainstorm/notes.md"
 touch "$TMPDIR_TEST/.planning/workflows/20260428T120000Z-abc123-silver-feature.md"
 touch "$TMPDIR_TEST/REVIEW.md"

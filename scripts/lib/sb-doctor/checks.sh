@@ -78,7 +78,7 @@ run_doctor_checks() {
       fi
       ;;
     *)
-      if [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
+      if [[ -f "${HOME}/.codex/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.codex/settings.json" 2>/dev/null; then
         record pass D4 "Claude settings.json references silver-bullet hooks"
       else
         record fail D4 "Claude settings.json missing SB hook entries"

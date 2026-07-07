@@ -96,7 +96,7 @@ init_guard_paths() {
       GUARD_PATHS+=("${HOME}/.config/opencode/AGENTS.md")
       ;;
     claude)
-      GUARD_PATHS+=("${HOME}/.claude/CLAUDE.md")
+      GUARD_PATHS+=("${HOME}/.codex/CLAUDE.md")
       ;;
   esac
 }

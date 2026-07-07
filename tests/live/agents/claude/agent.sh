@@ -125,7 +125,7 @@ agent_invoke() {
       # Opt-in env -i + bash -c (not -lc) for OAuth/key-conflict isolation only.
       # Default (SB_E2E_MATRIX_CLEAN_ENV=0) inherits caller auth — env -i strips
       # keychain/HOME credentials and often yields "Not logged in" in interactive TUI.
-      # Also strip ~/.claude/settings.json env keys — Claude reads API keys there
+      # Also strip ~/.codex/settings.json env keys — Claude reads API keys there
       # even when the shell env is empty, which conflicts with claude.ai OAuth.
       claude_matrix_auth_prepare
       trap 'claude_matrix_auth_restore' RETURN

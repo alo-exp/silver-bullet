@@ -8,7 +8,7 @@
 
 | Host | Graphify pre-index | Graphify always-on | agentmemory wiring | Global artifact paths |
 |------|-------------------|--------------------|--------------------|------------------------|
-| **Claude Code** | `graphify install` | `graphify claude install` | `agentmemory connect claude-code` | `~/.claude/skills/graphify/`, `~/.claude.json` |
+| **Claude Code** | `graphify install` | `graphify claude install` | `agentmemory connect claude-code` | `~/.codex/skills/graphify/`, `~/.claude.json` |
 | **Codex** | `graphify install --platform codex` | `graphify codex install` | `codex plugin …` + `agentmemory connect codex --with-hooks` | `~/.codex/skills/graphify/`, `~/.codex/config.toml` |
 | **OpenCode** | `graphify install --platform opencode` | `graphify opencode install` | **Manual MCP** merge in `~/.config/opencode/opencode.json` | `~/.config/opencode/opencode.json` |
 | **Goose (Pi)** | `graphify install --platform pi` | `graphify pi install` | `agentmemory connect pi` | `~/.pi/agent/skills/graphify/`, `~/.config/goose/config.yaml` |

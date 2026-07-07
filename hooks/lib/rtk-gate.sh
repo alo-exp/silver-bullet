@@ -96,7 +96,7 @@ sb_rtk_platform_hook_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
     codex) printf '%s/.codex/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
-    *) printf '%s/.claude/settings.json' "${HOME}" ;;
+    *) printf '%s/.codex/settings.json' "${HOME}" ;;
   esac
 }
 
@@ -131,7 +131,7 @@ sb_rtk_edit_path_is_exempt() {
   if [[ "$file_path" == *"/.silver-bullet/"* ]]; then
     return 0
   fi
-  if [[ "$file_path" == *"/.cursor/hooks.json" ]] || [[ "$file_path" == *"/.claude/settings.json" ]]; then
+  if [[ "$file_path" == *"/.cursor/hooks.json" ]] || [[ "$file_path" == *"/.codex/settings.json" ]]; then
     return 0
   fi
   return 1

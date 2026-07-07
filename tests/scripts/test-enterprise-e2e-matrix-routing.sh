@@ -42,7 +42,7 @@ matrix_routing_state_root() {
   case "${SILVER_BULLET_RUNTIME:-claude}" in
     codex) printf '%s/.codex/.silver-bullet' "$base" ;;
     cursor) printf '%s/.cursor/.silver-bullet' "$base" ;;
-    *) printf '%s/.claude/.silver-bullet' "$base" ;;
+    *) printf '%s/.codex/.silver-bullet' "$base" ;;
   esac
 }
 SB_RUNTIME_STATE_DIR="$(matrix_routing_state_root)"

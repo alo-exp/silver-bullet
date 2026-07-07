@@ -274,7 +274,7 @@ sb_graphify_platform_artifact_path() {
     opencode) printf '%s/.opencode/opencode.json' "${project_root%/}" ;;
     goose) printf '%s/.pi/agent/skills/graphify/SKILL.md' "${project_root%/}" ;;
     hermes) printf '%s/AGENTS.md' "${project_root%/}" ;;
-    *) printf '%s/.claude/settings.json' "${project_root%/}" ;;
+    *) printf '%s/.codex/settings.json' "${project_root%/}" ;;
   esac
 }
 

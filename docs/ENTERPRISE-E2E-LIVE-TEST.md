@@ -42,7 +42,7 @@ Included in `run-all-tests.sh` only when `SB_ENTERPRISE_E2E_LIVE=1`.
 
 Round 1/2 learnings:
 
-- **Third-party API key / custom gateway** in `~/.claude/settings.json` (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` — e.g. MiniMax M3 proxy).
+- **Third-party API key / custom gateway** in `~/.codex/settings.json` (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` — e.g. MiniMax M3 proxy).
 - Matrix runner exports settings env via `claude_matrix_export_settings_env` so spawned interactive TUI matches manual sessions (`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0` default).
 - The TUI may show **"Not logged in · Please run /login"** — this is an OAuth UI state only; token gateway auth is valid. Harness ignores the banner; **never** run `/login` or `claude auth login/logout`.
 - **`SB_E2E_MATRIX_CLEAN_ENV=0`** (default) — inherit caller shell auth. Do **not** use `env -i` unless debugging OAuth conflicts.
@@ -131,7 +131,7 @@ Record test-app `git rev-parse HEAD` in the round ledger header.
 
 ### Session-start from test app
 
-Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.claude/.silver-bullet/branch` matches the active fixture branch before matrix rows.
+Branch-scoped session-start runs from **test app CWD** via cursor-hook-bridge / `SILVER_BULLET_SESSION_SOURCE=startup`. Confirm `~/.codex/.silver-bullet/branch` matches the active fixture branch before matrix rows.
 
 ### Recommended tools (opt in on both repos)
 
@@ -265,6 +265,6 @@ On 429/Token Plan: wait 1 minute and retry. On SB hook fix: reinstall plugin bef
 | `scripts/run-enterprise-e2e-matrix.sh` | Interactive matrix row runner |
 | `scripts/monitor-enterprise-e2e-matrix.sh` | Batch monitor (429/network/stall) |
 | `scripts/watch-enterprise-e2e-tui.sh` | Turn-level TUI watcher + monitor recovery |
-| `scripts/lib/claude-matrix-auth.sh` | Export `~/.claude/settings.json` env for TUI |
+| `scripts/lib/claude-matrix-auth.sh` | Export `~/.codex/settings.json` env for TUI |
 | `scripts/lib/matrix-quota.sh` | 429 / Token Plan detection |
 | `tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh` | Structural validation (default CI-safe) |

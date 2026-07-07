@@ -330,7 +330,7 @@ start_batch() {
   fi
   log_poll "$(utc_now) ACTION: starting batch rows: ${rows[*]}"
   # Force settings export on monitor restarts — inherited SKIP=1 from run-all-tests / live
-  # wrappers would skip ~/.claude/settings.json env and leave interactive TUI at "Not logged in".
+  # wrappers would skip ~/.codex/settings.json env and leave interactive TUI at "Not logged in".
   local -a batch_env=(
     -u SB_E2E_MATRIX_DRY_RUN
     SB_E2E_LIVE_RUNTIME="$MATRIX_HOST"

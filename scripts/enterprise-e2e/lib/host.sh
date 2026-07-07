@@ -198,7 +198,7 @@ enterprise_e2e_routing_state_file() {
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
   fi
-  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}/state"
+  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.codex/.silver-bullet}/state"
 }
 
 # Host-aware .silver-bullet state root (parent of routing state file).
@@ -207,7 +207,7 @@ enterprise_e2e_runtime_state_dir() {
     # shellcheck source=hooks/lib/runtime-paths.sh
     source "${SB_ROOT}/hooks/lib/runtime-paths.sh"
   fi
-  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.claude/.silver-bullet}"
+  printf '%s\n' "${SB_RUNTIME_STATE_DIR:-${HOME}/.codex/.silver-bullet}"
 }
 
 # Translate MATRIX_ROWS route column for non-Claude hosts.

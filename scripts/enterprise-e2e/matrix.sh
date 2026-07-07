@@ -39,8 +39,8 @@ if [[ "$MATRIX_HOST" == "claude" ]]; then
 fi
 # SB_E2E_MATRIX_CLEAN_ENV=1 (env -i) is opt-in for claude.ai OAuth users whose shell
 # ANTHROPIC_API_KEY conflicts with stored credentials. It strips most env vars and can
-# leave interactive TUI at "Not logged in" when keychain / ~/.claude/ auth is required.
-# Default 0 inherits the caller's working auth (HOME, keychain, ~/.claude/).
+# leave interactive TUI at "Not logged in" when keychain / ~/.codex/ auth is required.
+# Default 0 inherits the caller's working auth (HOME, keychain, ~/.codex/).
 export SB_E2E_MATRIX_CLEAN_ENV="${SB_E2E_MATRIX_CLEAN_ENV:-0}"
 if [[ "${SB_E2E_MATRIX_CLEAN_ENV}" == "1" ]]; then
   # Only strip conflicting shell keys in clean-env mode.
@@ -63,7 +63,7 @@ export CLAUDE_INTERACTIVE_QUIET_TIMEOUT="${CLAUDE_INTERACTIVE_QUIET_TIMEOUT:-300
 export CLAUDE_INTERACTIVE_READY_DELAY_MS="${CLAUDE_INTERACTIVE_READY_DELAY_MS:-3000}"
 export CLAUDE_INTERACTIVE_READY_TIMEOUT="${CLAUDE_INTERACTIVE_READY_TIMEOUT:-60}"
 
-# Export ~/.claude/settings.json env for interactive TUI (Claude host only).
+# Export ~/.codex/settings.json env for interactive TUI (Claude host only).
 if [[ "$MATRIX_HOST" == "claude" ]]; then
 # Enterprise matrix always exports — do not inherit SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=1
 # from run-all-tests.sh / run-sb-live-tests-claude.sh (leaves TUI at login wall).
@@ -146,7 +146,7 @@ Environment:
   SB_E2E_MATRIX_FORCE_ALL=1    Re-run all rows including install-version pass registry
   SB_E2E_MATRIX_FAIL_ON_SKIP=1 Fail on evidence SKIP (not on ROW_ALREADY_PASSED_SAME_INSTALL)
   SB_E2E_MATRIX_CLEAN_ENV=1    Opt-in env -i for OAuth/key-conflict isolation (default 0 inherits shell)
-  SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.claude/settings.json env (default 0; set 1 for OAuth-only)
+  SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT  Skip ~/.codex/settings.json env (default 0; set 1 for OAuth-only)
   CLAUDE_INTERACTIVE_READY_TIMEOUT  Seconds to wait for prompt readiness (default 60)
   CLAUDE_MODEL                 Claude model (default haiku for matrix runs)
   CLAUDE_INTERACTIVE_QUIET_TIMEOUT  Seconds of quiet before row completes (default 300)

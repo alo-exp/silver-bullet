@@ -1,7 +1,7 @@
 # TC-02 Live Verify — 20260706T010843Z-TC-02
 # Host: claude | Fixture: enterprise-grade-test-app | SB sha: 69988bda2d7d | fixture sha: d07e6a0ed5bb
 # bootstrap-orchestrator-track.sh: NOT USED (live verify)
-# SB_RUNTIME_PRESERVE_STATE_DIR=1 state: /Users/shafqat/.claude/.silver-bullet/tri-criteria-live-20260706T010843Z-TC-02
+# SB_RUNTIME_PRESERVE_STATE_DIR=1 state: /Users/shafqat/.codex/.silver-bullet/tri-criteria-live-20260706T010843Z-TC-02
 # execution_model: claude agent delegation + runtime orchestrator drain
 # honest_note: agent may chain skills inside one WF; composer spacing from scheduler events
 

@@ -37,12 +37,12 @@ which context-mode || claude plugin list 2>/dev/null | grep -i context-mode
 
 ## Phase 2 — Global artifacts
 
-### 2.1 RTK hook (`~/.claude/settings.json`)
+### 2.1 RTK hook (`~/.codex/settings.json`)
 
 ```bash
-jq '.hooks.PreToolUse[]? | select(.command? | test("rtk"))' ~/.claude/settings.json 2>/dev/null
-grep -q rtk ~/.claude/settings.json 2>/dev/null && echo OK-settings
-test -f ~/.claude/RTK.md && echo OK-rtk-md
+jq '.hooks.PreToolUse[]? | select(.command? | test("rtk"))' ~/.codex/settings.json 2>/dev/null
+grep -q rtk ~/.codex/settings.json 2>/dev/null && echo OK-settings
+test -f ~/.codex/RTK.md && echo OK-rtk-md
 ```
 
 **Pass:** RTK PreToolUse entry and `RTK.md` present.
@@ -52,7 +52,7 @@ test -f ~/.claude/RTK.md && echo OK-rtk-md
 ### 2.2 Context Mode plugin or MCP
 
 ```bash
-test -d ~/.claude/plugins/context-mode && echo OK-plugin || \
+test -d ~/.codex/plugins/context-mode && echo OK-plugin || \
   jq '.mcpServers["context-mode"]' ~/.claude.json 2>/dev/null
 ```
 

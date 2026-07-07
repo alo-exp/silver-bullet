@@ -4,7 +4,7 @@
 
 ## Locked decisions
 
-- **Receipt root cause:** Codex adapter writes to `~/.codex/.silver-bullet/skill-invocations`; repo-source hooks auto-detected Claude runtime and searched `~/.claude/…`, so desktop `exec_command` receipts were invisible to `record-skill`.
+- **Receipt root cause:** Codex adapter writes to `~/.codex/.silver-bullet/skill-invocations`; repo-source hooks auto-detected Claude runtime and searched `~/.codex/…`, so desktop `exec_command` receipts were invisible to `record-skill`.
 - **Fix approach:** Cross-runtime receipt dir search via `sb_runtime_skill_receipt_dirs()`; also treat `CLAUDE_PLUGIN_ROOT` under `/.codex/` as codex runtime.
 - **Release scope:** Patch only — `#221` fix + `ab12e86` scan discovery; do not bundle `#217` (release-body validation still open).
 

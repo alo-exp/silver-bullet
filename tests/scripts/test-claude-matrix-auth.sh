@@ -34,7 +34,7 @@ TMP_HOME="$(mktemp -d)"
 trap 'rm -rf "$TMP_HOME"' EXIT
 export HOME="$TMP_HOME"
 mkdir -p "${HOME}/.claude"
-cat > "${HOME}/.claude/settings.json" <<'EOF'
+cat > "${HOME}/.codex/settings.json" <<'EOF'
 {
   "env": {
     "ANTHROPIC_API_KEY": "sk-test-matrix-key",
@@ -60,7 +60,7 @@ assert_eq "exports ANTHROPIC_BASE_URL from settings" "https://api.example.test/a
 assert_eq "exports other settings env keys" "enabled" "${CUSTOM_MATRIX_FLAG:-}"
 
 unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL CUSTOM_MATRIX_FLAG
-cat > "${HOME}/.claude/settings.json" <<'EOF'
+cat > "${HOME}/.codex/settings.json" <<'EOF'
 {
   "env": {
     "API_TIMEOUT_MS": "3000000"

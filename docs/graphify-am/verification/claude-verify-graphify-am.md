@@ -45,7 +45,7 @@ which gitleaks && gitleaks version 2>/dev/null | head -1
 ### 2.1 Graphify skill (global)
 
 ```bash
-test -f ~/.claude/skills/graphify/SKILL.md && grep -q graphify ~/.claude/skills/graphify/SKILL.md && echo OK
+test -f ~/.codex/skills/graphify/SKILL.md && grep -q graphify ~/.codex/skills/graphify/SKILL.md && echo OK
 ```
 
 **Pass:** skill file exists with graphify content.
@@ -55,7 +55,7 @@ test -f ~/.claude/skills/graphify/SKILL.md && grep -q graphify ~/.claude/skills/
 ### 2.2 Graphify always-on hooks
 
 ```bash
-grep -r graphify ~/.claude/CLAUDE.md ~/.claude/settings.json 2>/dev/null | head -3
+grep -r graphify ~/.codex/CLAUDE.md ~/.codex/settings.json 2>/dev/null | head -3
 ```
 
 **Pass:** graphify PreToolUse or rules reference present.

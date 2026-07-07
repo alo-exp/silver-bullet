@@ -83,7 +83,7 @@ No new tool invocations. Hook scripts continue using parameterized `git`, `jq`, 
 Verified by Read of all changed files: zero matches for `sk-*`, `ghp_*`, `AKIA*`, `password=`, `BEGIN.*PRIVATE KEY`, `Bearer [a-z0-9]{32,}`. No credential-file targeting (`~/.ssh/id_rsa` etc.) introduced.
 
 ### FINDING-5 (Tool-Use Scope Escalation) — `NO`
-No new tool declarations. Existing scope guards preserved: `nofollow-guard.sh` symlink protection, `case "$state_file" in "$HOME"/.claude/*) ;;` path validation, `printf '%s' | grep -qE '^[a-zA-Z0-9/_.-]+$'` branch-name validation.
+No new tool declarations. Existing scope guards preserved: `nofollow-guard.sh` symlink protection, `case "$state_file" in "$HOME"/.codex/*) ;;` path validation, `printf '%s' | grep -qE '^[a-zA-Z0-9/_.-]+$'` branch-name validation.
 
 ### FINDING-6 (Identity Spoofing & Authority Bluffing) — `NO`
 No new authority claims. Documentation states factual capabilities (e.g., "hooks fire only in Claude Code CLI") without overclaim.

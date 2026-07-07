@@ -179,7 +179,7 @@ When reviewing code, check each of these areas:
 - `~/.agents/plugins/<plugin-name>/` — Plugin-provided skills
 
 **Backward compatibility:**
-> "goose also discovers skills from .goose/skills/, .claude/skills/, ~/.claude/skills/, and platform-specific config directories, but agents/skills/ is the recommended standard."
+> "goose also discovers skills from .goose/skills/, .claude/skills/, ~/.codex/skills/, and platform-specific config directories, but agents/skills/ is the recommended standard."
 
 **Skills Marketplace:** https://goose-docs.ai/skills/
 

@@ -199,7 +199,7 @@ PY
   fi
 
   mkdir -p "${WORK_DIR}/.claude"
-  python3 - "${WORK_DIR}/.claude/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
+  python3 - "${WORK_DIR}/.codex/settings.local.json" "$disabled_mcpjson_servers_json" <<'PY'
 from pathlib import Path
 import json
 import sys

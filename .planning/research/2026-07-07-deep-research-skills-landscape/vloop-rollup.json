@@ -1,0 +1,23 @@
+{
+  "workflow_id": "WF-SILVER-DEEP-RESEARCH",
+  "flow_step": "FS-SILVER_DEEP_RESEARCH",
+  "mode": "deep",
+  "status": "pass",
+  "phases": {
+    "DR-SCOPE": {"status": "pass", "work_product": "scope.md"},
+    "DR-PLAN": {"status": "pass", "work_product": "research-plan.md"},
+    "DR-RETRIEVE": {"status": "pass", "work_product": "sources.jsonl", "source_count": 28},
+    "DR-TRIANGULATE": {"status": "pass", "work_product": "triangulation.md"},
+    "DR-OUTLINE": {"status": "pass", "work_product": "outline.md"},
+    "DR-SYNTHESIZE": {"status": "pass", "work_product": "research_report.md"},
+    "DR-CRITIQUE": {"status": "pass", "work_product": "critique.md", "loopback": "none"},
+    "DR-REFINE": {"status": "pass", "work_product": "research_report.md"},
+    "DR-PACKAGE": {"status": "pass", "work_product": "decision-record.md"}
+  },
+  "validation": {
+    "validate_report": "pass",
+    "verify_citations": "pass",
+    "verify_claim_support": "pass"
+  },
+  "repair_loops": 0
+}

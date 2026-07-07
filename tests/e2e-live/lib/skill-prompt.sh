@@ -34,7 +34,7 @@ matrix_row3_product_commit_clause() {
 matrix_row1_evidence_clause() {
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
   local state_hint="${SB_RUNTIME_STATE_DIR:-${CLAUDE_CONFIG_DIR:-}/.silver-bullet}"
-  printf '§5b row 1 gate: routing-only — invoke /silver silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.claude/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.' "$branch" "$state_hint"
+  printf '§5b row 1 gate: routing-only — invoke /silver silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.codex/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.' "$branch" "$state_hint"
 }
 
 # Row 6 fast path — README product fix + workflow evidence.

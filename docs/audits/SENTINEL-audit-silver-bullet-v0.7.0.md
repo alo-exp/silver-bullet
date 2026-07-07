@@ -122,7 +122,7 @@ A malicious `.silver-bullet.json` could set `state_file` to an arbitrary path (e
 All hooks reading state.state_file / state.trivial_file:
 After expanding the path, validate it stays within ${SB_RUNTIME_HOME_ROOT}/ or $SB_STATE_DIR:
   case "$state_file" in
-    "$HOME"/.claude/*) ;; # allowed
+    "$HOME"/.codex/*) ;; # allowed
     *) state_file="${SB_STATE_DIR}/state" ;; # fallback to default
   esac
 Apply the same validation to trivial_file.
@@ -147,7 +147,7 @@ Any process that can set environment variables (e.g., a malicious CI job, a comp
 ```
 Same path validation as SB-002. After the env var override line, add:
   case "$state_file" in
-    "$HOME"/.claude/*) ;;
+    "$HOME"/.codex/*) ;;
     *) state_file="${SB_STATE_DIR}/state" ;;
   esac
 ```

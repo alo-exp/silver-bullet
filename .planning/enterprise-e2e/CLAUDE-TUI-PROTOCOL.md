@@ -88,7 +88,7 @@ One Claude TUI session (or logical segment) per row in `enterprise-grade-test-ap
 2. Open Claude TUI with CWD = test app directory.
 3. Paste the **prompt card** from the matrix (natural user language — not test jargon).
 4. Monitor in parallel terminal:
-   - Claude hook delivery (`~/.claude/...`; use debug-dump when `SB_LIVE_DEBUG_DUMP=1`)
+   - Claude hook delivery (`~/.codex/...`; use debug-dump when `SB_LIVE_DEBUG_DUMP=1`)
    - `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` — required skills recorded
    - `.planning/workflows/*.md` — Flow Log CSV advancement
    - `.planning/orchestrator-composition-log.jsonl` — queue progression

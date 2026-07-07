@@ -28,14 +28,14 @@ cp "$REPO_ROOT/scripts/workflows.sh" "$MOCK_PROJ/scripts/workflows.sh"
 chmod +x "$MOCK_PROJ/scripts/workflows.sh"
 
 cache_ver="0.48.9"
-cache_dir="$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/${cache_ver}"
+cache_dir="$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/${cache_ver}"
 mkdir -p "$cache_dir/hooks" "$cache_dir/agents/claude/silver" "$cache_dir/agents/codex"
-ln -sfn "$cache_dir" "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/current"
+ln -sfn "$cache_dir" "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-bullet/current"
 cp "$REPO_ROOT/hooks/hooks.json" "$cache_dir/hooks/hooks.json"
 jq -n --arg v "$cache_ver" --arg p "$cache_dir" \
   '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
-  >"$MOCK_HOME/.claude/plugins/installed_plugins.json"
-printf '{"hooks":{}}\n' >"$MOCK_HOME/.claude/settings.json"
+  >"$MOCK_HOME/.codex/plugins/installed_plugins.json"
+printf '{"hooks":{}}\n' >"$MOCK_HOME/.codex/settings.json"
 
 out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
 printf '%s' "$out" | grep -q 'FAIL: D14' && pass "D14 cache bleed" || fail "D14 cache bleed"

@@ -1658,13 +1658,11 @@ Launch-hardening release. Remediates all blocker/high/medium findings from the p
 
 ## Patch
 
-**Silver command surface consolidation.** Silver Bullet now ships one Codex plugin named `silver-bullet` with `/silver` and `/silver:*` commands in the same bundle. The legacy `using-silver-bullet` alias is removed, and the shared marketplace no longer exposes a separate Silver Bullet Commands plugin.
 
 ## Fixes
 
 - `commands/*.md` now carry `silver:` labels so the picker shows the Silver Bullet surface inside the main plugin.
 - `commands/silver.md` adds the `/silver` router inside the same SB bundle.
-- `scripts/install-codex.sh` purges the old `using-silver-bullet` alias during `--purge-legacy-skills`.
 - The shared Codex marketplace no longer exposes a separate `plugins/silver` package.
 
 ---
@@ -2612,7 +2610,6 @@ into a single coherent entry. Closes issues [#14](https://github.com/alo-exp/sil
 - Ten-layer enforcement model now fully documented in `silver-bullet.md` section 1 (Stop hook, UserPromptSubmit reminder, and Forbidden skill gate layers were previously undocumented)
 
 ### Changed
-- Renamed `/using-silver-bullet` skill to `/silver:init` — shorter namespaced name consistent with the `/silver:*` namespace; project-wide update across all docs, site, help center, README, and hooks
 
 ### Fixed
 - `record-skill.sh`: greedy namespace stripping loop (mirrors `forbidden-skill-check.sh`) — double-namespaced invocations (e.g., `outer:inner:quality-gates`) were silently untracked (SENTINEL S6-001)

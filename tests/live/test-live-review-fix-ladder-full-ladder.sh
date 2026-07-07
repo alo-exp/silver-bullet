@@ -271,7 +271,8 @@ run_full_ladder_for_host() {
     review_fix_ladder_apply_rung_env "$LADDER_HOST" "$model" "$reasoning"
     if [[ "$LADDER_HOST" == "cursor" ]]; then
       slug="${CURSOR_AGENT_MODEL:-}"
-      printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} (cursor slug=${slug}) ---"
+      delegation="$(review_fix_ladder_rung_delegation "$model" "$reasoning")"
+      printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} (delegation=${delegation}, cursor model=${slug}) ---"
     else
       printf '%s\n' "--- Rung ${rung_index}/${rung_count}: model=${model} reasoning=${reasoning} ---"
     fi
