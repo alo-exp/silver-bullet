@@ -75,7 +75,7 @@ review_fix_ladder_rung_prompt() {
   local clean_pass="$6"
   local lite="${SB_LIVE_REVIEW_FIX_LADDER_LITE_PROMPT:-1}"
 
-  if [[ "$lite" == "1" ]]; then
+  if [[ "$lite" == "1" && "${SB_LIVE_REVIEW_FIX_LADDER_TRIAGE_SCENARIO:-0}" != "1" ]]; then
     cat <<EOF
 Review-fix ladder smoke rung ${rung_index}/${rung_total}: model=${model}, reasoning=${reasoning}.
 
@@ -83,6 +83,13 @@ Read smoke-target.py and CHARTER.md in this workspace only.
 
 Pass ${clean_pass}: reply with one line starting "LADDER_PASS:" naming the divide() zero-check defect from the charter. Do not edit files or run other commands.
 EOF
+    return 0
+  fi
+
+  if [[ "${SB_LIVE_REVIEW_FIX_LADDER_TRIAGE_SCENARIO:-0}" == "1" ]]; then
+    # shellcheck source=tests/live/lib/review-fix-ladder-triage-scenario.sh
+    source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/review-fix-ladder-triage-scenario.sh"
+    review_fix_ladder_phase_prompt "review" "$rung_index" "$rung_total" "$model" "$reasoning"
     return 0
   fi
 
