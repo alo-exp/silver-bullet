@@ -85,6 +85,28 @@ else
   fail "install-cursor records gitCommitSha in installed_plugins.json"
 fi
 
+repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+market_cache_link="${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet/${repo_sha}"
+market_cache_target="$(cd "$market_cache_link" 2>/dev/null && pwd -P || true)"
+if [[ -L "$market_cache_link" ]] && [[ "$market_cache_target" == "$resolved_current" ]]; then
+  pass "install-cursor seeds alo-labs-cursor marketplace cache symlink"
+else
+  fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
+fi
+
+if jq -e '.version == 2 and (.plugins["silver-bullet@alo-labs"] | type) == "array"' "$registry_path" >/dev/null 2>&1; then
+  pass "install-cursor writes installed_plugins.json v2 array entry"
+else
+  fail "install-cursor writes installed_plugins.json v2 array entry"
+fi
+
+if jq -e '.hooks.sessionStart[]? | select(.command | test("silver-bullet")) | .command | startswith("\"\"") | not'   "${CURSOR_HOME}/hooks.json" >/dev/null 2>&1; then
+  pass "install-cursor merges singly quoted SB hook commands"
+else
+  fail "install-cursor merges singly quoted SB hook commands"
+fi
+
+
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"
 

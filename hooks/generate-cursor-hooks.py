@@ -28,8 +28,7 @@ def rewrite_command(command: str, cursor_event: str) -> str:
     hook_path = command.strip('"')
     if "/cursor-hook-bridge.sh" in hook_path:
         return command
-    bridge = f'"{PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" {cursor_event} {hook_path}'
-    return f'"{bridge}"'
+    return f'"{PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh" {cursor_event} {hook_path}'
 
 
 def translate_matcher(matcher: str, cursor_event: str) -> str | None:
