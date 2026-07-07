@@ -6,7 +6,7 @@ matrix log bytes: 20336263
 issues (recent): none
 claude/expect:
   73390 expect /Users/shafqat/projects/silver-bullet/repo/scripts/claude-interactive-invoke.expect
-  73747 /Users/shafqat/.local/bin/claude --model haiku --effort low --permission-mode bypassPermissions --verbose --allow-dangerously-skip-permissions --settings /Users/shafqat/.claude/settings.json
+  73747 /Users/shafqat/.local/bin/claude --model haiku --effort low --permission-mode bypassPermissions --verbose --allow-dangerously-skip-permissions --settings /Users/shafqat/.codex/settings.json
   row1-attempt.log: 338024 bytes (2026-07-01 16:01)
   row5-attempt.log: 2790898 bytes (2026-07-01 15:10)
   row7-attempt.log: 361621 bytes (2026-07-01 09:58)

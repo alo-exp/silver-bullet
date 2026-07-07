@@ -31,7 +31,7 @@ proc load_claude_settings_env {} {
   if {[env_or_default CLAUDE_PRINT_SKIP_SETTINGS_EXPORT "0"] eq "1"} {
     return
   }
-  # Interactive TUI does not always inherit ~/.claude/settings.json env like
+  # Interactive TUI does not always inherit ~/.codex/settings.json env like
   # `claude --print`. Inject API-key env before spawn when not in clean-env mode
   # and when claude.ai OAuth is not already active (avoid auth conflicts).
   set matrix_clean_env [env_or_default SB_E2E_MATRIX_CLEAN_ENV "0"]
@@ -47,7 +47,7 @@ proc load_claude_settings_env {} {
     set settings "$::env(CLAUDE_CONFIG_DIR)/settings.json"
   }
   if {$settings eq ""} {
-    set settings "$home/.claude/settings.json"
+    set settings "$home/.codex/settings.json"
   }
   if {![file exists $settings]} {
     return
@@ -735,7 +735,7 @@ if {$settings_file eq "" && [info exists ::env(CLAUDE_CONFIG_DIR)] && $::env(CLA
   set settings_file "$::env(CLAUDE_CONFIG_DIR)/settings.json"
 }
 if {$settings_file eq "" && $home ne ""} {
-  set settings_file "$home/.claude/settings.json"
+  set settings_file "$home/.codex/settings.json"
 }
 if {$matrix_clean_env ne "1" && $settings_file ne "" && [file exists $settings_file]} {
   lappend args --settings $settings_file

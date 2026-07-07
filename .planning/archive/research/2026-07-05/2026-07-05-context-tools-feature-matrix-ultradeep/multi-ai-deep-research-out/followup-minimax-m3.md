@@ -267,12 +267,12 @@ This section walks through **10 distinct conflict classes** between LeanCTX and 
 - `.cursor/rules/recommended-tools.mdc` (alwaysApply).
 - `.cursor/rules/token-compression-enforcement.mdc` (alwaysApply).
 - `hooks/core-rules.md` (SB canonical rules referenced by hooks).
-- Per-host configs: `~/.claude/CLAUDE.md` (Claude Code), `~/.codex/AGENTS.md` (Codex), `~/.cursor/rules/*.mdc` (Cursor), `~/.config/opencode/opencode.json` (OpenCode).
+- Per-host configs: `~/.codex/CLAUDE.md` (Claude Code), `~/.codex/AGENTS.md` (Codex), `~/.cursor/rules/*.mdc` (Cursor), `~/.config/opencode/opencode.json` (OpenCode).
 
 **Adding LeanCTX introduces:**
 - `.cursor/rules/leanctx.mdc` (new, alwaysApply).
 - `~/.config/lean-ctx/config.toml` (LeanCTX-specific config).
-- Possibly `~/.claude/settings.json` updates (if LeanCTX runs as a Claude Code plugin or hook).
+- Possibly `~/.codex/settings.json` updates (if LeanCTX runs as a Claude Code plugin or hook).
 - Possibly `~/.cursor/mcp.json` updates (LeanCTX MCP server).
 - Possibly `~/.codex/config.toml` updates.
 - Possibly `~/.config/opencode/opencode.json` updates.
@@ -498,9 +498,9 @@ This section walks through each of the 4 target environments and the 5-stack's b
 
 **Hook system:** Claude Code's `hooks/hooks.json` is the most capable of the 4 hosts. Supports `PreToolUse` / `PostToolUse` / `SessionStart` / `SessionEnd` / `Stop` / `UserPromptSubmit` / `SubagentStart` / `SubagentStop` / `PreCompact` / `Notification`. **`PreToolUse` supports live rewrite via `updatedInput` + `permissionDecision: allow`.**
 
-**MCP system:** `~/.claude/settings.json` or `.mcp.json` with `mcpServers.<name>`. Supports per-server `disabledTools`.
+**MCP system:** `~/.codex/settings.json` or `.mcp.json` with `mcpServers.<name>`. Supports per-server `disabledTools`.
 
-**Rule system:** `~/.claude/CLAUDE.md` (user-level) + `./CLAUDE.md` (project-level). No `.mdc` system.
+**Rule system:** `~/.codex/CLAUDE.md` (user-level) + `./CLAUDE.md` (project-level). No `.mdc` system.
 
 **5-stack analysis for Claude Code:**
 
@@ -732,7 +732,7 @@ The conditions under which SB **should** add LeanCTX:
 |--------|--------|-------|-------------|----------|
 | **LeanCTX hook mode** | `HookMode::Mcp` only (observer on `PreToolUse:Bash`) | `HookMode::Mcp` only (no hooks; PreToolUse deny-only) | `HookMode::Mcp` + observer on `PreToolUse:Bash` + `UserPromptSubmit` for prompt-injection | `HookMode::Mcp` only (no native hook TS in catalog) |
 | **LeanCTX wire proxy** | ✓ (`LEANCTX_PROXY=on`, `LEANCTX_PROXY_SKIP_TOOLS=Bash`) | ✗ (no request lifecycle) | ✓ (`LEANCTX_PROXY=on`, `LEANCTX_PROXY_SKIP_TOOLS=Bash`) | △ (Plugin TS possible; not documented) |
-| **MCP server config** | `~/.cursor/mcp.json` `mcpServers.leanctx` with `disabledTools` | `~/.codex/config.toml` `[mcp_servers.leanctx]` with `enabled = true` | `~/.claude/settings.json` `mcpServers.leanctx` with `disabledTools` | `~/.config/opencode/opencode.json` `mcp.leanctx` with `enabled = true` |
+| **MCP server config** | `~/.cursor/mcp.json` `mcpServers.leanctx` with `disabledTools` | `~/.codex/config.toml` `[mcp_servers.leanctx]` with `enabled = true` | `~/.codex/settings.json` `mcpServers.leanctx` with `disabledTools` | `~/.config/opencode/opencode.json` `mcp.leanctx` with `enabled = true` |
 | **MCP tools exposed** | 5 unified only (76 blocked) | 5 unified only (76 blocked) | 5 unified only (76 blocked) | 5 unified only (76 blocked) |
 | **Rule file** | `.cursor/rules/leanctx.mdc` (new) | `AGENTS.md` (merged into existing; leanctx section) | `CLAUDE.md` (leanctx section) | `AGENTS.md` (merged; leanctx section) |
 | **PathJail default** | off (opt-in for `compliance_strict`) | off (no enforcement; opt-in is no-op) | off (opt-in for `compliance_strict`) | off (opt-in for `compliance_strict`) |

@@ -1220,7 +1220,7 @@ e2e_live: {pass|skip|fail}
 
 | ID | Surface |
 |----|---------|
-| M-Q01 | `site/.claude/launch.json` |
+| M-Q01 | `site/.codex/launch.json` |
 | M-Q02 | `site/CNAME` |
 | M-Q03 | `site/brute/index.html` |
 | M-Q04 | `site/bullet-grok2.jpg` |

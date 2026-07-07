@@ -95,7 +95,7 @@ Focused gaps where Goose, OpenCode, and OMP trail Claude/Cursor (and Codex where
 
 [^opencode-permissions]: OpenCode has granular per-tool permission control via `opencode.json` config. Each permission key resolves to `"allow"`, `"ask"`, or `"deny"`. Supports glob patterns: `"git commit *": "deny"`. 15 permission keys: `read`, `edit`, `glob`, `grep`, `list`, `bash`, `task`, `external_directory`, `todowrite`, `webfetch`, `websearch`, `lsp`, `skill`, `question`, `doom_loop`. Permission events: `permission.asked`, `permission.replied`. See [OpenCode permissions docs](https://opencode.ai/docs/permissions).
 
-[^opencode-skills]: OpenCode discovers `SKILL.md` files from `.opencode/skills/`, `~/.config/opencode/skills/`, `.claude/skills/`, `~/.claude/skills/`, `.agents/skills/`, `~/.agents/skills/`. Same YAML frontmatter format as Claude Code (`name`, `description` required). Native `skill` tool loads skills on demand. Agents see available skills as `<available_skills>` XML in tool description. See [OpenCode skills docs](https://opencode.ai/docs/skills).
+[^opencode-skills]: OpenCode discovers `SKILL.md` files from `.opencode/skills/`, `~/.config/opencode/skills/`, `.claude/skills/`, `~/.codex/skills/`, `.agents/skills/`, `~/.agents/skills/`. Same YAML frontmatter format as Claude Code (`name`, `description` required). Native `skill` tool loads skills on demand. Agents see available skills as `<available_skills>` XML in tool description. See [OpenCode skills docs](https://opencode.ai/docs/skills).
 
 [^opencode-subagents]: OpenCode has primary agents and subagents. Built-in subagents: General, Explore, Scout. Custom subagents via JSON or Markdown definitions. Subagents invoked via `task` tool or @ mention. `permission.task` controls which subagents an agent can invoke using glob patterns. Child sessions created by subagents; navigation via `session_child_first` keybinding. See [OpenCode agents docs](https://opencode.ai/docs/agents).
 
@@ -103,7 +103,7 @@ Focused gaps where Goose, OpenCode, and OMP trail Claude/Cursor (and Codex where
 
 [^opencode-mcp]: OpenCode supports local (stdio) and remote (URL-based) MCP servers. Remote servers support OAuth with Dynamic Client Registration (RFC 7591). Organizations can provide default MCP servers via `.well-known/opencode` endpoint. Local config overrides remote defaults. See [OpenCode MCP docs](https://opencode.ai/docs/mcp-servers).
 
-[^opencode-config]: OpenCode config injection: `AGENTS.md` (primary), `CLAUDE.md` (compatible), custom instruction paths via `opencode.json` `instructions` array with glob patterns and remote URLs. Precedence: local files → global `~/.config/opencode/AGENTS.md` → `~/.claude/CLAUDE.md`. Remote instructions fetched with 5s timeout. See [OpenCode rules docs](https://opencode.ai/docs/rules).
+[^opencode-config]: OpenCode config injection: `AGENTS.md` (primary), `CLAUDE.md` (compatible), custom instruction paths via `opencode.json` `instructions` array with glob patterns and remote URLs. Precedence: local files → global `~/.config/opencode/AGENTS.md` → `~/.codex/CLAUDE.md`. Remote instructions fetched with 5s timeout. See [OpenCode rules docs](https://opencode.ai/docs/rules).
 
 [^opencode-compaction]: OpenCode has `experimental.session.compacting` hook that fires before LLM generates continuation summary. Can inject additional context via `output.context.push()` or replace the entire compaction prompt via `output.prompt`. `session.compacted` fires after compaction completes. See [OpenCode plugins docs](https://opencode.ai/docs/plugins).
 

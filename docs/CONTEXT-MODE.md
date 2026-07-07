@@ -64,7 +64,7 @@ claude plugin install context-mode@context-mode
 
 | Host | Steps | Artifacts | Status |
 |------|-------|-----------|--------|
-| Claude Code | Plugin install (above) | `~/.claude/plugins/context-mode` | Supported |
+| Claude Code | Plugin install (above) | `~/.codex/plugins/context-mode` | Supported |
 | Cursor | Merge MCP + hooks per [upstream Cursor docs](https://github.com/mksglu/context-mode#cursor) | `~/.cursor/mcp.json`, `~/.cursor/hooks.json`, `~/.cursor/rules/` | Supported |
 | Codex | Merge `config.toml` + `hooks.json` blocks | `~/.codex/config.toml`, `~/.codex/hooks.json` | Supported |
 | OpenCode | Plugin + MCP in `opencode.json`; copy `AGENTS.md` | `~/.config/opencode/` | Supported |

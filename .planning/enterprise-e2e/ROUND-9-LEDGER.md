@@ -60,7 +60,7 @@ Rows **1, 3, 6, 11, 21, 22**. Summary: **2 pass / 4 fail** (internal 21–22 onl
 |-------|---------|
 | **Harness / fixture** | `SB_E2E_SESSION0_SKIP=1` + `--skip-code-intel-preflight` left fixture `enabled_by_user` null (no Session 0); main clone on **`round-9-codex`** not `round-9-claude`; live runner lacked **`enterprise_e2e_assert_test_app_branch`** (fixed in SB_ROOT for retry). |
 | **Agent behavior** | Parent orchestrator **routing-only** (rows 1/6); **no locked clarify** (`OUT-CLARIFY-01`); **no product commits**; optimistic outcome markdown vs harness rescoring; row 11 **plan/trace** gaps. |
-| **Hook noise** | Missing `~/.claude/hooks/gsd-validate-commit.sh` (non-blocking); not primary fail driver. |
+| **Hook noise** | Missing `~/.codex/hooks/gsd-validate-commit.sh` (non-blocking); not primary fail driver. |
 | **RTK** | `RTK_DISABLED=1` by operator choice for smoke — expected; not outcome fail. |
 
 ## Smoke retry (attempt 2)

@@ -1,0 +1,27 @@
+{
+  "registry": "smithery",
+  "status": "ok",
+  "reason": null,
+  "results": [
+    {
+      "name": "baranwang/mcp-deep-research",
+      "description": "Search the web for information effortlessly. Leverage the power of the Tavily API to enhance your research capabilities with maximum efficiency. Configure your search parameters and get started quickly with this intuitive tool.",
+      "source_registry": "smithery",
+      "install_count": 0,
+      "stars": null,
+      "security_score": null,
+      "last_updated": null,
+      "content_sha": null,
+      "install_url": "https://github.com/baranwang/mcp-deep-research",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "smithery",
+          "field": "server",
+          "wrapped_at": "2026-07-07T16:03:24.476Z"
+        },
+        "value": "{\"id\":\"5feb396b-9145-4e13-81d6-51aa7ef03255\",\"qualifiedName\":\"baranwang/mcp-deep-research\",\"namespace\":\"baranwang\",\"slug\":\"mcp-deep-research\",\"displayName\":\"Deep Research\",\"description\":\"Search the web for information effortlessly. Leverage the power of the Tavily API to enhance your research capabilities with maximum efficiency. Configure your search parameters and get started quickly with this intuitive tool.\",\"iconUrl\":\"https://icons.duckduckgo.com/ip3/github.com.ico\",\"verified\":false,\"useCount\":0,\"remote\":false,\"isDeployed\":true,\"createdAt\":\"2025-03-29T16:58:13.729Z\",\"homepage\":\"https://github.com/baranwang/mcp-deep-research\",\"bySmithery\":false,\"owner\":\"org_01KNB52C21FG78EX33CN2N64NE\",\"score\":0.05725806451612903}"
+      }
+    }
+  ],
+  "latency_ms": 486
+}

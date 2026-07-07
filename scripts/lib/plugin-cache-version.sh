@@ -107,7 +107,7 @@ PY
 # Ensure Claude Silver Bullet plugin cache has current alias + hooks (dev checkout).
 sb_claude_ensure_plugin_cache_ready() {
   local repo_root="${1:-}"
-  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   local latest=""
 
   [[ -d "$cache_root" ]] || return 1

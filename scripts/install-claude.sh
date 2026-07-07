@@ -57,7 +57,7 @@ plugin_scopes() {
 
 marketplace_registered() {
   local marketplace="$1"
-  local state_file="${HOME}/.claude/plugins/known_marketplaces.json"
+  local state_file="${HOME}/.codex/plugins/known_marketplaces.json"
 
   [[ -f "$state_file" ]] || return 1
   jq -e --arg name "$marketplace" 'has($name)' "$state_file" >/dev/null 2>&1
@@ -66,7 +66,7 @@ marketplace_registered() {
 marketplace_catalog_has_plugin() {
   local marketplace="$1"
   local plugin_name="$2"
-  local marketplace_json="${HOME}/.claude/plugins/marketplaces/${marketplace}/.claude-plugin/marketplace.json"
+  local marketplace_json="${HOME}/.codex/plugins/marketplaces/${marketplace}/.claude-plugin/marketplace.json"
 
   [[ -f "$marketplace_json" ]] || return 1
   jq -e --arg name "$plugin_name" 'any(.plugins[]?; .name == $name)' "$marketplace_json" >/dev/null 2>&1
@@ -75,7 +75,7 @@ marketplace_catalog_has_plugin() {
 marketplace_source_matches() {
   local marketplace="$1"
   local source="$2"
-  local state_file="${HOME}/.claude/plugins/known_marketplaces.json"
+  local state_file="${HOME}/.codex/plugins/known_marketplaces.json"
 
   [[ -f "$state_file" ]] || return 1
 
@@ -128,10 +128,10 @@ ensure_marketplace_ready() {
 materialize_local_silver_bullet_plugin_cache() {
   local version plugin_cache_root version_dir stable_alias registry
   version="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/.claude-plugin/plugin.json" 2>/dev/null || echo 0.0.0)"
-  plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   version_dir="${plugin_cache_root}/${version}"
   stable_alias="${plugin_cache_root}/current"
-  registry="${HOME}/.claude/plugins/installed_plugins.json"
+  registry="${HOME}/.codex/plugins/installed_plugins.json"
 
   mkdir -p "$version_dir/.claude-plugin" "${version_dir}/agents/claude" "${version_dir}/hooks"
   install -m 644 "${REPO_ROOT}/.claude-plugin/plugin.json" "${version_dir}/.claude-plugin/plugin.json"
@@ -202,7 +202,7 @@ purge_plugin_cache() {
   local plugin_id="$1"
   local marketplace="${plugin_id#*@}"
   local name="${plugin_id%@*}"
-  local cache_dir="${HOME}/.claude/plugins/cache/${marketplace}/${name}"
+  local cache_dir="${HOME}/.codex/plugins/cache/${marketplace}/${name}"
   local attempt=0
 
   # Drop stable alias before purge — concurrent install / claude CLI can race with plain rm.
@@ -219,8 +219,8 @@ purge_plugin_cache() {
 }
 
 sync_silver_bullet_settings_paths() {
-  local settings_file="${HOME}/.claude/settings.json"
-  local plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local settings_file="${HOME}/.codex/settings.json"
+  local plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   local stable_install_path="${plugin_cache_root}/current"
   local current_version_dir=""
 
@@ -284,7 +284,7 @@ PY
 }
 
 refresh_silver_bullet_install_alias() {
-  local plugin_cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local plugin_cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   [[ -d "$plugin_cache_root" ]] || return 0
   sb_plugin_cache_prune_orphaned_dirs "$plugin_cache_root"
   sb_plugin_cache_refresh_current_alias "$plugin_cache_root"
@@ -311,7 +311,7 @@ refresh_plugin_install() {
 }
 
 sync_silver_bullet_hook_cache() {
-  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   local current_version_dir=""
 
   [[ -d "$cache_root" ]] || return 0
@@ -340,7 +340,7 @@ prune_claude_cross_host_agent_surfaces() {
 }
 
 sync_silver_bullet_skill_cache() {
-  local cache_root="${HOME}/.claude/plugins/cache/alo-labs/silver-bullet"
+  local cache_root="${HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
   local current_version_dir=""
   local source_root
   source_root="$(sb_agent_bundle_root "$REPO_ROOT" claude)"

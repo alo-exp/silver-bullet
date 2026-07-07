@@ -213,7 +213,7 @@ The model receives contradictory guidance. Depending on hook execution order (un
 | **Granularity** | Per-file type, per-tool rules | Per-directory, per-process rules |
 | **Conflict with SB patterns** | None — rules are advisory | May block SB scripts that write to `/tmp`, `~/.cache`, or cross-repo directories |
 
-**Specific friction:** SB's bootstrap scripts (`scripts/sb-bootstrap.sh`, `scripts/install-cursor.sh`) write to `~/.cursor/`, `~/.claude/`, and temp directories. PathJail configured to the repo root would block these installs. SB's cross-repo memory sharing (agentmemory mesh) may write to a shared `.agentmemory/` outside the current repo. PathJail blocks this by default.
+**Specific friction:** SB's bootstrap scripts (`scripts/sb-bootstrap.sh`, `scripts/install-cursor.sh`) write to `~/.cursor/`, `~/.codex/`, and temp directories. PathJail configured to the repo root would block these installs. SB's cross-repo memory sharing (agentmemory mesh) may write to a shared `.agentmemory/` outside the current repo. PathJail blocks this by default.
 
 **Severity: MEDIUM-HIGH.** PathJail is stronger security but breaks SB's documented cross-directory workflows unless explicitly configured.
 
@@ -387,7 +387,7 @@ Model → LeanCTX MCP Gateway (port 3001) → Routes to:
 |-----------|----------|----------------|
 | Current repo root | Primary workspace | **Allow** (read/write) |
 | `~/.cursor/` | Cursor config, plugin cache | **Allow** (read/write) — needed for SB plugin |
-| `~/.claude/` | Claude Code config | **Allow** (read/write) |
+| `~/.codex/` | Claude Code config | **Allow** (read/write) |
 | `~/.codex/` | Codex config | **Allow** (read/write) |
 | `~/.config/opencode/` | OpenCode config | **Allow** (read/write) |
 | `~/.agentmemory/` | Cross-repo team memory | **Allow** (read/write) |

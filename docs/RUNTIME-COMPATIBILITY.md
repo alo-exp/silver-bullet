@@ -80,7 +80,7 @@ Host detection follows `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, `C
 | Check | Cursor | Claude | Codex |
 |-------|--------|--------|-------|
 | D8 `silver-orchestrator.mdc` | FAIL if missing | N/A | N/A |
-| D2/D3 plugin cache | `~/.cursor/plugins/...` | `~/.claude/plugins/...` | `~/.codex/plugins/...` |
+| D2/D3 plugin cache | `~/.cursor/plugins/...` | `~/.codex/plugins/...` | `~/.codex/plugins/...` |
 | D13 contamination | no `.claude/plugins` in Cursor hooks | no `.cursor`/`.codex` paths in Claude settings | no `.cursor`/`.claude` paths in Codex config |
 
 ```bash
