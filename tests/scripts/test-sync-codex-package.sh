@@ -105,7 +105,20 @@ if plugin_display_name != "Silver Bullet":
 if "skills" in manifest:
     bad.append("Codex manifest must not expose plugin skills; SB mirrors picker skills natively under /Silver to avoid duplicate /Silver Bullet listings")
 
-if list(package_root.glob("**/*SKILL.md")):
+def is_cursor_plugin_surface(path: Path) -> bool:
+    try:
+        rel = path.relative_to(package_root)
+    except ValueError:
+        return False
+    parts = rel.parts
+    return len(parts) >= 2 and parts[0] == "agents" and parts[1] == "cursor"
+
+
+codex_skill_mds = [
+    p for p in package_root.glob("**/*SKILL.md")
+    if not is_cursor_plugin_surface(p)
+]
+if codex_skill_mds:
     bad.append("Codex plugin package must not contain picker-discoverable *SKILL.md files")
 if list((package_root / "skill-source").glob("**/SILVER_SOURCE.md")):
     bad.append("Codex plugin skill-source must not contain SILVER_SOURCE.md files; hidden sources are extensionless to avoid /Silver Bullet picker discovery")
@@ -184,7 +197,9 @@ assert_file_exists "Cursor hooks manifest present after codex sync" "$PACKAGE_RO
 assert_codex_skill_titles_match_picker_namespace "Codex skill titles match Codex picker namespace" "$PACKAGE_ROOT"
 assert_path_absent "Codex package does not expose plugin picker skills directory" "$PACKAGE_ROOT/skills"
 assert_path_absent "Codex package does not expose generated picker skills directory" "$PACKAGE_ROOT/.generated-skills"
-assert_path_absent "Codex package does not expose agent SKILL.md bundle" "$PACKAGE_ROOT/agents"
+assert_path_absent "Codex package does not expose Claude agent SKILL.md bundle" "$PACKAGE_ROOT/agents/claude"
+assert_path_absent "Codex package does not expose Codex agent SKILL.md bundle under agents/" "$PACKAGE_ROOT/agents/codex"
+assert_file_exists "Cursor package exposes cursor agent bundle" "$PACKAGE_ROOT/agents/cursor/silver/SKILL.md"
 assert_file_exists "Silver Bullet internal skill router available" "$(skill_file silver)"
 assert_file_exists "Silver Bullet internal init skill available" "$(skill_file silver-init)"
 assert_file_exists "Silver Bullet internal ensure-docs skill available" "$(skill_file silver-ensure-docs)"
