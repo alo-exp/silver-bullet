@@ -69,10 +69,10 @@ HOME="$HOME_DIR" "$CLAUDE_BIN" plugin marketplace add https://github.com/anthrop
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install data-engineering@claude-plugins-official >/dev/null
 HOME="$HOME_DIR" "$CLAUDE_BIN" plugin install frontend-design@claude-plugins-official >/dev/null
 
-OLD_SB_CACHE_DIR="$HOME_DIR/.codex/plugins/cache/alo-labs/silver-bullet/0.27.1"
+OLD_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/0.27.1"
 CURRENT_CODEX_SB_CACHE_DIR="$HOME_DIR/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 mkdir -p "$(dirname "$OLD_SB_CACHE_DIR")"
-cat > "$HOME_DIR/.codex/settings.json" <<EOF
+cat > "$HOME_DIR/.claude/settings.json" <<EOF
 {
   "hooks": {
     "SessionStart": [
@@ -133,7 +133,7 @@ else
   (( FAIL++ )) || true
 fi
 
-if jq -e 'has("knowledge-work-plugins") | not' "$HOME_DIR/.codex/plugins/known_marketplaces.json" >/dev/null 2>&1; then
+if jq -e 'has("knowledge-work-plugins") | not' "$HOME_DIR/.claude/plugins/known_marketplaces.json" >/dev/null 2>&1; then
   echo "PASS: knowledge-work marketplace not added by default"
   (( PASS++ )) || true
 else
@@ -141,9 +141,9 @@ else
   (( FAIL++ )) || true
 fi
 
-CURRENT_SB_CACHE_DIR="$(sb_plugin_cache_latest_version_dir "$HOME_DIR/.codex/plugins/cache/alo-labs/silver-bullet" 2>/dev/null || true)"
-STABLE_SB_CACHE_DIR="$HOME_DIR/.codex/plugins/cache/alo-labs/silver-bullet/current"
-if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$STABLE_SB_CACHE_DIR" "$HOME_DIR/.codex/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.codex/settings.json"; then
+CURRENT_SB_CACHE_DIR="$(sb_plugin_cache_latest_version_dir "$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet" 2>/dev/null || true)"
+STABLE_SB_CACHE_DIR="$HOME_DIR/.claude/plugins/cache/alo-labs/silver-bullet/current"
+if [[ -n "$CURRENT_SB_CACHE_DIR" ]] && grep -qF "$STABLE_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json" && ! grep -qF "$OLD_SB_CACHE_DIR" "$HOME_DIR/.claude/settings.json"; then
   echo "PASS: Silver Bullet hook paths refreshed to stable alias in Claude settings"
   (( PASS++ )) || true
 else
@@ -151,8 +151,8 @@ else
   (( FAIL++ )) || true
 fi
 
-assert_not_contains "Codex-root Silver Bullet hook path removed from Claude settings" "$CURRENT_CODEX_SB_CACHE_DIR/hooks/session-start" "$HOME_DIR/.codex/settings.json"
-assert_not_contains "Placeholder Silver Bullet hook path removed from Claude settings" "\${CLAUDE_PLUGIN_ROOT}/hooks/session-start" "$HOME_DIR/.codex/settings.json"
+assert_not_contains "Codex-root Silver Bullet hook path removed from Claude settings" "$CURRENT_CODEX_SB_CACHE_DIR/hooks/session-start" "$HOME_DIR/.claude/settings.json"
+assert_not_contains "Placeholder Silver Bullet hook path removed from Claude settings" "\${CLAUDE_PLUGIN_ROOT}/hooks/session-start" "$HOME_DIR/.claude/settings.json"
 
 assert_file_exists "Silver Bullet stable alias exposes hook cache" "$STABLE_SB_CACHE_DIR/hooks/session-start"
 
