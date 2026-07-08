@@ -12,31 +12,32 @@
   },
   "skills": {
     "required_planning": [
+      "silver-quality-gates",
       "silver-context",
-      "silver-plan",
-      "silver-quality-gates"
+      "silver-plan"
     ],
     "required_planning_devops": [
-      "devops-quality-gates",
       "silver-blast-radius",
+      "devops-quality-gates",
       "silver-context",
       "silver-plan"
     ],
     "required_deploy": [
-      "security",
-      "silver-branch-finish",
-      "silver-completion-audit",
-      "silver-context",
-      "silver-execute",
-      "silver-plan",
       "silver-quality-gates",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
       "silver-review",
+      "security",
+      "silver-secure",
+      "silver-validate",
       "silver-review-request",
       "silver-review-triage",
-      "silver-secure",
-      "silver-ship",
-      "silver-validate",
-      "silver-verify",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
       "tdd",
       "verify-tests"
     ],
@@ -44,99 +45,101 @@
       "silver-create-release"
     ],
     "required_deploy_devops": [
-      "devops-quality-gates",
-      "security",
       "silver-blast-radius",
-      "silver-branch-finish",
-      "silver-completion-audit",
+      "devops-quality-gates",
       "silver-context",
-      "silver-execute",
       "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
       "silver-review",
+      "security",
+      "silver-secure",
+      "silver-validate",
       "silver-review-request",
       "silver-review-triage",
-      "silver-secure",
-      "silver-ship",
-      "silver-validate",
-      "silver-verify",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
       "verify-tests"
     ],
     "required_release_devops": [
       "silver-create-release"
     ],
     "all_tracked": [
+      "silver-quality-gates",
+      "silver-quality-gates-design",
+      "silver-quality-gates-adversarial",
+      "silver-domain-audit",
+      "silver-blast-radius",
       "devops-quality-gates",
       "devops-skill-router",
-      "extensibility",
+      "tdd",
+      "silver-create-release",
+      "verify-tests",
       "modularity",
-      "reliability",
       "reusability",
       "scalability",
       "security",
-      "silver",
-      "silver-add",
-      "silver-benchmark",
-      "silver-blast-radius",
-      "silver-bootstrap-milestone",
-      "silver-bootstrap-project",
-      "silver-branch-finish",
+      "reliability",
+      "usability",
+      "testability",
+      "extensibility",
       "silver-bugfix",
-      "silver-canary",
       "silver-clarify",
-      "silver-completion-audit",
-      "silver-content",
-      "silver-context",
-      "silver-create-release",
-      "silver-debug",
-      "silver-deploy",
       "silver-devops",
-      "silver-domain-audit",
-      "silver-ensure-docs",
-      "silver-execute",
+      "silver-deploy",
+      "silver-canary",
       "silver-fast",
       "silver-feature",
       "silver-forensics",
       "silver-handoff",
-      "silver-incident",
       "silver-ingest",
-      "silver-init",
+      "silver-incident",
       "silver-migrate",
-      "silver-orchestrator",
-      "silver-orient",
-      "silver-phase",
-      "silver-plan",
-      "silver-quality-gates",
-      "silver-quality-gates-adversarial",
-      "silver-quality-gates-design",
-      "silver-refactor",
       "silver-release",
-      "silver-rem",
-      "silver-remove",
       "silver-deep-research",
       "silver-retro",
-      "silver-review",
-      "silver-review-request",
-      "silver-review-stats",
-      "silver-review-triage",
-      "silver-scan",
-      "silver-secure",
-      "silver-ship",
-      "silver-spec",
-      "silver-spike",
+      "silver-refactor",
+      "silver-worktree",
       "silver-test",
-      "silver-thread",
+      "silver-benchmark",
+      "silver-content",
+      "silver-review-stats",
+      "silver-spec",
       "silver-ui",
-      "silver-ui-contract",
-      "silver-ui-review",
-      "silver-undo",
       "silver-update",
       "silver-validate",
+      "silver-add",
+      "silver-init",
+      "silver-orchestrator",
+      "silver-ensure-docs",
+      "silver-bootstrap-project",
+      "silver-bootstrap-milestone",
+      "silver-orient",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
       "silver-verify",
-      "silver-worktree",
-      "tdd",
-      "testability",
-      "usability",
-      "verify-tests"
+      "silver-ship",
+      "silver-review",
+      "silver-secure",
+      "silver-ui-contract",
+      "silver-ui-review",
+      "silver-debug",
+      "silver-review-request",
+      "silver-review-triage",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-remove",
+      "silver-rem",
+      "silver-scan",
+      "silver",
+      "silver-phase",
+      "silver-spike",
+      "silver-thread",
+      "silver-undo"
     ],
     "forbidden": []
   },
@@ -238,7 +241,7 @@
         "opencode": {
           "pre_index": [],
           "post_index": [
-            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual — no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
+            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual \u2014 no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
           ]
         },
         "goose": {
@@ -358,7 +361,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
+      "benefits_summary": "60\u201399% shell output savings via PreToolUse rewrite \u2014 automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
     },
     "context_mode": {
       "enabled_by_user": null,
@@ -371,7 +374,7 @@
       "min_node_version": "22.5",
       "optimize_on_init": true,
       "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
-      "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license",
+      "license_note": "ELv2 \u2014 not OSI-open; commercial bundling requires upstream license",
       "install_commands": [
         "npm install -g context-mode"
       ],
@@ -402,7 +405,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license \u2014 see license_note)."
     },
     "leanctx": {
       "enabled_by_user": null,
@@ -442,7 +445,7 @@
           "bash scripts/install-leanctx-sb.sh --host opencode"
         ]
       },
-      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
+      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection \u2014 surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
     }
   },
   "hooks": {
@@ -504,7 +507,7 @@
       }
     },
     "cost_minimized": {
-      "_comment": "Future profile — not applied by optimizer yet",
+      "_comment": "Future profile \u2014 not applied by optimizer yet",
       "graphify": {
         "install_git_hooks": false,
         "prefer_no_cluster": true
