@@ -283,7 +283,9 @@ merge_mcp_config
 write_sb_profile_env
 verify_wire_proxy_ordering
 
-if ! assert_guard_unchanged "${GUARD_SNAPSHOT[@]}"; then
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  log "SKIP: guard unchanged check (dry-run — no writes)"
+elif ! assert_guard_unchanged "${GUARD_SNAPSHOT[@]}"; then
   warn "Guard check failed — SB install must not clobber host agent config"
   exit 1
 fi

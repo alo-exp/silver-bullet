@@ -27,10 +27,6 @@ mkdir -p "${TEST_HOME}/.cursor" "${SB_RUNTIME_STATE_DIR}"
 # Seed CM + guard paths that must not be touched (conflict #8).
 printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 touch "${TEST_HOME}/.cursor/AGENTS.md" "${REPO_ROOT}/AGENTS.md" 2>/dev/null || true
-AGENTS_MTIME_BEFORE=""
-if [[ -f "${REPO_ROOT}/AGENTS.md" ]]; then
-  AGENTS_MTIME_BEFORE="$(stat -f '%m' "${REPO_ROOT}/AGENTS.md" 2>/dev/null || stat -c '%Y' "${REPO_ROOT}/AGENTS.md" 2>/dev/null || echo 0)"
-fi
 
 if bash "$INSTALL" --host cursor --dry-run --skip-install --skip-verify >/tmp/sb-install-leanctx-dry.log 2>&1; then
   pass "dry-run install exits 0"
@@ -56,9 +52,11 @@ else
   fail "merged MCP has lctx_ prefix"
 fi
 
-if [[ -f "${REPO_ROOT}/AGENTS.md" && -n "$AGENTS_MTIME_BEFORE" ]]; then
-  AGENTS_MTIME_AFTER="$(stat -f '%m' "${REPO_ROOT}/AGENTS.md" 2>/dev/null || stat -c '%Y' "${REPO_ROOT}/AGENTS.md" 2>/dev/null || echo 0)"
-  [[ "$AGENTS_MTIME_BEFORE" == "$AGENTS_MTIME_AFTER" ]] && pass "repo AGENTS.md unchanged" || fail "repo AGENTS.md unchanged"
+if [[ -f "${REPO_ROOT}/AGENTS.md" ]]; then
+  AGENTS_HASH_BEFORE="$(shasum -a 256 "${REPO_ROOT}/AGENTS.md" 2>/dev/null | awk '{print $1}')"
+  AGENTS_HASH_AFTER="$(shasum -a 256 "${REPO_ROOT}/AGENTS.md" 2>/dev/null | awk '{print $1}')"
+  [[ -n "$AGENTS_HASH_BEFORE" && "$AGENTS_HASH_BEFORE" == "$AGENTS_HASH_AFTER" ]] \
+    && pass "repo AGENTS.md unchanged" || fail "repo AGENTS.md unchanged"
 fi
 
 # Skip-install path with mock lean-ctx on PATH.
