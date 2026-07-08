@@ -103,10 +103,11 @@ init_guard_paths() {
 
 snapshot_guard_mtimes() {
   local -a snaps=()
-  local p
+  local p hash
   for p in "${GUARD_PATHS[@]}"; do
     if [[ -f "$p" ]]; then
-      snaps+=("${p}=$(stat -f '%m' "$p" 2>/dev/null || stat -c '%Y' "$p" 2>/dev/null || echo 0)")
+      hash="$(shasum -a 256 "$p" 2>/dev/null | awk '{print $1}')"
+      snaps+=("${p}=hash:${hash}")
     else
       snaps+=("${p}=missing")
     fi
@@ -116,7 +117,7 @@ snapshot_guard_mtimes() {
 
 assert_guard_unchanged() {
   local -a before=("$@")
-  local entry path state mtime
+  local entry path state hash actual
   for entry in "${before[@]}"; do
     path="${entry%%=*}"
     state="${entry#*=}"
@@ -127,7 +128,22 @@ assert_guard_unchanged() {
       }
       continue
     fi
+    if [[ "$state" == hash:* ]]; then
+      hash="${state#hash:}"
+      if [[ ! -f "$path" ]]; then
+        warn "install removed guarded path: $path"
+        return 1
+      fi
+      actual="$(shasum -a 256 "$path" 2>/dev/null | awk '{print $1}')"
+      [[ -n "$actual" && "$actual" == "$hash" ]] || {
+        warn "install modified guarded path: $path"
+        return 1
+      }
+      continue
+    fi
+    # Legacy mtime snapshots (older callers) — tolerate missing hash prefix.
     if [[ -f "$path" ]]; then
+      local mtime
       mtime="$(stat -f '%m' "$path" 2>/dev/null || stat -c '%Y' "$path" 2>/dev/null || echo 0)"
       [[ "$mtime" == "$state" ]] || {
         warn "install modified guarded path: $path"
