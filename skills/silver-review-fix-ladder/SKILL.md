@@ -203,51 +203,41 @@ Report:
 
 ## Host Delegation Notes
 
-### Cursor rung routing (Task vs agent-cursor)
+### Cursor rung routing (custom subagents)
 
-Resolve the ladder first (`python3 scripts/review-fix-ladder.py --json`). Each Cursor rung includes:
+Resolve the ladder first (`python3 scripts/review-fix-ladder.py --host cursor --json --project-root .`). Each Cursor rung includes:
 
 | Field | Meaning |
 |-------|---------|
-| `delegation` | `task` — use host `Task` with `task_slug`; `agent-cursor` — use `/silver:agent-cursor` |
-| `task_slug` | Composite slug for `Task` `model` param (when `delegation: task`) |
-| `agent_model` | Native `CURSOR_AGENT_MODEL` for cursor-agent TUI (when `delegation: agent-cursor`) |
+| `delegation` | `custom-subagent` — use host `Task` with `subagent_type` set to `subagent_name` |
+| `subagent_name` | Installed `sb-*` custom subagent slug (e.g. `sb-composer-2-5-medium`) |
+| `model_param` | Optional `Task` `model` override when required; Composer rungs use `composer-2.5` only |
 
-**Routing rule:** When `task_slug` ≠ `agent_model` (same-family effort not exposed in Task enum — e.g. `gpt-5.5` / `high`), route **review** and **verify** phases via agent-cursor. Triage and fix always use the orchestrator's pinned host model.
+**Routing rule:** For **review** and **verify** phases on Cursor, spawn `Task(subagent_type=<subagent_name>)`. **Omit `model`** when the custom subagent encodes the rung model — the hook waives the rung model check for matching `subagent_type`. **Never** use `agent-cursor` or `/silver:agent-cursor` for RFL review/verify on Cursor.
 
 Phase routing detail:
 
 ```bash
-python3 scripts/review-fix-ladder.py --host cursor --json --rung 7 --phase verify_1 --work-dir .
+python3 scripts/review-fix-ladder.py --host cursor --json --project-root . --rung 2 --phase verify_1
 ```
 
-For `delegation: agent-cursor`:
+For `delegation: custom-subagent`:
 
-1. Write brief from Template A or B to `.planning/agent-cursor/rfl-rung-{N}-{phase}/brief.md`
-2. Run the emitted `delegate_command` (or):
+1. Read `subagent_name` from resolver JSON for the active rung.
+2. Spawn **one** `Task` with `subagent_type: <subagent_name>` and the phase prompt (Template A or B).
+3. On verify passes, also set `readonly: true`.
+4. Do **not** pass `model` unless resolver emits `model_param` and host policy requires it.
 
-```bash
-mkdir -p .planning/agent-cursor/rfl-rung-7-verify_1
-# write brief.md from verify template
-export CURSOR_AGENT_MODEL=gpt-5.5-high
-bash scripts/agent-cursor-delegate.sh \
-  --work-dir "$(pwd)" \
-  --brief-file .planning/agent-cursor/rfl-rung-7-verify_1/brief.md \
-  --log .planning/agent-cursor/rfl-rung-7-verify_1/cursor-run.log
-```
-
-3. Record `result.md` + log bytes in close-out; verify brief constraints (verify-only: no edits).
-
-For `delegation: task`, use `Task` with `model: <task_slug>` and `readonly: true` on verify passes.
+Install or refresh agents before the ladder: `bash scripts/install-cursor-sb-agents.sh` (see `scripts/lib/cursor-sb-agents/`).
 
 | Host | Delegation |
 |------|------------|
-| **Cursor (Task path)** | `Task` subagent with `model` set to `task_slug` from resolver JSON. **All Composer rungs** map to `composer-2.5` only — never `composer-2.5-fast`. Verify passes: `readonly: true`. |
-| **Cursor (agent-cursor path)** | `/silver:agent-cursor` + `agent-cursor-delegate.sh` with `CURSOR_AGENT_MODEL=<agent_model>`. Required when Task cannot express the rung's reasoning effort (e.g. `gpt-5.5` / `medium` → `gpt-5.5-medium`, `high` → `gpt-5.5-high`). Artifacts under `.planning/agent-cursor/rfl-rung-*`. |
+| **Cursor (custom subagent)** | `Task(subagent_type=<subagent_name>)` from resolver JSON. Default ladder: 6 rungs (`composer-2.5` + `grok-4.5` × medium/high/xhigh). Verify passes: `readonly: true`. **Forbidden:** `agent-cursor`, `composer-2.5-fast`, Fast/Max/Low unless explicitly opted in. |
 | **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Secondary host agent** | `secondary host exec -m <model> -c model_reasoning_effort=<reasoning>` (native secondary host binary, not Kay shim) |
 
 Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-bullet.md`.
+
 
 ## Subagent Prompt Templates
 

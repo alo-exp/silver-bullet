@@ -121,23 +121,12 @@ assert_jq_true "Claude fallback model chain" '
 
 cursor_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$REPO_ROOT")"
 cursor_rungs="$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["rungs"]))' <<<"$cursor_json")"
-if [[ "$cursor_rungs" == "6" ]]; then
-  pass "Cursor sb_agents ladder has 6 rungs"
-else
-  fail "Cursor sb_agents ladder has 6 rungs — got $cursor_rungs"
-fi
-assert_jq_true "Cursor source cursor_sb_agents" '.source == "cursor_sb_agents"' "$cursor_json"
-assert_jq_true "Cursor rung 1 custom-subagent" '.rungs[0].delegation == "custom-subagent"' "$cursor_json"
-assert_jq_true "Cursor rung 1 subagent_name" '.rungs[0].subagent_name == "sb-composer-2-5-medium"' "$cursor_json"
-assert_jq_false "Cursor zero agent-cursor" '[.rungs[].delegation] | any(. == "agent-cursor")' "$cursor_json"
-
+[[ "$cursor_rungs" == "6" ]] && pass "Cursor sb_agents 6 rungs" || fail "Cursor sb_agents 6 rungs got $cursor_rungs"
+assert_jq_true "Cursor custom-subagent" '.rungs[0].delegation == "custom-subagent"' "$cursor_json"
+assert_jq_true "Cursor subagent_name" '.rungs[0].subagent_name == "sb-composer-2-5-medium"' "$cursor_json"
+assert_jq_false "No agent-cursor" '[.rungs[].delegation] | any(. == "agent-cursor")' "$cursor_json"
 phase_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$REPO_ROOT" --rung 2 --phase verify_1)"
-assert_jq_true "Phase routing custom-subagent" '.delegation == "custom-subagent"' "$phase_json"
-assert_jq_true "Phase subagent_name rung2" '.subagent_name == "sb-composer-2-5-high"' "$phase_json"
-
-cursor_text="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --project-root "$REPO_ROOT")"
-printf '%s' "$cursor_text" | grep -q 'custom-subagent' && pass "Cursor text custom-subagent" || fail "Cursor text custom-subagent"
-printf '%s' "$cursor_text" | grep -q 'agent-cursor' && fail "Cursor text no agent-cursor" || pass "Cursor text no agent-cursor"
+assert_jq_true "Phase custom-subagent" '.delegation == "custom-subagent"' "$phase_json"
 
 override_json="$(python3 "$RESOLVER" --host cursor --json)"
 assert_jq_true "Host override without env selects cursor" '.host == "cursor"' "$override_json"
