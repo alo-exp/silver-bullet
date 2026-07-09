@@ -160,6 +160,22 @@ doctor_apply_fixes() {
           fixed=1
         fi
         ;;
+      D20)
+        if [[ -f "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh" ]]; then
+          # shellcheck source=../hooks/lib/stack-compression-coordinator.sh
+          source "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh"
+          sb_stack_clear_mutex_violations
+        fi
+        if [[ -f "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh" ]]; then
+          # shellcheck source=../hooks/lib/agentmemory-gate.sh
+          source "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh"
+          local cfg="${PROJ_ROOT}/.silver-bullet.json"
+          if [[ -f "$cfg" ]] && sb_agentmemory_required "$cfg" 2>/dev/null; then
+            sb_agentmemory_scaffold_export_root "$PROJ_ROOT" "$cfg" || true
+          fi
+        fi
+        fixed=1
+        ;;
       D15)
         printf 'sb-doctor: --fix D15 requires shortening Claude agent descriptions\n' >&2
         ;;
@@ -172,6 +188,21 @@ doctor_apply_fixes() {
             fixed=1
             ;;
         esac
+        ;;
+      D21)
+        local csba_fix_scope="global"
+        if [[ -f "${PROJ_ROOT}/.silver-bullet.json" ]]; then
+          csba_fix_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "${PROJ_ROOT}/.silver-bullet.json")"
+        fi
+        local csba_fix_flags=(--fix)
+        if [[ "$csba_fix_scope" == "project" ]]; then
+          csba_fix_flags+=(--project)
+        else
+          csba_fix_flags+=(--global)
+        fi
+        printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
+        bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
+        fixed=1
         ;;
     esac
     [[ "$fixed" -eq 1 ]] && break
@@ -514,6 +545,24 @@ run_doctor_checks() {
   else
     record pass D18 "Cursor gitPath check N/A (host=${runtime})"
     record pass D19 "Cursor command stubs N/A (host=${runtime})"
+  fi
+
+  # D20 — stack compression mutex (five-tool coordinator)
+  local stack_cfg="${PROJ_ROOT}/.silver-bullet.json"
+  if [[ -f "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh" ]]; then
+    # shellcheck source=../hooks/lib/stack-compression-coordinator.sh
+    source "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh"
+    if [[ -f "$stack_cfg" ]] && sb_stack_coordinator_needed "$stack_cfg" 2>/dev/null; then
+      if sb_stack_mutual_exclusion_is_clean "$stack_cfg"; then
+        record pass D20 "stack compression mutex clean"
+      else
+        record fail D20 "stack compression mutex dirty — run: bash scripts/sb-doctor.sh --fix"
+      fi
+    else
+      record pass D20 "stack coordinator N/A (five-tool not active)"
+    fi
+  else
+    record warn D20 "stack-compression-coordinator lib missing; skipped"
   fi
 
   doctor_apply_fixes "$runtime"
