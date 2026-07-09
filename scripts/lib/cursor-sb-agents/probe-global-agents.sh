@@ -34,6 +34,25 @@ elif [[ -z "$CONFIG_JSON" ]]; then
   CONFIG_JSON="$(csba_load_merged_config "$REPO_ROOT")"
 fi
 
+if [[ ! -d "$AGENTS_DIR" ]]; then
+  if [[ "$JSON_OUT" -eq 1 ]]; then
+    jq -n \
+      --arg agents_dir "$AGENTS_DIR" \
+      '{
+        ok: false,
+        expected_count: 0,
+        actual_count: 0,
+        agents_dir: $agents_dir,
+        expected_names: [],
+        found_names: [],
+        reason: "agents dir missing"
+      }'
+  else
+    [[ "$QUIET" -eq 1 ]] || echo "PROBE FAIL: agents dir missing ${AGENTS_DIR}" >&2
+  fi
+  exit 1
+fi
+
 EXPECTED_COUNT="$(csba_expected_count "$CONFIG_JSON")"
 EXPECTED_NAMES="$(mktemp)"
 ACTUAL_NAMES="$(mktemp)"

@@ -234,7 +234,9 @@ cp "$REPO_ROOT/scripts/workflows.sh" "$D21_PROJ/scripts/workflows.sh"
 chmod +x "$D21_PROJ/scripts/workflows.sh"
 printf '{"hooks":{"SessionStart":[{"command":"cursor-hook"}]}}\n' >"$D21_HOME/.cursor/hooks.json"
 mkdir -p "$D21_HOME/.config/silver-bullet"
-printf '{"agents_install_status":"pending","selected_models":["composer-2.5"],"effort_levels":["medium"]}\n' \
+cp "${REPO_ROOT}/tests/fixtures/cursor-models-catalog.json" \
+  "$D21_HOME/.config/silver-bullet/cursor-models-catalog.json"
+printf '{"agents_install_status":"pending","selected_models":["composer-2.5","grok-4.5"],"effort_levels":["medium","high","xhigh"]}\n' \
   >"$D21_HOME/.config/silver-bullet/cursor-sb-agents.json"
 mkdir -p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks"
 ln -sfn "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
@@ -253,7 +255,11 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if env HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_OFFLINE=1 SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
+if env HOME="$D21_HOME" \
+  SB_CURSOR_SB_AGENTS_OFFLINE=1 \
+  SB_CURSOR_MODELS_CATALOG="$D21_HOME/.config/silver-bullet/cursor-models-catalog.json" \
+  SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" \
+  REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   --global --non-interactive >/dev/null 2>&1; then
   d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
   if printf '%s' "$d21_ok" | grep -q 'PASS: D21'; then
