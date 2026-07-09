@@ -67,12 +67,13 @@ def build_matrix(
                 if fname not in categories[cname]:
                     categories[cname].append(fname)
 
-    if not categories:
-        for _name, data in features_by_solution.items():
-            for feat in data.get("features") or []:
-                fname = feat.get("name") or str(feat)
-                all_features[fname] = "Capabilities"
-                categories.setdefault("Capabilities", []).append(fname)
+    for _name, data in features_by_solution.items():
+        for feat in data.get("features") or []:
+            fname = feat.get("name") or str(feat)
+            if not fname or fname in all_features:
+                continue
+            all_features[fname] = "Capabilities"
+            categories.setdefault("Capabilities", []).append(fname)
 
     solutions = list(features_by_solution.keys())
     rows: list[dict[str, Any]] = []

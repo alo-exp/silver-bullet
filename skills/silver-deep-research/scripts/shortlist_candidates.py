@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -29,16 +30,38 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def _normalize_license(lic: str) -> str:
+    return re.sub(r"[\s\-]+", "", lic.lower().strip())
+
+
+_NON_COMMERCIAL_MARKERS = (
+    "noncommercial",
+    "notcommercial",
+)
+
+
+def _is_commercial_license(lic: str) -> bool:
+    if not lic:
+        return False
+    norm = _normalize_license(lic)
+    if not norm:
+        return False
+    if norm in _NON_COMMERCIAL_MARKERS:
+        return False
+    if norm in ("commercial", "proprietary", "saas"):
+        return True
+    return bool(re.search(r"(?<![a-z])(?<!non)(?<!not)commercial(?![a-z])", norm))
+
+
 def license_ok(row: dict[str, Any], pref: str) -> bool:
-    lic = (row.get("license") or row.get("license_type") or "").lower()
+    lic = (row.get("license") or row.get("license_type") or "").strip()
     if pref == "mixed":
         return True
     if pref == "oss":
-        return lic in ("oss", "open-source", "open source", "apache", "mit", "gpl")
+        lic_lower = lic.lower()
+        return lic_lower in ("oss", "open-source", "open source", "apache", "mit", "gpl")
     if pref == "commercial":
-        if not lic:
-            return False
-        return lic in ("commercial", "proprietary", "saas") or "commercial" in lic
+        return _is_commercial_license(lic)
     return True
 
 

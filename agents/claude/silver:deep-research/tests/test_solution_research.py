@@ -263,6 +263,37 @@ class TestShortlist(unittest.TestCase):
             self.assertEqual(len(payload['solutions']), 1)
             self.assertEqual(payload['solutions'][0]['name'], 'Comm')
 
+    def test_commercial_filter_excludes_non_commercial(self):
+        shortlist = os.path.join(SCRIPTS, 'shortlist_candidates.py')
+        with tempfile.TemporaryDirectory() as d:
+            cand_path = os.path.join(d, 'candidates.jsonl')
+            with open(cand_path, 'w') as f:
+                f.write(json.dumps({
+                    'name': 'NonComm', 'score': 10, 'license': 'non-commercial',
+                }) + '\n')
+                f.write(json.dumps({
+                    'name': 'NonComm2', 'score': 9, 'license': 'noncommercial',
+                }) + '\n')
+                f.write(json.dumps({
+                    'name': 'Comm', 'score': 5, 'license': 'commercial',
+                }) + '\n')
+            need_path = os.path.join(d, 'need_profile.json')
+            with open(need_path, 'w') as f:
+                json.dump({
+                    'license_preference': 'commercial',
+                    'must_haves': [],
+                    'interview_complete': True,
+                }, f)
+            out = os.path.join(d, 'shortlist.json')
+            code, _ = run_py(
+                shortlist, '--candidates', cand_path,
+                '--need-profile', need_path, '--out', out, '--count', '1',
+            )
+            self.assertEqual(code, 0)
+            payload = json.load(open(out))
+            self.assertEqual(len(payload['solutions']), 1)
+            self.assertEqual(payload['solutions'][0]['name'], 'Comm')
+
 
 class TestSpaReport(unittest.TestCase):
     def test_generate_and_validate_spa(self):
