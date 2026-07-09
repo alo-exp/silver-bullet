@@ -97,7 +97,7 @@ else
   fail "install-cursor materializes commands in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver-init/SKILL.md" || -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver:init/SKILL.md" ]]; then
+if [[ -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver:plan/SKILL.md" || -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver-plan/SKILL.md" ]]; then
   pass "install-cursor materializes cursor skills in marketplace gitPath checkout"
 else
   fail "install-cursor materializes cursor skills in marketplace gitPath checkout"
@@ -196,6 +196,74 @@ if jq -e '.commands == "./commands"' "${resolved_current}/.cursor-plugin/plugin.
   pass "install-cursor plugin.json declares commands path"
 else
   fail "install-cursor plugin.json declares commands path"
+fi
+
+if [[ ! -f "${resolved_current}/skills/silver-feature/SKILL.md" ]] && \
+   [[ -d "${resolved_current}/skill-source" ]]; then
+  pass "install-cursor omits canonical skills/ picker mirror and ships skill-source"
+else
+  fail "install-cursor omits canonical skills/ picker mirror and ships skill-source"
+fi
+
+if python3 - "${resolved_current}" <<'PY'
+import glob
+import os
+import re
+import sys
+
+cache = sys.argv[1]
+
+def parse_fm(path):
+    text = open(path, encoding="utf-8", errors="ignore").read(2000)
+    m = re.match(r"^---\n(.*?)\n---", text, re.S)
+    meta = {}
+    if not m:
+        return meta
+    for line in m.group(1).splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            meta[k.strip()] = v.strip().strip('"')
+    return meta
+
+cmds = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "commands", "*.md"))}
+skills = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "agents", "cursor", "*", "SKILL.md"))}
+overlap = sorted(cmds & skills)
+if overlap:
+    print("overlap:", ", ".join(overlap))
+    raise SystemExit(1)
+print("ok")
+PY
+then
+  pass "install-cursor cache has no command/subagent route overlap"
+else
+  fail "install-cursor cache has no command/subagent route overlap"
+fi
+
+if [[ -d "$backend_cache_link" ]] && [[ ! -f "${backend_cache_link}/skills/silver-feature/SKILL.md" ]] && \
+   python3 - "${backend_cache_link}" <<'PY'
+import glob, os, re, sys
+cache = sys.argv[1]
+
+def parse_fm(path):
+    text = open(path, encoding="utf-8", errors="ignore").read(2000)
+    m = re.match(r"^---\n(.*?)\n---", text, re.S)
+    meta = {}
+    if not m:
+        return meta
+    for line in m.group(1).splitlines():
+        if ":" in line:
+            k, v = line.split(":", 1)
+            meta[k.strip()] = v.strip().strip('"')
+    return meta
+
+cmds = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "commands", "*.md"))}
+skills = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "agents", "cursor", "*", "SKILL.md"))}
+raise SystemExit(1 if cmds & skills else 0)
+PY
+then
+  pass "install-cursor backend cache has no command/subagent route overlap"
+else
+  fail "install-cursor backend cache has no command/subagent route overlap"
 fi
 
 if [[ "$(readlink "$current_link")" != "$current_link" ]]; then
