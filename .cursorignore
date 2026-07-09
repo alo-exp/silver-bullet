@@ -1,0 +1,7 @@
+# Cursor can index workspace skill-style folders into the agent TUI `/` picker.
+# Keep source-only SB skills and generated host bundles out of that public menu;
+# installed plugin command stubs under plugins/silver-bullet/commands stay public.
+skills/
+host-bundles/
+agents/
+.cursor/agents/
