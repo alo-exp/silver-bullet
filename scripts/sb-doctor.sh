@@ -565,6 +565,39 @@ run_doctor_checks() {
     record warn D20 "stack-compression-coordinator lib missing; skipped"
   fi
 
+  # D21 — Cursor SB custom subagents (cursor_sb_agents; global or project scope)
+  if [[ "$runtime" == "cursor" ]]; then
+    local csba_probe="${REPO_ROOT}/scripts/lib/cursor-sb-agents/probe-global-agents.sh"
+    local csba_check=0 csba_scope="global" csba_agents_dir=""
+    if [[ -f "$sb_config" ]]; then
+      csba_check="$(jq -r '
+        if (.cursor_sb_agents.enabled // false) == true then 1
+        elif (.cursor_sb_agents.enabled_by_user // null) == true
+             and (.cursor_sb_agents.enforcement_suspended // false) != true then 1
+        else 0 end' "$sb_config" 2>/dev/null || echo 0)"
+      csba_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "$sb_config" 2>/dev/null || echo global)"
+    fi
+    if [[ "$csba_check" -eq 0 ]]; then
+      record pass D21 "cursor_sb_agents not enabled (N/A)"
+    elif [[ ! -x "$csba_probe" ]]; then
+      record warn D21 "probe-global-agents.sh missing; skipped"
+    else
+      if [[ "$csba_scope" == "project" ]]; then
+        csba_agents_dir="${PROJ_ROOT}/.cursor/agents"
+      else
+        csba_agents_dir="${HOME}/.cursor/agents"
+      fi
+      if CSBA_REPO_ROOT="$REPO_ROOT" bash "$csba_probe" \
+        --agents-dir "$csba_agents_dir" --repo-root "$REPO_ROOT" --quiet 2>/dev/null; then
+        record pass D21 "SB custom subagents (${csba_scope}): managed set matches config"
+      else
+        record fail D21 "SB custom subagents missing or stale — run: bash scripts/install-cursor-sb-agents.sh --fix"
+      fi
+    fi
+  else
+    record pass D21 "cursor_sb_agents N/A (host=${runtime})"
+  fi
+
   doctor_apply_fixes "$runtime"
 }
 
