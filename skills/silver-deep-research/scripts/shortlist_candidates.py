@@ -35,15 +35,42 @@ def _normalize_license(lic: str) -> str:
 
 
 _COMMERCIAL_MARKERS = ("commercial", "proprietary", "saas")
+_NEGATION_TOKENS = frozenset({"no", "not", "non", "without"})
+_FILLER_TOKENS = frozenset({"for", "the", "a", "an", "of"})
+_NON_COMMERCIAL_COLLAPSED = (
+    "noncommercial",
+    "notcommercial",
+    "nocommercial",
+    "notforcommercial",
+    "noforcommercial",
+)
+_OSS_MARKERS = ("mit", "apache", "gpl", "bsd", "mpl")
+
+
+def _commercial_marker_negated(tokens: list[str]) -> bool:
+    for i, token in enumerate(tokens):
+        if token not in _COMMERCIAL_MARKERS:
+            continue
+        for j in range(i - 1, -1, -1):
+            prev = tokens[j]
+            if prev in _FILLER_TOKENS:
+                continue
+            if prev in _NEGATION_TOKENS:
+                return True
+            break
+    return False
 
 
 def _is_commercial_license(lic: str) -> bool:
-    if not lic:
+    if not lic or not lic.strip():
         return False
     norm = _normalize_license(lic)
     if not norm:
         return False
-    if "noncommercial" in norm or "notcommercial" in norm:
+    if any(rejected in norm for rejected in _NON_COMMERCIAL_COLLAPSED):
+        return False
+    tokens = [t for t in re.split(r"[^a-z0-9]+", lic.lower()) if t]
+    if tokens and _commercial_marker_negated(tokens):
         return False
     if norm in _COMMERCIAL_MARKERS:
         return True
@@ -56,7 +83,10 @@ def license_ok(row: dict[str, Any], pref: str) -> bool:
         return True
     if pref == "oss":
         lic_lower = lic.lower()
-        return lic_lower in ("oss", "open-source", "open source", "apache", "mit", "gpl")
+        if lic_lower in ("oss", "open-source", "open source", "apache", "mit", "gpl"):
+            return True
+        norm = _normalize_license(lic)
+        return any(marker in norm for marker in _OSS_MARKERS)
     if pref == "commercial":
         return _is_commercial_license(lic)
     return True
