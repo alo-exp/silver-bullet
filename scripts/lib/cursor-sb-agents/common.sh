@@ -66,6 +66,7 @@ csba_agents_dir_for_scope() {
 
 csba_refresh_catalog() {
   local repo_root="${1:-${CSBA_REPO_ROOT}}"
+  if [[ "${SB_CURSOR_SB_AGENTS_OFFLINE:-}" == "1" ]]; then if [[ -f "$CSBA_GLOBAL_CATALOG" ]] || [[ -f "${repo_root}/.silver-bullet/cursor-models-catalog.json" ]]; then return 0; fi; fi
   "${CSBA_PYTHON}" "$CSBA_FETCH" --repo-root "$repo_root"
 }
 
