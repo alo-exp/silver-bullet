@@ -13,8 +13,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-WEIGHTS = {"Critical": 5, "Very High": 4, "High": 3, "Medium": 2, "Low": 1}
-TICK = "\u2714"
+from matrix_core import TICK, score_solutions_from_rows
 
 
 def _slug(name: str) -> str:
@@ -39,12 +38,12 @@ def priority_for_feature(feature: str, need: dict[str, Any]) -> str:
     overrides = need.get("weights_override") or {}
     if feature in overrides:
         return overrides[feature]
-    must = {m.lower() for m in need.get("must_haves") or []}
-    nice = {n.lower() for n in need.get("nice_to_haves") or []}
-    fl = feature.lower()
-    if any(m in fl or fl in m for m in must):
+    must = {m.lower().strip() for m in need.get("must_haves") or []}
+    nice = {n.lower().strip() for n in need.get("nice_to_haves") or []}
+    fl = feature.lower().strip()
+    if fl in must:
         return "Critical"
-    if any(n in fl or fl in n for n in nice):
+    if fl in nice:
         return "High"
     return "Medium"
 
@@ -77,7 +76,7 @@ def build_matrix(
 
     solutions = list(features_by_solution.keys())
     rows: list[dict[str, Any]] = []
-    scores: dict[str, int] = {s: 0 for s in solutions}
+    row_buffer: list[dict[str, Any]] = []
 
     for cat_name, feat_names in categories.items():
         rows.append({"type": "category", "name": cat_name})
@@ -89,7 +88,6 @@ def build_matrix(
                 "priority": prio,
                 "solutions": {},
             }
-            wt = WEIGHTS.get(prio, 1)
             for sol in solutions:
                 data = features_by_solution[sol]
                 has = False
@@ -103,9 +101,10 @@ def build_matrix(
                         if (feat.get("name") or str(feat)) == fname:
                             has = bool(feat.get("supported", True))
                 row["solutions"][sol] = TICK if has else ""
-                if has:
-                    scores[sol] += wt
             rows.append(row)
+            row_buffer.append(row)
+
+    scores = score_solutions_from_rows(row_buffer, solutions)
 
     ranking = sorted(
         [{"solution": s, "score": scores[s]} for s in solutions],
