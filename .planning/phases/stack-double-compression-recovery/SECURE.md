@@ -6,6 +6,7 @@
 | Branch | `fix/stack-double-compression-recovery` |
 | Base commit | `2dc1eccd` (recovery land) + SUMMARY `59c533f0` |
 | Reviewed | 2026-07-10 (UTC+10) |
+| Security commits | [`9203419a`](https://github.com/alo-exp/silver-bullet/commit/9203419a) (SECURE.md), [`b8253191`](https://github.com/alo-exp/silver-bullet/commit/b8253191) (hook fixes) |
 | Skill | `silver-secure` (FLOW 11 SECURE) |
 | Verdict | **PASS** (no open BLOCK findings) |
 
