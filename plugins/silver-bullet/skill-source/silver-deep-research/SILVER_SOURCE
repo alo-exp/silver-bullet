@@ -96,6 +96,9 @@ before `DR-RETRIEVE`. `phase_gate.py` blocks retrieval until `need_profile.json`
 
 Default mode for solution types: **`deep`**.
 
+**Mode restriction:** `solution-landscape` and `solution-compare` reject `quick` and
+`standard` — only `deep` or `ultradeep` are allowed (`phase_gate.py` enforces).
+
 Landscape: `shortlist_candidates.py` → exactly 5 SCRs. Compare: skip shortlist; use
 `solutions_requested.json`.
 

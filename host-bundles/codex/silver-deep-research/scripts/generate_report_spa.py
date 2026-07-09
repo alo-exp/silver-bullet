@@ -63,8 +63,12 @@ def collect_report_data(out_dir: Path) -> dict[str, Any]:
 
 
 def safe_json_payload(data: dict[str, Any]) -> str:
-    """Serialize JSON for inline <script> embedding — escape < to prevent XSS."""
-    return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
+    """Serialize JSON for inline <script> embedding — escape chars that break scripts."""
+    payload = json.dumps(data, ensure_ascii=False)
+    payload = payload.replace("<", "\\u003c")
+    payload = payload.replace("\u2028", "\\u2028")
+    payload = payload.replace("\u2029", "\\u2029")
+    return payload
 
 
 def render_html(data: dict[str, Any]) -> str:
@@ -172,6 +176,7 @@ pre {{ white-space: pre-wrap; background: var(--surface); padding: 1rem; border-
   const rankings = cmp.rankings || [];
   const rows = (cmp.rows || []).filter(r => r.type === 'feature');
   const solutions = rankings.map(r => r.solution);
+  let table = '';
   if (solutions.length) {{
     table += '<table id="matrixTable"><thead><tr><th>Feature</th><th>Priority</th>';
     solutions.forEach(s => {{ table += '<th data-sort>' + esc(s) + '</th>'; }});

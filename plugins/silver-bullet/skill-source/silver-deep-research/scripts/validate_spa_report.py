@@ -25,6 +25,33 @@ SUBSTANTIVE_KEYS = frozenset({
     "comparison",
     "scrs",
 })
+TABLE_DECLARE = re.compile(r"\b(?:let|var)\s+table\s*=")
+INLINE_SCRIPT = re.compile(r"<script>(.*?)</script>", re.DOTALL | re.IGNORECASE)
+
+
+def _check_matrix_js(text: str) -> list[str]:
+    """Ensure matrix panel JS declares table before += concatenation."""
+    errors: list[str] = []
+    scripts = INLINE_SCRIPT.findall(text)
+    if not scripts:
+        return errors
+    matrix_js = scripts[-1]
+    if re.search(r"table\s*\+=", matrix_js) and not TABLE_DECLARE.search(matrix_js):
+        errors.append("matrix JS uses table += without let/var table declaration")
+    return errors
+
+
+def _check_safe_json_escaping(raw_json: str, payload: dict) -> list[str]:
+    """Assert safe_json_payload escaping for script-breaking characters."""
+    errors: list[str] = []
+    canonical = json.dumps(payload, ensure_ascii=False)
+    if "<" in canonical and "<" in raw_json:
+        errors.append("report-data must escape < as \\u003c in embedded JSON")
+    if "\u2028" in canonical and "\\u2028" not in raw_json:
+        errors.append("report-data must escape U+2028 as \\u2028 in embedded JSON")
+    if "\u2029" in canonical and "\\u2029" not in raw_json:
+        errors.append("report-data must escape U+2029 as \\u2029 in embedded JSON")
+    return errors
 
 
 def _extract_json_payload(text: str) -> tuple[str | None, str | None]:
@@ -52,6 +79,8 @@ def validate(path: Path) -> dict:
         if marker not in text:
             errors.append(f"missing tab/data marker: {marker}")
 
+    errors.extend(_check_matrix_js(text))
+
     raw_json, extract_err = _extract_json_payload(text)
     if extract_err:
         errors.append(extract_err)
@@ -68,6 +97,8 @@ def validate(path: Path) -> dict:
                     "report-data JSON lacks substantive keys "
                     f"(expected one of: {', '.join(sorted(SUBSTANTIVE_KEYS))})"
                 )
+            else:
+                errors.extend(_check_safe_json_escaping(raw_json, payload))
 
     return {"status": "pass" if not errors else "fail", "errors": errors}
 
