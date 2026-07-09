@@ -50,7 +50,7 @@ Runtime queue:
 silver-clarify -> silver-deep-research -> silver-ensure-docs -> silver-validate
 ```
 
-`/silver:deep-research` is removed. `/silver:deep-research` is the only SB research
+`/silver:research` is removed. `/silver:deep-research` is the only SB research
 route.
 
 ## Research Session (HARD)

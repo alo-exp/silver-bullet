@@ -24,6 +24,37 @@ def run_py(script: str, *args: str) -> tuple[int, dict]:
 
 
 class TestNeedProfileGate(unittest.TestCase):
+    def test_scope_blocked_without_interview(self):
+        phase_gate = os.path.join(SCRIPTS, 'phase_gate.py')
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, 'run_manifest.json'), 'w') as f:
+                json.dump({'research_type': 'solution-compare', 'mode': 'deep'}, f)
+            with open(os.path.join(d, 'scope.md'), 'w') as f:
+                f.write('# Scope\n\nBounded compare question with enough text.\n')
+            code, data = run_py(phase_gate, '--dir', d, '--phase', 'scope')
+            self.assertEqual(code, 1)
+            self.assertEqual(data['status'], 'fail')
+
+    def test_solution_compare_rejects_quick_mode(self):
+        phase_gate = os.path.join(SCRIPTS, 'phase_gate.py')
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, 'run_manifest.json'), 'w') as f:
+                json.dump({'research_type': 'solution-compare', 'mode': 'quick'}, f)
+            with open(os.path.join(d, 'scope.md'), 'w') as f:
+                f.write('# Scope\n\nBounded compare question with enough text.\n')
+            with open(os.path.join(d, 'need_profile.json'), 'w') as f:
+                json.dump({
+                    'category': 'IDP',
+                    'audience': 'CTO',
+                    'must_haves': ['SSO'],
+                    'license_preference': 'mixed',
+                    'interview_complete': True,
+                }, f)
+            code, data = run_py(phase_gate, '--dir', d, '--mode', 'quick')
+            self.assertEqual(code, 1)
+            self.assertEqual(data['status'], 'fail')
+            self.assertIn('deep or ultradeep', data.get('reason', ''))
+
     def test_retrieve_blocked_without_interview(self):
         phase_gate = os.path.join(SCRIPTS, 'phase_gate.py')
         with tempfile.TemporaryDirectory() as d:

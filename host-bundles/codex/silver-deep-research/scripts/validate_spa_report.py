@@ -18,6 +18,25 @@ REQUIRED_MARKERS = [
     "panel-overview",
     "panel-matrix",
 ]
+SUBSTANTIVE_KEYS = frozenset({
+    "title",
+    "research_type",
+    "need_profile",
+    "comparison",
+    "scrs",
+})
+
+
+def _extract_json_payload(text: str) -> tuple[str | None, str | None]:
+    """Return (raw_json, error) from report-data script tag."""
+    match = re.search(
+        r'<script\s+type="application/json"\s+id="report-data">(.*?)</script>',
+        text,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not match:
+        return None, "missing type=application/json report-data script block"
+    return match.group(1).strip(), None
 
 
 def validate(path: Path) -> dict:
@@ -33,8 +52,22 @@ def validate(path: Path) -> dict:
         if marker not in text:
             errors.append(f"missing tab/data marker: {marker}")
 
-    if 'type="application/json"' not in text and "report-data" not in text:
-        errors.append("missing inline JSON payload")
+    raw_json, extract_err = _extract_json_payload(text)
+    if extract_err:
+        errors.append(extract_err)
+    elif raw_json is not None:
+        try:
+            payload = json.loads(raw_json)
+        except json.JSONDecodeError as exc:
+            errors.append(f"report-data JSON not parseable: {exc}")
+        else:
+            if not isinstance(payload, dict):
+                errors.append("report-data payload must be a JSON object")
+            elif not SUBSTANTIVE_KEYS.intersection(payload.keys()):
+                errors.append(
+                    "report-data JSON lacks substantive keys "
+                    f"(expected one of: {', '.join(sorted(SUBSTANTIVE_KEYS))})"
+                )
 
     return {"status": "pass" if not errors else "fail", "errors": errors}
 

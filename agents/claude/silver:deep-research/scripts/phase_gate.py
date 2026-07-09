@@ -63,6 +63,22 @@ def phase_required_artifacts(
     return base
 
 
+SOLUTION_TYPES = frozenset({"solution-landscape", "solution-compare"})
+SOLUTION_FORBIDDEN_MODES = frozenset({"quick", "standard"})
+
+
+def check_solution_mode_gate(mode: str, research_type: str) -> tuple[bool, str]:
+    """Solution research types require deep or ultradeep mode."""
+    if research_type not in SOLUTION_TYPES:
+        return True, "ok"
+    if mode in SOLUTION_FORBIDDEN_MODES:
+        return False, (
+            f"research_type={research_type} requires mode deep or ultradeep "
+            f"(got {mode})"
+        )
+    return True, "ok"
+
+
 def check_need_profile_gate(out_dir: Path) -> tuple[bool, str]:
     """Block DR-RETRIEVE until need_profile interview is complete (solution types)."""
     path = out_dir / "need_profile.json"
@@ -120,7 +136,7 @@ def check_phase(out_dir: Path, phase_key: str, config: dict[str, Any] | None = N
     results: list[dict[str, str]] = []
     all_ok = True
 
-    if phase_key == "retrieve" and rt in ("solution-landscape", "solution-compare"):
+    if phase_key in ("scope", "retrieve") and rt in SOLUTION_TYPES:
         ok, detail = check_need_profile_gate(out_dir)
         results.append({"artifact": "need_profile.json (gate)", "ok": ok, "detail": detail})
         if not ok:
@@ -148,6 +164,16 @@ def check_mode_complete(out_dir: Path, mode: str, config: dict[str, Any] | None 
         return {"mode": mode, "status": "error", "reason": f"unknown mode: {mode}"}
 
     rt = resolve_research_type(out_dir, research_type)
+    mode_ok, mode_detail = check_solution_mode_gate(mode, rt)
+    if not mode_ok:
+        return {
+            "mode": mode,
+            "research_type": rt,
+            "status": "fail",
+            "reason": mode_detail,
+            "phases": [],
+        }
+
     phase_results = []
     all_ok = True
     for phase_key in modes[mode].get("phases", []):
