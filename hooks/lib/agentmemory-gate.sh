@@ -11,6 +11,10 @@ if [[ -f "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh" ]]; then
   # shellcheck source=recommended-tools.sh
   source "$(dirname "${BASH_SOURCE[0]}")/recommended-tools.sh"
 fi
+if [[ -f "$(dirname "${BASH_SOURCE[0]}")/path-canonical.sh" ]]; then
+  # shellcheck source=path-canonical.sh
+  source "$(dirname "${BASH_SOURCE[0]}")/path-canonical.sh"
+fi
 
 sb_agentmemory_required() {
   sb_recommended_tool_enforced "${1:-}" "agentmemory"
@@ -36,31 +40,63 @@ sb_agentmemory_export_rel_path() {
   printf '%s' "$rel"
 }
 
+sb_agentmemory_export_rel_is_safe() {
+  local rel="${1:-}"
+  [[ -n "$rel" ]] || return 1
+  case "$rel" in
+    *..*) return 1 ;;
+  esac
+  return 0
+}
+
+sb_agentmemory_export_path_is_project_scoped() {
+  local project_root="${1:-}" export_path="${2:-}"
+  local canon_root canon_export
+  [[ -n "$project_root" && -n "$export_path" ]] || return 1
+  if declare -f sb_canonical_path >/dev/null 2>&1; then
+    canon_root="$(sb_canonical_path "$project_root")"
+    canon_export="$(sb_canonical_path "$export_path")"
+  else
+    canon_root="$(cd "$project_root" 2>/dev/null && pwd -P)" || canon_root="${project_root%/}"
+    canon_export="$(cd "$export_path" 2>/dev/null && pwd -P 2>/dev/null)" || canon_export="$export_path"
+  fi
+  [[ -n "$canon_root" && -n "$canon_export" ]] || return 1
+  case "$canon_export" in
+    "$canon_root"/*) return 0 ;;
+    "$canon_root") return 0 ;;
+  esac
+  return 1
+}
+
 sb_agentmemory_abs_export_path() {
   local project_root="${1:-$PWD}"
   local config_file="${2:-}"
-  local rel
+  local rel abs
   rel="$(sb_agentmemory_export_rel_path "$config_file")"
+  sb_agentmemory_export_rel_is_safe "$rel" || return 1
   if [[ "$rel" == /* ]]; then
-    printf '%s' "$rel"
+    abs="$rel"
   else
-    printf '%s/%s' "${project_root%/}" "$rel"
+    abs="${project_root%/}/$rel"
   fi
+  sb_agentmemory_export_path_is_project_scoped "$project_root" "$abs" || return 1
+  printf '%s' "$abs"
 }
 
 sb_agentmemory_export_exists() {
   local project_root="${1:-$PWD}"
   local config_file="${2:-}"
   local export_path
-  export_path="$(sb_agentmemory_abs_export_path "$project_root" "$config_file")"
-  [[ -d "$export_path" && ! -L "$export_path" ]]
+  export_path="$(sb_agentmemory_abs_export_path "$project_root" "$config_file" 2>/dev/null || true)"
+  [[ -n "$export_path" && -d "$export_path" && ! -L "$export_path" ]]
 }
 
 sb_agentmemory_scaffold_export_root() {
   local project_root="${1:-$PWD}"
   local config_file="${2:-}"
   local export_path
-  export_path="$(sb_agentmemory_abs_export_path "$project_root" "$config_file")"
+  export_path="$(sb_agentmemory_abs_export_path "$project_root" "$config_file" 2>/dev/null || true)"
+  [[ -n "$export_path" ]] || return 1
   mkdir -p "${export_path}/memory" "${export_path}/snapshots" 2>/dev/null || return 1
 }
 

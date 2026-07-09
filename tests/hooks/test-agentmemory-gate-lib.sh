@@ -42,6 +42,13 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 mkdir -p "$TMP/.agentmemory/memory"
 sb_agentmemory_export_exists "$TMP" "$TMP/.silver-bullet.json" && pass "export root detect" || fail "export root detect"
 
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\"../../tmp/am-traversal-$$\"}}}"
+! sb_agentmemory_scaffold_export_root "$TMP" "$TMP/.silver-bullet.json" 2>/dev/null \
+  && pass "export scaffold blocks traversal" || fail "export scaffold blocks traversal"
+[[ ! -d "/tmp/am-traversal-$$" ]] && pass "traversal target not created" || fail "traversal target not created"
+
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"export_root\":\".agentmemory\"}}}"
+
 sb_agentmemory_edit_path_is_exempt ".agentmemory/memory/foo.md" "$TMP/.silver-bullet.json" && pass "edit path exempt under export" || fail "edit path exempt"
 
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" agentmemory)"

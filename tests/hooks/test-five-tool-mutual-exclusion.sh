@@ -150,6 +150,19 @@ else
   fail "hook blocks non-recoverable tool when mutex dirty — got: $remember_out"
 fi
 
+read_dirty=$(jq -n \
+  '{hook_event_name:"PreToolUse", tool_name:"Read", tool_input:{file_path:"README.md"}}')
+read_dirty_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$read_dirty" | bash "$COORD_HOOK" 2>/dev/null || true)"
+if printf '%s' "$read_dirty_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
+  && printf '%s' "$read_dirty_out" | grep -q 'sb_stack_double_compression'; then
+  pass "hook blocks native Read recovery when mutex dirty"
+else
+  fail "hook blocks native Read recovery when mutex dirty — got: $read_dirty_out"
+fi
+sb_stack_mutual_exclusion_is_clean "$CFG" && fail "mutex still dirty after Read attempt" \
+  || pass "mutex still dirty after Read attempt"
+
 recovery_mcp=$(jq -n \
   '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["recovery"]}}}')
 recovery_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
