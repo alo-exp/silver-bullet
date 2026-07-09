@@ -52,7 +52,7 @@ Runtime queue:
 silver-clarify -> silver-deep-research -> silver-ensure-docs -> silver-validate
 ```
 
-`/silver:deep-research` is removed. `/silver:deep-research` is the only SB research
+`/silver:research` is removed. `/silver:deep-research` is the only SB research
 route.
 
 ## Research Session (HARD)
@@ -100,7 +100,7 @@ Landscape: `shortlist_candidates.py` → exactly 5 SCRs. Compare: skip shortlist
 `solutions_requested.json`.
 
 Packaging: `compare_solutions.py` → `generate_report_spa.py` → serverless `report.html`
-(open in Cursor browser + `open report.html` — **no** `http.server`).
+(open in host browser MCP + `open report.html` — **no** `http.server`).
 
 ## Mode Selection
 
