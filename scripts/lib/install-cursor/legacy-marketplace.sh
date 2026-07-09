@@ -56,7 +56,14 @@ resolve_cursor_registry_git_commit_sha() {
   local manifest_sha remote_sha cache_sha preferred=""
   local backend_sha
 
-  backend_sha="$(discover_cursor_backend_plugin_shas | head -1)"
+  backend_sha=""
+  while IFS= read -r discovered; do
+    [[ -n "$discovered" ]] || continue
+    if cursor_github_commit_reachable "$discovered"; then
+      backend_sha="$discovered"
+      break
+    fi
+  done < <(discover_cursor_backend_plugin_shas)
   manifest_sha="$(read_marketplace_manifest_sha)"
   remote_sha="$(resolve_remote_github_head_sha)"
 
@@ -104,7 +111,7 @@ seed_cursor_marketplace_gitpaths_extended() {
 
   while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
-    ensure_cursor_github_marketplace_gitpath "$sha" "$source_root"
+    ensure_cursor_github_marketplace_gitpath "$sha" "$source_root" || continue
     materialize_cursor_plugin_surface_in_gitpath "$dest" "$sha"
     ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$sha"
   done < <(collect_cursor_plugin_seed_shas "$primary_sha" "$(resolve_cursor_backend_plugin_sha "$primary_sha")")
