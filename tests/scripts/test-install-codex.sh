@@ -1282,6 +1282,23 @@ assert_hook_trust_state_for_source "Codex package hook trust seeded for managed 
 assert_not_contains "Native Codex config no longer seeds SB user-hook trust" "$HOME_HOOKS_PATH_REAL" "$HOME_DIR/.codex/config.toml"
 assert_file_exists "Codex registry created" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Silver Bullet registry install path refreshed" "$FAKE_SB_INSTALL_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
+assert_contains "Silver Bullet registry uses user scope" '"scope": "user"' "$HOME_DIR/.codex/plugins/installed_plugins.json"
+if python3 - "$HOME_DIR/.codex/plugins/installed_plugins.json" <<'PY' >/dev/null 2>&1
+import json
+import pathlib
+import sys
+
+data = json.loads(pathlib.Path(sys.argv[1]).read_text())
+entry = data.get("plugins", {}).get("silver-bullet@alo-labs-codex", [{}])[0]
+raise SystemExit(0 if entry.get("scope") == "user" and "projectPath" not in entry else 1)
+PY
+then
+  echo "PASS: Silver Bullet registry avoids home projectPath gate"
+  (( PASS++ )) || true
+else
+  echo "FAIL: Silver Bullet registry avoids home projectPath gate"
+  (( FAIL++ )) || true
+fi
 assert_not_contains "Silver Bullet versioned install path removed" "$FAKE_SB_INSTALL_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_contains "Sidekick registry install path refreshed" "$FAKE_SIDEKICK_ALIAS" "$HOME_DIR/.codex/plugins/installed_plugins.json"
 assert_not_contains "Sidekick stale install path removed" "$FAKE_SIDEKICK_STALE_ROOT" "$HOME_DIR/.codex/plugins/installed_plugins.json"

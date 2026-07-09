@@ -63,6 +63,14 @@ if current_path.exists() or current_path.is_symlink():
         current_path.unlink()
 current_path.symlink_to(target_path)
 
+plugin_version = target_path.name
+plugin_json = target_path / ".codex-plugin" / "plugin.json"
+if plugin_json.is_file():
+    try:
+        plugin_version = json.loads(plugin_json.read_text()).get("version", plugin_version)
+    except Exception:
+        pass
+
 data = {"version": 2, "plugins": {}}
 if registry_path.is_file():
     try:
@@ -71,17 +79,19 @@ if registry_path.is_file():
         pass
 
 plugins = data.setdefault("plugins", {})
+prior = plugins.get(plugin_id, [{}])[0] if plugins.get(plugin_id) else {}
 entry = {
-    "scope": "project",
-    "projectPath": str(home),
+    "scope": "user",
     "installPath": str(current_path),
-    "version": target_path.name,
-    "installedAt": now,
+    "version": plugin_version,
+    "installedAt": prior.get("installedAt", now),
     "lastUpdated": now,
 }
+entry.pop("projectPath", None)
 
 if plugin_id in plugins and plugins[plugin_id]:
     plugins[plugin_id][0].update(entry)
+    plugins[plugin_id][0].pop("projectPath", None)
 else:
     plugins[plugin_id] = [entry]
 
