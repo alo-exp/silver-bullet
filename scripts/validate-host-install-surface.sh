@@ -200,17 +200,20 @@ if should_check("cursor"):
                 fail("cursor", f"missing {manifest.relative_to(repo_root)}")
             continue
         data = json.loads(manifest.read_text())
-        skills = data.get("skills", "")
-        allowed = ("./agents/cursor",)
-        if label == "root":
-            allowed = ("./agents/cursor", "./host-bundles/cursor")
-        if skills not in allowed:
+        skills = data.get("skills")
+        if skills:
             fail(
                 "cursor",
-                f"{manifest.relative_to(repo_root)} skills path must be ./agents/cursor — got {skills!r}",
+                f"{manifest.relative_to(repo_root)} must not declare skills "
+                f"(registers host-bundles in / picker — use skill-source + commands only; got {skills!r})",
             )
         if data.get("agents"):
-            fail("cursor", f"{manifest.relative_to(repo_root)} must not declare agents (skills path is sufficient)")
+            fail("cursor", f"{manifest.relative_to(repo_root)} must not declare agents path")
+        if label == "plugins/silver-bullet" and data.get("commands") != "./commands":
+            fail(
+                "cursor",
+                f"{manifest.relative_to(repo_root)} commands path must be ./commands — got {data.get('commands')!r}",
+            )
 
     if not cursor_manifest.is_file() and not plugin_cursor_manifest.is_file():
         fail("cursor", "missing .cursor-plugin/plugin.json")
