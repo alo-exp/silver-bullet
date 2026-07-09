@@ -112,12 +112,29 @@ collect_cursor_plugin_required_shas() {
   )
 }
 
+
+prune_agents_from_all_cursor_backend_caches() {
+  local cache_root entry
+  cache_root="$(cursor_backend_plugin_cache_root)"
+  [[ -d "$cache_root" ]] || return 0
+  for entry in "$cache_root"/*; do
+    [[ -d "$entry" ]] || continue
+    if [[ -d "${entry}/agents" ]]; then
+      rm -rf "${entry}/agents"
+      printf 'Note: pruned agents/ from Cursor backend cache %s (commands-only / picker)\n' "$(basename "$entry" | cut -c1-8)" >&2
+    fi
+  done
+}
+
 collect_cursor_plugin_seed_shas() {
   local primary_sha="${1:-}"
   local backend_sha="${2:-}"
 
   prune_stale_cursor_marketplace_cache_links "$primary_sha"
   prune_stale_cursor_marketplace_gitpaths "$primary_sha"
+  # Stale backend SHA dirs may still contain agents/cursor from older installs;
+  # cursor-agent loads every enabled backend cache into the / picker.
+  prune_agents_from_all_cursor_backend_caches
 
   while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
@@ -165,10 +182,8 @@ materialize_cursor_plugin_surface_into_dir() {
   else
     rm -rf "${target_root}/commands"
   fi
-  if [[ -d "${source_dest}/agents/cursor" ]]; then
-    mkdir -p "${target_root}/agents/cursor"
-    rsync -a --delete "${source_dest}/agents/cursor/" "${target_root}/agents/cursor/"
-  fi
+  # agents/cursor must not ship — cursor-agent TUI auto-discovers it for / picker.
+  rm -rf "${target_root}/agents/cursor" "${target_root}/agents"
   if [[ -d "${source_dest}/skill-source" ]]; then
     mkdir -p "${target_root}/skill-source"
     rsync -a --delete "${source_dest}/skill-source/" "${target_root}/skill-source/"
@@ -182,6 +197,7 @@ materialize_cursor_plugin_surface_into_dir() {
     install -m 644 "${source_dest}/.cursor-plugin/plugin.json" "${target_root}/.cursor-plugin/plugin.json"
   fi
 }
+
 
 ensure_cursor_backend_plugin_cache_dir() {
   local dest="$1"
