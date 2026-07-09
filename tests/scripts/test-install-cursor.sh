@@ -90,7 +90,7 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/commands/init.md" ]] && \
+if [[ -f "${gitpath_root}/commands/silver:init.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands in marketplace gitPath checkout"
 else
@@ -147,13 +147,13 @@ else
   fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 fi
 
-if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/init.md" ]]; then
+if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/silver:init.md" ]]; then
   pass "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 else
   fail "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 fi
 
-if [[ -f "${gitpath_root}/commands/init.md" ]] && \
+if [[ -f "${gitpath_root}/commands/silver:init.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands at gitPath repo root for empty backend path"
 else
@@ -207,7 +207,7 @@ else
   fail "install-cursor preserves orchestrator-directive-guard matcher variants — missing ${odg_missing}"
 fi
 
-if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/init.md" ]]; then
+if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/silver:init.md" ]]; then
   pass "install-cursor syncs composer command stubs to cache"
 else
   fail "install-cursor syncs composer command stubs to cache"
