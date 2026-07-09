@@ -73,7 +73,12 @@ STRICT_ALLOWLIST = {
     "skills/silver-agent-codex/SKILL.md",
     "skills/silver-agent-cursor/SKILL.md",
     "skills/silver-agent-claude/SKILL.md",
+    "skills/silver-agent-opencode/SKILL.md",
+    "skills/silver-agent-pi/SKILL.md",
     "skills/silver-agent-worker/SKILL.md",
+    "skills/silver-doctor/SKILL.md",
+    "skills/silver-init/SKILL.md",
+    "skills/silver-clear-stack-state/SKILL.md",
     "skills/silver/SKILL.md",
     "skills/silver-create-release/SKILL.md",
     "skills/silver-review-fix-ladder/SKILL.md",
@@ -90,6 +95,7 @@ STRICT_ALLOWLIST_PREFIXES = (
     "skills/silver-deep-research/scripts/",
     "skills/silver-deep-research/templates/",
     "skills/silver-deep-research/UPSTREAM.md",
+    "skills/silver-deep-research/tests/",
     "skills/silver-init/references/",
 )
 
@@ -162,6 +168,12 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
+    "scripts/diagnose-cursor-picker-duplicates.sh",
+    "scripts/enumerate-cursor-slash-picker.sh",
+    "scripts/install-cursor-sb-agents.sh",
+    "scripts/lib/cursor-sb-agents/",
+    "scripts/lib/strip-cursor-sb-hooks.py",
+    "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
 )

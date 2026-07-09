@@ -65,6 +65,12 @@ for agent in "${AGENTS[@]}"; do
     if [[ "$agent" == "claude" || "$agent" == "cursor" ]]; then
       bundle_dir="silver:${comp}"
     fi
+    # Cursor host-bundles omit command-stub-covered composers (slash commands own the route).
+    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/${bundle_dir}.md" ]]; then
+      echo "PASS: ${skill} omitted from cursor bundle (command stub owns route)"
+      PASS=$((PASS + 1))
+      continue
+    fi
     rendered="${dest}/${bundle_dir}/SKILL.md"
     bundle="$(sb_agent_bundle_root "$REPO_ROOT" "$agent")/${bundle_dir}/SKILL.md"
     bundle_rel="$(sb_agent_bundle_rel "$agent")/${bundle_dir}/SKILL.md"
