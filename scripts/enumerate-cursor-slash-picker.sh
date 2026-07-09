@@ -9,13 +9,14 @@
 # Acceptance: / picker shows commands ONLY — no agents/cursor directory on surface.
 #
 # Usage:
-#   bash scripts/enumerate-cursor-slash-picker.sh [--cursor-home PATH] [--surface PATH]
+#   bash scripts/enumerate-cursor-slash-picker.sh [--cursor-home PATH] [--surface PATH] [--workspace PATH]
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
 SURFACE=""
+WORKSPACE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --surface)
       SURFACE="${2:-}"
+      shift 2
+      ;;
+    --workspace)
+      WORKSPACE="${2:-}"
       shift 2
       ;;
     -h|--help)
@@ -38,7 +43,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 - "$CURSOR_HOME" "$REPO_ROOT" "$SURFACE" <<'PY'
+python3 - "$CURSOR_HOME" "$REPO_ROOT" "$SURFACE" "$WORKSPACE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -49,6 +54,7 @@ from pathlib import Path
 cursor_home = Path(sys.argv[1])
 repo_root = Path(sys.argv[2])
 surface_arg = sys.argv[3]
+workspace_arg = sys.argv[4]
 
 
 def parse_frontmatter(path: Path) -> dict[str, str]:
@@ -132,6 +138,40 @@ def enumerate_surface(root: Path) -> dict[str, object]:
     }
 
 
+def enumerate_workspace(root: Path) -> dict[str, object]:
+    manifest_path = root / ".cursor-plugin" / "plugin.json"
+    manifest: dict[str, object] = {}
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except Exception:
+            pass
+
+    skills_path = manifest.get("skills")
+    skills_root: Path | None = None
+    if skills_path:
+        skills_root = root / str(skills_path).removeprefix("./")
+
+    subagents: list[dict[str, str]] = []
+    if skills_root and skills_root.is_dir():
+        for skill_md in sorted(skills_root.glob("*/SKILL.md")):
+            name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
+            route = f"/{name}" if name != "silver" else "/silver"
+            subagents.append(
+                {
+                    "route": route,
+                    "name": name,
+                    "dir": str(skill_md.parent.relative_to(root)),
+                }
+            )
+
+    return {
+        "root": str(root),
+        "manifest_skills": skills_path,
+        "subagents": subagents,
+    }
+
+
 root = Path(surface_arg) if surface_arg else default_surface()
 if root is None or not root.is_dir():
     print("ERROR: no Cursor Silver Bullet plugin surface found", file=sys.stderr)
@@ -192,4 +232,25 @@ if failures:
     raise SystemExit(1)
 
 print("RESULT: OK — commands-only slash picker with colon routes")
+
+workspace_root = Path(workspace_arg) if workspace_arg else repo_root
+if workspace_root.is_dir():
+    workspace = enumerate_workspace(workspace_root)
+    ws_subagents = workspace["subagents"]
+    print()
+    print("Workspace slash-picker exposure (dev checkout)")
+    print(f"workspace={workspace['root']}")
+    print(f"manifest.skills={workspace['manifest_skills']!r}")
+    print(f"workspace_subagents={len(ws_subagents)}")
+    if workspace["manifest_skills"] or ws_subagents:
+        print()
+        print("WORKSPACE SUBAGENT/SKILL ENTRIES (must be zero):")
+        for entry in ws_subagents[:12]:
+            print(f"  {entry['route']}  ({entry['dir']})")
+        if len(ws_subagents) > 12:
+            print(f"  ... +{len(ws_subagents) - 12} more")
+        print()
+        print("RESULT: FAIL — workspace manifest still exposes skills in / picker")
+        raise SystemExit(1)
+    print("RESULT: OK — workspace manifest does not expose skills in / picker")
 PY

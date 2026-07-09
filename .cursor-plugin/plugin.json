@@ -18,6 +18,5 @@
     "quality-gates",
     "ci-cd"
   ],
-  "skills": "./host-bundles/cursor",
   "hooks": "./hooks/cursor-hooks.json"
 }
