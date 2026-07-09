@@ -5,3 +5,5 @@ skills/
 host-bundles/
 agents/
 .cursor/agents/
+plugins/silver-bullet/skill-source/
+plugins/silver-bullet/agents/

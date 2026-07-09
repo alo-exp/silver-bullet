@@ -208,6 +208,8 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
         ("skills", root / "skills"),
         ("host-bundles/cursor", root / "host-bundles" / "cursor"),
         ("agents", root / "agents"),
+        ("plugins/silver-bullet/skill-source", root / "plugins" / "silver-bullet" / "skill-source"),
+        ("plugins/silver-bullet/agents", root / "plugins" / "silver-bullet" / "agents"),
         ("project .cursor/agents", root / ".cursor" / "agents"),
     ]:
         if not surface_root.is_dir():

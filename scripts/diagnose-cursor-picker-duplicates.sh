@@ -62,6 +62,32 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
     return meta
 
 
+def load_cursorignore(root: Path) -> list[str]:
+    path = root / ".cursorignore"
+    if not path.is_file():
+        return []
+    patterns: list[str] = []
+    for raw in path.read_text(errors="ignore").splitlines():
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            patterns.append(line.lstrip("/"))
+    return patterns
+
+
+def is_cursorignored(root: Path, path: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.relative_to(root).as_posix()
+    except ValueError:
+        return False
+    for pattern in patterns:
+        if pattern.endswith("/"):
+            if rel == pattern.rstrip("/") or rel.startswith(pattern):
+                return True
+        elif rel == pattern or rel.startswith(pattern + "/"):
+            return True
+    return False
+
+
 def logical_route(name: str) -> str | None:
     if name == "silver":
         return "silver"
@@ -160,6 +186,32 @@ def nested_plugin_picker_surfaces(root: Path) -> list[str]:
     return issues
 
 
+def workspace_auto_discovery_report(root: Path) -> dict[str, object]:
+    patterns = load_cursorignore(root)
+    issues: list[str] = []
+    ignored = 0
+    for label, scan_root in [
+        ("skills", root / "skills"),
+        ("host-bundles/cursor", root / "host-bundles" / "cursor"),
+        ("agents", root / "agents"),
+        ("plugins/silver-bullet/skill-source", root / "plugins" / "silver-bullet" / "skill-source"),
+        ("plugins/silver-bullet/agents", root / "plugins" / "silver-bullet" / "agents"),
+        ("project .cursor/agents", root / ".cursor" / "agents"),
+    ]:
+        if not scan_root.is_dir():
+            continue
+        for skill_md in sorted(scan_root.glob("**/SKILL.md")):
+            if is_cursorignored(root, skill_md, patterns) or is_cursorignored(root, skill_md.parent, patterns):
+                ignored += 1
+                continue
+            meta = parse_frontmatter(skill_md)
+            name = meta.get("name", skill_md.parent.name).strip()
+            issues.append(f"{label}: {name} ({skill_md.parent.relative_to(root)})")
+    for issue in plugin_manifest_issues(root):
+        issues.append(f".cursor-plugin/plugin.json: {issue}")
+    return {"patterns": patterns, "issues": issues, "ignored": ignored}
+
+
 def analyze_surface(label: str, root: Path) -> dict[str, object]:
     if not root.is_dir():
         return {
@@ -251,11 +303,30 @@ def discover_roots(cursor_home: Path) -> list[tuple[str, Path]]:
 
 
 results = [analyze_surface(label, path) for label, path in discover_roots(cursor_home)]
+workspace = workspace_auto_discovery_report(repo_root)
 failures = 0
 
 print("Silver Bullet Cursor slash-picker duplicate diagnostic")
 print(f"cursor_home={cursor_home}")
 print()
+
+if workspace["issues"]:
+    failures += 1
+    print("[FAIL] dev-workspace-auto-discovery")
+    print(f"  path: {repo_root}")
+    print(f"  .cursorignore patterns={workspace['patterns']!r}")
+    print(f"  unignored workspace skill surfaces ({len(workspace['issues'])}):")
+    for issue in workspace["issues"][:12]:
+        print(f"    - {issue}")
+    if len(workspace["issues"]) > 12:
+        print(f"    ... +{len(workspace['issues']) - 12} more")
+    print()
+else:
+    print("[OK] dev-workspace-auto-discovery")
+    print(f"  path: {repo_root}")
+    print(f"  .cursorignore patterns={workspace['patterns']!r}")
+    print(f"  ignored workspace entries={workspace['ignored']}")
+    print()
 
 for item in results:
     label = item["label"]
