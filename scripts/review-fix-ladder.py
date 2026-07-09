@@ -227,8 +227,7 @@ def probe_agents_via_script(project_root: Path, config: dict[str, Any]) -> dict[
             env=env,
             capture_output=True,
             text=True,
-            check=False,
-            timeout=10,
+            check=False, timeout=10,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -244,10 +243,10 @@ def probe_agents_via_script(project_root: Path, config: dict[str, Any]) -> dict[
 def check_agents(config: dict[str, Any], project_root: Path) -> dict[str, Any]:
     rungs = cursor_sb_agents_rungs(config, catalog_ids=load_catalog_ids(project_root))
     expected = [r["subagent_name"] for r in rungs]
-    if os.environ.get("SB_CURSOR_SB_AGENTS_SKIP_PROBE") == "1":
-        probe = None
+    if os.environ.get("SB_CURSOR_SB_AGENTS_SKIP_PROBE")=="1":
+        probe=None
     else:
-        probe = probe_agents_via_script(project_root, config)
+        probe=probe_agents_via_script(project_root, config)
     if probe is not None:
         found = set(probe.get("found_names", []))
         missing = [name for name in expected if name not in found]

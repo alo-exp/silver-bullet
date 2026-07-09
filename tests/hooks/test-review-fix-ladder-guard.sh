@@ -70,6 +70,28 @@ sb_rfl_is_active && check "activate sets active state" pass || check "activate s
 [[ "$(sb_rfl_read_field total_rungs "")" == "6" ]] && check "activate total_rungs 6" pass || check "activate total_rungs 6" fail
 [[ "$(sb_rfl_read_field subagent_name "")" == "sb-composer-2-5-medium" ]] && check "activate subagent_name" pass || check "activate subagent_name" fail
 
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase review
+out_review_no_subagent=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_review raw findings only",model:"composer-2.5"}}')")
+is_denied "$out_review_no_subagent" && check "blocks review without subagent_type" pass || check "blocks review without subagent_type" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase review
+out_review_wrong_subagent=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_review raw findings",model:"composer-2.5",subagent_type:"sb-grok-4-5-medium"}}')")
+is_denied "$out_review_wrong_subagent" && check "blocks review wrong subagent_type" pass || check "blocks review wrong subagent_type" fail
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase review
+out_review_ok=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_review raw findings",subagent_type:"sb-composer-2-5-medium"}}')")
+is_denied "$out_review_ok" && check "allows review with correct subagent_type (no model)" fail || check "allows review with correct subagent_type (no model)" pass
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+sb_rfl_set_field phase verify_1
+out_verify_subagent=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"rung_1_verify_1 verify-only",readonly:true,subagent_type:"sb-composer-2-5-medium"}}')")
+is_denied "$out_verify_subagent" && check "allows verify with correct subagent_type (no model)" fail || check "allows verify with correct subagent_type (no model)" pass
+
+sb_rfl_reset 1 composer-2.5 composer-2.5
+
 out_triage_in_review=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage classify VALID-NONBLOCKER",model:"composer-2.5"}}')")
 is_denied "$out_triage_in_review" && check "blocks triage Task during review phase" pass || check "blocks triage Task during review phase" fail
 

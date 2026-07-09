@@ -66,15 +66,15 @@ sb_rfl_resolver_json() {
     printf '{}'
     return 1
   fi
-  python3 "$resolver" --host cursor --json --project-root "$project_root" 2>/dev/null || printf '{}'
+  SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$resolver" --host cursor --json --project-root "$project_root" 2>/dev/null || printf '{}'
 }
 
 sb_rfl_total_rungs_from_resolver() {
   local resolver_json="$1"
   if command -v jq >/dev/null 2>&1; then
-    jq -r '(.total_rungs // (.rungs | length) // 8)' <<<"$resolver_json"
+    jq -r '(.total_rungs // (.rungs | length) // 6)' <<<"$resolver_json"
   else
-    printf '8'
+    printf '6'
   fi
 }
 
@@ -194,7 +194,7 @@ sb_rfl_advance_rung() {
   [[ -f "$file" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
   rung="$(sb_rfl_read_field rung 1)"
-  total="$(sb_rfl_read_field total_rungs 8)"
+  total="$(sb_rfl_read_field total_rungs 6)"
   if (( rung >= total )); then
     sb_rfl_deactivate
     return 0
@@ -280,9 +280,15 @@ sb_rfl_validate_task_spawn() {
         return 1
       fi
       expected_subagent="$(sb_rfl_read_field subagent_name "")"
-      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
-        printf '%s' "Review-fix-ladder: review phase requires subagent_type ${expected_subagent} (got ${subagent_type})."
-        return 1
+      if [[ -n "$expected_subagent" ]]; then
+        if [[ -z "$subagent_type" ]]; then
+          printf '%s' "Review-fix-ladder: review phase requires subagent_type ${expected_subagent}."
+          return 1
+        fi
+        if [[ "$subagent_type" != "$expected_subagent" ]]; then
+          printf '%s' "Review-fix-ladder: review phase requires subagent_type ${expected_subagent} (got ${subagent_type})."
+          return 1
+        fi
       fi
       custom_subagent=0
       [[ -n "$expected_subagent" && "$subagent_type" == "$expected_subagent" ]] && custom_subagent=1
@@ -317,9 +323,15 @@ sb_rfl_validate_task_spawn() {
       ;;
     verify_1)
       expected_subagent="$(sb_rfl_read_field subagent_name "")"
-      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
-        printf '%s' "Review-fix-ladder: verify_1 requires subagent_type ${expected_subagent} (got ${subagent_type})."
-        return 1
+      if [[ -n "$expected_subagent" ]]; then
+        if [[ -z "$subagent_type" ]]; then
+          printf '%s' "Review-fix-ladder: verify_1 requires subagent_type ${expected_subagent}."
+          return 1
+        fi
+        if [[ "$subagent_type" != "$expected_subagent" ]]; then
+          printf '%s' "Review-fix-ladder: verify_1 requires subagent_type ${expected_subagent} (got ${subagent_type})."
+          return 1
+        fi
       fi
       if [[ "$hint" == "fix" || "$hint" == "triage" ]]; then
         printf '%s' "Review-fix-ladder: verify_1 — verify-only subagent (readonly), no fix or triage."
@@ -336,9 +348,15 @@ sb_rfl_validate_task_spawn() {
       ;;
     verify_2)
       expected_subagent="$(sb_rfl_read_field subagent_name "")"
-      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
-        printf '%s' "Review-fix-ladder: verify_2 requires subagent_type ${expected_subagent} (got ${subagent_type})."
-        return 1
+      if [[ -n "$expected_subagent" ]]; then
+        if [[ -z "$subagent_type" ]]; then
+          printf '%s' "Review-fix-ladder: verify_2 requires subagent_type ${expected_subagent}."
+          return 1
+        fi
+        if [[ "$subagent_type" != "$expected_subagent" ]]; then
+          printf '%s' "Review-fix-ladder: verify_2 requires subagent_type ${expected_subagent} (got ${subagent_type})."
+          return 1
+        fi
       fi
       if [[ "$hint" == "fix" || "$hint" == "triage" || "$hint" == "verify_1" ]]; then
         printf '%s' "Review-fix-ladder: verify_2 — second verify-only pass only."
