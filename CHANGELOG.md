@@ -2,13 +2,28 @@
 
 ## [Unreleased]
 
+---
+
+## [0.51.4] — 2026-07-10
+
+Patch release: Cursor slash-picker deduplication and custom subagents (install, doctor D21, RFL ladder), stack double-compression recovery hardening, MultAI deep-research port (`/silver:compare`), Codex user-scope registration, and tri-host post-release verify orchestrator.
+
 ## Features
-- `feat(cursor)`: wire SB custom subagents into `install-cursor.sh`, doctor **D21** (`probe-global-agents.sh` + `--fix` via `install-cursor-sb-agents.sh`), and silver-init §3.2.3 (tri-state consent, skip-if-global)
-- `feat(deep-research)`: port MultAI solution-landscape and solution-compare into SB (no multi-AI) — AF-DECIDE category decisions, mandatory need-profile interview (`need_profile.json`), top-5 shortlist + SCR extraction, weighted comparison matrix, serverless `report.html` SPA, canonical output root `research/<date>-<slug>/`, and `/silver:compare` for N≥2 named solutions (`daee7db8`…`632d75d4`)
+- `feat(cursor)`: SB custom subagents installer — `install-cursor.sh`, doctor **D21** (`probe-global-agents.sh` + `--fix`), silver-init §3.2.3 tri-state consent (`04cc0643`…`e9acbc18`)
+- `feat(cursor)`: RFL custom subagents — 6-rung review-fix ladder, hooks, tests, skill (`1781f06f`…`9fabd95f`)
+- `feat(deep-research)`: port MultAI solution-landscape and solution-compare — need-profile interview, SCR extraction, weighted matrix SPA, `/silver:compare` (`daee7db8`…`632d75d4`)
+- `feat(agents)`: `silver-agent-opencode` and `silver-agent-pi` delegation surfaces (`270a9356`)
+- `feat(release)`: mandatory tri-host post-release verify orchestrator (`f7733878`)
 
 ## Fixes
-- `fix(deep-research)`: v2 audit follow-ups — branch-correct GitHub `SKILL.md` URL resolution (`github_skill_retrieval.py`), `search_orchestrator` integration, `chain_tracker` unit tests, methodology DR-* phase alignment, and July 2026 landscape replay `gh-search` partials for reproducibility
-- `fix(deep-research)`: Thermos hardening — SPA matrix JS, landscape/compare validators, mode allowlist (`deep`/`ultradeep` only for solution types), OSS/commercial license token matching, SCR phase gates (`f5f00629`…`632d75d4`)
+- `fix(cursor)`: slash picker deduplication — prune backend plugin caches, honor `.cursorignore`, commands-only registration (`1c82c174`…`a8cb0109`)
+- `fix(cursor)`: harden D21 doctor probe and host-agnostic allowlists (`d3732096`, `e9acbc18`)
+- `fix(stack)`: double-compression mutex recovery, SEC-01/SEC-02 hardening, doctor D20 (`e8b1ab42`, `2285ccbd`, `0c90c675`)
+- `fix(codex)`: register Silver Bullet plugin with user scope (`1de5bea1`)
+- `fix(commands)`: align Cursor and Codex slash routes with `silver:` colon convention (`558da475`)
+- `fix(cursor)`: skip unreachable marketplace SHAs during install (`5ec45704`)
+- `fix(deep-research)`: v2 audit follow-ups and Thermos hardening (`250d2ea5`…`632d75d4`)
+- `fix(ci)`: regenerate APO views; restore hook executability and completion-audit alignment (`0594a821`, `4bb36750`)
 
 ---
 

@@ -1,6 +1,6 @@
 # Silver Bullet
 
-[![version](https://img.shields.io/badge/version-v0.51.3-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.51.3)
+[![version](https://img.shields.io/badge/version-v0.51.4-blue)](https://github.com/alo-exp/silver-bullet/releases/tag/v0.51.4)
 [![license](https://img.shields.io/badge/license-BUSL--1.1-blue)](LICENSE)
 [![website](https://img.shields.io/badge/site-sb.alolabs.dev-green)](https://sb.alolabs.dev)
 
