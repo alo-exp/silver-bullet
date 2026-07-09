@@ -61,6 +61,7 @@ bash scripts/sb-doctor.sh --fix
 | D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 | D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
+| D21 Cursor SB subagents | `bash scripts/install-cursor-sb-agents.sh --fix` or `bash scripts/sb-doctor.sh --fix` (**Cursor only**) |
 
 Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surfaces hook or install issues.
 

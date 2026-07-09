@@ -37,6 +37,21 @@ doctor_apply_fixes() {
             ;;
         esac
         ;;
+      D21)
+        local csba_fix_scope="global"
+        if [[ -f "${PROJ_ROOT}/.silver-bullet.json" ]]; then
+          csba_fix_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "${PROJ_ROOT}/.silver-bullet.json")"
+        fi
+        local csba_fix_flags=(--fix)
+        if [[ "$csba_fix_scope" == "project" ]]; then
+          csba_fix_flags+=(--project)
+        else
+          csba_fix_flags+=(--global)
+        fi
+        printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
+        bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
+        fixed=1
+        ;;
     esac
     [[ "$fixed" -eq 1 ]] && break
   done
