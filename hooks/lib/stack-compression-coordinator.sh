@@ -142,6 +142,7 @@ sb_stack_record_routed_owner_success() {
 }
 
 # Returns 0 when tool matches configured route owner and would not hit deny paths.
+# Mutex recovery: Bash and routed MCP only (native Read/Grep/WebFetch cannot clear violations).
 # Prints "route owner" on stdout when compliant.
 sb_stack_tool_is_compliant_routed_owner() {
   local config_file="${1:-}" tool_name="${2:-}" mcp_server="${3:-}" mcp_tool="${4:-}"
@@ -159,17 +160,6 @@ sb_stack_tool_is_compliant_routed_owner() {
       if sb_stack_should_deny_bash_double_wrap "$config_file" "$command_str"; then
         return 1
       fi
-      printf '%s %s\n' "$route" "$owner"
-      return 0
-      ;;
-    Read|Grep|WebFetch)
-      owner="$(sb_stack_surface_owner "$config_file" "$tool_name" 2>/dev/null || true)"
-      [[ -n "$owner" ]] || return 1
-      case "$tool_name" in
-        Read) route="sb_read" ;;
-        Grep) route="sb_grep" ;;
-        WebFetch) route="sb_webfetch" ;;
-      esac
       printf '%s %s\n' "$route" "$owner"
       return 0
       ;;
