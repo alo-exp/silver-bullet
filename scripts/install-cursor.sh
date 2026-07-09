@@ -266,7 +266,14 @@ ensure_cursor_github_marketplace_gitpath() {
       git -C "$dest_root" fetch origin "$commit_sha" >/dev/null 2>&1 || true
   fi
 
-  git -C "$dest_root" checkout -f "$commit_sha" >/dev/null
+  if git -C "$dest_root" cat-file -e "${commit_sha}^{commit}" >/dev/null 2>&1 \
+    && git -C "$dest_root" checkout -f "$commit_sha" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  rm -rf "$dest_root"
+  printf 'Note: skipped unreachable Cursor gitPath commit %s (not on %s)\n' "${commit_sha:0:8}" "$CURSOR_GITHUB_REPO_URL" >&2
+  return 1
 }
 
 resolve_remote_github_head_sha() {
@@ -396,7 +403,7 @@ seed_cursor_marketplace_gitpaths() {
 
   while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
-    ensure_cursor_github_marketplace_gitpath "$sha" "$source_root"
+    ensure_cursor_github_marketplace_gitpath "$sha" "$source_root" || continue
     materialize_cursor_plugin_surface_in_gitpath "$dest" "$sha"
     ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$sha"
   done < <(collect_cursor_plugin_seed_shas "$primary_sha" "")
@@ -427,7 +434,7 @@ verify_cursor_plugin_discovery_paths() {
         "$sha" "$(cursor_backend_plugin_cache_root)" "$sha" >&2
       failures=1
     fi
-  done < <(collect_cursor_plugin_seed_shas "$primary_sha" "$backend_sha")
+  done < <(collect_cursor_plugin_required_shas "$primary_sha" "$backend_sha")
 
   return "$failures"
 }
