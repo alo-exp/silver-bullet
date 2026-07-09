@@ -323,6 +323,20 @@ cursor_plugin_git_subpath_root() {
   printf '%s/%s' "$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")" "$CURSOR_PLUGIN_GIT_SUBPATH"
 }
 
+prune_cursor_gitpath_picker_skills() {
+  local dest="$1"
+  local gitpath_root="$2"
+
+  # Full gitPath checkouts still contain canonical skills/ (hyphen dirs). Cursor
+  # discovers them alongside plugin.json commands/ and agents/cursor subagents.
+  rm -rf "${gitpath_root}/skills"
+  if [[ -d "${dest}/skills" ]]; then
+    mkdir -p "${gitpath_root}/skills"
+    rsync -a --delete "${dest}/skills/" "${gitpath_root}/skills/"
+  fi
+  rm -rf "${gitpath_root}/plugins/silver-bullet/skills"
+}
+
 materialize_cursor_plugin_surface_at_root() {
   local dest="$1"
   local gitpath_root="$2"
@@ -342,6 +356,7 @@ materialize_cursor_plugin_surface_at_root() {
     mkdir -p "${gitpath_root}/.cursor-plugin"
     install -m 644 "${dest}/.cursor-plugin/plugin.json" "${gitpath_root}/.cursor-plugin/plugin.json"
   fi
+  prune_cursor_gitpath_picker_skills "$dest" "$gitpath_root"
 }
 
 materialize_cursor_plugin_surface_in_gitpath() {

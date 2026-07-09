@@ -257,5 +257,6 @@ cursor_plugin_gitpath_root_surface_ready() {
   gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
   [[ -f "${gitpath_root}/commands/init.md" ]] || return 1
   [[ -f "${gitpath_root}/.cursor-plugin/plugin.json" ]] || return 1
-  jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1
+  jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
+  [[ ! -f "${gitpath_root}/skills/silver-feature/SKILL.md" ]]
 }

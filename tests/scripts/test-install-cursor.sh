@@ -151,6 +151,18 @@ else
   fail "install-cursor materializes commands at gitPath repo root for empty backend path"
 fi
 
+if [[ ! -f "${gitpath_root}/skills/silver-feature/SKILL.md" ]]; then
+  pass "install-cursor prunes canonical skills/ from marketplace gitPath checkout"
+else
+  fail "install-cursor prunes canonical skills/ from marketplace gitPath checkout"
+fi
+
+if bash "${REPO_ROOT}/scripts/diagnose-cursor-picker-duplicates.sh" --cursor-home "$CURSOR_HOME" >/dev/null 2>&1; then
+  pass "diagnose-cursor-picker-duplicates reports zero overlap"
+else
+  fail "diagnose-cursor-picker-duplicates reports zero overlap"
+fi
+
 if jq -e '.version == 2 and (.plugins["silver-bullet@alo-labs"] | type) == "array"' "$registry_path" >/dev/null 2>&1; then
   pass "install-cursor writes installed_plugins.json v2 array entry"
 else
