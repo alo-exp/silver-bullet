@@ -32,7 +32,7 @@ export SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 
 agent_claude_apply_delegate_env
 
-if [[ "$SKIP_PREFLIGHT" -eq 0 ]]; then
+if [[ "$SKIP_PREFLIGHT" -eq 0 && "${SB_AGENT_CERT_RUN:-}" != "1" && "${SB_AGENT_CERT_RUN:-}" != "true" ]]; then
   bash "${SCRIPT_DIR}/preflight.sh" --sb-root "$SB_ROOT"
 fi
 

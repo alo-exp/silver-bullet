@@ -10,6 +10,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/site-session.sh" ]] && source "$_lib_dir/site-session.sh"
 [[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
 [[ -f "$_lib_dir/trivial-bypass.sh" ]] && source "$_lib_dir/trivial-bypass.sh"
+[[ -f "$_lib_dir/cert-bypass.sh" ]] && source "$_lib_dir/cert-bypass.sh"
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 [[ -f "$_lib_dir/orchestrator-parent.sh" ]] && source "$_lib_dir/orchestrator-parent.sh"
 
@@ -17,6 +18,9 @@ command -v jq >/dev/null 2>&1 || exit 0
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 hook_event="$(printf '%s' "$input" | jq -r '.hook_event_name // "Stop"' 2>/dev/null || echo Stop)"
 
 config_file=""

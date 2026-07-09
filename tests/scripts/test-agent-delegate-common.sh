@@ -77,6 +77,9 @@ grep -q 'SB_AGENT_CODEX_LOG_FLOOR' "$CODEX" && check "codex log floor env" pass 
 grep -q 'agent_delegate_append_invoke_output' "$CODEX" && check "codex exec log append" pass || check "codex exec log append" fail
 ! grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$CODEX" && check "codex no inline matrix unset" pass || check "codex no inline matrix unset" fail
 
+grep -q 'SB_AGENT_CERT_RUN' "$COMMON" && check "cert run bypass in common lib" pass || check "cert run bypass in common lib" fail
+grep -q 'cert-bypass.sh' "$REPO_ROOT/hooks/graphify-gate.sh" && check "graphify gate sources cert-bypass" pass || check "graphify gate sources cert-bypass" fail
+
 bash -n "$COMMON" && check "common lib shell syntax" pass || check "common lib shell syntax" fail
 bash -n "$CODEX" && check "codex wrapper shell syntax" pass || check "codex wrapper shell syntax" fail
 bash -n "$CURSOR" && check "cursor wrapper shell syntax" pass || check "cursor wrapper shell syntax" fail

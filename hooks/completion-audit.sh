@@ -12,6 +12,11 @@ done
 
 # Read JSON from stdin
 input=$(cat)
+if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
+  sb_hook_exit_on_cert_run
+elif declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 # Detect hook event type (PreToolUse vs PostToolUse) — best-effort without jq
 hook_event="PostToolUse"

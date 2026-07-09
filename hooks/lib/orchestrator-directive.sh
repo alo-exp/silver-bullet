@@ -344,7 +344,7 @@ sb_orchestrator_directive_from_pending_outcome() {
 # Standalone on-demand delegation bootstrap (outside composer flow_queue).
 sb_orchestrator_seed_delegation_directive() {
   local host="$1" task_id="$2" brief_path="$3" ownership_scope_json="${4:-[]}"
-  [[ "$host" == "codex" || "$host" == "cursor" || "$host" == "claude" ]] || return 1
+  [[ "$host" == "codex" || "$host" == "cursor" || "$host" == "claude" || "$host" == "opencode" || "$host" == "pi" ]] || return 1
   [[ -n "$task_id" && -n "$brief_path" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
 

@@ -18,8 +18,15 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
+  # shellcheck source=lib/cert-bypass.sh
+  source "$_lib_dir/cert-bypass.sh"
+fi
 
 input=$(cat)
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 hook_event=$(printf '%s' "$input" | jq -r '.hook_event_name // "PreToolUse"')
 [[ "$hook_event" == "PreToolUse" ]] || exit 0
 

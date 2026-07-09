@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-audit.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh agent-delegation-state.sh hook-audit.sh cert-bypass.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
@@ -41,6 +41,10 @@ sb_agent_delegation_is_active || exit 0
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0
+
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 hook_event="$(sb_adg_hook_field "$input" 'hook_event_name' 'PreToolUse')"
 [[ "$hook_event" == "PreToolUse" ]] || exit 0

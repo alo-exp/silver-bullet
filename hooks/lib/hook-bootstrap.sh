@@ -116,3 +116,14 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   # shellcheck source=lib/sb-project-gate.sh
   source "$_lib_dir/sb-project-gate.sh"
 fi
+if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
+  # shellcheck source=lib/cert-bypass.sh
+  source "$_lib_dir/cert-bypass.sh"
+fi
+
+# Call after reading hook stdin when substantive gates should allow cert cells.
+sb_hook_exit_on_cert_run() {
+  if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+    exit 0
+  fi
+}

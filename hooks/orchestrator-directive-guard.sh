@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
-for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh; do
+for _lib in runtime-paths.sh sb-project-gate.sh orchestrator-directive.sh orchestrator-state.sh orchestrator-parent.sh required-skills.sh hook-audit.sh cert-bypass.sh; do
   # shellcheck disable=SC1090
   [[ -f "$_lib_dir/$_lib" ]] && source "$_lib_dir/$_lib"
 done
@@ -54,6 +54,10 @@ if declare -f sb_find_project_config_walk_only >/dev/null 2>&1; then
   _odg_workspace_config="$(sb_find_project_config_walk_only 2>/dev/null || true)"
 fi
 [[ -n "$_odg_workspace_config" ]] || exit 0
+
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0

@@ -31,6 +31,11 @@ done
 
 [[ -d "$SB_ROOT" ]] || { printf 'ERROR: SB_ROOT not a directory: %s\n' "$SB_ROOT" >&2; exit 1; }
 
+if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]]; then
+  printf 'SKIP (cert run): Claude preflight\n'
+  exit 0
+fi
+
 if [[ "$DRY_RUN" -eq 1 ]]; then
   printf 'SKIP (dry-run): Claude CLI check\n'
 else
