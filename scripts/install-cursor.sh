@@ -126,7 +126,20 @@ sync_plugin_tree_from_checkout() {
   rsync -a --delete \
     --exclude '.git' --exclude '.planning' --exclude 'tests' --exclude 'site' --exclude 'forge' \
     "${source_root}/hooks/" "${dest}/hooks/"
-  rsync -a --delete "${source_root}/skills/" "${dest}/skills/"
+  # Do not mirror canonical skills/ into the Cursor cache — hyphen directories
+  # register as slash skills and duplicate agents/cursor subagents and commands/.
+  rm -rf "${dest}/skills"
+  mkdir -p "${dest}/skills/silver-init/scripts"
+  if [[ -d "${source_root}/skills/silver-init/scripts" ]]; then
+    rsync -a --delete "${source_root}/skills/silver-init/scripts/" "${dest}/skills/silver-init/scripts/"
+  fi
+  local skill_source_src="${source_root}/plugins/silver-bullet/skill-source"
+  if [[ -d "$skill_source_src" ]]; then
+    mkdir -p "${dest}/skill-source"
+    rsync -a --delete "${skill_source_src}/" "${dest}/skill-source/"
+  else
+    rm -rf "${dest}/skill-source"
+  fi
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
   local cursor_bundle
