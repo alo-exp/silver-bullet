@@ -1,0 +1,33 @@
+{
+  "solution_name": "pi-code-gui",
+  "license": "oss",
+  "categories": [
+    {
+      "name": "Pi integration",
+      "features": [
+        {"name": "Loads @earendil-works/pi-coding-agent SDK at runtime", "supported": true, "evidence_ids": ["E009"]},
+        {"name": "VS Code bridge tools as customTools", "supported": true, "evidence_ids": ["E009"]}
+      ]
+    },
+    {
+      "name": "GUI surface",
+      "features": [
+        {"name": "VS Code webview chat panel", "supported": true, "evidence_ids": ["E010"]},
+        {"name": "Standalone desktop app", "supported": false, "evidence_ids": ["E010"]}
+      ]
+    },
+    {
+      "name": "Workflow",
+      "features": [
+        {"name": "Git worktrees per thread", "supported": false, "evidence_ids": ["E009"]},
+        {"name": "Multi-agent orchestration UI", "supported": false, "evidence_ids": ["E009"]}
+      ]
+    },
+    {
+      "name": "Platform",
+      "features": [
+        {"name": "Runs anywhere VS Code runs (incl. Windows)", "supported": true, "evidence_ids": ["E010"]}
+      ]
+    }
+  ]
+}
