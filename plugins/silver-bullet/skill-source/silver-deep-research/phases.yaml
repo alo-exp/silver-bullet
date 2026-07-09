@@ -1,6 +1,6 @@
 # SB Deep Research — phase single source of truth
 # Aligns with SKILL.md DR-* steps and nested V-loop rollups.
-version: "1.0.0"
+version: "1.1.0"
 
 phases:
   scope:
@@ -119,6 +119,44 @@ phases:
       - validation logs present
     repair_triggers:
       - validation failures after max repair loops
+
+# Conditional artifacts by research_type (merged with base phase artifacts)
+research_types:
+  default:
+    description: General research questions (no solution matrix)
+  solution-landscape:
+    description: Market survey, top-5 SCR deep dive, weighted comparison matrix
+    default_mode: deep
+    phase_artifacts:
+      scope:
+        add:
+          - need_profile.json
+      triangulate:
+        add:
+          - landscape/landscape-report.md
+          - shortlist/shortlist.json
+      synthesize:
+        add:
+          - comparison/comparison.json
+          - comparison/comparison-matrix.md
+      package:
+        add:
+          - report.html
+  solution-compare:
+    description: User-named N>=2 solutions; SCR each; skip market shortlist
+    default_mode: deep
+    phase_artifacts:
+      scope:
+        add:
+          - need_profile.json
+          - solutions_requested.json
+      synthesize:
+        add:
+          - comparison/comparison.json
+          - comparison/comparison-matrix.md
+      package:
+        add:
+          - report.html
 
 modes:
   quick:
