@@ -124,6 +124,21 @@ def host_bundle_skill_routes(root: Path) -> set[str]:
     return routes
 
 
+def plugin_manifest_issues(root: Path) -> list[str]:
+    issues: list[str] = []
+    manifest = root / ".cursor-plugin" / "plugin.json"
+    if not manifest.is_file():
+        return issues
+    try:
+        data = json.loads(manifest.read_text())
+    except Exception:
+        return ["invalid .cursor-plugin/plugin.json"]
+    skills = data.get("skills")
+    if skills:
+        issues.append(f"plugin.json declares skills={skills!r} (registers subagents in / picker)")
+    return issues
+
+
 def nested_plugin_picker_surfaces(root: Path) -> list[str]:
     issues: list[str] = []
     nested_commands = root / "plugins" / "silver-bullet" / "commands"
@@ -155,6 +170,7 @@ def analyze_surface(label: str, root: Path) -> dict[str, object]:
             "cmd_skills_overlap": [],
             "extra_surfaces": [],
             "host_bundle_overlap": [],
+            "manifest_issues": [],
         }
     cmd = command_routes(root)
     agent = agent_skill_routes(root)
@@ -164,6 +180,7 @@ def analyze_surface(label: str, root: Path) -> dict[str, object]:
     cmd_skills = sorted(cmd & skills)
     host_overlap = sorted(cmd & host_bundle)
     extra_surfaces = nested_plugin_picker_surfaces(root) if "gitPath" in label or label == "installed-gitPath" else []
+    manifest_issues = plugin_manifest_issues(root)
     return {
         "label": label,
         "path": str(root),
@@ -175,6 +192,7 @@ def analyze_surface(label: str, root: Path) -> dict[str, object]:
         "cmd_skills_overlap": cmd_skills,
         "host_bundle_overlap": host_overlap,
         "extra_surfaces": extra_surfaces,
+        "manifest_issues": manifest_issues,
     }
 
 
@@ -248,8 +266,9 @@ for item in results:
     cmd_skills = item["cmd_skills_overlap"]
     host_overlap = item.get("host_bundle_overlap", [])
     extra_surfaces = item.get("extra_surfaces", [])
+    manifest_issues = item.get("manifest_issues", [])
     status = "OK"
-    if cmd_agent or cmd_skills or host_overlap or extra_surfaces:
+    if cmd_agent or cmd_skills or host_overlap or extra_surfaces or manifest_issues:
         status = "FAIL"
         failures += 1
     print(f"[{status}] {label}")
@@ -270,6 +289,9 @@ for item in results:
     if extra_surfaces:
         print(f"  extra picker surfaces ({len(extra_surfaces)}): {', '.join(extra_surfaces[:4])}"
               + (" ..." if len(extra_surfaces) > 4 else ""))
+    if manifest_issues:
+        print(f"  manifest issues ({len(manifest_issues)}): {', '.join(manifest_issues[:4])}"
+              + (" ..." if len(manifest_issues) > 4 else ""))
     print()
 
 if failures:

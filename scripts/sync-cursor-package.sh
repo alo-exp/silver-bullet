@@ -37,16 +37,15 @@ tmp="$(mktemp)"
 if [[ -d "${DEST_DIR}/commands" ]]; then
   jq --arg v "$plugin_version" '
     .version = $v
-    | .skills = "./agents/cursor"
     | .hooks = "./cursor-hooks.json"
     | .commands = "./commands"
+    | del(.skills)
   ' "$ROOT_MANIFEST" > "$tmp"
 else
   jq --arg v "$plugin_version" '
     .version = $v
-    | .skills = "./agents/cursor"
     | .hooks = "./cursor-hooks.json"
-    | del(.commands)
+    | del(.commands, .skills)
   ' "$ROOT_MANIFEST" > "$tmp"
 fi
 mv "$tmp" "$DEST_DIR/.cursor-plugin/plugin.json"
