@@ -28,6 +28,8 @@ done
 
 if [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" && -f "${SB_CURSOR_SB_AGENTS_CONFIG}" ]]; then
   CONFIG_JSON="$(jq -c '.' "$SB_CURSOR_SB_AGENTS_CONFIG")"
+elif [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" ]]; then
+  CONFIG_JSON="$SB_CURSOR_SB_AGENTS_CONFIG"
 elif [[ -z "$CONFIG_JSON" ]]; then
   CONFIG_JSON="$(csba_load_merged_config "$REPO_ROOT")"
 fi
