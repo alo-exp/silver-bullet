@@ -289,7 +289,7 @@ if [[ "$unignored_picker_rc" -ne 0 ]]; then
 else
   fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
 fi
-for bad_route in '/silverui' '/silveradd' '/silverplan' '/subagent-silver:init' '/subagent-tdd' '/full-conversation'; do
+for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-silver:init' '/subagent-tdd' '/full-conversation'; do
   if printf '%s' "$unignored_picker_out" | grep -qF -- "$bad_route"; then
     pass "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
   else
