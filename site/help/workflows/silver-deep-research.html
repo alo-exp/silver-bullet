@@ -114,6 +114,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#composition">Catalog Composition</a></li>
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#research-paths">Research paths</a></li>
+        <li><a href="#research-types">Research types</a></li>
         <li><a href="#handoff">Handoff to implementation</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
@@ -125,7 +126,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:deep-research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>.planning/research/</code> and referenced by the receiving workflow.</p>
+      <p><code>/silver:deep-research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>research/</code> and referenced by the receiving workflow.</p>
       <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, runs direct evidence-based research in the current host session by default, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
       <p><code>/silver:deep-research</code> maps to <code>WF-SILVER-DEEP-RESEARCH</code> in the v0.48.3 APO catalog. Standard composition:</p>
       <div class="code-block">AF-CLARIFY → AF-DECIDE → AF-DOCUMENT → AF-VALIDATE</div>
@@ -164,7 +165,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <tbody>
           <tr><td><code>AF-CLARIFY</code></td><td><code>/silver:clarify</code></td><td>Decision-ready research question and scope boundaries</td></tr>
           <tr><td><code>AF-DECIDE</code></td><td><code>/silver:deep-research</code> (decision mode)</td><td>Evidence-backed comparison, recommendation, and confidence levels</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable research artifact under <code>.planning/research/</code></td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable research artifact under <code>research/</code></td></tr>
           <tr><td><code>AF-VALIDATE</code></td><td><code>/silver:validate</code></td><td>Gap check before implementation handoff</td></tr>
         </tbody>
       </table>
@@ -178,28 +179,40 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Invoke <code>/silver:clarify</code>. Socratic clarification defines the research question, success criteria, and constraints before evidence gathering begins.</p>
 
       <h3><code>AF-DECIDE</code> — Choose research path and gather evidence</h3>
-      <p>SB classifies the question type, selects a depth mode (<code>quick</code>, <code>standard</code>, <code>deep</code>, <code>ultradeep</code>) from <code>phases.yaml</code>, and runs evidence-based research using repository context, local artifacts, official docs, primary sources, and optional <code>search-cli</code> retrieval with host fallback:</p>
+      <p>SB classifies the question type, selects a depth mode (<code>quick</code>, <code>standard</code>, <code>deep</code>, <code>ultradeep</code>) from <code>phases.yaml</code>, sets <code>research_type</code> (<code>default</code>, <code>solution-landscape</code>, or <code>solution-compare</code>), and runs evidence-based research using repository context, local artifacts, official docs, primary sources, and optional <code>search-cli</code> retrieval with host fallback:</p>
       <ul>
-        <li><strong>A. Market/landscape</strong> — "What tools/solutions exist for X?", "What's the state of the art?"</li>
-        <li><strong>B. Tech selection</strong> — "Should we use X or Y?", "Which library/framework is best for our case?"</li>
+        <li><strong>A. Market/landscape</strong> — <code>research_type: solution-landscape</code> — "What tools/solutions exist for X?", market survey → top-5 shortlist → SCR per candidate</li>
+        <li><strong>B. Tech selection</strong> — "Should we use X or Y?", weighted criteria, concrete recommendation</li>
         <li><strong>C. Competitive/product intelligence</strong> — "How do competitors solve X?", "What can we learn from product Y?"</li>
       </ul>
+      <p>For <strong>solution-landscape</strong> and <strong>solution-compare</strong> types, a mandatory <strong>need-profile interview</strong> runs before retrieval (<code>need_profile.json</code>, <code>reference/need-profile-interview.md</code>). <code>phase_gate.py</code> blocks <code>DR-RETRIEVE</code> until <code>interview_complete: true</code>. Named comparisons use <a href="./silver-compare.html"><code>/silver:compare</code></a> (<code>research_type=solution-compare</code>).</p>
 
       <div class="divider"></div>
 
       <h2 id="research-paths">Research paths</h2>
 
-      <h3>Path A — Market/landscape</h3>
-      <p>Landscape research: tools, solutions, and state of the art. Uses SB-owned portal descriptors (e.g. skills.sh API, GitHub) for <code>research_type: landscape</code> only — no TopGun dependency. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/landscape-report.md</code> plus <code>portal-*.json</code> partials when applicable.</p>
+      <h3>Path A — Solution landscape (<code>solution-landscape</code>)</h3>
+      <p>Market survey for tool/category decisions under <code>AF-DECIDE</code>. <code>shortlist_candidates.py</code> produces exactly five candidates; each gets a <strong>Solution Capability Report (SCR)</strong> under <code>solutions/&lt;slug&gt;/scr.md</code>. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/</code> with <code>landscape/landscape-report.md</code>, <code>shortlist/shortlist.json</code>, weighted <code>comparison/comparison-matrix.md</code>, and serverless <code>report.html</code>.</p>
 
       <h3>Path B — Tech selection</h3>
-      <p>Comparative evaluation against weighted criteria with a concrete recommendation. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code>.</p>
+      <p>Comparative evaluation against weighted criteria with a concrete recommendation. For <strong>named solutions you already know</strong>, use <a href="./silver-compare.html"><code>/silver:compare</code></a> instead. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code> (or full solution-compare artifact tree with SCRs and <code>report.html</code>).</p>
 
       <h3>Path C — Competitive/product intelligence</h3>
-      <p>How other products solve the problem, gaps, and adaptable patterns. Output: <code>.planning/research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
+      <p>How other products solve the problem, gaps, and adaptable patterns. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
+
+      <h2 id="research-types">Research types and SPA report</h2>
+      <table class="ref-table">
+        <thead><tr><th><code>research_type</code></th><th>Trigger</th><th>Deep dive</th></tr></thead>
+        <tbody>
+          <tr><td><code>default</code></td><td>General research questions</td><td>Standard DR artifacts (<code>research_report.md</code>, <code>decision-record.md</code>)</td></tr>
+          <tr><td><code>solution-landscape</code></td><td>AF-DECIDE tool/category decision</td><td>Market survey → top-5 SCR → weighted matrix → <code>report.html</code></td></tr>
+          <tr><td><code>solution-compare</code></td><td><a href="./silver-compare.html"><code>/silver:compare</code></a> A B …</td><td>SCR × N named solutions → weighted matrix → <code>report.html</code></td></tr>
+        </tbody>
+      </table>
+      <p>Solution types package via <code>compare_solutions.py</code> → <code>generate_report_spa.py</code> → serverless <code>report.html</code> (open in Cursor browser + <code>open report.html</code> — <strong>no</strong> HTTP server). Default mode for solution types is <code>deep</code>.</p>
 
       <h3><code>AF-DOCUMENT</code> — Persist findings</h3>
-      <p>Research artifacts are written under <code>.planning/research/</code> with citations, confidence levels, and actionable recommendations. Lineage is preserved for downstream planning.</p>
+      <p>Research artifacts are written under <code>research/&lt;date&gt;-&lt;slug&gt;/</code> with citations, confidence levels, and actionable recommendations. Lineage is preserved for downstream planning.</p>
 
       <h3><code>AF-VALIDATE</code> — Pre-implementation gap check</h3>
       <p>Invoke <code>/silver:validate</code> when plans or specs already exist, or run a lightweight validation pass on the research artifact before handoff.</p>
@@ -218,13 +231,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><strong><code>/silver:plan</code></strong> — convert findings into an implementation plan</li>
         <li><strong>Done</strong> — research-only engagement, no implementation needed</li>
       </ul>
-      <p>If the research continues into implementation, the artifact path (<code>.planning/research/&lt;date&gt;-&lt;topic&gt;/</code>) is passed as context so downstream SB context, planning, and verification can reference it. Research lineage is always preserved.</p>
+      <p>If the research continues into implementation, the artifact path (<code>research/&lt;date&gt;-&lt;slug&gt;/</code>) is passed as context so downstream SB context, planning, and verification can reference it. Research lineage is always preserved.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:deep-research Should we use React Query or SWR for server state management?</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-DEEP-RESEARCH</code>. <code>/silver:clarify</code> sharpens the question. Path B (tech selection) runs under <code>AF-DECIDE</code>. Findings are documented under <code>.planning/research/</code>, validated, and synthesized into a decision-ready handoff. Route to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver:plan</code> as needed.</p>
+      <div class="code-block">/silver:deep-research What internal developer portal should we adopt for service catalog and scorecards?</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-DEEP-RESEARCH</code>. <code>/silver:clarify</code> runs the need-profile interview. Path A (<code>solution-landscape</code>) runs under <code>AF-DECIDE</code>: market survey, top-5 shortlist, SCR per candidate, weighted matrix, and serverless <code>report.html</code> under <code>research/</code>. Validated and synthesized into a decision-ready handoff. Route to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver:plan</code> as needed. For named solutions already chosen, use <code>/silver:compare Backstage Port Cortex</code> instead.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
@@ -232,9 +245,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <span class="pnb-label">← Previous</span>
           <span class="pnb-title">/silver:devops</span>
         </a>
-        <a href="./silver-release.html">
+        <a href="./silver-compare.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:release</span>
+          <span class="pnb-title">/silver:compare</span>
         </a>
       </div>
 
