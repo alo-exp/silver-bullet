@@ -269,7 +269,12 @@ For solution types, also run:
 ```bash
 python3 skills/silver-deep-research/scripts/generate_report_spa.py --dir "$SB_RESEARCH_OUT_DIR"
 python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
-# landscape: validate_landscape.py — compare: validate_compare.py
+RT="$(jq -r '.research_type // empty' "$SB_RESEARCH_OUT_DIR/run_manifest.json")"
+if [ "$RT" = "solution-landscape" ]; then
+  python3 skills/silver-deep-research/scripts/validate_landscape.py --dir "$SB_RESEARCH_OUT_DIR"
+elif [ "$RT" = "solution-compare" ]; then
+  python3 skills/silver-deep-research/scripts/validate_compare.py --dir "$SB_RESEARCH_OUT_DIR"
+fi
 ```
 
 Maximum repair loops: 3 inside the flow step. If still failing, write blocker
