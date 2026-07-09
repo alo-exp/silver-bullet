@@ -7,7 +7,7 @@ version: 0.1.0
 
 # silver-agent-worker — External Implementer Contract
 
-You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via `agent-codex-delegate.sh`, `agent-cursor-delegate.sh`, `agent-claude-delegate.sh`, `agent-opencode-delegate.sh`, or `agent-pi-delegate.sh`. The host parent supervises; you execute only the bounded brief.
+You are the **external implementer** spawned by an SB `AGENT-DELEGATE` native worker via `agent-codex-delegate.sh` or `agent-cursor-delegate.sh`. The host parent supervises; you execute only the bounded brief.
 
 ## Role
 

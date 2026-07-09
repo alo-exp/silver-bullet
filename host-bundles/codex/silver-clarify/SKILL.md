@@ -131,6 +131,17 @@ Pick the strongest direction, or if no decision is appropriate yet, narrow the o
 Be decisive. Name the recommendation and the reason for it.
 If the next step is project or milestone framing, say so explicitly and route the handoff to `silver:context`. Otherwise hand off to `silver:plan` when phase context already exists.
 
+### Solution decision handoff (DECIDE / landscape / compare)
+
+When the handoff target is AF-DECIDE, `solution-landscape`, or `/silver:compare`:
+
+1. Run the question bank in `skills/silver-deep-research/reference/need-profile-interview.md`
+   (one question at a time; MC preferred).
+2. Persist `need_profile.json` under the research run dir with `license_preference`
+   (`oss` | `commercial` | `mixed`) and `interview_complete: true`.
+3. For compare: confirm the named solution list in `solutions_requested.json`.
+4. Record interview notes in `.planning/CLARIFY.md` and link `SB_RESEARCH_OUT_DIR`.
+
 ### 6. Capture
 
 Write a concise brief to `.planning/CLARIFY.md` with:
