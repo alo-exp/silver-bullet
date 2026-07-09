@@ -127,6 +127,70 @@ sb_stack_record_double_compression() {
   fi
 }
 
+sb_stack_clear_mutex_violations() {
+  local state_path
+  state_path="$(sb_stack_mutex_state_path)"
+  rm -f -- "$state_path" 2>/dev/null || true
+}
+
+sb_stack_record_routed_owner_success() {
+  local config_file="${1:-}" route="${2:-}" owner="${3:-}"
+  sb_stack_clear_mutex_violations "$config_file"
+  if [[ -n "$route" && -n "$owner" ]]; then
+    sb_stack_record_surface_owner "$config_file" "$route" "$owner"
+  fi
+}
+
+# Returns 0 when tool matches configured route owner and would not hit deny paths.
+# Prints "route owner" on stdout when compliant.
+sb_stack_tool_is_compliant_routed_owner() {
+  local config_file="${1:-}" tool_name="${2:-}" mcp_server="${3:-}" mcp_tool="${4:-}"
+  local command_str="${5:-}" mcp_args="${6:-}"
+  local route owner=""
+
+  [[ -n "$config_file" && -n "$tool_name" ]] || return 1
+  sb_stack_coordinator_needed "$config_file" || return 1
+
+  case "$tool_name" in
+    Bash|Shell|shell|exec_command)
+      route="sb_shell"
+      owner="$(sb_stack_route_owner "$config_file" "$route" 2>/dev/null || true)"
+      [[ -n "$owner" ]] || return 1
+      if sb_stack_should_deny_bash_double_wrap "$config_file" "$command_str"; then
+        return 1
+      fi
+      printf '%s %s\n' "$route" "$owner"
+      return 0
+      ;;
+    Read|Grep|WebFetch)
+      owner="$(sb_stack_surface_owner "$config_file" "$tool_name" 2>/dev/null || true)"
+      [[ -n "$owner" ]] || return 1
+      case "$tool_name" in
+        Read) route="sb_read" ;;
+        Grep) route="sb_grep" ;;
+        WebFetch) route="sb_webfetch" ;;
+      esac
+      printf '%s %s\n' "$route" "$owner"
+      return 0
+      ;;
+    CallMcpTool|MCP)
+      [[ -n "$mcp_tool" ]] || return 1
+      route="$(sb_stack_mcp_tool_route "$mcp_tool" 2>/dev/null || true)"
+      [[ -n "$route" ]] || return 1
+      if sb_stack_should_deny_mcp_tool "$config_file" "$mcp_server" "$mcp_tool" "$mcp_args"; then
+        return 1
+      fi
+      owner="$(sb_stack_route_owner "$config_file" "$route" 2>/dev/null || true)"
+      [[ -n "$owner" ]] || return 1
+      printf '%s %s\n' "$route" "$owner"
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 sb_stack_mutual_exclusion_is_clean() {
   local config_file="${1:-}"
   local state_path count
@@ -171,7 +235,16 @@ sb_stack_bash_rtk_rewritten() {
 sb_stack_bash_leanctx_shell_marker() {
   local command_str="${1:-}"
   [[ -n "$command_str" ]] || return 1
-  printf '%s' "$command_str" | grep -qE '(lean-ctx|leanctx|lctx_shell|SB_LEANCTX_SHELL)'
+  if printf '%s' "$command_str" | grep -qE 'SB_LEANCTX_SHELL=1'; then
+    return 0
+  fi
+  if printf '%s' "$command_str" | grep -qE '(^|[[:space:]|&;])(lean-ctx|leanctx)[[:space:]]+shell\b'; then
+    return 0
+  fi
+  if printf '%s' "$command_str" | grep -qE '\blctx_shell\b'; then
+    return 0
+  fi
+  return 1
 }
 
 sb_stack_mcp_tool_route() {
