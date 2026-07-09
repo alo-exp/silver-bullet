@@ -45,16 +45,51 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-import openpyxl
-from openpyxl.styles import (
-    Alignment,
-    Border,
-    Font,
-    PatternFill,
-    Side,
-)
-from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.worksheet import Worksheet
+from matrix_core import TICK, WEIGHTS
+
+openpyxl = None
+get_column_letter = None
+
+
+def _require_openpyxl() -> None:
+    global openpyxl, get_column_letter
+    if openpyxl is not None:
+        return
+    try:
+        import openpyxl as _openpyxl
+        from openpyxl.styles import (
+            Alignment,
+            Border,
+            Font,
+            PatternFill,
+            Side,
+        )
+        from openpyxl.utils import get_column_letter as _gcl
+    except ImportError:
+        print(
+            json.dumps({
+                "status": "error",
+                "reason": (
+                    "openpyxl is required for matrix_builder. "
+                    "Install with: pip install -r skills/silver-deep-research/requirements.txt"
+                ),
+            }),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    openpyxl = _openpyxl
+    get_column_letter = _gcl
+    globals().update({
+        "Alignment": Alignment,
+        "Border": Border,
+        "Font": Font,
+        "PatternFill": PatternFill,
+        "Side": Side,
+    })
+    _init_styles()
+
+
+Worksheet = Any
 
 log = logging.getLogger(__name__)
 
@@ -70,61 +105,80 @@ FEAT_COL = 1
 PRIO_COL = 2
 PLAT_START = 3
 
-TICK = "\u2714"
+# TICK and WEIGHTS from matrix_core
 
-WEIGHTS: dict[str, int] = {
-    "Critical": 5,
-    "Very High": 4,
-    "High": 3,
-    "Medium": 2,
-    "Low": 1,
-}
+# Default styles — initialized lazily via _require_openpyxl()
+_THIN = None
+_DEFAULT_BORDER = None
+_TITLE_FONT = None
+_TITLE_FILL = None
+_TITLE_ALIGN = None
+_HEADER_FONT = None
+_HEADER_FILL = None
+_HEADER_ALIGN = None
+_TOTAL_FONT = None
+_TOTAL_FILL = None
+_TOTAL_ALIGN = None
+_SCORE_FONT = None
+_SCORE_FILL = None
+_SCORE_ALIGN = None
+_CAT_FONT = None
+_CAT_FILL = None
+_CAT_ALIGN = None
+_FEAT_FONT = None
+_FEAT_ALIGN = None
+_TICK_FONT = None
+_TICK_FILL = None
+_TICK_ALIGN = None
+_EMPTY_FILL = None
+PRIORITY_FILLS: dict[str, Any] = {}
+_PRIO_FONT = None
+_PRIO_ALIGN = None
 
-# ---------------------------------------------------------------------------
-# Default styles (used when no --clone-style is provided)
-# ---------------------------------------------------------------------------
-_THIN = Side(style="thin")
-_DEFAULT_BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
 
-_TITLE_FONT = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
-_TITLE_FILL = PatternFill("solid", fgColor="2F5496")
-_TITLE_ALIGN = Alignment(horizontal="center", vertical="center")
-
-_HEADER_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-_HEADER_FILL = PatternFill("solid", fgColor="4472C4")
-_HEADER_ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
-
-_TOTAL_FONT = Font(name="Calibri", bold=True, size=11)
-_TOTAL_FILL = PatternFill("solid", fgColor="D6E4F0")
-_TOTAL_ALIGN = Alignment(horizontal="center", vertical="center")
-
-_SCORE_FONT = Font(name="Calibri", bold=True, size=11)
-_SCORE_FILL = PatternFill("solid", fgColor="D6E4F0")
-_SCORE_ALIGN = Alignment(horizontal="center", vertical="center")
-
-_CAT_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-_CAT_FILL = PatternFill("solid", fgColor="5B9BD5")
-_CAT_ALIGN = Alignment(horizontal="left", vertical="center")
-
-_FEAT_FONT = Font(name="Calibri", size=10)
-_FEAT_ALIGN = Alignment(horizontal="left", vertical="center", wrap_text=True)
-
-_TICK_FONT = Font(name="Calibri", size=10, color="006100")
-_TICK_FILL = PatternFill("solid", fgColor="C6EFCE")
-_TICK_ALIGN = Alignment(horizontal="center", vertical="center")
-
-_EMPTY_FILL = PatternFill("solid", fgColor="FFFFFF")
-
-PRIORITY_FILLS: dict[str, PatternFill] = {
-    "Critical": PatternFill("solid", fgColor="FF9999"),
-    "Very High": PatternFill("solid", fgColor="FFB366"),
-    "High": PatternFill("solid", fgColor="FFDD57"),
-    "Medium": PatternFill("solid", fgColor="D6E4F0"),
-    "Low": PatternFill("solid", fgColor="E2EFDA"),
-}
-
-_PRIO_FONT = Font(name="Calibri", size=10)
-_PRIO_ALIGN = Alignment(horizontal="center", vertical="center")
+def _init_styles() -> None:
+    global _THIN, _DEFAULT_BORDER, _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN
+    global _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN
+    global _TOTAL_FONT, _TOTAL_FILL, _TOTAL_ALIGN
+    global _SCORE_FONT, _SCORE_FILL, _SCORE_ALIGN
+    global _CAT_FONT, _CAT_FILL, _CAT_ALIGN
+    global _FEAT_FONT, _FEAT_ALIGN
+    global _TICK_FONT, _TICK_FILL, _TICK_ALIGN
+    global _EMPTY_FILL, PRIORITY_FILLS, _PRIO_FONT, _PRIO_ALIGN
+    if _THIN is not None:
+        return
+    _THIN = Side(style="thin")
+    _DEFAULT_BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+    _TITLE_FONT = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
+    _TITLE_FILL = PatternFill("solid", fgColor="2F5496")
+    _TITLE_ALIGN = Alignment(horizontal="center", vertical="center")
+    _HEADER_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
+    _HEADER_FILL = PatternFill("solid", fgColor="4472C4")
+    _HEADER_ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    _TOTAL_FONT = Font(name="Calibri", bold=True, size=11)
+    _TOTAL_FILL = PatternFill("solid", fgColor="D6E4F0")
+    _TOTAL_ALIGN = Alignment(horizontal="center", vertical="center")
+    _SCORE_FONT = Font(name="Calibri", bold=True, size=11)
+    _SCORE_FILL = PatternFill("solid", fgColor="D6E4F0")
+    _SCORE_ALIGN = Alignment(horizontal="center", vertical="center")
+    _CAT_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
+    _CAT_FILL = PatternFill("solid", fgColor="5B9BD5")
+    _CAT_ALIGN = Alignment(horizontal="left", vertical="center")
+    _FEAT_FONT = Font(name="Calibri", size=10)
+    _FEAT_ALIGN = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    _TICK_FONT = Font(name="Calibri", size=10, color="006100")
+    _TICK_FILL = PatternFill("solid", fgColor="C6EFCE")
+    _TICK_ALIGN = Alignment(horizontal="center", vertical="center")
+    _EMPTY_FILL = PatternFill("solid", fgColor="FFFFFF")
+    PRIORITY_FILLS = {
+        "Critical": PatternFill("solid", fgColor="FF9999"),
+        "Very High": PatternFill("solid", fgColor="FFB366"),
+        "High": PatternFill("solid", fgColor="FFDD57"),
+        "Medium": PatternFill("solid", fgColor="D6E4F0"),
+        "Low": PatternFill("solid", fgColor="E2EFDA"),
+    }
+    _PRIO_FONT = Font(name="Calibri", size=10)
+    _PRIO_ALIGN = Alignment(horizontal="center", vertical="center")
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +226,7 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     Returns:
         {platforms_added, categories, features, total_rows}
     """
+    _require_openpyxl()
     if clone_xlsx is not None:
         log.warning(
             "--clone-style / clone_xlsx is not yet implemented; "
@@ -336,6 +391,7 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
 # ---------------------------------------------------------------------------
 
 def main():
+    _require_openpyxl()
     parser = argparse.ArgumentParser(
         description="Build a comparison matrix XLSX from JSON config",
     )

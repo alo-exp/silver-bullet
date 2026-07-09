@@ -49,9 +49,36 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-import openpyxl
-from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.worksheet import Worksheet
+from matrix_core import TICK, WEIGHTS
+
+openpyxl = None
+get_column_letter = None
+
+
+def _require_openpyxl() -> None:
+    global openpyxl, get_column_letter
+    if openpyxl is not None:
+        return
+    try:
+        import openpyxl as _openpyxl
+        from openpyxl.utils import get_column_letter as _gcl
+    except ImportError:
+        print(
+            json.dumps({
+                "status": "error",
+                "reason": (
+                    "openpyxl is required for matrix operations. "
+                    "Install with: pip install -r skills/silver-deep-research/requirements.txt"
+                ),
+            }),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    openpyxl = _openpyxl
+    get_column_letter = _gcl
+
+
+Worksheet = Any  # openpyxl worksheet; resolved after _require_openpyxl()
 
 log = logging.getLogger(__name__)
 
@@ -62,15 +89,7 @@ FEAT_COL = 1      # Column A: feature name / category heading
 PRIO_COL = 2      # Column B: priority string
 PLAT_START = 3    # Column C: first platform
 
-TICK = "\u2714"   # ✔
-
-WEIGHTS: dict[str, int] = {
-    "Critical": 5,
-    "Very High": 4,
-    "High": 3,
-    "Medium": 2,
-    "Low": 1,
-}
+# TICK and WEIGHTS from matrix_core
 
 
 class RowType(Enum):
@@ -833,6 +852,7 @@ def _json_out(data: Any) -> None:
 
 
 def main():
+    _require_openpyxl()
     parser = argparse.ArgumentParser(
         description="XLSX comparison matrix operations",
         formatter_class=argparse.RawDescriptionHelpFormatter,
