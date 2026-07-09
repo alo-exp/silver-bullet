@@ -113,17 +113,133 @@ collect_cursor_plugin_required_shas() {
 }
 
 
+prune_cursor_picker_surfaces_from_cache_dir() {
+  local entry="$1"
+  local sha_label
+  sha_label="$(basename "$entry" | cut -c1-8)"
+
+  for surface in \
+    agents \
+    skills \
+    host-bundles \
+    .agents \
+    .cursor/agents \
+    plugins/silver-bullet/agents \
+    plugins/silver-bullet/skills \
+    plugins/silver-bullet/skill-source \
+    plugins/silver-bullet/templates
+  do
+    if [[ -e "${entry}/${surface}" ]]; then
+      rm -rf "${entry:?}/${surface}"
+      printf 'Note: pruned %s from Cursor backend cache %s (commands-only / picker)\n' "$surface" "$sha_label" >&2
+    fi
+  done
+}
+
 prune_agents_from_all_cursor_backend_caches() {
   local cache_root entry
   cache_root="$(cursor_backend_plugin_cache_root)"
   [[ -d "$cache_root" ]] || return 0
   for entry in "$cache_root"/*; do
     [[ -d "$entry" ]] || continue
-    if [[ -d "${entry}/agents" ]]; then
-      rm -rf "${entry}/agents"
-      printf 'Note: pruned agents/ from Cursor backend cache %s (commands-only / picker)\n' "$(basename "$entry" | cut -c1-8)" >&2
-    fi
+    prune_cursor_picker_surfaces_from_cache_dir "$entry"
   done
+}
+
+cleanup_cursor_custom_agents() {
+  local project_root="${1:-${REPO_ROOT:-}}"
+  python3 - "$CURSOR_HOME" "$project_root" <<'INNERPY'
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+cursor_home = Path(sys.argv[1]).expanduser()
+project_root = Path(sys.argv[2]).expanduser() if sys.argv[2] else None
+roots: list[tuple[str, Path]] = [("user", cursor_home / "agents")]
+if project_root:
+    roots.append(("project", project_root / ".cursor" / "agents"))
+
+bad_exact = {
+    "subagent-tdd",
+    "tdd",
+    "full-conversation",
+    "ai-llm-safety",
+    "artifact-reviewer",
+    "devops-skill-router",
+}
+bad_prefixes = ("silver", "subagent-silver", "subagent-devops", "principle-sequence")
+
+
+def parse_frontmatter(path: Path) -> dict[str, str]:
+    try:
+        text = path.read_text(errors="ignore")[:4000]
+    except Exception:
+        return {}
+    match = re.match(r"^---\n(.*?)\n---", text, re.S)
+    meta: dict[str, str] = {}
+    if match:
+        for line in match.group(1).splitlines():
+            if ":" in line:
+                key, value = line.split(":", 1)
+                meta[key.strip()] = value.strip().strip('"')
+    if path.suffix == ".json":
+        try:
+            data = json.loads(path.read_text(errors="ignore"))
+            for key in ("name", "title"):
+                if isinstance(data.get(key), str):
+                    meta[key] = data[key]
+        except Exception:
+            pass
+    return meta
+
+
+def should_quarantine(path: Path) -> bool:
+    meta = parse_frontmatter(path)
+    name = meta.get("name") or meta.get("title") or path.stem
+    lowered = name.strip().lower()
+    if lowered in bad_exact or lowered.startswith(bad_prefixes):
+        return True
+    try:
+        text = path.read_text(errors="ignore")[:4000]
+    except Exception:
+        text = ""
+    return "Silver Bullet" in text or "silver-bullet" in text
+
+
+def quarantine_path(scope: str, root: Path, path: Path, bucket: Path) -> None:
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        rel = Path(path.name)
+    target = bucket / scope / rel
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        target = target.with_name(target.name + ".duplicate")
+    shutil.move(str(path), str(target))
+    print(f"Note: quarantined Cursor custom agent {path} -> {target}", file=sys.stderr)
+
+bucket = cursor_home / ".silver-bullet-quarantine" / "cursor-agents" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+for scope, root in roots:
+    if not root.is_dir():
+        continue
+    candidates: list[Path] = []
+    for item in sorted(root.glob("**/*"), key=lambda p: len(p.parts), reverse=True):
+        if item.is_file() and item.suffix.lower() in {".md", ".json", ".yaml", ".yml"} and should_quarantine(item):
+            candidates.append(item)
+    for item in candidates:
+        if not item.exists():
+            continue
+        parent = item.parent
+        if item.name == "SKILL.md" and parent != root:
+            quarantine_path(scope, root, parent, bucket)
+        else:
+            quarantine_path(scope, root, item, bucket)
+INNERPY
 }
 
 collect_cursor_plugin_seed_shas() {
@@ -132,9 +248,10 @@ collect_cursor_plugin_seed_shas() {
 
   prune_stale_cursor_marketplace_cache_links "$primary_sha"
   prune_stale_cursor_marketplace_gitpaths "$primary_sha"
-  # Stale backend SHA dirs may still contain agents/cursor from older installs;
-  # cursor-agent loads every enabled backend cache into the / picker.
+  # Stale backend/custom dirs may still contain skills, agents, or templates from older installs;
+  # cursor-agent loads every enabled backend cache and custom agent dir into the / picker.
   prune_agents_from_all_cursor_backend_caches
+  cleanup_cursor_custom_agents "${REPO_ROOT:-}"
 
   while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
@@ -182,8 +299,8 @@ materialize_cursor_plugin_surface_into_dir() {
   else
     rm -rf "${target_root}/commands"
   fi
-  # agents/cursor must not ship — cursor-agent TUI auto-discovers it for / picker.
-  rm -rf "${target_root}/agents/cursor" "${target_root}/agents"
+  # Only commands/ is public. Cursor auto-discovers skill-like trees in the / picker.
+  prune_cursor_picker_surfaces_from_cache_dir "$target_root"
   if [[ -d "${source_dest}/skill-source" ]]; then
     mkdir -p "${target_root}/skill-source"
     rsync -a --delete "${source_dest}/skill-source/" "${target_root}/skill-source/"
