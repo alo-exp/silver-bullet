@@ -35,6 +35,7 @@ source "$TOOL_INPUT_LIB"
 TMP="$(mktemp -d)"
 STATE_DIR="$(mktemp -d)"
 export SB_RUNTIME_STATE_DIR="$STATE_DIR"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
 
 cat >"$TMP/.silver-bullet.json" <<EOF
 {
@@ -72,7 +73,8 @@ export SILVER_BULLET_PROJECT_ROOT="$TMP"
 assert_deny_hook() {
   local label="$1" input="$2" needle="${3:-STACK ROUTING}"
   local out
-  out="$(cd "$TMP" && printf '%s' "$input" | bash "$COORD_HOOK" 2>/dev/null || true)"
+  out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+    printf '%s' "$input" | bash "$COORD_HOOK" 2>/dev/null || true)"
   if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
     && printf '%s' "$out" | grep -qF "$needle"; then
     pass "$label"
@@ -82,6 +84,15 @@ assert_deny_hook() {
 }
 
 sb_stack_mutual_exclusion_is_clean "$CFG" && pass "mutex clean before violation" || fail "mutex clean before violation"
+
+# RED-2: install-leanctx path must not false-positive double-wrap marker.
+sb_stack_bash_leanctx_shell_marker "rtk bash scripts/install-leanctx-sb.sh --host cursor" \
+  && fail "RED-2: install-leanctx path false-positive marker" \
+  || pass "RED-2: install-leanctx path no false-positive marker"
+sb_stack_should_deny_bash_double_wrap "$CFG" "rtk bash scripts/install-leanctx-sb.sh --host cursor" \
+  && fail "RED-2: install-leanctx path denied as double-wrap" \
+  || pass "RED-2: install-leanctx path not denied as double-wrap"
+sb_stack_mutual_exclusion_is_clean "$CFG" && pass "RED-2: mutex stays clean" || fail "RED-2: mutex stays clean"
 
 # Lib-level: RTK rewrite + LeanCTX shell marker on same command.
 sb_stack_should_deny_bash_double_wrap "$CFG" "rtk git status && lean-ctx shell" \
@@ -104,6 +115,14 @@ sb_stack_should_deny_mcp_tool "$CFG" "leanctx" "lctx_shell" '{"command":"git sta
 sb_stack_should_deny_mcp_tool "$CFG" "leanctx" "lctx_fetch" '{"url":"https://example.com"}' \
   && pass "lib denies lctx_fetch (CM owns sb_webfetch)" || fail "lib denies lctx_fetch (CM owns sb_webfetch)"
 
+# RED-3: true double-wrap still records violation and denies until recovery.
+sb_stack_clear_mutex_violations "$CFG"
+sb_stack_should_deny_bash_double_wrap "$CFG" "rtk git status && lean-ctx shell" \
+  && pass "RED-3: true double-wrap denied at lib level" \
+  || fail "RED-3: true double-wrap denied at lib level"
+sb_stack_mutual_exclusion_is_clean "$CFG" && fail "RED-3: mutex dirty after true double-wrap" \
+  || pass "RED-3: mutex dirty after true double-wrap"
+
 # Hook-level integration.
 bash_input=$(jq -n \
   '{hook_event_name:"PreToolUse", tool_name:"Bash", tool_input:{command:"rtk git status && lean-ctx shell"}}')
@@ -117,18 +136,40 @@ graph_input=$(jq -n \
   '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_graph", arguments:{query:"graphify codebase symbol dependency"}}}')
 assert_deny_hook "hook denies lctx_graph code path" "$graph_input" "lctx_graph"
 
-# Mutual-exclusion state records violation and blocks subsequent coordinator passes.
+# Mutual-exclusion state records violation and blocks non-recoverable tools until recovery.
 sb_stack_record_double_compression "$CFG" "sb_shell" "leanctx" "rtk"
 sb_stack_mutual_exclusion_is_clean "$CFG" && fail "mutex dirty after violation" || pass "mutex dirty after violation"
 
+remember_dirty=$(jq -n \
+  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"note"}}}')
+remember_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$remember_dirty" | bash "$COORD_HOOK" 2>/dev/null || true)"
+if printf '%s' "$remember_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  pass "hook blocks non-recoverable tool when mutex dirty"
+else
+  fail "hook blocks non-recoverable tool when mutex dirty — got: $remember_out"
+fi
+
+recovery_mcp=$(jq -n \
+  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["recovery"]}}}')
+recovery_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$recovery_mcp" | bash "$COORD_HOOK" 2>/dev/null || true)"
+if printf '%s' "$recovery_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  fail "hook allows recovery MCP when mutex dirty — got: $recovery_out"
+else
+  pass "hook allows recovery MCP when mutex dirty"
+fi
+sb_stack_mutual_exclusion_is_clean "$CFG" && pass "mutex clean after recovery" || fail "mutex clean after recovery"
+
 allow_input=$(jq -n \
   '{hook_event_name:"PreToolUse", tool_name:"Read", tool_input:{file_path:"README.md"}}')
-allow_out="$(cd "$TMP" && printf '%s' "$allow_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
+allow_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$allow_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$allow_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
   && printf '%s' "$allow_out" | grep -q 'sb_stack_double_compression'; then
-  pass "hook blocks when mutex state dirty"
+  fail "hook blocks Read after recovery — got: $allow_out"
 else
-  fail "hook blocks when mutex state dirty — got: $allow_out"
+  pass "hook allows Read after recovery"
 fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"

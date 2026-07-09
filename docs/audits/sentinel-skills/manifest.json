@@ -364,6 +364,34 @@
     "evidence_note": "Greenfield SENTINEL pass for AF-AGENT-DELEGATE Cursor parent skill (v0.50.3)."
   },
   {
+    "skill": "silver-agent-opencode",
+    "path": "skills/silver-agent-opencode/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-opencode.md",
+    "status": "pending",
+    "verdict": "",
+    "audited_at": "",
+    "release_tag": "v0.45.0",
+    "findings_open": 1,
+    "agent_bundles_parity": "pending",
+    "content_sha256": "",
+    "evidence_note": ""
+  },
+  {
+    "skill": "silver-agent-pi",
+    "path": "skills/silver-agent-pi/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-agent-pi.md",
+    "status": "pending",
+    "verdict": "",
+    "audited_at": "",
+    "release_tag": "v0.45.0",
+    "findings_open": 1,
+    "agent_bundles_parity": "pending",
+    "content_sha256": "",
+    "evidence_note": ""
+  },
+  {
     "skill": "silver-agent-worker",
     "path": "skills/silver-agent-worker/SKILL.md",
     "sentinel_version": "2.3.0",
@@ -488,6 +516,34 @@
     "agent_bundles_parity": "verified",
     "content_sha256": "a0829dd8b3e58d990f27cd6efd07ee3fe82d88ba7dbd0c8a221ceb969f7d831a",
     "evidence_note": "Content unchanged since v0.44.7; prior monolithic SENTINEL audits in docs/audits/ cover canonical skill inventory."
+  },
+  {
+    "skill": "silver-clear-stack-state",
+    "path": "skills/silver-clear-stack-state/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-clear-stack-state.md",
+    "status": "pending",
+    "verdict": "",
+    "audited_at": "",
+    "release_tag": "v0.45.0",
+    "findings_open": 1,
+    "agent_bundles_parity": "pending",
+    "content_sha256": "",
+    "evidence_note": ""
+  },
+  {
+    "skill": "silver-compare",
+    "path": "skills/silver-compare/SKILL.md",
+    "sentinel_version": "2.3.0",
+    "audit_report": "docs/audits/sentinel-skills/SENTINEL-audit-silver-compare.md",
+    "status": "pending",
+    "verdict": "",
+    "audited_at": "",
+    "release_tag": "v0.45.0",
+    "findings_open": 1,
+    "agent_bundles_parity": "pending",
+    "content_sha256": "",
+    "evidence_note": ""
   },
   {
     "skill": "silver-completion-audit",

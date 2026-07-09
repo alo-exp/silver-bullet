@@ -115,6 +115,22 @@ bash scripts/optimize-five-tool-stack.sh --verify
 bash scripts/enable-rtk-context-mode.sh
 ```
 
+## Recovery (stack compression mutex)
+
+When the five-tool coordinator records `sb_stack_double_compression`, PreToolUse may block until the mutex clears. State is **global** under `${SB_RUNTIME_STATE_DIR:-~/.silver-bullet}/stack-compression-mutex` — not per-session; **subagents cannot bypass** a dirty mutex in the parent runtime home.
+
+**Self-heal:** Complete one **compliant routed-owner** tool call on the owned surface (for example `ctx_search` for `sb_slice`, `lctx_read_ast` for `sb_read`, or RTK-compressed Bash without LeanCTX shell rewrite for `sb_shell`). The coordinator clears the entire mutex on success.
+
+**Manual escape hatches:**
+
+1. `/silver:clear-stack-state` — documents and runs clear + optional agentmemory scaffold
+2. `bash scripts/sb-doctor.sh --fix` — clears mutex (check **D20**) and scaffolds `.agentmemory/memory` when agentmemory is opted in
+3. Last resort: `rm -f "${SB_RUNTIME_STATE_DIR:-$HOME/.silver-bullet}/stack-compression-mutex"` (no audit trail)
+
+**Wedged-session warning:** When the mutex is dirty, do not trust prior tool success self-reports — re-run verification after recovery.
+
+**Install guard:** `install-leanctx-sb.sh` / `optimize-five-tool-stack.sh` write `LEANCTX_DISABLE_SHELL_MCP=1` in the five-tool profile env so RTK owns `sb_shell` without LeanCTX shell MCP overlap.
+
 ## Related Docs
 
 - [RTK.md](RTK.md) — shell compression (`sb_shell`)
