@@ -180,16 +180,15 @@ install_cursor_plugin_manifest() {
   if [[ -d "${dest}/commands" ]]; then
     jq --arg v "$version" '
       .version = $v
-      | .skills = "./agents/cursor"
       | .hooks = "./cursor-hooks.json"
       | .commands = "./commands"
+      | del(.skills)
     ' "$manifest_src" > "$tmp"
   else
     jq --arg v "$version" '
       .version = $v
-      | .skills = "./agents/cursor"
       | .hooks = "./cursor-hooks.json"
-      | del(.commands)
+      | del(.commands, .skills)
     ' "$manifest_src" > "$tmp"
   fi
   install -m 644 "$tmp" "${dest}/.cursor-plugin/plugin.json"
@@ -440,6 +439,27 @@ seed_cursor_marketplace_gitpaths() {
   done < <(collect_cursor_plugin_seed_shas "$primary_sha" "")
 }
 
+rematerialize_all_reachable_cursor_gitpaths() {
+  local dest="$1"
+  local base_root entry name sha
+
+  base_root="$(cursor_github_marketplace_gitpath_root)"
+  [[ -d "$base_root" ]] || return 0
+
+  for entry in "$base_root"/*; do
+    [[ -d "$entry" ]] || continue
+    name="$(basename "$entry")"
+    [[ "$name" =~ ^[0-9a-f]{40}$ ]] || continue
+    [[ -d "${entry}/.git" ]] || continue
+    if ! git -C "$entry" cat-file -e "${name}^{commit}" >/dev/null 2>&1; then
+      continue
+    fi
+    materialize_cursor_plugin_surface_in_gitpath "$dest" "$name"
+    ensure_cursor_marketplace_plugin_cache_symlink "$dest" "$name"
+    ensure_cursor_backend_plugin_cache_dir "$dest" "$name"
+  done
+}
+
 verify_cursor_plugin_discovery_paths() {
   local dest="$1"
   local source_root="$2"
@@ -634,6 +654,7 @@ fi
 REGISTRY_COMMIT_SHA="$(resolve_cursor_registry_git_commit_sha "$INSTALL_COMMIT_SHA" "$LEGACY_MARKETPLACE_UI_SWITCH")"
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$REGISTRY_COMMIT_SHA"
 seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
+rematerialize_all_reachable_cursor_gitpaths "$DEST_ROOT"
 if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
   printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
   exit 1
