@@ -57,15 +57,29 @@ def is_silver_bullet_helper_picker_skill(dirname: str, skill_name: str) -> bool:
 def is_silver_bullet_native_mirror_route(dirname: str, skill_name: str) -> bool:
   return (
       dirname == "silver"
-      or dirname == "silver-feature"
+      or dirname in {"silver-feature", "silver:feature"}
       or skill_name in {"silver", "silver:feature"}
   )
+
+
+def mirror_dirname(skill_dir_name: str, skill_name: str) -> str:
+    """Codex TUI derives slash routes from ~/.codex/skills/<dirname>."""
+    if is_silver_bullet_helper_picker_skill(skill_dir_name, skill_name):
+        return skill_dir_name
+    if skill_name == "silver":
+        return "silver"
+    if skill_name.startswith("silver:"):
+        return skill_name
+    if skill_name.startswith("silver-"):
+        return "silver:" + skill_name.removeprefix("silver-")
+    return skill_dir_name
 
 
 def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
     return (
         dirname == "silver"
         or dirname.startswith("silver-")
+        or dirname.startswith("silver:")
         or skill_name == "silver"
         or skill_name.startswith("silver:")
         or is_silver_bullet_helper_picker_skill(dirname, skill_name)
@@ -91,7 +105,7 @@ for skill_dir in sorted(package_skills_root.iterdir(), key=lambda path: path.nam
         continue
     if not is_silver_bullet_picker_skill(skill_dir.name, skill_name):
         continue
-    desired[skill_dir.name] = skill_dir
+    desired[mirror_dirname(skill_dir.name, skill_name)] = skill_dir
 
 native_skills_root.mkdir(parents=True, exist_ok=True)
 

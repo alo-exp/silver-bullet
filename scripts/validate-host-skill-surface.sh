@@ -125,6 +125,25 @@ for host, surfaces in HOST_SURFACES.items():
             if not name:
                 fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
                 continue
+            stem = path.stem
+            if stem != name:
+                fail(
+                    host,
+                    f"{path.relative_to(repo_root)}: filename stem {stem!r} must match "
+                    f"name {name!r} (hosts derive slash routes from the stub filename)",
+                )
+            if name != "silver" and not name.startswith("silver:"):
+                fail(
+                    host,
+                    f"{path.relative_to(repo_root)}: command name {name!r} must be "
+                    f"'silver' or 'silver:<route>'",
+                )
+            if name.startswith("silver-"):
+                fail(
+                    host,
+                    f"{path.relative_to(repo_root)}: command name {name!r} uses hyphen form; "
+                    f"use silver: route",
+                )
             command_routes.add(name)
 
     for rel_root, kind in surfaces:

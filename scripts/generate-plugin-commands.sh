@@ -7,7 +7,7 @@ SKILLS_DIR="${REPO_ROOT}/skills"
 OUT_DIR="${REPO_ROOT}/plugins/silver-bullet/commands"
 
 # Composer routes with command stubs (extend as new top-level routes ship).
-COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-release silver-fast silver-new-workflow silver-orchestrator silver-orient silver-execute silver-ship)
+COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-compare silver-release silver-fast silver-new-workflow silver-orchestrator silver-orient silver-execute silver-ship)
 
 mkdir -p "$OUT_DIR"
 
@@ -51,7 +51,9 @@ for skill in "${COMPOSERS[@]}"; do
   title="$(title_case "$cmd_name")"
   [[ "$cmd_name" == "silver" ]] && title="Silver"
 
-  out="${OUT_DIR}/${cmd_name}.md"
+  # Host TUIs (cursor-agent, codex) derive slash routes from the command filename
+  # stem, not only frontmatter — filename must match name: (silver:route).
+  out="${OUT_DIR}/${codex_name}.md"
   cat > "$out" <<EOF
 ---
 name: "${codex_name}"
@@ -63,6 +65,11 @@ argument-hint: ${argument_hint}
 Invoke the Silver Bullet \`${skill}\` workflow for this request. Follow the composable flow contracts in \`docs/composable-flows-contracts.md\` and record required skill markers through the host Skill tool. If the Skill tool cannot resolve this route by name, read the full instructions from \`skill-source/${skill}/SILVER_SOURCE\` under the Silver Bullet plugin install root.
 EOF
   printf 'Wrote %s\n' "$out"
+  # Drop legacy bare-route stub left from pre-colon filenames.
+  legacy="${OUT_DIR}/${cmd_name}.md"
+  if [[ "$legacy" != "$out" && -f "$legacy" ]]; then
+    rm -f "$legacy"
+  fi
 done
 
 printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"
