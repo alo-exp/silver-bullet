@@ -64,19 +64,30 @@ def phase_required_artifacts(
 
 
 SOLUTION_TYPES = frozenset({"solution-landscape", "solution-compare"})
-SOLUTION_FORBIDDEN_MODES = frozenset({"quick", "standard"})
+SOLUTION_ALLOWED_MODES = frozenset({"deep", "ultradeep"})
 
 
 def check_solution_mode_gate(mode: str, research_type: str) -> tuple[bool, str]:
-    """Solution research types require deep or ultradeep mode."""
+    """Solution research types allow only deep or ultradeep mode."""
     if research_type not in SOLUTION_TYPES:
         return True, "ok"
-    if mode in SOLUTION_FORBIDDEN_MODES:
+    if mode not in SOLUTION_ALLOWED_MODES:
         return False, (
             f"research_type={research_type} requires mode deep or ultradeep "
             f"(got {mode})"
         )
     return True, "ok"
+
+
+def resolve_mode(out_dir: Path, explicit: str | None = None) -> str | None:
+    if explicit:
+        return explicit
+    manifest_path = out_dir / "run_manifest.json"
+    if manifest_path.exists():
+        mode = json.loads(manifest_path.read_text(encoding="utf-8")).get("mode")
+        if mode:
+            return mode
+    return None
 
 
 def check_need_profile_gate(out_dir: Path) -> tuple[bool, str]:
@@ -198,16 +209,26 @@ def cmd_check(args: argparse.Namespace) -> int:
 
     rt = getattr(args, "research_type", None)
 
+    resolved_rt = resolve_research_type(out_dir, rt)
+
     if args.phase:
+        mode = resolve_mode(out_dir, args.mode)
+        if resolved_rt in SOLUTION_TYPES and mode:
+            mode_ok, mode_detail = check_solution_mode_gate(mode, resolved_rt)
+            if not mode_ok:
+                print(json.dumps({
+                    "phase": args.phase,
+                    "research_type": resolved_rt,
+                    "mode": mode,
+                    "status": "fail",
+                    "reason": mode_detail,
+                }, indent=2))
+                return 1
         result = check_phase(out_dir, args.phase, research_type=rt)
     else:
-        mode = args.mode
+        mode = resolve_mode(out_dir, args.mode)
         if not mode:
-            manifest_path = out_dir / "run_manifest.json"
-            if manifest_path.exists():
-                mode = json.loads(manifest_path.read_text()).get("mode", "standard")
-            else:
-                mode = "standard"
+            mode = "standard"
         result = check_mode_complete(out_dir, mode, research_type=rt)
 
     print(json.dumps(result, indent=2))

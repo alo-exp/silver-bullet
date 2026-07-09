@@ -100,7 +100,7 @@ pre { white-space: pre-wrap; background: var(--surface); padding: 1rem; border-r
   const rankings = cmp.rankings || [];
   const rows = (cmp.rows || []).filter(r => r.type === 'feature');
   const solutions = rankings.map(r => r.solution);
-  let table = '<div class="filter-bar"><label>License filter: <select id="licFilter"><option value="all">All</option><option value="oss">OSS</option><option value="commercial">Commercial</option></select></label></div>';
+  let table = '';
   if (solutions.length) {
     table += '<table id="matrixTable"><thead><tr><th>Feature</th><th>Priority</th>';
     solutions.forEach(s => { table += '<th data-sort>' + esc(s) + '</th>'; });
