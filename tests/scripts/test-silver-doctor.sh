@@ -213,6 +213,66 @@ else
 fi
 rm -rf "$RED4_FIXTURE" "$RED4_STATE"
 unset SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR
+assert_contains "D21 cursor subagents check in doctor" 'D21' "$DOCTOR"
+assert_contains "D21 fix invokes install-cursor-sb-agents" 'install-cursor-sb-agents.sh' "$DOCTOR"
+assert_contains "install-cursor wires sb-agents" 'install-cursor-sb-agents' "${REPO_ROOT}/scripts/install-cursor.sh"
+
+# D21 — Cursor SB custom subagents (enabled + missing agents → FAIL; probe pass → PASS)
+D21_HOME="$(mktemp -d)"
+D21_PROJ="$(mktemp -d)"
+mkdir -p "$D21_HOME/.cursor" "$D21_PROJ/docs/workflows" "$D21_PROJ/scripts"
+cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$D21_PROJ/.silver-bullet.json"
+jq '.cursor_sb_agents.enabled = true
+  | .cursor_sb_agents.enabled_by_user = true
+  | .cursor_sb_agents.agents_install_scope = "global"
+  | .cursor_sb_agents.agents_install_status = "installed"' \
+  "$D21_PROJ/.silver-bullet.json" >"${D21_PROJ}/.silver-bullet.json.tmp"
+mv "${D21_PROJ}/.silver-bullet.json.tmp" "$D21_PROJ/.silver-bullet.json"
+cp "$REPO_ROOT/silver-bullet.md" "$D21_PROJ/silver-bullet.md"
+cp "$REPO_ROOT/scripts/workflows.sh" "$D21_PROJ/scripts/workflows.sh"
+chmod +x "$D21_PROJ/scripts/workflows.sh"
+printf '{"hooks":{"SessionStart":[{"command":"cursor-hook"}]}}\n' >"$D21_HOME/.cursor/hooks.json"
+mkdir -p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks"
+ln -sfn "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+  "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/current"
+cp "$REPO_ROOT/hooks/hooks.json" "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks/hooks.json"
+jq -n --arg v "0.48.7" --arg p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
+  '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
+  >"$D21_HOME/.cursor/plugins/installed_plugins.json"
+
+d21_missing="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
+if printf '%s' "$d21_missing" | grep -q 'FAIL: D21'; then
+  echo "PASS: D21 FAIL when enabled agents missing"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: D21 should FAIL when enabled agents missing"
+  FAIL=$((FAIL + 1))
+fi
+
+if env HOME="$D21_HOME" REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
+  --global --non-interactive >/dev/null 2>&1; then
+  d21_ok="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
+  if printf '%s' "$d21_ok" | grep -q 'PASS: D21'; then
+    echo "PASS: D21 PASS after install-cursor-sb-agents"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: D21 should PASS after agents installed"
+    printf '%s\n' "$d21_ok" | grep D21 || true
+    FAIL=$((FAIL + 1))
+  fi
+else
+  echo "WARN: install-cursor-sb-agents skipped in test (catalog/network)"
+fi
+
+d21_claude="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
+if printf '%s' "$d21_claude" | grep -q 'D21.*N/A'; then
+  echo "PASS: D21 N/A on Claude host"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: D21 should be N/A on Claude host"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$D21_HOME" "$D21_PROJ"
 
 # Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
 if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then

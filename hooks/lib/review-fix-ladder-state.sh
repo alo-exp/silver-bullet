@@ -42,15 +42,84 @@ sb_rfl_write_state() {
   printf '%s\n' "$json" >"$file"
 }
 
-sb_rfl_activate() {
-  local rung="${1:-1}" rung_model="${2:-composer-2.5}" host_model="${3:-composer-2.5}" total_rungs="${4:-8}"
-  local state_json
+sb_rfl_project_root() {
+  if [[ -n "${SB_RFL_PROJECT_ROOT:-}" ]]; then
+    printf '%s' "$SB_RFL_PROJECT_ROOT"
+    return 0
+  fi
+  if declare -f sb_find_project_config_walk_only >/dev/null 2>&1; then
+    local cfg
+    cfg="$(sb_find_project_config_walk_only 2>/dev/null || true)"
+    if [[ -n "$cfg" ]]; then
+      dirname "$cfg"
+      return 0
+    fi
+  fi
+  printf '%s' "${PWD:-.}"
+}
+
+sb_rfl_resolver_json() {
+  local project_root="${1:-}"
+  [[ -n "$project_root" ]] || project_root="$(sb_rfl_project_root)"
+  local resolver="${project_root%/}/scripts/review-fix-ladder.py"
+  if [[ ! -f "$resolver" ]]; then
+    printf '{}'
+    return 1
+  fi
+  python3 "$resolver" --host cursor --json --project-root "$project_root" 2>/dev/null || printf '{}'
+}
+
+sb_rfl_total_rungs_from_resolver() {
+  local resolver_json="$1"
   if command -v jq >/dev/null 2>&1; then
+    jq -r '(.total_rungs // (.rungs | length) // 8)' <<<"$resolver_json"
+  else
+    printf '8'
+  fi
+}
+
+sb_rfl_rung_from_resolver() {
+  local resolver_json="$1" rung_index="${2:-1}"
+  if command -v jq >/dev/null 2>&1; then
+    jq -c --argjson idx "$rung_index" '.rungs[$idx - 1] // {}' <<<"$resolver_json"
+  else
+    printf '{}'
+  fi
+}
+
+sb_rfl_sync_rung_metadata() {
+  local rung="${1:-1}"
+  local project_root resolver_json rung_json subagent_name model_param
+  project_root="$(sb_rfl_project_root)"
+  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
+  command -v jq >/dev/null 2>&1 || return 0
+  subagent_name="$(jq -r '.subagent_name // empty' <<<"$rung_json")"
+  model_param="$(jq -r '.model_param // empty' <<<"$rung_json")"
+  [[ -n "$subagent_name" ]] && sb_rfl_set_field subagent_name "$subagent_name"
+  [[ -n "$model_param" ]] && sb_rfl_set_field model_param "$model_param"
+  [[ -n "$model_param" ]] && sb_rfl_set_field rung_model "$model_param"
+}
+
+sb_rfl_activate() {
+  local rung="${1:-1}" rung_model="${2:-}" host_model="${3:-composer-2.5}"
+  local project_root resolver_json total_rungs rung_json subagent_name model_param state_json
+  project_root="$(sb_rfl_project_root)"
+  resolver_json="$(sb_rfl_resolver_json "$project_root")"
+  total_rungs="$(sb_rfl_total_rungs_from_resolver "$resolver_json")"
+  rung_json="$(sb_rfl_rung_from_resolver "$resolver_json" "$rung")"
+  if command -v jq >/dev/null 2>&1; then
+    subagent_name="$(jq -r '.subagent_name // empty' <<<"$rung_json")"
+    model_param="$(jq -r '.model_param // empty' <<<"$rung_json")"
+    [[ -z "$rung_model" && -n "$model_param" ]] && rung_model="$model_param"
+    [[ -z "$rung_model" ]] && rung_model="composer-2.5"
     state_json="$(jq -n \
       --argjson rung "$rung" \
       --argjson total "$total_rungs" \
       --arg rung_model "$rung_model" \
       --arg host_model "$host_model" \
+      --arg subagent_name "$subagent_name" \
+      --arg model_param "$model_param" \
       '{
         active: true,
         rung: $rung,
@@ -58,6 +127,8 @@ sb_rfl_activate() {
         phase: "review",
         rung_model: $rung_model,
         host_model: $host_model,
+        subagent_name: (if $subagent_name == "" then null else $subagent_name end),
+        model_param: (if $model_param == "" then null else $model_param end),
         pm_filed: false,
         verify_pass: 0,
         grep_after_verify: 0,
@@ -65,7 +136,8 @@ sb_rfl_activate() {
       }')"
     sb_rfl_write_state "$state_json"
   else
-    sb_rfl_write_state "{\"active\":true,\"rung\":${rung},\"phase\":\"review\",\"rung_model\":\"${rung_model}\",\"host_model\":\"${host_model}\",\"pm_filed\":false,\"verify_pass\":0}"
+    [[ -z "$rung_model" ]] && rung_model="composer-2.5"
+    sb_rfl_write_state "{\"active\":true,\"rung\":${rung},\"total_rungs\":${total_rungs},\"phase\":\"review\",\"rung_model\":\"${rung_model}\",\"host_model\":\"${host_model}\",\"pm_filed\":false,\"verify_pass\":0}"
   fi
 }
 
@@ -76,7 +148,7 @@ sb_rfl_deactivate() {
 sb_rfl_reset() {
   local rung="${1:-1}" rung_model="${2:-composer-2.5}" host_model="${3:-composer-2.5}"
   sb_rfl_deactivate
-  sb_rfl_activate "$rung" "$rung_model" "$host_model" 8
+  sb_rfl_activate "$rung" "$rung_model" "$host_model"
 }
 
 sb_rfl_set_field() {
@@ -130,6 +202,7 @@ sb_rfl_advance_rung() {
   jq --argjson next "$((rung + 1))" \
     '.rung = $next | .phase = "review" | .pm_filed = false | .verify_pass = 0 | .grep_after_verify = 0' \
     "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
+  sb_rfl_sync_rung_metadata "$((rung + 1))"
 }
 
 sb_rfl_compliance_stop() {
@@ -179,8 +252,8 @@ sb_rfl_prompt_has_review_triage_mix() {
 }
 
 sb_rfl_validate_task_spawn() {
-  local prompt="$1" model="${2:-}" readonly_flag="${3:-}"
-  local phase rung_model host_model pm_filed hint rung prompt_rung
+  local prompt="$1" model="${2:-}" readonly_flag="${3:-}" subagent_type="${4:-}"
+  local phase rung_model host_model pm_filed hint rung prompt_rung expected_subagent custom_subagent
 
   sb_rfl_is_active || return 0
   [[ "$(sb_rfl_read_field compliance_stop false)" == "true" ]] && return 0
@@ -206,7 +279,14 @@ sb_rfl_validate_task_spawn() {
         printf '%s' "Review-fix-ladder: review subagent must not triage — separate review and triage Task calls."
         return 1
       fi
-      if [[ -n "$model" && -n "$rung_model" && "$model" != "$rung_model" ]]; then
+      expected_subagent="$(sb_rfl_read_field subagent_name "")"
+      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
+        printf '%s' "Review-fix-ladder: review phase requires subagent_type ${expected_subagent} (got ${subagent_type})."
+        return 1
+      fi
+      custom_subagent=0
+      [[ -n "$expected_subagent" && "$subagent_type" == "$expected_subagent" ]] && custom_subagent=1
+      if [[ "$custom_subagent" -eq 0 && -n "$model" && -n "$rung_model" && "$model" != "$rung_model" ]]; then
         printf '%s' "Review-fix-ladder: review phase requires rung model ${rung_model} (got ${model})."
         return 1
       fi
@@ -236,6 +316,11 @@ sb_rfl_validate_task_spawn() {
       fi
       ;;
     verify_1)
+      expected_subagent="$(sb_rfl_read_field subagent_name "")"
+      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
+        printf '%s' "Review-fix-ladder: verify_1 requires subagent_type ${expected_subagent} (got ${subagent_type})."
+        return 1
+      fi
       if [[ "$hint" == "fix" || "$hint" == "triage" ]]; then
         printf '%s' "Review-fix-ladder: verify_1 — verify-only subagent (readonly), no fix or triage."
         return 1
@@ -250,6 +335,11 @@ sb_rfl_validate_task_spawn() {
       fi
       ;;
     verify_2)
+      expected_subagent="$(sb_rfl_read_field subagent_name "")"
+      if [[ -n "$expected_subagent" && -n "$subagent_type" && "$subagent_type" != "$expected_subagent" ]]; then
+        printf '%s' "Review-fix-ladder: verify_2 requires subagent_type ${expected_subagent} (got ${subagent_type})."
+        return 1
+      fi
       if [[ "$hint" == "fix" || "$hint" == "triage" || "$hint" == "verify_1" ]]; then
         printf '%s' "Review-fix-ladder: verify_2 — second verify-only pass only."
         return 1
@@ -312,7 +402,7 @@ sb_rfl_on_skill_invoke() {
   local skill="$1"
   case "$skill" in
     silver-review-fix-ladder|silver:review-fix-ladder|review-fix-ladder)
-      sb_rfl_activate 1 composer-2.5 composer-2.5 8
+      sb_rfl_activate 1 "" composer-2.5
       ;;
   esac
 }

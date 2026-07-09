@@ -642,6 +642,17 @@ fi
 
 DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
+
+# SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
+CSBA_INSTALLER="${REPO_ROOT}/scripts/install-cursor-sb-agents.sh"
+if [[ -x "$CSBA_INSTALLER" ]]; then
+  if [[ -t 0 && -t 1 ]]; then
+    bash "$CSBA_INSTALLER" --global || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+  else
+    bash "$CSBA_INSTALLER" --global --non-interactive || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+  fi
+fi
+
 ln -sfn "$DEST_ROOT" "$(cursor_install_current_link)"
 if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/dev/null 2>&1; then
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"
