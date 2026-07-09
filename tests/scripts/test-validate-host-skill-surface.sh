@@ -66,7 +66,7 @@ write_skill "$fixture_root/agents/claude" "modularity" "modularity" "false"
 write_skill "$fixture_root/host-bundles/codex" "silver" "silver"
 write_skill "$fixture_root/host-bundles/codex" "silver:feature" "silver:feature" "false"
 write_skill "$fixture_root/host-bundles/cursor" "silver" "silver"
-write_skill "$fixture_root/host-bundles/cursor" "silver:feature" "silver:feature" "false"
+write_skill "$fixture_root/host-bundles/cursor" "silver:plan" "silver:plan"
 write_command "$fixture_root/plugins/silver-bullet/commands" "feature.md" "silver:feature"
 
 bad_prefix_root="$tmpdir/bad-prefix"

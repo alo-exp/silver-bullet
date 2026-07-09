@@ -78,6 +78,12 @@ materialize_cursor_plugin_surface_into_dir() {
     mkdir -p "${target_root}/agents/cursor"
     rsync -a --delete "${source_dest}/agents/cursor/" "${target_root}/agents/cursor/"
   fi
+  if [[ -d "${source_dest}/skill-source" ]]; then
+    mkdir -p "${target_root}/skill-source"
+    rsync -a --delete "${source_dest}/skill-source/" "${target_root}/skill-source/"
+  else
+    rm -rf "${target_root}/skill-source"
+  fi
   if [[ -f "${source_dest}/cursor-hooks.json" ]]; then
     install -m 644 "${source_dest}/cursor-hooks.json" "${target_root}/cursor-hooks.json"
   fi

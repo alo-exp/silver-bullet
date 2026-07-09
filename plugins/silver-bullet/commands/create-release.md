@@ -5,4 +5,4 @@ description: Generate release notes and create a release
 argument-hint: <version or release description>
 ---
 
-Invoke the Silver Bullet `silver-create-release` workflow to assemble release notes and create the GitHub Release artifact for the requested version.
+Invoke the Silver Bullet `silver-create-release` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel. If the runtime-native skill invocation channel cannot resolve this route by name, read the full instructions from `skill-source/silver-create-release/SILVER_SOURCE` under the Silver Bullet plugin install root.
