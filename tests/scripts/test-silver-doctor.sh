@@ -222,7 +222,8 @@ D21_HOME="$(mktemp -d)"
 D21_PROJ="$(mktemp -d)"
 mkdir -p "$D21_HOME/.cursor" "$D21_PROJ/docs/workflows" "$D21_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$D21_PROJ/.silver-bullet.json"
-jq '.cursor_sb_agents.enabled = true
+jq '.sb_initiated = true
+  | .cursor_sb_agents.enabled = true
   | .cursor_sb_agents.enabled_by_user = true
   | .cursor_sb_agents.agents_install_scope = "global"
   | .cursor_sb_agents.agents_install_status = "installed"' \
@@ -232,6 +233,9 @@ cp "$REPO_ROOT/silver-bullet.md" "$D21_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$D21_PROJ/scripts/workflows.sh"
 chmod +x "$D21_PROJ/scripts/workflows.sh"
 printf '{"hooks":{"SessionStart":[{"command":"cursor-hook"}]}}\n' >"$D21_HOME/.cursor/hooks.json"
+mkdir -p "$D21_HOME/.config/silver-bullet"
+printf '{"agents_install_status":"pending","selected_models":["composer-2.5"],"effort_levels":["medium"]}\n' \
+  >"$D21_HOME/.config/silver-bullet/cursor-sb-agents.json"
 mkdir -p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7/hooks"
 ln -sfn "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.48.7" \
   "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/current"
@@ -240,7 +244,7 @@ jq -n --arg v "0.48.7" --arg p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-
   '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
   >"$D21_HOME/.cursor/plugins/installed_plugins.json"
 
-d21_missing="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
+d21_missing="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
 if printf '%s' "$d21_missing" | grep -q 'FAIL: D21'; then
   echo "PASS: D21 FAIL when enabled agents missing"
   PASS=$((PASS + 1))
@@ -249,9 +253,9 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if env HOME="$D21_HOME" REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
+if env HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_OFFLINE=1 SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   --global --non-interactive >/dev/null 2>&1; then
-  d21_ok="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
+  d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
   if printf '%s' "$d21_ok" | grep -q 'PASS: D21'; then
     echo "PASS: D21 PASS after install-cursor-sb-agents"
     PASS=$((PASS + 1))
