@@ -24,6 +24,22 @@ doctor_apply_fixes() {
           fixed=1
         fi
         ;;
+      D20)
+        if [[ -f "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh" ]]; then
+          # shellcheck source=../hooks/lib/stack-compression-coordinator.sh
+          source "${REPO_ROOT}/hooks/lib/stack-compression-coordinator.sh"
+          sb_stack_clear_mutex_violations
+        fi
+        if [[ -f "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh" ]]; then
+          # shellcheck source=../hooks/lib/agentmemory-gate.sh
+          source "${REPO_ROOT}/hooks/lib/agentmemory-gate.sh"
+          local cfg="${PROJ_ROOT}/.silver-bullet.json"
+          if [[ -f "$cfg" ]] && sb_agentmemory_required "$cfg" 2>/dev/null; then
+            sb_agentmemory_scaffold_export_root "$PROJ_ROOT" "$cfg" || true
+          fi
+        fi
+        fixed=1
+        ;;
       D15)
         printf 'sb-doctor: --fix D15 requires shortening Claude agent descriptions\n' >&2
         ;;
@@ -36,6 +52,21 @@ doctor_apply_fixes() {
             fixed=1
             ;;
         esac
+        ;;
+      D21)
+        local csba_fix_scope="global"
+        if [[ -f "${PROJ_ROOT}/.silver-bullet.json" ]]; then
+          csba_fix_scope="$(jq -r '.cursor_sb_agents.agents_install_scope // "global"' "${PROJ_ROOT}/.silver-bullet.json")"
+        fi
+        local csba_fix_flags=(--fix)
+        if [[ "$csba_fix_scope" == "project" ]]; then
+          csba_fix_flags+=(--project)
+        else
+          csba_fix_flags+=(--global)
+        fi
+        printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
+        bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
+        fixed=1
         ;;
     esac
     [[ "$fixed" -eq 1 ]] && break

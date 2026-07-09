@@ -126,7 +126,7 @@ run_edit() {
   local input
   input=$(jq -n --arg f "$TMPFILE" \
     '{hook_event_name:"PreToolUse", tool_name:"Edit", tool_input:{file_path:$f, old_string:"a", new_string:"b"}}')
-  (cd "$TMPDIR_TEST" && export PATH="${PATH:-/usr/bin:/bin}" SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-cursor}" SILVER_BULLET_PROJECT_ROOT="${SILVER_BULLET_PROJECT_ROOT:-$TMPDIR_TEST}" HOME="${TEST_HOME:-$HOME}" SB_AGENTMEMORY_MCP_ARTIFACT="${SB_AGENTMEMORY_MCP_ARTIFACT:-}" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
+  (cd "$TMPDIR_TEST" && export PATH="${PATH:-/usr/bin:/bin}" SILVER_BULLET_RUNTIME="${SILVER_BULLET_RUNTIME:-cursor}" SILVER_BULLET_PROJECT_ROOT="${SILVER_BULLET_PROJECT_ROOT:-$TMPDIR_TEST}" HOME="${TEST_HOME:-$HOME}" SB_AGENTMEMORY_MCP_ARTIFACT="${SB_AGENTMEMORY_MCP_ARTIFACT:-}" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_TEST_DIR}" && printf '%s' "$input" | bash "$GATE_HOOK" 2>/dev/null)
 }
 
 wire_test_mcp() {
@@ -182,6 +182,33 @@ rm -f "$AM_STATE"
 out="$(run_edit)"
 unwire_test_mcp
 assert_deny "MCP wired but no fresh usage blocks edit" "$out"
+
+# RED-5: auto-scaffold export root on substantive Write when opted in.
+setup
+write_cfg true true
+GF_STATE="${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}"
+jq --arg gf "$GF_STATE" \
+  '.recommended_tools.graphify = {"enabled_by_user": true, "query_state_file": $gf}' \
+  "$TMPCFG" >"${TMPCFG}.tmp" && mv "${TMPCFG}.tmp" "$TMPCFG"
+install_mock_agentmemory
+wire_test_mcp
+rm -rf "${TMPDIR_TEST}/.agentmemory"
+# shellcheck source=hooks/lib/graphify-gate.sh
+source "$REPO_ROOT/hooks/lib/graphify-gate.sh"
+# shellcheck source=hooks/lib/agentmemory-gate.sh
+source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
+sb_graphify_record_query "$TMPCFG" 2>/dev/null || true
+sb_agentmemory_record_usage "$TMPCFG" 2>/dev/null || true
+out="$(run_edit)"
+unwire_test_mcp
+assert_allow "RED-5: gate scaffolds export root and allows edit" "$out"
+if [[ -d "${TMPDIR_TEST}/.agentmemory/memory" ]]; then
+  echo "  PASS: RED-5: .agentmemory/memory scaffolded"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: RED-5: .agentmemory/memory scaffolded"
+  FAIL=$((FAIL + 1))
+fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
