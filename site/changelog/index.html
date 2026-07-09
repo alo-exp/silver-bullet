@@ -89,14 +89,35 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-4">
+      <div class="release-header">
+        <h2>v0.51.4</h2>
+        <time class="release-date" datetime="2026-07-10">2026-07-10</time>
+      </div>
+      <p class="release-summary">Patch release: Cursor slash-picker deduplication and custom subagents (install, doctor D21, RFL ladder), stack double-compression recovery hardening, MultAI deep-research port (<code>/silver:compare</code>), Codex user-scope registration, and tri-host post-release verify orchestrator.</p>
+      <h3>Features</h3>
+      <ul>
+        <li><code>feat(cursor)</code>: SB custom subagents installer — <code>install-cursor.sh</code>, doctor <strong>D21</strong>, silver-init §3.2.3 tri-state consent</li>
+        <li><code>feat(cursor)</code>: RFL custom subagents — 6-rung review-fix ladder, hooks, tests, skill</li>
+        <li><code>feat(deep-research)</code>: port MultAI solution-landscape and solution-compare — need-profile interview, SCR extraction, weighted matrix SPA, <code>/silver:compare</code></li>
+        <li><code>feat(agents)</code>: <code>silver-agent-opencode</code> and <code>silver-agent-pi</code> delegation surfaces</li>
+        <li><code>feat(release)</code>: mandatory tri-host post-release verify orchestrator</li>
+      </ul>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(cursor)</code>: slash picker deduplication — prune backend plugin caches, honor <code>.cursorignore</code>, commands-only registration</li>
+        <li><code>fix(cursor)</code>: harden D21 doctor probe and host-agnostic allowlists</li>
+        <li><code>fix(stack)</code>: double-compression mutex recovery, SEC-01/SEC-02 hardening, doctor D20</li>
+        <li><code>fix(codex)</code>: register Silver Bullet plugin with user scope</li>
+        <li><code>fix(commands)</code>: align Cursor and Codex slash routes with <code>silver:</code> colon convention</li>
+        <li><code>fix(deep-research)</code>: v2 audit follow-ups and Thermos hardening</li>
+      </ul>
+    </article>
+
     <article class="release" id="unreleased">
       <div class="release-header">
         <h2>Unreleased</h2>
       </div>
-      <h3>Fixes</h3>
-      <ul>
-        <li><code>fix(deep-research)</code>: v2 audit follow-ups — branch-correct GitHub <code>SKILL.md</code> URL resolution, <code>search_orchestrator</code> integration, <code>chain_tracker</code> unit tests, methodology DR-* phase alignment, and landscape replay <code>gh-search</code> partials</li>
-      </ul>
     </article>
 
     <article class="release" id="v0-51-3">
