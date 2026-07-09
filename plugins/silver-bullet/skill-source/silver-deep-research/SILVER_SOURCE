@@ -2,7 +2,7 @@
 name: "silver:deep-research"
 title: "Deep Research"
 description: >
-  SB catalog-backed AF-DECIDE flow step (FS-SILVER_DEEP_RESEARCH) and `/silver:deep-research` workflow engine: rigorous multi-source research with phase-level evidence, nested V-loops, citation tracking, claim verification, optional search-cli retrieval, and `.planning/research/` artifacts.
+  SB catalog-backed AF-DECIDE flow step (FS-SILVER_DEEP_RESEARCH) and `/silver:deep-research` workflow engine: rigorous multi-source research with phase-level evidence, nested V-loops, citation tracking, claim verification, optional search-cli retrieval, and `research/` artifacts.
 argument-hint: "<research question or technology decision> [--mode quick|standard|deep|ultradeep]"
 version: 1.0.0
 user-invocable: false
@@ -65,7 +65,7 @@ Before retrieval or synthesis:
 3. Create output directory:
 
 ```bash
-export SB_RESEARCH_OUT_DIR=".planning/research/$(date -u +%Y-%m-%d)-<slug>"
+export SB_RESEARCH_OUT_DIR="research/$(date -u +%Y-%m-%d)-<slug>"
 mkdir -p "$SB_RESEARCH_OUT_DIR/validation"
 ```
 
@@ -75,11 +75,32 @@ mkdir -p "$SB_RESEARCH_OUT_DIR/validation"
    - `flow_step: "FS-SILVER_DEEP_RESEARCH"`
    - `question`
    - `mode`
+   - `research_type` (`default` | `solution-landscape` | `solution-compare`)
    - `started_at`
    - `search_cli.status`
    - `search_cli.providers_available`
    - `fallback_reason`
 5. FORBIDDEN: writing research output to `~/Documents`.
+
+## Research types
+
+| `research_type` | Trigger | Deep dive |
+|-----------------|---------|-----------|
+| `default` | General research questions | Standard DR artifacts |
+| `solution-landscape` | AF-DECIDE tool/category decision | Market survey → top-5 SCR |
+| `solution-compare` | `/silver:compare A B …` | SCR × N named solutions |
+
+**Solution types:** run mandatory need-profile interview (`reference/need-profile-interview.md`)
+before `DR-RETRIEVE`. `phase_gate.py` blocks retrieval until `need_profile.json` has
+`interview_complete: true` and `license_preference` set.
+
+Default mode for solution types: **`deep`**.
+
+Landscape: `shortlist_candidates.py` → exactly 5 SCRs. Compare: skip shortlist; use
+`solutions_requested.json`.
+
+Packaging: `compare_solutions.py` → `generate_report_spa.py` → serverless `report.html`
+(open in Cursor browser + `open report.html` — **no** `http.server`).
 
 ## Mode Selection
 
@@ -156,6 +177,10 @@ Load these references as needed:
 - `reference/quality-gates.md` for validation loops
 - `reference/html-generation.md` for optional HTML
 - `reference/continuation.md` for long reports
+- `reference/need-profile-interview.md` for solution decision interviews
+- `reference/landscape/` for market landscape prompts
+- `reference/solution-scr/scr-guide.md` for Solution Capability Reports (SCR)
+- `reference/comparator/` for weighted matrix methodology
 
 Phases 3-5 operate as an evidence loop per section:
 
@@ -168,10 +193,12 @@ retrieve -> evidence store -> outline refinement -> draft -> verify claims -> de
 All files are under:
 
 ```text
-.planning/research/<date>-<slug>/
+research/<date>-<slug>/
 ```
 
-Required:
+Legacy `.planning/research/` paths are archived; new runs use `research/` at repo root.
+
+Required (mode-dependent; see `phases.yaml` + `research_types`):
 
 ```text
 run_manifest.json
@@ -191,6 +218,20 @@ validation/validate_report.log
 validation/verify_citations.log
 validation/verify_claim_support.log
 ```
+
+Solution-landscape / solution-compare also require:
+
+```text
+need_profile.json
+comparison/comparison.json
+comparison/comparison-matrix.md
+report.html
+solutions/<slug>/scr.md
+solutions/<slug>/features.json
+```
+
+Landscape adds `landscape/landscape-report.md`, `shortlist/shortlist.json` (exactly 5).
+Compare adds `solutions_requested.json` (N ≥ 2); no shortlist.
 
 Compatibility report names may also be emitted when useful:
 
@@ -217,6 +258,15 @@ Run validation before exit:
 python3 skills/silver-deep-research/scripts/validate_report.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
 python3 skills/silver-deep-research/scripts/verify_citations.py --report "$SB_RESEARCH_OUT_DIR/research_report.md"
 python3 skills/silver-deep-research/scripts/verify_claim_support.py --report "$SB_RESEARCH_OUT_DIR/research_report.md" --dir "$SB_RESEARCH_OUT_DIR"
+python3 skills/silver-deep-research/scripts/phase_gate.py --dir "$SB_RESEARCH_OUT_DIR"
+```
+
+For solution types, also run:
+
+```bash
+python3 skills/silver-deep-research/scripts/generate_report_spa.py --dir "$SB_RESEARCH_OUT_DIR"
+python3 skills/silver-deep-research/scripts/validate_spa_report.py --report "$SB_RESEARCH_OUT_DIR/report.html"
+# landscape: validate_landscape.py — compare: validate_compare.py
 ```
 
 Maximum repair loops: 3 inside the flow step. If still failing, write blocker

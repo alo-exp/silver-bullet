@@ -1,0 +1,45 @@
+{
+  "count": 5,
+  "solutions": [
+    {
+      "rank": 1,
+      "name": "Backstage",
+      "slug": "backstage",
+      "license": "oss",
+      "rationale": "Top candidate from landscape survey",
+      "score": 9.0
+    },
+    {
+      "rank": 2,
+      "name": "Port",
+      "slug": "port",
+      "license": "commercial",
+      "rationale": "Top candidate from landscape survey",
+      "score": 8.0
+    },
+    {
+      "rank": 3,
+      "name": "Cortex",
+      "slug": "cortex",
+      "license": "commercial",
+      "rationale": "Top candidate from landscape survey",
+      "score": 7.0
+    },
+    {
+      "rank": 4,
+      "name": "Compass",
+      "slug": "compass",
+      "license": "commercial",
+      "rationale": "Top candidate from landscape survey",
+      "score": 6.0
+    },
+    {
+      "rank": 5,
+      "name": "Roadie",
+      "slug": "roadie",
+      "license": "commercial",
+      "rationale": "Top candidate from landscape survey",
+      "score": 5.0
+    }
+  ]
+}

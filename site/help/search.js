@@ -330,7 +330,14 @@ var IDX = [
     "url": "/help/workflows/silver-deep-research.html",
     "anchor": "overview",
     "title": "/silver:deep-research",
-    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, uses optional MultAI only when explicitly requested, writes decision artifacts, and hands off to /silver:feature, /silver:ui, /silver:devops, silver:plan, or stops as research-only."
+    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, supports solution-landscape and solution-compare modes with need-profile interview, SCR, weighted matrix, and serverless report.html under research/, and hands off to /silver:feature, /silver:ui, /silver:devops, silver:plan, or stops as research-only."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-compare.html",
+    "anchor": "overview",
+    "title": "/silver:compare",
+    "text": "Named solution comparison via deep-research engine (research_type=solution-compare). Requires N>=2 named solutions, mandatory need-profile interview, SCR per solution, weighted comparison matrix, validate_compare.py and validate_spa_report.py gates, serverless report.html under research/<date>-<slug>/."
   },
   {
     "page": "Workflows",

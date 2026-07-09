@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Validate solution-compare run artifacts."""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+
+def validate(out_dir: Path) -> dict:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    req_path = out_dir / "solutions_requested.json"
+    if not req_path.exists():
+        errors.append("missing solutions_requested.json")
+    else:
+        data = json.loads(req_path.read_text(encoding="utf-8"))
+        names = data.get("solutions") or data.get("names") or []
+        if len(names) < 2:
+            errors.append(f"need N>=2 named solutions, got {len(names)}")
+        if len(names) > 12:
+            warnings.append(f"soft warn: {len(names)} solutions exceeds practical limit of 12")
+
+    if (out_dir / "shortlist" / "shortlist.json").exists():
+        errors.append("shortlist.json must not exist in solution-compare mode")
+
+    solutions_dir = out_dir / "solutions"
+    if req_path.exists():
+        expected = len(json.loads(req_path.read_text(encoding="utf-8")).get("solutions", []))
+        if solutions_dir.is_dir():
+            scr_count = sum(1 for d in solutions_dir.iterdir() if (d / "scr.md").exists())
+            if scr_count != expected:
+                errors.append(f"expected {expected} SCR dirs, found {scr_count}")
+
+    comp = out_dir / "comparison" / "comparison.json"
+    if not comp.exists():
+        errors.append("missing comparison/comparison.json")
+
+    spa = out_dir / "report.html"
+    if not spa.exists():
+        errors.append("missing report.html")
+
+    return {
+        "status": "pass" if not errors else "fail",
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dir", required=True)
+    args = parser.parse_args()
+    result = validate(Path(args.dir))
+    print(json.dumps(result, indent=2))
+    sys.exit(0 if result["status"] == "pass" else 1)
+
+
+if __name__ == "__main__":
+    main()

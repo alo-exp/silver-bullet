@@ -176,7 +176,7 @@ V-loop checks:
 {checks or '- (see phases.yaml)'}
 
 Load reference/methodology.md for full activities.
-Output directory: $SB_RESEARCH_OUT_DIR (.planning/research/<date>-<slug>/)
+Output directory: $SB_RESEARCH_OUT_DIR (research/<date>-<slug>/)
 """
 
     def write_phase_manifest(self, out_dir: Path, mode: Optional[ResearchMode] = None) -> Path:

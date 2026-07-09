@@ -18,7 +18,7 @@ Trigger auto-continuation when report exceeds 18,000 words in single run.
 
 ## Continuation State File
 
-**Location:** `$HOME/.claude/research_output/continuation_state_[report_id].json`
+**Location:** `.codex/research_output/continuation_state_[report_id].json` (Codex host; use project-local `.planning/research/` when host-agnostic)
 
 ```json
 {
@@ -79,7 +79,7 @@ Task(
 CONTINUATION TASK: Continue existing deep-research report.
 
 CRITICAL INSTRUCTIONS:
-1. Read continuation state: $HOME/.claude/research_output/continuation_state_[report_id].json
+1. Read continuation state: `.codex/research_output/continuation_state_[report_id].json`
 2. Read existing report: [file_path from state]
 3. Read LAST 3 completed sections for flow/style
 4. Load research context: themes, narrative arc, writing style
