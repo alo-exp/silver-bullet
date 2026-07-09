@@ -369,7 +369,7 @@ main() {
     local resolved_current registry_sha gitpath_root market_cache_link
     if [[ -L "$cache_current" ]]; then
       resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
-      if [[ -f "${resolved_current}/commands/init.md" ]]; then
+      if [[ -f "${resolved_current}/commands/silver:init.md" ]]; then
         record pass "cursor-commands" "plugin cache has composer command stubs"
       else
         record fail "cursor-commands" "commands/ missing — run: bash scripts/install-cursor.sh"
@@ -381,7 +381,7 @@ main() {
           market_cache_link="${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
           if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1 \
             && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]] \
-            && [[ -f "${gitpath_root}/commands/init.md" ]] \
+            && [[ -f "${gitpath_root}/commands/silver:init.md" ]] \
             && jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
             record pass "cursor-gitpath" "marketplace gitPath ready with commands (${registry_sha:0:8})"
           elif [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then

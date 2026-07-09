@@ -540,7 +540,7 @@ HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
 mkdir -p \
   "$HOME_DIR/.codex" \
-  "$HOME_DIR/.codex/skills/silver-feature" \
+  "$HOME_DIR/.codex/skills/silver:feature" \
   "$HOME_DIR/.codex/skills/silver-review-fix-ladder" \
   "$HOME_DIR/.codex/skills/unrelated-native" \
   "$HOME_DIR/.codex/skills/writing-plans" \
@@ -560,7 +560,7 @@ name: unrelated-native
 ---
 EOF
 
-cat > "$HOME_DIR/.codex/skills/silver-feature/SKILL.md" <<'EOF'
+cat > "$HOME_DIR/.codex/skills/silver:feature/SKILL.md" <<'EOF'
 ---
 name: "silver:feature"
 title: "Silver Bullet: Silver: Feature"
@@ -1026,13 +1026,13 @@ assert_file_exists "Silver Bullet cache alias exposes internal skill source" "$(
 assert_file_exists "Silver Bullet cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" modularity)"
 assert_file_exists "Silver Bullet cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" testability)"
 assert_no_packaged_skill_md "Silver Bullet cache alias exposes no picker-discoverable SKILL.md files" "$FAKE_SB_INSTALL_ALIAS"
-assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/silver/SKILL.md"
-assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver-feature/.silver-bullet-managed"
-assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
-assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver-feature/SKILL.md"
+assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver:feature/.silver-bullet-managed"
+assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
+assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
+assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
+assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes review fix ladder helper" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
 assert_file_exists "Codex native SB mirror marks review fix ladder as managed" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/.silver-bullet-managed"
 assert_contains "Codex native review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
@@ -1170,7 +1170,8 @@ assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROO
 assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/host-bundles/codex/silver-scan/SKILL.md"
 assert_file_absent "Installed SB package does not expose Claude agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents/claude"
 assert_file_absent "Installed SB package does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_SB_PACKAGE_ROOT/agents/codex"
-assert_file_exists "Installed SB package may expose Cursor agent bundle" "$FAKE_SB_PACKAGE_ROOT/agents/cursor/silver/SKILL.md"
+assert_file_exists "Installed SB package exposes silver slash command stub" "$FAKE_SB_PACKAGE_ROOT/commands/silver.md"
+assert_file_exists "Installed SB package exposes Cursor subagent skill" "$FAKE_SB_PACKAGE_ROOT/agents/cursor/silver:plan/SKILL.md"
 assert_file_absent "Current cache does not expose Claude agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents/claude"
 assert_file_absent "Current cache does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_CACHE_ROOT/agents/codex"
 assert_file_absent "SB source bundle does not expose plugin picker skills directory" "$REPO_ROOT/plugins/silver-bullet/skills"
@@ -1323,9 +1324,9 @@ assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-chec
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
 {
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/agents/cursor/**' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
 } > "$RUNTIME_CLAUDE_REPORT"
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
@@ -1471,7 +1472,7 @@ assert_file_exists "public-release cache alias exposes internal review fix ladde
 assert_file_exists "public-release cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" modularity)"
 assert_file_exists "public-release cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" testability)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
-assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver-feature/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver:feature/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes review fix ladder helper" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
 assert_contains "public-release review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes verify-tests gate" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
@@ -1509,7 +1510,7 @@ cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/.codex-plugin/plugin.json"
   "commands": "./commands/"
 }
 EOF
-cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands/init.md" <<'EOF'
+cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands/silver:init.md" <<'EOF'
 # init
 EOF
 git -C "$BROKEN_PUBLIC_SB_SOURCE" init -q
