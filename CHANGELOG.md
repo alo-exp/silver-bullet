@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ## Features
+- `feat(cursor)`: wire SB custom subagents into `install-cursor.sh`, doctor **D21** (`probe-global-agents.sh` + `--fix` via `install-cursor-sb-agents.sh`), and silver-init §3.2.3 (tri-state consent, skip-if-global)
 - `feat(deep-research)`: port MultAI solution-landscape and solution-compare into SB (no multi-AI) — AF-DECIDE category decisions, mandatory need-profile interview (`need_profile.json`), top-5 shortlist + SCR extraction, weighted comparison matrix, serverless `report.html` SPA, canonical output root `research/<date>-<slug>/`, and `/silver:compare` for N≥2 named solutions (`daee7db8`…`632d75d4`)
 
 ## Fixes
