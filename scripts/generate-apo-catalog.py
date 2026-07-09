@@ -191,6 +191,7 @@ SKILL_TO_FLOW = {
     "silver-deep-research": "AF-DECIDE",
     "silver-compare": "AF-DECIDE",
     "silver-doctor": "AF-PHASE-MANAGE",
+    "silver-clear-stack-state": "AF-PHASE-MANAGE",
     "review-research": "AF-DECIDE",
     "silver-spec": "AF-SPECIFY",
     "silver-ingest": "AF-SPECIFY",
@@ -270,6 +271,8 @@ SKILL_TO_FLOW = {
     "silver-agent-codex": "AF-AGENT-DELEGATE",
     "silver-agent-cursor": "AF-AGENT-DELEGATE",
     "silver-agent-claude": "AF-AGENT-DELEGATE",
+    "silver-agent-opencode": "AF-AGENT-DELEGATE",
+    "silver-agent-pi": "AF-AGENT-DELEGATE",
     "silver-agent-worker": "AF-AGENT-DELEGATE",
 }
 

@@ -61,6 +61,7 @@ bash scripts/sb-doctor.sh --fix
 | D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 | D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
+| D21 Cursor SB subagents | `bash scripts/install-cursor-sb-agents.sh --fix` or `bash scripts/sb-doctor.sh --fix` (**Cursor only**) |
 
 Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -70,7 +71,7 @@ Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surface
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D17)
+## Check catalog (D1–D20)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
@@ -89,6 +90,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D15 primary host agent description token budget
 - D16 repo install surface (`validate-host-install-surface.sh`)
 - D17 host-agnostic SB core (`validate-host-agnostic-core.sh`)
+- D20 stack compression mutex clean (`sb_stack_mutual_exclusion_is_clean`); `--fix` clears mutex and scaffolds agentmemory export root
 
 ```bash
 bash scripts/validate-host-install-surface.sh

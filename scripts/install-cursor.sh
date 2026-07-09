@@ -331,7 +331,10 @@ prune_cursor_gitpath_picker_skills() {
     mkdir -p "${gitpath_root}/skills"
     rsync -a --delete "${dest}/skills/" "${gitpath_root}/skills/"
   fi
-  rm -rf "${gitpath_root}/plugins/silver-bullet/skills"
+  rm -rf \
+    "${gitpath_root}/plugins/silver-bullet/skills" \
+    "${gitpath_root}/.agents" \
+    "${gitpath_root}/.cursor/agents"
 }
 
 prune_cursor_gitpath_extra_picker_surfaces() {
@@ -348,7 +351,11 @@ prune_cursor_gitpath_extra_picker_surfaces() {
   # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
   rm -rf \
     "${gitpath_root}/plugins/silver-bullet/commands" \
-    "${gitpath_root}/plugins/silver-bullet/agents"
+    "${gitpath_root}/plugins/silver-bullet/agents" \
+    "${gitpath_root}/plugins/silver-bullet/skill-source" \
+    "${gitpath_root}/plugins/silver-bullet/templates" \
+    "${gitpath_root}/templates/orchestrator-workers" \
+    "${gitpath_root}/templates/workflows"
 
   if [[ -f "$nested_manifest" ]]; then
     tmp="$(mktemp)"
@@ -642,6 +649,17 @@ fi
 
 DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
+
+# SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
+CSBA_INSTALLER="${REPO_ROOT}/scripts/install-cursor-sb-agents.sh"
+if [[ -x "$CSBA_INSTALLER" ]]; then
+  if [[ -t 0 && -t 1 ]]; then
+    bash "$CSBA_INSTALLER" --global || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+  else
+    bash "$CSBA_INSTALLER" --global --non-interactive || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+  fi
+fi
+
 ln -sfn "$DEST_ROOT" "$(cursor_install_current_link)"
 if [[ -z "${INSTALL_COMMIT_SHA:-}" ]] && git -C "$REPO_ROOT" rev-parse HEAD >/dev/null 2>&1; then
   INSTALL_COMMIT_SHA="$(resolve_install_commit_sha "$REPO_ROOT")"

@@ -98,5 +98,18 @@ fi
 rm -rf "$MOCK_BIN"
 rm -f "$REPO_ROOT/.silver-bullet.json.bak-five-tool-test" 2>/dev/null || true
 
+# AC-8: five-tool install profile disables LeanCTX shell MCP when RTK owns sb_shell.
+grep -q 'LEANCTX_DISABLE_SHELL_MCP=1' "$REPO_ROOT/scripts/install-leanctx-sb.sh" \
+  && pass "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1" \
+  || fail "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1"
+if bash "$REPO_ROOT/scripts/install-leanctx-sb.sh" --host cursor --dry-run --skip-install --skip-verify \
+  >/tmp/sb-opt-leanctx-profile.log 2>&1; then
+  grep -q 'five-tool-routed.env\|LEANCTX_DISABLE_SHELL_MCP' /tmp/sb-opt-leanctx-profile.log \
+    && pass "install dry-run logs profile env with shell MCP disabled" \
+    || fail "install dry-run logs profile env with shell MCP disabled"
+else
+  fail "install-leanctx-sb dry-run for profile env check"
+fi
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

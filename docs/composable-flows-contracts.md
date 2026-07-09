@@ -78,7 +78,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-BLAST-RADIUS` | blast_radius_assessment | `templates/orchestrator-workers/BLAST-RADIUS.md` | `silver-blast-radius` |
 | `AF-DEVOPS-ROUTE` | devops_toolchain_routing | `templates/orchestrator-workers/DEVOPS-SKILL-ROUTER.md` | `devops-skill-router`, `silver-devops` |
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
-| `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-doctor`, `silver-migrate`, `silver-phase` |
+| `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-doctor`, `silver-migrate`, `silver-phase`, `silver-clear-stack-state` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
 | `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-claude`, `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-opencode`, `silver-agent-pi` |
 
@@ -473,6 +473,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_AGENT_CLAUDE` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CLAUDE` |
 | `FS-SILVER_AGENT_CODEX` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CODEX` |
 | `FS-SILVER_AGENT_CURSOR` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CURSOR` |
+| `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_OPENCODE` |
+| `FS-SILVER_AGENT_PI` | `silver-agent-pi` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_PI` |
 | `FS-SILVER_BENCHMARK` | `silver-benchmark` | `AF-FAST-PATH` | `EV-FS-SILVER_BENCHMARK` |
 | `FS-SILVER_BLAST_RADIUS` | `silver-blast-radius` | `AF-BLAST-RADIUS` | `EV-FS-SILVER_BLAST_RADIUS` |
 | `FS-SILVER_BOOTSTRAP_MILESTONE` | `silver-bootstrap-milestone` | `AF-BOOTSTRAP` | `EV-FS-SILVER_BOOTSTRAP_MILESTONE` |
@@ -481,6 +483,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_BUGFIX` | `silver-bugfix` | `AF-DEBUG` | `EV-FS-SILVER_BUGFIX` |
 | `FS-SILVER_CANARY` | `silver-canary` | `AF-SHIP` | `EV-FS-SILVER_CANARY` |
 | `FS-SILVER_CLARIFY` | `silver-clarify` | `AF-CLARIFY` | `EV-FS-SILVER_CLARIFY` |
+| `FS-SILVER_CLEAR_STACK_STATE` | `silver-clear-stack-state` | `AF-PHASE-MANAGE` | `EV-FS-SILVER_CLEAR_STACK_STATE` |
 | `FS-SILVER_COMPARE` | `silver-compare` | `AF-DECIDE` | `EV-FS-SILVER_CLARIFY` |
 | `FS-SILVER_COMPLETION_AUDIT` | `silver-completion-audit` | `AF-COMPLETION-AUDIT` | `EV-FS-SILVER_COMPLETION_AUDIT` |
 | `FS-SILVER_CONTENT` | `silver-content` | `AF-DOCUMENT` | `EV-FS-SILVER_CONTENT` |
@@ -599,6 +602,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-bugfix` | `AF-DEBUG` |
 | `silver-canary` | `AF-SHIP` |
 | `silver-clarify` | `AF-CLARIFY` |
+| `silver-clear-stack-state` | `AF-PHASE-MANAGE` |
 | `silver-compare` | `AF-DECIDE` |
 | `silver-completion-audit` | `AF-COMPLETION-AUDIT` |
 | `silver-content` | `AF-DOCUMENT` |
