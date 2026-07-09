@@ -3,9 +3,10 @@
 #
 # Cursor plugin.json semantics (verified empirically):
 #   - "commands": "./commands"  → slash commands from commands/*.md (filename stem = route)
-#   - "skills": "./agents/cursor" → subagent entries from agents/cursor/*/SKILL.md
+#   - "skills": "./agents/cursor" → subagent entries from agents/cursor/*/SKILL.md (manifest)
+#   - agents/cursor on disk → same subagent entries via auto-discovery (no manifest needed)
 #
-# Acceptance: / picker shows commands ONLY — plugin.json must not declare skills.
+# Acceptance: / picker shows commands ONLY — no agents/cursor directory on surface.
 #
 # Usage:
 #   bash scripts/enumerate-cursor-slash-picker.sh [--cursor-home PATH] [--surface PATH]
@@ -86,8 +87,11 @@ def enumerate_surface(root: Path) -> dict[str, object]:
             pass
 
     commands_dir = root / "commands"
+    agents_cursor = root / "agents" / "cursor"
     skills_path = manifest.get("skills")
     skills_root = root / str(skills_path).removeprefix("./") if skills_path else None
+    if skills_root is None and agents_cursor.is_dir():
+        skills_root = agents_cursor
 
     commands: list[dict[str, str]] = []
     subagents: list[dict[str, str]] = []
@@ -103,7 +107,7 @@ def enumerate_surface(root: Path) -> dict[str, object]:
                 bad_colon.append(f"{path.name}: stem {path.stem!r} != name {name!r}")
             commands.append({"route": route, "name": name, "file": str(path.relative_to(root))})
 
-    if skills_path and skills_root and skills_root.is_dir():
+    if skills_root and skills_root.is_dir():
         for skill_md in sorted(skills_root.glob("*/SKILL.md")):
             name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
             route = f"/{name}" if name != "silver" else "/silver"
@@ -116,9 +120,11 @@ def enumerate_surface(root: Path) -> dict[str, object]:
             )
 
     overlap = sorted({c["name"] for c in commands} & {s["name"] for s in subagents})
+    agents_cursor_present = agents_cursor.is_dir() and any(agents_cursor.glob("*/SKILL.md"))
     return {
         "root": str(root),
         "manifest_skills": skills_path,
+        "agents_cursor_present": agents_cursor_present,
         "commands": commands,
         "subagents": subagents,
         "overlap": overlap,
@@ -140,6 +146,7 @@ bad_colon = result["bad_colon"]
 print("Silver Bullet Cursor slash-picker enumeration")
 print(f"surface={result['root']}")
 print(f"manifest.skills={result['manifest_skills']!r}")
+print(f"agents/cursor on disk={result['agents_cursor_present']}")
 print(f"commands={len(commands)} subagents={len(subagents)} overlap={len(overlap)}")
 print()
 
@@ -169,6 +176,8 @@ for entry in commands:
 
 failures = 0
 if result["manifest_skills"]:
+    failures += 1
+if result["agents_cursor_present"]:
     failures += 1
 if subagents:
     failures += 1

@@ -35,7 +35,7 @@ sb_agent_cache_rel() {
   case "${1:-}" in
     claude) printf '%s\n' 'agents/claude' ;;
     codex) printf '%s\n' 'skill-source' ;;
-    cursor) printf '%s\n' 'agents/cursor' ;;
+    cursor) printf '%s\n' 'skill-source' ;;
     *)
       printf 'sb_agent_cache_rel: unknown host: %s\n' "${1:-}" >&2
       return 1
