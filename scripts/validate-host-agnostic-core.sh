@@ -115,6 +115,7 @@ HOOKS_ALLOWLIST = {
     "hooks/planning-file-guard.sh",
     "hooks/session-start",
     "hooks/lib/leanctx-gate.sh",
+    "hooks/lib/review-fix-ladder-state.sh",
 }
 
 SCRIPTS_ALLOWLIST = {
