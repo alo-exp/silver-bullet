@@ -3,6 +3,7 @@ name: "silver:doctor"
 title: "Doctor"
 description: "This skill should be used when the user runs `/silver:doctor` or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/silver:init` update, after `/silver:update`, and during CI diagnostics."
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:doctor — Install and Activation Audit
@@ -62,6 +63,7 @@ bash scripts/sb-doctor.sh --fix
 | D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
 | D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
 | D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
+| D21 Cursor SB subagents | `bash scripts/install-cursor-sb-agents.sh --fix` or `bash scripts/sb-doctor.sh --fix` (**Cursor only**) |
 
 Log friction in `$HOME/.codex/.silver-bullet/sb-friction-log.md` when doctor surfaces hook or install issues.
 

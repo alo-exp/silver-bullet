@@ -528,6 +528,27 @@
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
   },
+  "cursor_sb_agents": {
+    "enabled": true,
+    "enabled_by_user": null,
+    "selected_models": [
+      "composer-2.5",
+      "grok-4.5"
+    ],
+    "effort_levels": [
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "include_fast": false,
+    "include_max": false,
+    "agent_name_prefix": "sb",
+    "catalog_source": "agent-models+docs",
+    "catalog_fetched_at": null,
+    "agents_install_status": "pending",
+    "agents_install_scope": null,
+    "enforcement_suspended": false
+  },
   "enterprise_policy": {
     "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",
     "active_profile": "supervised",
