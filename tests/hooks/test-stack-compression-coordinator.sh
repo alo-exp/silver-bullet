@@ -38,6 +38,7 @@ source "$READ_DENY_LIB"
 TMP="$(mktemp -d)"
 STATE_DIR="$(mktemp -d)"
 export SB_RUNTIME_STATE_DIR="$STATE_DIR"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
 
 write_five_tool_cfg() {
   cat >"$TMP/.silver-bullet.json" <<EOF
@@ -127,7 +128,8 @@ export SILVER_BULLET_PROJECT_ROOT="$TMP"
 rm -f "${SB_RUNTIME_STATE_DIR}/project-root" 2>/dev/null || true
 mcp_input=$(jq -n \
   '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"leanctx", toolName:"lctx_remember", arguments:{content:"test"}}}')
-hook_out="$(cd "$TMP" && printf '%s' "$mcp_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
+hook_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$mcp_input" | bash "$COORD_HOOK" 2>/dev/null || true)"
 if printf '%s' "$hook_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
   pass "coordinator hook denies lctx_remember"
 else
@@ -141,6 +143,34 @@ sb_stack_lifecycle_mark "agentmemory_snapshot"
 sleep 1
 sb_stack_lifecycle_mark "leanctx_compact"
 sb_stack_lifecycle_order_ok && pass "lifecycle order CM→AM→LeanCTX" || fail "lifecycle order CM→AM→LeanCTX"
+
+# RED-1: mutex violation → compliant ctx_search clears → subsequent Read allowed.
+sb_stack_record_double_compression "$CFG" "sb_shell" "leanctx" "rtk"
+sb_stack_mutual_exclusion_is_clean "$CFG" && fail "RED-1: mutex dirty after seeded violation" \
+  || pass "RED-1: mutex dirty after seeded violation"
+
+recovery_mcp=$(jq -n \
+  '{hook_event_name:"PreToolUse", tool_name:"CallMcpTool", tool_input:{server:"context-mode", toolName:"ctx_search", arguments:{queries:["test"]}}}')
+recovery_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$recovery_mcp" | bash "$COORD_HOOK" 2>/dev/null || true)"
+if printf '%s' "$recovery_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1; then
+  fail "RED-1: compliant ctx_search denied during recovery — got: $recovery_out"
+else
+  pass "RED-1: compliant ctx_search allowed during recovery"
+fi
+sb_stack_mutual_exclusion_is_clean "$CFG" && pass "RED-1: mutex clean after recovery MCP" \
+  || fail "RED-1: mutex clean after recovery MCP"
+
+read_after=$(jq -n \
+  '{hook_event_name:"PreToolUse", tool_name:"Read", tool_input:{file_path:"README.md"}}')
+read_out="$(cd "$TMP" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$STATE_DIR" \
+  printf '%s' "$read_after" | bash "$COORD_HOOK" 2>/dev/null || true)"
+if printf '%s' "$read_out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' >/dev/null 2>&1 \
+  && printf '%s' "$read_out" | grep -q 'sb_stack_double_compression'; then
+  fail "RED-1: Read denied after recovery — got: $read_out"
+else
+  pass "RED-1: Read allowed after recovery MCP"
+fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

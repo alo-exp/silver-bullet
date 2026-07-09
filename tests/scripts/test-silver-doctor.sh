@@ -152,6 +152,67 @@ fi
 assert_contains "D8 Cursor-only in doctor script" 'runtime" == "cursor"' "$DOCTOR"
 assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR"
 assert_contains "D13 host-scoped in doctor script" 'cross-host plugin path contamination' "$DOCTOR"
+assert_contains "D20 stack mutex check in doctor" 'D20' "$DOCTOR"
+
+# RED-4: doctor D20 fix primitives clear dirty mutex and scaffold agentmemory export root.
+RED4_FIXTURE="$(mktemp -d)"
+RED4_STATE="$(mktemp -d)"
+export SB_RUNTIME_STATE_DIR="$RED4_STATE"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$RED4_FIXTURE/.silver-bullet.json"
+jq '.recommended_tools.leanctx.enabled_by_user = true
+  | .recommended_tools.rtk.enabled_by_user = true
+  | .recommended_tools.context_mode.enabled_by_user = true
+  | .recommended_tools.agentmemory.enabled_by_user = true
+  | .optimization_profiles.five_tool_routed = {
+      "stack_mode": "parallel_routed",
+      "primary_fts": "context_mode",
+      "routes": {
+        "sb_read": "leanctx",
+        "sb_grep": "context_mode",
+        "sb_shell": "rtk",
+        "sb_slice": "context_mode",
+        "sb_webfetch": "context_mode",
+        "sb_graph": "graphify",
+        "sb_remember": "agentmemory"
+      }
+    }' "$RED4_FIXTURE/.silver-bullet.json" >"${RED4_FIXTURE}/.silver-bullet.json.tmp"
+mv "${RED4_FIXTURE}/.silver-bullet.json.tmp" "$RED4_FIXTURE/.silver-bullet.json"
+cp "$REPO_ROOT/silver-bullet.md" "$RED4_FIXTURE/silver-bullet.md"
+mkdir -p "$RED4_FIXTURE/docs/workflows" "$RED4_FIXTURE/scripts"
+cp "$REPO_ROOT/scripts/workflows.sh" "$RED4_FIXTURE/scripts/workflows.sh"
+chmod +x "$RED4_FIXTURE/scripts/workflows.sh"
+# shellcheck source=hooks/lib/stack-compression-coordinator.sh
+source "$REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"
+# shellcheck source=hooks/lib/agentmemory-gate.sh
+source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
+sb_stack_record_double_compression "$RED4_FIXTURE/.silver-bullet.json" "sb_shell" "leanctx" "rtk"
+doc_before="$(bash "$DOCTOR" "$RED4_FIXTURE" 2>&1 || true)"
+if printf '%s' "$doc_before" | grep -q 'FAIL: D20'; then
+  echo "PASS: RED-4 doctor detects dirty mutex (D20 FAIL)"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: RED-4 doctor should FAIL D20 when mutex dirty"
+  FAIL=$((FAIL + 1))
+fi
+sb_stack_clear_mutex_violations "$RED4_FIXTURE/.silver-bullet.json"
+sb_agentmemory_scaffold_export_root "$RED4_FIXTURE" "$RED4_FIXTURE/.silver-bullet.json" || true
+if sb_stack_mutual_exclusion_is_clean "$RED4_FIXTURE/.silver-bullet.json"; then
+  echo "PASS: RED-4 D20 fix clears dirty mutex"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: RED-4 D20 fix should clear dirty mutex"
+  FAIL=$((FAIL + 1))
+fi
+if [[ -d "$RED4_FIXTURE/.agentmemory/memory" ]]; then
+  echo "PASS: RED-4 D20 fix scaffolds agentmemory export root"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: RED-4 D20 fix should scaffold .agentmemory/memory"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$RED4_FIXTURE" "$RED4_STATE"
+unset SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR
 
 # Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
 if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
