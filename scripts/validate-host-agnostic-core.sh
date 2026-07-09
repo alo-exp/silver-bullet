@@ -77,6 +77,8 @@ STRICT_ALLOWLIST = {
     "skills/silver/SKILL.md",
     "skills/silver-create-release/SKILL.md",
     "skills/silver-review-fix-ladder/SKILL.md",
+    "skills/silver-doctor/SKILL.md",
+    "skills/silver-init/SKILL.md",
     "skills/silver-triage/SKILL.md",
     "silver-bullet.md",
     "templates/silver-bullet.md.base",
@@ -89,6 +91,7 @@ STRICT_ALLOWLIST_PREFIXES = (
     "skills/silver-deep-research/reference/",
     "skills/silver-deep-research/scripts/",
     "skills/silver-deep-research/templates/",
+    "skills/silver-deep-research/tests/",
     "skills/silver-deep-research/UPSTREAM.md",
     "skills/silver-init/references/",
 )
@@ -109,6 +112,7 @@ HOOKS_ALLOWLIST = {
     "hooks/planning-file-guard.sh",
     "hooks/session-start",
     "hooks/lib/leanctx-gate.sh",
+    "hooks/lib/review-fix-ladder-state.sh",
 }
 
 SCRIPTS_ALLOWLIST = {
@@ -162,6 +166,12 @@ SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/silver-scan.py",
     "scripts/lib/enterprise-e2e",
     "scripts/agent-",
+    "scripts/diagnose-cursor-picker-duplicates.sh",
+    "scripts/enumerate-cursor-slash-picker.sh",
+    "scripts/install-cursor-sb-agents.sh",
+    "scripts/lib/cursor-sb-agents/",
+    "scripts/lib/strip-cursor-sb-hooks.py",
+    "scripts/lib/post-release-uninstall.sh",
     "scripts/prune-stale-claude",
     "scripts/watch-enterprise-e2e",
 )

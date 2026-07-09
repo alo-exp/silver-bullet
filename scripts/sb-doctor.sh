@@ -501,7 +501,7 @@ run_doctor_checks() {
     resolved_current="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
     backend_sha="$(find "${HOME}/Library/Application Support/Cursor/logs" -name 'Cursor Plugins*.log' -type f -print0 2>/dev/null \
       | xargs -0 grep -h 'Adding enabled plugin: silver-bullet from ' 2>/dev/null \
-      | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1)"
+      | sed -n 's/.*silver-bullet from \([0-9a-f]\{40\}\).*/\1/p' | tail -1 || true)"
     [[ -n "$backend_sha" ]] || backend_sha="$registry_sha"
     if [[ -n "$backend_sha" && "$backend_sha" != "null" ]]; then
       gitpath_root="${HOME}/.cursor/plugins/marketplaces/github.com/alo-exp/silver-bullet/${backend_sha}"
@@ -553,8 +553,8 @@ run_doctor_checks() {
       else
         csba_agents_dir="${HOME}/.cursor/agents"
       fi
-      if CSBA_REPO_ROOT="$REPO_ROOT" bash "$csba_probe" \
-        --agents-dir "$csba_agents_dir" --repo-root "$REPO_ROOT" --quiet 2>/dev/null; then
+      if CSBA_REPO_ROOT="$PROJ_ROOT" bash "$csba_probe" \
+        --agents-dir "$csba_agents_dir" --repo-root "$PROJ_ROOT" --quiet 2>/dev/null; then
         record pass D21 "SB custom subagents (${csba_scope}): managed set matches config"
       else
         record fail D21 "SB custom subagents missing or stale — run: bash scripts/install-cursor-sb-agents.sh --fix"

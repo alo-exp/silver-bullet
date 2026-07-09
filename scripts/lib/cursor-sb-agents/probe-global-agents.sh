@@ -26,10 +26,31 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" ]]; then
+if [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" && -f "${SB_CURSOR_SB_AGENTS_CONFIG}" ]]; then
+  CONFIG_JSON="$(jq -c '.' "$SB_CURSOR_SB_AGENTS_CONFIG")"
+elif [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" ]]; then
   CONFIG_JSON="$SB_CURSOR_SB_AGENTS_CONFIG"
 elif [[ -z "$CONFIG_JSON" ]]; then
   CONFIG_JSON="$(csba_load_merged_config "$REPO_ROOT")"
+fi
+
+if [[ ! -d "$AGENTS_DIR" ]]; then
+  if [[ "$JSON_OUT" -eq 1 ]]; then
+    jq -n \
+      --arg agents_dir "$AGENTS_DIR" \
+      '{
+        ok: false,
+        expected_count: 0,
+        actual_count: 0,
+        agents_dir: $agents_dir,
+        expected_names: [],
+        found_names: [],
+        reason: "agents dir missing"
+      }'
+  else
+    [[ "$QUIET" -eq 1 ]] || echo "PROBE FAIL: agents dir missing ${AGENTS_DIR}" >&2
+  fi
+  exit 1
 fi
 
 EXPECTED_COUNT="$(csba_expected_count "$CONFIG_JSON")"
@@ -86,11 +107,15 @@ fail() {
 csba_names_match "$EXPECTED_NAMES" "$ACTUAL_NAMES" || fail "name set mismatch"
 
 if [[ "$SKIP_STATUS" -eq 0 ]]; then
-  if [[ -f "$CSBA_GLOBAL_CONFIG" ]]; then
-    jq -e '.agents_install_status == "installed"' "$CSBA_GLOBAL_CONFIG" >/dev/null 2>&1 \
+  status_file="$CSBA_GLOBAL_CONFIG"
+  if [[ -n "${SB_CURSOR_SB_AGENTS_CONFIG:-}" && -f "${SB_CURSOR_SB_AGENTS_CONFIG}" ]]; then
+    status_file="$SB_CURSOR_SB_AGENTS_CONFIG"
+  fi
+  if [[ -f "$status_file" ]]; then
+    jq -e '.agents_install_status == "installed"' "$status_file" >/dev/null 2>&1 \
       || fail "agents_install_status not installed"
   else
-    fail "missing global config ${CSBA_GLOBAL_CONFIG}"
+    fail "missing global config ${status_file}"
   fi
 fi
 
