@@ -4,6 +4,11 @@
 skills/
 host-bundles/
 agents/
+.agents/
 .cursor/agents/
 plugins/silver-bullet/skill-source/
 plugins/silver-bullet/agents/
+plugins/silver-bullet/skills/
+plugins/silver-bullet/templates/
+templates/orchestrator-workers/
+templates/workflows/

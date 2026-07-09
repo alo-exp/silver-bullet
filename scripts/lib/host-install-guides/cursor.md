@@ -38,6 +38,20 @@ Copy `scripts/lib/install-cursor/templates/cursor-rules/silver-orchestrator.mdc`
 
 `python3 scripts/lib/install-cursor/merge-cursor-hooks.py "$INSTALL_PATH"`
 
+## SB custom subagents (RFL / review ladders)
+
+After hook merge, `bash scripts/install-cursor.sh` runs `install-cursor-sb-agents.sh --global`
+(interactive when TTY; else `--non-interactive` defaults: Composer 2.5 + Grok 4.5 × medium/high/xhigh → 6 `sb-*` agents in `~/.cursor/agents/`).
+
+| Surface | Command |
+|---------|---------|
+| Install | `bash scripts/install-cursor-sb-agents.sh --global` |
+| Project fallback (init) | `bash scripts/install-cursor-sb-agents.sh --project` — only when global probe fails |
+| Doctor D21 | `bash scripts/lib/cursor-sb-agents/probe-global-agents.sh` |
+| Remediation | `bash scripts/install-cursor-sb-agents.sh --fix` or `bash scripts/sb-doctor.sh --fix` |
+
+Init §3.2.3: tri-state `cursor_sb_agents.enabled_by_user`; **skip** project `.cursor/agents/` when global probe passes (exact count + name set). Fast/Max models excluded unless user opts in at install/init.
+
 ## Token compression global rule
 
 `scripts/lib/install-cursor/templates/cursor/token-compression-enforcement.mdc`
