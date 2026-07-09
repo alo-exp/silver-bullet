@@ -31,13 +31,10 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _normalize_license(lic: str) -> str:
-    return re.sub(r"[\s\-]+", "", lic.lower().strip())
+    return re.sub(r"[^a-z0-9]+", "", (lic or "").lower())
 
 
-_NON_COMMERCIAL_MARKERS = (
-    "noncommercial",
-    "notcommercial",
-)
+_COMMERCIAL_MARKERS = ("commercial", "proprietary", "saas")
 
 
 def _is_commercial_license(lic: str) -> bool:
@@ -46,11 +43,11 @@ def _is_commercial_license(lic: str) -> bool:
     norm = _normalize_license(lic)
     if not norm:
         return False
-    if norm in _NON_COMMERCIAL_MARKERS:
+    if "noncommercial" in norm or "notcommercial" in norm:
         return False
-    if norm in ("commercial", "proprietary", "saas"):
+    if norm in _COMMERCIAL_MARKERS:
         return True
-    return bool(re.search(r"(?<![a-z])(?<!non)(?<!not)commercial(?![a-z])", norm))
+    return any(marker in norm for marker in _COMMERCIAL_MARKERS)
 
 
 def license_ok(row: dict[str, Any], pref: str) -> bool:
