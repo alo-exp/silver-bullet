@@ -60,15 +60,28 @@ fi
 source_manifest="${REPO_ROOT}/.cursor-plugin/plugin.json"
 source_skills="$(jq -r '.skills // ""' "$source_manifest" | sed 's|^\./||')"
 source_hooks="$(jq -r '.hooks // ""' "$source_manifest" | sed 's|^\./||')"
-if [[ -n "$source_skills" && -d "${REPO_ROOT}/${source_skills}" ]]; then
-  pass "source Cursor plugin.json skills path exists in checkout"
+if [[ -z "$source_skills" ]]; then
+  pass "source Cursor plugin.json omits skills (workspace must not register subagents)"
 else
-  fail "source Cursor plugin.json skills path exists in checkout"
+  fail "source Cursor plugin.json omits skills (workspace must not register subagents) — found ${source_skills}"
 fi
 if [[ -n "$source_hooks" && -f "${REPO_ROOT}/${source_hooks}" ]]; then
   pass "source Cursor plugin.json hooks path exists in checkout"
 else
   fail "source Cursor plugin.json hooks path exists in checkout"
+fi
+
+cursorignore="${REPO_ROOT}/.cursorignore"
+cursorignore_missing=0
+for pattern in 'skills/' 'host-bundles/' 'agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/'; do
+  if ! grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
+    (( cursorignore_missing++ )) || true
+  fi
+done
+if [[ "$cursorignore_missing" -eq 0 ]]; then
+  pass "source .cursorignore excludes workspace SB skill surfaces"
+else
+  fail "source .cursorignore excludes workspace SB skill surfaces — missing ${cursorignore_missing}"
 fi
 
 registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"
@@ -229,6 +242,23 @@ if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$
   pass "enumerate-cursor-slash-picker reports commands-only picker"
 else
   fail "enumerate-cursor-slash-picker reports commands-only picker"
+fi
+
+workspace_fixture="${TMP_HOME}/workspace-auto-discovery"
+mkdir -p "${workspace_fixture}/skills/silver-feature" "${workspace_fixture}/host-bundles/cursor/silver:plan" "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review"
+printf '%s\n' '---' 'name: silver-feature' '---' > "${workspace_fixture}/skills/silver-feature/SKILL.md"
+printf '%s\n' '---' 'name: silver:plan' '---' > "${workspace_fixture}/host-bundles/cursor/silver:plan/SKILL.md"
+printf '%s\n' '---' 'name: silver-review' '---' > "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review/SKILL.md"
+if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
+  fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
+else
+  pass "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
+fi
+printf '%s\n' 'skills/' 'host-bundles/' 'plugins/silver-bullet/skill-source/' > "${workspace_fixture}/.cursorignore"
+if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
+  pass "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
+else
+  fail "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
 fi
 
 if [[ ! -f "${resolved_current}/skills/silver-feature/SKILL.md" ]] && \
