@@ -286,3 +286,46 @@ SB skills so `record-skill.sh` tracks them.
 
 If any stage surfaces a blocker that cannot be resolved, log it under "Needs human review"
 and surface to the user before proceeding.
+
+---
+
+## Stage 5 — Post-Release Host Verification (mandatory after `gh release create`)
+
+After the GitHub Release is published, verify the **just-released** build on all three
+operator-local hosts before declaring the release complete.
+
+### Execution
+
+```bash
+bash scripts/post-release-host-verify.sh --version <version>
+```
+
+`post-release-refresh.sh` delegates to the same orchestrator for backward compatibility.
+
+Per host (cursor, codex, claude) on the **operator machine** (not isolated for install):
+
+1. **Clean uninstall** — remove SB plugin cache dirs; strip SB-only hook entries from
+   host hook manifests (`~/.cursor/hooks.json`, `~/.codex/hooks.json`, Claude plugin scopes).
+   **Do not** remove rtk, context-mode, or other non-SB hooks.
+2. **Fresh install** — `RTK_DISABLED=1 bash scripts/install-<host>.sh` from the released
+   tag checkout (or `--public-release` when validating marketplace-only paths).
+3. **Smoke** — operator-home `sb-diagnostics.sh` + isolated RC fresh cell:
+   `bash scripts/run-rc-validation-matrix.sh --host <host> --mode fresh`
+4. **Marker** — write `~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/{host}`
+   with `status=pass|fail`, `version`, and `timestamp`.
+
+### Hook marker (aggregate)
+
+Optional session marker after all three hosts pass:
+
+```bash
+echo "post-release-host-verify" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+```
+
+### Validation
+
+```bash
+bash tests/scripts/test-post-release-host-verify.sh
+```
+
+See `skills/silver-create-release/SKILL.md` Step 7.6 and `docs/testing/RC-VALIDATION-MATRIX.md`.

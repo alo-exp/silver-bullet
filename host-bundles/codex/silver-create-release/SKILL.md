@@ -39,7 +39,8 @@ Shell execution is limited to:
 - `bash scripts/validate-github-release-notes.sh` (validate GitHub Release body after creation — Step 7b)
 - `gh release create` (create GitHub release — use full path `/opt/homebrew/bin/gh`
   if available, fall back to bare `gh`)
-- `bash scripts/post-release-refresh.sh` (cleanly uninstall and freshly reinstall SB after release — Step 7.6)
+- `bash scripts/post-release-host-verify.sh` (mandatory tri-host uninstall + fresh install + smoke after release — Step 7.6)
+- `bash scripts/post-release-refresh.sh` (alias — delegates to post-release-host-verify.sh)
 - Shell commands listed in `.silver-bullet.json` `verify_commands[]` (Step 0 readiness
   check — user-controlled config, not untrusted input)
 
@@ -365,18 +366,25 @@ until the current `CI` and `Secret Scan` runs for `HEAD` complete successfully.
    the `silver-bullet-updates` Google Chat thread. If that workflow does not
    succeed, the release is not complete.
 
-   Immediately after publication, run the clean reinstall wrapper:
+   Immediately after publication, run mandatory tri-host post-release verification
+   on the operator machine (all three hosts: Cursor, Claude, Codex):
+
    ```bash
-   bash scripts/post-release-refresh.sh
+   bash scripts/post-release-host-verify.sh --version <version>
    ```
 
-   The wrapper performs a clean uninstall + fresh reinstall cycle for both host
-   runtimes by calling:
-   - `scripts/install-<runtime>.sh --purge-legacy-plugins`
-   - `scripts/install-<runtime>.sh --purge-legacy-skills`
+   The wrapper (`post-release-refresh.sh` delegates to the same script):
 
-   Do not mark the release complete until both the announcement workflow and the
-   refresh wrapper have succeeded.
+   1. **Clean uninstall** — SB plugin cache + SB-only hook entries per host (preserves
+      rtk, context-mode, and other non-SB hooks)
+   2. **Fresh install** — from the released tag checkout (`RTK_DISABLED=1 install-*.sh`)
+   3. **Smoke** — `sb-diagnostics.sh` on operator home + RC fresh cell
+      (`run-rc-validation-matrix.sh --host <host> --mode fresh` with isolated delegate)
+   4. **Marker** — `~/.{cursor,codex,claude}/.silver-bullet/post-release-verify/{host}`
+
+   Do not mark the release complete until the announcement workflow succeeds and
+   all three host markers show `status=pass` (or documented audited `skip` when a
+   host CLI is genuinely unavailable).
 
 ---
 
