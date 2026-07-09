@@ -44,8 +44,14 @@ _NON_COMMERCIAL_COLLAPSED = (
     "notforcommercial",
     "noforcommercial",
     "withoutcommercial",
+    "anticommercial",
 )
-_OSS_MARKERS = ("mit", "apache", "gpl", "bsd", "mpl")
+_OSS_EXACT_TOKENS = frozenset({
+    "mit", "apache", "apache20", "apache2", "gpl", "gpl2", "gpl3",
+    "agpl", "lgpl", "bsd", "bsd2", "bsd3", "mpl", "mpl2", "oss", "opensource",
+})
+_OSS_FAMILY_PREFIXES = ("mit", "apache", "gpl", "bsd", "mpl")
+_OSS_LITERAL_STRINGS = frozenset({"oss", "open-source", "open source"})
 
 
 def _commercial_marker_negated(tokens: list[str]) -> bool:
@@ -78,16 +84,31 @@ def _is_commercial_license(lic: str) -> bool:
     return any(marker in norm for marker in _COMMERCIAL_MARKERS)
 
 
+def _oss_token_matches(token: str) -> bool:
+    if token in _OSS_EXACT_TOKENS:
+        return True
+    return any(token.startswith(prefix) for prefix in _OSS_FAMILY_PREFIXES)
+
+
+def _is_oss_license(lic: str) -> bool:
+    if not lic or not lic.strip():
+        return False
+    lic_lower = lic.lower().strip()
+    if lic_lower in _OSS_LITERAL_STRINGS:
+        return True
+    norm = _normalize_license(lic)
+    if norm in _OSS_EXACT_TOKENS or any(norm.startswith(prefix) for prefix in _OSS_FAMILY_PREFIXES):
+        return True
+    tokens = [t for t in re.split(r"[^a-z0-9]+", lic_lower) if t]
+    return any(_oss_token_matches(t) for t in tokens)
+
+
 def license_ok(row: dict[str, Any], pref: str) -> bool:
     lic = (row.get("license") or row.get("license_type") or "").strip()
     if pref == "mixed":
         return True
     if pref == "oss":
-        lic_lower = lic.lower()
-        if lic_lower in ("oss", "open-source", "open source", "apache", "mit", "gpl"):
-            return True
-        norm = _normalize_license(lic)
-        return any(marker in norm for marker in _OSS_MARKERS)
+        return _is_oss_license(lic)
     if pref == "commercial":
         return _is_commercial_license(lic)
     return True
