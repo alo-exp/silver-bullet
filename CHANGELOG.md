@@ -1,8 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+## Fixes
+- `fix(deep-research)`: v2 audit follow-ups — branch-correct GitHub `SKILL.md` URL resolution (`github_skill_retrieval.py`), `search_orchestrator` integration, `chain_tracker` unit tests, methodology DR-* phase alignment, and July 2026 landscape replay `gh-search` partials for reproducibility
+
+---
+
 ## [0.51.3] — 2026-07-08
 
-Patch release: tri-host RC validation matrix green (cursor/codex/claude × fresh/upgrade), Cursor hook generator repairs, Claude home-path install alignment, Codex path-rewrite scoping, and LeanCTX five-tool stack foundation.
+Patch release: tri-host RC validation matrix green (cursor/codex/claude × fresh/upgrade), Cursor hook generator repairs, Claude home-path install alignment, Codex path-rewrite scoping, LeanCTX five-tool stack foundation, and **silver-deep-research v2 engine** (omitted from initial release notes).
 
 ## Fixes
 - `fix(cursor)`: hook generation, merge dedupe, marketplace gitPath, slash command materialization (`05fa57b5`…`72a4821f`)
@@ -14,6 +21,7 @@ Patch release: tri-host RC validation matrix green (cursor/codex/claude × fresh
 ## Features
 - `feat(leanctx)`: five-tool stack config, install/merge scripts, hook gates (`230310ee`…`d391e9dd`)
 - `feat(testing)`: five-tool pre-release gate via agent-cursor (`55d9ad52`)
+- `feat(deep-research)`: **v2 engine** — `search_orchestrator` with SB-owned `skill_portals`, `capability_score` eval harness, `validate_report` language gates, adversarial/report-block references, and July 2026 landscape replay benchmark with behavioral delta doc (`16c29403`)
 
 ---
 
