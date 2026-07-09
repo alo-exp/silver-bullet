@@ -104,6 +104,7 @@ case "$tool_name" in
     prompt="$(printf '%s' "$input" | jq -r '.tool_input.prompt // .tool_input.description // ""' 2>/dev/null || true)"
     model="$(printf '%s' "$input" | jq -r '.tool_input.model // ""' 2>/dev/null || true)"
     readonly_flag="$(printf '%s' "$input" | jq -r '.tool_input.readonly // .tool_input.readonly_mode // ""' 2>/dev/null || true)"
+    subagent_type="$(printf '%s' "$input" | jq -r '.tool_input.subagent_type // .tool_input.subagent // ""' 2>/dev/null || true)"
   ;;
   Bash|Shell|exec_command)
     cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
@@ -127,7 +128,7 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-if violation="$(sb_rfl_validate_task_spawn "$prompt" "$model" "$readonly_flag" 2>&1)"; then
+if violation="$(sb_rfl_validate_task_spawn "$prompt" "$model" "$readonly_flag" "$subagent_type" 2>&1)"; then
   exit 0
 fi
 
