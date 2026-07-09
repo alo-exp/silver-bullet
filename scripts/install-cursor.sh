@@ -337,6 +337,30 @@ prune_cursor_gitpath_picker_skills() {
   rm -rf "${gitpath_root}/plugins/silver-bullet/skills"
 }
 
+prune_cursor_gitpath_extra_picker_surfaces() {
+  local gitpath_root="$1"
+  local nested_manifest="${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json"
+  local tmp=""
+
+  # host-bundles/cursor mirrors agents/cursor — Cursor discovers both from full clone.
+  rm -rf "${gitpath_root}/host-bundles"
+
+  # Cross-host bundles are not Cursor picker surfaces.
+  rm -rf "${gitpath_root}/agents/claude" "${gitpath_root}/agents/codex"
+
+  # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
+  rm -rf \
+    "${gitpath_root}/plugins/silver-bullet/commands" \
+    "${gitpath_root}/plugins/silver-bullet/agents"
+
+  if [[ -f "$nested_manifest" ]]; then
+    tmp="$(mktemp)"
+    jq 'del(.skills, .commands)' "$nested_manifest" > "$tmp"
+    install -m 644 "$tmp" "$nested_manifest"
+    rm -f -- "$tmp"
+  fi
+}
+
 materialize_cursor_plugin_surface_at_root() {
   local dest="$1"
   local gitpath_root="$2"
@@ -362,16 +386,15 @@ materialize_cursor_plugin_surface_at_root() {
 materialize_cursor_plugin_surface_in_gitpath() {
   local dest="$1"
   local commit_sha="$2"
-  local gitpath_root surface_root
+  local gitpath_root
 
   [[ -n "$commit_sha" ]] || return 0
   gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
   [[ -d "${gitpath_root}/.git" ]] || return 0
 
-  surface_root="$(cursor_plugin_git_subpath_root "$commit_sha")"
-  mkdir -p "${surface_root}/.cursor-plugin"
-  materialize_cursor_plugin_surface_at_root "$dest" "$surface_root"
+  mkdir -p "${gitpath_root}/.cursor-plugin"
   materialize_cursor_plugin_surface_at_root "$dest" "$gitpath_root"
+  prune_cursor_gitpath_extra_picker_surfaces "$gitpath_root"
 }
 
 cursor_plugin_gitpath_ready() {
@@ -385,16 +408,9 @@ cursor_plugin_gitpath_ready() {
 
 cursor_plugin_gitpath_surface_ready() {
   local commit_sha="$1"
-  local surface_root
 
   cursor_plugin_gitpath_ready "$commit_sha" || return 1
-  if cursor_plugin_gitpath_root_surface_ready "$commit_sha"; then
-    return 0
-  fi
-  surface_root="$(cursor_plugin_git_subpath_root "$commit_sha")"
-  [[ -f "${surface_root}/commands/init.md" ]] || return 1
-  [[ -f "${surface_root}/.cursor-plugin/plugin.json" ]] || return 1
-  jq -e '.commands == "./commands"' "${surface_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1
+  cursor_plugin_gitpath_root_surface_ready "$commit_sha"
 }
 
 cursor_marketplace_cache_link_ready() {

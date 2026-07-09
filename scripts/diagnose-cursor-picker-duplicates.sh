@@ -110,6 +110,41 @@ def canonical_skill_routes(root: Path) -> set[str]:
     return routes
 
 
+def host_bundle_skill_routes(root: Path) -> set[str]:
+    routes: set[str] = set()
+    bundle = root / "host-bundles" / "cursor"
+    if not bundle.is_dir():
+        return routes
+    for skill_md in sorted(bundle.glob("*/SKILL.md")):
+        meta = parse_frontmatter(skill_md)
+        name = meta.get("name", skill_md.parent.name).strip()
+        route = logical_route(name) or logical_route(skill_md.parent.name)
+        if route:
+            routes.add(route)
+    return routes
+
+
+def nested_plugin_picker_surfaces(root: Path) -> list[str]:
+    issues: list[str] = []
+    nested_commands = root / "plugins" / "silver-bullet" / "commands"
+    nested_agents = root / "plugins" / "silver-bullet" / "agents" / "cursor"
+    nested_manifest = root / "plugins" / "silver-bullet" / ".cursor-plugin" / "plugin.json"
+    if nested_commands.is_dir() and any(nested_commands.glob("*.md")):
+        issues.append("plugins/silver-bullet/commands")
+    if nested_agents.is_dir() and any(nested_agents.glob("*/SKILL.md")):
+        issues.append("plugins/silver-bullet/agents/cursor")
+    if nested_manifest.is_file():
+        try:
+            manifest = json.loads(nested_manifest.read_text())
+            if manifest.get("commands") or manifest.get("skills"):
+                issues.append("plugins/silver-bullet/.cursor-plugin/plugin.json declares commands/skills")
+        except Exception:
+            pass
+    if (root / "host-bundles" / "cursor").is_dir():
+        issues.append("host-bundles/cursor")
+    return issues
+
+
 def analyze_surface(label: str, root: Path) -> dict[str, object]:
     if not root.is_dir():
         return {
@@ -118,12 +153,17 @@ def analyze_surface(label: str, root: Path) -> dict[str, object]:
             "missing": True,
             "cmd_agent_overlap": [],
             "cmd_skills_overlap": [],
+            "extra_surfaces": [],
+            "host_bundle_overlap": [],
         }
     cmd = command_routes(root)
     agent = agent_skill_routes(root)
     skills = canonical_skill_routes(root)
+    host_bundle = host_bundle_skill_routes(root)
     cmd_agent = sorted(cmd & agent)
     cmd_skills = sorted(cmd & skills)
+    host_overlap = sorted(cmd & host_bundle)
+    extra_surfaces = nested_plugin_picker_surfaces(root) if "gitPath" in label or label == "installed-gitPath" else []
     return {
         "label": label,
         "path": str(root),
@@ -133,6 +173,8 @@ def analyze_surface(label: str, root: Path) -> dict[str, object]:
         "skills_dirs": len(list((root / "skills").glob("*/SKILL.md"))) if (root / "skills").is_dir() else 0,
         "cmd_agent_overlap": cmd_agent,
         "cmd_skills_overlap": cmd_skills,
+        "host_bundle_overlap": host_overlap,
+        "extra_surfaces": extra_surfaces,
     }
 
 
@@ -204,8 +246,10 @@ for item in results:
         continue
     cmd_agent = item["cmd_agent_overlap"]
     cmd_skills = item["cmd_skills_overlap"]
+    host_overlap = item.get("host_bundle_overlap", [])
+    extra_surfaces = item.get("extra_surfaces", [])
     status = "OK"
-    if cmd_agent or cmd_skills:
+    if cmd_agent or cmd_skills or host_overlap or extra_surfaces:
         status = "FAIL"
         failures += 1
     print(f"[{status}] {label}")
@@ -220,6 +264,12 @@ for item in results:
     if cmd_skills:
         print(f"  cmd∩skills/ ({len(cmd_skills)}): {', '.join(cmd_skills[:8])}"
               + (" ..." if len(cmd_skills) > 8 else ""))
+    if host_overlap:
+        print(f"  cmd∩host-bundles ({len(host_overlap)}): {', '.join(host_overlap[:8])}"
+              + (" ..." if len(host_overlap) > 8 else ""))
+    if extra_surfaces:
+        print(f"  extra picker surfaces ({len(extra_surfaces)}): {', '.join(extra_surfaces[:4])}"
+              + (" ..." if len(extra_surfaces) > 4 else ""))
     print()
 
 if failures:

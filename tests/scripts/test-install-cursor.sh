@@ -90,23 +90,32 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/plugins/silver-bullet/commands/init.md" ]] && \
-   jq -e '.commands == "./commands"' "${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+if [[ -f "${gitpath_root}/commands/init.md" ]] && \
+   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands in marketplace gitPath checkout"
 else
   fail "install-cursor materializes commands in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver:plan/SKILL.md" || -f "${gitpath_root}/plugins/silver-bullet/agents/cursor/silver-plan/SKILL.md" ]]; then
+if [[ -f "${gitpath_root}/agents/cursor/silver:plan/SKILL.md" ]]; then
   pass "install-cursor materializes cursor skills in marketplace gitPath checkout"
 else
   fail "install-cursor materializes cursor skills in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/plugins/silver-bullet/cursor-hooks.json" ]]; then
+if [[ -f "${gitpath_root}/cursor-hooks.json" ]]; then
   pass "install-cursor materializes cursor-hooks.json in marketplace gitPath checkout"
 else
   fail "install-cursor materializes cursor-hooks.json in marketplace gitPath checkout"
+fi
+
+if [[ ! -d "${gitpath_root}/host-bundles/cursor" ]] && \
+   [[ ! -d "${gitpath_root}/plugins/silver-bullet/commands" ]] && \
+   jq -e '(.commands // null) == null and (.skills // null) == null' \
+     "${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+  pass "install-cursor prunes duplicate gitPath picker surfaces"
+else
+  fail "install-cursor prunes duplicate gitPath picker surfaces"
 fi
 
 if [[ -f "$registry_path" ]] && \
