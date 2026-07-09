@@ -38,7 +38,7 @@ mkdir -p "$SB_RESEARCH_OUT_DIR/validation"
 8. Delegate all DR-* phases to **`skills/silver-deep-research/SKILL.md`** — do not duplicate the engine.
 9. Skip market shortlist — user list is the research set.
 10. Produce SCR per solution → `compare_solutions.py` → `generate_report_spa.py`.
-11. Open `report.html` in Cursor browser and system browser (`open report.html`) — **no HTTP server**.
+11. Open `report.html` in host browser MCP and system browser (`open report.html`) — **no HTTP server**.
 
 ## `--auto`
 

@@ -100,7 +100,7 @@ Landscape: `shortlist_candidates.py` → exactly 5 SCRs. Compare: skip shortlist
 `solutions_requested.json`.
 
 Packaging: `compare_solutions.py` → `generate_report_spa.py` → serverless `report.html`
-(open in Cursor browser + `open report.html` — **no** `http.server`).
+(open in host browser MCP + `open report.html` — **no** `http.server`).
 
 ## Mode Selection
 
