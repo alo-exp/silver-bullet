@@ -241,7 +241,7 @@
         "opencode": {
           "pre_index": [],
           "post_index": [
-            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual \u2014 no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
+            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual — no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
           ]
         },
         "goose": {
@@ -361,7 +361,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "60\u201399% shell output savings via PreToolUse rewrite \u2014 automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
+      "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
     },
     "context_mode": {
       "enabled_by_user": null,
@@ -374,7 +374,7 @@
       "min_node_version": "22.5",
       "optimize_on_init": true,
       "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
-      "license_note": "ELv2 \u2014 not OSI-open; commercial bundling requires upstream license",
+      "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license",
       "install_commands": [
         "npm install -g context-mode"
       ],
@@ -405,7 +405,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license \u2014 see license_note)."
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
     },
     "leanctx": {
       "enabled_by_user": null,
@@ -445,7 +445,7 @@
           "bash scripts/install-leanctx-sb.sh --host opencode"
         ]
       },
-      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection \u2014 surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
+      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
     }
   },
   "hooks": {
@@ -507,7 +507,7 @@
       }
     },
     "cost_minimized": {
-      "_comment": "Future profile \u2014 not applied by optimizer yet",
+      "_comment": "Future profile — not applied by optimizer yet",
       "graphify": {
         "install_git_hooks": false,
         "prefer_no_cluster": true
@@ -545,5 +545,26 @@
     ],
     "stale_lock_ttl_seconds": 1800,
     "delegation_timeout_seconds": 1200
+  },
+  "cursor_sb_agents": {
+    "enabled": true,
+    "enabled_by_user": null,
+    "selected_models": [
+      "composer-2.5",
+      "grok-4.5"
+    ],
+    "effort_levels": [
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "include_fast": false,
+    "include_max": false,
+    "agent_name_prefix": "sb",
+    "catalog_source": "agent-models+docs",
+    "catalog_fetched_at": "2026-07-09T17:24:28.248427+00:00",
+    "agents_install_status": "installed",
+    "agents_install_scope": "global",
+    "enforcement_suspended": false
   }
 }

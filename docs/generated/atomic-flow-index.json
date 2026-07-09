@@ -205,6 +205,12 @@
     "FS-SILVER_AGENT_CURSOR": [
       "AF-AGENT-DELEGATE"
     ],
+    "FS-SILVER_AGENT_OPENCODE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_PI": [
+      "AF-AGENT-DELEGATE"
+    ],
     "FS-SILVER_BENCHMARK": [
       "AF-FAST-PATH"
     ],
@@ -228,6 +234,9 @@
     ],
     "FS-SILVER_CLARIFY": [
       "AF-CLARIFY"
+    ],
+    "FS-SILVER_CLEAR_STACK_STATE": [
+      "AF-PHASE-MANAGE"
     ],
     "FS-SILVER_COMPARE": [
       "AF-DECIDE"

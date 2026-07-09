@@ -56,6 +56,8 @@ cat >"$WORK/.silver-bullet.json" <<EOF
 }
 EOF
 touch "${SB_RUNTIME_STATE_DIR}/state"
+mkdir -p "$WORK/scripts"
+ln -sf "$REPO_ROOT/scripts/review-fix-ladder.py" "$WORK/scripts/review-fix-ladder.py"
 
 echo "=== review-fix-ladder guard tests ==="
 
@@ -63,11 +65,10 @@ sb_rfl_deactivate
 out_inactive=$(run_hook PreToolUse Task "$(jq -n --arg p 'fix files' '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:$p,model:"composer-2.5"}}')")
 check "inactive ladder does not deny Task" "$(is_denied "$out_inactive" && echo fail || echo pass)"
 
-sb_rfl_activate 1 composer-2.5 composer-2.5 8
-
-sb_rfl_activate 1 composer-2.5 composer-2.5 8
+sb_rfl_activate 1 "" composer-2.5
 sb_rfl_is_active && check "activate sets active state" pass || check "activate sets active state" fail
-[[ "$(sb_rfl_read_field phase "")" == "review" ]] && check "initial phase review" pass || check "initial phase review" fail
+[[ "$(sb_rfl_read_field total_rungs "")" == "6" ]] && check "activate total_rungs 6" pass || check "activate total_rungs 6" fail
+[[ "$(sb_rfl_read_field subagent_name "")" == "sb-composer-2-5-medium" ]] && check "activate subagent_name" pass || check "activate subagent_name" fail
 
 out_triage_in_review=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage classify VALID-NONBLOCKER",model:"composer-2.5"}}')")
 is_denied "$out_triage_in_review" && check "blocks triage Task during review phase" pass || check "blocks triage Task during review phase" fail
@@ -120,6 +121,12 @@ run_hook PostToolUse Bash "$(jq -n '{hook_event_name:"PostToolUse",tool_name:"Ba
 grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/hooks.json" && check "registered in hooks.json" pass || check "registered in hooks.json" fail
 grep -q 'review-fix-ladder-guard.sh' "$REPO_ROOT/hooks/cursor-hooks.json" && check "registered in cursor-hooks.json" pass || check "registered in cursor-hooks.json" fail
 bash -n "$HOOK" && check "guard shell syntax" pass || check "guard shell syntax" fail
+
+sb_rfl_deactivate
+sb_rfl_activate 1 "" composer-2.5
+sb_rfl_advance_rung
+[[ "$(sb_rfl_read_field rung "")" == "2" ]] && check "advance rung 2" pass || check "advance rung 2" fail
+[[ "$(sb_rfl_read_field subagent_name "")" == "sb-composer-2-5-high" ]] && check "advance subagent_name" pass || check "advance subagent_name" fail
 
 rm -rf "$WORK"
 echo "Results: $PASS passed, $FAIL failed"

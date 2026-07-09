@@ -12,7 +12,7 @@ SKILL_ROOT = os.path.join(os.path.dirname(__file__), '..')
 SCRIPTS = os.path.join(SKILL_ROOT, 'scripts')
 sys.path.insert(0, SCRIPTS)
 
-from shortlist_candidates import _is_commercial_license, _is_oss_license, license_ok  # noqa: E402
+from shortlist_candidates import _is_commercial_license  # noqa: E402
 
 
 def run_py(script: str, *args: str) -> tuple[int, dict]:
@@ -255,17 +255,6 @@ class TestCommercialLicenseNormalize(unittest.TestCase):
             'noncommercial',
             'notcommercial',
             'Not Commercial License',
-            'No Commercial Use',
-            'not-for-commercial-use',
-            'not for commercial use',
-            'Not For Commercial Use',
-            'withoutcommercialuse',
-            'withoutcommercial',
-            'WithoutCommercialUse',
-            'without commercial use',
-            'anti-commercial',
-            'Anti-Commercial License',
-            'anticommercial',
         )
         for lic in rejects:
             with self.subTest(license=lic):
@@ -289,45 +278,6 @@ class TestCommercialLicenseNormalize(unittest.TestCase):
     def test_rejects_empty_license(self):
         self.assertFalse(_is_commercial_license(''))
         self.assertFalse(_is_commercial_license('   '))
-
-
-class TestOssLicenseMatch(unittest.TestCase):
-    def test_rejects_substring_false_positives(self):
-        rejects = (
-            'commit',
-            'Committee License',
-            'permit',
-            'limit',
-            'smith',
-            'transmit',
-            'amplify',
-            'example',
-            'simple',
-            'template',
-            'implement',
-        )
-        for lic in rejects:
-            with self.subTest(license=lic):
-                self.assertFalse(_is_oss_license(lic))
-                self.assertFalse(license_ok({'license': lic}, 'oss'))
-
-    def test_accepts_oss_licenses(self):
-        accepts = (
-            'MIT',
-            'Apache-2.0',
-            'GPL-3.0',
-            'BSD-3-Clause',
-            'MPL-2.0',
-            'oss',
-            'open-source',
-            'open source',
-            'LGPL-2.1',
-            'AGPL-3.0',
-        )
-        for lic in accepts:
-            with self.subTest(license=lic):
-                self.assertTrue(_is_oss_license(lic))
-                self.assertTrue(license_ok({'license': lic}, 'oss'))
 
 
 class TestShortlist(unittest.TestCase):

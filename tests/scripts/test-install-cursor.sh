@@ -30,6 +30,16 @@ trap 'rm -rf "$TMP_HOME"' EXIT
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
 
+mkdir -p \
+  "${CURSOR_HOME}/agents/subagent-silver:init" \
+  "${CURSOR_HOME}/agents/full-conversation" \
+  "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui" \
+  "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd"
+printf '%s\n' '---' 'name: subagent-silver:init' '---' > "${CURSOR_HOME}/agents/subagent-silver:init/SKILL.md"
+printf '%s\n' '---' 'name: full-conversation' '---' > "${CURSOR_HOME}/agents/full-conversation/SKILL.md"
+printf '%s\n' '---' 'name: silver-ui' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui/SKILL.md"
+printf '%s\n' '---' 'name: subagent-tdd' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd/SKILL.md"
+
 bash "${REPO_ROOT}/scripts/install-cursor.sh" >/dev/null
 
 current_link="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
@@ -38,6 +48,21 @@ if [[ -L "$current_link" ]]; then
 else
   fail "install-cursor creates current symlink"
 fi
+
+if [[ ! -e "${CURSOR_HOME}/agents/subagent-silver:init" ]] && [[ ! -e "${CURSOR_HOME}/agents/full-conversation" ]] && \
+   compgen -G "${CURSOR_HOME}/.silver-bullet-quarantine/cursor-agents/*/user/*" >/dev/null; then
+  pass "install-cursor quarantines stale SB custom agents"
+else
+  fail "install-cursor quarantines stale SB custom agents"
+fi
+
+if [[ ! -e "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills" ]] && \
+   [[ ! -e "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles" ]]; then
+  pass "install-cursor prunes stale backend picker skill surfaces"
+else
+  fail "install-cursor prunes stale backend picker skill surfaces"
+fi
+
 
 if [[ -f "${CURSOR_HOME}/hooks.json" ]] && grep -q 'silver-bullet' "${CURSOR_HOME}/hooks.json"; then
   pass "install-cursor merges SB hooks into hooks.json"
@@ -73,7 +98,7 @@ fi
 
 cursorignore="${REPO_ROOT}/.cursorignore"
 cursorignore_missing=0
-for pattern in 'skills/' 'host-bundles/' 'agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/'; do
+for pattern in 'skills/' 'host-bundles/' 'agents/' '.agents/' '.cursor/agents/' 'plugins/silver-bullet/skill-source/' 'plugins/silver-bullet/agents/' 'plugins/silver-bullet/skills/' 'plugins/silver-bullet/templates/' 'templates/orchestrator-workers/' 'templates/workflows/'; do
   if ! grep -qxF "$pattern" "$cursorignore" 2>/dev/null; then
     (( cursorignore_missing++ )) || true
   fi
@@ -245,16 +270,33 @@ else
 fi
 
 workspace_fixture="${TMP_HOME}/workspace-auto-discovery"
-mkdir -p "${workspace_fixture}/skills/silver-feature" "${workspace_fixture}/host-bundles/cursor/silver:plan" "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review"
+mkdir -p   "${workspace_fixture}/skills/silver-feature"   "${workspace_fixture}/skills/silver-ui"   "${workspace_fixture}/skills/silver-add"   "${workspace_fixture}/skills/silver-plan"   "${workspace_fixture}/host-bundles/cursor/silver:plan"   "${workspace_fixture}/host-bundles/cursor/subagent-tdd"   "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review"   "${workspace_fixture}/plugins/silver-bullet/agents/subagent-silver:init"   "${workspace_fixture}/.cursor/agents/full-conversation"
 printf '%s\n' '---' 'name: silver-feature' '---' > "${workspace_fixture}/skills/silver-feature/SKILL.md"
+printf '%s\n' '---' 'name: silver-ui' '---' > "${workspace_fixture}/skills/silver-ui/SKILL.md"
+printf '%s\n' '---' 'name: silver-add' '---' > "${workspace_fixture}/skills/silver-add/SKILL.md"
+printf '%s\n' '---' 'name: silver-plan' '---' > "${workspace_fixture}/skills/silver-plan/SKILL.md"
 printf '%s\n' '---' 'name: silver:plan' '---' > "${workspace_fixture}/host-bundles/cursor/silver:plan/SKILL.md"
+printf '%s\n' '---' 'name: subagent-tdd' '---' > "${workspace_fixture}/host-bundles/cursor/subagent-tdd/SKILL.md"
 printf '%s\n' '---' 'name: silver-review' '---' > "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review/SKILL.md"
-if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
-  fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
-else
+printf '%s\n' '---' 'name: subagent-silver:init' '---' > "${workspace_fixture}/plugins/silver-bullet/agents/subagent-silver:init/SKILL.md"
+printf '%s\n' '---' 'name: full-conversation' '---' > "${workspace_fixture}/.cursor/agents/full-conversation/SKILL.md"
+set +e
+unignored_picker_out="$(bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" 2>&1)"
+unignored_picker_rc=$?
+set -e
+if [[ "$unignored_picker_rc" -ne 0 ]]; then
   pass "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
+else
+  fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
 fi
-printf '%s\n' 'skills/' 'host-bundles/' 'plugins/silver-bullet/skill-source/' > "${workspace_fixture}/.cursorignore"
+for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-silver:init' '/subagent-tdd' '/full-conversation'; do
+  if printf '%s' "$unignored_picker_out" | grep -qF -- "$bad_route"; then
+    pass "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
+  else
+    fail "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
+  fi
+done
+printf '%s\n'   'skills/'   'host-bundles/'   'plugins/silver-bullet/skill-source/'   'plugins/silver-bullet/agents/'   '.cursor/agents/' > "${workspace_fixture}/.cursorignore"
 if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" >/dev/null 2>&1; then
   pass "enumerate-cursor-slash-picker honors .cursorignore for workspace skill surfaces"
 else
