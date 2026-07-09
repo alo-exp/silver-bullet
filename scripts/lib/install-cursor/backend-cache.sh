@@ -17,6 +17,65 @@ cursor_cursor_logs_root() {
   printf '%s/.config/Cursor/logs\n' "$HOME"
 }
 
+cursor_github_commit_reachable() {
+  local sha="$1"
+  local source_root="${2:-${REPO_ROOT:-.}}"
+
+  [[ -n "$sha" ]] || return 1
+  if git -C "$source_root" cat-file -e "${sha}^{commit}" >/dev/null 2>&1; then
+    return 0
+  fi
+  git ls-remote --exit-code "$CURSOR_GITHUB_REPO_URL" "$sha" >/dev/null 2>&1
+}
+
+prune_stale_cursor_marketplace_cache_links() {
+  local keep_sha="${1:-}"
+  local cache_root entry name
+
+  cache_root="$(cursor_marketplace_plugin_cache_root)"
+  [[ -d "$cache_root" ]] || return 0
+
+  for entry in "$cache_root"/*; do
+    [[ -e "$entry" ]] || continue
+    name="$(basename "$entry")"
+    [[ "$name" =~ ^[0-9a-f]{40}$ ]] || continue
+    if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
+      continue
+    fi
+    if cursor_github_commit_reachable "$name"; then
+      continue
+    fi
+    rm -f "$entry"
+    printf 'Note: pruned stale Cursor marketplace cache symlink for unreachable commit %s\n' "${name:0:8}" >&2
+  done
+}
+
+prune_stale_cursor_marketplace_gitpaths() {
+  local keep_sha="${1:-}"
+  local base_root entry name
+
+  if declare -F cursor_github_marketplace_gitpath_root >/dev/null 2>&1; then
+    base_root="$(cursor_github_marketplace_gitpath_root)"
+  else
+    base_root="${CURSOR_HOME}/plugins/marketplaces/github.com/${CURSOR_GITHUB_REPO_SLUG:-alo-exp/silver-bullet}"
+  fi
+  [[ -d "$base_root" ]] || return 0
+
+  for entry in "$base_root"/*; do
+    [[ -e "$entry" ]] || continue
+    name="$(basename "$entry")"
+    [[ "$name" =~ ^[0-9a-f]{40}$ ]] || continue
+    if [[ -n "$keep_sha" && "$name" == "$keep_sha" ]]; then
+      continue
+    fi
+    if cursor_github_commit_reachable "$name"; then
+      continue
+    fi
+    rm -rf "$entry"
+    printf 'Note: pruned stale Cursor gitPath checkout for unreachable commit %s\n' "${name:0:8}" >&2
+  done
+}
+
 discover_cursor_backend_plugin_shas() {
   local log_root latest_sha
   log_root="$(cursor_cursor_logs_root)"
@@ -37,27 +96,59 @@ discover_cursor_backend_plugin_shas() {
     | sort -u
 }
 
+collect_cursor_plugin_required_shas() {
+  while IFS= read -r sha; do
+    [[ -n "$sha" ]] || continue
+    if cursor_github_commit_reachable "$sha"; then
+      printf '%s\n' "$sha"
+    fi
+  done < <(
+    {
+      printf '%s\n' "$1" "$2"
+      read_installed_plugins_git_sha
+      read_marketplace_manifest_sha
+      discover_cursor_backend_plugin_shas
+    } | awk 'NF && !seen[$0]++'
+  )
+}
+
 collect_cursor_plugin_seed_shas() {
-  {
-    printf '%s\n' "$1" "$2"
-    read_installed_plugins_git_sha
-    read_marketplace_manifest_sha
-    resolve_remote_github_head_sha
-    collect_cursor_marketplace_cache_shas
-    discover_cursor_backend_plugin_shas
-  } | awk 'NF && !seen[$0]++'
+  local primary_sha="${1:-}"
+  local backend_sha="${2:-}"
+
+  prune_stale_cursor_marketplace_cache_links "$primary_sha"
+  prune_stale_cursor_marketplace_gitpaths "$primary_sha"
+
+  while IFS= read -r sha; do
+    [[ -n "$sha" ]] || continue
+    if cursor_github_commit_reachable "$sha"; then
+      printf '%s\n' "$sha"
+    fi
+  done < <(
+    {
+      collect_cursor_plugin_required_shas "$primary_sha" "$backend_sha"
+      resolve_remote_github_head_sha
+      collect_cursor_marketplace_cache_shas
+    } | awk 'NF && !seen[$0]++'
+  )
 }
 
 resolve_cursor_backend_plugin_sha() {
   local discovered manifest_sha install_sha
-  discovered="$(discover_cursor_backend_plugin_shas | head -1)"
-  if [[ -n "$discovered" ]]; then
-    printf '%s\n' "$discovered"
+  while IFS= read -r discovered; do
+    [[ -n "$discovered" ]] || continue
+    if cursor_github_commit_reachable "$discovered"; then
+      printf '%s\n' "$discovered"
+      return 0
+    fi
+  done < <(discover_cursor_backend_plugin_shas)
+  manifest_sha="$(read_marketplace_manifest_sha)"
+  if [[ -n "$manifest_sha" ]] && cursor_github_commit_reachable "$manifest_sha"; then
+    printf '%s\n' "$manifest_sha"
     return 0
   fi
-  manifest_sha="$(read_marketplace_manifest_sha)"
-  if [[ -n "$manifest_sha" ]]; then
-    printf '%s\n' "$manifest_sha"
+  if [[ -n "${1:-}" ]] && cursor_github_commit_reachable "${1}"; then
+    printf '%s\n' "${1}"
     return 0
   fi
   printf '%s\n' "${1:-}"

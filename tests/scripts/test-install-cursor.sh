@@ -292,6 +292,39 @@ else
   fail "install-cursor --merge-hooks-only preserves current symlink target"
 fi
 
+# Unreachable historical cache SHAs must not fail install (exit 128 / read-tree)
+stale_sha="23c96ddb4bb191809830efc89c7e83c60941f8fe"
+stale_cache_root="${CURSOR_HOME}/plugins/cache/alo-labs-cursor/silver-bullet"
+mkdir -p "$stale_cache_root"
+ln -sfn "$resolved_current" "${stale_cache_root}/${stale_sha}"
+stale_gitpath_root="${CURSOR_HOME}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${stale_sha}"
+mkdir -p "$stale_gitpath_root"
+git -C "$stale_gitpath_root" init -q
+git -C "$stale_gitpath_root" commit --allow-empty -q -m "stale" >/dev/null 2>&1 || true
+
+stale_install_out="$(bash "${REPO_ROOT}/scripts/install-cursor.sh" 2>&1)"
+stale_install_rc=$?
+if [[ "$stale_install_rc" -eq 0 ]]; then
+  pass "install-cursor exits 0 when marketplace cache has unreachable SHA"
+else
+  fail "install-cursor exits 0 when marketplace cache has unreachable SHA — rc=${stale_install_rc}"
+fi
+if printf '%s' "$stale_install_out" | grep -qF 'unable to read tree'; then
+  fail "install-cursor suppresses fatal read-tree errors for unreachable SHA"
+else
+  pass "install-cursor suppresses fatal read-tree errors for unreachable SHA"
+fi
+if [[ ! -e "${stale_cache_root}/${stale_sha}" ]]; then
+  pass "install-cursor prunes unreachable marketplace cache symlink"
+else
+  fail "install-cursor prunes unreachable marketplace cache symlink"
+fi
+if [[ ! -d "$stale_gitpath_root" ]]; then
+  pass "install-cursor removes broken gitPath checkout for unreachable SHA"
+else
+  fail "install-cursor removes broken gitPath checkout for unreachable SHA"
+fi
+
 
 diag_out="$(SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" 2>/dev/null || true)"
 assert_contains "sb-diagnostics reports cursor runtime" "cursor" "$diag_out"
