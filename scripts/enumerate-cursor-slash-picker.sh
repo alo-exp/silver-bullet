@@ -57,6 +57,32 @@ surface_arg = sys.argv[3]
 workspace_arg = sys.argv[4]
 
 
+def load_cursorignore(root: Path) -> list[str]:
+    path = root / ".cursorignore"
+    if not path.is_file():
+        return []
+    patterns: list[str] = []
+    for raw in path.read_text(errors="ignore").splitlines():
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            patterns.append(line.lstrip("/"))
+    return patterns
+
+
+def is_cursorignored(root: Path, path: Path, patterns: list[str]) -> bool:
+    try:
+        rel = path.relative_to(root).as_posix()
+    except ValueError:
+        return False
+    for pattern in patterns:
+        if pattern.endswith("/"):
+            if rel == pattern.rstrip("/") or rel.startswith(pattern):
+                return True
+        elif rel == pattern or rel.startswith(pattern + "/"):
+            return True
+    return False
+
+
 def parse_frontmatter(path: Path) -> dict[str, str]:
     text = path.read_text(errors="ignore")
     match = re.match(r"^---\n(.*?)\n---", text, re.S)
@@ -152,24 +178,76 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
     if skills_path:
         skills_root = root / str(skills_path).removeprefix("./")
 
+    ignore_patterns = load_cursorignore(root)
     subagents: list[dict[str, str]] = []
+    ignored: list[dict[str, str]] = []
+    bad_colon: list[str] = []
+
+    def add_skill_entry(skill_md: Path, surface: str) -> None:
+        name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
+        route = f"/{name}" if name != "silver" else "/silver"
+        entry = {
+            "route": route,
+            "name": name,
+            "dir": str(skill_md.parent.relative_to(root)),
+            "surface": surface,
+        }
+        if is_cursorignored(root, skill_md, ignore_patterns) or is_cursorignored(root, skill_md.parent, ignore_patterns):
+            ignored.append(entry)
+            return
+        subagents.append(entry)
+        if name != "silver" and not name.startswith("silver:"):
+            bad_colon.append(f"{skill_md.parent.relative_to(root)}: name={name!r}")
+
     if skills_root and skills_root.is_dir():
         for skill_md in sorted(skills_root.glob("*/SKILL.md")):
-            name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
-            route = f"/{name}" if name != "silver" else "/silver"
-            subagents.append(
-                {
-                    "route": route,
-                    "name": name,
-                    "dir": str(skill_md.parent.relative_to(root)),
-                }
-            )
+            add_skill_entry(skill_md, "manifest.skills")
+
+    seen: set[Path] = set()
+    for surface, surface_root in [
+        ("skills", root / "skills"),
+        ("host-bundles/cursor", root / "host-bundles" / "cursor"),
+        ("agents", root / "agents"),
+        ("project .cursor/agents", root / ".cursor" / "agents"),
+    ]:
+        if not surface_root.is_dir():
+            continue
+        for skill_md in sorted(surface_root.glob("**/SKILL.md")):
+            resolved = skill_md.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            add_skill_entry(skill_md, surface)
 
     return {
         "root": str(root),
         "manifest_skills": skills_path,
         "subagents": subagents,
+        "ignored": ignored,
+        "bad_colon": bad_colon,
+        "ignore_patterns": ignore_patterns,
     }
+
+
+def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
+    if not root.is_dir():
+        return []
+    entries: list[dict[str, str]] = []
+    for skill_md in sorted(root.glob("**/SKILL.md")):
+        name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
+        if name.startswith("silver:") or name.startswith("silver-"):
+            entries.append({"name": name, "file": str(skill_md.relative_to(root))})
+    for path in sorted(root.glob("**/*")):
+        if not path.is_file() or path.name == "SKILL.md":
+            continue
+        if path.suffix.lower() not in {".md", ".json", ".yaml", ".yml"}:
+            continue
+        text = path.read_text(errors="ignore")
+        meta = parse_frontmatter(path)
+        name = meta.get("name") or meta.get("title") or path.stem
+        if name.startswith("silver:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:
+            entries.append({"name": name, "file": str(path.relative_to(root))})
+    return entries
 
 
 root = Path(surface_arg) if surface_arg else default_surface()
@@ -237,20 +315,37 @@ workspace_root = Path(workspace_arg) if workspace_arg else repo_root
 if workspace_root.is_dir():
     workspace = enumerate_workspace(workspace_root)
     ws_subagents = workspace["subagents"]
+    ws_ignored = workspace["ignored"]
+    ws_bad_colon = workspace["bad_colon"]
+    global_custom = enumerate_global_custom_agents(cursor_home / "agents")
     print()
     print("Workspace slash-picker exposure (dev checkout)")
     print(f"workspace={workspace['root']}")
     print(f"manifest.skills={workspace['manifest_skills']!r}")
-    print(f"workspace_subagents={len(ws_subagents)}")
-    if workspace["manifest_skills"] or ws_subagents:
+    print(f".cursorignore patterns={workspace['ignore_patterns']!r}")
+    print(f"workspace_subagents={len(ws_subagents)} ignored_workspace_entries={len(ws_ignored)}")
+    print(f"workspace_bad_colon={len(ws_bad_colon)} global_custom_agents={len(global_custom)}")
+    if workspace["manifest_skills"] or ws_subagents or ws_bad_colon or global_custom:
         print()
         print("WORKSPACE SUBAGENT/SKILL ENTRIES (must be zero):")
         for entry in ws_subagents[:12]:
-            print(f"  {entry['route']}  ({entry['dir']})")
+            print(f"  {entry['route']}  ({entry['dir']} via {entry['surface']})")
         if len(ws_subagents) > 12:
             print(f"  ... +{len(ws_subagents) - 12} more")
+        if ws_bad_colon:
+            print("WORKSPACE COLON VIOLATIONS:")
+            for item in ws_bad_colon[:12]:
+                print(f"  - {item}")
+            if len(ws_bad_colon) > 12:
+                print(f"  ... +{len(ws_bad_colon) - 12} more")
+        if global_custom:
+            print("GLOBAL CUSTOM AGENT ENTRIES (must be zero for SB):")
+            for entry in global_custom[:12]:
+                print(f"  {entry['name']}  ({entry['file']})")
+            if len(global_custom) > 12:
+                print(f"  ... +{len(global_custom) - 12} more")
         print()
-        print("RESULT: FAIL — workspace manifest still exposes skills in / picker")
+        print("RESULT: FAIL — workspace/global surfaces still expose SB skills in / picker")
         raise SystemExit(1)
-    print("RESULT: OK — workspace manifest does not expose skills in / picker")
+    print("RESULT: OK — workspace/global surfaces do not expose SB skills in / picker")
 PY
