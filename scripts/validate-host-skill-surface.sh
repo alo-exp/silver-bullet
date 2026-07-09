@@ -151,6 +151,15 @@ for host, surfaces in HOST_SURFACES.items():
                 )
                 continue
 
+            if host == "cursor" and name in command_routes:
+                rel = path.relative_to(repo_root)
+                fail(
+                    host,
+                    f"{rel}: command-covered route {name!r} must not ship in host-bundles/cursor "
+                    f"(slash command owns the public surface; keep instructions in skill-source/)",
+                )
+                continue
+
             if not is_user_invocable(meta):
                 continue
 

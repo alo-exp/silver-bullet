@@ -5,4 +5,4 @@ description: Summarize Silver Bullet review statistics
 argument-hint: <scope or time range>
 ---
 
-Invoke the Silver Bullet `silver-review-stats` workflow to summarize review statistics and highlight trends or outliers.
+Invoke the Silver Bullet `silver-review-stats` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel. If the runtime-native skill invocation channel cannot resolve this route by name, read the full instructions from `skill-source/silver-review-stats/SILVER_SOURCE` under the Silver Bullet plugin install root.

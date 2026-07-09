@@ -533,9 +533,8 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
 def suppress_command_stub_skills_from_picker(root: pathlib.Path, commands_dir: pathlib.Path) -> None:
     """Hide picker skills that already have plugin command stubs.
 
-    Cursor exposes plugin ``commands/`` as slash entries and ``skills/`` as
-    skill/subagent picker entries. Routes with both surfaces duplicate in the
-    menu; keep the slash command public and mark the mirrored skill internal.
+    Codex still discovers mirrored bundle skills in some layouts; mark them
+    internal so only native slash/command surfaces stay public.
     """
     routes = command_stub_routes(commands_dir)
     if not routes:
@@ -545,6 +544,28 @@ def suppress_command_stub_skills_from_picker(root: pathlib.Path, commands_dir: p
         name = read_skill_frontmatter(skill_md).get("name", "").strip()
         if name in routes:
             set_user_invocable_false(skill_md)
+
+
+def exclude_command_stub_skills_from_cursor_subagent_surface(
+    root: pathlib.Path, commands_dir: pathlib.Path
+) -> None:
+    """Drop command-covered skills from the Cursor subagent surface.
+
+    Cursor registers plugin ``commands/`` as slash entries and every directory
+    under ``plugin.json`` ``skills`` as subagents, regardless of
+    ``user-invocable: false``. Routes with both surfaces duplicate in the menu;
+    keep slash commands public and retain full instructions in ``skill-source/``.
+    """
+    routes = command_stub_routes(commands_dir)
+    if not routes:
+        return
+
+    for skill_md in sorted(root.glob("*/SKILL.md")):
+        name = read_skill_frontmatter(skill_md).get("name", "").strip()
+        if name not in routes:
+            continue
+        skill_dir = skill_md.parent
+        _safe_rmtree(skill_dir)
 
 
 def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str) -> None:
@@ -566,6 +587,8 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
             if agent in {"cursor", "codex"}:
                 commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
                 suppress_command_stub_skills_from_picker(staging, commands_dir)
+                if agent == "cursor":
+                    exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
         except Exception:

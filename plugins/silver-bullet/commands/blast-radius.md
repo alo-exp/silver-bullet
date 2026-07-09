@@ -5,4 +5,4 @@ description: Assess the blast radius of a change
 argument-hint: <change description>
 ---
 
-Invoke the Silver Bullet `silver-blast-radius` workflow for the proposed change. Map scope, dependencies, failure scenarios, and rollback concerns before implementation starts.
+Invoke the Silver Bullet `silver-blast-radius` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel. If the runtime-native skill invocation channel cannot resolve this route by name, read the full instructions from `skill-source/silver-blast-radius/SILVER_SOURCE` under the Silver Bullet plugin install root.

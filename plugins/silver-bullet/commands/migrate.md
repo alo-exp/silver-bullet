@@ -5,4 +5,4 @@ description: Migrate a project to the current Silver Bullet schema
 argument-hint: <migration target>
 ---
 
-Invoke the Silver Bullet `silver-migrate` workflow to migrate project state or documentation to the current SB layout.
+Invoke the Silver Bullet `silver-migrate` workflow for this request. Follow the composable flow contracts in `docs/composable-flows-contracts.md` and record required skill markers through the host runtime-native skill invocation channel. If the runtime-native skill invocation channel cannot resolve this route by name, read the full instructions from `skill-source/silver-migrate/SILVER_SOURCE` under the Silver Bullet plugin install root.

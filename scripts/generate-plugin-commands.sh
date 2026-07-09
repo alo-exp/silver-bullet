@@ -60,7 +60,7 @@ description: ${description}
 argument-hint: ${argument_hint}
 ---
 
-Invoke the Silver Bullet \`${skill}\` workflow for this request. Follow the composable flow contracts in \`docs/composable-flows-contracts.md\` and record required skill markers through the host Skill tool.
+Invoke the Silver Bullet \`${skill}\` workflow for this request. Follow the composable flow contracts in \`docs/composable-flows-contracts.md\` and record required skill markers through the host Skill tool. If the Skill tool cannot resolve this route by name, read the full instructions from \`skill-source/${skill}/SILVER_SOURCE\` under the Silver Bullet plugin install root.
 EOF
   printf 'Wrote %s\n' "$out"
 done
