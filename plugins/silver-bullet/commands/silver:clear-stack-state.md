@@ -1,6 +1,6 @@
 ---
 name: "silver:clear-stack-state"
-title: "Clear stack state"
+title: "Clear Stack State"
 description: Clear five-tool stack compression mutex violations and recover from sb_stack_double_compression wedges
 argument-hint: 
 ---

@@ -3615,7 +3615,8 @@
         "silver-add",
         "silver-doctor",
         "silver-migrate",
-        "silver-phase"
+        "silver-phase",
+        "silver-clear-stack-state"
       ],
       "flow_steps": [
         "FS-SILVER_ADD",
@@ -3626,7 +3627,8 @@
         "FS-SILVER_REMOVE",
         "FS-SILVER_THREAD",
         "FS-SILVER_UNDO",
-        "FS-SILVER_UPDATE"
+        "FS-SILVER_UPDATE",
+        "FS-SILVER_CLEAR_STACK_STATE"
       ],
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
@@ -3827,7 +3829,9 @@
         "FS-DELEGATE-VERIFY",
         "FS-DELEGATE-RELAUNCH",
         "FS-DELEGATE-MENTOR",
-        "FS-DELEGATE-GUARD_OFF"
+        "FS-DELEGATE-GUARD_OFF",
+        "FS-SILVER_AGENT_OPENCODE",
+        "FS-SILVER_AGENT_PI"
       ],
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
@@ -6018,6 +6022,108 @@
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
+      "id": "FS-SILVER_AGENT_OPENCODE",
+      "skill": "silver-agent-opencode",
+      "purpose": "Execute the silver-agent-opencode skill as a catalog-backed step in AF-AGENT-DELEGATE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-agent-opencode work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_AGENT_OPENCODE",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-agent-opencode receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-agent-opencode produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "command_evidence"
+          ],
+          "artifact_refs": [
+            "skills/silver-agent-opencode/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_AGENT_OPENCODE"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-AGENT-DELEGATE"
+      ],
+      "canonical_catalog_entity": "AF-AGENT-DELEGATE"
+    },
+    {
+      "id": "FS-SILVER_AGENT_PI",
+      "skill": "silver-agent-pi",
+      "purpose": "Execute the silver-agent-pi skill as a catalog-backed step in AF-AGENT-DELEGATE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-agent-pi work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_AGENT_PI",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-agent-pi receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-agent-pi produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "command_evidence"
+          ],
+          "artifact_refs": [
+            "skills/silver-agent-pi/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_AGENT_PI"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-AGENT-DELEGATE"
+      ],
+      "canonical_catalog_entity": "AF-AGENT-DELEGATE"
+    },
+    {
       "id": "FS-SILVER_BENCHMARK",
       "skill": "silver-benchmark",
       "purpose": "Execute the silver-benchmark skill as a catalog-backed step in AF-FAST-PATH.",
@@ -6424,6 +6530,57 @@
         "AF-CLARIFY"
       ],
       "canonical_catalog_entity": "AF-CLARIFY"
+    },
+    {
+      "id": "FS-SILVER_CLEAR_STACK_STATE",
+      "skill": "silver-clear-stack-state",
+      "purpose": "Execute the silver-clear-stack-state skill as a catalog-backed step in AF-PHASE-MANAGE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-clear-stack-state work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_CLEAR_STACK_STATE",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-clear-stack-state receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-clear-stack-state produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "command_evidence"
+          ],
+          "artifact_refs": [
+            "skills/silver-clear-stack-state/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_CLEAR_STACK_STATE"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-PHASE-MANAGE"
+      ],
+      "canonical_catalog_entity": "AF-PHASE-MANAGE"
     },
     {
       "id": "FS-SILVER_COMPARE",
@@ -10982,6 +11139,22 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_AGENT_CURSOR"
     },
     {
+      "id": "EV-FS-SILVER_AGENT_OPENCODE",
+      "producer": "FS-SILVER_AGENT_OPENCODE",
+      "artifact_or_tool_ref": "skills/silver-agent-opencode/SKILL.md",
+      "sufficiency_class": "command_evidence",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_AGENT_OPENCODE"
+    },
+    {
+      "id": "EV-FS-SILVER_AGENT_PI",
+      "producer": "FS-SILVER_AGENT_PI",
+      "artifact_or_tool_ref": "skills/silver-agent-pi/SKILL.md",
+      "sufficiency_class": "command_evidence",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_AGENT_PI"
+    },
+    {
       "id": "EV-FS-SILVER_BENCHMARK",
       "producer": "FS-SILVER_BENCHMARK",
       "artifact_or_tool_ref": "skills/silver-benchmark/SKILL.md",
@@ -11044,6 +11217,14 @@
       "sufficiency_class": "tool_evidence",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_CLARIFY"
+    },
+    {
+      "id": "EV-FS-SILVER_CLEAR_STACK_STATE",
+      "producer": "FS-SILVER_CLEAR_STACK_STATE",
+      "artifact_or_tool_ref": "skills/silver-clear-stack-state/SKILL.md",
+      "sufficiency_class": "command_evidence",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_CLEAR_STACK_STATE"
     },
     {
       "id": "EV-FS-SILVER_COMPARE",
@@ -11923,7 +12104,8 @@
       "verify-tests": "AF-VERIFY",
       "silver-agent-opencode": "AF-AGENT-DELEGATE",
       "silver-agent-pi": "AF-AGENT-DELEGATE",
-      "silver-compare": "AF-DECIDE"
+      "silver-compare": "AF-DECIDE",
+      "silver-clear-stack-state": "AF-PHASE-MANAGE"
     },
     "gsd_alias_to_entity": {
       "code-review": "AF-REVIEW",
