@@ -3803,9 +3803,11 @@
       },
       "tools": [],
       "owning_skills": [
+        "silver-agent-claude",
         "silver-agent-codex",
         "silver-agent-cursor",
-        "silver-agent-claude"
+        "silver-agent-opencode",
+        "silver-agent-pi"
       ],
       "flow_steps": [
         "FS-DELEGATE-BRIEF",
@@ -6424,6 +6426,57 @@
       "canonical_catalog_entity": "AF-CLARIFY"
     },
     {
+      "id": "FS-SILVER_COMPARE",
+      "skill": "silver-compare",
+      "purpose": "Execute the silver-compare skill as a catalog-backed step in AF-DECIDE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "current user intent",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-compare work product or routing decision",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_COMPARE",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-compare receives the parent flow intent and only the artifacts needed for its local responsibility.",
+        "work_product": "silver-compare produces its documented skill output and evidence marker.",
+        "verification": {
+          "methods": [
+            "tool_evidence"
+          ],
+          "artifact_refs": [
+            "skills/silver-compare/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_CLARIFY"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-DECIDE"
+      ],
+      "canonical_catalog_entity": "AF-DECIDE"
+    },
+    {
       "id": "FS-SILVER_COMPLETION_AUDIT",
       "skill": "silver-completion-audit",
       "purpose": "Execute the silver-completion-audit skill as a catalog-backed step in AF-COMPLETION-AUDIT.",
@@ -8268,58 +8321,6 @@
       "canonical_catalog_entity": "AF-REVIEW-TRIAGE"
     },
     {
-      "id": "FS-SILVER_TRIAGE",
-      "skill": "silver-triage",
-      "purpose": "Execute the silver-triage skill as a catalog-backed generic review-finding triage step in AF-REVIEW-TRIAGE.",
-      "hierarchy_level": "flow_step",
-      "classification": "flow-step-skill",
-      "inputs": [
-        "parent atomic-flow input",
-        "raw review findings",
-        "relevant artifacts and state"
-      ],
-      "outputs": [
-        "silver-triage work product or routing decision",
-        "triage table with PM filing refs",
-        "local step evidence"
-      ],
-      "v_loop": {
-        "id": "VL-FS-SILVER_TRIAGE",
-        "rollup_target": "flow_step",
-        "input_contract": "silver-triage receives raw review findings and scope; must not be the same agent that produced the review.",
-        "work_product": "silver-triage produces classified findings, PM filing plan, and fix routing.",
-        "verification": {
-          "methods": [
-            "inspection"
-          ],
-          "artifact_refs": [
-            "skills/silver-triage/SKILL.md"
-          ]
-        },
-        "validation": {
-          "target": "parent atomic-flow input and current user intent",
-          "methods": [
-            "compare step output to parent flow contract"
-          ]
-        },
-        "repair": {
-          "behavior": "rerun or revise the step until the local V-check passes",
-          "max_attempts": 2
-        },
-        "escalation": {
-          "condition": "step cannot satisfy its local contract with available context",
-          "blocker_artifact": ".planning/BLOCKERS.md"
-        },
-        "evidence_refs": [
-          "EV-FS-SILVER_TRIAGE"
-        ]
-      },
-      "reusable_by_flows": [
-        "AF-REVIEW-TRIAGE"
-      ],
-      "canonical_catalog_entity": "AF-REVIEW-TRIAGE"
-    },
-    {
       "id": "FS-SILVER_SCAN",
       "skill": "silver-scan",
       "purpose": "Execute the silver-scan skill as a catalog-backed step in AF-ORIENT.",
@@ -8675,6 +8676,58 @@
         "AF-PHASE-MANAGE"
       ],
       "canonical_catalog_entity": "AF-PHASE-MANAGE"
+    },
+    {
+      "id": "FS-SILVER_TRIAGE",
+      "skill": "silver-triage",
+      "purpose": "Execute the silver-triage skill as a catalog-backed generic review-finding triage step in AF-REVIEW-TRIAGE.",
+      "hierarchy_level": "flow_step",
+      "classification": "flow-step-skill",
+      "inputs": [
+        "parent atomic-flow input",
+        "raw review findings",
+        "relevant artifacts and state"
+      ],
+      "outputs": [
+        "silver-triage work product or routing decision",
+        "triage table with PM filing refs",
+        "local step evidence"
+      ],
+      "v_loop": {
+        "id": "VL-FS-SILVER_TRIAGE",
+        "rollup_target": "flow_step",
+        "input_contract": "silver-triage receives raw review findings and scope; must not be the same agent that produced the review.",
+        "work_product": "silver-triage produces classified findings, PM filing plan, and fix routing.",
+        "verification": {
+          "methods": [
+            "inspection"
+          ],
+          "artifact_refs": [
+            "skills/silver-triage/SKILL.md"
+          ]
+        },
+        "validation": {
+          "target": "parent atomic-flow input and current user intent",
+          "methods": [
+            "compare step output to parent flow contract"
+          ]
+        },
+        "repair": {
+          "behavior": "rerun or revise the step until the local V-check passes",
+          "max_attempts": 2
+        },
+        "escalation": {
+          "condition": "step cannot satisfy its local contract with available context",
+          "blocker_artifact": ".planning/BLOCKERS.md"
+        },
+        "evidence_refs": [
+          "EV-FS-SILVER_TRIAGE"
+        ]
+      },
+      "reusable_by_flows": [
+        "AF-REVIEW-TRIAGE"
+      ],
+      "canonical_catalog_entity": "AF-REVIEW-TRIAGE"
     },
     {
       "id": "FS-SILVER_UI",
@@ -10993,6 +11046,14 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_CLARIFY"
     },
     {
+      "id": "EV-FS-SILVER_COMPARE",
+      "producer": "FS-SILVER_COMPARE",
+      "artifact_or_tool_ref": "skills/silver-compare/SKILL.md",
+      "sufficiency_class": "tool_evidence",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_CLARIFY"
+    },
+    {
       "id": "EV-FS-SILVER_COMPLETION_AUDIT",
       "producer": "FS-SILVER_COMPLETION_AUDIT",
       "artifact_or_tool_ref": "skills/silver-completion-audit/SKILL.md",
@@ -11281,14 +11342,6 @@
       "satisfies_v_loop_ref": "VL-FS-SILVER_REVIEW_TRIAGE"
     },
     {
-      "id": "EV-FS-SILVER_TRIAGE",
-      "producer": "FS-SILVER_TRIAGE",
-      "artifact_or_tool_ref": "skills/silver-triage/SKILL.md",
-      "sufficiency_class": "inspection",
-      "staleness_key": "catalog-version+entity-contract",
-      "satisfies_v_loop_ref": "VL-FS-SILVER_TRIAGE"
-    },
-    {
       "id": "EV-FS-SILVER_SCAN",
       "producer": "FS-SILVER_SCAN",
       "artifact_or_tool_ref": "skills/silver-scan/SKILL.md",
@@ -11343,6 +11396,14 @@
       "sufficiency_class": "inspection",
       "staleness_key": "catalog-version+entity-contract",
       "satisfies_v_loop_ref": "VL-FS-SILVER_THREAD"
+    },
+    {
+      "id": "EV-FS-SILVER_TRIAGE",
+      "producer": "FS-SILVER_TRIAGE",
+      "artifact_or_tool_ref": "skills/silver-triage/SKILL.md",
+      "sufficiency_class": "inspection",
+      "staleness_key": "catalog-version+entity-contract",
+      "satisfies_v_loop_ref": "VL-FS-SILVER_TRIAGE"
     },
     {
       "id": "EV-FS-SILVER_UI",
@@ -11859,7 +11920,10 @@
       "tdd": "AF-EXECUTE",
       "testability": "AF-VERIFY",
       "usability": "AF-UI-QUALITY",
-      "verify-tests": "AF-VERIFY"
+      "verify-tests": "AF-VERIFY",
+      "silver-agent-opencode": "AF-AGENT-DELEGATE",
+      "silver-agent-pi": "AF-AGENT-DELEGATE",
+      "silver-compare": "AF-DECIDE"
     },
     "gsd_alias_to_entity": {
       "code-review": "AF-REVIEW",
@@ -11877,7 +11941,8 @@
       "systematic-debugging": "AF-DEBUG",
       "test-driven-development": "FS-TDD",
       "verification-before-completion": "AF-COMPLETION-AUDIT",
-      "writing-plans": "AF-PLAN"
+      "writing-plans": "AF-PLAN",
+      "silver-compare": "AF-DECIDE"
     },
     "runtime_queue_tokens": {
       "FLOW-QUALITY-GATE": "AF-QUALITY-GATE",
