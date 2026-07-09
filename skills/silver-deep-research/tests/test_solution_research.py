@@ -23,6 +23,36 @@ def run_py(script: str, *args: str) -> tuple[int, dict]:
     return result.returncode, data
 
 
+def seed_landscape_fixture(
+    d: str,
+    *,
+    shortlist_count: int = 5,
+    with_solutions: bool = True,
+    with_landscape: bool = True,
+) -> None:
+    os.makedirs(os.path.join(d, 'shortlist'), exist_ok=True)
+    with open(os.path.join(d, 'shortlist', 'shortlist.json'), 'w') as f:
+        json.dump({
+            'count': shortlist_count,
+            'solutions': [{'name': f'Sol{i}', 'rank': i} for i in range(1, shortlist_count + 1)],
+        }, f)
+    if with_landscape:
+        os.makedirs(os.path.join(d, 'landscape'), exist_ok=True)
+        with open(os.path.join(d, 'landscape', 'landscape-report.md'), 'w') as f:
+            f.write('# Landscape Report\n\nMarket survey with enough content.\n')
+    if with_solutions:
+        for i in range(1, 6):
+            sol = os.path.join(d, 'solutions', f'sol{i}')
+            os.makedirs(sol, exist_ok=True)
+            with open(os.path.join(sol, 'scr.md'), 'w') as f:
+                f.write('# Solution Capability Report\n\nEnough content for gate.\n')
+    os.makedirs(os.path.join(d, 'comparison'), exist_ok=True)
+    with open(os.path.join(d, 'comparison', 'comparison.json'), 'w') as f:
+        json.dump({'rankings': [{'solution': 'Sol1', 'score': 1}]}, f)
+    with open(os.path.join(d, 'report.html'), 'w') as f:
+        f.write('<!DOCTYPE html><html><body>report</body></html>')
+
+
 class TestNeedProfileGate(unittest.TestCase):
     def test_scope_blocked_without_interview(self):
         phase_gate = os.path.join(SCRIPTS, 'phase_gate.py')
@@ -145,6 +175,45 @@ class TestCompareSolutions(unittest.TestCase):
             comp = json.load(open(os.path.join(d, 'comparison', 'comparison.json')))
             self.assertEqual(comp['winner'], 'alpha')
 
+    def test_category_false_not_overwritten_by_flat_features(self):
+        compare = os.path.join(SCRIPTS, 'compare_solutions.py')
+        with tempfile.TemporaryDirectory() as d:
+            need = {
+                'must_haves': ['SSO'],
+                'nice_to_haves': [],
+                'license_preference': 'mixed',
+                'interview_complete': True,
+            }
+            with open(os.path.join(d, 'need_profile.json'), 'w') as f:
+                json.dump(need, f)
+            sol = os.path.join(d, 'solutions', 'alpha')
+            os.makedirs(sol)
+            with open(os.path.join(sol, 'features.json'), 'w') as f:
+                json.dump({
+                    'solution_name': 'alpha',
+                    'categories': [{
+                        'name': 'Core',
+                        'features': [{'name': 'SSO', 'supported': False}],
+                    }],
+                    'features': [{'name': 'SSO', 'supported': True}],
+                }, f)
+            sol2 = os.path.join(d, 'solutions', 'beta')
+            os.makedirs(sol2)
+            with open(os.path.join(sol2, 'features.json'), 'w') as f:
+                json.dump({
+                    'solution_name': 'beta',
+                    'categories': [{
+                        'name': 'Core',
+                        'features': [{'name': 'SSO', 'supported': True}],
+                    }],
+                }, f)
+            code, data = run_py(compare, '--dir', d)
+            self.assertEqual(code, 0)
+            comp = json.load(open(os.path.join(d, 'comparison', 'comparison.json')))
+            sso_row = next(r for r in comp['rows'] if r.get('name') == 'SSO')
+            self.assertEqual(sso_row['solutions']['alpha'], '')
+            self.assertEqual(sso_row['solutions']['beta'], '\u2714')
+
 
 class TestShortlist(unittest.TestCase):
     def test_exactly_five_shortlist(self):
@@ -169,6 +238,30 @@ class TestShortlist(unittest.TestCase):
             self.assertEqual(code, 0)
             payload = json.load(open(out))
             self.assertEqual(len(payload['solutions']), 5)
+
+    def test_commercial_filter_excludes_empty_license(self):
+        shortlist = os.path.join(SCRIPTS, 'shortlist_candidates.py')
+        with tempfile.TemporaryDirectory() as d:
+            cand_path = os.path.join(d, 'candidates.jsonl')
+            with open(cand_path, 'w') as f:
+                f.write(json.dumps({'name': 'NoLic', 'score': 10}) + '\n')
+                f.write(json.dumps({'name': 'Comm', 'score': 5, 'license': 'commercial'}) + '\n')
+            need_path = os.path.join(d, 'need_profile.json')
+            with open(need_path, 'w') as f:
+                json.dump({
+                    'license_preference': 'commercial',
+                    'must_haves': [],
+                    'interview_complete': True,
+                }, f)
+            out = os.path.join(d, 'shortlist.json')
+            code, _ = run_py(
+                shortlist, '--candidates', cand_path,
+                '--need-profile', need_path, '--out', out, '--count', '1',
+            )
+            self.assertEqual(code, 0)
+            payload = json.load(open(out))
+            self.assertEqual(len(payload['solutions']), 1)
+            self.assertEqual(payload['solutions'][0]['name'], 'Comm')
 
 
 class TestSpaReport(unittest.TestCase):
@@ -297,6 +390,75 @@ class TestSilverCompareContract(unittest.TestCase):
             code, data = run_py(val, '--dir', d)
             self.assertEqual(code, 0)
             self.assertEqual(data['status'], 'pass')
+
+
+class TestValidateLandscape(unittest.TestCase):
+    def test_happy_path(self):
+        val = os.path.join(SCRIPTS, 'validate_landscape.py')
+        with tempfile.TemporaryDirectory() as d:
+            seed_landscape_fixture(d)
+            code, data = run_py(val, '--dir', d)
+            self.assertEqual(code, 0)
+            self.assertEqual(data['status'], 'pass')
+
+    def test_wrong_shortlist_count(self):
+        val = os.path.join(SCRIPTS, 'validate_landscape.py')
+        with tempfile.TemporaryDirectory() as d:
+            seed_landscape_fixture(d, shortlist_count=3)
+            code, data = run_py(val, '--dir', d)
+            self.assertEqual(code, 1)
+            self.assertTrue(any('exactly 5' in e for e in data.get('errors', [])))
+
+    def test_missing_landscape_report(self):
+        val = os.path.join(SCRIPTS, 'validate_landscape.py')
+        with tempfile.TemporaryDirectory() as d:
+            seed_landscape_fixture(d, with_landscape=False)
+            code, data = run_py(val, '--dir', d)
+            self.assertEqual(code, 1)
+            self.assertTrue(any('landscape-report' in e for e in data.get('errors', [])))
+
+    def test_missing_solutions_dir(self):
+        val = os.path.join(SCRIPTS, 'validate_landscape.py')
+        with tempfile.TemporaryDirectory() as d:
+            seed_landscape_fixture(d, with_solutions=False)
+            code, data = run_py(val, '--dir', d)
+            self.assertEqual(code, 1)
+            self.assertTrue(any('solutions/' in e for e in data.get('errors', [])))
+
+
+class TestValidateCompareNegative(unittest.TestCase):
+    def test_missing_solutions_dir(self):
+        val = os.path.join(SCRIPTS, 'validate_compare.py')
+        gen = os.path.join(SCRIPTS, 'generate_report_spa.py')
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, 'solutions_requested.json'), 'w') as f:
+                json.dump({'solutions': ['A', 'B']}, f)
+            os.makedirs(os.path.join(d, 'comparison'))
+            with open(os.path.join(d, 'comparison', 'comparison.json'), 'w') as f:
+                json.dump({'rankings': [{'solution': 'A', 'score': 1}]}, f)
+            subprocess.run([sys.executable, gen, '--dir', d], check=True)
+            code, data = run_py(val, '--dir', d)
+            self.assertEqual(code, 1)
+            self.assertTrue(any('solutions/' in e for e in data.get('errors', [])))
+
+
+class TestPhaseGateShortlist(unittest.TestCase):
+    def test_shortlist_requires_five_for_landscape(self):
+        phase_gate = os.path.join(SCRIPTS, 'phase_gate.py')
+        with tempfile.TemporaryDirectory() as d:
+            with open(os.path.join(d, 'run_manifest.json'), 'w') as f:
+                json.dump({'research_type': 'solution-landscape', 'mode': 'deep'}, f)
+            os.makedirs(os.path.join(d, 'shortlist'))
+            with open(os.path.join(d, 'shortlist', 'shortlist.json'), 'w') as f:
+                json.dump({'solutions': [{'name': 'A'}, {'name': 'B'}]}, f)
+            code, data = run_py(phase_gate, '--dir', d, '--phase', 'triangulate')
+            self.assertEqual(code, 1)
+            self.assertEqual(data['status'], 'fail')
+            shortlist_art = next(
+                a for a in data.get('artifacts', []) if 'shortlist' in a.get('artifact', '')
+            )
+            self.assertFalse(shortlist_art['ok'])
+            self.assertIn('exactly 5', shortlist_art['detail'])
 
 
 class TestMatrixOpenpyxl(unittest.TestCase):

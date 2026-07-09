@@ -36,7 +36,9 @@ def license_ok(row: dict[str, Any], pref: str) -> bool:
     if pref == "oss":
         return lic in ("oss", "open-source", "open source", "apache", "mit", "gpl")
     if pref == "commercial":
-        return lic in ("commercial", "proprietary", "saas", "") or "commercial" in lic
+        if not lic:
+            return False
+        return lic in ("commercial", "proprietary", "saas") or "commercial" in lic
     return True
 
 
