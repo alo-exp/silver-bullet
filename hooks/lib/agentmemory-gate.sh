@@ -56,6 +56,14 @@ sb_agentmemory_export_exists() {
   [[ -d "$export_path" && ! -L "$export_path" ]]
 }
 
+sb_agentmemory_scaffold_export_root() {
+  local project_root="${1:-$PWD}"
+  local config_file="${2:-}"
+  local export_path
+  export_path="$(sb_agentmemory_abs_export_path "$project_root" "$config_file")"
+  mkdir -p "${export_path}/memory" "${export_path}/snapshots" 2>/dev/null || return 1
+}
+
 sb_agentmemory_cli_path() {
   if command -v agentmemory >/dev/null 2>&1; then
     command -v agentmemory
