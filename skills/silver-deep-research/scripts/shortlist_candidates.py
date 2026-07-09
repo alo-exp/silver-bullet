@@ -43,6 +43,7 @@ _NON_COMMERCIAL_COLLAPSED = (
     "nocommercial",
     "notforcommercial",
     "noforcommercial",
+    "withoutcommercial",
 )
 _OSS_MARKERS = ("mit", "apache", "gpl", "bsd", "mpl")
 
