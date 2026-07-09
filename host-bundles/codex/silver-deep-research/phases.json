@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "phases": {
     "scope": {
       "id": "DR-SCOPE",
@@ -72,6 +72,30 @@
       "required_artifacts": ["decision-record.md", "handoff.md", "vloop-rollup.json"],
       "vloop_checks": ["AF-DECIDE rollup complete", "validation logs present"],
       "repair_triggers": ["validation failures after max repair loops"]
+    }
+  },
+  "research_types": {
+    "default": {
+      "description": "General research questions (no solution matrix)"
+    },
+    "solution-landscape": {
+      "description": "Market survey, top-5 SCR deep dive, weighted comparison matrix",
+      "default_mode": "deep",
+      "phase_artifacts": {
+        "scope": {"add": ["need_profile.json"]},
+        "triangulate": {"add": ["landscape/landscape-report.md", "shortlist/shortlist.json"]},
+        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md"]},
+        "package": {"add": ["report.html"]}
+      }
+    },
+    "solution-compare": {
+      "description": "User-named N>=2 solutions; SCR each; skip market shortlist",
+      "default_mode": "deep",
+      "phase_artifacts": {
+        "scope": {"add": ["need_profile.json", "solutions_requested.json"]},
+        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md"]},
+        "package": {"add": ["report.html"]}
+      }
     }
   },
   "modes": {

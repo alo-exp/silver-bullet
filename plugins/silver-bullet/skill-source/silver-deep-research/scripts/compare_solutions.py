@@ -90,16 +90,21 @@ def build_matrix(
             }
             for sol in solutions:
                 data = features_by_solution[sol]
+                found_in_categories = False
                 has = False
                 for cat in data.get("categories") or []:
                     for feat in cat.get("features") or []:
                         if (feat.get("name") or feat.get("feature")) == fname:
+                            found_in_categories = True
                             has = bool(feat.get("supported", feat.get("present", True)))
                             break
-                if not has:
+                    if found_in_categories:
+                        break
+                if not found_in_categories:
                     for feat in data.get("features") or []:
                         if (feat.get("name") or str(feat)) == fname:
-                            has = bool(feat.get("supported", True))
+                            has = bool(feat.get("supported", feat.get("present", True)))
+                            break
                 row["solutions"][sol] = TICK if has else ""
             rows.append(row)
             row_buffer.append(row)

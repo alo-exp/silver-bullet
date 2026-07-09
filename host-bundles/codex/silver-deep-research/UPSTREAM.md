@@ -9,7 +9,7 @@ The initial `silver-deep-research` engine was absorbed from:
 Silver Bullet adaptations:
 
 - frontmatter and invocation route are `silver-deep-research`
-- outputs are constrained to `.planning/research/<date>-<slug>/`
+- outputs are constrained to `research/<date>-<slug>/` at repo root (legacy `.planning/research/` archived)
 - `~/Documents` output is forbidden
 - AF-DECIDE and `FS-SILVER_DEEP_RESEARCH` metadata are recorded in
   `run_manifest.json`
@@ -30,4 +30,6 @@ See [reference/provenance.md](reference/provenance.md) for the full ledger.
 | lingzhi227 file gates | `phase_gate.py` | Idea-derived |
 | blessonism openclaw | `search_orchestrator.py`, catalogs | Idea-derived |
 | hoolulu chapter factory | `report_profiles.yaml`, validate_report | Idea-derived |
-| Socialpranker eval | `eval/rubric.md`, `capability_score.py` | Idea-derived |
+| MultAI comparator matrix | `scripts/matrix_ops.py`, `matrix_builder.py` | MIT — ported |
+| MultAI landscape prompts | `reference/landscape/` | MIT — ported |
+| MultAI CIR methodology | `reference/solution-scr/scr-guide.md` | Idea-derived — SCR naming |

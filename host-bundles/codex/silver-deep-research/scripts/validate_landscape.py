@@ -24,9 +24,11 @@ def validate(out_dir: Path) -> dict:
         errors.append("missing landscape/landscape-report.md")
 
     solutions_dir = out_dir / "solutions"
-    if solutions_dir.is_dir():
+    if not solutions_dir.is_dir():
+        errors.append("missing solutions/ directory")
+    else:
         scr_count = sum(1 for d in solutions_dir.iterdir() if (d / "scr.md").exists())
-        if scr_count < 5:
+        if scr_count != 5:
             errors.append(f"expected 5 scr.md files, found {scr_count}")
 
     comp = out_dir / "comparison" / "comparison.json"

@@ -129,6 +129,13 @@ def artifact_satisfied(out_dir: Path, artifact: str) -> tuple[bool, str]:
             return False, f"invalid json: {artifact}"
         if not data:
             return False, f"empty: {artifact}"
+        if artifact == "shortlist/shortlist.json":
+            if resolve_research_type(out_dir) == "solution-landscape":
+                solutions = data.get("solutions") or []
+                if len(solutions) != 5:
+                    return False, (
+                        f"shortlist must have exactly 5 solutions, got {len(solutions)}"
+                    )
         return True, "ok"
 
     if path.stat().st_size == 0:
