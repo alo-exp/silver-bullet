@@ -1,0 +1,164 @@
+{
+  "research_type": "solution-landscape",
+  "license_preference": "oss",
+  "categories": [
+    "Must-haves",
+    "Nice-to-haves",
+    "Platform"
+  ],
+  "rows": [
+    {
+      "type": "category",
+      "name": "Must-haves"
+    },
+    {
+      "type": "feature",
+      "name": "Wraps @earendil-works/pi-coding-agent",
+      "priority": "Critical",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "\u2714",
+        "openclaw": "partial"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Dedicated graphical UI",
+      "priority": "Critical",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "\u2714",
+        "openclaw": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "OSS / source-available",
+      "priority": "Critical",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "\u2714",
+        "openclaw": "\u2714"
+      }
+    },
+    {
+      "type": "category",
+      "name": "Nice-to-haves"
+    },
+    {
+      "type": "feature",
+      "name": "Multi-session workspace",
+      "priority": "High",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "",
+        "openclaw": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Git worktree isolation",
+      "priority": "Medium",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "",
+        "pi-code-gui": "",
+        "openclaw": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Remote / multi-device supervision",
+      "priority": "Medium",
+      "solutions": {
+        "pi-gui": "",
+        "pi-web": "\u2714",
+        "pi-desktop": "",
+        "pi-code-gui": "",
+        "openclaw": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Integrated terminal + diff review",
+      "priority": "Medium",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "partial",
+        "openclaw": ""
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Multi-agent orchestration",
+      "priority": "Medium",
+      "solutions": {
+        "pi-gui": "\u2714",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "",
+        "openclaw": "\u2714"
+      }
+    },
+    {
+      "type": "category",
+      "name": "Platform"
+    },
+    {
+      "type": "feature",
+      "name": "Windows desktop build",
+      "priority": "Medium",
+      "solutions": {
+        "pi-gui": "",
+        "pi-web": "\u2714",
+        "pi-desktop": "\u2714",
+        "pi-code-gui": "\u2714",
+        "openclaw": "partial"
+      }
+    }
+  ],
+  "rankings": [
+    {
+      "solution": "pi-gui",
+      "score": 92,
+      "rank": 1
+    },
+    {
+      "solution": "pi-web",
+      "score": 86,
+      "rank": 2
+    },
+    {
+      "solution": "pi-desktop",
+      "score": 81,
+      "rank": 3
+    },
+    {
+      "solution": "pi-code-gui",
+      "score": 74,
+      "rank": 4
+    },
+    {
+      "solution": "openclaw",
+      "score": 62,
+      "rank": 5
+    }
+  ],
+  "winner": "pi-gui",
+  "runner_up": "pi-web",
+  "caveats": [
+    "OpenClaw is Pi-runtime-adjacent but messaging-first; partial Pi SDK fidelity for daily coding GUI.",
+    "pi-gui lacks documented Windows builds; pi-desktop leads on Windows Electron packaging."
+  ]
+}
