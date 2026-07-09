@@ -49,7 +49,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, WEIGHTS
+from matrix_core import TICK, WEIGHTS, priority_weight
 
 openpyxl = None
 get_column_letter = None
@@ -252,8 +252,8 @@ def _compute_score(ws: Worksheet, col: int, L: _Layout) -> int:
             continue
         prio = str(ws.cell(r, PRIO_COL).value or "")
         tick = ws.cell(r, col).value
-        if tick == TICK and prio in WEIGHTS:
-            score += WEIGHTS[prio]
+        if tick == TICK:
+            score += priority_weight(prio)
     return score
 
 
@@ -337,6 +337,7 @@ def add_platform(
     Returns:
         {ticks_applied, new_rows_added, orphans, total_features, platform_col}
     """
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx)
     ws = wb.active
     L = _Layout(ws)
@@ -496,6 +497,7 @@ def add_platform(
 
 def reorder_columns_by_score(src_xlsx: str, out_xlsx: str) -> dict:
     """Reorder platform columns by descending weighted score."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx)
     ws = wb.active
     L = _Layout(ws)
@@ -560,6 +562,7 @@ def create_combo_column(
     platform_b: str,
 ) -> dict:
     """Create a combo column = union of ticks from two platforms."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx)
     ws = wb.active
     L = _Layout(ws)
@@ -630,6 +633,7 @@ def create_combo_column(
 
 def verify_ticks(src_xlsx: str) -> dict:
     """Extract per-platform tick lists for verification."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx, data_only=True)
     ws = wb.active
     L = _Layout(ws)
@@ -665,6 +669,7 @@ def reorder_rows(
     new_order: list[str],
 ) -> dict:
     """Reorder feature rows within a single category."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx)
     ws = wb.active
     L = _Layout(ws)
@@ -728,6 +733,7 @@ def reorder_categories(
     new_order: list[str],
 ) -> dict:
     """Reorder category blocks in the matrix."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx)
     ws = wb.active
     L = _Layout(ws)
@@ -775,6 +781,7 @@ def reorder_categories(
 
 def extract_features(src_xlsx: str) -> dict:
     """Extract all features grouped by category."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx, data_only=True)
     ws = wb.active
     L = _Layout(ws)
@@ -797,6 +804,7 @@ def extract_features(src_xlsx: str) -> dict:
 
 def ranked_scores(src_xlsx: str) -> dict:
     """Return ranked platform scores."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx, data_only=True)
     ws = wb.active
     L = _Layout(ws)
@@ -820,6 +828,7 @@ def ranked_scores(src_xlsx: str) -> dict:
 
 def info(src_xlsx: str) -> dict:
     """Return summary info about the matrix."""
+    _require_openpyxl()
     wb = openpyxl.load_workbook(src_xlsx, data_only=True)
     ws = wb.active
     L = _Layout(ws)

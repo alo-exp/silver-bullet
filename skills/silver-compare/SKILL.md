@@ -3,7 +3,7 @@ name: silver-compare
 description: >
   Compare N>=2 named solutions via deep-research engine (research_type=solution-compare).
   Runs mandatory need-profile interview, SCR extraction per solution, weighted matrix, serverless report.html.
-argument-hint: "<solution-1> <solution-2> [...solution-N] [--mode deep|standard|ultradeep] [--auto]"
+argument-hint: "<solution-1> <solution-2> [...solution-N] [--mode deep|ultradeep] [--auto]"
 version: 1.0.0
 ---
 
