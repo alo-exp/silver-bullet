@@ -8,6 +8,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
 # shellcheck source=scripts/agent-claude/lib.sh
 source "${REPO_ROOT}/scripts/agent-claude/lib.sh"
+# shellcheck source=hooks/lib/cert-bypass.sh
+source "${REPO_ROOT}/hooks/lib/cert-bypass.sh"
 
 usage() {
   cat <<'EOF'
@@ -46,6 +48,10 @@ done
 agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
 agent_delegate_clear_matrix_env
 
+if [[ "${SB_AGENT_CERT_RUN:-0}" == "1" && -z "${CLAUDE_PERMISSION_MODE:-}" ]]; then
+  export CLAUDE_PERMISSION_MODE=bypassPermissions
+fi
+
 if [[ -n "$BRIEF_FILE" ]]; then
   BRIEF_FILE="$(agent_delegate_canonicalize_path "$BRIEF_FILE")"
 fi
@@ -80,6 +86,17 @@ agent_claude_apply_lightweight_env() {
   export SB_AGENT_CLAUDE_DELEGATE=1
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
+
+  if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]]; then
+    export SB_AGENT_CERT_RUN=1
+    if declare -f sb_cert_run_touch_marker >/dev/null 2>&1; then
+      sb_cert_run_touch_marker "${WORK_DIR:-${CLAUDE_WORK_DIR:-}}"
+    else
+      mkdir -p "${WORK_DIR:-}/.silver-bullet" 2>/dev/null || true
+      : >"${WORK_DIR:-}/.silver-bullet/agent-cert-run" 2>/dev/null || true
+    fi
+    agent_claude_ensure_plugin_cache "$SB_ROOT" || true
+  fi
 
   if [[ "$USE_PRINT" -eq 1 ]]; then
     export CLAUDE_USE_INTERACTIVE=0

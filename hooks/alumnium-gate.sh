@@ -11,6 +11,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/runtime-paths.sh" ]] && source "$_lib_dir/runtime-paths.sh"
 [[ -f "$_lib_dir/sb-project-gate.sh" ]] && source "$_lib_dir/sb-project-gate.sh"
 [[ -f "$_lib_dir/trivial-bypass.sh" ]] && source "$_lib_dir/trivial-bypass.sh"
+[[ -f "$_lib_dir/cert-bypass.sh" ]] && source "$_lib_dir/cert-bypass.sh"
 [[ -f "$_lib_dir/tool-input.sh" ]] && source "$_lib_dir/tool-input.sh"
 [[ -f "$_lib_dir/recommended-tools.sh" ]] && source "$_lib_dir/recommended-tools.sh"
 [[ -f "$_lib_dir/alumnium-gate.sh" ]] && source "$_lib_dir/alumnium-gate.sh"
@@ -33,6 +34,9 @@ emit_block() {
 }
 
 command -v jq >/dev/null 2>&1 || exit 0
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0

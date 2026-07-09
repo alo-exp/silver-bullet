@@ -14,6 +14,7 @@ _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib
 [[ -f "$_lib_dir/recommended-tools-registry.sh" ]] && source "$_lib_dir/recommended-tools-registry.sh"
 [[ -f "$_lib_dir/token-compression-tools-gate.sh" ]] && source "$_lib_dir/token-compression-tools-gate.sh"
 [[ -f "$_lib_dir/hook-audit.sh" ]] && source "$_lib_dir/hook-audit.sh"
+[[ -f "$_lib_dir/cert-bypass.sh" ]] && source "$_lib_dir/cert-bypass.sh"
 
 emit_block() {
   local reason="$1"
@@ -28,6 +29,9 @@ emit_block() {
 }
 
 command -v jq >/dev/null 2>&1 || exit 0
+if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 input="$(cat 2>/dev/null || true)"
 [[ -n "$input" ]] || exit 0
