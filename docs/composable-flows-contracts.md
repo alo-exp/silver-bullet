@@ -80,7 +80,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-VALIDATE` | gap_validation | `templates/orchestrator-workers/VALIDATE.md` | `silver-validate` |
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-doctor`, `silver-migrate`, `silver-phase` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
-| `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-claude` |
+| `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-claude`, `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-opencode`, `silver-agent-pi` |
 
 ## Skill-Dispatched Worker Templates
 
@@ -481,6 +481,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_BUGFIX` | `silver-bugfix` | `AF-DEBUG` | `EV-FS-SILVER_BUGFIX` |
 | `FS-SILVER_CANARY` | `silver-canary` | `AF-SHIP` | `EV-FS-SILVER_CANARY` |
 | `FS-SILVER_CLARIFY` | `silver-clarify` | `AF-CLARIFY` | `EV-FS-SILVER_CLARIFY` |
+| `FS-SILVER_COMPARE` | `silver-compare` | `AF-DECIDE` | `EV-FS-SILVER_CLARIFY` |
 | `FS-SILVER_COMPLETION_AUDIT` | `silver-completion-audit` | `AF-COMPLETION-AUDIT` | `EV-FS-SILVER_COMPLETION_AUDIT` |
 | `FS-SILVER_CONTENT` | `silver-content` | `AF-DOCUMENT` | `EV-FS-SILVER_CONTENT` |
 | `FS-SILVER_CONTEXT` | `silver-context` | `AF-ORIENT` | `EV-FS-SILVER_CONTEXT` |
@@ -517,7 +518,6 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_REVIEW_REQUEST` | `silver-review-request` | `AF-REVIEW-REQUEST` | `EV-FS-SILVER_REVIEW_REQUEST` |
 | `FS-SILVER_REVIEW_STATS` | `silver-review-stats` | `AF-ORIENT` | `EV-FS-SILVER_REVIEW_STATS` |
 | `FS-SILVER_REVIEW_TRIAGE` | `silver-review-triage` | `AF-REVIEW-TRIAGE` | `EV-FS-SILVER_REVIEW_TRIAGE` |
-| `FS-SILVER_TRIAGE` | `silver-triage` | `AF-REVIEW-TRIAGE` | `EV-FS-SILVER_TRIAGE` |
 | `FS-SILVER_SCAN` | `silver-scan` | `AF-ORIENT` | `EV-FS-SILVER_SCAN` |
 | `FS-SILVER_SECURE` | `silver-secure` | `AF-SECURE` | `EV-FS-SILVER_SECURE` |
 | `FS-SILVER_SHIP` | `silver-ship` | `AF-SHIP` | `EV-FS-SILVER_SHIP` |
@@ -525,6 +525,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_SPIKE` | `silver-spike` | `AF-EXECUTE` | `EV-FS-SILVER_SPIKE` |
 | `FS-SILVER_TEST` | `silver-test` | `AF-VERIFY` | `EV-FS-SILVER_TEST` |
 | `FS-SILVER_THREAD` | `silver-thread` | `AF-PHASE-MANAGE` | `EV-FS-SILVER_THREAD` |
+| `FS-SILVER_TRIAGE` | `silver-triage` | `AF-REVIEW-TRIAGE` | `EV-FS-SILVER_TRIAGE` |
 | `FS-SILVER_UI` | `silver-ui` | `AF-UI-QUALITY` | `EV-FS-SILVER_UI` |
 | `FS-SILVER_UI_CONTRACT` | `silver-ui-contract` | `AF-DESIGN-CONTRACT` | `EV-FS-SILVER_UI_CONTRACT` |
 | `FS-SILVER_UI_REVIEW` | `silver-ui-review` | `AF-UI-QUALITY` | `EV-FS-SILVER_UI_REVIEW` |
@@ -587,6 +588,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-agent-claude` | `AF-AGENT-DELEGATE` |
 | `silver-agent-codex` | `AF-AGENT-DELEGATE` |
 | `silver-agent-cursor` | `AF-AGENT-DELEGATE` |
+| `silver-agent-opencode` | `AF-AGENT-DELEGATE` |
+| `silver-agent-pi` | `AF-AGENT-DELEGATE` |
 | `silver-agent-worker` | `AF-AGENT-DELEGATE` |
 | `silver-benchmark` | `AF-FAST-PATH` |
 | `silver-blast-radius` | `AF-BLAST-RADIUS` |
@@ -596,6 +599,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `silver-bugfix` | `AF-DEBUG` |
 | `silver-canary` | `AF-SHIP` |
 | `silver-clarify` | `AF-CLARIFY` |
+| `silver-compare` | `AF-DECIDE` |
 | `silver-completion-audit` | `AF-COMPLETION-AUDIT` |
 | `silver-content` | `AF-DOCUMENT` |
 | `silver-context` | `AF-ORIENT` |
@@ -664,6 +668,7 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `gsd-verify-work` | `AF-VERIFY` |
 | `receiving-code-review` | `AF-REVIEW-TRIAGE` |
 | `requesting-code-review` | `AF-REVIEW-REQUEST` |
+| `silver-compare` | `AF-DECIDE` |
 | `systematic-debugging` | `AF-DEBUG` |
 | `test-driven-development` | `FS-TDD` |
 | `verification-before-completion` | `AF-COMPLETION-AUDIT` |

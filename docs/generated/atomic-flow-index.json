@@ -229,6 +229,9 @@
     "FS-SILVER_CLARIFY": [
       "AF-CLARIFY"
     ],
+    "FS-SILVER_COMPARE": [
+      "AF-DECIDE"
+    ],
     "FS-SILVER_COMPLETION_AUDIT": [
       "AF-COMPLETION-AUDIT"
     ],
