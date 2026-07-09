@@ -62,8 +62,13 @@ def collect_report_data(out_dir: Path) -> dict[str, Any]:
     }
 
 
+def safe_json_payload(data: dict[str, Any]) -> str:
+    """Serialize JSON for inline <script> embedding — escape < to prevent XSS."""
+    return json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
+
+
 def render_html(data: dict[str, Any]) -> str:
-    payload = json.dumps(data, ensure_ascii=False)
+    payload = safe_json_payload(data)
     title = html.escape(str(data.get("title", "Research Report")))
     return f"""<!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -167,7 +172,6 @@ pre {{ white-space: pre-wrap; background: var(--surface); padding: 1rem; border-
   const rankings = cmp.rankings || [];
   const rows = (cmp.rows || []).filter(r => r.type === 'feature');
   const solutions = rankings.map(r => r.solution);
-  let table = '<div class="filter-bar"><label>License filter: <select id="licFilter"><option value="all">All</option><option value="oss">OSS</option><option value="commercial">Commercial</option></select></label></div>';
   if (solutions.length) {{
     table += '<table id="matrixTable"><thead><tr><th>Feature</th><th>Priority</th>';
     solutions.forEach(s => {{ table += '<th data-sort>' + esc(s) + '</th>'; }});
