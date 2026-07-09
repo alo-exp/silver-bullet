@@ -132,6 +132,37 @@ cp -R "${PLUGIN_ROOT}/templates/orchestrator-workers/." .silver-bullet/orchestra
 
 Set `orchestrator_mode` to `"parent"` in `.silver-bullet.json` (only supported mode).
 
+
+### 3.2.3 Cursor SB custom subagents (cursor_sb_agents — Cursor host only)
+
+Tri-state consent mirrors §1.1a Graphify / §1.1b agentmemory (`cursor_sb_agents.enabled_by_user`: `null` | `true` | `false`).
+
+**Skip-if-global:** before writing project `.cursor/agents/`, probe global install:
+
+```bash
+bash "${PLUGIN_ROOT}/scripts/lib/cursor-sb-agents/probe-global-agents.sh" --quiet
+```
+
+When probe passes (expected managed count + name set + `agents_install_status: installed` in `~/.config/silver-bullet/cursor-sb-agents.json`), **skip** project agents.
+
+**Steps:**
+
+1. Read `cursor_sb_agents.enabled_by_user` and `enforcement_suspended` from `.silver-bullet.json`.
+2. If `null`, ask: "Install SB custom subagents for review ladders?" — **Yes** → install path; **No** → set `enabled: false`, skip.
+3. If `true`, run global probe; on pass skip; on fail run `bash scripts/install-cursor-sb-agents.sh --project` (priced multi-select when TTY).
+4. On install failure with consent `true`: set `enforcement_suspended: true`, preserve consent, retry next init.
+5. If `false`, skip with "SB custom subagents opted out".
+
+Commands:
+
+```bash
+# Global probe (skip project install when PASS)
+bash scripts/lib/cursor-sb-agents/probe-global-agents.sh --quiet
+
+# Project fallback only when global probe fails
+bash scripts/install-cursor-sb-agents.sh --project
+```
+
 ### 3.2.5 CI setup
 
 Check if a GitHub Actions CI workflow exists:
