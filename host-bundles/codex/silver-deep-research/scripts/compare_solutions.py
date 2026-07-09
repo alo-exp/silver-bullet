@@ -20,6 +20,16 @@ def _slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
+def _feature_name(feat: Any) -> str | None:
+    if isinstance(feat, str):
+        name = feat.strip()
+        return name or None
+    if isinstance(feat, dict):
+        name = feat.get("name") or feat.get("feature")
+        return str(name).strip() if name else None
+    return None
+
+
 def load_features(solutions_dir: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     if not solutions_dir.is_dir():
@@ -60,7 +70,7 @@ def build_matrix(
             cname = cat.get("name") or "General"
             categories.setdefault(cname, [])
             for feat in cat.get("features") or []:
-                fname = feat.get("name") or feat.get("feature")
+                fname = _feature_name(feat)
                 if not fname:
                     continue
                 all_features[fname] = cname
@@ -69,7 +79,7 @@ def build_matrix(
 
     for _name, data in features_by_solution.items():
         for feat in data.get("features") or []:
-            fname = feat.get("name") or str(feat)
+            fname = _feature_name(feat)
             if not fname or fname in all_features:
                 continue
             all_features[fname] = "Capabilities"
@@ -95,16 +105,24 @@ def build_matrix(
                 has = False
                 for cat in data.get("categories") or []:
                     for feat in cat.get("features") or []:
-                        if (feat.get("name") or feat.get("feature")) == fname:
+                        if _feature_name(feat) == fname:
                             found_in_categories = True
-                            has = bool(feat.get("supported", feat.get("present", True)))
+                            has = (
+                                bool(feat.get("supported", feat.get("present", True)))
+                                if isinstance(feat, dict)
+                                else True
+                            )
                             break
                     if found_in_categories:
                         break
                 if not found_in_categories:
                     for feat in data.get("features") or []:
-                        if (feat.get("name") or str(feat)) == fname:
-                            has = bool(feat.get("supported", feat.get("present", True)))
+                        if _feature_name(feat) == fname:
+                            has = (
+                                bool(feat.get("supported", feat.get("present", True)))
+                                if isinstance(feat, dict)
+                                else True
+                            )
                             break
                 row["solutions"][sol] = TICK if has else ""
             rows.append(row)

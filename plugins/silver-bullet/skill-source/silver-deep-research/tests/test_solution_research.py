@@ -10,6 +10,9 @@ import unittest
 
 SKILL_ROOT = os.path.join(os.path.dirname(__file__), '..')
 SCRIPTS = os.path.join(SKILL_ROOT, 'scripts')
+sys.path.insert(0, SCRIPTS)
+
+from shortlist_candidates import _is_commercial_license  # noqa: E402
 
 
 def run_py(script: str, *args: str) -> tuple[int, dict]:
@@ -214,6 +217,68 @@ class TestCompareSolutions(unittest.TestCase):
             self.assertEqual(sso_row['solutions']['alpha'], '')
             self.assertEqual(sso_row['solutions']['beta'], '\u2714')
 
+    def test_flat_string_features_do_not_crash(self):
+        compare = os.path.join(SCRIPTS, 'compare_solutions.py')
+        with tempfile.TemporaryDirectory() as d:
+            need = {
+                'must_haves': [],
+                'nice_to_haves': [],
+                'license_preference': 'mixed',
+                'interview_complete': True,
+            }
+            with open(os.path.join(d, 'need_profile.json'), 'w') as f:
+                json.dump(need, f)
+            for name, feats in (
+                ('alpha', {'features': ['RBAC', 'Audit log']}),
+                ('beta', {'features': ['RBAC']}),
+            ):
+                sol = os.path.join(d, 'solutions', name)
+                os.makedirs(sol)
+                with open(os.path.join(sol, 'features.json'), 'w') as f:
+                    json.dump({'solution_name': name, **feats}, f)
+            code, data = run_py(compare, '--dir', d)
+            self.assertEqual(code, 0)
+            self.assertEqual(data['status'], 'ok')
+            comp = json.load(open(os.path.join(d, 'comparison', 'comparison.json')))
+            feat_names = [r['name'] for r in comp['rows'] if r.get('type') == 'feature']
+            self.assertIn('RBAC', feat_names)
+            self.assertIn('Audit log', feat_names)
+
+
+class TestCommercialLicenseNormalize(unittest.TestCase):
+    def test_rejects_non_commercial_variants(self):
+        rejects = (
+            'non_commercial',
+            'not_commercial',
+            'NON_COMMERCIAL',
+            'non-commercial',
+            'noncommercial',
+            'notcommercial',
+            'Not Commercial License',
+        )
+        for lic in rejects:
+            with self.subTest(license=lic):
+                self.assertFalse(_is_commercial_license(lic))
+
+    def test_accepts_commercial_variants(self):
+        accepts = (
+            'commercial',
+            'Commercial License',
+            'commercial-use',
+            'Commercial Use Only',
+            'enterprise commercial',
+            'proprietary',
+            'saas',
+            'Enterprise SaaS',
+        )
+        for lic in accepts:
+            with self.subTest(license=lic):
+                self.assertTrue(_is_commercial_license(lic))
+
+    def test_rejects_empty_license(self):
+        self.assertFalse(_is_commercial_license(''))
+        self.assertFalse(_is_commercial_license('   '))
+
 
 class TestShortlist(unittest.TestCase):
     def test_exactly_five_shortlist(self):
@@ -275,7 +340,16 @@ class TestShortlist(unittest.TestCase):
                     'name': 'NonComm2', 'score': 9, 'license': 'noncommercial',
                 }) + '\n')
                 f.write(json.dumps({
+                    'name': 'NonComm3', 'score': 8, 'license': 'non_commercial',
+                }) + '\n')
+                f.write(json.dumps({
+                    'name': 'NonComm4', 'score': 7, 'license': 'not_commercial',
+                }) + '\n')
+                f.write(json.dumps({
                     'name': 'Comm', 'score': 5, 'license': 'commercial',
+                }) + '\n')
+                f.write(json.dumps({
+                    'name': 'CommLic', 'score': 4, 'license': 'Commercial License',
                 }) + '\n')
             need_path = os.path.join(d, 'need_profile.json')
             with open(need_path, 'w') as f:
@@ -287,12 +361,12 @@ class TestShortlist(unittest.TestCase):
             out = os.path.join(d, 'shortlist.json')
             code, _ = run_py(
                 shortlist, '--candidates', cand_path,
-                '--need-profile', need_path, '--out', out, '--count', '1',
+                '--need-profile', need_path, '--out', out, '--count', '2',
             )
             self.assertEqual(code, 0)
             payload = json.load(open(out))
-            self.assertEqual(len(payload['solutions']), 1)
-            self.assertEqual(payload['solutions'][0]['name'], 'Comm')
+            names = {s['name'] for s in payload['solutions']}
+            self.assertEqual(names, {'Comm', 'CommLic'})
 
 
 class TestSpaReport(unittest.TestCase):
