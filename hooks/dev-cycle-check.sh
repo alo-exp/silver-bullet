@@ -5,6 +5,7 @@ trap 'exit 0' ERR
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
 # shellcheck source=lib/hook-bootstrap.sh
 [[ -n "$_lib_dir" ]] && source "${_lib_dir}/hook-bootstrap.sh"
+[[ -f "$_lib_dir/cert-bypass.sh" ]] && source "$_lib_dir/cert-bypass.sh"
 if [[ -f "$_lib_dir/plugin-cache-guard.sh" ]]; then
   # shellcheck source=lib/plugin-cache-guard.sh
   source "$_lib_dir/plugin-cache-guard.sh"
@@ -33,6 +34,10 @@ fi
 
 # Wrap everything in a function so any failure is caught
 main() {
+  if declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+    exit 0
+  fi
+
   # Read JSON from stdin
   input=$(cat)
 

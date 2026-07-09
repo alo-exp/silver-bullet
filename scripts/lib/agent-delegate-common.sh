@@ -256,6 +256,8 @@ agent_delegate_write_degraded_fallback_evidence() {
 # Ensures graphify index/query freshness and agentmemory server/export exist before substantive edits.
 agent_delegate_preflight_recommended_tools() {
   local work_dir="${1:-}" sb_root="${2:-}" host="${3:-claude}"
+  [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]] && return 0
+  [[ -n "$work_dir" && -d "$work_dir" && -f "${work_dir}/.silver-bullet/agent-cert-run" ]] && return 0
   [[ -n "$work_dir" && -d "$work_dir" ]] || return 0
   [[ -n "$sb_root" && -d "$sb_root" ]] || return 0
 
