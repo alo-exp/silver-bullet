@@ -331,7 +331,10 @@ prune_cursor_gitpath_picker_skills() {
     mkdir -p "${gitpath_root}/skills"
     rsync -a --delete "${dest}/skills/" "${gitpath_root}/skills/"
   fi
-  rm -rf "${gitpath_root}/plugins/silver-bullet/skills"
+  rm -rf \
+    "${gitpath_root}/plugins/silver-bullet/skills" \
+    "${gitpath_root}/.agents" \
+    "${gitpath_root}/.cursor/agents"
 }
 
 prune_cursor_gitpath_extra_picker_surfaces() {
@@ -348,7 +351,11 @@ prune_cursor_gitpath_extra_picker_surfaces() {
   # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
   rm -rf \
     "${gitpath_root}/plugins/silver-bullet/commands" \
-    "${gitpath_root}/plugins/silver-bullet/agents"
+    "${gitpath_root}/plugins/silver-bullet/agents" \
+    "${gitpath_root}/plugins/silver-bullet/skill-source" \
+    "${gitpath_root}/plugins/silver-bullet/templates" \
+    "${gitpath_root}/templates/orchestrator-workers" \
+    "${gitpath_root}/templates/workflows"
 
   if [[ -f "$nested_manifest" ]]; then
     tmp="$(mktemp)"
