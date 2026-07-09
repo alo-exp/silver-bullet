@@ -214,7 +214,7 @@ cursor_backend_plugin_cache_ready() {
   cache_path="$(cursor_backend_plugin_cache_root)/${commit_sha}"
   [[ -d "$cache_path" ]] || return 1
   [[ -f "${cache_path}/.cache-complete" ]] || return 1
-  [[ -f "${cache_path}/commands/init.md" ]] || return 1
+  [[ -f "${cache_path}/commands/silver:init.md" ]] || return 1
   [[ -f "${cache_path}/.cursor-plugin/plugin.json" ]] || return 1
   jq -e '.commands == "./commands"' "${cache_path}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   resolved_dest="$(cd "$dest" && pwd -P)"
@@ -255,7 +255,7 @@ cursor_plugin_gitpath_root_surface_ready() {
 
   cursor_plugin_gitpath_ready "$commit_sha" || return 1
   gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
-  [[ -f "${gitpath_root}/commands/init.md" ]] || return 1
+  [[ -f "${gitpath_root}/commands/silver:init.md" ]] || return 1
   [[ -f "${gitpath_root}/.cursor-plugin/plugin.json" ]] || return 1
   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   [[ ! -f "${gitpath_root}/skills/silver-feature/SKILL.md" ]]
