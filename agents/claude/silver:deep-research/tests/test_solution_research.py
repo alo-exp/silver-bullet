@@ -259,6 +259,10 @@ class TestCommercialLicenseNormalize(unittest.TestCase):
             'not-for-commercial-use',
             'not for commercial use',
             'Not For Commercial Use',
+            'withoutcommercialuse',
+            'withoutcommercial',
+            'WithoutCommercialUse',
+            'without commercial use',
         )
         for lic in rejects:
             with self.subTest(license=lic):
