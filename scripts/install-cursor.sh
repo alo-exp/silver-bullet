@@ -142,12 +142,10 @@ sync_plugin_tree_from_checkout() {
   fi
   rsync -a --delete "${source_root}/scripts/" "${dest}/scripts/"
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
-  local cursor_bundle
-  cursor_bundle="$(sb_agent_bundle_root "$source_root" cursor)"
-  if [[ -d "$cursor_bundle" ]]; then
-    mkdir -p "${dest}/agents/cursor"
-    rsync -a --delete "${cursor_bundle}/" "${dest}/agents/cursor/"
-  fi
+  # agents/cursor must not ship in the Cursor install cache — cursor-agent TUI
+  # auto-discovers agents/<host>/*/SKILL.md for / picker entries regardless of
+  # plugin.json skills. Orchestrator + Skill tool read skill-source/ instead.
+  rm -rf "${dest}/agents/cursor" "${dest}/agents"
   local commands_src
   commands_src="$(cursor_plugin_commands_src "$source_root" || true)"
   if [[ -n "$commands_src" ]]; then
@@ -344,8 +342,8 @@ prune_cursor_gitpath_extra_picker_surfaces() {
   # host-bundles/cursor mirrors agents/cursor — Cursor discovers both from full clone.
   rm -rf "${gitpath_root}/host-bundles"
 
-  # Cross-host bundles are not Cursor picker surfaces.
-  rm -rf "${gitpath_root}/agents/claude" "${gitpath_root}/agents/codex"
+  # agents/cursor auto-registers / picker subagents; skill-source is internal-only.
+  rm -rf "${gitpath_root}/agents"
 
   # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
   rm -rf \
@@ -368,10 +366,7 @@ materialize_cursor_plugin_surface_at_root() {
     mkdir -p "${gitpath_root}/commands"
     rsync -a --delete "${dest}/commands/" "${gitpath_root}/commands/"
   fi
-  if [[ -d "${dest}/agents/cursor" ]]; then
-    mkdir -p "${gitpath_root}/agents/cursor"
-    rsync -a --delete "${dest}/agents/cursor/" "${gitpath_root}/agents/cursor/"
-  fi
+  rm -rf "${gitpath_root}/agents/cursor" "${gitpath_root}/agents"
   if [[ -f "${dest}/cursor-hooks.json" ]]; then
     install -m 644 "${dest}/cursor-hooks.json" "${gitpath_root}/cursor-hooks.json"
   fi

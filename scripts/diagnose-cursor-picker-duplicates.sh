@@ -268,7 +268,8 @@ for item in results:
     extra_surfaces = item.get("extra_surfaces", [])
     manifest_issues = item.get("manifest_issues", [])
     status = "OK"
-    if cmd_agent or cmd_skills or host_overlap or extra_surfaces or manifest_issues:
+    agent_count = int(item.get("agents", 0) or 0)
+    if cmd_agent or cmd_skills or host_overlap or extra_surfaces or manifest_issues or agent_count > 0:
         status = "FAIL"
         failures += 1
     print(f"[{status}] {label}")
@@ -292,6 +293,8 @@ for item in results:
     if manifest_issues:
         print(f"  manifest issues ({len(manifest_issues)}): {', '.join(manifest_issues[:4])}"
               + (" ..." if len(manifest_issues) > 4 else ""))
+    if agent_count > 0:
+        print(f"  agents/cursor subagent surface present ({agent_count} skills — must be 0)")
     print()
 
 if failures:
