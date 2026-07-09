@@ -219,6 +219,18 @@ else
   fail "install-cursor plugin.json declares commands path"
 fi
 
+if jq -e '(.skills // null) == null' "${resolved_current}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
+  pass "install-cursor plugin.json omits skills (commands-only / picker)"
+else
+  fail "install-cursor plugin.json omits skills (commands-only / picker)"
+fi
+
+if bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" >/dev/null 2>&1; then
+  pass "enumerate-cursor-slash-picker reports commands-only picker"
+else
+  fail "enumerate-cursor-slash-picker reports commands-only picker"
+fi
+
 if [[ ! -f "${resolved_current}/skills/silver-feature/SKILL.md" ]] && \
    [[ -d "${resolved_current}/skill-source" ]]; then
   pass "install-cursor omits canonical skills/ picker mirror and ships skill-source"
