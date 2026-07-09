@@ -40,6 +40,9 @@ agent_claude_apply_delegate_env() {
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
   export CLAUDE_USE_INTERACTIVE="${CLAUDE_USE_INTERACTIVE:-1}"
+  if [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]]; then
+    export SB_AGENT_CERT_RUN=1
+  fi
   agent_claude_apply_runtime_env
 }
 
@@ -188,6 +191,10 @@ if isinstance(hooks, dict):
     for event, groups in list(hooks.items()):
         if isinstance(groups, list):
             hooks[event] = filter_hooks(groups)
+
+cert = os.environ.get("SB_AGENT_CERT_RUN", "")
+if cert in ("1", "true"):
+    doc.setdefault("env", {})["SB_AGENT_CERT_RUN"] = "1"
 
 dest.write_text(json.dumps(doc, indent=2) + "\n")
 PY

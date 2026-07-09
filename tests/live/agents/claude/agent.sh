@@ -168,6 +168,7 @@ agent_invoke() {
   output=$(
     cd "$WORK_DIR" && \
       HOME="${HOME}" \
+      SB_AGENT_CERT_RUN="${SB_AGENT_CERT_RUN:-}" \
       CLAUDE_LIVE_CLI="$cli" \
       CLAUDE_LIVE_PROMPT="$prompt" \
       CLAUDE_LIVE_PERMISSION_MODE="$permission_mode" \
@@ -198,6 +199,13 @@ if os.environ.get("CLAUDE_LIVE_CONTINUE") == "1":
 args.append(prompt)
 
 try:
+    env = os.environ.copy()
+    cert = os.environ.get("SB_AGENT_CERT_RUN", "")
+    marker = os.path.join(os.getcwd(), ".silver-bullet", "agent-cert-run")
+    if os.path.isfile(marker) and not os.path.islink(marker):
+        env["SB_AGENT_CERT_RUN"] = "1"
+    elif cert:
+        env["SB_AGENT_CERT_RUN"] = cert
     result = subprocess.run(
         args,
         text=True,
@@ -205,6 +213,7 @@ try:
         stderr=subprocess.STDOUT,
         timeout=timeout,
         check=False,
+        env=env,
     )
     if result.stdout:
         sys.stdout.write(result.stdout)

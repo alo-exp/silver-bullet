@@ -32,6 +32,10 @@ if [[ -f "$_lib_dir/tool-input.sh" ]]; then
   # shellcheck source=lib/tool-input.sh
   source "$_lib_dir/tool-input.sh"
 fi
+if [[ -f "$_lib_dir/cert-bypass.sh" ]]; then
+  # shellcheck source=lib/cert-bypass.sh
+  source "$_lib_dir/cert-bypass.sh"
+fi
 
 if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
   # shellcheck source=lib/jq-gate.sh
@@ -68,6 +72,11 @@ elif ! command -v jq >/dev/null 2>&1; then
 fi
 
 input=$(cat)
+if declare -f sb_hook_exit_on_cert_run >/dev/null 2>&1; then
+  sb_hook_exit_on_cert_run
+elif declare -f sb_cert_run_bypass_active >/dev/null 2>&1 && sb_cert_run_bypass_active; then
+  exit 0
+fi
 
 # Extract file path from tool input. Native Codex apply_patch payloads are
 # parsed by hooks/lib/tool-input.sh from patch file headers.
