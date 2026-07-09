@@ -21,9 +21,10 @@ fi
 
 plugin_version="$(jq -r '.version' "$ROOT_MANIFEST")"
 
-cursor_bundle="$(sb_agent_bundle_root "$REPO_ROOT" cursor)"
-mkdir -p "${DEST_DIR}/agents/cursor"
-rsync -a --delete "${cursor_bundle}/" "${DEST_DIR}/agents/cursor/"
+# Do not ship agents/cursor in the Cursor plugin package — cursor-agent TUI
+# auto-discovers agents/<host>/*/SKILL.md for the / picker even without
+# plugin.json skills. Internal workflows resolve from skill-source/ instead.
+rm -rf "${DEST_DIR}/agents/cursor" "${DEST_DIR}/agents"
 
 if [[ -d "${REPO_ROOT}/plugins/silver-bullet/commands" ]]; then
   mkdir -p "${DEST_DIR}/commands"

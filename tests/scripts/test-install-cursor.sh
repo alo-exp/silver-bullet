@@ -97,10 +97,10 @@ else
   fail "install-cursor materializes commands in marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/agents/cursor/silver:plan/SKILL.md" ]]; then
-  pass "install-cursor materializes cursor skills in marketplace gitPath checkout"
+if [[ ! -f "${gitpath_root}/agents/cursor/silver:plan/SKILL.md" ]]; then
+  pass "install-cursor omits agents/cursor from marketplace gitPath (commands-only / picker)"
 else
-  fail "install-cursor materializes cursor skills in marketplace gitPath checkout"
+  fail "install-cursor omits agents/cursor from marketplace gitPath (commands-only / picker)"
 fi
 
 if [[ -f "${gitpath_root}/cursor-hooks.json" ]]; then
@@ -260,6 +260,9 @@ def parse_fm(path):
 
 cmds = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "commands", "*.md"))}
 skills = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "agents", "cursor", "*", "SKILL.md"))}
+if skills:
+    print("agents/cursor skills present:", len(skills))
+    raise SystemExit(1)
 overlap = sorted(cmds & skills)
 if overlap:
     print("overlap:", ", ".join(overlap))
@@ -267,9 +270,9 @@ if overlap:
 print("ok")
 PY
 then
-  pass "install-cursor cache has no command/subagent route overlap"
+  pass "install-cursor cache has no agents/cursor subagent surface"
 else
-  fail "install-cursor cache has no command/subagent route overlap"
+  fail "install-cursor cache has no agents/cursor subagent surface"
 fi
 
 if [[ -d "$backend_cache_link" ]] && [[ ! -f "${backend_cache_link}/skills/silver-feature/SKILL.md" ]] && \
@@ -291,12 +294,12 @@ def parse_fm(path):
 
 cmds = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "commands", "*.md"))}
 skills = {parse_fm(p).get("name", "") for p in glob.glob(os.path.join(cache, "agents", "cursor", "*", "SKILL.md"))}
-raise SystemExit(1 if cmds & skills else 0)
+raise SystemExit(1 if skills else 0)
 PY
 then
-  pass "install-cursor backend cache has no command/subagent route overlap"
+  pass "install-cursor backend cache has no agents/cursor subagent surface"
 else
-  fail "install-cursor backend cache has no command/subagent route overlap"
+  fail "install-cursor backend cache has no agents/cursor subagent surface"
 fi
 
 if [[ "$(readlink "$current_link")" != "$current_link" ]]; then
