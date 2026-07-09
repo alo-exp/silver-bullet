@@ -2,8 +2,12 @@
 
 ## [Unreleased]
 
+## Features
+- `feat(deep-research)`: port MultAI solution-landscape and solution-compare into SB (no multi-AI) — AF-DECIDE category decisions, mandatory need-profile interview (`need_profile.json`), top-5 shortlist + SCR extraction, weighted comparison matrix, serverless `report.html` SPA, canonical output root `research/<date>-<slug>/`, and `/silver:compare` for N≥2 named solutions (`daee7db8`…`632d75d4`)
+
 ## Fixes
 - `fix(deep-research)`: v2 audit follow-ups — branch-correct GitHub `SKILL.md` URL resolution (`github_skill_retrieval.py`), `search_orchestrator` integration, `chain_tracker` unit tests, methodology DR-* phase alignment, and July 2026 landscape replay `gh-search` partials for reproducibility
+- `fix(deep-research)`: Thermos hardening — SPA matrix JS, landscape/compare validators, mode allowlist (`deep`/`ultradeep` only for solution types), OSS/commercial license token matching, SCR phase gates (`f5f00629`…`632d75d4`)
 
 ---
 
