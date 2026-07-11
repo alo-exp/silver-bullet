@@ -1,0 +1,15 @@
+{
+  "agent_slug": "ocg-qwen3.7-plus",
+  "model": "opencode-go/qwen3.7-plus",
+  "started_at": "2026-07-11T19:53:16Z",
+  "completed_at": "2026-07-12T00:30:00Z",
+  "research_mode": "ultradeep",
+  "topic": "Canonical SDLC Process Architecture",
+  "output_directory": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-qwen3.7-plus/",
+  "phases_completed": ["scope", "plan", "retrieve", "triangulate", "outline_refinement", "synthesize", "critique", "refine", "package"],
+  "total_sources": 32,
+  "total_claims": 87,
+  "process_areas_covered": 18,
+  "quality_gate_passed": true,
+  "notes": "Research conducted using parallel web retrieval from 16+ primary industry sources including Google SRE, DORA, NIST SSDF, CNCF, OpenSSF, OpenTelemetry, ThoughtWorks Technology Radar Vol 34, and engineering blogs from Meta, Netflix, AWS, GitHub, Atlassian, Stripe, Shopify, Cloudflare. All 18 required process areas covered with evidence-based workflows."
+}

@@ -1,0 +1,19 @@
+{"id":"E001","claim_id":"C001","source_id":"S001","span":"DORA Capabilities page: Five metrics as leading indicators","quote":"DORA now tracks five software delivery performance metrics"}
+{"id":"E002","claim_id":"C001","source_id":"S002","span":"DORA Publications: Four Keys metrics","quote":"Deployment Frequency, Lead Time for Changes, Time to Restore Service, Change Failure Rate"}
+{"id":"E003","claim_id":"C002","source_id":"S002","span":"DORA 2025 State of AI-assisted Software Development","quote":"AI adoption associated with 1.5% decrease in throughput and 7.2% decrease in delivery stability"}
+{"id":"E004","claim_id":"C002","source_id":"S020","span":"DORA Balancing AI Tensions","quote":"AI amplifies existing organizational strengths and dysfunctions"}
+{"id":"E005","claim_id":"C005","source_id":"S007","span":"GitHub Engineering Blog: Copilot Code Review","quote":"Copilot code review accounts for 1 in 5 code reviews on GitHub"}
+{"id":"E006","claim_id":"C006","source_id":"S009","span":"Spotify Engineering: AI adoption data","quote":">99% of engineers use AI coding tools every week"}
+{"id":"E007","claim_id":"C007","source_id":"S019","span":"DORA AI Capabilities Model Report","quote":"Seven capabilities that amplify the benefits of AI adoption"}
+{"id":"E008","claim_id":"C008","source_id":"S004","span":"Google Eng Practices: Code Review","quote":"Design, Functionality, Complexity, Tests, Naming, Comments, Style, Documentation"}
+{"id":"E009","claim_id":"C009","source_id":"S005","span":"NIST SP 800-218 SSDF v1.1","quote":"19 practice activities across 4 practice areas"}
+{"id":"E010","claim_id":"C010","source_id":"S006","span":"Stack Overflow 2025 Survey","quote":"82% used OpenAI GPT for development work in the past year"}
+{"id":"E011","claim_id":"C011","source_id":"S006","span":"Stack Overflow 2025 Survey: AI Agents","quote":"69% of AI agent users said agents increased productivity"}
+{"id":"E012","claim_id":"C012","source_id":"S020","span":"DORA Tensions: Trust in AI","quote":"30% of developers trust AI 'a little' or 'not at all'"}
+{"id":"E013","claim_id":"C013","source_id":"S002","span":"DORA 2025 Report: Core Finding","quote":"AI acts as an amplifier, magnifying existing strengths and weaknesses"}
+{"id":"E014","claim_id":"C014","source_id":"S001","span":"DORA Capabilities: Performance benchmarks","quote":"Elite performers deploy 208x more frequently"}
+{"id":"E015","claim_id":"C015","source_id":"S024","span":"Team Topologies: Four Team Types","quote":"Stream-aligned, enabling, platform, complicated-subsystem team types"}
+{"id":"E016","claim_id":"C016","source_id":"S001","span":"DORA Metrics: Change Lead Time","quote":"Elite: less than one hour"}
+{"id":"E017","claim_id":"C018","source_id":"S025","span":"SPACE Framework","quote":"Satisfaction & Well-being, Performance, Activity, Communication & Collaboration, Efficiency & Flow"}
+{"id":"E018","claim_id":"C020","source_id":"S001","span":"DORA Capabilities: Small Batches","quote":"Working in small batches — core capability, AI tagged"}
+{"id":"E019","claim_id":"C020","source_id":"S019","span":"DORA AI Capabilities: Small Batches","quote":"Counteracts instability risk as AI accelerates development"}

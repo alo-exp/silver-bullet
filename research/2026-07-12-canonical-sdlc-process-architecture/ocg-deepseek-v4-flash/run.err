@@ -1,0 +1,191 @@
+[0m
+> build · deepseek-v4-flash
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && mkdir -p /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[0m
+[0m# [0mTodos
+[✓] Create output directory and research plan artifacts
+[•] Research: Gather primary sources on SDLC practices from leading tech orgs
+[ ] Research: DORA, NIST SSDF, OWASP, CNCF standards and frameworks
+[ ] Research: Platform engineering, IDP, and DevEx practices
+[ ] Research: AI-assisted/agentic software engineering practices
+[ ] Write scope.md, research-plan.md, sources.jsonl, claims.jsonl
+[ ] Write evidence.jsonl, triangulation.md, outline.md
+[ ] Write critique.md, decision-record.md, handoff.md
+[ ] Write vloop-rollup.json, run_manifest.json
+[ ] Write primary research_report.md with all 10 sections
+[0m
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m⚙ [0mctx_batch_execute Batch Execute & Search
+[0m• [0mResearch DORA/DevOps practices[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m⚙ [0mctx_fetch_and_index Fetch & Index URL(s)
+[0m• [0mResearch platform engineering / IDP[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m• [0mResearch AI-assisted engineering[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m✓ [0mResearch DORA/DevOps practices[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m✓ [0mResearch AI-assisted engineering[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m✓ [0mResearch platform engineering / IDP[90m Ocg-Deepseek-V4-Flash Agent[0m
+[0m
+[0m# [0mTodos
+[✓] Create output directory and research plan artifacts
+[✓] Research: Gather primary sources on SDLC practices from leading tech orgs
+[✓] Research: DORA, NIST SSDF, OWASP, CNCF standards and frameworks
+[✓] Research: Platform engineering, IDP, and DevEx practices
+[✓] Research: AI-assisted/agentic software engineering practices
+[•] Write scope.md, research-plan.md, sources.jsonl, claims.jsonl
+[ ] Write evidence.jsonl, triangulation.md, outline.md
+[ ] Write critique.md, decision-record.md, handoff.md
+[ ] Write vloop-rollup.json, run_manifest.json
+[ ] Write primary research_report.md with all 10 sections
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/scope.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/research-plan.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/sources.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/claims.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/evidence.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/triangulation.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/outline.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/critique.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/decision-record.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/handoff.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/vloop-rollup.json
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/run_manifest.json
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/research_report.md
+Wrote file successfully.
+[0m
+[0m$ [0mls -la /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/ && echo "---" && wc -l /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/research_report.md && echo "---" && echo "Files:" && for f in scope.md research-plan.md sources.jsonl evidence.jsonl triangulation.md outline.md claims.jsonl critique.md decision-record.md handoff.md vloop-rollup.json run_manifest.json research_report.md; do test -f "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/$f" && echo "OK: $f ($(wc -c < "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/$f") bytes)" || echo "MISSING: $f"; done
+total 264
+drwxr-xr-x@ 17 shafqat  staff    544 Jul 12 05:57 .
+drwxr-xr-x@ 10 shafqat  staff    320 Jul 12 05:53 ..
+-rw-r--r--@  1 shafqat  staff   3377 Jul 12 05:56 claims.jsonl
+-rw-r--r--@  1 shafqat  staff   2416 Jul 12 05:57 critique.md
+-rw-r--r--@  1 shafqat  staff   2055 Jul 12 05:57 decision-record.md
+-rw-r--r--@  1 shafqat  staff   3198 Jul 12 05:56 evidence.jsonl
+-rw-r--r--@  1 shafqat  staff   1498 Jul 12 05:57 handoff.md
+-rw-r--r--@  1 shafqat  staff   2716 Jul 12 05:57 outline.md
+-rw-r--r--@  1 shafqat  staff     28 Jul 12 05:53 pid.txt
+-rw-r--r--@  1 shafqat  staff   2007 Jul 12 05:56 research-plan.md
+-rw-r--r--@  1 shafqat  staff  61742 Jul 12 06:00 research_report.md
+-rw-r--r--@  1 shafqat  staff  10865 Jul 12 06:00 run.err
+-rw-r--r--@  1 shafqat  staff    734 Jul 12 05:57 run_manifest.json
+-rw-r--r--@  1 shafqat  staff   1734 Jul 12 05:56 scope.md
+-rw-r--r--@  1 shafqat  staff   5281 Jul 12 05:56 sources.jsonl
+-rw-r--r--@  1 shafqat  staff   3073 Jul 12 05:56 triangulation.md
+-rw-r--r--@  1 shafqat  staff   1175 Jul 12 05:57 vloop-rollup.json
+---
+     755 /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash/research_report.md
+---
+Files:
+OK: scope.md (    1734 bytes)
+OK: research-plan.md (    2007 bytes)
+OK: sources.jsonl (    5281 bytes)
+OK: evidence.jsonl (    3198 bytes)
+OK: triangulation.md (    3073 bytes)
+OK: outline.md (    2716 bytes)
+OK: claims.jsonl (    3377 bytes)
+OK: critique.md (    2416 bytes)
+OK: decision-record.md (    2055 bytes)
+OK: handoff.md (    1498 bytes)
+OK: vloop-rollup.json (    1175 bytes)
+OK: run_manifest.json (     734 bytes)
+OK: research_report.md (   61742 bytes)
+[0m
+[0m# [0mTodos
+[✓] Create output directory and research plan artifacts
+[✓] Research: Gather primary sources on SDLC practices from leading tech orgs
+[✓] Research: DORA, NIST SSDF, OWASP, CNCF standards and frameworks
+[✓] Research: Platform engineering, IDP, and DevEx practices
+[✓] Research: AI-assisted/agentic software engineering practices
+[✓] Write scope.md, research-plan.md, sources.jsonl, claims.jsonl
+[✓] Write evidence.jsonl, triangulation.md, outline.md
+[✓] Write critique.md, decision-record.md, handoff.md
+[✓] Write vloop-rollup.json, run_manifest.json
+[✓] Write primary research_report.md with all 10 sections
+[0m
