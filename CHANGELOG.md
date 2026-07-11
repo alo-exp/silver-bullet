@@ -1,6 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [0.51.5] — 2026-07-11
+
+Patch release: permanent Cursor desktop/TUI picker fix — local plugin discovery symlink, commands-only backend caches, marketplace SHA alignment at install, D14 commands-only contract, stale custom-agent quarantine, and tagged archive/public install regression coverage.
+
+## Fixes
+- `fix(cursor)`: commands-only picker install path for desktop and TUI — symlink `~/.cursor/plugins/local/silver-bullet`, sync marketplace SHA, prune skill-source from backend caches (`66330f22`)
+- `fix(cursor)`: align manifest SHA with install before verify — registry/primary/backend SHA narrowing, local plugin link as desktop discovery fallback (`a6b0c000`)
+- `fix(cursor)`: enforce D14 commands-only cache validation; stop malformed `/silverui` and internal/subagent route drift in TUI
+- `fix(cursor)`: stale SB custom-agent cleanup and quarantine during install
+- `fix(tests)`: archive install regression tests for tagged public release paths
 
 ---
 
