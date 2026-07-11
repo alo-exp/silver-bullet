@@ -89,6 +89,22 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-5">
+      <div class="release-header">
+        <h2>v0.51.5</h2>
+        <time class="release-date" datetime="2026-07-11">2026-07-11</time>
+      </div>
+      <p class="release-summary">Patch release: permanent Cursor desktop/TUI picker fix — local plugin discovery symlink, commands-only backend caches, marketplace SHA alignment at install, D14 commands-only contract, stale custom-agent quarantine, and tagged archive/public install regression coverage.</p>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(cursor)</code>: commands-only picker install path for desktop and TUI — symlink <code>~/.cursor/plugins/local/silver-bullet</code>, sync marketplace SHA, prune skill-source from backend caches</li>
+        <li><code>fix(cursor)</code>: align manifest SHA with install before verify — registry/primary/backend SHA narrowing, local plugin link as desktop discovery fallback</li>
+        <li><code>fix(cursor)</code>: enforce D14 commands-only cache validation; stop malformed <code>/silverui</code> and internal/subagent route drift in TUI</li>
+        <li><code>fix(cursor)</code>: stale SB custom-agent cleanup and quarantine during install</li>
+        <li><code>fix(tests)</code>: archive install regression tests for tagged public release paths</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-51-4">
       <div class="release-header">
         <h2>v0.51.4</h2>

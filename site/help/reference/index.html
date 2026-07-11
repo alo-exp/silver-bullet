@@ -9,7 +9,7 @@
 <title>Command Reference — Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet command reference: lifecycle commands, composable atomic flows, .silver-bullet.json config options, file structure, and session log format.">
 <meta property="og:title" content="Command Reference — Silver Bullet Help">
-<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.51.4.">
+<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.51.5.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/reference/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -130,7 +130,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 <div class="page-hero">
   <div class="container">
     <h1>Command Reference</h1>
-    <p>Authoritative lookup for Silver Bullet v0.51.4 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 27 canonical atomic flows, 22 workflows, and planning artifacts.</p>
+    <p>Authoritative lookup for Silver Bullet v0.51.5 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 27 canonical atomic flows, 22 workflows, and planning artifacts.</p>
   </div>
 </div>
 
@@ -168,7 +168,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <!-- THREE-HOST INSTALL -->
-      <h2 id="runtime-install">Three-Host Runtime Install (v0.51.4)</h2>
+      <h2 id="runtime-install">Three-Host Runtime Install (v0.51.5)</h2>
       <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. Run <code>bash scripts/sb-bootstrap.sh</code> for first-time orientation or <code>bash scripts/sb-diagnostics.sh</code> to read capability tier 0&ndash;3 for the active host.</p>
 
       <div class="table-wrap"><table class="ref-table">
@@ -428,8 +428,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <!-- RUNTIME PARITY (v0.51.4) -->
-      <h2 id="runtime-parity">Runtime Parity Scripts (v0.51.4)</h2>
+      <!-- RUNTIME PARITY (v0.51.5) -->
+      <h2 id="runtime-parity">Runtime Parity Scripts (v0.51.5)</h2>
       <p>Structural parity scripts align documented evidence contracts with hook-enforced runtime behavior across all three hosts.</p>
 
       <div class="table-wrap"><table class="ref-table">
@@ -470,7 +470,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- APO CATALOG ARTIFACTS -->
       <h2 id="composable-flows">APO Catalog, Generated Views &amp; Migration</h2>
-      <p>v0.51.4 makes <code>docs/apo-catalog.json</code> the sole authority for the Silver Bullet process model. It defines Process → Workflow → Atomic Flow → Flow Step/Skill, including 27 canonical atomic flows, 22 workflows, 85 flow steps, V-loops, evidence records, intent ledgers, composition logs, tool policies, and runtime mappings.</p>
+      <p>v0.51.5 makes <code>docs/apo-catalog.json</code> the sole authority for the Silver Bullet process model. It defines Process → Workflow → Atomic Flow → Flow Step/Skill, including 27 canonical atomic flows, 22 workflows, 85 flow steps, V-loops, evidence records, intent ledgers, composition logs, tool policies, and runtime mappings.</p>
 
       <h3 id="catalog-generated-views">Catalog source of truth</h3>
       <ul>
@@ -484,11 +484,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3 id="vloop-subagents">V-loops and subagents</h3>
       <p>Every atomic flow executes as exactly one subagent work package. Each flow step/skill has a local V-loop; step V-loops roll up into the atomic-flow V-gate, atomic-flow V-gates roll up into workflow gates, and final completion validates material user intent against evidence.</p>
 
-      <h3 id="migration-notes">v0.51.4 migration notes</h3>
+      <h3 id="migration-notes">v0.51.5 migration notes</h3>
       <ul>
         <li>Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation. New docs, workflows, and tests should use atomic-flow slugs, <code>WF-*</code> workflow IDs, or public <code>/silver:*</code> routes.</li>
         <li>Older <code>WORKFLOW.md</code> state is legacy; active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code>.</li>
-        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with v0.51.4.</li>
+        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with v0.51.5.</li>
         <li>If stale generated docs are detected, run <code>python3 scripts/generate-apo-artifacts.py</code> and the APO freshness tests before release.</li>
       </ul>
 
@@ -537,8 +537,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
-  <span class="key">"config_version"</span>: <span class="str">"0.51.4"</span>,
-  <span class="key">"version"</span>: <span class="str">"0.51.4"</span>,
+  <span class="key">"config_version"</span>: <span class="str">"0.51.5"</span>,
+  <span class="key">"version"</span>: <span class="str">"0.51.5"</span>,
   <span class="key">"project"</span>: {
     <span class="key">"name"</span>: <span class="str">"my-app"</span>,
     <span class="key">"src_pattern"</span>: <span class="str">"/src/"</span>,
@@ -753,7 +753,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.51.4</div>
+/silver:release v0.51.5</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>
