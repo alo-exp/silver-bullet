@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.51.6] — 2026-07-11
+
+Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under `~/.cursor/plugins/local/` so `/silver` commands register after public reinstall.
+
+## Fixes
+- `fix(cursor)`: materialize commands-only local plugin surface into `~/.cursor/plugins/local/silver-bullet` instead of symlinking outside `plugins/local` — Cursor desktop rejects external symlink targets and silently skips command registration (`aeb96fd0`)
+- `fix(plugin-mirror)`: restore `plugins/silver-bullet/scripts` symlink to repo `scripts/` — canonical source remains via `../../scripts` (`8418c6f5`)
+- `fix(tests)`: install-cursor regression coverage for materialized local plugin directory and commands-only backend caches
+
+---
+
 ## [0.51.5] — 2026-07-11
 
 Patch release: permanent Cursor desktop/TUI picker fix — local plugin discovery symlink, commands-only backend caches, marketplace SHA alignment at install, D14 commands-only contract, stale custom-agent quarantine, and tagged archive/public install regression coverage.
