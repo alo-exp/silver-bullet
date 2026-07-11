@@ -296,9 +296,9 @@ elif host == "cursor":
                 failures.append(
                     f"[cursor] cache bleed: skills/{child.name} registers slash-picker skills"
                 )
-    commands_init = cache_root / "commands" / "silver:init.md"
+    commands_init = cache_root / "commands" / "silver.md"
     if not commands_init.is_file():
-        failures.append("[cursor] cache missing commands/silver:init.md (slash menu empty)")
+        failures.append("[cursor] cache missing commands/silver.md (slash menu empty)")
     manifest = cache_root / ".cursor-plugin" / "plugin.json"
     if manifest.is_file():
         try:
@@ -315,14 +315,14 @@ elif host == "cursor":
             )
     else:
         failures.append("[cursor] cache missing .cursor-plugin/plugin.json")
-    # Legacy bare-route stubs (/silverui, /silverplan) must not ship beside colon routes.
+    # Cursor desktop requires filesystem-safe filenames; frontmatter carries
+    # the intended silver:<route> slash name.
     commands_dir = cache_root / "commands"
     if commands_dir.is_dir():
         for path in commands_dir.glob("*.md"):
-            stem = path.stem
-            if stem != "silver" and not stem.startswith("silver:"):
+            if ":" in path.name:
                 failures.append(
-                    f"[cursor] malformed command filename {path.name!r} (expected silver:route)"
+                    f"[cursor] malformed command filename {path.name!r} (colon is not desktop-safe)"
                 )
 
 elif host == "codex":

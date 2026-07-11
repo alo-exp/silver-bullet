@@ -367,21 +367,78 @@ main() {
     local reg="${cursor_home}/plugins/installed_plugins.json"
     local cache_current="${cursor_home}/plugins/cache/alo-labs/silver-bullet/current"
     local resolved_current registry_sha gitpath_root market_cache_link
+    local expected_version registry_version registry_install_path local_version cache_version
+    local command_filename_colon_count marketplace_version marketplace_sha
+    expected_version="$(jq -r '.version // empty' "${REPO_ROOT}/package.json" 2>/dev/null || true)"
     if [[ -L "$cache_current" ]]; then
       resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
-      if [[ -f "${resolved_current}/commands/silver:init.md" ]]; then
+      if [[ -f "${resolved_current}/commands/silver.md" ]] && \
+         [[ "$(python3 - "${resolved_current}/commands/silver.md" <<'PY'
+import re, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+lines = p.read_text(encoding="utf-8", errors="ignore").splitlines()
+if not lines or lines[0].strip() != "---":
+    raise SystemExit(0)
+for line in lines[1:]:
+    if line.strip() == "---":
+        break
+    m = re.match(r"^name:\s*(.*)$", line)
+    if m:
+        print(m.group(1).strip().strip('"').strip("'"))
+        break
+PY
+)" == "silver" ]]; then
         record pass "cursor-commands" "plugin cache has composer command stubs"
       else
         record fail "cursor-commands" "commands/ missing — run: bash scripts/install-cursor.sh"
       fi
+      command_filename_colon_count=0
+      for command_file in "${resolved_current}/commands"/*.md; do
+        [[ -f "$command_file" ]] || continue
+        case "$(basename "$command_file")" in
+          *:*) command_filename_colon_count=$((command_filename_colon_count + 1)) ;;
+        esac
+      done
+      if [[ "$command_filename_colon_count" -eq 0 ]]; then
+        record pass "cursor-command-filenames" "all command filenames are desktop-safe"
+      else
+        record fail "cursor-command-filenames" "${command_filename_colon_count} command filenames contain ':' — regenerate command stubs"
+      fi
+      registry_version="$(jq -r '.plugins["silver-bullet@alo-labs"][0].version // empty' "$reg" 2>/dev/null || true)"
+      registry_install_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].installPath // empty' "$reg" 2>/dev/null || true)"
+      cache_version="$(jq -r '.version // empty' "${resolved_current}/.cursor-plugin/plugin.json" 2>/dev/null || true)"
+      local_version="$(jq -r '.version // empty' "${cursor_home}/plugins/local/silver-bullet/.cursor-plugin/plugin.json" 2>/dev/null || true)"
+      if [[ "$registry_version" == "$expected_version" && \
+            "$(basename "$registry_install_path")" == "$expected_version" && \
+            "$(basename "$resolved_current")" == "$expected_version" && \
+            "$cache_version" == "$expected_version" && \
+            "$local_version" == "$expected_version" && \
+            -d "${cursor_home}/plugins/cache/alo-labs/silver-bullet/${expected_version}" ]]; then
+        record pass "cursor-install-identity" "registry/cache/current/local all match ${expected_version}"
+      else
+        record fail "cursor-install-identity" "registry/cache/current/local version mismatch — run: bash scripts/install-cursor.sh"
+      fi
       if [[ -f "$reg" ]]; then
         registry_sha="$(jq -r '.plugins["silver-bullet@alo-labs"][0].gitCommitSha // empty' "$reg" 2>/dev/null || true)"
+        if jq -e '.plugins["silver-bullet@alo-labs"][0].enabled == true' "$reg" >/dev/null 2>&1; then
+          record pass "cursor-marketplace-enablement" "silver-bullet@alo-labs enabled record present"
+        else
+          record fail "cursor-marketplace-enablement" "silver-bullet@alo-labs enablement record missing/disabled"
+        fi
         if [[ -n "$registry_sha" ]]; then
           gitpath_root="${cursor_home}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${registry_sha}"
           market_cache_link="${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet/${registry_sha}"
+          marketplace_version="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version // empty' "${cursor_home}/plugins/marketplaces/alo-labs-cursor/.cursor-plugin/marketplace.json" 2>/dev/null || true)"
+          marketplace_sha="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .source.sha // empty' "${cursor_home}/plugins/marketplaces/alo-labs-cursor/.cursor-plugin/marketplace.json" 2>/dev/null || true)"
+          if [[ "$marketplace_version" == "$expected_version" && "$marketplace_sha" == "$registry_sha" ]]; then
+            record pass "cursor-marketplace-pin" "marketplace manifest matches ${expected_version}/${registry_sha:0:8}"
+          else
+            record fail "cursor-marketplace-pin" "marketplace manifest version/SHA mismatch — run: bash scripts/install-cursor.sh"
+          fi
           if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1 \
             && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]] \
-            && [[ -f "${gitpath_root}/commands/silver:init.md" ]] \
+            && [[ -f "${gitpath_root}/commands/silver.md" ]] \
             && jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
             record pass "cursor-gitpath" "marketplace gitPath ready with commands (${registry_sha:0:8})"
           elif [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then

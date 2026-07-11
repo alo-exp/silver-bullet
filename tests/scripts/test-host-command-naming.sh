@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fail when plugin command stubs use bare/hyphen filenames instead of silver: routes.
+# Fail when plugin command stubs use colon filenames or hyphen frontmatter names.
+# Cursor desktop requires filesystem-safe filenames; slash routes stay in frontmatter.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -40,8 +41,11 @@ for path in sorted(commands_dir.glob("*.md")):
     if not name:
         bad.append(f"{path.name}: missing name in frontmatter")
         continue
-    if path.stem != name:
-        bad.append(f"{path.name}: stem {path.stem!r} != name {name!r}")
+    if ":" in path.name:
+        bad.append(f"{path.name}: colon in filename is not desktop-safe")
+    expected_stem = "silver" if name == "silver" else name.replace(":", "-")
+    if path.stem != expected_stem:
+        bad.append(f"{path.name}: stem {path.stem!r} != expected {expected_stem!r} for name {name!r}")
     if name != "silver" and not name.startswith("silver:"):
         bad.append(f"{path.name}: name {name!r} must be silver or silver:<route>")
     if name.startswith("silver-"):
@@ -52,7 +56,7 @@ if bad:
     raise SystemExit(1)
 PY
 then
-  pass "all command stubs use silver: colon route filenames"
+  pass "all command stubs use desktop-safe filenames with silver: frontmatter names"
 else
   fail "command stub filename/name alignment"
 fi
@@ -66,7 +70,7 @@ fi
 bad_fixture="$(mktemp -d)"
 trap 'rm -rf "$bad_fixture"' EXIT
 mkdir -p "$bad_fixture/plugins/silver-bullet/commands"
-cat >"$bad_fixture/plugins/silver-bullet/commands/init.md" <<'EOF'
+cat >"$bad_fixture/plugins/silver-bullet/commands/silver:init.md" <<'EOF'
 ---
 name: "silver:init"
 ---
@@ -76,9 +80,9 @@ import subprocess, sys
 raise SystemExit(subprocess.call(["bash", "scripts/validate-host-skill-surface.sh", "--repo-root", sys.argv[1]]))
 PY
 then
-  fail "bare init.md filename should fail validation"
+  fail "colon silver:init.md filename should fail validation"
 else
-  pass "bare init.md filename fails validation"
+  pass "colon silver:init.md filename fails validation"
 fi
 
 echo ""

@@ -67,7 +67,7 @@ write_skill "$fixture_root/host-bundles/codex" "silver" "silver"
 write_skill "$fixture_root/host-bundles/codex" "silver:feature" "silver:feature" "false"
 write_skill "$fixture_root/host-bundles/cursor" "silver" "silver"
 write_skill "$fixture_root/host-bundles/cursor" "silver:plan" "silver:plan"
-write_command "$fixture_root/plugins/silver-bullet/commands" "silver:feature.md" "silver:feature"
+  write_command "$fixture_root/plugins/silver-bullet/commands" "silver-feature.md" "silver:feature"
 
 bad_prefix_root="$tmpdir/bad-prefix"
 write_skill "$bad_prefix_root/host-bundles/cursor" "silver-feature" "silver-feature"
@@ -78,14 +78,14 @@ write_skill "$bad_command_stem_root/host-bundles/cursor" "silver:plan" "silver:p
 
 dup_root="$tmpdir/bad-dup"
 write_skill "$dup_root/host-bundles/cursor" "silver-feature" "silver-feature"
-write_command "$dup_root/plugins/silver-bullet/commands" "silver:feature.md" "silver:feature"
+  write_command "$dup_root/plugins/silver-bullet/commands" "silver-feature.md" "silver:feature"
 
 hyphen_root="$tmpdir/bad-hyphen"
 write_skill "$hyphen_root/agents/claude" "silver-feature" "silver:feature"
 
 overlap_root="$tmpdir/bad-overlap"
 write_skill "$overlap_root/host-bundles/cursor" "silver:feature" "silver:feature"
-write_command "$overlap_root/plugins/silver-bullet/commands" "silver:feature.md" "silver:feature"
+  write_command "$overlap_root/plugins/silver-bullet/commands" "silver-feature.md" "silver:feature"
 
 echo "--- validate-host-skill-surface.sh (fixtures) ---"
 assert_pass "clean fixture passes" \

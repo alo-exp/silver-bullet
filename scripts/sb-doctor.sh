@@ -524,7 +524,7 @@ run_doctor_checks() {
       market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${backend_sha}"
       backend_cache_path="${HOME}/.cursor/plugins/cache/alo-labs-agent-plugins/silver-bullet/${backend_sha}"
       if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
-        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/silver:init.md" ]]; then
+        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/silver.md" ]]; then
           record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
         elif [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
           record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
@@ -537,7 +537,7 @@ run_doctor_checks() {
     else
       record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
     fi
-    if [[ -f "${resolved_current}/commands/silver:init.md" ]]; then
+    if [[ -f "${resolved_current}/commands/silver.md" ]]; then
       record pass D19 "composer /silver:* command stubs present in plugin cache"
     else
       record fail D19 "commands/ missing from plugin cache — slash menu will be empty"
