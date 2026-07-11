@@ -578,6 +578,19 @@ registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 }
 
+cursor_canonical_physical_path() {
+  local path="$1"
+  [[ -n "$path" ]] || return 0
+  if [[ -e "$path" || -d "$path" ]]; then
+    path="$(cd "$path" 2>/dev/null && pwd -P || printf '%s' "$path")"
+  fi
+  # macOS: /var symlinks to /private/var — normalize so identity checks are stable.
+  if [[ "$path" == /private/var/* ]]; then
+    path="/var/${path#/private/var/}"
+  fi
+  printf '%s' "$path"
+}
+
 verify_cursor_install_identity() {
   local dest="$1"
   local version="$2"
@@ -589,9 +602,9 @@ verify_cursor_install_identity() {
   local expected_git_path resolved_registry_git_path resolved_expected_git_path
   local failures=0
 
-  resolved_dest="$(cd "$dest" && pwd -P)"
+  resolved_dest="$(cursor_canonical_physical_path "$dest")"
   current_link="$(cursor_install_current_link)"
-  resolved_current="$(cd "$current_link" 2>/dev/null && pwd -P || true)"
+  resolved_current="$(cursor_canonical_physical_path "$(cd "$current_link" 2>/dev/null && pwd -P || true)")"
   local_plugin="${CURSOR_HOME}/plugins/local/silver-bullet"
 
   if [[ "$(basename "$resolved_dest")" != "$version" || ! -d "$resolved_dest" ]]; then
@@ -619,10 +632,10 @@ verify_cursor_install_identity() {
   resolved_registry_git_path=""
   resolved_expected_git_path=""
   if [[ -n "$registry_git_path" ]]; then
-    resolved_registry_git_path="$(cd "$registry_git_path" 2>/dev/null && pwd -P || printf '%s' "$registry_git_path")"
+    resolved_registry_git_path="$(cursor_canonical_physical_path "$registry_git_path")"
   fi
   if [[ -n "$expected_git_path" ]]; then
-    resolved_expected_git_path="$(cd "$expected_git_path" 2>/dev/null && pwd -P || printf '%s' "$expected_git_path")"
+    resolved_expected_git_path="$(cursor_canonical_physical_path "$expected_git_path")"
   fi
   if [[ -n "$commit_sha" && "$resolved_registry_git_path" != "$resolved_expected_git_path" ]]; then
     printf 'ERROR: Cursor registry gitPath=%s expected=%s\n' "$registry_git_path" "$expected_git_path" >&2
@@ -633,9 +646,8 @@ verify_cursor_install_identity() {
     failures=1
   fi
 
-  # Also canonicalize installPath comparisons for macOS /var vs /private/var.
   if [[ -n "$registry_install_path" ]]; then
-    registry_install_path="$(cd "$registry_install_path" 2>/dev/null && pwd -P || printf '%s' "$registry_install_path")"
+    registry_install_path="$(cursor_canonical_physical_path "$registry_install_path")"
   fi
   if [[ "$registry_version" != "$version" || "$(basename "$registry_install_path")" != "$version" || "$registry_install_path" != "$resolved_dest" ]]; then
     printf 'ERROR: Cursor registry identity mismatch: version=%s installPath=%s expectedVersion=%s expectedPath=%s\n' \

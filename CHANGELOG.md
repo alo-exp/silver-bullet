@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.51.7] — 2026-07-12
+
+Patch release: Cursor desktop `/silver` commands fix — hyphen-safe command filenames and install identity lock.
+
+## Fixes
+- `fix(cursor)`: desktop-safe command filenames (`silver-<route>.md` stubs with `silver:` frontmatter) — Cursor desktop rejects colon-bearing command filenames (`27d268e7`)
+- `fix(cursor)`: install identity lock — VERSION-aligned cache/current/local/marketplace pins prevent registry drift claiming version N against installPath N-1
+- `fix(tests)`: install-cursor and host command naming regression coverage
+
+---
+
 ## [0.51.6] — 2026-07-11
 
 Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under `~/.cursor/plugins/local/` so `/silver` commands register after public reinstall.
