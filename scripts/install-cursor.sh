@@ -154,7 +154,14 @@ sync_plugin_tree_from_checkout() {
   else
     rm -rf "${dest}/commands"
   fi
-  python3 "${source_root}/scripts/generate-cursor-hooks.py" >/dev/null
+  python3 "${source_root}/scripts/generate-cursor-hooks.py" >/dev/null 2>&1 || {
+    if [[ -x "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
+      python3 "${REPO_ROOT}/scripts/generate-cursor-hooks.py" >/dev/null
+    else
+      printf 'ERROR: missing scripts/generate-cursor-hooks.py in %s and %s\n' "$source_root" "$REPO_ROOT" >&2
+      exit 1
+    fi
+  }
   install -m 644 "${source_root}/hooks/cursor-hooks.json" "${dest}/hooks/cursor-hooks.json"
   install_cursor_plugin_manifest "$dest" "$version" "$source_root"
   printf '%s\n' "$dest"
@@ -668,6 +675,8 @@ REGISTRY_COMMIT_SHA="$(resolve_cursor_registry_git_commit_sha "$INSTALL_COMMIT_S
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$REGISTRY_COMMIT_SHA"
 seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
 rematerialize_all_reachable_cursor_gitpaths "$DEST_ROOT"
+sync_cursor_user_marketplace_manifest
+ensure_cursor_local_plugin_link "$DEST_ROOT"
 if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
   printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
   exit 1

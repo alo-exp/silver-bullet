@@ -29,6 +29,7 @@ trap 'rm -rf "$TMP_HOME"' EXIT
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
+export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 
 mkdir -p \
   "${CURSOR_HOME}/agents/subagent-silver:init" \
@@ -348,6 +349,7 @@ else
 fi
 
 if [[ -d "$backend_cache_link" ]] && [[ ! -f "${backend_cache_link}/skills/silver-feature/SKILL.md" ]] && \
+   [[ ! -d "${backend_cache_link}/skill-source" ]] && \
    python3 - "${backend_cache_link}" <<'PY'
 import glob, os, re, sys
 cache = sys.argv[1]
@@ -372,6 +374,46 @@ then
   pass "install-cursor backend cache has no agents/cursor subagent surface"
 else
   fail "install-cursor backend cache has no agents/cursor subagent surface"
+fi
+
+local_plugin_link="${CURSOR_HOME}/plugins/local/silver-bullet"
+if [[ -L "$local_plugin_link" ]] && \
+   [[ "$(readlink -f "$local_plugin_link" 2>/dev/null || true)" == "$(readlink -f "$resolved_current" 2>/dev/null || true)" ]]; then
+  pass "install-cursor links ~/.cursor/plugins/local/silver-bullet for desktop discovery"
+else
+  fail "install-cursor links ~/.cursor/plugins/local/silver-bullet for desktop discovery"
+fi
+
+if [[ -f "${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json" ]] && \
+   jq -e --arg v "$(jq -r '.version' "${REPO_ROOT}/package.json")" \
+     '.plugins[] | select(.name=="silver-bullet") | .version == $v' \
+     "${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json" >/dev/null 2>&1; then
+  pass "install-cursor syncs user marketplace manifest silver-bullet version"
+else
+  fail "install-cursor syncs user marketplace manifest silver-bullet version"
+fi
+
+if bash "${REPO_ROOT}/scripts/validate-host-install-surface.sh" --cache-root "$resolved_current" --host cursor >/dev/null 2>&1; then
+  pass "validate-host-install-surface accepts commands-only cursor cache"
+else
+  fail "validate-host-install-surface accepts commands-only cursor cache"
+fi
+
+malformed_cmds=0
+while IFS= read -r bad; do
+  [[ -n "$bad" ]] || continue
+  (( malformed_cmds++ )) || true
+done < <(find "${resolved_current}/commands" -maxdepth 1 -name '*.md' ! -name 'silver.md' ! -name 'silver:*.md' -print 2>/dev/null)
+if [[ "$malformed_cmds" -eq 0 ]]; then
+  pass "install-cursor cache has no malformed bare-route command filenames"
+else
+  fail "install-cursor cache has no malformed bare-route command filenames — count=${malformed_cmds}"
+fi
+
+if [[ -f "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
+  pass "release tree ships scripts/generate-cursor-hooks.py"
+else
+  fail "release tree ships scripts/generate-cursor-hooks.py"
 fi
 
 if [[ "$(readlink "$current_link")" != "$current_link" ]]; then

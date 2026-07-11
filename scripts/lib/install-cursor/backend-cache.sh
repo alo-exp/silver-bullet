@@ -121,6 +121,7 @@ prune_cursor_picker_surfaces_from_cache_dir() {
   for surface in \
     agents \
     skills \
+    skill-source \
     host-bundles \
     .agents \
     .cursor/agents \
@@ -299,20 +300,35 @@ materialize_cursor_plugin_surface_into_dir() {
   else
     rm -rf "${target_root}/commands"
   fi
-  # Only commands/ is public. Cursor auto-discovers skill-like trees in the / picker.
+  # Backend cache is commands-only — skill-source stays in the primary install cache only.
   prune_cursor_picker_surfaces_from_cache_dir "$target_root"
-  if [[ -d "${source_dest}/skill-source" ]]; then
-    mkdir -p "${target_root}/skill-source"
-    rsync -a --delete "${source_dest}/skill-source/" "${target_root}/skill-source/"
-  else
-    rm -rf "${target_root}/skill-source"
-  fi
   if [[ -f "${source_dest}/cursor-hooks.json" ]]; then
     install -m 644 "${source_dest}/cursor-hooks.json" "${target_root}/cursor-hooks.json"
   fi
   if [[ -f "${source_dest}/.cursor-plugin/plugin.json" ]]; then
     install -m 644 "${source_dest}/.cursor-plugin/plugin.json" "${target_root}/.cursor-plugin/plugin.json"
   fi
+}
+
+ensure_cursor_local_plugin_link() {
+  local dest="$1"
+  local local_root="${CURSOR_HOME}/plugins/local"
+  local link_path="${local_root}/silver-bullet"
+
+  [[ -n "$dest" && -d "$dest" ]] || return 0
+  mkdir -p "$local_root"
+  ln -sfn "$dest" "$link_path"
+  printf 'Cursor local plugin link: %s -> %s\n' "$link_path" "$dest" >&2
+}
+
+sync_cursor_user_marketplace_manifest() {
+  local source_manifest="${REPO_ROOT}/.cursor-plugin/marketplace.json"
+  local dest_manifest="${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json"
+
+  [[ -f "$source_manifest" ]] || return 0
+  mkdir -p "$(dirname "$dest_manifest")"
+  install -m 644 "$source_manifest" "$dest_manifest"
+  printf 'Synced Cursor user marketplace manifest to %s\n' "$dest_manifest" >&2
 }
 
 
@@ -349,6 +365,7 @@ cursor_backend_plugin_cache_ready() {
   [[ -f "${cache_path}/.cache-complete" ]] || return 1
   [[ -f "${cache_path}/commands/silver:init.md" ]] || return 1
   [[ -f "${cache_path}/.cursor-plugin/plugin.json" ]] || return 1
+  [[ ! -d "${cache_path}/skill-source" ]] || return 1
   jq -e '.commands == "./commands"' "${cache_path}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   resolved_dest="$(cd "$dest" && pwd -P)"
   [[ "$(jq -r '.version // empty' "${cache_path}/.cursor-plugin/plugin.json")" == "$(jq -r '.version // empty' "${resolved_dest}/.cursor-plugin/plugin.json")" ]]
