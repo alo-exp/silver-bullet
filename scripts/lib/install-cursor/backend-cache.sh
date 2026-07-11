@@ -112,6 +112,26 @@ collect_cursor_plugin_required_shas() {
   )
 }
 
+# Narrower set for post-install verify — avoids failing on stale marketplace
+# manifest SHAs that were not seeded before manifest sync.
+collect_cursor_plugin_verify_shas() {
+  local primary_sha="${1:-}"
+  local backend_sha="${2:-}"
+  local registry_sha
+
+  registry_sha="$(read_installed_plugins_git_sha)"
+  while IFS= read -r sha; do
+    [[ -n "$sha" ]] || continue
+    if cursor_github_commit_reachable "$sha"; then
+      printf '%s\n' "$sha"
+    fi
+  done < <(
+    {
+      printf '%s\n' "$primary_sha" "$registry_sha" "$backend_sha"
+    } | awk 'NF && !seen[$0]++'
+  )
+}
+
 
 prune_cursor_picker_surfaces_from_cache_dir() {
   local entry="$1"
@@ -321,13 +341,54 @@ ensure_cursor_local_plugin_link() {
   printf 'Cursor local plugin link: %s -> %s\n' "$link_path" "$dest" >&2
 }
 
+cursor_local_plugin_link_ready() {
+  local dest="$1"
+  local link_path="${CURSOR_HOME}/plugins/local/silver-bullet"
+  local resolved_dest resolved_link
+
+  [[ -n "$dest" && -d "$dest" ]] || return 1
+  [[ -L "$link_path" ]] || return 1
+  resolved_dest="$(cd "$dest" && pwd -P)"
+  resolved_link="$(cd "$link_path" && pwd -P 2>/dev/null || true)"
+  [[ -n "$resolved_link" && "$resolved_link" == "$resolved_dest" ]]
+}
+
 sync_cursor_user_marketplace_manifest() {
+  local commit_sha="${1:-}"
+  local version="${2:-}"
   local source_manifest="${REPO_ROOT}/.cursor-plugin/marketplace.json"
   local dest_manifest="${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json"
+  local tmp
 
   [[ -f "$source_manifest" ]] || return 0
   mkdir -p "$(dirname "$dest_manifest")"
-  install -m 644 "$source_manifest" "$dest_manifest"
+  tmp="$(mktemp)"
+  if [[ -n "$commit_sha" && -n "$version" ]]; then
+    python3 - "$source_manifest" "$tmp" "$commit_sha" "$version" <<'PY'
+import json
+import pathlib
+import sys
+
+src = pathlib.Path(sys.argv[1])
+dst = pathlib.Path(sys.argv[2])
+commit_sha = sys.argv[3]
+version = sys.argv[4]
+data = json.loads(src.read_text())
+for plugin in data.get("plugins", []):
+    if plugin.get("name") != "silver-bullet":
+        continue
+    plugin["version"] = version
+    source = plugin.setdefault("source", {})
+    source["sha"] = commit_sha
+    source["ref"] = commit_sha
+    break
+dst.write_text(json.dumps(data, indent=2) + "\n")
+PY
+    install -m 644 "$tmp" "$dest_manifest"
+  else
+    install -m 644 "$source_manifest" "$dest_manifest"
+  fi
+  rm -f -- "$tmp"
   printf 'Synced Cursor user marketplace manifest to %s\n' "$dest_manifest" >&2
 }
 

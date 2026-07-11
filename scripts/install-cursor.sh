@@ -494,7 +494,18 @@ verify_cursor_plugin_discovery_paths() {
         "$sha" "$(cursor_backend_plugin_cache_root)" "$sha" >&2
       failures=1
     fi
-  done < <(collect_cursor_plugin_required_shas "$primary_sha" "$backend_sha")
+  done < <(collect_cursor_plugin_verify_shas "$primary_sha" "$backend_sha")
+
+  if [[ "$failures" -eq 0 ]]; then
+    return 0
+  fi
+
+  # Desktop also loads ~/.cursor/plugins/local/silver-bullet (Cursor plugins docs).
+  if cursor_local_plugin_link_ready "$dest" \
+    && [[ -f "${dest}/commands/silver:init.md" ]] \
+    && [[ -f "${dest}/.cursor-plugin/plugin.json" ]]; then
+    return 0
+  fi
 
   return "$failures"
 }
@@ -675,7 +686,8 @@ REGISTRY_COMMIT_SHA="$(resolve_cursor_registry_git_commit_sha "$INSTALL_COMMIT_S
 ensure_cursor_installed_plugins_registry "$DEST_ROOT" "$VERSION" "$REGISTRY_COMMIT_SHA"
 seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
 rematerialize_all_reachable_cursor_gitpaths "$DEST_ROOT"
-sync_cursor_user_marketplace_manifest
+sync_cursor_user_marketplace_manifest "$REGISTRY_COMMIT_SHA" "$VERSION"
+seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
 ensure_cursor_local_plugin_link "$DEST_ROOT"
 if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
   printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
