@@ -98,6 +98,11 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
 
 
 def default_surface() -> Path | None:
+    local_plugin = cursor_home / "plugins/local/silver-bullet"
+    if local_plugin.is_dir() and not local_plugin.is_symlink():
+        manifest = local_plugin / ".cursor-plugin" / "plugin.json"
+        if manifest.is_file():
+            return local_plugin
     link = cursor_home / "plugins/cache/alo-labs/silver-bullet/current"
     if link.exists():
         return link.resolve()

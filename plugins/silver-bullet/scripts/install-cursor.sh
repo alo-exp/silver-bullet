@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 VERSION="$(jq -r '.version // "0.0.0"' "${REPO_ROOT}/package.json" 2>/dev/null || echo 0.0.0)"
 PUBLIC_RELEASE_ONLY=0
-CURSOR_HOME="${CURSOR_HOME:-${HOME}/.cursor}"
+CURSOR_HOME="${CURSOR_HOME:-${HOME}/.codex}"
 CURSOR_MARKETPLACE_SOURCE="${CURSOR_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins}"
 CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE="${CURSOR_SB_PUBLIC_MARKETPLACE_SOURCE:-https://github.com/alo-labs/agent-plugins.git}"
 CURSOR_MARKETPLACE_NAME="${CURSOR_MARKETPLACE_NAME:-alo-labs-cursor}"
@@ -70,7 +70,7 @@ usage() {
 Usage: scripts/install-cursor.sh [--merge-hooks-only] [--public-release]
 
 Synchronizes the Silver Bullet plugin tree into the Cursor plugin cache and
-merges SB hooks into ~/.cursor/hooks.json.
+merges SB hooks into $HOME/.codex/hooks.json.
 
 When the legacy alo-labs/alo-labs-cursor-marketplace clone is present, the
 installer removes it, seeds gitPath for backend-resolved SHAs, and prints UI
@@ -144,7 +144,7 @@ sync_plugin_tree_from_checkout() {
   rsync -a --delete "${source_root}/templates/" "${dest}/templates/"
   # agents/cursor must not ship in the Cursor install cache — cursor-agent TUI
   # auto-discovers agents/<host>/*/SKILL.md for / picker entries regardless of
-  # plugin.json skills. Orchestrator + Skill tool read skill-source/ instead.
+  # plugin.json skills. Orchestrator + runtime-native skill invocation channel read skill-source/ instead.
   rm -rf "${dest}/agents/cursor" "${dest}/agents"
   local commands_src
   commands_src="$(cursor_plugin_commands_src "$source_root" || true)"
@@ -663,7 +663,7 @@ fi
 DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 
-# SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
+# SB custom subagents for Cursor review/verify ladders ($HOME/.codex/agents/)
 CSBA_INSTALLER="${REPO_ROOT}/scripts/install-cursor-sb-agents.sh"
 if [[ -x "$CSBA_INSTALLER" ]]; then
   if [[ -t 0 && -t 1 ]]; then
