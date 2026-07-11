@@ -1,5 +1,0 @@
-{"id": "C001", "text": "pi-gui is the strongest dedicated native desktop GUI wrapper for the official Pi coding-agent SDK among evaluated OSS projects", "evidence_ids": ["E001", "E002", "E003"], "support_status": "supported", "type": "recommendation"}
-{"id": "C002", "text": "PI WEB is the best fit when sessions must persist server-side and be supervised from multiple devices", "evidence_ids": ["E004", "E005", "E006"], "support_status": "supported", "type": "synthesis"}
-{"id": "C003", "text": "Pi Desktop offers the broadest desktop feature surface including Windows installers and optional multi-agent council planning", "evidence_ids": ["E007", "E008"], "support_status": "supported", "type": "factual"}
-{"id": "C004", "text": "Pi Code Gui is the leading VS Code-native Pi GUI with editor bridge tools", "evidence_ids": ["E009", "E010"], "support_status": "supported", "type": "factual"}
-{"id": "C005", "text": "OpenClaw is Pi-runtime-adjacent but messaging-first and not a dedicated Pi coding GUI", "evidence_ids": ["E011", "E012"], "support_status": "supported", "type": "synthesis"}
