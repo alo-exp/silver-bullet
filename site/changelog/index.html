@@ -89,6 +89,20 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-6">
+      <div class="release-header">
+        <h2>v0.51.6</h2>
+        <time class="release-date" datetime="2026-07-11">2026-07-11</time>
+      </div>
+      <p class="release-summary">Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under <code>~/.cursor/plugins/local/</code> so <code>/silver</code> commands register after public reinstall.</p>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(cursor)</code>: materialize commands-only local plugin surface into <code>~/.cursor/plugins/local/silver-bullet</code> instead of symlinking outside <code>plugins/local</code> — Cursor desktop rejects external symlink targets and silently skips command registration</li>
+        <li><code>fix(plugin-mirror)</code>: restore <code>plugins/silver-bullet/scripts</code> symlink to repo <code>scripts/</code></li>
+        <li><code>fix(tests)</code>: install-cursor regression coverage for materialized local plugin directory and commands-only backend caches</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-51-5">
       <div class="release-header">
         <h2>v0.51.5</h2>
