@@ -1,0 +1,322 @@
+#!/usr/bin/expect -f
+
+proc env_or_default {name default} {
+  if {[info exists ::env($name)] && $::env($name) ne ""} {
+    return $::env($name)
+  }
+  return $default
+}
+
+proc shell_quote {value} {
+  return "'[string map {' '\\''} $value]'"
+}
+
+set timeout [expr {int([env_or_default CODEX_INTERACTIVE_TIMEOUT 900])}]
+set runtime_agent [env_or_default CODEX_RUNTIME_AGENT "kay"]
+set launch_mode [env_or_default CODEX_LAUNCH_MODE "exec"]
+if {$runtime_agent eq "codex"} {
+  set cli [env_or_default CODEX_BIN [env_or_default CODEX_CLI [exec sh -lc {
+    if [ -x "/Applications/Codex.app/Contents/Resources/codex" ]; then
+      printf '%s\n' "/Applications/Codex.app/Contents/Resources/codex"
+    elif command -v codex >/dev/null 2>&1; then
+      command -v codex
+    fi
+  }]]]
+} else {
+  set cli [env_or_default CODEX_BIN [env_or_default CODEX_CLI [exec sh -lc {
+    if command -v kay >/dev/null 2>&1; then
+      command -v kay
+    elif [ -x "${SB_LIVE_ORIGINAL_HOME:-$HOME}/.local/bin/kay" ]; then
+      printf '%s\n' "${SB_LIVE_ORIGINAL_HOME:-$HOME}/.local/bin/kay"
+    elif [ -x "${SB_LIVE_ORIGINAL_HOME:-$HOME}/.kay/packages/standalone/current/kay" ]; then
+      printf '%s\n' "${SB_LIVE_ORIGINAL_HOME:-$HOME}/.kay/packages/standalone/current/kay"
+    fi
+  }]]]
+}
+set work_dir [env_or_default CODEX_WORK_DIR ""]
+set prompt_file [env_or_default CODEX_PROMPT_FILE ""]
+set sandbox_mode [env_or_default CODEX_SANDBOX_MODE "danger-full-access"]
+set bypass [env_or_default CODEX_BYPASS "0"]
+set hook_trust_bypass [env_or_default CODEX_BYPASS_HOOK_TRUST "0"]
+set auto_trust_hooks [env_or_default CODEX_AUTO_TRUST_HOOKS "0"]
+set color [env_or_default CODEX_COLOR "never"]
+set json_output [env_or_default CODEX_JSON "0"]
+set transcript_file [env_or_default CODEX_TRANSCRIPT_FILE ""]
+set last_message_file [env_or_default CODEX_LAST_MESSAGE_FILE ""]
+set model [env_or_default CODEX_MODEL ""]
+set model_provider [env_or_default CODEX_MODEL_PROVIDER ""]
+set reasoning_effort [env_or_default CODEX_REASONING_EFFORT ""]
+set kay_home_override [env_or_default CODEX_KAY_HOME ""]
+set experimental_use_exec_command_tool [env_or_default CODEX_EXPERIMENTAL_USE_EXEC_COMMAND_TOOL ""]
+set interactive_prompt_input [env_or_default CODEX_INTERACTIVE_PROMPT_INPUT "0"]
+set ready_timeout [expr {int([env_or_default CODEX_INTERACTIVE_READY_TIMEOUT 20])}]
+set quiet_timeout [expr {int([env_or_default CODEX_INTERACTIVE_QUIET_TIMEOUT 5])}]
+set did_auto_trust_hooks 0
+set hook_trust_confirmation_pending 0
+set native_codex_prompt [format %c 0x203A]
+
+if {$work_dir eq "" || $prompt_file eq ""} {
+  puts stderr "ERROR: CODEX_WORK_DIR and CODEX_PROMPT_FILE must be set"
+  exit 2
+}
+if {$runtime_agent eq "codex"} {
+  if {[file tail $cli] ne "codex"} {
+    puts stderr "ERROR: SB native Codex tests require the actual Codex CLI"
+    exit 2
+  }
+} elseif {[file tail $cli] ne "kay"} {
+  puts stderr "ERROR: SB test launchers require Kay as the compatible agent"
+  exit 2
+}
+if {$runtime_agent ne "codex" && $kay_home_override ne ""} {
+  set ::env(KAY_HOME) $kay_home_override
+}
+
+set prompt_handle [open $prompt_file r]
+set prompt [read $prompt_handle]
+close $prompt_handle
+
+cd $work_dir
+
+if {$launch_mode eq "interactive"} {
+  set args [list --cd $work_dir --no-alt-screen]
+  if {$runtime_agent ne "codex" && $color ne ""} {
+    lappend args --color $color
+  }
+  if {$sandbox_mode ne ""} {
+    lappend args --sandbox $sandbox_mode
+  }
+  if {$bypass eq "1"} {
+    lappend args --dangerously-bypass-approvals-and-sandbox
+  }
+  if {$runtime_agent eq "codex" && $hook_trust_bypass eq "1"} {
+    lappend args --dangerously-bypass-hook-trust
+  }
+  if {$model ne ""} {
+    lappend args --model $model
+  }
+  if {$model_provider ne ""} {
+    lappend args --config "model_provider=$model_provider"
+  }
+  if {$reasoning_effort ne ""} {
+    lappend args --config "model_reasoning_effort=$reasoning_effort"
+  }
+  if {$experimental_use_exec_command_tool ne ""} {
+    lappend args --config "experimental_use_exec_command_tool=$experimental_use_exec_command_tool"
+  }
+  if {$interactive_prompt_input ne "1"} {
+    lappend args $prompt
+  }
+} else {
+  set args [list exec --cd $work_dir --skip-git-repo-check --color $color]
+  if {$sandbox_mode ne ""} {
+    lappend args --sandbox $sandbox_mode
+  }
+  if {$bypass eq "1"} {
+    lappend args --dangerously-bypass-approvals-and-sandbox
+  }
+  if {$runtime_agent eq "codex" && $hook_trust_bypass eq "1"} {
+    lappend args --dangerously-bypass-hook-trust
+  }
+  if {$model ne ""} {
+    lappend args --model $model
+  }
+  if {$model_provider ne ""} {
+    lappend args --config "model_provider=$model_provider"
+  }
+  if {$reasoning_effort ne ""} {
+    # Use the same model, but force the reasoning level for cost control in live E2E runs.
+    lappend args --config "model_reasoning_effort=$reasoning_effort"
+  }
+  if {$experimental_use_exec_command_tool ne ""} {
+    lappend args --config "experimental_use_exec_command_tool=$experimental_use_exec_command_tool"
+  }
+  if {$json_output eq "1"} {
+    lappend args --json
+  }
+  if {$last_message_file ne ""} {
+    lappend args --output-last-message $last_message_file
+  }
+
+  set shell_command [shell_quote $cli]
+  foreach arg $args {
+    append shell_command " " [shell_quote $arg]
+  }
+  append shell_command " - < " [shell_quote $prompt_file] " 2>&1"
+
+  if {$transcript_file ne ""} {
+    log_file -a $transcript_file
+  }
+
+  spawn -noecho sh -lc $shell_command
+  set child_pid [exp_pid]
+  expect {
+    eof {
+      # Child exited; status is handled below.
+    }
+    timeout {
+      puts stderr "ERROR: timed out waiting for Codex exec to complete"
+      catch {exec kill -TERM -$child_pid}
+      catch {exec kill -TERM $child_pid}
+      after 1000
+      catch {exec kill -KILL -$child_pid}
+      catch {exec kill -KILL $child_pid}
+      catch {close}
+      catch {wait}
+      if {$transcript_file ne ""} {
+        log_file
+      }
+      exit 124
+    }
+  }
+
+  set wait_result [wait]
+  if {$transcript_file ne ""} {
+    log_file
+  }
+  if {[llength $wait_result] >= 4 && [lindex $wait_result 2] eq "exit"} {
+    exit [lindex $wait_result 3]
+  }
+  exit 1
+}
+
+if {$transcript_file ne ""} {
+  log_file -a $transcript_file
+}
+
+if {$runtime_agent eq "codex"} {
+  set ::env(TERM) "xterm-256color"
+}
+
+spawn -noecho $cli {*}$args
+set saw_completion_marker 0
+set saw_prompt 0
+set prompt_submitted 0
+if {$launch_mode ne "interactive"} {
+  set prompt_submitted 1
+}
+expect {
+  -re {Continue anyway\? \[y/N\]:} {
+    send -- "y\r"
+    exp_continue
+  }
+  -re {Uninstall the existing npm-managed Code now\? \[y/N\]} {
+    send -- "n\r"
+    exp_continue
+  }
+  -re {Start Code now\? \[y/N\]} {
+    send -- "n\r"
+    exp_continue
+  }
+  -re {Do you trust the contents of this directory\?} {
+    if {$auto_trust_hooks eq "1"} {
+      send -- "\r"
+      exp_continue
+    }
+    puts stderr "ERROR: interactive workspace trust prompt surfaced; isolated runtime was not pre-trusted"
+    exit 1
+  }
+  -re {Hooks need review|Trust all and continue} {
+    if {$auto_trust_hooks eq "1" && !$did_auto_trust_hooks} {
+      set did_auto_trust_hooks 1
+      set hook_trust_confirmation_pending 1
+      send -- "\033\[B\r"
+      exp_continue
+    }
+    puts stderr "ERROR: interactive hook trust review surfaced; trusted hook state is out of sync"
+    exit 1
+  }
+  -re {Press enter to confirm or esc to go back} {
+    if {$hook_trust_confirmation_pending} {
+      set hook_trust_confirmation_pending 0
+      send -- "\r"
+      exp_continue
+    }
+    exp_continue
+  }
+  -re {\"type\":\"task_lifecycle\",\"phase\":\"quiescent\"} {
+    if {$prompt_submitted} {
+      set saw_completion_marker 1
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
+  -re {❯} {
+    if {!$prompt_submitted && $launch_mode eq "interactive" && $interactive_prompt_input eq "1"} {
+      send -- $prompt
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    if {!$prompt_submitted && $launch_mode eq "interactive"} {
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    set saw_prompt 1
+    if {$prompt_submitted} {
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
+  -re $native_codex_prompt {
+    # Native Codex returns to a single-angle prompt marker (U+203A) rather
+    # than the heavy arrow used by Kay. Treat it as the same quiescent state.
+    if {!$prompt_submitted && $launch_mode eq "interactive" && $interactive_prompt_input eq "1"} {
+      send -- $prompt
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    if {!$prompt_submitted && $launch_mode eq "interactive"} {
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    set saw_prompt 1
+    if {$prompt_submitted} {
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
+  -re {^> $} {
+    if {!$prompt_submitted && $launch_mode eq "interactive" && $interactive_prompt_input eq "1"} {
+      send -- $prompt
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    if {!$prompt_submitted && $launch_mode eq "interactive"} {
+      send -- "\r"
+      set prompt_submitted 1
+      set timeout $timeout
+      exp_continue
+    }
+    set saw_prompt 1
+    if {$prompt_submitted} {
+      set timeout $quiet_timeout
+    }
+    exp_continue
+  }
+  eof {
+    # Accept clean exit after a single prompt turn.
+  }
+  timeout {
+    if {$saw_completion_marker || $saw_prompt} {
+      # The session has returned to a quiescent prompt and gone quiet, so the
+      # response is complete.
+    } else {
+      puts stderr "ERROR: timed out waiting for Codex prompt to complete"
+      exit 1
+    }
+  }
+}
+
+if {$transcript_file ne ""} {
+  log_file
+}

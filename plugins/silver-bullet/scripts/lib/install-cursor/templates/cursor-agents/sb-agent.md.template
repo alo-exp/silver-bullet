@@ -1,0 +1,9 @@
+---
+name: {{AGENT_NAME}}
+title: "Silver: {{agent Name}}"
+description: {{DESCRIPTION}}
+model: {{MODEL_PARAM}}
+readonly: false
+---
+{{BODY}}
+<!-- sb-managed: cursor-sb-agents -->
