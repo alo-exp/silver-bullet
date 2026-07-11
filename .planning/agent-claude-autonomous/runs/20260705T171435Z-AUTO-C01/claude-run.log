@@ -1,17 +1,0 @@
-=== agent-claude-delegate 2026-07-05T17:14:35Z ===
-work_dir=/Users/shafqat/projects/enterprise-grade-test-app
-sb_root=/Users/shafqat/projects/silver-bullet/repo
-attempt=1
-interactive=0
-
-7[r8[?25h[?25l[?2004h[?1004h[?2031h]0;✳ Claude Code[2G▐▛███▜▌[12GClaude[19GCode[24Gv2.1.195
-▝▜█████▛▘[12GSonnet[19G4.6[23Gwith[28Glow[32Geffort[39G·[41GAPI[45GUsage[51GBilling
-[3G▘▘[6G▝▝[12G~/projects/enterprise-grade-test-app
-
-
-────────────────────────────────────────────────────────────────────────────────
-❯ [7m [27m
-────────────────────────────────────────────────────────────────────────────────
-[3G⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[71G0[73Gtokens
-[64G○[66Glow[70G·[72G/effort
-[2C[4A[>0q[c[2D[4B[1C[6A⚠[4G17[[harness] 0-token mode banner — wake TUI with Enter (E2E-081)

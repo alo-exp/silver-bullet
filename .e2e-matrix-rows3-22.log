@@ -1,43 +1,0 @@
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 3: silver-feature (/silver:feature) ===
-  graphify: graphify query "silver-feature routes hooks skills orchestrator"
-  evidence: .planning/workflows/feature-currency.md
-  launching interactive Claude session...
-[2C[4A]0;⠐ Claude Code[2D[4B[60C[9A1
-
-
-
-
-
-
-
-
-[2C[4A]0;⠂ Claude Code[2D[4B[60C[9A0
-
-
-
-
-
-
-
-
-[2C[4A]0;⠐ Claude Code]0;✳ Claude Code[2D[4B[9A⏺[3GAPI[7GError: Reque[20Gt rejected (429) ·[39GToken Plan usage limit reached:[K[2C[1BUpgrade[11Gyour Token Plan[27Gor purchase Credi[45Gs for more usag[61G. (2056)[70G[K[5C[1B[K[1B✻[3GCogitated[13Gfor[17G3m[20G2s[1B[K[1B────────────────────────────────────────────────────────────────────────────────[1B❯ [7m [27m[K[1B────────────────────────────────────────────────────────────────────────────────[2C[1B⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents
-[2C[3AERROR: timed out waiting for Claude response
-  FAIL: missing evidence at .planning/workflows/feature-currency.md
-=== Row 4: silver-bugfix (/silver:bugfix) ===
-  graphify: graphify query "silver-bugfix routes hooks skills orchestrator"
-  evidence: .planning/workflows/bugfix-health.md
-  launching interactive Claude session...
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 3: silver-feature (/silver:feature) ===
-  graphify: graphify query "silver-feature routes hooks skills orchestrator"
-  evidence: .planning/workflows/feature-currency.md
-  launching interactive Claude session...

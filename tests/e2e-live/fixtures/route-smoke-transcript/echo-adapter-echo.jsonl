@@ -1,4 +1,0 @@
-{"type": "prompt.submitted", "prompt": "Run exactly this command as your first and only non-hook command: `silver-bullet invoke-skill silver:forensics`."}
-{"id":"1","event_seq":1,"msg":{"type":"exec_command_begin","call_id":"call-echo-before","command":["echo","Route smoke complete for silver:forensics."]}}
-{"id":"2","event_seq":2,"msg":{"type":"exec_command_begin","call_id":"call-adapter","command":["silver-bullet","invoke-skill","silver:forensics"]}}
-{"id":"3","event_seq":3,"msg":{"type":"exec_command_begin","call_id":"call-echo-after","command":["echo","Route smoke complete for silver:forensics."]}}

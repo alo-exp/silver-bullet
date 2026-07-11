@@ -1,1 +1,0 @@
-../CLAUDE-TUI-PROTOCOL.md

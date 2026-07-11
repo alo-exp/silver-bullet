@@ -1,8 +1,0 @@
-{
-  "session_scope": "minimal_doc",
-  "branch": "feature/tc02-readme-badge",
-  "forbid_default_feature_queue": true,
-  "expected_dynamic_ops": ["substitute", "prune"],
-  "expected_rule_refs": ["DR-SUBSTITUTE-LEANER-WORKFLOW", "DR-PRUNE-SATISFIED-ATOM"],
-  "blocking_decisions_only": true
-}

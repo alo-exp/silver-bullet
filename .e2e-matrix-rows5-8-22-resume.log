@@ -1,5 +1,0 @@
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
