@@ -140,8 +140,14 @@ def enumerate_surface(root: Path) -> dict[str, object]:
             route = f"/{name}" if name != "silver" else "/silver"
             if name != "silver" and not name.startswith("silver:"):
                 bad_colon.append(f"{path.name}: name={name!r}")
-            elif path.stem != name:
-                bad_colon.append(f"{path.name}: stem {path.stem!r} != name {name!r}")
+            elif ":" in path.name:
+                bad_colon.append(f"{path.name}: colon-bearing command filename is not desktop-safe")
+            else:
+                expected_stem = "silver" if name == "silver" else name.replace(":", "-")
+                if path.stem != expected_stem:
+                    bad_colon.append(
+                        f"{path.name}: stem {path.stem!r} != safe stem {expected_stem!r} for name {name!r}"
+                    )
             commands.append({"route": route, "name": name, "file": str(path.relative_to(root))})
 
     if skills_root and skills_root.is_dir():

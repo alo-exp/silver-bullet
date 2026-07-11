@@ -349,6 +349,54 @@ ensure_cursor_local_plugin_link() {
   printf 'Cursor local plugin surface: %s (materialized from %s)\n' "$local_plugin" "$dest" >&2
 }
 
+cursor_plugin_command_filename_colon_count() {
+  local root="$1"
+  local count=0
+  local command_file
+
+  for command_file in "$root"/commands/*.md; do
+    [[ -f "$command_file" ]] || continue
+    case "$(basename "$command_file")" in
+      *:*) count=$((count + 1)) ;;
+    esac
+  done
+  printf '%s\n' "$count"
+}
+
+cursor_command_frontmatter_name() {
+  local file="$1"
+  python3 - "$file" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    raise SystemExit(0)
+lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+if not lines or lines[0].strip() != "---":
+    raise SystemExit(0)
+for line in lines[1:]:
+    if line.strip() == "---":
+        break
+    match = re.match(r"^name:\s*(.*)$", line)
+    if match:
+        print(match.group(1).strip().strip('"').strip("'"))
+        break
+PY
+}
+
+cursor_plugin_commands_surface_ready() {
+  local root="$1"
+  local router="${root}/commands/silver.md"
+
+  [[ -f "$router" ]] || return 1
+  [[ "$(cursor_command_frontmatter_name "$router")" == "silver" ]] || return 1
+  [[ -f "${root}/commands/silver-init.md" ]] || return 1
+  [[ "$(cursor_command_frontmatter_name "${root}/commands/silver-init.md")" == "silver:init" ]] || return 1
+  [[ "$(cursor_plugin_command_filename_colon_count "$root")" -eq 0 ]]
+}
+
 cursor_local_plugin_link_ready() {
   local dest="$1"
   local local_plugin="${CURSOR_HOME}/plugins/local/silver-bullet"
@@ -357,7 +405,7 @@ cursor_local_plugin_link_ready() {
   [[ -n "$dest" && -d "$dest" ]] || return 1
   [[ -d "$local_plugin" ]] || return 1
   [[ ! -L "$local_plugin" ]] || return 1
-  [[ -f "${local_plugin}/commands/silver:init.md" ]] || return 1
+  cursor_plugin_commands_surface_ready "$local_plugin" || return 1
   [[ -f "${local_plugin}/.cursor-plugin/plugin.json" ]] || return 1
   jq -e '.commands == "./commands"' "${local_plugin}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   resolved_dest="$(cd "$dest" && pwd -P)"
@@ -436,7 +484,7 @@ cursor_backend_plugin_cache_ready() {
   cache_path="$(cursor_backend_plugin_cache_root)/${commit_sha}"
   [[ -d "$cache_path" ]] || return 1
   [[ -f "${cache_path}/.cache-complete" ]] || return 1
-  [[ -f "${cache_path}/commands/silver:init.md" ]] || return 1
+  cursor_plugin_commands_surface_ready "$cache_path" || return 1
   [[ -f "${cache_path}/.cursor-plugin/plugin.json" ]] || return 1
   [[ ! -d "${cache_path}/skill-source" ]] || return 1
   jq -e '.commands == "./commands"' "${cache_path}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
@@ -478,7 +526,7 @@ cursor_plugin_gitpath_root_surface_ready() {
 
   cursor_plugin_gitpath_ready "$commit_sha" || return 1
   gitpath_root="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
-  [[ -f "${gitpath_root}/commands/silver:init.md" ]] || return 1
+  cursor_plugin_commands_surface_ready "$gitpath_root" || return 1
   [[ -f "${gitpath_root}/.cursor-plugin/plugin.json" ]] || return 1
   jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   [[ ! -f "${gitpath_root}/skills/silver-feature/SKILL.md" ]]

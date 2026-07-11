@@ -298,10 +298,14 @@ ensure_cursor_marketplace_plugin_cache_symlink() {
   cache_root="${CURSOR_HOME}/plugins/cache/${CURSOR_MARKETPLACE_NAME}/silver-bullet"
   link_path="${cache_root}/${commit_sha}"
   mkdir -p "$cache_root"
-  if [[ -e "$link_path" && ! -L "$link_path" ]]; then
-    rm -rf "$link_path"
+  # macOS ln -sfn fails with "File exists" when link_path is a real directory.
+  if [[ -e "$link_path" || -L "$link_path" ]]; then
+    rm -rf "$link_path" 2>/dev/null || true
   fi
-  ln -sfn "$dest" "$link_path"
+  if ! ln -sfn "$dest" "$link_path"; then
+    printf 'ERROR: failed to link Cursor marketplace cache %s -> %s\n' "$link_path" "$dest" >&2
+    return 1
+  fi
   ensure_cursor_backend_plugin_cache_dir "$dest" "$commit_sha"
 }
 
@@ -333,7 +337,8 @@ prune_cursor_gitpath_picker_skills() {
 
   # Full gitPath checkouts still contain canonical skills/ (hyphen dirs). Cursor
   # discovers them alongside plugin.json commands/ and agents/cursor subagents.
-  rm -rf "${gitpath_root}/skills"
+  # Tolerate busy/partial trees under ~/.cursor (macOS "Directory not empty").
+  rm -rf "${gitpath_root}/skills" 2>/dev/null || true
   if [[ -d "${dest}/skills" ]]; then
     mkdir -p "${gitpath_root}/skills"
     rsync -a --delete "${dest}/skills/" "${gitpath_root}/skills/"
@@ -341,7 +346,7 @@ prune_cursor_gitpath_picker_skills() {
   rm -rf \
     "${gitpath_root}/plugins/silver-bullet/skills" \
     "${gitpath_root}/.agents" \
-    "${gitpath_root}/.cursor/agents"
+    "${gitpath_root}/.cursor/agents" 2>/dev/null || true
 }
 
 prune_cursor_gitpath_extra_picker_surfaces() {
@@ -350,10 +355,10 @@ prune_cursor_gitpath_extra_picker_surfaces() {
   local tmp=""
 
   # host-bundles/cursor mirrors agents/cursor — Cursor discovers both from full clone.
-  rm -rf "${gitpath_root}/host-bundles"
+  rm -rf "${gitpath_root}/host-bundles" 2>/dev/null || true
 
   # agents/cursor auto-registers / picker subagents; skill-source is internal-only.
-  rm -rf "${gitpath_root}/agents"
+  rm -rf "${gitpath_root}/agents" 2>/dev/null || true
 
   # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
   rm -rf \
@@ -362,7 +367,7 @@ prune_cursor_gitpath_extra_picker_surfaces() {
     "${gitpath_root}/plugins/silver-bullet/skill-source" \
     "${gitpath_root}/plugins/silver-bullet/templates" \
     "${gitpath_root}/templates/orchestrator-workers" \
-    "${gitpath_root}/templates/workflows"
+    "${gitpath_root}/templates/workflows" 2>/dev/null || true
 
   if [[ -f "$nested_manifest" ]]; then
     tmp="$(mktemp)"
@@ -380,7 +385,7 @@ materialize_cursor_plugin_surface_at_root() {
     mkdir -p "${gitpath_root}/commands"
     rsync -a --delete "${dest}/commands/" "${gitpath_root}/commands/"
   fi
-  rm -rf "${gitpath_root}/agents/cursor" "${gitpath_root}/agents"
+  rm -rf "${gitpath_root}/agents/cursor" "${gitpath_root}/agents" 2>/dev/null || true
   if [[ -f "${dest}/cursor-hooks.json" ]]; then
     install -m 644 "${dest}/cursor-hooks.json" "${gitpath_root}/cursor-hooks.json"
   fi
@@ -573,6 +578,95 @@ registry_path.write_text(json.dumps(data, indent=2) + "\n")
 PY
 }
 
+verify_cursor_install_identity() {
+  local dest="$1"
+  local version="$2"
+  local commit_sha="${3:-}"
+  local registry_file="${CURSOR_HOME}/plugins/installed_plugins.json"
+  local current_link resolved_dest resolved_current local_plugin
+  local registry_version registry_install_path registry_git_sha registry_git_path
+  local local_version cache_version marketplace_version marketplace_sha
+  local expected_git_path resolved_registry_git_path resolved_expected_git_path
+  local failures=0
+
+  resolved_dest="$(cd "$dest" && pwd -P)"
+  current_link="$(cursor_install_current_link)"
+  resolved_current="$(cd "$current_link" 2>/dev/null && pwd -P || true)"
+  local_plugin="${CURSOR_HOME}/plugins/local/silver-bullet"
+
+  if [[ "$(basename "$resolved_dest")" != "$version" || ! -d "$resolved_dest" ]]; then
+    printf 'ERROR: Cursor cache claimed version %s is not materialized at %s\n' "$version" "$resolved_dest" >&2
+    failures=1
+  fi
+  if [[ "$resolved_current" != "$resolved_dest" ]]; then
+    printf 'ERROR: Cursor current symlink resolves to %s, expected %s\n' "$resolved_current" "$resolved_dest" >&2
+    failures=1
+  fi
+  if [[ ! -d "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${version}" ]]; then
+    printf 'ERROR: Cursor claimed cache version is missing: %s\n' "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${version}" >&2
+    failures=1
+  fi
+
+  registry_version="$(jq -r '.plugins["silver-bullet@alo-labs"][0].version // empty' "$registry_file" 2>/dev/null || true)"
+  registry_install_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].installPath // empty' "$registry_file" 2>/dev/null || true)"
+  registry_git_sha="$(jq -r '.plugins["silver-bullet@alo-labs"][0].gitCommitSha // empty' "$registry_file" 2>/dev/null || true)"
+  registry_git_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].gitPath // empty' "$registry_file" 2>/dev/null || true)"
+  if [[ -n "$commit_sha" && "$registry_git_sha" != "$commit_sha" ]]; then
+    printf 'ERROR: Cursor registry gitCommitSha=%s expected=%s\n' "$registry_git_sha" "$commit_sha" >&2
+    failures=1
+  fi
+  expected_git_path="$(cursor_github_marketplace_gitpath_for_sha "$commit_sha")"
+  resolved_registry_git_path=""
+  resolved_expected_git_path=""
+  if [[ -n "$registry_git_path" ]]; then
+    resolved_registry_git_path="$(cd "$registry_git_path" 2>/dev/null && pwd -P || printf '%s' "$registry_git_path")"
+  fi
+  if [[ -n "$expected_git_path" ]]; then
+    resolved_expected_git_path="$(cd "$expected_git_path" 2>/dev/null && pwd -P || printf '%s' "$expected_git_path")"
+  fi
+  if [[ -n "$commit_sha" && "$resolved_registry_git_path" != "$resolved_expected_git_path" ]]; then
+    printf 'ERROR: Cursor registry gitPath=%s expected=%s\n' "$registry_git_path" "$expected_git_path" >&2
+    failures=1
+  fi
+  if ! jq -e '.plugins["silver-bullet@alo-labs"][0].enabled == true' "$registry_file" >/dev/null 2>&1; then
+    printf 'ERROR: Cursor marketplace enablement record is missing or disabled for silver-bullet@alo-labs\n' >&2
+    failures=1
+  fi
+
+  # Also canonicalize installPath comparisons for macOS /var vs /private/var.
+  if [[ -n "$registry_install_path" ]]; then
+    registry_install_path="$(cd "$registry_install_path" 2>/dev/null && pwd -P || printf '%s' "$registry_install_path")"
+  fi
+  if [[ "$registry_version" != "$version" || "$(basename "$registry_install_path")" != "$version" || "$registry_install_path" != "$resolved_dest" ]]; then
+    printf 'ERROR: Cursor registry identity mismatch: version=%s installPath=%s expectedVersion=%s expectedPath=%s\n' \
+      "$registry_version" "$registry_install_path" "$version" "$resolved_dest" >&2
+    failures=1
+  fi
+
+  cache_version="$(jq -r '.version // empty' "${resolved_dest}/.cursor-plugin/plugin.json" 2>/dev/null || true)"
+  local_version="$(jq -r '.version // empty' "${local_plugin}/.cursor-plugin/plugin.json" 2>/dev/null || true)"
+  marketplace_version="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version // empty' "$(marketplace_manifest_path)" 2>/dev/null || true)"
+  marketplace_sha="$(read_marketplace_manifest_sha)"
+  if [[ "$cache_version" != "$version" || "$local_version" != "$version" ]]; then
+    printf 'ERROR: Cursor plugin manifest version mismatch: cache=%s local=%s expected=%s\n' \
+      "$cache_version" "$local_version" "$version" >&2
+    failures=1
+  fi
+  if [[ "$marketplace_version" != "$version" ]] || \
+     { [[ -n "$commit_sha" ]] && [[ "$marketplace_sha" != "$commit_sha" ]]; }; then
+    printf 'ERROR: Cursor marketplace pin mismatch: version=%s sha=%s expectedVersion=%s expectedSha=%s\n' \
+      "$marketplace_version" "$marketplace_sha" "$version" "$commit_sha" >&2
+    failures=1
+  fi
+  if [[ "$(cursor_plugin_command_filename_colon_count "$resolved_dest")" -ne 0 || \
+        "$(cursor_plugin_command_filename_colon_count "$local_plugin")" -ne 0 ]]; then
+    printf 'ERROR: Cursor command filenames contain colon characters; regenerate with scripts/generate-plugin-commands.sh\n' >&2
+    failures=1
+  fi
+
+  return "$failures"
+}
+
 sync_plugin_tree() {
   local dest
 
@@ -660,7 +754,19 @@ if [[ "$LEGACY_MARKETPLACE_UI_SWITCH" -eq 1 ]]; then
   remove_legacy_cursor_marketplace_clones
 fi
 
-DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
+# Never let resolve fall back to a stale `current` symlink when VERSION is known —
+# that produced registry version N with installPath still at N-1.
+if [[ "$MERGE_ONLY" -eq 0 ]]; then
+  DEST_ROOT="$(printf '%s\n' "$DEST_ROOT" | awk 'NF{line=$0} END{print line}')"
+  EXPECTED_DEST="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${VERSION}"
+  if [[ ! -d "$EXPECTED_DEST" ]]; then
+    printf 'ERROR: expected Cursor cache version dir missing after sync: %s\n' "$EXPECTED_DEST" >&2
+    exit 1
+  fi
+  DEST_ROOT="$(cd "$EXPECTED_DEST" && pwd -P)"
+else
+  DEST_ROOT="$(resolve_cursor_install_dest "$DEST_ROOT")"
+fi
 python3 "$MERGE_HOOKS" "$DEST_ROOT"
 
 # SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
@@ -684,6 +790,10 @@ rematerialize_all_reachable_cursor_gitpaths "$DEST_ROOT"
 sync_cursor_user_marketplace_manifest "$REGISTRY_COMMIT_SHA" "$VERSION"
 seed_cursor_marketplace_gitpaths_extended "$DEST_ROOT" "$REGISTRY_COMMIT_SHA" "$REPO_ROOT"
 ensure_cursor_local_plugin_link "$DEST_ROOT"
+if ! verify_cursor_install_identity "$DEST_ROOT" "$VERSION" "$REGISTRY_COMMIT_SHA"; then
+  printf 'ERROR: Cursor install identity is inconsistent — refusing to leave a partial install\n' >&2
+  exit 1
+fi
 if ! verify_cursor_plugin_discovery_paths "$DEST_ROOT" "$REPO_ROOT"; then
   printf 'ERROR: Cursor plugin discovery paths incomplete — re-run: bash scripts/install-cursor.sh\n' >&2
   exit 1

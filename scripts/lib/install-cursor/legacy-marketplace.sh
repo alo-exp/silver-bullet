@@ -87,19 +87,16 @@ resolve_cursor_registry_git_commit_sha() {
     return 0
   fi
 
-  # Prefer the freshly installed commit when gitPath is materialized — stale
-  # backend SHAs from Cursor Plugins logs can lag local install-cursor runs.
-  if [[ -n "$install_sha" ]] && cursor_plugin_gitpath_ready "$install_sha"; then
+  # Prefer the commit we just installed. Stale Cursor Plugins log SHAs and
+  # marketplace pins must not win over a fresh local/public install SHA —
+  # that mismatch produced registry version X with installPath/cache at X-1.
+  if [[ -n "$install_sha" ]]; then
     printf '%s\n' "$install_sha"
     return 0
   fi
 
   if [[ -n "$backend_sha" ]]; then
     printf '%s\n' "$backend_sha"
-    return 0
-  fi
-  if [[ -n "$install_sha" ]]; then
-    printf '%s\n' "$install_sha"
     return 0
   fi
   if [[ -n "$manifest_sha" ]]; then
