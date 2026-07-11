@@ -28,6 +28,15 @@ SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
 TEST_RUN_ID="$$"
 MOCK_BIN=""
 
+# Prior hooks/tests may leave SB_RUNTIME_STATE_DIR pointing at a removed temp root.
+if [[ "${SB_RUNTIME_PRESERVE_STATE_DIR:-}" == "1" && -n "${SB_RUNTIME_STATE_DIR:-}" && ! -d "${SB_RUNTIME_STATE_DIR}" ]]; then
+  unset SB_RUNTIME_PRESERVE_STATE_DIR SB_RUNTIME_STATE_DIR
+  # shellcheck source=hooks/lib/runtime-paths.sh
+  source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
+  SB_TEST_DIR="${SB_RUNTIME_STATE_DIR}"
+fi
+mkdir -p "${SB_TEST_DIR}"
+
 cleanup_all() {
   rm -rf "$TMPDIR_TEST" "${TEST_HOME:-}" "${SB_TEST_DIR}/graphify-query-${TEST_RUN_ID}" "$MOCK_BIN"
 }

@@ -89,6 +89,20 @@ main{padding:48px 24px 96px}
 <main>
   <div class="container">
 
+    <article class="release" id="v0-51-7">
+      <div class="release-header">
+        <h2>v0.51.7</h2>
+        <time class="release-date" datetime="2026-07-12">2026-07-12</time>
+      </div>
+      <p class="release-summary">Patch release: Cursor desktop <code>/silver</code> commands fix — hyphen-safe command filenames and install identity lock.</p>
+      <h3>Fixes</h3>
+      <ul>
+        <li><code>fix(cursor)</code>: desktop-safe command filenames (<code>silver-&lt;route&gt;.md</code> stubs with <code>silver:</code> frontmatter) — Cursor desktop rejects colon-bearing command filenames</li>
+        <li><code>fix(cursor)</code>: install identity lock — VERSION-aligned cache/current/local/marketplace pins prevent registry drift claiming version N against installPath N-1</li>
+        <li><code>fix(tests)</code>: install-cursor and host command naming regression coverage</li>
+      </ul>
+    </article>
+
     <article class="release" id="v0-51-6">
       <div class="release-header">
         <h2>v0.51.6</h2>

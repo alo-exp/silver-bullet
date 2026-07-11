@@ -66,7 +66,8 @@ for agent in "${AGENTS[@]}"; do
       bundle_dir="silver:${comp}"
     fi
     # Cursor host-bundles omit command-stub-covered composers (slash commands own the route).
-    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/${bundle_dir}.md" ]]; then
+    # Desktop-safe command stubs use hyphen filenames (silver-feature.md) with silver: frontmatter.
+    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/${skill}.md" ]]; then
       echo "PASS: ${skill} omitted from cursor bundle (command stub owns route)"
       PASS=$((PASS + 1))
       continue
