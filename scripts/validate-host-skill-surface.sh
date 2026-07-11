@@ -125,12 +125,19 @@ for host, surfaces in HOST_SURFACES.items():
             if not name:
                 fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
                 continue
+            expected_stem = "silver" if name == "silver" else name.replace(":", "-")
+            if ":" in path.name:
+                fail(
+                    host,
+                    f"{path.relative_to(repo_root)}: command filename contains ':'; "
+                    f"use filesystem-safe names with the route preserved in frontmatter",
+                )
             stem = path.stem
-            if stem != name:
+            if stem != expected_stem:
                 fail(
                     host,
                     f"{path.relative_to(repo_root)}: filename stem {stem!r} must match "
-                    f"name {name!r} (hosts derive slash routes from the stub filename)",
+                    f"filesystem-safe route stem {expected_stem!r} for name {name!r}",
                 )
             if name != "silver" and not name.startswith("silver:"):
                 fail(

@@ -121,6 +121,32 @@ else
   fail "install-cursor registers silver-bullet@alo-labs in installed_plugins.json"
 fi
 
+claimed_version="$(jq -r '.version' "${REPO_ROOT}/package.json")"
+registry_version="$(jq -r '.plugins["silver-bullet@alo-labs"][0].version // empty' "$registry_path")"
+registry_install_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].installPath // empty' "$registry_path")"
+cache_manifest_version="$(jq -r '.version // empty' "${resolved_current}/.cursor-plugin/plugin.json")"
+local_manifest_version="$(jq -r '.version // empty' "${CURSOR_HOME}/plugins/local/silver-bullet/.cursor-plugin/plugin.json")"
+if [[ "$registry_version" == "$claimed_version" ]] && \
+   [[ "$(basename "$registry_install_path")" == "$claimed_version" ]] && \
+   [[ "$(basename "$resolved_current")" == "$claimed_version" ]] && \
+   [[ -d "${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/${claimed_version}" ]] && \
+   [[ "$cache_manifest_version" == "$claimed_version" ]] && \
+   [[ "$local_manifest_version" == "$claimed_version" ]]; then
+  pass "install-cursor keeps registry/cache/current/local versions aligned"
+else
+  fail "install-cursor keeps registry/cache/current/local versions aligned"
+fi
+
+if [[ -f "${resolved_current}/commands/silver.md" ]] && \
+   grep -q '^name: "silver"$' "${resolved_current}/commands/silver.md" && \
+   [[ -f "${resolved_current}/commands/silver-init.md" ]] && \
+   grep -q '^name: "silver:init"$' "${resolved_current}/commands/silver-init.md" && \
+   [[ ! -e "${resolved_current}/commands/silver:init.md" ]]; then
+  pass "install-cursor uses safe command filename with frontmatter route"
+else
+  fail "install-cursor uses safe command filename with frontmatter route"
+fi
+
 repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 gitpath_root="${CURSOR_HOME}/plugins/marketplaces/github.com/alo-exp/silver-bullet/${repo_sha}"
 if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${repo_sha}^{commit}" >/dev/null 2>&1; then
@@ -129,7 +155,7 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/commands/silver:init.md" ]] && \
+if [[ -f "${gitpath_root}/commands/silver.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands in marketplace gitPath checkout"
 else
@@ -186,13 +212,13 @@ else
   fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 fi
 
-if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/silver:init.md" ]]; then
+if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/silver.md" ]]; then
   pass "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 else
   fail "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 fi
 
-if [[ -f "${gitpath_root}/commands/silver:init.md" ]] && \
+if [[ -f "${gitpath_root}/commands/silver.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands at gitPath repo root for empty backend path"
 else
@@ -246,7 +272,7 @@ else
   fail "install-cursor preserves orchestrator-directive-guard matcher variants — missing ${odg_missing}"
 fi
 
-if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/silver:init.md" ]]; then
+if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/silver.md" ]]; then
   pass "install-cursor syncs composer command stubs to cache"
 else
   fail "install-cursor syncs composer command stubs to cache"
@@ -378,7 +404,7 @@ fi
 
 local_plugin_dir="${CURSOR_HOME}/plugins/local/silver-bullet"
 if [[ -d "$local_plugin_dir" ]] && [[ ! -L "$local_plugin_dir" ]] && \
-   [[ -f "${local_plugin_dir}/commands/silver:init.md" ]] && \
+   [[ -f "${local_plugin_dir}/commands/silver.md" ]] && \
    [[ "$(jq -r '.version // empty' "${local_plugin_dir}/.cursor-plugin/plugin.json")" == \
       "$(jq -r '.version // empty' "${resolved_current}/.cursor-plugin/plugin.json")" ]]; then
   pass "install-cursor materializes ~/.cursor/plugins/local/silver-bullet for desktop discovery"
@@ -401,6 +427,17 @@ else
   fail "install-cursor syncs user marketplace manifest silver-bullet version"
 fi
 
+if jq -e --arg sha "$repo_sha" \
+   '.plugins["silver-bullet@alo-labs"][0].enabled == true and .plugins["silver-bullet@alo-labs"][0].gitCommitSha == $sha' \
+   "$registry_path" >/dev/null 2>&1 && \
+   jq -e --arg sha "$repo_sha" \
+   '.plugins[] | select(.name=="silver-bullet") | .source.sha == $sha and .source.ref == $sha' \
+   "${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json" >/dev/null 2>&1; then
+  pass "install-cursor records marketplace enablement and commit pin"
+else
+  fail "install-cursor records marketplace enablement and commit pin"
+fi
+
 if bash "${REPO_ROOT}/scripts/validate-host-install-surface.sh" --cache-root "$resolved_current" --host cursor >/dev/null 2>&1; then
   pass "validate-host-install-surface accepts commands-only cursor cache"
 else
@@ -411,11 +448,11 @@ malformed_cmds=0
 while IFS= read -r bad; do
   [[ -n "$bad" ]] || continue
   (( malformed_cmds++ )) || true
-done < <(find "${resolved_current}/commands" -maxdepth 1 -name '*.md' ! -name 'silver.md' ! -name 'silver:*.md' -print 2>/dev/null)
+done < <(find "${resolved_current}/commands" -maxdepth 1 -name '*.md' -name '*:*' -print 2>/dev/null)
 if [[ "$malformed_cmds" -eq 0 ]]; then
-  pass "install-cursor cache has no malformed bare-route command filenames"
+  pass "install-cursor cache has no colon-bearing command filenames"
 else
-  fail "install-cursor cache has no malformed bare-route command filenames — count=${malformed_cmds}"
+  fail "install-cursor cache has no colon-bearing command filenames — count=${malformed_cmds}"
 fi
 
 if [[ -f "${REPO_ROOT}/scripts/generate-cursor-hooks.py" ]]; then

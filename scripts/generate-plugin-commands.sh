@@ -11,6 +11,22 @@ COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-de
 
 mkdir -p "$OUT_DIR"
 
+# Cursor desktop accepts command routes from frontmatter while requiring
+# filesystem-safe command filenames. Migrate older colon-named stubs before
+# regenerating so stale files cannot keep shadowing the safe names.
+shopt -s nullglob
+for legacy in "$OUT_DIR"/*.md; do
+  legacy_name="$(basename "$legacy")"
+  [[ "$legacy_name" == *:* ]] || continue
+  safe_name="${legacy_name//:/-}"
+  safe="${OUT_DIR}/${safe_name}"
+  if [[ -e "$safe" ]]; then
+    rm -f -- "$legacy"
+  else
+    mv -- "$legacy" "$safe"
+  fi
+done
+
 title_case() {
   python3 - "$1" <<'PY'
 import sys
@@ -51,9 +67,10 @@ for skill in "${COMPOSERS[@]}"; do
   title="$(title_case "$cmd_name")"
   [[ "$cmd_name" == "silver" ]] && title="Silver"
 
-  # Host TUIs (cursor-agent, codex) derive slash routes from the command filename
-  # stem, not only frontmatter — filename must match name: (silver:route).
-  out="${OUT_DIR}/${codex_name}.md"
+  # Cursor desktop derives the route from frontmatter but rejects colon-bearing
+  # command filenames; keep the intended silver:<route> name in frontmatter.
+  safe_file_stem="${codex_name//:/-}"
+  out="${OUT_DIR}/${safe_file_stem}.md"
   cat > "$out" <<EOF
 ---
 name: "${codex_name}"
@@ -65,11 +82,12 @@ argument-hint: ${argument_hint}
 Invoke the Silver Bullet \`${skill}\` workflow for this request. Follow the composable flow contracts in \`docs/composable-flows-contracts.md\` and record required skill markers through the host Skill tool. If the Skill tool cannot resolve this route by name, read the full instructions from \`skill-source/${skill}/SILVER_SOURCE\` under the Silver Bullet plugin install root.
 EOF
   printf 'Wrote %s\n' "$out"
-  # Drop legacy bare-route stub left from pre-colon filenames.
-  legacy="${OUT_DIR}/${cmd_name}.md"
-  if [[ "$legacy" != "$out" && -f "$legacy" ]]; then
-    rm -f "$legacy"
-  fi
+  # Drop legacy bare-route and colon-named stubs left by older generators.
+  for legacy in "${OUT_DIR}/${cmd_name}.md" "${OUT_DIR}/${codex_name}.md"; do
+    if [[ "$legacy" != "$out" && -f "$legacy" ]]; then
+      rm -f -- "$legacy"
+    fi
+  done
 done
 
 printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"

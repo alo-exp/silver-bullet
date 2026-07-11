@@ -35,7 +35,7 @@ seed_good_fixture() {
   write_skill "$root/host-bundles/cursor" "silver" "silver"
   mkdir -p "$root/plugins/silver-bullet/skill-source/silver" "$root/plugins/silver-bullet/commands"
   printf 'mirror\n' >"$root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE"
-  cat >"$root/plugins/silver-bullet/commands/silver:feature.md" <<'EOF'
+  cat >"$root/plugins/silver-bullet/commands/silver-feature.md" <<'EOF'
 ---
 name: silver:feature
 description: test command stub
