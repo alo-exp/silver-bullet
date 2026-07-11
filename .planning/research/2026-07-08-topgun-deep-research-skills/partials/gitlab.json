@@ -1,7 +1,0 @@
-{
-  "registry": "gitlab",
-  "status": "unavailable",
-  "reason": "GitLab API 401",
-  "results": [],
-  "latency_ms": 559
-}
