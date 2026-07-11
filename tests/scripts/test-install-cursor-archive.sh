@@ -36,11 +36,12 @@ else
   fail "archive install materializes colon command stubs"
 fi
 
-if [[ -L "${CURSOR_HOME}/plugins/local/silver-bullet" ]] && \
-   [[ "$(readlink -f "${CURSOR_HOME}/plugins/local/silver-bullet" 2>/dev/null || true)" == "$(readlink -f "$resolved_current" 2>/dev/null || true)" ]]; then
-  pass "archive install links local plugin for desktop discovery"
+if [[ -d "${CURSOR_HOME}/plugins/local/silver-bullet" ]] && \
+   [[ ! -L "${CURSOR_HOME}/plugins/local/silver-bullet" ]] && \
+   [[ -f "${CURSOR_HOME}/plugins/local/silver-bullet/commands/silver:init.md" ]]; then
+  pass "archive install materializes local plugin for desktop discovery"
 else
-  fail "archive install links local plugin for desktop discovery"
+  fail "archive install materializes local plugin for desktop discovery"
 fi
 
 registry_path="${CURSOR_HOME}/plugins/installed_plugins.json"

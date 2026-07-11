@@ -333,24 +333,36 @@ materialize_cursor_plugin_surface_into_dir() {
 ensure_cursor_local_plugin_link() {
   local dest="$1"
   local local_root="${CURSOR_HOME}/plugins/local"
-  local link_path="${local_root}/silver-bullet"
+  local local_plugin="${local_root}/silver-bullet"
 
   [[ -n "$dest" && -d "$dest" ]] || return 0
   mkdir -p "$local_root"
-  ln -sfn "$dest" "$link_path"
-  printf 'Cursor local plugin link: %s -> %s\n' "$link_path" "$dest" >&2
+  # Cursor desktop rejects symlinks whose resolved target is outside plugins/local
+  # (Cursor Plugins log: loadUserLocalPlugin rejected: symlink target ... is outside ...).
+  # Materialize commands-only surface directly under plugins/local/ per
+  # https://cursor.com/docs/plugins and https://github.com/cursor/plugins/issues/35
+  if [[ -L "$local_plugin" ]]; then
+    rm -f "$local_plugin"
+  fi
+  mkdir -p "$local_plugin"
+  materialize_cursor_plugin_surface_into_dir "$dest" "$local_plugin"
+  printf 'Cursor local plugin surface: %s (materialized from %s)\n' "$local_plugin" "$dest" >&2
 }
 
 cursor_local_plugin_link_ready() {
   local dest="$1"
-  local link_path="${CURSOR_HOME}/plugins/local/silver-bullet"
-  local resolved_dest resolved_link
+  local local_plugin="${CURSOR_HOME}/plugins/local/silver-bullet"
+  local resolved_dest
 
   [[ -n "$dest" && -d "$dest" ]] || return 1
-  [[ -L "$link_path" ]] || return 1
+  [[ -d "$local_plugin" ]] || return 1
+  [[ ! -L "$local_plugin" ]] || return 1
+  [[ -f "${local_plugin}/commands/silver:init.md" ]] || return 1
+  [[ -f "${local_plugin}/.cursor-plugin/plugin.json" ]] || return 1
+  jq -e '.commands == "./commands"' "${local_plugin}/.cursor-plugin/plugin.json" >/dev/null 2>&1 || return 1
   resolved_dest="$(cd "$dest" && pwd -P)"
-  resolved_link="$(cd "$link_path" && pwd -P 2>/dev/null || true)"
-  [[ -n "$resolved_link" && "$resolved_link" == "$resolved_dest" ]]
+  [[ "$(jq -r '.version // empty' "${local_plugin}/.cursor-plugin/plugin.json")" == \
+     "$(jq -r '.version // empty' "${resolved_dest}/.cursor-plugin/plugin.json")" ]]
 }
 
 sync_cursor_user_marketplace_manifest() {

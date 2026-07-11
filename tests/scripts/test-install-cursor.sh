@@ -376,12 +376,20 @@ else
   fail "install-cursor backend cache has no agents/cursor subagent surface"
 fi
 
-local_plugin_link="${CURSOR_HOME}/plugins/local/silver-bullet"
-if [[ -L "$local_plugin_link" ]] && \
-   [[ "$(readlink -f "$local_plugin_link" 2>/dev/null || true)" == "$(readlink -f "$resolved_current" 2>/dev/null || true)" ]]; then
-  pass "install-cursor links ~/.cursor/plugins/local/silver-bullet for desktop discovery"
+local_plugin_dir="${CURSOR_HOME}/plugins/local/silver-bullet"
+if [[ -d "$local_plugin_dir" ]] && [[ ! -L "$local_plugin_dir" ]] && \
+   [[ -f "${local_plugin_dir}/commands/silver:init.md" ]] && \
+   [[ "$(jq -r '.version // empty' "${local_plugin_dir}/.cursor-plugin/plugin.json")" == \
+      "$(jq -r '.version // empty' "${resolved_current}/.cursor-plugin/plugin.json")" ]]; then
+  pass "install-cursor materializes ~/.cursor/plugins/local/silver-bullet for desktop discovery"
 else
-  fail "install-cursor links ~/.cursor/plugins/local/silver-bullet for desktop discovery"
+  fail "install-cursor materializes ~/.cursor/plugins/local/silver-bullet for desktop discovery"
+fi
+
+if [[ -L "${CURSOR_HOME}/plugins/local/silver-bullet" ]]; then
+  fail "install-cursor must not symlink local plugin outside plugins/local (desktop rejects external targets)"
+else
+  pass "install-cursor local plugin is not an external symlink"
 fi
 
 if [[ -f "${CURSOR_MARKETPLACE_ROOT}/.cursor-plugin/marketplace.json" ]] && \

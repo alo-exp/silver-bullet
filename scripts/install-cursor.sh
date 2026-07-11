@@ -496,15 +496,10 @@ verify_cursor_plugin_discovery_paths() {
     fi
   done < <(collect_cursor_plugin_verify_shas "$primary_sha" "$backend_sha")
 
-  if [[ "$failures" -eq 0 ]]; then
-    return 0
-  fi
-
-  # Desktop also loads ~/.cursor/plugins/local/silver-bullet (Cursor plugins docs).
-  if cursor_local_plugin_link_ready "$dest" \
-    && [[ -f "${dest}/commands/silver:init.md" ]] \
-    && [[ -f "${dest}/.cursor-plugin/plugin.json" ]]; then
-    return 0
+  if ! cursor_local_plugin_link_ready "$dest"; then
+    printf 'ERROR: Cursor local plugin surface missing at %s/plugins/local/silver-bullet — desktop rejects symlinks outside plugins/local (run: bash scripts/install-cursor.sh)\n' \
+      "$CURSOR_HOME" >&2
+    failures=1
   fi
 
   return "$failures"
