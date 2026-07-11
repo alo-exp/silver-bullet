@@ -259,9 +259,9 @@ run_doctor_checks() {
   # D14 — foreign agent namespaces in active plugin cache
   if [[ -n "$skill_root" && -d "$skill_root" && -x "$install_surface_script" ]]; then
     if bash "$install_surface_script" --cache-root "$skill_root" --host "$runtime" >/dev/null 2>&1; then
-      record pass D14 "plugin cache has no foreign host agent namespaces"
+      record pass D14 "plugin cache commands-only surface OK (commands/, no agents/skills bleed)"
     else
-      record fail D14 "plugin cache cross-host bleed — run: bash scripts/install-${runtime}.sh"
+      record fail D14 "plugin cache commands-only contract failed — run: bash scripts/install-${runtime}.sh"
     fi
   else
     record warn D14 "plugin cache surface check skipped (no active install)"

@@ -243,6 +243,7 @@ run_cache_checks() {
   python3 - "$root" "$host" <<'PY'
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -283,10 +284,46 @@ if host == "claude":
             failures.append(f"[claude] cache bleed: agents/{name}")
 
 elif host == "cursor":
-    require(agents / "cursor", "agents/cursor")
+    # Commands-only Cursor package: public / picker is commands/*.md only.
     forbid(agents / "claude", "agents/claude")
     forbid(agents / "codex", "agents/codex")
+    forbid(agents / "cursor", "agents/cursor")
     forbid(cache_root / "host-bundles", "host-bundles")
+    skills_root = cache_root / "skills"
+    if skills_root.is_dir():
+        for child in skills_root.iterdir():
+            if child.is_dir() and child.name != "silver-init":
+                failures.append(
+                    f"[cursor] cache bleed: skills/{child.name} registers slash-picker skills"
+                )
+    commands_init = cache_root / "commands" / "silver:init.md"
+    if not commands_init.is_file():
+        failures.append("[cursor] cache missing commands/silver:init.md (slash menu empty)")
+    manifest = cache_root / ".cursor-plugin" / "plugin.json"
+    if manifest.is_file():
+        try:
+            data = json.loads(manifest.read_text())
+        except Exception:
+            data = {}
+        if data.get("skills"):
+            failures.append(
+                f"[cursor] cache manifest declares skills={data.get('skills')!r} (commands-only required)"
+            )
+        if data.get("commands") != "./commands":
+            failures.append(
+                f"[cursor] cache manifest commands must be ./commands — got {data.get('commands')!r}"
+            )
+    else:
+        failures.append("[cursor] cache missing .cursor-plugin/plugin.json")
+    # Legacy bare-route stubs (/silverui, /silverplan) must not ship beside colon routes.
+    commands_dir = cache_root / "commands"
+    if commands_dir.is_dir():
+        for path in commands_dir.glob("*.md"):
+            stem = path.stem
+            if stem != "silver" and not stem.startswith("silver:"):
+                failures.append(
+                    f"[cursor] malformed command filename {path.name!r} (expected silver:route)"
+                )
 
 elif host == "codex":
     forbid(agents / "claude", "agents/claude")
