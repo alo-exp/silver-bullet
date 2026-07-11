@@ -1,1 +1,0 @@
-../../../lib/enterprise-e2e-outcome-assessment.sh
