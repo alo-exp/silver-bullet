@@ -2,6 +2,12 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
+_adapter_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _adapter_lib=""
+if [[ -f "${_adapter_lib}/hook-subproc-timeout.sh" ]]; then
+  # shellcheck source=lib/hook-subproc-timeout.sh
+  source "${_adapter_lib}/hook-subproc-timeout.sh"
+fi
+
 event_name="${1:-}"
 shift || true
 
@@ -20,9 +26,17 @@ trap cleanup EXIT
 
 cat >"$input_file"
 
-rc=0
-if ! "$@" <"$input_file" >"$stdout_file" 2>"$stderr_file"; then
-  rc=$?
+SB_HOOK_SUBPROC_TIMEOUT="${SB_CODEX_HOOK_SUBPROC_TIMEOUT:-12}"
+trap - ERR
+set +e
+sb_run_hooked_command "$SB_HOOK_SUBPROC_TIMEOUT" "$input_file" "$stdout_file" "$stderr_file" "$@"
+rc=$?
+set -e
+trap '''exit 0''' ERR
+if [[ "$rc" -eq 124 ]]; then
+  : >"$stdout_file"
+  printf '{"systemMessage":"Silver Bullet hook subprocess timed out."}\n' >"$stdout_file"
+  rc=0
 fi
 
 python3 - "$event_name" "$stdout_file" <<'PY'

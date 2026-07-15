@@ -25,6 +25,45 @@ EVENT_MAP = {
 
 PLUGIN_ROOT = "${CURSOR_PLUGIN_ROOT}"
 
+# Hooks already run on preToolUse/postToolUse with Shell matcher; duplicating them onto
+# beforeShellExecution/afterShellExecution (matcher .*) multiplies heavy bash work per
+# terminal command (2–4× fan-out) and can orphan processes when Cursor hook timeouts fire.
+SHELL_DUPLICATE_SKIP_SUFFIXES = ("-gate.sh", "-guard.sh")
+
+# Explicit skips beyond suffix rules — heavy scripts, network I/O, or postToolUse Shell recorders.
+SHELL_DUPLICATE_SKIP_BASENAMES = frozenset({
+    "dev-cycle-check.sh",  # large jq/git/state walk; was 4× per shell before skip
+    "completion-audit.sh",  # jq + evidence gates on every shell
+    "stack-compression-coordinator.sh",  # five-tool routing; sources many libs
+    "ci-status-check.sh",  # gh API; can exceed hook timeout
+    "site-regression-gate.sh",  # 120s timeout — must never double
+    "phase-archive.sh",
+    "subagent-stop-enforcement.sh",
+    "site-preview-preflight.sh",
+    "roadmap-freshness.sh",
+    "spec-floor-check.sh",
+    "industry-tooling-hint.sh",
+    # postToolUse|Shell already records usage — afterShell duplicates are redundant
+    "record-skill.sh",
+    "flow-advance.sh",
+    "review-fix-ladder-guard.sh",
+    "phase-lock-heartbeat.sh",
+    "pr-traceability.sh",
+    "session-log-init.sh",
+    "record-graphify-query.sh",
+    "record-agentmemory-usage.sh",
+    "record-token-compression-usage.sh",
+    "record-leanctx-usage.sh",
+    "record-site-visual-evidence.sh",
+    "record-recommended-mcp.sh",
+})
+
+
+def should_skip_shell_duplicate(basename: str) -> bool:
+    if basename in SHELL_DUPLICATE_SKIP_BASENAMES:
+        return True
+    return any(basename.endswith(suffix) for suffix in SHELL_DUPLICATE_SKIP_SUFFIXES)
+
 
 def normalize_hook_path(hook_path: str) -> str:
     hook_path = hook_path.strip('"').replace("${CLAUDE_PLUGIN_ROOT}", PLUGIN_ROOT)
@@ -90,10 +129,14 @@ def translate_matcher(matcher: str, cursor_event: str) -> str | None:
     return "|".join(dict.fromkeys(translated)) if translated else None
 
 
-def should_duplicate_to_shell(event: str, matcher: str) -> bool:
-    return event in {"PreToolUse", "PostToolUse"} and any(
-        token in {"Bash", "exec_command", "shell"} for token in matcher.split("|")
-    )
+def should_duplicate_to_shell(event: str, matcher: str, command: str) -> bool:
+    if event not in {"PreToolUse", "PostToolUse"}:
+        return False
+    if not any(token in {"Bash", "exec_command", "shell"} for token in matcher.split("|")):
+        return False
+    hook_path = normalize_hook_path(extract_hook_path(command))
+    basename = pathlib.Path(hook_path.strip('"')).name
+    return not should_skip_shell_duplicate(basename)
 
 
 def shell_cursor_event(claude_event: str) -> str:
@@ -118,7 +161,7 @@ def build_cursor_hooks(src: dict) -> dict:
                 if translated:
                     entry["matcher"] = translated
                 cursor_hooks.setdefault(cursor_event, []).append(entry)
-                if should_duplicate_to_shell(claude_event, matcher):
+                if should_duplicate_to_shell(claude_event, matcher, hook.get("command", "")):
                     shell_event = shell_cursor_event(claude_event)
                     shell_entry = {
                         "command": rewrite_command(hook.get("command", ""), shell_event),
@@ -143,3 +186,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
