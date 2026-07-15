@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Fail when plugin command stubs use colon filenames or hyphen frontmatter names.
-# Cursor desktop requires filesystem-safe filenames; slash routes stay in frontmatter.
+# Fail when plugin command stubs use colon filenames or non-kebab metadata.
+# Cursor plugin commands use filesystem-safe filenames and kebab-case names.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -37,26 +37,25 @@ def parse_frontmatter(path: Path) -> dict[str, str]:
 
 
 for path in sorted(commands_dir.glob("*.md")):
-    name = parse_frontmatter(path).get("name", "").strip()
-    if not name:
-        bad.append(f"{path.name}: missing name in frontmatter")
-        continue
+    meta = parse_frontmatter(path)
     if ":" in path.name:
         bad.append(f"{path.name}: colon in filename is not desktop-safe")
-    expected_stem = "silver" if name == "silver" else name.replace(":", "-")
-    if path.stem != expected_stem:
-        bad.append(f"{path.name}: stem {path.stem!r} != expected {expected_stem!r} for name {name!r}")
-    if name != "silver" and not name.startswith("silver:"):
-        bad.append(f"{path.name}: name {name!r} must be silver or silver:<route>")
-    if name.startswith("silver-"):
-        bad.append(f"{path.name}: hyphen command name {name!r}")
+    name = meta.get("name", "").strip()
+    if not name:
+        bad.append(f"{path.name}: missing name in frontmatter")
+    elif name != path.stem:
+        bad.append(f"{path.name}: name {name!r} must match kebab-case filename stem")
+    if not meta.get("description", "").strip():
+        bad.append(f"{path.name}: missing description in frontmatter")
+    if ":" in name:
+        bad.append(f"{path.name}: command name {name!r} must be kebab-case")
 
 if bad:
     print("\n".join(bad))
     raise SystemExit(1)
 PY
 then
-  pass "all command stubs use desktop-safe filenames with silver: frontmatter names"
+  pass "all command stubs use kebab-case metadata with desktop-safe filenames"
 else
   fail "command stub filename/name alignment"
 fi

@@ -1,6 +1,6 @@
 ---
-name: "silver:orient"
-title: "Orient"
+name: "silver-orient"
+title: "Silver: Silver Orient"
 description: DEPRECATED — use silver-scan for retrospective session scan or silver-context for phase context.
 argument-hint: <task description>
 ---

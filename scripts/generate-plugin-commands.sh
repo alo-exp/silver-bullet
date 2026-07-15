@@ -11,9 +11,9 @@ COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-de
 
 mkdir -p "$OUT_DIR"
 
-# Cursor desktop accepts command routes from frontmatter while requiring
-# filesystem-safe command filenames. Migrate older colon-named stubs before
-# regenerating so stale files cannot keep shadowing the safe names.
+# Cursor desktop derives command routes from plain-Markdown filenames.
+# Migrate older colon-named stubs before regenerating so stale files cannot
+# keep shadowing the safe names.
 shopt -s nullglob
 for legacy in "$OUT_DIR"/*.md; do
   legacy_name="$(basename "$legacy")"
@@ -27,14 +27,6 @@ for legacy in "$OUT_DIR"/*.md; do
   fi
 done
 
-title_case() {
-  python3 - "$1" <<'PY'
-import sys
-s = sys.argv[1].replace("-", " ")
-print(" ".join(w[:1].upper() + w[1:] for w in s.split()))
-PY
-}
-
 for skill in "${COMPOSERS[@]}"; do
   src="${SKILLS_DIR}/${skill}/SKILL.md"
   if [[ ! -f "$src" ]]; then
@@ -43,20 +35,18 @@ for skill in "${COMPOSERS[@]}"; do
   fi
 
   name_line="$(awk '/^---$/{f++;next} f==1 && /^name:/{print; exit}' "$src")"
-  desc_line="$(awk '/^---$/{f++;next} f==1 && /^description:/{print; exit}' "$src")"
-  hint_line="$(awk '/^---$/{f++;next} f==1 && /^argument-hint:/{print; exit}' "$src")"
-
   skill_name="${name_line#name: }"
   skill_name="${skill_name#\"}"
   skill_name="${skill_name%\"}"
   skill_name="${skill_name#silver-}"
   [[ "$skill_name" == "silver" ]] && cmd_name="silver" || cmd_name="$skill_name"
 
+  desc_line="$(awk '/^---$/{f++;next} f==1 && /^description:/{print; exit}' "$src")"
+  hint_line="$(awk '/^---$/{f++;next} f==1 && /^argument-hint:/{print; exit}' "$src")"
   description="${desc_line#description: }"
   description="${description#> }"
   description="${description%\"}"
   description="${description#\"}"
-
   argument_hint="${hint_line#argument-hint: }"
   argument_hint="${argument_hint%\"}"
   argument_hint="${argument_hint#\"}"
@@ -64,17 +54,16 @@ for skill in "${COMPOSERS[@]}"; do
 
   codex_name="silver:${cmd_name}"
   [[ "$cmd_name" == "silver" ]] && codex_name="silver"
-  title="$(title_case "$cmd_name")"
-  [[ "$cmd_name" == "silver" ]] && title="Silver"
 
-  # Cursor desktop derives the route from frontmatter but rejects colon-bearing
-  # command filenames; keep the intended silver:<route> name in frontmatter.
+  # Cursor plugin commands require kebab-case frontmatter names and
+  # filesystem-safe command filenames.
   safe_file_stem="${codex_name//:/-}"
+  [[ -z "$description" || "$description" == ">" ]] && \
+    description="Silver Bullet ${safe_file_stem} workflow"
   out="${OUT_DIR}/${safe_file_stem}.md"
   cat > "$out" <<EOF
 ---
-name: "${codex_name}"
-title: "${title}"
+name: "${safe_file_stem}"
 description: ${description}
 argument-hint: ${argument_hint}
 ---
@@ -89,5 +78,27 @@ EOF
     fi
   done
 done
+
+# Add the same Cursor metadata to retained routes that are not in the
+# composer list, preserving their existing prompt bodies.
+python3 - "$OUT_DIR" <<'PY'
+import sys
+from pathlib import Path
+
+for path in sorted(Path(sys.argv[1]).glob("*.md")):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if lines and lines[0].strip() == "---":
+        continue
+    body = "\n".join(lines).strip()
+    metadata = (
+        "---\n"
+        f'name: "{path.stem}"\n'
+        f"description: Silver Bullet {path.stem} workflow\n"
+        "argument-hint: <task description>\n"
+        "---\n\n"
+    )
+    path.write_text(metadata + body + "\n", encoding="utf-8")
+
+PY
 
 printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"

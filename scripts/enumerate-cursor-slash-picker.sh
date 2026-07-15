@@ -138,16 +138,12 @@ def enumerate_surface(root: Path) -> dict[str, object]:
         for path in sorted(commands_dir.glob("*.md")):
             name = parse_frontmatter(path).get("name", "").strip() or path.stem
             route = f"/{name}" if name != "silver" else "/silver"
-            if name != "silver" and not name.startswith("silver:"):
-                bad_colon.append(f"{path.name}: name={name!r}")
-            elif ":" in path.name:
+            if ":" in path.name:
                 bad_colon.append(f"{path.name}: colon-bearing command filename is not desktop-safe")
-            else:
-                expected_stem = "silver" if name == "silver" else name.replace(":", "-")
-                if path.stem != expected_stem:
-                    bad_colon.append(
-                        f"{path.name}: stem {path.stem!r} != safe stem {expected_stem!r} for name {name!r}"
-                    )
+            elif name != path.stem or ":" in name:
+                bad_colon.append(
+                    f"{path.name}: command name {name!r} must match its kebab-case filename stem"
+                )
             commands.append({"route": route, "name": name, "file": str(path.relative_to(root))})
 
     if skills_root and skills_root.is_dir():

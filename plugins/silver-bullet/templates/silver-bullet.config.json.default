@@ -388,6 +388,7 @@
       "install_status": null,
       "install_failure_reason": null,
       "required_when_enabled": true,
+      "min_version": "3.9.9",
       "cli_command": "lean-ctx",
       "install_commands": [
         "curl -fsSL https://leanctx.com/install.sh | sh"
