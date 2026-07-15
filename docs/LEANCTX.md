@@ -14,6 +14,7 @@ Consent lives in `.silver-bullet.json`:
     "enabled_by_user": null,
     "enforcement_suspended": false,
     "required_when_enabled": true,
+    "min_version": "3.9.9",
     "stack_mode": "parallel_routed",
     "optimization_profile": "five_tool_routed",
     "mcp_tool_prefix": "lctx_"
@@ -130,6 +131,19 @@ When the five-tool coordinator records `sb_stack_double_compression`, PreToolUse
 **Wedged-session warning:** When the mutex is dirty, do not trust prior tool success self-reports — re-run verification after recovery.
 
 **Install guard:** `install-leanctx-sb.sh` / `optimize-five-tool-stack.sh` write `LEANCTX_DISABLE_SHELL_MCP=1` in the five-tool profile env so RTK owns `sb_shell` without LeanCTX shell MCP overlap.
+
+## Durable file edits (compression marker leak)
+
+LeanCTX `ctx_read` returns **display-only** compression markers (`[lean-ctx: omitted N lines]`, `filename [194L]` headers). These must never be written back to disk.
+
+| Phase | Tool | Mode |
+|-------|------|------|
+| Orient / analyze | `ctx_read`, `lctx_read_ast` | compressed modes OK |
+| Write / Edit / patch | native `Read` or `ctx_read(raw=true)` | **required** |
+
+**Upstream (v3.9.9+):** LeanCTX PreToolUse `handle_deny()` blocks Write/Edit/StrReplace/MultiEdit payloads containing `[lean-ctx:` markers ([yvgude/lean-ctx#805](https://github.com/yvgude/lean-ctx/issues/805)). Escape hatch: `LEAN_CTX_ALLOW_COMPRESSED_WRITE=1`.
+
+**SB belt-and-suspenders:** `hooks/compression-marker-guard.sh` remains in the SB plugin hook chain — it also catches ctx_read file headers (`filename.plan.md [316L]`) and covers hosts where only SB plugin hooks are active. Upgrade: `lean-ctx update` or `curl -fsSL https://leanctx.com/install.sh | sh` (requires **≥ 3.9.9**).
 
 ## Related Docs
 

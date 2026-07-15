@@ -1,6 +1,6 @@
 ---
-name: "silver:execute"
-title: "Execute"
+name: "silver-execute"
+title: "Silver: Silver Execute"
 description: This skill executes an SB PLAN.md in controlled waves with TDD, evidence capture, and summary artifacts.
 argument-hint: <plan path or execution scope>
 ---
