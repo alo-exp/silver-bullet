@@ -524,7 +524,9 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
     if not commands_dir.is_dir():
         return routes
     for path in sorted(commands_dir.glob("*.md")):
-        name = read_skill_frontmatter(path).get("name", "").strip()
+        name = read_skill_frontmatter(path).get("name", "").strip() or path.stem
+        if name.startswith("silver-"):
+            name = "silver:" + name[len("silver-") :]
         if name:
             routes.add(name)
     return routes

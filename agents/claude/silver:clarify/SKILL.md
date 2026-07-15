@@ -1,5 +1,5 @@
 ---
-name: silver:clarify
+name: silver-clarify
 description: Turn vague ideas or requirements into a decision-ready brief that merges PM framing, brainstorming discipline, and SB-owned lifecycle handoff.
 argument-hint: "<idea, rough requirement, or requirement doc>"
 version: 0.1.0
@@ -32,8 +32,8 @@ When the topic is visual or diagram-heavy and `--text` is not set, offer the vis
 
 If A: follow the browser evidence fallback hierarchy in `silver-bullet.md §8.1`:
 
-1. **Alumnium MCP (preferred)** — when configured, `start` the session, then `do` / `check` / `get` against a URL or local dev server, and `stop` when done. Capture screenshots, assertion results, or extracted UI state in `.planning/CLARIFY.md`.
-2. **Host browser MCP** — when Alumnium is unavailable, use the host agent's built-in browser tools for the same visual exploration. Typical flow: navigate → snapshot → screenshot → click/type to explore options → re-snapshot. In task host, use `host browser MCP` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_type`, `browser_scroll`). Attach screenshots and snapshot notes to `.planning/CLARIFY.md`.
+1. **Alumnium MCP (preferred)** — when configured, `start` the session, then `do` / `check` / `get` against a URL or local dev server, and `stop` when done. Capture screenshots, assertion results, or extracted UI state in the clarify brief (see **Clarify output path** below).
+2. **Host browser MCP** — when Alumnium is unavailable, use the host agent's built-in browser tools for the same visual exploration. Typical flow: navigate → snapshot → screenshot → click/type to explore options → re-snapshot. In task host, use `host browser MCP` (`browser_navigate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`, `browser_type`, `browser_scroll`). Attach screenshots and snapshot notes to the clarify brief.
 3. **Text-only** — when neither path is available; notify the user, offer Alumnium install-and-retry ([install reference](https://github.com/alumnium-hq/alumnium)), then continue without blocking.
 
 Prefer Alumnium over host browser MCP when both are available — structured `do`/`check`/`get` compresses browser noise versus ad-hoc navigation.
@@ -138,11 +138,34 @@ When the handoff target is AF-DECIDE, `solution-landscape`, or `/silver:compare`
 2. Persist `need_profile.json` under the research run dir with `license_preference`
    (`oss` | `commercial` | `mixed`) and `interview_complete: true`.
 3. For compare: confirm the named solution list in `solutions_requested.json`.
-4. Record interview notes in `.planning/CLARIFY.md` and link `SB_RESEARCH_OUT_DIR`.
+4. Record interview notes in the clarify brief and link `SB_RESEARCH_OUT_DIR`.
+
+### Clarify output path
+
+Write the brief to a **timestamped, plan-scoped** path — not a fixed `.planning/CLARIFY.md`:
+
+```
+.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md
+```
+
+| Segment | Rule |
+|---------|------|
+| `{plan-basename}` | Basename of the input plan file without extension (e.g. `multi_ai_deep_research_b3d9881b` from `multi_ai_deep_research_b3d9881b.plan.md`). When no plan file is provided, slugify the topic or use `clarify-session`. |
+| `{YYMMDD}` | UTC date (`date -u '+%y%m%d'`) |
+| `{timestamp}` | Compact UTC instant (`date -u '+%Y%m%dT%H%M%SZ'`) — matches other `.planning/` run artifacts |
+
+Resolve the path with:
+
+```bash
+source scripts/lib/planning-clarify-path.sh
+sb_planning_clarify_output_path "$REPO_ROOT" "$PLAN_FILE_PATH"
+```
+
+Legacy `.planning/CLARIFY.md` is deprecated for new runs; outcome gates accept both patterns.
 
 ### 6. Capture
 
-Write a concise brief to `.planning/CLARIFY.md` with:
+Write a concise brief to the resolved clarify output path with:
 
 - problem statement
 - current context

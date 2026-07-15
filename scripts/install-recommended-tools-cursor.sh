@@ -66,10 +66,23 @@ fi
 GLOBAL_RULES_DIR="${HOME}/.cursor/rules"
 if [[ "$INSTALL_GLOBAL" -eq 1 ]]; then
   mkdir -p "$GLOBAL_RULES_DIR"
-  for rule in context-mode.mdc token-compression-enforcement.mdc; do
+  for rule in context-mode.mdc token-compression-enforcement.mdc graphify.mdc agentmemory.mdc leanctx.mdc; do
     [[ -f "${RULES_DIR}/${rule}" ]] && install_rule "$rule" "$GLOBAL_RULES_DIR"
   done
-  printf '\nGlobal token-compression rules synced to %s\n' "$GLOBAL_RULES_DIR"
+  if [[ -f "${REPO_ROOT}/scripts/lib/global-toolstack/global-recommended-tools.mdc" ]]; then
+    cp "${REPO_ROOT}/scripts/lib/global-toolstack/global-recommended-tools.mdc" \
+      "${GLOBAL_RULES_DIR}/recommended-tools.mdc"
+    printf 'OK: %s/recommended-tools.mdc (global variant)\n' "$GLOBAL_RULES_DIR"
+  elif [[ -f "${RULES_DIR}/recommended-tools.mdc" ]]; then
+    install_rule recommended-tools.mdc "$GLOBAL_RULES_DIR"
+  fi
+  if [[ -x "${REPO_ROOT}/scripts/install-global-toolstack.sh" ]]; then
+    bash "${REPO_ROOT}/scripts/install-global-toolstack.sh"
+  fi
+  if [[ -x "${HOME}/.cursor/hooks/toolstack/parity-verify.sh" ]]; then
+    bash "${HOME}/.cursor/hooks/toolstack/parity-verify.sh" || true
+  fi
+  printf '\nGlobal toolstack rules + hooks synced to %s\n' "$GLOBAL_RULES_DIR"
 fi
 
 if [[ -f "${RULES_DIR}/context-mode.mdc" ]]; then
@@ -84,3 +97,4 @@ printf 'Verify agentmemory MCP in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)\n
 if [[ "$INSTALL_GLOBAL" -eq 0 ]]; then
   printf 'Tip: run with --global to sync context-mode rules to ~/.cursor/rules/\n'
 fi
+

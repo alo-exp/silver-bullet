@@ -684,11 +684,20 @@ enterprise_e2e_outcome_score_auto() {
   printf 'fail\n'
 }
 
+
+enterprise_e2e_outcome_find_clarify_doc() {
+  local work_dir="$1"
+  # shellcheck source=scripts/lib/planning-clarify-path.sh
+  source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/planning-clarify-path.sh"
+  sb_planning_find_newest_clarify_doc "$work_dir" 2>/dev/null || true
+}
+
 enterprise_e2e_outcome_score_clarify() {
   local work_dir="$1" state_dir="$2" row_log="${3:-}" row_num="${4:-}"
-  local state_file="${state_dir}/state"
-  if [[ -f "${work_dir}/.planning/CLARIFY.md" ]]; then
-    if grep -qiE 'locked|decision_class' "${work_dir}/.planning/CLARIFY.md" 2>/dev/null; then
+  local state_file="${state_dir}/state" clarify_doc
+  clarify_doc="$(enterprise_e2e_outcome_find_clarify_doc "$work_dir")"
+  if [[ -n "$clarify_doc" && -f "$clarify_doc" ]]; then
+    if grep -qiE 'locked|decision_class' "$clarify_doc" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
     printf 'partial\n'; return 0
@@ -727,7 +736,9 @@ enterprise_e2e_outcome_score_noop() {
     fi
     printf 'fail\n'; return 0
   fi
-  if [[ -f "${work_dir}/.planning/CLARIFY.md" ]] && grep -qi 'locked' "${work_dir}/.planning/CLARIFY.md" 2>/dev/null; then
+  local clarify_doc
+  clarify_doc="$(enterprise_e2e_outcome_find_clarify_doc "$work_dir")"
+  if [[ -n "$clarify_doc" && -f "$clarify_doc" ]] && grep -qi 'locked' "$clarify_doc" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]]; then
@@ -1453,7 +1464,9 @@ enterprise_e2e_outcome_score_measure() {
 
 enterprise_e2e_outcome_score_decide() {
   local work_dir="$1"
-  if [[ -f "${work_dir}/.planning/CLARIFY.md" ]] && grep -qi 'locked' "${work_dir}/.planning/CLARIFY.md" 2>/dev/null; then
+  local clarify_doc
+  clarify_doc="$(enterprise_e2e_outcome_find_clarify_doc "$work_dir")"
+  if [[ -n "$clarify_doc" && -f "$clarify_doc" ]] && grep -qi 'locked' "$clarify_doc" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
   printf 'n/a\n'
