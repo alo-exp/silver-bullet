@@ -140,11 +140,11 @@ fi
 if [[ -f "${resolved_current}/commands/silver.md" ]] && \
    grep -q '^name: "silver"$' "${resolved_current}/commands/silver.md" && \
    [[ -f "${resolved_current}/commands/silver-init.md" ]] && \
-   grep -q '^name: "silver:init"$' "${resolved_current}/commands/silver-init.md" && \
+   grep -q '^name: "silver-init"$' "${resolved_current}/commands/silver-init.md" && \
    [[ ! -e "${resolved_current}/commands/silver:init.md" ]]; then
-  pass "install-cursor uses safe command filename with frontmatter route"
+  pass "install-cursor uses kebab-case command metadata with safe filenames"
 else
-  fail "install-cursor uses safe command filename with frontmatter route"
+  fail "install-cursor uses kebab-case command metadata with safe filenames"
 fi
 
 repo_sha="$(git -C "$REPO_ROOT" rev-parse HEAD)"

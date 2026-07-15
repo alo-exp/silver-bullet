@@ -1,7 +1,7 @@
 ---
-name: "silver:devops"
-title: "DevOps"
-description: >
+name: "silver-devops"
+title: "Silver: Silver DevOps"
+description: Silver Bullet silver-devops workflow
 argument-hint: <infrastructure or CI/CD change description>
 ---
 

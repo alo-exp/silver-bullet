@@ -363,37 +363,15 @@ cursor_plugin_command_filename_colon_count() {
   printf '%s\n' "$count"
 }
 
-cursor_command_frontmatter_name() {
-  local file="$1"
-  python3 - "$file" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-if not path.is_file():
-    raise SystemExit(0)
-lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-if not lines or lines[0].strip() != "---":
-    raise SystemExit(0)
-for line in lines[1:]:
-    if line.strip() == "---":
-        break
-    match = re.match(r"^name:\s*(.*)$", line)
-    if match:
-        print(match.group(1).strip().strip('"').strip("'"))
-        break
-PY
-}
-
 cursor_plugin_commands_surface_ready() {
   local root="$1"
   local router="${root}/commands/silver.md"
+  local init="${root}/commands/silver-init.md"
 
   [[ -f "$router" ]] || return 1
-  [[ "$(cursor_command_frontmatter_name "$router")" == "silver" ]] || return 1
-  [[ -f "${root}/commands/silver-init.md" ]] || return 1
-  [[ "$(cursor_command_frontmatter_name "${root}/commands/silver-init.md")" == "silver:init" ]] || return 1
+  [[ -f "$init" ]] || return 1
+  grep -q '^name: "silver"$' "$router" || return 1
+  grep -q '^name: "silver-init"$' "$init" || return 1
   [[ "$(cursor_plugin_command_filename_colon_count "$root")" -eq 0 ]]
 }
 

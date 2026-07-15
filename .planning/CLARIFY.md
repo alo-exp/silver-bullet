@@ -1,452 +1,179 @@
-# SB Dependency Absorption And Repositioning
+# `/silver:deep-research-multi-ai` — Clarification Brief
+
+**Source plan:** [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md)  
+**Clarify run:** 2026-07-15 (AF-CLARIFY on workflow implementation plan)  
+**Scope:** Catalog-backed multi-model orchestration layer on the existing SB deep-research engine — not a second DR engine, not a MultAI revival.
+
+---
 
 ## Problem Statement
 
-Silver Bullet is currently positioned as an Agentic Process Orchestrator around
-GSD, Superpowers, and selected Anthropic Knowledge Work plugins. That made sense
-while SB was mostly a workflow composer, but SB has since absorbed several of
-those workflows directly. Keeping the dependency plugins as hard requirements now
-creates overlap, duplicate routing surfaces, and unclear ownership.
+Silver Bullet already ships a mature single-host `/silver:deep-research` workflow (`WF-SILVER-DEEP-RESEARCH`) with a canonical state machine, evidence validators, solution-landscape/compare paths, and `research/<date>-<topic>/` artifacts. Users who want **triangulated, multi-model research** today must either:
 
-The next major change is to make SB self-contained for software-engineering
-process orchestration. SB should absorb only the GSD, Superpowers, and Anthropic
-skills it explicitly depends on, merge overlapping skills into SB-native
-workflows, and stop requiring those plugins at install/runtime. SB should still
-support optional DevOps enrichment plugins because those extend SB into
-provider-specific infrastructure domains rather than duplicating SB's core scope.
+- run ad-hoc `silver:multi-ai-task` orchestration (OpenCode-centric, not DR-phase-aware), or
+- manually fan out across Cursor subagents with no deterministic consolidation, provenance, or DR artifact compatibility.
 
-## Current Context
+The removed `FS-SILVER_MULTI_AI` / MultAI surfaces were intentionally excised from `AF-DECIDE` so ordinary deep research stays direct and dependency-free. The gap remains: **no first-class, opt-in SB workflow** that runs parallel model lanes inside the canonical DR phases and produces byte-stable consolidated output.
 
-- The completed v0.37.0 milestone made SB the handholding orchestrator and
-  process enforcer for non-trivial SDLC intent.
-- `silver:clarify` already absorbed Product Management brainstorming,
-  Superpowers brainstorming, and GSD discussion-style handoff behavior into a
-  single SB-owned brief flow.
-- Current README, homepage, templates, workflow files, install checks, and
-  default config still describe GSD as lifecycle authority and Superpowers /
-  Anthropic plugins as required helper dependencies.
-- `templates/silver-bullet.config.json.default` still requires GSD markers and
-  Superpowers markers for planning and deploy floors.
-- `silver:init` still hard-checks GSD, Superpowers, Design, Engineering, and
-  Product Management plugin availability.
-- `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:release`,
-  `silver:spec`, `silver:fast`, `silver:forensics`, and workflow templates still
-  invoke dependency skills directly.
-- Workflow templates also explicitly suggest lifecycle utility commands such as
-  `gsd:next`, `gsd:progress`, `gsd:resume-work`, `gsd:pause-work`,
-  `gsd:add-phase`, and `gsd:insert-phase`.
-- The repo already contains SB-owned quality, security, review, docs,
-  handoff, issue capture, validation, TDD-wrapper, and artifact-review skills.
-  Those should become the foundation of the absorbed flow system.
+**Audience:** Operators and researchers who explicitly want multi-model triangulation for technology decisions, landscape/compare work, or high-stakes architecture spikes — and who accept higher cost, latency, and setup (Cursor custom agents + OpenCode profiles).
+
+**Done looks like:**
+
+- A new opt-in route `WF-SILVER-DEEP-RESEARCH-MULTI-AI` (`/silver:deep-research-multi-ai`) composes the existing DR engine, `silver:agent-opencode` (OCG legs), and six pinned Cursor custom agents.
+- Default dry-run resolves **OCG lite + Cursor default pool** (11 agents); pools are selectable/excludable with documented precedence.
+- One host-owned SB DR controller advances phases; workers return phase-scoped contributions only; deterministic consolidation merges claims/sources/evidence with full provenance.
+- Existing `/silver:deep-research` and generic `/silver:agent-opencode` behavior is unchanged.
+- Fresh downstream install/upgrade/repair provisions `sb-dr-*` agents idempotently without touching user-owned agents.
+
+---
 
 ## PM Framing
 
-**Audience:** SB users who want one reliable SDLC operating system rather than a
-stack of overlapping plugins they must install, understand, and coordinate.
+| Dimension | Position |
+|-----------|----------|
+| **Value** | Higher-confidence research via model diversity; honest divergence/conflict reporting; DR-compatible artifacts for downstream `/silver:feature`, `/silver:plan`, or `/silver:compare` handoff |
+| **Cost** | Explicit — parallel legs multiply tokens/API spend; caps and `partial-ok` default acknowledge budget reality |
+| **Risk reduction** | No silent model substitution; filesystem containment; no second DR engine; MultAI workflow IDs stay retired |
+| **Positioning** | Sibling workflow, user-requested or router-discriminated — never the default path for ordinary "which technology" questions |
 
-**Value:** Reduce installation friction, remove duplicate skill surfaces, make SB
-ownership clearer, and keep the user experience as one coherent SDLC journey.
-
-**Success:** A fresh SB install no longer requires GSD, Superpowers, or Anthropic
-Knowledge Work plugins for normal software-engineering workflows. Existing SB
-routes still produce equivalent or better artifacts, gates, and user guidance.
-Optional DevOps enrichment plugins remain available through the DevOps router.
+---
 
 ## Options Considered
 
-### 1. Thin Absorption
+### 1. Thin orchestration layer on canonical DR (plan as written) — **recommended**
 
-Absorb only the exact skills named in `required_planning`,
-`required_deploy`, and the active workflow files.
+Add `skills/silver-deep-research-multi-ai/` as a **dispatch + consolidation controller** around the existing `silver-deep-research` state machine. OCG legs go through supervised `/silver:agent-opencode`; Cursor legs use provisioned `sb-dr-*` custom agents. Host owns phase sequencing, validators, manifests, and consolidated writes.
 
-This is the fastest path, but it risks preserving hidden dependency assumptions
-inside SB skills and docs. It also misses conditional call sites that are still
-part of SB-owned workflows, such as UI design review and release documentation.
+| Pros | Cons |
+|------|------|
+| Reuses DR phases, validators, `research/` contract, and agent-opencode security/completion contracts | Large implementation surface (8 phases, dual backends, provisioning) |
+| Deterministic consolidation with provenance fits SB evidence culture | Requires live Cursor model catalog resolution at implementation time |
+| Clear separation from removed MultAI; tests already assert `FS-SILVER_MULTI_AI` absence | Operational complexity: OpenCode drift, Cursor model availability, concurrency tuning |
 
-### 2. Full Plugin Cloning
+### 2. Simpler — "second opinion" extension to single-agent DR
 
-Copy or recreate all GSD, Superpowers, and Anthropic skill surfaces inside SB.
+Extend `/silver:deep-research` with an optional `--second-model <id>` flag that runs one extra leg and appends a `divergence.md` — no pool algebra, no Cursor agent fleet, no consolidation core.
 
-This would remove dependency installation, but it would import a large amount of
-scope that SB does not explicitly need. It also increases maintenance burden and
-blurs the intended boundary between SB-owned SDLC orchestration and optional
-specialist plugins.
+| Pros | Cons |
+|------|------|
+| Smallest diff; ships in weeks | Does not meet stated goal (6+1 default pool, exclusion algebra, byte-stable merge) |
+| Lower cost and fewer moving parts | Would need a second expansion pass for landscape/compare multi-model paths |
+| No new workflow route (avoids 18-route lock tension) | Archived multi-AI consolidation patterns stay unused |
 
-### 3. Synergistic Flow-Cluster Absorption
+### 3. Reuse `silver:multi-ai-task` as the orchestration spine
 
-Inventory every explicit SB dependency call site, group similar dependency
-skills by SB flow responsibility, and create SB-owned merged workflows that
-preserve the strongest behavior without exposing the original plugin boundary.
+Wire existing `multi-ai-task` dispatch/consolidation into DR by translating phase briefs to multi-ai-task prompts and back.
 
-This mirrors the successful `silver:clarify` pattern. It removes required
-dependency plugins while avoiding wholesale cloning.
+| Pros | Cons |
+|------|------|
+| Reuses proven OpenCode parallel dispatch patterns | multi-ai-task is spec-heavy, not DR-phase-aware; known gaps (extractor circularity, phase numbering drift per self-review) |
+| Less new orchestration code | Bypasses agent-opencode supervision contract the plan explicitly requires |
+| | Cursor backend would still need separate provisioning — dual-backend problem remains |
 
-### 4. Keep Dependencies But Rename Positioning
+### 4. OCG-only multi-model (defer Cursor pool to v2)
 
-Continue requiring GSD, Superpowers, and Anthropic plugins, but describe them as
-embedded ecosystem components.
+Ship v1 with OCG lite/regular pools only; add Cursor custom-agent provisioning in a follow-on release.
 
-This does not solve the overlap problem. It keeps install/runtime fragility and
-continues to make SB's authority ambiguous.
+| Pros | Cons |
+|------|------|
+| Reduces Phase 2 risk (model ID resolution, installer scope) | Default promise is **OCG lite + six Cursor agents** — shipping without Cursor breaks acceptance criteria |
+| Faster path to consolidation/dispatch tests with fake backends | Users on Cursor-only hosts get no value from the flagship workflow |
 
-## Recommendation
+---
 
-Use **Option 3: Synergistic Flow-Cluster Absorption**.
+## Pressure-Test — Assumptions and Gaps
 
-SB should absorb dependency behavior at the flow level, not by one-to-one
-copying every upstream skill. The implementation should preserve existing
-artifact names where they are part of the SB contract, especially `.planning/`
-artifacts, while changing ownership from "GSD owns this" to "SB owns this
-lifecycle evidence."
+### Assumptions the plan relies on (validated or reasonable)
 
-The dependency boundary should be:
+- **Single DR engine invariant** — Correct. Forking a second state machine would duplicate validators, `phases.yaml`, and landscape/compare gates. The host-controller pattern matches how SB already treats orchestrator vs worker boundaries.
+- **Opt-in sibling, not MultAI revival** — Aligns with repo tests (`FS-SILVER_MULTI_AI` removed), site docs (MultAI only on explicit user request for ordinary DR), and changelog direction.
+- **`silver:agent-opencode` as OCG sole path** — Preserves mentor, completion, secret-scan, and log-floor contracts; bypass would be a security/process regression.
+- **Deterministic consolidation without LLM in the merge** — Essential for reproducible golden tests and honest consensus denominators.
+- **Isolated agent lanes + orchestrator-only top-level writes** — Matches SB path-ownership patterns and prevents cross-agent prompt injection via filesystem reads.
 
-- **Absorb:** Any GSD, Superpowers, Product Management, Engineering, or Design
-  skill that SB currently requires in config, install checks, workflow templates,
-  route skills, completion gates, or conditional SB-owned flows.
-- **Do not absorb:** Unreferenced admin utilities, broad plugin capabilities
-  listed only as ecosystem marketing, and provider-specific DevOps plugin skills.
-- **Keep optional:** DevOps enrichment plugins routed by `devops-skill-router`;
-  MultAI-style second-opinion research remains optional and user-requested.
+### Uncertainties requiring implementation-time validation
 
-## Absorption Groups
+| Area | Gap | Mitigation in plan |
+|------|-----|-------------------|
+| Cursor model IDs | Opus/Gemini/GLM/Sol bracket params must come from live catalog | Phase 2: capability probe + AskQuestion; hard error on unverified identity |
+| Which DR phases are parallelized | Plan says host decides per phase but does not enumerate v1 phase list | Lock during Phase 1 contract: publish `parallel_phases` manifest per research_type |
+| 18-route public lock | Router rebuild plan pins exactly 18 `silver:<route>` names | Phase 6 must confirm slot — may require lock amendment or replace a retired route |
+| Cost defaults | Caps mentioned but not default values | Define in pool profile JSON + operator guide |
+| LLM editorial polish | Optional, non-normative — default off implied but not explicit | Lock: `consolidation.editorial_llm: false` unless `--polish` |
+| `ocg-glm-5.2` exclusion | Explicit in plan | Document rationale in operator guide (cost/quality/policy) |
 
-### Clarify And Product Framing
+### Research / validation gaps before ship
 
-Already mostly absorbed by `silver:clarify`.
+- Two-agent live smoke (one OCG + one Cursor) is necessary but not sufficient — matrix must cover all six Cursor agents and every included OCG slug.
+- Downstream-project install tests (no source checkout dependency) are high-risk; prioritize early in Phase 2.
+- Schema migration story for `dispatch_ledger` across versions needs fixture coverage in Phase 4 tests.
 
-Merge sources:
+---
 
-- Anthropic Product Management `product-brainstorming`
-- Anthropic Product Management `write-spec` where it supports idea-to-spec
-  framing
-- Superpowers `brainstorming`
-- GSD `discuss-phase` context/decision discipline
+## Convergence — Recommendation
 
-SB-owned target behavior:
+**Proceed with Option 1 (plan as written).** The inherited GPT-5.6 Sol High review rung is complete; locked behavior is internally consistent with the current repo posture (single-agent DR default, MultAI removed, `research/` contract, agent-opencode supervision).
 
-- Keep `silver:clarify` as the front-end clarify flow.
-- Extend handoff so a clarify brief can seed SB-owned milestone or phase
-  context without requiring GSD.
-- Avoid duplicate spec-writing paths between `silver:clarify` and
-  `silver:spec`.
+The plan correctly rejects simpler options for the stated acceptance criteria. Option 2 would under-deliver; Option 3 would inherit multi-ai-task technical debt; Option 4 violates the default pool contract.
 
-### Project And Milestone Bootstrap
+### Locked decisions (do not re-litigate without user override)
 
-Absorb because SB initialization and workflows explicitly depend on these GSD
-behaviors.
+- Opt-in `WF-SILVER-DEEP-RESEARCH-MULTI-AI`; no replacement of `WF-SILVER-DEEP-RESEARCH`
+- One canonical SB DR engine/state machine; workers are phase contributors only
+- Default: OCG lite + Cursor default pool (6 agents); `ocg-glm-5.2` excluded; regular/lite mutex
+- No silent model substitution — AskQuestion: enable / exclude / abort
+- Output under `research/<YYYY-MM-DD>-<topic>/`; per-agent isolated dirs; orchestrator consolidated writes only
+- Pool selection algebra: `{none,lite,regular} × {none,default}`, `--include-only` then `--exclude`, reject empty resolved set
+- Implementation order: contracts → provisioning → backends → consolidation → registration → verification
 
-Merge sources:
+### Gray areas to resolve in Phase 1 (contracts), not in clarify
 
-- GSD `new-project`
-- GSD `new-milestone`
-- GSD `map-codebase`
-- GSD `scan`
-- GSD `next`
-- GSD `progress`
-- GSD `resume-work`
-- GSD `pause-work`
-- GSD `add-phase`
-- GSD `insert-phase`
-- SB `silver:init`, `silver:scan`, Graphify/project-memory behavior
+1. **Explicit `parallel_phases` table** per `research_type` (`default`, `solution-landscape`, `solution-compare`) and depth mode.
+2. **Router/catalog slot** for the 19th workflow vs amendment to `public-workflow-routes.lock.json` (coordinate with router rebuild milestone).
+3. **Default cost/concurrency caps** and failure policy UI copy for `partial-ok` vs `fail-fast`.
+4. **Project vs global** Cursor agent scope default (`project` per plan; confirm config key name).
 
-SB-owned target behavior:
+---
 
-- SB initializes `.planning/PROJECT.md`, `.planning/REQUIREMENTS.md`,
-  `.planning/ROADMAP.md`, `.planning/STATE.md`, and codebase intelligence.
-- Brownfield mapping becomes an SB-owned orientation flow.
-- Session resume, pause, progress, next-step detection, and phase insertion
-  become SB-owned lifecycle utilities rather than GSD suggestions.
-- Installer no longer checks for GSD.
+## Unresolved Questions (product / technical)
 
-### Phase Discussion And Context Capture
-
-Absorb because `gsd:discuss-phase` is still a required planning marker.
-
-Merge sources:
-
-- GSD `discuss-phase`
-- `silver:clarify`
-- SB artifact reviewers, especially `review-context`
-
-SB-owned target behavior:
-
-- Produce phase `CONTEXT.md` artifacts with locked decisions, assumptions, gray
-  areas, and deferrals.
-- Read prior context and avoid re-asking settled questions.
-- Support interactive, auto, all, text, and assumption-driven modes where they
-  are useful to SB.
-
-### Spec, Requirements, And Roadmap
-
-Absorb because SB already owns `silver:spec` and still conditionally invokes
-Product Management `write-spec`.
-
-Merge sources:
-
-- Anthropic Product Management `write-spec`
-- GSD requirements and roadmap generation behavior from `new-project` /
-  `new-milestone`
-- SB `silver:spec`, `silver:ingest`, `review-spec`, `review-requirements`,
-  `review-roadmap`, and cross-artifact review
-
-SB-owned target behavior:
-
-- `silver:spec` becomes fully self-contained.
-- Product-style PRD structure, goals, non-goals, user stories, success metrics,
-  open questions, and phasing remain preserved.
-- SPEC, REQUIREMENTS, ROADMAP, and DESIGN review loops stay SB-owned.
-
-### Architecture And Technical Design
-
-Absorb because workflow templates explicitly invoke `system-design`, the default
-config tracks `architecture` and `system-design`, and SB feature/UI flows route
-architecture-significant work through research and design decisions.
-
-Merge sources:
-
-- Anthropic Engineering `architecture`
-- Anthropic Engineering `system-design`
-- SB `silver:research`, `silver:quality-gates`, `review-research`,
-  `review-design`, security/reliability/scalability/extensibility gates
-
-SB-owned target behavior:
-
-- SB owns architecture decision framing, system design review, ADR/research
-  evidence, and design-time quality checks.
-- Architecture guidance feeds into phase context and plans without requiring a
-  separate Engineering plugin invocation.
-
-### Planning
-
-Absorb because `gsd:plan-phase` is required before implementation and SB
-explicitly redirects Superpowers `writing-plans` to GSD today.
-
-Merge sources:
-
-- GSD `plan-phase`
-- GSD `analyze-dependencies`
-- Superpowers `writing-plans` discipline
-- SB quality gates, validation, artifact review, and dependency analysis
-
-SB-owned target behavior:
-
-- Produce implementation plans that preserve GSD's executable phase planning,
-  verification criteria, and dependency structure.
-- Preserve dependency analysis before planning when phase ordering or parallel
-  execution can drift.
-- Preserve Superpowers' insistence on exact file paths, concrete steps, no
-  placeholders, TDD readiness, and self-review.
-- Eliminate direct references to Superpowers `writing-plans`.
-
-### Execution And TDD
-
-Absorb because `gsd:execute-phase`, `gsd:autonomous`, and
-`test-driven-development` are required or explicitly invoked.
-
-Merge sources:
-
-- GSD `execute-phase`
-- GSD `autonomous`
-- GSD `fast`
-- GSD `quick`
-- Superpowers `test-driven-development`
-- Existing SB `tdd` wrapper
-
-SB-owned target behavior:
-
-- SB owns phase execution modes: standard, autonomous, quick, and trivial.
-- Behavior-changing implementation keeps red-green-refactor discipline.
-- Execution remains evidence-producing and resumable.
-- Existing GSD command names may remain as compatibility aliases temporarily,
-  but they should route to SB-owned skills.
-
-### Debugging And Forensics
-
-Absorb because SB bugfix and forensics flows explicitly invoke these skills.
-
-Merge sources:
-
-- Superpowers `systematic-debugging`
-- GSD `debug`
-- GSD `forensics`
-- Anthropic Engineering `debug`
-- Anthropic Engineering `incident-response`
-- SB `silver:bugfix` and `silver:forensics`
-
-SB-owned target behavior:
-
-- Bugfix starts with root-cause discipline, then runs persistent investigation
-  and regression coverage.
-- Incident-specific behavior is available for DevOps or production failures,
-  but provider-specific remediation remains optional plugin territory.
-- Forensics stays SB-owned and routes GSD-specific historical analysis into a
-  general SB workflow-state analysis.
-
-### Review And Feedback Triage
-
-Absorb because GSD review and Superpowers review helpers are required deploy
-markers.
-
-Merge sources:
-
-- GSD `code-review`
-- GSD `code-review-fix`
-- GSD `review`
-- Superpowers `requesting-code-review`
-- Superpowers `receiving-code-review`
-- Anthropic Engineering `code-review`
-- SB artifact-reviewer framework and review analytics
-
-SB-owned target behavior:
-
-- SB owns review request framing, review execution, feedback skepticism,
-  fix/triage, and deferred-item capture.
-- `REVIEW.md` remains the authoritative code review artifact.
-- Advisory review items that are not fixed must be filed through SB issue/backlog
-  capture.
-
-### Verification, Security, And Validation
-
-Absorb because these gates are required before final delivery.
-
-Merge sources:
-
-- GSD `verify-work`
-- GSD `secure-phase`
-- GSD `validate-phase`
-- GSD `add-tests`
-- Superpowers `verification-before-completion`
-- Anthropic Engineering `testing-strategy`
-- SB `verify-tests`, `security`, `silver:validate`, quality gates, UAT gate,
-  spec floor, and artifact reviewers
-
-SB-owned target behavior:
-
-- Verification remains evidence-first and conversational where useful.
-- Test strategy becomes SB-owned rather than an Engineering plugin dependency.
-- Gap-driven test generation from UAT/verification evidence becomes SB-owned.
-- Security and validation artifacts stay first-class completion gates.
-- No completion claim is accepted without fresh verification evidence.
-
-### UI And Design Quality
-
-Absorb because `silver:ui` and workflow templates explicitly invoke Design and
-GSD UI skills.
-
-Merge sources:
-
-- GSD `ui-phase`
-- GSD `ui-review`
-- Anthropic Design `design-system`
-- Anthropic Design `ux-copy`
-- Anthropic Design `accessibility-review`
-- Anthropic Design `design-critique`
-- Anthropic Design `design-handoff`
-- Anthropic Design `user-research`
-- SB `review-design`, `review-uat`, usability/testability quality gates
-
-SB-owned target behavior:
-
-- SB owns UI-SPEC, design-system audit, UX copy review, accessibility review,
-  implemented UI review, and design handoff evidence.
-- UI workflow still feels like one SB path rather than a chain of Design plus
-  GSD plus SB commands.
-
-### Documentation, Shipping, And Release
-
-Absorb because release workflows explicitly invoke GSD and Engineering release
-helpers.
-
-Merge sources:
-
-- GSD `docs-update`
-- GSD `ship`
-- GSD `audit-uat`
-- GSD `audit-milestone`
-- GSD `complete-milestone`
-- GSD `milestone-summary`
-- GSD `plan-milestone-gaps`
-- GSD `pr-branch`
-- Superpowers `finishing-a-development-branch`
-- Anthropic Engineering `documentation`
-- Anthropic Engineering `tech-debt`
-- Anthropic Engineering `deploy-checklist`
-- SB `silver:ensure-docs`, `silver:release`, `silver:create-release`,
-  `verify-tests`, CI gates, PR traceability, and docs governance
-
-SB-owned target behavior:
-
-- SB owns docs freshness, milestone audit, UAT audit, gap closure, branch finish,
-  tech-debt capture, ship readiness, PR/release evidence, and milestone archival.
-- DevOps provider deployment checks remain enrichments when optional DevOps
-  plugins are installed.
-
-## Explicit Non-Absorption List
-
-Do not absorb these unless a later SB requirement introduces a direct call site:
-
-- GSD settings, profile, workspace, thread, manager, help, stats, import/export,
-  plugin-update, and other admin/maintenance commands.
-- Superpowers `executing-plans` and `subagent-driven-development`; SB currently
-  forbids them for project execution and should continue to own execution
-  through SB workflows.
-- Superpowers `using-superpowers`; it is only an activation mechanism and should
-  disappear when Superpowers stops being required.
-- Anthropic Product Management roadmap, stakeholder update, metrics review,
-  competitive brief, sprint planning, and research synthesis skills unless SB
-  has a current workflow call site or chooses to make them SB-owned later.
-- Non-DevOps optional second-opinion tooling such as MultAI unless the user
-  explicitly asks for multi-AI perspectives.
-- Provider-specific optional DevOps plugin skills from HashiCorp, AWS Labs,
-  Pulumi, DevOps Skills, and Kubernetes/agent ecosystems.
-
-## Assumptions
-
-- "Explicitly depends on" includes required config markers, install-time checks,
-  workflow template steps, SB skill call sites, and conditional SB-owned routes.
-- Existing `.planning/` artifact names should remain stable during the migration.
-- Compatibility aliases for old `gsd-*`, Superpowers, and Anthropic marker names
-  may be needed for existing projects, but those aliases should invoke SB-owned
-  behavior.
-- The absorption should happen in phases; trying to replace every dependency
-  surface in one patch is too risky.
-- Optional DevOps enrichment remains plugin-based because those skills extend SB
-  into provider-specific infrastructure expertise rather than duplicating SB's
-  core process engine.
-
-## Unresolved Questions
-
-- Should the next release be named as a major positioning release, such as
-  v0.38.0 or v0.40.0, or held for a v1.0 boundary?
-- Should SB keep GSD-compatible command aliases indefinitely, or mark them as
-  migration shims with a deprecation window?
-- Should the installer remove dependency plugin checks in one step, or first
-  warn that dependency plugins are no longer required?
-- Should dependency skill bodies be re-audited against upstream at the start of
-  each absorption phase, or is the current SB call-site behavior the authority?
-- Should `.planning/config.json` retain GSD-flavored field names for
-  compatibility, or migrate to SB-native field names with backward compatibility?
+| # | Question | Owner | Suggested resolution |
+|---|----------|-------|---------------------|
+| Q1 | Does multi-AI DR require explicit user wording every run, or may `preferences.json` set `auto-run` for research triggers? | Product | Mirror ordinary DR: explicit opt-in for route; preferences may default pool selection but not silent invocation |
+| Q2 | Should `solution-landscape` / `solution-compare` be v1-supported given backend-independent validator constraint? | Engineering | Yes for types with backend-independent validators; gate others in manifest with clear error |
+| Q3 | Where does consolidated HTML rank vs existing `generate_report_spa.py` — merge or parallel generator? | Engineering | Reuse SPA patterns; multi-AI adds `consolidated/report.html` per plan — prove composability in Phase 5 |
+| Q4 | Is GLM-5.2 in Cursor pool while `ocg-glm-5.2` is excluded intentional? | Product | Yes unless policy changes — document as asymmetric trust/cost decision |
+| Q5 | Interaction with future 18-route lock / native subagent surfaces? | Architecture | Register in Phase 6; do not block Phase 1–5 on router rebuild — use feature branch contract |
+
+---
 
 ## Next-Step Notes
 
-Create a new milestone for dependency absorption and split it into small,
-auditable phases. Recommended first phases:
+**Primary next route:** **`/silver:deep-research-multi-ai` implementation path** — begin **Phase 1 (contracts)** per plan todo `contracts`:
 
-1. Inventory every current dependency call site and marker, then freeze the
-   absorption matrix.
-2. Replace install-time hard checks for GSD, Superpowers, Engineering, Design,
-   and Product Management with SB-owned capability checks.
-3. Absorb bootstrap, phase context, planning, and execution into SB-owned
-   lifecycle skills while preserving existing artifacts.
-4. Absorb review, verification, TDD, security, validation, and completion gates.
-5. Absorb UI/design, PM/spec, documentation, ship, and release helper behavior.
-6. Add compatibility aliases, migration docs, and hook/config updates.
-7. Update README, homepage, help center, package manifests, and templates to
-   reposition SB as the self-contained SDLC process engine.
-8. Run focused hook/skill tests, full local tests, and live install/update smoke
-   tests across Claude and Codex before release.
+- Add `skills/silver-deep-research-multi-ai/SKILL.md` (thin controller)
+- Versioned pool definitions + JSON schemas + fixtures
+- CLI/options contract + reuse memo
+- Publish `parallel_phases` table and resolve Q1–Q5 gray areas in schema/profile data
 
-The implementation should start with a dependency inventory phase, not with
-rewriting workflow copy. The copy change is the visible outcome; the real risk is
-missing a hidden call site or gate marker.
+**Not recommended next:** `/silver:context` — no brownfield project framing needed; the implementation plan is repo-native and phase-scoped.
+
+**Optional:** `/silver:plan` — only if the parent orchestrator needs `.planning/ROADMAP.md` / phase files materialized from the eight plan phases before spawning implementation workers. The source plan is already implementation-ready; **skip `/silver:plan` unless milestone tracking is required**.
+
+**Suggested worker queue after contracts:**
+
+1. `contracts` → `provisioning` → `backends` → `consolidation` → `registration` → `verification`
+2. TDD-first: minimal multi-agent fixture tree + schema tests before live smoke
+
+**Blockers:** None for clarify. **Pre-implementation blockers to watch:** Cursor model catalog access during Phase 2; router lock slot during Phase 6.
+
+---
+
+## Artifacts
+
+| Artifact | Path |
+|----------|------|
+| Clarify brief (this file) | [.planning/CLARIFY.md](.planning/CLARIFY.md) |
+| Source implementation plan | [multi_ai_deep_research_b3d9881b.plan.md](/Users/shafqat/.cursor/plans/multi_ai_deep_research_b3d9881b.plan.md) |
+| Parent DR contract | [research/README.md](research/README.md) |
+| Clarify workflow reference | [site/help/workflows/silver-clarify.html](site/help/workflows/silver-clarify.html) |

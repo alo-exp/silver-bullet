@@ -202,7 +202,11 @@ assert_path_absent "Codex package does not expose Codex agent SKILL.md bundle un
 assert_file_exists "Cursor package exposes silver slash command stub" "$PACKAGE_ROOT/commands/silver.md"
 assert_path_absent "Cursor package does not ship agents/cursor subagent mirror" "$PACKAGE_ROOT/agents/cursor"
 assert_file_exists "Workspace cursor bundle exposes non-command subagent skill" "$REPO_ROOT/host-bundles/cursor/silver:plan/SKILL.md"
-assert_contains "Cursor silver command stub uses colon route name" 'name: "silver"' "$PACKAGE_ROOT/commands/silver.md"
+if grep -q '^name: "silver"$' "$PACKAGE_ROOT/commands/silver.md"; then
+  pass "Cursor silver command stub has kebab-case metadata"
+else
+  fail "Cursor silver command stub has kebab-case metadata"
+fi
 assert_file_exists "Silver Bullet internal skill router available" "$(skill_file silver)"
 assert_file_exists "Silver Bullet internal init skill available" "$(skill_file silver-init)"
 assert_file_exists "Silver Bullet internal ensure-docs skill available" "$(skill_file silver-ensure-docs)"

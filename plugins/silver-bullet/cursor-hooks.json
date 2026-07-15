@@ -100,6 +100,11 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/compression-marker-guard.sh",
+        "timeout": 10,
+        "matcher": "Edit|Write|MultiEdit|Shell"
+      },
+      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/orchestrator-directive-guard.sh",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
@@ -243,6 +248,11 @@
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/site-chrome-guard.sh",
+        "matcher": ".*",
+        "timeout": 10
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeShellExecution ${CURSOR_PLUGIN_ROOT}/hooks/compression-marker-guard.sh",
         "matcher": ".*",
         "timeout": 10
       },

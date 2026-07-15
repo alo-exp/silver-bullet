@@ -1,6 +1,6 @@
 ---
-name: "silver:ship"
-title: "Ship"
+name: "silver-ship"
+title: "Silver: Silver Ship"
 description: "This skill performs SB phase shipping: final gates, branch/PR readiness, CI status, docs traceability, and handoff."
 argument-hint: <phase or ship scope>
 ---

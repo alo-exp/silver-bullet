@@ -16,6 +16,189 @@ if [[ -z "$cursor_event" || "$#" -eq 0 ]]; then
   exit 2
 fi
 
+# region agent log
+# Temporary ff97da instrumentation: snapshot discovery state without changing hook output.
+if [[ "$cursor_event" == "sessionStart" || "$cursor_event" == "beforeSubmitPrompt" ]]; then
+  _debug_log="/Users/shafqat/projects/silver-bullet/repo/.cursor/debug-ff97da.log"
+  _debug_lines=0
+  [[ -f "$_debug_log" ]] && _debug_lines="$(wc -l <"$_debug_log" 2>/dev/null || printf '0')"
+  if [[ "$_debug_lines" -lt 10 ]]; then
+    _debug_local="$HOME/.cursor/plugins/local/silver-bullet"
+    _debug_local_type="missing"
+    [[ -L "$_debug_local" ]] && _debug_local_type="symlink"
+    [[ -d "$_debug_local" ]] && _debug_local_type="directory"
+    _debug_local_realpath="$(cd "$_debug_local" 2>/dev/null && pwd -P || true)"
+    _debug_manifest="$_debug_local/.cursor-plugin/plugin.json"
+    _debug_manifest_present=0
+    [[ -f "$_debug_manifest" ]] && _debug_manifest_present=1
+    _debug_manifest_version="$(jq -r '.version // empty' "$_debug_manifest" 2>/dev/null || true)"
+    _debug_manifest_commands="$(jq -c '.commands // null' "$_debug_manifest" 2>/dev/null || printf 'null')"
+    _debug_manifest_commands_dir="$_debug_local/commands"
+    _debug_root_commands_dir="$_debug_local/commands"
+    _debug_count_files() {
+      local dir="$1" count=0 file
+      for file in "$dir"/*; do
+        [[ -f "$file" ]] || continue
+        count=$((count + 1))
+      done
+      printf '%s' "$count"
+    }
+    _debug_representative_files() {
+      local dir="$1" file count=0
+      for file in "$dir"/*; do
+        [[ -f "$file" ]] || continue
+        printf '%s\n' "$(basename "$file")"
+        count=$((count + 1))
+        [[ "$count" -ge 5 ]] && break
+      done | jq -Rsc 'split("\n") | map(select(length > 0))'
+    }
+    _debug_command_filename_colon_count() {
+      local dir="$1" count=0 file
+      for file in "$dir"/*.md; do
+        [[ -f "$file" ]] || continue
+        case "$(basename "$file")" in
+          *:*) count=$((count + 1)) ;;
+        esac
+      done
+      printf '%s' "$count"
+    }
+    _debug_manifest_commands_count="$(_debug_count_files "$_debug_manifest_commands_dir")"
+    _debug_manifest_commands_representative="$(_debug_representative_files "$_debug_manifest_commands_dir")"
+    _debug_root_commands_count="$(_debug_count_files "$_debug_root_commands_dir")"
+    _debug_root_commands_representative="$(_debug_representative_files "$_debug_root_commands_dir")"
+    _debug_local_command_filename_colon_count="$(_debug_command_filename_colon_count "$_debug_root_commands_dir")"
+    _debug_registry="$HOME/.cursor/plugins/installed_plugins.json"
+    _debug_registry_keys="$(jq -c '.plugins["silver-bullet@alo-labs"][0] // {} | keys' "$_debug_registry" 2>/dev/null || printf '[]')"
+    _debug_registry_version="$(jq -r '.plugins["silver-bullet@alo-labs"][0].version // empty' "$_debug_registry" 2>/dev/null || true)"
+    _debug_registry_enabled="$(jq -c '.plugins["silver-bullet@alo-labs"][0].enabled // null' "$_debug_registry" 2>/dev/null || printf 'null')"
+    _debug_registry_install_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].installPath // empty' "$_debug_registry" 2>/dev/null || true)"
+    _debug_registry_git_path="$(jq -r '.plugins["silver-bullet@alo-labs"][0].gitPath // empty' "$_debug_registry" 2>/dev/null || true)"
+    _debug_cache_root="$HOME/.cursor/plugins/cache/alo-labs/silver-bullet"
+    _debug_cache_path="${_debug_cache_root}/${_debug_registry_version}"
+    _debug_cache_present=0
+    [[ -d "$_debug_cache_path" ]] && _debug_cache_present=1
+    _debug_cache_actual_version="$(cd "$_debug_registry_install_path" 2>/dev/null && basename "$(pwd -P)" || true)"
+    _debug_cache_command_filename_colon_count="$(_debug_command_filename_colon_count "$_debug_registry_install_path/commands")"
+    _debug_marketplace_enablement_record_exists=0
+    if jq -e '.plugins["silver-bullet@alo-labs"][0].enabled == true' "$_debug_registry" >/dev/null 2>&1; then
+      _debug_marketplace_enablement_record_exists=1
+    fi
+    _debug_marketplace_path="$_debug_registry_git_path/.cursor-plugin/marketplace.json"
+    [[ -f "$_debug_marketplace_path" ]] || _debug_marketplace_path="/Users/shafqat/projects/silver-bullet/repo/.cursor-plugin/marketplace.json"
+    _debug_marketplace_version="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .version // empty' "$_debug_marketplace_path" 2>/dev/null || true)"
+    _debug_marketplace_sha="$(jq -r '.plugins[] | select(.name=="silver-bullet") | .source.sha // empty' "$_debug_marketplace_path" 2>/dev/null || true)"
+    _debug_marketplace_manifest_version="$(jq -r '.metadata.version // empty' "$_debug_marketplace_path" 2>/dev/null || true)"
+    _debug_latest_plugin_log=""
+    for _debug_candidate in "$HOME/Library/Application Support/Cursor/logs"/*/*/exthost/anysphere.cursor-agent-exec/"Cursor Plugins"*.log; do
+      [[ -f "$_debug_candidate" ]] || continue
+      [[ -z "$_debug_latest_plugin_log" || "$_debug_candidate" -nt "$_debug_latest_plugin_log" ]] && _debug_latest_plugin_log="$_debug_candidate"
+    done
+    _debug_latest_plugin_log_mtime="$(stat -f '%Sm' -t '%Y-%m-%dT%H:%M:%S%z' "$_debug_latest_plugin_log" 2>/dev/null || true)"
+    _debug_plugin_log_silver_matches=0
+    _debug_plugin_log_command_matches=0
+    _debug_plugin_log_local_loader_matches=0
+    _debug_plugin_log_enabled_matches=0
+    if [[ -n "$_debug_latest_plugin_log" && -f "$_debug_latest_plugin_log" ]]; then
+      _debug_plugin_log_silver_matches="$(rg -i -c 'silver-bullet|silver bullet' "$_debug_latest_plugin_log" 2>/dev/null || printf '0')"
+      _debug_plugin_log_command_matches="$(rg -i -c 'command|slash|chat' "$_debug_latest_plugin_log" 2>/dev/null || printf '0')"
+      _debug_plugin_log_local_loader_matches="$(rg -i -c 'loadUserLocalPlugin|local plugin' "$_debug_latest_plugin_log" 2>/dev/null || printf '0')"
+      _debug_plugin_log_enabled_matches="$(rg -i -c 'listEnabledPlugins|enabled plugin' "$_debug_latest_plugin_log" 2>/dev/null || printf '0')"
+    fi
+    _debug_append_snapshot() {
+      local hypothesis="$1" message="$2" data="$3"
+      jq -nc \
+        --arg sessionId "ff97da" \
+        --arg runId "repro" \
+        --arg hypothesisId "$hypothesis" \
+        --arg location "${BASH_SOURCE[0]}:debug-plugin-discovery" \
+        --arg message "$message" \
+        --argjson data "$data" \
+        '{sessionId:$sessionId,runId:$runId,hypothesisId:$hypothesisId,location:$location,message:$message,data:$data,timestamp:(now|todateiso8601)}' >>"$_debug_log"
+    }
+    _debug_append_snapshot A "Cache and local command surfaces" "$(jq -nc \
+      --arg localType "$_debug_local_type" \
+      --arg localRealpath "$_debug_local_realpath" \
+      --arg registryInstallPath "$_debug_registry_install_path" \
+      --arg cacheActualVersion "$_debug_cache_actual_version" \
+      --argjson cachePresent "$_debug_cache_present" \
+      --argjson localCommandCount "$_debug_root_commands_count" \
+      --argjson localColonCount "$_debug_local_command_filename_colon_count" \
+      --argjson cacheColonCount "$_debug_cache_command_filename_colon_count" \
+      '{localType:$localType,localRealpath:$localRealpath,registryInstallPath:$registryInstallPath,cacheActualVersion:$cacheActualVersion,cachePresent:$cachePresent,localCommandCount:$localCommandCount,localColonCount:$localColonCount,cacheColonCount:$cacheColonCount}')"
+    _debug_append_snapshot B "Plugin manifest command registration contract" "$(jq -nc \
+      --arg manifestPath "$_debug_manifest" \
+      --arg manifestVersion "$_debug_manifest_version" \
+      --argjson manifestPresent "$_debug_manifest_present" \
+      --argjson manifestCommands "$_debug_manifest_commands" \
+      --arg manifestCommandsDir "$_debug_manifest_commands_dir" \
+      --argjson manifestCommandsCount "$_debug_manifest_commands_count" \
+      '{manifestPath:$manifestPath,manifestVersion:$manifestVersion,manifestPresent:$manifestPresent,commands:$manifestCommands,commandsDir:$manifestCommandsDir,commandsCount:$manifestCommandsCount}')"
+    _debug_append_snapshot C "Persisted plugin enablement and source identity" "$(jq -nc \
+      --arg registryVersion "$_debug_registry_version" \
+      --argjson registryEnabled "$_debug_registry_enabled" \
+      --arg registryGitPath "$_debug_registry_git_path" \
+      --argjson marketplaceEnablementRecordExists "$_debug_marketplace_enablement_record_exists" \
+      --arg marketplaceVersion "$_debug_marketplace_version" \
+      --arg marketplaceSha "$_debug_marketplace_sha" \
+      '{registryVersion:$registryVersion,registryEnabled:$registryEnabled,registryGitPath:$registryGitPath,marketplaceEnablementRecordExists:$marketplaceEnablementRecordExists,marketplaceVersion:$marketplaceVersion,marketplaceSha:$marketplaceSha}')"
+    _debug_append_snapshot D "Cursor plugin host log evidence" "$(jq -nc \
+      --arg latestPluginLogPath "$_debug_latest_plugin_log" \
+      --arg latestPluginLogMtime "$_debug_latest_plugin_log_mtime" \
+      --argjson silverMatches "$_debug_plugin_log_silver_matches" \
+      --argjson commandMatches "$_debug_plugin_log_command_matches" \
+      --argjson localLoaderMatches "$_debug_plugin_log_local_loader_matches" \
+      --argjson enabledMatches "$_debug_plugin_log_enabled_matches" \
+      '{latestPluginLogPath:$latestPluginLogPath,latestPluginLogMtime:$latestPluginLogMtime,silverMatches:$silverMatches,commandMatches:$commandMatches,localLoaderMatches:$localLoaderMatches,enabledMatches:$enabledMatches}')"
+    _debug_append_snapshot E "Hook lifecycle event reached" "$(jq -nc \
+      --arg event "$cursor_event" \
+      --argjson argvCount "$#" \
+      '{event:$event,argvCount:$argvCount}')"
+    for _debug_hypothesis in A B C D E; do
+      _debug_record="$(jq -nc \
+        --arg sessionId "ff97da" \
+        --arg runId "pre-fix" \
+        --arg hypothesisId "$_debug_hypothesis" \
+        --arg location "${BASH_SOURCE[0]}:debug-plugin-discovery" \
+        --arg message "Cursor plugin discovery snapshot" \
+        --arg event "$cursor_event" \
+        --arg localPath "$_debug_local" \
+        --arg localType "$_debug_local_type" \
+        --arg localRealpath "$_debug_local_realpath" \
+        --arg manifestPath "$_debug_manifest" \
+        --arg manifestVersion "$_debug_manifest_version" \
+        --argjson manifestCommands "$_debug_manifest_commands" \
+        --argjson manifestPresent "$_debug_manifest_present" \
+        --arg manifestCommandsDir "$_debug_manifest_commands_dir" \
+        --argjson manifestCommandsCount "$_debug_manifest_commands_count" \
+        --argjson manifestCommandsRepresentative "$_debug_manifest_commands_representative" \
+        --arg rootCommandsDir "$_debug_root_commands_dir" \
+        --argjson rootCommandsCount "$_debug_root_commands_count" \
+        --argjson rootCommandsRepresentative "$_debug_root_commands_representative" \
+        --arg registryPath "$_debug_registry" \
+        --argjson registryEntryKeys "$_debug_registry_keys" \
+        --arg registryVersion "$_debug_registry_version" \
+        --argjson registryEnabled "$_debug_registry_enabled" \
+        --arg registryInstallPath "$_debug_registry_install_path" \
+        --arg registryGitPath "$_debug_registry_git_path" \
+        --arg cacheRoot "$_debug_cache_root" \
+        --arg cacheActualVersion "$_debug_cache_actual_version" \
+        --argjson cachePresent "$_debug_cache_present" \
+        --argjson localCommandFilenameColonCount "$_debug_local_command_filename_colon_count" \
+        --argjson cacheCommandFilenameColonCount "$_debug_cache_command_filename_colon_count" \
+        --argjson marketplaceEnablementRecordExists "$_debug_marketplace_enablement_record_exists" \
+        --arg marketplacePath "$_debug_marketplace_path" \
+        --arg marketplaceVersion "$_debug_marketplace_version" \
+        --arg marketplaceSha "$_debug_marketplace_sha" \
+        --arg marketplaceManifestVersion "$_debug_marketplace_manifest_version" \
+        --arg latestPluginLogPath "$_debug_latest_plugin_log" \
+        --arg latestPluginLogMtime "$_debug_latest_plugin_log_mtime" \
+        '{sessionId:$sessionId,runId:$runId,hypothesisId:$hypothesisId,location:$location,message:$message,fixAttempt:true,data:{event:$event,localPlugin:{path:$localPath,type:$localType,realpath:$localRealpath},manifest:{present:$manifestPresent,path:$manifestPath,version:$manifestVersion,commands:$manifestCommands,commandsDir:$manifestCommandsDir,commandsCount:$manifestCommandsCount,representative:$manifestCommandsRepresentative},rootCommands:{dir:$rootCommandsDir,count:$rootCommandsCount,representative:$rootCommandsRepresentative},registry:{path:$registryPath,entryKeys:$registryEntryKeys,version:$registryVersion,enabled:$registryEnabled,installPath:$registryInstallPath,gitPath:$registryGitPath},cache:{root:$cacheRoot,present:$cachePresent,actualVersion:$cacheActualVersion,commandFilenameColonCount:$cacheCommandFilenameColonCount},commandFilenameColonCount:$localCommandFilenameColonCount,marketplaceEnablementRecordExists:$marketplaceEnablementRecordExists,marketplace:{path:$marketplacePath,manifestVersion:$marketplaceManifestVersion,pluginVersion:$marketplaceVersion,sha:$marketplaceSha},latestCursorPluginLog:{path:$latestPluginLogPath,mtime:$latestPluginLogMtime}},timestamp:(now|todateiso8601)}')"
+      printf '%s\n' "$_debug_record" >>"$_debug_log"
+    done
+  fi
+fi
+# endregion
+
 input_file="$(mktemp "${TMPDIR:-/tmp}/sb-cursor-in.XXXXXX")"
 stdout_file="$(mktemp "${TMPDIR:-/tmp}/sb-cursor-out.XXXXXX")"
 stderr_file="$(mktemp "${TMPDIR:-/tmp}/sb-cursor-err.XXXXXX")"

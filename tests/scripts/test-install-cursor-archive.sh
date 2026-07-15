@@ -31,11 +31,11 @@ current_link="${CURSOR_HOME}/plugins/cache/alo-labs/silver-bullet/current"
 resolved_current="$(cd "$current_link" && pwd -P)"
 
 if [[ -f "${resolved_current}/commands/silver-init.md" ]] && \
-   grep -q '^name: "silver:init"$' "${resolved_current}/commands/silver-init.md" && \
+   grep -q '^name: "silver-init"$' "${resolved_current}/commands/silver-init.md" && \
    [[ ! -e "${resolved_current}/commands/silver:init.md" ]]; then
-  pass "archive install materializes desktop-safe command stubs"
+  pass "archive install materializes kebab-case command stubs"
 else
-  fail "archive install materializes desktop-safe command stubs"
+  fail "archive install materializes kebab-case command stubs"
 fi
 
 if [[ -d "${CURSOR_HOME}/plugins/local/silver-bullet" ]] && \
