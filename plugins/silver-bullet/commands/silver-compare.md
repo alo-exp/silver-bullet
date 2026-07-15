@@ -1,7 +1,7 @@
 ---
-name: "silver:compare"
-title: "Compare"
-description: >
+name: "silver-compare"
+title: "Silver: Silver Compare"
+description: Silver Bullet silver-compare workflow
 argument-hint: <solution-1> <solution-2> [...solution-N] [--mode deep|ultradeep] [--auto]
 ---
 

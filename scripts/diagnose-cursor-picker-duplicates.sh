@@ -104,9 +104,10 @@ def command_routes(root: Path) -> set[str]:
     if not commands.is_dir():
         return routes
     for path in sorted(commands.glob("*.md")):
-        name = parse_frontmatter(path).get("name", "").strip()
-        if name:
-            routes.add(name)
+        name = path.stem
+        route = logical_route(name)
+        if route:
+            routes.add(route)
     return routes
 
 

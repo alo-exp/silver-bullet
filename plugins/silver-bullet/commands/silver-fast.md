@@ -1,7 +1,7 @@
 ---
-name: "silver:fast"
-title: "Fast"
-description: >
+name: "silver-fast"
+title: "Silver: Silver Fast"
+description: Silver Bullet silver-fast workflow
 argument-hint: <description of change>
 ---
 

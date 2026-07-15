@@ -1,7 +1,7 @@
 ---
-name: "silver:deep-research"
-title: "Deep Research"
-description: >
+name: "silver-deep-research"
+title: "Silver: Silver Deep Research"
+description: Silver Bullet silver-deep-research workflow
 argument-hint: <research question or technology decision> [--mode quick|standard|deep|ultradeep]
 ---
 

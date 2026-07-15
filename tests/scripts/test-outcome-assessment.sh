@@ -103,7 +103,7 @@ EOF
 cat >"$FIXTURE/.planning/QUALITY-GATES-feature.md" <<'EOF'
 # Quality gates
 EOF
-cat >"$FIXTURE/.planning/CLARIFY.md" <<'EOF'
+cat >"$FIXTURE/.planning/multi_ai_deep_research_b3d9881b-CLARIFY-260716-20260716T000000Z.md" <<'EOF'
 # Clarify — currency feature
 locked decision: use ISO 4217 currency codes
 decision_class: locked
@@ -250,7 +250,7 @@ rm -f "$SESSION_LOG_R3"
 
 # --- Fixture: row 1 router tailoring ---
 printf 'silver-context\n' >"$STATE_DIR/state"
-rm -f "$FIXTURE/.planning/CLARIFY.md" 2>/dev/null || true
+rm -f "$FIXTURE/.planning/multi_ai_deep_research_b3d9881b-CLARIFY-260716-20260716T000000Z.md" 2>/dev/null || true
 rm -f "$FIXTURE/.planning/workflows/router-session.md" 2>/dev/null || true
 cat >"$FIXTURE/.planning/workflows/router-session.md" <<'EOF'
 # Router session
@@ -376,3 +376,4 @@ fi
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
+

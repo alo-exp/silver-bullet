@@ -315,14 +315,25 @@ elif host == "cursor":
             )
     else:
         failures.append("[cursor] cache missing .cursor-plugin/plugin.json")
-    # Cursor desktop requires filesystem-safe filenames; frontmatter carries
-    # the intended silver:<route> slash name.
+    # Cursor plugin commands use kebab-case frontmatter names and
+    # filesystem-safe filenames.
     commands_dir = cache_root / "commands"
     if commands_dir.is_dir():
         for path in commands_dir.glob("*.md"):
             if ":" in path.name:
                 failures.append(
                     f"[cursor] malformed command filename {path.name!r} (colon is not desktop-safe)"
+                )
+            text = path.read_text(errors="ignore")
+            name = ""
+            for line in text.splitlines():
+                if line.strip() == "---" and name:
+                    break
+                if line.startswith("name:"):
+                    name = line.split(":", 1)[1].strip().strip("\"'")
+            if not name or name != path.stem or ":" in name:
+                failures.append(
+                    f"[cursor] command file {path.name!r} lacks a kebab-case name matching its filename"
                 )
 
 elif host == "codex":

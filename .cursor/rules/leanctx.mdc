@@ -33,6 +33,12 @@ When `recommended_tools.leanctx.enabled_by_user: true`, LeanCTX is **mandatory**
 7. **After code edits** — `graphify update .` then agentmemory capture (synergy unchanged).
 8. **Codex caveat** — AST read-path may be deny-only until PreToolUse rewrite lands; wire proxy + ledger + PathJail + injection still apply.
 
+## Durable edits (Write/Edit/ApplyPatch)
+
+- **Analysis reads** may use compressed `ctx_read` / `lctx_read_ast` modes.
+- **Before any Write/Edit** to durable files (`.cursor/plans/*.plan.md`, `.planning/**`, source, docs): read the target with **native Read** or **`ctx_read(raw=true)`** only.
+- **NEVER** paste compressed tool output (`[lean-ctx: omitted N lines]`, `filename [194L]` headers, `[Archived]`) into edit payloads — lean-ctx ≥3.9.9 and SB `compression-marker-guard.sh` deny such writes.
+
 ## Forbidden when five-tool active
 
 - DO NOT use `lctx_remember` — use agentmemory `memory_save`.

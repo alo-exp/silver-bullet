@@ -158,7 +158,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Pick the best path for the current constraints and capture the rationale in a concise decision brief.</p>
 
       <h3>Step 5 — Handoff</h3>
-      <p>Write <code>.planning/CLARIFY.md</code> and hand off to <code>/silver:context</code> and <code>/silver:plan</code> once the brief is clear enough for phase discussion.</p>
+      <p>Write a timestamped clarify brief under <code>.planning/</code> using the pattern <code>{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code> (see <code>scripts/lib/planning-clarify-path.sh</code>) and hand off to <code>/silver:context</code> and <code>/silver:plan</code> once the brief is clear enough for phase discussion.</p>
 
       <div class="divider"></div>
 
@@ -173,13 +173,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="output">Output</h2>
-      <p>The main artifact is <code>.planning/CLARIFY.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need SB planning.</p>
+      <p>The main artifact is a plan-scoped clarify brief: <code>.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need SB planning.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:clarify I have a rough idea for a todo app feature, but I'm not sure what the exact scope should be.</div>
-      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes <code>.planning/CLARIFY.md</code>, and hands off to <code>/silver:context</code> and <code>/silver:plan</code>.</p>
+      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes the timestamped clarify brief under <code>.planning/</code>, and hands off to <code>/silver:context</code> and <code>/silver:plan</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-fast.html">
@@ -215,3 +215,4 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 <script src="../../chrome.js?v=site-chrome-11"></script>
 </body>
 </html>
+

@@ -1,7 +1,7 @@
 ---
-name: "silver:bugfix"
-title: "Bugfix"
-description: >
+name: "silver-bugfix"
+title: "Silver: Silver Bugfix"
+description: Silver Bullet silver-bugfix workflow
 argument-hint: <description of the bug or failure>
 ---
 

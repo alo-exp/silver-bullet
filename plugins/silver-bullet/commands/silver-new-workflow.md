@@ -1,7 +1,7 @@
 ---
-name: "silver:new-workflow"
-title: "New Workflow"
-description: >
+name: "silver-new-workflow"
+title: "Silver: Silver New Workflow"
+description: Silver Bullet silver-new-workflow workflow
 argument-hint: <workflow intent | --audit <target> | path to existing skill/workflow to convert>
 ---
 

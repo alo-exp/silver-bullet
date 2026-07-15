@@ -232,7 +232,7 @@ var IDX = [
     "url": "/help/workflows/silver-clarify.html",
     "anchor": "overview",
     "title": "/silver:clarify",
-    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes .planning/CLARIFY.md, and hands off to silver:context when the brief is decision-ready."
+    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes a timestamped .planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md brief, and hands off to silver:context when the brief is decision-ready."
   },
   {
     "page": "Workflows",

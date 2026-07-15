@@ -125,31 +125,23 @@ for host, surfaces in HOST_SURFACES.items():
             if not name:
                 fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
                 continue
-            expected_stem = "silver" if name == "silver" else name.replace(":", "-")
             if ":" in path.name:
                 fail(
                     host,
                     f"{path.relative_to(repo_root)}: command filename contains ':'; "
-                    f"use filesystem-safe names with the route preserved in frontmatter",
+                    f"use a filesystem-safe kebab-case filename",
                 )
             stem = path.stem
-            if stem != expected_stem:
+            if stem != name:
                 fail(
                     host,
                     f"{path.relative_to(repo_root)}: filename stem {stem!r} must match "
-                    f"filesystem-safe route stem {expected_stem!r} for name {name!r}",
+                    f"kebab-case command name {name!r}",
                 )
-            if name != "silver" and not name.startswith("silver:"):
+            if ":" in name:
                 fail(
                     host,
-                    f"{path.relative_to(repo_root)}: command name {name!r} must be "
-                    f"'silver' or 'silver:<route>'",
-                )
-            if name.startswith("silver-"):
-                fail(
-                    host,
-                    f"{path.relative_to(repo_root)}: command name {name!r} uses hyphen form; "
-                    f"use silver: route",
+                    f"{path.relative_to(repo_root)}: command name {name!r} must be kebab-case",
                 )
             command_routes.add(name)
 
