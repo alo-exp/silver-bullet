@@ -71,7 +71,7 @@ Log friction in `$HOME/.claude/.silver-bullet/sb-friction-log.md` when doctor su
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D20)
+## Check catalog (D1–D22)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
@@ -91,6 +91,7 @@ bash scripts/sb-doctor.sh && echo "doctor PASS"
 - D16 repo install surface (`validate-host-install-surface.sh`)
 - D17 host-agnostic SB core (`validate-host-agnostic-core.sh`)
 - D20 stack compression mutex clean (`sb_stack_mutual_exclusion_is_clean`); `--fix` clears mutex and scaffolds agentmemory export root
+- D22 duplicate LeanCTX MCP servers (`lean-ctx` + `leanctx` in `$HOME/.claude/mcp.json`); WARN — run `python3 scripts/lib/merge-leanctx-mcp-config.py --host cursor`
 
 ```bash
 bash scripts/validate-host-install-surface.sh
