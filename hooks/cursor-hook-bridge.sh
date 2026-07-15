@@ -7,6 +7,10 @@ if [[ -f "${_bridge_lib}/rtk-compat.sh" ]]; then
   # shellcheck source=lib/rtk-compat.sh
   source "${_bridge_lib}/rtk-compat.sh"
 fi
+if [[ -f "${_bridge_lib}/hook-subproc-timeout.sh" ]]; then
+  # shellcheck source=lib/hook-subproc-timeout.sh
+  source "${_bridge_lib}/hook-subproc-timeout.sh"
+fi
 export SILVER_BULLET_HOOK_EXEC=1
 
 cursor_event="${1:-}"
@@ -15,6 +19,7 @@ shift || true
 if [[ -z "$cursor_event" || "$#" -eq 0 ]]; then
   exit 2
 fi
+
 
 input_file="$(mktemp "${TMPDIR:-/tmp}/sb-cursor-in.XXXXXX")"
 stdout_file="$(mktemp "${TMPDIR:-/tmp}/sb-cursor-out.XXXXXX")"
@@ -91,9 +96,18 @@ else:
 Path(sys.argv[2] + ".sb").write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
 PY
 
-rc=0
-if ! "$@" <"${input_file}.sb" >"$stdout_file" 2>"$stderr_file"; then
-  rc=$?
+SB_HOOK_SUBPROC_TIMEOUT="${SB_CURSOR_HOOK_SUBPROC_TIMEOUT:-12}"
+trap - ERR
+set +e
+sb_run_hooked_command "$SB_HOOK_SUBPROC_TIMEOUT" "${input_file}.sb" "$stdout_file" "$stderr_file" "$@"
+rc=$?
+set -e
+trap '''exit 0''' ERR
+if [[ "$rc" -eq 124 ]]; then
+  : >"$stdout_file"
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","message":"Silver Bullet hook subprocess timed out."}}
+' >"$stdout_file"
+  rc=0
 fi
 rm -f -- "${input_file}.sb"
 
