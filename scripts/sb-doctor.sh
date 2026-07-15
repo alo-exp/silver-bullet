@@ -598,6 +598,20 @@ run_doctor_checks() {
     record pass D21 "cursor_sb_agents N/A (host=${runtime})"
   fi
 
+
+  # D22 — Cursor duplicate LeanCTX MCP servers (lean-ctx + leanctx)
+  if [[ "$runtime" == "cursor" ]]; then
+    local cursor_mcp="${HOME}/.cursor/mcp.json"
+    if [[ -f "$cursor_mcp" ]] \
+      && jq -e '.mcpServers["lean-ctx"] and .mcpServers.leanctx' "$cursor_mcp" >/dev/null 2>&1; then
+      record warn D22 "duplicate LeanCTX MCP servers (lean-ctx + leanctx) — remove lean-ctx, keep leanctx; run: python3 scripts/lib/merge-leanctx-mcp-config.py --host cursor"
+    else
+      record pass D22 "no duplicate LeanCTX MCP servers"
+    fi
+  else
+    record pass D22 "duplicate LeanCTX MCP check N/A (host=${runtime})"
+  fi
+
   doctor_apply_fixes "$runtime"
 }
 

@@ -94,11 +94,27 @@ def leanctx_cursor_server(cm_active: bool) -> dict:
     }
 
 
+def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
+    """Drop upstream ``lean-ctx`` MCP entry when SB owns ``leanctx``.
+
+    Upstream ``lean-ctx init`` may register ``mcpServers.lean-ctx`` while SB
+    install uses the canonical ``leanctx`` key (with ``lctx_`` prefix and
+    five-tool env). Both keys spawn separate lean-ctx MCP subprocesses (~2× per
+    Cursor worker) — keep ``leanctx`` only.
+    """
+    if "lean-ctx" not in servers:
+        return False
+    del servers["lean-ctx"]
+    return True
+
+
 def merge_cursor_mcp(target: pathlib.Path, dry_run: bool) -> dict:
     cm_active = context_mode_present_cursor(target)
     data = load_json(target, {"mcpServers": {}})
     servers = data.setdefault("mcpServers", {})
     changed = False
+    if remove_upstream_lean_ctx_duplicate(servers):
+        changed = True
     if "leanctx" not in servers:
         servers["leanctx"] = leanctx_cursor_server(cm_active)
         changed = True
@@ -266,3 +282,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
