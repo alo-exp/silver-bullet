@@ -123,6 +123,36 @@ agent_delegate_append_invoke_output() {
   printf '%s' "$output" >>"$log_file"
 }
 
+# Post-invoke product evidence: git head, last commit, working tree status.
+agent_delegate_append_workdir_evidence() {
+  local log_file="$1" work_dir="$2" prompt_text="${3:-}"
+  [[ -n "$log_file" && -n "$work_dir" && -d "$work_dir" ]] || return 0
+
+  {
+    printf '\n=== workdir evidence ===\n'
+    if [[ -n "$prompt_text" ]]; then
+      printf 'prompt_bytes=%s\n' "$(printf '%s' "$prompt_text" | wc -c | tr -d ' ')"
+    fi
+    if git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      printf 'git_head=%s\n' "$(git -C "$work_dir" rev-parse HEAD 2>/dev/null || echo 'none')"
+      printf 'git_log_last=\n'
+      git -C "$work_dir" log -3 --oneline 2>/dev/null || true
+      printf 'git_status=\n'
+      git -C "$work_dir" status --short 2>/dev/null || true
+      printf 'workdir_files=\n'
+      find "$work_dir" -maxdepth 2 -type f ! -path '*/.git/*' 2>/dev/null | head -20 || true
+      if [[ -f "${work_dir}/README.md" ]]; then
+        printf 'readme_preview=\n'
+        head -5 "${work_dir}/README.md" 2>/dev/null || true
+      fi
+    else
+      printf 'git=not-a-repo\n'
+      ls -la "$work_dir" 2>/dev/null || true
+    fi
+    printf '\n'
+  } >>"$log_file"
+}
+
 agent_delegate_write_fallback_log() {
   local log_file="$1" host_label="$2" work_dir="$3" sb_root="$4" attempt="$5" final_exit="$6" output="$7"
   [[ -n "$log_file" ]] || return 0
@@ -284,3 +314,4 @@ agent_delegate_preflight_recommended_tools() {
   fi
   return 0
 }
+
