@@ -215,6 +215,7 @@ rm -rf "$RED4_FIXTURE" "$RED4_STATE"
 unset SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR
 assert_contains "D21 cursor subagents check in doctor" 'D21' "$DOCTOR"
 assert_contains "D21 fix invokes install-cursor-sb-agents" 'install-cursor-sb-agents.sh' "$DOCTOR"
+assert_contains "D22 duplicate leanctx MCP check in doctor" 'D22' "$DOCTOR"
 assert_contains "install-cursor wires sb-agents" 'install-cursor-sb-agents' "${REPO_ROOT}/scripts/install-cursor.sh"
 
 # D21 — Cursor SB custom subagents (enabled + missing agents → FAIL; probe pass → PASS)
