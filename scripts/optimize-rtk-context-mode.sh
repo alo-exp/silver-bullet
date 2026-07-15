@@ -189,8 +189,10 @@ optimize_context_mode_claude() {
 optimize_context_mode_cursor() {
   ensure_context_mode_cli
   run_merge_py cursor
-  run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
-    bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
+  if [[ -z "${TOOLSTACK_INSTALL_IN_PROGRESS:-}" ]]; then
+    run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
+      bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
+  fi
 }
 
 optimize_context_mode_codex() {
@@ -308,3 +310,4 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 log "=== Optimization complete ==="
+

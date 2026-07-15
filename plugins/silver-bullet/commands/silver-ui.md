@@ -1,7 +1,7 @@
 ---
-name: "silver:ui"
-title: "UI"
-description: >
+name: "silver-ui"
+title: "Silver: Silver UI"
+description: Silver Bullet silver-ui workflow
 argument-hint: <UI feature or component description>
 ---
 

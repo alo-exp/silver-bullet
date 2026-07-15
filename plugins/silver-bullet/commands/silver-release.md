@@ -1,7 +1,7 @@
 ---
-name: "silver:release"
-title: "Release"
-description: >
+name: "silver-release"
+title: "Silver: Silver Release"
+description: Silver Bullet silver-release workflow
 argument-hint: <version or release description, e.g. v1.2.0>
 ---
 

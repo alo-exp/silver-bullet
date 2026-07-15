@@ -1,7 +1,7 @@
 ---
-name: "silver:feature"
-title: "Feature"
-description: >
+name: "silver-feature"
+title: "Silver: Silver Feature"
+description: Silver Bullet silver-feature workflow
 argument-hint: <feature description>
 ---
 
