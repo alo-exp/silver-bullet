@@ -64,6 +64,22 @@ agent_delegate_append_invoke_output "$append_log" $'exec stdout line 1\nexec std
 grep -q 'exec stdout line 1' "$append_log" && grep -q 'test-delegate' "$append_log" && check "append invoke output to log" pass || check "append invoke output to log" fail
 rm -f "$append_log"
 
+# Workdir evidence append
+evidence_dir="$(mktemp -d)"
+git -C "$evidence_dir" init -q
+git -C "$evidence_dir" config user.email "test@local"
+git -C "$evidence_dir" config user.name "Test"
+echo 'marker' >"${evidence_dir}/README.md"
+git -C "$evidence_dir" add README.md
+git -C "$evidence_dir" commit -q -m 'test commit'
+evidence_log="$(mktemp)"
+agent_delegate_append_workdir_evidence "$evidence_log" "$evidence_dir" 'test prompt'
+grep -q '=== workdir evidence ===' "$evidence_log" && check "workdir evidence section" pass || check "workdir evidence section" fail
+grep -q 'git_head=' "$evidence_log" && check "workdir evidence git head" pass || check "workdir evidence git head" fail
+grep -q 'test commit' "$evidence_log" && check "workdir evidence git log" pass || check "workdir evidence git log" fail
+rm -f "$evidence_log"
+rm -rf "$evidence_dir"
+
 # Wrapper sourcing
 grep -q 'agent-delegate-common.sh' "$CODEX" && check "codex sources common lib" pass || check "codex sources common lib" fail
 grep -q 'agent-delegate-common.sh' "$CURSOR" && check "cursor sources common lib" pass || check "cursor sources common lib" fail
