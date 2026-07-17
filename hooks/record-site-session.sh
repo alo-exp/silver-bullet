@@ -34,7 +34,9 @@ sb_project_gate_or_exit 2>/dev/null || exit 0
 
 if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
-  if sb_site_prompt_is_site_intent "$prompt"; then
+  if sb_site_prompt_is_agent_delegation_intent "$prompt"; then
+    sb_site_session_clear_all
+  elif sb_site_prompt_is_site_intent "$prompt"; then
     sb_site_session_mark_site_intent
     if printf '%s' "$prompt" | grep -qiE '\blive\b|publish|pushed to main|go live'; then
       sb_site_session_mark_live_claim_pending
@@ -48,6 +50,12 @@ tool_name="$(sb_tool_name "$input" 2>/dev/null || true)"
 file_path="$(sb_tool_file_path "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_input.file_path // ""' 2>/dev/null || true)"
 
 case "$tool_name" in
+  Task|Subagent|Agent)
+    tool_preview="$(printf '%s' "$input" | jq -c '.tool_input // {}' 2>/dev/null || echo '{}')"
+    if sb_site_text_is_agent_delegation_intent "$tool_preview"; then
+      sb_site_session_clear_all
+    fi
+    ;;
   Edit|Write|MultiEdit|apply_patch)
     if sb_site_session_path_is_site "$file_path"; then
       sb_site_session_touch "edit:${file_path}"

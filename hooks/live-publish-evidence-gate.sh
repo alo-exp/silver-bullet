@@ -60,7 +60,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
     *) exit 0 ;;
   esac
   cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
-  if sb_site_session_push_targets_main "$cmd" && sb_site_session_active; then
+  if sb_site_session_push_targets_main "$cmd" && sb_site_session_gates_apply; then
     needs_evidence=true
   fi
 elif [[ "$hook_event" == "Stop" ]]; then
@@ -68,7 +68,7 @@ elif [[ "$hook_event" == "Stop" ]]; then
     source "$_lib_dir/orchestrator-parent.sh"
     sb_orchestrator_is_worker_session 2>/dev/null && exit 0
   fi
-  if sb_site_session_active; then
+  if sb_site_session_gates_apply; then
     if [[ -f "${SB_STATE_DIR}/site-session.json" ]]; then
       push_intent="$(jq -r '.push_intent // false' "${SB_STATE_DIR}/site-session.json" 2>/dev/null || echo false)"
       live_pending="$(jq -r '.live_claim_pending // false' "${SB_STATE_DIR}/site-session.json" 2>/dev/null || echo false)"
