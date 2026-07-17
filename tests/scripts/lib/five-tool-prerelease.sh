@@ -92,6 +92,9 @@ ${root}/tests/hooks/test-five-tool-mutual-exclusion.sh
 ${root}/tests/hooks/test-agentmemory-graphify-synergy.sh
 ${root}/tests/scripts/test-install-leanctx-sb.sh
 ${root}/tests/scripts/test-optimize-five-tool-stack.sh
+${root}/tests/scripts/test-reconcile-recommended-tools.sh
+${root}/tests/scripts/test-reload-receipts.sh
+${root}/tests/scripts/test-runtime-mirror-freshness.sh
 ${root}/tests/scripts/test-agent-cursor-skill.sh
 EOF
 }
@@ -111,3 +114,4 @@ five_tool_prerelease_run_offline_bundle() {
   done < <(five_tool_prerelease_offline_tests "$root")
   return "$failures"
 }
+
