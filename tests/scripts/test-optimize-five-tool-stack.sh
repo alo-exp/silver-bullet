@@ -45,7 +45,7 @@ export PATH="$MOCK_BIN:/usr/bin:/bin"
 )
 
 # Run optimize against repo using --force (leanctx may be null in repo config).
-if bash "$OPTIMIZE" --host cursor --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-five-tool-1.log 2>&1; then
+if bash "$OPTIMIZE" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-five-tool-1.log 2>&1; then
   pass "dry-run --force exits 0"
 else
   fail "dry-run --force exits 0"
@@ -89,7 +89,7 @@ stack_mode="$(jq -r '.optimization_profiles.five_tool_routed.stack_mode // empty
 [[ "$stack_mode" == "parallel_routed" ]] && pass "stack_mode parallel_routed" || fail "stack_mode parallel_routed"
 
 # Idempotent second dry-run.
-if bash "$OPTIMIZE" --host cursor --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-five-tool-2.log 2>&1; then
+if bash "$OPTIMIZE" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-rtcm --skip-synergy --force >/tmp/sb-opt-five-tool-2.log 2>&1; then
   pass "second dry-run idempotent exit 0"
 else
   fail "second dry-run idempotent exit 0"
@@ -102,7 +102,7 @@ rm -f "$REPO_ROOT/.silver-bullet.json.bak-five-tool-test" 2>/dev/null || true
 grep -q 'LEANCTX_DISABLE_SHELL_MCP=1' "$REPO_ROOT/scripts/install-leanctx-sb.sh" \
   && pass "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1" \
   || fail "install-leanctx-sb sets LEANCTX_DISABLE_SHELL_MCP=1"
-if bash "$REPO_ROOT/scripts/install-leanctx-sb.sh" --host cursor --dry-run --skip-install --skip-verify \
+if bash "$REPO_ROOT/scripts/install-leanctx-sb.sh" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-install --skip-verify \
   >/tmp/sb-opt-leanctx-profile.log 2>&1; then
   grep -q 'five-tool-routed.env\|LEANCTX_DISABLE_SHELL_MCP' /tmp/sb-opt-leanctx-profile.log \
     && pass "install dry-run logs profile env with shell MCP disabled" \
@@ -113,3 +113,4 @@ fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+

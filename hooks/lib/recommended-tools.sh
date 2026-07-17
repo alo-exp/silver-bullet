@@ -211,7 +211,7 @@ sb_recommended_tool_platform_pre_index_commands() {
   elif [[ "$tool_id" == "leanctx" ]]; then
     case "$host" in
       cursor|claude|codex|opencode)
-        printf '%s\n' "bash scripts/install-leanctx-sb.sh --host ${host}"
+        printf '%s\n' "bash scripts/install-leanctx-sb.sh --host ${host} --project-root \"\$(pwd)\""
         ;;
     esac
   fi
@@ -229,10 +229,9 @@ sb_recommended_tool_platform_post_index_commands() {
     return 0
   fi
   # Legacy flat-array config: cursor = post-only; claude/codex = second command post-index.
-  legacy="$(jq -r --arg id "$tool_id" --arg host "$host" \
-    '.recommended_tools[$id].platform_install_commands[$host][]? // empty' \
-    "$config_file" 2>/dev/null || true)"
-  if [[ -n "$legacy" ]]; then
+  if legacy="$(jq -r --arg id "$tool_id" --arg host "$host" \
+    '.recommended_tools[$id].platform_install_commands[$host] | if type == "array" then .[] else empty end' \
+    "$config_file" 2>/dev/null || true)" && [[ -n "$legacy" ]]; then
     case "$host" in
       cursor) printf '%s' "$legacy"; return 0 ;;
       claude|codex|opencode|goose|hermes)
@@ -296,7 +295,7 @@ sb_recommended_tool_full_install_lines() {
   host="${host:-$(sb_runtime_host)}"
   cli_lines="$(sb_recommended_tool_install_commands "$config_file" "$tool_id")"
   if [[ -z "$cli_lines" && "$tool_id" == "graphify" ]]; then
-    cli_lines=$'uv tool install graphifyy\npipx install graphifyy'
+    cli_lines=$'uv tool install '\''graphifyy[mcp]'\''\npipx install '\''graphifyy[mcp]'\'''
   fi
   if [[ -z "$cli_lines" && "$tool_id" == "agentmemory" ]]; then
     cli_lines='npm install -g @agentmemory/agentmemory'
@@ -487,3 +486,4 @@ sb_stack_surface_owner() {
     *) return 1 ;;
   esac
 }
+

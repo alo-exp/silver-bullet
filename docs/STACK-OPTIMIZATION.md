@@ -107,3 +107,30 @@ Every optimization step traces to `docs/research/graphify-agentmemory-optimizati
 - `docs/AGENTMEMORY.md` — synergy_max `.env` template
 - `docs/code-intelligence-contract.md` — tier-1 optimization requirement
 - `hooks/lib/stack-optimizer.sh` — implementation
+
+## Five-tool stack optimization (RTK + Context Mode + LeanCTX)
+
+When LeanCTX is opted in, use the orchestrator script instead of `optimize-rtk-context-mode.sh` alone:
+
+```bash
+bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"
+```
+
+For RTK + Context Mode only (no LeanCTX):
+
+```bash
+bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"
+```
+
+Both scripts require explicit `--host` and `--project-root` (canonical SB project root).
+
+## Five-tool reconciliation and reload receipts
+
+`/silver:init`, `/silver:update`, installer reconciliation, and `/silver:doctor --fix` delegate to `scripts/reconcile-recommended-tools.sh`. Host MCP/hook writes batch into one reload receipt per worktree (or linked host-global receipt for pure host scope). SessionStart is verification-only: it may verify receipts but never creates, clears, or supersedes them.
+
+Regenerate runtime plugin mirrors after script/hook changes:
+
+```bash
+bash scripts/sync-runtime-mirrors.sh
+bash tests/scripts/test-runtime-mirror-freshness.sh
+```

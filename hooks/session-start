@@ -127,6 +127,47 @@ if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
   sb_project_root_cache_write "$sb_project_root" 2>/dev/null || true
 fi
 
+# Doc-scheme enforcement requires a session marker. Codex live/e2e runs can
+# reach doc gates without first writing the session mode file that triggers
+# session-log-init.sh, so ensure the marker exists from SessionStart itself.
+# Must run before rt_heartbeat_write so rt_current_session_id resolves sb-<epoch>
+# for ts_sb_defer_to_bridge heartbeat lookup.
+session_start_file="${SB_STATE_DIR}/session-start-time"
+session_start_file="${SILVER_BULLET_SESSION_START_FILE:-$session_start_file}"
+if ! sb_runtime_path_is_state_scoped "$session_start_file"; then
+  session_start_file="${SB_STATE_DIR}/session-start-time"
+fi
+session_start_value="$(cat "$session_start_file" 2>/dev/null || true)"
+if ! [[ "$session_start_value" =~ ^[0-9]+$ ]]; then
+  sb_guard_nofollow "$session_start_file" 2>/dev/null || true
+  date +%s >"$session_start_file" 2>/dev/null || true
+fi
+
+# SB bridge heartbeat (schema-v1) — verification-only SessionStart may write heartbeat only.
+_rt_hb_script=""
+if [[ -f "$sb_project_root/scripts/lib/recommended-tools/paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$sb_project_root/scripts/lib/recommended-tools/paths.sh"
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "${CLAUDE_PLUGIN_ROOT}/scripts/lib/recommended-tools/paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${CLAUDE_PLUGIN_ROOT}/scripts/lib/recommended-tools/paths.sh"
+fi
+if declare -f rt_resolve_lib_script >/dev/null 2>&1; then
+  _rt_hb_script="$(rt_resolve_lib_script "recommended-tools/heartbeat.sh" "$sb_project_root" 2>/dev/null || true)"
+elif [[ -f "$sb_project_root/scripts/lib/recommended-tools/heartbeat.sh" ]]; then
+  _rt_hb_script="$sb_project_root/scripts/lib/recommended-tools/heartbeat.sh"
+fi
+if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+  _sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2>/dev/null || echo false)"
+  if [[ "$_sb_initiated" == "true" ]]; then
+    # Section 3: eligible SessionStart (all sources); rt_heartbeat_write enforces 60s cadence.
+    # shellcheck source=/dev/null
+    RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+      source "$_rt_hb_script" 2>/dev/null && rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+  fi
+fi
+unset _rt_hb_script _sb_initiated
+
 # Prerequisite probe (Wave 0.2): jq + plugin cache; attempt repair or block.
 if [[ -f "$_lib_dir/prerequisite-probe.sh" ]]; then
   # shellcheck source=lib/prerequisite-probe.sh
@@ -144,20 +185,6 @@ if [[ -f "$_lib_dir/prerequisite-probe.sh" ]]; then
     fi
     exit 0
   fi
-fi
-
-# Doc-scheme enforcement requires a session marker. Codex live/e2e runs can
-# reach doc gates without first writing the session mode file that triggers
-# session-log-init.sh, so ensure the marker exists from SessionStart itself.
-session_start_file="${SB_STATE_DIR}/session-start-time"
-session_start_file="${SILVER_BULLET_SESSION_START_FILE:-$session_start_file}"
-if ! sb_runtime_path_is_state_scoped "$session_start_file"; then
-  session_start_file="${SB_STATE_DIR}/session-start-time"
-fi
-session_start_value="$(cat "$session_start_file" 2>/dev/null || true)"
-if ! [[ "$session_start_value" =~ ^[0-9]+$ ]]; then
-  sb_guard_nofollow "$session_start_file" 2>/dev/null || true
-  date +%s >"$session_start_file" 2>/dev/null || true
 fi
 
 # ── Branch-scoped state reset ─────────────────────────────────────────────────
@@ -542,6 +569,28 @@ if [[ "$sb_should_mutate" == true && "${SILVER_BULLET_UPDATE_CHECK_DISABLED:-}" 
 fi
 
 # Recommended-tools consent injection (Graphify and future opt-in tooling)
+_rt_verify_ctx=""
+_rt_verify_script=""
+if declare -f rt_resolve_lib_script >/dev/null 2>&1; then
+  _rt_verify_script="$(rt_resolve_lib_script "recommended-tools/session-verify.sh" "$sb_project_root" 2>/dev/null || true)"
+elif [[ -f "$sb_project_root/scripts/lib/recommended-tools/session-verify.sh" ]]; then
+  _rt_verify_script="$sb_project_root/scripts/lib/recommended-tools/session-verify.sh"
+fi
+if [[ -n "$_rt_verify_script" ]]; then
+  # shellcheck source=/dev/null
+  RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+    source "$_rt_verify_script" 2>/dev/null || true
+  _rt_verify_ctx="$(rt_session_verify_block "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true)"
+fi
+if [[ -n "$_rt_verify_ctx" ]]; then
+  combined="${combined:+$combined
+
+---
+
+}${_rt_verify_ctx}"
+fi
+unset _rt_verify_ctx _rt_verify_script
+
 if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
   # shellcheck source=lib/recommended-tools.sh
   source "$_lib_dir/recommended-tools.sh"
@@ -555,7 +604,7 @@ if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
   fi
   _rt_cfg="${sb_project_root}/.silver-bullet.json"
   if [[ -f "$_rt_cfg" ]]; then
-    for _rt_tool in graphify agentmemory alumnium rtk context_mode; do
+    for _rt_tool in graphify agentmemory alumnium rtk context_mode leanctx; do
       _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "$_rt_tool" 2>/dev/null || true)"
       if [[ -n "$_rt_ctx" ]]; then
         combined="${combined:+$combined
@@ -581,3 +630,4 @@ content=$(printf '%s' "$combined" | jq -Rs . 2>/dev/null || true)
 if [[ -n "$content" ]]; then
   printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"
 fi
+

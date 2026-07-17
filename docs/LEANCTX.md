@@ -45,10 +45,10 @@ SB owns host config writes. Use library-mode init only — **never** full `lean-
 
 | Host | Command |
 |------|---------|
-| Cursor | `bash scripts/install-leanctx-sb.sh --host cursor` |
-| Claude Code | `bash scripts/install-leanctx-sb.sh --host claude` |
-| Codex | `bash scripts/install-leanctx-sb.sh --host codex` |
-| OpenCode | `bash scripts/install-leanctx-sb.sh --host opencode` |
+| Cursor | `bash scripts/install-leanctx-sb.sh --host cursor --project-root "$(pwd)"` |
+| Claude Code | `bash scripts/install-leanctx-sb.sh --host claude --project-root "$(pwd)"` |
+| Codex | `bash scripts/install-leanctx-sb.sh --host codex --project-root "$(pwd)"` |
+| OpenCode | `bash scripts/install-leanctx-sb.sh --host opencode --project-root "$(pwd)"` |
 
 > **Phase 2:** `scripts/install-leanctx-sb.sh` and `scripts/lib/merge-leanctx-mcp-config.py` are delivered by the hooks/install worker. Until then, config and registry document the contract.
 
@@ -152,3 +152,7 @@ LeanCTX `ctx_read` returns **display-only** compression markers (`[lean-ctx: omi
 - [GRAPHIFY.md](GRAPHIFY.md) — code retrieval (`sb_graph`)
 - [AGENTMEMORY.md](AGENTMEMORY.md) — session capture (`sb_remember`)
 - [STACK-OPTIMIZATION.md](STACK-OPTIMIZATION.md) — Graphify + agentmemory synergy profile
+
+## MCP namespace and reload receipts
+
+LeanCTX registers as `leanctx` with `lctx_*` tool prefix. Overlapping `ctx_*` sandbox/fetch/shell tools are disabled when Context Mode and RTK are active. MCP merge is atomic via `patch-mcp.py`; reload receipts track affected servers per worktree. Cross-worktree receipts never supersede each other.
