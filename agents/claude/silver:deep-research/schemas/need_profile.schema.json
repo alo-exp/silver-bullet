@@ -50,7 +50,13 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "persona_id": {
+      "type": "string",
+      "enum": ["startup", "enterprise", "regulated"],
+      "description": "Optional persona from reference/need-profile-personas.json for weighted matrix scoring"
+    },
     "auto_assumed": { "type": "boolean" }
   },
   "additionalProperties": true
 }
+

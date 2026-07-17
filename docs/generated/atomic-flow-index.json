@@ -13,6 +13,7 @@
     "AF-DOCUMENT",
     "AF-EXECUTE",
     "AF-FAST-PATH",
+    "AF-MULTI-AI-TASK",
     "AF-ORIENT",
     "AF-PHASE-MANAGE",
     "AF-PLAN",
@@ -48,9 +49,11 @@
     "silver-create-release": "AF-RELEASE",
     "silver-debug": "AF-DEBUG",
     "silver-deep-research": "AF-DECIDE",
+    "silver-deep-research-multi-ai": "AF-DECIDE",
     "silver-ensure-docs": "AF-DOCUMENT",
     "silver-execute": "AF-EXECUTE",
     "silver-handoff": "AF-DOCUMENT",
+    "silver-multi-ai-task": "AF-MULTI-AI-TASK",
     "silver-new-workflow": "AF-PLAN",
     "silver-plan": "AF-PLAN",
     "silver-quality-gates": "AF-QUALITY-GATE",
@@ -145,6 +148,24 @@
     "FS-MODULARITY": [
       "AF-QUALITY-GATE"
     ],
+    "FS-MULTI-AI-CAPABILITY-PROBE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-DISPATCH": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-INDEX": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RECONCILE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RESERVE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RESOLVE": [
+      "AF-MULTI-AI-TASK"
+    ],
     "FS-RELIABILITY": [
       "AF-QUALITY-GATE"
     ],
@@ -205,12 +226,8 @@
     "FS-SILVER_AGENT_CURSOR": [
       "AF-AGENT-DELEGATE"
     ],
-    "FS-SILVER_AGENT_OPENCODE": [
-      "AF-AGENT-DELEGATE"
-    ],
-    "FS-SILVER_AGENT_PI": [
-      "AF-AGENT-DELEGATE"
-    ],
+    "FS-SILVER_AGENT_OPENCODE": [],
+    "FS-SILVER_AGENT_PI": [],
     "FS-SILVER_BENCHMARK": [
       "AF-FAST-PATH"
     ],
@@ -259,6 +276,9 @@
     "FS-SILVER_DEEP_RESEARCH": [
       "AF-DECIDE"
     ],
+    "FS-SILVER_DEEP_RESEARCH_MULTI_AI": [
+      "AF-DECIDE"
+    ],
     "FS-SILVER_DEPLOY": [
       "AF-SHIP"
     ],
@@ -300,6 +320,9 @@
     ],
     "FS-SILVER_MIGRATE": [
       "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_MULTI_AI_TASK": [
+      "AF-MULTI-AI-TASK"
     ],
     "FS-SILVER_NEW_WORKFLOW": [
       "AF-PLAN"
@@ -424,6 +447,7 @@
     "AF-DOCUMENT": "templates/orchestrator-workers/DOCUMENT.md",
     "AF-EXECUTE": "templates/orchestrator-workers/EXECUTE.md",
     "AF-FAST-PATH": "templates/orchestrator-workers/FAST.md",
+    "AF-MULTI-AI-TASK": "skills/silver-multi-ai-task/SKILL.md",
     "AF-ORIENT": "templates/orchestrator-workers/ORIENT.md",
     "AF-PHASE-MANAGE": "templates/orchestrator-workers/PHASE.md",
     "AF-PLAN": "templates/orchestrator-workers/PLAN.md",
@@ -487,8 +511,15 @@
       "silver-ensure-docs",
       "silver-validate"
     ],
+    "silver-deep-research-multi-ai": [
+      "silver-clarify",
+      "silver-deep-research-multi-ai",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
     "silver-deploy": [
       "silver-blast-radius",
+      "devops-quality-gates",
       "silver-plan",
       "silver-execute",
       "silver-verify",
@@ -557,6 +588,9 @@
       "silver-secure",
       "silver-verify",
       "silver-ensure-docs"
+    ],
+    "silver-multi-ai-task": [
+      "silver-multi-ai-task"
     ],
     "silver-new-workflow": [
       "silver-clarify",

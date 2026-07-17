@@ -37,10 +37,11 @@ assert_pass "compare fixture validates" \
   python3 "$SCRIPTS/validate_compare.py" --dir "$COMPARE"
 
 assert_pass "landscape report.html SPA validates" \
-  python3 "$SCRIPTS/validate_spa_report.py" --report "$LANDSCAPE/report.html"
+  python3 "$SCRIPTS/validate_spa_report.py" --report "$LANDSCAPE/report.html" --profile general
 
 assert_pass "compare report.html SPA validates" \
-  python3 "$SCRIPTS/validate_spa_report.py" --report "$COMPARE/report.html"
+  python3 "$SCRIPTS/validate_spa_report.py" --report "$COMPARE/report.html" --profile general
 
 printf '\nResults: %s passed, %s failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]]
+

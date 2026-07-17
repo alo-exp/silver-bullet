@@ -1,0 +1,34 @@
+{
+  "schema_id": "backend-capabilities-v1",
+  "version": "1.0.0",
+  "spine": "multi-ai-task-v2",
+  "probed_at": "2026-07-17T00:00:00Z",
+  "backends": {
+    "cursor": {
+      "status": "stub",
+      "adapter_id": "cursor-host-adapter-v1",
+      "adapter_version": "1.0.0",
+      "evidence": {
+        "usage_metered": false,
+        "hard_ceiling_enforced": false,
+        "cancellation_proven": false,
+        "model_identity_hash": null,
+        "config_hash": null
+      },
+      "disable_reason": "adapter not live — stub spike only"
+    },
+    "ocg": {
+      "status": "stub",
+      "adapter_id": "agent-opencode-multi-ai-worker-v1",
+      "adapter_version": "1.0.0",
+      "evidence": {
+        "usage_metered": false,
+        "hard_ceiling_enforced": false,
+        "cancellation_proven": false,
+        "model_identity_hash": null,
+        "config_hash": null
+      },
+      "disable_reason": "live spike not run — stub spike only"
+    }
+  }
+}
