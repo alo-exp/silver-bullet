@@ -113,18 +113,8 @@ if command -v graphify >/dev/null 2>&1; then
   graphify cursor install 2>/dev/null || true
 fi
 
-# --- RTK + CM optimize (merge only; no recursive global install) ---
-if [[ -n "$REPO_ROOT" && -x "${REPO_ROOT}/scripts/optimize-rtk-context-mode.sh" ]]; then
-  TOOLSTACK_INSTALL_IN_PROGRESS=1 bash "${REPO_ROOT}/scripts/optimize-rtk-context-mode.sh" --host cursor --skip-cm-doctor 2>/dev/null || true
-fi
-
-# --- MCP merge ---
-export TOOLSTACK_REPO_ROOT="${REPO_ROOT:-}"
-python3 "${TS_DIR}/patch-mcp.py"
-
-# --- hooks.json patch ---
-python3 "${TS_DIR}/patch-hooks.py"
-python3 "${TS_DIR}/fix-shell-compression-hook.py"
+# --- MCP + hooks batch (reconciler owns RTCM optimize + patch writes + reload receipt) ---
+# Direct patch-mcp/patch-hooks removed — rt_apply_host_*_batch in reconciler apply path.
 
 # --- global rules sync ---
 RULE_SRC="${REPO_ROOT}/.cursor/rules"
@@ -138,10 +128,33 @@ if [[ -f "${SRC_DIR}/global-recommended-tools.mdc" ]]; then
   cp -f "${SRC_DIR}/global-recommended-tools.mdc" "${RULES_DIR}/recommended-tools.mdc"
 fi
 
-# --- self-deploy install.sh ---
-cp -f "$0" "${TS_DIR}/install.sh"
-chmod +x "${TS_DIR}/install.sh"
+# --- five-tool reconciler (installer entry point; batches MCP + hook writes) ---
+_installer_lib=""
+if [[ -n "$REPO_ROOT" && -f "${REPO_ROOT}/scripts/lib/recommended-tools/installer.sh" ]]; then
+  _installer_lib="${REPO_ROOT}/scripts/lib/recommended-tools/installer.sh"
+elif [[ -f "${TS_LIB}/recommended-tools/installer.sh" ]]; then
+  _installer_lib="${TS_LIB}/recommended-tools/installer.sh"
+fi
+if [[ -n "$_installer_lib" ]]; then
+  # shellcheck source=../../recommended-tools/installer.sh
+  source "$_installer_lib"
+  _rt_proj=""
+  if [[ -n "${SB_RECONCILE_PROJECT_ROOT:-}" && -f "${SB_RECONCILE_PROJECT_ROOT}/.silver-bullet.json" ]]; then
+    _rt_proj="$(cd "${SB_RECONCILE_PROJECT_ROOT}" && pwd -P)"
+  fi
+  rt_installer_post_install "${REPO_ROOT}" "${_rt_proj:-}" || \
+    printf 'WARN: reconciler post-install exited nonzero (host infra may still be usable)\n' >&2
+fi
+
+# --- self-deploy install.sh (skip when already running from deployed path) ---
+_self="$(cd "$(dirname "$0")" && pwd -P)/$(basename "$0")"
+_dest="$(cd "$TS_DIR" && pwd -P)/install.sh"
+if [[ "$_self" != "$_dest" ]]; then
+  cp -f "$0" "${TS_DIR}/install.sh"
+  chmod +x "${TS_DIR}/install.sh"
+fi
 
 printf '\n== Global toolstack install complete ==\n'
 printf 'Backups: hooks.json.bak.%s mcp.json.bak.%s\n' "$TS" "$TS"
 printf 'Run: bash %s/parity-verify.sh && bash %s/verify.sh\n' "$TS_DIR" "$TS_DIR"
+

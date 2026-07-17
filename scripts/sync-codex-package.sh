@@ -8,7 +8,8 @@ source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 
-SYNC_LOCK_DIR="${REPO_ROOT}/.git/sb-sync-codex-package.lock.d"
+SYNC_LOCK_DIR="${REPO_ROOT}/.planning/sb-sync-codex-package.lock.d"
+mkdir -p "$(dirname "$SYNC_LOCK_DIR")" 2>/dev/null || SYNC_LOCK_DIR="${TMPDIR:-/tmp}/sb-sync-codex-package.lock.d"
 mkdir -p "$(dirname "$SYNC_LOCK_DIR")"
 _sync_lock_attempt=0
 while ! mkdir "$SYNC_LOCK_DIR" 2>/dev/null; do
@@ -143,3 +144,4 @@ else
 fi
 
 log "Codex package synchronized"
+
