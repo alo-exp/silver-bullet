@@ -15,9 +15,11 @@ usage() {
   cat <<'EOF'
 Usage: agent-opencode-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH | --prompt-file PATH)
        [--log PATH] [--mode permissive|strict] [--sb-root PATH] [--use-interactive]
+       [--delegation-mode default|multi-ai-worker-v1]
+       [--multi-ai-profile PROFILE_ID] [--multi-ai-pool lite|regular]
 
 Delegates a single task to OpenCode via tests/live/agents/opencode/agent.sh (opencode run primary).
-Model policy: opencode-go / mimo-v2.5 only. Parent supervisors: see /silver:agent-opencode.
+Model policy: default opencode-go / mimo-v2.5. multi-ai-worker-v1 selects allowlisted OCG profiles only.
 EOF
 }
 
@@ -29,6 +31,9 @@ LOG_FILE=""
 MODE="permissive"
 SB_ROOT="${SB_ROOT:-$REPO_ROOT}"
 USE_INTERACTIVE=0
+DELEGATION_MODE="default"
+MULTI_AI_PROFILE=""
+MULTI_AI_POOL="lite"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -40,6 +45,9 @@ while [[ $# -gt 0 ]]; do
     --mode) MODE="$2"; shift 2 ;;
     --sb-root) SB_ROOT="$2"; shift 2 ;;
     --use-interactive) USE_INTERACTIVE=1; shift ;;
+    --delegation-mode) DELEGATION_MODE="$2"; shift 2 ;;
+    --multi-ai-profile) MULTI_AI_PROFILE="$2"; shift 2 ;;
+    --multi-ai-pool) MULTI_AI_POOL="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -59,6 +67,16 @@ if [[ -n "$LOG_FILE" ]]; then
 fi
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
+
+unset SB_AGENT_OPENCODE_DELEGATION_MODE SB_MULTI_AI_OCG_PROFILE SB_MULTI_AI_OCG_POOL SB_MULTI_AI_OCG_VALIDATED
+
+case "$DELEGATION_MODE" in
+  default|multi-ai-worker-v1) ;;
+  *)
+    printf 'ERROR: invalid --delegation-mode %s (expected default or multi-ai-worker-v1)\n' "$DELEGATION_MODE" >&2
+    exit 2
+    ;;
+esac
 
 if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "opencode"; then
   printf 'ERROR: recommended-tools preflight failed — fix Graphify/agentmemory before delegation\n' >&2
@@ -82,18 +100,34 @@ quota_retry_max="${AGENT_OPENCODE_QUOTA_RETRY_MAX:-5}"
 log_floor="${SB_AGENT_OPENCODE_LOG_FLOOR:-512}"
 attempt=0
 
+agent_opencode_apply_delegation_mode() {
+  if [[ "$DELEGATION_MODE" == "multi-ai-worker-v1" ]]; then
+    [[ -n "$MULTI_AI_PROFILE" ]] || {
+      printf 'ERROR: --multi-ai-profile required for multi-ai-worker-v1\n' >&2
+      return 2
+    }
+    agent_opencode_apply_multi_ai_worker_env "$MULTI_AI_PROFILE" "$MULTI_AI_POOL" "$SB_ROOT" || return $?
+  else
+    if [[ -n "$MULTI_AI_PROFILE" ]]; then
+      printf 'ERROR: --multi-ai-profile requires --delegation-mode multi-ai-worker-v1\n' >&2
+      return 2
+    fi
+    agent_opencode_pin_mimo_model_env || return $?
+  fi
+}
+
 agent_opencode_apply_lightweight_env() {
   [[ "${SB_AGENT_OPENCODE_LIGHTWEIGHT:-1}" == "1" ]] || return 0
 
   export SB_AGENT_OPENCODE_DELEGATE=1
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
-  agent_opencode_pin_mimo_model_env || return $?
 }
 
 agent_opencode_invoke_once() {
-  agent_opencode_apply_runtime_env
+  agent_opencode_apply_delegation_mode || return $?
   agent_opencode_apply_lightweight_env || return $?
+  agent_opencode_apply_runtime_env
   export SB_ROOT
   export WORK_DIR="$WORK_DIR"
   export OPENCODE_WORK_DIR="$WORK_DIR"
@@ -118,8 +152,12 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
 
   if [[ -n "$LOG_FILE" ]]; then
     : >"$LOG_FILE"
+    log_model="opencode-go/mimo-v2.5"
+    if [[ "$DELEGATION_MODE" == "multi-ai-worker-v1" ]]; then
+      log_model="opencode-go/${MULTI_AI_PROFILE}"
+    fi
     agent_delegate_write_log_header "$LOG_FILE" "agent-opencode-delegate" "$WORK_DIR" "$SB_ROOT" "$attempt" \
-      "model=opencode-go/mimo-v2.5"
+      "model=${log_model} mode=${DELEGATION_MODE}"
   fi
 
   final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
@@ -154,3 +192,4 @@ done
 
 printf '%s' "$final_output"
 exit "$final_exit"
+

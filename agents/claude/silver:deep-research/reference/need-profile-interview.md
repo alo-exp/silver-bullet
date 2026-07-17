@@ -21,9 +21,12 @@ Use `silver-clarify` discipline: one question at a time, multiple choice preferr
 ## Persistence
 
 Write `need_profile.json` with `"interview_complete": true` and valid
-`license_preference`. For `--auto`, set `"auto_assumed": true` and document defaults —
+`license_preference`. Optional `persona_id`: `startup` | `enterprise` | `regulated`
+(see `reference/need-profile-personas.json` for weighted matrix defaults).
+For `--auto`, set `"auto_assumed": true` and document defaults —
 never invent must-haves silently.
 
 ## Gate
 
 `phase_gate.py` blocks `DR-RETRIEVE` until `interview_complete` is true for solution types.
+

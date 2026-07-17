@@ -130,6 +130,9 @@ jobs:
           SILVER_BULLET_RUNTIME: cursor
           SB_RELEASE_LIVE_MATRIX_WRITE_CURSOR_MARKER: "0"
 
+      - name: Install optional deep-research Python deps
+        run: pip install openpyxl
+
       - name: Run script unit tests
         run: |
           sudo apt-get install -y jq git
@@ -263,3 +266,4 @@ jobs:
             --rule 'void-style:off' \
             --rule 'attribute-boolean-style:off' \
             site/**/*.html
+

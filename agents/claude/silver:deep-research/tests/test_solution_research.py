@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 SKILL_ROOT = os.path.join(os.path.dirname(__file__), '..')
 SCRIPTS = os.path.join(SKILL_ROOT, 'scripts')
@@ -24,6 +25,20 @@ def run_py(script: str, *args: str) -> tuple[int, dict]:
     out = result.stdout.strip()
     data = json.loads(out) if out.startswith('{') else {}
     return result.returncode, data
+
+
+
+
+def _has_openpyxl() -> bool:
+    from deps_probe import openpyxl_importable
+    return openpyxl_importable()
+
+
+def _maybe_emit_fixture_xlsx(d: str) -> None:
+    if not _has_openpyxl():
+        return
+    from generate_comparison_xlsx import generate_comparison_xlsx
+    generate_comparison_xlsx(Path(d))
 
 
 def seed_landscape_fixture(
@@ -51,9 +66,21 @@ def seed_landscape_fixture(
                 f.write('# Solution Capability Report\n\nEnough content for gate.\n')
     os.makedirs(os.path.join(d, 'comparison'), exist_ok=True)
     with open(os.path.join(d, 'comparison', 'comparison.json'), 'w') as f:
-        json.dump({'rankings': [{'solution': 'Sol1', 'score': 1}]}, f)
+        json.dump({
+            'rankings': [{'solution': 'Sol1', 'score': 1, 'rank': 1}],
+            'rows': [
+                {'type': 'category', 'name': 'Core'},
+                {
+                    'type': 'feature',
+                    'name': 'SSO',
+                    'priority': 'High',
+                    'solutions': {'Sol1': '\u2714', 'Sol2': '', 'Sol3': '', 'Sol4': '', 'Sol5': ''},
+                },
+            ],
+        }, f)
     with open(os.path.join(d, 'report.html'), 'w') as f:
         f.write('<!DOCTYPE html><html><body>report</body></html>')
+    _maybe_emit_fixture_xlsx(d)
 
 
 class TestNeedProfileGate(unittest.TestCase):
@@ -490,7 +517,19 @@ class TestSilverCompareContract(unittest.TestCase):
                 )
             os.makedirs(os.path.join(d, 'comparison'))
             with open(os.path.join(d, 'comparison', 'comparison.json'), 'w') as f:
-                json.dump({'rankings': [{'solution': 'Alpha', 'score': 1}]}, f)
+                json.dump({
+                    'rankings': [{'solution': 'Alpha', 'score': 1, 'rank': 1}],
+                    'rows': [
+                        {'type': 'category', 'name': 'Core'},
+                        {
+                            'type': 'feature',
+                            'name': 'SSO',
+                            'priority': 'High',
+                            'solutions': {'Alpha': '\u2714', 'Beta': ''},
+                        },
+                    ],
+                }, f)
+            _maybe_emit_fixture_xlsx(d)
             subprocess.run([sys.executable, gen, '--dir', d], check=True)
             code, data = run_py(val, '--dir', d)
             self.assertEqual(code, 0)
