@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-07-11T19:47:27.684689+00:00",
+  "fetched_at": "2026-07-17T14:55:40.326268+00:00",
   "source": "agent-models+docs",
   "agent_cli": "agent",
   "models": [
@@ -2964,16 +2964,16 @@
         "xhigh"
       ],
       "agent_ids": [
-        "grok-4.5-xhigh",
-        "grok-4.5-fast-xhigh",
-        "grok-4.5-medium",
-        "grok-4.5-fast-medium",
-        "grok-4.5-high",
-        "grok-4.5-fast-high"
+        "cursor-grok-4.5-high",
+        "cursor-grok-4.5-high-fast",
+        "cursor-grok-4.5-low",
+        "cursor-grok-4.5-low-fast",
+        "cursor-grok-4.5-medium",
+        "cursor-grok-4.5-medium-fast"
       ],
       "fast_available": true,
       "max_detected": false,
-      "notes": "Jointly trained by Cursor and SpaceXAI; Not yet available in the European Union"
+      "notes": "Jointly trained by Cursor and SpaceXAI"
     },
     {
       "id": "kimi-k2-7-code",

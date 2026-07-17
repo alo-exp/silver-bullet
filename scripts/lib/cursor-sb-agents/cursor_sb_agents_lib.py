@@ -17,14 +17,20 @@ MANAGED_MARKER = "<!-- sb-managed: cursor-sb-agents -->"
 DOCS_URL = "https://cursor.com/docs/models-and-pricing.md"
 DEFAULT_EFFORT_LEVELS = ["medium", "high", "xhigh"]
 DEFAULT_SELECTED_MODELS = ["composer-2.5", "grok-4.5"]
+# Cursor Agent CLI lists cursor-grok-4.5-{low,medium,high} (+ fast). Legacy
+# grok-4.5-{medium,high,xhigh} still resolve for some efforts; grok-4.5-low does
+# NOT. Prefer cursor- prefixed slugs for low/medium/high. xhigh has no
+# cursor-grok-4.5-xhigh entry — keep grok-4.5-xhigh.
 GROK_EFFORT_MAP = {
-    "medium": "grok-4.5-medium",
-    "high": "grok-4.5-high",
+    "low": "cursor-grok-4.5-low",
+    "medium": "cursor-grok-4.5-medium",
+    "high": "cursor-grok-4.5-high",
     "xhigh": "grok-4.5-xhigh",
 }
 GROK_FAST_EFFORT_MAP = {
-    "medium": "grok-4.5-fast-medium",
-    "high": "grok-4.5-fast-high",
+    "low": "cursor-grok-4.5-low-fast",
+    "medium": "cursor-grok-4.5-medium-fast",
+    "high": "cursor-grok-4.5-high-fast",
     "xhigh": "grok-4.5-fast-xhigh",
 }
 
@@ -198,7 +204,8 @@ def base_model_from_slug(model_id: str) -> str:
         if is_fast_id(model_id):
             return model_id.split("-fast", 1)[0]
         return model_id
-    if model_id.startswith("grok-4.5"):
+    # Normalize both cursor-grok-4.5-* and legacy grok-4.5-* to base grok-4.5
+    if model_id.startswith("cursor-grok-4.5") or model_id.startswith("grok-4.5"):
         return "grok-4.5"
     for effort in ("xhigh", "extra-high", "high", "medium", "low", "none"):
         suffix = f"-{effort}"
@@ -222,6 +229,17 @@ def effort_from_slug(model_id: str, base: str) -> str | None:
         for effort, slug in GROK_FAST_EFFORT_MAP.items():
             if model_id == slug:
                 return effort
+        # Legacy aliases still seen in older agent defs / probes
+        legacy = {
+            "grok-4.5-medium": "medium",
+            "grok-4.5-high": "high",
+            "grok-4.5-xhigh": "xhigh",
+            "grok-4.5-fast-medium": "medium",
+            "grok-4.5-fast-high": "high",
+            "grok-4.5-fast-xhigh": "xhigh",
+        }
+        if model_id in legacy:
+            return legacy[model_id]
         return None
     remainder = model_id[len(base) :].lstrip("-")
     if remainder.startswith("fast-"):
@@ -502,3 +520,4 @@ def has_managed_marker(path: Path) -> bool:
         return MANAGED_MARKER in path.read_text(encoding="utf-8")
     except OSError:
         return False
+
