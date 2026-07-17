@@ -63,9 +63,18 @@ pass "AC-1 no fast/max/low suffixes in default set"
 
 # AC-11: Grok composite model lines; Composer locked composer-2.5
 grok_high="$(awk '/^model:/{print $2; exit}' "$AGENTS_DIR/sb-grok-4-5-high.md")"
-assert_eq "AC-11 grok high composite slug" "grok-4.5-high" "$grok_high"
+assert_eq "AC-11 grok high composite slug" "cursor-grok-4.5-high" "$grok_high"
 composer_xhigh="$(awk '/^model:/{print $2; exit}' "$AGENTS_DIR/sb-composer-2-5-xhigh.md")"
 assert_eq "AC-11 composer all efforts composer-2.5" "composer-2.5" "$composer_xhigh"
+
+# AC-11b: explicit low effort uses cursor-grok-4.5-low (grok-4.5-low is not a CLI slug)
+run_install --global --non-interactive --select-models grok-4.5 --effort-levels low,medium,high >/dev/null
+grok_low="$(awk '/^model:/{print $2; exit}' "$AGENTS_DIR/sb-grok-4-5-low.md")"
+assert_eq "AC-11b grok low cursor-prefixed slug" "cursor-grok-4.5-low" "$grok_low"
+grok_med="$(awk '/^model:/{print $2; exit}' "$AGENTS_DIR/sb-grok-4-5-medium.md")"
+assert_eq "AC-11b grok medium cursor-prefixed slug" "cursor-grok-4.5-medium" "$grok_med"
+# Restore default-shaped set for subsequent ACs
+run_install --global --non-interactive --select-models composer-2.5,grok-4.5 --effort-levels medium,high,xhigh >/dev/null
 
 # AC-14: unmarked sb-user-custom.md survives prune
 cat >"$AGENTS_DIR/sb-user-custom.md" <<'EOF'
@@ -110,3 +119,4 @@ jq -e '.models[0].pricing.input' "$FIXTURE_CATALOG" >/dev/null \
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]
+
