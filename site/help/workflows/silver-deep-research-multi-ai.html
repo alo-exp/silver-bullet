@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>/silver:deep-research-multi-ai — Silver Bullet Help</title>
+<meta name="description" content="Opt-in deep research composer that parallelizes DR-RETRIEVE, DR-TRIANGULATE, and DR-CRITIQUE via multi-ai-task-v2.">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+</head>
+<body class="has-help-subnav">
+<nav><div class="nav-inner"><a href="../../" class="nav-brand"><span class="logo gradient">Silver Bullet</span></a></div></nav>
+<div class="page-hero" style="padding:6rem 24px 3rem;background:var(--bg-hero)">
+  <div class="container" style="max-width:860px;margin:0 auto">
+    <h1>/silver:deep-research-multi-ai</h1>
+    <p>Thin DR composer over canonical <code>/silver:deep-research</code> plus <code>/silver:multi-ai-task</code>. Workflow <code>WF-SILVER-DEEP-RESEARCH-MULTI-AI</code>.</p>
+  </div>
+</div>
+<main class="container" style="max-width:860px;margin:0 auto;padding:2rem 24px 4rem">
+  <h2>Overview</h2>
+  <p>Explicit opt-in multi-model deep research. Host drives phases once; eligible phases dispatch parallel workers; deterministic consolidation emits <code>report.html</code> and landscape types emit <code>landscape-report.html</code>.</p>
+  <h2>Solution landscape / compare</h2>
+  <p>For <code>solution-landscape</code> and <code>solution-compare</code>, package weighted matrix artifacts after consolidation:</p>
+  <pre><code>python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py \
+  --dir research/&lt;date&gt;-&lt;slug&gt;/</code></pre>
+  <p>Emits <code>comparison/comparison.json</code>, <code>comparison/comparison-matrix.md</code>, <code>comparison/comparison-matrix.xlsx</code> (MultAI-weighted COUNTIFS), plus <code>report.html</code> and <code>landscape-report.html</code>. Optional <code>persona_id</code> on <code>need_profile.json</code>: <code>startup</code>, <code>enterprise</code>, or <code>regulated</code>.</p>
+  <h2>Manifest</h2>
+  <p>Canonical <code>run_manifest.json</code> v4 with <code>spine: multi-ai-task-v2</code>. v3 sources migrate copy-on-write with audit chain.</p>
+  <p><a href="silver-multi-ai-task.html">/silver:multi-ai-task</a> · <a href="silver-deep-research.html">/silver:deep-research</a></p>
+</main>
+</body>
+</html>
+

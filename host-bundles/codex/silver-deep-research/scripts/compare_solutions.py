@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from matrix_core import TICK, score_solutions_from_rows
+from need_profile_personas import apply_persona_priority
 
 
 def _slug(name: str) -> str:
@@ -44,21 +45,28 @@ def load_features(solutions_dir: Path) -> dict[str, dict[str, Any]]:
     return out
 
 
-def priority_for_feature(feature: str, need: dict[str, Any]) -> str:
+def priority_for_feature(
+    feature: str,
+    need: dict[str, Any],
+    category: str | None = None,
+) -> str:
     overrides = need.get("weights_override") or {}
     if feature in overrides:
-        return overrides[feature]
-    must = {m.lower().strip() for m in need.get("must_haves") or []}
-    nice = {n.lower().strip() for n in need.get("nice_to_haves") or []}
-    fl = feature.lower().strip()
-    if fl in must:
-        return "Critical"
-    if fl in nice:
-        return "High"
-    return "Medium"
+        base = overrides[feature]
+    else:
+        must = {m.lower().strip() for m in need.get("must_haves") or []}
+        nice = {n.lower().strip() for n in need.get("nice_to_haves") or []}
+        fl = feature.lower().strip()
+        if fl in must:
+            base = "Critical"
+        elif fl in nice:
+            base = "High"
+        else:
+            base = "Medium"
+    return apply_persona_priority(feature, category, base, need)
 
 
-def build_matrix(
+def build_comparison_json(
     features_by_solution: dict[str, dict[str, Any]],
     need: dict[str, Any],
 ) -> dict[str, Any]:
@@ -92,7 +100,7 @@ def build_matrix(
     for cat_name, feat_names in categories.items():
         rows.append({"type": "category", "name": cat_name})
         for fname in feat_names:
-            prio = priority_for_feature(fname, need)
+            prio = priority_for_feature(fname, need, cat_name)
             row: dict[str, Any] = {
                 "type": "feature",
                 "name": fname,
@@ -172,21 +180,21 @@ def matrix_markdown(comparison: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Build comparison matrix from SCRs")
-    parser.add_argument("--dir", required=True, help="Research output directory")
-    parser.add_argument("--need-profile", help="need_profile.json (default: dir/need_profile.json)")
-    args = parser.parse_args()
-
-    out_dir = Path(args.dir)
-    need_path = Path(args.need_profile) if args.need_profile else out_dir / "need_profile.json"
+def compare_solutions(
+    out_dir: Path,
+    *,
+    need_profile: Path | None = None,
+    emit_xlsx: bool = True,
+) -> dict[str, Any]:
+    """Build comparison.json/md and optionally comparison-matrix.xlsx."""
+    need_path = need_profile if need_profile else out_dir / "need_profile.json"
     need = json.loads(need_path.read_text(encoding="utf-8"))
 
     features = load_features(out_dir / "solutions")
     if len(features) < 2:
-        raise SystemExit("Need at least 2 solutions with features.json")
+        raise ValueError("Need at least 2 solutions with features.json")
 
-    comparison = build_matrix(features, need)
+    comparison = build_comparison_json(features, need)
     comp_dir = out_dir / "comparison"
     comp_dir.mkdir(parents=True, exist_ok=True)
     (comp_dir / "comparison.json").write_text(
@@ -195,8 +203,49 @@ def main() -> None:
     (comp_dir / "comparison-matrix.md").write_text(
         matrix_markdown(comparison), encoding="utf-8"
     )
-    print(json.dumps({"status": "ok", "winner": comparison.get("winner")}))
+
+    payload: dict[str, Any] = {"status": "ok", "winner": comparison.get("winner")}
+    if emit_xlsx:
+        from generate_comparison_xlsx import generate_comparison_xlsx
+
+        try:
+            xlsx_result = generate_comparison_xlsx(out_dir)
+        except ImportError as exc:
+            raise RuntimeError(
+                "openpyxl is required for comparison-matrix.xlsx "
+                "(pip install openpyxl or pass --no-emit-xlsx)"
+            ) from exc
+        if xlsx_result.get("status") != "ok":
+            raise RuntimeError(xlsx_result.get("reason", "xlsx generation failed"))
+        payload["xlsx"] = xlsx_result.get("output")
+    return payload
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build comparison matrix from SCRs")
+    parser.add_argument("--dir", required=True, help="Research output directory")
+    parser.add_argument("--need-profile", help="need_profile.json (default: dir/need_profile.json)")
+    parser.add_argument(
+        "--emit-xlsx",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Also write comparison/comparison-matrix.xlsx (default: on; use --no-emit-xlsx to skip)",
+    )
+    args = parser.parse_args()
+
+    out_dir = Path(args.dir)
+    need_path = Path(args.need_profile) if args.need_profile else None
+    try:
+        payload = compare_solutions(
+            out_dir,
+            need_profile=need_path,
+            emit_xlsx=args.emit_xlsx,
+        )
+    except (ValueError, RuntimeError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(json.dumps(payload))
 
 
 if __name__ == "__main__":
     main()
+

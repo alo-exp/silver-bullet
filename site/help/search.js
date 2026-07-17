@@ -334,6 +334,20 @@ var IDX = [
   },
   {
     "page": "Workflows",
+    "url": "/help/workflows/silver-multi-ai-task.html",
+    "anchor": "overview",
+    "title": "/silver:multi-ai-task",
+    "text": "Reusable multi-model orchestration primitive (multi-ai-task-v2 spine). Pool resolution, dispatch ledger, work-item manifests, cost caps, Cursor host adapter stub, and OCG multi-ai-worker-v1 delegation."
+  },
+  {
+    "page": "Workflows",
+    "url": "/help/workflows/silver-deep-research-multi-ai.html",
+    "anchor": "overview",
+    "title": "/silver:deep-research-multi-ai",
+    "text": "Opt-in deep research composer: parallel DR-RETRIEVE, DR-TRIANGULATE, DR-CRITIQUE via /silver:multi-ai-task, run_manifest v4, deterministic consolidation, report.html and landscape-report.html."
+  },
+  {
+    "page": "Workflows",
     "url": "/help/workflows/silver-compare.html",
     "anchor": "overview",
     "title": "/silver:compare",

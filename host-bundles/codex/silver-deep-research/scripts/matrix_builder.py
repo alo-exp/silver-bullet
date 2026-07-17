@@ -65,18 +65,11 @@ def _require_openpyxl() -> None:
             Side,
         )
         from openpyxl.utils import get_column_letter as _gcl
-    except ImportError:
-        print(
-            json.dumps({
-                "status": "error",
-                "reason": (
-                    "openpyxl is required for matrix_builder. "
-                    "Install with: pip install -r skills/silver-deep-research/requirements.txt"
-                ),
-            }),
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    except ImportError as exc:
+        raise ImportError(
+            "openpyxl is required for matrix_builder. "
+            "Install with: pip install -r skills/silver-deep-research/requirements.txt"
+        ) from exc
     openpyxl = _openpyxl
     get_column_letter = _gcl
     globals().update({
@@ -185,6 +178,19 @@ def _init_styles() -> None:
 # Helpers
 # ---------------------------------------------------------------------------
 
+_FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def _sanitize_cell_value(value: Any) -> Any:
+    """Neutralize spreadsheet formula injection for user-controlled strings."""
+    if not isinstance(value, str) or not value:
+        return value
+    lead = value.lstrip("\t\r\n ")
+    if lead and lead[0] in _FORMULA_PREFIXES:
+        return "'" + value
+    return value
+
+
 def _countif(col_letter: str) -> str:
     return f'=COUNTIF({col_letter}{DATA_START}:{col_letter}1048576,"?*")'
 
@@ -208,6 +214,14 @@ def _style_cell(cell, font=None, fill=None, align=None, border=None):
         cell.alignment = copy.copy(align)
     if border:
         cell.border = copy.copy(border)
+
+
+def _set_user_cell(ws, row: int, col: int, value: Any, font=None, fill=None, align=None, border=None):
+    """Write a user-controlled value with formula neutralization + optional style."""
+    cell = ws.cell(row, col)
+    cell.value = _sanitize_cell_value(value)
+    _style_cell(cell, font, fill, align, border)
+    return cell
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +263,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     # Row 1: Title
     # ------------------------------------------------------------------
     ws.merge_cells(f"A{TITLE_ROW}:{last_ltr}{TITLE_ROW}")
-    title_cell = ws.cell(TITLE_ROW, 1)
-    title_cell.value = title
-    _style_cell(title_cell, _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN, _DEFAULT_BORDER)
+    _set_user_cell(
+        ws, TITLE_ROW, 1, title,
+        _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN, _DEFAULT_BORDER,
+    )
     ws.row_dimensions[TITLE_ROW].height = 30
 
     # ------------------------------------------------------------------
@@ -267,9 +282,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
 
     for p_idx, plat in enumerate(platforms):
         col = PLAT_START + p_idx
-        cell = ws.cell(HEADER_ROW, col)
-        cell.value = plat["name"]
-        _style_cell(cell, _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN, _DEFAULT_BORDER)
+        _set_user_cell(
+            ws, HEADER_ROW, col, plat["name"],
+            _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN, _DEFAULT_BORDER,
+        )
 
     ws.row_dimensions[HEADER_ROW].height = 30
 
@@ -323,9 +339,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     for cat in categories:
         # Category heading row (merged)
         ws.merge_cells(f"A{current_row}:{last_ltr}{current_row}")
-        cat_cell = ws.cell(current_row, FEAT_COL)
-        cat_cell.value = cat["name"]
-        _style_cell(cat_cell, _CAT_FONT, _CAT_FILL, _CAT_ALIGN, _DEFAULT_BORDER)
+        _set_user_cell(
+            ws, current_row, FEAT_COL, cat["name"],
+            _CAT_FONT, _CAT_FILL, _CAT_ALIGN, _DEFAULT_BORDER,
+        )
         ws.row_dimensions[current_row].height = 22
         current_row += 1
 
@@ -335,15 +352,17 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
             total_features += 1
 
             # Col A: feature name
-            fc = ws.cell(current_row, FEAT_COL)
-            fc.value = feat_name
-            _style_cell(fc, _FEAT_FONT, _EMPTY_FILL, _FEAT_ALIGN, _DEFAULT_BORDER)
+            _set_user_cell(
+                ws, current_row, FEAT_COL, feat_name,
+                _FEAT_FONT, _EMPTY_FILL, _FEAT_ALIGN, _DEFAULT_BORDER,
+            )
 
             # Col B: priority
-            pc = ws.cell(current_row, PRIO_COL)
-            pc.value = prio
             prio_fill = PRIORITY_FILLS.get(prio, _EMPTY_FILL)
-            _style_cell(pc, _PRIO_FONT, prio_fill, _PRIO_ALIGN, _DEFAULT_BORDER)
+            _set_user_cell(
+                ws, current_row, PRIO_COL, prio,
+                _PRIO_FONT, prio_fill, _PRIO_ALIGN, _DEFAULT_BORDER,
+            )
 
             # Platform columns: tick or empty
             for p_idx in range(num_plats):
@@ -410,3 +429,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -7,6 +7,10 @@ import json
 import sys
 from pathlib import Path
 
+from deps_probe import openpyxl_importable
+
+
+
 
 def validate(out_dir: Path) -> dict:
     errors: list[str] = []
@@ -39,6 +43,14 @@ def validate(out_dir: Path) -> dict:
     comp = out_dir / "comparison" / "comparison.json"
     if not comp.exists():
         errors.append("missing comparison/comparison.json")
+
+    xlsx = out_dir / "comparison" / "comparison-matrix.xlsx"
+    if not xlsx.is_file():
+        errors.append("missing comparison/comparison-matrix.xlsx")
+        if not openpyxl_importable():
+            errors.append(
+                "openpyxl not installed (pip install -r skills/silver-deep-research/requirements.txt)"
+            )
 
     spa = out_dir / "report.html"
     if not spa.exists():

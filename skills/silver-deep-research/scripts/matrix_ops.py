@@ -62,18 +62,11 @@ def _require_openpyxl() -> None:
     try:
         import openpyxl as _openpyxl
         from openpyxl.utils import get_column_letter as _gcl
-    except ImportError:
-        print(
-            json.dumps({
-                "status": "error",
-                "reason": (
-                    "openpyxl is required for matrix operations. "
-                    "Install with: pip install -r skills/silver-deep-research/requirements.txt"
-                ),
-            }),
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    except ImportError as exc:
+        raise ImportError(
+            "openpyxl is required for matrix operations. "
+            "Install with: pip install openpyxl"
+        ) from exc
     openpyxl = _openpyxl
     get_column_letter = _gcl
 

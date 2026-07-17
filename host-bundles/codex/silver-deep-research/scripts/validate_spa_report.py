@@ -12,18 +12,34 @@ FORBIDDEN = re.compile(
     r"http\.server|localhost:\d+|launch_report",
     re.IGNORECASE,
 )
-REQUIRED_MARKERS = [
+REQUIRED_MARKERS_GENERAL = [
     'id="report-data"',
     "data-tab-marker",
     "panel-overview",
     "panel-matrix",
 ]
-SUBSTANTIVE_KEYS = frozenset({
+REQUIRED_MARKERS_LANDSCAPE = [
+    'id="report-data"',
+    "data-landscape-marker",
+    "panel-landscape-grid",
+    "landscape-filter-bar",
+    "landscape-chart-canvas",
+]
+# Profile routing: general (report.html) or landscape (landscape-report.html).
+SUBSTANTIVE_KEYS_GENERAL = frozenset({
     "title",
     "research_type",
     "need_profile",
     "comparison",
     "scrs",
+    "consolidation",
+})
+SUBSTANTIVE_KEYS_LANDSCAPE = frozenset({
+    "title",
+    "research_type",
+    "need_profile",
+    "comparison",
+    "landscape",
 })
 TABLE_DECLARE = re.compile(r"\b(?:let|var)\s+table\s*=")
 INLINE_SCRIPT = re.compile(r"<script>(.*?)</script>", re.DOTALL | re.IGNORECASE)
@@ -66,7 +82,7 @@ def _extract_json_payload(text: str) -> tuple[str | None, str | None]:
     return match.group(1).strip(), None
 
 
-def validate(path: Path) -> dict:
+def validate(path: Path, profile: str | None = None) -> dict:
     errors: list[str] = []
     if not path.exists():
         return {"status": "fail", "errors": ["report.html missing"]}
@@ -75,11 +91,19 @@ def validate(path: Path) -> dict:
     if FORBIDDEN.search(text):
         errors.append("forbidden server/localhost reference in report.html")
 
-    for marker in REQUIRED_MARKERS:
+    if profile == "landscape":
+        required = REQUIRED_MARKERS_LANDSCAPE
+    elif profile == "general":
+        required = REQUIRED_MARKERS_GENERAL
+    else:
+        required = REQUIRED_MARKERS_GENERAL
+
+    for marker in required:
         if marker not in text:
             errors.append(f"missing tab/data marker: {marker}")
 
-    errors.extend(_check_matrix_js(text))
+    if profile in {None, "general"}:
+        errors.extend(_check_matrix_js(text))
 
     raw_json, extract_err = _extract_json_payload(text)
     if extract_err:
@@ -92,25 +116,37 @@ def validate(path: Path) -> dict:
         else:
             if not isinstance(payload, dict):
                 errors.append("report-data payload must be a JSON object")
-            elif not SUBSTANTIVE_KEYS.intersection(payload.keys()):
+            elif not (SUBSTANTIVE_KEYS_LANDSCAPE if profile == "landscape" else SUBSTANTIVE_KEYS_GENERAL).intersection(payload.keys()):
                 errors.append(
                     "report-data JSON lacks substantive keys "
-                    f"(expected one of: {', '.join(sorted(SUBSTANTIVE_KEYS))})"
+                    f"(expected one of: {', '.join(sorted(SUBSTANTIVE_KEYS_LANDSCAPE if profile == 'landscape' else SUBSTANTIVE_KEYS_GENERAL))})"
                 )
             else:
                 errors.extend(_check_safe_json_escaping(raw_json, payload))
 
-    return {"status": "pass" if not errors else "fail", "errors": errors}
+    return {
+        "status": "pass" if not errors else "fail",
+        "errors": errors,
+        "profile": profile or "legacy-general",
+    }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--report", required=True, help="Path to report.html")
+    parser.add_argument("--report", required=True, help="Path to report.html or landscape-report.html")
+    parser.add_argument(
+        "--profile",
+        choices=["general", "landscape"],
+        default="general",
+        help="Validation profile (general for report.html, landscape for landscape-report.html)",
+    )
     args = parser.parse_args()
-    result = validate(Path(args.report))
+
+    result = validate(Path(args.report), profile=args.profile)
     print(json.dumps(result, indent=2))
     sys.exit(0 if result["status"] == "pass" else 1)
 
 
 if __name__ == "__main__":
     main()
+

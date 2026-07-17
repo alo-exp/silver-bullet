@@ -7,9 +7,14 @@ import json
 import sys
 from pathlib import Path
 
+from deps_probe import openpyxl_importable
+
+
+
 
 def validate(out_dir: Path) -> dict:
     errors: list[str] = []
+    warnings: list[str] = []
     shortlist_path = out_dir / "shortlist" / "shortlist.json"
     if not shortlist_path.exists():
         errors.append("missing shortlist/shortlist.json")
@@ -35,11 +40,19 @@ def validate(out_dir: Path) -> dict:
     if not comp.exists():
         errors.append("missing comparison/comparison.json")
 
+    xlsx = out_dir / "comparison" / "comparison-matrix.xlsx"
+    if not xlsx.is_file():
+        errors.append("missing comparison/comparison-matrix.xlsx")
+        if not openpyxl_importable():
+            errors.append(
+                "openpyxl not installed (pip install -r skills/silver-deep-research/requirements.txt)"
+            )
+
     spa = out_dir / "report.html"
     if not spa.exists():
         errors.append("missing report.html")
 
-    return {"status": "pass" if not errors else "fail", "errors": errors}
+    return {"status": "pass" if not errors else "fail", "errors": errors, "warnings": warnings}
 
 
 def main() -> None:

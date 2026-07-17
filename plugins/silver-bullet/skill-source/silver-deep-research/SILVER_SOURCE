@@ -102,8 +102,11 @@ Default mode for solution types: **`deep`**.
 Landscape: `shortlist_candidates.py` → exactly 5 SCRs. Compare: skip shortlist; use
 `solutions_requested.json`.
 
-Packaging: `compare_solutions.py` → `generate_report_spa.py` → serverless `report.html`
-(open in host browser MCP + `open report.html` — **no** `http.server`).
+Packaging: `compare_solutions.py` → `comparison-matrix.xlsx` + `generate_report_spa.py` →
+serverless `report.html` (open in host browser MCP + `open report.html` — **no** `http.server`).
+
+Optional `persona_id` on `need_profile.json` (`startup`, `enterprise`, `regulated`) adjusts
+weighted matrix priorities — see `reference/need-profile-personas.json`.
 
 ## Mode Selection
 
@@ -228,6 +231,7 @@ Solution-landscape / solution-compare also require:
 need_profile.json
 comparison/comparison.json
 comparison/comparison-matrix.md
+comparison/comparison-matrix.xlsx
 report.html
 solutions/<slug>/scr.md
 solutions/<slug>/features.json

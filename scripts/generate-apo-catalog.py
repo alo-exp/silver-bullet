@@ -4,9 +4,17 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 
+_LIB = Path(__file__).resolve().parent / "lib"
+if str(_LIB) not in sys.path:
+    sys.path.insert(0, str(_LIB))
+
+from apo_catalog_common import evidence_record  # noqa: E402
+from apo_multi_ai_catalog import merge_multi_ai_catalog  # noqa: E402
+from apo_delegate_catalog import merge_delegate_catalog  # noqa: E402
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = REPO_ROOT / "skills"
 CATALOG_PATH = REPO_ROOT / "docs" / "apo-catalog.json"
@@ -50,123 +58,9 @@ ATOMIC_SPECS = [
     ("AF-PHASE-MANAGE", "PHASE_MANAGE", "phase_and_state_management", "templates/orchestrator-workers/PHASE.md", "Phase, backlog, thread, or state transition record."),
     ("AF-FAST-PATH", "FAST_PATH", "bounded_fast_path", "templates/orchestrator-workers/FAST.md", "Minimal safe workflow route for narrow low-risk work."),
     ("AF-AGENT-DELEGATE", "AGENT_DELEGATE", "external_agent_delegation", "templates/orchestrator-workers/AGENT-DELEGATE.md", "Audited delegation result with evidence-backed success claim."),
+    ("AF-MULTI-AI-TASK", "MULTI_AI_TASK", "multi_model_orchestration", "skills/silver-multi-ai-task/SKILL.md", "Parallel multi-model task dispatch with manifests, ledger, and result index."),
 ]
 
-DELEGATE_FLOW_STEP_ORDER = [
-    "FS-DELEGATE-BRIEF",
-    "FS-DELEGATE-GUARD_ON",
-    "FS-DELEGATE-LAUNCH",
-    "FS-DELEGATE-CODEX-LAUNCH",
-    "FS-DELEGATE-CODEX-ROUTE",
-    "FS-SILVER_AGENT_CODEX",
-    "FS-DELEGATE-CURSOR-LAUNCH",
-    "FS-DELEGATE-CURSOR-ROUTE",
-    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY",
-    "FS-SILVER_AGENT_CURSOR",
-    "FS-DELEGATE-CLAUDE-LAUNCH",
-    "FS-DELEGATE-CLAUDE-ROUTE",
-    "FS-SILVER_AGENT_CLAUDE",
-    "FS-DELEGATE-CHECKPOINT",
-    "FS-DELEGATE-VERIFY",
-    "FS-DELEGATE-RELAUNCH",
-    "FS-DELEGATE-MENTOR",
-    "FS-DELEGATE-GUARD_OFF",
-]
-
-DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
-    "FS-DELEGATE-BRIEF": {
-        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
-        "purpose": "Host prepares bounded brief, ownership scope, and acceptance criteria.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "BRIEF",
-    },
-    "FS-DELEGATE-GUARD_ON": {
-        "skill": "distribution-only",
-        "purpose": "Activate session-scoped delegation guard for parent supervision tier.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "GUARD_ON",
-    },
-    "FS-DELEGATE-LAUNCH": {
-        "skill": "silver-agent-worker",
-        "purpose": "Native worker launches external CLI with implementer contract.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CODEX-LAUNCH": {
-        "skill": "silver-agent-codex",
-        "purpose": "Spawn agent-codex-delegate.sh with CODEX_HOME isolation and hook-trust.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CODEX-ROUTE": {
-        "skill": "silver-agent-codex",
-        "purpose": "Inject $silver:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CURSOR-LAUNCH": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Spawn agent-cursor-delegate.sh with Keychain auth and model policy.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CURSOR-ROUTE": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Inject /silver:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": {
-        "skill": "silver-agent-cursor",
-        "purpose": "Enforce composer-2.5 only (never Fast) on nested Task spawns.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CLAUDE-LAUNCH": {
-        "skill": "silver-agent-claude",
-        "purpose": "Spawn agent-claude-delegate.sh with CLAUDE_CONFIG_DIR isolation and OAuth auth.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CLAUDE-ROUTE": {
-        "skill": "silver-agent-claude",
-        "purpose": "Inject /silver:* route syntax into external agent brief.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "LAUNCH",
-    },
-    "FS-DELEGATE-CHECKPOINT": {
-        "skill": "distribution-only",
-        "purpose": "Record checkpoint evidence from delegate supervision.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "CHECKPOINT",
-    },
-    "FS-DELEGATE-VERIFY": {
-        "skill": "distribution-only",
-        "purpose": "Audit external success claim against brief and evidence.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "VERIFY",
-    },
-    "FS-DELEGATE-RELAUNCH": {
-        "skill": "silver-agent-worker",
-        "purpose": "Relaunch delegate within repair.max_attempts with NEXT_RETRY_PROMPT.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "RELAUNCH",
-    },
-    "FS-DELEGATE-MENTOR": {
-        "skill": "silver-agent-codex|silver-agent-cursor|silver-agent-claude",
-        "purpose": "Host mentor capture and user-facing report preparation.",
-        "classification": "flow-step-skill",
-        "evidence_suffix": "MENTOR",
-    },
-    "FS-DELEGATE-GUARD_OFF": {
-        "skill": "distribution-only",
-        "purpose": "Clear active delegation guard and session markers.",
-        "classification": "atomic-flow-implementation",
-        "evidence_suffix": "GUARD_OFF",
-    },
-}
-
-# Skill-dispatched alternate worker templates (runtime resolves via orchestrator-parent.sh).
 SKILL_WORKER_TEMPLATES: dict[str, dict[str, str]] = {
     "AF-DOCUMENT": {
         "silver-handoff": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
@@ -274,10 +168,13 @@ SKILL_TO_FLOW = {
     "silver-agent-opencode": "AF-AGENT-DELEGATE",
     "silver-agent-pi": "AF-AGENT-DELEGATE",
     "silver-agent-worker": "AF-AGENT-DELEGATE",
+    "silver-multi-ai-task": "AF-MULTI-AI-TASK",
+    "silver-deep-research-multi-ai": "AF-DECIDE",
 }
 
+
 PRECOMPOSED = {
-    "silver-feature", "silver-ui", "silver-devops", "silver-bugfix", "silver-deep-research",
+    "silver-feature", "silver-ui", "silver-devops", "silver-bugfix", "silver-deep-research", "silver-deep-research-multi-ai",
     "silver-release", "silver-fast", "silver-new-workflow", "silver-incident", "silver-deploy", "silver-canary",
     "silver-content", "silver-retro", "silver-benchmark", "silver-refactor",
     "silver-test", "silver-forensics",
@@ -287,17 +184,6 @@ QUALITY = {
     "reliability", "scalability", "modularity", "reusability", "extensibility",
     "security", "testability", "usability", "ai-llm-safety",
 }
-
-
-def evidence_record(ev_id: str, producer: str, ref: str, cls: str, artifact: str) -> dict:
-    return {
-        "id": ev_id,
-        "producer": producer,
-        "artifact_or_tool_ref": artifact,
-        "sufficiency_class": cls,
-        "staleness_key": "catalog-version+entity-contract",
-        "satisfies_v_loop_ref": ref,
-    }
 
 
 def classify_skill(name: str) -> str:
@@ -347,6 +233,77 @@ def workflow(
     return doc
 
 
+FLOW_STEP_OVERRIDES: dict[str, dict] = {
+    "silver-deep-research-multi-ai": {
+        "purpose": "Execute opt-in multi-model deep research via FS-SILVER_DEEP_RESEARCH_MULTI_AI.",
+        "outputs": [
+            "run_manifest.json v4",
+            "consolidated/research_report.md",
+            "report.html",
+            "landscape-report.html",
+            "multi-ai result index",
+        ],
+        "v_loop": {
+            "work_product": "Multi-model DR artifacts with multi-ai-task-v2 spine and provenance.",
+            "verification": {
+                "artifact_refs": [
+                    "skills/silver-deep-research-multi-ai/SKILL.md",
+                    "research/<date>-<slug>/run_manifest.json",
+                ],
+            },
+        },
+    },
+    "silver-deep-research": {
+        "purpose": "Execute the nested SB deep-research workflow as FS-SILVER_DEEP_RESEARCH inside AF-DECIDE.",
+        "outputs": [
+            "research_report.md",
+            "decision-record.md",
+            "handoff.md",
+            "sources.jsonl",
+            "evidence.jsonl",
+            "claims.jsonl",
+            "vloop-rollup.json",
+        ],
+        "v_loop": {
+            "work_product": "Phase-level deep research artifacts plus ART-DECIDE rollup under .planning/research/.",
+            "verification": {
+                "artifact_refs": [
+                    "skills/silver-deep-research/SKILL.md",
+                    ".planning/research/<date>-<slug>/vloop-rollup.json",
+                    ".planning/research/<date>-<slug>/decision-record.md",
+                ],
+            },
+            "validation": {
+                "methods": [
+                    "confirm nested DR-* phase V-loops passed or were mode-skipped",
+                    "trace decision-record.md to parent AF-DECIDE input",
+                ],
+            },
+        },
+    },
+}
+
+
+def apply_flow_step_overrides(step: dict, name: str) -> None:
+    """Apply data-driven purpose/output/v_loop overrides for selected skills."""
+    override = FLOW_STEP_OVERRIDES.get(name)
+    if not override:
+        return
+    if "purpose" in override:
+        step["purpose"] = override["purpose"]
+    if "outputs" in override:
+        step["outputs"] = list(override["outputs"])
+    v_over = override.get("v_loop") or {}
+    if "work_product" in v_over:
+        step["v_loop"]["work_product"] = v_over["work_product"]
+    verification = v_over.get("verification")
+    if verification:
+        step["v_loop"]["verification"].update(verification)
+    validation = v_over.get("validation")
+    if validation:
+        step["v_loop"]["validation"].update(validation)
+
+
 def build_flow_steps(skill_names: list[str]) -> tuple[list[dict], dict[str, list[str]], list[dict]]:
     flow_to_steps = {flow_id: [] for flow_id, *_ in ATOMIC_SPECS}
     flow_steps = []
@@ -381,125 +338,10 @@ def build_flow_steps(skill_names: list[str]) -> tuple[list[dict], dict[str, list
             "reusable_by_flows": [flow_id],
             "canonical_catalog_entity": flow_id,
         }
-        if name == "silver-deep-research":
-            step["purpose"] = "Execute the nested SB deep-research workflow as FS-SILVER_DEEP_RESEARCH inside AF-DECIDE."
-            step["outputs"] = [
-                "research_report.md",
-                "decision-record.md",
-                "handoff.md",
-                "sources.jsonl",
-                "evidence.jsonl",
-                "claims.jsonl",
-                "vloop-rollup.json",
-            ]
-            step["v_loop"]["work_product"] = "Phase-level deep research artifacts plus ART-DECIDE rollup under .planning/research/."
-            step["v_loop"]["verification"]["artifact_refs"] = [
-                "skills/silver-deep-research/SKILL.md",
-                ".planning/research/<date>-<slug>/vloop-rollup.json",
-                ".planning/research/<date>-<slug>/decision-record.md",
-            ]
-            step["v_loop"]["validation"]["methods"] = [
-                "confirm nested DR-* phase V-loops passed or were mode-skipped",
-                "trace decision-record.md to parent AF-DECIDE input",
-            ]
+
+        apply_flow_step_overrides(step, name)
         flow_steps.append(step)
     return sorted(flow_steps, key=lambda item: item["id"]), flow_to_steps, evidence_records
-
-
-def build_delegate_flow_steps() -> tuple[list[dict], list[dict], list[dict]]:
-    """Catalog-backed FS-DELEGATE-* steps for AF-AGENT-DELEGATE."""
-    flow_steps: list[dict] = []
-    evidence_records: list[dict] = []
-    for step_id in DELEGATE_FLOW_STEP_ORDER:
-        meta = DELEGATE_STEP_DEFS[step_id]
-        ev_suffix = meta["evidence_suffix"]
-        ev_id = f"EV-FS-DELEGATE-{ev_suffix}"
-        v_id = f"VL-{step_id}"
-        evidence_class = "inspection"
-        evidence_records.append(
-            evidence_record(ev_id, step_id, v_id, evidence_class, f".planning/agent-<host>/<task-id>/")
-        )
-        flow_steps.append({
-            "id": step_id,
-            "skill": meta["skill"],
-            "purpose": meta["purpose"],
-            "hierarchy_level": "flow_step",
-            "classification": meta["classification"],
-            "inputs": ["delegation brief", "host selection", "ownership scope"],
-            "outputs": ["step evidence", "delegate.log excerpt or checkpoint"],
-            "v_loop": {
-                "id": v_id,
-                "rollup_target": "flow_step",
-                "input_contract": f"{step_id} receives bounded delegation context from AF-AGENT-DELEGATE.",
-                "work_product": meta["purpose"],
-                "verification": {"methods": ["inspection", "analysis"], "artifact_refs": ["ART-AGENT-DELEGATE"]},
-                "validation": {"target": "delegation brief intent", "methods": ["trace to brief and ownership scope"]},
-                "repair": {"behavior": "rerun delegate sub-loop via native worker", "max_attempts": 2},
-                "escalation": {"condition": "step cannot satisfy contract after repair", "blocker_artifact": ".planning/BLOCKERS.md"},
-                "evidence_refs": [ev_id],
-            },
-            "reusable_by_flows": ["AF-AGENT-DELEGATE"],
-            "canonical_catalog_entity": "AF-AGENT-DELEGATE",
-        })
-    evidence_records.append(
-        evidence_record(
-            "EV-DELEGATE-DEGRADED-FALLBACK",
-            "AF-AGENT-DELEGATE",
-            "VL-AF-AGENT-DELEGATE",
-            "command_evidence",
-            ".planning/agent-<host>/<task-id>/degraded-fallback.jsonl",
-        )
-    )
-    return flow_steps, evidence_records
-
-
-def merge_delegate_catalog(
-    flow_steps: list[dict],
-    flow_to_steps: dict[str, list[str]],
-    step_evidence: list[dict],
-    atomic_flows: list[dict],
-    artifacts: list[dict],
-    flow_evidence: list[dict],
-) -> None:
-    delegate_steps, delegate_evidence = build_delegate_flow_steps()
-    delegate_ids = {step["id"] for step in delegate_steps}
-    flow_steps[:] = [step for step in flow_steps if step["id"] not in delegate_ids]
-    flow_steps.extend(delegate_steps)
-    flow_steps.sort(key=lambda item: item["id"])
-    flow_to_steps["AF-AGENT-DELEGATE"] = list(DELEGATE_FLOW_STEP_ORDER)
-    step_evidence.extend(delegate_evidence)
-    artifacts.append({
-        "id": "ART-AGENT-DELEGATE",
-        "path_pattern": ".planning/agent-<host>/<task-id>/*",
-        "schema_or_sections": "brief.md,delegate.log,result.md,checkpoints/,retry-prompt.md,STATUS block",
-        "producer": "AF-AGENT-DELEGATE",
-        "verifier": "AF-AGENT-DELEGATE",
-        "stale_conditions": ["brief hash changes", "task_id reuse with different scope"],
-    })
-    flow_evidence.append(
-        evidence_record(
-            "EV-AF-AGENT-DELEGATE",
-            "AF-AGENT-DELEGATE",
-            "VL-AF-AGENT-DELEGATE",
-            "artifact_review",
-            "ART-AGENT-DELEGATE",
-        )
-    )
-    for flow in atomic_flows:
-        if flow.get("id") != "AF-AGENT-DELEGATE":
-            continue
-        flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor", "silver-agent-claude"]
-        flow["flow_steps"] = list(DELEGATE_FLOW_STEP_ORDER)
-        flow["artifacts"] = ["ART-AGENT-DELEGATE"]
-        flow["execution"]["parallelizable"] = False
-        flow["dedup_gate"] = {
-            "equivalence_review": "AF-AGENT-DELEGATE is the sole canonical external-agent delegation AF; per-host AFs are not promoted.",
-            "granularity_review": "capability spans brief through guard cleanup; larger than a skill step",
-            "usage_review": "referenced by WF-AGENT-DELEGATE-ENTRY and on-demand host skills",
-            "v_loop_review": "VL-AF-AGENT-DELEGATE defines full V-loop with repair.max_attempts 2",
-            "step_review": "FS-DELEGATE-* steps have local V-loops and shared EV-FS-DELEGATE-* evidence refs",
-        }
-        flow["dedup_gate_status"] = "passed"
 
 
 def build_atomic_flows(flow_steps: list[dict], flow_to_steps: dict[str, list[str]]) -> tuple[list[dict], list[dict]]:
@@ -602,6 +444,8 @@ def build_workflows() -> list[dict]:
         workflow("WF-SILVER-DEVOPS", "silver-devops", "precomposed", [n("AF-BLAST-RADIUS"), n("AF-DEVOPS-ROUTE"), n("AF-QUALITY-GATE"), n("AF-SECURE"), n("AF-ORIENT"), n("AF-PLAN"), n("AF-VALIDATE"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-devops", triggers=["devops", "infra"], queue=["silver-blast-radius", "devops-skill-router", "devops-quality-gates", "security", "silver-context", "silver-plan", "silver-validate", "silver-execute"] + feature_queue[5:]),
         workflow("WF-SILVER-BUGFIX", "silver-bugfix", "precomposed", [n("AF-ORIENT", optional=True), n("AF-DEBUG"), n("AF-PLAN"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-bugfix", triggers=["bug", "fix", "debug"], queue=["silver-debug", "silver-plan", "silver-execute"] + feature_queue[5:]),
         workflow("WF-SILVER-DEEP-RESEARCH", "silver-deep-research", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-deep-research", triggers=["deep research", "research", "decide"], queue=["silver-clarify", "silver-deep-research", "silver-ensure-docs", "silver-validate"]),
+        workflow("WF-SILVER-MULTI-AI-TASK", "silver-multi-ai-task", "specialized", [n("AF-MULTI-AI-TASK")], owner="silver-multi-ai-task", triggers=["multi-ai-task", "multi model task", "parallel models"], queue=["silver-multi-ai-task"]),
+        workflow("WF-SILVER-DEEP-RESEARCH-MULTI-AI", "silver-deep-research-multi-ai", "precomposed", [n("AF-CLARIFY"), n("AF-DECIDE", label="multi-ai"), n("AF-MULTI-AI-TASK"), n("AF-DOCUMENT"), n("AF-VALIDATE")], owner="silver-deep-research-multi-ai", triggers=["deep research multi ai", "multi model research", "triangulated research"], queue=["silver-clarify", "silver-deep-research-multi-ai", "silver-ensure-docs", "silver-validate"]),
         workflow(
             "WF-SILVER-NEW-WORKFLOW",
             "silver-new-workflow",
@@ -635,6 +479,68 @@ def build_workflows() -> list[dict]:
     return workflows
 
 
+
+PROCESS_PACK_DEFS = [
+    {
+        "id": "PP-SB-DEFAULT",
+        "name": "Default Silver Bullet SE/DevOps Process Pack",
+        "process_ref": "PROC-SB-SE-DEVOPS",
+        "workflow_refs": [
+            "WF-SILVER-FEATURE",
+            "WF-SILVER-UI",
+            "WF-SILVER-DEVOPS",
+            "WF-SILVER-BUGFIX",
+            "WF-SILVER-DEEP-RESEARCH",
+            "WF-SILVER-RELEASE",
+            "WF-SILVER-FAST",
+        ],
+        "override_rules": [
+            "teams may reorder workflows, mandate gates, require tools, and set risk thresholds",
+            "teams must not define local atomic flows outside docs/apo-catalog.json",
+        ],
+        "conflict_resolution": "catalog safety gates override user shortcuts; explicit user scope can choose a smaller workflow when dynamic rules permit",
+        "versioning": "catalog_version governs migration; process pack changes require migration_map update",
+    },
+    {
+        "id": "PP-SB-REGULATED",
+        "name": "Regulated enterprise process pack",
+        "process_ref": "PROC-SB-SE-DEVOPS",
+        "workflow_refs": [
+            "WF-SILVER-FEATURE",
+            "WF-SILVER-BUGFIX",
+            "WF-SILVER-RELEASE",
+            "WF-SILVER-DEEP-RESEARCH",
+        ],
+        "override_rules": [
+            "exclude WF-SILVER-FAST from default router recommendations",
+            "mandate INTENT-GATE-DEFAULT and VR-WORKFLOW-DEFAULT on every delivery workflow",
+            "pair with enterprise_policy.active_profile regulated and evidence_schema_strict",
+            "require human approval for ship, release, and production deploy atomic flows",
+        ],
+        "conflict_resolution": "regulated gates and catalog safety gates override speed shortcuts; WF-SILVER-FAST requires explicit user scope",
+        "versioning": "catalog_version governs migration; regulated overlays require compliance review before promotion",
+    },
+    {
+        "id": "PP-SB-STARTUP-FAST",
+        "name": "Startup fast-path process pack",
+        "process_ref": "PROC-SB-SE-DEVOPS",
+        "workflow_refs": [
+            "WF-SILVER-FAST",
+            "WF-SILVER-FEATURE",
+            "WF-SILVER-BUGFIX",
+            "WF-SILVER-UI",
+        ],
+        "override_rules": [
+            "prefer WF-SILVER-FAST for greenfield features under three-day scope",
+            "defer WF-SILVER-DEEP-RESEARCH and WF-SILVER-DEVOPS unless risk triggers fire",
+            "pair with enterprise_policy.active_profile autonomous_safe on tier 2+ hosts",
+            "skip optional bootstrap/orient atoms when dynamic rules permit",
+        ],
+        "conflict_resolution": "fast-path shortcuts yield to catalog safety gates and blocking decision_class outcomes",
+        "versioning": "catalog_version governs migration; startup-fast overlays documented in enterprise onboarding",
+    },
+]
+
 def build_catalog() -> dict:
     skill_names = sorted(path.parent.name for path in SKILLS_DIR.glob("*/SKILL.md"))
     missing = sorted(set(skill_names) - set(SKILL_TO_FLOW))
@@ -657,6 +563,7 @@ def build_catalog() -> dict:
         for flow_id, slug, *_ in ATOMIC_SPECS
     ]
     merge_delegate_catalog(flow_steps, flow_to_steps, step_evidence, atomic_flows, artifacts, flow_evidence)
+    merge_multi_ai_catalog(flow_steps, flow_to_steps, step_evidence, atomic_flows, artifacts, flow_evidence)
     artifacts.append({
         "id": "ART-INTENT-LEDGER",
         "path_pattern": ".planning/intent-ledger.json",
@@ -682,15 +589,7 @@ def build_catalog() -> dict:
             "team_override_policy": "process packs may add, remove, gate, or reorder workflows without forking atomic flow definitions",
             "mandatory_gates": ["INTENT-GATE-DEFAULT", "VR-WORKFLOW-DEFAULT"],
         }],
-        "process_packs": [{
-            "id": "PP-SB-DEFAULT",
-            "name": "Default Silver Bullet SE/DevOps Process Pack",
-            "process_ref": "PROC-SB-SE-DEVOPS",
-            "workflow_refs": ["WF-SILVER-FEATURE", "WF-SILVER-UI", "WF-SILVER-DEVOPS", "WF-SILVER-BUGFIX", "WF-SILVER-DEEP-RESEARCH", "WF-SILVER-RELEASE", "WF-SILVER-FAST"],
-            "override_rules": ["teams may reorder workflows, mandate gates, require tools, and set risk thresholds", "teams must not define local atomic flows outside docs/apo-catalog.json"],
-            "conflict_resolution": "catalog safety gates override user shortcuts; explicit user scope can choose a smaller workflow when dynamic rules permit",
-            "versioning": "catalog_version governs migration; process pack changes require migration_map update",
-        }],
+        "process_packs": PROCESS_PACK_DEFS,
         "workflows": workflows,
         "atomic_flows": atomic_flows,
         "flow_steps": flow_steps,
@@ -785,6 +684,9 @@ def build_catalog() -> dict:
                 "silver-clarify": "AF-CLARIFY", "silver-deep-research": "AF-DECIDE", "silver-ensure-docs": "AF-DOCUMENT",
                 "silver-handoff": "AF-DOCUMENT", "silver-scan": "AF-ORIENT",
                 "silver-review-fix-ladder": "AF-REVIEW-TRIAGE", "silver-new-workflow": "AF-PLAN",
+                "silver-triage": "AF-REVIEW-TRIAGE",
+                "silver-multi-ai-task": "AF-MULTI-AI-TASK",
+                "silver-deep-research-multi-ai": "AF-DECIDE",
             },
         },
     }

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "run-manifest-v4.schema.json",
+  "title": "DeepResearchRunManifestV4",
+  "type": "object",
+  "required": [
+    "schema_id",
+    "version",
+    "spine",
+    "run_id",
+    "query",
+    "mode",
+    "research_type",
+    "started_at",
+    "report_dir",
+    "multi_ai"
+  ],
+  "properties": {
+    "schema_id": { "const": "deep-research-run-manifest-v4" },
+    "version": { "const": "4.0.0" },
+    "spine": { "const": "multi-ai-task-v2" },
+    "run_id": { "type": "string", "pattern": "^run-[0-9a-f]{32}$" },
+    "query": { "type": "string" },
+    "mode": { "enum": ["quick", "standard", "deep", "ultradeep"] },
+    "research_type": {
+      "enum": ["default", "solution-landscape", "solution-compare"]
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": ["string", "null"], "format": "date-time" },
+    "report_dir": { "type": "string" },
+    "workflow_id": { "const": "WF-SILVER-DEEP-RESEARCH-MULTI-AI" },
+    "multi_ai": {
+      "type": "object",
+      "required": ["budget", "phases", "work_item_refs"],
+      "properties": {
+        "budget": {
+          "type": "object",
+          "required": ["currency_micro_usd_cap", "total_tokens_cap"],
+          "properties": {
+            "currency_micro_usd_cap": { "type": "integer" },
+            "total_tokens_cap": { "type": "integer" },
+            "currency_micro_usd_actual": { "type": "integer" },
+            "total_tokens_actual": { "type": "integer" },
+            "price_known": { "type": "boolean" },
+            "usage_metered": { "type": "boolean" },
+            "budget_stop_reason": { "type": ["string", "null"] }
+          }
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phase_id", "work_item_id"],
+            "properties": {
+              "phase_id": { "enum": ["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"] },
+              "work_item_id": { "type": "string" },
+              "parallel": { "type": "boolean" }
+            }
+          }
+        },
+        "work_item_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["work_item_id", "manifest_path", "manifest_sha256"],
+            "properties": {
+              "work_item_id": { "type": "string" },
+              "manifest_path": { "type": "string" },
+              "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+            }
+          }
+        },
+        "result_index_path": { "type": ["string", "null"] },
+        "result_index_sha256": { "type": ["string", "null"] }
+      }
+    },
+    "artifact_paths": { "type": "object" }
+  },
+  "additionalProperties": true
+}
