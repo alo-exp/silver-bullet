@@ -9,11 +9,12 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MERGE_PY="${SCRIPT_DIR}/lib/merge-token-compression-config.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
 
-HOST="auto"
+HOST=""
 DRY_RUN=0
 SKIP_CLI_CONFIG=0
 SKIP_RTK_INIT=0
 SKIP_CM_DOCTOR=0
+PROJECT_ROOT=""
 
 usage() {
   cat <<'EOF'
@@ -22,8 +23,9 @@ Usage: bash scripts/optimize-rtk-context-mode.sh [options]
 Ensures optimized RTK + Context Mode wiring for AI coding hosts (global config only).
 
 Options:
-  --host <claude|codex|cursor|opencode|hermes|goose|all|auto>
-                                        Target host (default: auto-detect)
+  --host <claude|codex|cursor|opencode|hermes|goose|all>
+                                        Target host (required)
+  --project-root <path>                 Canonical SB project root (required)
   --dry-run                             Print actions without writing files
   --skip-cli-config                     Skip ~/.cursor/cli-config.json merge
   --skip-rtk-init                       Skip rtk init wiring
@@ -275,7 +277,8 @@ run_cm_doctor() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="${2:-auto}"; shift 2 ;;
+    --host) HOST="${2:-}"; shift 2 ;;
+    --project-root) PROJECT_ROOT="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
     --skip-cli-config) SKIP_CLI_CONFIG=1; shift ;;
     --skip-rtk-init) SKIP_RTK_INIT=1; shift ;;
@@ -284,6 +287,19 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+if [[ -z "$HOST" ]]; then
+  echo "ERROR: --host is required" >&2
+  usage >&2
+  exit 2
+fi
+if [[ -z "$PROJECT_ROOT" ]]; then
+  echo "ERROR: --project-root is required" >&2
+  usage >&2
+  exit 2
+fi
+PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
+export RT_PROJECT_ROOT="$PROJECT_ROOT"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
 
@@ -310,4 +326,5 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 log "=== Optimization complete ==="
+
 

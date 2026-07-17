@@ -1,19 +1,19 @@
 ---
 name: silver-doctor
 description: This skill should be used when the user runs `/silver:doctor` or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/silver:init` update, after `/silver:update`, and during CI diagnostics.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # /silver:doctor — Install and Activation Audit
 
-Audits whether local SB installation is correct for the active host and whether the current project is on the current enforcement surface.
+Audits whether local SB installation is correct for the active host and whether the current project is on the current enforcement surface. **Default and `--deep` are read-only.** Repair requires `--fix=SCOPE`.
 
 ## When to Use
 
 - Before Wave 1+ implementation work or after `/silver:update`
 - When hooks appear inactive or plugin version is stale
 - After migrating a project with `/silver:migrate` + `/silver:init` update mode
-- When task host may have an imported primary host-native SB install (contamination check)
+- When five-tool stack reports drift, missing Graphify index, or MCP reload pending
 
 ## Process
 
@@ -23,11 +23,15 @@ From the project root (or pass an explicit path):
 
 ```bash
 bash scripts/sb-doctor.sh
-# or from plugin install:
-bash "${PLUGIN_ROOT}/scripts/sb-doctor.sh" "$(pwd)"
+bash scripts/sb-doctor.sh --deep          # adds bounded expensive probes (stdio handshake, context-mode doctor)
+bash scripts/sb-doctor.sh --dry-run       # reconciler plan only — no writes
+bash scripts/sb-doctor.sh --fix=local     # project-scope repair via reconciler doctor-fix
+bash scripts/sb-doctor.sh --fix=host      # host hooks/MCP/routes
+bash scripts/sb-doctor.sh --fix=packages  # package installs only
+bash scripts/sb-doctor.sh --fix           # same as --fix=all
 ```
 
-JSON output (for automation):
+JSON output (schema 2.0.0 — includes full reconciler component evidence):
 
 ```bash
 SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
@@ -38,30 +42,35 @@ SB_DOCTOR_FORMAT=json bash scripts/sb-doctor.sh
 | Level | Meaning |
 |-------|---------|
 | **PASS** | Check satisfied |
-| **WARN** | Non-blocking; remediation listed |
+| **WARN** | Non-blocking; remediation listed (`reload_required`, suspended opt-in) |
 | **FAIL** | Must fix before relying on SB enforcement |
 
 **Overall PASS** requires zero FAIL lines. WARN is allowed.
 
+**D10 five-tool checks** use `scripts/reconcile-recommended-tools.sh` for Graphify, agentmemory, RTK, Context Mode, LeanCTX, and cross-tool route/heartbeat convergence. Per-tool IDs: `D10-graphify`, `D10-agentmemory`, `D10-rtk`, `D10-context_mode`, `D10-leanctx`, `D10-routes`.
+
+**D10-routes WARN (not FAIL)** when no five-tool consent is active (`consent != enabled` on all five tools) and `cross_tool` is `repairable` solely because of `heartbeat_absent_or_invalid` — routes/heartbeat are N/A until opt-in. Any other `cross_tool` evidence (hook order, route drift, shell rewrite) still FAILs.
+
+**CONFIGURED ≠ LIVE:** `reload_required` means MCP was written but this session has not proven tool liveness. Phase C adds receipt verification; until then, toggle MCP or start a new chat after repair.
+
 ### Step 3: Fix FAILs inline
 
 ```bash
-bash scripts/sb-doctor.sh --fix
+bash scripts/sb-doctor.sh --fix=local    # project index, export roots, consent-scoped repairs
+bash scripts/sb-doctor.sh --fix=host     # hooks, MCP merge, route ownership
+bash scripts/sb-doctor.sh --fix=all      # bounded dependency-ordered convergence
 ```
 
 | Check | Typical fix |
 |-------|-------------|
-| D2/D3 plugin stale | `/silver:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` (task host) |
-| D4 hooks missing | `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
+| D2/D3 plugin stale | `/silver:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
+| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
 | D6 config stale | `bash scripts/sb-migrate-config.sh` or `/silver:migrate` |
-| D7 template drift | Refresh `silver-bullet.md` from template; run parity test |
-| D8 orchestrator rule | task host only: `bash scripts/sb-migrate-orchestrator-parent.sh` |
+| D10-* five-tool | `bash scripts/sb-doctor.sh --fix=local|host|packages|all` |
+| D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"` |
 | D13 manifest paths | Host install script for active runtime |
-| D14 cache bleed | `bash scripts/install-{primary host,secondary host,task host}.sh` or `sb-doctor.sh --fix` |
-| D15 token budget | Shorten primary host `description` frontmatter in `agents/primary host/` |
-| D16 repo layout bleed | `bash scripts/validate-host-install-surface.sh`; fix via host install |
-| D17 core host bleed | `bash scripts/validate-host-agnostic-core.sh`; move host refs to `scripts/lib/install-*/` |
-| D21 Cursor SB subagents | `bash scripts/install-cursor-sb-agents.sh --fix` or `bash scripts/sb-doctor.sh --fix` (**Cursor only**) |
+| D20 stack mutex | `--fix` clears mutex + scaffolds agentmemory export root |
+| D22 duplicate LeanCTX MCP | WARN — `RT_PATCH_LEANCTX=1 python3 scripts/lib/global-toolstack/patch-mcp.py` |
 
 Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surfaces hook or install issues.
 
@@ -71,32 +80,35 @@ Log friction in `${SB_RUNTIME_STATE_DIR}/sb-friction-log.md` when doctor surface
 bash scripts/sb-doctor.sh && echo "doctor PASS"
 ```
 
-## Check catalog (D1–D22)
+## Check catalog (D1–D22 + D10-*)
 
 - D1 `jq` on PATH
 - D2 plugin registry version ≥ project template `config_version`
 - D3 plugin cache `current` symlink + hooks manifest
-- D4 host hooks manifest (task host `hooks.json`, secondary host `config.toml`, primary host `settings.json`)
+- D4 host hooks manifest
 - D5 project activation (`sb_initiated: true`)
 - D6 `config_version` freshness
 - D7 template parity test
-- D8 task host orchestrator rule (**task host host only**)
+- D8 Cursor orchestrator rule (Cursor host only)
 - D9 workflow tracker
-- D10 recommended tools when opted in
+- **D10-*** five-tool reconciler results (all five tools + D10-routes + optional D10-deep-*)
 - D11 hook smoke
 - D12 `${SB_RUNTIME_STATE_DIR}` writable
 - D13 cross-host manifest paths + expected cache bundle
 - D14 foreign agent namespaces in plugin cache
-- D15 primary host agent description token budget
-- D16 repo install surface (`validate-host-install-surface.sh`)
-- D17 host-agnostic SB core (`validate-host-agnostic-core.sh`)
-- D20 stack compression mutex clean (`sb_stack_mutual_exclusion_is_clean`); `--fix` clears mutex and scaffolds agentmemory export root
-- D22 duplicate LeanCTX MCP servers (`lean-ctx` + `leanctx` in `~/.cursor/mcp.json`); WARN — run `python3 scripts/lib/merge-leanctx-mcp-config.py --host cursor`
+- D15 Claude agent description token budget (Claude only)
+- D16 repo install surface
+- D17 host-agnostic SB core
+- D18–D19 Cursor marketplace gitPath + command stubs
+- D20 stack compression mutex
+- D21 Cursor SB custom subagents
+- D22 duplicate LeanCTX MCP servers
 
 ```bash
 bash scripts/validate-host-install-surface.sh
 bash scripts/validate-host-agnostic-core.sh
-bash scripts/sb-doctor.sh --fix
+bash scripts/sb-doctor.sh --dry-run
+bash scripts/sb-doctor.sh --fix=all
 ```
 
 ## Tests

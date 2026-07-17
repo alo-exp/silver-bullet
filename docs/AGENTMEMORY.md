@@ -95,15 +95,18 @@ mkdir -p .agentmemory/memory .agentmemory/snapshots
 
 Add the agentmemory managed block to `.gitignore` (see `docs/AGENTMEMORY.md` git section in setup runbook). SB init scaffolds this when the user opts in.
 
-### Step 4 — Platform MCP wiring (SB-supported hosts)
+### Step 4 — Platform MCP wiring
 
 | Host | Pre-index | Post-index (MCP connect) | Artifact |
 |------|-----------|--------------------------|----------|
 | Claude Code | *(none)* | `agentmemory connect claude-code` | `~/.claude.json` |
 | Codex | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
-| Cursor | *(none)* | Merge MCP block into `~/.cursor/mcp.json` | `~/.cursor/mcp.json` |
+| Cursor | *(none)* | **User-wired** via Cursor Settings → MCP (or manual `~/.cursor/mcp.json` edit) | `~/.cursor/mcp.json` |
+| OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
 
-**Cursor MCP merge** (preserve existing servers):
+**Cursor:** SB does **not** auto-merge agentmemory into `~/.cursor/mcp.json` during `/silver:init` or `/silver:update`. The reconciler **probes** for an existing `agentmemory` or `user-agentmemory` MCP entry. On `reconcile-recommended-tools.sh --mode apply`, when agentmemory is consented, repair may atomically merge the block below (same as manual wiring).
+
+**Manual Cursor MCP block** (preserve existing servers):
 
 ```bash
 jq '.mcpServers.agentmemory = {
@@ -150,3 +153,7 @@ curl -s -X POST http://localhost:3111/agentmemory/smart-search \
 - `docs/GRAPHIFY.md` — Graphify setup and query patterns (retrieval layer)
 - `docs/code-intelligence-contract.md` — capability tiers and degradation rules
 - `hooks/lib/agentmemory-gate.sh` — enforcement helpers
+
+## MCP reload receipts
+
+Graphify and LeanCTX MCP registration is merged atomically with other five-tool servers via `patch-mcp.py`. **agentmemory** on Cursor is normally user-wired in the IDE; the reconciler probes for it and may merge on `--mode apply` repair. After host config repair, SB does **not** claim any MCP server is live until the current session invokes expected MCP tools and passes attestation validation against the active reload receipt. Partial tool failures are accepted as liveness evidence but retain canonical `reload_required`. See `docs/STACK-OPTIMIZATION.md` and `scripts/reconcile-recommended-tools.sh --host-evidence-stdin`.

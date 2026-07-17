@@ -135,3 +135,15 @@ Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `
 - `silver-bullet.md` §11 — hook protocol and SDK workarounds
 - `docs/code-intelligence-contract.md` — code-intelligence tiers (separate from runtime tiers)
 - `skills/silver-init/SKILL.md` — project bootstrap and runtime probe
+
+## Reload receipts and host evidence (Cursor)
+
+Runtime state for five-tool reconciliation lives under `${SB_RUNTIME_STATE}/recommended-tools/` (heartbeats, reload receipts). Paths resolve via `hooks/lib/runtime-paths.sh` — never by probing arbitrary home directories.
+
+| Artifact | Path pattern |
+|----------|----------------|
+| Heartbeat | `heartbeats/<project-id>/<worktree-id>/<session-id>.json` |
+| Reload receipt | `reload-receipts/<host>/<project-id>/<worktree-id>/<receipt-id>.json` |
+| Host-global receipt | `reload-receipts/<host>/_host-global/_host-global/<receipt-id>.json` |
+
+Skills supply host MCP attestation on stdin (`--host-evidence-stdin`) immediately after real tool calls. Attestations convey liveness only — not consent or repair authorization. Canonical `ready` requires no active receipt and full activation.

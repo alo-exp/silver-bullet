@@ -64,9 +64,13 @@ jq -e '.recommended_tools.graphify.platform_install_commands.claude.pre_index[0]
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template claude pre_index command" || fail "template claude pre_index command"
 
-jq -e '.recommended_tools.graphify.install_commands | index("pipx install graphifyy") != null' \
+jq -e '.recommended_tools.graphify.install_commands | index("pipx install '\''graphifyy[mcp]'\''") != null' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
-  && pass "template uses pipx not plain pip" || fail "template uses pipx not plain pip"
+  && pass "template graphify pipx uses graphifyy[mcp]" || fail "template graphify pipx uses graphifyy[mcp]"
+
+jq -e '.recommended_tools.graphify.install_commands | index("uv tool install '\''graphifyy[mcp]'\''") != null' \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
+  && pass "template graphify uv uses graphifyy[mcp]" || fail "template graphify uv uses graphifyy[mcp]"
 
 template_suspended="$(jq -r '.recommended_tools.graphify.enforcement_suspended' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default")"
@@ -186,21 +190,37 @@ jq -e '.recommended_tools.leanctx.mcp_tool_prefix == "lctx_"' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx mcp_tool_prefix lctx_" || fail "template leanctx mcp_tool_prefix lctx_"
 
-jq -e '.recommended_tools.leanctx.platform_install_commands.cursor[0] == "bash scripts/install-leanctx-sb.sh --host cursor"' \
+leanctx_project_root='bash scripts/install-leanctx-sb.sh --host cursor --project-root "$(pwd)"'
+jq -e --arg cmd "$leanctx_project_root" \
+  '.recommended_tools.leanctx.platform_install_commands.cursor.pre_index[0] == $cmd' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx cursor platform install" || fail "template leanctx cursor platform install"
 
-jq -e '.recommended_tools.leanctx.platform_install_commands.claude[0] == "bash scripts/install-leanctx-sb.sh --host claude"' \
+jq -e '.recommended_tools.leanctx.platform_install_commands.claude.pre_index[0] == "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx claude platform install" || fail "template leanctx claude platform install"
 
-jq -e '.recommended_tools.leanctx.platform_install_commands.codex[0] == "bash scripts/install-leanctx-sb.sh --host codex"' \
+jq -e '.recommended_tools.leanctx.platform_install_commands.codex.pre_index[0] == "bash scripts/install-leanctx-sb.sh --host codex --project-root \"$(pwd)\""' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx codex platform install" || fail "template leanctx codex platform install"
 
-jq -e '.recommended_tools.leanctx.platform_install_commands.opencode[0] == "bash scripts/install-leanctx-sb.sh --host opencode"' \
+jq -e '.recommended_tools.leanctx.platform_install_commands.opencode.pre_index[0] == "bash scripts/install-leanctx-sb.sh --host opencode --project-root \"$(pwd)\""' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template leanctx opencode platform install" || fail "template leanctx opencode platform install"
+
+# shellcheck source=../../hooks/lib/recommended-tools.sh
+# shellcheck disable=SC1091
+source "$REPO_ROOT/hooks/lib/recommended-tools.sh"
+export SILVER_BULLET_RUNTIME=cursor
+leanctx_install_lines="$(sb_recommended_tool_platform_install_commands \
+  "$REPO_ROOT/templates/silver-bullet.config.json.default" leanctx cursor)"
+leanctx_install_count="$(printf '%s\n' "$leanctx_install_lines" | sed '/^$/d' | wc -l | tr -d ' ')"
+[[ "$leanctx_install_count" -eq 1 ]] \
+  && pass "recommended-tools leanctx emits single platform install line" \
+  || fail "recommended-tools leanctx emits single platform install line"
+printf '%s' "$leanctx_install_lines" | grep -qF -- '--project-root "$(pwd)"' \
+  && pass "recommended-tools leanctx platform install includes --project-root" \
+  || fail "recommended-tools leanctx platform install includes --project-root"
 
 jq -e '.optimization_profiles.five_tool_routed.routes | keys | length == 10' \
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
@@ -234,3 +254,4 @@ assert_grep "recommended-tools stack surface owner" \
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+

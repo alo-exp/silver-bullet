@@ -185,11 +185,11 @@ command -v graphify
 
 If missing, attempt install (user already consented):
 ```
-uv tool install graphifyy
+uv tool install 'graphifyy[mcp]'
 ```
 or:
 ```
-pipx install graphifyy
+pipx install 'graphifyy[mcp]'
 ```
 
 Re-check `command -v graphify`.
@@ -381,7 +381,7 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
 3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
 6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
 
@@ -417,7 +417,7 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
 5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
 6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install
@@ -502,6 +502,44 @@ MultAI-style second-opinion research remains optional. Do not block
 initialization when it is missing. If the user explicitly asks for multi-AI
 research later, route through the optional plugin discovery/install path at that
 time.
+
+### 1.1g LeanCTX (recommended tool — opt-in)
+
+Execute consent flow from `references/recommended-tools-opt-in.md` §1.1g. LeanCTX is part of the executable five-tool stack — not reference-only.
+
+### 1.2 Reconcile recommended tools (canonical engine)
+
+After Phase 1.1a–§1.1g consent is gathered, **delegate all install/verify/repair** to the reconciler. Do not run per-tool install pseudocode when the reconciler is available.
+
+**Persist consent atomically** — write all five `enabled_by_user` values to `.silver-bullet.json` in one jq transaction before apply (fresh: Phase 3.4; update: immediate after consent).
+
+```bash
+SB_HOST="${SILVER_BULLET_RUNTIME:-cursor}"
+RECONCILE="${PLUGIN_ROOT}/scripts/reconcile-recommended-tools.sh"
+
+# Read-only verify (orient before apply)
+bash "$RECONCILE" --project-root "$PWD" --host "$SB_HOST" --mode verify --scope all --format text
+
+# Apply (init entry point) — consented tools only; isolated per-component failures
+bash "$RECONCILE" --project-root "$PWD" --host "$SB_HOST" --mode apply --scope all --entry-point init --format text
+```
+
+**When LeanCTX is enabled**, also run (idempotent):
+```bash
+bash scripts/optimize-five-tool-stack.sh --host "$SB_HOST" --project-root "$(pwd)"
+```
+
+**Host hook merge (Cursor):** use `scripts/lib/install-cursor/merge-cursor-hooks.py` only — do not duplicate host-detection pseudocode.
+
+**Completion reporting** — parse reconciler JSON/text and report separately:
+- **configured** — packages/MCP/hooks written
+- **live** — only when activation_status is `full` for that component in this session
+- **reload_required** — host MCP reload pending; never claim live
+- **suspended** / **failed** — per-component; do not block unrelated tools
+
+Resume after reload without re-prompting consent. Re-run verify only.
+
+---
 
 ---
 
@@ -872,7 +910,7 @@ it thereafter.
 - **3.2.3 Cursor SB custom subagents (Cursor only)**: tri-state `cursor_sb_agents.enabled_by_user` (see `references/scaffold-steps.md` §3.2.3). Probe global managed agents first; **skip** project `.cursor/agents/` when `probe-global-agents.sh` passes; else `bash scripts/install-cursor-sb-agents.sh --project`.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
-- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, and `context_mode`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
+- **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, `context_mode`, and `leanctx`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
 - **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
 - **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.

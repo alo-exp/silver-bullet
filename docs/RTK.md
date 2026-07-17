@@ -60,7 +60,7 @@ Run from project root after CLI install. SB stores commands in `recommended_tool
 | Hermes | `rtk init --agent hermes` | `~/.hermes/plugins/rtk-rewrite/` | Partial |
 | Goose | — | — | **Unsupported** upstream |
 
-**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host>` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
+**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host> --project-root "$(pwd)"` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 ### Cursor allow-list coupling
 
@@ -78,7 +78,7 @@ Codex limitation: PreToolUse on Codex supports deny rules only — RTK savings o
 
 ```bash
 bash scripts/enable-rtk-context-mode.sh --tool rtk
-bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
+bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"   # idempotent re-merge
 ```
 
 ## Optimization checklist (research-backed)
@@ -86,8 +86,8 @@ bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
 Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** global wiring. Run after `/silver:init` or standalone:
 
 ```bash
-bash scripts/optimize-rtk-context-mode.sh --host auto   # detect from ~/.cursor, ~/.codex, etc.
-bash scripts/optimize-rtk-context-mode.sh --host all    # every host (+ goose SKIP)
+bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"   # detect from ~/.cursor, ~/.codex, etc.
+bash scripts/optimize-rtk-context-mode.sh --host all --project-root "$(pwd)"    # every host (+ goose SKIP)
 ```
 
 | Step | Claude | Cursor | Codex | OpenCode | Hermes | Goose |
@@ -146,3 +146,9 @@ SB does **not** merge RTK rewrite logic into the SB plugin `hooks.json`.
 - **Context Mode** — MCP/large-file compaction (separate opt-in)
 
 See `silver-bullet.md` §2g-ii.
+
+## Shell ownership and reload receipts
+
+In `five_tool_routed` mode RTK is the **sole** `sb_shell` owner. Context Mode owns grep/slice/webfetch; LeanCTX shell MCP is disabled. Hook order is RTK before Context Mode; `lean-ctx hook rewrite` entries are removed on repair.
+
+Host hook changes batch into one reload receipt (not multiple restart prompts). RTK liveness is proven only when the session attestation reports successful shell-hook evidence alongside MCP tools — config presence alone is insufficient for canonical `ready`.

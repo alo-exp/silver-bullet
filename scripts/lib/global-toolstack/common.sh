@@ -69,10 +69,25 @@ ts_find_sb_config() {
 }
 
 ts_sb_defer_to_bridge() {
-  local cfg
+  local cfg project_root project_id worktree_id session_id hb_path
   cfg="$(ts_find_sb_config 2>/dev/null || true)"
   [[ -n "$cfg" ]] || return 1
-  return 0
+  project_root="$(dirname "$cfg")"
+  # Heartbeat schema-v1: defer only on valid, unexpired SB bridge heartbeat.
+  if [[ -f "${project_root}/scripts/lib/recommended-tools/heartbeat.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "${project_root}/scripts/lib/recommended-tools/heartbeat.sh" 2>/dev/null || true
+    if declare -f rt_heartbeat_path >/dev/null 2>&1; then
+      project_id="$(rt_project_id 2>/dev/null || true)"
+      worktree_id="$(rt_worktree_id "$project_root" 2>/dev/null || true)"
+      session_id="$(rt_current_session_id 2>/dev/null || true)"
+      hb_path="$(rt_heartbeat_path "$project_id" "$worktree_id" "$session_id" 2>/dev/null || true)"
+      if [[ -n "$hb_path" ]] && rt_heartbeat_is_valid "$hb_path" "cursor" "$project_root" "$project_root"; then
+        return 0
+      fi
+    fi
+  fi
+  return 1
 }
 
 ts_enforcement_active() {
@@ -594,3 +609,4 @@ ts_sb_plugin_cache() {
   local cache="${HOME}/.cursor/plugins/cache/alo-labs/silver-bullet/current"
   [[ -d "$cache/hooks/lib" ]] && printf '%s' "$cache"
 }
+

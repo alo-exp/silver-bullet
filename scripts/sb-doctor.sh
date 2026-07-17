@@ -4,14 +4,20 @@
 #
 # Usage:
 #   bash scripts/sb-doctor.sh [PROJECT_ROOT]
-#   bash scripts/sb-doctor.sh --fix [PROJECT_ROOT]
+#   bash scripts/sb-doctor.sh --deep [PROJECT_ROOT]
+#   bash scripts/sb-doctor.sh --dry-run [PROJECT_ROOT]
+#   bash scripts/sb-doctor.sh --fix[=local|host|packages|all] [PROJECT_ROOT]
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/lib/agent-bundle-paths.sh
 source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DOCTOR_FIX="${SB_DOCTOR_FIX:-0}"
+DOCTOR_FIX_SCOPE="${SB_DOCTOR_FIX_SCOPE:-}"
+DOCTOR_DEEP="${SB_DOCTOR_DEEP:-0}"
+DOCTOR_DRY_RUN="${SB_DOCTOR_DRY_RUN:-0}"
 DOCTOR_FIX_APPLIED=0
+RECONCILER_JSON=""
 PROJ_ROOT="${PWD}"
 FORMAT="${SB_DOCTOR_FORMAT:-text}"
 PASS=0
@@ -23,11 +29,36 @@ FAILED_CHECK_IDS=()
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --fix) DOCTOR_FIX=1; shift ;;
-      -h|--help) sed -n '1,8p' "$0"; exit 0 ;;
+      --deep) DOCTOR_DEEP=1; shift ;;
+      --dry-run) DOCTOR_DRY_RUN=1; shift ;;
+      --fix)
+        DOCTOR_FIX=1
+        DOCTOR_FIX_SCOPE="${DOCTOR_FIX_SCOPE:-all}"
+        shift
+        ;;
+      --fix=*)
+        DOCTOR_FIX=1
+        DOCTOR_FIX_SCOPE="${1#--fix=}"
+        shift
+        ;;
+      -h|--help)
+        sed -n '1,12p' "$0"
+        echo "  --deep          Bounded expensive probes (read-only)"
+        echo "  --dry-run       Reconciler plan mode (no writes)"
+        echo "  --fix[=SCOPE]   Apply repair: local|host|packages|all (default all)"
+        exit 0
+        ;;
       *) PROJ_ROOT="$1"; shift ;;
     esac
   done
+  case "${DOCTOR_FIX_SCOPE:-}" in
+    ""|all) DOCTOR_FIX_SCOPE="all" ;;
+    local|host|packages) ;;
+    *)
+      echo "ERROR: --fix scope must be local|host|packages|all" >&2
+      exit 2
+      ;;
+  esac
 }
 
 record() {
@@ -145,10 +176,111 @@ doctor_host_install_script() {
   esac
 }
 
+doctor_reconciler_scope() {
+  case "${DOCTOR_FIX_SCOPE:-all}" in
+    local) printf '%s' "project" ;;
+    host) printf '%s' "host" ;;
+    packages) printf '%s' "packages" ;;
+    all) printf '%s' "all" ;;
+    *) printf '%s' "all" ;;
+  esac
+}
+
+doctor_run_reconciler() {
+  local mode="$1"
+  local reconciler="${REPO_ROOT}/scripts/reconcile-recommended-tools.sh"
+  [[ -f "$reconciler" ]] || return 1
+  local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-cursor}}"
+  local scope="all"
+  if [[ "$mode" == "apply" ]]; then
+    scope="$(doctor_reconciler_scope)"
+  fi
+  local -a args=(--project-root "$PROJ_ROOT" --host "$host" --mode "$mode" --scope "$scope" --format json)
+  if [[ "$mode" == "apply" ]]; then
+    args+=(--entry-point doctor-fix)
+  fi
+  RECONCILER_JSON="$(bash "$reconciler" "${args[@]}" 2>/dev/null || true)"
+  [[ -n "$RECONCILER_JSON" ]] || return 1
+  return 0
+}
+
+doctor_record_reconciler_d10() {
+  local reconciler="${REPO_ROOT}/scripts/reconcile-recommended-tools.sh"
+  [[ -f "$reconciler" ]] || {
+    record pass D10 "reconciler unavailable; skipped"
+    return 0
+  }
+  local mode="verify"
+  [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && mode="plan"
+  doctor_run_reconciler "$mode" || true
+  [[ -n "$RECONCILER_JSON" ]] || {
+    record warn D10 "reconciler returned no JSON"
+    return 0
+  }
+  [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && record pass D10 "dry-run plan complete (no writes)"
+  local tool state activation consent any_fail=0
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    tool="${line%%:*}"
+    rest="${line#*:}"
+    state="${rest%%:*}"
+    activation="${rest##*:}"
+    [[ "$tool" == "cross_tool" ]] && continue
+    consent="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .consent' 2>/dev/null || true)"
+    case "$state" in
+      ready) record pass "D10-${tool}" "${tool} ready (activation=${activation})" ;;
+      disabled|pending|unsupported) record pass "D10-${tool}" "${tool} ${state} (consent=${consent:-n/a})" ;;
+      suspended) record warn "D10-${tool}" "${tool} suspended — retry /silver:init or /silver:update" ;;
+      reload_required) record warn "D10-${tool}" "${tool} reload_required (activation=${activation})" ;;
+      repairable) record fail "D10-${tool}" "${tool} repairable — run /silver:doctor --fix"; any_fail=1 ;;
+      failed) record fail "D10-${tool}" "${tool} failed"; any_fail=1 ;;
+      *) record warn "D10-${tool}" "${tool} state=${state}" ;;
+    esac
+  done < <(printf '%s' "$RECONCILER_JSON" | jq -r '.components[]? | select(.component != "cross_tool") | "\(.component):\(.canonical_state):\(.activation_status)"' 2>/dev/null)
+  local cross cross_activation
+  cross="$(printf '%s' "$RECONCILER_JSON" | jq -r '.components[]? | select(.component=="cross_tool") | .canonical_state' 2>/dev/null || true)"
+  cross_activation="$(printf '%s' "$RECONCILER_JSON" | jq -r '.components[]? | select(.component=="cross_tool") | .activation_status' 2>/dev/null || true)"
+  if [[ -n "$cross" ]]; then
+    if [[ "$cross" == "ready" && "$cross_activation" == "full" ]]; then
+      record pass D10-routes "ten route owners + heartbeat OK"
+    elif [[ "$cross" == "ready" ]] && printf '%s' "$RECONCILER_JSON" | jq -e '.components[]? | select(.component=="cross_tool") | .evidence[]? | select(. == "no_five_tool_consent")' >/dev/null 2>&1; then
+      record pass D10-routes "cross_tool N/A until five-tool opt-in (no consent)"
+    elif [[ "$cross" == "ready" ]]; then
+      record pass D10-routes "cross_tool ready (activation=${cross_activation:-none})"
+    else
+      record fail D10-routes "cross_tool ${cross} (activation=${cross_activation:-none}) — run --fix=host"
+      any_fail=1
+    fi
+  else
+    record warn D10-routes "cross_tool component missing from reconciler output — run reconcile or /silver:doctor --fix=host"
+  fi
+  if [[ "$DOCTOR_DEEP" -eq 1 ]]; then
+    if command -v context-mode >/dev/null 2>&1; then
+      context-mode doctor >/dev/null 2>&1 && record pass D10-deep-cm "context-mode doctor OK" \
+        || record warn D10-deep-cm "context-mode doctor reported issues"
+    fi
+    if command -v graphify-mcp >/dev/null 2>&1; then
+      timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1 \
+        && record pass D10-deep-graphify "graphify-mcp stdio handshake OK" \
+        || record warn D10-deep-graphify "graphify-mcp stdio handshake failed"
+    fi
+  fi
+  [[ "$any_fail" -eq 0 ]]
+}
+
 doctor_apply_fixes() {
   local runtime="$1" check_id install_script fixed=0
   [[ "$DOCTOR_FIX" -eq 1 ]] || return 0
+  [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && return 0
   [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && return 0
+  if [[ -f "${REPO_ROOT}/scripts/reconcile-recommended-tools.sh" ]]; then
+    printf 'sb-doctor: --fix=%s running reconciler doctor-fix apply
+' "${DOCTOR_FIX_SCOPE:-all}" >&2
+    doctor_run_reconciler apply || true
+    DOCTOR_FIX_APPLIED=1
+    fixed=1
+  fi
+  [[ "$FAIL" -eq 0 && "$fixed" -eq 1 ]] && return 0
   [[ "$FAIL" -eq 0 ]] && return 0
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
     case "$check_id" in
@@ -349,35 +481,9 @@ run_doctor_checks() {
     record fail D9 "workflow tracker incomplete (scripts/workflows.sh or docs/workflows/)"
   fi
 
-  # D10 — recommended tools (when opted in)
-  if [[ -f "$sb_config" ]] && [[ -f "${REPO_ROOT}/hooks/lib/recommended-tools.sh" ]]; then
-    # shellcheck source=../hooks/lib/recommended-tools.sh
-    source "${REPO_ROOT}/hooks/lib/recommended-tools.sh"
-    local tool suspended consent
-    for tool in graphify agentmemory rtk context_mode alumnium; do
-      if declare -f sb_recommended_tool_enabled_by_user >/dev/null 2>&1; then
-        if sb_recommended_tool_enabled_by_user "$sb_config" "$tool" 2>/dev/null; then
-          consent="enabled"
-          suspended="false"
-          if declare -f sb_recommended_tool_enforcement_suspended >/dev/null 2>&1; then
-            if sb_recommended_tool_enforcement_suspended "$sb_config" "$tool"; then
-              suspended="true"
-            fi
-          fi
-          if [[ "$suspended" == "true" ]]; then
-            record warn D10 "${tool} ${consent} but enforcement suspended"
-          else
-            record pass D10 "${tool} ${consent} (enforcement active)"
-          fi
-        fi
-      fi
-    done
-    if ! grep -q 'D10' <(printf '%s\n' "${REPORT_LINES[@]}"); then
-      record pass D10 "no recommended_tools enabled_by_user (opt-in checks skipped)"
-    fi
-  else
-    record pass D10 "recommended tools config unavailable; skipped"
-  fi
+  # D10 — five-tool reconciler (all components + routes)
+  doctor_record_reconciler_d10 || true
+
 
   # D11 — hook smoke
   local hook_root hook_name
@@ -604,7 +710,7 @@ run_doctor_checks() {
     local cursor_mcp="${HOME}/.cursor/mcp.json"
     if [[ -f "$cursor_mcp" ]] \
       && jq -e '.mcpServers["lean-ctx"] and .mcpServers.leanctx' "$cursor_mcp" >/dev/null 2>&1; then
-      record warn D22 "duplicate LeanCTX MCP servers (lean-ctx + leanctx) — remove lean-ctx, keep leanctx; run: python3 scripts/lib/merge-leanctx-mcp-config.py --host cursor"
+      record warn D22 "duplicate LeanCTX MCP servers (lean-ctx + leanctx) — remove lean-ctx, keep leanctx; run: RT_PATCH_LEANCTX=1 python3 scripts/lib/global-toolstack/patch-mcp.py"
     else
       record pass D22 "no duplicate LeanCTX MCP servers"
     fi
@@ -617,10 +723,19 @@ run_doctor_checks() {
 
 doctor_print_summary() {
   if [[ "$FORMAT" == "json" ]]; then
+    local recon='null'
+    if [[ -n "${RECONCILER_JSON:-}" ]]; then
+      recon="$(printf '%s' "$RECONCILER_JSON" | jq -c '.' 2>/dev/null || echo null)"
+    fi
     jq -n \
+      --arg schema "2.0.0" \
       --argjson pass "$PASS" --argjson fail "$FAIL" --argjson warn "$WARN" \
+      --argjson deep "$([[ "$DOCTOR_DEEP" -eq 1 ]] && echo true || echo false)" \
+      --argjson dry_run "$([[ "$DOCTOR_DRY_RUN" -eq 1 ]] && echo true || echo false)" \
+      --arg fix_scope "${DOCTOR_FIX_SCOPE:-}" \
+      --argjson reconciler "$recon" \
       --arg lines "$(printf '%s\n' "${REPORT_LINES[@]}")" \
-      '{pass:$pass,fail:$fail,warn:$warn,lines:($lines|split("\n"))}'
+      '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
   else
     echo
     echo "Silver Bullet doctor: ${PASS} PASS, ${WARN} WARN, ${FAIL} FAIL"
@@ -635,9 +750,10 @@ doctor_print_summary() {
 main() {
   parse_args "$@"
   run_doctor_checks
-  if [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]]; then
+  if [[ "$DOCTOR_FIX_APPLIED" -eq 1 && "$DOCTOR_DRY_RUN" -eq 0 ]]; then
     [[ "$FORMAT" != "json" ]] && echo && echo "sb-doctor: re-running checks after --fix"
     PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
+    RECONCILER_JSON=""
     run_doctor_checks
   fi
   doctor_print_summary

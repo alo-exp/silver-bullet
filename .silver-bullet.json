@@ -433,18 +433,30 @@
         "injection_detection": true
       },
       "platform_install_commands": {
-        "cursor": [
-          "bash scripts/install-leanctx-sb.sh --host cursor"
-        ],
-        "claude": [
-          "bash scripts/install-leanctx-sb.sh --host claude"
-        ],
-        "codex": [
-          "bash scripts/install-leanctx-sb.sh --host codex"
-        ],
-        "opencode": [
-          "bash scripts/install-leanctx-sb.sh --host opencode"
-        ]
+        "cursor": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host cursor --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "claude": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host codex --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "opencode": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host opencode --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        }
       },
       "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
     }
