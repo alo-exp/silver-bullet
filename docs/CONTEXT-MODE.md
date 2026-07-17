@@ -71,7 +71,7 @@ claude plugin install context-mode@context-mode
 | Hermes | MCP YAML merge only (no official adapter) | `~/.hermes/config.yaml` | Partial |
 | Goose | — | — | **Unsupported** |
 
-**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host>` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
+**Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host> --project-root "$(pwd)"` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
 
 SB runs `/silver:init` scaffold steps to inject the instruction fragment into `silver-bullet.md` and `CLAUDE.md` (idempotent sentinel block from `templates/context-mode-hint.md.base`).
 
@@ -85,12 +85,12 @@ Tool name placeholders vary by host (Claude plugin-qualified names vs Cursor MCP
 
 ```bash
 bash scripts/enable-rtk-context-mode.sh --tool context_mode
-bash scripts/optimize-rtk-context-mode.sh --host cursor   # idempotent re-merge
+bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"   # idempotent re-merge
 ```
 
 ## Optimization checklist (research-backed)
 
-Run `bash scripts/optimize-rtk-context-mode.sh` after install:
+Run `bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"` after install:
 
 | Step | Cursor | Claude | Codex | OpenCode | Hermes | Goose |
 |------|--------|--------|-------|----------|--------|-------|
@@ -135,3 +135,7 @@ context-mode doctor       # terminal
 - **agentmemory** — capture; pair with Graphify for retrieve
 
 See `silver-bullet.md` §2g-ii.
+
+## MCP reload receipts
+
+Context Mode MCP tools (`ctx_execute`, `ctx_search`, …) must be registered without LeanCTX `ctx_*` overlap. After installer or `/silver:doctor --fix` host repair, expect `reload_required` until Cursor reloads MCP and a fresh attestation confirms expected tools. Read-only `verify`/`plan` consume `--host-evidence-stdin` in memory only; receipt clearing requires authorized apply with all-success evidence.

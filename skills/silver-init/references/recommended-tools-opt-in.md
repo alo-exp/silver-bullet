@@ -83,11 +83,11 @@ command -v graphify
 
 If missing, attempt install (user already consented):
 ```
-uv tool install graphifyy
+uv tool install 'graphifyy[mcp]'
 ```
 or:
 ```
-pipx install graphifyy
+pipx install 'graphifyy[mcp]'
 ```
 
 Re-check `command -v graphify`.
@@ -279,7 +279,7 @@ Question: "Silver Bullet recommends **RTK** for shell output compression.\n\nBen
 1. Run `install_commands` from config (Homebrew or curl installer — see `docs/RTK.md`)
 2. Verify: `rtk --version` (v0.4x), `rtk gain --help`
 3. Run host `platform_install_commands` (`rtk init -g`, `rtk init -g (see install guide)`, or `rtk init -g (see install guide)`)
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — merges hooks, MCP, host CLI config allow-list, and global rules (see `docs/RTK.md` optimization checklist)
 5. Verify host hook artifact (grep `rtk` in settings/hooks/AGENTS.md)
 6. Run `bash scripts/enable-rtk-context-mode.sh --tool rtk`
 
@@ -315,7 +315,7 @@ Include ELv2 license disclosure and MCP-value note in the question.
 1. **Node >= 22.5** check first
 2. `npm install -g context-mode` (or host plugin path per host — see `docs/CONTEXT-MODE.md`)
 3. Host-specific plugin/MCP/hook steps from `platform_install_commands`
-4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
+4. **Run optimization:** `bash scripts/optimize-rtk-context-mode.sh --host <runtime>|auto --project-root "$(pwd)"` — full hook set (`sessionStart`, `afterAgentResponse`), MCP merge, task host allow-list, global host rules directory directory (see `docs/CONTEXT-MODE.md`)
 5. **Scaffold instruction fragment** into `silver-bullet.md` and `project instruction file` from `templates/context-mode-hint.md.base` (idempotent sentinel block — see `references/scaffold-steps.md`)
 6. **Host-specific:** copy `context-mode.mdc` to `host rules path (see install guide) ` per upstream (also done by optimize script)
 7. Remind user to **restart agent** after plugin install
@@ -357,12 +357,13 @@ Question: "Silver Bullet recommends **LeanCTX** for parallel-routed compression 
 
 1. Run `install_commands` from config (`curl -fsSL https://leanctx.com/install.sh | sh`)
 2. Verify: `lean-ctx --version`
-3. Run host `platform_install_commands` (`bash scripts/install-leanctx-sb.sh --host <runtime>`)
-4. **Phase 2:** Run `bash scripts/optimize-five-tool-stack.sh --host <runtime>|auto` instead of `optimize-rtk-context-mode.sh`
+3. Run host `platform_install_commands` (`bash scripts/install-leanctx-sb.sh --host <runtime> --project-root "$(pwd)"`)
+4. **Phase 2:** Run `bash scripts/optimize-five-tool-stack.sh --host <runtime>|auto --project-root "$(pwd)"` instead of `optimize-rtk-context-mode.sh`
 
 On success/failure: same jq pattern as Graphify/agentmemory.
 
 #### Step 4 — Opted out / already consented
 
 Same pattern as Graphify §1.1a Steps 4–5.
+
 

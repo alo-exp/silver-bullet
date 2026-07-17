@@ -60,6 +60,11 @@ assert_contains "documents D1 jq check" "D1" "$SKILL"
 assert_contains "documents D13 Claude import" "claude/plugins|D13" "$SKILL"
 assert_contains "documents D14 cache bleed" "D14" "$SKILL"
 assert_contains "documents --fix flag" "--fix" "$SKILL"
+assert_contains "documents --dry-run" "--dry-run" "$SKILL"
+assert_contains "documents --deep" "--deep" "$SKILL"
+assert_contains "documents D10 reconciler" "D10-graphify" "$SKILL"
+assert_contains "sb-doctor has --dry-run" "--dry-run" "$DOCTOR"
+assert_contains "sb-doctor has doctor_run_reconciler" "doctor_run_reconciler" "$DOCTOR"
 for id in D14 D15 D16; do
   grep -q "${id}" "$DOCTOR" && echo "PASS: sb-doctor.sh references check ${id}" && PASS=$((PASS + 1)) || { echo "FAIL: sb-doctor.sh missing check ${id}"; FAIL=$((FAIL + 1)); }
 done
@@ -299,3 +304,4 @@ rm -f /tmp/sb-doctor-live-$$.txt
 echo
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]
+

@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 INSTALL="$REPO_ROOT/scripts/install-leanctx-sb.sh"
-MERGE_PY="$REPO_ROOT/scripts/lib/merge-leanctx-mcp-config.py"
+PATCH_MCP_PY="$REPO_ROOT/scripts/lib/global-toolstack/patch-mcp.py"
 PASS=0
 FAIL=0
 TEST_HOME=""
@@ -28,7 +28,7 @@ mkdir -p "${TEST_HOME}/.cursor" "${SB_RUNTIME_STATE_DIR}"
 printf '{"mcpServers":{"context-mode":{"command":"context-mode"}}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 touch "${TEST_HOME}/.cursor/AGENTS.md" "${REPO_ROOT}/AGENTS.md" 2>/dev/null || true
 
-if bash "$INSTALL" --host cursor --dry-run --skip-install --skip-verify >/tmp/sb-install-leanctx-dry.log 2>&1; then
+if bash "$INSTALL" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-install --skip-verify >/tmp/sb-install-leanctx-dry.log 2>&1; then
   pass "dry-run install exits 0"
 else
   fail "dry-run install exits 0"
@@ -39,11 +39,14 @@ grep -q 'DRY-RUN' /tmp/sb-install-leanctx-dry.log && pass "dry-run logs actions"
 grep -q 'five_tool_routed\|LeanCTX SB install complete' /tmp/sb-install-leanctx-dry.log \
   && pass "dry-run completes install flow" || fail "dry-run completes install flow"
 
-# Real merge in isolated HOME (not dry-run) — validates MCP JSON.
-if python3 "$MERGE_PY" --host cursor >/dev/null 2>&1; then
-  pass "MCP merge writes valid JSON"
+grep -q 'patch-mcp\|RT_PATCH_LEANCTX' /tmp/sb-install-leanctx-dry.log \
+  && pass "dry-run uses patch-mcp path" || fail "dry-run uses patch-mcp path"
+
+# Real merge in isolated HOME (not dry-run) — validates MCP JSON via canonical patch-mcp.
+if RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 "$PATCH_MCP_PY" >/dev/null 2>&1; then
+  pass "patch-mcp leanctx writes valid JSON"
 else
-  fail "MCP merge writes valid JSON"
+  fail "patch-mcp leanctx writes valid JSON"
 fi
 
 if jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
@@ -70,7 +73,7 @@ EOF
 chmod +x "$MOCK_BIN/lean-ctx"
 export PATH="$MOCK_BIN:$PATH"
 
-if bash "$INSTALL" --host cursor --skip-verify 2>/tmp/sb-install-leanctx-real.log; then
+if bash "$INSTALL" --host cursor --project-root "$REPO_ROOT" --skip-verify 2>/tmp/sb-install-leanctx-real.log; then
   pass "skip-verify install with mock CLI exits 0"
 else
   fail "skip-verify install with mock CLI exits 0"
@@ -88,3 +91,4 @@ rm -rf "$MOCK_BIN"
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+
