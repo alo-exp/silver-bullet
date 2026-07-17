@@ -11,20 +11,21 @@
 #
 # Fallback install path (safest when --library-mode absent):
 #   1. Ensure lean-ctx binary on PATH (curl installer or cargo install lean-ctx).
-#   2. Skip lean-ctx init entirely; wire MCP via scripts/lib/merge-leanctx-mcp-config.py.
+#   2. Skip lean-ctx init entirely; wire MCP via scripts/lib/global-toolstack/patch-mcp.py.
 #   3. Apply SB five-tool profile env via merge script (lctx_ prefix, CM overlap off).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-MERGE_PY="${SCRIPT_DIR}/lib/merge-leanctx-mcp-config.py"
+PATCH_MCP_PY="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 VERIFY_PY="${SCRIPT_DIR}/lib/verify-leanctx-wire-proxy-ordering.py"
 
-HOST="auto"
+HOST=""
 DRY_RUN=0
 SKIP_INSTALL=0
 SKIP_VERIFY=0
 SKIP_MERGE=0
+PROJECT_ROOT=""
 
 # Host paths lean-ctx init would clobber — we guard these (conflict #8).
 declare -a GUARD_PATHS=()
@@ -37,7 +38,8 @@ Host-aware LeanCTX install for Silver Bullet five-tool routed stack.
 Uses library-mode when upstream supports it; otherwise SB merge-only wiring.
 
 Options:
-  --host <cursor|claude|codex|opencode|auto>   Target host (default: auto)
+  --host <cursor|claude|codex|opencode>   Target host (required)
+  --project-root <path>                   Canonical SB project root (required)
   --dry-run                                     Print actions without writes
   --skip-install                                Skip binary install step
   --skip-merge                                  Skip MCP merge helper
@@ -216,9 +218,19 @@ merge_mcp_config() {
     log "SKIP: MCP merge"
     return 0
   fi
-  local merge_args=(python3 "$MERGE_PY" --host "$HOST")
-  [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
-  run_cmd "${merge_args[@]}"
+  if [[ "$HOST" != "cursor" ]]; then
+    log "SKIP: MCP merge (host=${HOST}; patch-mcp targets ~/.cursor/mcp.json — use host install path)"
+    return 0
+  fi
+  if [[ ! -f "$PATCH_MCP_PY" ]]; then
+    warn "patch-mcp helper missing: $PATCH_MCP_PY"
+    return 1
+  fi
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 $PATCH_MCP_PY"
+    return 0
+  fi
+  RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 run_cmd python3 "$PATCH_MCP_PY"
 }
 
 write_sb_profile_env() {
@@ -269,7 +281,8 @@ verify_wire_proxy_ordering() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="${2:-auto}"; shift 2 ;;
+    --host) HOST="${2:-}"; shift 2 ;;
+    --project-root) PROJECT_ROOT="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
     --skip-install) SKIP_INSTALL=1; shift ;;
     --skip-merge) SKIP_MERGE=1; shift ;;
@@ -278,6 +291,19 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+if [[ -z "$HOST" ]]; then
+  echo "ERROR: --host is required" >&2
+  usage >&2
+  exit 2
+fi
+if [[ -z "$PROJECT_ROOT" ]]; then
+  echo "ERROR: --project-root is required" >&2
+  usage >&2
+  exit 2
+fi
+PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
+export RT_PROJECT_ROOT="$PROJECT_ROOT"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
 
@@ -309,3 +335,4 @@ fi
 log "=== LeanCTX SB install complete ==="
 log "Routing: sb_wire/sb_read/sb_pathjail/sb_injection → LeanCTX; sb_shell→RTK; sb_slice/sb_grep/sb_webfetch→CM; sb_graph→Graphify; sb_remember→agentmemory"
 log "See .cursor/rules/leanctx.mdc and docs/LEANCTX.md (when present)"
+

@@ -163,3 +163,21 @@ When both Graphify and agentmemory are opted in:
 3. **Retrieve** — use `graphify query` for structural + memory context; hooks treat a fresh Graphify query as satisfying the agentmemory usage gate.
 
 See `docs/AGENTMEMORY.md` for install, MCP wiring, and git-backed auto-save bridge setup.
+
+## MCP extra and reload receipts
+
+Install Graphify with the MCP extra so `graphify-mcp` is on PATH:
+
+```bash
+uv tool install "graphifyy[mcp]"
+```
+
+SB writes Cursor MCP config only after a successful `graphify-mcp` stdio handshake. **Configured ≠ live:** after host config changes, the reconciler emits a reload receipt at `${SB_RUNTIME_STATE}/recommended-tools/reload-receipts/<host>/<project-id>/<worktree-id>/`. Canonical state stays `reload_required` until the current Cursor session supplies a fresh schema-v1 attestation via `--host-evidence-stdin` (max 64KiB, single JSON document) showing every expected tool succeeded.
+
+| Signal | Meaning |
+|--------|---------|
+| `CONFIGURED: yes` | `~/.cursor/mcp.json` includes Graphify |
+| `LIVE: no` | Receipt active or activation not `full` |
+| `ACTION` | Tools & MCP → graphify off/on, then new chat; fallback Developer: Reload Window |
+
+Verify read-only: `bash scripts/reconcile-recommended-tools.sh --mode verify --host-evidence-stdin`. Clear requires authorized apply (`/silver:init`, `/silver:update`, installer, or `/silver:doctor --fix`) with a fresh all-success attestation.

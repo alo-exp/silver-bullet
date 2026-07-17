@@ -558,6 +558,25 @@ else
   fail "marketplace manifest declares silver-bullet subpath"
 fi
 
+# Phase B: reconciler snapshots deployed to global toolstack
+if [[ -f "${TMP_HOME}/.cursor/hooks/toolstack/reconcile-recommended-tools.sh" ]]; then
+  pass "install-cursor deploys reconciler to toolstack"
+else
+  fail "install-cursor deploys reconciler to toolstack"
+fi
+if [[ -d "${TMP_HOME}/.cursor/hooks/toolstack/lib/recommended-tools" ]] \
+   && [[ -f "${TMP_HOME}/.cursor/hooks/toolstack/lib/recommended-tools/installer.sh" ]]; then
+  pass "install-cursor deploys recommended-tools lib snapshot"
+else
+  fail "install-cursor deploys recommended-tools lib snapshot"
+fi
+if grep -q -- '--project-root' "${REPO_ROOT}/scripts/install-cursor.sh" 2>/dev/null; then
+  pass "install-cursor documents --project-root"
+else
+  fail "install-cursor documents --project-root"
+fi
+
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

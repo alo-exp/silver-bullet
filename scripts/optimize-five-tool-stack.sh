@@ -13,11 +13,12 @@ OPTIMIZE_SYNERGY="${SCRIPT_DIR}/sb-optimize-stack.sh"
 INSTALL_CURSOR_RULES="${SCRIPT_DIR}/install-recommended-tools-cursor.sh"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
 
-HOST="auto"
+HOST=""
 DRY_RUN=0
 SKIP_RTCM=0
 SKIP_SYNERGY=0
 FORCE=0
+PROJECT_ROOT=""
 
 usage() {
   cat <<'EOF'
@@ -34,7 +35,8 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|auto|all>   Target host (default: auto)
+  --host <cursor|claude|codex|opencode|all>   Target host (required)
+  --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
   --skip-synergy                                   Skip Graphify+agentmemory optimize
@@ -58,6 +60,10 @@ run_cmd() {
 }
 
 detect_host() {
+  if [[ -n "${RT_HOST:-}" ]]; then
+    printf '%s' "$RT_HOST"
+    return 0
+  fi
   if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
     printf '%s' "cursor"
     return 0
@@ -78,7 +84,9 @@ detect_host() {
 }
 
 config_file() {
-  if [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then
+  if [[ -n "$PROJECT_ROOT" && -f "${PROJECT_ROOT}/.silver-bullet.json" ]]; then
+    printf '%s' "${PROJECT_ROOT}/.silver-bullet.json"
+  elif [[ -f "${REPO_ROOT}/.silver-bullet.json" ]]; then
     printf '%s' "${REPO_ROOT}/.silver-bullet.json"
   else
     printf '%s' "${REPO_ROOT}/templates/silver-bullet.config.json.default"
@@ -104,7 +112,8 @@ five_tool_profile_active() {
 }
 
 apply_profile_metadata() {
-  local cfg="${REPO_ROOT}/.silver-bullet.json"
+  local cfg
+  cfg="$(config_file)"
   [[ -f "$cfg" ]] || return 0
   if [[ "$DRY_RUN" -eq 1 ]]; then
     log "DRY-RUN: stamp optimization_profiles.five_tool_routed metadata"
@@ -145,14 +154,12 @@ optimize_host() {
   log ""
   log "--- five-tool optimize: host=${h} ---"
 
-  local leanctx_args=(bash "$INSTALL_LEANCTX" --host "$h")
+  local leanctx_args=(bash "$INSTALL_LEANCTX" --host "$h" --project-root "${PROJECT_ROOT:-$REPO_ROOT}")
   [[ "$DRY_RUN" -eq 1 ]] && leanctx_args+=(--dry-run)
   run_cmd "${leanctx_args[@]}"
 
   if [[ "$SKIP_RTCM" -eq 0 ]]; then
-    # RTK+CM still required for sb_shell / sb_slice / sb_grep / sb_webfetch.
-    # LeanCTX shell/sandbox/FTS disabled in install profile (conflicts #3, #5, #17).
-    local rtcm_args=(bash "$OPTIMIZE_RTCM" --host "$h" --skip-cm-doctor)
+    local rtcm_args=(bash "$OPTIMIZE_RTCM" --host "$h" --project-root "${PROJECT_ROOT:-$REPO_ROOT}" --skip-cm-doctor)
     [[ "$DRY_RUN" -eq 1 ]] && rtcm_args+=(--dry-run)
     run_cmd "${rtcm_args[@]}"
   else
@@ -166,7 +173,8 @@ optimize_host() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --host) HOST="${2:-auto}"; shift 2 ;;
+    --host) HOST="${2:-}"; shift 2 ;;
+    --project-root) PROJECT_ROOT="${2:-}"; shift 2 ;;
     --dry-run) DRY_RUN=1; export RTCM_DRY_RUN=1; shift ;;
     --skip-rtcm) SKIP_RTCM=1; shift ;;
     --skip-synergy) SKIP_SYNERGY=1; shift ;;
@@ -175,6 +183,18 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown arg: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
+
+if [[ -z "$HOST" ]]; then
+  echo "ERROR: --host is required (reconciler must pass explicit host)" >&2
+  usage >&2
+  exit 2
+fi
+if [[ -z "$PROJECT_ROOT" ]]; then
+  echo "ERROR: --project-root is required" >&2
+  usage >&2
+  exit 2
+fi
+PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd -P)"
 
 [[ "$HOST" == "auto" ]] && HOST="$(detect_host)"
 
@@ -220,3 +240,4 @@ else
 fi
 
 log "=== Five-tool optimization complete ==="
+

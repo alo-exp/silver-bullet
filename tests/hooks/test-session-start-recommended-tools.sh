@@ -62,7 +62,8 @@ EOF
 }
 
 run_session() {
-  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup && printf '{"source":"startup"}' | bash "$SESSION" 2>/dev/null)
+  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup SILVER_BULLET_RUNTIME=cursor CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
+    && printf '{"source":"startup"}' | bash "$SESSION" 2>/dev/null)
 }
 
 extract_ctx() {
@@ -152,5 +153,62 @@ out="$(run_session)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
 printf '%s' "$ctx" | grep -qi 'rtk' && pass "rtk pending consent injects prompt" || fail "rtk pending consent injects prompt"
 
+# Phase B: verification-only drift block (no repair)
+write_consent true
+cat >"$TMP/.silver-bullet.json" <<EOF
+{
+  "config_version": "${CURRENT_CONFIG_VERSION}",
+  "sb_initiated": true,
+  "recommended_tools": {
+    "graphify": { "enabled_by_user": true, "enforcement_suspended": false },
+    "agentmemory": { "enabled_by_user": false },
+    "rtk": { "enabled_by_user": false },
+    "context_mode": { "enabled_by_user": false },
+    "leanctx": { "enabled_by_user": false }
+  },
+  "skills": { "required_planning": ["silver-quality-gates"] },
+  "state": {
+    "state_file": "${STATE_FILE}",
+    "trivial_file": "${TRIVIAL_FILE}"
+  }
+}
+EOF
+out="$(run_session)"
+ctx="$(printf '%s' "$out" | extract_ctx)"
+printf '%s' "$ctx" | grep -q 'verification only' && pass "session-start injects verification-only header" || fail "session-start injects verification-only header"
+
+# Section 3: heartbeat writes on compact/resume (60s cadence enforced in rt_heartbeat_write)
+write_consent true
+git -C "$TMP" init -q 2>/dev/null || true
+export SB_RUNTIME_STATE_DIR="${TMP}/.silver-bullet"
+export SB_RUNTIME_PRESERVE_STATE_DIR=1
+mkdir -p "$SB_RUNTIME_STATE_DIR"
+out="$(cd "$TMP" && export SB_RUNTIME_STATE_DIR SB_RUNTIME_PRESERVE_STATE_DIR \
+  SILVER_BULLET_SESSION_SOURCE=compact SILVER_BULLET_RUNTIME=cursor CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
+  && printf '{"source":"compact"}' | bash "$SESSION" 2>/dev/null)"
+hb_file=""
+hb_file="$(find "$SB_RUNTIME_STATE_DIR/recommended-tools/heartbeats" -name '*.json' -type f 2>/dev/null | head -1 || true)"
+if [[ -n "$hb_file" ]]; then
+  pass "session-start compact writes heartbeat"
+else
+  fail "session-start compact writes heartbeat"
+fi
+
+# Heartbeat session_id must match sb-<session-start-time> (written before rt_heartbeat_write)
+session_epoch="$(cat "${SB_RUNTIME_STATE_DIR}/session-start-time" 2>/dev/null || true)"
+expected_sid="sb-${session_epoch}"
+if [[ -n "$hb_file" && -n "$session_epoch" ]]; then
+  actual_sid="$(jq -r '.session_id // ""' "$hb_file" 2>/dev/null || true)"
+  if [[ "$actual_sid" == "$expected_sid" ]]; then
+    pass "heartbeat session_id matches session-start-time id"
+  else
+    fail "heartbeat session_id matches session-start-time id (got ${actual_sid:-<empty>}, want ${expected_sid})"
+  fi
+else
+  fail "heartbeat session_id matches session-start-time id (missing heartbeat or session-start-time)"
+fi
+unset SB_RUNTIME_PRESERVE_STATE_DIR
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+

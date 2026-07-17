@@ -1,8 +1,10 @@
 ---
-name: silver-clarify
+name: "silver:clarify"
+title: "Clarify"
 description: Turn vague ideas or requirements into a decision-ready brief that merges PM framing, brainstorming discipline, and SB-owned lifecycle handoff.
 argument-hint: "<idea, rough requirement, or requirement doc>"
 version: 0.1.0
+user-invocable: false
 ---
 
 # /silver:clarify — Clarify, Compare, and Hand Off

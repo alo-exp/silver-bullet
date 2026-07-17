@@ -67,10 +67,11 @@ cursor_plugin_commands_src() {
 
 usage() {
   cat <<'USAGE'
-Usage: scripts/install-cursor.sh [--merge-hooks-only] [--public-release]
+Usage: scripts/install-cursor.sh [--merge-hooks-only] [--public-release] [--project-root PATH]
 
 Synchronizes the Silver Bullet plugin tree into the Cursor plugin cache and
-merges SB hooks into ~/.cursor/hooks.json.
+merges SB hooks into ~/.cursor/hooks.json. Deploys the five-tool reconciler,
+global repair framework, and host snapshots on every install/upgrade.
 
 When the legacy alo-labs/alo-labs-cursor-marketplace clone is present, the
 installer removes it, seeds gitPath for backend-resolved SHAs, and prints UI
@@ -79,6 +80,7 @@ steps to switch to https://github.com/alo-labs/agent-plugins.
 Options:
   --merge-hooks-only  Only merge hooks from the current install path
   --public-release    Refresh from the published Cursor marketplace instead of the local checkout
+  --project-root PATH Reconcile consented project tools after host infra (requires .silver-bullet.json)
 USAGE
 }
 
@@ -721,17 +723,22 @@ sync_plugin_tree_from_public_release() {
 
 MERGE_ONLY=0
 LEGACY_MARKETPLACE_UI_SWITCH=0
+SB_RECONCILE_PROJECT_ROOT=""
 # shellcheck source=scripts/lib/install-cursor/legacy-marketplace.sh
 source "$LEGACY_MARKETPLACE_LIB"
 # shellcheck source=scripts/lib/install-cursor/backend-cache.sh
 source "$BACKEND_CACHE_LIB"
 
-for arg in "$@"; do
-  case "$arg" in
-    --merge-hooks-only) MERGE_ONLY=1 ;;
-    --public-release) PUBLIC_RELEASE_ONLY=1 ;;
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --merge-hooks-only) MERGE_ONLY=1; shift ;;
+    --public-release) PUBLIC_RELEASE_ONLY=1; shift ;;
+    --project-root)
+      SB_RECONCILE_PROJECT_ROOT="${2:-}"
+      shift 2
+      ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Unknown option: $arg" >&2; usage; exit 2 ;;
+    *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
   esac
 done
 
@@ -834,4 +841,16 @@ if [[ "$LEGACY_MARKETPLACE_UI_SWITCH" -eq 1 ]]; then
   printf 'Cursor marketplace: legacy clone removed — complete UI switch per notice above\n'
 else
   printf 'Cursor marketplace: unified alo-labs/agent-plugins (%s)\n' "$CURSOR_MARKETPLACE_NAME"
+fi
+
+# Five-tool reconciler: deploy host snapshots + reconcile consented project tools when root supplied.
+RT_INSTALLER_LIB="${REPO_ROOT}/scripts/lib/recommended-tools/installer.sh"
+if [[ -f "$RT_INSTALLER_LIB" ]]; then
+  # shellcheck source=scripts/lib/recommended-tools/installer.sh
+  source "$RT_INSTALLER_LIB"
+  _rt_project=""
+  if [[ -n "${SB_RECONCILE_PROJECT_ROOT:-}" ]]; then
+    _rt_project="$(cd "$SB_RECONCILE_PROJECT_ROOT" && pwd -P 2>/dev/null || true)"
+  fi
+  rt_installer_post_install "$REPO_ROOT" "$_rt_project" ||     printf 'WARN: reconciler post-install exited nonzero (host infra may still be usable)\n' >&2
 fi

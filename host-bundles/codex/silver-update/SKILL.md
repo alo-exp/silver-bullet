@@ -272,7 +272,7 @@ jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.jso
 
 1. Install RTK CLI per `docs/RTK.md` (verify `rtk gain --help`)
 2. Run host `rtk init` command from `platform_install_commands`
-3. `bash scripts/optimize-rtk-context-mode.sh --host auto`
+3. `bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"`
 4. `bash scripts/enable-rtk-context-mode.sh --tool rtk`
 
 On success, clear suspension. On failure, keep suspension.
@@ -305,7 +305,7 @@ jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-b
 
 1. Verify Node >= 22.5
 2. `npm install -g context-mode` and/or primary host plugin steps per `docs/CONTEXT-MODE.md`
-3. `bash scripts/optimize-rtk-context-mode.sh --host auto`
+3. `bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"`
 4. Re-scaffold instruction fragment (`templates/context-mode-hint.md.base`)
 5. Remind user to restart agent
 6. `bash scripts/enable-rtk-context-mode.sh --tool context_mode`
@@ -313,6 +313,46 @@ jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-b
 On success, clear suspension.
 
 **If `enabled_by_user` is `false`:** no action needed.
+
+
+### Step 8f: LeanCTX consent and install retry
+
+After Step 8e (Context Mode), check `.silver-bullet.json` for LeanCTX consent and suspension:
+
+```bash
+jq -r '.recommended_tools.leanctx.enabled_by_user // "null"' .silver-bullet.json
+jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet.json
+```
+
+**If `enabled_by_user` is `null`:** run consent flow from `/silver:init` §1.1g / `references/recommended-tools-opt-in.md`.
+
+**If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry via reconciler (no re-ask):
+
+```bash
+bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-cursor}"   --mode apply --scope all --entry-point update --format text
+bash scripts/optimize-five-tool-stack.sh --host "${SILVER_BULLET_RUNTIME:-cursor}" --project-root "$(pwd)"
+```
+
+On success, clear suspension (same jq pattern as Graphify). On failure, keep suspension.
+
+**If `enabled_by_user` is `false`:** no action needed.
+
+### Step 8g: Host snapshot reconciliation (after plugin update)
+
+Refresh deployed global scripts, rules, hooks, and MCP merge from the updated plugin checkout:
+
+```bash
+bash scripts/install-cursor.sh --merge-hooks-only
+bash scripts/install-global-toolstack.sh --project-root "$(pwd)"
+```
+
+Then verify (read-only):
+
+```bash
+bash scripts/reconcile-recommended-tools.sh   --project-root "$(pwd)" --host "${SILVER_BULLET_RUNTIME:-cursor}"   --mode verify --scope all --format text
+```
+
+Report `reload_required` honestly — plugin update does not prove MCP liveness in the current session.
 
 ### Step 9: Project scaffolding migration (opt-in)
 
