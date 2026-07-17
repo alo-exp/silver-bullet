@@ -136,7 +136,7 @@ teardown
 
 echo "--- site-regression-gate ---"
 setup
-jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false}' \
+jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false,touch_reason:"edit:site/index.html"}' \
   >"${SB_TEST_DIR}/site-session.json"
 out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks active site session without regression pass" "$out"
@@ -208,7 +208,7 @@ teardown
 
 echo "--- v-loop-rollup-gate ---"
 setup
-jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z"}' >"${SB_TEST_DIR}/site-session.json"
+jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"edit:site/index.html"}' >"${SB_TEST_DIR}/site-session.json"
 source "$REPO_ROOT/hooks/lib/site-session.sh"
 export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
 sb_site_session_init_vloops
@@ -224,7 +224,7 @@ teardown
 
 echo "--- site-visual-evidence-gate ---"
 setup
-jq -n '{active:true,last_touch_at:"2026-06-28T12:00:00Z"}' >"${SB_TEST_DIR}/site-session.json"
+jq -n '{active:true,last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent"}' >"${SB_TEST_DIR}/site-session.json"
 out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
 assert_block "Stop blocks site session without visual evidence" "$out"
 jq -n '{captured_at:"2026-06-28T12:00:00Z",paths:["/tmp/x.png"]}' >"${SB_TEST_DIR}/site-visual-evidence.json"
@@ -308,6 +308,60 @@ else
   FAIL=$((FAIL + 1))
 fi
 teardown
+
+echo "--- site-session gate scoping (#244/#245) ---"
+setup
+jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "active without site work — visual gate allows Stop" "$out"
+out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "active without site work — vloop gate allows Stop" "$out"
+out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "active without site work — regression gate allows Stop" "$out"
+teardown
+
+setup
+jq -n '{active:true,touch_reason:"edit:site/index.html",last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+jq -n '{active:true,host:"opencode",task_id:"t1",work_dir:"/tmp",ownership_scope:[]}' \
+  >"${SB_TEST_DIR}/agent-delegation-active.json"
+out=$(run_hook "$VISUAL_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "site work + agent delegation — visual gate allows Stop" "$out"
+out=$(run_hook "$VLOOP_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "site work + agent delegation — vloop gate allows Stop" "$out"
+out=$(run_hook "$SITE_REG_HOOK" Stop "$(jq -n '{hook_event_name:"Stop"}')")
+assert_allow "site work + agent delegation — regression gate allows Stop" "$out"
+teardown
+
+setup
+jq -n '{active:true,touch_reason:"site-intent",last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+source "$REPO_ROOT/hooks/lib/site-session.sh"
+export SB_RUNTIME_STATE_DIR="$SB_TEST_DIR"
+sb_site_session_record_subagent_spawn '{"description":"silver-agent-opencode pi TUI delegation"}'
+if [[ -f "${SB_TEST_DIR}/site-session.json" ]] && jq -e '.touch_reason == "site-intent"' "${SB_TEST_DIR}/site-session.json" >/dev/null; then
+  echo "  ok: silver-agent-opencode spawn does not mark site session"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: silver-agent-opencode spawn marked site session"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
+setup
+jq -n '{active:true,touch_reason:"edit:site/index.html",last_touch_at:"2026-06-28T12:00:00Z"}' \
+  >"${SB_TEST_DIR}/site-session.json"
+run_hook "$RECORD_HOOK" UserPromptSubmit "$(jq -n --arg p 'invoke silver-agent-opencode for pi TUI delegation' '{hook_event_name:"UserPromptSubmit",prompt:$p}')" >/dev/null
+if [[ ! -f "${SB_TEST_DIR}/site-session.json" ]]; then
+  echo "  ok: agent delegation prompt clears stale site session"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: agent delegation prompt did not clear site session"
+  FAIL=$((FAIL + 1))
+fi
+teardown
+
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
