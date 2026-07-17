@@ -66,7 +66,7 @@ if [[ "$hook_event" == "Stop" || "$hook_event" == "SubagentStop" ]]; then
     source "$_lib_dir/orchestrator-parent.sh"
     sb_orchestrator_is_worker_session 2>/dev/null && exit 0
   fi
-  sb_site_session_active && should_check=true
+  sb_site_session_gates_apply && should_check=true
 elif [[ "$hook_event" == "PreToolUse" ]]; then
   tool_name="$(sb_tool_name "$input" 2>/dev/null || true)"
   case "$tool_name" in
@@ -76,7 +76,7 @@ elif [[ "$hook_event" == "PreToolUse" ]]; then
   cmd="$(sb_tool_command_string "$input" 2>/dev/null || true)"
   if printf '%s' "$cmd" | grep -qE '\bgit push\b'; then
     sb_site_session_mark_push_intent 2>/dev/null || true
-    sb_site_session_active && should_check=true
+    sb_site_session_gates_apply && should_check=true
   else
     exit 0
   fi

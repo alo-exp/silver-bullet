@@ -46,7 +46,7 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
 fi
 
-sb_site_session_active || exit 0
+sb_site_session_gates_apply || exit 0
 sb_site_session_visual_evidence_valid && exit 0
 
 reason="Site visual evidence gate — active site session requires 1280px light+dark screenshots before Stop.

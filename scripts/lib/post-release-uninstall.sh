@@ -21,10 +21,19 @@ _sb_post_release_rm_dir() {
 
 sb_post_release_uninstall_cursor() {
   local cursor_home="${CURSOR_HOME:-${HOME}/.cursor}"
+  local sb_state_dir="${cursor_home}/.silver-bullet"
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs/silver-bullet"
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-agent-plugins/silver-bullet"
   _sb_post_release_rm_dir "${cursor_home}/plugins/cache/alo-labs-cursor/silver-bullet"
   _sb_post_release_strip_cursor_hooks "${cursor_home}/hooks.json"
+  rm -f -- \
+    "${sb_state_dir}/site-session.json" \
+    "${sb_state_dir}/site-visual-evidence.json" \
+    "${sb_state_dir}/site-vloops.json" \
+    "${sb_state_dir}/agent-delegation-active.json" \
+    "${sb_state_dir}/subagent-spawns.jsonl" \
+    "${sb_state_dir}/live-publish-evidence.json" \
+    "${sb_state_dir}/pending-completion-audit.json" 2>/dev/null || true
   printf 'uninstall: cursor SB cache + hooks stripped\n'
 }
 
@@ -69,3 +78,4 @@ sb_post_release_uninstall_host() {
     *) printf 'ERROR: unknown host %s\n' "$1" >&2; return 2 ;;
   esac
 }
+

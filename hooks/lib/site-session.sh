@@ -55,6 +55,17 @@ sb_site_prompt_is_site_intent() {
   printf '%s' "$lower" | grep -Eq '(site/|help center|help-center|homepage|github pages|sb\.alolabs\.dev|publish.*site|site.*publish|help/.*html|chrome\.css|tokens\.css)'
 }
 
+# Agent delegation prompts/spawns are not site sessions (#244/#245).
+sb_site_text_is_agent_delegation_intent() {
+  local text="${1:-}"
+  [[ -n "$text" ]] || return 1
+  printf '%s' "$text" | grep -qiE 'silver-agent-(codex|cursor|claude|opencode|pi)|AF-AGENT-DELEGATE|agent.delegat'
+}
+
+sb_site_prompt_is_agent_delegation_intent() {
+  sb_site_text_is_agent_delegation_intent "${1:-}"
+}
+
 sb_site_session_touch() {
   local reason="${1:-edit}"
   local outfile now
@@ -103,6 +114,65 @@ sb_site_session_active() {
   [[ -f "$outfile" ]] || return 1
   command -v jq >/dev/null 2>&1 || return 1
   jq -e '.active == true' "$outfile" >/dev/null 2>&1
+}
+
+# True when touch_reason or flags show real site/help work (not stale or incidental).
+sb_site_session_has_site_work() {
+  local outfile touch_reason
+  outfile="$(sb_site_session_file)"
+  [[ -f "$outfile" ]] || return 1
+  command -v jq >/dev/null 2>&1 || return 1
+  if jq -e '.push_intent == true or .live_claim_pending == true' "$outfile" >/dev/null 2>&1; then
+    return 0
+  fi
+  touch_reason="$(jq -r '.touch_reason // ""' "$outfile" 2>/dev/null || true)"
+  case "$touch_reason" in
+    site-intent|push-intent|live-claim|regression) return 0 ;;
+    edit:site/*) return 0 ;;
+    edit:*/site/*) return 0 ;;
+  esac
+  [[ "$touch_reason" == edit:* ]] && [[ "$touch_reason" == *"/site/"* ]] && return 0
+  return 1
+}
+
+# Site Stop/PreToolUse gates apply only for genuine site sessions (#244/#245).
+sb_site_session_gates_apply() {
+  sb_site_session_active || return 1
+  sb_site_session_has_site_work || return 1
+  if [[ -f "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh" ]]; then
+    # shellcheck source=agent-delegation-state.sh
+    source "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh"
+    if declare -f sb_agent_delegation_is_active >/dev/null 2>&1; then
+      sb_agent_delegation_is_active && return 1
+    fi
+  fi
+  return 0
+}
+
+sb_site_session_subagent_input_is_site_related() {
+  local tool_input="${1:-}"
+  [[ -n "$tool_input" ]] || return 1
+  if sb_site_text_is_agent_delegation_intent "$tool_input"; then
+    return 1
+  fi
+  printf '%s' "$tool_input" | grep -qiE \
+    'silver:content|site/[[:alnum:]_./-]+|site/\*\*|help[[:space:]-]center|sb\.alolabs\.dev|github[[:space:]]+pages|publish.*site|site.*publish|homepage'
+}
+
+sb_site_session_clear_all() {
+  rm -f -- "$(sb_site_session_file)" \
+    "$(sb_site_session_visual_evidence_file)" \
+    "$(sb_site_session_live_evidence_file)" \
+    "$(sb_site_session_vloop_file)" \
+    "$(sb_site_session_pending_audit_file)" \
+    "$(sb_site_session_subagent_log)" 2>/dev/null || true
+  if [[ -f "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh" ]]; then
+    # shellcheck source=agent-delegation-state.sh
+    source "$(dirname "${BASH_SOURCE[0]}")/agent-delegation-state.sh"
+    if declare -f sb_agent_delegation_deactivate >/dev/null 2>&1; then
+      sb_agent_delegation_deactivate
+    fi
+  fi
 }
 
 sb_site_session_regression_current() {
@@ -183,7 +253,7 @@ sb_site_session_record_subagent_spawn() {
     line="{\"spawned_at\":\"$now\"}"
   fi
   printf '%s\n' "$line" >>"$(sb_site_session_subagent_log)" 2>/dev/null || true
-  if printf '%s' "$tool_input" | grep -qiE 'site|help|publish|homepage'; then
+  if sb_site_session_subagent_input_is_site_related "$tool_input"; then
     sb_site_session_touch "subagent-site"
   fi
 }
