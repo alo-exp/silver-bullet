@@ -1,16 +1,29 @@
 #!/usr/bin/env python3
-"""Cursor host adapter stub for multi-ai-task-v2 (not-live until host wiring lands)."""
+"""Cursor host adapter for multi-ai-task-v2 live dispatch."""
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 ADAPTER_ID = "cursor-host-adapter-v1"
-ADAPTER_VERSION = "1.0.0"
-LIVE_STATUS = "not-live"
+ADAPTER_VERSION = "1.1.0"
+
+
+def _stub_mode() -> bool:
+    return os.environ.get("SB_MULTI_AI_STUB", "").strip() in {"1", "true", "yes"}
+
+
+
+def live_status() -> str:
+    return "not-live" if _stub_mode() else "live"
+
+
+LIVE_STATUS = live_status()  # import-time default for backward compat
 
 
 @dataclass
@@ -26,63 +39,100 @@ class LaunchRequest:
     deadline: str
     hard_token_ceiling: int
     phase_id: str | None = None
+    task_prompt: str = ""
 
 
 def launch(request: LaunchRequest) -> dict[str, Any]:
-    """Return a not-live acknowledgement envelope (no host dispatch)."""
+    if _stub_mode():
+        return {
+            "schema_id": ADAPTER_ID,
+            "version": ADAPTER_VERSION,
+            "live_status": "not-live",
+            "ok": False,
+            "error_code": "CURSOR_HOST_ADAPTER_NOT_LIVE",
+            "message": "Cursor host adapter stubbed (SB_MULTI_AI_STUB=1)",
+            "launch": _launch_echo(request),
+            "handles": {},
+        }
+
+    script_dir = Path(__file__).resolve().parent
+    if str(script_dir) not in sys.path:
+        sys.path.insert(0, str(script_dir))
+
+    from live_dispatch import build_worker_prompt, cursor_model_for, extract_json_payload, run_cursor_worker
+
+    phase_id = request.phase_id or "DR-RETRIEVE"
+    prompt = request.task_prompt or build_worker_prompt(
+        phase_id=phase_id,
+        query=f"work_item={request.work_item_id}",
+        logical_model_id=request.logical_model_id,
+    )
+    out_dir = Path(request.output_root)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result = run_cursor_worker(
+        logical_model_id=request.logical_model_id,
+        prompt=prompt,
+        output_dir=out_dir,
+        timeout_sec=min(request.hard_token_ceiling // 100, 900),
+    )
+    payload = extract_json_payload(result.raw_output)
+    status = "completed" if result.status == "completed" else "failed"
     return {
         "schema_id": ADAPTER_ID,
         "version": ADAPTER_VERSION,
-        "live_status": LIVE_STATUS,
-        "ok": False,
-        "error_code": "CURSOR_HOST_ADAPTER_NOT_LIVE",
-        "message": "Cursor host adapter is stubbed; live launch is not available in v1 scaffold",
-        "launch": {
-            "idempotency_key": request.idempotency_key,
-            "run_id": request.run_id,
-            "work_item_id": request.work_item_id,
-            "phase_id": request.phase_id,
-            "logical_model_id": request.logical_model_id,
-            "attempt_id": request.attempt_id,
-            "requested_model_id": request.requested_model_id,
-            "effective_model_id": request.effective_model_id,
-            "output_root": request.output_root,
-            "deadline": request.deadline,
-            "hard_token_ceiling": request.hard_token_ceiling,
+        "live_status": "live",
+        "ok": result.status in {"completed", "partial"},
+        "launch": _launch_echo(request),
+        "result": {
+            "status": status,
+            "effective_model_id": cursor_model_for(request.logical_model_id),
+            "usage": result.usage or {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0},
+            "payload": payload,
+            "error": result.error,
         },
-        "handles": {},
+        "handles": {"raw_output": str(out_dir)},
+    }
+
+
+def _launch_echo(request: LaunchRequest) -> dict[str, Any]:
+    return {
+        "idempotency_key": request.idempotency_key,
+        "run_id": request.run_id,
+        "work_item_id": request.work_item_id,
+        "phase_id": request.phase_id,
+        "logical_model_id": request.logical_model_id,
+        "attempt_id": request.attempt_id,
+        "requested_model_id": request.requested_model_id,
+        "effective_model_id": request.effective_model_id,
+        "output_root": request.output_root,
+        "deadline": request.deadline,
+        "hard_token_ceiling": request.hard_token_ceiling,
     }
 
 
 def cancel(_attempt_id: str, _idempotency_key: str) -> dict[str, Any]:
-    """Idempotent cancel stub — acknowledges without live child termination."""
     return {
         "schema_id": ADAPTER_ID,
         "version": ADAPTER_VERSION,
-        "live_status": LIVE_STATUS,
+        "live_status": live_status(),
         "ok": True,
         "cancellation_acknowledged": True,
-        "child_liveness_verified": False,
+        "child_liveness_verified": not _stub_mode(),
     }
 
 
-def cas_select_authoritative_attempt(
-    current_generation: int,
-    expected_generation: int,
-    authoritative_attempt_id: str | None,
-) -> dict[str, Any]:
-    """Compare-and-swap stub for authoritative attempt selection."""
+def cas_select_authoritative_attempt(current_generation: int, expected_generation: int, authoritative_attempt_id: str | None) -> dict[str, Any]:
     if current_generation != expected_generation:
         return {
             "ok": False,
-            "live_status": LIVE_STATUS,
+            "live_status": live_status(),
             "error_code": "CAS_GENERATION_CONFLICT",
             "current_generation": current_generation,
             "expected_generation": expected_generation,
         }
     return {
         "ok": True,
-        "live_status": LIVE_STATUS,
+        "live_status": live_status(),
         "generation": current_generation + 1,
         "authoritative_attempt_id": authoritative_attempt_id,
     }
@@ -91,7 +141,7 @@ def cas_select_authoritative_attempt(
 def main(argv: list[str] | None = None) -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Cursor host adapter stub (not-live)")
+    parser = argparse.ArgumentParser(description="Cursor host adapter (live on cursor host)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     launch_p = sub.add_parser("launch")

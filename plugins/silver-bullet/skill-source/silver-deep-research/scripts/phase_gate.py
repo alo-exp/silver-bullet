@@ -90,7 +90,52 @@ def resolve_mode(out_dir: Path, explicit: str | None = None) -> str | None:
     return None
 
 
-def check_need_profile_gate(out_dir: Path) -> tuple[bool, str]:
+def _category_packs_dir() -> Path:
+    return _skill_root() / "reference" / "landscape" / "category-packs"
+
+
+def _load_category_pack_for_gate(pack_id: str) -> dict[str, Any]:
+    path = _category_packs_dir() / f"{pack_id}.json"
+    if not path.is_file():
+        raise FileNotFoundError(f"category pack not found: {pack_id}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("category_id") != pack_id:
+        raise ValueError(f"pack category_id mismatch for {pack_id}")
+    return data
+
+
+def _effective_inclusion_criteria(need_profile: dict[str, Any], pack: dict[str, Any]) -> dict[str, Any]:
+    override = need_profile.get("inclusion_criteria")
+    if override:
+        return override
+    return pack.get("inclusion_criteria") or {}
+
+
+def check_category_pack_gate(need_profile: dict[str, Any]) -> tuple[bool, str]:
+    """Fail closed when landscape/compare lacks a resolvable pack with inclusion criteria."""
+    pack_id = need_profile.get("category_pack_id")
+    if not pack_id:
+        return False, "need_profile.json missing category_pack_id (required for solution research)"
+    try:
+        pack = _load_category_pack_for_gate(str(pack_id))
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as exc:
+        return False, f"unresolvable category_pack_id {pack_id!r}: {exc}"
+    criteria = _effective_inclusion_criteria(need_profile, pack)
+    items = criteria.get("criteria") or []
+    if not items:
+        return False, "inclusion_criteria empty (pack and need_profile overrides)"
+    if criteria.get("rule") != "min_pass_count":
+        return False, "inclusion_criteria.rule must be min_pass_count"
+    min_pass = criteria.get("min_pass_count")
+    if not isinstance(min_pass, int) or min_pass < 1:
+        return False, "inclusion_criteria.min_pass_count must be a positive integer"
+    return True, "ok"
+
+
+def check_need_profile_gate(
+    out_dir: Path,
+    research_type: str | None = None,
+) -> tuple[bool, str]:
     """Block DR-RETRIEVE until need_profile interview is complete (solution types)."""
     path = out_dir / "need_profile.json"
     if not path.exists():
@@ -103,6 +148,11 @@ def check_need_profile_gate(out_dir: Path) -> tuple[bool, str]:
         return False, "need_profile.json interview_complete is false"
     if data.get("license_preference") not in ("oss", "commercial", "mixed"):
         return False, "need_profile.json license_preference not set"
+    rt = research_type or resolve_research_type(out_dir)
+    if rt in SOLUTION_TYPES:
+        pack_ok, pack_detail = check_category_pack_gate(data)
+        if not pack_ok:
+            return False, pack_detail
     return True, "ok"
 
 
@@ -155,7 +205,7 @@ def check_phase(out_dir: Path, phase_key: str, config: dict[str, Any] | None = N
     all_ok = True
 
     if phase_key in ("scope", "retrieve") and rt in SOLUTION_TYPES:
-        ok, detail = check_need_profile_gate(out_dir)
+        ok, detail = check_need_profile_gate(out_dir, research_type=rt)
         results.append({"artifact": "need_profile.json (gate)", "ok": ok, "detail": detail})
         if not ok:
             all_ok = False
@@ -258,3 +308,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

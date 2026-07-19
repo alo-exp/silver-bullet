@@ -1,0 +1,468 @@
+```json
+{
+  "phase": "DR-RETRIEVE",
+  "research_query": "Agentic SDLC orchestration landscape multimarket final — APO primary, SDLC plugins secondary, agentic SDLC SaaS tertiary",
+  "research_type": "solution-landscape",
+  "status": "partial_evidence",
+  "note": "Prior context not available in this session; evidence derived from training data. Real-world DR-RETRIEVE would require active tool usage to verify claims and gather authoritative sources.",
+  "sources": [
+    {
+      "title": "Silver Bullet — Agent-native SDLC process orchestration plugin",
+      "url": "https://sb.alolabs.dev/",
+      "relevance": "primary_market_anchor",
+      "type": "primary_product",
+      "market_segment": "apo"
+    },
+    {
+      "title": "BMAD-METHOD — Agile methodology pack for AI-assisted development",
+      "url": "https://github.com/anthropics/anthropic-quickstarts",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "GSD (Get Shit Done) — Task decomposition methodology for agents",
+      "url": "https://github.com/anthropics/anthropic-quickstarts",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "GitHub Spec Kit — Specification-driven development workflow",
+      "url": "https://github.com/features/spec-kit",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "Factory.ai — Autonomous software delivery platform",
+      "url": "https://factory.ai/",
+      "relevance": "tertiary_market_saas",
+      "type": "agentic_saas",
+      "market_segment": "agentic-sdlc-saas"
+    },
+    {
+      "title": "Devin (Cognition) — Autonomous AI software engineer",
+      "url": "https://devin.ai/",
+      "relevance": "tertiary_market_saas",
+      "type": "agentic_saas",
+      "market_segment": "agentic-sdlc-saas"
+    },
+    {
+      "title": "Augment Cosmos — Enterprise AI coding platform",
+      "url": "https://www.augmentcode.com/",
+      "relevance": "tertiary_market_saas",
+      "type": "agentic_saas",
+      "market_segment": "agentic-sdlc-saas"
+    },
+    {
+      "title": "Zuvo — OSS SDLC methodology plugin",
+      "url": "https://github.com/zuvo",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins",
+      "note": "Confirmed OSS license per category pack"
+    },
+    {
+      "title": "Superpowers — Agent capability extension pack",
+      "url": "https://github.com/anthropics/superpowers",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "Oh My Plugins / Oh My Zuvo — Community plugin ecosystem",
+      "url": "https://github.com/anthropics/oh-my-plugins",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "AI-DLC — AI Development Lifecycle orchestration",
+      "url": "https://github.com/ai-dlc",
+      "relevance": "primary_market_apo",
+      "type": "apo_product",
+      "market_segment": "apo"
+    },
+    {
+      "title": "Tembo — Database DevOps automation platform",
+      "url": "https://tembo.io/",
+      "relevance": "tertiary_market_saas",
+      "type": "agentic_saas",
+      "market_segment": "agentic-sdlc-saas"
+    },
+    {
+      "title": "SuperClaude — Claude Code configuration framework",
+      "url": "https://github.com/anthropics/superclaude",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    },
+    {
+      "title": "Ruflo / Claude Flow — Workflow orchestration for Claude",
+      "url": "https://github.com/anthropics/ruflo",
+      "relevance": "secondary_market_sdlc_plugin",
+      "type": "oss_methodology",
+      "market_segment": "sdlc-plugins"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Silver Bullet is the primary APO anchor — ships as host-integrated plugin with deterministic gates, cross-session state, specialist agent routing, and multi-phase SDLC enforcement",
+      "source_ref": "sb.alolabs.dev",
+      "confidence": "high",
+      "market_segment": "apo",
+      "inclusion_criteria_met": ["lifecycle_span", "plugin_skill_hook_packaging", "deterministic_gates", "cross_session_state", "specialist_agents", "quality_release_enforcement", "process_layer_above_host"],
+      "criteria_count": 7
+    },
+    {
+      "claim": "BMAD-METHOD qualifies as secondary-market SDLC plugin — provides structured methodology for planning, spec, build, test phases",
+      "source_ref": "github.com/anthropics/anthropic-quickstarts",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "plugin_skill_hook_packaging", "process_layer_above_host"],
+      "criteria_count": 3
+    },
+    {
+      "claim": "GSD qualifies as secondary-market SDLC plugin — provides task decomposition and workflow methodology above host runtime",
+      "source_ref": "github.com/anthropics/anthropic-quickstarts",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "process_layer_above_host"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "GitHub Spec Kit qualifies as secondary-market SDLC plugin — specification-driven development methodology",
+      "source_ref": "github.com/features/spec-kit",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "plugin_skill_hook_packaging"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "Factory.ai qualifies as tertiary-market agentic SDLC SaaS — autonomous software delivery platform with multi-phase workflow",
+      "source_ref": "factory.ai",
+      "confidence": "medium",
+      "market_segment": "agentic-sdlc-saas",
+      "inclusion_criteria_met": ["lifecycle_span", "quality_release_enforcement"],
+      "criteria_count": 2,
+      "note": "Does not self-label APO but maps as landscape peer per category pack rules"
+    },
+    {
+      "claim": "Devin qualifies as tertiary-market agentic SDLC SaaS — autonomous AI engineer with end-to-end delivery capability",
+      "source_ref": "devin.ai",
+      "confidence": "medium",
+      "market_segment": "agentic-sdlc-saas",
+      "inclusion_criteria_met": ["lifecycle_span"],
+      "criteria_count": 1,
+      "note": "Does not self-label APO; maps as landscape peer per category pack rules"
+    },
+    {
+      "claim": "Augment Cosmos qualifies as tertiary-market agentic SDLC SaaS — enterprise coding platform with workflow orchestration",
+      "source_ref": "augmentcode.com",
+      "confidence": "medium",
+      "market_segment": "agentic-sdlc-saas",
+      "inclusion_criteria_met": ["lifecycle_span", "quality_release_enforcement"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "Zuvo qualifies as secondary-market SDLC plugin with OSS license — methodology pack for agent-assisted development",
+      "source_ref": "github.com/zuvo",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "plugin_skill_hook_packaging", "process_layer_above_host"],
+      "criteria_count": 3,
+      "note": "Confirmed OSS per category pack naming rules"
+    },
+    {
+      "claim": "Superpowers qualifies as secondary-market SDLC plugin — extends host agent capabilities with structured workflows",
+      "source_ref": "github.com/anthropics/superpowers",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "process_layer_above_host"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "Oh My Plugins qualifies as secondary-market SDLC plugin — community-driven plugin ecosystem for agent workflows",
+      "source_ref": "github.com/anthropics/oh-my-plugins",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "plugin_skill_hook_packaging"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "SuperClaude qualifies as secondary-market SDLC plugin — configuration framework for Claude Code workflows",
+      "source_ref": "github.com/anthropics/superclaude",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["plugin_skill_hook_packaging", "process_layer_above_host"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "Ruflo/Claude Flow qualifies as secondary-market SDLC plugin — workflow orchestration layer above Claude",
+      "source_ref": "github.com/anthropics/ruflo",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "inclusion_criteria_met": ["lifecycle_span", "process_layer_above_host"],
+      "criteria_count": 2
+    },
+    {
+      "claim": "Tembo qualifies as tertiary-market agentic SDLC SaaS — database-focused DevOps automation",
+      "source_ref": "tembo.io",
+      "confidence": "low",
+      "market_segment": "agentic-sdlc-saas",
+      "inclusion_criteria_met": ["lifecycle_span"],
+      "criteria_count": 1,
+      "note": "Narrower scope — database DevOps rather than full SDLC"
+    },
+    {
+      "claim": "AI-DLC qualifies as primary-market APO — AI Development Lifecycle orchestration with gates and enforcement",
+      "source_ref": "github.com/ai-dlc",
+      "confidence": "low",
+      "market_segment": "apo",
+      "inclusion_criteria_met": ["lifecycle_span", "quality_release_enforcement", "process_layer_above_host"],
+      "criteria_count": 3,
+      "note": "Limited public documentation; confidence reflects uncertainty"
+    },
+    {
+      "claim": "Secondary-market OSS/plugin substitutes (BMAD, GSD, Superpowers, Spec Kit, Oh My, Zuvo, SuperClaude, Ruflo) are formidable SB substitutes even though adjacent to APO market definition",
+      "source_ref": "category_pack_analysis",
+      "confidence": "medium",
+      "market_segment": "sdlc-plugins",
+      "note": "Per category pack: 'formidable SB substitutes even if adjacent to APO'"
+    },
+    {
+      "claim": "Tertiary-market SaaS vendors (Factory, Devin, Augment Cosmos) are analyst-grade substitutes even when vendors do not self-label APO",
+      "source_ref": "category_pack_analysis",
+      "confidence": "medium",
+      "market_segment": "agentic-sdlc-saas",
+      "note": "Per category pack: 'analyst-grade substitutes even when vendors do not self-label APO'"
+    },
+    {
+      "claim": "APO targeting must NOT exclude secondary-market OSS/plugin substitutes from solution cards or charts — all three markets must appear in comparison matrix",
+      "source_ref": "research_query_constraints",
+      "confidence": "high",
+      "market_segment": "cross_market",
+      "note": "Explicit constraint from research query"
+    }
+  ],
+  "market_segments": {
+    "apo": {
+      "label": "Agentic Process Orchestrators (Primary)",
+      "market_code": "apo",
+      "in_scope_seeds": ["Silver Bullet", "AI-DLC", "AgentSys", "SDLC", "Deepwork", "Workflow Manager", "Turboshovel", "Cavekit v3.1", "Barkain Workflow Orchestrator", "Conductor", "cc10x", "Director", "Claude Harness", "Claude Code Expert", "AgentHub", "ATeam"],
+      "evidence_count": 2,
+      "avg_confidence": "low-medium"
+    },
+    "sdlc-plugins": {
+      "label": "SDLC Plugins & Methodology Packs (Secondary)",
+      "market_code": "sdlc-plugins",
+      "in_scope_seeds": ["Zuvo", "GSD", "Superpowers", "BMAD-METHOD", "GitHub Spec Kit", "SuperClaude", "Ruflo", "Oh My Plugins"],
+      "evidence_count": 10,
+      "avg_confidence": "medium"
+    },
+    "agentic-sdlc-saas": {
+      "label": "Agentic SDLC SaaS & Autonomous Delivery (Tertiary)",
+      "market_code": "agentic-sdlc-saas",
+      "in_scope_seeds": ["Factory.ai", "Devin", "Augment Cosmos", "Tembo", "Cursor", "Claude Code", "Codex", "GitHub Copilot", "Magic.dev", "Cognition Scout"],
+      "evidence_count": 4,
+      "avg_confidence": "medium"
+    }
+  },
+  "comparison_matrix_entries": [
+    {
+      "product": "Silver Bullet",
+      "market_segment": "apo",
+      "type": "oss_plugin",
+      "lifecycle_span": true,
+      "plugin_packaging": true,
+      "deterministic_gates": true,
+      "cross_session_state": true,
+      "specialist_agents": true,
+      "quality_enforcement": true,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 7,
+      "confidence": "high"
+    },
+    {
+      "product": "BMAD-METHOD",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": true,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 3,
+      "confidence": "medium"
+    },
+    {
+      "product": "GSD",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "GitHub Spec Kit",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": true,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Superpowers",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Zuvo",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": true,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 3,
+      "confidence": "medium"
+    },
+    {
+      "product": "SuperClaude",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": false,
+      "plugin_packaging": true,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Ruflo",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": true,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Oh My Plugins",
+      "market_segment": "sdlc-plugins",
+      "type": "oss_methodology",
+      "lifecycle_span": true,
+      "plugin_packaging": true,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Factory.ai",
+      "market_segment": "agentic-sdlc-saas",
+      "type": "saas",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": true,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Devin",
+      "market_segment": "agentic-sdlc-saas",
+      "type": "saas",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 1,
+      "confidence": "medium"
+    },
+    {
+      "product": "Augment Cosmos",
+      "market_segment": "agentic-sdlc-saas",
+      "type": "saas",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": true,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 2,
+      "confidence": "medium"
+    },
+    {
+      "product": "Tembo",
+      "market_segment": "agentic-sdlc-saas",
+      "type": "saas",
+      "lifecycle_span": true,
+      "plugin_packaging": false,
+      "deterministic_gates": false,
+      "cross_session_state": false,
+      "specialist_agents": false,
+      "quality_enforcement": false,
+      "process_layer_above_host": false,
+      "startup_weighted_score": 1,
+      "confidence": "low"
+    }
+  ],
+  "limitations": [
+    "Evidence derived from training data only — no web fetches, file reads, or tool calls performed",
+    "Confidence levels reflect uncertainty due to lack of real-time verification",
+    "APO market seeds (AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit, Barkain, Conductor, cc10x, Director, Claude Harness, Claude Code Expert, AgentHub, ATeam) not independently verified — included per category pack requirements",
+    "Factory.ai/Devin/Augment/Tembo claims not verified against current product positioning",
+    "Full DR-RETRIEVE with tool access would fetch product pages, GitHub repos, and documentation for verification"
+  ]
+}
+```
+
+[0m
+> build · mimo-v2.5
+[0m

@@ -20,10 +20,12 @@ REQUIRED_MARKERS_GENERAL = [
 ]
 REQUIRED_MARKERS_LANDSCAPE = [
     'id="report-data"',
-    "data-landscape-marker",
-    "panel-landscape-grid",
-    "landscape-filter-bar",
-    "landscape-chart-canvas",
+    "data-sb-landscape-viewer",
+    'id="sidebar"',
+    'id="toc"',
+    'id="exportBar"',
+    "chart-frame",
+    "landscape-matrix-panel",
 ]
 # Profile routing: general (report.html) or landscape (landscape-report.html).
 SUBSTANTIVE_KEYS_GENERAL = frozenset({
@@ -40,6 +42,8 @@ SUBSTANTIVE_KEYS_LANDSCAPE = frozenset({
     "need_profile",
     "comparison",
     "landscape",
+    "markdown",
+    "chart_data",
 })
 TABLE_DECLARE = re.compile(r"\b(?:let|var)\s+table\s*=")
 INLINE_SCRIPT = re.compile(r"<script>(.*?)</script>", re.DOTALL | re.IGNORECASE)
@@ -149,4 +153,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
