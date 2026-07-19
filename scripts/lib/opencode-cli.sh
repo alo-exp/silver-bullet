@@ -72,13 +72,22 @@ agent_opencode_enforce_invoke_model_policy() {
     here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     sb_root="$(cd "${here}/../.." && pwd)"
   fi
+  if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-pool-v1" && "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" ]]; then
+    agent_opencode_validate_multi_ai_pool_mode "${SB_MULTI_AI_OCG_POOL:-lite}" "$sb_root"
+    return $?
+  fi
   if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-worker-v1" && "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" && -n "${SB_MULTI_AI_OCG_PROFILE:-}" ]]; then
     agent_opencode_assert_validated_multi_ai_env "$sb_root"
     return $?
   fi
   if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-worker-v1" || -n "${SB_MULTI_AI_OCG_PROFILE:-}" || "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" ]]; then
+    if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-pool-v1" ]]; then
+      agent_opencode_validate_multi_ai_pool_mode "${SB_MULTI_AI_OCG_POOL:-lite}" "$sb_root"
+      return $?
+    fi
     printf 'ERROR: incomplete or forged multi-ai-worker env; use agent_opencode_apply_multi_ai_worker_env\n' >&2
     return 2
   fi
   agent_opencode_pin_mimo_model_env
 }
+

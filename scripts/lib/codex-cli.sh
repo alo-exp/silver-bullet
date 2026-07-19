@@ -16,11 +16,14 @@ resolve_native_codex_cli_path() {
     fi
   fi
 
-  candidate="/Applications/Codex.app/Contents/Resources/codex"
-  if [[ -x "$candidate" ]]; then
-    printf '%s\n' "$candidate"
-    return 0
-  fi
+  for candidate in \
+    "/Applications/ChatGPT.app/Contents/Resources/codex" \
+    "/Applications/Codex.app/Contents/Resources/codex"; do
+    if [[ -x "$candidate" && "$(basename "$candidate")" == "codex" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
 
   candidate="$(command -v codex 2>/dev/null || true)"
   if [[ -n "$candidate" && -x "$candidate" && "$(basename "$(python3 - "$candidate" <<'PY'
@@ -35,6 +38,15 @@ PY
   fi
 
   return 1
+}
+
+# Resolve and export CODEX_BIN for delegate subprocesses (idempotent).
+agent_codex_export_bin() {
+  local resolved
+  resolved="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
+  [[ -n "$resolved" ]] || return 1
+  export CODEX_BIN="$resolved"
+  return 0
 }
 
 # Strip [mcp_servers*] tables from a Codex config.toml (lightweight delegate boot).

@@ -71,11 +71,11 @@ AGENT_SH="${SB_ROOT}/tests/live/agents/codex/agent.sh"
   exit 1
 }
 
-CLI="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
-[[ -n "$CLI" ]] || {
+agent_codex_export_bin || {
   printf 'ERROR: native Codex CLI not found\n' >&2
   exit 1
 }
+CLI="$CODEX_BIN"
 
 quota_retry_interval="${AGENT_CODEX_QUOTA_RETRY_INTERVAL:-60}"
 quota_retry_max="${AGENT_CODEX_QUOTA_RETRY_MAX:-5}"

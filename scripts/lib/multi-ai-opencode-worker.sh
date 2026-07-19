@@ -26,6 +26,34 @@ agent_opencode_profile_to_run_model() {
   printf '%s\n' "$profile_id"
 }
 
+agent_opencode_validate_multi_ai_pool_mode() {
+  local pool="${1:-lite}"
+  local sb_root="${2:-.}"
+  if [[ "$pool" != "lite" && "$pool" != "regular" ]]; then
+    printf 'ERROR: multi-ai pool must be lite or regular (got %s)\n' "$pool" >&2
+    return 2
+  fi
+  local reg
+  reg="$(agent_opencode_registry_path "$sb_root")"
+  [[ -f "$reg" ]] || {
+    printf 'ERROR: missing model family registry at %s\n' "$reg" >&2
+    return 2
+  }
+  if ! command -v jq >/dev/null 2>&1; then
+    printf 'ERROR: jq required for multi-ai-pool-v1 validation\n' >&2
+    return 2
+  fi
+  local key="ocg_lite_pool"
+  [[ "$pool" == "regular" ]] && key="ocg_regular_pool"
+  local count
+  count="$(jq -r --arg k "$key" '.[$k] | length' "$reg" 2>/dev/null || echo 0)"
+  if [[ "$count" -lt 1 ]]; then
+    printf 'ERROR: empty OCG pool %s in registry\n' "$pool" >&2
+    return 2
+  fi
+  return 0
+}
+
 agent_opencode_validate_multi_ai_worker_mode() {
   local profile_id="$1"
   local pool="${2:-lite}"
@@ -89,3 +117,4 @@ agent_opencode_assert_validated_multi_ai_env() {
   fi
   return 0
 }
+
