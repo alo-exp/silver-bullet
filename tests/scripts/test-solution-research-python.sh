@@ -32,3 +32,4 @@ fi
 
 printf '\nResults: %s passed, 0 failed\n' "$ran"
 exit 0
+

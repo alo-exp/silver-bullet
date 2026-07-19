@@ -7,7 +7,7 @@ SKILLS_DIR="${REPO_ROOT}/skills"
 OUT_DIR="${REPO_ROOT}/plugins/silver-bullet/commands"
 
 # Composer routes with command stubs (extend as new top-level routes ship).
-COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-compare silver-release silver-fast silver-new-workflow silver-orchestrator silver-orient silver-execute silver-ship)
+COMPOSERS=(silver silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-deep-research-multi-ai silver-multi-ai-task silver-compare silver-release silver-fast silver-new-workflow silver-orchestrator silver-orient silver-execute silver-ship)
 
 mkdir -p "$OUT_DIR"
 
@@ -102,3 +102,4 @@ for path in sorted(Path(sys.argv[1]).glob("*.md")):
 PY
 
 printf 'Generated %s composer command stubs in %s\n' "${#COMPOSERS[@]}" "$OUT_DIR"
+

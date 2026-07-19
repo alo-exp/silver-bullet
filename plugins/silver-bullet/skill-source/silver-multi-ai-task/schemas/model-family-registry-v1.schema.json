@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "model-family-registry-v1.schema.json",
+  "title": "ModelFamilyRegistryV1",
+  "type": "object",
+  "required": ["schema_id", "version", "logical_to_family", "aliases"],
+  "properties": {
+    "schema_id": { "const": "model-family-registry-v1" },
+    "version": { "type": "string" },
+    "logical_to_family": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "aliases": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "cursor_default_pool": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocg_lite_pool": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ocg_regular_pool": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

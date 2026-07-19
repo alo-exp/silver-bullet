@@ -2,8 +2,9 @@
 # Native OpenCode CLI adapter for live Silver Bullet tests.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 # shellcheck source=scripts/lib/opencode-cli.sh
-source "${SCRIPT_DIR}/../../../../scripts/lib/opencode-cli.sh"
+source "${REPO_ROOT}/scripts/lib/opencode-cli.sh"
 
 agent_name() {
   printf 'opencode'
@@ -30,7 +31,7 @@ agent_preflight() {
     printf 'ERROR: OpenCode CLI not working at %s\n' "$cli" >&2
     return 1
   fi
-  agent_opencode_pin_mimo_model_env || return 1
+  agent_opencode_enforce_invoke_model_policy "$REPO_ROOT" || return 1
 }
 
 agent_invoke() {
@@ -40,7 +41,7 @@ agent_invoke() {
   local -a args=()
 
   cli="$(agent_cli_path)" || return 1
-  agent_opencode_pin_mimo_model_env || return 1
+  agent_opencode_enforce_invoke_model_policy "$REPO_ROOT" || return 1
 
   work_dir="${OPENCODE_WORK_DIR:-${WORK_DIR:-}}"
   [[ -n "$work_dir" ]] || { printf 'ERROR: OPENCODE_WORK_DIR or WORK_DIR required\n' >&2; return 1; }
@@ -130,3 +131,4 @@ PY
   fi
   printf '%s' "$output"
 }
+

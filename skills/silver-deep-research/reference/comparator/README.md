@@ -6,19 +6,36 @@ Weighted matrix scoring ported from MultAI (MIT). See `scripts/compare_solutions
 ## Primary path
 
 1. Union features from all SCR `features.json` files
-2. Map priorities from `need_profile.json` (`must_haves` → Critical)
+2. Map priorities from `need_profile.json` (`must_haves` → Critical; optional `persona_id` boosts)
 3. Apply ticks (✔) per solution per feature with evidence backing
-4. Run `compare_solutions.py --dir $SB_RESEARCH_OUT_DIR` → `comparison/comparison.json`
+4. Run `compare_solutions.py --dir $SB_RESEARCH_OUT_DIR` → `comparison/comparison.json`,
+   `comparison/comparison-matrix.md`, and `comparison/comparison-matrix.xlsx`
 5. Run `generate_report_spa.py --dir $SB_RESEARCH_OUT_DIR` → serverless `report.html`
 
-`comparison.json` + SPA `report.html` are the **required** DR-PACKAGE outputs for
-solution-landscape and solution-compare runs.
+`comparison.json`, `comparison-matrix.xlsx`, and SPA `report.html` are **required** DR-PACKAGE
+outputs for solution-landscape and solution-compare runs.
 
-## Optional XLSX export
+## XLSX export
 
-`matrix_builder.py` and `matrix_ops.py` provide optional CLI XLSX export/manipulation.
-They are **not** required for DR-PACKAGE validation — use only when a spreadsheet
-artifact is explicitly requested.
+`compare_solutions.py` emits `comparison/comparison-matrix.xlsx` by default (MultAI-weighted
+COUNTIFS score row). Standalone:
+
+```bash
+python3 skills/silver-deep-research/scripts/generate_comparison_xlsx.py --dir "$SB_RESEARCH_OUT_DIR"
+```
+
+DR-multi-AI packaging:
+
+```bash
+python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py --dir "$SB_RESEARCH_OUT_DIR"
+```
+
+`matrix_ops.py` supports add-platform, reorder-columns, combo, verify on existing matrices.
+
+## Personas
+
+Set optional `persona_id` on `need_profile.json` (`startup` | `enterprise` | `regulated`).
+Catalog: `reference/need-profile-personas.json`.
 
 ## Weights
 
@@ -35,3 +52,4 @@ Unknown priorities default to weight **1** (`matrix_core.priority_weight`).
 ## Forbidden
 
 - No `http.server` or `launch_report.py` — use `generate_report_spa.py` for HTML
+
