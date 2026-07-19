@@ -8,7 +8,7 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
-- **Branch:** `main` @ `ff01c000` on `origin/main` (merge `80fd6715`; handoff `0c1c8bc5`; tip-align `89d6ae77` / `ff01c000`)
+- **Branch:** `main` @ `890d2ff3` on `origin/main` (merge `80fd6715`; handoff `0c1c8bc5`; tip-align through `ff01c000`; V-loop enrich `890d2ff3`)
 - **Primary checkout:** `/Users/shafqat/projects/silver-bullet/repo`
 - **Cleanup confirmed:** worktree `r41j` removed; branch `cursor/16e60539` deleted (no longer in `git worktree list` / local or remote branch list)
 - **Working tree:** dirty with unrelated untracked junk (`.alumnium/logs`, `${SB_RUNTIME_HOME_ROOT}/`, planning run dirs) — do not mix into DR commits
@@ -39,8 +39,7 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 
 ## Verification and Release State
 
-- **`origin/main` tip:** `ff01c000` (`docs(handoff): align tip SHA with origin/main after cleanup`) — ancestry includes merge `80fd6715`, handoff `0c1c8bc5`, tip record `89d6ae77`, plus feature commits `cc2df4e0`, `6ce819a6`, `352aed21`, `b3111b22`.
-- Local `main` may be 1+ commits ahead with auto-snapshots (e.g. `081c8fa1` agentmemory) — push only intentional commits.
+- **`origin/main` tip:** `890d2ff3` (`docs(handoff): enrich multimarket landscape resume for V-loop accuracy`) — ancestry includes `ff01c000`, `081c8fa1` (agentmemory auto-snapshot), merge `80fd6715`, handoff `0c1c8bc5`, plus feature commits `cc2df4e0`, `6ce819a6`, `352aed21`, `b3111b22`.
 - Authoritative run: **`run_id=run-57f38dfa25d83cc50d224e283d4692f3`**, mode ultradeep, **24/24** pool completion claimed for final multimarket run.
 - Full-suite verification for this merge: **not re-run in handoff/V-loop** (`verification status unknown` for full `tests/run-all-tests.sh`).
 - Latest planning milestone complete; latest tags are on the v0.51.x line — plugin release not cut for this DR work.
@@ -98,6 +97,6 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 ### Git / cleanup
 
 - Feature branch merged into `main` at `80fd6715`
-- Handoff landed `0c1c8bc5`; tip-SHA docs `89d6ae77` then `ff01c000` on `origin/main`
+- Handoff landed `0c1c8bc5`; tip-SHA docs `89d6ae77` / `ff01c000`; V-loop enrich `890d2ff3` on `origin/main`
 - **Cleanup verified (2026-07-20 V-loop):** worktree `r41j` gone; branch `cursor/16e60539` gone
 - Conflict resolved during merge: keep main’s `.planning`/TMPDIR lock fallback in `scripts/sync-codex-package.sh`
