@@ -1,0 +1,226 @@
+{
+  "schema_id": "multi-ai-result-index-v1",
+  "version": "1.0.0",
+  "spine": "multi-ai-task-v2",
+  "run_id": "run-57f38dfa25d83cc50d224e283d4692f3",
+  "ledger_generation": 0,
+  "ledger_head_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "entries": [
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "claude-opus-4.8-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "gemini-3.5-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "gpt-5.6-luna-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "ocg-deepseek-v4-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "ocg-kimi-k2.7-code",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "ocg-mimo-v2.5",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "ocg-minimax-m3",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+      "phase_id": "DR-RETRIEVE",
+      "logical_model_id": "ocg-qwen3.7-plus",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "claude-opus-4.8-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "gemini-3.5-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "gpt-5.6-luna-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "ocg-deepseek-v4-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "ocg-kimi-k2.7-code",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "ocg-mimo-v2.5",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "ocg-minimax-m3",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+      "phase_id": "DR-TRIANGULATE",
+      "logical_model_id": "ocg-qwen3.7-plus",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "claude-opus-4.8-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "gemini-3.5-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "gpt-5.6-luna-medium",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "ocg-deepseek-v4-flash",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "ocg-kimi-k2.7-code",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "ocg-mimo-v2.5",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "ocg-minimax-m3",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    },
+    {
+      "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+      "phase_id": "DR-CRITIQUE",
+      "logical_model_id": "ocg-qwen3.7-plus",
+      "status": "completed",
+      "authoritative_attempt_id": null,
+      "validation_outcome": null,
+      "terminal_reason": null
+    }
+  ]
+}

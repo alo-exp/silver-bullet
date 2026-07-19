@@ -29,6 +29,10 @@ DEFAULT_CACHE_TTL_SECONDS = 86400
 SPINE = "multi-ai-task-v2"
 UNSUPPORTED_HOST_ERROR = "SB_MULTI_AI_UNSUPPORTED_HOST"
 
+# Host-delegate backends (SB router: GPT→agent-codex, Opus→agent-claude).
+CODEX_DELEGATE_LOGICAL_IDS = frozenset({"gpt-5.6-luna-medium"})
+CLAUDE_DELEGATE_LOGICAL_IDS = frozenset({"claude-opus-4.8-medium"})
+
 
 def utc_now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -212,6 +216,12 @@ def resolve_pool(selection: PoolSelection, subscription: str | None = None) -> l
             effective = "ocg-glm-5.2"
         elif logical_id.startswith("ocg-"):
             backend = "ocg"
+            effective = logical_id
+        elif logical_id in CODEX_DELEGATE_LOGICAL_IDS:
+            backend = "codex"
+            effective = logical_id
+        elif logical_id in CLAUDE_DELEGATE_LOGICAL_IDS:
+            backend = "claude"
             effective = logical_id
         else:
             backend = "cursor"

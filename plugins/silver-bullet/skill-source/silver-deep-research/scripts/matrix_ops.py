@@ -49,7 +49,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, WEIGHTS, priority_weight
+from matrix_core import TICK, TICK_CRITERION, WEIGHTS, priority_weight
 
 openpyxl = None
 get_column_letter = None
@@ -223,17 +223,17 @@ def _remerge_all(ws: Worksheet, last_col: int, L: _Layout) -> None:
 
 
 def _countif(col_letter: str, L: _Layout) -> str:
-    """COUNTIF formula for total capabilities row."""
-    return f'=COUNTIF({col_letter}{L.data_start}:{col_letter}1048576,"?*")'
+    """COUNTIF formula for total capabilities row (ticks only, not em-dash placeholders)."""
+    return f'=COUNTIF({col_letter}{L.data_start}:{col_letter}1048576,"{TICK_CRITERION}")'
 
 
 def _score_formula(col_letter: str, L: _Layout) -> str:
-    """Priority-weighted COUNTIFS formula for score row."""
+    """Priority-weighted COUNTIFS formula for score row (ticks only)."""
     b = f"$B${L.data_start}:$B$1048576"
     c = f"{col_letter}${L.data_start}:{col_letter}$1048576"
     parts = []
     for prio, wt in WEIGHTS.items():
-        parts.append(f'COUNTIFS({b},"{prio}",{c},"?*")*{wt}')
+        parts.append(f'COUNTIFS({b},"{prio}",{c},"{TICK_CRITERION}")*{wt}')
     return "=" + "+".join(parts)
 
 
@@ -951,3 +951,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -8,12 +8,13 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 SKILL_ROOT = os.path.join(os.path.dirname(__file__), "..")
 SCRIPTS = os.path.join(SKILL_ROOT, "scripts")
 sys.path.insert(0, SCRIPTS)
 
-from matrix_core import TICK  # noqa: E402
+from matrix_core import TICK, comparison_matrix_xlsx_path, research_dir_slug, score_solutions_from_rows  # noqa: E402
 from need_profile_personas import apply_persona_priority, get_persona, list_persona_ids  # noqa: E402
 
 
@@ -93,7 +94,7 @@ class TestGenerateComparisonXlsx(unittest.TestCase):
             code, data = run_py(compare, "--dir", d)
             self.assertEqual(code, 0)
             self.assertEqual(data["status"], "ok")
-            xlsx = os.path.join(d, "comparison", "comparison-matrix.xlsx")
+            xlsx = str(comparison_matrix_xlsx_path(Path(d)))
             self.assertTrue(os.path.isfile(xlsx))
             self.assertIn("xlsx", data)
 
@@ -127,10 +128,66 @@ class TestGenerateComparisonXlsx(unittest.TestCase):
             self.assertIsNotNone(sso_row)
             assert sso_row is not None
             self.assertEqual(ws.cell(sso_row, 3).value, TICK)
-            self.assertIsNone(ws.cell(sso_row, 4).value)
+            self.assertEqual(ws.cell(sso_row, 4).value, "\u2014")
             score_formula = str(ws.cell(4, 3).value or "")
             self.assertTrue(score_formula.startswith("="))
             self.assertIn("COUNTIFS", score_formula)
+            self.assertIn(TICK, score_formula)
+            self.assertNotIn('"?*"', score_formula)
+
+    @unittest.skipUnless(_has_openpyxl(), "openpyxl not installed")
+    def test_distinct_scores_for_different_feature_support(self) -> None:
+        """Two solutions with different ticks must get different weighted scores."""
+        from matrix_ops import ranked_scores
+
+        compare = os.path.join(SCRIPTS, "compare_solutions.py")
+        with tempfile.TemporaryDirectory() as d:
+            self._seed_compare_fixture(d)
+            code, data = run_py(compare, "--dir", d)
+            self.assertEqual(code, 0)
+            xlsx = str(comparison_matrix_xlsx_path(Path(d)))
+            rs = ranked_scores(xlsx)
+            by_plat = {r["platform"]: r["score"] for r in rs["rankings"]}
+            self.assertNotEqual(by_plat["alpha"], by_plat["beta"])
+            self.assertGreater(by_plat["alpha"], by_plat["beta"])
+
+            comp = json.loads(
+                Path(d, "comparison", "comparison.json").read_text(encoding="utf-8")
+            )
+            json_scores = {r["solution"]: r["score"] for r in comp["rankings"]}
+            self.assertEqual(json_scores["alpha"], by_plat["alpha"])
+            self.assertEqual(json_scores["beta"], by_plat["beta"])
+
+
+class TestMatrixCoreNaming(unittest.TestCase):
+    def test_comparison_matrix_xlsx_filename(self) -> None:
+        from matrix_core import comparison_matrix_xlsx_filename
+
+        self.assertEqual(
+            comparison_matrix_xlsx_filename("2026-07-19-agentic-sdlc-orchestration-landscape-fullpool"),
+            "2026-07-19-agentic-sdlc-orchestration-landscape-fullpool-comparison-matrix.xlsx",
+        )
+
+    def test_comparison_matrix_xlsx_path_uses_dir_slug(self) -> None:
+        from matrix_core import comparison_matrix_xlsx_path, default_spa_report_path
+
+        with tempfile.TemporaryDirectory(
+            prefix="2026-07-19-agentic-sdlc-orchestration-landscape-fullpool-"
+        ) as d:
+            root = Path(d)
+            slug = research_dir_slug(root)
+            (root / "run_manifest.json").write_text(
+                json.dumps({"research_type": "solution-landscape"}),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                default_spa_report_path(root).name,
+                "landscape-report.html",
+            )
+            self.assertEqual(
+                comparison_matrix_xlsx_path(root).name,
+                f"{slug}-comparison-matrix.xlsx",
+            )
 
 
 class TestMatrixBuilderSanitization(unittest.TestCase):
@@ -148,3 +205,4 @@ class TestMatrixBuilderSanitization(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

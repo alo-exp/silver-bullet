@@ -69,7 +69,26 @@ class SpaProfileRoutingTests(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
 
-    def test_landscape_wrapper_exits_nonzero_on_wrong_research_type(self) -> None:
+    def test_general_profile_does_not_require_multai_landscape_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "run_manifest.json").write_text(
+                json.dumps({"query": "q", "research_type": "default", "mode": "deep"}) + "\n",
+                encoding="utf-8",
+            )
+            subprocess.run([sys.executable, str(GEN_GENERAL), "--dir", str(root)], check=True)
+            report = root / "report.html"
+            text = report.read_text(encoding="utf-8")
+            self.assertNotIn("data-sb-landscape-viewer", text)
+            self.assertNotIn('id="sidebar"', text)
+            proc = subprocess.run(
+                [sys.executable, str(VALIDATOR), "--report", str(report), "--profile", "general"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "run_manifest.json").write_text(
@@ -88,3 +107,4 @@ class SpaProfileRoutingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

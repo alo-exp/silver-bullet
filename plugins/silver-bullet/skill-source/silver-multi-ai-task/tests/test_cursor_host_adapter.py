@@ -23,6 +23,21 @@ from cursor_host_adapter import (  # noqa: E402
 
 
 class CursorHostAdapterStubTests(unittest.TestCase):
+    def setUp(self) -> None:
+        import importlib
+        import os
+        os.environ["SB_MULTI_AI_STUB"] = "1"
+        import cursor_host_adapter as cha
+        importlib.reload(cha)
+        global LIVE_STATUS, cancel, cas_select_authoritative_attempt, launch
+        LIVE_STATUS = cha.live_status()
+        cancel = cha.cancel
+        cas_select_authoritative_attempt = cha.cas_select_authoritative_attempt
+        launch = cha.launch
+
+    def tearDown(self) -> None:
+        import os
+        os.environ.pop("SB_MULTI_AI_STUB", None)
     def test_live_status_is_not_live(self) -> None:
         self.assertEqual(LIVE_STATUS, "not-live")
 

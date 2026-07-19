@@ -229,7 +229,7 @@ def main() -> None:
         "--emit-xlsx",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Also write comparison/comparison-matrix.xlsx (default: on; use --no-emit-xlsx to skip)",
+        help="Also write comparison/{report-stem}-comparison-matrix.xlsx (default: on; use --no-emit-xlsx to skip)",
     )
     args = parser.parse_args()
 
@@ -248,4 +248,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 

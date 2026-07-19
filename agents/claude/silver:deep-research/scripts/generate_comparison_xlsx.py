@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-Emit comparison/comparison-matrix.xlsx from comparison.json + need_profile.json.
+Emit comparison/{dir-slug}-comparison-matrix.xlsx from comparison.json + need_profile.json.
 
 Uses MultAI-ported matrix_builder (create) and matrix_ops (reorder by score).
 Weighted score row uses Excel COUNTIFS formulas aligned with matrix_core.WEIGHTS.
+Naming: `{research-dir-basename}-comparison-matrix.xlsx` under comparison/ (e.g.
+2026-07-19-agentic-sdlc-orchestration-landscape-fullpool/ →
+comparison/2026-07-19-agentic-sdlc-orchestration-landscape-fullpool-comparison-matrix.xlsx).
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from matrix_builder import build_matrix
-from matrix_core import TICK
+from matrix_core import TICK, comparison_matrix_xlsx_path
 from matrix_ops import reorder_columns_by_score
 
 
@@ -88,11 +91,14 @@ def generate_comparison_xlsx(
     comparison_path: Path | None = None,
     need_profile_path: Path | None = None,
     out_path: Path | None = None,
+    report_html: Path | None = None,
     reorder: bool = True,
 ) -> dict[str, Any]:
     comp_path = comparison_path or (research_dir / "comparison" / "comparison.json")
     need_path = need_profile_path or (research_dir / "need_profile.json")
-    xlsx_path = out_path or (research_dir / "comparison" / "comparison-matrix.xlsx")
+    xlsx_path = out_path or comparison_matrix_xlsx_path(
+        research_dir, report_html=report_html
+    )
 
     comparison = json.loads(comp_path.read_text(encoding="utf-8"))
     need: dict[str, Any] = {}
@@ -141,7 +147,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--out",
-        help="Output .xlsx path (default: <dir>/comparison/comparison-matrix.xlsx)",
+        help="Output .xlsx path (default: comparison/{dir-slug}-comparison-matrix.xlsx)",
+    )
+    parser.add_argument(
+        "--report-html",
+        help="Deprecated; XLSX naming uses research directory slug only",
     )
     parser.add_argument(
         "--no-reorder",
@@ -157,6 +167,7 @@ def main(argv: list[str] | None = None) -> int:
             comparison_path=Path(args.comparison) if args.comparison else None,
             need_profile_path=Path(args.need_profile) if args.need_profile else None,
             out_path=Path(args.out) if args.out else None,
+            report_html=Path(args.report_html) if args.report_html else None,
             reorder=not args.no_reorder,
         )
     except Exception as exc:  # noqa: BLE001 — CLI boundary
@@ -169,3 +180,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
