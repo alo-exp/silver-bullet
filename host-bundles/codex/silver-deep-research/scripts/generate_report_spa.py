@@ -12,6 +12,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from spa_embed import safe_json_payload
+
 
 def load_json(path: Path) -> dict[str, Any] | list[Any] | None:
     if not path.exists():
@@ -60,15 +62,6 @@ def collect_report_data(out_dir: Path) -> dict[str, Any]:
         "decision_excerpt": decision,
         "generated_by": "silver-deep-research/generate_report_spa.py",
     }
-
-
-def safe_json_payload(data: dict[str, Any]) -> str:
-    """Serialize JSON for inline <script> embedding — escape chars that break scripts."""
-    payload = json.dumps(data, ensure_ascii=False)
-    payload = payload.replace("<", "\\u003c")
-    payload = payload.replace("\u2028", "\\u2028")
-    payload = payload.replace("\u2029", "\\u2029")
-    return payload
 
 
 def render_html(data: dict[str, Any]) -> str:
@@ -226,3 +219,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

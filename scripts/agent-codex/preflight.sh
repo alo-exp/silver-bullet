@@ -39,6 +39,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 else
   CLI="$(resolve_native_codex_cli_path "${CODEX_BIN:-}" || true)"
   [[ -n "$CLI" ]] || { printf 'ERROR: native Codex CLI not found\n' >&2; exit 1; }
+  export CODEX_BIN="$CLI"
   "$CLI" --version >/dev/null 2>&1 || { printf 'ERROR: Codex CLI not working: %s\n' "$CLI" >&2; exit 1; }
   printf 'OK: Codex CLI %s\n' "$("$CLI" --version 2>/dev/null | head -1)"
 fi

@@ -84,8 +84,8 @@
       "phase_artifacts": {
         "scope": {"add": ["need_profile.json"]},
         "triangulate": {"add": ["landscape/landscape-report.md", "shortlist/shortlist.json"]},
-        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md"]},
-        "package": {"add": ["report.html"]}
+        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md", "comparison/{dir-slug}-comparison-matrix.xlsx"]},
+        "package": {"add": ["report.html", "landscape-report.html"]}
       }
     },
     "solution-compare": {
@@ -93,8 +93,8 @@
       "default_mode": "deep",
       "phase_artifacts": {
         "scope": {"add": ["need_profile.json", "solutions_requested.json"]},
-        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md"]},
-        "package": {"add": ["report.html"]}
+        "synthesize": {"add": ["comparison/comparison.json", "comparison/comparison-matrix.md", "comparison/{dir-slug}-comparison-matrix.xlsx"]},
+        "package": {"add": ["report.html", "landscape-report.html"]}
       }
     }
   },
@@ -132,3 +132,5 @@
     "ultradeep": {"max_sources": 40, "min_avg_credibility": 75}
   }
 }
+
+

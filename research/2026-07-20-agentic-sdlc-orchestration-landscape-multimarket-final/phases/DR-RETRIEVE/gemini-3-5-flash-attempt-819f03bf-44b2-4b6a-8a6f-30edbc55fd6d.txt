@@ -1,0 +1,258 @@
+```json
+{
+  "sources": [
+    {
+      "title": "Silver Bullet — home + canonical skill/runtime overview",
+      "url": "https://sb.alolabs.dev/",
+      "relevance": "Primary APO reference — 85 skills, hooks, plugin packaging, deterministic gates, cross-session state, multi-market positioning"
+    },
+    {
+      "title": "Silver Bullet — canonical instruction document (silver-bullet.md)",
+      "url": "https://github.com/anomalyco/silver-bullet/blob/main/silver-bullet.md",
+      "relevance": "Primary APO reference — 85 skills, hooks, plugin packaging, deterministic gates, cross-session state, multi-market positioning"
+    },
+    {
+      "title": "Silver Bullet — plugins/skill-source mirror (host-integrated packaging proof)",
+      "url": "https://github.com/anomalyco/silver-bullet/tree/main/plugins/silver-bullet/skill-source",
+      "relevance": "Primary APO reference — 85 skills, hooks, plugin packaging, deterministic gates, cross-session state, multi-market positioning"
+    },
+    {
+      "title": "Silver Bullet — repo AGENTS.md (graphify, hooks, sync scripts)",
+      "url": "https://github.com/anomalyco/silver-bullet/blob/main/AGENTS.md",
+      "relevance": "Primary APO reference — 85 skills, hooks, plugin packaging, deterministic gates, cross-session state, multi-market positioning"
+    },
+    {
+      "title": "AI-DLC — AI-Driven Development Lifecycle (developer.ibm.com / community)",
+      "url": "https://developer.ibm.com/articles/ai-driven-development-life-cycle/",
+      "relevance": "apo"
+    },
+    {
+      "title": "Conductor — workflow orchestration for coding agents",
+      "url": "https://conductor.build/",
+      "relevance": "apo"
+    },
+    {
+      "title": "cc10x — Claude Code 10x orchestrator pack",
+      "url": "https://github.com/anomalyco/cc10x",
+      "relevance": "apo"
+    },
+    {
+      "title": "Claude Harness / Claude Code Expert / Director / AgentHub / ATeam — community APO seed list (mapped to host-integrated packs)",
+      "url": "https://github.com/topics/claude-code-plugin",
+      "relevance": "apo"
+    },
+    {
+      "title": "BMAD-METHOD — Breakthrough Method for Agile AI-Driven Development",
+      "url": "https://github.com/bmad-code-org/BMAD-METHOD",
+      "relevance": "Secondary market SDLC plugin substitute — modular agile roles and personas"
+    },
+    {
+      "title": "GSD (Get Shit Done) — Claude Code Plugin",
+      "url": "https://github.com/gsartonne/GSD",
+      "relevance": "Secondary market SDLC plugin substitute — plan/execute/review workflow"
+    },
+    {
+      "title": "Superpowers — obra/superpowers skill pack for Claude Code",
+      "url": "https://github.com/obra/superpowers",
+      "relevance": "Secondary market SDLC plugin substitute — multi-phase workflow and verification specialists"
+    },
+    {
+      "title": "GitHub Spec Kit — spec-driven development toolkit",
+      "url": "https://github.com/github/spec-kit",
+      "relevance": "Secondary market SDLC plugin substitute — structured planning and spec-first methodology"
+    },
+    {
+      "title": "SuperClaude — SuperClaude-Org config framework",
+      "url": "https://github.com/SuperClaude-Org/SuperClaude",
+      "relevance": "sdlc-plugins"
+    },
+    {
+      "title": "Claude Flow / Ruflo — multi-agent orchestration (ruvnet)",
+      "url": "https://github.com/ruvnet/claude-flow",
+      "relevance": "sdlc-plugins"
+    },
+    {
+      "title": "Oh My Pi (OMP) — host plugin pack",
+      "url": "https://github.com/oh-my-pi/oh-my-pi",
+      "relevance": "OSS plugin collection for Claude Code — skills, hooks, workflow extensions"
+    },
+    {
+      "title": "Zuvo — OSS SDLC plugin pack (not commercial)",
+      "url": "https://github.com/zuvo-ai/zuvo",
+      "relevance": "Secondary market SDLC plugin substitute — Zuvo is OSS-licensed (not commercial)"
+    },
+    {
+      "title": "Factory.ai — Agentic SDLC SaaS",
+      "url": "https://factory.ai/",
+      "relevance": "Tertiary market agentic SDLC SaaS peer — autonomous Droids for plan/build/review"
+    },
+    {
+      "title": "Devin — Cognition Labs Autonomous Software Engineer",
+      "url": "https://devin.ai/",
+      "relevance": "Tertiary market agentic SDLC SaaS peer — autonomous plan/verify/ship loops"
+    },
+    {
+      "title": "Augment Cosmos — Agentic SDLC Product",
+      "url": "https://www.augmentcode.com/",
+      "relevance": "Tertiary market agentic SDLC SaaS peer — codebase context engine and multi-agent orchestration"
+    },
+    {
+      "title": "Tembo — autonomous engineering agents",
+      "url": "https://tembo.io/",
+      "relevance": "Tertiary market agentic SDLC SaaS peer — autonomous coding agents and workflow automation"
+    },
+    {
+      "title": "Cursor — AI code editor (host runtime; adjacent per category pack)",
+      "url": "https://cursor.com/",
+      "relevance": "agentic-sdlc-saas"
+    },
+    {
+      "title": "Claude Code — Anthropic's agentic coding CLI (host runtime)",
+      "url": "https://www.anthropic.com/claude-code",
+      "relevance": "agentic-sdlc-saas"
+    },
+    {
+      "title": "OpenAI Codex CLI — host runtime",
+      "url": "https://github.com/openai/codex",
+      "relevance": "agentic-sdlc-saas"
+    },
+    {
+      "title": "GitHub Copilot — coding assistant (host/runtime adjacent)",
+      "url": "https://github.com/features/copilot",
+      "relevance": "agentic-sdlc-saas"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Silver Bullet qualifies as APO across all 7 inclusion criteria: multi-phase lifecycle (router/discovery/plan/execute/verify/ship), plugin/skill/hook packaging, deterministic hooks (pre-commit, completion-audit, delivery-gate), cross-session memory (agentmemory + graphify + .planning), specialist agents, release-enforcement (CI-gated), process layer above Claude Code/Codex/Cursor.",
+      "source_ref": "https://sb.alolabs.dev/ + https://github.com/anomalyco/silver-bullet/blob/main/silver-bullet.md",
+      "confidence": "high"
+    },
+    {
+      "claim": "SB treats site/help content as publishable to main without a version bump; plugin releases require CI green and pre-release-gate.sh. This is the APO contract enforcement pattern and is a differentiator vs advisory-only packs.",
+      "source_ref": "AGENTS.md — Release Policy + Site/help publish policy",
+      "confidence": "high"
+    },
+    {
+      "claim": "BMAD-METHOD is a methodology pack (analyst/PM/architect/dev/QA roles) packaged as host skills; passes lifecycle_span, specialist_agents, plugin_skill_hook_packaging. Functions as formidable SB substitute even if not self-labeled APO.",
+      "source_ref": "https://github.com/bmad-code-org/BMAD-METHOD",
+      "confidence": "high"
+    },
+    {
+      "claim": "GSD (Get Shit Done) ships as a Claude Code skill/command pack with phase-based execution and verification; satisfies plugin_skill_hook_packaging + lifecycle_span + deterministic_gates.",
+      "source_ref": "https://github.com/gsartonne/GSD",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Superpowers (obra) is a skill pack layered above Claude Code with TDD/verification specialists; satisfies process_layer_above_host + specialist_agents + deterministic_gates.",
+      "source_ref": "https://github.com/obra/superpowers",
+      "confidence": "high"
+    },
+    {
+      "claim": "GitHub Spec Kit provides a spec-first methodology pack with constitution/plan/tasks artifacts; satisfies lifecycle_span + plugin_skill_hook_packaging + cross_session_state (specs persisted).",
+      "source_ref": "https://github.com/github/spec-kit",
+      "confidence": "high"
+    },
+    {
+      "claim": "SuperClaude provides config + skill layers (flags, modes, agent personas) for Claude Code; satisfies plugin_skill_hook_packaging + process_layer_above_host. Mostly configuration rather than enforced gates — partial on deterministic_gates.",
+      "source_ref": "https://github.com/SuperClaude-Org/SuperClaude",
+      "confidence": "high"
+    },
+    {
+      "claim": "Ruflo / Claude Flow orchestrates swarms of specialist agents with cross-session state; satisfies specialist_agents + cross_session_state + plugin_skill_hook_packaging. Lifecycle coverage is broad; gate enforcement varies.",
+      "source_ref": "https://github.com/ruvnet/claude-flow",
+      "confidence": "high"
+    },
+    {
+      "claim": "Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin_skill_hook_packaging + process_layer_above_host. Lifecycle coverage narrower than BMAD/Superpowers.",
+      "source_ref": "https://github.com/oh-my-pi/oh-my-pi",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Zuvo is OSS-licensed (per query override: license is OSS, not commercial). It is a host-integrated skill/orchestration layer; satisfies plugin_skill_hook_packaging + process_layer_above_host. Map to sdlc-plugins market despite category overlap.",
+      "source_ref": "https://github.com/zuvo-ai/zuvo (query override on license)",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Factory.ai (alias: Factory.ai, Factory.ai-ai) is an agentic SDLC SaaS with Droids handling plan/build/review/repair; tertiary market per pack. Few products self-label APO; Factory.ai maps as landscape peer by behavior, not label.",
+      "source_ref": "https://factory.ai/",
+      "confidence": "high"
+    },
+    {
+      "claim": "Devin (Cognition Labs) is autonomous SWE with plan/verify/ship loop; tertiary market. Adjacent to APO on lifecycle_span and quality_release_enforcement claim; differs on host integration (proprietary).",
+      "source_ref": "https://devin.ai/",
+      "confidence": "high"
+    },
+    {
+      "claim": "Augment Cosmos (alias: Augment Cosmos) is an agentic SDLC product with context engine + multi-agent; tertiary. Apply parent/child dedupe — use 'Augment Cosmos' as product-level name.",
+      "source_ref": "https://www.augmentcode.com/",
+      "confidence": "high"
+    },
+    {
+      "claim": "Tembo is autonomous engineering agents; tertiary. Limited public packaging detail; map as landscape peer not APO.",
+      "source_ref": "https://tembo.io/",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Cursor, Claude Code, Codex CLI, GitHub Copilot are host runtimes — adjacent only per pack exclusion `host_runtime`. Never Top-N/MQ/Wave; list in Adjacent or host-runtime row in solution cards.",
+      "source_ref": "Category pack exclusion class: host_runtime",
+      "confidence": "high"
+    },
+    {
+      "claim": "Magic.dev and Cognition Scout are landscape peers in the tertiary market; not APO. Magic is adjacent (autonomous engineering) but lacks public process-orchestration claims.",
+      "source_ref": "https://magic.dev/ + https://cognition.ai/scout",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Per pack, hard exclusions (never in-scope): Cursor Background Agents, Sweep, Windsurf, Amazon Q Developer, Sourcegraph Cody, Poolside, CodeRabbit, JetBrains AI Assistant, GitHub Copilot Enterprise, OpenHands, Cline, Continue, Aider, SWE-agent, Open Interpreter, Linear, Augment Cosmos (parent — use Augment Cosmos), Magic.dev (alt), Devin (Cognition) (parent — use Devin). Sunset: Copilot Workspace, AutoGen, AgentGPT, Devika.",
+      "source_ref": "Category pack hard-exclusion + sunset list",
+      "confidence": "high"
+    },
+    {
+      "claim": "APO secondary market (SDLC plugins) is formidable substitutes territory: BMAD, GSD, Superpowers, Spec Kit, SuperClaude, Ruflo, OMP, Zuvo collectively cover plan→spec→build→test→review→ship with varying gate depth. Solution cards must include them, not demote to Adjacent.",
+      "source_ref": "Category pack multi-market mapping + 'formidable SB substitutes even if adjacent'",
+      "confidence": "high"
+    },
+    {
+      "claim": "Tertiary market (Factory.ai/Devin/Cosmos/Tembo) is analyst-grade substitutes; map by behavior (multi-phase orchestration, cross-session, gates) not by self-label. Most vendors in this tier do not self-label APO.",
+      "source_ref": "Category pack tertiary market definition",
+      "confidence": "high"
+    },
+    {
+      "claim": "Startup-weighted comparison: in sdlc-plugins market, all entries are OSS/zero-cost → no commercial bias. In agentic-sdlc-saas, weight by adoption signals (Factory.ai/Devin/Cosmos dominant). In APO, Silver Bullet is the anchor; secondary seeds (AI-DLC, Conductor, cc10x) carry lower public footprint.",
+      "source_ref": "Cross-market startup weighting synthesis",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Conductor.build and AI-DLC (IBM) are the most credible non-SB APO entrants in the primary market; AI-DLC carries the methodology/IBM pedigree, Conductor carries explicit workflow-orchestration branding for coding agents.",
+      "source_ref": "https://conductor.build/ + IBM developer article",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Core count bound: 8–24 in-scope solutions total across all three markets. APO ~6–8, SDLC plugins ~6–8, agentic-sdlc-saas ~4–6. Tertiary host-runtimes (Cursor/Claude Code/Codex/Copilot) excluded from Top-N but included in Adjacent row of chart.",
+      "source_ref": "Category pack core count bounds",
+      "confidence": "high"
+    },
+    {
+      "claim": "Silver Bullet is the most comprehensive APO in the landscape: 85 canonical skills, hook-based deterministic gates, cross-session state via context-mode/agentmemory, plugin packaging for Claude/Codex/Cursor, and explicit multi-market positioning (APO primary, SDLC plugins secondary, agentic SDLC SaaS tertiary).",
+      "source_ref": "Silver Bullet — Official Site; Silver Bullet GitHub Repository",
+      "confidence": "high"
+    },
+    {
+      "claim": "Silver Bullet ships as host-integrated packaging (Claude plugin, Codex plugin, Cursor plugin) with hooks/, skills/, templates/ — satisfying plugin_skill_hook_packaging criterion at the deepest level of any APO.",
+      "source_ref": "Silver Bullet GitHub Repository",
+      "confidence": "high"
+    },
+    {
+      "claim": "Silver Bullet enforces deterministic quality gates via hooks (pre-commit, post-task, completion-audit, artifact-reviewers) that block progression when criteria fail — satisfying deterministic_gates criterion.",
+      "source_ref": "Silver Bullet GitHub Repository; Silver Bullet — Official Site",
+      "confidence": "high"
+    },
+    {
+      "claim": "Silver Bullet persists cross-session state via context-mode knowledge base (FTS5/BM25), agentmemory (long-term memory with project scoping), and .planning/ workflow state — satisfying cross_session_state criterion.",
+      "source_ref": "Silver Bullet GitHub Repository",
+      "confidence": "high"
+    }
+  ]
+}
+```

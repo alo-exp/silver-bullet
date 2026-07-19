@@ -31,8 +31,16 @@ agent_codex_apply_runtime_env() {
 
 # Default env for on-demand Codex delegation (not matrix).
 agent_codex_apply_delegate_env() {
+  local script_dir repo_root
+  script_dir="$(agent_codex_script_dir)"
+  repo_root="$(cd "${script_dir}/../.." && pwd)"
+  # shellcheck source=scripts/lib/codex-cli.sh
+  source "${repo_root}/scripts/lib/codex-cli.sh"
+
   _agent_codex_source_common
   agent_delegate_clear_matrix_env
+
+  agent_codex_export_bin || true
 
   export SB_AGENT_CODEX_DELEGATE="${SB_AGENT_CODEX_DELEGATE:-1}"
   export SB_AGENT_CODEX_LIGHTWEIGHT="${SB_AGENT_CODEX_LIGHTWEIGHT:-1}"
@@ -50,5 +58,5 @@ agent_codex_delegate_env_names() {
     SB_ORCHESTRATOR_WORKER SB_ORCHESTRATOR_PARENT \
     CODEX_AUTO_TRUST_HOOKS CODEX_BYPASS_HOOK_TRUST RTK_DISABLED \
     CODEX_INTERACTIVE_READY_TIMEOUT CODEX_INTERACTIVE_IDLE_TIMEOUT \
-    CODEX_EXEC_TAIL_IDLE_TIMEOUT
+    CODEX_EXEC_TAIL_IDLE_TIMEOUT CODEX_BIN
 }
