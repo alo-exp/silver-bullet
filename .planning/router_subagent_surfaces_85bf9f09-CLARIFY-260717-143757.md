@@ -140,3 +140,23 @@ Interactive `/silver:clarify` round-2 (Grok 4.5 High). All blockers answered; in
 None for round-2.
 
 **Do not** overwrite multi-AI `.planning/CLARIFY.md`. Repo plan and Cursor mirror must remain **byte-identical**.
+
+---
+
+## Clarify Decision Addendum (round-3 — 2026-07-20) — COMPLETE
+
+Interactive requirements lock (Grok 4.5 High). Incorporated into plan + mirror.
+
+### Ratified
+
+- **Launch prompt + work spec (mandatory admission gate)** — Every host subagent launch must include a prompt-engineered launch prompt **and** a well-specified work spec with clear **output** and **outcome** requirements. Fail-closed without them: blocker `blocked_launch_prompt_spec` (no spawn / no lease/capability/channel).
+- **Work-spec minimum fields** — `goal_outcome`, `required_outputs`, `acceptance_criteria`, `scope_bounds`, `context_refs` (Knowledge/Learnings/pre-read + packet/ancestry refs). Prompt binds work-spec hash, WBS path, role, denies, callback/return contract.
+- **ASCII WBS progress visualization (mandatory UX)** — On every governing-scope step transition and every user-facing status: path `Process > Workflow > AF > Step` (optional ` > Skill`), markers `[x]` complete / `[>]` current / `[ ]` pending / `[!]` blocked. Missing viz → `blocked_progress_viz`.
+- Traceability: **LPS-01** (`VAL/TST-RFL-616`), **WBS-01** (`VAL/TST-RFL-617`).
+
+### Still open
+
+None for round-3.
+
+**Do not** overwrite multi-AI `.planning/CLARIFY.md`. Repo plan and Cursor mirror must remain **byte-identical**.
+
