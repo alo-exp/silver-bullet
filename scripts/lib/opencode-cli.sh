@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Canonical OpenCode CLI resolution for scripts/ and tests/live/ harnesses.
 # Desktop OpenCode.app is NOT the automation CLI — use ~/.opencode/bin/opencode.
+# Multi-AI worker-v1 policy lives in multi-ai-opencode-worker.sh (sourced below).
 
 resolve_native_opencode_cli_path() {
   local requested="${1:-${OPENCODE_BIN:-}}"
@@ -52,3 +53,41 @@ agent_opencode_pin_mimo_model_env() {
   fi
   return 0
 }
+
+# Load multi-AI worker policy so single-source callers (delegate) get apply/assert/validate.
+_AGENT_OPENCODE_CLI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/multi-ai-opencode-worker.sh
+if [[ -f "${_AGENT_OPENCODE_CLI_DIR}/multi-ai-opencode-worker.sh" ]]; then
+  source "${_AGENT_OPENCODE_CLI_DIR}/multi-ai-opencode-worker.sh"
+else
+  printf 'WARN: multi-ai-opencode-worker.sh missing; multi-ai-worker-v1 policy unavailable
+' >&2
+fi
+unset _AGENT_OPENCODE_CLI_DIR
+
+agent_opencode_enforce_invoke_model_policy() {
+  local sb_root="${1:-}"
+  if [[ -z "$sb_root" ]]; then
+    local here
+    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    sb_root="$(cd "${here}/../.." && pwd)"
+  fi
+  if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-pool-v1" && "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" ]]; then
+    agent_opencode_validate_multi_ai_pool_mode "${SB_MULTI_AI_OCG_POOL:-lite}" "$sb_root"
+    return $?
+  fi
+  if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-worker-v1" && "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" && -n "${SB_MULTI_AI_OCG_PROFILE:-}" ]]; then
+    agent_opencode_assert_validated_multi_ai_env "$sb_root"
+    return $?
+  fi
+  if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-worker-v1" || -n "${SB_MULTI_AI_OCG_PROFILE:-}" || "${SB_MULTI_AI_OCG_VALIDATED:-}" == "1" ]]; then
+    if [[ "${SB_AGENT_OPENCODE_DELEGATION_MODE:-}" == "multi-ai-pool-v1" ]]; then
+      agent_opencode_validate_multi_ai_pool_mode "${SB_MULTI_AI_OCG_POOL:-lite}" "$sb_root"
+      return $?
+    fi
+    printf 'ERROR: incomplete or forged multi-ai-worker env; use agent_opencode_apply_multi_ai_worker_env\n' >&2
+    return 2
+  fi
+  agent_opencode_pin_mimo_model_env
+}
+

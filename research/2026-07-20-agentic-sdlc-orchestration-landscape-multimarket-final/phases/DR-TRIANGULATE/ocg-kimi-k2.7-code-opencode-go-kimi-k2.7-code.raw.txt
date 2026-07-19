@@ -1,0 +1,107 @@
+```json
+{
+  "claim_candidates": [
+    {
+      "text": "Silver Bullet qualifies as a primary APO (Agentic Process Orchestrator) under all 7 inclusion criteria, supported by host-integrated plugin/skill/hook packaging, cross-session state via .planning/ and graphify, deterministic quality gates via tests/hooks, and specialist agent orchestration.",
+      "confidence": 0.92,
+      "supporting_sources": [
+        "https://sb.alolabs.dev/",
+        "https://github.com/anomalyco/silver-bullet/blob/main/silver-bullet.md",
+        "https://github.com/anomalyco/silver-bullet/tree/main/plugins/silver-bullet/skill-source",
+        "https://github.com/anomalyco/silver-bullet/blob/main/AGENTS.md"
+      ]
+    },
+    {
+      "text": "The APO market exhibits low explicit self-labeling; most vendors in the seed list (AI-DLC, AgentSys, SDLC, Deepwork, Workflow Manager, Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, Conductor, cc10x, Director, Claude Harness, Claude Code Expert, AgentHub, ATeam) must be classified by functional fit rather than brand claim.",
+      "confidence": 0.85,
+      "supporting_sources": [
+        "https://conductor.build/",
+        "https://github.com/anomalyco/cc10x",
+        "https://github.com/topics/claude-code-plugin",
+        "https://developer.ibm.com/articles/ai-driven-development-life-cycle/"
+      ]
+    },
+    {
+      "text": "Secondary-market SDLC plugins and methodology packs (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo / Claude Flow, Oh My Pi) are valid solution-card peers and formidable substitutes for primary APO, even when they do not present themselves as orchestrators.",
+      "confidence": 0.88,
+      "supporting_sources": [
+        "CATEGORY_PACK secondary market definition"
+      ]
+    },
+    {
+      "text": "Zuvo must be represented as an OSS offering, not a commercial product, in all solution cards and matrix entries.",
+      "confidence": 0.90,
+      "supporting_sources": [
+        "CATEGORY_PACK naming/license note"
+      ]
+    },
+    {
+      "text": "Factory.ai and Factory are aliases and must be deduplicated to a single product-level entry in the landscape matrix and solution cards.",
+      "confidence": 0.90,
+      "supporting_sources": [
+        "CATEGORY_PACK aliases note"
+      ]
+    },
+    {
+      "text": "Tertiary agentic SDLC SaaS vendors (Factory.ai, Devin, Augment Cosmos, Tembo) are analyst-grade substitutes in the APO landscape by functional mapping, despite not self-labeling as APO.",
+      "confidence": 0.80,
+      "supporting_sources": [
+        "CATEGORY_PACK tertiary market definition"
+      ]
+    },
+    {
+      "text": "Generic coding agents (Cursor, Claude Code, Codex, GitHub Copilot), agent frameworks (LangGraph, CrewAI, MetaGPT, LangChain), and single-step tools must be excluded from the Top-N/matrix and relegated to Adjacent-only or hard-exclusion sections.",
+      "confidence": 0.93,
+      "supporting_sources": [
+        "CATEGORY_PACK exclusion classes"
+      ]
+    }
+  ],
+  "cross_checks": [
+    {
+      "claim": "Silver Bullet is a primary APO anchor.",
+      "status": "consistent",
+      "notes": "Repo evidence matches all 7 inclusion criteria: plugin/skill/hook packaging, deterministic gates, cross-session state, specialist agents, lifecycle span, quality/release enforcement, and process-layer positioning above host runtimes."
+    },
+    {
+      "claim": "Secondary SDLC plugins are not excluded from solution cards or charts.",
+      "status": "consistent",
+      "notes": "User instruction and category pack explicitly require per-market solution cards; secondary substitutes must appear alongside primary APO."
+    },
+    {
+      "claim": "Zuvo is OSS, not commercial.",
+      "status": "consistent",
+      "notes": "Category pack license note is unambiguous; matrix cards should avoid pricing/commercial framing for Zuvo."
+    },
+    {
+      "claim": "Factory.ai and Factory are the same product-level entity.",
+      "status": "consistent",
+      "notes": "Alias rule from category pack should be applied; avoid double-counting in the 8–24 core solution bound."
+    },
+    {
+      "claim": "Few products self-label as APO.",
+      "status": "partially_verified",
+      "notes": "Supported by category pack and general market observation, but prior retrieve evidence for individual vendor homepages is truncated; needs homepage/source confirmation per seed."
+    },
+    {
+      "claim": "Devin, Augment Cosmos, and Factory.ai are analyst-grade APO peers.",
+      "status": "conditionally_consistent",
+      "notes": "Consistent with tertiary market definition if evaluated by lifecycle span and process enforcement; however, their public positioning as autonomous coding agents creates tension with exclusion class 'coding_agent'. Functional scoring against the 7 criteria is required to resolve."
+    },
+    {
+      "claim": "Cursor, Claude Code, Codex, GitHub Copilot are host runtimes and excluded from APO matrix.",
+      "status": "consistent",
+      "notes": "Category pack lists them as adjacent/excluded host_runtime or coding_agent; keep them out of Top-N/matrix."
+    },
+    {
+      "claim": "Total in-scope solutions fall within 8–24 bound.",
+      "status": "not_verified",
+      "notes": "Seed lists exceed 24 names; not all will qualify under ≥3-of-7 criteria. Final pruning and deduplication must be performed in the next phase to validate the bound."
+    }
+  ]
+}
+```
+
+[0m
+> build · kimi-k2.7-code
+[0m

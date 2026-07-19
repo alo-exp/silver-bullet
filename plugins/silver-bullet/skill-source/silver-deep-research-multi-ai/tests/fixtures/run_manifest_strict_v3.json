@@ -1,0 +1,17 @@
+{
+  "schema_id": "deep-research-run-manifest-strict-v3",
+  "version": "3.0.0",
+  "run_id": "run-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "query": "v3 strict fixture",
+  "mode": "deep",
+  "research_type": "default",
+  "started_at": "2026-01-01T00:00:00Z",
+  "phases": [
+    {"phase_id": "DR-RETRIEVE", "parallel": true},
+    {"phase_id": "DR-TRIANGULATE", "parallel": true}
+  ],
+  "budget": {
+    "currency_micro_usd_cap": 25000000,
+    "total_tokens_cap": 2000000
+  }
+}

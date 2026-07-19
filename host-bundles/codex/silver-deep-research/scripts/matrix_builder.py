@@ -45,7 +45,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from matrix_core import TICK, WEIGHTS
+from matrix_core import TICK, TICK_CRITERION, WEIGHTS
 
 openpyxl = None
 get_column_letter = None
@@ -65,18 +65,11 @@ def _require_openpyxl() -> None:
             Side,
         )
         from openpyxl.utils import get_column_letter as _gcl
-    except ImportError:
-        print(
-            json.dumps({
-                "status": "error",
-                "reason": (
-                    "openpyxl is required for matrix_builder. "
-                    "Install with: pip install -r skills/silver-deep-research/requirements.txt"
-                ),
-            }),
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    except ImportError as exc:
+        raise ImportError(
+            "openpyxl is required for matrix_builder. "
+            "Install with: pip install -r skills/silver-deep-research/requirements.txt"
+        ) from exc
     openpyxl = _openpyxl
     get_column_letter = _gcl
     globals().update({
@@ -136,6 +129,9 @@ _PRIO_FONT = None
 _PRIO_ALIGN = None
 
 
+_FONT_FAMILY = "Roboto Condensed"
+
+
 def _init_styles() -> None:
     global _THIN, _DEFAULT_BORDER, _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN
     global _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN
@@ -147,37 +143,39 @@ def _init_styles() -> None:
     global _EMPTY_FILL, PRIORITY_FILLS, _PRIO_FONT, _PRIO_ALIGN
     if _THIN is not None:
         return
-    _THIN = Side(style="thin")
+    _THIN = Side(style="thin", color="D0D7DE")
     _DEFAULT_BORDER = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
-    _TITLE_FONT = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
-    _TITLE_FILL = PatternFill("solid", fgColor="2F5496")
+    # Restrained professional blues/grays (Roboto Condensed — system may fall back if absent)
+    _TITLE_FONT = Font(name=_FONT_FAMILY, bold=True, size=14, color="FFFFFF")
+    _TITLE_FILL = PatternFill("solid", fgColor="1F3864")
     _TITLE_ALIGN = Alignment(horizontal="center", vertical="center")
-    _HEADER_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-    _HEADER_FILL = PatternFill("solid", fgColor="4472C4")
+    _HEADER_FONT = Font(name=_FONT_FAMILY, bold=True, size=11, color="FFFFFF")
+    _HEADER_FILL = PatternFill("solid", fgColor="2F5597")
     _HEADER_ALIGN = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    _TOTAL_FONT = Font(name="Calibri", bold=True, size=11)
-    _TOTAL_FILL = PatternFill("solid", fgColor="D6E4F0")
+    _TOTAL_FONT = Font(name=_FONT_FAMILY, bold=True, size=11, color="1F3864")
+    _TOTAL_FILL = PatternFill("solid", fgColor="E8EEF4")
     _TOTAL_ALIGN = Alignment(horizontal="center", vertical="center")
-    _SCORE_FONT = Font(name="Calibri", bold=True, size=11)
-    _SCORE_FILL = PatternFill("solid", fgColor="D6E4F0")
+    _SCORE_FONT = Font(name=_FONT_FAMILY, bold=True, size=11, color="1F3864")
+    _SCORE_FILL = PatternFill("solid", fgColor="E8EEF4")
     _SCORE_ALIGN = Alignment(horizontal="center", vertical="center")
-    _CAT_FONT = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-    _CAT_FILL = PatternFill("solid", fgColor="5B9BD5")
+    _CAT_FONT = Font(name=_FONT_FAMILY, bold=True, size=11, color="FFFFFF")
+    _CAT_FILL = PatternFill("solid", fgColor="5B7FA6")
     _CAT_ALIGN = Alignment(horizontal="left", vertical="center")
-    _FEAT_FONT = Font(name="Calibri", size=10)
+    _FEAT_FONT = Font(name=_FONT_FAMILY, size=10, color="24292F")
     _FEAT_ALIGN = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    _TICK_FONT = Font(name="Calibri", size=10, color="006100")
-    _TICK_FILL = PatternFill("solid", fgColor="C6EFCE")
+    # Tick cells: neutral black on white (no green fills)
+    _TICK_FONT = Font(name=_FONT_FAMILY, size=10, color="1F1F1F")
+    _TICK_FILL = PatternFill("solid", fgColor="FFFFFF")
     _TICK_ALIGN = Alignment(horizontal="center", vertical="center")
     _EMPTY_FILL = PatternFill("solid", fgColor="FFFFFF")
     PRIORITY_FILLS = {
-        "Critical": PatternFill("solid", fgColor="FF9999"),
-        "Very High": PatternFill("solid", fgColor="FFB366"),
-        "High": PatternFill("solid", fgColor="FFDD57"),
-        "Medium": PatternFill("solid", fgColor="D6E4F0"),
-        "Low": PatternFill("solid", fgColor="E2EFDA"),
+        "Critical": PatternFill("solid", fgColor="F4C7C3"),
+        "Very High": PatternFill("solid", fgColor="F9DCC4"),
+        "High": PatternFill("solid", fgColor="FCE8B2"),
+        "Medium": PatternFill("solid", fgColor="E8EEF4"),
+        "Low": PatternFill("solid", fgColor="F3F4F6"),
     }
-    _PRIO_FONT = Font(name="Calibri", size=10)
+    _PRIO_FONT = Font(name=_FONT_FAMILY, size=10, color="24292F")
     _PRIO_ALIGN = Alignment(horizontal="center", vertical="center")
 
 
@@ -185,8 +183,21 @@ def _init_styles() -> None:
 # Helpers
 # ---------------------------------------------------------------------------
 
+_FORMULA_PREFIXES = ("=", "+", "-", "@")
+
+
+def _sanitize_cell_value(value: Any) -> Any:
+    """Neutralize spreadsheet formula injection for user-controlled strings."""
+    if not isinstance(value, str) or not value:
+        return value
+    lead = value.lstrip("\t\r\n ")
+    if lead and lead[0] in _FORMULA_PREFIXES:
+        return "'" + value
+    return value
+
+
 def _countif(col_letter: str) -> str:
-    return f'=COUNTIF({col_letter}{DATA_START}:{col_letter}1048576,"?*")'
+    return f'=COUNTIF({col_letter}{DATA_START}:{col_letter}1048576,"{TICK_CRITERION}")'
 
 
 def _score_formula(col_letter: str) -> str:
@@ -194,7 +205,7 @@ def _score_formula(col_letter: str) -> str:
     c = f"{col_letter}${DATA_START}:{col_letter}$1048576"
     parts = []
     for prio, wt in WEIGHTS.items():
-        parts.append(f'COUNTIFS({b},"{prio}",{c},"?*")*{wt}')
+        parts.append(f'COUNTIFS({b},"{prio}",{c},"{TICK_CRITERION}")*{wt}')
     return "=" + "+".join(parts)
 
 
@@ -208,6 +219,14 @@ def _style_cell(cell, font=None, fill=None, align=None, border=None):
         cell.alignment = copy.copy(align)
     if border:
         cell.border = copy.copy(border)
+
+
+def _set_user_cell(ws, row: int, col: int, value: Any, font=None, fill=None, align=None, border=None):
+    """Write a user-controlled value with formula neutralization + optional style."""
+    cell = ws.cell(row, col)
+    cell.value = _sanitize_cell_value(value)
+    _style_cell(cell, font, fill, align, border)
+    return cell
 
 
 # ---------------------------------------------------------------------------
@@ -249,9 +268,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     # Row 1: Title
     # ------------------------------------------------------------------
     ws.merge_cells(f"A{TITLE_ROW}:{last_ltr}{TITLE_ROW}")
-    title_cell = ws.cell(TITLE_ROW, 1)
-    title_cell.value = title
-    _style_cell(title_cell, _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN, _DEFAULT_BORDER)
+    _set_user_cell(
+        ws, TITLE_ROW, 1, title,
+        _TITLE_FONT, _TITLE_FILL, _TITLE_ALIGN, _DEFAULT_BORDER,
+    )
     ws.row_dimensions[TITLE_ROW].height = 30
 
     # ------------------------------------------------------------------
@@ -267,9 +287,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
 
     for p_idx, plat in enumerate(platforms):
         col = PLAT_START + p_idx
-        cell = ws.cell(HEADER_ROW, col)
-        cell.value = plat["name"]
-        _style_cell(cell, _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN, _DEFAULT_BORDER)
+        _set_user_cell(
+            ws, HEADER_ROW, col, plat["name"],
+            _HEADER_FONT, _HEADER_FILL, _HEADER_ALIGN, _DEFAULT_BORDER,
+        )
 
     ws.row_dimensions[HEADER_ROW].height = 30
 
@@ -323,9 +344,10 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     for cat in categories:
         # Category heading row (merged)
         ws.merge_cells(f"A{current_row}:{last_ltr}{current_row}")
-        cat_cell = ws.cell(current_row, FEAT_COL)
-        cat_cell.value = cat["name"]
-        _style_cell(cat_cell, _CAT_FONT, _CAT_FILL, _CAT_ALIGN, _DEFAULT_BORDER)
+        _set_user_cell(
+            ws, current_row, FEAT_COL, cat["name"],
+            _CAT_FONT, _CAT_FILL, _CAT_ALIGN, _DEFAULT_BORDER,
+        )
         ws.row_dimensions[current_row].height = 22
         current_row += 1
 
@@ -335,15 +357,17 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
             total_features += 1
 
             # Col A: feature name
-            fc = ws.cell(current_row, FEAT_COL)
-            fc.value = feat_name
-            _style_cell(fc, _FEAT_FONT, _EMPTY_FILL, _FEAT_ALIGN, _DEFAULT_BORDER)
+            _set_user_cell(
+                ws, current_row, FEAT_COL, feat_name,
+                _FEAT_FONT, _EMPTY_FILL, _FEAT_ALIGN, _DEFAULT_BORDER,
+            )
 
             # Col B: priority
-            pc = ws.cell(current_row, PRIO_COL)
-            pc.value = prio
             prio_fill = PRIORITY_FILLS.get(prio, _EMPTY_FILL)
-            _style_cell(pc, _PRIO_FONT, prio_fill, _PRIO_ALIGN, _DEFAULT_BORDER)
+            _set_user_cell(
+                ws, current_row, PRIO_COL, prio,
+                _PRIO_FONT, prio_fill, _PRIO_ALIGN, _DEFAULT_BORDER,
+            )
 
             # Platform columns: tick or empty
             for p_idx in range(num_plats):
@@ -354,7 +378,7 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
                     cell.value = TICK
                     _style_cell(cell, _TICK_FONT, _TICK_FILL, _TICK_ALIGN, _DEFAULT_BORDER)
                 else:
-                    cell.value = None
+                    cell.value = "\u2014"
                     _style_cell(cell, _FEAT_FONT, _EMPTY_FILL, _TICK_ALIGN, _DEFAULT_BORDER)
 
             current_row += 1
@@ -373,6 +397,7 @@ def build_matrix(config: dict, out_xlsx: str, clone_xlsx: Optional[str] = None) 
     # ------------------------------------------------------------------
     ws.freeze_panes = f"A{DATA_START}"
     ws.auto_filter.ref = f"A{HEADER_ROW}:{last_ltr}{HEADER_ROW}"
+    ws.sheet_view.showGridLines = False
 
     wb.save(out_xlsx)
 
@@ -410,3 +435,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
