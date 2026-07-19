@@ -1,0 +1,122 @@
+```json
+{
+  "critiques": [
+    {
+      "target": "Silver Bullet self-claim 'most complete open-source APO'",
+      "severity": "high",
+      "finding": "Self-serving vendor claim presented as landscape finding. No external benchmark or third-party ranking supports 'most complete' — it conflates shipped-skill count (85+) with process depth, and ignores that AI-DLC, Conductor, and Cavekit v3.1 may have comparable or stronger multi-phase enforcement even with smaller surface area. Confidence 0.92 is overcalibrated for an unverified superlative."
+    },
+    {
+      "target": "Claim that Silver Bullet and AI-DLC are 'the only seeds' with documented multi-phase lifecycle enforcement + host-integrated packaging",
+      "severity": "high",
+      "finding": "Factually unsupported as stated. Conductor.build ships a multi-stage build/test/release orchestrator with host integration; cc10x is a Claude Code plugin with composable subagents; Cavekit v3.1 packages lifecycle workflows as Claude skills. The binary 'only two' framing collapses what is actually a spectrum of enforcement depth and should be rephrased as a depth-ranked tier list with evidence per product."
+    },
+    {
+      "target": "Zuvo classification as 'OSS methodology pack' (secondary market)",
+      "severity": "medium",
+      "finding": "Zuvo is described as OSS in the brief, but its positioning, repo activity, and feature set were not validated in prior context. If Zuvo ships deterministic gates or cross-session state it qualifies for APO; if it is purely a methodology overlay it is secondary. The landscape card should explicitly justify the market assignment against the 7 inclusion criteria, not assume secondary by default."
+    },
+    {
+      "target": "Tertiary market — Magic.dev and Cognition Scout as in-scope substitutes",
+      "severity": "high",
+      "finding": "Hard-exclusion list flags Magic.dev as excluded, yet the multi-market seed list re-includes it under 'agentic-sdlc-saas'. This is a direct contradiction. Also, 'Cognition Scout' is not a documented public product name — likely confused with Cognition Labs' Devin or a rumored product. Either confirm the public product page or drop it. Devin and Factory should carry the analyst-substitute slot."
+    },
+    {
+      "target": "Tertiary market — missing SAAS-side competitors",
+      "severity": "high",
+      "finding": "Tertiary market omits multiple analyst-grade agentic SDLC platforms that should be peers: Replit Agent, Bolt.new, Lovable, v0 (Vercel), Sourcegraph Amp, Warp Terminal, Pieces for Developers, Rovo Dev (Atlassian), GitHub Copilot Coding Agent, Tabnine, Qodo (formerly Codium), and Continue Dev. The '8–24 in-scope' budget is not exhausted by Factory/Devin/Cosmos/Tembo alone — the tertiary card set is underpopulated and over-indexed on a few names."
+    },
+    {
+      "target": "Secondary market — incomplete plugin inventory",
+      "severity": "medium",
+      "finding": "Missing plausible OSS SDLC-plugin substitutes that compete for the same buyer: Roo Code / Roo Cline (VS Code agentic extension), Avante (Neovim), Continue OSS, MentatBot, Plandex, Forge (openHands-light), Aider (excluded as coding_agent but commonly used as APO substrate), and the Hermes / Fabric agent pattern packs. Also missing the 'everything-claude-code' / 'claude-code-templates' family that has exploded on GitHub and competes with SB's skill catalog directly."
+    },
+    {
+      "target": "APO seed list — unverified products",
+      "severity": "high",
+      "finding": "Several core seeds (Deepwork, Turboshovel, Barkain Workflow Orchestrator, Director, Claude Harness, AgentHub, ATeam, AgentSys) have no public documentation, repo, or vendor site referenced in prior context. They cannot be credibly placed in a landscape without first-party evidence; risk of hallucinated product presence. Recommend either linking to canonical sources or marking as 'research-pending / unverified' in the matrix."
+    },
+    {
+      "target": "AI-DLC provenance",
+      "severity": "medium",
+      "finding": "AI-DLC is cited via an IBM developer article but no product URL, repo, or vendor is provided. If 'AI-DLC' refers to IBM's published methodology (not a shippable product), it is excluded as 'methodology without shipped enforcement' rather than APO. The seed list conflates method/paper with product."
+    },
+    {
+      "target": "Cavekit v3.1 vs v4 treatment",
+      "severity": "low",
+      "finding": "Cavekit v3.1 is listed as APO core seed while v4 is adjacent-only, with no explanation of the version split. A reader cannot evaluate Cavekit without knowing which version satisfies the 7 criteria and why v4 was demoted. State the criteria outcome for both versions explicitly."
+    },
+    {
+      "target": "Confidence calibration across claims",
+      "severity": "medium",
+      "finding": "Confidence scores cluster 0.78–0.92 but evidence density does not. The 'most formidable substitute set' claim (0.85) cites four repos but no comparative metric; the 'only two' claim (0.78) is treated as more certain than its evidence warrants. Recalibrate against the 7-criteria rubric per product rather than per market."
+    },
+    {
+      "target": "Cross-market interaction underweighted",
+      "severity": "medium",
+      "finding": "The brief warns APO must not exclude secondary substitutes, but the prior context does not analyze how SB users actually compose with BMAD/GSD/Superpowers (e.g., SB-as-host-runtime with BMAD-method or GSD invoked as a skill). Without that, the 'formidable substitute' framing mischaracterizes the real competitive dynamic, which is composition and substitutability depending on host."
+    },
+    {
+      "target": "Hard-exclusion list has internal contradictions",
+      "severity": "high",
+      "finding": "Magic.dev appears in both tertiary seeds and the hard-exclusion list. Cursor Background Agents, Sweep, Aider, Cline are excluded as 'coding_agent' but several of them (notably Sweep, Aider, Cline) are routinely cited as APO-adjacent by practitioners and should be in the Adjacent section, not silently dropped."
+    }
+  ],
+  "gaps": [
+    {
+      "area": "APO market — unverified seed products",
+      "description": "Deepwork, Turboshovel, Barkain Workflow Orchestrator, Director, Claude Harness, AgentHub, ATeam, AgentSys have no cited canonical source. Cannot score inclusion criteria or place in chart without first-party evidence.",
+      "suggested_action": "Run targeted repo and vendor-site lookups for each unverified seed; for any that yield no evidence, move to an explicit 'research-pending' row or drop from the in-scope set rather than carrying forward as a placeholder."
+    },
+    {
+      "area": "AI-DLC product vs methodology",
+      "description": "No vendor or shippable product URL; likely a published methodology, which would not pass the 'shipped, enforced SDLC process product' test.",
+      "suggested_action": "Confirm whether AI-DLC exists as a downloadable product/plugin. If methodology only, demote to Adjacent and add a note that it is a reference framework, not a competing product."
+    },
+    {
+      "area": "Tertiary market underpopulated",
+      "description": "Only 4 SaaS substitutes (Factory, Devin, Augment Cosmos, Tembo) plus a long list of host runtimes; the brief allows 8–24 in-scope total. Major analyst-grade agentic SDLC platforms are missing.",
+      "suggested_action": "Add to tertiary: Replit Agent, Bolt.new, Lovable, v0, Sourcegraph Amp, Rovo Dev, GitHub Copilot Coding Agent, Qodo, Tabnine, Pieces. Score each against the 7 inclusion criteria and place in Top-N or Adjacent accordingly."
+    },
+    {
+      "area": "Secondary plugin market underpopulated",
+      "description": "Brief lists 8 plugins but the live OSS ecosystem contains 20+ methodology/skill packs that compete for the same workflow-niche.",
+      "suggested_action": "Add: Roo Code/Roo Cline, Avante, MentatBot, Plandex, Forge, the 'everything-claude-code' / 'awesome-claude-code' template family, Hermes agent patterns, Fabric. Filter using the 7-criteria rubric; most will land Adjacent (coding_agent) but a few may qualify as APO-class."
+    },
+    {
+      "area": "Cross-market composition analysis missing",
+      "description": "Landscape treats markets as disjoint, but APO + secondary products are routinely composed (SB host + BMAD-method skill, or GSD + Superpowers, or Claude Code + cc10x). Substitutability is conditional on host.",
+      "suggested_action": "Add a 'composed stacks' row set to Top-N or Adjacent: e.g., 'Claude Code + cc10x + GSD', 'Cursor + BMAD-METHOD', 'Codex + Silver Bullet + Superpowers'. Score the composed stack against the 7 criteria, not just the parts."
+    },
+    {
+      "area": "Pricing and procurement dimensions missing",
+      "description": "Comparison matrix lacks pricing, license, support tier, and procurement model. For a procurement-ready landscape, these are required columns for the analyst buyer.",
+      "suggested_action": "Add columns: license (OSS/SSPL/commercial/Free-tier), pricing model (per-seat/per-token/per-task/free), support tier (community/enterprise), and last-release date. Populate from vendor site for commercial; from repo for OSS."
+    },
+    {
+      "area": "Evidence density per product",
+      "description": "Prior context cites a URL per claim but not per cell of the comparison matrix. Cells like 'deterministic_gates: ✅' need a one-line evidence link.",
+      "suggested_action": "For every product × criterion cell, attach a one-line evidence anchor (repo path, doc URL, or 'unverified'). Reject cells with no evidence from the in-scope set."
+    },
+    {
+      "area": "Sunset and version drift not checked",
+      "description": "Several seeds (e.g., Claude Harness, AgentHub, Conductor) may have changed scope, been renamed, or gone dormant since the category pack was written.",
+      "suggested_action": "Verify last commit / last release date and current scope for every seed before the landscape ships. Move dormant (>12 months no release) products to a 'dormant — verify' bucket and out of Top-N."
+    },
+    {
+      "area": "Adjacent-section coverage",
+      "description": "Adjacent seeds (LangGraph, CrewAI, MetaGPT, LangChain, AxonFlow, Cavekit v4) need explicit treatment; the prior context does not analyze why each is adjacent vs in-scope.",
+      "suggested_action": "For each adjacent seed, document the 7-criteria pass/fail pattern that demoted it (e.g., LangGraph = generic_agent_framework, no shipped SDLC enforcement). This prevents reader confusion and supports later reclassification if a product evolves."
+    },
+    {
+      "area": "Confidence-claim linkage",
+      "description": "Confidence scores float independently of evidence count and recency; high-confidence claims sometimes rest on a single source.",
+      "suggested_action": "Tie confidence to a 2-axis rubric: (a) number of independent sources, (b) source authority. Cap confidence at the lower of the two. A 0.92 claim backed by one vendor-controlled source should drop to ~0.65."
+    }
+  ]
+}
+```
+
+[0m
+> build · minimax-m3
+[0m

@@ -81,7 +81,21 @@ Forbidden: reports, synthesis, V-loop artifacts, worker state.
 | `landscape-report.html` | `--profile landscape` | `solution-landscape` / `solution-compare` only |
 | `comparison/comparison-matrix.xlsx` | — | `solution-landscape` / `solution-compare` (weighted matrix) |
 
-Intermediates live under `consolidated/` only.
+**Landscape viewer:** MultAI-parity SPA (`landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Self-contained (`file://`); no `http.server`.
+
+**General DR:** unchanged tabbed `generate_spa_report.py:general` — no MultAI chart sections.
+
+## Landscape / solution prompts (MultAI parity, SB engine only)
+
+For `research_type` `solution-landscape` or `solution-compare` only — **do not** alter default deep-research prompts.
+
+| Asset | Path | Use |
+|-------|------|-----|
+| Landscape researcher prompt | [`../silver-deep-research/reference/landscape/prompt-template.md`](../silver-deep-research/reference/landscape/prompt-template.md) | DR-RETRIEVE per-model landscape research |
+| Consolidation guide (9 sections + chart-data) | [`../silver-deep-research/reference/landscape/consolidation-guide.md`](../silver-deep-research/reference/landscape/consolidation-guide.md) | DR-TRIANGULATE → `landscape/landscape-report.md` + `landscape/chart-data.json` |
+| Comparator framework | [`../silver-deep-research/reference/comparator/capability-framework.md`](../silver-deep-research/reference/comparator/capability-framework.md) | Matrix build via `compare_solutions.py` |
+
+Host controller must pass consolidation guide to synthesis workers; `consolidate.py` remains deterministic claim merge for `consolidated/consolidation.json` only.
 
 ## Solution packaging (landscape / compare)
 
@@ -93,6 +107,9 @@ python3 skills/silver-deep-research-multi-ai/scripts/package_solution_outputs.py
 ```
 
 Runs `compare_solutions.py` (JSON + MD + XLSX), then both SPA reports.
+For `solution-landscape` / `solution-compare`, packaging **always** re-runs
+`materialize_solution_artifacts` and `synthesize_landscape` (force) before the landscape SPA
+and `validate_landscape_content` gate — engine fixes apply without manual fullpool edits.
 Skip steps with `--skip-compare`, `--skip-xlsx`, or `--skip-spa`.
 
 ## GLM-5.2 routing

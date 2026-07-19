@@ -11,22 +11,22 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from multi_ai_core import (  # noqa: E402
-    PoolSelection,
-    dry_run_report,
-    host_gate,
-)
+from live_dispatch import run_multi_ai_live, stub_mode  # noqa: E402
+from multi_ai_core import PoolSelection, dry_run_report, host_gate  # noqa: E402
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Silver Bullet multi-ai-task v2 primitive")
     parser.add_argument("--output-root", help="Output root directory (required for live dispatch)")
+    parser.add_argument("--task-prompt", default="", help="Task prompt for live workers")
+    parser.add_argument("--phase-id", choices=["DR-RETRIEVE", "DR-TRIANGULATE", "DR-CRITIQUE"], help="Optional DR phase scope")
     parser.add_argument("--ocg-pool", choices=["none", "lite", "regular"], default="lite")
     parser.add_argument("--cursor-pool", choices=["none", "default"], default="default")
     parser.add_argument("--include-only", action="append", default=[])
     parser.add_argument("--exclude", action="append", default=[])
     parser.add_argument("--max-agents", type=int, default=11)
     parser.add_argument("--cursor-subscription", choices=["auto", "subscribed", "unsubscribed"], default="auto")
+    parser.add_argument("--timeout-sec", type=int, default=600)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args(argv)
 
@@ -56,13 +56,24 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, indent=2))
         return 0 if report.get("ok") else 1
 
-    payload = {
-        "ok": False,
-        "error_code": "MULTI_AI_LIVE_DISPATCH_NOT_READY",
-        "message": "Live dispatch requires enabled backends; use --dry-run in Phase A scaffold",
-    }
-    print(json.dumps(payload, indent=2))
-    return 2
+    if stub_mode():
+        payload = {
+            "ok": False,
+            "error_code": "MULTI_AI_LIVE_DISPATCH_NOT_READY",
+            "message": "Live dispatch disabled (SB_MULTI_AI_STUB=1); unset to enable",
+        }
+        print(json.dumps(payload, indent=2))
+        return 2
+
+    result = run_multi_ai_live(
+        output_root=Path(args.output_root),
+        selection=selection,
+        task_prompt=args.task_prompt,
+        phase_id=args.phase_id,
+        timeout_sec=args.timeout_sec,
+    )
+    print(json.dumps(result, indent=2))
+    return 0 if result.get("ok") else 1
 
 
 if __name__ == "__main__":

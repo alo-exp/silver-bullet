@@ -85,10 +85,14 @@ class PackageSolutionOutputsTests(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             data = json.loads(proc.stdout)
             self.assertEqual(data["status"], "ok")
-            self.assertTrue((root / "comparison" / "comparison-matrix.xlsx").is_file())
+            slug = root.name
+            self.assertTrue(
+                (root / "comparison" / f"{slug}-comparison-matrix.xlsx").is_file()
+            )
             self.assertTrue((root / "report.html").is_file())
             self.assertTrue((root / "landscape-report.html").is_file())
 
 
 if __name__ == "__main__":
     unittest.main()
+

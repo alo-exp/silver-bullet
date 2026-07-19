@@ -45,3 +45,21 @@ def ensure_dir_on_path(directory: Path) -> Path:
         sys.path.insert(0, scripts_s)
     return directory
 
+
+def resolve_multi_ai_scripts() -> Path:
+    """Prefer the authored skills/ tree so thin agent mirrors still get landscape builders."""
+    here = Path(__file__).resolve().parent
+    if (here / "synthesize_landscape.py").is_file() and (here / "landscape_preview_render.py").is_file():
+        return here
+    for parent in here.parents:
+        candidate = parent / "skills" / "silver-deep-research-multi-ai" / "scripts"
+        if (candidate / "synthesize_landscape.py").is_file():
+            return candidate
+    return here
+
+
+def ensure_multi_ai_scripts_on_path() -> Path:
+    """Prepend canonical multi-AI skill scripts (synthesize / materialize / SPA render)."""
+    return ensure_dir_on_path(resolve_multi_ai_scripts())
+
+

@@ -6,6 +6,7 @@
     "composer-2.5": "composer",
     "grok-4.5": "grok",
     "gpt-5.6-sol-medium": "gpt",
+    "gpt-5.6-luna-medium": "gpt",
     "claude-opus-4.8-medium": "claude",
     "gemini-3.5-flash": "gemini",
     "glm-5.2": "glm",
@@ -26,7 +27,7 @@
   "cursor_default_pool": [
     "composer-2.5",
     "grok-4.5",
-    "gpt-5.6-sol-medium",
+    "gpt-5.6-luna-medium",
     "claude-opus-4.8-medium",
     "gemini-3.5-flash",
     "glm-5.2"
