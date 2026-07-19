@@ -8,7 +8,7 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
-- **Branch after merge:** `main` @ `80fd671514a948381dd7f4ee704e25e964095231`
+- **Branch after merge:** `main` @ `0c1c8bc5c698b1eae010aff81ec8de23c40f8b62` (merge `80fd6715` + this handoff)
 - **Prior worktree/branch (removed after merge):** worktree `r41j` on `cursor/16e60539`
 - **Primary checkout:** `/Users/shafqat/projects/silver-bullet/repo`
 
@@ -37,7 +37,7 @@ Reusable handoff prompt for a fresh session. Task-detail mode included (user req
 
 ## Verification and Release State
 
-- Merge commit on `main`: `80fd6715` — contains feature commits `cc2df4e0`, `6ce819a6`, `352aed21`, plus earlier `b3111b22`.
+- Tip of `main`: `0c1c8bc5` (merge `80fd6715`) — contains feature commits `cc2df4e0`, `6ce819a6`, `352aed21`, plus earlier `b3111b22`.
 - Authoritative run: **`run_id=run-57f38dfa25d83cc50d224e283d4692f3`**, mode ultradeep, **24/24** pool completion claimed for final multimarket run.
 - Full-suite verification for this merge: **not re-run in handoff session** (`verification status unknown` for full `tests/run-all-tests.sh`).
 - Latest planning milestone complete; plugin release not cut for this DR work.
