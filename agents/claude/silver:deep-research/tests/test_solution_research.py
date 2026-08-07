@@ -107,6 +107,7 @@ class TestNeedProfileGate(unittest.TestCase):
                     'category': 'IDP',
                     'audience': 'CTO',
                     'must_haves': ['SSO'],
+                    'category_pack_id': 'agentic-sdlc-process-orchestrator',
                     'license_preference': 'mixed',
                     'interview_complete': True,
                 }, f)
@@ -163,6 +164,7 @@ class TestNeedProfileGate(unittest.TestCase):
                     'category': 'IDP',
                     'audience': 'CTO',
                     'must_haves': ['SSO'],
+                    'category_pack_id': 'agentic-sdlc-process-orchestrator',
                     'license_preference': 'mixed',
                     'interview_complete': True,
                 }, f)

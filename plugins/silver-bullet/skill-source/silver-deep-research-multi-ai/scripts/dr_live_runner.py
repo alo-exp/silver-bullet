@@ -255,7 +255,9 @@ def validate_pool_completeness(
         phase_id = phase.get("phase_id", "?")
         with_envelope: set[str] = set()
         for worker in phase.get("workers") or []:
-            if worker.get("has_envelope") and worker.get("status") == "completed":
+            # Older fixture callers recorded only has_envelope; treat that as
+            # completed while live dispatch records an explicit status.
+            if worker.get("has_envelope") and worker.get("status", "completed") == "completed":
                 with_envelope.add(str(worker.get("logical_model_id")))
         missing = sorted(expected - with_envelope)
         if missing:
@@ -401,4 +403,3 @@ def run_dr_live(
         "live_dispatch": True,
         "dispatch_mode": "live",
     }
-

@@ -43,14 +43,14 @@ jq -e '.hosts.hermes.status == "partial"' "$REPO_ROOT/scripts/lib/rtk-cm-hosts.j
   && pass "hermes marked partial" || fail "hermes marked partial"
 
 # 5. Dry-run cursor completes
-if bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host cursor --dry-run --skip-rtk-init --skip-cm-doctor >/dev/null 2>&1; then
+if bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host cursor --project-root "$REPO_ROOT" --dry-run --skip-rtk-init --skip-cm-doctor >/dev/null 2>&1; then
   pass "cursor dry-run exits 0"
 else
   fail "cursor dry-run exits 0"
 fi
 
 # 6. Dry-run all hosts (including goose skip)
-all_out="$(bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host all --dry-run --skip-rtk-init --skip-cm-doctor 2>&1 || true)"
+all_out="$(bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host all --project-root "$REPO_ROOT" --dry-run --skip-rtk-init --skip-cm-doctor 2>&1 || true)"
 if echo "$all_out" | grep -q 'SKIP: goose'; then
   pass "all dry-run skips goose"
 else
@@ -58,7 +58,7 @@ else
 fi
 
 for host in opencode hermes codex claude; do
-  if bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host "$host" --dry-run --skip-rtk-init --skip-cm-doctor >/dev/null 2>&1; then
+  if bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" --host "$host" --project-root "$REPO_ROOT" --dry-run --skip-rtk-init --skip-cm-doctor >/dev/null 2>&1; then
     pass "${host} dry-run exits 0"
   else
     fail "${host} dry-run exits 0"

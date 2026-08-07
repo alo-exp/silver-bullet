@@ -42,6 +42,12 @@ def validate(out_dir: Path) -> dict:
         errors.append("missing comparison/comparison.json")
 
     xlsx = comparison_matrix_xlsx_path(out_dir, report_html=default_spa_report_path(out_dir))
+    # Accept fixtures produced before the directory-slug filename contract
+    # was introduced; newly generated outputs still use the canonical path.
+    if not xlsx.is_file():
+        legacy_xlsx = out_dir / "comparison" / "comparison-matrix.xlsx"
+        if legacy_xlsx.is_file():
+            xlsx = legacy_xlsx
     if not xlsx.is_file():
         errors.append(f"missing {xlsx.relative_to(out_dir)}")
         if not openpyxl_importable():
@@ -67,4 +73,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

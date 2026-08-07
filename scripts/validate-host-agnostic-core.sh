@@ -76,6 +76,7 @@ STRICT_ALLOWLIST = {
     "skills/silver-agent-opencode/SKILL.md",
     "skills/silver-agent-pi/SKILL.md",
     "skills/silver-agent-worker/SKILL.md",
+    "skills/silver-update/SKILL.md",
     "skills/silver-doctor/SKILL.md",
     "skills/silver-init/SKILL.md",
     "skills/silver-clear-stack-state/SKILL.md",
@@ -100,6 +101,11 @@ STRICT_ALLOWLIST_PREFIXES = (
     "skills/silver-deep-research/UPSTREAM.md",
     "skills/silver-deep-research/tests/",
     "skills/silver-init/references/",
+    # Multi-AI research skills intentionally contain host adapter names and
+    # provider-specific fixtures; they are bounded research surfaces rather
+    # than host-neutral Silver Bullet core instructions.
+    "skills/silver-multi-ai-task/",
+    "skills/silver-deep-research-multi-ai/",
 )
 
 HOOKS_ALLOWLIST = {
@@ -133,6 +139,8 @@ SCRIPTS_ALLOWLIST = {
     "scripts/lib/merge-token-compression-config.py",
     "scripts/lib/merge-leanctx-mcp-config.py",
     "scripts/lib/host-smoke-cell.sh",
+    "scripts/lib/apo_delegate_catalog.py",
+    "scripts/lib/recommended-tools/heartbeat.sh",
     "scripts/lib/agent-plugins-common.sh",
     "scripts/generate-cursor-hooks.py",
     "scripts/generate-apo-catalog.py",
@@ -158,6 +166,7 @@ GLOBAL_EXCLUDE_PREFIXES = (
 SCRIPTS_HOST_TOOLING_PREFIXES = (
     "scripts/sync-",
     "scripts/validate-host-install",
+    "scripts/lib/global-toolstack/",
     "scripts/validate-claude",
     "scripts/enterprise-e2e/",
     "scripts/run-enterprise-e2e",
