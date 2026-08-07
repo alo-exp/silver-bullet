@@ -214,7 +214,7 @@ if [[ -x "$SITE_REG_HOOK" && -f "${REPO_ROOT}/hooks/lib/e2e-matrix-routing.sh" ]
     >"$site_home/.silver-bullet.json"
   site_state="$(matrix_routing_state_root "$site_home")"
   mkdir -p "$site_state"
-  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false}' \
+  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent",regression_passed_at:null,push_intent:false}' \
     >"${site_state}/site-session.json"
   export SB_RUNTIME_STATE_DIR="$site_state"
   site_out="$(cd "$site_home" && printf '%s' '{"hook_event_name":"Stop"}' | HOME="$site_home" SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$site_state" bash "$SITE_REG_HOOK" 2>/dev/null || true)"
