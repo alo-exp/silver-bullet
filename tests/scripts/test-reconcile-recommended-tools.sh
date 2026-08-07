@@ -464,6 +464,21 @@ bash "$RECONCILE" --project-root "$TMP_HB" --host cursor --mode verify --format 
 TMP_DOUBLE="$(mktemp -d)"
 export HOME="$TMP_DOUBLE"
 mkdir -p "${TMP_DOUBLE}/.cursor"
+mkdir -p "${TMP_DOUBLE}/bin"
+cat >"${TMP_DOUBLE}/bin/lean-ctx" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  --version) printf 'lean-ctx test-stub 0.0.0\n' ;;
+  init)
+    [[ "${2:-}" == "--help" ]] && printf 'Usage: lean-ctx init\n'
+    ;;
+  proxy)
+    [[ "${2:-}" == "--help" ]] && printf 'Usage: lean-ctx proxy\n'
+    ;;
+esac
+EOF
+chmod +x "${TMP_DOUBLE}/bin/lean-ctx"
+export PATH="${TMP_DOUBLE}/bin:${PATH}"
 printf '{"mcpServers":{}}\n' >"${TMP_DOUBLE}/.cursor/mcp.json"
 printf '{"hooks":{"preToolUse":[]}}\n' >"${TMP_DOUBLE}/.cursor/hooks.json"
 jq '.recommended_tools.graphify.enabled_by_user = true
