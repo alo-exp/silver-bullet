@@ -37,11 +37,11 @@ seed_good_fixture() {
   printf 'mirror\n' >"$root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE"
   cat >"$root/plugins/silver-bullet/commands/silver-feature.md" <<'EOF'
 ---
-name: silver:feature
+name: silver-feature
 description: test command stub
 user-invocable: true
 ---
-# silver:feature
+# silver-feature
 EOF
 }
 
