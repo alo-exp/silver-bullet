@@ -3,6 +3,10 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# Keep the fixture's state/cache roots aligned with the runtime used by
+# run_session below. CI seeds Codex runtime variables globally, but this
+# test intentionally exercises the Cursor SessionStart path.
+export SILVER_BULLET_RUNTIME=cursor
 if [[ -f "$REPO_ROOT/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "$REPO_ROOT/hooks/lib/runtime-paths.sh"
