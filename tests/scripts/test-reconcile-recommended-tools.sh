@@ -339,6 +339,13 @@ TMP_HB_VALID="$(mktemp -d)"
 TMP_HB_VALID_CANON="$(cd "$TMP_HB_VALID" && pwd -P)"
 export HOME="$TMP_HB_VALID"
 mkdir -p "${TMP_HB_VALID}/.cursor"
+mkdir -p "${TMP_HB_VALID}/bin"
+cat >"${TMP_HB_VALID}/bin/agentmemory" <<'EOF'
+#!/usr/bin/env bash
+[[ "${1:-}" == "status" ]] && printf 'Connected\n'
+EOF
+chmod +x "${TMP_HB_VALID}/bin/agentmemory"
+export PATH="${TMP_HB_VALID}/bin:${PATH}"
 printf '{"mcpServers":{}}\n' >"${TMP_HB_VALID}/.cursor/mcp.json"
 printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"}]}}\n' >"${TMP_HB_VALID}/.cursor/hooks.json"
 jq '.recommended_tools.graphify.enabled_by_user = true
