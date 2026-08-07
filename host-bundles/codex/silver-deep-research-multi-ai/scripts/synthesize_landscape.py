@@ -1291,6 +1291,9 @@ def build_report_markdown(
     lines.extend(["## 3. Competitive Positioning — Analyst Frameworks", ""])
     market_charts = (chart.get("markets") or {}) if isinstance(chart.get("markets"), dict) else {}
     if market_charts:
+        # Preserve the original generic chart anchors for downstream report
+        # consumers while exposing the richer per-market headings below.
+        lines.extend([f"### 3A. {category} Positioning Matrix", "", f"### 3B. Magic Quadrant — {category}", ""])
         for m_idx, (mid, mchart) in enumerate(market_charts.items(), start=1):
             role = mchart.get("market_role", "")
             display = mchart.get("market_display_name", mid)

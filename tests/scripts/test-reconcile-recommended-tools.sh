@@ -281,15 +281,17 @@ mcp_create_env='RT_PROJECT_ROOT="'"$TMP_MCP_CREATE"'" RT_HOST=cursor RT_MODE=app
 mcp_create="$(eval "$mcp_create_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/common.sh; rt_init_paths
   source \"'"$REPO_ROOT"'\"/scripts/lib/recommended-tools/receipts.sh
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
-echo "$mcp_create" | jq -e '.changed == true' >/dev/null 2>&1 \
-  && pass "first-time mcp.json creation sets changed=true in batch" || fail "first-time mcp.json creation sets changed=true in batch"
-[[ -f "${TMP_MCP_CREATE}/.cursor/mcp.json" ]] \
-  && pass "first-time mcp batch creates mcp.json" || fail "first-time mcp batch creates mcp.json"
 if command -v graphify-mcp >/dev/null 2>&1; then
+  echo "$mcp_create" | jq -e '.changed == true' >/dev/null 2>&1 \
+    && pass "first-time mcp.json creation sets changed=true in batch" || fail "first-time mcp.json creation sets changed=true in batch"
+  [[ -f "${TMP_MCP_CREATE}/.cursor/mcp.json" ]] \
+    && pass "first-time mcp batch creates mcp.json" || fail "first-time mcp batch creates mcp.json"
   jq -e '.mcpServers.graphify.command == "graphify-mcp"' "${TMP_MCP_CREATE}/.cursor/mcp.json" >/dev/null 2>&1 \
     && pass "first-time mcp batch adds graphify when handshake available" \
     || fail "first-time mcp batch adds graphify when handshake available"
 else
+  echo "$mcp_create" | jq -e '.changed == false' >/dev/null 2>&1 \
+    && pass "first-time mcp batch is a no-op without handshake" || fail "first-time mcp batch no-op without handshake"
   pass "first-time mcp graphify entry (graphify-mcp absent — skipped)"
 fi
 

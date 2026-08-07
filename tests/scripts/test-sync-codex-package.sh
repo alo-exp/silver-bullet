@@ -4,6 +4,16 @@ set -euo pipefail
 PASS=0
 FAIL=0
 
+pass() {
+  echo "PASS: $1"
+  (( PASS++ )) || true
+}
+
+fail() {
+  echo "FAIL: $1"
+  (( FAIL++ )) || true
+}
+
 assert_file_exists() {
   local desc="$1" path="$2"
   if [[ -f "$path" ]]; then

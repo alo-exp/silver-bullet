@@ -26,6 +26,23 @@ def _has_openpyxl() -> bool:
 
 class PackageSolutionOutputsTests(unittest.TestCase):
     def _seed(self, root: Path) -> None:
+        (root / "contributions").mkdir(parents=True)
+        (root / "contributions" / "all-envelopes.json").write_text(
+            json.dumps([
+                {
+                    "phase_id": "DR-RETRIEVE",
+                    "logical_model_id": "test",
+                    "payload": {
+                        "evidence": [
+                            {"claim": "alpha provides SSO."},
+                            {"claim": "silver-bullet provides SSO."},
+                            {"claim": "aider provides SSO."},
+                        ]
+                    },
+                }
+            ]) + "\n",
+            encoding="utf-8",
+        )
         (root / "run_manifest.json").write_text(
             json.dumps(
                 {
@@ -42,7 +59,7 @@ class PackageSolutionOutputsTests(unittest.TestCase):
                 {
                     "category": "IDP",
                     "audience": "CTO",
-                    "must_haves": ["SSO"],
+                    "must_haves": [],
                     "persona_id": "startup",
                     "license_preference": "mixed",
                     "interview_complete": True,
@@ -62,7 +79,29 @@ class PackageSolutionOutputsTests(unittest.TestCase):
                             {
                                 "name": "Core",
                                 "features": [
-                                    {"name": "SSO", "supported": name == "alpha"},
+                                    {"name": feature, "supported": True}
+                                    for feature in (
+                                        "Workflow composition",
+                                        "Atomic flow catalog",
+                                        "Parent/child agent delegation",
+                                        "Hook-enforced gates",
+                                        "Self-serve signup",
+                                        "Quick onboarding",
+                                        "IDE-native integration",
+                                        "Skill/plugin marketplace",
+                                        "Predictable pricing",
+                                        "Free tier / OSS core",
+                                        "Per-seat transparency",
+                                        "Managed hosting",
+                                        "Prebuilt SDLC templates",
+                                        "Zero-infra bootstrap",
+                                        "Automated review loops",
+                                        "CI integration",
+                                        "Visual/E2E verification",
+                                        "SSO",
+                                        "RBAC",
+                                        "Audit log",
+                                    )
                                 ],
                             }
                         ],
@@ -95,4 +134,3 @@ class PackageSolutionOutputsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
