@@ -43,7 +43,7 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
 fi
 
-sb_site_session_active || exit 0
+sb_site_session_gates_apply || exit 0
 sb_site_session_sync_vloops_from_state 2>/dev/null || true
 sb_site_session_vloop_pending || exit 0
 
