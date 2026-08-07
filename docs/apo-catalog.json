@@ -4008,7 +4008,7 @@
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
         "dispatch_mode": "subagent",
-        "worker_template": "skills/silver-multi-ai-task/SKILL.md",
+        "worker_template": "templates/orchestrator-workers/MULTI-AI-TASK.md",
         "parallelizable": true,
         "dependencies": [
           "catalog-selected upstream refs"
@@ -6566,7 +6566,7 @@
           "EV-FS-SILVER_AGENT_OPENCODE"
         ]
       },
-      "reusable_by_flows": [],
+        "reusable_by_flows": ["AF-AGENT-DELEGATE"],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
@@ -6615,7 +6615,7 @@
           "EV-FS-SILVER_AGENT_PI"
         ]
       },
-      "reusable_by_flows": [],
+      "reusable_by_flows": ["AF-AGENT-DELEGATE"],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
