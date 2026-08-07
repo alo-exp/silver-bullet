@@ -27,6 +27,9 @@ jobs:
             echo "Valid: $f"
           done
 
+      - name: Validate committed Graphify artifacts
+        run: bash scripts/validate-graphify-artifacts.sh
+
       - name: Check Cursor marketplace.json version matches plugin.json
         run: |
           plugin_v=$(jq -r '.version' .cursor-plugin/plugin.json)
@@ -266,4 +269,3 @@ jobs:
             --rule 'void-style:off' \
             --rule 'attribute-boolean-style:off' \
             site/**/*.html
-
