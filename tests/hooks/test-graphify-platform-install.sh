@@ -64,8 +64,8 @@ hermes_pre="$(jq -r '.recommended_tools.graphify.platform_install_commands.herme
 [[ "$hermes_pre" == "graphify install --project --platform hermes" ]] && pass "hermes pre_index" || fail "hermes pre_index"
 
 install_cmds="$(jq -r '.recommended_tools.graphify.install_commands[]' "$TEMPLATE")"
-printf '%s' "$install_cmds" | grep -q 'uv tool install graphifyy' && pass "template CLI uv install" || fail "template CLI uv install"
-printf '%s' "$install_cmds" | grep -q 'pipx install graphifyy' && pass "template CLI pipx install" || fail "template CLI pipx install"
+printf '%s' "$install_cmds" | grep -q "uv tool install 'graphifyy\[mcp\]'" && pass "template CLI uv install" || fail "template CLI uv install"
+printf '%s' "$install_cmds" | grep -q "pipx install 'graphifyy\[mcp\]'" && pass "template CLI pipx install" || fail "template CLI pipx install"
 ! printf '%s' "$install_cmds" | grep -q 'pip install graphifyy' && pass "template avoids plain pip install" || fail "template avoids plain pip"
 
 # Hook lib fallbacks
