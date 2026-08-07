@@ -30,6 +30,7 @@ trap 'rm -rf "$TMP"' EXIT
 # Prerequisite probe requires plugin cache (see test-session-start.sh)
 PLUGIN_CACHE_DIR="${SB_RUNTIME_HOME_ROOT}/plugins/cache"
 mkdir -p "${PLUGIN_CACHE_DIR}/alo-labs/silver-bullet/test"
+export SB_RUNTIME_PLUGIN_CACHE_ROOT="${PLUGIN_CACHE_DIR}"
 
 TEST_RUN_ID="$$"
 STATE_FILE="${SB_RUNTIME_STATE_DIR}/session-rt-test-state-${TEST_RUN_ID}"
