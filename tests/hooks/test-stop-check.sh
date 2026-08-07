@@ -888,7 +888,7 @@ SITE_REG_HOOK="$REPO_ROOT/hooks/site-regression-gate.sh"
 if [[ -f "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh" && -x "$SITE_REG_HOOK" ]]; then
   # shellcheck source=hooks/lib/e2e-matrix-routing.sh
   source "$REPO_ROOT/hooks/lib/e2e-matrix-routing.sh"
-  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",regression_passed_at:null,push_intent:false}' \
+  jq -n '{active:true,started_at:"2026-01-01T00:00:00Z",last_touch_at:"2026-06-28T12:00:00Z",touch_reason:"site-intent",regression_passed_at:null,push_intent:false}' \
     >"${SB_TEST_DIR}/site-session.json"
   site_out=$( cd "$TMPDIR_TEST" && printf '%s' '{"hook_event_name":"Stop"}' | bash "$SITE_REG_HOOK" 2>/dev/null || true )
   assert_blocks "ORCH-7a: site-regression blocks Stop with active session" "$site_out"
