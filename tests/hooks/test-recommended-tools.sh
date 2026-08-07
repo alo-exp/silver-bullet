@@ -92,7 +92,7 @@ host="$(
 [[ "$host" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
 
 full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
-printf '%s' "$full" | grep -q 'uv tool install graphifyy' && pass "full install includes CLI" || fail "full install includes CLI"
+printf '%s' "$full" | grep -Eq "uv tool install ['\"]?graphifyy" && pass "full install includes CLI" || fail "full install includes CLI"
 printf '%s' "$full" | grep -q 'graphify cursor install' && pass "full install includes cursor platform cmd" || fail "full install includes cursor platform cmd"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\"}"
