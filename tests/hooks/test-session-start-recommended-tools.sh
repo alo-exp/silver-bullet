@@ -62,7 +62,7 @@ EOF
 }
 
 run_session() {
-  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup SILVER_BULLET_RUNTIME=cursor CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
+  (cd "$TMP" && export SILVER_BULLET_SESSION_SOURCE=startup SILVER_BULLET_RUNTIME=cursor SILVER_BULLET_UPDATE_CHECK_DISABLED=1 CLAUDE_PLUGIN_ROOT="$REPO_ROOT" \
     && printf '{"source":"startup"}' | bash "$SESSION" 2>/dev/null)
 }
 
@@ -211,4 +211,3 @@ unset SB_RUNTIME_PRESERVE_STATE_DIR
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
-
