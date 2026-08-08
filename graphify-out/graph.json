@@ -6044,15 +6044,375 @@
   },
   "nodes": [
     {
+      "label": "lib/leanctx-gate.sh",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "lib/leanctx-gate.sh"
+    },
+    {
+      "label": "leanctx-gate.sh script",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sh__entry",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "leanctx-gate.sh script"
+    },
+    {
+      "label": "sb_leanctx_required()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L15",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_required",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_required()"
+    },
+    {
+      "label": "sb_leanctx_cli_command()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L19",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_command",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_cli_command()"
+    },
+    {
+      "label": "sb_leanctx_cli_path()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L28",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_path",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_cli_path()"
+    },
+    {
+      "label": "sb_leanctx_cli_available()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L43",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_available",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_cli_available()"
+    },
+    {
+      "label": "sb_leanctx_platform_artifact_path()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L47",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_path",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_platform_artifact_path()"
+    },
+    {
+      "label": "sb_leanctx_platform_artifact_present()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L63",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_platform_artifact_present()"
+    },
+    {
+      "label": "sb_leanctx_hooks_present()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L72",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_hooks_present",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_hooks_present()"
+    },
+    {
+      "label": "sb_leanctx_usage_ttl_seconds()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L91",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_ttl_seconds",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_usage_ttl_seconds()"
+    },
+    {
+      "label": "sb_leanctx_usage_state_path()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L104",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_state_path",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_usage_state_path()"
+    },
+    {
+      "label": "sb_leanctx_usage_epoch()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L124",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_epoch",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_usage_epoch()"
+    },
+    {
+      "label": "sb_leanctx_usage_is_fresh()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L133",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_usage_is_fresh()"
+    },
+    {
+      "label": "sb_leanctx_record_usage()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L145",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_record_usage",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_record_usage()"
+    },
+    {
+      "label": "sb_leanctx_clear_usage_state()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L156",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_clear_usage_state",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_clear_usage_state()"
+    },
+    {
+      "label": "sb_leanctx_edit_path_is_exempt()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L163",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_edit_path_is_exempt",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_edit_path_is_exempt()"
+    },
+    {
+      "label": "sb_leanctx_command_is_exempt()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L184",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_command_is_exempt",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_command_is_exempt()"
+    },
+    {
+      "label": "sb_leanctx_command_is_usage()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L199",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_command_is_usage",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_command_is_usage()"
+    },
+    {
+      "label": "sb_leanctx_mcp_tool_is_usage()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L213",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_mcp_tool_is_usage",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_mcp_tool_is_usage()"
+    },
+    {
+      "label": "sb_leanctx_mcp_server_matches()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L224",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_mcp_server_matches",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_mcp_server_matches()"
+    },
+    {
+      "label": "sb_leanctx_block_message_no_cli()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L230",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_cli",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_block_message_no_cli()"
+    },
+    {
+      "label": "sb_leanctx_block_message_no_mcp()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L252",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_mcp",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_block_message_no_mcp()"
+    },
+    {
+      "label": "sb_leanctx_block_message_stale_usage()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L270",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_stale_usage",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_block_message_stale_usage()"
+    },
+    {
+      "label": "sb_leanctx_prompt_reminder_line()",
+      "file_type": "code",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L288",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_function"
+      },
+      "_origin": "ast",
+      "id": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
+      "community": 124,
+      "community_name": "lib/leanctx-gate.sh",
+      "norm_label": "sb_leanctx_prompt_reminder_line()"
+    },
+    {
       "label": "graphify/SKILL.md",
       "file_type": "document",
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "graphify/skill.md"
+      "norm_label": "graphify/skill.md",
+      "id": "claude_skills_graphify_skill"
     },
     {
       "label": "/graphify",
@@ -6060,10 +6420,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_graphify",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "/graphify"
+      "norm_label": "/graphify",
+      "id": "claude_skills_graphify_skill_graphify"
     },
     {
       "label": "Usage",
@@ -6071,10 +6431,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L10",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_usage",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "usage"
+      "norm_label": "usage",
+      "id": "claude_skills_graphify_skill_usage"
     },
     {
       "label": "What graphify is for",
@@ -6082,10 +6442,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L45",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_what_graphify_is_for",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "what graphify is for"
+      "norm_label": "what graphify is for",
+      "id": "claude_skills_graphify_skill_what_graphify_is_for"
     },
     {
       "label": "What You Must Do When Invoked",
@@ -6093,10 +6453,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L49",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "what you must do when invoked"
+      "norm_label": "what you must do when invoked",
+      "id": "claude_skills_graphify_skill_what_you_must_do_when_invoked"
     },
     {
       "label": "Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)",
@@ -6104,10 +6464,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L61",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 0 - github repos and multi-path merge (only if a url or several paths)"
+      "norm_label": "step 0 - github repos and multi-path merge (only if a url or several paths)",
+      "id": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths"
     },
     {
       "label": "Step 1 - Ensure graphify is installed",
@@ -6115,10 +6475,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L65",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_1_ensure_graphify_is_installed",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 1 - ensure graphify is installed"
+      "norm_label": "step 1 - ensure graphify is installed",
+      "id": "claude_skills_graphify_skill_step_1_ensure_graphify_is_installed"
     },
     {
       "label": "Step 2 - Detect files",
@@ -6126,10 +6486,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L107",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_2_detect_files",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 2 - detect files"
+      "norm_label": "step 2 - detect files",
+      "id": "claude_skills_graphify_skill_step_2_detect_files"
     },
     {
       "label": "Step 2.5 - Video and audio (only if video files detected)",
@@ -6137,10 +6497,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L144",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_2_5_video_and_audio_only_if_video_files_detected",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 2.5 - video and audio (only if video files detected)"
+      "norm_label": "step 2.5 - video and audio (only if video files detected)",
+      "id": "claude_skills_graphify_skill_step_2_5_video_and_audio_only_if_video_files_detected"
     },
     {
       "label": "Step 3 - Extract entities and relationships",
@@ -6148,10 +6508,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L148",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 3 - extract entities and relationships"
+      "norm_label": "step 3 - extract entities and relationships",
+      "id": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships"
     },
     {
       "label": "Part A - Structural extraction for code files",
@@ -6159,10 +6519,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L167",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_part_a_structural_extraction_for_code_files",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "part a - structural extraction for code files"
+      "norm_label": "part a - structural extraction for code files",
+      "id": "claude_skills_graphify_skill_part_a_structural_extraction_for_code_files"
     },
     {
       "label": "Part B - Semantic extraction (parallel subagents)",
@@ -6170,10 +6530,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L193",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_part_b_semantic_extraction_parallel_subagents",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "part b - semantic extraction (parallel subagents)"
+      "norm_label": "part b - semantic extraction (parallel subagents)",
+      "id": "claude_skills_graphify_skill_part_b_semantic_extraction_parallel_subagents"
     },
     {
       "label": "Part C - Merge AST + semantic into final extraction",
@@ -6181,10 +6541,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L356",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_part_c_merge_ast_semantic_into_final_extraction",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "part c - merge ast + semantic into final extraction"
+      "norm_label": "part c - merge ast + semantic into final extraction",
+      "id": "claude_skills_graphify_skill_part_c_merge_ast_semantic_into_final_extraction"
     },
     {
       "label": "Step 4 - Build graph, cluster, analyze, generate outputs",
@@ -6192,10 +6552,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L390",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_4_build_graph_cluster_analyze_generate_outputs",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 4 - build graph, cluster, analyze, generate outputs"
+      "norm_label": "step 4 - build graph, cluster, analyze, generate outputs",
+      "id": "claude_skills_graphify_skill_step_4_build_graph_cluster_analyze_generate_outputs"
     },
     {
       "label": "Step 4.5 - Graph health check (read-only integrity gate)",
@@ -6203,10 +6563,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L453",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_4_5_graph_health_check_read_only_integrity_gate",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 4.5 - graph health check (read-only integrity gate)"
+      "norm_label": "step 4.5 - graph health check (read-only integrity gate)",
+      "id": "claude_skills_graphify_skill_step_4_5_graph_health_check_read_only_integrity_gate"
     },
     {
       "label": "Step 5 - Label communities",
@@ -6214,10 +6574,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L479",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_5_label_communities",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 5 - label communities"
+      "norm_label": "step 5 - label communities",
+      "id": "claude_skills_graphify_skill_step_5_label_communities"
     },
     {
       "label": "Step 6 - Generate Obsidian vault (opt-in) + HTML",
@@ -6225,10 +6585,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L528",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_6_generate_obsidian_vault_opt_in_html",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 6 - generate obsidian vault (opt-in) + html"
+      "norm_label": "step 6 - generate obsidian vault (opt-in) + html",
+      "id": "claude_skills_graphify_skill_step_6_generate_obsidian_vault_opt_in_html"
     },
     {
       "label": "Steps 6b-8 - Wiki, Neo4j, FalkorDB, SVG, GraphML, MCP, benchmark (only on their flags)",
@@ -6236,10 +6596,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L548",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_steps_6b_8_wiki_neo4j_falkordb_svg_graphml_mcp_benchmark_only_on_their_flags",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "steps 6b-8 - wiki, neo4j, falkordb, svg, graphml, mcp, benchmark (only on their flags)"
+      "norm_label": "steps 6b-8 - wiki, neo4j, falkordb, svg, graphml, mcp, benchmark (only on their flags)",
+      "id": "claude_skills_graphify_skill_steps_6b_8_wiki_neo4j_falkordb_svg_graphml_mcp_benchmark_only_on_their_flags"
     },
     {
       "label": "Step 9 - Save manifest, update cost tracker, clean up, and report",
@@ -6247,10 +6607,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L554",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_step_9_save_manifest_update_cost_tracker_clean_up_and_report",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "step 9 - save manifest, update cost tracker, clean up, and report"
+      "norm_label": "step 9 - save manifest, update cost tracker, clean up, and report",
+      "id": "claude_skills_graphify_skill_step_9_save_manifest_update_cost_tracker_clean_up_and_report"
     },
     {
       "label": "Interpreter guard for subcommands",
@@ -6258,10 +6618,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L656",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_interpreter_guard_for_subcommands",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "interpreter guard for subcommands"
+      "norm_label": "interpreter guard for subcommands",
+      "id": "claude_skills_graphify_skill_interpreter_guard_for_subcommands"
     },
     {
       "label": "For --update and --cluster-only",
@@ -6269,10 +6629,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L674",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_for_update_and_cluster_only",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "for --update and --cluster-only"
+      "norm_label": "for --update and --cluster-only",
+      "id": "claude_skills_graphify_skill_for_update_and_cluster_only"
     },
     {
       "label": "For /graphify query",
@@ -6280,10 +6640,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L680",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_for_graphify_query",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "for /graphify query"
+      "norm_label": "for /graphify query",
+      "id": "claude_skills_graphify_skill_for_graphify_query"
     },
     {
       "label": "For /graphify add and --watch",
@@ -6291,10 +6651,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L692",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_for_graphify_add_and_watch",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "for /graphify add and --watch"
+      "norm_label": "for /graphify add and --watch",
+      "id": "claude_skills_graphify_skill_for_graphify_add_and_watch"
     },
     {
       "label": "For the commit hook and native CLAUDE.md integration",
@@ -6302,10 +6662,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L698",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_for_the_commit_hook_and_native_claude_md_integration",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "for the commit hook and native claude.md integration"
+      "norm_label": "for the commit hook and native claude.md integration",
+      "id": "claude_skills_graphify_skill_for_the_commit_hook_and_native_claude_md_integration"
     },
     {
       "label": "Honesty Rules",
@@ -6313,10 +6673,10 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L704",
       "_origin": "ast",
-      "id": "claude_skills_graphify_skill_honesty_rules",
       "community": 255,
       "community_name": "What You Must Do When Invoked",
-      "norm_label": "honesty rules"
+      "norm_label": "honesty rules",
+      "id": "claude_skills_graphify_skill_honesty_rules"
     },
     {
       "label": "add-watch.md",
@@ -6324,10 +6684,10 @@
       "source_file": ".claude/skills/graphify/references/add-watch.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_add_watch",
       "community": 3349,
       "community_name": "graphify reference: add a URL and watch a folder",
-      "norm_label": "add-watch.md"
+      "norm_label": "add-watch.md",
+      "id": "claude_skills_graphify_references_add_watch"
     },
     {
       "label": "graphify reference: add a URL and watch a folder",
@@ -6335,10 +6695,10 @@
       "source_file": ".claude/skills/graphify/references/add-watch.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder",
       "community": 3349,
       "community_name": "graphify reference: add a URL and watch a folder",
-      "norm_label": "graphify reference: add a url and watch a folder"
+      "norm_label": "graphify reference: add a url and watch a folder",
+      "id": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder"
     },
     {
       "label": "For /graphify add",
@@ -6346,10 +6706,10 @@
       "source_file": ".claude/skills/graphify/references/add-watch.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_add_watch_for_graphify_add",
       "community": 3349,
       "community_name": "graphify reference: add a URL and watch a folder",
-      "norm_label": "for /graphify add"
+      "norm_label": "for /graphify add",
+      "id": "claude_skills_graphify_references_add_watch_for_graphify_add"
     },
     {
       "label": "For --watch",
@@ -6357,10 +6717,10 @@
       "source_file": ".claude/skills/graphify/references/add-watch.md",
       "source_location": "L39",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_add_watch_for_watch",
       "community": 3349,
       "community_name": "graphify reference: add a URL and watch a folder",
-      "norm_label": "for --watch"
+      "norm_label": "for --watch",
+      "id": "claude_skills_graphify_references_add_watch_for_watch"
     },
     {
       "label": "exports.md",
@@ -6368,10 +6728,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "exports.md"
+      "norm_label": "exports.md",
+      "id": "claude_skills_graphify_references_exports"
     },
     {
       "label": "graphify reference: extra exports and benchmark",
@@ -6379,10 +6739,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "graphify reference: extra exports and benchmark"
+      "norm_label": "graphify reference: extra exports and benchmark",
+      "id": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark"
     },
     {
       "label": "Step 6b - Wiki (only if --wiki flag)",
@@ -6390,10 +6750,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_6b_wiki_only_if_wiki_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 6b - wiki (only if --wiki flag)"
+      "norm_label": "step 6b - wiki (only if --wiki flag)",
+      "id": "claude_skills_graphify_references_exports_step_6b_wiki_only_if_wiki_flag"
     },
     {
       "label": "Step 7 - Neo4j export (only if --neo4j or --neo4j-push flag)",
@@ -6401,10 +6761,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L15",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_7_neo4j_export_only_if_neo4j_or_neo4j_push_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 7 - neo4j export (only if --neo4j or --neo4j-push flag)"
+      "norm_label": "step 7 - neo4j export (only if --neo4j or --neo4j-push flag)",
+      "id": "claude_skills_graphify_references_exports_step_7_neo4j_export_only_if_neo4j_or_neo4j_push_flag"
     },
     {
       "label": "Step 7a - FalkorDB export (only if --falkordb or --falkordb-push flag)",
@@ -6412,10 +6772,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L31",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_7a_falkordb_export_only_if_falkordb_or_falkordb_push_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 7a - falkordb export (only if --falkordb or --falkordb-push flag)"
+      "norm_label": "step 7a - falkordb export (only if --falkordb or --falkordb-push flag)",
+      "id": "claude_skills_graphify_references_exports_step_7a_falkordb_export_only_if_falkordb_or_falkordb_push_flag"
     },
     {
       "label": "Step 7b - SVG export (only if --svg flag)",
@@ -6423,10 +6783,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_7b_svg_export_only_if_svg_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 7b - svg export (only if --svg flag)"
+      "norm_label": "step 7b - svg export (only if --svg flag)",
+      "id": "claude_skills_graphify_references_exports_step_7b_svg_export_only_if_svg_flag"
     },
     {
       "label": "Step 7c - GraphML export (only if --graphml flag)",
@@ -6434,10 +6794,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L53",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_7c_graphml_export_only_if_graphml_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 7c - graphml export (only if --graphml flag)"
+      "norm_label": "step 7c - graphml export (only if --graphml flag)",
+      "id": "claude_skills_graphify_references_exports_step_7c_graphml_export_only_if_graphml_flag"
     },
     {
       "label": "Step 7d - MCP server (only if --mcp flag)",
@@ -6445,10 +6805,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L59",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_7d_mcp_server_only_if_mcp_flag",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 7d - mcp server (only if --mcp flag)"
+      "norm_label": "step 7d - mcp server (only if --mcp flag)",
+      "id": "claude_skills_graphify_references_exports_step_7d_mcp_server_only_if_mcp_flag"
     },
     {
       "label": "Step 8 - Token reduction benchmark (only if total_words > 5000)",
@@ -6456,10 +6816,10 @@
       "source_file": ".claude/skills/graphify/references/exports.md",
       "source_location": "L79",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_exports_step_8_token_reduction_benchmark_only_if_total_words_5000",
       "community": 1011,
       "community_name": "graphify reference: extra exports and benchmark",
-      "norm_label": "step 8 - token reduction benchmark (only if total_words > 5000)"
+      "norm_label": "step 8 - token reduction benchmark (only if total_words > 5000)",
+      "id": "claude_skills_graphify_references_exports_step_8_token_reduction_benchmark_only_if_total_words_5000"
     },
     {
       "label": "extraction-spec.md",
@@ -6467,10 +6827,10 @@
       "source_file": ".claude/skills/graphify/references/extraction-spec.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_extraction_spec",
       "community": 3587,
       "community_name": "extraction-spec.md",
-      "norm_label": "extraction-spec.md"
+      "norm_label": "extraction-spec.md",
+      "id": "claude_skills_graphify_references_extraction_spec"
     },
     {
       "label": "graphify reference: extraction subagent prompt",
@@ -6478,10 +6838,10 @@
       "source_file": ".claude/skills/graphify/references/extraction-spec.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_extraction_spec_graphify_reference_extraction_subagent_prompt",
       "community": 3587,
       "community_name": "extraction-spec.md",
-      "norm_label": "graphify reference: extraction subagent prompt"
+      "norm_label": "graphify reference: extraction subagent prompt",
+      "id": "claude_skills_graphify_references_extraction_spec_graphify_reference_extraction_subagent_prompt"
     },
     {
       "label": "github-and-merge.md",
@@ -6489,10 +6849,10 @@
       "source_file": ".claude/skills/graphify/references/github-and-merge.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_github_and_merge",
       "community": 3487,
       "community_name": "graphify reference: GitHub clone and cross-repo merge",
-      "norm_label": "github-and-merge.md"
+      "norm_label": "github-and-merge.md",
+      "id": "claude_skills_graphify_references_github_and_merge"
     },
     {
       "label": "graphify reference: GitHub clone and cross-repo merge",
@@ -6500,10 +6860,10 @@
       "source_file": ".claude/skills/graphify/references/github-and-merge.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_github_and_merge_graphify_reference_github_clone_and_cross_repo_merge",
       "community": 3487,
       "community_name": "graphify reference: GitHub clone and cross-repo merge",
-      "norm_label": "graphify reference: github clone and cross-repo merge"
+      "norm_label": "graphify reference: github clone and cross-repo merge",
+      "id": "claude_skills_graphify_references_github_and_merge_graphify_reference_github_clone_and_cross_repo_merge"
     },
     {
       "label": "Step 0 - Clone GitHub repo(s) (only if a GitHub URL was given)",
@@ -6511,10 +6871,10 @@
       "source_file": ".claude/skills/graphify/references/github-and-merge.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_github_and_merge_step_0_clone_github_repo_s_only_if_a_github_url_was_given",
       "community": 3487,
       "community_name": "graphify reference: GitHub clone and cross-repo merge",
-      "norm_label": "step 0 - clone github repo(s) (only if a github url was given)"
+      "norm_label": "step 0 - clone github repo(s) (only if a github url was given)",
+      "id": "claude_skills_graphify_references_github_and_merge_step_0_clone_github_repo_s_only_if_a_github_url_was_given"
     },
     {
       "label": "hooks.md",
@@ -6522,10 +6882,10 @@
       "source_file": ".claude/skills/graphify/references/hooks.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_hooks",
       "community": 3350,
       "community_name": "graphify reference: commit hook and native CLAUDE.md integration",
-      "norm_label": "hooks.md"
+      "norm_label": "hooks.md",
+      "id": "claude_skills_graphify_references_hooks"
     },
     {
       "label": "graphify reference: commit hook and native CLAUDE.md integration",
@@ -6533,10 +6893,10 @@
       "source_file": ".claude/skills/graphify/references/hooks.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration",
       "community": 3350,
       "community_name": "graphify reference: commit hook and native CLAUDE.md integration",
-      "norm_label": "graphify reference: commit hook and native claude.md integration"
+      "norm_label": "graphify reference: commit hook and native claude.md integration",
+      "id": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration"
     },
     {
       "label": "For git commit hook",
@@ -6544,10 +6904,10 @@
       "source_file": ".claude/skills/graphify/references/hooks.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_hooks_for_git_commit_hook",
       "community": 3350,
       "community_name": "graphify reference: commit hook and native CLAUDE.md integration",
-      "norm_label": "for git commit hook"
+      "norm_label": "for git commit hook",
+      "id": "claude_skills_graphify_references_hooks_for_git_commit_hook"
     },
     {
       "label": "For native CLAUDE.md integration",
@@ -6555,10 +6915,10 @@
       "source_file": ".claude/skills/graphify/references/hooks.md",
       "source_location": "L21",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_hooks_for_native_claude_md_integration",
       "community": 3350,
       "community_name": "graphify reference: commit hook and native CLAUDE.md integration",
-      "norm_label": "for native claude.md integration"
+      "norm_label": "for native claude.md integration",
+      "id": "claude_skills_graphify_references_hooks_for_native_claude_md_integration"
     },
     {
       "label": "query.md",
@@ -6566,10 +6926,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "query.md"
+      "norm_label": "query.md",
+      "id": "claude_skills_graphify_references_query"
     },
     {
       "label": "graphify reference: query, path, explain",
@@ -6577,10 +6937,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "graphify reference: query, path, explain"
+      "norm_label": "graphify reference: query, path, explain",
+      "id": "claude_skills_graphify_references_query_graphify_reference_query_path_explain"
     },
     {
       "label": "Step 0 \u2014 Constrained query expansion (REQUIRED before traversal)",
@@ -6588,10 +6948,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query_step_0_constrained_query_expansion_required_before_traversal",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "step 0 \u2014 constrained query expansion (required before traversal)"
+      "norm_label": "step 0 \u2014 constrained query expansion (required before traversal)",
+      "id": "claude_skills_graphify_references_query_step_0_constrained_query_expansion_required_before_traversal"
     },
     {
       "label": "Step 1 \u2014 Traversal",
@@ -6599,10 +6959,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L61",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query_step_1_traversal",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "step 1 \u2014 traversal"
+      "norm_label": "step 1 \u2014 traversal",
+      "id": "claude_skills_graphify_references_query_step_1_traversal"
     },
     {
       "label": "For /graphify path",
@@ -6610,10 +6970,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L186",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query_for_graphify_path",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "for /graphify path"
+      "norm_label": "for /graphify path",
+      "id": "claude_skills_graphify_references_query_for_graphify_path"
     },
     {
       "label": "For /graphify explain",
@@ -6621,10 +6981,10 @@
       "source_file": ".claude/skills/graphify/references/query.md",
       "source_location": "L254",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_query_for_graphify_explain",
       "community": 1409,
       "community_name": "graphify reference: query, path, explain",
-      "norm_label": "for /graphify explain"
+      "norm_label": "for /graphify explain",
+      "id": "claude_skills_graphify_references_query_for_graphify_explain"
     },
     {
       "label": "transcribe.md",
@@ -6632,10 +6992,10 @@
       "source_file": ".claude/skills/graphify/references/transcribe.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_transcribe",
       "community": 3488,
       "community_name": "graphify reference: transcribe video and audio",
-      "norm_label": "transcribe.md"
+      "norm_label": "transcribe.md",
+      "id": "claude_skills_graphify_references_transcribe"
     },
     {
       "label": "graphify reference: transcribe video and audio",
@@ -6643,10 +7003,10 @@
       "source_file": ".claude/skills/graphify/references/transcribe.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_transcribe_graphify_reference_transcribe_video_and_audio",
       "community": 3488,
       "community_name": "graphify reference: transcribe video and audio",
-      "norm_label": "graphify reference: transcribe video and audio"
+      "norm_label": "graphify reference: transcribe video and audio",
+      "id": "claude_skills_graphify_references_transcribe_graphify_reference_transcribe_video_and_audio"
     },
     {
       "label": "Step 2.5 - Transcribe video / audio files (only if video files detected)",
@@ -6654,10 +7014,10 @@
       "source_file": ".claude/skills/graphify/references/transcribe.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_transcribe_step_2_5_transcribe_video_audio_files_only_if_video_files_detected",
       "community": 3488,
       "community_name": "graphify reference: transcribe video and audio",
-      "norm_label": "step 2.5 - transcribe video / audio files (only if video files detected)"
+      "norm_label": "step 2.5 - transcribe video / audio files (only if video files detected)",
+      "id": "claude_skills_graphify_references_transcribe_step_2_5_transcribe_video_audio_files_only_if_video_files_detected"
     },
     {
       "label": "update.md",
@@ -6665,10 +7025,10 @@
       "source_file": ".claude/skills/graphify/references/update.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_update",
       "community": 3351,
       "community_name": "graphify reference: incremental update and cluster-only",
-      "norm_label": "update.md"
+      "norm_label": "update.md",
+      "id": "claude_skills_graphify_references_update"
     },
     {
       "label": "graphify reference: incremental update and cluster-only",
@@ -6676,10 +7036,10 @@
       "source_file": ".claude/skills/graphify/references/update.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only",
       "community": 3351,
       "community_name": "graphify reference: incremental update and cluster-only",
-      "norm_label": "graphify reference: incremental update and cluster-only"
+      "norm_label": "graphify reference: incremental update and cluster-only",
+      "id": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only"
     },
     {
       "label": "For --update (incremental re-extraction)",
@@ -6687,10 +7047,10 @@
       "source_file": ".claude/skills/graphify/references/update.md",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_update_for_update_incremental_re_extraction",
       "community": 3351,
       "community_name": "graphify reference: incremental update and cluster-only",
-      "norm_label": "for --update (incremental re-extraction)"
+      "norm_label": "for --update (incremental re-extraction)",
+      "id": "claude_skills_graphify_references_update_for_update_incremental_re_extraction"
     },
     {
       "label": "For --cluster-only",
@@ -6698,10 +7058,10 @@
       "source_file": ".claude/skills/graphify/references/update.md",
       "source_location": "L202",
       "_origin": "ast",
-      "id": "claude_skills_graphify_references_update_for_cluster_only",
       "community": 3351,
       "community_name": "graphify reference: incremental update and cluster-only",
-      "norm_label": "for --cluster-only"
+      "norm_label": "for --cluster-only",
+      "id": "claude_skills_graphify_references_update_for_cluster_only"
     },
     {
       "label": "CONTEXT.md",
@@ -6709,10 +7069,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "planning_context",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "context.md"
+      "norm_label": "context.md",
+      "id": "planning_context"
     },
     {
       "label": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
@@ -6720,10 +7080,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "context \u2014 five-tool stack activation (claude desktop code host)"
+      "norm_label": "context \u2014 five-tool stack activation (claude desktop code host)",
+      "id": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host"
     },
     {
       "label": "Goal",
@@ -6731,10 +7091,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "planning_context_goal",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "goal"
+      "norm_label": "goal",
+      "id": "planning_context_goal"
     },
     {
       "label": "Observed State (evidence)",
@@ -6742,10 +7102,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L12",
       "_origin": "ast",
-      "id": "planning_context_observed_state_evidence",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "observed state (evidence)"
+      "norm_label": "observed state (evidence)",
+      "id": "planning_context_observed_state_evidence"
     },
     {
       "label": "Decisions",
@@ -6753,10 +7113,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L25",
       "_origin": "ast",
-      "id": "planning_context_decisions",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "decisions"
+      "norm_label": "decisions",
+      "id": "planning_context_decisions"
     },
     {
       "label": "Assumptions",
@@ -6764,10 +7124,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L39",
       "_origin": "ast",
-      "id": "planning_context_assumptions",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "assumptions"
+      "norm_label": "assumptions",
+      "id": "planning_context_assumptions"
     },
     {
       "label": "Constraints",
@@ -6775,10 +7135,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "planning_context_constraints",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "constraints"
+      "norm_label": "constraints",
+      "id": "planning_context_constraints"
     },
     {
       "label": "Non-Goals",
@@ -6786,10 +7146,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L54",
       "_origin": "ast",
-      "id": "planning_context_non_goals",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "non-goals"
+      "norm_label": "non-goals",
+      "id": "planning_context_non_goals"
     },
     {
       "label": "Planning Handoff",
@@ -6797,10 +7157,10 @@
       "source_file": ".planning/CONTEXT.md",
       "source_location": "L60",
       "_origin": "ast",
-      "id": "planning_context_planning_handoff",
       "community": 675,
       "community_name": "CONTEXT \u2014 Five-Tool Stack Activation (Claude Desktop Code Host)",
-      "norm_label": "planning handoff"
+      "norm_label": "planning handoff",
+      "id": "planning_context_planning_handoff"
     },
     {
       "label": "install-cursor.sh",
@@ -72190,366 +72550,6 @@
       "community_name": "jq-gate.sh",
       "norm_label": "sb_jq_enforcement_block_sb_initiated()",
       "id": "hooks_lib_jq_gate_sb_jq_enforcement_block_sb_initiated"
-    },
-    {
-      "label": "lib/leanctx-gate.sh",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L1",
-      "metadata": {
-        "language": "bash",
-        "kind": "file"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "lib/leanctx-gate.sh",
-      "id": "hooks_lib_leanctx_gate"
-    },
-    {
-      "label": "leanctx-gate.sh script",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L1",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_entrypoint"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "leanctx-gate.sh script",
-      "id": "hooks_lib_leanctx_gate_sh__entry"
-    },
-    {
-      "label": "sb_leanctx_required()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L15",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_required()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_required"
-    },
-    {
-      "label": "sb_leanctx_cli_command()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L19",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_cli_command()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_command"
-    },
-    {
-      "label": "sb_leanctx_cli_path()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L28",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_cli_path()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_path"
-    },
-    {
-      "label": "sb_leanctx_cli_available()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L43",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_cli_available()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_cli_available"
-    },
-    {
-      "label": "sb_leanctx_platform_artifact_path()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L47",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_platform_artifact_path()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_path"
-    },
-    {
-      "label": "sb_leanctx_platform_artifact_present()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L62",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_platform_artifact_present()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present"
-    },
-    {
-      "label": "sb_leanctx_hooks_present()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L71",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_hooks_present()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_hooks_present"
-    },
-    {
-      "label": "sb_leanctx_usage_ttl_seconds()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L90",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_usage_ttl_seconds()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_ttl_seconds"
-    },
-    {
-      "label": "sb_leanctx_usage_state_path()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L103",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_usage_state_path()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_state_path"
-    },
-    {
-      "label": "sb_leanctx_usage_epoch()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L123",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_usage_epoch()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_epoch"
-    },
-    {
-      "label": "sb_leanctx_usage_is_fresh()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L132",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_usage_is_fresh()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh"
-    },
-    {
-      "label": "sb_leanctx_record_usage()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L144",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_record_usage()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_record_usage"
-    },
-    {
-      "label": "sb_leanctx_clear_usage_state()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L155",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_clear_usage_state()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_clear_usage_state"
-    },
-    {
-      "label": "sb_leanctx_edit_path_is_exempt()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L162",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_edit_path_is_exempt()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_edit_path_is_exempt"
-    },
-    {
-      "label": "sb_leanctx_command_is_exempt()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L183",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_command_is_exempt()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_command_is_exempt"
-    },
-    {
-      "label": "sb_leanctx_command_is_usage()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L198",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_command_is_usage()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_command_is_usage"
-    },
-    {
-      "label": "sb_leanctx_mcp_tool_is_usage()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L212",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_mcp_tool_is_usage()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_mcp_tool_is_usage"
-    },
-    {
-      "label": "sb_leanctx_mcp_server_matches()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L223",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_mcp_server_matches()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_mcp_server_matches"
-    },
-    {
-      "label": "sb_leanctx_block_message_no_cli()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L229",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_block_message_no_cli()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_cli"
-    },
-    {
-      "label": "sb_leanctx_block_message_no_mcp()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L251",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_block_message_no_mcp()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_mcp"
-    },
-    {
-      "label": "sb_leanctx_block_message_stale_usage()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L269",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_block_message_stale_usage()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_block_message_stale_usage"
-    },
-    {
-      "label": "sb_leanctx_prompt_reminder_line()",
-      "file_type": "code",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L287",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_function"
-      },
-      "_origin": "ast",
-      "community": 124,
-      "community_name": "lib/leanctx-gate.sh",
-      "norm_label": "sb_leanctx_prompt_reminder_line()",
-      "id": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line"
     },
     {
       "label": "nofollow-guard.sh",
@@ -406157,15 +406157,352 @@
   ],
   "links": [
     {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L230",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_cli",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L252",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_mcp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L270",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_stale_usage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L156",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_clear_usage_state",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L43",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_available",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_command",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L184",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_command_is_exempt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L199",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_command_is_usage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L163",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_edit_path_is_exempt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_hooks_present",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L224",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_mcp_server_matches",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L213",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_mcp_tool_is_usage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L47",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L288",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L145",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_record_usage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_required",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L124",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_epoch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L133",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L104",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_state_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "defines",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L91",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_ttl_seconds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate_sh__entry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "INFERRED",
+      "source_file": "tests/hooks/test-leanctx-gate.sh",
+      "source_location": "L186",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast",
+      "confidence_score": 0.5,
+      "source": "tests_hooks_test_leanctx_gate",
+      "target": "hooks_lib_leanctx_gate"
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L44",
+      "weight": 1.0,
+      "context": "call",
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate_sb_leanctx_cli_available",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_path",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L304",
+      "weight": 1.0,
+      "context": "call",
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_available",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L306",
+      "weight": 1.0,
+      "context": "call",
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "hooks/lib/leanctx-gate.sh",
+      "source_location": "L308",
+      "weight": 1.0,
+      "context": "call",
+      "_origin": "ast",
+      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/hooks/test-leanctx-gate.sh",
+      "source_location": "L188",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "tests_hooks_test_leanctx_gate_sh__entry",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "tests/hooks/test-leanctx-gate.sh",
+      "source_location": "L187",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "tests_hooks_test_leanctx_gate_sh__entry",
+      "target": "hooks_lib_leanctx_gate_sb_leanctx_record_usage"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill",
-      "target": "claude_skills_graphify_skill_graphify",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_graphify"
     },
     {
       "relation": "contains",
@@ -406174,9 +406511,9 @@
       "source_location": "L692",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_for_graphify_add_and_watch",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_for_graphify_add_and_watch"
     },
     {
       "relation": "contains",
@@ -406185,9 +406522,9 @@
       "source_location": "L680",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_for_graphify_query",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_for_graphify_query"
     },
     {
       "relation": "contains",
@@ -406196,9 +406533,9 @@
       "source_location": "L698",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_for_the_commit_hook_and_native_claude_md_integration",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_for_the_commit_hook_and_native_claude_md_integration"
     },
     {
       "relation": "contains",
@@ -406207,9 +406544,9 @@
       "source_location": "L674",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_for_update_and_cluster_only",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_for_update_and_cluster_only"
     },
     {
       "relation": "contains",
@@ -406218,9 +406555,9 @@
       "source_location": "L704",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_honesty_rules",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_honesty_rules"
     },
     {
       "relation": "contains",
@@ -406229,9 +406566,9 @@
       "source_location": "L656",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_interpreter_guard_for_subcommands",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_interpreter_guard_for_subcommands"
     },
     {
       "relation": "contains",
@@ -406240,9 +406577,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_usage",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_usage"
     },
     {
       "relation": "contains",
@@ -406251,9 +406588,9 @@
       "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_what_graphify_is_for",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_what_graphify_is_for"
     },
     {
       "relation": "contains",
@@ -406262,9 +406599,9 @@
       "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_graphify",
-      "target": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_what_you_must_do_when_invoked"
     },
     {
       "relation": "contains",
@@ -406273,9 +406610,9 @@
       "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths"
     },
     {
       "relation": "contains",
@@ -406284,9 +406621,9 @@
       "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_1_ensure_graphify_is_installed",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_1_ensure_graphify_is_installed"
     },
     {
       "relation": "contains",
@@ -406295,9 +406632,9 @@
       "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_2_5_video_and_audio_only_if_video_files_detected",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_2_5_video_and_audio_only_if_video_files_detected"
     },
     {
       "relation": "contains",
@@ -406306,9 +406643,9 @@
       "source_location": "L107",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_2_detect_files",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_2_detect_files"
     },
     {
       "relation": "contains",
@@ -406317,9 +406654,9 @@
       "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships"
     },
     {
       "relation": "contains",
@@ -406328,9 +406665,9 @@
       "source_location": "L453",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_4_5_graph_health_check_read_only_integrity_gate",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_4_5_graph_health_check_read_only_integrity_gate"
     },
     {
       "relation": "contains",
@@ -406339,9 +406676,9 @@
       "source_location": "L390",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_4_build_graph_cluster_analyze_generate_outputs",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_4_build_graph_cluster_analyze_generate_outputs"
     },
     {
       "relation": "contains",
@@ -406350,9 +406687,9 @@
       "source_location": "L479",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_5_label_communities",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_5_label_communities"
     },
     {
       "relation": "contains",
@@ -406361,9 +406698,9 @@
       "source_location": "L528",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_6_generate_obsidian_vault_opt_in_html",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_6_generate_obsidian_vault_opt_in_html"
     },
     {
       "relation": "contains",
@@ -406372,9 +406709,9 @@
       "source_location": "L554",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_step_9_save_manifest_update_cost_tracker_clean_up_and_report",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_step_9_save_manifest_update_cost_tracker_clean_up_and_report"
     },
     {
       "relation": "contains",
@@ -406383,9 +406720,9 @@
       "source_location": "L548",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_what_you_must_do_when_invoked",
-      "target": "claude_skills_graphify_skill_steps_6b_8_wiki_neo4j_falkordb_svg_graphml_mcp_benchmark_only_on_their_flags",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_steps_6b_8_wiki_neo4j_falkordb_svg_graphml_mcp_benchmark_only_on_their_flags"
     },
     {
       "relation": "contains",
@@ -406394,9 +406731,9 @@
       "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships",
-      "target": "claude_skills_graphify_skill_part_a_structural_extraction_for_code_files",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_part_a_structural_extraction_for_code_files"
     },
     {
       "relation": "contains",
@@ -406405,9 +406742,9 @@
       "source_location": "L193",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships",
-      "target": "claude_skills_graphify_skill_part_b_semantic_extraction_parallel_subagents",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_part_b_semantic_extraction_parallel_subagents"
     },
     {
       "relation": "contains",
@@ -406416,9 +406753,9 @@
       "source_location": "L356",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_skill_step_3_extract_entities_and_relationships",
-      "target": "claude_skills_graphify_skill_part_c_merge_ast_semantic_into_final_extraction",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_skill_part_c_merge_ast_semantic_into_final_extraction"
     },
     {
       "relation": "contains",
@@ -406427,9 +406764,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_add_watch",
-      "target": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder"
     },
     {
       "relation": "contains",
@@ -406438,9 +406775,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder",
-      "target": "claude_skills_graphify_references_add_watch_for_graphify_add",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_add_watch_for_graphify_add"
     },
     {
       "relation": "contains",
@@ -406449,9 +406786,9 @@
       "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_add_watch_graphify_reference_add_a_url_and_watch_a_folder",
-      "target": "claude_skills_graphify_references_add_watch_for_watch",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_add_watch_for_watch"
     },
     {
       "relation": "contains",
@@ -406460,9 +406797,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports",
-      "target": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark"
     },
     {
       "relation": "contains",
@@ -406471,9 +406808,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_6b_wiki_only_if_wiki_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_6b_wiki_only_if_wiki_flag"
     },
     {
       "relation": "contains",
@@ -406482,9 +406819,9 @@
       "source_location": "L15",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_7_neo4j_export_only_if_neo4j_or_neo4j_push_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_7_neo4j_export_only_if_neo4j_or_neo4j_push_flag"
     },
     {
       "relation": "contains",
@@ -406493,9 +406830,9 @@
       "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_7a_falkordb_export_only_if_falkordb_or_falkordb_push_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_7a_falkordb_export_only_if_falkordb_or_falkordb_push_flag"
     },
     {
       "relation": "contains",
@@ -406504,9 +406841,9 @@
       "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_7b_svg_export_only_if_svg_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_7b_svg_export_only_if_svg_flag"
     },
     {
       "relation": "contains",
@@ -406515,9 +406852,9 @@
       "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_7c_graphml_export_only_if_graphml_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_7c_graphml_export_only_if_graphml_flag"
     },
     {
       "relation": "contains",
@@ -406526,9 +406863,9 @@
       "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_7d_mcp_server_only_if_mcp_flag",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_7d_mcp_server_only_if_mcp_flag"
     },
     {
       "relation": "contains",
@@ -406537,9 +406874,9 @@
       "source_location": "L79",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_exports_graphify_reference_extra_exports_and_benchmark",
-      "target": "claude_skills_graphify_references_exports_step_8_token_reduction_benchmark_only_if_total_words_5000",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_exports_step_8_token_reduction_benchmark_only_if_total_words_5000"
     },
     {
       "relation": "contains",
@@ -406548,9 +406885,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_extraction_spec",
-      "target": "claude_skills_graphify_references_extraction_spec_graphify_reference_extraction_subagent_prompt",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_extraction_spec_graphify_reference_extraction_subagent_prompt"
     },
     {
       "relation": "contains",
@@ -406559,9 +406896,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_github_and_merge",
-      "target": "claude_skills_graphify_references_github_and_merge_graphify_reference_github_clone_and_cross_repo_merge",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_github_and_merge_graphify_reference_github_clone_and_cross_repo_merge"
     },
     {
       "relation": "contains",
@@ -406570,9 +406907,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_github_and_merge_graphify_reference_github_clone_and_cross_repo_merge",
-      "target": "claude_skills_graphify_references_github_and_merge_step_0_clone_github_repo_s_only_if_a_github_url_was_given",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_github_and_merge_step_0_clone_github_repo_s_only_if_a_github_url_was_given"
     },
     {
       "relation": "contains",
@@ -406581,9 +406918,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_hooks",
-      "target": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration"
     },
     {
       "relation": "contains",
@@ -406592,9 +406929,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration",
-      "target": "claude_skills_graphify_references_hooks_for_git_commit_hook",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_hooks_for_git_commit_hook"
     },
     {
       "relation": "contains",
@@ -406603,9 +406940,9 @@
       "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_hooks_graphify_reference_commit_hook_and_native_claude_md_integration",
-      "target": "claude_skills_graphify_references_hooks_for_native_claude_md_integration",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_hooks_for_native_claude_md_integration"
     },
     {
       "relation": "contains",
@@ -406614,9 +406951,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_query",
-      "target": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_query_graphify_reference_query_path_explain"
     },
     {
       "relation": "contains",
@@ -406625,9 +406962,9 @@
       "source_location": "L254",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
-      "target": "claude_skills_graphify_references_query_for_graphify_explain",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_query_for_graphify_explain"
     },
     {
       "relation": "contains",
@@ -406636,9 +406973,9 @@
       "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
-      "target": "claude_skills_graphify_references_query_for_graphify_path",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_query_for_graphify_path"
     },
     {
       "relation": "contains",
@@ -406647,9 +406984,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
-      "target": "claude_skills_graphify_references_query_step_0_constrained_query_expansion_required_before_traversal",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_query_step_0_constrained_query_expansion_required_before_traversal"
     },
     {
       "relation": "contains",
@@ -406658,9 +406995,9 @@
       "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_query_graphify_reference_query_path_explain",
-      "target": "claude_skills_graphify_references_query_step_1_traversal",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_query_step_1_traversal"
     },
     {
       "relation": "contains",
@@ -406669,9 +407006,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_transcribe",
-      "target": "claude_skills_graphify_references_transcribe_graphify_reference_transcribe_video_and_audio",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_transcribe_graphify_reference_transcribe_video_and_audio"
     },
     {
       "relation": "contains",
@@ -406680,9 +407017,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_transcribe_graphify_reference_transcribe_video_and_audio",
-      "target": "claude_skills_graphify_references_transcribe_step_2_5_transcribe_video_audio_files_only_if_video_files_detected",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_transcribe_step_2_5_transcribe_video_audio_files_only_if_video_files_detected"
     },
     {
       "relation": "contains",
@@ -406691,9 +407028,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_update",
-      "target": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only"
     },
     {
       "relation": "contains",
@@ -406702,9 +407039,9 @@
       "source_location": "L202",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only",
-      "target": "claude_skills_graphify_references_update_for_cluster_only",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_update_for_cluster_only"
     },
     {
       "relation": "contains",
@@ -406713,9 +407050,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "claude_skills_graphify_references_update_graphify_reference_incremental_update_and_cluster_only",
-      "target": "claude_skills_graphify_references_update_for_update_incremental_re_extraction",
-      "confidence_score": 1.0
+      "target": "claude_skills_graphify_references_update_for_update_incremental_re_extraction"
     },
     {
       "relation": "contains",
@@ -406724,9 +407061,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context",
-      "target": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "confidence_score": 1.0
+      "target": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host"
     },
     {
       "relation": "contains",
@@ -406735,9 +407072,9 @@
       "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_assumptions",
-      "confidence_score": 1.0
+      "target": "planning_context_assumptions"
     },
     {
       "relation": "contains",
@@ -406746,9 +407083,9 @@
       "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_constraints",
-      "confidence_score": 1.0
+      "target": "planning_context_constraints"
     },
     {
       "relation": "contains",
@@ -406757,9 +407094,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_decisions",
-      "confidence_score": 1.0
+      "target": "planning_context_decisions"
     },
     {
       "relation": "contains",
@@ -406768,9 +407105,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_goal",
-      "confidence_score": 1.0
+      "target": "planning_context_goal"
     },
     {
       "relation": "contains",
@@ -406779,9 +407116,9 @@
       "source_location": "L54",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_non_goals",
-      "confidence_score": 1.0
+      "target": "planning_context_non_goals"
     },
     {
       "relation": "contains",
@@ -406790,9 +407127,9 @@
       "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_observed_state_evidence",
-      "confidence_score": 1.0
+      "target": "planning_context_observed_state_evidence"
     },
     {
       "relation": "contains",
@@ -406801,9 +407138,9 @@
       "source_location": "L60",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "planning_context_context_five_tool_stack_activation_claude_desktop_code_host",
-      "target": "planning_context_planning_handoff",
-      "confidence_score": 1.0
+      "target": "planning_context_planning_handoff"
     },
     {
       "relation": "defines",
@@ -492208,343 +492545,6 @@
       "confidence_score": 1.0,
       "source": "hooks_lib_jq_gate_sb_jq_enforcement_block_sb_initiated",
       "target": "hooks_lib_jq_gate_sb_jq_enforcement_block"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L229",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_cli"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L251",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_no_mcp"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L269",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_block_message_stale_usage"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L155",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_clear_usage_state"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L43",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_available"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L19",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_command"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L28",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_path"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L183",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_command_is_exempt"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L198",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_command_is_usage"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L162",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_edit_path_is_exempt"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L71",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_hooks_present"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L223",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_mcp_server_matches"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L212",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_mcp_tool_is_usage"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L47",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_path"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L62",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L287",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L144",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_record_usage"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L15",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_required"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L123",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_epoch"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L132",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L103",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_state_path"
-    },
-    {
-      "relation": "defines",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L90",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_ttl_seconds"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L1",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate_sh__entry"
-    },
-    {
-      "relation": "imports_from",
-      "confidence": "INFERRED",
-      "source_file": "tests/hooks/test-leanctx-gate.sh",
-      "source_location": "L186",
-      "weight": 1.0,
-      "context": "import",
-      "_origin": "ast",
-      "confidence_score": 0.5,
-      "source": "tests_hooks_test_leanctx_gate",
-      "target": "hooks_lib_leanctx_gate"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L44",
-      "weight": 1.0,
-      "context": "call",
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate_sb_leanctx_cli_available",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_path"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L303",
-      "weight": 1.0,
-      "context": "call",
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_cli_available"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L305",
-      "weight": 1.0,
-      "context": "call",
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_platform_artifact_present"
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "hooks/lib/leanctx-gate.sh",
-      "source_location": "L307",
-      "weight": 1.0,
-      "context": "call",
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "hooks_lib_leanctx_gate_sb_leanctx_prompt_reminder_line",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tests/hooks/test-leanctx-gate.sh",
-      "source_location": "L188",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "tests_hooks_test_leanctx_gate_sh__entry",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_usage_is_fresh"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "tests/hooks/test-leanctx-gate.sh",
-      "source_location": "L187",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "tests_hooks_test_leanctx_gate_sh__entry",
-      "target": "hooks_lib_leanctx_gate_sb_leanctx_record_usage"
     },
     {
       "relation": "defines",
@@ -889642,5 +889642,5 @@
       "source_file": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-kimi-k2.7-code-opencode-go-kimi-k2.7-code.raw.txt"
     }
   ],
-  "built_at_commit": "d2e455871deda1fde0fa71240be732a3ad8fd56d"
+  "built_at_commit": "54ab337b6dfe380844a567526e5db362827bf921"
 }
