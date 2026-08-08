@@ -69,7 +69,15 @@ Markers live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` and 
 
 ### 2. Version Bump
 
-Update `package.json` version field.
+Update `package.json`, then reconcile every release-identity surface before the gate:
+
+- Claude, Cursor, and Codex plugin/marketplace manifests
+- `templates/silver-bullet.config.json.default` and the Codex plugin `config_version`
+- `scripts/lib/agent-plugins-catalog.json`, including the tagged Codex ref
+- the README badge and **Current Release** block
+- the supported release series in root `SECURITY.md`
+
+Run `bash tests/scripts/test-release-version-alignment.sh`; it derives the expected value from `package.json` and fails on drift in any of these surfaces.
 
 ### 3. Changelog
 

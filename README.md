@@ -279,8 +279,8 @@ Run `bash scripts/sb-diagnostics.sh` for host-specific install and hook wiring c
 
 ## Current Release
 
-- Version: `0.48.5`
-- Release: [v0.48.5](https://github.com/alo-exp/silver-bullet/releases/tag/v0.48.5)
+- Version: `0.51.7`
+- Release: [v0.51.7](https://github.com/alo-exp/silver-bullet/releases/tag/v0.51.7)
 - Changelog: [CHANGELOG.md](CHANGELOG.md) · [site/changelog/](https://sb.alolabs.dev/changelog/)
 
 ## License
