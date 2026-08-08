@@ -200,9 +200,17 @@ sb_site_session_mark_regression_pass() {
 
 sb_site_session_run_regression_tests() {
   local repo_root="$1"
-  local log_file rc
-  [[ -n "$repo_root" && -d "$repo_root/tests" ]] || return 1
-  log_file="$(mktemp "${SB_RUNTIME_STATE_DIR:-/tmp}/site-regression.XXXXXX.log" 2>/dev/null)" || return 1
+  local log_file log_base rc
+  [[ -n "$repo_root" && -d "$repo_root/tests" ]] || return 90
+  # BSD/macOS mktemp only randomizes a TRAILING run of X's. A template like
+  # site-regression.XXXXXX.log is taken literally, so the first call creates
+  # that exact filename and every later call fails EEXIST — wedging the gate.
+  # Create with trailing X's, then add the .log suffix.
+  log_base="$(mktemp "${SB_RUNTIME_STATE_DIR:-/tmp}/site-regression.XXXXXX" 2>/dev/null)" || return 91
+  log_file="${log_base}.log"
+  if ! mv "$log_base" "$log_file" 2>/dev/null; then
+    log_file="$log_base"
+  fi
   (
     cd "$repo_root" || exit 1
     bash tests/scripts/test-site-chrome-regression.sh \
