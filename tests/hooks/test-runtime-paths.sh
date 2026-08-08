@@ -20,6 +20,9 @@ for runtime in claude codex cursor; do
 done
 mkdir -p "$TMP_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib"
 cp "$RUNTIME_PATHS" "$TMP_HOME/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib/runtime-paths.sh"
-out=$(env -u SILVER_BULLET_RUNTIME -u SB_RUNTIME_PRESERVE_STATE_DIR -u SB_RUNTIME_STATE_DIR HOME="$TMP_HOME" bash -c 'source "'"$TMP_HOME"'/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib/runtime-paths.sh"; printf "%s|%s" "$SILVER_BULLET_RUNTIME" "$SB_RUNTIME_STATE_DIR"')
+out=$(env -u SILVER_BULLET_RUNTIME -u SB_RUNTIME_PRESERVE_STATE_DIR -u SB_RUNTIME_STATE_DIR \
+  -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE \
+  -u CLAUDE_PLUGIN_ROOT -u CURSOR_PLUGIN_ROOT \
+  HOME="$TMP_HOME" bash -c 'source "'"$TMP_HOME"'/.cursor/plugins/cache/alo-labs/silver-bullet/0.0.0/hooks/lib/runtime-paths.sh"; printf "%s|%s" "$SILVER_BULLET_RUNTIME" "$SB_RUNTIME_STATE_DIR"')
 assert_eq "infers cursor from path" "cursor|${TMP_HOME}/.cursor/.silver-bullet" "$out"
 echo; echo "Passed: $PASS"; echo "Failed: $FAIL"; [[ "$FAIL" -eq 0 ]]

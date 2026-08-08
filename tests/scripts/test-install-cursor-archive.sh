@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fresh install from a git-archive extract (public-release / post-release path).
+# Fresh install from an archive-shaped working-tree extract (public-release / post-release path).
 set -euo pipefail
 
 PASS=0
@@ -17,12 +17,14 @@ export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 
-git -C "$REPO_ROOT" archive HEAD | tar -x -C "$ARCHIVE_ROOT"
+# Use current tracked/untracked working-tree content without .git metadata so
+# pre-commit verification exercises the code under review rather than HEAD.
+rsync -a --exclude='.git/' "$REPO_ROOT/" "$ARCHIVE_ROOT/"
 
 if [[ -f "${ARCHIVE_ROOT}/scripts/generate-cursor-hooks.py" ]]; then
-  pass "git archive contains scripts/generate-cursor-hooks.py"
+  pass "archive-shaped tree contains scripts/generate-cursor-hooks.py"
 else
-  fail "git archive contains scripts/generate-cursor-hooks.py"
+  fail "archive-shaped tree contains scripts/generate-cursor-hooks.py"
 fi
 
 RTK_DISABLED=1 bash "${ARCHIVE_ROOT}/scripts/install-cursor.sh" >/dev/null

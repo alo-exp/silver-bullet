@@ -66,6 +66,12 @@ else
   pass "claude tri-host smoke skipped (CLI unavailable)"
 fi
 
+if bash "${REPO_ROOT}/tests/scripts/test-runtime-mirror-freshness.sh" >/dev/null 2>&1; then
+  pass "tri-host smoke preserves generated runtime mirrors"
+else
+  fail "tri-host smoke preserves generated runtime mirrors"
+fi
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

@@ -583,6 +583,9 @@ PY
 cursor_canonical_physical_path() {
   local path="$1"
   [[ -n "$path" ]] || return 0
+  # Normalize duplicate separators even before the final path is materialized
+  # (for example a git-archive install rooted under $TMPDIR).
+  path="$(printf '%s' "$path" | sed 's#//*#/#g')"
   if [[ -e "$path" || -d "$path" ]]; then
     path="$(cd "$path" 2>/dev/null && pwd -P || printf '%s' "$path")"
   fi

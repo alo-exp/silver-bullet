@@ -67,7 +67,9 @@ sync_codex_cache_package_surface() {
   [[ -n "$package_version" ]] || return 0
 
   mkdir -p "${package_root}/${package_version}"
-  rsync -a --delete "${marketplace_package_root}/" "${package_root}/${package_version}/"
+  # Cache entries must be self-contained even when the local checkout package
+  # uses relative symlinks for its generated source surface.
+  rsync -aL --delete "${marketplace_package_root}/" "${package_root}/${package_version}/"
   regenerate_core_rules_pin "${package_root}/${package_version}/hooks"
   validate_silver_bullet_skill_surface "installed package" "${package_root}/${package_version}"
 
@@ -75,7 +77,7 @@ sync_codex_cache_package_surface() {
   for version_dir in "$package_root"/*; do
     [[ -d "$version_dir" ]] || continue
     [[ "$(basename "$version_dir")" == "current" ]] && continue
-    rsync -a --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
+    rsync -aL --delete "${marketplace_root}/plugins/silver-bullet/" "${version_dir}/"
   done
   shopt -u nullglob
 }
@@ -158,5 +160,4 @@ PY
 
   validate_silver_bullet_skill_surface "installed package alias" "${package_root}/current"
 }
-
 
