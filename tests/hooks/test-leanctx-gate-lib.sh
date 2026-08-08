@@ -80,5 +80,39 @@ sb_leanctx_command_is_usage 'lean-ctx status' "$TMP/.silver-bullet.json" && pass
 sb_leanctx_mcp_tool_is_usage 'lctx_read_ast' && pass "lctx_read_ast is usage" || fail "lctx_read_ast is usage"
 sb_leanctx_mcp_tool_is_usage 'memory_save' && fail "memory_save not leanctx usage" || pass "memory_save not leanctx usage"
 
+# ── sb_leanctx_hooks_present: per-host wiring verification ───────────────────
+# Regression coverage: the case had arms for cursor and codex only, so every
+# other host fell through to an unconditional `return 0` and the hooks-wiring
+# check was a silent no-op. Uses a throwaway HOME — never the real settings.
+HOOKS_HOME="$(mktemp -d)"
+trap 'rm -rf "$MOCK_BIN" "$TEST_HOME" "$TMP" "$HOOKS_HOME"' EXIT
+mkdir -p "${HOOKS_HOME}/.claude"
+
+(
+  export HOME="$HOOKS_HOME"
+  printf '{"hooks":{"PreToolUse":[{"command":"lean-ctx hook"}]}}\n' >"${HOME}/.claude/settings.json"
+  sb_leanctx_hooks_present claude
+) && pass "claude host with lean-ctx in settings.json passes" \
+  || fail "claude host with lean-ctx in settings.json passes"
+
+(
+  export HOME="$HOOKS_HOME"
+  printf '{"hooks":{"PreToolUse":[{"command":"something-else"}]}}\n' >"${HOME}/.claude/settings.json"
+  sb_leanctx_hooks_present claude
+) && fail "claude host without lean-ctx fails" \
+  || pass "claude host without lean-ctx fails"
+
+(
+  export HOME="$HOOKS_HOME"
+  rm -f "${HOME}/.claude/settings.json"
+  sb_leanctx_hooks_present claude
+) && fail "claude host with no settings.json fails" \
+  || pass "claude host with no settings.json fails"
+
+# Genuinely unknown hosts stay intentionally permissive.
+sb_leanctx_hooks_present some-unknown-host \
+  && pass "unknown host remains permissive" \
+  || fail "unknown host remains permissive"
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
