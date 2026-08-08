@@ -54,7 +54,19 @@ assert_pass "live sentinel manifest passes" \
 
 echo "--- generate-sentinel-skills-manifest.sh ---"
 assert_pass "generate manifest succeeds" \
-  bash "$REPO_ROOT/scripts/generate-sentinel-skills-manifest.sh" --release-tag v0.45.0
+  bash "$REPO_ROOT/scripts/generate-sentinel-skills-manifest.sh" \
+    --out-dir "$tmpdir/generated-sentinel-skills" \
+    --release-tag v0.45.0
+
+expected_generated_count="$(find "$REPO_ROOT/skills" -mindepth 2 -maxdepth 2 -name 'SKILL.md' -print | wc -l | tr -d ' ')"
+generated_count="$(jq 'length' "$tmpdir/generated-sentinel-skills/manifest.json")"
+if [[ "$generated_count" -eq "$expected_generated_count" ]]; then
+  echo "PASS: generated manifest matches current skill inventory"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: generated manifest count $generated_count != current inventory $expected_generated_count"
+  FAIL=$((FAIL + 1))
+fi
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

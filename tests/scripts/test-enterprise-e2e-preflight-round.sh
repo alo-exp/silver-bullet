@@ -50,7 +50,9 @@ assert_contains "checkpoint unified table" \
   "${REPO_ROOT}/scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh" \
   "Poll checkpoint"
 
-if bash "${REPO_ROOT}/scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh" 2>/dev/null | grep -q 'Driver PID'; then
+checkpoint_output=""
+if checkpoint_output="$(bash "${REPO_ROOT}/scripts/enterprise-e2e/enterprise-e2e-checkpoint.sh" 2>/dev/null)" \
+  && grep -qF 'Driver PID' <<<"$checkpoint_output"; then
   pass "checkpoint emits markdown block"
 else
   fail "checkpoint emits markdown block"

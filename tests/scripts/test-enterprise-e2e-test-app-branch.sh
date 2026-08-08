@@ -205,7 +205,9 @@ assert_contains "matrix.sh install-version skip" \
 
 DEFAULT_FIXTURE_ROOT="$(cd "${REPO_ROOT}/../.." && pwd)/enterprise-grade-test-app"
 FIXTURE_ROOT="${SB_TEST_ENTERPRISE_APP_ROOT:-$DEFAULT_FIXTURE_ROOT}"
-if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
+if [[ "${SB_TEST_ENTERPRISE_FIXTURE_STATE:-0}" != "1" ]]; then
+  pass "external fixture state checks skipped (set SB_TEST_ENTERPRISE_FIXTURE_STATE=1 to enable)"
+elif [[ -d "${FIXTURE_ROOT}/.git" ]]; then
   if git -C "$FIXTURE_ROOT" show-ref --verify --quiet "refs/heads/enterprise-e2e/round-9-codex" 2>/dev/null; then
     pass "fixture repo has enterprise-e2e/round-9-codex branch"
   else
@@ -226,7 +228,7 @@ if [[ -d "${FIXTURE_ROOT}/.git" ]]; then
     fi
   fi
 else
-  pass "fixture repo check skipped (no git at $FIXTURE_ROOT)"
+  fail "external fixture state check requested but no git repository exists at $FIXTURE_ROOT"
 fi
 
 echo ""

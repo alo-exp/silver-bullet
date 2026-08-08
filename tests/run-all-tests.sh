@@ -30,6 +30,7 @@ SUITE_FAIL=0
 run_suite() {
   local label="$1" dir="$2"
   local suite_pass=0 suite_fail=0 file_count=0
+  local -a failed_files=()
 
   printf '\n========================================\n'
   printf '  %s\n' "$label"
@@ -58,11 +59,20 @@ run_suite() {
     suite_fail=$((suite_fail + f))
 
     if [[ $exit_code -ne 0 ]]; then
+      # Some contract tests fail before printing a Results line. Count the
+      # non-zero file once when its own reported failure count is zero.
+      if [[ $f -eq 0 ]]; then
+        suite_fail=$((suite_fail + 1))
+      fi
+      failed_files+=("$basename")
       printf '  *** SUITE FAILED (exit %d) ***\n\n' "$exit_code"
     fi
   done
 
   printf '\n%s: %d files, %d passed, %d failed\n' "$label" "$file_count" "$suite_pass" "$suite_fail"
+  if [[ ${#failed_files[@]} -gt 0 ]]; then
+    printf 'Failed test files: %s\n' "${failed_files[*]}"
+  fi
   TOTAL_PASS=$((TOTAL_PASS + suite_pass))
   TOTAL_FAIL=$((TOTAL_FAIL + suite_fail))
   if [[ $suite_fail -eq 0 ]]; then

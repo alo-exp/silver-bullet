@@ -4,7 +4,8 @@
 # Usage:
 #   scripts/validate-sentinel-skills-manifest.sh [--manifest PATH] [--expected-count N] [--release-tag TAG]
 #
-# Exit 0 when all rows are status=clean, findings_open=0, and count matches expected (default 85).
+# Exit 0 when all rows are status=clean, findings_open=0, and count matches the
+# frozen v0.45.0 audit inventory (default 96).
 
 set -euo pipefail
 

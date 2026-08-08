@@ -33,18 +33,20 @@ fi
 update_version_file() {
   local manifest="$1"
   local current_version
+  local current_config_version
   current_version=$(jq -r '.version' "$manifest")
+  current_config_version=$(jq -r '.config_version' "$manifest")
 
-  if [[ "$current_version" == "$plugin_v" ]]; then
-    echo "✓ Versions already in sync: $plugin_v ($manifest)"
+  if [[ "$current_version" == "$plugin_v" && "$current_config_version" == "$plugin_v" ]]; then
+    echo "✓ Version and config_version already in sync: $plugin_v ($manifest)"
     return 0
   fi
 
   tmp=$(mktemp)
-  jq --arg v "$plugin_v" '.version = $v' "$manifest" > "$tmp"
+  jq --arg v "$plugin_v" '.version = $v | .config_version = $v' "$manifest" > "$tmp"
   mv "$tmp" "$manifest"
   rm -f -- "$tmp"
-  echo "✓ Updated version: $current_version → $plugin_v ($manifest)"
+  echo "✓ Updated version/config_version: $current_version/$current_config_version → $plugin_v ($manifest)"
 }
 
 sync_codex_marketplace_manifest() {
