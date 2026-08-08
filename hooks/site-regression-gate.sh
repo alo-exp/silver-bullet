@@ -94,11 +94,24 @@ if sb_site_session_regression_current; then
 fi
 
 log_file=""
-if log_file="$(sb_site_session_run_regression_tests "$repo_root" 2>/dev/null)"; then
+rc=0
+# NOTE: this script runs under `set -e` with `trap 'exit 0' ERR`. A bare
+# `log_file="$(...)"` on its own line would trip errexit on a non-zero return,
+# fire the ERR trap, and exit 0 — silently failing the gate OPEN. The `|| rc=$?`
+# form keeps the assignment in a condition context so the status is captured.
+log_file="$(sb_site_session_run_regression_tests "$repo_root" 2>/dev/null)" || rc=$?
+if [[ $rc -eq 0 ]]; then
   exit 0
 fi
 
-reason="Site session regression gate — run site freshness + chrome regression before push/Stop.
+if [[ $rc -eq 90 ]]; then
+  reason="Site session regression gate — cannot run: no tests directory at ${repo_root}/tests.
+This is a gate setup problem, not a test failure."
+elif [[ $rc -eq 91 ]]; then
+  reason="Site session regression gate — cannot run: failed to create a log file under ${SB_RUNTIME_STATE_DIR:-/tmp}.
+This is a gate setup problem, not a test failure. Check that the directory exists and is writable, and remove any stale 'site-regression.XXXXXX.log' literal file left by older SB versions."
+else
+  reason="Site session regression gate — run site freshness + chrome regression before push/Stop.
 
 Required (all must pass):
   bash tests/scripts/test-site-chrome-regression.sh
@@ -106,4 +119,5 @@ Required (all must pass):
   bash tests/scripts/test-site-content-freshness.sh
 
 Fix failures then retry. Log: ${log_file:-unknown}"
+fi
 emit_block "$reason"
