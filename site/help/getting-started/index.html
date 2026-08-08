@@ -187,7 +187,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="what-is-sb">What Silver Bullet Does</h2>
       <p>Silver Bullet is an <strong>Agentic Process Orchestrator (APO)</strong> plugin for Claude Code, Codex, and Cursor. It owns the default software-engineering and DevOps lifecycle: routing, planning, execution, verification, review, ship, and release — enforced by hooks and recorded in catalog-backed workflow state.</p>
-      <p>The process model is defined in <code>docs/apo-catalog.json</code>: <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. Silver Bullet ships 27 canonical <code>AF-*</code> atomic flows, 22 <code>WF-*</code> workflows, and 85 flow steps. Legacy <code>FLOW 1–18</code> names remain migration aliases only; new work should use catalog IDs.</p>
+      <p>The process model is defined in <code>docs/apo-catalog.json</code>: <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. Silver Bullet ships 29 canonical <code>AF-*</code> atomic flows, 26 <code>WF-*</code> workflows (22 public task-shaped workflows plus 4 internal reusable components), and 118 flow steps. Legacy <code>FLOW 1–18</code> names remain migration aliases only; new work should use catalog IDs.</p>
 
       <div class="prereq-grid" style="grid-template-columns:1fr 1fr">
         <div class="prereq-card">
@@ -261,7 +261,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>Adoption path (all hosts)</h3>
       <ol>
         <li>Install the Silver Bullet package from your host marketplace (see per-host steps below).</li>
-        <li>Run <code>bash scripts/sb-bootstrap.sh</code> (checkout) or <code>bash scripts/sb-diagnostics.sh</code> to confirm hook delivery.</li>
+        <li>Run <code>/silver:doctor</code> after marketplace install to confirm host activation. Repository contributors can use the checkout-only diagnostic scripts described below.</li>
         <li>Open your project and run <code>/silver:init</code> — this stamps <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, docs scaffold, and activates enforcement.</li>
         <li>Start work with <code>/silver &lt;your request&gt;</code> so SB classifies intent and composes the smallest safe <code>WF-*</code> workflow.</li>
       </ol>
@@ -269,19 +269,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <h3>First-time orientation</h3>
       <p>From a Silver Bullet checkout or after cloning the repo for contributor setup, run the onboarding probe before marketplace install:</p>
       <div class="code-block"><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
-      <p>After install on any host, confirm hook delivery and capability tier:</p>
+      <p>From that repository checkout, confirm hook delivery and capability tier:</p>
       <div class="code-block"><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
       <p>After <code>/silver:update</code> or when hooks seem inactive, run the host-aware activation audit:</p>
       <div class="code-block"><span class="cmd">/silver:doctor</span></div>
 
       <h3>Cursor Plugin</h3>
       <p>For normal Cursor use, add the public <code>alo-labs/agent-plugins</code> marketplace in Cursor and install <code>silver-bullet</code> from <code>alo-labs-cursor</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>
-      <div class="code-label">Cursor (public marketplace)</div>
+      <div class="code-label">Repository checkout installer targeting the public release</div>
       <div class="code-block"><span class="cmd">bash scripts/install-cursor.sh --public-release</span></div>
       <p>When developing Silver Bullet from a repository checkout, sync the plugin tree locally instead:</p>
 <div class="code-label">Development checkout only</div>
 <div class="code-block"><span class="cmd">bash scripts/install-cursor.sh</span></div>
-      <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Run <code>bash scripts/sb-diagnostics.sh</code> to confirm hook delivery.</p>
+      <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Marketplace users run <code>/silver:doctor</code> to confirm activation; repository contributors may also run checkout-only <code>bash scripts/sb-diagnostics.sh</code>.</p>
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager or the public <code>alo-labs/agent-plugins</code> marketplace (<code>alo-labs</code> catalog).</p>
@@ -318,7 +318,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB workflow path for the work.</div>
       </div>
 
-      <h3 id="hook-activation">Hook activation (v0.48.3)</h3>
+      <h3 id="hook-activation">Hook activation (v0.51.7)</h3>
       <p>Enforcement hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Workspaces without <code>/silver:init</code> receive no hook enforcement — this prevents accidental gates on unrelated repositories.</p>
 
       <h3 id="recommended-tools">Recommended tools (opt-in)</h3>
