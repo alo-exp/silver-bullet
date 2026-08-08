@@ -41,6 +41,8 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | Live enterprise E2E | Kay hook-failure diagnostic on `enterprise-grade-test-app`; Claude supervised 22-row matrix is the canonical full-surface gate | Kay: `tests/e2e-live/run-e2e-live-tests.sh`; Claude: `.planning/enterprise-e2e/` |
 | JSON config correctness | required_deploy + all_tracked exact-match assertions | ✅ CI enforced (v0.26.0) |
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
+| Release identity parity | package, plugin, marketplace, config, catalog, README, and security support series | **Covered** by `tests/scripts/test-release-version-alignment.sh` |
+| Documentation governance | unique live-guidance inventory, exact task-checklist coverage, historical-evidence exclusion | **Covered** by `tests/docs/test-documentation-scheme.sh` |
 
 ## Silver Bullet Test Execution Gate
 
@@ -49,6 +51,10 @@ Silver Bullet treats test execution as a freshness-gated step, not just a planni
 - Run `/verify-tests` after the last source change and before `gh pr create`, deploy, or `gh release create`
 - The skill executes `.silver-bullet.json` `verify_commands` when present, otherwise it falls back to stack defaults such as `tests/run-all-tests.sh`, `npm test`, `pytest`, `cargo test`, or `go test ./...`
 - `tests/run-all-tests.sh` invokes each `test-*.sh` with `</dev/null` so hooks that read stdin do not hang when the runner captures output via command substitution (fixed v0.39.2 — without the redirect, `input=$(cat)` in hook tests blocks the full 3000+ test suite indefinitely in agent shells)
+- The aggregate runner counts a non-zero test-file exit even when that file terminates before printing a `Results:` summary; suite totals cannot silently report green after an early failure.
+- Default structural tests are hermetic. Assertions against the live sibling enterprise fixture are opt-in with `SB_TEST_ENTERPRISE_FIXTURE_STATE=1`; live/certification gates own external branch state.
+- Tri-host install smoke must leave generated runtime mirrors unchanged. Installer caches dereference package symlinks outside the source checkout.
+- Manifest-generator tests write to temporary output directories; frozen historical audit manifests are validation inputs, not mutable test fixtures.
 - On success, the skill writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state`
 - `completion-audit.sh` blocks final delivery if the marker is missing after `/verify-tests` was recorded, and `dev-cycle-check.sh` invalidates the marker whenever source edits land
 
@@ -150,19 +156,9 @@ The skill scenario coverage test validates that each SB-owned source skill has a
 | **Skill scenario tests** | Each skill has documented trigger + workflow | `tests/skill-scenarios/*.md` | <5s |
 | **Coverage guard** | Every source skill has a scenario fixture | `tests/scripts/test-sb-skill-scenario-coverage.sh` | <5s |
 
-### Coverage Goals
+### Coverage Contract
 
-| Skill Category | Skills | Coverage |
-|---------------|--------|----------|
-| Silver Core Workflow | 10 | 100% (scenario documented) |
-| Silver Extended | 11 | 100% |
-| GSD Workflow | 12 | 100% |
-| Quality & Methodology | 10 | 100% |
-| Review & Assessment | 11 | 100% |
-| Planning & Documentation | 5 | 100% |
-| DevOps & Routing | 2 | 100% |
-
-**Total:** one scenario fixture per source skill.
+Every source `skills/*/SKILL.md` must have a matching scenario fixture. The scenario directory may also contain capability-level fixtures, so its raw file count is not a canonical skill count. `tests/scripts/test-sb-skill-scenario-coverage.sh` computes coverage from the current source tree and fails on a missing source-skill scenario.
 
 ### Running the Harness
 

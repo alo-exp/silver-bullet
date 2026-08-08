@@ -1,4 +1,6 @@
 # Silver Bullet Website Content Audit
+
+> **Historical audit — completed and superseded.** This report assessed the v0.13.0 site and its recommendations are not current requirements. Use [`README.md`](../../README.md), [`docs/PRD-Overview.md`](../PRD-Overview.md), and the current Help Center for live product guidance. The body below is preserved as point-in-time evidence.
 ## Gap Analysis: Site vs. Current Plugin (v0.13.0)
 
 **Audit Date:** April 8, 2026  

@@ -24,7 +24,7 @@ Write docs so the intended reader is obvious.
 |----------|-------------------|------------|
 | **New contributor** | What is this project? How do I run it safely? | `README.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md` |
 | **Active implementer** | What changed? Where are the gotchas? | `docs/CHANGELOG.md`, `docs/knowledge/YYYY-MM.md` |
-| **Reviewer / release operator** | Is this ready to ship? What is the risk? | `docs/TESTING.md`, `docs/CICD.md`, `docs/DEPLOYMENT.md` |
+| **Reviewer / release operator** | Is this ready to ship? What is the risk? | `docs/TESTING.md`, `docs/RELEASE.md`, `docs/SECURITY.md` |
 | **Maintainer** | What is durable policy vs temporary plan? | `docs/doc-scheme.md`, `docs/knowledge/`, `docs/ADR/` |
 | **External stakeholder** | What shipped and why? | `README.md`, `docs/CHANGELOG.md` |
 | **Plugin author** *(multi-host plugin-dev projects only)* | How do I extend commands/skills/agents safely? | `docs/specs/`, plugin runtime docs, relevant ADRs |
@@ -39,7 +39,7 @@ Each page should have one **primary** purpose.
 | Type | Primary question | Typical style | Typical locations |
 |------|------------------|---------------|-------------------|
 | **Tutorial** | "Teach me from zero" | Sequential, example-driven | `README.md`, onboarding docs |
-| **How-to** | "Help me do one task now" | Step-by-step procedure | `docs/DEPLOYMENT.md`, runbooks |
+| **How-to** | "Help me do one task now" | Step-by-step procedure | `docs/RELEASE.md`, workflow runbooks |
 | **Reference** | "What is the exact behavior?" | Exhaustive and factual | `docs/API.md`, command/options tables |
 | **Explanation** | "Why is it designed this way?" | Conceptual, tradeoffs | `docs/ARCHITECTURE.md`, ADRs |
 
@@ -61,7 +61,7 @@ Use this map when adding or reorganizing docs.
 | Run tests or debug regressions | `docs/TESTING.md`, `docs/knowledge/YYYY-MM.md` |
 | Understand what changed in a task | `docs/CHANGELOG.md` |
 | Find historical decisions and rationale | `docs/ADR/`, `docs/knowledge/YYYY-MM.md` |
-| Ship/release safely | `docs/CICD.md`, `docs/DEPLOYMENT.md`, release checklist docs |
+| Ship/release safely | `docs/RELEASE.md`, `docs/workflows/devops-cycle.md` |
 | Extend plugin behavior *(plugin-dev only)* | `docs/specs/`, plugin extension docs |
 | Check runtime parity *(plugin-dev only)* | `docs/RUNTIME-COMPATIBILITY.md` |
 
@@ -158,6 +158,19 @@ Every document has a growth limit:
 | **Milestone completion** | Planning artifacts archived; tables trimmed |
 | **Release** | `README.md`, root `CHANGELOG.md` |
 
+## Governed Guidance vs. Historical Evidence
+
+The repository intentionally contains more documents than the live governance set.
+
+| Class | Examples | Contract treatment |
+|-------|----------|--------------------|
+| **Current guidance** | Architecture, enforcement, release, testing, runtime, workflow, and integration references | Listed in `doc-scheme.json` `required_docs`; reviewed for every non-trivial task |
+| **Generated current views** | Catalog derivatives and composition matrices | Listed in `required_docs`; regenerate from their authority rather than hand-editing |
+| **Historical evidence** | `audits/`, `archive/`, `sessions/`, `specs/`, completed plans, research outputs, forensics | Preserved and discoverable, but excluded from `required_docs` unless explicitly promoted |
+| **Superseded analysis** | Point-in-time internal comparisons and completed audits | Keep the original body and add a clear historical header plus replacement links |
+
+`required_docs` is therefore an explicit inventory of live guidance, not a recursive inventory of every file under `docs/`. This keeps task checklists meaningful while preserving the evidence trail.
+
 ## Enforced Task Checklist
 
 Runtime source of truth is `docs/doc-scheme.json`; this file (`docs/doc-scheme.md`) is the human policy companion.
@@ -201,7 +214,7 @@ When a brownfield project switches from a pre-existing user doc structure to SB 
 | `README.md`, `ARCHITECTURE.md`, `TESTING.md` | Current maintainer or phase owner | At every release |
 | `CHANGELOG.md` | Task owner | Every task |
 | `knowledge/YYYY-MM.md`, `learnings/YYYY-MM.md` | Task owner | Every task + month-end cleanup |
-| `CICD.md`, `DEPLOYMENT.md`, `SECURITY.md` | Release/operator owner | Every release touching ops |
+| `RELEASE.md`, `SECURITY.md`, deployment runbooks | Release/operator owner | Every release touching ops |
 | `RUNTIME-COMPATIBILITY.md` *(plugin-dev only)* | Runtime owner | Every runtime-impacting change |
 
 ### Staleness and contradiction policy

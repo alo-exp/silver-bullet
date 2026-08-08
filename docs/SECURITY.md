@@ -1,50 +1,44 @@
 # Security Posture
 
-**Last updated:** 2026-04-13
-**Methodology:** SENTINEL adversarial security audit (4-stage pre-release gate)
+**Last updated:** 2026-08-08
+
+**Current release line:** v0.51.x
+
+**Methodology:** release security gates, targeted SENTINEL skill audits, and regression tests
 
 ## Current Posture
 
-Silver Bullet has passed 5 SENTINEL audit cycles across v0.7.0, v0.8.0, and v0.15.0 releases. All Critical and High findings have been remediated. The audit is mandatory — Stage 4 of the pre-release quality gate blocks releases until two consecutive clean passes.
+Silver Bullet is a local, flat-file process orchestrator. It has no server, database, telemetry pipeline, or required third-party extension plugin. Its principal security boundary is the combination of host hook enforcement, repository policy, validated configuration, and evidence-backed delivery gates described in [`docs/ENFORCEMENT.md`](ENFORCEMENT.md).
+
+Security review is part of the canonical final-delivery chain. A historical audit proves only the version and surface named by that report; it is not treated as evidence that later code is automatically covered.
 
 ### Threat Model Summary
 
-| Threat | Mitigation | Layer |
-|--------|-----------|-------|
-| Prompt injection via CLAUDE.md | Hook scripts fire on every tool call — instructions can't override hooks | Hooks |
-| Skill skip (bypass enforcement) | `completion-audit.sh` blocks git operations if required skills missing from state | Hook gate |
-| State file tampering | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` is append-only; session-start clears stale markers | State mgmt |
-| Hook bypass via direct file edit | `dev-cycle-check.sh` blocks Edit/Write/Bash if planning phase incomplete | Pre-tool gate |
-| Trivial-mode abuse | Trivial flag requires explicit user confirmation; auto-cleared on session start | UX gate |
-| Cross-plugin conflict | SB never modifies third-party plugin files; additive enforcement only | Design principle |
-| Stale quality gate markers | Session-start hook clears `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` | Session lifecycle |
+| Threat | Current mitigation | Layer |
+|--------|--------------------|-------|
+| Instruction or prompt injection | Security-sensitive behavior is enforced by executable hooks and validated state, not by prose alone | Hooks + validation |
+| Required-flow or skill bypass | Workflow guards, completion audit, and stop checks compare selected requirements with fresh completion markers | Delivery gates |
+| Runtime-state tampering | State-adjacent writes are guarded; session startup reconciles or clears ephemeral markers | State management |
+| Direct source or planning edits | Planning-floor and planning-file guards block mutations that bypass the selected workflow | Pre-tool gates |
+| Unsafe configuration values | Hook helpers validate paths, enums, and command-sensitive values before use | Input validation |
+| Optional-plugin scope expansion | Optional extensions are detected and invoked only at explicit workflow boundaries | Plugin boundary |
+| Stale evidence reuse | Session-scoped timestamps, receipts, and freshness checks reject old gate evidence | Evidence lifecycle |
+| Host capability gaps | Runtime tiers document which controls are hard blocks versus advisory guidance | Runtime compatibility |
 
-### Hardening History
+## Audit Coverage
 
-| Version | Key Changes |
-|---------|-------------|
-| v0.7.0 | Initial 7-layer enforcement, SENTINEL P-1 through P-7 |
-| v0.8.0 | Skill enforcement expansion (TDD, tech-debt promoted to required_deploy) |
-| v0.8.0-pass2 | Forensics skill hardening, bypass detection |
-| v0.15.0 | Artifact reviewer 2-pass framework, cross-artifact consistency |
-| v0.16.0 | Configurable review depth, review analytics |
+The repository preserves consolidated historical audits in [`docs/audits/`](audits/) and targeted current-surface audits in [`docs/audits/sentinel-skills/`](audits/sentinel-skills/). The root [`SENTINEL-audit-silver-bullet-v0.15.1.md`](../SENTINEL-audit-silver-bullet-v0.15.1.md) is the latest consolidated release-wide report currently preserved; later coverage is intentionally described as targeted rather than misrepresented as a full-tree audit.
 
-## Audit Archive
+Targeted reports currently cover high-risk orchestration and release surfaces including agent delegation, release creation, diagnostics, multi-AI execution, review escalation, and triage. See [`docs/audits/sentinel-skills/MANIFEST.md`](audits/sentinel-skills/MANIFEST.md) for the inventory.
 
-Full audit reports are preserved in `docs/audits/`:
+## Security Boundaries
 
-| File | Scope |
-|------|-------|
-| `SENTINEL-audit-silver-bullet.md` | Original full audit (v0.7.0 baseline) |
-| `SENTINEL-audit-silver-bullet-v0.7.0.md` | v0.7.0 release audit |
-| `SENTINEL-audit-silver-bullet-v0.8.0.md` | v0.8.0 release audit |
-| `SENTINEL-audit-silver-bullet-v0.8.0-pass2.md` | v0.8.0 second pass |
-| `SENTINEL-audit-forensics.md` | Forensics skill deep audit |
-| `SENTINEL-audit-forensics-r2.md` | Forensics round 2 |
-| `SENTINEL-audit-forensics-r3.md` | Forensics round 3 |
-| `sentinel-audit-report.md` | v0.15.0 audit |
-| `sentinel-audit-report-pass2.md` | v0.15.0 second pass |
+- Project configuration is data, not trusted shell code.
+- Optional extension plugins are not dependencies and remain owned by their publishers.
+- Host-runtime vulnerabilities are outside this repository's disclosure scope.
+- Historical audits, forensics, and security plans are immutable evidence, not live operational instructions.
+- The public reporting policy and supported release line live in [`SECURITY.md`](../SECURITY.md).
 
-## Scalability
+## Maintenance
 
-This document is a **snapshot** — rewritten each release with current posture. Historical audits live in `docs/audits/` (one file per audit, never modified after creation). Cap: max 20 audit files; oldest removed when exceeded (findings are in git history).
+Rewrite this posture when the release line, enforcement architecture, trust boundary, or audit coverage changes. Preserve historical reports under `docs/audits/`; do not rewrite them to match current behavior.
