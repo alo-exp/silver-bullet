@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="shortcut icon" href="../favicon.ico">
 <title>Silver Bullet Help Center</title>
-<meta name="description" content="Silver Bullet v0.51.7 Help Center — APO catalog (docs/apo-catalog.json), Process → Workflow → Atomic Flow → Flow Step, 27 AF-* flows, 22 workflows, hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
+  <meta name="description" content="Silver Bullet v0.51.7 Help Center — APO catalog (docs/apo-catalog.json), Process → Workflow → Atomic Flow → Flow Step, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 118 flow steps, and hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
 <meta property="og:title" content="Silver Bullet Help Center — Composable Atomic Flows">
 <meta property="og:description" content="Docs for Silver Bullet v0.51.7: APO catalog-backed AF-* atomic flows, WF-* workflows, V-loop evidence, hook-enforced delivery gates, and spec-to-release traceability.">
 <meta property="og:type" content="website">
@@ -170,6 +170,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <a href="concepts/cost-optimization.html" class="quick-link"><span class="ql-icon"><i data-lucide="cpu"></i></span> Operational Efficiency</a>
       <a href="concepts/autonomous-enterprise-status.html" class="quick-link"><span class="ql-icon"><i data-lucide="shield-check"></i></span> Enterprise Status</a>
       <a href="concepts/orchestrator-mode.html" class="quick-link"><span class="ql-icon"><i data-lucide="git-branch"></i></span> Orchestrator Mode</a>
+      <a href="workflows/silver-multi-ai-task.html" class="quick-link"><span class="ql-icon"><i data-lucide="split"></i></span> Multi-AI Tasks</a>
+      <a href="workflows/silver-agent-delegate.html" class="quick-link"><span class="ql-icon"><i data-lucide="users"></i></span> Agent Delegation</a>
     </div>
   </div>
 </section>
@@ -249,9 +251,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <p>Authoritative lookup for commands, <code>.silver-bullet.json</code>, the APO catalog, AF-* alias table, and planning artifacts.</p>
         <ul class="card-topics">
           <li>Three-host marketplace install and capability matrix</li>
-          <li>27 AF-* atomic flows with legacy FLOW alias column</li>
-          <li>22 workflows and 85 catalog flow steps</li>
-          <li>Config sample at version 0.48.3 and session log format</li>
+          <li>29 AF-* atomic flows with legacy FLOW alias column</li>
+          <li>26 workflows (22 task-shaped plus 4 reusable components) and 118 catalog flow steps</li>
+          <li>Config sample at version 0.51.7 and session log format</li>
         </ul>
         <div class="card-cta">Open reference →</div>
       </a>
@@ -260,11 +262,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="card-icon"><i data-lucide="git-branch-plus"></i></div>
         <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.51.7</span>
         <h3>Orchestration Workflows</h3>
-        <p>Named WF-* workflows that <code>/silver</code> composes from the APO catalog — feature, UI, DevOps, bugfix, research, release, fast, and spec pipeline routes.</p>
+        <p>All 26 WF-* workflows from the APO catalog — 22 task-shaped routes plus 4 reusable components — including multi-AI research, workflow authoring, and supervised agent delegation.</p>
         <ul class="card-topics">
-          <li>27 AF-* atomic flows; legacy FLOW 1–18 aliases for migration only</li>
-          <li>22 workflows and 85 flow steps in <code>docs/apo-catalog.json</code></li>
+          <li>29 AF-* atomic flows; legacy FLOW 1–18 aliases for migration only</li>
+          <li>26 workflows (22 task-shaped plus 4 reusable components) and 118 flow steps in <code>docs/apo-catalog.json</code></li>
           <li>WF-POST-EXEC-GATES: review, verify, secure, validate, ship</li>
+          <li>AF-MULTI-AI-TASK and AF-AGENT-DELEGATE execution routes</li>
           <li>V-loop rollups and subagent execution contracts</li>
           <li>Hook activation guard + recommended tools opt-in</li>
         </ul>

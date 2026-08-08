@@ -145,18 +145,18 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> classifies intent and routes to a catalog-backed workflow (<code>silver:feature</code>, <code>silver:ui</code>, …) or a dynamic route. Workflows compose canonical atomic flow IDs and reusable workflow components from the APO catalog. Each atomic flow is one subagent work package with its own V-loop; each flow step/skill has a local V-loop that rolls up before the parent flow gate can pass.</p>
-      <p>Active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code> (Flow Log CSV rows). The retired single-file <code>WORKFLOW.md</code> model is legacy only. SB is the lifecycle authority — no external workflow delegation.</p>
+      <p><code>/silver</code> classifies intent and routes to a catalog-backed workflow (<code>silver:feature</code>, <code>silver:ui</code>, …) or a dynamic route. The current catalog contains <strong>26 workflows</strong>: <strong>22 task-shaped workflows</strong> and <strong>4 reusable components</strong>, composed from <strong>29 atomic flows</strong> and <strong>118 flow steps</strong>.</p>
+      <p>Active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code> (Flow Log CSV rows). The retired single-file <code>WORKFLOW.md</code> model is legacy only. SB remains the lifecycle authority; explicit agent delegation runs as the supervised <code>AF-AGENT-DELEGATE</code> flow.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.48.3 runtime order is defined by canonical atomic flow slugs, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
+        <div class="callout-body"><strong>FLOW numbers are migration aliases.</strong> v0.51.7 runtime order is defined by canonical atomic flow slugs, reusable workflow components, composer skills, and <code>hooks/lib/orchestrator-state.sh</code>.</div>
       </div>
 
       <div class="divider"></div>
 
-      <h2 id="composer-workflows">Composer Workflows</h2>
-      <p>Composer workflows are catalog-backed <code>workflow</code> entities. They compose atomic flow slugs and reusable workflow components; conditional insertions are recorded through catalog dynamic rules and composition logs.</p>
+      <h2 id="composer-workflows">Selected Composer Workflows</h2>
+      <p>These representative catalog-backed workflows show the canonical SDLC order. Long compositions are abbreviated here; <code>docs/apo-catalog.json</code> remains authoritative for every optional atom, condition, and reusable component.</p>
 
       <table class="ref-table">
         <thead>
@@ -165,11 +165,15 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <tbody>
           <tr><td>/silver</td><td style="font-family:inherit;font-size:.875rem">freeform intent, unclear route, mixed work</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → feature: <code>BOOTSTRAP</code> → … → <code>EXECUTE</code> → post-exec gates<br><code>ROUTE</code> → fast: <code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
           <tr><td>/silver:deep-research</td><td style="font-family:inherit;font-size:.875rem">compare X vs Y, spike, technology decision</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td>/silver:deep-research-multi-ai</td><td style="font-family:inherit;font-size:.875rem">explicit multi-model research opt-in</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>MULTI_AI_TASK</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td>/silver:multi-ai-task</td><td style="font-family:inherit;font-size:.875rem">bounded multi-model delegation</td><td style="font-family:inherit;font-size:.875rem"><code>MULTI_AI_TASK</code></td></tr>
           <tr><td>/silver:compare</td><td style="font-family:inherit;font-size:.875rem">compare named solutions head-to-head, capability matrix</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → deep-research <code>solution-compare</code></td></tr>
+          <tr><td>/silver:new-workflow</td><td style="font-family:inherit;font-size:.875rem">create, convert, or audit a workflow</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>ORIENT</code> → <code>DECIDE</code> → <code>PLAN</code> → <code>REVIEW_TRIAGE</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>VALIDATE</code> → <code>DOCUMENT</code></td></tr>
           <tr><td>/silver:feature</td><td style="font-family:inherit;font-size:.875rem">add, build, implement, new feature, enhance</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <span style="font-size:.85rem;color:var(--text-dim)">[<code>UI_QUALITY</code> if UI]</span> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> (<code>verify-tests</code>) → <code>SECURE</code> (<code>VALIDATE</code> as needed) → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
           <tr><td>/silver:bugfix</td><td style="font-family:inherit;font-size:.875rem">bug, broken, crash, error, regression</td><td style="font-family:inherit;font-size:.875rem"><span style="font-size:.85rem;color:var(--text-dim)">[</span><code>ORIENT</code><span style="font-size:.85rem;color:var(--text-dim)"> if needed]</span> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> (<code>verify-tests</code>) → <code>SECURE</code> (<code>VALIDATE</code> as needed) → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
           <tr><td>/silver:ui</td><td style="font-family:inherit;font-size:.875rem">UI, frontend, component, screen, design</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>CLARIFY</code> → <code>DECIDE</code> → <code>SPECIFY</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → <code>UI_QUALITY</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> (<code>verify-tests</code>) → <code>SECURE</code> (<code>VALIDATE</code> as needed) → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
           <tr><td>/silver:fast</td><td style="font-family:inherit;font-size:.875rem">trivial, typo, bounded small change</td><td style="font-family:inherit;font-size:.875rem"><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
+          <tr><td>agent delegation</td><td style="font-family:inherit;font-size:.875rem">agent-claude, agent-codex, agent-cursor</td><td style="font-family:inherit;font-size:.875rem"><code>AGENT_DELEGATE</code></td></tr>
           <tr><td>/silver:devops</td><td style="font-family:inherit;font-size:.875rem">infra, CI/CD, terraform, IaC, cloud</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> (<code>verify-tests</code>) → <code>SECURE</code> (<code>VALIDATE</code> as needed) → <code>QUALITY_GATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></td></tr>
           <tr><td>/silver:release</td><td style="font-family:inherit;font-size:.875rem">release, publish, version, tag v</td><td style="font-family:inherit;font-size:.875rem"><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> (<code>verify-tests</code>) → <code>SECURE</code> (<code>VALIDATE</code> as needed) → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td></tr>
         </tbody>
@@ -180,7 +184,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="atomic-flows">Atomic Flow Catalog</h2>
-      <p>The APO catalog defines <strong>27 canonical atomic flows</strong>. Each entry has an input contract, work product, per-flow V-loop, owning skills, tool policy, execution block, dependency/mutation metadata, and exit condition. Full generated contracts: <code>docs/composable-flows-contracts.md</code>.</p>
+      <p>The APO catalog defines <strong>29 canonical atomic flows</strong>. Each entry has an input contract, work product, per-flow V-loop, owning skills, tool policy, execution block, dependency/mutation metadata, and exit condition. Full generated contracts: <code>docs/composable-flows-contracts.md</code>.</p>
 
       <table class="ref-table">
         <thead>
@@ -199,6 +203,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr><td><code>AF-QUALITY-GATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:quality-gates</code>, <code>/devops-quality-gates</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 13</td></tr>
           <tr><td><code>AF-FAST-PATH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:fast</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td><code>AF-EXECUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:execute</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 8</td></tr>
+          <tr><td><code>AF-AGENT-DELEGATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">AGENT_DELEGATE</td><td style="font-family:inherit;font-size:.875rem">supervised external-agent delegation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:agent-claude</code>, <code>/silver:agent-codex</code>, <code>/silver:agent-cursor</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td><code>AF-MULTI-AI-TASK</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">MULTI_AI_TASK</td><td style="font-family:inherit;font-size:.875rem">budgeted multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:multi-ai-task</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td><code>AF-DEBUG</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:debug</code>, <code>/silver:forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
           <tr><td><code>AF-UI-QUALITY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ui-review</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 9</td></tr>
           <tr><td><code>AF-VERIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:verify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 12</td></tr>
@@ -240,8 +246,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.48.3)</h2>
-      <p>As of v0.48.3, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
+      <h2 id="activation">Hook Activation &amp; Recommended Tools (v0.51.7)</h2>
+      <p>As of v0.51.7, hooks engage only when a project is SB-initiated: both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> must exist. Non-initiated workspaces receive no enforcement — run <code>/silver:init</code> first.</p>
       <p><strong>Recommended tools (opt-in):</strong></p>
       <ul>
         <li><strong>Graphify</strong> — <code>recommended_tools.graphify.enabled_by_user</code> in <code>.silver-bullet.json</code>; preferred retrieval before planning, editing, review, and release</li>
@@ -257,6 +263,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="workflow-grid">
         <a href="silver-router.html" class="workflow-card"><h4>/silver</h4><p>Dynamic router — <code>AF-ROUTE</code> composes feature or fast chain (<code>WF-SILVER-ROUTER</code>)</p></a>
         <a href="silver-deep-research.html" class="workflow-card"><h4>/silver:deep-research</h4><p>Evidence-based decisions (<code>CLARIFY</code> → <code>DECIDE</code>)</p></a>
+        <a href="silver-deep-research-multi-ai.html" class="workflow-card"><h4>/silver:deep-research-multi-ai</h4><p>Opt-in parallel research with deterministic synthesis</p></a>
+        <a href="silver-multi-ai-task.html" class="workflow-card"><h4>/silver:multi-ai-task</h4><p>Budgeted multi-model dispatch through <code>AF-MULTI-AI-TASK</code></p></a>
+        <a href="silver-agent-delegate.html" class="workflow-card"><h4>Agent delegation</h4><p>Supervised Claude, Codex, or Cursor execution (<code>WF-AGENT-DELEGATE-ENTRY</code>)</p></a>
         <a href="silver-compare.html" class="workflow-card"><h4>/silver:compare</h4><p>Named solution comparison — SCR, matrix, <code>report.html</code></p></a>
         <a href="silver-clarify.html" class="workflow-card"><h4>/silver:clarify</h4><p>Fuzzy-intent intake and decision-ready brief (<code>CLARIFY</code>)</p></a>
         <a href="silver-spec.html" class="workflow-card"><h4>/silver:spec</h4><p>SPEC.md and REQUIREMENTS.md (<code>SPECIFY</code>)</p></a>
@@ -282,6 +291,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <a href="silver-forensics.html" class="workflow-card"><h4>/silver:forensics</h4><p>Session and post-mortem failure reconstruction (<code>WF-SILVER-FORENSICS</code>)</p></a>
         <a href="silver-process-maintenance.html" class="workflow-card"><h4>/silver:process-maintenance</h4><p>Phase, backlog, and planning state maintenance (<code>WF-PROCESS-MAINTENANCE</code>)</p></a>
       </div>
+      <p><code>WF-VALIDATE-SUBSTEP</code> and <code>WF-POST-EXEC-GATES</code> are internal reusable components, so they intentionally do not have standalone public route pages.</p>
 
       <div class="divider"></div>
 

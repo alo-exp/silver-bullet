@@ -90,6 +90,16 @@ assert_contains "release workflow documents 100% site scan" "100% public site sc
 assert_contains "orchestrator mode documents composer_chain" "composer_chain" "$REPO_ROOT/site/help/concepts/orchestrator-mode.html"
 assert_contains "enterprise status documents tri-criteria harness" "Tri-criteria E2E harness" "$REPO_ROOT/site/help/concepts/autonomous-enterprise-status.html"
 assert_contains "pre-release gate script runs site freshness" "test-site-content-freshness.sh" "$REPO_ROOT/scripts/pre-release-gate.sh"
+assert_contains "Help Center documents current workflow total" "26 workflows" "$REPO_ROOT/site/help/index.html"
+assert_contains "Help Center documents task-shaped and reusable workflow split" "22 task-shaped plus 4 reusable components" "$REPO_ROOT/site/help/index.html"
+assert_contains "Help Center documents current atomic-flow total" "29 AF-\* atomic flows" "$REPO_ROOT/site/help/index.html"
+assert_contains "Help Center documents current flow-step total" "118 flow steps" "$REPO_ROOT/site/help/index.html"
+assert_contains "workflow index documents agent delegation entry" "WF-AGENT-DELEGATE-ENTRY" "$REPO_ROOT/site/help/workflows/index.html"
+assert_contains "workflow index documents multi-AI task flow" "AF-MULTI-AI-TASK" "$REPO_ROOT/site/help/workflows/index.html"
+assert_contains "search index includes agent delegation page" "silver-agent-delegate\.html" "$REPO_ROOT/site/help/search.js"
+assert_not_contains "current Help content omits stale operational catalog versions" "v0\.48\.3" "$REPO_ROOT/site/help"
+
+python3 "$REPO_ROOT/tests/scripts/check-site-help-consistency.py"
 
 bash "$REPO_ROOT/tests/scripts/test-site-chrome-regression.sh"
 

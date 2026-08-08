@@ -134,7 +134,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="overview">What Is Orchestrator Mode?</h2>
       <p>When <code>orchestrator_mode</code> is <code>parent</code> (the only supported value in <code>.silver-bullet.json</code>), Silver Bullet treats the main session as a <strong>scheduler</strong>, not an implementer. The parent reads <code>orchestrator-directive.json</code>, spawns Task workers from <code>.silver-bullet/orchestrator-workers/</code> templates, and advances the flow queue until it is empty.</p>
-      <p>This model is <strong>proven structurally</strong> — hook tests, directive guards, and parent-only tool allowlists enforce it on tier&nbsp;2+ hosts (Cursor Multitask, Claude Code with hooks). As of v0.51.0, the <strong>tri-criteria greenfield harness</strong> (live/cold matrix across Cursor, Claude, and Codex) records <strong>6/6 PASS</strong> for multi-workflow orchestration including <code>composer_chain</code> advance. Full 22-row enterprise matrix parity remains host-dependent — see <a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a>.</p>
+      <p>This model is <strong>proven structurally</strong> — hook tests, directive guards, and parent-only tool allowlists enforce it on tier&nbsp;2+ hosts (Cursor Multitask, Claude Code with hooks). <span class="historical" data-historical>Introduced in v0.51.0,</span> the <strong>tri-criteria greenfield harness</strong> (live/cold matrix across Cursor, Claude, and Codex) records <strong>6/6 PASS</strong> for multi-workflow orchestration including <code>composer_chain</code> advance. Full 22-row enterprise matrix parity remains host-dependent — see <a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a>.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
@@ -167,7 +167,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>Queue advances; repeat until <code>current_flow</code> is empty.</li>
       </ol>
 
-      <h3 id="composer-chain">Multi-workflow <code>composer_chain</code> (v0.51.0+)</h3>
+      <h3 id="composer-chain">Multi-workflow <code>composer_chain</code> <span class="historical" data-historical>(introduced in v0.51.0)</span></h3>
       <p>When intent spans multiple composer workflows (for example feature delivery followed by DevOps and release), the scheduler seeds <code>orchestrator.json</code> with a <code>composer_chain</code> array. After each workflow queue drains, <code>sb_orchestrator_try_advance_composer_chain</code> tailors and enqueues the next composer workflow — proven in the tri-criteria greenfield matrix (TC-01 multi-WF chain).</p>
       <div class="code-block">{
   "composer_chain": ["silver-devops", "silver-release"],

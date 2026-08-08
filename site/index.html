@@ -8,9 +8,9 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="shortcut icon" href="favicon.ico">
 <title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
-<meta name="description" content="Silver Bullet v0.51.7 is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: 27 AF-* atomic flows, 22 WF-* workflows, 85 flow-step V-loops, dynamic composition, hook-enforced delivery gates, and spec-to-release traceability on Claude Code, Codex, and Cursor.">
+<meta name="description" content="Silver Bullet v0.51.7 is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: 29 AF-* atomic flows, 22 task-shaped workflows plus 4 reusable components, 118 flow steps, dynamic composition, hook-enforced delivery gates, and spec-to-release traceability on Claude Code, Codex, and Cursor.">
 <meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native SDLC">
-<meta property="og:description" content="From spec to release with hook-enforced gates. /silver composes the smallest safe chain from the canonical APO catalog — 27 atomic flows, V-loop evidence, and delivery gates that block commits, PRs, and releases without proof.">
+<meta property="og:description" content="From spec to release with hook-enforced gates. /silver composes the smallest safe chain from the canonical APO catalog — 29 atomic flows, 22 task-shaped workflows plus 4 reusable components, and 118 evidence-bearing flow steps.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -1378,7 +1378,7 @@ img{max-width:100%;height:auto}
           <p class="hero-tagline-caps hero-tagline-thin">THE PROCESS LAYER OF AI-DRIVEN DEV</p>
         </div>
       </div>
-      <h2 class="hero-headline">Maximize AI-driven<br><span class="hero-headline-accent">Dev Process Reliability</span><br>at 10x Lower Cost</h2>
+      <h2 class="hero-headline">Maximize AI-driven<br><span class="hero-headline-accent">Dev Process Reliability</span><br>with Enforced Evidence</h2>
       <div class="hero-split-body">
         <h3 class="hero-subhead" style="font-size:clamp(1.1rem,2.2vw,1.5rem);letter-spacing:-.01em;line-height:1.35;text-align:left;font-weight:400">Enforce the Method Back to the AI Madness!</h3>
         <ul class="hero-features-list" aria-label="Core capabilities">
@@ -1435,7 +1435,7 @@ img{max-width:100%;height:auto}
           <a href="#mechanism" class="btn btn-outline">See the Mechanism</a>
           <a href="changelog/" class="btn btn-outline">What&rsquo;s New?</a>
         </div>
-        <div class="hero-cta-note">100% Free Forever &middot; No Strings Attached &middot; No Telemetry</div>
+        <div class="hero-cta-note">BUSL 1.1 Source-Available &middot; Broad Production Use &middot; No Plugin Telemetry</div>
       </div>
       <div class="hero-platform-row">
         <div class="platform-pills">
@@ -1551,24 +1551,24 @@ img{max-width:100%;height:auto}
     </div>
     <div class="cost-grid mt-6">
       <div class="cost-card fade-in">
-        <div class="cost-stat">39%</div>
-        <div class="cost-label">Of AI-generated code contains security vulnerabilities</div>
-        <div class="cost-desc">Veracode 2025 study across 100+ enterprise codebases. Most teams catch them post-merge, not at write-time.</div>
+        <div class="cost-stat">Security Risk</div>
+        <div class="cost-label">AI-generated changes still require security review</div>
+        <div class="cost-desc">Silver Bullet&rsquo;s design goal is to make security and verification evidence explicit before delivery. It does not claim a universal vulnerability rate or replace your scanners.</div>
       </div>
       <div class="cost-card fade-in">
-        <div class="cost-stat">$14K&ndash;$28K</div>
-        <div class="cost-label">Average cost of a single AI-assisted outage from skipped review</div>
-        <div class="cost-desc">Aggregated from incident retrospectives on agent-produced changes. Cheap to prevent. Expensive to recover from.</div>
+        <div class="cost-stat">Outage Exposure</div>
+        <div class="cost-label">Skipped review can increase operational risk</div>
+        <div class="cost-desc">The financial impact varies by system and incident. Silver Bullet focuses on enforcing review, verification, and deployment evidence rather than asserting a universal outage cost.</div>
       </div>
       <div class="cost-card fade-in">
-        <div class="cost-stat">7&times;</div>
-        <div class="cost-label">More rework when agents skip spec coverage validation</div>
-        <div class="cost-desc">Internal benchmark across feature work with and without upfront coverage check. The agents are not the problem &mdash; the missing check is.</div>
+        <div class="cost-stat">Rework Risk</div>
+        <div class="cost-label">Spec drift creates avoidable implementation churn</div>
+        <div class="cost-desc">Upfront coverage checks are intended to expose missing or conflicting requirements before implementation. The benefit depends on task scope, repository, and team practice.</div>
       </div>
       <div class="cost-card fade-in">
-        <div class="cost-stat">~30%</div>
-        <div class="cost-label">Of context-window tokens spent re-discovering prior decisions</div>
-        <div class="cost-desc">RTK + Context Mode + persistent memory can reclaim this. Without it, every new session starts paying the same tax.</div>
+        <div class="cost-stat">Context Tax</div>
+        <div class="cost-label">Repeated rediscovery consumes time and context</div>
+        <div class="cost-desc">Opted-in retrieval, compression, and persistent-memory tools can reduce repeated reads. Savings vary by host, repository, and session; no fixed token-reduction percentage is claimed.</div>
       </div>
     </div>
     <div class="cost-emotional fade-in">
@@ -1608,8 +1608,8 @@ img{max-width:100%;height:auto}
     <div class="section-label">Silver Bullet</div>
     <h2 class="section-title">The Layer That Makes Your Agent Trustworthy</h2>
     <p class="section-desc centered">If you have watched an agent skip the review skill the moment context compacts &mdash; or open a PR because it can, not because the evidence is there &mdash; you already know why we built this. Execution engines and review skills exist. Agents still bypass them when pressure rises.</p>
-    <p class="section-desc centered" style="margin-top:20px">Silver Bullet is hook-enforced orchestration across Claude Code, Codex, and Cursor &mdash; dogfooded daily in this alpha OSS repo. We did not build it to be smarter than the models. We built mechanical gates plus code-intelligence retrieval, not another prompt template, because no model can be trusted with delivery on its own.</p>
-    <p class="section-desc centered" style="margin-top:20px">The catalog is open. The plugin is free forever &mdash; no strings attached, no telemetry. The agent stays yours. Silver Bullet is the layer in between that makes the layer above it trustworthy.</p>
+    <p class="section-desc centered" style="margin-top:20px">Silver Bullet is hook-enforced orchestration across Claude Code, Codex, and Cursor &mdash; dogfooded daily in this alpha source-available repo. We did not build it to be smarter than the models. We built mechanical gates plus code-intelligence retrieval, not another prompt template, because no model can be trusted with delivery on its own.</p>
+    <p class="section-desc centered" style="margin-top:20px">The catalog and plugin source are available under BUSL 1.1. Production use is broadly permitted, except offering Silver Bullet or a substantially similar orchestrator as a competing hosted, managed, or SaaS product. The plugin itself sends no usage telemetry to Alo Labs.</p>
   </div>
 </section>
 
@@ -1621,7 +1621,7 @@ img{max-width:100%;height:auto}
     <div class="text-center">
       <div class="section-label">The Mechanism</div>
       <h2 class="section-title">Why Silver Bullet Works When Instruction-Following Doesn&rsquo;t</h2>
-      <p class="section-desc centered">The mechanism is not a better prompt. It is a catalog of 27 atomic flows composed into 22 task-shaped workflows, executed by your agent, with twelve hook layers that physically block unsafe progress. The model can reason. Only the environment can decide.</p>
+      <p class="section-desc centered">The mechanism is not a better prompt. It is a catalog of 29 atomic flows composed into 22 task-shaped workflows and 4 reusable components, executed by your agent, with twelve hook layers that physically block unsafe progress. The model can reason. Only the environment can decide.</p>
     </div>
 
     <div class="feature-grid mt-6 fade-in">
@@ -1629,7 +1629,7 @@ img{max-width:100%;height:auto}
       <div class="feature-card">
         <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="git-branch"></i></div>
         <h3>Dynamic Workflow Composition</h3>
-        <p><code>/silver</code> classifies the task and composes the chain it needs. Feature, bugfix, UI, DevOps, deploy, canary, refactor, test, worktree, content, benchmark, incident, retro, release, research, spec, ingest, validate, docs, tracking &mdash; and the fast path. Each route is pre-composed. The agent does not improvise the process.</p>
+        <p><code>/silver</code> classifies the task and composes the chain it needs. The catalog covers primary delivery, research, multi-AI work, supervised agent delegation, workflow authoring, fast and specialized paths, infrastructure, release, and operational learning. Each route is catalog-backed; the agent does not improvise the process.</p>
       </div>
 
       <div class="feature-card">
@@ -1671,7 +1671,7 @@ img{max-width:100%;height:auto}
       </div>
       <div class="mech-row">
         <div class="mech-card fade-in">
-          <span class="mech-tag">27 ATOMIC FLOWS</span>
+          <span class="mech-tag">29 ATOMIC FLOWS</span>
           <h3>The Composable Primitives</h3>
           <p>Every workflow is built from the same atomic flow library. Reusable, testable, contractually defined.</p>
           <ul class="mech-list">
@@ -1685,7 +1685,7 @@ img{max-width:100%;height:auto}
           </ul>
         </div>
         <div class="mech-card fade-in">
-          <span class="mech-tag">22 WORKFLOWS</span>
+          <span class="mech-tag">22 TASK WORKFLOWS + 4 COMPONENTS</span>
           <h3>Task-Shaped Chains</h3>
           <p>Pre-composed sequences for every common delivery shape. You pick the task. The router picks the chain.</p>
           <ul class="mech-list">
@@ -1699,7 +1699,7 @@ img{max-width:100%;height:auto}
           </ul>
         </div>
         <div class="mech-card fade-in">
-          <span class="mech-tag">85 FLOW-STEP V-LOOPS</span>
+          <span class="mech-tag">118 FLOW STEPS</span>
           <h3>Evidence at Every Step</h3>
           <p>Each flow step has a local V-loop with subagent dispatch and opted-in tool governance. Evidence is produced where the work is produced.</p>
           <ul class="mech-list">
@@ -1780,7 +1780,7 @@ img{max-width:100%;height:auto}
         <p>SessionStart, PreToolUse (Bash, Edit, Skill, MultiEdit), PostToolUse, Stop, UserPromptSubmit. The full enforcement surface is observable and auditable.</p>
       </div>
       <div class="proof-card fade-in">
-        <div class="proof-stat">27</div>
+        <div class="proof-stat">29</div>
         <div class="proof-label">Atomic Flows (AF-*)</div>
         <p>Every reusable primitive, contractually defined in <code>docs/apo-catalog.json</code> and kept in sync with generated views.</p>
       </div>
@@ -1790,7 +1790,7 @@ img{max-width:100%;height:auto}
         <p>Each one routes by task signal. Each one ends with explicit ship evidence. The router does not improvise.</p>
       </div>
       <div class="proof-card fade-in">
-        <div class="proof-stat">85</div>
+        <div class="proof-stat">118</div>
         <div class="proof-label">Flow-Step V-Loops</div>
         <p>Local V-loops with subagent dispatch and tool governance. Evidence is produced where work is produced.</p>
       </div>
@@ -1800,9 +1800,9 @@ img{max-width:100%;height:auto}
         <p>The catalog reports capability tier per host. Claude Code, Codex, and Cursor each reach their documented ceiling &mdash; no marketing-tier claims.</p>
       </div>
       <div class="proof-card fade-in">
-        <div class="proof-stat">$0</div>
-        <div class="proof-label">Free Forever</div>
-        <p>No credit card. No telemetry. No vendor lock-in. Open catalog, hook-enforced gates &mdash; install once and keep your agent.</p>
+        <div class="proof-stat">BUSL 1.1</div>
+        <div class="proof-label">Source-Available</div>
+        <p>Inspect, modify, distribute, and use in production under the license. Competing hosted, managed, or SaaS offerings are excluded from the additional production-use grant.</p>
       </div>
     </div>
 
@@ -1929,7 +1929,7 @@ img{max-width:100%;height:auto}
           <li><code>silver:deploy</code> and <code>silver:canary</code> runtime evidence</li>
           <li><code>silver:incident</code> and <code>silver:retro</code> learning loops</li>
         </ul>
-        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">Learn More&hellip;</a></div>
+        <div class="plugin-tags"><a href="#mechanism" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -1943,7 +1943,7 @@ img{max-width:100%;height:auto}
           <li><code>silver:refactor</code> for behavior-preserving change</li>
           <li><code>silver:benchmark</code> for repeatable agent or approach evals</li>
         </ul>
-        <div class="plugin-tags"><a href="#quality" class="plugin-learn-more">Learn More&hellip;</a></div>
+        <div class="plugin-tags"><a href="#mechanism" class="plugin-learn-more">Learn More&hellip;</a></div>
       </div>
 
       <div class="ecosystem-card fade-in">
@@ -2091,8 +2091,8 @@ img{max-width:100%;height:auto}
       </div>
 
       <div class="faq-item fade-in">
-        <div class="faq-q">What if my workflow doesn&rsquo;t fit any of the 22 pre-composed routes?</div>
-        <div class="faq-a">Routes are the entry points. The 27 atomic flows are the primitives. Every composed workflow is built from atomic flows, and you can compose your own with the same primitives. <code>/silver:process-maintenance</code> is the explicit lane for phase, thread, backlog, and migration work that does not fit a delivery shape.</div>
+        <div class="faq-q">What if my workflow doesn&rsquo;t fit any of the 22 task-shaped routes?</div>
+        <div class="faq-a">Routes are the entry points. The 29 atomic flows are the primitives. Every composed workflow is built from atomic flows, and you can compose your own with the same primitives. <code>/silver:process-maintenance</code> is the explicit lane for phase, thread, backlog, and migration work that does not fit a delivery shape.</div>
       </div>
 
       <div class="faq-item fade-in">
@@ -2102,7 +2102,7 @@ img{max-width:100%;height:auto}
 
       <div class="faq-item fade-in">
         <div class="faq-q">Is this enterprise-grade? Can I get support?</div>
-        <div class="faq-a">Silver Bullet is free open-source alpha software, dogfooded in production at multiple organizations. Innovated at <strong>&Auml;lo Labs</strong>. For teams needing prioritized support, custom plugin authoring, or audit-ready compliance reports, contact us through the Help Center. The plugin stays free &mdash; no credit card, no telemetry, no strings attached.</div>
+        <div class="faq-a">Silver Bullet is alpha, source-available software under BUSL 1.1, developed and dogfooded by <strong>Alo Labs</strong>. Production use is broadly permitted except for a competing hosted, managed, or SaaS offering. The plugin itself sends no usage telemetry to Alo Labs. For prioritized support, custom plugin authoring, or audit-ready compliance reports, contact us through the Help Center.</div>
       </div>
 
     </div>
@@ -2158,7 +2158,7 @@ img{max-width:100%;height:auto}
           <tr>
             <td>Workflow entry</td>
             <td>Session-start auto-routing; large skill menus</td>
-            <td>Explicit <code>/silver</code> router; 22 pre-composed workflow routes plus 36 marketplace command stubs behind one entry point</td>
+            <td>Explicit <code>/silver</code> router; 22 task-shaped workflows plus 4 reusable components behind one catalog contract</td>
           </tr>
           <tr>
             <td>Enforcement</td>
@@ -2202,14 +2202,14 @@ img{max-width:100%;height:auto}
 <section id="install">
   <div class="container text-center">
     <div class="section-label">Get Started</div>
-    <h2 class="section-title">Install Free. Enforce Every Delivery. Risk-Free.</h2>
-    <p class="section-desc centered">100% free forever. No credit card. No telemetry. No vendor lock-in. The plugin is yours; the hooks are yours; the agent stays yours.</p>
+    <h2 class="section-title">Install the Source-Available Plugin. Enforce Every Delivery.</h2>
+    <p class="section-desc centered">Licensed under BUSL 1.1 with broad production use, except a competing hosted, managed, or SaaS offering. The plugin itself sends no usage telemetry to Alo Labs.</p>
 
     <div class="install-block mt-4 fade-in">
       <div class="install-code">
-        <div><span class="comment"># Onboarding probe (jq, diagnostics, next steps)</span></div>
+        <div><span class="comment"># From a Silver Bullet source checkout only: onboarding probe</span></div>
         <div><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
-        <div><span class="comment"># Capability tier report (claude | codex | cursor)</span></div>
+        <div><span class="comment"># From that source checkout: capability tier report (claude | codex | cursor)</span></div>
         <div><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
         <div>&nbsp;</div>
         <div><span class="comment"># Install Silver Bullet (Claude Code)</span></div>
@@ -2250,17 +2250,17 @@ img{max-width:100%;height:auto}
   <div class="container">
     <div class="text-center">
       <div class="section-label">The Catalog</div>
-      <h2 class="section-title">22 Workflows. 27 Atomic Flows. One Contract.</h2>
+      <h2 class="section-title">26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.</h2>
       <p class="section-desc centered">The authoritative source of truth is <code>docs/apo-catalog.json</code>. Generated views stay in sync via CI. Every workflow is composed from the same atomic flow library.</p>
     </div>
 
     <div class="workflow-tabs mt-4 fade-in">
-      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Pre-Composed Workflows <span style="opacity:.6">(18 + 4 components)</span></button>
-      <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(27)</span></button>
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Catalog Workflows <span style="opacity:.6">(22 + 4 components)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(29)</span></button>
     </div>
 
     <div class="workflow-body">
-    <p class="section-desc centered" style="margin-top:12px;margin-bottom:16px;font-size:.9rem">27 atomic flows &middot; 22 workflows &middot; 85 flow-step V-loops with subagent dispatch and tool governance</p>
+    <p class="section-desc centered" style="margin-top:12px;margin-bottom:16px;font-size:.9rem">29 atomic flows &middot; 22 task-shaped workflows + 4 reusable components &middot; 118 flow steps with local V-loops. The table shows each workflow&rsquo;s complete top-level catalog composition; reusable component internals appear at the end.</p>
 
     <div id="workflow-orch" class="workflow-panel active">
       <table class="workflow-table fade-in">
@@ -2268,29 +2268,14 @@ img{max-width:100%;height:auto}
           <tr>
             <th>Workflow</th>
             <th>Entry signals</th>
-            <th>Key steps</th>
+            <th>Top-level catalog composition</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><a href="help/workflows/silver-router.html" style="color:var(--accent-light);text-decoration:none">/silver</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"/silver", "route"</td>
-            <td><code>ROUTE</code> &rarr; <span style="font-size:.935rem;color:var(--text-dim)">(composes feature or fast)</span></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"feature", "implement", "build feature"</td>
-            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
-            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; <code>DESIGN_CONTRACT</code> &rarr; <code>EXECUTE</code> &rarr; <code>UI_QUALITY</code> &rarr; <code>REVIEW</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "fix", "debug"</td>
-            <td><code>ORIENT</code> &rarr; <code>DEBUG</code> &rarr; <code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
+            <td><code>ROUTE</code> &rarr; optional <code>WF-SILVER-FEATURE</code> / <code>WF-SILVER-FAST</code> <span style="font-size:.935rem;color:var(--text-dim)">(dynamic routing; top-level sequence)</span></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-deep-research.html" style="color:var(--accent-light);text-decoration:none">/silver:deep-research</a></td>
@@ -2298,49 +2283,29 @@ img{max-width:100%;height:auto}
             <td><code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-compare.html" style="color:var(--accent-light);text-decoration:none">/silver:compare</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"compare", "vs", "capability matrix"</td>
-            <td><code>CLARIFY</code> &rarr; deep-research <code>solution-compare</code></td>
+            <td><a href="help/workflows/silver-deep-research-multi-ai.html" style="color:var(--accent-light);text-decoration:none">/silver:deep-research-multi-ai</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"multi-AI research", "deep research cohort"</td>
+            <td><code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>MULTI_AI_TASK</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-clarify.html" style="color:var(--accent-light);text-decoration:none">/silver:clarify</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"idea", "fuzzy requirement", "scope"</td>
-            <td><code>CLARIFY</code> &rarr; context/plan handoff</td>
+            <td><a href="help/workflows/silver-new-workflow.html" style="color:var(--accent-light);text-decoration:none">/silver:new-workflow</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"new workflow", "author workflow"</td>
+            <td><code>CLARIFY</code> &rarr; <code>ORIENT</code> &rarr; <code>DECIDE</code> &rarr; <code>PLAN</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>VALIDATE</code> &rarr; <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-spec.html" style="color:var(--accent-light);text-decoration:none">/silver:spec</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"spec", "acceptance criteria", "user stories"</td>
-            <td><code>SPECIFY</code></td>
+            <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"feature", "implement", "build feature"</td>
+            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; optional <code>DESIGN_CONTRACT</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-ingest.html" style="color:var(--accent-light);text-decoration:none">/silver:ingest</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"JIRA", "Figma", "external artifact"</td>
-            <td><code>SPECIFY</code> <span style="font-size:.935rem;color:var(--text-dim)">(ingest sub-step)</span></td>
+            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
+            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; <code>DESIGN_CONTRACT</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-validate.html" style="color:var(--accent-light);text-decoration:none">/silver:validate</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"validate", "gap analysis"</td>
-            <td><code>VALIDATE</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra", "iac"</td>
-            <td><code>BLAST_RADIUS</code> &rarr; <code>DEVOPS_ROUTE</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>SECURE</code> &rarr; <code>ORIENT</code> &rarr; <code>PLAN</code> &rarr; <code>VALIDATE</code> &rarr; <code>EXECUTE</code> &rarr; <code>REVIEW</code> &rarr; <code>VERIFY</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"deploy", "roll out"</td>
-            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"canary", "progressive rollout"</td>
-            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SHIP</code></td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"release", "version", "tag"</td>
-            <td><code>QUALITY_GATE</code> &rarr; <code>REVIEW</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code> &rarr; <code>RELEASE</code></td>
+            <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "fix", "debug"</td>
+            <td><code>ORIENT</code> &rarr; <code>DEBUG</code> &rarr; <code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
@@ -2355,12 +2320,7 @@ img{max-width:100%;height:auto}
           <tr>
             <td><a href="help/workflows/silver-refactor.html" style="color:var(--accent-light);text-decoration:none">/silver:refactor</a></td>
             <td style="font-size:.9rem;color:var(--text-secondary)">"refactor", "behavior-preserving"</td>
-            <td><code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; post-exec gates</td>
-          </tr>
-          <tr>
-            <td><a href="help/workflows/silver-benchmark.html" style="color:var(--accent-light);text-decoration:none">/silver:benchmark</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"benchmark", "eval", "compare models"</td>
-            <td><code>ORIENT</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+            <td><code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
           </tr>
           <tr>
             <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
@@ -2368,24 +2328,39 @@ img{max-width:100%;height:auto}
             <td><code>CLARIFY</code> &rarr; <code>SPECIFY</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"incident", "outage", "p1"</td>
-            <td><code>BLAST_RADIUS</code> &rarr; <code>DEBUG</code> &rarr; <code>SECURE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+            <td><a href="help/workflows/silver-benchmark.html" style="color:var(--accent-light);text-decoration:none">/silver:benchmark</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"benchmark", "eval", "compare models"</td>
+            <td><code>ORIENT</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-retro.html" style="color:var(--accent-light);text-decoration:none">/silver:retro</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"retro", "postmortem"</td>
-            <td><code>ORIENT</code> &rarr; <code>DOCUMENT</code> &rarr; <code>DECIDE</code></td>
+            <td><a href="help/workflows/silver-multi-ai-task.html" style="color:var(--accent-light);text-decoration:none">/silver:multi-ai-task</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"multi-AI task", "parallel AI review"</td>
+            <td><code>MULTI_AI_TASK</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-forensics.html" style="color:var(--accent-light);text-decoration:none">/silver:forensics</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"forensics", "deep-dive"</td>
-            <td><code>DEBUG</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+            <td><a href="help/workflows/silver-agent-delegate.html" style="color:var(--accent-light);text-decoration:none">agent-delegate-entry</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"agent-delegate", "agent-codex", "agent-cursor", "agent-claude"</td>
+            <td><code>AGENT_DELEGATE</code></td>
           </tr>
           <tr>
-            <td><a href="help/workflows/silver-process-maintenance.html" style="color:var(--accent-light);text-decoration:none">/silver:process-maintenance</a></td>
-            <td style="font-size:.9rem;color:var(--text-secondary)">"phase", "thread", "backlog", "migration"</td>
-            <td><code>PHASE_MANAGE</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra", "iac"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>DEVOPS_ROUTE</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>SECURE</code> &rarr; <code>ORIENT</code> &rarr; <code>PLAN</code> &rarr; <code>VALIDATE</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"deploy", "roll out"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"canary", "progressive rollout"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"release", "version", "tag"</td>
+            <td><code>QUALITY_GATE</code> &rarr; <code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>VALIDATE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code> &rarr; <code>RELEASE</code></td>
           </tr>
           <tr style="border-top:2px solid var(--border)">
             <td colspan="3" style="font-size:1.054rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;padding-top:18px">Reusable Workflow Components (Composed Internally)</td>
@@ -2409,6 +2384,29 @@ img{max-width:100%;height:auto}
             <td style="color:var(--accent-light)">validate-substep</td>
             <td style="font-size:.9rem;color:var(--text-secondary)">Spec-to-plan gap analysis</td>
             <td><code>VALIDATE</code></td>
+          </tr>
+          <tr style="border-top:2px solid var(--border)">
+            <td colspan="3" style="font-size:1.054rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;padding-top:18px">Operations and Learning</td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"incident", "outage", "p1"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>DEBUG</code> &rarr; <code>SECURE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-retro.html" style="color:var(--accent-light);text-decoration:none">/silver:retro</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"retro", "postmortem"</td>
+            <td><code>ORIENT</code> &rarr; <code>DOCUMENT</code> &rarr; <code>DECIDE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-forensics.html" style="color:var(--accent-light);text-decoration:none">/silver:forensics</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"forensics", "deep-dive"</td>
+            <td><code>DEBUG</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-process-maintenance.html" style="color:var(--accent-light);text-decoration:none">/silver:process-maintenance</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"phase", "thread", "backlog", "migration"</td>
+            <td><code>PHASE_MANAGE</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
           </tr>
         </tbody>
       </table>
@@ -2435,6 +2433,8 @@ img{max-width:100%;height:auto}
           <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
           <tr><td><code>FAST_PATH</code></td><td style="font-size:.935rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
           <tr><td><code>EXECUTE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
+          <tr><td><code>AGENT_DELEGATE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">supervised delegation to a host-aware execution agent</td></tr>
+          <tr><td><code>MULTI_AI_TASK</code></td><td style="font-size:.935rem;color:var(--text-secondary)">parallel multi-AI task execution and synthesis</td></tr>
           <tr><td><code>DEBUG</code></td><td style="font-size:.935rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
           <tr><td><code>UI_QUALITY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">UI quality, accessibility, and design review</td></tr>
           <tr><td><code>VERIFY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
@@ -2466,7 +2466,7 @@ img{max-width:100%;height:auto}
     <h2 class="section-title fade-in">Stop Hoping Your AI Agent Follows the Process. Enforce It.</h2>
     <p class="section-desc centered fade-in">Install Silver Bullet once. The hooks activate on every commit, PR, and release. The agent keeps its autonomy where autonomy is safe. The environment decides when it is not.</p>
     <a href="#install" class="btn btn-primary fade-in" style="font-size:1rem;padding:16px 36px">Install Silver Bullet &darr;</a>
-    <p style="margin-top:24px;font-size:.935rem;color:var(--text-secondary);font-family:var(--font-mono)">Free forever. No credit card. No telemetry. Cancel anytime (it is a plugin).</p>
+    <p style="margin-top:24px;font-size:.935rem;color:var(--text-secondary);font-family:var(--font-mono)">BUSL 1.1 source-available. Broad production use. No plugin telemetry to Alo Labs.</p>
   </div>
 </section>
 
@@ -2478,14 +2478,14 @@ img{max-width:100%;height:auto}
     <div class="text-center">
       <div class="section-label">After You Install</div>
       <h2 class="section-title">What Happens in the First Hour</h2>
-      <p class="section-desc centered">Most teams have Silver Bullet blocking their first unsafe PR within the first session. Here is the typical onboarding arc.</p>
+      <p class="section-desc centered">A typical first-hour goal is to initialize the project, compose a workflow, and see how a missing delivery gate is surfaced. Timing and enforcement behavior depend on the host, project configuration, and task.</p>
     </div>
 
     <div class="grid grid-3 mt-6">
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="download"></i></div>
         <h3>Minutes 0&ndash;10: Install + Probe</h3>
-        <p>Install the plugin, run <code>sb-bootstrap.sh</code> and <code>sb-diagnostics.sh</code>. SB reports your host&rsquo;s enforcement tier and which hooks are active. <code>/silver:init</code> stamps your project.</p>
+        <p>Install the plugin and run <code>/silver:init</code>. If you are working from a Silver Bullet source checkout, you can also run <code>bash scripts/sb-bootstrap.sh</code> and <code>bash scripts/sb-diagnostics.sh</code> to probe dependencies and host capability tiers.</p>
       </div>
       <div class="feature-card fade-in">
         <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="play"></i></div>
@@ -2531,7 +2531,7 @@ img{max-width:100%;height:auto}
 
       <p style="font-size:1.15rem;color:var(--text-primary);line-height:1.5;margin:0 0 18px;font-weight:700">Silver Bullet is that process layer.</p>
 
-      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 0">Twelve hook layers. Twenty-two workflows. A spec-to-release trace, blast-radius gate, and an evidence schema the agent cannot forge. None of this makes the model smarter. It changes the boundary between &ldquo;the agent produced this&rdquo; and &ldquo;this has been verified&rdquo; &mdash; the silver bullet Brooks said did not exist. It exists now. It is free forever &mdash; no strings attached. You can install it before lunch.</p>
+      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 0">Twelve hook layers. Twenty-nine atomic flows. Twenty-two task-shaped workflows plus four reusable components. A spec-to-release trace, blast-radius gate, and evidence schema validated at delivery boundaries. None of this makes the model smarter. It changes the boundary between &ldquo;the agent produced this&rdquo; and &ldquo;this has fresh verification evidence.&rdquo; Silver Bullet is source-available under BUSL 1.1 and ready to evaluate in your own environment.</p>
     </div>
   </div>
 </section>
