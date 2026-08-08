@@ -124,5 +124,36 @@ sb_recommended_tool_enforced "$TMP/.silver-bullet.json" context_mode && pass "co
 cm_benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" context_mode)"
 printf '%s' "$cm_benefits" | grep -qi 'MCP' && pass "context_mode benefits" || fail "context_mode benefits"
 
+# --- Claude host arms in host case statements -----------------------------
+# Regression: sb_graphify_platform_artifact_path() had no claude) arm, so the
+# claude host fell through to the codex path and sb-diagnostics.sh emitted a
+# permanently unclearable "graphify-platform - platform artifact missing".
+_got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" claude)"
+if [[ "$_got" == "/tmp/sb-proj/.claude/settings.json" ]]; then
+  pass "claude host resolves graphify artifact to .claude/settings.json"
+else
+  fail "claude host resolves graphify artifact to .claude/settings.json (got: $_got)"
+fi
+# Other hosts must be unaffected by the new arm.
+_got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" cursor)"
+if [[ "$_got" == "/tmp/sb-proj/.cursor/rules/graphify.mdc" ]]; then
+  pass "cursor host graphify artifact unchanged"
+else
+  fail "cursor host graphify artifact unchanged (got: $_got)"
+fi
+_got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" codex)"
+if [[ "$_got" == "/tmp/sb-proj/.codex/hooks.json" ]]; then
+  pass "codex host graphify artifact unchanged"
+else
+  fail "codex host graphify artifact unchanged (got: $_got)"
+fi
+# Unknown hosts still hit the documented fallback.
+_got="$(sb_graphify_platform_artifact_path "/tmp/sb-proj" wat)"
+if [[ "$_got" == "/tmp/sb-proj/.codex/settings.json" ]]; then
+  pass "unknown host graphify artifact falls back"
+else
+  fail "unknown host graphify artifact falls back (got: $_got)"
+fi
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
