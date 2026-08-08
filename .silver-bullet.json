@@ -145,7 +145,7 @@
   },
   "recommended_tools": {
     "graphify": {
-      "enabled_by_user": null,
+      "enabled_by_user": true,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
@@ -202,13 +202,13 @@
       "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
       "optimization": {
         "profile": "synergy_max",
-        "last_applied_at": null,
+        "last_applied_at": "2026-08-08T07:32:26Z",
         "last_verified_at": null,
-        "score": null
+        "score": 115
       }
     },
     "agentmemory": {
-      "enabled_by_user": null,
+      "enabled_by_user": true,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
@@ -264,9 +264,9 @@
       "export_root": ".agentmemory",
       "optimization": {
         "profile": "synergy_max",
-        "last_applied_at": null,
+        "last_applied_at": "2026-08-08T07:32:26Z",
         "last_verified_at": null,
-        "score": null
+        "score": 115
       }
     },
     "alumnium": {
@@ -327,7 +327,7 @@
       "benefits_summary": "Optional multi-provider retrieval for silver:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
     },
     "rtk": {
-      "enabled_by_user": null,
+      "enabled_by_user": true,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
@@ -364,7 +364,7 @@
       "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
     },
     "context_mode": {
-      "enabled_by_user": null,
+      "enabled_by_user": true,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
@@ -408,7 +408,7 @@
       "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
     },
     "leanctx": {
-      "enabled_by_user": null,
+      "enabled_by_user": true,
       "enforcement_suspended": false,
       "install_status": null,
       "install_failure_reason": null,
