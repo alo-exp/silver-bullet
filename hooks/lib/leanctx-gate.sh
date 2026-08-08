@@ -82,7 +82,16 @@ sb_leanctx_hooks_present() {
       hooks_file="${CODEX_HOME:-${HOME}/.codex}/hooks.json"
       [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
       ;;
+    claude)
+      # Claude wires lean-ctx through settings.json (hooks + MCP server entry)
+      # rather than a standalone hooks.json.
+      hooks_file="${HOME}/.claude/settings.json"
+      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
+      ;;
     *)
+      # Intentionally permissive: for hosts SB has no wiring contract for we
+      # cannot distinguish "not wired" from "wired somewhere we don't know
+      # about", so we must not block on an unverifiable claim.
       return 0
       ;;
   esac

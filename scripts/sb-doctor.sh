@@ -247,6 +247,14 @@ doctor_record_reconciler_d10() {
       record pass D10-routes "cross_tool N/A until five-tool opt-in (no consent)"
     elif [[ "$cross" == "ready" ]]; then
       record pass D10-routes "cross_tool ready (activation=${cross_activation:-none})"
+    elif [[ "$cross" == "unsupported" ]]; then
+      # Platform limitation, not drift: rt_host_supported() implements
+      # cross-tool convergence for cursor only, so on every other host
+      # cross_tool is permanently "unsupported" and --fix=host provably
+      # cannot clear it. Reporting this as FAIL made granting five-tool
+      # consent strictly worsen the doctor result while naming a remedy that
+      # can never work. Warn, and do not recommend a repair.
+      record warn D10-routes "cross_tool unsupported on this host — cross-tool convergence is implemented for cursor only; no action available"
     else
       record fail D10-routes "cross_tool ${cross} (activation=${cross_activation:-none}) — run --fix=host"
       any_fail=1
