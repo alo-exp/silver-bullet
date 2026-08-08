@@ -101,3 +101,7 @@ raw/
 # === end agentmemory managed block ===
 site/.preview-server.pid
 site/.preview-server.log
+
+# === local-only agent artifacts (never committed) ===
+.claude/settings.json.graphify-bak
+.claude/CLAUDE.md
