@@ -230,9 +230,16 @@ jq -e '.optimization_profiles.five_tool_routed.routes.sb_read == "leanctx" and .
   "$REPO_ROOT/templates/silver-bullet.config.json.default" >/dev/null \
   && pass "template five_tool_routed route owners" || fail "template five_tool_routed route owners"
 
-# Template parity: leanctx block matches between live config and template
-jq -S '.recommended_tools.leanctx' "$REPO_ROOT/templates/silver-bullet.config.json.default" > /tmp/sb-leanctx-template.json
-jq -S '.recommended_tools.leanctx' "$REPO_ROOT/.silver-bullet.json" > /tmp/sb-leanctx-live.json
+# Template parity: leanctx block matches between live config and template.
+# Consent and install state are per-project, not contract: the template ships
+# enabled_by_user: null to preserve the opt-in step for all five tools, and
+# install_status / install_failure_reason / enforcement_suspended are written at
+# runtime. Diffing those would fail on every project that granted consent, so
+# parity covers the contract only: min_version, mcp_tool_prefix, stack_mode,
+# primary_fts, install_commands, routes.
+LEANCTX_PARITY_FILTER='.recommended_tools.leanctx | del(.enabled_by_user, .install_status, .install_failure_reason, .enforcement_suspended)'
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/templates/silver-bullet.config.json.default" > /tmp/sb-leanctx-template.json
+jq -S "$LEANCTX_PARITY_FILTER" "$REPO_ROOT/.silver-bullet.json" > /tmp/sb-leanctx-live.json
 diff -q /tmp/sb-leanctx-template.json /tmp/sb-leanctx-live.json >/dev/null \
   && pass "leanctx block parity template vs live" || fail "leanctx block parity template vs live"
 

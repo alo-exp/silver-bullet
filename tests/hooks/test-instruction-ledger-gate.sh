@@ -144,6 +144,105 @@ else
   check "Stop is allowed when no ledger exists" pass
 fi
 
+# ── Seeding: code fences and agent reports must not enroll work items ────────
+# Regression coverage for ledger self-enrollment: pasting an agent completion
+# report enrolled the report's own summary bullets as new pending items, so
+# Stop could never be satisfied. Fenced blocks are quoted material, and a
+# completion report is evidence of work finished — neither is a user request.
+
+seeded_labels() {
+  [[ -f "$LEDGER" ]] || return 1
+  jq -r '[.. | objects | select(has("label")) | .label] | join("|")' "$LEDGER" 2>/dev/null
+}
+
+# A genuine 3-bullet request MUST still seed. This assertion guards against
+# over-filtering: silently disabling the ledger is worse than a spurious item.
+rm -f "$LEDGER"
+sb_instruction_ledger_seed_from_prompt 'Please do the following work:
+- refactor the parser module
+- add a regression test for the fence case
+- update the changelog'
+if [[ -f "$LEDGER" ]] && seeded_labels | grep -q 'refactor the parser module'; then
+  check "genuine 3-bullet user request still seeds the ledger" pass
+else
+  check "genuine 3-bullet user request still seeds the ledger" fail
+fi
+
+# Bullets inside a fenced code block are NOT instructions.
+rm -f "$LEDGER"
+sb_instruction_ledger_seed_from_prompt 'Here is the config I am using:
+```yaml
+- alpha step
+- beta step
+- gamma step
+```
+Thanks.'
+if [[ -f "$LEDGER" ]]; then
+  check "bullets inside a code fence are not enrolled" fail
+else
+  check "bullets inside a code fence are not enrolled" pass
+fi
+
+# parse_bullets itself must drop fenced lines but keep real ones.
+fence_mixed='- real instruction one
+```
+- fenced bullet
+- another fenced bullet
+```
+- real instruction two'
+if [[ "$(sb_instruction_ledger_bullet_count "$fence_mixed")" == "2" ]]; then
+  check "parse_bullets counts only unfenced bullets" pass
+else
+  check "parse_bullets counts only unfenced bullets" fail
+fi
+
+# An unterminated fence must swallow the rest of the prompt (safe direction).
+unterminated='- real instruction
+```
+- fenced one
+- fenced two'
+if [[ "$(sb_instruction_ledger_bullet_count "$unterminated")" == "1" ]]; then
+  check "unterminated fence swallows remaining bullets" pass
+else
+  check "unterminated fence swallows remaining bullets" fail
+fi
+
+# A pasted agent completion report must NOT seed.
+AGENT_REPORT='Report from worker agent
+
+- Fixed the ledger parser
+- Repaired the leanctx claude arm
+- Updated the doctor warning
+
+Verbatim output:
+Results: 13 passed, 0 failed
+SYNTAX_EXIT=0
+
+git log --oneline -2
+8f570b37 fix(hooks): stop gates failing open
+`8f570b37` → `9a1b2c3d`'
+rm -f "$LEDGER"
+sb_instruction_ledger_seed_from_prompt "$AGENT_REPORT"
+if [[ -f "$LEDGER" ]]; then
+  check "pasted agent report does not seed the ledger" fail
+else
+  check "pasted agent report does not seed the ledger" pass
+fi
+
+if sb_prompt_is_agent_report "$AGENT_REPORT"; then
+  check "agent report classifier matches a real report" pass
+else
+  check "agent report classifier matches a real report" fail
+fi
+
+# One marker alone must NOT be enough (false-positive guard).
+if sb_prompt_is_agent_report 'Please run git status --porcelain and fix whatever is dirty'; then
+  check "single marker does not classify as agent report" fail
+else
+  check "single marker does not classify as agent report" pass
+fi
+
+rm -f "$LEDGER"
 bash -n "$HOOK" && check "gate shell syntax" pass || check "gate shell syntax" fail
 bash -n "${REPO_ROOT}/hooks/lib/instruction-ledger.sh" \
   && check "ledger lib shell syntax" pass || check "ledger lib shell syntax" fail

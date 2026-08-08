@@ -301,6 +301,78 @@ else
 fi
 rm -f /tmp/sb-doctor-live-$$.txt
 
+# ── D10-routes: cross_tool "unsupported" is a warning, not a failure ─────────
+# rt_host_supported() implements cross-tool convergence for cursor only, so on
+# every other host cross_tool is permanently "unsupported" and --fix=host
+# provably cannot clear it. Reporting FAIL made granting five-tool consent
+# strictly worsen the doctor result while naming an impossible remedy.
+UNSUPPORTED_ARM="$(awk '/elif \[\[ "\$cross" == "unsupported" \]\]; then/,/^    else$/' "$DOCTOR")"
+# Strip comment lines: the arm's rationale comment legitimately mentions
+# --fix=host when explaining why that remedy cannot work, and the assertions
+# below are about the emitted `record` line, not the prose.
+UNSUPPORTED_CODE="$(printf '%s\n' "$UNSUPPORTED_ARM" | grep -v '^[[:space:]]*#')"
+
+if [[ -n "$UNSUPPORTED_ARM" ]]; then
+  echo "PASS: sb-doctor.sh has a dedicated cross_tool=unsupported arm"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: sb-doctor.sh missing cross_tool=unsupported arm"
+  FAIL=$((FAIL + 1))
+fi
+
+if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'record warn D10-routes'; then
+  echo "PASS: cross_tool unsupported records warn (not fail)"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: cross_tool unsupported does not record warn"
+  FAIL=$((FAIL + 1))
+fi
+
+if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'record fail'; then
+  echo "FAIL: cross_tool unsupported arm still records fail"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: cross_tool unsupported arm does not record fail"
+  PASS=$((PASS + 1))
+fi
+
+if printf '%s' "$UNSUPPORTED_CODE" | grep -Fq -- '--fix=host'; then
+  echo "FAIL: cross_tool unsupported still recommends --fix=host"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: cross_tool unsupported does not recommend --fix=host"
+  PASS=$((PASS + 1))
+fi
+
+if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'cursor'; then
+  echo "PASS: cross_tool unsupported message names the cursor-only limitation"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: cross_tool unsupported message omits the platform limitation"
+  FAIL=$((FAIL + 1))
+fi
+
+# Genuinely repairable drift must still FAIL.
+if grep -q 'record fail D10-routes "cross_tool \${cross}' "$DOCTOR"; then
+  echo "PASS: repairable cross_tool drift still records fail"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: repairable cross_tool drift no longer records fail"
+  FAIL=$((FAIL + 1))
+fi
+
+# rt_host_supported() must NOT have been widened to claim unimplemented support.
+RT_COMMON="${REPO_ROOT}/scripts/lib/recommended-tools/common.sh"
+if [[ -f "$RT_COMMON" ]]; then
+  if awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON" | grep -q 'cursor'; then
+    echo "PASS: rt_host_supported still gates on cursor"
+    PASS=$((PASS + 1))
+  else
+    echo "FAIL: rt_host_supported no longer gates on cursor"
+    FAIL=$((FAIL + 1))
+  fi
+fi
+
 echo
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

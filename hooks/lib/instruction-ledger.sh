@@ -29,11 +29,27 @@ sb_instruction_ledger_jq_update() {
 }
 
 # Extract bullet lines (markdown -, *, • or numbered) into JSON array via jq.
+#
+# Fenced code blocks (``` ... ```) are stripped BEFORE bullet extraction. A
+# bullet inside a code fence is quoted material — a pasted diff, a log excerpt,
+# a shell transcript — never a user instruction. Without this, pasting any
+# block that happens to contain list syntax enrolled those lines as pending
+# work items. An unterminated fence is treated as fencing the rest of the
+# prompt, which is the safe direction: quoted text is skipped, not enrolled.
 sb_instruction_ledger_parse_bullets() {
   local prompt="$1"
   command -v jq >/dev/null 2>&1 || return 1
   printf '%s' "$prompt" | jq -Rs '
     split("\n")
+    | reduce .[] as $line ({fenced: false, out: []};
+        if ($line | test("^[[:space:]]*```")) then
+          .fenced = (.fenced | not)
+        elif .fenced then
+          .
+        else
+          .out += [$line]
+        end)
+    | .out
     | map(select(length > 0))
     | map(select(test("^[[:space:]]*([-*•]|[0-9]+[.)])[[:space:]]")))
     | map(sub("^[[:space:]]*([-*•]|[0-9]+[.)])[[:space:]]*"; ""))
@@ -48,6 +64,43 @@ sb_instruction_ledger_bullet_count() {
   jq 'length' <<<"$bullets" 2>/dev/null || echo 0
 }
 
+# Detect a pasted agent completion report (as opposed to a user request).
+#
+# Reporting that work is DONE must never manufacture new unresolved items. A
+# completion report is largely a summary of finished work — restating it as
+# pending ledger children means Stop can never be satisfied, because the very
+# act of reporting adds items that no further work will resolve.
+#
+# Requires at least TWO distinct corroborating markers. A genuine user request
+# can incidentally contain any one of these (someone may legitimately ask
+# "run git status --porcelain and fix what you find"), so a single hit is not
+# enough to suppress seeding. Two independent markers is the false-positive
+# guard: over-filtering silently disables the ledger, which is worse than an
+# occasional spurious item.
+sb_prompt_is_agent_report() {
+  local prompt="${1:-}"
+  local hits=0
+  [[ -n "$prompt" ]] || return 1
+
+  # Explicit if-blocks (not `grep && hits=...`): these libs are sourced by
+  # hooks running under `set -e` with an ERR trap, where a failing AND-list is
+  # needless risk.
+  local marker
+  for marker in \
+    '^[[:space:]]*(Report from|##[[:space:]]*Report)' \
+    'git log --oneline|git status --porcelain' \
+    'Results:[[:space:]]*[0-9]+[[:space:]]*passed' \
+    'exit 0|_EXIT=[0-9]' \
+    '[0-9a-f]{7,}\.\.[0-9a-f]{7,}|`[0-9a-f]{7,}`[[:space:]]*→[[:space:]]*`[0-9a-f]{7,}`'
+  do
+    if printf '%s' "$prompt" | grep -Eq "$marker" 2>/dev/null; then
+      hits=$((hits + 1))
+    fi
+  done
+
+  [[ "$hits" -ge 2 ]]
+}
+
 # Seed nested ledger when prompt has >= min_bullets list items (default 3).
 sb_instruction_ledger_seed_from_prompt() {
   local prompt="$1"
@@ -59,6 +112,13 @@ sb_instruction_ledger_seed_from_prompt() {
 
   if declare -f sb_prompt_is_informational_query >/dev/null 2>&1 \
     && sb_prompt_is_informational_query "$prompt"; then
+    return 0
+  fi
+
+  # A pasted completion report is evidence of work finished, not a new request.
+  # Seeding from it would enroll the report's own summary as pending items that
+  # nothing can resolve, deadlocking Stop.
+  if sb_prompt_is_agent_report "$prompt"; then
     return 0
   fi
 
