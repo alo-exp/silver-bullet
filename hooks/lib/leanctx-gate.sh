@@ -55,6 +55,7 @@ sb_leanctx_platform_artifact_path() {
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
     opencode) printf '%s/.config/opencode/mcp.json' "${HOME}" ;;
+    claude) printf '%s/.claude/settings.json' "${HOME}" ;;
     *) printf '%s/.codex/settings.json' "${HOME}" ;;
   esac
 }
