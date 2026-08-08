@@ -147,6 +147,7 @@ LeanCTX `ctx_read` returns **display-only** compression markers (`[lean-ctx: omi
 
 ## Related Docs
 
+- [LEANCTX-OPERATING-GUIDE.md](LEANCTX-OPERATING-GUIDE.md) — practical routing, execution, timeout, and edit-safety playbook
 - [RTK.md](RTK.md) — shell compression (`sb_shell`)
 - [CONTEXT-MODE.md](CONTEXT-MODE.md) — sandbox, webfetch, grep analysis (`sb_slice`, `sb_webfetch`, `sb_grep`)
 - [GRAPHIFY.md](GRAPHIFY.md) — code retrieval (`sb_graph`)

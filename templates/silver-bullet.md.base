@@ -402,6 +402,8 @@ Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/
 
 **Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/silver:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
 
+**Operating guide:** Read [`docs/LEANCTX-OPERATING-GUIDE.md`](docs/LEANCTX-OPERATING-GUIDE.md) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
+
 <!-- BEGIN context-mode hint (do not edit) -->
 ## Context Mode usage
 
