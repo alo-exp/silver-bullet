@@ -16,6 +16,14 @@
 
 <!-- ENTRIES BELOW — newest first -->
 
+## 2026-08-08 — repository-consistency-reconciliation
+**What**: Reconciled v0.51.7 release metadata, security posture, standalone lifecycle language, and documentation governance; marked superseded GSD/site analyses as historical, expanded release-surface parity checks, removed host/external-state coupling from the default test harness, kept isolated Codex installs from materializing package symlinks inside the source checkout, and made Sentinel manifest generation tests preserve the frozen audit input.
+**Commits**: —
+**Skills run**: graphify, silver:ensure-docs, security, verify-tests
+**Virtual cost**: —
+**KNOWLEDGE.md**: updated (live guidance vs historical evidence; complete release identity surface)
+**Learnings**: updated (documentation classification and release parity checks)
+
 ## 2026-06-14 — phase-056-zuvo-runtime-parity-release (doc-scheme session pass)
 **What**: Doc-scheme gate remediation for v0.40.0 delivery — full 79-key checklist, fresh mandated-doc mtimes after Cursor session-start-time, TESTING.md phase 057 cursor test matrix.
 **Commits**: (this session)

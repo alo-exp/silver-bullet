@@ -4,8 +4,8 @@
 
 | Version | Supported          |
 |---------|--------------------|
-| 0.6.x   | Yes                |
-| < 0.6   | No                 |
+| 0.51.x  | Yes                |
+| < 0.51  | No                 |
 
 ## Reporting a Vulnerability
 
@@ -35,8 +35,8 @@ Silver Bullet's hooks execute shell commands as part of their enforcement logic.
 
 The following are out of scope:
 
-- Issues in upstream dependencies (GSD, Superpowers, Engineering, Design plugins)
-- Claude Code platform vulnerabilities (report to Anthropic directly)
+- Vulnerabilities in optional third-party extension plugins; report those to their maintainers
+- Host-platform vulnerabilities in Claude Code, Codex, or Cursor; report those to the relevant platform vendor
 - Issues requiring physical access to the machine
 
 ## Acknowledgments

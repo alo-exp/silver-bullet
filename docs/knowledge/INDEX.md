@@ -1,32 +1,31 @@
 # Project Knowledge Index
 
-Quick-reference pointer to current project docs. Updated when docs are added/removed.
+Quick-reference pointer to current guidance and preserved evidence. Updated when a document is added, retired, or changes governance class.
 
-| Doc | Path | Purpose |
-|-----|------|---------|
-| Architecture | `docs/ARCHITECTURE.md` | Components, layers, design principles |
-| Enforcement | `docs/ENFORCEMENT.md` | 12-layer enforcement architecture |
-| SDLC Map | `docs/SDLC-MAP.md` | Stage → skills → artifacts → enforcement |
-| Plugin Boundaries | `docs/PLUGIN-BOUNDARIES.md` | What each plugin owns |
-| Security | `docs/SECURITY.md` | Current posture + audit archive index |
-| Release | `docs/RELEASE.md` | Release process, CI, versioning |
-| Testing | `docs/TESTING.md` | Test pyramid, coverage goals |
-| Skill Scenarios | `tests/skill-scenarios/` | Skill scenario validation fixtures |
-| Tech Debt | `docs/tech-debt.md` | Active debt register (max 20 items) |
-| Changelog | `docs/CHANGELOG.md` | Version history |
-| Task Doc Checklist | `docs/task-doc-checklist.json` | Per-task doc update checklist; must cover governed doc inventory enforced by completion hooks |
-| Doc Scheme Contract | `docs/doc-scheme.json` | Hook-enforced docs contract (`required_docs`, sections, granularity, mappings, archive moves) |
-| PRD Overview | `docs/PRD-Overview.md` | Product vision, requirement areas |
-| Doc Scheme | `docs/doc-scheme.md` | Canonical docs-governance policy and live contract companion |
-| Alo Labs Plugin Install Playbook | `docs/internal/alo-labs-plugin-installation-playbook.md` | Cross-host install, hook, and cache hygiene rules for Alo Labs plugins |
-| Legacy Scheme Wrappers | `docs/documentation-scheme.md`, `docs/project-documentation-scheme.md` | Compatibility pointers for older links |
-| Active Workflow | `docs/workflows/full-dev-cycle.md` | Dev cycle steps |
-| Specs (archive) | `docs/specs/` | Point-in-time design specs |
-| Session Logs | `docs/sessions/` | Per-session notes |
-| Docs Archive | `docs/archive/` | Preserved brownfield docs moved during switch-to-SB alternatives |
-| Audit Archive | `docs/audits/` | Historical SENTINEL reports |
-| Internal | `docs/internal/` | QA reports, guidelines, superseded docs |
-| Git Repo | https://github.com/alo-exp/silver-bullet.git | — |
+## Current guidance
 
-Latest knowledge: `docs/knowledge/2026-06.md`
-Latest learnings: `docs/learnings/2026-06.md`
+| Area | Start here | Supporting references |
+|------|------------|-----------------------|
+| Product and scope | `README.md`, `docs/PRD-Overview.md` | `docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md` |
+| Architecture and orchestration | `docs/ARCHITECTURE.md`, `docs/ORCHESTRATOR.md` | `docs/SDLC-MAP.md`, `docs/PLUGIN-BOUNDARIES.md`, `docs/multi-agent-coordination.md` |
+| APO catalog and authoring | `docs/apo-catalog.json`, `docs/APO-AUTHORING-COMPLIANCE.md` | `docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, `docs/NEW-WORKFLOW.md` |
+| Enforcement and evidence | `docs/ENFORCEMENT.md`, `docs/evidence-schema.md` | `docs/external-review-policy.md`, `docs/code-intelligence-contract.md` |
+| Runtime behavior | `docs/RUNTIME-COMPATIBILITY.md` | `docs/runtime-extensibility-comparison.md` |
+| Security | `SECURITY.md`, `docs/SECURITY.md` | Historical reports under `docs/audits/` |
+| Testing and enterprise validation | `docs/TESTING.md` | `docs/ENTERPRISE-E2E-LIVE-TEST.md`, `tests/skill-scenarios/` |
+| Release | `docs/RELEASE.md` | Root `CHANGELOG.md`, `docs/CHANGELOG.md` |
+| Workflow runbooks | `docs/workflows/full-dev-cycle.md`, `docs/workflows/devops-cycle.md` | — |
+| Documentation governance | `docs/doc-scheme.md`, `docs/doc-scheme.json` | `docs/task-doc-checklist.json`; legacy wrappers remain for old links |
+| Active maintenance | `docs/TODO.md`, `docs/tech-debt.md` | `docs/issues/ISSUES.md`, `docs/issues/BACKLOG.md` |
+| Comparative boundaries | `docs/gsd-vs-silver-bullet.md`, `docs/sb-without-gsd.md` | `docs/sb-vs-gsd.md`, `docs/sb-vs-as1.md` |
+
+## Tool-stack references
+
+`docs/GRAPHIFY.md`, `docs/AGENTMEMORY.md`, `docs/LEANCTX.md`, `docs/LEANCTX-OPERATING-GUIDE.md`, `docs/CONTEXT-MODE.md`, `docs/RTK.md`, `docs/SEARCH-CLI.md`, `docs/ALUMNIUM.md`, and `docs/STACK-OPTIMIZATION.md` describe supported retrieval and runtime-assistance integrations. The cross-host installation playbook is `docs/internal/alo-labs-plugin-installation-playbook.md`.
+
+## Historical evidence
+
+`docs/audits/`, `docs/archive/`, `docs/sessions/`, `docs/specs/`, `docs/superpowers/`, `docs/research*/`, `docs/silver-forensics/`, and superseded files under `docs/internal/` are preserved point-in-time evidence. They are not current instructions unless a live guidance page explicitly promotes them.
+
+Latest knowledge: `docs/knowledge/2026-08.md`
+Latest learnings: `docs/learnings/2026-08.md`

@@ -3,7 +3,8 @@
   "task_granularity": 2,
   "updated_at": "replace-with-utc-iso8601",
   "_notes": [
-    "Populate one docs entry for every governed document file currently present under docs/ (recursive).",
+    "Populate one docs entry for every current guidance surface listed in docs/doc-scheme.json required_docs.",
+    "Historical audits, archives, research, session logs, completed plans, and superseded analyses are evidence rather than live governed guidance unless the scheme explicitly promotes them.",
     "Keep monthly files represented by wildcard keys docs/knowledge/YYYY-MM.md and docs/learnings/YYYY-MM.md.",
     "When README.md or root CHANGELOG.md exist, include them too."
   ],
