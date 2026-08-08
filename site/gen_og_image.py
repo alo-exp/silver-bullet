@@ -277,7 +277,7 @@ def main() -> None:
 
     draw.text((82, 260), "Maximize AI-driven", font=fonts["headline"], fill=TEXT_PRIMARY)
     draw.text((82, 318), "Dev Process Reliability", font=fonts["headline"], fill=HERO_GREEN)
-    draw.text((82, 376), "at 10x Lower Cost", font=fonts["headline"], fill=TEXT_PRIMARY)
+    draw.text((82, 376), "29 Atomic Flows · 26 Workflows", font=fonts["subhead"], fill=TEXT_PRIMARY)
 
     draw.text((82, 458), "Enforce the Method Back to the AI Madness!", font=fonts["subhead"], fill=HERO_GREEN)
 
@@ -292,6 +292,7 @@ def main() -> None:
         "Knowledge Management",
     ]
     right_x = 732
+    draw.text((right_x, 108), "v0.51.7 · 118 FLOW STEPS", font=fonts["tag"], fill=TEXT_DIM)
     draw.text((right_x, 150), "AGENTIC PROCESS ORCHESTRATOR", font=fonts["label"], fill=HERO_GREEN)
     for idx, feature in enumerate(features):
         draw_feature(draw, base, (right_x, 196 + idx * 42), feature, fonts["feature"])

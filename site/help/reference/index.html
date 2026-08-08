@@ -130,7 +130,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 <div class="page-hero">
   <div class="container">
     <h1>Command Reference</h1>
-    <p>Authoritative lookup for Silver Bullet v0.51.7 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 27 canonical atomic flows, 22 workflows, and planning artifacts.</p>
+    <p>Authoritative lookup for Silver Bullet v0.51.7 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 29 canonical atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), and planning artifacts.</p>
   </div>
 </div>
 
@@ -169,7 +169,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- THREE-HOST INSTALL -->
       <h2 id="runtime-install">Three-Host Runtime Install (v0.51.7)</h2>
-      <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. Run <code>bash scripts/sb-bootstrap.sh</code> for first-time orientation or <code>bash scripts/sb-diagnostics.sh</code> to read capability tier 0&ndash;3 for the active host.</p>
+      <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. When working from a repository checkout, <code>bash scripts/sb-bootstrap.sh</code> provides first-time orientation and <code>bash scripts/sb-diagnostics.sh</code> reports capability tier 0&ndash;3. Marketplace users should use the installed <code>/silver:doctor</code> route for host-aware diagnostics.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Host</th><th>Public marketplace</th><th>Checkout installer</th><th>State root</th></tr></thead>
@@ -355,11 +355,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <tbody>
           <tr><td><a href="../workflows/silver-router.html">/silver</a></td><td>freeform intent, route, classify</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td></tr>
           <tr><td><a href="../workflows/silver-deep-research.html">/silver:deep-research</a></td><td>how should we, spike, architecture decision, solution landscape</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-deep-research-multi-ai.html">/silver:deep-research-multi-ai</a></td><td>explicit multi-model research, parallel evidence gathering</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>MULTI_AI_TASK</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-multi-ai-task.html">/silver:multi-ai-task</a></td><td>bounded multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>MULTI_AI_TASK</code></td></tr>
           <tr><td><a href="../workflows/silver-compare.html">/silver:compare</a></td><td>compare named solutions, weighted matrix, N solutions</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> (need-profile) → <code>DECIDE</code> (solution-compare) → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
           <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → context/plan handoff</td></tr>
           <tr><td><a href="../workflows/silver-spec.html">/silver:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code></td></tr>
           <tr><td><a href="../workflows/silver-ingest.html">/silver:ingest</a></td><td>JIRA, Figma, Google Docs, Confluence, external artifact</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code> (ingest sub-step)</td></tr>
           <tr><td><a href="../workflows/silver-validate.html">/silver:validate</a></td><td>validate spec, validate plan, gap analysis, assumption awareness</td><td style="font-family:inherit;font-size:.875rem"><code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-new-workflow.html">/silver:new-workflow</a></td><td>create workflow, convert skill, audit workflow compliance</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>ORIENT</code> → <code>DECIDE</code> → <code>PLAN</code> → <code>REVIEW_TRIAGE</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>VALIDATE</code> → <code>DOCUMENT</code></td></tr>
           <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT?</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
           <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
           <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
@@ -368,6 +371,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><a href="../workflows/silver-refactor.html">/silver:refactor</a></td><td>refactor, rename, split, extract, move files, simplify</td><td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → post-exec gates</td></tr>
           <tr><td><a href="../workflows/silver-benchmark.html">/silver:benchmark</a></td><td>benchmark, compare agents, compare models, provider comparison</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
           <tr><td><a href="../workflows/silver-content.html">/silver:content</a></td><td>content, SEO, AI search, article, blog, migration, metadata, links</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
+          <tr><td><a href="../workflows/silver-agent-delegate.html">Agent delegation</a></td><td>agent-claude, agent-codex, agent-cursor</td><td style="font-family:inherit;font-size:.875rem"><code>AGENT_DELEGATE</code> (<code>WF-AGENT-DELEGATE-ENTRY</code>)</td></tr>
+          <tr><td>/silver:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td style="font-family:inherit;font-size:.875rem"><code>EXECUTE</code> (worktree isolation mode)</td></tr>
           <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
           <tr><td><a href="../workflows/silver-deploy.html">/silver:deploy</a></td><td>deploy, deployment, production deploy, staging deploy, rollout</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td></tr>
           <tr><td><a href="../workflows/silver-canary.html">/silver:canary</a></td><td>canary, post-deploy, production watch, runtime watch, health watch</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td></tr>
@@ -378,7 +383,6 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><a href="../workflows/silver-retro.html">/silver:retro</a></td><td>retro, retrospective, release metrics, process review</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DOCUMENT</code> → <code>DECIDE</code></td></tr>
           <tr><td><a href="../workflows/silver-forensics.html">/silver:forensics</a></td><td>forensics, session failure, post-mortem reconstruction</td><td style="font-family:inherit;font-size:.875rem"><code>DEBUG</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-SILVER-FORENSICS</code>)</td></tr>
           <tr><td><a href="../workflows/silver-process-maintenance.html">/silver:process-maintenance</a></td><td>phase, thread, backlog, migration</td><td style="font-family:inherit;font-size:.875rem"><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-PROCESS-MAINTENANCE</code>)</td></tr>
-          <tr><td>/silver:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td style="font-family:inherit;font-size:.875rem"><code>EXECUTE</code> (worktree isolation mode)</td></tr>
         </tbody>
       </table></div>
       <p><strong>Post-exec gates</strong> (<code>WF-POST-EXEC-GATES</code>): <code>UI_QUALITY?</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE?</code> → <code>QUALITY_GATE</code> (pre-ship) → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code>.</p>
@@ -429,7 +433,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <!-- RUNTIME PARITY (v0.51.5) -->
-      <h2 id="runtime-parity">Runtime Parity Scripts (v0.51.5)</h2>
+      <h2 id="runtime-parity">Runtime Parity Scripts <span class="historical" data-historical>(introduced in v0.51.5)</span></h2>
       <p>Structural parity scripts align documented evidence contracts with hook-enforced runtime behavior across all three hosts.</p>
 
       <div class="table-wrap"><table class="ref-table">
@@ -439,8 +443,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td><code>hooks/lib/evidence-schema-gate.sh</code></td><td>Warn-first delivery gate on PR/release; set <code>SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1</code> to hard-block.</td></tr>
           <tr><td><code>scripts/silver-add.sh fingerprint|dedup|prioritize</code></td><td>Stable backlog fingerprints shared with <code>silver:scan</code>; dedup against <code>docs/issues/</code> and scan state.</td></tr>
           <tr><td><code>scripts/stamp-interface-state.sh</code></td><td>Stamps <code>.planning/interface/STATE.md</code> from template during <code>/silver:init</code> for UI projects.</td></tr>
-          <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>One-command onboarding probe: checks <code>jq</code>, runs diagnostics, prints init/plugin next steps.</td></tr>
-          <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Install/runtime diagnostics for migrators and support.</td></tr>
+          <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>Repository-checkout onboarding probe: checks <code>jq</code>, runs diagnostics, and prints init/plugin next steps.</td></tr>
+          <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Repository-checkout install/runtime diagnostics for development, migration, and support.</td></tr>
           <tr><td><code>scripts/sb-doctor.sh</code></td><td>Host-aware install + activation audit (<code>/silver:doctor</code>). Checks plugin cache, hooks manifest, config freshness, orchestrator rule (Cursor only), and cross-host contamination.</td></tr>
         </tbody>
       </table></div>
@@ -470,7 +474,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- APO CATALOG ARTIFACTS -->
       <h2 id="composable-flows">APO Catalog, Generated Views &amp; Migration</h2>
-      <p>v0.51.5 makes <code>docs/apo-catalog.json</code> the sole authority for the Silver Bullet process model. It defines Process → Workflow → Atomic Flow → Flow Step/Skill, including 27 canonical atomic flows, 22 workflows, 85 flow steps, V-loops, evidence records, intent ledgers, composition logs, tool policies, and runtime mappings.</p>
+      <p><span class="historical" data-historical>Introduced in v0.51.5,</span> <code>docs/apo-catalog.json</code> is the sole authority for the Silver Bullet process model. It defines Process → Workflow → Atomic Flow → Flow Step/Skill, including 29 canonical atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 118 flow steps, V-loops, evidence records, intent ledgers, composition logs, tool policies, and runtime mappings.</p>
 
       <h3 id="catalog-generated-views">Catalog source of truth</h3>
       <ul>
@@ -484,16 +488,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3 id="vloop-subagents">V-loops and subagents</h3>
       <p>Every atomic flow executes as exactly one subagent work package. Each flow step/skill has a local V-loop; step V-loops roll up into the atomic-flow V-gate, atomic-flow V-gates roll up into workflow gates, and final completion validates material user intent against evidence.</p>
 
-      <h3 id="migration-notes">v0.51.5 migration notes</h3>
+      <h3 id="migration-notes"><span class="historical" data-historical>v0.51.5 migration notes</span></h3>
       <ul>
         <li>Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation. New docs, workflows, and tests should use atomic-flow slugs, <code>WF-*</code> workflow IDs, or public <code>/silver:*</code> routes.</li>
         <li>Older <code>WORKFLOW.md</code> state is legacy; active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code>.</li>
-        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with v0.51.5.</li>
+        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with the installed release. <span class="historical" data-historical>This migration instruction was introduced in v0.51.5.</span></li>
         <li>If stale generated docs are detected, run <code>python3 scripts/generate-apo-artifacts.py</code> and the APO freshness tests before release.</li>
       </ul>
 
       <h3 id="atomic-flow-list">Canonical atomic flows</h3>
-      <p>Cross-checked against <code>docs/generated/atomic-flow-index.json</code> (27 entries). Slugs are the stable catalog identifiers; legacy FLOW numbers map through <code>migration_map.legacy_flows</code> in the catalog.</p>
+      <p>Cross-checked against <code>docs/generated/atomic-flow-index.json</code> (29 entries). Slugs are the stable catalog identifiers; legacy FLOW numbers map through <code>migration_map.legacy_flows</code> in the catalog.</p>
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Slug</th><th>Capability class</th><th>Public route</th><th>Legacy alias</th></tr></thead>
         <tbody>
@@ -509,6 +513,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:quality-gates</code>, <code>/devops-quality-gates</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 13</td></tr>
           <tr><td>FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:fast</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td>EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:execute</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 8</td></tr>
+          <tr><td>AGENT_DELEGATE</td><td style="font-family:inherit;font-size:.875rem">supervised external-agent delegation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:agent-claude</code>, <code>/silver:agent-codex</code>, <code>/silver:agent-cursor</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>MULTI_AI_TASK</td><td style="font-family:inherit;font-size:.875rem">budgeted multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:multi-ai-task</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
           <tr><td>DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:debug</code>, <code>/silver:forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
           <tr><td>UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ui-review</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 9</td></tr>
           <tr><td>VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:verify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 12</td></tr>
@@ -753,7 +759,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.51.5</div>
+/silver:release v0.51.7</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>

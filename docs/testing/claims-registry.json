@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Homepage marketing claims mapped to verification test IDs (site/index.html).",
   "claims": [
     {
@@ -15,16 +15,16 @@
       "test_ids": ["claims-audit"]
     },
     {
-      "claim_id": "hero-reliability-cost",
-      "text": "at 10x Lower Cost",
+      "claim_id": "hero-reliability-evidence",
+      "text": "with Enforced Evidence",
       "source_selector": "#hero-main .hero-headline",
-      "test_ids": ["rtk-context-mode-preflight"]
+      "test_ids": ["completion-audit", "claims-audit"]
     },
     {
-      "claim_id": "hero-free-no-telemetry",
-      "text": "100% Free Forever",
+      "claim_id": "hero-busl-no-telemetry",
+      "text": "BUSL 1.1 Source-Available",
       "source_selector": "#hero-main .hero-cta-note",
-      "test_ids": ["claims-audit", "privacy-docs"]
+      "test_ids": ["claims-audit", "license-terms", "privacy-docs"]
     },
     {
       "claim_id": "hero-tri-host",
@@ -40,7 +40,7 @@
     },
     {
       "claim_id": "mechanism-catalog-counts",
-      "text": "27 atomic flows composed into 22 task-shaped workflows",
+      "text": "29 atomic flows composed into 22 task-shaped workflows and 4 reusable components",
       "source_selector": "#mechanism",
       "test_ids": ["validate-apo-catalog"]
     },
@@ -75,15 +75,9 @@
       "test_ids": ["runtime-compatibility-doc"]
     },
     {
-      "claim_id": "first-hour-block-pr",
-      "text": "blocking their first unsafe PR within the first session",
-      "source_selector": "#next-steps",
-      "test_ids": ["planned-onboarding-slo"]
-    },
-    {
       "claim_id": "catalog-contract-footer",
-      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
-      "source_selector": "#catalog",
+      "text": "26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.",
+      "source_selector": "#workflow",
       "test_ids": ["validate-apo-catalog"]
     },
     {

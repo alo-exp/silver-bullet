@@ -79,15 +79,15 @@ main{padding:48px 24px 96px}
  <div class="container">
   <p class="section-label">Release notes</p>
   <h1>What&rsquo;s New</h1>
-  <p>Highlights from Silver Bullet v0.48 onward. Full history lives in the repository <code>CHANGELOG.md</code>.</p>
+  <p>Selected highlights from Silver Bullet v0.48 onward. This page is intentionally not an exhaustive release ledger; full canonical history lives in the repository <code>CHANGELOG.md</code>.</p>
   <p class="source-link"><a href="https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">View full CHANGELOG on GitHub &rarr;</a></p>
  </div>
 </header>
 <main>
  <div class="container">
-  <article class="release" id="dev-multi-ai-dr">
+  <article class="release" id="unreleased">
    <div class="release-header">
-    <h2>Development — multi-AI deep research</h2>
+    <h2>Unreleased — multi-AI deep research</h2>
     <time class="release-date" datetime="2026-07-17">2026-07-17</time>
    </div>
    <p class="release-summary">In progress (not yet versioned): <code>/silver:multi-ai-task</code> and <code>/silver:deep-research-multi-ai</code> — multi-ai-task-v2 spine, v4 manifests, capability spike, dual HTML reports.</p>
@@ -161,11 +161,6 @@ main{padding:48px 24px 96px}
     <li><code>fix(commands)</code>: align Cursor and Codex slash routes with <code>silver:</code> colon convention</li>
     <li><code>fix(deep-research)</code>: v2 audit follow-ups and Thermos hardening</li>
    </ul>
-  </article>
-  <article class="release" id="unreleased">
-   <div class="release-header">
-    <h2>Unreleased</h2>
-   </div>
   </article>
   <article class="release" id="v0-51-3">
    <div class="release-header">
@@ -323,22 +318,6 @@ main{padding:48px 24px 96px}
     <li><code>docs(issues)</code>: enterprise E2E issues log with fix commit SHA traceability</li>
    </ul>
   </article>
-  <article class="release" id="v0-48-7-doctor">
-   <div class="release-header">
-    <h2>v0.48.7</h2>
-    <time class="release-date" datetime="2026-06-29">2026-06-29</time>
-   </div>
-   <p class="release-summary">Host-aware silver-doctor checks and enterprise E2E credential preflight.</p>
-   <h3>Bug Fixes</h3>
-   <ul>
-    <li><code>fix(doctor)</code>: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via <code>runtime-paths.sh</code></li>
-    <li><code>fix(e2e)</code>: fail fast when Claude token gateway credentials missing</li>
-   </ul>
-   <h3>Tests</h3>
-   <ul>
-    <li><code>test(doctor)</code>: mocked-host unit tests for Claude/Codex/Cursor doctor paths</li>
-   </ul>
-  </article>
   <article class="release" id="v0-48-7">
    <div class="release-header">
     <h2>v0.48.7</h2>
@@ -354,10 +333,12 @@ main{padding:48px 24px 96px}
    <ul>
     <li><code>fix(if)</code>: close remaining test, hook coverage, and documentation gaps</li>
     <li><code>fix(ladder)</code>: enforce Composer 2.5 only for all Cursor subagent rungs</li>
+    <li><code>fix(doctor)</code>: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via <code>runtime-paths.sh</code></li>
+    <li><code>fix(e2e)</code>: fail fast when Claude token gateway credentials are missing</li>
    </ul>
    <h3>Documentation</h3>
    <ul>
-    <li><code>docs(test)</code>: silver-doctor catalog, scenario, and sentinel manifest coverage</li>
+    <li><code>docs(test)</code>: silver-doctor catalog, scenario, sentinel manifest coverage, and mocked-host unit tests for Claude/Codex/Cursor doctor paths</li>
    </ul>
   </article>
   <article class="release" id="v0-48-6">

@@ -128,14 +128,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="overview">Overview</h2>
       <p><code>/silver:deep-research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>research/</code> and referenced by the receiving workflow.</p>
       <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, runs direct evidence-based research in the current host session by default, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
-      <p><code>/silver:deep-research</code> maps to <code>WF-SILVER-DEEP-RESEARCH</code> in the v0.48.3 APO catalog. Standard composition:</p>
+      <p><code>/silver:deep-research</code> maps to <code>WF-SILVER-DEEP-RESEARCH</code> in the v0.51.7 APO catalog. Standard composition:</p>
       <div class="code-block">AF-CLARIFY → AF-DECIDE → AF-DOCUMENT → AF-VALIDATE</div>
       <p>After validation, hand off to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver</code> reclassification. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>v2 engine (v0.51.5+):</strong> SB-owned <code>search_orchestrator</code> with <code>skill_portals</code> for landscape research, <code>capability_score</code> eval harness, <code>validate_report</code> language gates, branch-correct GitHub <code>SKILL.md</code> retrieval, and <code>chain_tracker</code> citation lineage — see <a href="../../changelog/">changelog</a> for release notes.
+          <strong>v2 engine <span class="historical" data-historical>(introduced in v0.51.5)</span>:</strong> SB-owned <code>search_orchestrator</code> with <code>skill_portals</code> for landscape research, <code>capability_score</code> eval harness, <code>validate_report</code> language gates, branch-correct GitHub <code>SKILL.md</code> retrieval, and <code>chain_tracker</code> citation lineage — see <a href="../../changelog/">changelog</a> for release notes.
         </div>
       </div>
 

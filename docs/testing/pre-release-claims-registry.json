@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Feature-level homepage and help claims verified in pre-release (overlay dry-run structural, claims-audit, matrix rows, install scripts). Not in validation overlay gates.",
   "sources": {
     "homepage": "site/index.html",
@@ -52,10 +52,19 @@
     {
       "claim_id": "mechanism-catalog-counts",
       "surface": "homepage",
-      "text": "27 atomic flows composed into 22 task-shaped workflows",
+      "text": "29 atomic flows composed into 22 task-shaped workflows and 4 reusable components",
       "verification_tier": "contract",
       "check_id": "apo-catalog-counts",
       "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "hero-busl-no-telemetry",
+      "surface": "homepage",
+      "text": "BUSL 1.1 Source-Available",
+      "verification_tier": "contract",
+      "check_id": "license-surface-consistency",
+      "test_ids": ["claims-audit", "site-structural-consistency"],
+      "notes": "BUSL 1.1 source availability and no-plugin-telemetry wording are qualified by the homepage, Terms, Privacy Policy, and repository LICENSE."
     },
     {
       "claim_id": "mechanism-twelve-hooks",
@@ -111,7 +120,7 @@
     {
       "claim_id": "catalog-contract-footer",
       "surface": "homepage",
-      "text": "22 Workflows. 27 Atomic Flows. One Contract.",
+      "text": "26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.",
       "verification_tier": "contract",
       "check_id": "apo-catalog-counts",
       "test_ids": ["validate-apo-catalog"]
@@ -127,7 +136,7 @@
     {
       "claim_id": "help-workflow-pages",
       "surface": "help_center",
-      "text": "Each catalog workflow has a Help Center workflow page",
+      "text": "All 22 public catalog workflows have dedicated Help Center workflow pages; all 4 reusable components are covered in aggregate workflow documentation",
       "verification_tier": "structural",
       "check_id": "help-workflow-coverage",
       "test_ids": ["help-center-staleness"]
