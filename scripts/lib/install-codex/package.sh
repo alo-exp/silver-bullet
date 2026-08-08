@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 # Codex install module — auto-split from install-codex.sh
+codex_package_is_repo_checkout() {
+  local package_root="$1"
+  local package_real repo_package_real
+
+  package_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$package_root")"
+  repo_package_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "${REPO_ROOT}/plugins/silver-bullet")"
+  [[ "$package_real" == "$repo_package_real" ]]
+}
+
 materialize_silver_bullet_package() {
   local marketplace_root
   local package_root
@@ -14,6 +23,10 @@ materialize_silver_bullet_package() {
   fi
 
   [[ -d "$package_root" ]] || return 0
+  # The generated package in a source checkout intentionally uses symlinks.
+  # Materialize only marketplace/cache copies; mutating the checkout makes a
+  # later mirror-freshness gate depend on test or install order.
+  codex_package_is_repo_checkout "$package_root" && return 0
 
   # Codex's cache materialization can drop symlink-backed package entries.
   # Replace SB's symlinked top-level package surface with real files/dirs so
@@ -58,6 +71,7 @@ sync_materialized_package_surface() {
   package_root="${marketplace_root}/plugins/silver-bullet"
 
   [[ -d "$package_root" ]] || return 0
+  codex_package_is_repo_checkout "$package_root" && return 0
 
   local dir
   rm -rf -- "${package_root}/skills"
@@ -160,5 +174,4 @@ validate_silver_bullet_skill_surface() {
     fi
   done
 }
-
 

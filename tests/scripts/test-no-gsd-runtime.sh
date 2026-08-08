@@ -34,8 +34,9 @@ violations="$(rg 'gsd[-:]' \
   --glob '*.{sh,md,json}' 2>/dev/null || true)"
 
 if [[ -n "$violations" ]]; then
-  # Allow only forbidden-skill-check denylist entries.
-  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/scripts/test-no-gsd-runtime\.sh|scripts/prune-stale-claude-user-hooks\.sh|scripts/watch-enterprise-e2e-tui\.sh|scripts/agent-claude/lib\.sh' || true)"
+  # Allow denylist/migration references and the research-only competitor registry.
+  # The category-pack URL is discovery data; it is not a runtime dependency or route.
+  unexpected="$(printf '%s\n' "$violations" | grep -vE 'hooks/forbidden-skill-check\.sh|tests/scripts/test-no-gsd-runtime\.sh|scripts/prune-stale-claude-user-hooks\.sh|scripts/watch-enterprise-e2e-tui\.sh|scripts/agent-claude/lib\.sh|skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator\.json' || true)"
   if [[ -n "$unexpected" ]]; then
     fail "unexpected gsd refs outside forbidden-skill denylist"
     printf '%s\n' "$unexpected" | sed 's/^/    /'

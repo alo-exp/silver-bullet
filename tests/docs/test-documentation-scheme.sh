@@ -43,6 +43,30 @@ for f in \
   fi
 done
 
+section "Documentation governance contract"
+
+if jq -e '(.required_docs | map(.key) | length) == (.required_docs | map(.key) | unique | length)' docs/doc-scheme.json >/dev/null; then
+  pass "doc-scheme required_docs keys are unique"
+else
+  fail "doc-scheme required_docs contains duplicate keys"
+fi
+
+if jq -e --slurpfile scheme docs/doc-scheme.json \
+  '(.docs | keys | sort) == ($scheme[0].required_docs | map(.key) | sort)' \
+  docs/task-doc-checklist.json >/dev/null; then
+  pass "task checklist exactly covers the governed guidance inventory"
+else
+  fail "task checklist keys differ from doc-scheme required_docs"
+fi
+
+historical_required=$(jq -r '.required_docs[].key' docs/doc-scheme.json | \
+  grep -E '^docs/(archive|audits|research[^/]*|sessions|silver-forensics|specs|superpowers)/' || true)
+if [[ -z "$historical_required" ]]; then
+  pass "historical evidence directories are excluded from live guidance governance"
+else
+  fail "historical evidence incorrectly listed as live guidance: $historical_required"
+fi
+
 # ─── Section 2: Required directories exist ───
 
 section "Required directories exist"
