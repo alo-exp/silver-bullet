@@ -273,6 +273,11 @@ sb_graphify_platform_artifact_path() {
     opencode) printf '%s/.opencode/opencode.json' "${project_root%/}" ;;
     goose) printf '%s/.pi/agent/skills/graphify/SKILL.md' "${project_root%/}" ;;
     hermes) printf '%s/AGENTS.md' "${project_root%/}" ;;
+    # `graphify claude install --project` writes project-scoped hooks into
+    # .claude/settings.json. Without this arm claude fell through to the codex
+    # path, so graphify-platform reported a permanently unclearable WARN even
+    # when Claude hooks were installed correctly.
+    claude) printf '%s/.claude/settings.json' "${project_root%/}" ;;
     *) printf '%s/.codex/settings.json' "${project_root%/}" ;;
   esac
 }

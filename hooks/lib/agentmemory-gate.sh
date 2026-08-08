@@ -141,6 +141,8 @@ sb_agentmemory_platform_artifact_path() {
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     goose) printf '%s/.config/goose/config.yaml' "${HOME}" ;;
     hermes) printf '%s/.hermes/config.yaml' "${HOME}" ;;
+    # Explicit rather than correct-by-accident via the fallback.
+    claude) printf '%s/.claude.json' "${HOME}" ;;
     *) printf '%s/.claude.json' "${HOME}" ;;
   esac
 }

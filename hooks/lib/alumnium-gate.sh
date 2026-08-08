@@ -39,6 +39,8 @@ sb_alumnium_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    # Explicit rather than correct-by-accident via the fallback.
+    claude) printf '%s/.claude.json' "${HOME}" ;;
     *) printf '%s/.claude.json' "${HOME}" ;;
   esac
 }
