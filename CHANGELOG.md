@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.52.0] — 2026-08-08
+
+Minor release: five-tool routed compression stack, multi-AI orchestration primitive, and a batch of hook gate-integrity fixes — several gates were failing open or blocking Stop permanently.
+
+## Features
+- `feat(tools)`: activate five-tool routed stack — graphify, leanctx, context-mode, rtk, agentmemory (`d2e45587`)
+- `feat(tools)`: five-tool reconciler and Cursor install integration (`5fd2e27f`)
+- `feat(multi-ai)`: multi-AI primitive, deep-research composer, Excel matrix, and personas (`0981d91e`)
+- `feat(multi-ai)`: Codex/OpenCode host adapters for live deep-research dispatch (`65a1ebe2`)
+- `feat(clarify)`: per-plan CLARIFY filenames and planning path helper (`d63bc165`)
+
+## Fixes
+- `fix(hooks)`: stop instruction-ledger self-enrollment — the ledger extracted every markdown bullet including lines inside code fences, so pasting an agent completion report enrolled its own summary as new pending work and Stop could never be satisfied (`c452f9df`)
+- `fix(hooks)`: stop instruction-ledger and review-fix-ladder gates failing open — `jq -e` over a generator emitted nothing at zero pending nodes and exited 4, and a bare `sb_rfl_compliance_stop` under `set -e` plus `trap 'exit 0' ERR` made a deny gate return ALLOW (`8f570b37`)
+- `fix(hooks)`: add a real claude arm to `sb_leanctx_hooks_present()` — the hooks-wiring check silently passed on every host except cursor and codex (`c452f9df`)
+- `fix(hooks)`: site regression gate no longer wedges on a BSD `mktemp` template (`2044c86c`)
+- `fix(hooks)`: stop shell-hook duplication and orphan bash leaks (`c179c509`)
+- `fix(hooks)`: site session gates skip agent-delegation false positives (#244, #245) (`cb4611cf`)
+- `fix(leanctx)`: resolve the claude host MCP artifact to `~/.claude/settings.json`, and correct the claude guard path that pointed at `~/.codex/CLAUDE.md` (`54ab337b`, `c452f9df`)
+- `fix(leanctx)`: dedupe the lean-ctx MCP server entry on SB install (`cd702db9`)
+- `fix(doctor)`: report D10-routes `cross_tool unsupported` as a platform-limitation warning instead of a FAIL recommending `--fix=host`, which could never clear it (`c452f9df`)
+- `fix(tests)`: repair a BSD-first `stat` probe that wedged CI — on GNU coreutils `-f` means `--file-system` and exits 0, so the fallback never ran and `chmod` received a junk mode (`03035708`)
+- `fix(ci)`: repair the graphify artifact schema failing validation on main (`8800a63a`)
+- `fix(agents)`: implement `agent_delegate_append_workdir_evidence` for the delegate log floor (`da7df161`)
+
+## Docs
+- LeanCTX operating guide (`9f349618`), public site reconcile (`25eb0cb7`), shared Graphify repository artifacts (`a79ecb77`)
+
+---
+
 ## [0.51.7] — 2026-07-12
 
 Patch release: Cursor desktop `/silver` commands fix — hyphen-safe command filenames and install identity lock.
