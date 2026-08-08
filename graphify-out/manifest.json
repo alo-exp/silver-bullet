@@ -3070,7 +3070,7 @@
     "semantic_hash": "38c9d418a72d6604552a170e2232e5e7"
   },
   ".silver-bullet.json": {
-    "mtime": 1786175145.829663,
+    "mtime": 1786178264.6399486,
     "ast_hash": "1ada161473c9fff9d71db18c446ff24a",
     "semantic_hash": ""
   },
@@ -4150,9 +4150,9 @@
     "semantic_hash": "75fdd9ced4960f1a86875dd4ab958deb"
   },
   "hooks/lib/leanctx-gate.sh": {
-    "mtime": 1786119200.6104355,
-    "ast_hash": "a6da498047ecf4e779126bc95b01c0f0",
-    "semantic_hash": "a6da498047ecf4e779126bc95b01c0f0"
+    "mtime": 1786178816.7811174,
+    "ast_hash": "91c95e01c0f404fb335747aeb4e09dc5",
+    "semantic_hash": ""
   },
   "hooks/lib/nofollow-guard.sh": {
     "mtime": 1786119200.6105437,
@@ -5195,7 +5195,7 @@
     "semantic_hash": "a9649d410db9ff146bd8d190edd91257"
   },
   "plugins/silver-bullet/.silver-bullet.json": {
-    "mtime": 1786175145.829663,
+    "mtime": 1786178264.6399486,
     "ast_hash": "1ada161473c9fff9d71db18c446ff24a",
     "semantic_hash": ""
   },
