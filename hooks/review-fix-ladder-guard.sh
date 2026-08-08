@@ -132,5 +132,10 @@ if violation="$(sb_rfl_validate_task_spawn "$prompt" "$model" "$readonly_flag" "
   exit 0
 fi
 
-sb_rfl_compliance_stop "$violation"
+# State-recording is best-effort. sb_rfl_compliance_stop() bubbles up the exit
+# code of sb_rfl_set_bool/sb_rfl_set_field, which return non-zero when the
+# ladder state file is unwritable or unparseable. Left bare, that non-zero
+# trips `set -e` -> the `trap 'exit 0' ERR` above -> exit 0, which the host
+# reads as ALLOW: emit_deny below would never run and the gate would fail OPEN.
+sb_rfl_compliance_stop "$violation" || true
 emit_deny "$violation"

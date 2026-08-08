@@ -105,10 +105,13 @@ sb_instruction_ledger_all_resolved() {
   outfile="$(sb_instruction_ledger_file)"
   [[ -f "$outfile" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
+  # Collect pending nodes into an ARRAY before counting. A bare generator
+  # (`def pending_nodes: .. | objects | select(...)`) makes `| length` map over
+  # each emitted node instead of counting them, and emits nothing at all when
+  # there are zero pending nodes — so `jq -e` exits 4 (no output) exactly when
+  # everything IS resolved, blocking Stop forever with an empty item list.
   jq -e '
-    def pending_nodes:
-      .. | objects | select(has("status")) | select(.status == "pending");
-    (pending_nodes | length) == 0
+    [.. | objects | select(has("status")) | select(.status == "pending")] | length == 0
   ' "$outfile" >/dev/null 2>&1
 }
 

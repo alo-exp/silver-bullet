@@ -150,6 +150,27 @@ sb_rfl_advance_rung
 [[ "$(sb_rfl_read_field rung "")" == "2" ]] && check "advance rung 2" pass || check "advance rung 2" fail
 [[ "$(sb_rfl_read_field subagent_name "")" == "sb-composer-2-5-high" ]] && check "advance subagent_name" pass || check "advance subagent_name" fail
 
+# ── Fail-open regression: the deny must survive a failed state write ─────────
+# sb_rfl_compliance_stop() bubbles up sb_rfl_set_bool/set_field's exit code.
+# When the state dir is not writable that is non-zero, which — left bare under
+# `set -e` + `trap 'exit 0' ERR` — aborted the hook with exit 0 (ALLOW) before
+# emit_deny ever ran, silently failing the gate OPEN.
+if [[ "$(id -u)" != "0" ]]; then
+  sb_rfl_reset 1 composer-2.5 composer-2.5
+  sb_rfl_set_field phase review
+  _rfl_saved_mode=$(stat -f '%Lp' "$SB_RUNTIME_STATE_DIR" 2>/dev/null || stat -c '%a' "$SB_RUNTIME_STATE_DIR")
+  chmod 0500 "$SB_RUNTIME_STATE_DIR"
+  # `|| true` so a regressed hook (which exits non-zero with no output) reports
+  # a clean FAIL here instead of killing this `set -e` harness.
+  out_unwritable=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage on findings",model:"composer-2.5"}}')" || true)
+  chmod "$_rfl_saved_mode" "$SB_RUNTIME_STATE_DIR"
+  is_denied "$out_unwritable" \
+    && check "still denies when compliance-stop state write fails" pass \
+    || check "still denies when compliance-stop state write fails" fail
+else
+  echo "  SKIP: running as root — chmod-based unwritable-state case not meaningful"
+fi
+
 rm -rf "$WORK"
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
