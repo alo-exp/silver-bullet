@@ -96,6 +96,9 @@ sb_rtk_platform_hook_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/hooks.json' "${HOME}" ;;
     codex) printf '%s/.codex/AGENTS.md' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    # rtk init -g wires Claude hooks into ~/.claude/settings.json; the codex
+    # fallback pointed this check at a different host's config entirely.
+    claude) printf '%s/.claude/settings.json' "${HOME}" ;;
     *) printf '%s/.codex/settings.json' "${HOME}" ;;
   esac
 }
