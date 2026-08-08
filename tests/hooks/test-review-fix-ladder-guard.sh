@@ -158,7 +158,13 @@ sb_rfl_advance_rung
 if [[ "$(id -u)" != "0" ]]; then
   sb_rfl_reset 1 composer-2.5 composer-2.5
   sb_rfl_set_field phase review
-  _rfl_saved_mode=$(stat -f '%Lp' "$SB_RUNTIME_STATE_DIR" 2>/dev/null || stat -c '%a' "$SB_RUNTIME_STATE_DIR")
+  # GNU stat first. BSD's `-f FORMAT` means `--file-system` on GNU coreutils,
+  # which prints a filesystem report and exits 0 — so probing BSD-first never
+  # reaches the fallback on Linux and hands chmod a multi-line junk "mode".
+  # That is exactly how this test broke CI while passing on macOS.
+  _rfl_saved_mode=$(stat -c '%a' "$SB_RUNTIME_STATE_DIR" 2>/dev/null \
+    || stat -f '%Lp' "$SB_RUNTIME_STATE_DIR" 2>/dev/null)
+  [[ "$_rfl_saved_mode" =~ ^[0-7]{3,4}$ ]] || _rfl_saved_mode=700
   chmod 0500 "$SB_RUNTIME_STATE_DIR"
   # `|| true` so a regressed hook (which exits non-zero with no output) reports
   # a clean FAIL here instead of killing this `set -e` harness.
