@@ -104,5 +104,32 @@ python3 "$REPO_ROOT/tests/scripts/check-site-help-consistency.py"
 bash "$REPO_ROOT/tests/scripts/test-site-chrome-regression.sh"
 
 echo
+# --- Superseded release versions under site/ ------------------------------
+# Generic replacement for per-version hardcoded checks. The release process
+# bumps package.json but has never swept site/, so every release left stale
+# "As of vX.Y.Z" product claims behind (v0.51.7 left 66 across 28 files).
+#
+# Legitimate history is respected via the site's own existing convention:
+# `<span class="historical" data-historical>(introduced in vX.Y.Z)</span>`, or
+# a line that calls itself Historical. Those lines are skipped, so documenting
+# when a feature landed stays possible.
+#
+# Allowlisted files: the changelog (release history is its purpose) and the
+# gaps report (a labelled point-in-time audit snapshot).
+_stale_version_hits="$(
+  grep -rnE 'v0\.(4[0-9]|5[0-9])\.[0-9]+' \
+    "$REPO_ROOT/site" \
+    --include='*.html' --include='*.js' --include='*.py' 2>/dev/null \
+  | grep -vE 'site/changelog/index\.html|site/gaps/index\.html' \
+  | grep -vE 'data-historical|class="historical"|[Hh]istorical' \
+  | grep -vE "v${CURRENT_VERSION}" \
+  || true
+)"
+if [[ -z "$_stale_version_hits" ]]; then
+  pass "no superseded release version strings under site/ (outside changelog/gaps and historical markers)"
+else
+  fail "no superseded release version strings under site/ — found $(printf '%s\n' "$_stale_version_hits" | grep -c . || true) hit(s), e.g. $(printf '%s' "$_stale_version_hits" | head -3 | sed "s|$REPO_ROOT/||" | tr '\n' ' ')"
+fi
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

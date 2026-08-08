@@ -9,7 +9,7 @@
 <title>Command Reference — Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet command reference: lifecycle commands, composable atomic flows, .silver-bullet.json config options, file structure, and session log format.">
 <meta property="og:title" content="Command Reference — Silver Bullet Help">
-<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.51.7.">
+<meta property="og:description" content="Lifecycle commands, composable atomic flows reference, .silver-bullet.json config, and session log format for v0.52.0.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/reference/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -130,7 +130,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 <div class="page-hero">
   <div class="container">
     <h1>Command Reference</h1>
-    <p>Authoritative lookup for Silver Bullet v0.51.7 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 29 canonical atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), and planning artifacts.</p>
+    <p>Authoritative lookup for Silver Bullet v0.52.0 — commands, <code>.silver-bullet.json</code>, the APO catalog (<code>docs/apo-catalog.json</code>), 29 canonical atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), and planning artifacts.</p>
   </div>
 </div>
 
@@ -168,7 +168,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <!-- THREE-HOST INSTALL -->
-      <h2 id="runtime-install">Three-Host Runtime Install (v0.51.7)</h2>
+      <h2 id="runtime-install">Three-Host Runtime Install (v0.52.0)</h2>
       <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. When working from a repository checkout, <code>bash scripts/sb-bootstrap.sh</code> provides first-time orientation and <code>bash scripts/sb-diagnostics.sh</code> reports capability tier 0&ndash;3. Marketplace users should use the installed <code>/silver:doctor</code> route for host-aware diagnostics.</p>
 
       <div class="table-wrap"><table class="ref-table">
@@ -432,7 +432,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <div class="divider"></div>
 
-      <!-- RUNTIME PARITY (v0.51.5) -->
+      <!-- RUNTIME PARITY (historical: v0.51.5) -->
       <h2 id="runtime-parity">Runtime Parity Scripts <span class="historical" data-historical>(introduced in v0.51.5)</span></h2>
       <p>Structural parity scripts align documented evidence contracts with hook-enforced runtime behavior across all three hosts.</p>
 
@@ -759,7 +759,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 /silver:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.51.7</div>
+/silver:release v0.52.0</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>
