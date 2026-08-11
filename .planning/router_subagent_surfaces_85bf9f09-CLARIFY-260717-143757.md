@@ -202,6 +202,9 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 17. **Active RFL → live pre-read/P-loop:** post-migration prospective ordinary I edits require fresh `pre_read_pending → poa_*`; historical mapped evidence never satisfies live gates.
 18. **Iterate P-loop exemption:** rung planning gate is charter + baseline admission/revalidation — not ordinary `poa_*`.
 19. **P-loop plan freshness (Sol XHigh c1):** material plan-of-action change under same work-spec requires `i_running → poa_*` re-P (new satisfaction receipt) before re-entering `i_running`; work-spec scope change still requires re-launch.
+20. **Process-repair delegation (Sol XHigh c2):** Process V/Val findings against child deliverables use Authorizer-owned `process_repair_pending` → `process_repair_delegated` → Workflow/AF relaunch + join; Process-synthesis never mutates AF/Work-Skill artifacts directly; re-entry through Process A→V→Val.
+21. **Blocker precedence table (Sol XHigh c2):** mutually exclusive ordered classification — corrupt_state > callback_gap > callback_unresolved > verification_unavailable > validation_state > advisor_state > escalation_unavailable > child_unavailable (role-specific wins over generic); one canonical blocker + resume target per failure.
+
 
 
 
