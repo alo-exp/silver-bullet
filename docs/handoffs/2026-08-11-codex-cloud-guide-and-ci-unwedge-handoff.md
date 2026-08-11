@@ -96,30 +96,56 @@ FAIL: install-cursor merges full SB hook count — template 88 vs merged 86
   there is no clean pre-fix baseline for this assertion; CI never reached it
   before `0c0e6ec`.
 
-### Leading hypothesis (unconfirmed)
+### RESOLVED: the entries are genuinely absent, not relocated
 
-`stack-compression-coordinator.sh` ships in the global toolstack
-(`scripts/lib/global-toolstack/`), so its merged entry may live under a
-`~/.cursor/hooks/toolstack/...` path that the assertion's
-`test("silver-bullet")` filter does not count — which would make **86 correct
-and the assertion wrong**. But `site-regression-gate.sh` is *not* in the
-toolstack, so that does not explain both. Do not "fix" the count until you know
-which of merge / patch / assertion is at fault.
+The widened diagnostic in `61bb1d1` answered it (CI run 31535652332). The
+toolstack-path hypothesis is **dead** — the two entries are lost, and the
+assertion is right to fail:
 
-### Next step (already staged for you)
+| Hook | In `hooks/cursor-hooks.json` | In merged `~/.cursor/hooks.json` |
+|---|---|---|
+| `site-regression-gate.sh` | `preToolUse/Shell`, `stop/.*`, `subagentStop/.*` | `stop/.*`, `subagentStop/.*` — **`preToolUse/Shell` lost** |
+| `stack-compression-coordinator.sh` | `Edit\|Write\|MultiEdit\|Shell`, `Read\|Grep`, `WebFetch`, `CallMcpTool\|MCP` | same minus **`Read\|Grep`** |
 
-`61bb1d1` widened the failure output to dump the merged entries for both hooks
-*unfiltered by path*. Either read that from the next CI run on this branch, or
-reproduce locally:
+`patch-hooks.py` does add a toolstack coordinator entry
+(`bash <home>/.cursor/hooks/toolstack/stack-compression-coordinator.sh`), but
+its matcher is `Edit|Write|MultiEdit|Shell|CallMcpTool|MCP|WebFetch` — it
+contains neither `Read` nor `Grep`. So the `Read|Grep` compression coverage is
+**not** picked up elsewhere, and `site-regression-gate` loses its preToolUse
+Shell gate outright. This is a real functional gap, not a stale assertion.
+
+### Where to look
+
+Neither loss is explained by the code read so far, which is why it needs a
+local repro:
+
+- `merge-cursor-hooks.py` dedupes on `(command, matcher)` per event, and both
+  missing entries have unique keys — so the add loop should keep them.
+  Its `is_stale_sb_hook()` cleanup is the only removal path; check whether a
+  second merge pass (`--merge-hooks-only` runs twice in this test) plus the
+  `stable_install_path()` versioned→`current` symlink rewrite makes these two
+  look stale.
+- `patch-hooks.py` removes only lean-ctx rewrite entries, but
+  `ensure_rtk_before_cm()` does `pretool.pop()` + re-insert, and
+  `insert_before_bridge()` reorders — worth confirming nothing is dropped
+  when the list is mutated mid-iteration.
+- `scripts/lib/global-toolstack/fix-shell-compression-hook.py` is unread and
+  its name suggests it rewrites Shell-matcher hooks. Start here.
+
+### Reproducing
+
+Needs real `rsync` (see §4) — the prior session's stand-in made the test pass
+64/64 locally, masking this:
 
 ```bash
 bash tests/scripts/test-install-cursor.sh
+# on failure it now prints both the missing entries and what merged holds
 ```
 
-If the entries appear under a `toolstack/` path → the assertion needs to count
-them and the fix is in the test. If they are genuinely absent → the loss is in
-`install-cursor.sh`'s merge path, and `merge-cursor-hooks.py` /
-`patch-hooks.py` ordering is where to look.
+Decide the fix only after you know which stage drops them: if merge, fix
+`merge-cursor-hooks.py`; if a patcher, fix that; if the hooks are genuinely
+meant to be superseded, the toolstack matcher needs `Read|Grep` added and the
+assertion updated to match — but do not just relax the assertion.
 
 ---
 
@@ -154,8 +180,8 @@ The prior container lacked tooling, so these are unverified rather than known-go
 
 ## 5. Suggested order of work
 
-1. Read the widened hook-count diagnostic (next CI run, or reproduce locally
-   with real `rsync`) and resolve the 88-vs-86 assertion.
+1. Fix the two dropped preToolUse hooks (§3) — the diagnostic already
+   identified them; start at `fix-shell-compression-hook.py`.
 2. Re-run the full sweep with real tooling; confirm the 13 environment failures
    above are green locally and that nothing new appears.
 3. Confirm the tree stays clean after a full sweep — that invariant is the
