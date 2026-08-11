@@ -64,7 +64,7 @@ bash "$DRIVER" --help >/dev/null 2>&1 && check "driver --help" pass || check "dr
 
 dry_work_dir="$(mktemp -d "${TMPDIR:-/tmp}/tri-criteria-dry-XXXXXX")"
 trap 'rm -rf "$dry_work_dir"' EXIT
-dry_out="$(bash "$DRIVER" start --track TC-01 --dry-run --work-dir "$dry_work_dir" 2>&1)" || true
+dry_out="$(SB_E2E_RUNS_DIR="${dry_work_dir}/runs" bash "$DRIVER" start --track TC-01 --dry-run --work-dir "$dry_work_dir" 2>&1)" || true
 grep -q 'run_id=' <<<"$dry_out" && check "TC-01 dry-run creates run_id" pass || check "TC-01 dry-run creates run_id" fail
 grep -q 'vision.md' <<<"$dry_out" && check "dry-run copies vision" pass || check "dry-run copies vision" fail
 

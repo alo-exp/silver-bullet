@@ -42,7 +42,9 @@ done
 
 SOURCES="${SB_ROOT}/docs/testing/host-certification-sources.json"
 BASELINE="${SB_ROOT}/docs/testing/autonomous-enterprise-proof-baseline.json"
-ARTIFACT="${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json"
+# SB_CERT_ARTIFACT redirects --write to an alternate path so callers (tests)
+# can exercise the writer without mutating the tracked repo artifact.
+ARTIFACT="${SB_CERT_ARTIFACT:-${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json}"
 
 if [[ ! -f "$SOURCES" ]]; then
   echo "FAIL: missing $SOURCES" >&2

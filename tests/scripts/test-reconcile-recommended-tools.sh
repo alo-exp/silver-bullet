@@ -541,6 +541,40 @@ hb_path="$(rt_heartbeat_path "proj" "wt" "../../evil")"
 [[ "$hb_path" != *"/evil"* && "$hb_path" == *".json" ]] \
   && pass "heartbeat path uses sanitized session id" || fail "heartbeat path uses sanitized session id"
 
+# Reentrancy: apply mode must not recurse through optimize/installer back into
+# itself. Regression guard — the cycle reconcile -> optimize-rtk-context-mode ->
+# install-recommended-tools-global -> install-recommended-tools-cursor ->
+# reconcile previously spawned processes until the CI runner was reclaimed.
+TMP_REENTRY="$(mktemp -d)"
+TMP_REENTRY_HOME="$(mktemp -d)"
+jq '.recommended_tools.graphify.enabled_by_user = true
+  | .recommended_tools.agentmemory.enabled_by_user = true
+  | .recommended_tools.rtk.enabled_by_user = true
+  | .recommended_tools.context_mode.enabled_by_user = true
+  | .recommended_tools.leanctx.enabled_by_user = true
+  | .sb_initiated = true' "$TEMPLATE" >"$TMP_REENTRY/.silver-bullet.json"
+printf '# SB\n' >"$TMP_REENTRY/silver-bullet.md"
+git -C "$TMP_REENTRY" init -q
+mkdir -p "${TMP_REENTRY_HOME}/.cursor"
+printf '{"mcpServers":{}}\n' >"${TMP_REENTRY_HOME}/.cursor/mcp.json"
+printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"}]}}\n' >"${TMP_REENTRY_HOME}/.cursor/hooks.json"
+reentry_rc=0
+HOME="$TMP_REENTRY_HOME" timeout 120 bash "$RECONCILE" \
+  --project-root "$TMP_REENTRY" --host cursor --mode apply --entry-point doctor-fix \
+  --format json >/dev/null 2>&1 || reentry_rc=$?
+[[ "$reentry_rc" -ne 124 ]] \
+  && pass "apply with all tools consented terminates (no reconcile/installer recursion)" \
+  || fail "apply with all tools consented terminates (no reconcile/installer recursion)"
+rm -rf "$TMP_REENTRY" "$TMP_REENTRY_HOME"
+
+# The guard itself: post-install must not re-enter the reconciler mid-apply
+reentry_guard="$(SB_RT_APPLY_ACTIVE=1 bash -c \
+  'source "'"$REPO_ROOT"'/scripts/lib/recommended-tools/installer.sh"
+  rt_installer_post_install "'"$REPO_ROOT"'" "" 2>&1' || true)"
+[[ "$reentry_guard" == *"SKIP: installer post-install reconcile"* ]] \
+  && pass "post-install skips nested reconcile when apply active" \
+  || fail "post-install skips nested reconcile when apply active"
+
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

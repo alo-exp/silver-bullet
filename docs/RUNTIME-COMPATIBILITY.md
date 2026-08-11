@@ -135,6 +135,7 @@ Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `
 - `silver-bullet.md` §11 — hook protocol and SDK workarounds
 - `docs/code-intelligence-contract.md` — code-intelligence tiers (separate from runtime tiers)
 - `skills/silver-init/SKILL.md` — project bootstrap and runtime probe
+- `docs/CODEX-CLOUD.md` — running SB in Codex Cloud (tier 0–1), MCP limits, desktop/cloud split
 
 ## Reload receipts and host evidence (Cursor)
 
