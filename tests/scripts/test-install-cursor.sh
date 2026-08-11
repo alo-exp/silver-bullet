@@ -29,6 +29,11 @@ trap 'rm -rf "$TMP_HOME"' EXIT
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
+# The installer runs install-cursor-sb-agents.sh, which writes a project
+# .silver-bullet.json. Point it at the sandbox so the run does not rewrite the
+# checkout's own config.
+export CSBA_REPO_ROOT="${TMP_HOME}/project"
+mkdir -p "$CSBA_REPO_ROOT"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 
 mkdir -p \
@@ -267,6 +272,14 @@ else
              | "\($e)/\(.matcher // "-") :: \(.command | sub(".*/hooks/"; ""))"' \
         "${CURSOR_HOME}/hooks.json" | sort) \
     | grep '^<' | sed 's/^</      /' || true
+  # Show what the merged file actually holds for those hooks, unfiltered by the
+  # silver-bullet path match — an entry rewritten to a toolstack path is
+  # present but invisible to the count above.
+  echo "    merged entries for the missing hooks (any path):"
+  jq -r '.hooks | to_entries[] | .key as $e | .value[]
+         | select(.command | test("stack-compression-coordinator|site-regression-gate"))
+         | "      \($e)/\(.matcher // "-") :: \(.command)"' \
+    "${CURSOR_HOME}/hooks.json" 2>/dev/null || true
 fi
 
 odg_expected_matchers=("Edit|Write|MultiEdit" "Edit|Write|MultiEdit|Shell" "Task|Subagent|Agent")
