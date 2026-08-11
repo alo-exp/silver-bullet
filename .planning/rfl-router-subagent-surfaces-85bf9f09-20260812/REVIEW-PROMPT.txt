@@ -1,6 +1,22 @@
 You are an adversarial architecture reviewer for Silver Bullet.
-Read the FULL plan at /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md using a native/raw file read (do not use compressed lean-ctx output as the source of truth).
-Also skim the clarify brief at /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md.
+
+## Phase 1 — Silver Bullet background (mandatory)
+
+Read and absorb the full SB product/architecture overview using native/raw file reads (do not treat compressed lean-ctx output as source of truth). Follow the read list and absorb checklist in:
+
+`/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md`
+
+Primary documents:
+- `/Users/shafqat/projects/silver-bullet/repo/silver-bullet.md` (canonical — read fully)
+- `/Users/shafqat/projects/silver-bullet/repo/AGENTS.md`
+- Skim `/Users/shafqat/projects/silver-bullet/repo/docs/ARCHITECTURE.md` and `/Users/shafqat/projects/silver-bullet/repo/docs/ORCHESTRATOR.md` as needed for Process/Workflow/AF and host/plugin shape
+
+First absorb what SB is (Process/Workflow/AF, hosts, hooks/skills shape), THEN proceed.
+
+## Phase 2 — Adversarial plan review
+
+Read the FULL plan at `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md` (native/raw).
+Also skim the clarify brief at `/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`.
 
 Ignore obsolete RFL ceremony (verify_1/verify_2, charter-signal grep, orchestrator grep, PM filing).
 
@@ -10,6 +26,7 @@ Do an independent adversarial critical thorough review for:
 - state-machine holes
 - traceability orphans
 - executability problems
+- fit vs real SB product/architecture (Process/Workflow/AF, hosts, hooks/skills, enforcement)
 
 Return structured findings with severity High/Medium/Low and exact edit suggestions when NEEDS_FIXES.
 
