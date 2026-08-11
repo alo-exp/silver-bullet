@@ -38,7 +38,7 @@ Silver Bullet needs a Process-first `/silver` router architecture with Authorize
 
 ## Universal Advisor / A-loop (locked intent)
 
-Canonical order: `pre-read Knowledge/Learnings → I-loop(s) → A-loop → (return to I if needed) → V-loop → Validation-loop → post-verify Knowledge/Learnings write → return to parent`.
+Canonical order: `pre-read Knowledge/Learnings → P-loop (plan-of-action draft → Advisor review until satisfied) → I-loop(s) → A-loop → (return to I if needed) → V-loop → Validation-loop → post-verify Knowledge/Learnings write → return to parent`.
 
 - Advisor is fundamental and universal (not Marketing-only).
 - Enables lower-cost executors + higher-cost Advisors.
@@ -97,7 +97,7 @@ These deepen the plan Locked decisions without reopening Q1–Q11. Authoritative
 | Q15 | Nine `fitness_charter` fields + four canonical Iterate rung IDs as in plan Locked decisions | **Ratified** (round-2) |
 | Q16 | `contracts/iterate-ladder-contract.lock.json` is binding/fence authority for Iterate | **Ratified** (round-2) |
 | Q17 | Exact six migration ingress states: `freeze_new_source` → `project_pre_freeze_events` → `seal_drain_watermark` → `drain_old_epoch` → `producer_stopped` → `cutover` | **Ratified** (round-2, answer **A**) |
-| Q18 | Ordinary delivery SM: `pre_read_pending` → `i_*` → `a_*` → `v_*` → `val_*` → `kl_post_write_pending` → `scope_complete` | **Ratified** (round-2; amended for Val) |
+| Q18 | Ordinary delivery SM: `pre_read_pending` → `p_*` (`poa_draft`/`poa_advisor_review`/`poa_satisfied`) → `i_*` → `a_*` → `v_*` → `val_*` → `kl_post_write_pending` → `scope_complete` | **Ratified** (round-2; amended for Val; P-loop phases aligned round-4) |
 | Q19 | Iterate work states are orthogonal to `authority_status` | **Ratified** (round-2) |
 | Q20 | `awaiting_revalidation` (in-rung) ≠ `awaiting_baseline_revalidation` (baseline-stale) | **Ratified** (round-2) |
 | Q21 | AF Validation-loop (≠ V, ≠ A); **"Val always after V"** → **B**: `I → A → V → Val`; Planning/Validation-tier owner; two-clean | **Ratified** (round-2, answer **B**) |
@@ -192,3 +192,5 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 8. **Control-plane quality-loop exemption:** deny-all leaf roles exempt from P-loop **and** recursive I/A/V/Val; role receipt then terminate.
 9. **LPS host delimitation:** Cursor single-string `Task.prompt` uses `<<<SB_LAUNCH_PROMPT>>>` / `<<<SB_WORK_SPEC_JSON>>>` / `<<<SB_END>>>` envelope.
 10. **Leaf Step handoff:** leaf Step terminates quality loops at `a_two_clean`; parent AF owns V → Val → K/L post-write.
+
+
