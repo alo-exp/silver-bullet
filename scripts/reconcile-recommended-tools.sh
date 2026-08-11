@@ -70,6 +70,15 @@ RT_PROJECT_ROOT="$(cd "$RT_PROJECT_ROOT" && pwd -P)"
 
 export RT_PROJECT_ROOT RT_HOST RT_MODE RT_SCOPE RT_FORMAT RT_ENTRY_POINT RT_REPO_ROOT
 
+# Reentrancy guard. Apply mode shells out to the optimizers and installers, and
+# those call back into this reconciler (installer post-install). Without a
+# marker the chain reconcile -> optimize-rtk-context-mode ->
+# install-recommended-tools-global -> install-recommended-tools-cursor ->
+# reconcile loops forever. Descendants check this and skip the nested call.
+if [[ "$RT_MODE" == "apply" ]]; then
+  export SB_RT_APPLY_ACTIVE=1
+fi
+
 # shellcheck source=lib/recommended-tools/common.sh
 source "${RT_LIB}/common.sh"
 rt_init_paths
