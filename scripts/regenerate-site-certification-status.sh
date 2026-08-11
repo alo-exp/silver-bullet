@@ -11,12 +11,14 @@ set -euo pipefail
 
 SB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GENERATOR="${SB_ROOT}/scripts/enterprise-e2e-certification-status.sh"
-CANONICAL="${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json"
-SITE_COPY="${SB_ROOT}/site/help/data/certification-status.json"
+# SB_CERT_ARTIFACT / SB_CERT_SITE_COPY redirect both writes so callers (tests)
+# can exercise the regeneration without rewriting the tracked mirror.
+CANONICAL="${SB_CERT_ARTIFACT:-${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json}"
+SITE_COPY="${SB_CERT_SITE_COPY:-${SB_ROOT}/site/help/data/certification-status.json}"
 
 [[ -x "$GENERATOR" ]] || { echo "FAIL: missing $GENERATOR" >&2; exit 1; }
 
-RTK_DISABLED=1 bash "$GENERATOR" --write --json >/dev/null
+RTK_DISABLED=1 SB_CERT_ARTIFACT="$CANONICAL" bash "$GENERATOR" --write --json >/dev/null
 
 if [[ ! -f "$CANONICAL" ]]; then
   echo "FAIL: generator did not write $CANONICAL" >&2

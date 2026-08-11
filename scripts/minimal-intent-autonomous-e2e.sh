@@ -13,6 +13,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLANNING_DIR="${REPO_ROOT}/.planning/minimal-intent-e2e"
+# SB_E2E_RUNS_DIR redirects per-run artifacts (including --dry-run output)
+# away from the tracked .planning tree so callers and tests do not leave
+# run directories behind in the checkout. Matrix/fixture reads still use
+# PLANNING_DIR.
+RUNS_DIR="${SB_E2E_RUNS_DIR:-${PLANNING_DIR}/runs}"
 MATRIX_JSON="${PLANNING_DIR}/MATRIX.json"
 STRUCT_TEST="${REPO_ROOT}/tests/scripts/test-minimal-intent-autonomous-e2e.sh"
 
@@ -213,7 +218,7 @@ cmd_start() {
 
   local run_id run_dir install_fp sb_sha
   run_id="$(run_id_new)-${row_id}"
-  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  run_dir="${RUNS_DIR}/${run_id}"
   mkdir -p "$run_dir"
 
   install_fp="$(enterprise_e2e_install_fingerprint)"
@@ -264,7 +269,7 @@ cmd_score() {
   done
 
   [[ -n "$run_id" ]] || { echo "ERROR: --run required" >&2; exit 2; }
-  local run_dir="${PLANNING_DIR}/runs/${run_id}"
+  local run_dir="${RUNS_DIR}/${run_id}"
   [[ -d "$run_dir" ]] || { echo "ERROR: run dir not found: $run_dir" >&2; exit 1; }
 
   log_path="${log_path:-${run_dir}/parent-session.log}"
@@ -360,7 +365,7 @@ cmd_status() {
   done
 
   if [[ -n "$run_id" ]]; then
-    local ledger="${PLANNING_DIR}/runs/${run_id}/ledger.json"
+    local ledger="${RUNS_DIR}/${run_id}/ledger.json"
     [[ -f "$ledger" ]] && cat "$ledger" || echo "No ledger for $run_id"
     return 0
   fi
