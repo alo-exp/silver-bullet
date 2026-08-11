@@ -181,9 +181,9 @@ Interactive requirements lock. Incorporated into plan + Cursor mirror.
 
 Clarifying elaborations locked into the plan during adversarial RFL (do not reopen Q-locks):
 
-1. **P-loop scope:** Applies to **implementation** workers/executors only. Deny-all leaf control-plane roles (`advisor`, `verifier`, `validator`, `defect_escalation`) are exempt from plan-of-action drafting/review.
+1. **P-loop scope:** Applies to **ordinary-delivery** implementation workers/executors only (Workflow/AF/Step/Process-synthesis). Deny-all leaf control-plane roles (`advisor`, `verifier`, `validator`, `defect_escalation`) are exempt from plan-of-action drafting/review. **Iterate rung implementers** use charter + baseline admission (not ordinary `poa_*`).
 2. **Migration Val receipts:** Legacy RFL maps into I/A/V/**Validation-loop** records; missing Val history uses migration-only `val_loop_not_applicable` (never satisfies live Val gates).
-3. **Levels 0–3 repair return:** Successful repair → original owner **I → A → V** (re-A before V), not V-only.
+3. **Levels 0–3 repair return:** Successful repair → original owner **I → A → V** (re-A before V), not V-only. Ordinary repair never enters Iterate `awaiting_baseline_revalidation`; Iterate repair does.
 4. **Authorizer path fallback:** injective `host/org/repo/<remote_id_hash8>` from canonical remote bytes; `local/default/<repo_dir_hash>` when git remote absent/unparseable; trust lookup verifies stored canonical identity.
 5. **KLW post-write:** Insight write **or** durable `kl_post_write_no_insights` satisfies KLW-01.
 6. **LPS schema artifact:** `contracts/work-spec.schema.json` is a Row-1 reviewed source; explicit `VAL/TST-RFL-612`–`618` obligation paragraphs required.
@@ -198,5 +198,9 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 13. **Step→Advisor request edges:** implementation Step/executor (or AF on behalf of Step) may request P-loop Advisor and in-I consult; Authorizer-only spawn; §6 deny-generation must allow these edges.
 14. **Active ordinary RFL migration:** non-Iterate re-admit path with `blocked_legacy_rfl_readmit`; never uses Iterate baseline states; Iterate authority only via fresh post-migration activation.
 15. **Injective Authorizer trust identity:** canonical remote bytes + `remote_id_hash8` path suffix; trust lookup verifies stored canonical identity before key use.
+16. **Discriminated Levels 0–3 repair (Sol High c3):** ordinary repair re-enters ordinary SM (never `awaiting_baseline_revalidation`); Iterate repair uses baseline-revalidation path.
+17. **Active RFL → live pre-read/P-loop:** post-migration prospective ordinary I edits require fresh `pre_read_pending → poa_*`; historical mapped evidence never satisfies live gates.
+18. **Iterate P-loop exemption:** rung planning gate is charter + baseline admission/revalidation — not ordinary `poa_*`.
+
 
 
