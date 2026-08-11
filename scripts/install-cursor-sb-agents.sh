@@ -4,6 +4,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# REPO_ROOT locates this script's own assets and must stay pinned to the
+# checkout. PROJECT_ROOT is the project whose .silver-bullet.json and agents
+# dir get written; it follows CSBA_REPO_ROOT (already the override honored by
+# common.sh) so callers and tests can target a sandbox instead of silently
+# mutating the Silver Bullet checkout itself.
+PROJECT_ROOT="${CSBA_REPO_ROOT:-$REPO_ROOT}"
 # shellcheck source=lib/cursor-sb-agents/common.sh
 source "${REPO_ROOT}/scripts/lib/cursor-sb-agents/common.sh"
 
@@ -63,7 +69,7 @@ if [[ -z "$SCOPE" ]]; then
 fi
 
 if [[ "$FIX_MODE" -eq 1 ]]; then
-  CONFIG_JSON="$(csba_load_merged_config "$REPO_ROOT")"
+  CONFIG_JSON="$(csba_load_merged_config "$PROJECT_ROOT")"
   SCOPE="$(printf '%s' "$CONFIG_JSON" | jq -r '.agents_install_scope // "global"')"
   INCLUDE_FAST="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_fast // false')"
   INCLUDE_MAX="$(printf '%s' "$CONFIG_JSON" | jq -r '.include_max // false')"
@@ -71,7 +77,7 @@ if [[ "$FIX_MODE" -eq 1 ]]; then
   [[ "$INCLUDE_MAX" == "true" ]] && INCLUDE_MAX=1 || INCLUDE_MAX=0
 fi
 
-csba_refresh_catalog "$REPO_ROOT" >/dev/null
+csba_refresh_catalog "$PROJECT_ROOT" >/dev/null
 
 prompt_yes_no() {
   local prompt="$1"
@@ -128,7 +134,7 @@ if [[ -z "$CONFIG_JSON" ]]; then
       [[ -n "$row" ]] && ROWS+=("$row")
     done < <("${CSBA_PYTHON}" "$CSBA_FETCH" --list-selectable \
       "${FAST_ARGS[@]}" "${MAX_ARGS[@]}" \
-      --repo-root "$REPO_ROOT" 2>/dev/null || true)
+      --repo-root "$PROJECT_ROOT" 2>/dev/null || true)
     declare -a IDS=()
     local_i=1
     for row in "${ROWS[@]:-}"; do
@@ -179,7 +185,7 @@ CONFIG_JSON="$(printf '%s' "$CONFIG_JSON" | jq \
    | .enabled = true
    | .agents_install_status = "installed"')"
 
-AGENTS_DIR="$(csba_agents_dir_for_scope "$SCOPE" "$REPO_ROOT")"
+AGENTS_DIR="$(csba_agents_dir_for_scope "$SCOPE" "$PROJECT_ROOT")"
 mkdir -p "$AGENTS_DIR"
 
 TEMPLATE_TEXT="$(cat "$CSBA_TEMPLATE")"
@@ -245,7 +251,7 @@ PY
 )"
 
 csba_write_global_config "$CONFIG_JSON"
-csba_merge_project_config "$REPO_ROOT" "$CONFIG_JSON"
+csba_merge_project_config "$PROJECT_ROOT" "$CONFIG_JSON"
 
 EXPECTED_COUNT="$(csba_expected_count "$CONFIG_JSON")"
 WRITTEN_COUNT="$(printf '%s' "$GENERATE_OUT" | jq '.written | length')"

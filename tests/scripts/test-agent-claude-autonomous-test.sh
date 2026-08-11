@@ -47,7 +47,7 @@ grep -q -- '--tmux' "$DRIVER" && check "driver documents --tmux" pass || check "
 
 dry_work_dir="$(mktemp -d "${TMPDIR:-/tmp}/agent-claude-auto-dry-XXXXXX")"
 trap 'rm -rf "$dry_work_dir"' EXIT
-dry_out="$(bash "$DRIVER" start --row AUTO-C01 --dry-run --work-dir "$dry_work_dir" 2>&1)" || true
+dry_out="$(SB_E2E_RUNS_DIR="${dry_work_dir}/runs" bash "$DRIVER" start --row AUTO-C01 --dry-run --work-dir "$dry_work_dir" 2>&1)" || true
 grep -q 'run_id=' <<<"$dry_out" && check "start dry-run creates run_id" pass || check "start dry-run creates run_id" fail
 
 echo "Results: $PASS passed, $FAIL failed"

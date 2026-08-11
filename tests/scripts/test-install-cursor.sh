@@ -255,6 +255,18 @@ if [[ "$merged_sb_hook_count" -eq "$template_hook_count" ]]; then
   pass "install-cursor merges full SB hook count (${merged_sb_hook_count})"
 else
   fail "install-cursor merges full SB hook count — template ${template_hook_count} vs merged ${merged_sb_hook_count}"
+  # Name the entries that went missing. A bare count difference is not
+  # actionable when the failure only reproduces in CI.
+  echo "    missing from merged hooks.json (event/matcher :: hook):"
+  diff \
+    <(jq -r '.hooks | to_entries[] | .key as $e | .value[]
+             | "\($e)/\(.matcher // "-") :: \(.command | sub(".*/hooks/"; ""))"' \
+        "${REPO_ROOT}/hooks/cursor-hooks.json" | sort) \
+    <(jq -r '.hooks | to_entries[] | .key as $e | .value[]
+             | select(.command | test("silver-bullet"))
+             | "\($e)/\(.matcher // "-") :: \(.command | sub(".*/hooks/"; ""))"' \
+        "${CURSOR_HOME}/hooks.json" | sort) \
+    | grep '^<' | sed 's/^</      /' || true
 fi
 
 odg_expected_matchers=("Edit|Write|MultiEdit" "Edit|Write|MultiEdit|Shell" "Task|Subagent|Agent")
