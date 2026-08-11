@@ -14520,13 +14520,13 @@
     "semantic_hash": "063986b86f0102dbf8b460b13512b259"
   },
   ".planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md": {
-    "mtime": 1786469225.156401,
-    "ast_hash": "d4b5c3215eedca5d43daedbdc2b4d0d4",
+    "mtime": 1786469860.9917438,
+    "ast_hash": "46dec5f48f65b0a5ad265a7a4f416743",
     "semantic_hash": ""
   },
   ".planning/router_subagent_surfaces_85bf9f09.plan.md": {
-    "mtime": 1786469224.9730349,
-    "ast_hash": "22a72e15f117c8d70215d0991d7fb42c",
+    "mtime": 1786469860.9903357,
+    "ast_hash": "e10f5fe8d7605d6185267e1a39ccaff5",
     "semantic_hash": ""
   },
   ".planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md": {
@@ -24080,18 +24080,23 @@
     "semantic_hash": ""
   },
   ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/ledger.json": {
-    "mtime": 1786468864.3226423,
-    "ast_hash": "1b8c10a59814da1351c4e5768a38bee8",
+    "mtime": 1786469397.2754548,
+    "ast_hash": "cbbe3b6ab151cb855a79497ed2852e01",
     "semantic_hash": ""
   },
   ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT.txt": {
-    "mtime": 1786468864.561736,
-    "ast_hash": "7f7d9402d27cfeae74643492d79fc65c",
+    "mtime": 1786469397.0689538,
+    "ast_hash": "4bd8a3cb99efaff2a43b84cd4344712d",
     "semantic_hash": ""
   },
   ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/RFL-SUMMARY.md": {
-    "mtime": 1786468864.4424791,
-    "ast_hash": "9de11bd2ffd896526739a4f9acdad78c",
+    "mtime": 1786469397.275837,
+    "ast_hash": "b443f40d32128f8eb96bf0d440493ace",
+    "semantic_hash": ""
+  },
+  ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md": {
+    "mtime": 1786469396.8906074,
+    "ast_hash": "4b33f60f5296c50bff66aa2fccc5e7a5",
     "semantic_hash": ""
   }
 }
