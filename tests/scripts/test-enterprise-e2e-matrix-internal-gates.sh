@@ -22,12 +22,13 @@ TMPDIR="${TMPDIR:-/tmp}"
 FIXTURE="$(mktemp -d "${TMPDIR}/sb-matrix-internal-gates.XXXXXX")"
 trap 'rm -rf "$FIXTURE"' EXIT
 
-mkdir -p "$FIXTURE/.planning/workflows"
+mkdir -p "$FIXTURE/.planning/workflows" "$FIXTURE/.planning/enterprise-e2e"
 
 out="$(SB_E2E_MATRIX_DRY_RUN=1 \
   SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_E2E_FIXTURE_BRANCH_LOCK=0 \
   SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE" \
+  SB_E2E_ROW_PASS_REGISTRY="$FIXTURE/.planning/enterprise-e2e/.row-pass-registry.json" \
   bash "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 22 2>&1)" || true
 
 assert_ok "dry-run row 22 internal PASS" grep -q 'validate-substep (internal) PASS' <<<"$out"
@@ -38,6 +39,7 @@ out21="$(SB_E2E_MATRIX_DRY_RUN=1 \
   SB_E2E_TEST_APP_BRANCH_ENFORCE=0 \
   SB_E2E_FIXTURE_BRANCH_LOCK=0 \
   SB_TEST_ENTERPRISE_APP_ROOT="$FIXTURE" \
+  SB_E2E_ROW_PASS_REGISTRY="$FIXTURE/.planning/enterprise-e2e/.row-pass-registry.json" \
   bash "${REPO_ROOT}/scripts/run-enterprise-e2e-matrix.sh" 21 2>&1)" || true
 
 assert_ok "dry-run row 21 internal PASS" grep -q 'post-exec-gates (internal) PASS' <<<"$out21"

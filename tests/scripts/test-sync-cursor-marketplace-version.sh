@@ -18,7 +18,12 @@ assert_equal() {
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/sync-cursor-marketplace-version.sh"
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+# This test asserts that the release script updates the in-repo manifest, so it
+# cannot be sandboxed away — snapshot and restore it instead, otherwise every
+# run leaves the tracked manifest re-pinned to the current HEAD.
+IN_REPO_MANIFEST="$REPO_ROOT/.cursor-plugin/marketplace.json"
+cp "$IN_REPO_MANIFEST" "$TMP/.in-repo-marketplace.json.orig"
+trap 'cp -f "$TMP/.in-repo-marketplace.json.orig" "$IN_REPO_MANIFEST" 2>/dev/null || true; rm -rf "$TMP"' EXIT
 
 REMOTE="$TMP/remote.git"
 MARKETPLACE="$TMP/marketplace"
