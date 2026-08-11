@@ -6,6 +6,12 @@
 - Ladder: Gemini High → GLM High/Max → Kimi High/Max → GPT-5.6 Sol High/XHigh → Opus 5 Thinking High/XHigh
 - Rule: 2 consecutive CLEAN per model+effort before advance; Gemini high-only (no xhigh)
 
+## Protocol update (2026-08-12)
+
+**SB overview mandatory** for every review cycle. See `REVIEW-PROMPT-PREAMBLE.md`.
+Prior Gemini High cycles without SB overview are **invalidated**; consecutive-clean reset to 0; restart Gemini High with enriched prompt.
+
+
 ## Progress
 
 | Rung | Model | Effort | Status |
