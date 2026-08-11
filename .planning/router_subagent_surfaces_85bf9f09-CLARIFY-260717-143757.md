@@ -164,11 +164,13 @@ None for round-3.
 
 ## Clarify Decision Addendum (round-4 — 2026-08-12) — COMPLETE
 
+**Naming:** the pre-implementation plan-of-action Advisor gate is called **P-loop (Planning Loop)**.
+
 Interactive requirements lock. Incorporated into plan + Cursor mirror.
 
 ### Locked
 
-1. **Plan-of-action Advisor review (mandatory, pre-implementation):** After work-spec admission and Knowledge/Learnings pre-read, every worker/executor drafts a durable plan of action, submits it to a stronger-tier Advisor, incorporates feedback until a durable **satisfaction receipt** (plan hash + work-spec hash + launch_id), then may start implementation I-loop. Fail-closed: `blocked_plan_of_action_review`. Distinct from post-I A-loop.
+1. **P-loop / Planning Loop (mandatory, pre-implementation):** After work-spec admission and Knowledge/Learnings pre-read, every worker/executor drafts a durable plan of action, submits it to a stronger-tier Advisor, incorporates feedback until a durable **satisfaction receipt** (plan hash + work-spec hash + launch_id), then may start implementation I-loop. Fail-closed: `blocked_plan_of_action_review`. Distinct from post-I A-loop.
 2. **On-demand Advisor consult:** During `i_running`, executor may freely consult Advisor when self-assessed capability is insufficient. Authorizer-fenced; does not auto-mutate work-spec; does not replace plan-of-action satisfaction.
 3. **Ordinary SM:** `pre_read_pending` → `poa_draft`/`poa_advisor_review`/`poa_satisfied` → `i_*` → `a_*` → `v_*` → `val_*` → `kl_post_write_pending` → `scope_complete`
 4. Traceability **POA-01** / `VAL/TST-RFL-618`
