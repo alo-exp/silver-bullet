@@ -193,7 +193,7 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 9. **LPS host delimitation:** Cursor single-string `Task.prompt` uses `<<<SB_LAUNCH_PROMPT>>>` / `<<<SB_WORK_SPEC_JSON>>>` / `<<<SB_END>>>` envelope.
 10. **Leaf Step handoff:** leaf Step terminates quality loops at `a_two_clean`; parent AF owns V → Val → K/L post-write.
 
-11. **Discriminated callbacks (Sol High):** ordinary producers bind `launch_id + scope_execution_id + execution_attempt_id` (`producer_kind=ordinary_delivery`); only `producer_kind=iterate_attempt` binds Iterate contract-binding/rung/`attempt_id`.
+11. **Discriminated callbacks (Sol High):** ordinary producers bind `launch_id + scope_execution_id + execution_attempt_id` (`producer_kind=ordinary_delivery`); only `producer_kind=iterate_attempt` binds Iterate contract-binding/rung/`attempt_id`. **Callback fence is generic** for both kinds. Early-callback dedupe includes `source_operation_id`/occurrence ordinal (or channel+seq) so repeated same-kind callbacks do not alias.
 12. **Process-synthesis executor:** Authorizer-launched Process-scope synthesis/executor owns Process P→I→A→V→Val after top Workflow returns; parent orchestrator never implements.
 13. **Step→Advisor request edges:** implementation Step/executor (or AF on behalf of Step) may request P-loop Advisor and in-I consult; Authorizer-only spawn; §6 deny-generation must allow these edges.
 14. **Active ordinary RFL migration:** non-Iterate re-admit path with `blocked_legacy_rfl_readmit`; never uses Iterate baseline states; Iterate authority only via fresh post-migration activation.
@@ -201,6 +201,7 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 16. **Discriminated Levels 0–3 repair (Sol High c3):** ordinary repair re-enters ordinary SM (never `awaiting_baseline_revalidation`); Iterate repair uses baseline-revalidation path.
 17. **Active RFL → live pre-read/P-loop:** post-migration prospective ordinary I edits require fresh `pre_read_pending → poa_*`; historical mapped evidence never satisfies live gates.
 18. **Iterate P-loop exemption:** rung planning gate is charter + baseline admission/revalidation — not ordinary `poa_*`.
+
 
 
 
