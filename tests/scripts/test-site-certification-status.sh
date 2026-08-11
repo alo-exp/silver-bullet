@@ -16,7 +16,9 @@ JS="${REPO_ROOT}/site/help/concepts/certification-status.js"
 
 [[ -x "$REGEN" ]] && pass "regenerate script executable" || fail "regenerate script not executable"
 
-if RTK_DISABLED=1 bash "$REGEN" >/dev/null 2>&1; then
+REGEN_TMP="$(mktemp -d)"
+trap 'rm -rf "$REGEN_TMP"' EXIT
+if RTK_DISABLED=1 SB_CERT_ARTIFACT="${REGEN_TMP}/CERTIFICATION-STATUS.json" SB_CERT_SITE_COPY="${REGEN_TMP}/certification-status.json" bash "$REGEN" >/dev/null 2>&1; then
   pass "regenerate-site-certification-status exits 0"
 else
   fail "regenerate-site-certification-status failed"

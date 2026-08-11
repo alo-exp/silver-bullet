@@ -36,7 +36,11 @@ fi
 
 CERT_SCRIPT="${SB_ROOT}/scripts/enterprise-e2e-certification-status.sh"
 if [[ -x "$CERT_SCRIPT" ]]; then
-  RTK_DISABLED=1 bash "$CERT_SCRIPT" --write --json >"$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null \
+  # Keep --write pointed at the staged evidence copy. Exporting evidence is a
+  # read-only operation from the repo's point of view; without the redirect it
+  # rewrites the tracked .planning artifact as a side effect.
+  RTK_DISABLED=1 SB_CERT_ARTIFACT="$STAGING/evidence/CERTIFICATION-STATUS.json" \
+    bash "$CERT_SCRIPT" --write --json >"$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null \
     || cp -f "${SB_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json" \
       "$STAGING/evidence/CERTIFICATION-STATUS.json" 2>/dev/null || true
 fi

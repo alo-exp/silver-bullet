@@ -11,6 +11,11 @@ if [[ ! -d "$SRC" ]]; then
   exit 1
 fi
 
+if ! command -v rsync >/dev/null 2>&1; then
+  printf 'ERROR: rsync is required by sync-templates.sh but is not in PATH.\n' >&2
+  exit 1
+fi
+
 mkdir -p "$DST"
 rsync -a --delete "${SRC}/" "${DST}/"
 
