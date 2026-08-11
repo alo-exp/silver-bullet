@@ -187,3 +187,8 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 4. **Authorizer path fallback:** `local/default/<repo_dir_hash>` when git remote absent/unparseable.
 5. **KLW post-write:** Insight write **or** durable `kl_post_write_no_insights` satisfies KLW-01.
 6. **LPS schema artifact:** `contracts/work-spec.schema.json` is a Row-1 reviewed source; explicit `VAL/TST-RFL-612`–`618` obligation paragraphs required.
+
+7. **Work-spec immutability:** work-spec hash immutable per `launch_id`; scope change requires Authorizer re-launch (fresh launch_id + P-loop), never in-place mutation.
+8. **Control-plane quality-loop exemption:** deny-all leaf roles exempt from P-loop **and** recursive I/A/V/Val; role receipt then terminate.
+9. **LPS host delimitation:** Cursor single-string `Task.prompt` uses `<<<SB_LAUNCH_PROMPT>>>` / `<<<SB_WORK_SPEC_JSON>>>` / `<<<SB_END>>>` envelope.
+10. **Leaf Step handoff:** leaf Step terminates quality loops at `a_two_clean`; parent AF owns V → Val → K/L post-write.
