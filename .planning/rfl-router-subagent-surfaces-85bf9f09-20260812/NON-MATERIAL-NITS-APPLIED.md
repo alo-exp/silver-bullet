@@ -114,9 +114,7 @@ No additional non-material sections requiring polish beyond items already invent
 
 ## Commit SHA(s)
 
-Filled after commit:
-
-- _(see git log / parent return)_
+- `19e06378e3c19592336b18ed0e1cefa6cc5668e5` — docs(planning): apply non-material RFL nits to router subagent plan.
 
 ## Declined summary (rationale)
 
