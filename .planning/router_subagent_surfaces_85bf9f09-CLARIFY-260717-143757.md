@@ -117,7 +117,7 @@ Interactive `/silver:clarify` round-2 (Grok 4.5 High). All blockers answered; in
 - **Q15** — Nine `fitness_charter` fields + four canonical Iterate rung IDs
 - **Q16** — `contracts/iterate-ladder-contract.lock.json` is Iterate binding/fence authority
 - **Q17** — Answer **A**: exact six ordered migration ingress states
-- **Q18** — Ordinary delivery SM includes Val: `pre_read_pending` → `i_*` → `a_*` → `v_*` → `val_*` → `kl_post_write_pending` → `scope_complete`
+- **Q18** — Ordinary delivery SM includes Val: `pre_read_pending` → `i_*` → `a_*` → `v_*` → `val_*` → `kl_post_write_pending` → `scope_complete` *(historical round-2 ratification text; P-loop `p_*`/`poa_*` phases inserted by round-4 — see appendix Q18 row and round-4 addendum for authoritative SM)*
 - **Q19** — Iterate work states orthogonal to `authority_status`
 - **Q20** — `awaiting_revalidation` (in-rung) ≠ `awaiting_baseline_revalidation` (baseline-stale)
 - **Q21** — Answer **B** / **"Val always after V"**: order `I → A → V → Val`; Planning/Validation-tier owner; two-clean; distinct from A-loop and V-loop
@@ -205,7 +205,7 @@ Clarifying elaborations locked into the plan during adversarial RFL (do not reop
 20. **Process-repair delegation (Sol XHigh c2/c3):** ancestry-preserving Authorizer path `process_repair_pending` → `process_repair_delegated` → reopen deepest leaf through declared owner chain only; invalidate all ancestor A/V/Val/KL evidence; bottom-up joins + A→V→Val before Process resumes; forbid direct nested-AF/Workflow→Process callback; Process-synthesis never mutates AF/Work-Skill artifacts.
 21. **Blocker total precedence (Sol XHigh c2/c3):** complete ordered mutually exclusive table over all 29 `blocked_*` IDs with disjoint predicates and explicit resume targets; overlap fixtures for all reachable intersections (no equal-rank residual heuristic).
 
-
+22. **Non-material RFL polish (Opus High/XHigh + earlier-rung nits, 2026-08-12):** occurrence-ordinal cross-refs use § anchors (not brittle line numbers); `drain_only` named in ingress substate whitelist; `launch_intent` enumerates Authorizer-minted `scope_execution_id`/`execution_attempt_id`; dependency-matrix rows 2–4 name WBS/LPS/POA acceptance; ESC-01 repair-rejoin ordinal fixture; uniform `revalidation_cycle_id` `trigger_kind` 3-tuple; TRUST-01 local-fallback realpath/symlink fixture + migrate re-bind; LPS envelope escaping + RFC 8785 JCS hash equality; labelled leaf-Step `a_two_clean → step_yield` terminal; ordinary budget/oscillation note (no Iterate-style ladder-conflict counterpart); Process-synthesis Workhorse tier; A-loop Mentor continuity + knowledge-candidate buffering; rows 6↔12 phase labels + overlap fixture; callback gap-vs-unresolved tiebreaker; I-loop dirty-round disposition mapping; `final-validation` = `val_validated` synonym; mandatory A/Val "floor" wording.
 
 
 
