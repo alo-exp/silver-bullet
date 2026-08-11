@@ -177,3 +177,13 @@ Interactive requirements lock. Incorporated into plan + Cursor mirror.
 
 **Do not** overwrite multi-AI `.planning/CLARIFY.md`. Repo plan and Cursor mirror must remain **byte-identical**.
 
+## RFL incorporate notes (2026-08-12)
+
+Clarifying elaborations locked into the plan during adversarial RFL (do not reopen Q-locks):
+
+1. **P-loop scope:** Applies to **implementation** workers/executors only. Deny-all leaf control-plane roles (`advisor`, `verifier`, `validator`, `defect_escalation`) are exempt from plan-of-action drafting/review.
+2. **Migration Val receipts:** Legacy RFL maps into I/A/V/**Validation-loop** records; missing Val history uses migration-only `val_loop_not_applicable` (never satisfies live Val gates).
+3. **Levels 0–3 repair return:** Successful repair → original owner **I → A → V** (re-A before V), not V-only.
+4. **Authorizer path fallback:** `local/default/<repo_dir_hash>` when git remote absent/unparseable.
+5. **KLW post-write:** Insight write **or** durable `kl_post_write_no_insights` satisfies KLW-01.
+6. **LPS schema artifact:** `contracts/work-spec.schema.json` is a Row-1 reviewed source; explicit `VAL/TST-RFL-612`–`618` obligation paragraphs required.
