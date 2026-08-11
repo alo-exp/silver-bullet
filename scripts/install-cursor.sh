@@ -794,10 +794,17 @@ python3 "$MERGE_HOOKS" "$DEST_ROOT"
 # SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
 CSBA_INSTALLER="${REPO_ROOT}/scripts/install-cursor-sb-agents.sh"
 if [[ -x "$CSBA_INSTALLER" ]]; then
+  # Scope the subagent config write to the project being installed for, when
+  # one was named. Unscoped it defaults to this checkout, so installing for
+  # another project rewrote Silver Bullet's own .silver-bullet.json.
+  csba_env=()
+  if [[ -n "${SB_RECONCILE_PROJECT_ROOT:-}" ]]; then
+    csba_env=(env "CSBA_REPO_ROOT=${SB_RECONCILE_PROJECT_ROOT}")
+  fi
   if [[ -t 0 && -t 1 ]]; then
-    bash "$CSBA_INSTALLER" --global || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+    "${csba_env[@]}" bash "$CSBA_INSTALLER" --global || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
   else
-    bash "$CSBA_INSTALLER" --global --non-interactive || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
+    "${csba_env[@]}" bash "$CSBA_INSTALLER" --global --non-interactive || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
   fi
 fi
 
