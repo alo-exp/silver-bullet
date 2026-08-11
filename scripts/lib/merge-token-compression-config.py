@@ -38,6 +38,11 @@ def hook_command(entry: dict) -> str:
     return str(entry.get("command", ""))
 
 
+def hook_entry_key(entry: dict) -> tuple[str, str]:
+    """Dedupe key: same command with different matchers must both be kept."""
+    return (hook_command(entry), str(entry.get("matcher", "")))
+
+
 def merge_hook_entries(existing: list, new_entries: list) -> tuple[list, int]:
     merged = list(existing)
     added = 0
@@ -45,7 +50,8 @@ def merge_hook_entries(existing: list, new_entries: list) -> tuple[list, int]:
         cmd = hook_command(entry)
         if not cmd:
             continue
-        if any(hook_command(item) == cmd for item in merged):
+        new_key = hook_entry_key(entry)
+        if any(hook_entry_key(item) == new_key for item in merged):
             continue
         merged.append(entry)
         added += 1
