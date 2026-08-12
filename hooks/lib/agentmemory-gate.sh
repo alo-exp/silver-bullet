@@ -175,8 +175,15 @@ sb_agentmemory_usage_state_path() {
   if [[ -n "$config_file" && -f "$config_file" ]]; then
     state_path="$(jq -r '.recommended_tools.agentmemory.usage_state_file // ""' "$config_file" 2>/dev/null || true)"
     state_path="${state_path/#\~/$HOME}"
+    # Expand runtime placeholders (parity with leanctx-gate; #276).
+    state_path="${state_path//\$\{SB_RUNTIME_HOME_ROOT\}/${SB_RUNTIME_HOME_ROOT:-${HOME}/.cursor}}"
+    state_path="${state_path//\$\{SB_RUNTIME_STATE_DIR\}/${SB_RUNTIME_STATE_DIR:-${HOME}/.cursor/.silver-bullet}}"
   fi
   if [[ -z "$state_path" ]]; then
+    state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
+  fi
+  # Reject unresolved ${...} leftovers — never mkdir a literal placeholder path.
+  if [[ "$state_path" == *'${'* ]]; then
     state_path="${SB_RUNTIME_STATE_DIR:-${HOME}/.silver-bullet}/agentmemory-usage"
   fi
   if declare -f sb_runtime_path_is_state_scoped >/dev/null 2>&1; then

@@ -107,7 +107,20 @@ sb_doc_scheme__write_gap_report() {
 
   gap_dir="${state_dir}/doc-scheme-gaps"
   mkdir -p "$gap_dir"
-  gap_path="${gap_dir}/${repo_slug}.json"
+  # #280: scope by session + task so a prior task's obligations cannot leak.
+  # Fall back to repo-only path only when both ids are empty (should not happen).
+  local session_id=""
+  session_id="${SILVER_BULLET_SESSION_ID:-}"
+  if [[ -z "$session_id" && -f "${state_dir}/session-start-time" && ! -L "${state_dir}/session-start-time" ]]; then
+    session_id="$(tr -d '\n' <"${state_dir}/session-start-time" 2>/dev/null || true)"
+  fi
+  [[ -n "$session_id" ]] || session_id="nosession"
+  local task_slug=""
+  task_slug=$(printf '%s' "${task_id:-unknown-task}" | sed 's#[^A-Za-z0-9._-]#-#g')
+  [[ -n "$task_slug" ]] || task_slug="unknown-task"
+  gap_path="${gap_dir}/${repo_slug}__${session_id}__${task_slug}.json"
+  # Remove legacy project-only gap file so stale reports are not rediscovered.
+  rm -f -- "${gap_dir}/${repo_slug}.json" 2>/dev/null || true
 
   issues_json=$(printf '%s' "$issues" | jq -R -s 'split("\n") | map(select(length > 0))')
 
@@ -119,6 +132,7 @@ sb_doc_scheme__write_gap_report() {
     --arg task_granularity "$task_granularity" \
     --arg checklist_path "$checklist_path" \
     --arg contract_path "$contract_path" \
+    --arg session_id "$session_id" \
     --argjson issues "$issues_json" \
     '{
       mode: $mode,
@@ -128,7 +142,9 @@ sb_doc_scheme__write_gap_report() {
       task_granularity: $task_granularity,
       checklist_path: $checklist_path,
       contract_path: $contract_path,
-      issues: $issues
+      session_id: $session_id,
+      issues: $issues,
+      files: ($issues | length)
     }' > "$gap_path"
 
   SB_DOC_SCHEME_GAP_REPORT_PATH="$gap_path"
@@ -390,3 +406,4 @@ EOF
 
   return 0
 }
+

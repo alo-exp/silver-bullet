@@ -137,9 +137,9 @@ if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 && sb_orchestrat
         tmpl="$(jq -r '.next_worker_template // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
         args="$(jq -r '.args // ""' "$(sb_orchestrator_directive_file)" 2>/dev/null || true)"
       fi
-      if [[ -n "$expected" ]]; then
-        sb_orchestrator_mark_worker_spawn "$expected" "$tmpl" "$args" 2>/dev/null || true
-      fi
+      # Always write the worker marker on delegation spawn (#275). Claude Agent
+      # workers never get SubagentStart; the marker is their only classification signal.
+      sb_orchestrator_mark_worker_spawn "${expected:-ad-hoc}" "$tmpl" "$args" 2>/dev/null || true
       exit 0
       ;;
   esac

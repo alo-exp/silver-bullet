@@ -340,6 +340,16 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh",
         "timeout": 10,
         "matcher": "CallMcpTool|MCP"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh",
+        "timeout": 10,
+        "matcher": "CallMcpTool|MCP"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh",
+        "timeout": 10,
+        "matcher": "CallMcpTool|MCP"
       }
     ],
     "subagentStart": [
