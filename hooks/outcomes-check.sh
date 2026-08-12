@@ -95,8 +95,14 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   fi
   summary="$(sb_outcomes_pending_summary)"
   [[ -n "$summary" ]] || exit 0
-  ctx=$(printf '%s' "$summary" | jq -Rs '.')
-  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+  if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+    # shellcheck source=lib/ups-coalesce.sh
+    source "$_lib_dir/ups-coalesce.sh"
+    sb_ups_emit_additional_context "$summary" "UserPromptSubmit"
+  else
+    ctx=$(printf '%s' "$summary" | jq -Rs '.')
+    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+  fi
   exit 0
 fi
 
@@ -151,3 +157,4 @@ else
   printf '{"decision":"block","reason":%s}' "$json_reason"
 fi
 exit 0
+

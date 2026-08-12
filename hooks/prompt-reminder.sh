@@ -310,9 +310,32 @@ fi
 bare_prompt_context=""
 if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
   if sb_prompt_is_bare_work_request "$prompt"; then
-    silver_bullet_adapter="$(resolve_silver_bullet_codex_adapter)"
-    quoted_prompt="$(shell_single_quote "$prompt")"
-    bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+    _bare_host="${SILVER_BULLET_RUNTIME:-${SB_RUNTIME_NAME:-claude}}"
+    # Parent orchestrator and Claude/Cursor prefer Skill tool; Codex uses invoke-skill adapter (#260).
+    _prefer_skill=false
+    if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+      # shellcheck source=lib/orchestrator-parent.sh
+      source "$_lib_dir/orchestrator-parent.sh"
+      if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 \
+        && sb_orchestrator_is_parent_session 2>/dev/null; then
+        _prefer_skill=true
+      fi
+    fi
+    case "$_bare_host" in
+      codex)
+        if [[ "$_prefer_skill" == true ]]; then
+          bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action (parent mode): invoke the Skill tool with skill \"silver\" (prefer Skill over Bash invoke-skill).
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        else
+          silver_bullet_adapter="$(resolve_silver_bullet_codex_adapter)"
+          quoted_prompt="$(shell_single_quote "$prompt")"
+          bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
 
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
 First action: invoke the Silver router through the Codex SB adapter:
@@ -322,6 +345,19 @@ First action: invoke the Silver router through the Codex SB adapter:
 Router context: ${prompt}
 
 Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        fi
+        ;;
+      *)
+        bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action: invoke the Skill tool with skill \"silver\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        ;;
+    esac
   fi
 fi
 
@@ -501,6 +537,12 @@ ${stack_opt_line}"
   fi
 fi
 
-printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
+if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+  # shellcheck source=lib/ups-coalesce.sh
+  source "$_lib_dir/ups-coalesce.sh"
+  sb_ups_emit_additional_context "$msg" "UserPromptSubmit"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
+fi
 
 exit 0
