@@ -89,6 +89,32 @@ fi
 
 rm -rf "$MOCK_BIN"
 
+# #278: Claude host dry-run must merge via merge-leanctx-mcp-config (not silent SKIP)
+if bash "$INSTALL" --host claude --project-root "$REPO_ROOT" --dry-run --skip-install --skip-verify >/tmp/sb-install-leanctx-claude-dry.log 2>&1; then
+  pass "claude dry-run install exits 0"
+else
+  fail "claude dry-run install exits 0"
+  cat /tmp/sb-install-leanctx-claude-dry.log >&2 || true
+fi
+if grep -q 'merge-leanctx-mcp-config\|Merging LeanCTX MCP for host=claude\|DRY-RUN: python3 .*merge-leanctx' /tmp/sb-install-leanctx-claude-dry.log \
+  && ! grep -q 'SKIP: MCP merge (host=claude' /tmp/sb-install-leanctx-claude-dry.log; then
+  pass "claude dry-run merges MCP (#278)"
+else
+  fail "claude dry-run merges MCP (#278)"
+  cat /tmp/sb-install-leanctx-claude-dry.log >&2 || true
+fi
+
+MERGE_PY="$REPO_ROOT/scripts/lib/merge-leanctx-mcp-config.py"
+mkdir -p "${TEST_HOME}"
+printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.claude.json"
+if python3 "$MERGE_PY" --host claude >/dev/null 2>&1 \
+  && jq -e '.mcpServers.leanctx.env.LEANCTX_MCP_TOOL_PREFIX == "lctx_"' "${TEST_HOME}/.claude.json" >/dev/null 2>&1; then
+  pass "merge-leanctx-mcp-config writes claude leanctx (#278)"
+else
+  fail "merge-leanctx-mcp-config writes claude leanctx (#278)"
+fi
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+
 

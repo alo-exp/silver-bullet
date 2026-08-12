@@ -3070,7 +3070,7 @@
     "semantic_hash": "38c9d418a72d6604552a170e2232e5e7"
   },
   ".silver-bullet.json": {
-    "mtime": 1786498666.421561,
+    "mtime": 1786524788.2903447,
     "ast_hash": "1b543f84ac0d484e3455734014afc985",
     "semantic_hash": ""
   },
@@ -3895,9 +3895,9 @@
     "semantic_hash": "80ff3d1df2b45475c4aff3df4d6ee305"
   },
   "hooks/cursor-hooks.json": {
-    "mtime": 1786499355.6931016,
-    "ast_hash": "71dcd230b2cfdf564011cab489bd02ba",
-    "semantic_hash": "71dcd230b2cfdf564011cab489bd02ba"
+    "mtime": 1786525213.8137586,
+    "ast_hash": "3b234ba9a475948541799e250c3bed0e",
+    "semantic_hash": ""
   },
   "hooks/debug-dump.sh": {
     "mtime": 1786119200.6027458,
@@ -3935,9 +3935,9 @@
     "semantic_hash": "9f1bc12b201d081d8e8c061144802e03"
   },
   "hooks/hooks.json": {
-    "mtime": 1786496445.320363,
-    "ast_hash": "8740942a85724fc055a2c86b6f4568e0",
-    "semantic_hash": "8740942a85724fc055a2c86b6f4568e0"
+    "mtime": 1786525141.3854535,
+    "ast_hash": "ba8b7e63490d7810318fab0c0a34edb8",
+    "semantic_hash": ""
   },
   "hooks/industry-tooling-hint.sh": {
     "mtime": 1786119200.6038811,
@@ -3970,8 +3970,8 @@
     "semantic_hash": "aa7bf70d59d32f700e28fe0bbfc04b6a"
   },
   "hooks/lib/agentmemory-gate.sh": {
-    "mtime": 1786508871.7243648,
-    "ast_hash": "9ce3f69c079ca01d9d28952cb67a271c",
+    "mtime": 1786525122.2292147,
+    "ast_hash": "f11fe83717d5bee3f1a85453bdfee04b",
     "semantic_hash": ""
   },
   "hooks/lib/alumnium-gate.sh": {
@@ -4080,9 +4080,9 @@
     "semantic_hash": "387689523ae472ebf905825254ea861c"
   },
   "hooks/lib/doc-scheme-gate.sh": {
-    "mtime": 1786119200.6083314,
-    "ast_hash": "b43c178295aa6d088fc98746f36618a7",
-    "semantic_hash": "b43c178295aa6d088fc98746f36618a7"
+    "mtime": 1786525189.3397834,
+    "ast_hash": "8e1ddc3e8f02dfb3f000b12e1064e45a",
+    "semantic_hash": ""
   },
   "hooks/lib/e2e-matrix-routing.sh": {
     "mtime": 1786119200.6084642,
@@ -4365,9 +4365,9 @@
     "semantic_hash": "85316781b748bc804029bece786af326"
   },
   "hooks/orchestrator-directive-guard.sh": {
-    "mtime": 1786496445.48118,
-    "ast_hash": "a48fff482fa53879ccc716e733e02c24",
-    "semantic_hash": "a48fff482fa53879ccc716e733e02c24"
+    "mtime": 1786525122.0523708,
+    "ast_hash": "a12565d368789cccc9878501e969d930",
+    "semantic_hash": ""
   },
   "hooks/outcomes-check.sh": {
     "mtime": 1786509203.4021661,
@@ -4410,9 +4410,9 @@
     "semantic_hash": ""
   },
   "hooks/record-agentmemory-usage.sh": {
-    "mtime": 1786119200.6187842,
-    "ast_hash": "e5996e15be1762723e3834cfaaf9d504",
-    "semantic_hash": "e5996e15be1762723e3834cfaaf9d504"
+    "mtime": 1786525144.9815972,
+    "ast_hash": "74e8570987531dfaed7106eff1551c0f",
+    "semantic_hash": ""
   },
   "hooks/record-graphify-query.sh": {
     "mtime": 1786119200.6188707,
@@ -4425,9 +4425,9 @@
     "semantic_hash": "83822c8ac3ab672aa56c822e1439b999"
   },
   "hooks/record-recommended-mcp.sh": {
-    "mtime": 1786119200.619097,
-    "ast_hash": "39d745841e9a9d3326b7f489fc72d38d",
-    "semantic_hash": "39d745841e9a9d3326b7f489fc72d38d"
+    "mtime": 1786525151.379802,
+    "ast_hash": "79c4f142f04601fe0d4a9cb9d3861d73",
+    "semantic_hash": ""
   },
   "hooks/record-requested-skill.sh": {
     "mtime": 1786509200.630098,
@@ -4480,8 +4480,8 @@
     "semantic_hash": "add1e2b4cc0727b7cb8165274a465484"
   },
   "hooks/session-start": {
-    "mtime": 1786521327.0311875,
-    "ast_hash": "ee3e6c2857680c1b044bcc0a6673a84d",
+    "mtime": 1786525212.3718603,
+    "ast_hash": "879f14e957c4ac4717cd1412c0880f4f",
     "semantic_hash": ""
   },
   "hooks/site-chrome-guard.sh": {
@@ -4495,8 +4495,8 @@
     "semantic_hash": "56b64b63d37ac85aa2c7229c0f82988e"
   },
   "hooks/site-regression-gate.sh": {
-    "mtime": 1786521325.3561776,
-    "ast_hash": "c4b5597932bf50efc8a6b6b97a5e3ff8",
+    "mtime": 1786525153.7050085,
+    "ast_hash": "f74a8050d21b2a865d84e6cb01d56453",
     "semantic_hash": ""
   },
   "hooks/site-visual-evidence-gate.sh": {
@@ -4530,9 +4530,9 @@
     "semantic_hash": ""
   },
   "hooks/subagent-start.sh": {
-    "mtime": 1786119200.6234658,
-    "ast_hash": "0666079f6b7859e2c44a92f56c97ba9a",
-    "semantic_hash": "0666079f6b7859e2c44a92f56c97ba9a"
+    "mtime": 1786525115.995733,
+    "ast_hash": "01fc967d56ed585058a14031f567959f",
+    "semantic_hash": ""
   },
   "hooks/subagent-stop-enforcement.sh": {
     "mtime": 1786509230.425729,
@@ -5195,14 +5195,14 @@
     "semantic_hash": ""
   },
   "plugins/silver-bullet/.silver-bullet.json": {
-    "mtime": 1786498666.421561,
+    "mtime": 1786524788.2903447,
     "ast_hash": "1b543f84ac0d484e3455734014afc985",
     "semantic_hash": ""
   },
   "plugins/silver-bullet/cursor-hooks.json": {
-    "mtime": 1786499355.7016933,
-    "ast_hash": "71dcd230b2cfdf564011cab489bd02ba",
-    "semantic_hash": "71dcd230b2cfdf564011cab489bd02ba"
+    "mtime": 1786525213.8145084,
+    "ast_hash": "3b234ba9a475948541799e250c3bed0e",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/reference/parallel-phases-v1.json": {
     "mtime": 1786119200.0,
@@ -6635,8 +6635,8 @@
     "semantic_hash": "43dc204fd60492b6c1545fe5ef0ad1c0"
   },
   "scripts/install-leanctx-sb.sh": {
-    "mtime": 1786186646.8048043,
-    "ast_hash": "3e7f05c8b7242e6158997963e7de5691",
+    "mtime": 1786525153.6538365,
+    "ast_hash": "cd1f04b20dcad41ee482b8efd359b787",
     "semantic_hash": ""
   },
   "scripts/install-recommended-tools-cursor.sh": {
@@ -8270,9 +8270,9 @@
     "semantic_hash": "af4055217904b33897d5fef6b8a781c0"
   },
   "tests/hooks/test-agentmemory-gate-lib.sh": {
-    "mtime": 1786496445.3357449,
-    "ast_hash": "a8ae4e3347f0d6229fc4cbce6a179361",
-    "semantic_hash": "a8ae4e3347f0d6229fc4cbce6a179361"
+    "mtime": 1786525245.575974,
+    "ast_hash": "41750fd0c2e978e76c1404ab20c83341",
+    "semantic_hash": ""
   },
   "tests/hooks/test-agentmemory-gate.sh": {
     "mtime": 1786509005.8416147,
@@ -8595,9 +8595,9 @@
     "semantic_hash": ""
   },
   "tests/hooks/test-record-agentmemory-usage.sh": {
-    "mtime": 1786119200.941462,
-    "ast_hash": "238694c5b227b3060f98bc4218a3584f",
-    "semantic_hash": "238694c5b227b3060f98bc4218a3584f"
+    "mtime": 1786525240.3317232,
+    "ast_hash": "dc222ba1e0d96eef797ae6e5cbd1eeac",
+    "semantic_hash": ""
   },
   "tests/hooks/test-record-graphify-query.sh": {
     "mtime": 1786119200.9415548,
@@ -8700,8 +8700,8 @@
     "semantic_hash": "714161f28fa3ea06a0bc4a8b58f31cd9"
   },
   "tests/hooks/test-session-start.sh": {
-    "mtime": 1786521360.5609782,
-    "ast_hash": "b169210f4ddc9185894744be8dba8934",
+    "mtime": 1786525214.507217,
+    "ast_hash": "1120c531d5a49adb80e84d32252d5033",
     "semantic_hash": ""
   },
   "tests/hooks/test-shell-read-only.sh": {
@@ -9360,9 +9360,9 @@
     "semantic_hash": ""
   },
   "tests/scripts/test-install-leanctx-sb.sh": {
-    "mtime": 1786119200.9615874,
-    "ast_hash": "8b04b966fd89a7d0150ea349ea2e16a4",
-    "semantic_hash": "8b04b966fd89a7d0150ea349ea2e16a4"
+    "mtime": 1786525257.6000109,
+    "ast_hash": "dc8a9c16ad0a7bd1f202316eb396a16c",
+    "semantic_hash": ""
   },
   "tests/scripts/test-instruction-flow-parity.sh": {
     "mtime": 1786119200.961689,
@@ -15740,7 +15740,7 @@
     "semantic_hash": "40b2d0ece3459d56ee458342b6215345"
   },
   "AGENTS.md": {
-    "mtime": 1786185443.035954,
+    "mtime": 1786525310.683937,
     "ast_hash": "0e44dcd5d938a2e43151a185837d3d9f",
     "semantic_hash": "0e44dcd5d938a2e43151a185837d3d9f"
   },
@@ -16615,8 +16615,8 @@
     "semantic_hash": "c14fe97f1c241c4c8ef1f7831830826e"
   },
   "docs/LEANCTX.md": {
-    "mtime": 1786496445.481353,
-    "ast_hash": "df91b2823ef0801c5061dfec7865de4b",
+    "mtime": 1786525272.1285794,
+    "ast_hash": "a285c5661d62b49caf81205a51f13016",
     "semantic_hash": ""
   },
   "docs/NEW-WORKFLOW.md": {
@@ -18825,7 +18825,7 @@
     "semantic_hash": "6edf2d31b199a6a44918e4a309fdc351"
   },
   "plugins/silver-bullet/AGENTS.md": {
-    "mtime": 1786185443.035954,
+    "mtime": 1786525310.683937,
     "ast_hash": "0e44dcd5d938a2e43151a185837d3d9f",
     "semantic_hash": "0e44dcd5d938a2e43151a185837d3d9f"
   },
@@ -20245,8 +20245,8 @@
     "semantic_hash": "c96e384fa49cefdcbc64f702355f2270"
   },
   "site/changelog/index.html": {
-    "mtime": 1786496445.4803662,
-    "ast_hash": "027894519fd215a09ac274e95f391e93",
+    "mtime": 1786525191.0283115,
+    "ast_hash": "82cffc211252195f86485e7642b5e51b",
     "semantic_hash": ""
   },
   "site/fonts/D-DIN-OFL.txt": {
@@ -24255,8 +24255,13 @@
     "semantic_hash": ""
   },
   "tests/hooks/test-site-session-mktemp-portability.sh": {
-    "mtime": 1786521395.5349603,
-    "ast_hash": "1f3716decd3cfe34df35f4107304dd86",
+    "mtime": 1786522084.4142823,
+    "ast_hash": "c552e09b4bf27dc78dac255c9de03906",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/sb-mktemp-2026-08-12.json": {
+    "mtime": 1786521630.0914996,
+    "ast_hash": "53ec8e497e8506d4b1272f9aeec06194",
     "semantic_hash": ""
   }
 }

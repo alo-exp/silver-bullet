@@ -390,8 +390,24 @@ if [[ "$sb_should_mutate" == true ]]; then
   rm -f -- "$quality_gate_state_file" 2>/dev/null
   rm -f -- "$verify_tests_state_file" 2>/dev/null
   rm -f -- "${SB_STATE_DIR}/planning-edit-override" \
-        "${SB_STATE_DIR}/roadmap-edit-override" \
-        "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
+        "${SB_STATE_DIR}/roadmap-edit-override" 2>/dev/null || true
+  # #275: Claude Agent workers fire SessionStart(startup) but never SubagentStart.
+  # Parent PreToolUse writes orchestrator-worker-active.json; wiping it here before
+  # classification misclassifies workers as parents. Preserve a *fresh* marker
+  # (within TTL via sb_orchestrator_is_worker_session). Stale/invalid markers still clear.
+  _sb_preserve_worker_marker=false
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    if sb_orchestrator_is_worker_session 2>/dev/null; then
+      _sb_preserve_worker_marker=true
+    fi
+  fi
+  if [[ "$_sb_preserve_worker_marker" != true ]]; then
+    rm -f -- "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
+  fi
+  # #280: drop prior-session doc-scheme gap reports so obligations cannot leak.
+  rm -rf -- "${SB_STATE_DIR}/doc-scheme-gaps" 2>/dev/null || true
 fi
 
 # Warn visibly if jq is unavailable — enforcement will be disabled
@@ -520,6 +536,19 @@ if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
     source "$_lib_dir/orchestrator-parent.sh"
     if sb_orchestrator_is_worker_session 2>/dev/null; then
       export SB_ORCHESTRATOR_WORKER=1
+      # Claude has no SubagentStart — inject worker banner on SessionStart (#275).
+      # Do NOT tell workers to set SB_ORCHESTRATOR_WORKER=1 themselves (dead / spoofable).
+      worker_ctx="SB WORKER SUBAGENT (mandatory)
+  1. graphify query before exploration (never skip when graphify-out/ exists).
+  2. agentmemory MCP — save decisions/defects/evidence after meaningful work.
+  3. Invoke assigned skill before substantive edits.
+  4. Write evidence artifact path (.planning/ or agentmemory export) before exit summary.
+  5. RTK + Context Mode — follow project token-compression rules when opted in."
+      combined="${combined:+$combined
+
+---
+
+}${worker_ctx}"
     elif sb_orchestrator_is_parent_session 2>/dev/null; then
       export SB_ORCHESTRATOR_PARENT=1
       parent_ctx="$(sb_orchestrator_parent_context_block 2>/dev/null || true)"

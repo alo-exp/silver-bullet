@@ -108,5 +108,30 @@ else
   fail "enabled_by_user false skips recording"
 fi
 
+# #276: MCP CallMcpTool / memory_* clears the gate
+setup
+run_mcp_hook() {
+  local input
+  input=$(jq -n \
+    '{hook_event_name:"PostToolUse", tool_name:"CallMcpTool", tool_input:{server:"user-agentmemory", toolName:"memory_smart_search", arguments:{query:"test"}}}')
+  (cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$RECORD_HOOK" 2>/dev/null)
+}
+run_mcp_hook
+if [[ -f "$AM_STATE" ]] && grep -qE '^[0-9]+$' "$AM_STATE"; then
+  pass "records epoch on MCP memory_smart_search (#276)"
+else
+  fail "records epoch on MCP memory_smart_search (#276)"
+fi
+
+setup
+input=$(jq -n '{hook_event_name:"PostToolUse", tool_name:"mcp__agentmemory__memory_recall", tool_input:{}}')
+(cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$RECORD_HOOK" 2>/dev/null) || true
+if [[ -f "$AM_STATE" ]] && grep -qE '^[0-9]+$' "$AM_STATE"; then
+  pass "records epoch on mcp__agentmemory__memory_recall (#276)"
+else
+  fail "records epoch on mcp__agentmemory__memory_recall (#276)"
+fi
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1
+
