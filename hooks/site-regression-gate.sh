@@ -110,14 +110,20 @@ This is a gate setup problem, not a test failure."
 elif [[ $rc -eq 91 ]]; then
   reason="Site session regression gate — cannot run: failed to create a log file under ${SB_RUNTIME_STATE_DIR:-/tmp}.
 This is a gate setup problem, not a test failure. Check that the directory exists and is writable, and remove any stale 'site-regression.XXXXXX.log' literal file left by older SB versions."
+elif [[ -z "$log_file" || ! -f "$log_file" ]]; then
+  # Empty/missing log with a non-setup rc means we could not capture a run —
+  # do not tell the operator the suites "failed" when we have no evidence they ran.
+  reason="Site session regression gate — cannot run: regression helper returned rc=${rc} without a usable log file.
+This is a gate setup problem, not a test failure. Log: ${log_file:-unknown}"
 else
-  reason="Site session regression gate — run site freshness + chrome regression before push/Stop.
+  reason="Site session regression gate — suites ran and failed. Re-run site freshness + chrome regression before push/Stop.
 
 Required (all must pass):
   bash tests/scripts/test-site-chrome-regression.sh
   bash tests/scripts/test-site-doc-freshness.sh
   bash tests/scripts/test-site-content-freshness.sh
 
-Fix failures then retry. Log: ${log_file:-unknown}"
+Fix failures then retry. Log: ${log_file}"
 fi
 emit_block "$reason"
+
