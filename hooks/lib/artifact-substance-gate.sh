@@ -55,9 +55,9 @@ sb_artifact_substance_gate_enforce() {
     vfile="$(_sb_substance_find_artifact "$repo_root" "VERIFICATION.md" 2>/dev/null || true)"
     if [[ -n "$vfile" ]]; then
       if _sb_substance_is_stub "$vfile"; then
-        issues="${issues}  ❌ VERIFICATION.md is empty or stub-only ($vfile)\n"
+        issues="${issues}  ❌ VERIFICATION.md is empty or stub-only ($vfile)"$'\n'
       elif ! _sb_substance_has_command_output "$vfile"; then
-        issues="${issues}  ❌ VERIFICATION.md missing fenced command output blocks (docs/evidence-schema.md) ($vfile)\n"
+        issues="${issues}  ❌ VERIFICATION.md missing fenced command output blocks (docs/evidence-schema.md) ($vfile)"$'\n'
       fi
     fi
   fi
@@ -66,9 +66,9 @@ sb_artifact_substance_gate_enforce() {
     rfile="$(_sb_substance_find_artifact "$repo_root" "REVIEW.md" 2>/dev/null || true)"
     if [[ -n "$rfile" ]]; then
       if _sb_substance_is_stub "$rfile"; then
-        issues="${issues}  ❌ REVIEW.md is empty or stub-only ($rfile)\n"
+        issues="${issues}  ❌ REVIEW.md is empty or stub-only ($rfile)"$'\n'
       elif ! grep -qiE 'finding|no issues|no findings|clean pass|must-fix|nice-to-have' "$rfile" 2>/dev/null; then
-        issues="${issues}  ❌ REVIEW.md missing findings section or explicit no-issues statement ($rfile)\n"
+        issues="${issues}  ❌ REVIEW.md missing findings section or explicit no-issues statement ($rfile)"$'\n'
       fi
       # Two-pass review discipline: REVIEW-ROUNDS.md must show ≥2 rounds when review ran
       local rounds_file="${repo_root}/.planning/REVIEW-ROUNDS.md"
@@ -76,10 +76,10 @@ sb_artifact_substance_gate_enforce() {
         local round_count
         round_count=$(grep -cE '^## Round [0-9]+' "$rounds_file" 2>/dev/null || echo 0)
         if [[ "$round_count" -lt 2 ]]; then
-          issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)\n"
+          issues="${issues}  ❌ REVIEW-ROUNDS.md has ${round_count} round(s) — two consecutive clean passes required (see hooks/core-rules.md §3a) ($rounds_file)"$'\n'
         fi
       elif [[ -f "$rfile" ]]; then
-        issues="${issues}  ❌ REVIEW-ROUNDS.md missing — append audit trail for two review rounds ($rounds_file)\n"
+        issues="${issues}  ❌ REVIEW-ROUNDS.md missing — append audit trail for two review rounds ($rounds_file)"$'\n'
       fi
     fi
   fi
@@ -88,9 +88,9 @@ sb_artifact_substance_gate_enforce() {
     pfile="$(_sb_substance_find_artifact "$repo_root" "PLAN.md" 2>/dev/null || true)"
     if [[ -n "$pfile" ]]; then
       if _sb_substance_is_stub "$pfile"; then
-        issues="${issues}  ❌ PLAN.md is empty or stub-only ($pfile)\n"
+        issues="${issues}  ❌ PLAN.md is empty or stub-only ($pfile)"$'\n'
       elif ! grep -qiE 'acceptance|task|wave|verification|dependency' "$pfile" 2>/dev/null; then
-        issues="${issues}  ❌ PLAN.md missing task/acceptance/verification sections ($pfile)\n"
+        issues="${issues}  ❌ PLAN.md missing task/acceptance/verification sections ($pfile)"$'\n'
       fi
     fi
   fi
