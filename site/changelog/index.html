@@ -97,6 +97,40 @@ main{padding:48px 24px 96px}
     <li><code>docs(site)</code>: <a href="../help/workflows/silver-multi-ai-task.html">multi-ai-task</a> and <a href="../help/workflows/silver-deep-research-multi-ai.html">deep-research-multi-ai</a> help pages</li>
    </ul>
   </article>
+  <article class="release" id="v0-52-0">
+   <div class="release-header">
+    <h2>v0.52.0</h2>
+    <time class="release-date" datetime="2026-08-08">2026-08-08</time>
+   </div>
+   <p class="release-summary">Minor release: five-tool routed compression stack, multi-AI orchestration primitive, and a batch of hook gate-integrity fixes — several gates were failing open or blocking Stop permanently.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(tools)</code>: activate five-tool routed stack — graphify, leanctx, context-mode, rtk, agentmemory</li>
+    <li><code>feat(tools)</code>: five-tool reconciler and Cursor install integration</li>
+    <li><code>feat(multi-ai)</code>: multi-AI primitive, deep-research composer, Excel matrix, and personas</li>
+    <li><code>feat(multi-ai)</code>: Codex/OpenCode host adapters for live deep-research dispatch</li>
+    <li><code>feat(clarify)</code>: per-plan CLARIFY filenames and planning path helper</li>
+   </ul>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(hooks)</code>: stop instruction-ledger self-enrollment from fenced agent reports</li>
+    <li><code>fix(hooks)</code>: stop instruction-ledger and review-fix-ladder gates failing open</li>
+    <li><code>fix(hooks)</code>: add a real claude arm to <code>sb_leanctx_hooks_present()</code></li>
+    <li><code>fix(hooks)</code>: site regression gate no longer wedges on a BSD <code>mktemp</code> template</li>
+    <li><code>fix(hooks)</code>: stop shell-hook duplication and orphan bash leaks</li>
+    <li><code>fix(hooks)</code>: site session gates skip agent-delegation false positives (#244, #245)</li>
+    <li><code>fix(leanctx)</code>: resolve the claude host MCP artifact to <code>~/.claude/settings.json</code></li>
+    <li><code>fix(leanctx)</code>: dedupe the lean-ctx MCP server entry on SB install</li>
+    <li><code>fix(doctor)</code>: report D10-routes <code>cross_tool unsupported</code> as a platform-limitation warning instead of a FAIL recommending <code>--fix=host</code></li>
+    <li><code>fix(tests)</code>: repair a BSD-first <code>stat</code> probe that wedged CI</li>
+    <li><code>fix(ci)</code>: repair the graphify artifact schema failing validation on main</li>
+    <li><code>fix(agents)</code>: implement <code>agent_delegate_append_workdir_evidence</code> for the delegate log floor</li>
+   </ul>
+   <h3>Docs</h3>
+   <ul>
+    <li>LeanCTX operating guide, public site reconcile, shared Graphify repository artifacts</li>
+   </ul>
+  </article>
   <article class="release" id="v0-51-7">
    <div class="release-header">
     <h2>v0.51.7</h2>

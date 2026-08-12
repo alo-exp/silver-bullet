@@ -218,19 +218,36 @@ merge_mcp_config() {
     log "SKIP: MCP merge"
     return 0
   fi
-  if [[ "$HOST" != "cursor" ]]; then
-    log "SKIP: MCP merge (host=${HOST}; patch-mcp targets ~/.cursor/mcp.json — use host install path)"
-    return 0
-  fi
-  if [[ ! -f "$PATCH_MCP_PY" ]]; then
-    warn "patch-mcp helper missing: $PATCH_MCP_PY"
-    return 1
-  fi
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 $PATCH_MCP_PY"
-    return 0
-  fi
-  RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 run_cmd python3 "$PATCH_MCP_PY"
+  local merge_py="${SCRIPT_DIR}/lib/merge-leanctx-mcp-config.py"
+  case "$HOST" in
+    cursor)
+      if [[ ! -f "$PATCH_MCP_PY" ]]; then
+        warn "patch-mcp helper missing: $PATCH_MCP_PY"
+        return 1
+      fi
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        log "DRY-RUN: RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 python3 $PATCH_MCP_PY"
+        return 0
+      fi
+      RT_PATCH_LEANCTX=1 RT_PATCH_GRAPHIFY=0 run_cmd python3 "$PATCH_MCP_PY"
+      ;;
+    claude|codex|opencode)
+      if [[ ! -f "$merge_py" ]]; then
+        warn "merge-leanctx-mcp-config helper missing: $merge_py"
+        return 1
+      fi
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        log "DRY-RUN: python3 $merge_py --host $HOST"
+        return 0
+      fi
+      log "Merging LeanCTX MCP for host=${HOST} via merge-leanctx-mcp-config.py"
+      run_cmd python3 "$merge_py" --host "$HOST"
+      ;;
+    *)
+      log "SKIP: MCP merge (host=${HOST}; no merge target implemented — supported: cursor, claude, codex, opencode)"
+      return 0
+      ;;
+  esac
 }
 
 write_sb_profile_env() {
@@ -335,4 +352,5 @@ fi
 log "=== LeanCTX SB install complete ==="
 log "Routing: sb_wire/sb_read/sb_pathjail/sb_injection → LeanCTX; sb_shell→RTK; sb_slice/sb_grep/sb_webfetch→CM; sb_graph→Graphify; sb_remember→agentmemory"
 log "See .cursor/rules/leanctx.mdc and docs/LEANCTX.md (when present)"
+
 

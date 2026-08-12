@@ -85,6 +85,10 @@ Registry helpers (Phase 1):
 | **Codex** | ✅ LeanCTX | ❌ deny-only | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST blocked until PreToolUse rewrite; wire-proxy ordering validator mandatory |
 | **OpenCode** | ✅ LeanCTX | ⚠️ verify install | ✅ | ✅ | ✅ RTK | ✅ CM | ✅ CM deny | ✅ Graphify | ✅ AM | ⚠️ advisory | ❌ blocked | AST support confirmed at install verify or documented gap |
 
+### Cross-tool convergence (`cross_tool`)
+
+`rt_host_supported()` and the five-tool reconciler's `cross_tool` component are **Cursor-only** today. On Claude/Codex/OpenCode, `sb-doctor` reports D10-routes as a **WARN** naming this platform limitation — it must **not** FAIL or recommend `--fix=host` (that remedy cannot clear `unsupported`). Implementing real cross-tool convergence for non-Cursor hosts is feature work, not a doctor false-green (#277).
+
 ### Codex Limitations
 
 Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is enabled on Codex:

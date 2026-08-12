@@ -62,8 +62,9 @@ if [[ -f "$_lib_dir/orchestrator-scheduler.sh" ]]; then
   fi
 fi
 
+# Do NOT instruct workers to set SB_ORCHESTRATOR_WORKER=1 — a process cannot set
+# its parent env, and that dead line has induced agents to fake worker status (#275).
 banner="SB WORKER SUBAGENT (mandatory)
-  Set SB_ORCHESTRATOR_WORKER=1 for this session.
   1. graphify query before exploration (never skip when graphify-out/ exists).
   2. agentmemory MCP — save decisions/defects/evidence after meaningful work.
   3. Invoke assigned skill before substantive edits${assigned_skill:+: }${assigned_skill}.
@@ -73,3 +74,4 @@ banner="SB WORKER SUBAGENT (mandatory)
 ctx="$(printf '%s' "$banner" | jq -Rs '.')"
 printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":%s}}' "$hook_event" "$ctx"
 exit 0
+

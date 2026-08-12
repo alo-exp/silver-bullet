@@ -418,7 +418,8 @@ touch "$OVERRIDE_DIR/planning-edit-override" "$OVERRIDE_DIR/roadmap-edit-overrid
   bash "$HOOK" </dev/null 2>/dev/null ) || true
 assert_file_missing "startup clears planning-edit-override" "$OVERRIDE_DIR/planning-edit-override"
 assert_file_missing "startup clears roadmap-edit-override" "$OVERRIDE_DIR/roadmap-edit-override"
-printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+# #275: stale marker (beyond TTL) must clear; fresh marker must survive Claude SessionStart.
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"2020-01-01T00:00:00Z"}\n' \
   > "$OVERRIDE_DIR/orchestrator-worker-active.json"
 ( cd "$HOOK_WORKDIR" && \
   SB_RUNTIME_PRESERVE_STATE_DIR=1 \
@@ -426,6 +427,27 @@ printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -
   SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
   bash "$HOOK" </dev/null 2>/dev/null ) || true
 assert_file_missing "startup clears stale orchestrator-worker-active.json" "$OVERRIDE_DIR/orchestrator-worker-active.json"
+printf '{"skill":"silver-plan","template":"PLAN","spawned_at":"%s"}\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+  > "$OVERRIDE_DIR/orchestrator-worker-active.json"
+out_worker=$( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$OVERRIDE_DIR" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+if [[ -f "$OVERRIDE_DIR/orchestrator-worker-active.json" ]]; then
+  echo "  PASS: startup preserves fresh orchestrator-worker-active.json (#275)"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: startup should preserve fresh orchestrator-worker-active.json (#275)"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$out_worker" | grep -qF 'SB WORKER SUBAGENT'; then
+  echo "  PASS: SessionStart injects worker banner when marker fresh (#275)"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: SessionStart should inject worker banner when marker fresh (#275)"
+  FAIL=$((FAIL + 1))
+fi
 rm -rf "$HOOK_WORKDIR" "$OVERRIDE_DIR"
 rm -f "$TMPBRANCH"
 

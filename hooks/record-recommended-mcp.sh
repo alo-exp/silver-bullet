@@ -53,7 +53,7 @@ case "$server" in
 esac
 
 case "$mcp_tool" in
-  save_memory|capture|remember|store*)
+  save_memory|capture|remember|store*|memory_smart_search|memory_recall|memory_search|memory_save|smart_search|recall|search)
     if sb_agentmemory_required "$config_file" 2>/dev/null && declare -f sb_agentmemory_record_usage >/dev/null 2>&1; then
       sb_agentmemory_record_usage "$config_file" && recorded=1
     fi
@@ -64,3 +64,4 @@ if [[ "$recorded" -eq 1 ]]; then
   printf '{"hookSpecificOutput":{"message":"✅ recommended MCP usage recorded"}}'
 fi
 exit 0
+
