@@ -242,11 +242,119 @@ else
   check "single marker does not classify as agent report" pass
 fi
 
+# ── SB-BUG-C #249: foreign scope ledger must not deadlock Stop ───────────────
+# Gate compares ledger scope to current git branch/worktree — run Stop from a
+# real git checkout (REPO_ROOT), not the non-git WORK fixture.
+write_ledger pending pending pending
+jq --arg b "other-branch" --arg w "/tmp/other-worktree" \
+  '.scope = {branch: $b, worktree: $w}' "$LEDGER" >"${LEDGER}.tmp" \
+  && mv -f "${LEDGER}.tmp" "$LEDGER"
+rm -f "${SB_TEST_DIR}/trivial" "${SB_TEST_DIR}/stop-coalesce-block" 2>/dev/null || true
+out=$(
+  cd "$REPO_ROOT" && printf '%s' '{"hook_event_name":"Stop"}' \
+    | SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+      bash "$HOOK" 2>/dev/null
+) || true
+if blocks "$out"; then
+  check "Stop ignores foreign-scope ledger (no block)" fail
+else
+  check "Stop ignores foreign-scope ledger (no block)" pass
+fi
+if [[ -f "$LEDGER" ]]; then
+  check "foreign-scope ledger cleared on Stop" fail
+else
+  check "foreign-scope ledger cleared on Stop" pass
+fi
+
+# ── SB-BUG-D #250: sanctioned resolve marks leaves done ──────────────────────
+# Unscoped (legacy) ledger remains enforceable in-session; resolve writes leaves.
+write_ledger pending pending pending
+if sb_instruction_ledger_resolve_item "i2" "done" "fixed in PR"; then
+  check "resolve_item marks leaf done by id" pass
+else
+  check "resolve_item marks leaf done by id" fail
+fi
+status_i2="$(jq -r '.intents[0].children[] | select(.id=="i2") | .status' "$LEDGER")"
+if [[ "$status_i2" == "done" ]]; then
+  check "ledger file shows i2 done after resolve" pass
+else
+  check "ledger file shows i2 done after resolve" fail
+fi
+if sb_instruction_ledger_resolve_item "audit the hooks" "deferred" "out of scope this turn"; then
+  check "resolve_item marks leaf deferred by label" pass
+else
+  check "resolve_item marks leaf deferred by label" fail
+fi
+if sb_instruction_ledger_resolve_item "add tests" "done" "tests/hooks/test-instruction-ledger-gate.sh"; then
+  check "resolve_item marks remaining leaf done" pass
+else
+  check "resolve_item marks remaining leaf done" fail
+fi
+out=$(run_stop)
+if blocks "$out"; then
+  check "Stop allowed after sanctioned resolve of all leaves" fail
+else
+  check "Stop allowed after sanctioned resolve of all leaves" pass
+fi
+
+# CLI wrapper must succeed end-to-end.
+write_ledger pending pending pending
+RESOLVE="${REPO_ROOT}/scripts/resolve-instruction-ledger.sh"
+if SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+    bash "$RESOLVE" done i1 --evidence "cli path" >/dev/null \
+  && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+    bash "$RESOLVE" deferred i2 --evidence "later" >/dev/null \
+  && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+    bash "$RESOLVE" done i3 --evidence "cli path" >/dev/null; then
+  check "resolve-instruction-ledger.sh CLI resolves all leaves" pass
+else
+  check "resolve-instruction-ledger.sh CLI resolves all leaves" fail
+fi
+out=$(run_stop)
+if blocks "$out"; then
+  check "Stop allowed after CLI resolve" fail
+else
+  check "Stop allowed after CLI resolve" pass
+fi
+
+# Block reason must name the sanctioned resolve procedure.
+write_ledger done pending done
+out=$(run_stop)
+if blocks "$out" && printf '%s' "$out" | grep -q 'resolve-instruction-ledger.sh'; then
+  check "block reason documents sanctioned resolve procedure" pass
+else
+  check "block reason documents sanctioned resolve procedure" fail
+fi
+
+# Seed stamps scope when git is available in WORK — use REPO_ROOT as cwd for seed.
+rm -f "$LEDGER"
+(
+  cd "$REPO_ROOT"
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" \
+    bash -c 'source hooks/lib/runtime-paths.sh; source hooks/lib/instruction-ledger.sh; sb_instruction_ledger_seed_from_prompt "Please:
+- one alpha task here
+- two beta task here
+- three gamma task here"'
+)
+if [[ -f "$LEDGER" ]] && [[ -n "$(jq -r '.scope.branch // empty' "$LEDGER")" ]]; then
+  check "seed stamps scope.branch" pass
+else
+  check "seed stamps scope.branch" fail
+fi
+if [[ -f "$LEDGER" ]] && [[ -n "$(jq -r '.scope.worktree // empty' "$LEDGER")" ]]; then
+  check "seed stamps scope.worktree" pass
+else
+  check "seed stamps scope.worktree" fail
+fi
+
 rm -f "$LEDGER"
 bash -n "$HOOK" && check "gate shell syntax" pass || check "gate shell syntax" fail
 bash -n "${REPO_ROOT}/hooks/lib/instruction-ledger.sh" \
   && check "ledger lib shell syntax" pass || check "ledger lib shell syntax" fail
+bash -n "${REPO_ROOT}/scripts/resolve-instruction-ledger.sh" \
+  && check "resolve script shell syntax" pass || check "resolve script shell syntax" fail
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]
+
