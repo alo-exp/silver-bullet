@@ -286,6 +286,26 @@ assert_file_missing "branch changed -> orchestrator-worker-active.json deleted" 
 rm -rf "$HOOK_WORKDIR" "$ORCH_DIR"
 rm -f "$TMPBRANCH"
 
+# Test 1c: Branch change clears instruction-ledger.json (SB-BUG-C #249)
+echo "--- Test 1c: Branch change clears instruction-ledger.json ---"
+HOOK_WORKDIR=$(make_git_repo)
+LEDGER_DIR="${SB_TEST_DIR}/session-start-ledger-${TEST_RUN_ID}"
+mkdir -p "$LEDGER_DIR"
+printf '{"prompt_id":"foreign","intents":[{"id":"root","status":"pending","children":[{"id":"i1","label":"left over","status":"pending","children":[]}]}]}' \
+  > "$LEDGER_DIR/instruction-ledger.json"
+printf 'silver-quality-gates\n' > "$TMPSTATE"
+printf 'old-branch-xyz' > "$TMPBRANCH"
+( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$LEDGER_DIR" \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "branch changed -> instruction-ledger.json deleted" "$LEDGER_DIR/instruction-ledger.json"
+rm -rf "$HOOK_WORKDIR" "$LEDGER_DIR"
+rm -f "$TMPBRANCH"
+
 # Test 2: Same branch -> state file preserved
 echo "--- Test 2: Same branch -> state file preserved ---"
 HOOK_WORKDIR=$(make_git_repo)
