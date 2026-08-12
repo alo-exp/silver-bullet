@@ -201,7 +201,10 @@ def main() -> int:
     gate_specs: list[tuple[str, str | None, int | None]] = []
     if patch_coordinator:
         gate_specs.append(
-            ("stack-compression-coordinator.sh", "Edit|Write|MultiEdit|Shell|CallMcpTool|MCP|WebFetch", 10)
+            # Include Read|Grep — the SB bridge registers a dedicated matcher for
+            # compression routing on those tools; omitting it leaves a coverage gap
+            # when the bridge entry is absent or superseded.
+            ("stack-compression-coordinator.sh", "Edit|Write|MultiEdit|Shell|Read|Grep|CallMcpTool|MCP|WebFetch", 10)
         )
     if patch_graphify:
         gate_specs.append(("graphify-gate.sh", "Edit|Write|MultiEdit|Shell", 10))
@@ -271,3 +274,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

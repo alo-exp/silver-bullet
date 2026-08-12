@@ -131,6 +131,13 @@ rt_installer_post_install() {
   if [[ -n "$project_root" ]]; then
     scope=all
   fi
+  # Already inside a reconcile apply: that run owns convergence and will finish
+  # it after this installer returns. Calling back into it here closes the
+  # reconcile -> optimize -> install -> reconcile cycle.
+  if [[ -n "${SB_RT_APPLY_ACTIVE:-}" ]]; then
+    printf 'SKIP: installer post-install reconcile (already inside reconcile apply)\n'
+    return 0
+  fi
   local out rc=0
   out="$(rt_installer_run_reconcile "$repo_root" "$project_root" "$scope" apply 2>&1)" || rc=$?
   printf '%s\n' "$out"

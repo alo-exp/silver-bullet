@@ -8,6 +8,19 @@ source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 AGENT_RENDERER="${SCRIPT_DIR}/render-agent-bundle.py"
 
+# Preflight before anything destructive. This script prunes tracked trees
+# (agents/{codex,cursor}, plugins/silver-bullet/templates) and repopulates them
+# with rsync. Discovering rsync is missing at that point leaves the checkout
+# with the deletions applied and nothing copied back.
+for _req in rsync python3; do
+  if ! command -v "$_req" >/dev/null 2>&1; then
+    printf 'ERROR: %s is required by sync-codex-package.sh but is not in PATH.\n' "$_req" >&2
+    printf '       Install it and re-run — this script prunes tracked trees before repopulating them.\n' >&2
+    exit 1
+  fi
+done
+unset _req
+
 SYNC_LOCK_DIR="${REPO_ROOT}/.planning/sb-sync-codex-package.lock.d"
 mkdir -p "$(dirname "$SYNC_LOCK_DIR")" 2>/dev/null || SYNC_LOCK_DIR="${TMPDIR:-/tmp}/sb-sync-codex-package.lock.d"
 mkdir -p "$(dirname "$SYNC_LOCK_DIR")"

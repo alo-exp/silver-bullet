@@ -8,6 +8,17 @@ source "${REPO_ROOT}/scripts/lib/agent-bundle-paths.sh"
 DEST_DIR="${REPO_ROOT}/plugins/silver-bullet"
 ROOT_MANIFEST="${REPO_ROOT}/.cursor-plugin/plugin.json"
 
+# Same hazard as sync-codex-package.sh: this prunes under plugins/silver-bullet
+# before repopulating with rsync, so a missing rsync would leave the mirror
+# short. Fail before anything is removed.
+for _req in rsync python3; do
+  if ! command -v "$_req" >/dev/null 2>&1; then
+    printf 'ERROR: %s is required by sync-cursor-package.sh but is not in PATH.\n' "$_req" >&2
+    exit 1
+  fi
+done
+unset _req
+
 log() {
   printf '[cursor-sync] %s\n' "$*"
 }

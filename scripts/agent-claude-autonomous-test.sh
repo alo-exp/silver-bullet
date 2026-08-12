@@ -13,6 +13,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLANNING_DIR="${REPO_ROOT}/.planning/agent-claude-autonomous"
+# SB_E2E_RUNS_DIR redirects per-run artifacts (including --dry-run output)
+# away from the tracked .planning tree so callers and tests do not leave
+# run directories behind in the checkout. Matrix/fixture reads still use
+# PLANNING_DIR.
+RUNS_DIR="${SB_E2E_RUNS_DIR:-${PLANNING_DIR}/runs}"
 MATRIX_JSON="${PLANNING_DIR}/MATRIX.json"
 INVOKE="${REPO_ROOT}/scripts/agent-claude/invoke.sh"
 PREFLIGHT_AC="${REPO_ROOT}/scripts/agent-claude/preflight.sh"
@@ -222,7 +227,7 @@ cmd_start() {
   [[ -d "$work_dir" ]] || { echo "ERROR: work_dir not found: $work_dir" >&2; exit 1; }
 
   run_id="$(run_id_new)-${row_id}"
-  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  run_dir="${RUNS_DIR}/${run_id}"
   mkdir -p "$run_dir"
 
   install_fp="$(enterprise_e2e_install_fingerprint)"
@@ -352,7 +357,7 @@ cmd_score() {
   done
   [[ -n "$run_id" ]] || { echo "ERROR: --run required" >&2; exit 2; }
 
-  local run_dir="${PLANNING_DIR}/runs/${run_id}"
+  local run_dir="${RUNS_DIR}/${run_id}"
   local ledger="${run_dir}/ledger.json"
   local log_file="${run_dir}/claude-run.log"
   [[ -f "$ledger" ]] || { echo "ERROR: missing ledger: $ledger" >&2; exit 1; }
@@ -374,7 +379,7 @@ cmd_score() {
 
   if [[ "$row_id" == "AUTO-C03" ]]; then
     local world_score log_bytes log_floor verdict="PASS" verdict_ok=1
-    world_score="$(python3 - "$ledger" "${PLANNING_DIR}/runs" <<'PYC03'
+    world_score="$(python3 - "$ledger" "${RUNS_DIR}" <<'PYC03'
 import json, sys
 ledger_path, runs_root = sys.argv[1:3]
 with open(ledger_path, encoding="utf-8") as f:
@@ -485,14 +490,14 @@ cmd_status() {
   done
 
   if [[ -n "$run_id" ]]; then
-    local ledger="${PLANNING_DIR}/runs/${run_id}/ledger.json"
+    local ledger="${RUNS_DIR}/${run_id}/ledger.json"
     [[ -f "$ledger" ]] && cat "$ledger" || echo "missing: $ledger" >&2
     return 0
   fi
 
   echo "=== agent-claude autonomous runs ==="
-  if [[ -d "${PLANNING_DIR}/runs" ]]; then
-    ls -1 "${PLANNING_DIR}/runs" 2>/dev/null || echo "(none)"
+  if [[ -d "${RUNS_DIR}" ]]; then
+    ls -1 "${RUNS_DIR}" 2>/dev/null || echo "(none)"
   else
     echo "(none)"
   fi

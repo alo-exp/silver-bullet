@@ -29,6 +29,11 @@ trap 'rm -rf "$TMP_HOME"' EXIT
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
+# The installer runs install-cursor-sb-agents.sh, which writes a project
+# .silver-bullet.json. Point it at the sandbox so the run does not rewrite the
+# checkout's own config.
+export CSBA_REPO_ROOT="${TMP_HOME}/project"
+mkdir -p "$CSBA_REPO_ROOT"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
 
 mkdir -p \
@@ -255,6 +260,26 @@ if [[ "$merged_sb_hook_count" -eq "$template_hook_count" ]]; then
   pass "install-cursor merges full SB hook count (${merged_sb_hook_count})"
 else
   fail "install-cursor merges full SB hook count — template ${template_hook_count} vs merged ${merged_sb_hook_count}"
+  # Name the entries that went missing. A bare count difference is not
+  # actionable when the failure only reproduces in CI.
+  echo "    missing from merged hooks.json (event/matcher :: hook):"
+  diff \
+    <(jq -r '.hooks | to_entries[] | .key as $e | .value[]
+             | "\($e)/\(.matcher // "-") :: \(.command | sub(".*/hooks/"; ""))"' \
+        "${REPO_ROOT}/hooks/cursor-hooks.json" | sort) \
+    <(jq -r '.hooks | to_entries[] | .key as $e | .value[]
+             | select(.command | test("silver-bullet"))
+             | "\($e)/\(.matcher // "-") :: \(.command | sub(".*/hooks/"; ""))"' \
+        "${CURSOR_HOME}/hooks.json" | sort) \
+    | grep '^<' | sed 's/^</      /' || true
+  # Show what the merged file actually holds for those hooks, unfiltered by the
+  # silver-bullet path match — an entry rewritten to a toolstack path is
+  # present but invisible to the count above.
+  echo "    merged entries for the missing hooks (any path):"
+  jq -r '.hooks | to_entries[] | .key as $e | .value[]
+         | select(.command | test("stack-compression-coordinator|site-regression-gate"))
+         | "      \($e)/\(.matcher // "-") :: \(.command)"' \
+    "${CURSOR_HOME}/hooks.json" 2>/dev/null || true
 fi
 
 odg_expected_matchers=("Edit|Write|MultiEdit" "Edit|Write|MultiEdit|Shell" "Task|Subagent|Agent")

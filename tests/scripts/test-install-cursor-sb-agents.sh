@@ -42,6 +42,7 @@ run_install() {
   env HOME="$TEST_HOME" \
     SB_CURSOR_SB_AGENTS_OFFLINE=1 \
     SB_CURSOR_MODELS_CATALOG="${TEST_HOME}/.config/silver-bullet/cursor-models-catalog.json" \
+    CSBA_REPO_ROOT="$TEST_PROJ" \
     bash "$INSTALLER" "$@"
 }
 

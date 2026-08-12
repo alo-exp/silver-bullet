@@ -794,6 +794,13 @@ python3 "$MERGE_HOOKS" "$DEST_ROOT"
 # SB custom subagents for Cursor review/verify ladders (~/.cursor/agents/)
 CSBA_INSTALLER="${REPO_ROOT}/scripts/install-cursor-sb-agents.sh"
 if [[ -x "$CSBA_INSTALLER" ]]; then
+  # Scope the subagent config write to the project being installed for, when
+  # one was named. Unscoped it defaults to this checkout, so installing for
+  # another project rewrote Silver Bullet's own .silver-bullet.json.
+  # Avoid empty-array expansion under `set -u` (bash 3.2 / some CI images).
+  if [[ -n "${SB_RECONCILE_PROJECT_ROOT:-}" ]]; then
+    export CSBA_REPO_ROOT="${SB_RECONCILE_PROJECT_ROOT}"
+  fi
   if [[ -t 0 && -t 1 ]]; then
     bash "$CSBA_INSTALLER" --global || printf 'WARN: install-cursor-sb-agents.sh exited nonzero (continuing)\n' >&2
   else
@@ -856,4 +863,10 @@ if [[ -f "$RT_INSTALLER_LIB" ]]; then
     _rt_project="$(cd "$SB_RECONCILE_PROJECT_ROOT" && pwd -P 2>/dev/null || true)"
   fi
   rt_installer_post_install "$REPO_ROOT" "$_rt_project" ||     printf 'WARN: reconciler post-install exited nonzero (host infra may still be usable)\n' >&2
+  # Toolstack patchers rewrite ~/.cursor/hooks.json after the initial SB merge.
+  # Re-merge so multi-matcher bridge entries (Read|Grep coordinator, site-regression
+  # Shell, etc.) cannot be left missing when a host patcher drops or supersedes them.
+  if [[ -d "$DEST_ROOT" && -f "$MERGE_HOOKS" ]]; then
+    python3 "$MERGE_HOOKS" "$DEST_ROOT"
+  fi
 fi
