@@ -114,7 +114,7 @@ elif [[ -z "$log_file" || ! -f "$log_file" ]]; then
   # Empty/missing log with a non-setup rc means we could not capture a run —
   # do not tell the operator the suites "failed" when we have no evidence they ran.
   reason="Site session regression gate — cannot run: regression helper returned rc=${rc} without a usable log file.
-This is a gate setup problem, not a test failure. Log: ${log_file:-unknown}"
+This is a gate setup problem, not a test failure. No log file was produced."
 else
   reason="Site session regression gate — suites ran and failed. Re-run site freshness + chrome regression before push/Stop.
 
@@ -126,4 +126,5 @@ Required (all must pass):
 Fix failures then retry. Log: ${log_file}"
 fi
 emit_block "$reason"
+
 

@@ -58,5 +58,22 @@ write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" agentmemory 2>/dev/null || true)"
 printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "agentmemory pending prompt" || fail "agentmemory pending prompt"
 
+# #276: usage_state_file with ${SB_RUNTIME_HOME_ROOT} must expand to an absolute path
+export SB_RUNTIME_HOME_ROOT="${TMP}/runtime-home"
+export SB_RUNTIME_STATE_DIR="${SB_RUNTIME_HOME_ROOT}/.silver-bullet"
+mkdir -p "$SB_RUNTIME_STATE_DIR"
+write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"agentmemory\":{\"enabled_by_user\":true,\"usage_state_file\":\"\${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage\"}}}"
+resolved="$(sb_agentmemory_usage_state_path "$TMP/.silver-bullet.json")"
+if [[ "$resolved" == /* && "$resolved" != *'${'* ]]; then
+  pass "usage_state_path expands SB_RUNTIME_HOME_ROOT (#276)"
+else
+  fail "usage_state_path expands SB_RUNTIME_HOME_ROOT (#276) got: $resolved"
+fi
+if [[ "$resolved" == "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage" ]]; then
+  pass "usage_state_path resolves to runtime home agentmemory-usage (#276)"
+else
+  fail "usage_state_path resolves to runtime home agentmemory-usage (#276) got: $resolved"
+fi
+
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]] || exit 1

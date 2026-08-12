@@ -21,6 +21,10 @@ input="$(cat 2>/dev/null || true)"
 tool_name="$(sb_tool_name "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_name // ""')"
 case "$tool_name" in
   Bash|Shell|shell|exec_command) ;;
+  CallMcpTool|MCP) ;;
+  # Claude/Cursor may surface MCP tools as mcp__<server>__<tool>
+  mcp__*agentmemory*|mcp__agentmemory__*) ;;
+  memory_smart_search|memory_recall|memory_search|memory_save|smart_search) ;;
   *) exit 0 ;;
 esac
 
@@ -49,6 +53,26 @@ fi
 
 sb_agentmemory_required "$config_file" || exit 0
 
+# MCP path: CallMcpTool / mcp__* / named memory_* tools clear the gate (#276).
+case "$tool_name" in
+  CallMcpTool|MCP)
+    server="$(printf '%s' "$input" | jq -r '.tool_input.server // .tool_input.mcpServer // ""' 2>/dev/null || true)"
+    mcp_tool="$(printf '%s' "$input" | jq -r '.tool_input.toolName // .tool_input.name // ""' 2>/dev/null || true)"
+    if [[ "$server" == *agentmemory* ]] || [[ "$mcp_tool" =~ ^(memory_|smart_search|recall|search|save_memory|store) ]]; then
+      if sb_agentmemory_record_usage "$config_file"; then
+        printf '{"hookSpecificOutput":{"message":"✅ agentmemory usage recorded"}}'
+      fi
+    fi
+    exit 0
+    ;;
+  mcp__*agentmemory*|mcp__agentmemory__*|memory_smart_search|memory_recall|memory_search|memory_save|smart_search)
+    if sb_agentmemory_record_usage "$config_file"; then
+      printf '{"hookSpecificOutput":{"message":"✅ agentmemory usage recorded"}}'
+    fi
+    exit 0
+    ;;
+esac
+
 cmd="$(sb_tool_command_string "$input" 2>/dev/null || printf '%s' "$input" | jq -r '.tool_input.command // ""')"
 [[ -n "$cmd" ]] || exit 0
 
@@ -64,3 +88,4 @@ if sb_agentmemory_record_usage "$config_file"; then
 else
   exit 0
 fi
+
