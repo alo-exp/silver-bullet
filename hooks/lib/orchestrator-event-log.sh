@@ -129,7 +129,7 @@ sb_orchestrator_saga_begin() {
   entry="$(jq -nc --arg skill "$worker_skill" --arg action "$action" --arg at "$now" \
     --argjson artifacts "$artifacts_json" \
     '{worker_skill: $skill, action: $action, started_at: $at, status: "in_progress", artifacts: $artifacts, rollback_steps: []}')"
-  printf '%s' "$entry" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
+  printf '%s\n' "$entry" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
   sb_orchestrator_event_append "saga_begin" "$(jq -nc --arg skill "$worker_skill" --arg action "$action" '{worker_skill: $skill, action: $action}')"
 }
 
@@ -143,7 +143,7 @@ sb_orchestrator_saga_complete() {
   updated="$(jq --arg status "$status" --arg at "$now" \
     '.status = $status | .completed_at = $at' "$saga_file" 2>/dev/null || true)"
   [[ -n "$updated" ]] || return 1
-  printf '%s' "$updated" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
+  printf '%s\n' "$updated" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
   sb_orchestrator_event_append "saga_complete" "$(jq -nc --arg skill "$worker_skill" --arg status "$status" '{worker_skill: $skill, status: $status}')"
 }
 
@@ -158,7 +158,7 @@ sb_orchestrator_saga_rollback_hint() {
       '.status = "rollback_required" |
        .rollback_steps += [{at: $at, reason: $reason, action: "revert_declared_artifacts"}]' \
       "$saga_file" 2>/dev/null || true)"
-    [[ -n "$updated" ]] && printf '%s' "$updated" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
+    [[ -n "$updated" ]] && printf '%s\n' "$updated" >"${saga_file}.tmp" 2>/dev/null && mv "${saga_file}.tmp" "$saga_file"
   fi
   sb_orchestrator_event_append "saga_rollback" "$(jq -nc --arg skill "$worker_skill" --arg reason "$reason" '{worker_skill: $skill, reason: $reason}')"
   hint="Saga rollback required for ${worker_skill}: ${reason}. Revert declared artifacts from .planning/ and git scope per worker contract before re-dispatch."
