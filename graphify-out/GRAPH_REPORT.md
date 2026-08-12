@@ -1,16 +1,16 @@
 # Graph Report - repo  (2026-08-12)
 
 ## Corpus Check
-- 4131 files · ~8,971,003 words
+- 4132 files · ~8,971,965 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 30248 nodes · 42622 edges · 3737 communities (1791 shown, 1946 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 1500 edges (avg confidence: 0.71)
+- 30254 nodes · 42629 edges · 3752 communities (1806 shown, 1946 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 1501 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `cfe23b06`
+- Built from commit: `95460c26`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,7 +22,7 @@
 - Order Validation API
 - silver-scan.py
 - PA-18 (Referenced Process Area)
-- AF-DOCUMENT
+- silver:deep-research
 - skill-source/silver-deep-research-multi-ai/scripts/synthesize_landscape.py
 - skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py
 - Graphify
@@ -60,22 +60,22 @@
 - run_ec
 - .r9-pilot-row3-launch-inner.sh
 - load_category_pack
-- skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py
+- load_category_pack
 - Canonical SDLC Process Architecture Research Report
 - silver:multi-ai-task/scripts/multi_ai_core.py
 - Silver Bullet Prior-Art Landscape
 - properties
 - Consolidated Prior-Art Landscape Report
-- security skill
+- DevOps Quality Gates
 - Incident-Ready Waitlist SaaS Slice
-- Incident Fast Path
+- All Tracked Skills
 - Full Capability-Only Ranking — Deep Research Skills
 - properties
 - properties
 - agentmemory MCP
 - paths.sh
 - properties
-- SDLC Gap Analysis
+- AF-RELEASE
 - enterprise-e2e-row-pass-registry.sh
 - skill_md_retrieval_plan
 - run_py
@@ -91,7 +91,7 @@
 - Kimi Research Scope
 - AF-AGENT-DELEGATE
 - Process Area 18: AI-Assisted / Agentic Software Engineering
-- Silver Bullet Major Issues Analysis
+- AF-DOCUMENT
 - Enterprise E2E Silver Bullet Issues
 - Consolidated Landscape Report
 - $defs
@@ -115,7 +115,7 @@
 - Agentic Process Orchestrator
 - ReportValidator
 - global-toolstack/common.sh
-- Pi
+- Modularity
 - ReportValidator
 - run_es
 - properties
@@ -143,7 +143,7 @@
 - lib/stack-compression-coordinator.sh
 - DR-RETRIEVE
 - run_py
-- skill-source/silver-deep-research-multi-ai/scripts/validate_landscape_content.py
+- resolve_pack_from_need
 - Top 50 Problems: AI Agents in Software Engineering & DevOps
 - License Research Report
 - run_py
@@ -152,7 +152,7 @@
 - monitor-enterprise-e2e-matrix.sh
 - skills/silver-deep-research-multi-ai/scripts/validate_landscape_content.py
 - run_py
-- /silver:validate Workflow
+- Structured JSON Logging
 - properties
 - .r9-pilot-rows-1-6-11-sequential.sh
 - e2e-live/helpers.sh
@@ -189,7 +189,7 @@
 - Best Source-Available License for Maximum User Freedom - Markdown Report
 - properties
 - orchestrator-directive.sh
-- SolutionClassifierTests
+- test-enterprise-e2e-matrix-routing.sh
 - comparison_matrix_xlsx_path
 - codex-r3-force1416-driver.sh
 - comparison_matrix_xlsx_path
@@ -238,7 +238,7 @@
 - codex/silver-deep-research/scripts/phase_gate.py
 - Phase 054 Verification Report
 - codex-r3-force141619-driver.sh
-- .cursor3-process-row.sh
+- skills/silver-multi-ai-task/scripts/live_dispatch.py
 - Terms of Use
 - skill-source/silver-deep-research/scripts/phase_gate.py
 - skill-source/silver-multi-ai-task/scripts/live_dispatch.py
@@ -248,11 +248,11 @@
 - Silver Init Skill
 - SENTINEL Audit Report: Silver Bullet v0.8.0
 - Goose
-- skills/silver-multi-ai-task/scripts/live_dispatch.py
+- skills/silver-multi-ai-task/scripts/multi_ai_core.py
 - test-e2e-live-full-surface-journey.sh
 - run_dr_live
 - ResearchEngine
-- id
+- enum
 - PA-11.1 Continuous Integration Pipeline
 - gen_og_image.py
 - agent-delegation-state.sh
@@ -335,13 +335,13 @@
 - PA-11 CI Release
 - properties
 - properties
-- Silver Bullet Benefits Over Plain GSD
+- Core Concepts Help Page
 - silver:multi-ai-task/scripts/cursor_host_adapter.py
 - Deep Research Mode
 - lib/context-mode-gate.sh
 - lib/graphify-gate.sh
 - Round 6 Gates
-- DevOps Quality Gates
+- Silver Bullet Major Issues Analysis
 - Deep Research Methodology
 - orchestrator-event-log.sh
 - test-kay-codex-isolation.sh
@@ -393,7 +393,7 @@
 - Goose
 - Goose Extensibility Technical Claims Verification
 - RTK + Context Mode README
-- /silver:deep-research workflow page
+- properties
 - Deep Research Capability Rubric
 - $ref
 - SourceEvaluator
@@ -436,10 +436,10 @@
 - DR-006 Company Coverage Selection
 - properties
 - .codex-prerelease-validation-run.sh
-- codex-r2-force1516-driver.sh
+- enterprise-e2e-live-common.sh
 - codex-r2-matrix-driver.sh
 - Silver Ingest Workflow Help Page
-- enterprise-e2e-live-common.sh
+- codex-r2-tierb-smoke-driver.sh
 - codex-r8-force1516-driver.sh
 - codex-r8-force716-driver.sh
 - codex-r8-tierbc-driver.sh
@@ -474,7 +474,7 @@
 - properties
 - required
 - agent-pi/lib.sh
-- migrate_v3_to_v4
+- sha256_json
 - market_entry
 - required
 - kay-codex-isolation.sh
@@ -491,7 +491,7 @@
 - required-skills.sh
 - rtk-compat.sh
 - Agent Host Delegation Sibling Prompt
-- properties
+- /silver:validate Workflow
 - Learnings — 2026-05
 - lib/rtk-gate.sh
 - properties
@@ -499,7 +499,7 @@
 - properties
 - codex/silver-deep-research/scripts/citation_manager.py
 - codex/silver-deep-research/scripts/md_to_html.py
-- round8-matrix-driver.sh
+- Enterprise E2E Validation Plan
 - live-verify-track-host.sh
 - skill-source/silver-deep-research/scripts/citation_manager.py
 - Review Loop Rules
@@ -528,7 +528,7 @@
 - OpenCode Extensibility Research
 - 2. Audit Summary
 - 3. Adversarial Re-Audit of the Fix
-- Critical Self-Review: multi-ai-task Skill v2.0.0
+- Silver Bullet Benefits Over Plain GSD
 - enforcement-tier-gate.sh
 - properties
 - codex/silver-multi-ai-task/schemas/cursor-host-adapter-v1.schema.json
@@ -595,7 +595,7 @@
 - skills/silver-deep-research/scripts/shortlist_candidates.py
 - test-project-active-guard.sh
 - Plan 061-01
-- Phase 28 Plan 01
+- Phase 23 Summary 01
 - test-reload-receipts.sh
 - Thermo-Nuclear Code Quality Review Round 1
 - Provenance Ledger
@@ -608,10 +608,10 @@
 - Getting Started Help Page
 - properties
 - Silver Bullet — Product / Architecture / Inner-Workings Overview
-- required
+- SolutionClassifierTests
 - properties
-- lib/alumnium-gate.sh
-- LiveDispatchModelRoutingTests
+- Critical Self-Review: multi-ai-task Skill v2.0.0
+- Reusability Skill
 - market_entry
 - Runtime Environment Assumption
 - inclusion_criteria
@@ -654,19 +654,19 @@
 - RTK Recommended Tool
 - Enterprise E2E Cherry-Pick Harness Fixes
 - required
-- Orchestration Workflows Topic
+- Command Reference Topic
 - Silver Bullet Site Design System
 - silver-agent-cursor skill
 - Lifecycle Hooks
 - apply_persona_priority
-- properties
+- Silver Bullet DevOps Cycle
 - Autonomous health endpoint task brief
 - properties
 - test-agentmemory-gate.sh
 - test-orchestrator-parent-guard.sh
 - test-session-start-recommended-tools.sh
 - responsive-full/package.json
-- enum
+- properties
 - properties
 - Phase 056 Runtime Parity Context
 - Phase 31 Plan 01 Summary
@@ -679,7 +679,7 @@
 - silver:deep-research/tests/test_comparison_xlsx.py
 - required
 - properties
-- Enterprise E2E Validation Plan
+- ups-coalesce.sh
 - GSD-2 Gap Narrowing Design Specification
 - properties
 - startup
@@ -695,7 +695,7 @@
 - properties
 - Silver Bullet Site QA Report
 - Multi-Agent Coordination
-- CMF Worksheet v3.0 — Silver Bullet Homepage
+- Phase 28 Plan 01
 - Review Requirements Skill
 - skill-source/silver-deep-research/schemas/run_manifest.schema.json
 - properties
@@ -722,7 +722,7 @@
 - test-record-requested-skill.sh
 - kay/agent.sh
 - test-sync-codex-package.sh
-- Stop Hook False-Positive Audit v0.30.0
+- codex-r3-force4-driver.sh
 - sha256_json
 - startup
 - SEED-001 Skill Gap Check
@@ -740,7 +740,7 @@
 - silver:deep-research/scripts/compare_solutions.py
 - New Workflow Meta Workflow Plan
 - properties
-- Reusability Skill
+- Phase 28 Plan 02
 - required
 - silver:multi-ai-task/scripts/ocg_pool_cohort.py
 - Research Report Structure
@@ -750,10 +750,10 @@
 - Pi GUI
 - codex/silver-deep-research/schemas/need_profile.schema.json
 - properties
-- verify_runtime_dependency_access
+- required
 - Silver Bullet Gaps Report Page
 - DevOps & IaC Workflow Help Page
-- Minimax M3 critique
+- LiveDispatchModelRoutingTests
 - items
 - SB Tri-Criteria Log Audit
 - enum
@@ -763,7 +763,7 @@
 - Live AI E2E Tests
 - required
 - silver-plan
-- skill-discovery.sh
+- round6-matrix-driver.sh
 - R9 smoke RED triage
 - post-release-uninstall.sh
 - codex/silver-multi-ai-task/scripts/ocg_pool_cohort.py
@@ -779,7 +779,7 @@
 - Strict-Clean Enterprise E2E Certification
 - run-compare.mjs
 - live-verify-track.sh
-- codex-r3-force4-driver.sh
+- CategoryPackSchemaTests
 - regulated
 - startup
 - skill-source/silver-deep-research/schemas/need_profile.schema.json
@@ -802,9 +802,9 @@
 - silver-add.sh
 - DeepSeek Critique
 - Kimi Critique
-- CategoryPackSchemaTests
+- Content and Search Workflow
 - enterprise_e2e_code_intel_preflight
-- Multi AI Pool Algebra
+- CategoryPackSchemaTests
 - startup
 - skills/silver-deep-research/schemas/need_profile.schema.json
 - properties
@@ -842,7 +842,7 @@
 - CategoryPackSchemaTests
 - sb-project-gate.sh
 - Silver Bullet Responsive Visual QA Report
-- enterprise_e2e_export_live_defaults
+- Search Orchestration
 - Requested State Sidecar
 - In Scope
 - OpenCode RTK and Context Mode Verification
@@ -873,7 +873,7 @@
 - skill-source/silver-multi-ai-task/schemas/backend-capabilities-v1.schema.json
 - properties
 - Triangulation — Canonical SDLC Process Architecture
-- verify_runtime_hook_delivery
+- Minimax M3 critique
 - test-app-branch.sh
 - generate-apo-artifacts.py
 - agentmemory-gate.sh script
@@ -890,7 +890,7 @@
 - compute_support_score
 - skills/silver-multi-ai-task/schemas/backend-capabilities-v1.schema.json
 - properties
-- CategoryPackSchemaTests
+- verify_runtime_dependency_access
 - Issue tracker routing
 - Phase 051 Research
 - Phase 051 Plan 03 Summary
@@ -938,7 +938,7 @@
 - lib/context-mode-read-deny.sh
 - github-run-list.sh
 - orchestrator-skill-atom.sh
-- Minimax M3 DR-RETRIEVE Evidence
+- Generic coding agent exclusion
 - plugin-cache-guard.sh
 - recommended-tools-registry.sh
 - rtk-cm-global.sh
@@ -977,7 +977,7 @@
 - scripts/generate-cursor-hooks.py
 - install-recommended-tools-global.sh
 - test-cert-bypass.sh
-- AI/LLM Safety Design Enforcement
+- skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py
 - run-pre-release-host-smoke.sh
 - enum
 - enum
@@ -1090,13 +1090,13 @@
 - Round 7 Rows 1–5 Checkpoint
 - Graphify Incremental Update Reference
 - Graphify Exports Reference
-- Confidence Assessment
-- test-leanctx-gate-lib.sh
+- Research Output Contract
+- Human Checkpoints
 - test-orchestrator-non-sb-workspace-guard.sh
 - test-phase-lock-heartbeat.sh
 - enterprise-e2e-certification-status.sh
 - test-record-leanctx-usage.sh
-- /silver:verify
+- silver:undo
 - hooks/test-semantic-compress.sh
 - test-install-cursor.sh
 - test-install-cursor-sb-agents.sh
@@ -1105,14 +1105,14 @@
 - Review Ingestion Manifest Skill
 - test-workflows.sh
 - New Workflow Audit RFL Closeout
-- silver:ui-review
+- silver-test
 - .test_package_emits_xlsx_and_reports
 - enterprise
 - cited_source_ids
 - enum
 - required
 - enum
-- skill-source/silver-deep-research/reference/landscape/category-packs/schema.json
+- Claude Opus Critique
 - required
 - type
 - required
@@ -1120,20 +1120,20 @@
 - properties
 - enum
 - required
-- prepare_workspace
+- OverviewQualityTests
 - compliance-status.sh
 - Pre-Release Quality Gate
 - core-rules-integrity.sh
 - config-scope.sh
 - stop-check.sh
 - .test_package_emits_xlsx_and_reports
-- ensure_runtime_dependency_access_preflight
+- enterprise_e2e_export_live_defaults
 - enterprise
 - cited_source_ids
 - enum
 - required
 - enum
-- Goose ACP Client
+- enterprise_e2e_assert_row_matrix_baseline_rev_increase
 - Silver DevOps Skill
 - required
 - type
@@ -1156,7 +1156,7 @@
 - enum
 - required
 - enum
-- Silver Bullet Core Enforcement Rules
+- Phase 29 Plan 01
 - required
 - properties
 - required
@@ -1165,11 +1165,11 @@
 - enum
 - required
 - Triangulation Report: Canonical SDLC Process Architecture
-- consolidate
-- enterprise_e2e_assert_row_matrix_baseline_rev_increase
+- enterprise_e2e_ledger_row_is_pass
+- Responsive QA Post-Fix Report
 - silver-ui-contract
 - Agent-Claude Autonomous Criteria
-- enterprise_e2e_ledger_row_is_pass
+- AI/LLM Safety Design Enforcement
 - Academic Source Matrix
 - Market Source Matrix
 - Technical Source Matrix
@@ -1202,9 +1202,9 @@
 - enum
 - required
 - test-phase-lock-claim.sh
-- test-debug-dump.sh
+- Incident Fast Path
 - TST-01 Sentinel Lock UUID Assertion
-- silver:doctor Skill
+- Silver Init
 - test-kay-project-hook-bridge.sh
 - Phase 062 Plan 01
 - Phase 20 Plan 02
@@ -1216,7 +1216,7 @@
 - test-rtk-compat.sh
 - test-rtk-gate-lib.sh
 - test-sb-project-gate.sh
-- TestMatrixOpenpyxl
+- verify_runtime_hook_delivery
 - test-skill-execution-paths.sh
 - test-skill-refs.sh
 - claude/agent.sh
@@ -1230,7 +1230,7 @@
 - deep-checks.mjs
 - MigrateRunManifestTests
 - SpaProfileRoutingTests
-- test-recommended-tools-policy.sh
+- test-debug-dump.sh
 - enum
 - category_priority_floor
 - suggested_must_haves
@@ -1245,7 +1245,7 @@
 - hook-output.sh
 - test-codex-hook-adapter-timeout.sh
 - prerequisite-probe.sh
-- Silver Multi AI Task Skill
+- Multi AI Pool Algebra
 - Handoff — Codex Cloud guide + CI unwedge (PR #246)
 - MigrateRunManifestTests
 - SpaProfileRoutingTests
@@ -1253,7 +1253,7 @@
 - enum
 - category_priority_floor
 - suggested_must_haves
-- Multi-Agent Safety
+- Qwen3 7 Max Self-Review
 - enum
 - score_run
 - properties
@@ -1297,7 +1297,7 @@
 - Security Policy
 - MigrateRunManifestTests
 - SpaProfileRoutingTests
-- enum
+- .cursor3-process-row.sh
 - enum
 - category_priority_floor
 - suggested_must_haves
@@ -1326,7 +1326,7 @@
 - agent-opencode-delegate.sh
 - enable-rtk-context-mode.sh
 - Assembly Prompt
-- skills/silver-deep-research/reference/landscape/category-packs/schema.json
+- skill-source/silver-deep-research/reference/landscape/category-packs/schema.json
 - cache.sh
 - PA-04.1 Architecture Decision Record (ADR)
 - PA-10.1 Hermetic Reproducible Build
@@ -1351,9 +1351,9 @@
 - properties
 - required
 - result
-- test-step-vloop-runtime-rollup.sh
-- silver:deep-research/reference/need-profile-personas.json
-- TestVerifyMixed
+- live-test.sh
+- skills/silver-deep-research/reference/landscape/category-packs/schema.json
+- build_capabilities_stub
 - project-active.sh
 - test-enterprise-e2e-validation-overlay.sh
 - test-agentmemory-platform-install.sh
@@ -1379,10 +1379,10 @@
 - silver:deep-research/schemas/claim.schema.json
 - required
 - enum
-- Research Output Contract
+- prepare_workspace
 - TestSourceEvaluatorAdmiralty
 - required
-- suggested_constraints
+- Getting Started Help Page Mobile Hero Screenshot, Light Theme, 375px
 - usage
 - silver:multi-ai-task/schemas/multi-ai-dispatch-ledger-v1.schema.json
 - type
@@ -1428,7 +1428,7 @@
 - workflow-chain-guard.sh
 - codex/silver-deep-research-multi-ai/schemas/run-manifest-v4.schema.json
 - required
-- category_pack_id
+- ensure_runtime_dependency_access_preflight
 - enum
 - enum
 - product_aliases
@@ -1436,9 +1436,9 @@
 - codex/silver-deep-research/schemas/claim.schema.json
 - required
 - enum
-- Artifact Injection
+- Pilot Pass Checklist
 - TestSourceEvaluatorAdmiralty
-- TC-03 Criteria (Net-New Workflow Creation)
+- TestMatrixOpenpyxl
 - required
 - reliability_code
 - usage
@@ -1491,7 +1491,7 @@
 - enum
 - TestSourceEvaluatorAdmiralty
 - TDD skill
-- Pilot Pass Checklist
+- 18-Path Catalog
 - required
 - usage
 - skill-source/silver-multi-ai-task/schemas/multi-ai-dispatch-ledger-v1.schema.json
@@ -1508,7 +1508,7 @@
 - scripts/lib/codex-cli.sh
 - install-common.sh
 - merge-cursor-hooks.py
-- agentmemory Dependency Flow
+- enum
 - silver:verify
 - probe-agentmemory.sh
 - probe-cross-tool.sh
@@ -1516,7 +1516,7 @@
 - _load_payload
 - sb-optimize-stack.sh
 - skills/silver-deep-research-multi-ai/schemas/run-manifest-v4.schema.json
-- Search Orchestration
+- TC-03 Criteria (Net-New Workflow Creation)
 - required
 - enum
 - silver-phase
@@ -1620,7 +1620,7 @@
 - test-recommended-tools.sh
 - test-compression-marker-guard.sh
 - Data Collection Prompt
-- test-core-rules-integrity.sh
+- consolidate
 - Broken English Forecast Fixture
 - Unresolved Citation 99
 - silver:rem Skill
@@ -1646,7 +1646,7 @@
 - test-semantic-compress-hook.sh
 - opencode/agent.sh
 - pi/agent.sh
-- Tool Use Safety
+- Multi-Agent Safety
 - test-enterprise-e2e-matrix-force.sh
 - Milestone Summary v0.46.0
 - v0.26.0 Requirements
@@ -1677,7 +1677,7 @@
 - Agentic SDLC Comparison Matrix
 - Silver Bullet Enforcement Tier
 - test-model-selection-boundary.sh
-- test-parallel-scheduling-safety.sh
+- Tool Use Safety
 - suggested_must_haves
 - test-round9-gate3-driver.sh
 - test-runtime-composition-tailoring.sh
@@ -1687,7 +1687,7 @@
 - test-silver-triage-adapter.sh
 - test-site-chrome-regression.sh
 - test-site-content-freshness.sh
-- allow_adjacent_section
+- TestMatrixOpenpyxl
 - test-validate-host-agnostic-core.sh
 - test-validate-host-install-surface.sh
 - test-validate-host-skill-surface.sh
@@ -1759,7 +1759,7 @@
 - enum
 - TestEvalHarness
 - TestSupportScore
-- suggested_constraints
+- test-orchestrator-worker-templates.sh
 - Dark desktop screenshot of Silver Ship Readiness workflow help page
 - Agent-Claude Initial Evidence
 - AUTO-C01 Score Triage
@@ -3313,7 +3313,7 @@
 - feature_priority_overrides
 - enum
 - TestEvalHarness
-- claim_id
+- test-step-vloop-runtime-rollup.sh
 - TestSupportScore
 - TestVerifySupported
 - items
@@ -3323,8 +3323,8 @@
 - recommended-tools-e2e.sh
 - test-codex-hook-contract.sh
 - test-context-mode-read-deny-lib.sh
-- run_hook_probe_strict
-- test-enterprise-e2e-matrix-quota.sh
+- Review Loop Rules
+- TestVerifySupported
 - test-enterprise-policy-runtime.sh
 - test-plugin-integrity.sh
 - smoke-target.py
@@ -3337,7 +3337,7 @@
 - test-pre-release-host-smoke.sh
 - test-rc-validation-matrix.sh
 - test-run-release-live-matrix.sh
-- Site Release Audit
+- feature_priority_overrides
 - test-run-sb-live-tests-codex.sh
 - test-run-sb-live-tests-kay.sh
 - test-sb-optimize-stack.sh
@@ -3347,11 +3347,11 @@
 - test-validate-github-release-notes.sh
 - test-verify-release-announcement-ci.sh
 - feature_priority_overrides
-- test-rm-safety.sh
+- YAML and JSON Infrastructure-Code Rule
 - evidence_ids
-- extracted_at
+- test-cursor-hooks-paths.sh
 - must_research
-- evidence_hash
+- test-orchestrator-delegation-directive.sh
 - source_id
 - silver:deep-research/tests/test_offline_fixture.py
 - enum
@@ -3367,19 +3367,19 @@
 - cursor-hook-bridge.sh
 - deploy-tier.sh
 - state-helpers.sh
-- workspace_trust_config_files
+- Review charter
 - orchestrator-directive-guard.sh
 - pr-traceability.sh
 - spec-session-record.sh
 - Dependency-Aware Scheduler
 - uat-gate.sh
 - suggested_must_haves
-- feature_priority_overrides
-- feature_priority_overrides
+- enum
+- test-rm-safety.sh
 - evidence_ids
 - TestVerifySupported
 - must_research
-- reliability_code
+- category_priority_floor
 - source_id
 - codex/silver-deep-research/tests/test_offline_fixture.py
 - enum
@@ -3405,15 +3405,16 @@
 - [0.9.0] — 2026-04-08
 - Step 7 — Remediation Output
 - RFL Rung 5 — Opus Thinking High — Cycle 1
-- codex_plugin_registered
+- feature_priority_overrides
 - evidence_ids
 - must_research
-- Merge status
+- agentmemory Dependency Flow
 - source_id
 - skill-source/silver-deep-research/tests/test_offline_fixture.py
 - enum
 - type
 - enum
+- Environment Promotion
 - skill-source/silver-multi-ai-task/scripts/provision-cursor-agents.sh
 - Solution Capability Report: agenthub
 - Solution Capability Report: AgentSys
@@ -3443,6 +3444,7 @@
 - certification-status.js
 - evidence_ids
 - must_research
+- reliability_code
 - source_id
 - skills/silver-deep-research/tests/test_offline_fixture.py
 - enum
@@ -3450,6 +3452,7 @@
 - enum
 - reliability_code
 - skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh
+- enum
 - test-route-smoke-transcript.sh
 - test-stack-optimizer-agentmemory.sh
 - test-stack-optimizer-graphify.sh
@@ -3463,6 +3466,7 @@
 - test-claude-agent-surface-isolation.sh
 - test-claude-plugin-surface.sh
 - test-codex-skill-frontmatter-yaml.sh
+- feature_priority_overrides
 - test-export-enterprise-evidence.sh
 - test-flow-step-vloop.sh
 - test-graphify-am-global-setup.sh
@@ -3488,8 +3492,9 @@
 - test-validate-pre-release-gates.sh
 - test-verify-release-commit-ci.sh
 - overflow-check.mjs
-- enum
+- category_pack_id
 - _json_out
+- Multi-Market Landscape Critique
 - outputs
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
@@ -3537,6 +3542,8 @@
 - [0.48.6] — 2026-06-27
 - test-trivial-file-clear.sh
 - _json_out
+- expires_at
+- text
 - agent-delegation-cleanup.sh
 - dogfood-orchestrator-parent-surface.sh
 - export-enterprise-evidence.sh
@@ -3554,10 +3561,12 @@
 - sync-cursor-package.sh
 - validate-github-release-notes.sh
 - preview-server-daemon.sh
+- category_pack_id
 - _json_out
 - RFL Rung 3 — Kimi K3 Max / XHigh — Adversarial Architecture Review (Cycle 1)
 - outputs
 - .freeze_pane
+- 2026-08-12-pr255-graphify-hyperedges-ci.md
 - test-e2e-devops-cycle.sh
 - test-e2e-lifecycle-gaps.sh
 - test-semantic-compress-scenarios.sh
@@ -3702,14 +3711,20 @@
 - Compensation and Rollback
 - Parallel Join
 - Workflow as Component
+- run_hook_probe_strict
 - expires_at
+- test-enterprise-e2e-matrix-quota.sh
 - resolve-instruction-ledger.sh
 - text
+- extracted_at
+- alo-labs/agent-plugins Marketplace
 - expires_at
 - Phase 25 Plan 02
 - RFL Rung 4 — GPT-5.6 Sol High — Cycle 7
 - RFL Rung 3 — Kimi K3 High — Adversarial Architecture Re-Review (Cycle 2)
 - RFL Rung 3 — Kimi K3 High — Adversarial Architecture Re-Review (Cycle 3)
+- workspace_trust_config_files
+- codex_plugin_registered
 - test-codex-runtime-bootstrap.sh
 - RFL Rung 4 — GPT-5.6 Sol High — Cycle 10
 - RFL Rung 4 — GPT-5.6 Sol High — Cycle 11
@@ -3753,29 +3768,446 @@
   skills/silver-deep-research/schemas/source.schema.json → site/help/index.html
 - `silver:feature` --references--> `Post-execution sequencing`  [EXTRACTED]
   agents/claude/silver:feature/SKILL.md → .visual-audit/responsive-full/2026-06-30-post-fix/help-workflows-silver-refactor-dark-1280px.png
-- `Claude Code Recursive Nesting Conflict` --semantically_similar_to--> `Claude Code`  [INFERRED] [semantically similar]
-  docs/research-260624/multi-ai-out/conflicts.md → research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/gpt-5-6-luna-medium-attempt-2c5abefe-0016-47b0-bd95-ea4c6b24adf6.txt
+- `silver:verify` --references--> `/silver:test workflow`  [EXTRACTED]
+  host-bundles/cursor/silver:verify/SKILL.md → .visual-audit/responsive-full/2026-06-30-post-fix/help-workflows-silver-refactor-dark-1280px.png
 
 ## Import Cycles
 - None detected.
 
-## Communities (3737 total, 1946 thin omitted)
+## Hyperedges (group relationships)
+- **R9 MCP preparation, regression handling, retries, and smoke-gate validation** — agentmemory_memory_r9_mcp_unblock_operator_2026_07_03_document, agentmemory_memory_r9_row3_retry4_mcp_regression_2026_07_03_document, agentmemory_memory_r9_smoke_retry2_triage_2026_07_03_document, agentmemory_memory_r9_smoke_6_6_green_2026_07_03_document, enterprise_e2e_mcp_environment_setup, mcp_authentication_gate, enterprise_e2e_smoke_matrix [INFERRED 0.90]
+- **SENTINEL Security Audit Flow** — agents_skills_audit_security_of_skill, sentinel, poc_safety_gate, severity_floors, self_challenge_gate [EXTRACTED 1.00]
+- **Registry Result Normalization Pipeline** — agents_skills_find_skills, agents_skills_compare_skills, structural_envelope, unified_result_schema [INFERRED 0.90]
+- **TopGun Skill Acquisition Pipeline** — agents_skills_topgun, agents_skills_find_skills, agents_skills_compare_skills, agents_skills_secure_skills, agents_skills_install_skills [EXTRACTED 1.00]
+- **Quality Enforcement Skills** — code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_modularity, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_scalability, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_security, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_reliability, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_usability, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_testability, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_extensibility, code_agents_1_exec_call_sv3c7w4aj7xwnrwvznwvx8ou_ai_llm_safety [EXTRACTED 1.00]
+- **Round 7 Rows 1–5 Passing Matrix** — e2e_matrix_round7_rows1_5_checkpoint, e2e_matrix_round7_rows1_5_checkpoint_silver_router, e2e_matrix_round7_rows1_5_checkpoint_silver_research, e2e_matrix_round7_rows1_5_checkpoint_silver_feature, e2e_matrix_round7_rows1_5_checkpoint_silver_bugfix, e2e_matrix_round7_rows1_5_checkpoint_silver_ui [EXTRACTED 0.98]
+- **Graphify Reference Pipeline** — hermes_skills_graphify_skill_graphify, hermes_skills_graphify_references_extraction_spec_extraction_spec, hermes_skills_graphify_references_query_query, hermes_skills_graphify_references_update_update [EXTRACTED 1.00]
+- **Graphify Reference Pipeline** — opencode_skills_graphify_references_add_watch_document, opencode_skills_graphify_references_github_and_merge_document, opencode_skills_graphify_references_transcribe_document, opencode_skills_graphify_references_update_document [EXTRACTED 0.85]
+- **Graphify Pipeline Documentation** — pi_agent_skills_graphify_skill_graphify, pi_agent_skills_graphify_references_extraction_spec, pi_agent_skills_graphify_references_query, pi_agent_skills_graphify_references_update [EXTRACTED 1.00]
+- **Tri-Host Agent Delegation Validation** — planning_agent_claude_live_validation, planning_agent_codex_live_validation, planning_agent_cursor_live_validation, af_agent_delegate [EXTRACTED 1.00]
+- **Release Quality Gate Documents** — planning_pre_release_run_20260706, planning_pre_release_v0_50_4, planning_pre_release_v0_50_5, pre_release_gate [EXTRACTED 0.95]
+- **Repeated autonomous health endpoint delivery briefs** — planning_agent_claude_autonomous_runs_20260705t173019z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t173755z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t173915z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t174100z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t174135z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t174312z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t175337z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t214129z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t081234z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t083441z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t083704z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t090126z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t092140z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t095446z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t101829z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t103438z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t110346z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t113725z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t114758z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t114830z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t114917z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t114923z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t115006z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t115012z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t115139z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t120703z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t132146z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t133447z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t135129z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260706t141737z_auto_c01_brief_task, planning_agent_claude_autonomous_runs_20260705t173019z_auto_c01_brief_get_api_health_endpoint [INFERRED 0.99]
+- **Health endpoint contract and validation flow** — planning_agent_claude_autonomous_runs_20260705t173019z_auto_c01_brief_get_api_health_endpoint, planning_agent_claude_autonomous_runs_20260705t173019z_auto_c01_brief_health_json_status_ok, planning_agent_claude_autonomous_runs_20260705t173019z_auto_c01_brief_test_app [INFERRED 0.95]
+- **Autonomous README documentation change** — planning_agent_claude_autonomous_runs_20260705t173019z_auto_c02_brief_task, planning_agent_claude_autonomous_runs_20260705t173019z_auto_c02_brief_readme_autonomous_track_marker [EXTRACTED 1.00]
+- **Pre-Release Review Rounds** — planning_archive_pre_release_review_b_review_b, planning_archive_pre_release_review_c_review_c, planning_archive_pre_release_review_r3_review_r3, planning_archive_pre_release_review_r4_review_r4, planning_archive_pre_release_review_r5_review_r5, planning_archive_pre_release_review_r6_review_r6, planning_archive_pre_release_review_r7_review_r7, planning_archive_pre_release_review_r8_review_r8 [EXTRACTED 0.98]
+- **Five-Tool Context Stack** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_feature_coverage_matrix_rtk [EXTRACTED 1.00]
+- **Composable RTK, Context Mode, agentmemory, and Graphify workflow** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_rtk, leanctx_vs_sb_context_tools_capability_analysis_rtk_cm_agentmemory_graphify_pipeline [EXTRACTED 0.95]
+- **Capabilities identified as uniquely strong in LeanCTX** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_wire_request_path_compression, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_ast_read_path_modes, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_pathjail, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_ed25519_savings_ledger, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_prompt_injection_detection [EXTRACTED 0.95]
+- **Residual specialist advantages over LeanCTX** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_ctx_fetch_strict, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_agentmemory_orchestration, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_leanctx_vs_sb_context_tools_capability_analysis_graphify_multimodal_graph, leanctx_vs_sb_context_tools_capability_analysis_gitleaks_team_security_control [EXTRACTED 0.90]
+- **LeanCTX Replacement Stack** — followup_leanctx [EXTRACTED 1.00]
+- **Context Tool Conflict Surface** — followup_leanctx, followup_rtk, followup_silver_bullet_hooks [EXTRACTED 1.00]
+- **Existing and Proposed Five-Tool Stack** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_deepseek_v4_pro_rtk [EXTRACTED 1.00]
+- **LeanCTX Unique Capabilities** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_deepseek_v4_pro_ast_read_path_modes [EXTRACTED 1.00]
+- **Hook Lifecycle Ordering** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_deepseek_v4_pro_hook_ordering_treaty [EXTRACTED 1.00]
+- **Layer 1 Wire Foundation Capabilities** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_deepseek_v4_pro_injection_detection [EXTRACTED 0.99]
+- **Silver Bullet Four-Tool Stack Components** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_deepseek_v4_pro_rtk [EXTRACTED 0.99]
+- **Three Graph Systems and Routing Domains** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_tool_leanctx_ctx_graph, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_tool_memory_graph_query [EXTRACTED 1.00]
+- **Layered Governance Stack** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_capability_shell_allowlist [EXTRACTED 1.00]
+- **Additive 5-Stack Boundary Pipeline** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_tool_ctx_execute_file, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_tool_memory_graph_query [EXTRACTED 1.00]
+- **Silver Bullet Five-Stack Operational Pipeline** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_rtk [EXTRACTED 1.00]
+- **LeanCTX Unique Planes and Bash Interception** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_ast_read_modes, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_glm_5_2_ed25519_ledger [EXTRACTED 0.98]
+- **Layered hook priority pipeline** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_kimi_k2_6_rtk [EXTRACTED 1.00]
+- **Environment-specific LeanCTX rollout** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_kimi_k2_6_codex, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_kimi_k2_6_cursor [EXTRACTED 1.00]
+- **PreToolUse Triple Interposition** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_followup_kimi_k2_6_rtk [EXTRACTED 1.00]
+- **Four-Tool Composable Context Pipeline** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_minimax_m3_report_rtk [EXTRACTED 1.00]
+- **LeanCTX Architectural Advantages** — planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_minimax_m3_report_ast_read_modes, planning_archive_research_2026_07_05_2026_07_05_context_tools_feature_matrix_ultradeep_multi_ai_deep_research_out_minimax_m3_report_pathjail [EXTRACTED 1.00]
+- **Spec Foundation Delivery Artifacts** — planning_archive_v0_14_0_12_spec_foundation_12_01_plan_spec_template, planning_archive_v0_14_0_12_spec_foundation_12_01_plan_design_template, planning_archive_v0_14_0_12_spec_foundation_12_01_plan_requirements_template, planning_archive_v0_14_0_12_spec_foundation_12_01_plan_spec_floor_hook, planning_archive_v0_14_0_12_spec_foundation_12_02_plan_silver_spec_skill, planning_archive_v0_14_0_12_spec_foundation_12_03_plan_silver_router [EXTRACTED 1.00]
+- **Five-Tool Reconciliation and Validation Flow** — planning_autonomous_toolstack_reconciliation_2b7bddfa_clarify_260717_20260717t075811z, planning_autonomous_toolstack_reconciliation_2b7bddfa_plan, planning_autonomous_toolstack_reconciliation_phase_a_spike, planning_leanctx_five_tool_build_complete, planning_leanctx_five_tool_live_validation, five_tool_routed_stack [EXTRACTED 0.90]
+- **Round 6 Recovery Control Loop** — _planning_enterprise_e2e_round_6_gates_document, _planning_enterprise_e2e_round_6_ledger_document, _planning_enterprise_e2e_round_6_operational_addendum_document, _planning_enterprise_e2e_round_6_outcomes_document, _planning_enterprise_e2e_round_6_pause_checkpoint_document, _planning_enterprise_e2e_round_6_session_handoff_document [EXTRACTED 0.98]
+- **Enterprise E2E Round Gate Artifact Chain** — _planning_enterprise_e2e_round_5_ledger_document, _planning_enterprise_e2e_round_5_gates_document, _planning_enterprise_e2e_round_6_ledger_document, _planning_enterprise_e2e_round_6_gates_document, _planning_enterprise_e2e_round_7_ledger_document, _planning_enterprise_e2e_round_7_gates_document, _planning_enterprise_e2e_round_8_ledger_document, _planning_enterprise_e2e_round_8_gates_document [EXTRACTED 0.98]
+- **Cursor strict-clean confirmation pair** — planning_enterprise_e2e_round_cursor_1_gates_document, planning_enterprise_e2e_round_cursor_1_ledger_document, planning_enterprise_e2e_round_cursor_2_gates_document [EXTRACTED 0.98]
+- **Strict-Clean Certification Flow** — planning_enterprise_e2e_round_cursor_2_ledger, planning_enterprise_e2e_round_cursor_3_real_ledger, planning_enterprise_e2e_round_n_gates [EXTRACTED 0.95]
+- **Shared Multi-Host Harness Documents** — planning_enterprise_e2e_shared_harness, planning_enterprise_e2e_shared_harness_adversarial_review, planning_enterprise_e2e_test_app_branch_policy [INFERRED 0.90]
+- **Minimal-Intent Lifecycle Evidence Chain** — planning_minimal_intent_e2e_criteria, planning_minimal_intent_e2e_runbook, planning_minimal_intent_e2e_fixtures_mi_01_vision [EXTRACTED 0.95]
+- **API Order Validation and Rejection Flow** — planning_minimal_intent_e2e_runs_20260705t175141z_mi_01_vision_order_validation, planning_minimal_intent_e2e_runs_20260705t175141z_mi_01_vision_api [EXTRACTED 0.95]
+- **Repeated capture of the minimal order-validation requirement** — planning_minimal_intent_e2e_runs_20260705t175142z_mi_01_vision_document, planning_minimal_intent_e2e_runs_20260705t175143z_mi_01_intent_seed_document, planning_minimal_intent_e2e_runs_20260705t175143z_mi_01_vision_document, minimal_intent_order_validation_api, silver_bullet_autonomous_mode, feature_branch_commit [EXTRACTED 1.00]
+- **Order validation and error handling flow** — planning_minimal_intent_e2e_runs_20260705t175144z_mi_01_intent_seed_order_validation_api [EXTRACTED 1.00]
+- **Autonomous development and delivery workflow** — planning_minimal_intent_e2e_runs_20260705t175144z_mi_01_intent_seed_commit_on_feature_branch [EXTRACTED 1.00]
+- **Order Validation API Error Flow** — planning_minimal_intent_e2e_runs_20260705t175145z_mi_01_intent_seed_api [EXTRACTED 0.95]
+- **Order Validation and Rejection Flow** — planning_minimal_intent_e2e_runs_20260705t175201z_mi_01_vision_api, planning_minimal_intent_e2e_runs_20260705t175201z_mi_01_vision_order_rejection [EXTRACTED 0.95]
+- **Autonomous Silver Bullet Delivery Flow** — planning_minimal_intent_e2e_runs_20260705t175201z_mi_01_vision_commit [EXTRACTED 0.90]
+- **Minimal Intent Validation Requirements** — planning_minimal_intent_e2e_order_validation_goal [EXTRACTED 1.00]
+- **Order Validation API Rejection Flow** — planning_minimal_intent_e2e_runs_20260705t175318z_mi_01_intent_seed_document, planning_minimal_intent_e2e_runs_20260705t175318z_mi_01_intent_seed_api [EXTRACTED 1.00]
+- **Order Validation Autonomous Delivery Flow** — planning_minimal_intent_e2e_runs_20260705t175306z_mi_01_vision_document, planning_minimal_intent_e2e_runs_20260705t175518z_mi_01_result_document, concept_order_validation_api, concept_feature_branch_commit [EXTRACTED 0.95]
+- **Safe Insight Session Logging** — planning_phases_051_auto_capture_enforcement_051_03_plan_task_2, planning_phases_051_auto_capture_enforcement_051_03_plan_insight_text, planning_phases_051_auto_capture_enforcement_051_03_plan_printf_logging [EXTRACTED 1.00]
+- **Marketplace installation and stale-cache cleanup lifecycle** — planning_phases_053_silver_update_overhaul_verification_document, planning_phases_053_silver_update_overhaul_verification_marketplace_install_command, planning_phases_053_silver_update_overhaul_verification_stale_cache_directory, planning_phases_053_silver_update_overhaul_verification_new_cache_directory [EXTRACTED 1.00]
+- **Phase 059 Review and Verification** — planning_phases_059_code_review_chores_059_review_document, planning_phases_059_code_review_chores_059_verification_document, phase_059_code_review_chores_chr_01, phase_059_code_review_chores_chr_02, phase_059_code_review_chores_chr_03, phase_059_code_review_chores_chr_04 [EXTRACTED 1.00]
+- **Phase 060 Test Coverage Evidence Chain** — planning_phases_060_test_coverage_060_01_plan_document, planning_phases_060_test_coverage_060_01_summary_document, planning_phases_060_test_coverage_060_review_document, planning_phases_060_test_coverage_060_verification_document, phase_060_test_coverage_tst_01, phase_060_test_coverage_tst_02 [EXTRACTED 1.00]
+- **Phase 61 Requirements SKL-01 through SKL-04** — planning_phases_061_skill_quality_rename_061_01_plan_skl_01_requirement, planning_phases_061_skill_quality_rename_061_01_plan_skl_02_requirement, planning_phases_061_skill_quality_rename_061_01_plan_skl_03_requirement, planning_phases_061_skill_quality_rename_061_01_plan_skl_04_requirement [EXTRACTED 1.00]
+- **Phase 94 Alignment Quality Evidence** — planning_phases_094_sb_gsd_alignment_094_consistency_document, planning_phases_094_sb_gsd_alignment_094_public_content_document, planning_phases_094_sb_gsd_alignment_094_review_document, planning_phases_094_sb_gsd_alignment_094_security_document, planning_phases_094_sb_gsd_alignment_094_validation_document, planning_phases_094_sb_gsd_alignment_094_verification_document [EXTRACTED 1.00]
+- **Intent Ledger Architecture** — phase_103_active_intent_ledger, phase_103_nested_intent_tree, phase_103_workflow_phase_state, phase_103_project_planning_artifacts [EXTRACTED 0.95]
+- **Completion Verification and Follow-Through** — phase_104_completion_verification, phase_104_surrounding_sdlc_state, phase_103_active_intent_ledger, phase_104_immediate_fix_or_redispatch [EXTRACTED 0.90]
+- **Autonomous Master Agentic Loop** — phase_105_autonomous_user_interface, phase_105_master_agentic_loop, phase_105_autonomous_progress, phase_105_crucial_decision_boundary [EXTRACTED 0.90]
+- **18-path composition catalog** — planning_phases_25_composer_redesign_25_02_plan_path_0_bootstrap, planning_phases_25_composer_redesign_25_02_plan_path_1_orient, planning_phases_25_composer_redesign_25_02_plan_path_2_explore, planning_phases_25_composer_redesign_25_02_plan_path_3_ideate, planning_phases_25_composer_redesign_25_02_plan_path_4_specify, planning_phases_25_composer_redesign_25_02_plan_path_5_plan, planning_phases_25_composer_redesign_25_02_plan_path_6_design_contract, planning_phases_25_composer_redesign_25_02_plan_path_7_execute, planning_phases_25_composer_redesign_25_02_plan_path_8_ui_quality, planning_phases_25_composer_redesign_25_02_plan_path_9_review, planning_phases_25_composer_redesign_25_02_plan_path_10_secure, planning_phases_25_composer_redesign_25_02_plan_path_11_verify, planning_phases_25_composer_redesign_25_02_plan_path_12_quality_gate, planning_phases_25_composer_redesign_25_02_plan_path_13_ship, planning_phases_25_composer_redesign_25_02_plan_path_14_debug, planning_phases_25_composer_redesign_25_02_plan_path_15_design_handoff, planning_phases_25_composer_redesign_25_02_plan_path_16_document, planning_phases_25_composer_redesign_25_02_plan_path_17_release [EXTRACTED 1.00]
+- **Phase 28 Documentation Update** — planning_phases_28_documentation_update_28_context_document, planning_phases_28_documentation_update_28_01_plan_document, planning_phases_28_documentation_update_28_01_summary_document, planning_phases_28_documentation_update_28_02_plan_document, planning_phases_28_documentation_update_28_02_summary_document, planning_phases_28_documentation_update_28_verification_document [EXTRACTED 1.00]
+- **Phase 92 Planning Summary Verification** — planning_phases_92_dynamic_silver_router_and_atomic_flow_composition_alignment_92_01_plan_document, planning_phases_92_dynamic_silver_router_and_atomic_flow_composition_alignment_92_01_summary_document, planning_phases_92_dynamic_silver_router_and_atomic_flow_composition_alignment_92_verification_document, planning_phases_92_dynamic_silver_router_and_atomic_flow_composition_alignment_92_01_plan_phase_92 [EXTRACTED 1.00]
+- **Stack Recovery Gate Chain** — planning_phases_stack_double_compression_recovery_secure, planning_phases_stack_double_compression_recovery_validate, planning_phases_stack_double_compression_recovery_quality_gate, planning_phases_stack_double_compression_recovery_branch_finish, planning_phases_stack_double_compression_recovery_completion_audit, planning_phases_stack_double_compression_recovery_ship, planning_phases_stack_double_compression_recovery_e2e_verify_20260715 [EXTRACTED 0.98]
+- **Top Capability-Ranked Deep Research Skills** — external_socialpranker_claude_deep_research, external_alo_exp_silver_bullet_silver_deep_research, external_199_biotechnologies_claude_deep_research_skill, external_hoolulu_deep_research, external_blessonism_openclaw_search_skills, external_weizhena_deep_research_skills, external_parallel_web_parallel_agent_skills, external_tonyazhuuki_deep_research_skill, external_lingzhi227_agent_research_skills, external_standardhuman_deep_research_skill [EXTRACTED 1.00]
+- **Cross-Source Skills Landscape Claims** — planning_research_2026_07_08_v2_landscape_replay_triangulation_skills_sh_api_functional_v2, planning_research_2026_07_08_v2_landscape_replay_triangulation_socialpranker_feature_depth, planning_research_2026_07_08_v2_landscape_replay_triangulation_sb_v2_discovery_orchestration, planning_research_2026_07_08_v2_landscape_replay_triangulation_parallel_web_portal_installs [EXTRACTED 1.00]
+- **SB Flow Enforcement Ecosystem** — planning_review_sb_flow_adversarial_review_silver_ui_flow, planning_review_sb_flow_adversarial_review_silver_devops_flow, planning_review_sb_flow_adversarial_review_silver_fast_flow, planning_review_sb_flow_adversarial_review_silver_validate_skill, planning_review_sb_flow_adversarial_review_workflow_chain_guard, planning_review_sb_flow_adversarial_review_orchestrator_state_queues [INFERRED 0.90]
+- **Superset Capability Comparison** — planning_reviews_sb_superset_audit_2026_06_17_gsd_core, planning_reviews_sb_superset_audit_2026_06_17_superpowers, planning_reviews_sb_superset_audit_2026_06_17_zuvo, planning_reviews_sb_superset_audit_2026_06_17_sb_coverage [EXTRACTED 1.00]
+- **Quality Loop Delivery Sequence** — _planning_router_subagent_surfaces_85bf9f09_plan_i_loop, _planning_router_subagent_surfaces_85bf9f09_plan_a_loop, _planning_router_subagent_surfaces_85bf9f09_plan_v_loop, _planning_router_subagent_surfaces_85bf9f09_plan_validation_loop, _planning_router_subagent_surfaces_85bf9f09_plan_knowledge_learning_gates [EXTRACTED 1.00]
+- **Migration and Rollback Lifecycle** — _planning_router_subagent_surfaces_85bf9f09_plan_migration_barrier, _planning_router_subagent_surfaces_85bf9f09_plan_rollback_bridge, _planning_router_subagent_surfaces_85bf9f09_plan_doctor [EXTRACTED 1.00]
+- **Router, Authorizer, and Nested Quality Architecture** — planning_router_subagent_surfaces_85bf9f09_clarify_260717_143757, planning_router_subagent_surfaces_85bf9f09_plan, router_hierarchical_execution, quality_loops_i_a_v_validation, authorizer_fenced_execution, knowledge_learning_preread_postwrite [EXTRACTED 0.95]
+- **Tri-Criteria E2E Outcomes** — planning_sb_tri_criteria_e2e_design_tc_01_multi_workflow_chaining [EXTRACTED 1.00]
+- **Live Validation Required Gates** — planning_sb_tri_criteria_e2e_live_validation_plan_live_orchestrator, planning_sb_tri_criteria_e2e_live_validation_plan_runtime_path, planning_sb_tri_criteria_e2e_live_validation_plan_product_delta, planning_sb_tri_criteria_e2e_live_validation_plan_scorer_green, planning_sb_tri_criteria_e2e_live_validation_plan_anti_bootstrap, planning_sb_tri_criteria_e2e_live_validation_plan_queue_drain [EXTRACTED 1.00]
+- **Three Falsifiable Tri-Criteria Tracks** — planning_sb_tri_criteria_e2e_readme_tc_01_multiwf_chain_track, planning_sb_tri_criteria_e2e_readme_tc_02_dynamic_compose_track, planning_sb_tri_criteria_e2e_readme_tc_03_net_new_workflow_track [EXTRACTED 1.00]
+- **Four-Stage Pre-Release Quality Gate** — planning_sb_tri_criteria_e2e_tri_host_result_20260706_stage_1, planning_sb_tri_criteria_e2e_tri_host_result_20260706_stage_2, planning_sb_tri_criteria_e2e_tri_host_result_20260706_stage_3, planning_sb_tri_criteria_e2e_tri_host_result_20260706_stage_4b [EXTRACTED 1.00]
+- **TC-03 Posture Audit Bundle Flow** — planning_sb_tri_criteria_e2e_tc_03_net_new_workflow_fixtures_tc_03_vision_planning_compliance [EXTRACTED 1.00]
+- **Tri-Host Nine-Cell Matrix** — planning_sb_tri_criteria_e2e_readme_tc_01_multiwf_chain_track, planning_sb_tri_criteria_e2e_readme_tc_02_dynamic_compose_track, planning_sb_tri_criteria_e2e_readme_tc_03_net_new_workflow_track [EXTRACTED 1.00]
+- **TC-01 Waitlist SaaS Delivery Flow** — planning_sb_tri_criteria_e2e_runs_20260705t215745z_tc_01_vision_docker_compose [EXTRACTED 1.00]
+- **TC-03 posture audit bundle flow** — planning_sb_tri_criteria_e2e_runs_20260706t005944z_tc_03_vision_scripts_replay_script, planning_sb_tri_criteria_e2e_runs_20260706t005944z_tc_03_vision_wf_posture_audit_artifact [EXTRACTED 1.00]
+- **TC-02 observability runbook flow** — planning_sb_tri_criteria_e2e_runs_20260706t010542z_tc_02_vision_observability_only, planning_sb_tri_criteria_e2e_runs_20260706t010542z_tc_02_vision_existing_middleware, planning_sb_tri_criteria_e2e_runs_20260706t010542z_tc_02_vision_sample_request_logs [EXTRACTED 1.00]
+- **TC-01 Waitlist SaaS Requirements and Release Chain** — _planning_sb_tri_criteria_e2e_runs_20260706t021645z_tc_01_vision_minimal_landing_page, _planning_sb_tri_criteria_e2e_runs_20260706t021645z_tc_01_vision_feature_devops_release_chain [EXTRACTED 1.00]
+- **TC-03 Posture Audit Bundle Artifacts** — _planning_sb_tri_criteria_e2e_runs_20260706t023103z_tc_03_vision_replay_script, _planning_sb_tri_criteria_e2e_runs_20260706t023103z_tc_03_vision_replay_verification_script, _planning_sb_tri_criteria_e2e_runs_20260706t023103z_tc_03_vision_reusable_posture_audit_workflow [EXTRACTED 1.00]
+- **TC-02 Observability Requirements** — planning_sb_tri_criteria_e2e_runs_20260706t025335z_tc_02_vision_existing_middleware, planning_sb_tri_criteria_e2e_runs_20260706t025335z_tc_02_vision_readme_runbook [EXTRACTED 1.00]
+- **TC-03 SB Posture Audit Bundle** — planning_sb_tri_criteria_e2e_runs_20260706t030351z_tc_03_vision_compliance_markdown, planning_sb_tri_criteria_e2e_runs_20260706t030351z_tc_03_vision_wf_posture_audit [EXTRACTED 1.00]
+- **Tri-Host Agent Delegation Pilot Evidence** — _planning_silver_agent_claude_pilot_document, _planning_silver_agent_codex_pilot_document, _planning_silver_agent_cursor_pilot_document, _planning_silver_agent_delegate_pilot_document [EXTRACTED 1.00]
+- **Silver Bullet Orchestrator Worker Contract** — _silver_bullet_orchestrator_workers_document, _silver_bullet_orchestrator_workers_execute, _silver_bullet_orchestrator_workers_fast, _silver_bullet_orchestrator_workers_new_workflow, _silver_bullet_orchestrator_workers_orient, _silver_bullet_orchestrator_workers_phase, _silver_bullet_orchestrator_workers_plan, _silver_bullet_orchestrator_workers_quality_gate, _silver_bullet_orchestrator_workers_release [EXTRACTED 1.00]
+- **Shared Worker Tooling and Handoff Lifecycle** — agentmemory_mcp, planning_evidence_artifact, rtk_context_mode, flow_advance_sh [EXTRACTED 1.00]
+- **SB Orchestrator Worker Requirements** — silver_bullet_orchestrator_workers_review_request_document, silver_bullet_orchestrator_workers_review_triage_document, silver_bullet_orchestrator_workers_review_document, silver_bullet_orchestrator_workers_router_document, silver_bullet_orchestrator_workers_secure_document, silver_bullet_orchestrator_workers_security_document, silver_bullet_orchestrator_workers_ship_document, silver_bullet_orchestrator_workers_specify_document, silver_bullet_orchestrator_workers_ui_quality_document, silver_bullet_orchestrator_workers_validate_document, silver_bullet_orchestrator_workers_verify_document [EXTRACTED 1.00]
+- **Mobile Overflow Root Cause Family** — mobile_horizontal_page_scroll, ref_table_uncapped_width, doc_layout_fixed_grid_override, ref_table_nowrap_first_column, backlog_grid_min_width, topnav_width_exceeds_viewport [EXTRACTED 1.00]
+- **Getting Started Responsive Screenshot Set** — visual_audit_responsive_full_2026_06_30_pipeline_proof_help_getting_started_light_1280px_screenshot, visual_audit_responsive_full_2026_06_30_pipeline_proof_help_getting_started_light_375px_hero_screenshot, visual_audit_responsive_full_2026_06_30_pipeline_proof_help_getting_started_light_375px_mid_screenshot [EXTRACTED 1.00]
+- **AI/LLM Safety Rule Set** — agents_claude_ai_llm_safety_skill_external_content_untrusted_data [EXTRACTED 0.99]
+- **Artifact Review Orchestration** — agents_claude_artifact_review_assessor_skill_file, agents_claude_artifact_reviewer_skill_file, agents_claude_artifact_reviewer_rules_review_loop_file, agents_claude_artifact_reviewer_rules_reviewer_interface_file [INFERRED 0.95]
+- **Design, Implementation, and Review Quality Enforcement Lifecycle** — agents_claude_extensibility_skill, agents_claude_modularity_skill, agents_claude_reliability_skill, agents_claude_reusability_skill [EXTRACTED 1.00]
+- **Scalability enforcement dimensions** — agents_claude_scalability_skill_scalability [EXTRACTED 1.00]
+- **Security enforcement dimensions** — agents_claude_security_skill_security, security_input_validation, security_injection_prevention [EXTRACTED 1.00]
+- **Silver Router Workflow Destinations** — agents_claude_silver_skill_silver, agents_claude_silver_skill_silver_clarify [EXTRACTED 1.00]
+- **silver:add Filing Routes** — agents_claude_silver_add_skill, github_issues_project_board, local_docs_issues_markdown, custom_json_adapter [EXTRACTED 1.00]
+- **Tri-host parent-supervised delegation skill family** — agents_claude_silver_agent_claude, agents_claude_silver_agent_codex, agents_claude_silver_agent_cursor [EXTRACTED 0.99]
+- **Parent-Supervised External Agent Delegation** — agents_claude_silver_agent_opencode_skill, agents_claude_silver_agent_pi_skill, agents_claude_silver_agent_worker_skill [INFERRED 0.88]
+- **Multi-AI Research Pipeline** — agents_claude_silver_deep_research_multi_ai_skill_document, multi_ai_task_flow, dr_retrieve_phase, dr_triangulate_phase, dr_critique_phase, consolidate_module, general_report_html_document, landscape_report_html_document [EXTRACTED 0.98]
+- **Deep Research Pipeline** — agents_claude_silver_deep_research_readme_silver_deep_research, agents_claude_silver_deep_research_readme_scope, agents_claude_silver_deep_research_readme_plan, agents_claude_silver_deep_research_readme_retrieve, agents_claude_silver_deep_research_readme_triangulate, agents_claude_silver_deep_research_readme_outline_refinement, agents_claude_silver_deep_research_readme_synthesize, agents_claude_silver_deep_research_readme_critique, agents_claude_silver_deep_research_readme_refine, agents_claude_silver_deep_research_readme_package [EXTRACTED 1.00]
+- **Deep Research Capability Rubric Dimensions** — agents_claude_silver_deep_research_eval_rubric_phases_modes_dimension, agents_claude_silver_deep_research_eval_rubric_citation_evidence_dimension, agents_claude_silver_deep_research_eval_rubric_search_providers_dimension, agents_claude_silver_deep_research_eval_rubric_multilingual_dimension, agents_claude_silver_deep_research_eval_rubric_report_formats_dimension, agents_claude_silver_deep_research_eval_rubric_validation_eval_dimension, agents_claude_silver_deep_research_eval_rubric_portability_dimension, agents_claude_silver_deep_research_eval_rubric_human_in_loop_dimension, agents_claude_silver_deep_research_eval_rubric_composability_dimension, agents_claude_silver_deep_research_eval_rubric_source_catalogs_dimension, agents_claude_silver_deep_research_eval_rubric_adversarial_dimension [EXTRACTED 1.00]
+- **Nine-Phase Research Pipeline** — agents_claude_silver_deep_research_phases_dr_scope, agents_claude_silver_deep_research_phases_dr_plan, agents_claude_silver_deep_research_phases_dr_outline, agents_claude_silver_deep_research_phases_dr_synthesize, agents_claude_silver_deep_research_phases_dr_package [EXTRACTED 1.00]
+- **Category Pack Resolution Lifecycle** — agents_claude_silver_deep_research_reference_landscape_category_packs_readme_document, need_profile_interview_document, dr_live_runner_write_need_profile_function, category_pack_resolve_pack_from_need_profile_function, phase_gate_module, solution_classifier_module [EXTRACTED 0.95]
+- **Category-pack Governed Landscape Contract** — agents_claude_silver_deep_research_reference_need_profile_interview_category_pack, agents_claude_silver_deep_research_reference_landscape_consolidation_guide_category_pack, agents_claude_silver_deep_research_reference_landscape_prompt_template_category_market_contract, agents_claude_silver_deep_research_reference_landscape_prompt_template_fitness_scorecard, agents_claude_silver_deep_research_reference_landscape_consolidation_guide_core_solutions [INFERRED 0.85]
+- **Evidence-Driven Deep Research Report Assembly** — agents_claude_silver_deep_research_reference_prompts_data_collection_document, agents_claude_silver_deep_research_reference_prompts_outline_document, agents_claude_silver_deep_research_reference_prompts_chapter_agent_document, agents_claude_silver_deep_research_reference_prompts_assembly_document, evidence_jsonl_document, research_report_document [INFERRED 0.90]
+- **Deployment Workflow Lifecycle** — silver_plan_skill, silver_execute_skill, silver_bullet_orchestrator_workers_security_skill, silver_ship_skill [EXTRACTED 1.00]
+- **DevOps Standard Composition Chain** — silver_plan_skill, silver_execute_skill, silver_bullet_orchestrator_workers_security_skill, silver_ship_skill [EXTRACTED 1.00]
+- **D10 Five-Tool Checks** — d10_graphify_check, d10_agentmemory_check, d10_rtk_check, d10_context_mode_check, d10_leanctx_check, d10_routes_check [EXTRACTED 1.00]
+- **Fast Tier Two Lifecycle Slice** — agents_claude_silver_fast_skill_document, silver_plan_skill, silver_validate_skill, agents_claude_silver_execute_skill_document [EXTRACTED 1.00]
+- **Multi-AI Dispatch Pipeline** — agents_claude_silver_multi_ai_task_fs_multi_ai_resolve, agents_claude_silver_multi_ai_task_fs_multi_ai_capability_probe, agents_claude_silver_multi_ai_task_fs_multi_ai_reserve, agents_claude_silver_multi_ai_task_fs_multi_ai_dispatch, agents_claude_silver_multi_ai_task_fs_multi_ai_reconcile, agents_claude_silver_multi_ai_task_fs_multi_ai_index [EXTRACTED 0.98]
+- **Review response triad and triage flow** — agents_claude_silver_review_triage_skill_review_triage, agents_claude_silver_triage_skill_triage [EXTRACTED 1.00]
+- **UI delivery workflow and quality gates** — agents_claude_silver_ui_skill_ui, agents_claude_silver_ui_contract_skill_ui_contract, agents_claude_silver_secure_skill_secure, agents_claude_silver_ship_skill_ship [EXTRACTED 1.00]
+- **TDD Red-Green-Refactor Cycle** — agents_claude_tdd_skill_tdd, red_green_refactor_concept, failing_test_concept, production_code_concept [EXTRACTED 1.00]
+- **Silver Bullet Design, Review, and Verification Lifecycle** — agents_claude_testability_skill, agents_claude_usability_skill, agents_claude_verify_tests_skill, silver_context, silver_plan, silver_review [INFERRED 0.85]
+- **Graphify and Agentmemory Retrieval Flow** — docs_graphify_document [EXTRACTED 0.95]
+- **Five-Tool Routed Compression Stack** — concept_context_mode [EXTRACTED 0.98]
+- **Parent Worker Orchestration Lifecycle** — concept_parent_worker_orchestration, docs_orchestrator_document [EXTRACTED 0.95]
+- **Autonomous Delivery Architecture** — docs_product_vision_autonomous_enterprise_product_vision, concept_agentic_process_orchestrator, concept_parent_worker_orchestration, concept_atomic_flow, concept_v_loop, concept_hook_enforced_lifecycle [EXTRACTED 0.98]
+- **Recommended Tool Integration and Hook Governance** — docs_rtk_rtk_recommended_tool, concept_recommended_tool_governance, concept_rtk_shell_output_compression, concept_cursor_allow_list_coupling, concept_hook_coexistence, concept_context_mode [EXTRACTED 0.97]
+- **Five-Tool Stack** — graphify, agentmemory, rtk, context_mode, leanctx [EXTRACTED 1.00]
+- **Round 2 Residual Findings** — docs_audits_sentinel_audit_forensics_r2_finding_3_1r2, docs_audits_sentinel_audit_forensics_r2_finding_5_1r2 [EXTRACTED 1.00]
+- **Round 1 Forensics Security Findings** — docs_audits_sentinel_audit_forensics_finding_1_1, docs_audits_sentinel_audit_forensics_finding_3_1, docs_audits_sentinel_audit_forensics_finding_5_1, docs_audits_sentinel_audit_forensics_finding_9_1 [EXTRACTED 1.00]
+- **Pass 2 Verified Patches P-1 Through P-7** — docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_1_fc_1_a, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_2_fc_3_a, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_3_fc_5_a, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_4_fc_5_b, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_5_fc_6_a, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_6_fc_1_c, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_p_7_fc_9 [EXTRACTED 1.00]
+- **Pass 2 Accepted and Open Residual Findings** — docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_fc_8, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_fc_3_b, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_fc_5_c, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_fc_1_b, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_nf_1, docs_audits_sentinel_audit_silver_bullet_v0_8_0_pass2_nf_2 [EXTRACTED 1.00]
+- **High Findings Requiring Release Mitigation** — docs_audits_sentinel_fc_1_a, docs_audits_sentinel_fc_3_a, docs_audits_sentinel_patch_p_1, docs_audits_sentinel_patch_p_2 [EXTRACTED 1.00]
+- **Autonomous Orchestration With Outcome Gating** — docs_audits_pre_launch_adversarial_review_2026_06_autonomous_orchestrator, docs_audits_pre_launch_adversarial_review_2026_06_outcome_checklist, docs_audits_pre_launch_adversarial_review_2026_06_flow_chaining [EXTRACTED 1.00]
+- **SENTINEL Per-Skill Audit Corpus** — docs_audits_sentinel_skills_manifest_manifest, docs_audits_sentinel_skills_sentinel_audit_silver_agent_codex_audit, docs_audits_sentinel_skills_sentinel_audit_silver_agent_cursor_audit, docs_audits_sentinel_skills_sentinel_audit_silver_agent_worker_audit, docs_audits_sentinel_skills_sentinel_audit_silver_create_release_audit, docs_audits_sentinel_skills_sentinel_audit_silver_doctor_audit, docs_audits_sentinel_skills_sentinel_audit_silver_multi_ai_task_audit, docs_audits_sentinel_skills_sentinel_audit_silver_release_audit, docs_audits_sentinel_skills_sentinel_audit_silver_review_fix_ladder_audit, docs_audits_sentinel_skills_sentinel_audit_silver_triage_audit [EXTRACTED 1.00]
+- **Review Triad** — docs_composable_flows_contracts_wf_review_triad [EXTRACTED 1.00]
+- **Ship Readiness Flow** — docs_composable_flows_contracts_wf_ship_readiness [EXTRACTED 1.00]
+- **Transcript Parsing, Normalization, and Rendering Pipeline** — docs_forensics_session_transcript_viewer_parse_jsonl, docs_forensics_session_transcript_viewer_extract_text_from_content, docs_forensics_session_transcript_viewer_summarize_tool_payload, docs_forensics_session_transcript_viewer_decode_codex_tool_output_string, docs_forensics_session_transcript_viewer_render [EXTRACTED 0.98]
+- **Goose Graphify and agentmemory Query Flow** — docs_graphify_am_verification_goose_verify_graphify_am_graphify_update, docs_graphify_am_verification_goose_verify_graphify_am_graphify_query, docs_graphify_am_verification_goose_verify_graphify_am_graphify_out_graph_json, docs_graphify_am_verification_goose_verify_graphify_am_agentmemory_moc [EXTRACTED 0.92]
+- **Phase 0 Preflight Gate Components** — docs_instruction_following_phase0_preflight_evidence_phase_0_gate, docs_instruction_following_phase0_preflight_evidence_cursor_native_install, docs_instruction_following_phase0_preflight_evidence_template_parity, docs_instruction_following_phase0_preflight_evidence_silver_doctor, docs_instruction_following_phase0_preflight_evidence_hook_smoke_tests [EXTRACTED 1.00]
+- **Safe VERIFY and REVIEW Parallel Window** — docs_internal_flow_01_parallelism_design_flow_execute, docs_internal_flow_01_parallelism_design_flow_verify, docs_internal_flow_01_parallelism_design_flow_review, docs_internal_flow_01_parallelism_design_flow_finalize [EXTRACTED 0.98]
+- **Google Chat Release Announcement Flow** — docs_internal_google_chat_release_announcement_prompt_release_commit_ci, docs_internal_google_chat_release_announcement_prompt_gchat_release_webhook, docs_internal_google_chat_release_announcement_prompt_release_card, docs_internal_google_chat_release_announcement_prompt_fixed_thread, docs_internal_google_chat_release_announcement_prompt_release_url [EXTRACTED 0.98]
+- **Pre-Release Quality Gate Stages** — docs_internal_pre_release_quality_gate_code_security, docs_internal_pre_release_quality_gate_public_content_refresh, docs_internal_pre_release_quality_gate_verification_bundle [EXTRACTED 1.00]
+- **Silver Bullet Delivery Layer Around GSD** — docs_internal_sb_benefits_over_plain_gsd_gsd, docs_internal_sb_benefits_over_plain_gsd_workflow_enforcement, docs_internal_sb_benefits_over_plain_gsd_spec_acceptance_governance, docs_internal_sb_benefits_over_plain_gsd_release_governance [EXTRACTED 1.00]
+- **Spec to Release Traceability Flow** — docs_internal_sb_benefits_over_plain_gsd_spec, docs_internal_sb_benefits_over_plain_gsd_requirements, docs_internal_sb_benefits_over_plain_gsd_validation, docs_internal_sb_benefits_over_plain_gsd_uat, docs_internal_sb_benefits_over_plain_gsd_release_governance [EXTRACTED 1.00]
+- **Core Design Build Review Deploy Loop** — docs_internal_sdlc_gap_analysis_gsd_code_review [EXTRACTED 1.00]
+- **Post-v0.50.2 Enterprise Harness Fixes** — docs_issues_enterprise_e2e_sb_issues_e2e_101, docs_issues_enterprise_e2e_sb_issues_e2e_102, docs_issues_enterprise_e2e_sb_issues_e2e_103, docs_issues_enterprise_e2e_sb_issues_e2e_104, docs_issues_enterprise_e2e_sb_issues_e2e_105, docs_issues_enterprise_e2e_sb_issues_e2e_106, docs_issues_enterprise_e2e_sb_issues_e2e_107, docs_issues_enterprise_e2e_sb_issues_e2e_108, docs_issues_enterprise_e2e_sb_issues_e2e_109, docs_issues_enterprise_e2e_sb_issues_e2e_110, docs_issues_enterprise_e2e_sb_issues_e2e_111, docs_issues_enterprise_e2e_sb_issues_e2e_112, docs_issues_enterprise_e2e_sb_issues_e2e_113, docs_issues_enterprise_e2e_sb_issues_e2e_114, docs_issues_enterprise_e2e_sb_issues_e2e_115 [EXTRACTED 1.00]
+- **Shared Multi-Runtime Scenario Matrix** — docs_knowledge_2026_05_live_matrix, docs_knowledge_2026_05_scenario_suite, docs_knowledge_2026_05_runtime_adapters, docs_knowledge_2026_05_claude_runtime, docs_knowledge_2026_05_codex_runtime [EXTRACTED 1.00]
+- **Silver Bullet Problem Clusters and Mechanisms** — docs_pm_research_gaps_sb_problem_map_document, docs_pm_research_gaps_sb_problem_map_cluster_process_bypass, docs_pm_research_gaps_sb_problem_map_cluster_traceability_drift, docs_pm_research_gaps_sb_problem_map_cluster_delivery_risk, docs_pm_research_gaps_sb_problem_map_sixteen_layer_enforcement [EXTRACTED 1.00]
+- **Prior-Art Category Landscape** — docs_research_260624_sb_consolidated_prior_art_report_silver_bullet_apo_model, docs_research_260624_sb_consolidated_prior_art_report_agentic_sdlc_methodologies, docs_research_260624_sb_consolidated_prior_art_report_enterprise_workflow_engines, docs_research_260624_sb_consolidated_prior_art_report_policy_engines, docs_research_260624_sb_consolidated_prior_art_report_quality_automation [EXTRACTED 1.00]
+- **Silver Bullet APO Differentiator Gap Cluster** — docs_research_260624_sb_consolidated_prior_art_report_silver_bullet_apo_model, docs_research_260624_sb_consolidated_prior_art_report_hook_enforced_delivery_blocking [EXTRACTED 1.00]
+- **Silver Bullet APO Differentiator Bundle** — docs_research_260624_sb_consolidated_prior_art_report_silver_bullet_apo_model, docs_research_260624_sb_consolidated_prior_art_report_machine_readable_hierarchical_apo_catalog, docs_research_260624_sb_consolidated_prior_art_report_per_step_v_loop_rollups, docs_research_260624_sb_consolidated_prior_art_report_intent_validation_gates, docs_research_260624_sb_consolidated_prior_art_report_hook_enforced_lifecycle_skill_chains [EXTRACTED 1.00]
+- **Enterprise Workflow Engine Landscape** — docs_research_260624_sb_consolidated_prior_art_report_dagger, docs_research_260624_sb_consolidated_prior_art_report_camunda_8 [EXTRACTED 1.00]
+- **Enforcement and IDE Integration Landscape** — docs_research_260624_sb_consolidated_prior_art_report_opa, docs_research_260624_sb_consolidated_prior_art_report_cline, docs_research_260624_sb_consolidated_prior_art_report_cursor [EXTRACTED 1.00]
+- **Workflow Composition Patterns** — docs_research_260624_sb_prior_art_research_prompt_parallel_join, docs_research_260624_sb_prior_art_research_prompt_compensation_rollback, docs_research_260624_sb_prior_art_research_prompt_workflow_as_component [EXTRACTED 1.00]
+- **Silver Bullet APO Architecture** — docs_research_260624_sb_prior_art_user_prompt_v_loop, docs_research_260624_sb_prior_art_user_prompt_hooks [EXTRACTED 0.98]
+- **Silver Bullet Orchestrated Delivery Flow** — docs_research_260624_sb_prior_art_user_prompt_task_workers [EXTRACTED 0.96]
+- **Verified Subagent Workflow Execution** — docs_research_260624_atomic_flow_redesign_plan_v_loop, docs_research_260624_atomic_flow_redesign_plan_scheduler, docs_research_260624_atomic_flow_redesign_plan_subagent, docs_research_260624_atomic_flow_redesign_plan_evidence_record [EXTRACTED 1.00]
+- **Initial Candidate Atomic Flow Basis** — docs_research_260624_atomic_flow_redesign_plan_candidate_af_route, docs_research_260624_atomic_flow_redesign_plan_candidate_af_orient, docs_research_260624_atomic_flow_redesign_plan_candidate_af_clarify, docs_research_260624_atomic_flow_redesign_plan_candidate_af_research, docs_research_260624_atomic_flow_redesign_plan_candidate_af_decide, docs_research_260624_atomic_flow_redesign_plan_candidate_af_ingest, docs_research_260624_atomic_flow_redesign_plan_candidate_af_validate, docs_research_260624_atomic_flow_redesign_plan_candidate_af_plan, docs_research_260624_atomic_flow_redesign_plan_candidate_af_tdd, docs_research_260624_atomic_flow_redesign_plan_candidate_af_execute, docs_research_260624_atomic_flow_redesign_plan_candidate_af_refactor, docs_research_260624_atomic_flow_redesign_plan_candidate_af_review_request, docs_research_260624_atomic_flow_redesign_plan_candidate_af_review_fix, docs_research_260624_atomic_flow_redesign_plan_candidate_af_artifact_review, docs_research_260624_atomic_flow_redesign_plan_candidate_af_domain_audit, docs_research_260624_atomic_flow_redesign_plan_candidate_af_quality_gate, docs_research_260624_atomic_flow_redesign_plan_candidate_af_test_engineering, docs_research_260624_atomic_flow_redesign_plan_candidate_af_ai_llm_safety, docs_research_260624_atomic_flow_redesign_plan_candidate_af_completion_audit, docs_research_260624_atomic_flow_redesign_plan_candidate_af_design_contract, docs_research_260624_atomic_flow_redesign_plan_candidate_af_design_handoff, docs_research_260624_atomic_flow_redesign_plan_candidate_af_blast_radius, docs_research_260624_atomic_flow_redesign_plan_candidate_af_devops_route, docs_research_260624_atomic_flow_redesign_plan_candidate_af_deploy, docs_research_260624_atomic_flow_redesign_plan_candidate_af_incident, docs_research_260624_atomic_flow_redesign_plan_candidate_af_forensics, docs_research_260624_atomic_flow_redesign_plan_candidate_af_document, docs_research_260624_atomic_flow_redesign_plan_candidate_af_knowledge_capture, docs_research_260624_atomic_flow_redesign_plan_candidate_af_backlog, docs_research_260624_atomic_flow_redesign_plan_candidate_af_phase_manage, docs_research_260624_atomic_flow_redesign_plan_candidate_af_undo, docs_research_260624_atomic_flow_redesign_plan_candidate_af_release, docs_research_260624_atomic_flow_redesign_plan_candidate_af_create_release, docs_research_260624_atomic_flow_redesign_plan_candidate_af_retro, docs_research_260624_atomic_flow_redesign_plan_candidate_af_benchmark [EXTRACTED 1.00]
+- **Cursor Native Agent Surface** — docs_research_260624_cursor_claims_factcheck_cursor_hooks, docs_research_260624_cursor_claims_factcheck_cursor_skills, docs_research_260624_cursor_claims_factcheck_before_mcp_execution, docs_research_260624_cursor_claims_factcheck_task_subagent [EXTRACTED 0.92]
+- **Goose Core Architecture** — docs_research_260624_goose_ai_agent_research_interface, docs_research_260624_goose_ai_agent_research_agent, docs_research_260624_goose_ai_agent_research_extensions, docs_research_260624_goose_ai_agent_research_providers, docs_research_260624_goose_ai_agent_research_config_recipes, docs_research_260624_goose_ai_agent_research_goose_server, docs_research_260624_goose_ai_agent_research_core_goose_crate [EXTRACTED 1.00]
+- **Goose ACP Interoperability** — docs_research_260624_goose_ai_agent_research_goose, docs_research_260624_goose_ai_agent_research_acp, docs_research_260624_goose_ai_agent_research_acp_server, docs_research_260624_goose_ai_agent_research_acp_client, docs_research_260624_goose_ai_agent_research_zed, docs_research_260624_goose_ai_agent_research_codex [EXTRACTED 1.00]
+- **Goose Extensibility and Tool Control** — docs_research_260624_goose_extensibility_research_mcp_servers, docs_research_260624_goose_extensibility_research_adversary_mode, docs_research_260624_goose_extensibility_research_skills, docs_research_260624_goose_extensibility_research_plugins [EXTRACTED 0.95]
+- **Foundation-to-Recommendation Research Pipeline** — docs_research_260624_license_plan_foundation, docs_research_260624_license_plan_license_inventory, docs_research_260624_license_plan_legal_enforceability, docs_research_260624_license_plan_adoption_signal, docs_research_260624_license_plan_recommendation [EXTRACTED 1.00]
+- **Triangulated Evidence Set** — docs_research_260624_license_plan_canonical_license_text, docs_research_260624_license_plan_attorney_commentary, docs_research_260624_license_plan_adoption_example, docs_research_260624_license_plan_direct_quote [EXTRACTED 1.00]
+- **Stakeholder Tradeoff Model** — docs_research_260624_license_scope_licensor_creator, docs_research_260624_license_scope_end_user_integrator, docs_research_260624_license_scope_saas_provider_competitor, docs_research_260624_license_scope_oss_purist, docs_research_260624_license_scope_legal_counsel [EXTRACTED 1.00]
+- **PolyForm Noncommercial Recommendation** — docs_research_260624_license_research_report_polyform_noncommercial_1_0_0, docs_research_260624_license_research_report_maximum_freedom, docs_research_260624_license_research_report_direct_commercial_use_prohibition [EXTRACTED 0.98]
+- **SaaS Restriction Pattern** — docs_research_260624_license_research_report_polyform_strict_1_0_0, docs_research_260624_license_research_report_elastic_license_2_0, docs_research_260624_license_research_report_functional_source_license_1_1, docs_research_260624_license_research_report_saas_managed_service_prohibition [EXTRACTED 0.90]
+- **Time-Delayed Open Source Pattern** — docs_research_260624_license_research_report_business_source_license_1_1, docs_research_260624_license_research_report_functional_source_license_1_1, docs_research_260624_license_research_report_time_delayed_open_source [EXTRACTED 1.00]
+- **PolyForm Four-License Family** — docs_research_260624_license_research_report_polyform_project, docs_research_260624_license_research_report_polyform_noncommercial_1_0_0, docs_research_260624_license_research_report_polyform_strict_1_0_0, docs_research_260624_license_research_report_polyform_internal_use, docs_research_260624_license_research_report_polyform_free_trial [EXTRACTED 1.00]
+- **Monetization Restriction Patterns** — docs_research_260624_license_research_report_direct_commercial_use_prohibition, docs_research_260624_license_research_report_anti_saas_hosted_service_prohibition, docs_research_260624_license_research_report_service_disclosure_reciprocity, docs_research_260624_license_research_report_polyform_noncommercial_1_0_0, docs_research_260624_license_research_report_polyform_strict_1_0_0, docs_research_260624_license_research_report_elastic_license_2_0, docs_research_260624_license_research_report_server_side_public_license_v1 [EXTRACTED 0.95]
+- **Cross-Model Subagent Nesting Conflict Cases** — docs_research_260624_multi_ai_out_conflicts_document, docs_research_260624_multi_ai_out_conflicts_opencode_subagent_nesting, docs_research_260624_multi_ai_out_conflicts_claude_code_recursive_nesting, docs_research_260624_multi_ai_out_conflicts_pi_extension_subagents [EXTRACTED 1.00]
+- **Platforms Compared for Nested Subagent Launching** — docs_research_260624_multi_ai_out_consolidated_cursor, docs_research_260624_multi_ai_out_consolidated_codex, docs_research_260624_multi_ai_out_consolidated_pi, docs_research_260624_multi_ai_out_consolidated_nested_subagent_launching [EXTRACTED 1.00]
+- **multi-ai-task Architecture and Evaluation Dimensions** — docs_research_260624_multi_ai_self_review_20260627_083255_ocg_glm_5_2_dispatch_pipeline [EXTRACTED 0.92]
+- **Four-phase multi-ai-task workflow** — multi_ai_task_phase_1_input_and_dispatch, multi_ai_task_phase_2_output_capture_and_extraction, multi_ai_task_phase_3_consolidation, multi_ai_task_phase_4_output [EXTRACTED 1.00]
+- **Unformalized example-specific conflict rules** — multi_ai_task_conflict_resolution_rule_registry, multi_ai_task_conflict_rule_most_severe, multi_ai_task_conflict_rule_concatenate_all, multi_ai_task_conflict_rule_merge_exact, multi_ai_task_conflict_rule_majority_with_uncertain, multi_ai_task_conflict_rule_lowest_of_majors, multi_ai_task_conflict_rule_all_collected, multi_ai_task_conflict_rule_union_dedup [EXTRACTED 1.00]
+- **multi-ai-task v2.2.0 Issue Resolution Set** — docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_most_severe_inversion, docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_majority_inconsistency, docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_dispatch_security, docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_manifest_inconsistency, docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_documentation_executable_question [EXTRACTED 1.00]
+- **Multi-Model Review Rounds** — docs_research_260624_multi_ai_self_review_20260627_083255_ocg_qwen3_7_max_document, docs_research_260624_multi_ai_self_review_r2_20260627_093345_consolidated_self_review_document, docs_research_260624_multi_ai_self_review_r2_20260627_093345_ocg_deepseek_v4_pro_document [EXTRACTED 0.95]
+- **Multi-AI Self-Review Corpus** — docs_research_260624_multi_ai_self_review_r3_20260627_multi_ai_self_review_document, docs_research_260624_multi_ai_self_review_r3_20260627_095647_self_review_prompt_document, docs_research_260624_multi_ai_self_review_r3_20260627_095647_ocg_deepseek_v4_pro_document, docs_research_260624_multi_ai_self_review_r3_20260627_095647_ocg_glm_5_2_document [EXTRACTED 1.00]
+- **multi-ai-task Self-Review Artifacts** — docs_research_260624_multi_ai_self_review_r3_20260627_095647_ocg_minimax_m3, docs_research_260624_multi_ai_self_review_r3_20260627_095647_ocg_qwen3_7_max, docs_research_260624_multi_ai_self_review_r4_20260627_101100_self_review_prompt, docs_research_260624_multi_ai_self_review_r4_20260627_101100_ocg_deepseek_v4_pro [INFERRED 0.82]
+- **Multi-AI Self-Review Round 5** — docs_research_260624_multi_ai_self_review_r5_20260627_101831_self_review_prompt_document, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_document, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_glm_5_2_document [EXTRACTED 1.00]
+- **Critical Multi-AI Task Review Findings** — docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_composite_key_dedup_rationale, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_v_loop_intent_gate_rationale, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_schema_double_injection_rationale, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_extractor_model_infinite_regression_rationale, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_non_research_examples_unvalidated_rationale, docs_research_260624_multi_ai_self_review_r5_20260627_101831_ocg_deepseek_v4_pro_enforcement_gap_rationale [EXTRACTED 1.00]
+- **Cross Document Specification Inconsistencies** — docs_research_260624_multi_ai_self_review_r7_20260627_105327_ocg_glm_5_2_phase_numbering_conflict, docs_research_260624_multi_ai_self_review_r7_20260627_105327_ocg_glm_5_2_structured_jsonl_contract_collision, docs_research_260624_multi_ai_self_review_r7_20260627_105327_ocg_glm_5_2_thorough_verifier_dispatch_gap, docs_research_260624_multi_ai_self_review_r7_20260627_105327_ocg_glm_5_2_custom_strategy_schema_conflict [EXTRACTED 1.00]
+- **OpenCode Extensibility Surface** — docs_research_260624_opencode_extensibility_research_plugin_system, docs_research_260624_opencode_extensibility_research_permission_system, docs_research_260624_opencode_extensibility_research_agent_system, docs_research_260624_opencode_extensibility_research_mcp_integration, docs_research_260624_opencode_extensibility_research_skills_system, docs_research_260624_opencode_extensibility_research_config_system [EXTRACTED 0.90]
+- **OpenCode Plugin Event Lifecycle** — docs_research_260624_opencode_verification_report_tool_execute_before, docs_research_260624_opencode_verification_report_tool_execute_after, docs_research_260624_opencode_verification_report_session_created, docs_research_260624_opencode_verification_report_session_compacted, docs_research_260624_opencode_verification_report_permission_asked, docs_research_260624_opencode_verification_report_permission_replied [EXTRACTED 1.00]
+- **Silver Bullet Five Architectural Differentiators** — docs_research_260624_prior_art_landscape_2026_06_27_sb_parent_worker_split [EXTRACTED 1.00]
+- **Silver Bullet Delivery Blocker and Audit Trio** — docs_research_260624_prior_art_landscape_minimax_m3_workflow_chain_guard, docs_research_260624_prior_art_landscape_minimax_m3_completion_audit, docs_research_260624_prior_art_landscape_minimax_m3_orchestrator_directive_guard [EXTRACTED 1.00]
+- **Closest Architectural Matches** — docs_research_260624_prior_art_landscape_report_gsd [EXTRACTED 1.00]
+- **Prior-Art Landscape Clusters** — docs_research_260624_prior_art_landscape_report_multi_agent_orchestration, docs_research_260624_prior_art_landscape_report_policy_engine [EXTRACTED 1.00]
+- **Silver Bullet APO Differentiators** — docs_research_260624_prior_art_landscape_research_silver_bullet_apo_architecture, docs_research_260624_prior_art_landscape_research_per_step_v_loop_rollup, docs_research_260624_prior_art_landscape_research_evidence_tiers_tool_governance [EXTRACTED 1.00]
+- **Direct Agentic SDLC Competitors** — docs_research_260624_prior_art_landscape_research_metagpt, docs_research_260624_prior_art_landscape_research_silver_bullet_apo_architecture [EXTRACTED 0.95]
+- **Adjacent Architectural Inspirations** — docs_research_260624_prior_art_landscape_research_anthropic_agents [EXTRACTED 0.95]
+- **Silver Bullet APO Signature Differentiators** — docs_research_260624_prior_art_report_machine_readable_sdlc_devops_process_catalog, docs_research_260624_prior_art_report_per_step_v_model_verification_loops, docs_research_260624_prior_art_report_hook_enforced_lifecycle_chains, docs_research_260624_prior_art_report_parent_orchestrator_worker_split, docs_research_260624_prior_art_report_tiered_evidence_sufficiency_model [EXTRACTED 1.00]
+- **Top Architectural Closest Matches** — docs_research_260624_prior_art_report_github_spec_kit, docs_research_260624_prior_art_report_harness, docs_research_260624_prior_art_report_backstage, docs_research_260624_prior_art_report_temporal, docs_research_260624_prior_art_report_claude_code_hooks [EXTRACTED 1.00]
+- **Unoccupied APO Market Gaps** — docs_research_260624_prior_art_report_per_step_v_model_verification_loops, docs_research_260624_prior_art_report_tiered_evidence_sufficiency_model, docs_research_260624_prior_art_report_unified_se_devops_catalog, docs_research_260624_prior_art_report_catalog_backed_dynamic_composition [EXTRACTED 1.00]
+- **agentmemory to Graphify Retrieval Flow** — docs_research_graphify_agentmemory_optimization_agentmemory_export, docs_research_graphify_agentmemory_optimization_git_bridge [EXTRACTED 1.00]
+- **Host-Portable RTK + Context Mode Stack** — docs_rtk_cm_readme_rtk, docs_rtk_cm_readme_codex, docs_rtk_cm_readme_cursor, docs_rtk_cm_readme_opencode, docs_rtk_cm_readme_hermes, docs_rtk_cm_readme_goose [EXTRACTED 1.00]
+- **Cursor RTK and Context Mode End-to-End Flow** — docs_rtk_cm_rtk_cm_cursor_verification_rtk_hook_cursor, docs_rtk_cm_rtk_cm_cursor_verification_pretooluse, docs_rtk_cm_rtk_cm_cursor_verification_git_status, docs_rtk_cm_rtk_cm_cursor_verification_ctx_stats, docs_rtk_cm_rtk_cm_cursor_verification_ctx_fetch_and_index [EXTRACTED 1.00]
+- **Runtime Hosts Compared Against Silver Bullet Requirements** — docs_runtime_extensibility_comparison_silver_bullet_tier_2_enforcement, docs_runtime_extensibility_comparison_codex, docs_runtime_extensibility_comparison_cursor, docs_runtime_extensibility_comparison_goose, docs_runtime_extensibility_comparison_omp [EXTRACTED 0.98]
+- **Silver Bullet Tier-2 Enforcement Components** — docs_runtime_extensibility_comparison_bash_hooks_json_protocol, docs_runtime_extensibility_comparison_recorded_skill_channel, docs_runtime_extensibility_comparison_completion_gates, docs_runtime_extensibility_comparison_user_prompt_reminder_injection, docs_runtime_extensibility_comparison_task_subagent_workers [EXTRACTED 0.95]
+- **Host Delegation Operating Contract** — docs_skills_agent_host_delegation_sibling_prompt_production_delegation, docs_skills_agent_host_delegation_sibling_prompt_host_adapter_contract, docs_skills_agent_host_delegation_sibling_prompt_parent_supervision, docs_skills_agent_host_delegation_sibling_prompt_dedicated_worktree, docs_skills_agent_host_delegation_sibling_prompt_committed_product_delta [EXTRACTED 0.95]
+- **Delegation Pilot Pass Gates** — docs_skills_agent_host_delegation_sibling_prompt_pilot_pass_checklist, docs_skills_agent_host_delegation_sibling_prompt_log_floor, docs_skills_agent_host_delegation_sibling_prompt_live_session_evidence, docs_skills_agent_host_delegation_sibling_prompt_acceptance_criteria_evidence, docs_skills_agent_host_delegation_sibling_prompt_committed_product_delta, docs_skills_agent_host_delegation_sibling_prompt_parent_summary, docs_skills_agent_host_delegation_sibling_prompt_graphify_update_requirement [EXTRACTED 0.95]
+- **Autonomous Hardening Feature Set** — docs_specs_2026_04_02_autonomous_hardening_design_hybrid_hook_workflow_architecture, docs_specs_2026_04_02_autonomous_hardening_design_enhanced_antistall [EXTRACTED 0.95]
+- **Autonomous Mode Hardening Features** — docs_specs_2026_04_02_autonomous_hardening_plan_answer_injection, docs_specs_2026_04_02_autonomous_hardening_plan_timeout_supervision, docs_specs_2026_04_02_autonomous_hardening_plan_skill_auto_discovery [EXTRACTED 1.00]
+- **Workflow Hardening Flow** — docs_specs_2026_04_02_autonomous_hardening_plan_pre_answers, docs_specs_2026_04_02_autonomous_hardening_plan_skill_auto_discovery, docs_specs_2026_04_02_autonomous_hardening_plan_skill_gap_check, docs_specs_2026_04_02_autonomous_hardening_plan_autonomous_completion_cleanup [EXTRACTED 1.00]
+- **GSD-2 Gap-Narrowing Strategies** — docs_specs_2026_04_02_gap_narrowing_plan_cross_session_knowledge, docs_specs_2026_04_02_gap_narrowing_plan_autonomy, docs_specs_2026_04_02_gap_narrowing_plan_ci_cd_verification, docs_specs_2026_04_02_gap_narrowing_plan_model_routing_agent_teams [EXTRACTED 1.00]
+- **Semantic context compression pipeline** — hooks_semantic_compress, scripts_semantic_compress, scripts_extract_phase_goal, scripts_tfidf_rank, planning_context_cache, hook_specific_output_additional_context [EXTRACTED 0.95]
+- **Six SB orchestration workflows** — skills_silver_skill, silver_bullet_silver_ui_workflow, silver_bullet_silver_devops_workflow, silver_bullet_silver_release_workflow, silver_bullet_silver_fast_workflow [EXTRACTED 1.00]
+- **SB workflow delivery gates** — silver_bullet_silver_ui_workflow, silver_bullet_silver_devops_workflow, silver_bullet_silver_release_workflow, silver_bullet_security [EXTRACTED 0.92]
+- **Sequential Tier A, Tier B, Tier C, and Release Phases** — docs_testing_enterprise_e2e_host_certification_methodology_tier_a_structural, docs_testing_enterprise_e2e_host_certification_methodology_tier_b_live_smoke, docs_testing_enterprise_e2e_host_certification_methodology_tier_c_full_matrix, docs_testing_enterprise_e2e_host_certification_methodology_phase_a_review_fix_ladder, docs_testing_enterprise_e2e_host_certification_methodology_phase_c_release_gates [EXTRACTED 1.00]
+- **Product Certification Evidence Model** — docs_testing_enterprise_e2e_host_certification_methodology_harness_strict_clean, docs_testing_enterprise_e2e_host_certification_methodology_product_audit, docs_testing_enterprise_e2e_host_certification_methodology_required_evidence_gates, docs_testing_enterprise_e2e_host_certification_methodology_product_commit_gate, docs_testing_enterprise_e2e_host_certification_methodology_host_product_certification [EXTRACTED 1.00]
+- **Live Driver, Registry, Branch, Quota, and Ledger Control Loop** — docs_testing_enterprise_e2e_host_certification_methodology_single_driver_daemon, docs_testing_enterprise_e2e_host_certification_methodology_quota_aware_scheduling, docs_testing_enterprise_e2e_host_certification_methodology_row_pass_registry, docs_testing_enterprise_e2e_host_certification_methodology_fixture_branch_rules [INFERRED 0.85]
+- **Cross-agent isolation controls** — docs_testing_enterprise_e2e_host_certification_methodology_claude_r6_host, docs_testing_enterprise_e2e_host_certification_methodology_host_worktree_isolation, docs_testing_enterprise_e2e_host_certification_methodology_separate_host_locks [EXTRACTED 1.00]
+- **Strict-clean certification gates** — docs_testing_enterprise_e2e_host_certification_methodology_e2e_live_invoke, docs_testing_enterprise_e2e_host_certification_methodology_fixture_commit_sha, docs_testing_enterprise_e2e_host_certification_methodology_outcome_row_passes, docs_testing_enterprise_e2e_host_certification_methodology_phase_c [EXTRACTED 0.98]
+- **Registered harness fix classes E2E-086 through E2E-117** — docs_testing_enterprise_e2e_host_certification_methodology_e2e_086, docs_testing_enterprise_e2e_host_certification_methodology_e2e_087, docs_testing_enterprise_e2e_host_certification_methodology_e2e_088, docs_testing_enterprise_e2e_host_certification_methodology_e2e_089, docs_testing_enterprise_e2e_host_certification_methodology_e2e_090, docs_testing_enterprise_e2e_host_certification_methodology_e2e_091, docs_testing_enterprise_e2e_host_certification_methodology_e2e_092, docs_testing_enterprise_e2e_host_certification_methodology_e2e_093, docs_testing_enterprise_e2e_host_certification_methodology_e2e_094, docs_testing_enterprise_e2e_host_certification_methodology_e2e_095, docs_testing_enterprise_e2e_host_certification_methodology_e2e_096, docs_testing_enterprise_e2e_host_certification_methodology_e2e_097, docs_testing_enterprise_e2e_host_certification_methodology_e2e_098, docs_testing_enterprise_e2e_host_certification_methodology_e2e_099, docs_testing_enterprise_e2e_host_certification_methodology_e2e_100, docs_testing_enterprise_e2e_host_certification_methodology_e2e_101, docs_testing_enterprise_e2e_host_certification_methodology_e2e_102, docs_testing_enterprise_e2e_host_certification_methodology_e2e_103, docs_testing_enterprise_e2e_host_certification_methodology_e2e_104, docs_testing_enterprise_e2e_host_certification_methodology_e2e_105, docs_testing_enterprise_e2e_host_certification_methodology_e2e_106, docs_testing_enterprise_e2e_host_certification_methodology_e2e_107, docs_testing_enterprise_e2e_host_certification_methodology_e2e_108, docs_testing_enterprise_e2e_host_certification_methodology_e2e_109, docs_testing_enterprise_e2e_host_certification_methodology_e2e_110, docs_testing_enterprise_e2e_host_certification_methodology_e2e_111, docs_testing_enterprise_e2e_host_certification_methodology_e2e_112, docs_testing_enterprise_e2e_host_certification_methodology_e2e_113, docs_testing_enterprise_e2e_host_certification_methodology_e2e_114, docs_testing_enterprise_e2e_host_certification_methodology_e2e_115, docs_testing_enterprise_e2e_host_certification_methodology_e2e_116, docs_testing_enterprise_e2e_host_certification_methodology_e2e_117 [EXTRACTED 1.00]
+- **Five-Tool Parallel Stack** — docs_testing_five_tool_prerelease_rtk [EXTRACTED 1.00]
+- **Reusable Post-Execution Gate Component** — docs_workflow_composition_matrix_wf_post_exec_gates [EXTRACTED 1.00]
+- **Required DevOps Lifecycle** — docs_workflows_devops_cycle_orientation, docs_workflows_devops_cycle_blast_radius, docs_workflows_devops_cycle_context, docs_workflows_devops_cycle_plan, docs_workflows_devops_cycle_execute, docs_workflows_devops_cycle_review, docs_workflows_devops_cycle_verify, docs_workflows_devops_cycle_secure, docs_workflows_devops_cycle_promote_environments, docs_workflows_devops_cycle_deploy_readiness, docs_workflows_devops_cycle_ship, docs_workflows_devops_cycle_release [EXTRACTED 1.00]
+- **Artifact Review Orchestration** — host_bundles_codex_artifact_reviewer, host_bundles_codex_artifact_review_assessor, host_bundles_codex_artifact_reviewer_rules_review_loop, host_bundles_codex_artifact_reviewer_rules_reviewer_interface, host_bundles_codex_artifact_reviewer_review_spec [EXTRACTED 1.00]
+- **Review Loop Execution Flow** — host_bundles_codex_artifact_reviewer_rules_review_loop_review_loop_algorithm, host_bundles_codex_artifact_reviewer_rules_review_loop_load_review_state, host_bundles_codex_artifact_reviewer_rules_review_loop_resolve_depth, host_bundles_codex_artifact_reviewer_rules_review_loop_invoke_reviewer, host_bundles_codex_artifact_reviewer_rules_review_loop_record_round, host_bundles_codex_artifact_reviewer_rules_review_loop_emit_review_metric, host_bundles_codex_artifact_reviewer_rules_review_loop_save_review_state, host_bundles_codex_artifact_reviewer_rules_reviewer_interface_orchestrator_apply_fix, host_bundles_codex_artifact_reviewer_rules_reviewer_interface_commit_review_trail, host_bundles_codex_artifact_reviewer_rules_review_loop_clear_review_state [EXTRACTED 1.00]
+- **Context-Aware DevOps Skill Routing Catalog** — host_bundles_codex_devops_skill_router_skill_document [EXTRACTED 1.00]
+- **Silver Quality Checklists Across the Delivery Lifecycle** — host_bundles_codex_extensibility_skill_document, host_bundles_codex_modularity_skill_document, host_bundles_codex_reliability_skill_document, host_bundles_codex_reusability_skill_document, silver_plan_skill, silver_execute_skill [EXTRACTED 1.00]
+- **Planning and Review Quality Enforcement** — host_bundles_codex_scalability_scalability, host_bundles_codex_security_security [INFERRED 0.92]
+- **Silver Add Filing Pipeline** — host_bundles_codex_silver_add_skill_silver_add, host_bundles_codex_silver_add_skill_item_classification, host_bundles_codex_silver_add_skill_deduplication, host_bundles_codex_silver_add_skill_github_filing, host_bundles_codex_silver_add_skill_local_filing, host_bundles_codex_silver_add_skill_session_log_recording [EXTRACTED 1.00]
+- **Parent-Supervised Delegation Lifecycle** — host_bundles_codex_silver_agent_claude_skill, host_bundles_codex_silver_agent_codex_skill, host_bundles_codex_silver_agent_cursor_skill, concept_delegation_directive_contract, concept_completion_evidence [EXTRACTED 0.95]
+- **Bugfix Composition Flow** — host_bundles_codex_silver_bugfix_skill_silver_bugfix [EXTRACTED 0.99]
+- **Canary release runtime watch lifecycle** — concept_todo_model_impact, silver_plan, silver_execute, silver_verify, concept_domain_audit_packs, concept_incident_postmortem [EXTRACTED 0.95]
+- **Multi AI Research Architecture** — host_bundles_codex_silver_deep_research_multi_ai_skill_host_dr_controller, host_bundles_codex_silver_deep_research_multi_ai_skill_host_validation_gates, host_bundles_codex_silver_deep_research_multi_ai_skill_deterministic_consolidation, host_bundles_codex_silver_deep_research_multi_ai_skill_report_html [EXTRACTED 1.00]
+- **Capability Rubric Dimensions** — host_bundles_codex_silver_deep_research_eval_rubric_phases_modes, host_bundles_codex_silver_deep_research_eval_rubric_citation_evidence, host_bundles_codex_silver_deep_research_eval_rubric_search_providers, host_bundles_codex_silver_deep_research_eval_rubric_multilingual, host_bundles_codex_silver_deep_research_eval_rubric_report_formats, host_bundles_codex_silver_deep_research_eval_rubric_validation_eval, host_bundles_codex_silver_deep_research_eval_rubric_portability, host_bundles_codex_silver_deep_research_eval_rubric_human_in_loop, host_bundles_codex_silver_deep_research_eval_rubric_composability, host_bundles_codex_silver_deep_research_eval_rubric_source_catalogs, host_bundles_codex_silver_deep_research_eval_rubric_adversarial [EXTRACTED 1.00]
+- **Research Report Template Structure** — host_bundles_codex_silver_deep_research_templates_report_template_executive_summary, host_bundles_codex_silver_deep_research_templates_report_template_introduction, host_bundles_codex_silver_deep_research_templates_report_template_main_analysis, host_bundles_codex_silver_deep_research_templates_report_template_synthesis_insights, host_bundles_codex_silver_deep_research_templates_report_template_limitations_caveats, host_bundles_codex_silver_deep_research_templates_report_template_recommendations, host_bundles_codex_silver_deep_research_templates_report_template_bibliography [EXTRACTED 1.00]
+- **Deployment Orchestration Lifecycle** — host_bundles_codex_silver_deploy_skill, concept_todo_model_impact, concept_ci_quality_gates, silver_plan, silver_execute, silver_verify, security, silver_secure, concept_runtime_watch [EXTRACTED 0.95]
+- **DevOps Delivery Chain** — host_bundles_codex_silver_devops_skill, concept_todo_model_impact, concept_ci_quality_gates, silver_plan, silver_execute, silver_review, silver_verify, silver_secure [EXTRACTED 0.95]
+- **Forensics Investigation Lifecycle** — host_bundles_codex_silver_forensics_skill_forensics_workflow, host_bundles_codex_silver_forensics_skill_postmortem_report [EXTRACTED 0.96]
+- **Recommended Tool Consent and Reconciliation Flow** — host_bundles_codex_silver_init_skill_rtk, host_bundles_codex_silver_init_skill_recommended_tools_reconciler [EXTRACTED 1.00]
+- **Silver Init Phase Workflow** — host_bundles_codex_silver_init_skill_session_init, host_bundles_codex_silver_init_skill_dependency_check, host_bundles_codex_silver_init_skill_auto_detect_project, host_bundles_codex_silver_init_skill_scaffold [EXTRACTED 1.00]
+- **Recommended Context and Memory Tools Stack** — host_bundles_codex_silver_init_references_recommended_tools_opt_in_rtk [EXTRACTED 0.95]
+- **Multi AI Parallel Task Flow** — host_bundles_codex_silver_multi_ai_task_skill, af_multi_ai_task, fs_multi_ai_resolve, fs_multi_ai_capability_probe, fs_multi_ai_reserve, fs_multi_ai_dispatch, fs_multi_ai_reconcile, fs_multi_ai_index [EXTRACTED 0.99]
+- **Multi AI Pool Resolution Pipeline** — host_bundles_codex_silver_multi_ai_task_reference_pool_algebra, pool_validate_mutex, pool_expand_canonical_ids, pool_apply_include_only, pool_apply_exclude, pool_subscription_routing, pool_reject_invalid_sets [EXTRACTED 0.99]
+- **Ship Security and Delivery Gates** — host_bundles_codex_silver_ship_skill, host_bundles_codex_silver_secure_skill, verify_tests_skill [EXTRACTED 1.00]
+- **UI Delivery Workflow** — host_bundles_codex_silver_ui_skill, host_bundles_codex_silver_ui_contract_skill, silver_execute_skill, silver_ui_review_skill, host_bundles_codex_silver_secure_skill, host_bundles_codex_silver_ship_skill [EXTRACTED 1.00]
+- **Parent Orchestration Flow** — host_bundles_codex_silver_skill_router, host_bundles_codex_silver_skill_parent_mode, host_bundles_codex_silver_skill_composer_skills, host_bundles_codex_silver_skill_orchestrator_directive, host_bundles_codex_silver_skill_worker_template [EXTRACTED 1.00]
+- **Silver Bullet Runtime Delivery Gates** — host_bundles_codex_silver_skill_pre_ship_quality_gate [EXTRACTED 1.00]
+- **TDD Red-Green-Refactor flow** — host_bundles_codex_tdd_skill_skill, tdd_policy_concept, red_green_refactor_concept, failing_test_concept, production_code_concept, test_suite_concept [EXTRACTED 0.99]
+- **Structured Artifact Review Loop** — host_bundles_cursor_artifact_reviewer_rules_reviewer_interface_artifact_reviewer, host_bundles_cursor_artifact_reviewer_rules_reviewer_interface_orchestrator_apply_fix, host_bundles_cursor_artifact_reviewer_rules_reviewer_interface_commit_review_trail [EXTRACTED 1.00]
+- **Extensible Design Principles** — host_bundles_cursor_extensibility_skill_mechanism_policy_separation [EXTRACTED 1.00]
+- **Reviewer Skills Implement Artifact Reviewer Framework** — host_bundles_cursor_review_context_skill, host_bundles_cursor_review_cross_artifact_skill, host_bundles_cursor_review_design_skill, host_bundles_cursor_review_ingestion_manifest_skill, host_bundles_cursor_review_plan_skill, host_bundles_cursor_review_requirements_skill, host_bundles_cursor_review_research_skill [EXTRACTED 1.00]
+- **Cross-Artifact Consistency Scope** — host_bundles_cursor_review_cross_artifact_skill [EXTRACTED 1.00]
+- **Artifact Review Skill Suite** — host_bundles_cursor_review_roadmap_skill_review_roadmap, host_bundles_cursor_review_spec_skill_review_spec, host_bundles_cursor_review_uat_skill_review_uat, host_bundles_cursor_review_verification_skill_review_verification, artifact_reviewer_framework, structured_reviewer_findings [EXTRACTED 1.00]
+- **Design and Review Scalability Security Flow** — host_bundles_cursor_scalability_skill_scalability, host_bundles_cursor_security_skill_security, silver_context_workflow_stage, silver_plan_workflow_stage, silver_execute_workflow_stage, silver_review_workflow_stage [EXTRACTED 1.00]
+- **Tri-host parent-supervised delegation protocol** — host_bundles_cursor_silver_agent_claude_silver_agent_claude, host_bundles_cursor_silver_agent_codex_silver_agent_codex, host_bundles_cursor_silver_agent_cursor_silver_agent_cursor, shared_af_agent_delegate_contract, shared_delegation_brief_contract, shared_completion_evidence_contract [INFERRED 0.96]
+- **External-agent delegation supervision flow** — host_bundles_cursor_silver_agent_opencode_skill_silver_agent_opencode, host_bundles_cursor_silver_agent_pi_skill_silver_agent_pi, host_bundles_cursor_silver_agent_worker_skill_silver_agent_worker [EXTRACTED 1.00]
+- **UI Contract, Review, and Verification Lifecycle** — host_bundles_cursor_silver_ui_contract_skill, host_bundles_cursor_silver_ui_review_skill, host_bundles_cursor_silver_verify_skill [EXTRACTED 0.95]
+- **Browser Evidence Fallback Path** — host_bundles_cursor_silver_ui_review_skill, host_bundles_cursor_silver_verify_skill, concept_host_browser_mcp [EXTRACTED 0.95]
+- **Testability, TDD, Verification, and Test Execution Gates** — host_bundles_cursor_testability_skill, host_bundles_cursor_tdd_skill, host_bundles_cursor_silver_verify_skill, host_bundles_cursor_verify_tests_skill [INFERRED 0.86]
+- **Artifact Review Lifecycle** — plugins_silver_bullet_skill_source_artifact_reviewer_rules_review_loop_load_review_state, plugins_silver_bullet_skill_source_artifact_reviewer_rules_review_loop_invoke_reviewer, plugins_silver_bullet_skill_source_artifact_reviewer_rules_reviewer_interface_orchestrator_apply_fix, plugins_silver_bullet_skill_source_artifact_reviewer_rules_review_loop_save_review_state, plugins_silver_bullet_skill_source_artifact_reviewer_rules_reviewer_interface_commit_review_trail [EXTRACTED 1.00]
+- **Evidence to Decision Artifact Chain** — plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_sources_jsonl, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_evidence_jsonl, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_claims_jsonl, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_research_report_md, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_decision_record_md [INFERRED 0.85]
+- **Solution Landscape Contract Flow** — plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_need_profile_json, plugins_silver_bullet_skill_source_silver_deep_research_reference_landscape_consolidation_guide_solution_classifier, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_comparison_json, plugins_silver_bullet_skill_source_silver_deep_research_phases_artifact_report_html [EXTRACTED 0.95]
+- **Nine-Phase Deep Research Pipeline** — plugins_silver_bullet_skill_source_silver_deep_research_reference_methodology_outline [EXTRACTED 1.00]
+- **Deep Research Report Rendering Pipeline** — plugins_silver_bullet_skill_source_silver_deep_research_templates_mckinsey_report_template_content_placeholder [EXTRACTED 1.00]
+- **Research Report Schema Components** — plugins_silver_bullet_skill_source_silver_deep_research_templates_report_template_bibliography [EXTRACTED 1.00]
+- **Recommended Tool Opt-In Stack** — plugins_silver_bullet_skill_source_silver_init_references_recommended_tools_opt_in_rtk [EXTRACTED 1.00]
+- **Backstage and Port IDP Comparison** — research_2026_07_09_fixture_compare_solutions_port_scr_port, research_2026_07_09_fixture_compare_comparison_comparison_matrix_sso, research_2026_07_09_fixture_compare_comparison_comparison_matrix_plugins [EXTRACTED 1.00]
+- **Shared Pi GUI Feature Comparison** — research_2026_07_10_pi_gui_landscape_report_pi_gui, research_2026_07_10_pi_gui_landscape_report_pi_web, research_2026_07_10_pi_gui_landscape_report_pi_desktop, research_2026_07_10_pi_gui_landscape_report_pi_code_gui, research_2026_07_10_pi_gui_landscape_report_openclaw, research_2026_07_10_pi_gui_landscape_comparison_comparison_matrix_wraps_pi_coding_agent, research_2026_07_10_pi_gui_landscape_comparison_comparison_matrix_dedicated_graphical_ui, research_2026_07_10_pi_gui_landscape_comparison_comparison_matrix_oss_source_available [EXTRACTED 1.00]
+- **Five OSS Pi GUI Candidates Evaluated Together** — research_2026_07_10_pi_gui_landscape_report_pi_gui, research_2026_07_10_pi_gui_landscape_report_pi_web, research_2026_07_10_pi_gui_landscape_report_pi_desktop, research_2026_07_10_pi_gui_landscape_report_pi_code_gui, research_2026_07_10_pi_gui_landscape_report_openclaw [EXTRACTED 1.00]
+- **Pi GUI Landscape Solutions** — research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_pi_gui [INFERRED 0.90]
+- **Pi GUI SDK, Session, and Worktree Architecture** — research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_pi_gui, research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_pi_sdk_driver, research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_pi_coding_agent_sdk, research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_pi_session_files, research_2026_07_10_pi_gui_landscape_solutions_pi_gui_scr_git_worktrees [EXTRACTED 1.00]
+- **Delivery verification, artifact, and release flow** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_13 [INFERRED 0.88]
+- **CI security and artifact pipeline** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_11_01, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_09_02, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_13_02, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_10_02 [INFERRED 0.86]
+- **Production deployment, reliability, and observability feedback loop** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_14 [INFERRED 0.84]
+- **PA-16 Measurement Feedback Loop** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_telemetry, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_16_01, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_16_02, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_16_03, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_16_04, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_16_05 [EXTRACTED 1.00]
+- **PA-18 AI SDLC Integration Layer** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_18, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_01, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_02, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_03, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_04, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_05, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_06, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_07, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_wf_18_08 [EXTRACTED 1.00]
+- **Delivery to Feedback Lifecycle** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_08, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_14, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_unified_process_catalog_pa_16 [EXTRACTED 1.00]
+- **Canonical 18 Process Area Capability Model** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_eighteen_process_area_capability_model, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_01, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_02, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_03, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_04, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_05, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_06, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_07, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_08, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_09, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_10, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_12, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_14, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_15, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_17, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_18 [EXTRACTED 1.00]
+- **Universal Delivery Implementation-to-Release Flow** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_07, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_08, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_09, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_10, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_11 [EXTRACTED 1.00]
+- **Feedback, Reliability, Security, Measurement and AI Governance Flow** — research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_14, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_15, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_18, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_08, research_2026_07_12_canonical_sdlc_process_architecture_consolidated_consolidated_report_pa_09 [EXTRACTED 0.90]
+- **Canonical SDLC Process Area Taxonomy** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_deepseek_v4_flash_research_report_pa12_platform_engineering_idp [EXTRACTED 1.00]
+- **Research Synthesis Artifact Set** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_research_plan, research_2026_07_12_canonical_sdlc_process_architecture_ocg_deepseek_v4_flash_triangulation, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_critique, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_decision_record, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_handoff, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_outline [INFERRED 0.85]
+- **Canonical SDLC 18-Process-Area Taxonomy** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_01_strategy_portfolio_product_direction, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_02_discovery_requirements_product_definition, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_03_ux_product_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_04_architecture_technical_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_05_planning_work_management, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_08_code_review_knowledge_sharing, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_09_testing_qe_verification, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_scope_process_area_10_build_integration_artifact_management [EXTRACTED 1.00]
+- **Test to Continuous Integration and Deployment Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_1_areas_workflow_9_1_test_strategy_planning, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_1_areas_workflow_9_2_test_automation_development_maintenance, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_1_areas_workflow_11_2_deployment_execution_progressive_rollout [EXTRACTED 0.90]
+- **Threat Modeling Security Testing and CI Security Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_1_areas_workflow_13_1_threat_modeling_risk_assessment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_1_areas_workflow_13_2_security_testing_verification [EXTRACTED 0.85]
+- **Planning & Work Management Workflows** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_pa_5, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_5_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_5_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_5_3 [EXTRACTED 1.00]
+- **Measurement, DevEx & Continuous Improvement Workflows** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_16_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_16_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_wf_16_3 [EXTRACTED 1.00]
+- **Discovery to Requirements Validation Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_2_areas_workflow_2_3_requirements_specification_validation [EXTRACTED 0.95]
+- **Implementation, Review & CI/CD Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_pa_7, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_wf_7_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_wf_7_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_pa_8, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_pa_9 [INFERRED 0.90]
+- **Code Review and Knowledge Sharing Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_process_area_8_code_review_knowledge_sharing, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_8_1_structured_code_review, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_8_2_collaborative_programming, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_review_comments, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_knowledge_transfer, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_human_reviewer_approval [EXTRACTED 0.95]
+- **Reliability, Observability and Production Feedback Loop** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_14_1_slo_driven_operations, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_14_2_incident_response_learning, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_15_1_observability_pipeline_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_15_2_production_feedback_continuous_improvement, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_telemetry_data, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_slo_targets, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_improvement_tickets [INFERRED 0.86]
+- **Maintenance, Modernization and Retirement Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_17_1_technical_debt_reduction, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_17_2_strangler_fig_modernization, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_workflow_17_3_system_retirement_decommissioning, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_technical_debt_inventory, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_legacy_system, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_replacement_system, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_3_areas_retired_legacy_components [INFERRED 0.88]
+- **Canonical 18-Process-Area SDLC Model** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa1_strategy_portfolio_product_direction, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa2_discovery_requirements_product_definition, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa3_ux_product_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa4_architecture_technical_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa5_planning_work_management, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa6_development_environment_toolchain, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa7_software_implementation, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa8_code_review_knowledge_sharing, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa9_testing_qe_verification, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa10_build_integration_artifact_management, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa11_ci_release_deployment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa12_platform_engineering_internal_developer_platform, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa13_security_privacy_risk_compliance, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa14_reliability_operations_sre, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa15_observability_production_feedback, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa16_measurement_devex_continuous_improvement, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa17_maintenance_evolution_retirement, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa18_ai_assisted_agentic_software_engineering [EXTRACTED 1.00]
+- **Security as a Cross-Cutting SDLC Concern** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa1_strategy_portfolio_product_direction, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa7_software_implementation, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa11_ci_release_deployment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa13_security_privacy_risk_compliance, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa18_ai_assisted_agentic_software_engineering [EXTRACTED 1.00]
+- **Operational Feedback and Continuous Improvement Loop** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa11_ci_release_deployment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa14_reliability_operations_sre, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa15_observability_production_feedback, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa16_measurement_devex_continuous_improvement, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_research_report_pa17_maintenance_evolution_retirement [EXTRACTED 0.95]
+- **Direction, Delivery, Feedback, and Sustainability Layers** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_decision_record_direction_layer, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_decision_record_delivery_layer, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_decision_record_feedback_layer, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_decision_record_sustainability_layer [EXTRACTED 1.00]
+- **Canonical 18 Process Areas** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_01_strategy, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_02_discovery, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_03_ux_design, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_04_architecture, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_05_planning, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_08_code_review, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_09_testing, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_10_build, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_11_ci_release_deployment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_13_security, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_15_observability, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_16_devex [EXTRACTED 1.00]
+- **Minimum Viable SDLC Critical Path** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_04_architecture, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_09_testing, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_10_build, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_11_ci_release_deployment, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_15_observability, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_16_devex, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_outline_pa_01_strategy [EXTRACTED 1.00]
+- **Canonical Security Stack** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_slsa [EXTRACTED 1.00]
+- **Continuous integration, staging deployment, progressive production delivery, and rollback flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11_3, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11_7 [INFERRED 0.90]
+- **SLOs, incident learning, observability, and delivery measurement** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_14_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_14_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_14_3, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_15_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_15_3, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_16_1 [INFERRED 0.84]
+- **AI-assisted coding, review, and test authoring flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_18_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_18_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_08_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_09_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_07_6 [INFERRED 0.90]
+- **18 Process Areas Form the Canonical Reference Model** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_01, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_02, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_03, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_04, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_05, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_06, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_07, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_08, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_09, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_10, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_12, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_13, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_14, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_15, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_17, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_18 [EXTRACTED 1.00]
+- **Minimum-Viable SDLC Loop** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_04, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_07, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_09, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_10, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_11, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_15, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_16, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_01 [EXTRACTED 1.00]
+- **Agentic Engineering Flow** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_pa_18_agentic_engineering_task, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_explore_plan_implement, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_test_driven_agentic_development, research_2026_07_12_canonical_sdlc_process_architecture_ocg_minimax_m3_research_report_human_review [EXTRACTED 1.00]
+- **Three-Market Landscape Structure** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_primary_apo_market, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_secondary_sdlc_plugins, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_tertiary_agentic_sdlc_saas [EXTRACTED 1.00]
+- **APO Must-Have Capability Bundle** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_verification_gates [EXTRACTED 1.00]
+- **OSS Secondary-Market Vendor Set** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_oh_my_pi, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_silver_bullet, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_bmad, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_ruflo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_zuvo [EXTRACTED 1.00]
+- **Agentic Process Orchestrators Market Participants** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_cc10x, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_ateam [EXTRACTED 0.95]
+- **SDLC Plugins and Methodology Packs Participants** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_zuvo [EXTRACTED 0.95]
+- **Agentic SDLC SaaS and Autonomous Delivery Participants** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_devin, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_codex, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_cursor, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_landscape_landscape_report_tembo [EXTRACTED 0.95]
+- **Mimo v2.5 Comparison Matrix** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_mimo_v2_5_opencode_go_mimo_v2_5_raw_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_mimo_v2_5_opencode_go_mimo_v2_5_raw_zuvo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_mimo_v2_5_opencode_go_mimo_v2_5_raw_oh_my_plugins, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_mimo_v2_5_opencode_go_mimo_v2_5_raw_devin, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_mimo_v2_5_opencode_go_mimo_v2_5_raw_tembo [EXTRACTED 0.95]
+- **Minimax M3 Secondary SDLC Substitute Set** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_minimax_m3_opencode_go_minimax_m3_raw_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_minimax_m3_opencode_go_minimax_m3_raw_zuvo [EXTRACTED 0.95]
+- **Minimax M3 Tertiary Landscape Peer Set** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_minimax_m3_opencode_go_minimax_m3_raw_devin, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_minimax_m3_opencode_go_minimax_m3_raw_tembo [EXTRACTED 0.90]
+- **Silver Bullet APO Inclusion Profile** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_phases_dr_retrieve_ocg_qwen3_7_plus_opencode_go_qwen3_7_plus_raw_silver_bullet [EXTRACTED 0.97]
+- **Primary APO solution set** — s1_silver_bullet, s1_ai_dlc, s1_agentsys, s1_sdlc, s1_deepwork, s1_workflow_manager, s1_turboshovel, s1_cavekit_v3_1, s1_barkain_workflow_orchestrator, s1_conductor, s1_cc10x, s1_director, s1_claude_harness, s1_claude_code_expert, s1_agenthub, s1_ateam [EXTRACTED 0.90]
+- **Secondary SDLC plugin and methodology solution set** — s1_zuvo, s1_gsd_get_shit_done, s1_superpowers, s1_bmad_method, s1_github_spec_kit, s1_superclaude, s1_ruflo_claude_flow, s1_oh_my_pi [EXTRACTED 0.90]
+- **Tertiary agentic SDLC SaaS solution set** — s1_factory, s1_devin, s1_augment_cosmos, s1_tembo [EXTRACTED 0.80]
+- **Primary APO Candidate Cluster** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_silver_bullet_scr_microsoft_conductor [INFERRED 0.88]
+- **Tertiary Agentic SDLC SaaS Peer Group** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_tembo_scr_tembo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_silver_bullet_scr_devin [EXTRACTED 0.92]
+- **Secondary SDLC Plugin Substitute Pool** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_gsd_scr_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_ruflo_scr_ruflo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_sdlc_plugin_scr_zuvo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_silver_bullet_scr_bmad [EXTRACTED 0.98]
+- **Secondary-Market OSS Plugin Substitutes** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_zuvo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_bmad, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_gsd, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_ruflo, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_omp, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_solutions_zuvo_scr_plan_spec_build_test_review_ship [EXTRACTED 0.95]
+- **Cursor Installation and Command Registration Fix Series** — site_changelog_index_v0_51_7, site_changelog_index_v0_51_6, site_changelog_index_v0_51_5, site_changelog_index_v0_51_4 [EXTRACTED 0.95]
+- **Multi-Host Validation and Release Flow** — site_changelog_index_v0_51_0, site_changelog_index_v0_50_5, site_changelog_index_v0_51_1, site_changelog_index_v0_51_3 [INFERRED 0.82]
+- **50-Problem Hook Coverage Audit Scope** — site_gaps_index, site_gaps_index_50_problem_audit, site_gaps_index_hook_coverage, site_gaps_index_agent_reliability, site_gaps_index_process, site_gaps_index_security, site_gaps_index_cost, site_gaps_index_devops [EXTRACTED 0.98]
+- **Artifact Review Triage Cycle** — site_help_concepts_artifact_review_assessor_reviewer, site_help_concepts_artifact_review_assessor_reviewer_findings, site_help_concepts_artifact_review_assessor_artifact_review_assessor, site_help_concepts_artifact_review_assessor_artifact, site_help_concepts_artifact_review_assessor_review_state [EXTRACTED 0.98]
+- **Cross-Artifact Release Review** — site_help_concepts_artifact_review_assessor_cross_artifact_reviewer, site_help_concepts_artifact_review_assessor_alignment, site_help_concepts_artifact_review_assessor_artifact_review_assessor [EXTRACTED 0.96]
+- **Enterprise Certification Proof Surfaces** — site_help_concepts_autonomous_enterprise_status_tri_criteria_e2e_harness, site_help_concepts_autonomous_enterprise_status_strict_clean_evidence, site_help_concepts_autonomous_enterprise_status_generated_certification_artifact [EXTRACTED 1.00]
+- **Composable Workflow Hierarchy** — site_help_concepts_composable_workflow_skill [EXTRACTED 1.00]
+- **Feature Composition Stages** — site_help_concepts_composable_workflow_feature_composition, site_help_concepts_composable_workflow_ship [EXTRACTED 1.00]
+- **Five Documentation Scalability Patterns** — site_help_concepts_documentation_snapshot_pattern, site_help_concepts_documentation_capped_table_pattern, site_help_concepts_documentation_rotation_pattern, site_help_concepts_documentation_summary_archive_pattern, site_help_concepts_documentation_fixed_pattern [EXTRACTED 1.00]
+- **Core Delivery Enforcement System** — site_help_concepts_index_skills, site_help_concepts_index_hooks, site_help_concepts_index_workflow_order, site_help_concepts_index_completion_delivery_gates, site_help_concepts_index_ci_freshness, site_help_concepts_index_prompt_reminders [EXTRACTED 1.00]
+- **Routing Classification and Path Composition Flow** — site_help_concepts_routing_logic_path_composition [EXTRACTED 0.95]
+- **Verification and Completion Audit Gate Flow** — site_help_concepts_verification_verification_md [EXTRACTED 1.00]
+- **Help Center APO Workflow Catalog** — site_help_index_apo_catalog, site_help_index_process_workflow_atomic_flow_flow_step, site_help_index_af_atomic_flows, site_help_index_wf_workflows, site_help_index_85_flow_steps, site_help_index_hook_enforced_silver_orchestration [EXTRACTED 0.98]
+- **Core Silver Bullet Lifecycle Flow** — site_help_reference_index_silver_deploy, site_help_reference_index_silver_canary [EXTRACTED 0.98]
+- **Silver Feature Delivery Lifecycle** — site_help_workflows_index_af_bootstrap, site_help_workflows_index_af_clarify, site_help_workflows_index_af_decide, site_help_workflows_index_af_specify, site_help_workflows_index_af_completion_audit [EXTRACTED 0.98]
+- **Silver Benchmark Measurement Flow** — site_help_workflows_index_af_document [EXTRACTED 1.00]
+- **Clarification Workflow Steps** — site_help_workflows_silver_clarify_frame_problem, site_help_workflows_silver_clarify_explore_options, site_help_workflows_silver_clarify_pressure_test, site_help_workflows_silver_clarify_converge, site_help_workflows_silver_clarify_handoff [EXTRACTED 1.00]
+- **Deep research decision and handoff lifecycle** — site_help_workflows_silver_deep_research_research_directory [EXTRACTED 1.00]
+- **WF-SILVER-FAST Bounded Tier 2 Composition** — site_help_workflows_silver_fast_wf_silver_fast, site_help_workflows_silver_fast_af_fast_path [EXTRACTED 1.00]
+- **WF-SILVER-FEATURE Standard Composition Chain** — site_help_workflows_silver_feature_wf_silver_feature, site_help_workflows_silver_feature_af_bootstrap, site_help_workflows_silver_feature_af_orient, site_help_workflows_silver_feature_af_clarify, site_help_workflows_silver_feature_af_decide, site_help_workflows_silver_feature_af_specify, site_help_workflows_silver_feature_af_design_contract, site_help_workflows_silver_feature_wf_post_exec_gates [EXTRACTED 1.00]
+- **WF-POST-EXEC-GATES Canonical Post-Execution Tail** — site_help_workflows_silver_feature_wf_post_exec_gates [EXTRACTED 1.00]
+- **WF-SILVER-FORENSICS composition: DEBUG → DOCUMENT → VALIDATE** — site_help_workflows_silver_forensics_workflow [EXTRACTED 1.00]
+- **WF-SILVER-INCIDENT composition: BLAST_RADIUS → DEBUG → SECURE → VERIFY → DOCUMENT** — site_help_workflows_silver_incident_workflow [EXTRACTED 1.00]
+- **Incident exit gate evidence** — site_help_workflows_silver_incident_workflow, site_help_workflows_silver_incident_incident_artifact, site_help_workflows_silver_incident_canary_evidence, site_help_workflows_silver_incident_corrective_actions [EXTRACTED 1.00]
+- **Multi-Model Orchestration Primitive** — site_help_workflows_silver_multi_ai_task_budgets, site_help_workflows_silver_multi_ai_task_work_item_manifests [EXTRACTED 1.00]
+- **Planning State Mutation and Validation Lifecycle** — site_help_workflows_silver_process_maintenance_planning_roadmap_md, site_help_workflows_silver_process_maintenance_planning_state_md [INFERRED 0.90]
+- **WF-SILVER-FEATURE Lifecycle Chain** — site_help_workflows_silver_router_review, site_help_workflows_silver_router_verify, site_help_workflows_silver_router_secure [EXTRACTED 1.00]
+- **Spec elicitation and artifact review pipeline** — site_help_workflows_silver_spec_wf_spec, site_help_workflows_silver_spec_socratic_elicitation, site_help_workflows_silver_spec_assumption_consolidation, site_help_workflows_silver_spec_spec_artifact, site_help_workflows_silver_spec_requirements_artifact [EXTRACTED 1.00]
+- **Spec artifacts, planning, and traceability contract** — site_help_workflows_silver_spec_spec_artifact, site_help_workflows_silver_spec_requirements_artifact, site_help_workflows_silver_spec_sb_planning, site_help_workflows_silver_spec_sb_hooks [EXTRACTED 1.00]
+- **UI workflow composition** — site_help_workflows_silver_ui_wf_silver_ui [EXTRACTED 1.00]
+- **Validation Spec-to-Plan-to-Report Flow** — site_help_workflows_silver_validate_validate_workflow, site_help_workflows_silver_validate_spec_md, site_help_workflows_silver_validate_plan_md, site_help_workflows_silver_validate_validation_md [EXTRACTED 0.98]
+- **Validation Lifecycle Hooks** — site_help_workflows_silver_validate_validate_workflow, site_help_workflows_silver_validate_spec_floor_check_sh, site_help_workflows_silver_validate_pr_traceability_sh, site_help_workflows_silver_validate_uat_gate_sh [EXTRACTED 0.95]
+- **Artifact Review Assessment Loop** — skills_artifact_review_assessor_skill_artifact_review_assessor, skills_artifact_review_assessor_skill_must_fix, skills_artifact_review_assessor_skill_nice_to_have, skills_artifact_review_assessor_skill_workflow_md [EXTRACTED 0.94]
+- **Review Loop Lifecycle Flow** — skills_artifact_reviewer_rules_review_loop_invoke_reviewer, skills_artifact_reviewer_rules_review_loop_record_round, skills_artifact_reviewer_rules_review_loop_emit_review_metric, skills_artifact_reviewer_rules_review_loop_orchestrator_apply_fix, skills_artifact_reviewer_rules_review_loop_completion_verification_gate [EXTRACTED 1.00]
+- **Seven DevOps Quality Gate Dimensions** — skills_devops_quality_gates_modularity, skills_devops_quality_gates_scalability, skills_devops_quality_gates_reliability, skills_devops_quality_gates_testability, skills_devops_quality_gates_observability, skills_devops_quality_gates_change_safety [EXTRACTED 1.00]
+- **Planning and Review Quality Enforcement Skills** — skills_modularity, skills_reliability, skills_reusability [EXTRACTED 1.00]
+- **Scalable Secure Architecture Controls** — skills_scalability_skill_stateless_by_default, skills_security_skill_input_validation_at_boundaries [INFERRED 0.86]
+- **Single-task parent-supervised delegation sibling family** — skills_silver_agent_codex_skill_document, skills_silver_agent_cursor_skill_document, skills_silver_agent_opencode_skill_document [EXTRACTED 1.00]
+- **Shared delegation lifecycle and completion evidence contract** — skills_silver_agent_codex_skill_document, skills_silver_agent_cursor_skill_document, skills_silver_agent_opencode_skill_document, concept_delegation_brief_checkpoint_escalation_lifecycle [EXTRACTED 1.00]
+- **Multi AI Parallel Research Phases** — skills_silver_deep_research_multi_ai_dr_retrieve, skills_silver_deep_research_multi_ai_dr_triangulate, skills_silver_deep_research_multi_ai_dr_critique [EXTRACTED 1.00]
+- **Landscape Preview Theme, Chart, and Navigation Shell** — skills_silver_deep_research_multi_ai_assets_landscape_preview_template, skills_silver_deep_research_multi_ai_assets_landscape_preview_template_light_theme, skills_silver_deep_research_multi_ai_assets_landscape_preview_template_dark_theme, skills_silver_deep_research_multi_ai_assets_landscape_preview_template_chart_system, skills_silver_deep_research_multi_ai_assets_landscape_preview_template_solution_nav [EXTRACTED 1.00]
+- **Deep Research Internal Phase Pipeline** — dr_scope_phase, dr_plan_phase, dr_retrieve_phase, dr_triangulate_phase, dr_outline_phase, dr_synthesize_phase, dr_critique_phase, dr_refine_phase, dr_package_phase [EXTRACTED 1.00]
+- **Nine-Phase Deep Research Pipeline** — skills_silver_deep_research_dr_scope, skills_silver_deep_research_dr_plan, skills_silver_deep_research_dr_retrieve, skills_silver_deep_research_dr_triangulate, skills_silver_deep_research_dr_outline, skills_silver_deep_research_dr_synthesize, skills_silver_deep_research_dr_critique, skills_silver_deep_research_dr_refine, skills_silver_deep_research_dr_package [EXTRACTED 1.00]
+- **Research Modes Select Phase Subsets** — skills_silver_deep_research_quick_mode, skills_silver_deep_research_standard_mode, skills_silver_deep_research_deep_mode, skills_silver_deep_research_ultradeep_mode, skills_silver_deep_research_dr_scope, skills_silver_deep_research_dr_plan, skills_silver_deep_research_dr_retrieve, skills_silver_deep_research_dr_triangulate, skills_silver_deep_research_dr_outline, skills_silver_deep_research_dr_synthesize, skills_silver_deep_research_dr_critique, skills_silver_deep_research_dr_refine, skills_silver_deep_research_dr_package [EXTRACTED 1.00]
+- **Pack-Driven Landscape and Comparison Flow** — skills_silver_deep_research_reference_landscape_category_packs_readme_document, skills_silver_deep_research_reference_landscape_consolidation_guide_document, skills_silver_deep_research_reference_landscape_prompt_template_document, skills_silver_deep_research_reference_comparator_readme_document, skills_silver_deep_research_reference_comparator_capability_framework_document [INFERRED 0.94]
+- **Evidence Quality Control Loop** — skills_silver_deep_research_dr_retrieve, skills_silver_deep_research_evidence_jsonl, skills_silver_deep_research_dr_triangulate, skills_silver_deep_research_dr_critique, skills_silver_deep_research_dr_refine, skills_silver_deep_research_claims_jsonl, skills_silver_deep_research_research_report_md, skills_silver_deep_research_evidence_quality_control [INFERRED 0.85]
+- **Deep Research Report Workflow** — skills_silver_deep_research_reference_search_orchestration_document, skills_silver_deep_research_reference_prompts_data_collection_document, skills_silver_deep_research_reference_prompts_outline_document, skills_silver_deep_research_reference_prompts_chapter_agent_document, skills_silver_deep_research_reference_prompts_assembly_document, skills_silver_deep_research_reference_report_assembly_document [INFERRED 0.93]
+- **Evidence Quality and Citation Validation Flow** — skills_silver_deep_research_reference_source_grading_document, skills_silver_deep_research_reference_prompts_data_collection_document, skills_silver_deep_research_reference_prompts_outline_document, skills_silver_deep_research_reference_report_blocks_confidence_assessment_document, skills_silver_deep_research_reference_prompts_assembly_document [INFERRED 0.91]
+- **Research Report Rendering Contract** — skills_silver_deep_research_templates_report_template, skills_silver_deep_research_templates_mckinsey_report_template, skills_silver_deep_research_templates_mckinsey_report_template_content, skills_silver_deep_research_templates_mckinsey_report_template_bibliography, skills_silver_deep_research_templates_report_template_bibliography [INFERRED 0.86]
+- **Valid English Report Evidence Set** — skills_silver_deep_research_tests_fixtures_valid_report, skills_silver_deep_research_tests_fixtures_valid_report_source_1, skills_silver_deep_research_tests_fixtures_valid_report_source_2, skills_silver_deep_research_tests_fixtures_valid_report_source_3, skills_silver_deep_research_tests_fixtures_valid_report_source_4, skills_silver_deep_research_tests_fixtures_valid_report_source_5, skills_silver_deep_research_tests_fixtures_valid_report_source_6, skills_silver_deep_research_tests_fixtures_valid_report_source_7, skills_silver_deep_research_tests_fixtures_valid_report_source_8, skills_silver_deep_research_tests_fixtures_valid_report_source_9, skills_silver_deep_research_tests_fixtures_valid_report_source_10 [EXTRACTED 1.00]
+- **Silver Bullet Fresh Setup Lifecycle** — skills_silver_init_skill_fresh_setup, skills_silver_init_skill_config_write, skills_silver_init_skill_docs_bootstrap, skills_silver_init_skill_workflow_files, skills_silver_init_skill_hook_registration, skills_silver_init_skill_capability_probe [EXTRACTED 0.98]
+- **Recommended Tool Opt-in Stack** — agentmemory_tool, rtk_tool, context_mode_tool, leanctx_tool [EXTRACTED 0.96]
+- **multi-ai-task-v2 Execution Bundle** — skills_silver_multi_ai_task_skill_document, skills_silver_multi_ai_task_pool_algebra, skills_silver_multi_ai_task_dispatch_flow, skills_silver_multi_ai_task_artifact_contract, skills_silver_multi_ai_task_work_item_manifest, skills_silver_multi_ai_task_dispatch_ledger, skills_silver_multi_ai_task_result_index [EXTRACTED 0.95]
+- **Retrospective improvement and knowledge capture flow** — skills_silver_retro_skill, silver_add [EXTRACTED 0.95]
+- **Review request, review, and progressive review-fix lifecycle** — skills_silver_review_request_skill, skills_silver_review_skill, skills_silver_review_fix_ladder_skill [INFERRED 0.88]
+- **UI browser evidence flow** — skills_silver_ui_review_skill, skills_silver_verify_skill, host_browser_mcp_tool [INFERRED 0.85]
+- **Recommended tools update stack** — skills_silver_update_skill, agentmemory_tool, rtk_tool, context_mode_tool, leanctx_tool [EXTRACTED 0.95]
+- **Silver Bullet planning artifact lifecycle** — skills_silver_ui_review_skill, skills_silver_undo_skill, skills_silver_validate_skill, skills_silver_verify_skill, skills_silver_worktree_skill [INFERRED 0.85]
+- **Planning and Review Quality Enforcement** — skills_scalability_skill_scalability, skills_security_skill_security [INFERRED 0.92]
+- **Decision Research Pipeline** — templates_orchestrator_workers_decide, skills_silver_deep_research_skill_silver_deep_research [EXTRACTED 1.00]
+- **Shared orchestrator worker execution contract** — templates_orchestrator_workers_release, templates_orchestrator_workers_review_request, templates_orchestrator_workers_review_triage, templates_orchestrator_workers_review, templates_orchestrator_workers_router, templates_orchestrator_workers_secure, templates_orchestrator_workers_security, templates_orchestrator_workers_ship, templates_orchestrator_workers_specify, templates_orchestrator_workers_ui_quality, templates_orchestrator_workers_validate, templates_orchestrator_workers_verify, graphify, agentmemory, rtk_context_mode, silver_bullet_parent_orchestrator [EXTRACTED 1.00]
+- **Live E2E Test Scenario Suite** — tests_live_readme_test_live_enforcement, tests_live_readme_test_live_skill_recording, tests_live_readme_test_live_full_scenario, tests_live_readme_test_live_doc_scheme, tests_live_readme_test_silver_init_migration, tests_live_readme_test_live_review_fix_ladder_smoke [EXTRACTED 0.95]
+- **Requirements to plan, verify, and ship** — tests_skill_scenarios_silver_spec_silver_spec, tests_skill_scenarios_silver_plan_silver_plan, tests_skill_scenarios_silver_verify_silver_verify, tests_skill_scenarios_silver_ship_silver_ship [INFERRED 0.78]
+- **Review, triage, verification, and fix flow** — tests_skill_scenarios_silver_review_silver_review, tests_skill_scenarios_silver_review_fix_ladder_silver_review_fix_ladder, tests_skill_scenarios_silver_triage_silver_triage, tests_skill_scenarios_silver_verify_silver_verify [EXTRACTED 0.95]
+- **Testability, TDD, test engineering, and verification** — tests_skill_scenarios_testability_testability, tests_skill_scenarios_tdd_tdd, tests_skill_scenarios_silver_test_silver_test, tests_skill_scenarios_verify_tests_verify_tests [INFERRED 0.85]
+- **Brute-Force Software Stack responsive and theme variants** — visual_audit_responsive_full_2026_06_30_post_fix_brute_dark_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_brute_dark_375px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_brute_dark_768px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_brute_light_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_brute_light_375px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_brute_light_768px_screenshot [EXTRACTED 1.00]
+- **Silver Bullet Gaps Report responsive audit views** — visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_1280px_mid, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_375px_footer, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_375px_hero, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_375px_mid, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_768px_footer, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_768px_hero, visual_audit_responsive_full_2026_06_30_post_fix_gaps_dark_768px_mid [EXTRACTED 1.00]
+- **Responsive Gaps Report views** — visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_1280px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_1280px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_1280px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_375px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_375px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_375px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_gaps_light_768px_footer_image [EXTRACTED 1.00]
+- **Composable Workflow page responsive visual-audit captures** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_composable_workflow_light_375px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_composable_workflow_light_375px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_composable_workflow_light_768px_image [EXTRACTED 1.00]
+- **Operational Efficiency page responsive visual-audit captures** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_dark_768px_image [EXTRACTED 1.00]
+- **Light-theme responsive audit of the Operational Efficiency help page** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_cost_optimization_light_768px_image [EXTRACTED 1.00]
+- **Dark-theme responsive audit of the Core Concepts help page** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_dark_1280px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_dark_1280px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_dark_1280px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_dark_375px_footer_image [EXTRACTED 1.00]
+- **Responsive Routing Logic page captures** — _visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_dark_1280px_image, _visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_dark_375px_footer_image, _visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_dark_375px_hero_image, _visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_dark_375px_mid_image, _visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_dark_768px_image [EXTRACTED 1.00]
+- **Routing Logic responsive screenshot set** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_light_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_light_375px_footer_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_light_375px_hero_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_light_375px_mid_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_routing_logic_light_768px_screenshot [EXTRACTED 1.00]
+- **Session Startup responsive screenshot set** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_session_startup_dark_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_session_startup_dark_375px_screenshot [EXTRACTED 1.00]
+- **Verification page responsive visual variants** — visual_audit_responsive_full_2026_06_30_post_fix_help_concepts_verification_light_375px_image [EXTRACTED 1.00]
+- **Help Center homepage responsive visual variants** — visual_audit_responsive_full_2026_06_30_post_fix_help_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_dark_375px_image [EXTRACTED 1.00]
+- **DevOps & IaC Workflow responsive light-theme screenshots** — visual_audit_responsive_full_2026_06_30_post_fix_help_devops_workflow_light_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_devops_workflow_light_375px_footer_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_devops_workflow_light_375px_hero_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_devops_workflow_light_375px_mid_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_devops_workflow_light_768px_screenshot [EXTRACTED 1.00]
+- **Getting Started responsive dark-theme screenshots** — visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_dark_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_dark_375px_footer_screenshot [EXTRACTED 1.00]
+- **Responsive Getting Started Help Center visual audit screenshots** — visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_dark_375px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_dark_375px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_dark_768px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_light_375px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_light_375px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_help_getting_started_light_375px_mid_image [EXTRACTED 1.00]
+- **Responsive variants of Help Center Reference page** — visual_audit_responsive_full_2026_06_30_post_fix_help_reference_dark_375px_hero, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_dark_375px_mid, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_dark_768px_hero, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_dark_768px_mid, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_1280px_footer [EXTRACTED 1.00]
+- **Responsive visual audit captures of Silver Bullet Command Reference** — visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_1280px_hero_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_1280px_mid_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_375px_footer_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_375px_hero_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_375px_mid_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_768px_footer_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_reference_light_768px_hero_screenshot [EXTRACTED 1.00]
+- **Responsive light workflows page audit views** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_light_375px_mid_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_light_768px_screenshot [EXTRACTED 1.00]
+- **Responsive benchmark workflow page audit views** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_benchmark_dark_1280px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_benchmark_dark_375px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_benchmark_dark_768px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_benchmark_light_1280px_screenshot [EXTRACTED 1.00]
+- **Responsive theme and viewport variants of the /silver:canary workflow help page** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_canary_dark_375px_screenshot, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_canary_dark_768px_screenshot [EXTRACTED 1.00]
+- **Responsive light-theme variants of the Silver DevOps workflow page** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_devops_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_devops_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_devops_light_768px_image [EXTRACTED 1.00]
+- **Responsive and theme variants of the Silver Fast workflow page** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_fast_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_fast_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_fast_dark_768px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_fast_light_1280px_image [EXTRACTED 1.00]
+- **Responsive visual-audit variants of the /silver:process-maintenance help page** — _visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_process_maintenance_dark_1280px_screenshot, _visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_process_maintenance_dark_375px_screenshot [EXTRACTED 1.00]
+- **Process maintenance catalog flow** — site_help_workflows_silver_process_maintenance, wf_process_maintenance, af_phase_manage, af_document, af_validate [EXTRACTED 1.00]
+- **Refactor post-execution gate chain** — site_help_workflows_silver_refactor, af_execute, af_verify, af_review_request, af_review, af_review_triage, af_secure, af_validate, af_quality_gate, af_branch_finish, af_completion_audit, af_ship [EXTRACTED 1.00]
+- **Responsive visual-audit variants of the Silver Refactor workflow page** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_refactor_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_refactor_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_refactor_light_768px_image [INFERRED 0.98]
+- **Responsive and theme variants of the Silver Release workflow page** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_release_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_release_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_release_dark_768px_image [INFERRED 0.98]
+- **Silver Spec responsive light-theme views** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_spec_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_spec_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_spec_light_768px_image [INFERRED 0.99]
+- **Silver Test responsive and theme views** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_test_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_test_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_test_dark_768px_image [INFERRED 0.99]
+- **Responsive full visual audit captures** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_ui_light_768px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_768px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_768px_image [EXTRACTED 1.00]
+- **Silver Validate responsive theme and viewport variants** — visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_dark_768px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_1280px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_375px_image, visual_audit_responsive_full_2026_06_30_post_fix_help_workflows_silver_validate_light_768px_image [EXTRACTED 1.00]
+- **Silver Bullet homepage responsive visual audit** — visual_audit_responsive_full_2026_06_30_post_fix_home_dark_1280px_footer, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_1280px_hero, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_1280px_mid, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_375px_footer, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_375px_hero, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_375px_mid, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_768px_footer [EXTRACTED 1.00]
+- **Silver Bullet homepage responsive visual audit** — visual_audit_responsive_full_2026_06_30_post_fix_home_dark_768px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_home_dark_768px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_home_light_1280px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_home_light_1280px_hero_image, visual_audit_responsive_full_2026_06_30_post_fix_home_light_1280px_mid_image, visual_audit_responsive_full_2026_06_30_post_fix_home_light_375px_footer_image, visual_audit_responsive_full_2026_06_30_post_fix_home_light_375px_hero_image [EXTRACTED 1.00]
+- **Responsive Terms of Use Render Set** — _visual_audit_responsive_full_2026_06_30_post_fix_terms_light_375px_image, _visual_audit_responsive_full_2026_06_30_post_fix_terms_light_768px_image [INFERRED 0.98]
+- **AI-Assisted Engineering Workflow Family** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_process_area_18, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_1, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_2, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_3, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_4, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_5, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_6, research_2026_07_12_canonical_sdlc_process_architecture_ocg_kimi_k2_7_code_subagent_4_areas_wf_18_7 [EXTRACTED 1.00]
+- **Canonical SDLC Evidence Stack** — research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_decision_record_taxonomy, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_dora_research, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_google_sre, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_nist_ssdf, research_2026_07_12_canonical_sdlc_process_architecture_ocg_mimo_v2_5_owasp [INFERRED 0.86]
+- **Multi-Market Agentic SDLC Landscape** — research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_apo_market, research_2026_07_20_agentic_sdlc_orchestration_landscape_multimarket_final_factory [EXTRACTED 1.00]
+
+## Communities (3752 total, 1946 thin omitted)
 
 ### Community 0 - "Silver Feature"
 Cohesion: 0.03
-Nodes (205): Search Output for Silver Quality Gates, GSD Ship, GSD Verify Work, ai-llm-safety, FLOW 1, FLOW 10, FLOW 11, FLOW 12 (+197 more)
+Nodes (210): DevOps Cycle Workflow, GSD Ship, GSD Verify Work, ai-llm-safety, FLOW 1, FLOW 10, FLOW 11, FLOW 12 (+202 more)
 
 ### Community 1 - "Silver Bullet"
 Cohesion: 0.02
-Nodes (157): Dependency Orchestration, Final-Delivery Enforcement, Precondition Checks, Spec Kit Constitution to Implement Phases, Spec-Driven Constitution Plan and Tasks, DevOps Routing, Feature Delivery, PROC-SB-SE-DEVOPS (+149 more)
+Nodes (166): Dependency Orchestration, Final-Delivery Enforcement, Precondition Checks, Spec Kit Constitution to Implement Phases, Superpowers Coding Workflow, Spec-Driven Constitution Plan and Tasks, DevOps Routing, Feature Delivery (+158 more)
 
 ### Community 2 - "Changelog"
 Cohesion: 0.01
 Nodes (367): 0.1.0 (2026-03-31), [0.28.0] — 2026-04-27, [0.29.0] — 2026-04-28, [0.29.1] — 2026-04-28, [0.30.0] — 2026-04-28, [0.31.0] — 2026-04-28, [0.31.1] — 2026-05-06, [0.32.1] — 2026-05-07 (+359 more)
 
 ### Community 3 - "Website Content Audit"
-Cohesion: 0.04
-Nodes (82): Bare Instruction Interception, Configuration, Content Drift, Website Content Audit, File Safety Rules, GSD Execute, GSD Knowledge, GSD Plan (+74 more)
+Cohesion: 0.03
+Nodes (78): gsd-complete-milestone, Bare Instruction Interception, Configuration, Content Drift, Website Content Audit, File Safety Rules, GSD Execute, GSD Knowledge (+70 more)
 
 ### Community 4 - "Order Validation API"
 Cohesion: 0.02
@@ -3789,21 +4221,21 @@ Nodes (100): CompletedProcess, audit_fingerprint(), normalize_text(), Canonical 
 Cohesion: 0.03
 Nodes (108): Agent Runtimes, AI-Assisted Code, AI-Generated Tests, Contract Testing, Deprecation Policy, Foundation Models, Google Reviewer Guidelines, Hermetic Content-Addressed Builds (+100 more)
 
-### Community 7 - "AF-DOCUMENT"
+### Community 7 - "silver:deep-research"
 Cohesion: 0.03
-Nodes (90): silver-clarify Runtime Command, silver-ensure-docs Runtime Command, silver-validate Runtime Command, AF-PHASE-MANAGE, FLOW 16, FLOW 17, FLOW 2, FLOW 3 (+82 more)
+Nodes (76): Need Profile Interview, silver-clarify Runtime Command, silver-ensure-docs Runtime Command, silver-validate Runtime Command, silver:clarify, Feature Scope, Multi Model Research, Solution Comparison (+68 more)
 
 ### Community 8 - "skill-source/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
-Nodes (77): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_known_solutions(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim() (+69 more)
+Nodes (71): _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, build_chart_data(), _build_chart_support(), build_link_pairs() (+63 more)
 
 ### Community 9 - "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
-Cohesion: 0.05
-Nodes (76): Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, build_chart_data() (+68 more)
+Cohesion: 0.06
+Nodes (73): build_overview_seeds(), Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, build_chart_data() (+65 more)
 
 ### Community 10 - "Graphify"
 Cohesion: 0.04
-Nodes (79): Agentmemory, Graphify Dependency Flow, composer-2.5, Completion Evidence Gate, Context Mode Integration, Delegation Directive Contract, ownership_scope, Structured STATUS block (+71 more)
+Nodes (89): Agentmemory, Graphify Dependency Flow, composer-2.5, Completion Evidence Gate, Context Mode Integration, Delegation Directive Contract, Node Project Scaffold, ownership_scope (+81 more)
 
 ### Community 11 - "SB Prior-Art User Prompt"
 Cohesion: 0.05
@@ -3811,7 +4243,7 @@ Nodes (43): OPA Rego Policy and Decision Logs, OPA Policy as Code, Aider, Cursor
 
 ### Community 12 - "codex/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
-Nodes (75): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution… (+67 more)
+Nodes (77): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_known_solutions(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim() (+69 more)
 
 ### Community 13 - "enterprise-e2e-outcome-assessment.sh"
 Cohesion: 0.06
@@ -3819,19 +4251,19 @@ Nodes (57): enterprise-e2e-outcome-assessment.sh script, enterprise_e2e_outcome_
 
 ### Community 14 - "LeanCTX"
 Cohesion: 0.03
-Nodes (98): Recommended Tools Opt-In, RTK, RTK Dependency Flow, LeanCTX Dependency Flow, Recommended Tools Reconciliation, RTK, Context Mode, hooks.json (+90 more)
+Nodes (97): Recommended Tools Opt-In, RTK, RTK Dependency Flow, LeanCTX Dependency Flow, Recommended Tools Reconciliation, RTK, Context Mode, hooks.json (+89 more)
 
 ### Community 15 - "Artifact Review Assessor"
 Cohesion: 0.03
-Nodes (80): DISMISS Findings, MUST-FIX Findings, NICE-TO-HAVE Findings, FLOW 5, WF-SILVER-CONTENT, REQUIREMENTS.md, ROADMAP.md, SPEC.md (+72 more)
+Nodes (78): DISMISS Findings, MUST-FIX Findings, NICE-TO-HAVE Findings, FLOW 5, WF-SILVER-CONTENT, REQUIREMENTS.md, ROADMAP.md, SPEC.md (+70 more)
 
 ### Community 16 - "silver:review"
-Cohesion: 0.06
-Nodes (98): Extensibility, Modularity, Reliability, Reusability, Impure Shell, Pure Core, Pure Business Logic, /testability — Testable Design Enforcement, Testability Checklist (+90 more)
+Cohesion: 0.04
+Nodes (127): DevOps Quality Gates, record-skill Marker Writer, Extensibility, Modularity, Reliability, Reusability, silver:deploy Skill, silver:devops Skill (+119 more)
 
 ### Community 17 - "Prior-Art Landscape GLM 5.2"
 Cohesion: 0.04
-Nodes (82): Aider, Aider Architect Editor Split, OpenHands CodeAct Sandbox Loop, Agentic SDLC Frameworks, Anthropic Building Effective Agents, Anthropic Orchestrator-Workers Pattern, Antigravity Workflows Agents Skills Architecture, Antigravity Ultimate SDLC Framework (+74 more)
+Nodes (85): OpenHands CodeAct Sandbox Loop, Agentic SDLC Frameworks, Anthropic Building Effective Agents, Anthropic Orchestrator-Workers Pattern, Antigravity Workflows Agents Skills Architecture, Antigravity Ultimate SDLC Framework, AutoGen, BMAD Method / Devin (+77 more)
 
 ### Community 18 - "silver:deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
@@ -3839,7 +4271,7 @@ Nodes (77): build_overview_seeds(), Load pack from need_profile; return None whe
 
 ### Community 19 - "classify_solutions"
 Cohesion: 0.10
-Nodes (67): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+59 more)
+Nodes (63): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+55 more)
 
 ### Community 20 - "Consolidated SDLC Process Architecture Report"
 Cohesion: 0.05
@@ -3850,28 +4282,28 @@ Cohesion: 0.11
 Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+44 more)
 
 ### Community 22 - "classify_solutions"
+Cohesion: 0.09
+Nodes (69): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), build_overview_seeds(), catalog_entries_from_pack(), _dedupe_preserve_order() (+61 more)
+
+### Community 23 - "classify_solutions"
 Cohesion: 0.10
 Nodes (63): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+55 more)
 
-### Community 23 - "classify_solutions"
-Cohesion: 0.06
-Nodes (80): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), build_overview_seeds(), catalog_entries_from_pack(), category_packs_dir() (+72 more)
-
 ### Community 24 - "Claude Code"
-Cohesion: 0.06
-Nodes (47): Claude Code Hook System, Runtime Extensibility Comparison, Bash hooks.json Protocol, Claude Code Hooks Reference, Codex, Codex Hooks Reference, Stop and SubagentStop Completion Gates, Cursor (+39 more)
+Cohesion: 0.04
+Nodes (67): Claude Agent Tool Frontmatter, Claude Code Recursive Nesting Conflict, Cross-Model Conflicts — Subagent Nesting Research, nicobailon/pi-subagents, OpenCode Subagent Nesting Conflict, OpenCode permission.task Configuration, Pi Extension Subagents Conflict, OpenCode TaskAgentTools (+59 more)
 
 ### Community 25 - "codex/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py"
-Cohesion: 0.10
-Nodes (54): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+46 more)
+Cohesion: 0.11
+Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+44 more)
 
 ### Community 26 - "classify_solutions"
 Cohesion: 0.10
 Nodes (63): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+55 more)
 
 ### Community 27 - "skill-source/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py"
-Cohesion: 0.11
-Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+44 more)
+Cohesion: 0.10
+Nodes (54): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+46 more)
 
 ### Community 28 - "Enterprise E2E Host Certification Methodology"
 Cohesion: 0.03
@@ -3886,8 +4318,8 @@ Cohesion: 0.09
 Nodes (59): add_platform(), _all_categories(), _all_features(), _apply_col_styles(), _backfill_formulas(), _cache_col_styles(), _clone_style(), _compute_score() (+51 more)
 
 ### Community 31 - "runtime-paths.sh"
-Cohesion: 0.05
-Nodes (33): nofollow-guard.sh script, sb_runtime_skill_receipt_dirs(), runtime-paths.sh script, trivial-bypass.sh script, assert_field(), test-cursor-hook-bridge.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, fail() (+25 more)
+Cohesion: 0.04
+Nodes (41): nofollow-guard.sh script, sb_runtime_skill_receipt_dirs(), runtime-paths.sh script, trivial-bypass.sh script, assert_eq(), assert_fail(), assert_ok(), test-core-rules-integrity.sh script (+33 more)
 
 ### Community 32 - "codex/silver-deep-research/scripts/matrix_ops.py"
 Cohesion: 0.09
@@ -3903,23 +4335,23 @@ Nodes (59): add_platform(), _all_categories(), _all_features(), _apply_col_style
 
 ### Community 35 - "/silver:init"
 Cohesion: 0.03
-Nodes (70): bypassPermissions Mode, Forensics Security Boundary, GitHub Account Takeover, Invocation-Based Enforcement, LLM Instruction-Following Boundary, Overall Risk: High, Documentation Prompt Injection Risk, SENTINEL Audit Report (+62 more)
+Nodes (64): bypassPermissions Mode, Forensics Security Boundary, GitHub Account Takeover, Invocation-Based Enforcement, LLM Instruction-Following Boundary, Overall Risk: High, Documentation Prompt Injection Risk, SENTINEL Audit Report (+56 more)
 
 ### Community 36 - "site-session.sh"
 Cohesion: 0.05
 Nodes (36): sb_live_publish_evidence_valid(), sb_site_prompt_is_agent_delegation_intent(), sb_site_session_active(), sb_site_session_gates_apply(), sb_site_session_has_site_work(), sb_site_session_init_vloops(), sb_site_session_mark_live_claim_pending(), sb_site_session_mark_push_intent() (+28 more)
 
 ### Community 37 - "detach-background.sh"
-Cohesion: 0.08
-Nodes (31): codex-r2-force1516-driver.sh script, codex-r2-matrix-driver.sh script, codex-r2-tierb-smoke-driver.sh script, codex-r8-force1516-driver.sh script, codex-r8-force16-only-driver.sh script, codex-r8-force716-driver.sh script, codex-r8-tierbc-driver.sh script, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY (+23 more)
+Cohesion: 0.07
+Nodes (35): codex-r2-force1516-driver.sh script, codex-r2-matrix-driver.sh script, codex-r2-tierb-smoke-driver.sh script, codex-r8-force1516-driver.sh script, codex-r8-force16-only-driver.sh script, codex-r8-force716-driver.sh script, codex-r8-tierbc-driver.sh script, round6-matrix-driver.sh script (+27 more)
 
 ### Community 38 - "run_ec"
 Cohesion: 0.06
 Nodes (29): append_jsonl(), classify_claim(), cmd_add(), cmd_extract(), cmd_list(), cmd_stats(), compute_claim_id(), extract_sentences() (+21 more)
 
 ### Community 39 - "properties"
-Cohesion: 0.05
-Nodes (50): items, minItems, type, pattern, type, items, type, description (+42 more)
+Cohesion: 0.04
+Nodes (57): items, type, items, minItems, type, pattern, type, items (+49 more)
 
 ### Community 40 - "run_ec"
 Cohesion: 0.06
@@ -3939,11 +4371,11 @@ Nodes (49): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERA
 
 ### Community 44 - "load_category_pack"
 Cohesion: 0.06
-Nodes (17): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., Merge need_profile overrides onto the base category pack., resolve_pack_from_need_profile(), CategoryPackLoaderTests (+9 more)
+Nodes (13): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., CategoryPackLoaderTests, CategoryPackSchemaTests, Unit tests for category market pack schema and loader. (+5 more)
 
-### Community 45 - "skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py"
-Cohesion: 0.18
-Nodes (4): MultiMarketChartTests, MultiMarketMaterializeTests, MultiMarketPackTests, Multi-market landscape engine contracts.
+### Community 45 - "load_category_pack"
+Cohesion: 0.06
+Nodes (17): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., Merge need_profile overrides onto the base category pack., resolve_pack_from_need_profile(), CategoryPackLoaderTests (+9 more)
 
 ### Community 46 - "Canonical SDLC Process Architecture Research Report"
 Cohesion: 0.07
@@ -3955,7 +4387,7 @@ Nodes (24): BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(
 
 ### Community 48 - "Silver Bullet Prior-Art Landscape"
 Cohesion: 0.06
-Nodes (49): AutoGen AgentChat and Handoffs, Cline, CrewAI Flows and Crews, Cursor, Dagger, Silver Bullet Prior-Art Landscape, GSD, LangGraph Stateful DAG and Checkpoints (+41 more)
+Nodes (50): Aider, Aider Architect Editor Split, AutoGen AgentChat and Handoffs, Cline, CrewAI Flows and Crews, Cursor, Dagger, Silver Bullet Prior-Art Landscape (+42 more)
 
 ### Community 49 - "properties"
 Cohesion: 0.05
@@ -3965,21 +4397,21 @@ Nodes (45): additionalProperties, format, type, description, description, patter
 Cohesion: 0.05
 Nodes (74): Durable Execution Substrate, Antigravity Ultimate SDLC, GLM 5.2 Research Output, Earthly Lunar, GitHub Agentic Workflows, Argo Kubernetes DAG and Retry, Camunda BPMN Zeebe and DMN, Harness CI/CD and Policy Governance (+66 more)
 
-### Community 51 - "security skill"
-Cohesion: 0.07
-Nodes (55): scalability skill, security skill, Asynchronous Processing, Authentication and Authorization, Caching Strategy, Plugin Interface, Defense in Depth, Dependency Security (+47 more)
+### Community 51 - "DevOps Quality Gates"
+Cohesion: 0.06
+Nodes (64): scalability skill, security skill, Asynchronous Processing, Authentication and Authorization, Caching Strategy, DevOps Quality Gates, Plugin Interface, Defense in Depth (+56 more)
 
 ### Community 52 - "Incident-Ready Waitlist SaaS Slice"
 Cohesion: 0.04
 Nodes (55): TC-01 Intent Seed 20260706T023311Z, TC-01 Intent Seed 20260706T084149Z, TC-01 Intent Seed 20260706T092844Z, TC-01 waitlist vision, Fixture app, TC-01 intent seed, TC-01 waitlist vision, TC-01 intent seed (+47 more)
 
-### Community 53 - "Incident Fast Path"
-Cohesion: 0.09
-Nodes (23): All Tracked Skills, Accessibility Review Skill, Finalization Step 14, Runtime Hooks, Orchestrator Directive Guard, Stop Check, UAT Gate, Workflow Chain Guard (+15 more)
+### Community 53 - "All Tracked Skills"
+Cohesion: 0.25
+Nodes (8): All Tracked Skills, Accessibility Review Skill, Finalization Step 14, Incident Response Skill, Tech Debt Skill, Red-Green-Refactor Discipline, Test-Driven Development Skill, UI Work Conditional
 
 ### Community 54 - "Full Capability-Only Ranking — Deep Research Skills"
 Cohesion: 0.03
-Nodes (76): 199-biotechnologies/claude-deep-research-skill (rank 6), 24601/agent-deep-research (rank 19), affaan-m/deep-research (rank 21), alo-exp/silver-bullet/silver-deep-research (rank 2), anthony-maio/pieces-agent-skills (rank 29), arun-8687/gemini-deep-research (rank 46), baranwang/mcp-deep-research (rank 53), blessonism OpenClaw Search Skills (+68 more)
+Nodes (75): 199-biotechnologies/claude-deep-research-skill (rank 6), 24601/agent-deep-research (rank 19), affaan-m/deep-research (rank 21), alo-exp/silver-bullet/silver-deep-research (rank 2), anthony-maio/pieces-agent-skills (rank 29), arun-8687/gemini-deep-research (rank 46), baranwang/mcp-deep-research (rank 53), cam10001110101/ollama-deep-researcher (rank 39) (+67 more)
 
 ### Community 55 - "properties"
 Cohesion: 0.05
@@ -4001,9 +4433,9 @@ Nodes (21): rt_heartbeat_cadence_due(), rt_heartbeat_write(), heartbeat.sh scrip
 Cohesion: 0.05
 Nodes (45): additionalProperties, format, type, description, description, pattern, type, description (+37 more)
 
-### Community 60 - "SDLC Gap Analysis"
-Cohesion: 0.04
-Nodes (54): Release Tag, Release Notes and GitHub Release, Release Notes, Design Plugin, Pre-Release Quality Gate, API Contract Design, API Contract Gap, CHANGELOG (+46 more)
+### Community 60 - "AF-RELEASE"
+Cohesion: 0.12
+Nodes (17): Release Tag, Release Notes and GitHub Release, Release Notes, FLOW 18, Pre-Release Quality Gate, CHANGELOG, GitHub Release, silver:create-release (+9 more)
 
 ### Community 61 - "enterprise-e2e-row-pass-registry.sh"
 Cohesion: 0.08
@@ -4030,20 +4462,20 @@ Cohesion: 0.06
 Nodes (52): DeepSeek V4 Pro Research Output, Capella, Kimi K2.6 Research Output, Mimo V2.5 Pro Research Output, MiniMax M3 Research Output, Haystack, Aider, Airflow (+44 more)
 
 ### Community 67 - "Followup GLM 5.2 Context Tools Feature Matrix"
-Cohesion: 0.05
-Nodes (55): OpenCode permission.task Glob, OpenCode, PathJail, Pre-Model Injection Detection, Layer 1 Wire Foundation, MCP-First Architecture, PathJail Allowlist, Phase 1 Wire Foundation (+47 more)
+Cohesion: 0.04
+Nodes (63): OpenCode permission.task Glob, OpenCode, PathJail, silver:phase, silver:plan, silver:refactor, Pre-Model Injection Detection, Layer 1 Wire Foundation (+55 more)
 
 ### Community 68 - "SB Posture Audit Bundle"
 Cohesion: 0.07
-Nodes (49): feature/tri-codex-tc-03-20260706t023103z-tc-03 Branch, TC-03 Agent Brief, TC-03 Intent Seed, feature/tc03-posture-audit Branch, TC-03 Vision, Last graphify update Timestamp, Posture Audit Replay Script, Cold Replay Verification Script (+41 more)
+Nodes (51): feature/tri-codex-tc-03-20260706t023103z-tc-03 Branch, TC-03 Agent Brief, TC-03 Intent Seed, feature/tc03-posture-audit Branch, TC-03 Vision, Last graphify update Timestamp, Posture Audit Replay Script, Cold Replay Verification Script (+43 more)
 
 ### Community 69 - "skill_md_retrieval_plan"
 Cohesion: 0.08
 Nodes (28): load_catalog(), Any, Load catalog by stem (e.g. intent_classes). Prefers .json over .yaml., build_skill_md_raw_url(), enrich_github_search_hits(), naive_skill_md_raw_url(), parse_github_full_name(), Any (+20 more)
 
 ### Community 70 - "SENTINEL Security Audit Report"
-Cohesion: 0.06
-Nodes (47): alo-exp Silver Bullet Repository, SENTINEL Security Audit Report, SENTINEL Audit Pass 2 Report, Silver Bullet Orchestrated Dev Workflows Design Spec, Orchestrated Development Workflows, Product Management Plugin, Invocation-Based Enforcement Model, Engineering Plugin (+39 more)
+Cohesion: 0.03
+Nodes (82): alo-exp Silver Bullet Repository, Design Plugin, SENTINEL Security Audit Report, SENTINEL Audit Pass 2 Report, API Contract Design, API Contract Gap, CI/CD Setup, CI/CD Scaffolding Gap (+74 more)
 
 ### Community 71 - "logical_to_family"
 Cohesion: 0.05
@@ -4065,29 +4497,29 @@ Nodes (30): AF-AGENT-DELEGATE, Claude TUI Subagent Delegation Skill, Codex TUI S
 Cohesion: 0.05
 Nodes (48): Agent Comparison, AI as Engineering Amplifier, Deprecated Software Delivery Practices, Leading-Edge Mainstream Practices, Minimum Standard Leading-Edge Maturity Tiers, Universal Software Delivery Core, Unified Process Catalog, Agent-Run Incident Response (+40 more)
 
-### Community 76 - "Silver Bullet Major Issues Analysis"
-Cohesion: 0.08
-Nodes (27): GitHub CLI Dependency, SDLC Coverage, Silver Bullet State File, AI-Native SDLC Playbook, Branch-Scoped State Reset, compactPrompt Configuration, Defense-in-Depth Stack, Silver Bullet Enforcement Techniques Reference (+19 more)
+### Community 76 - "AF-DOCUMENT"
+Cohesion: 0.03
+Nodes (75): AF-PHASE-MANAGE, FLOW 16, FLOW 17, FLOW 2, silver-documentation, Design Handoff Worker Template, WF-PROCESS-MAINTENANCE, WF-SILVER-BENCHMARK (+67 more)
 
 ### Community 77 - "Enterprise E2E Silver Bullet Issues"
 Cohesion: 0.05
 Nodes (58): Custom API Key Disclaimer, Codex Harness, Codex Installation Process, Codex Product Audit Methodology, Enterprise E2E Silver Bullet Issues, E2E-002 Context Recovery Used Compact, E2E-003 Residual Session State Errors, E2E-004 Stop Denials Actionable (+50 more)
 
 ### Community 78 - "Consolidated Landscape Report"
-Cohesion: 0.07
-Nodes (55): Quality Gates and Standards, Anti-fatigue Protocol, Bibliography Requirements, Citation Verification, Superpowers Coding Workflow, Catalog Flow Order, Workflow Composition, Atomic Flow Catalog (+47 more)
+Cohesion: 0.08
+Nodes (47): Catalog Flow Order, Workflow Composition, Atomic Flow Catalog, Automated Review Loops, BMAD (rank 4, score 32), CC10x, Codex, Comparison Matrix (+39 more)
 
 ### Community 79 - "$defs"
-Cohesion: 0.05
-Nodes (42): additionalProperties, items, type, additionalProperties, type, items, type, type (+34 more)
+Cohesion: 0.06
+Nodes (31): additionalProperties, additionalProperties, type, type, $defs, atomic_flow, composition_log, entity_id (+23 more)
 
 ### Community 80 - "Observability-only change"
-Cohesion: 0.07
-Nodes (46): TC-02 Observability Intent Seed, Correlation ID Middleware Propagation, Observability-Only Scope, README On-Call Runbook, Request Correlation ID, README Observability Runbook, TC-02 agent brief, TC-02 intent seed (+38 more)
+Cohesion: 0.09
+Nodes (24): TC-02 agent brief, TC-02 intent seed, TC-02 observability vision, DR-PRUNE-SATISFIED-ATOM, DR-SUBSTITUTE-LEANER-WORKFLOW, Fixture API, Full feature development pipeline excluded, Observability-only change (+16 more)
 
 ### Community 81 - "Refactor Workflow Documentation"
-Cohesion: 0.07
-Nodes (51): AF-BRANCH-FINISH atomic flow, AF-COMPLETION-AUDIT atomic flow, AF-DOCUMENT atomic flow, AF-EXECUTE atomic flow, AF-PHASE-MANAGE atomic flow, AF-PLAN atomic flow, AF-QUALITY-GATE atomic flow, AF-REVIEW atomic flow (+43 more)
+Cohesion: 0.09
+Nodes (40): AF-BRANCH-FINISH atomic flow, AF-COMPLETION-AUDIT atomic flow, AF-EXECUTE atomic flow, AF-PLAN atomic flow, AF-QUALITY-GATE atomic flow, AF-REVIEW atomic flow, AF-REVIEW-REQUEST atomic flow, AF-REVIEW-TRIAGE atomic flow (+32 more)
 
 ### Community 82 - "Zuvo Solution Capability Report"
 Cohesion: 0.20
@@ -4107,11 +4539,11 @@ Nodes (42): aliases, ocg-glm-5.2, sb-dr-glm-5.2, cursor_default_pool, claude-opu
 
 ### Community 86 - "Design Reviewer Skill"
 Cohesion: 0.05
-Nodes (44): Server Implementation, Spec Skill, Review Context Skill, Decision Contradictions, Decisions Section, Discretion Context, Structured Findings Output, Review Cross Artifact Skill (+36 more)
+Nodes (45): Server Implementation, Spec Skill, Review Context Skill, Decision Contradictions, Decisions Section, Discretion Context, Structured Findings Output, Review Cross Artifact Skill (+37 more)
 
 ### Community 87 - "Parent / Worker Orchestrator Mode"
-Cohesion: 0.23
-Nodes (12): decision_class: blocking, Directive Guard, Enterprise Policy Profile, Hook Enforcement, Parent / Worker Orchestrator Mode, Parent Session, Parent-only Tool Allowlists, Production Deploy / Release (+4 more)
+Cohesion: 0.19
+Nodes (15): silver:orchestrator, Silver Router Logic, decision_class: blocking, Directive Guard, Enterprise Policy Profile, Hook Enforcement, Parent / Worker Orchestrator Mode, Parent Session (+7 more)
 
 ### Community 88 - "Canonical SDLC Process Architecture Research Report"
 Cohesion: 0.05
@@ -4122,8 +4554,8 @@ Cohesion: 0.05
 Nodes (10): append_pre_ship_quality_gates_marker(), assert_allowed(), assert_blocked(), emit_required_deploy_skills(), is_blocked(), SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL, seed_lifecycle_artifacts(), common.sh script (+2 more)
 
 ### Community 90 - "Enterprise E2E Effectiveness Plan"
-Cohesion: 0.09
-Nodes (35): Round 3 Ledger, Absolute Export Root, agentmemory Markdown Export, cost_minimized Profile, Graphify + agentmemory Optimization Digest, Git Bridge, agentmemory Gitignore Fix, Obsidian Export (+27 more)
+Cohesion: 0.07
+Nodes (44): Round 3 Ledger, Absolute Export Root, agentmemory Markdown Export, cost_minimized Profile, Graphify + agentmemory Optimization Digest, Git Bridge, agentmemory Gitignore Fix, Obsidian Export (+36 more)
 
 ### Community 91 - "ReportValidator"
 Cohesion: 0.06
@@ -4142,12 +4574,12 @@ Cohesion: 0.06
 Nodes (22): load_report_profile(), main(), Any, Path, Verify profile section labels appear for selected language., Chapter/section headings at ### level must be unique., Report metadata block required at tail., Flag overconfident forecast phrasing per profile. (+14 more)
 
 ### Community 95 - "codex/silver-multi-ai-task/scripts/live_dispatch.py"
-Cohesion: 0.11
-Nodes (31): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for(), cursor_models_to_try(), cursor_output_is_failure() (+23 more)
+Cohesion: 0.19
+Nodes (25): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_output_is_failure(), _delegate_work_dir(), dispatch_agent(), dispatch_phase_parallel() (+17 more)
 
 ### Community 96 - "skill-source/silver-multi-ai-task/scripts/multi_ai_core.py"
-Cohesion: 0.11
-Nodes (29): PoolResolutionTests, Pool completeness hard-fail and resolution tests for DR live runner., BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args() (+21 more)
+Cohesion: 0.12
+Nodes (28): PoolResolutionTests, BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args(), Namespace (+20 more)
 
 ### Community 97 - "Agentic Process Orchestrator"
 Cohesion: 0.07
@@ -4161,9 +4593,9 @@ Nodes (22): load_report_profile(), main(), Any, Path, Verify profile section lab
 Cohesion: 0.06
 Nodes (21): common.sh script, ts_agentmemory_export_rel_path(), ts_agentmemory_health_url(), ts_agentmemory_usage_state_path(), ts_agentmemory_usage_ttl_seconds(), ts_effective_export_root(), ts_effective_graph_path(), ts_effective_health_url() (+13 more)
 
-### Community 100 - "Pi"
-Cohesion: 0.11
-Nodes (20): Claude Agent Tool Frontmatter, Claude Code Recursive Nesting Conflict, Cross-Model Conflicts — Subagent Nesting Research, nicobailon/pi-subagents, OpenCode Subagent Nesting Conflict, OpenCode permission.task Configuration, Pi Extension Subagents Conflict, OpenCode TaskAgentTools (+12 more)
+### Community 100 - "Modularity"
+Cohesion: 0.07
+Nodes (56): Usability Dimension, Autonomy, CI/CD Verification, Cross-session Knowledge, Gap Narrowing Implementation Plan, Model Routing and Agent Teams, DevOps Quality Gates Adversarial Mode, IaC Change-Safety Checks (+48 more)
 
 ### Community 101 - "ReportValidator"
 Cohesion: 0.06
@@ -4178,8 +4610,8 @@ Cohesion: 0.10
 Nodes (21): items, type, items, type, v_loop_rollup, type, type, child_v_loop_refs (+13 more)
 
 ### Community 104 - "codex/silver-multi-ai-task/scripts/multi_ai_core.py"
-Cohesion: 0.12
-Nodes (28): PoolResolutionTests, BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args(), Namespace (+20 more)
+Cohesion: 0.11
+Nodes (29): PoolResolutionTests, Pool completeness hard-fail and resolution tests for DR live runner., BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args() (+21 more)
 
 ### Community 105 - "Multi-Model Deep Research Skill"
 Cohesion: 0.05
@@ -4214,8 +4646,8 @@ Cohesion: 0.05
 Nodes (42): AI Integration, 7.2 Percent Delivery Stability Decrease per 25 Percent AI Adoption Increase, DeepSeek Research Scope, AI-Assisted and Agentic Software Engineering, Developer Experience and SPACE Framework, DORA Metrics and Capabilities, NIST SSDF, Observability and SRE (+34 more)
 
 ### Community 113 - "orchestrator-scheduler.sh"
-Cohesion: 0.09
-Nodes (28): sb_orchestrator_event_record_join(), sb_scheduler_append_composition_log(), sb_scheduler_apply_doc_only_tailoring(), sb_scheduler_apply_multi_workflow_chain(), sb_scheduler_apply_net_new_workflow_route(), sb_scheduler_apply_observability_tailoring(), sb_scheduler_atom_vgate_ready(), sb_scheduler_catalog_file() (+20 more)
+Cohesion: 0.08
+Nodes (29): sb_orchestrator_event_apply_resume_checkpoint(), sb_orchestrator_event_record_join(), sb_scheduler_append_composition_log(), sb_scheduler_apply_doc_only_tailoring(), sb_scheduler_apply_multi_workflow_chain(), sb_scheduler_apply_net_new_workflow_route(), sb_scheduler_apply_observability_tailoring(), sb_scheduler_atom_vgate_ready() (+21 more)
 
 ### Community 114 - "review-fix-ladder-state.sh"
 Cohesion: 0.09
@@ -4226,8 +4658,8 @@ Cohesion: 0.05
 Nodes (38): additionalProperties, allOf, type, $id, attempt_id, DR-CRITIQUE, DR-RETRIEVE, DR-TRIANGULATE (+30 more)
 
 ### Community 116 - "codex/silver-deep-research-multi-ai/scripts/validate_landscape_content.py"
-Cohesion: 0.11
-Nodes (24): assert_file_free_of_compression_markers(), assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Path, Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates() (+16 more)
+Cohesion: 0.12
+Nodes (22): assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
 
 ### Community 117 - "properties"
 Cohesion: 0.05
@@ -4259,35 +4691,35 @@ Nodes (17): sb_leanctx_cli_available(), sb_leanctx_cli_path(), sb_leanctx_platfo
 
 ### Community 124 - "load_category_pack"
 Cohesion: 0.06
-Nodes (13): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., CategoryPackLoaderTests, CategoryPackSchemaTests, Unit tests for category market pack schema and loader. (+5 more)
+Nodes (17): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., Merge need_profile overrides onto the base category pack., resolve_pack_from_need_profile(), CategoryPackLoaderTests (+9 more)
 
 ### Community 125 - "lib/stack-compression-coordinator.sh"
-Cohesion: 0.08
-Nodes (21): sb_stack_bash_leanctx_shell_marker(), sb_stack_bash_rtk_rewritten(), sb_stack_clear_mutex_violations(), sb_stack_coordinator_needed(), sb_stack_default_route_owner(), sb_stack_mcp_query_looks_like_code(), sb_stack_mutual_exclusion_required(), sb_stack_record_double_compression() (+13 more)
+Cohesion: 0.10
+Nodes (15): sb_stack_bash_leanctx_shell_marker(), sb_stack_bash_rtk_rewritten(), sb_stack_clear_mutex_violations(), sb_stack_coordinator_needed(), sb_stack_default_route_owner(), sb_stack_mcp_query_looks_like_code(), sb_stack_mutual_exclusion_required(), sb_stack_record_double_compression() (+7 more)
 
 ### Community 126 - "DR-RETRIEVE"
 Cohesion: 0.13
 Nodes (36): Deep Research Phases, DR-OUTLINE, DR-PACKAGE, DR-PLAN, DR-SCOPE, DR-SYNTHESIZE, Claim-Level Delta, Adversarial Review Protocol (+28 more)
 
 ### Community 127 - "run_py"
-Cohesion: 0.08
-Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run_py(), seed_landscape_fixture(), TestCompareSolutions, TestMatrixOpenpyxl (+7 more)
+Cohesion: 0.10
+Nodes (12): _has_openpyxl(), _maybe_emit_fixture_xlsx(), run_py(), seed_landscape_fixture(), TestCompareSolutions, TestNeedProfileGate, TestPhaseGateShortlist, TestShortlist (+4 more)
 
-### Community 128 - "skill-source/silver-deep-research-multi-ai/scripts/validate_landscape_content.py"
-Cohesion: 0.12
-Nodes (22): assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
+### Community 128 - "resolve_pack_from_need"
+Cohesion: 0.10
+Nodes (26): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), assert_file_free_of_compression_markers(), assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Path, Remove compression marker lines and inline marker segments. (+18 more)
 
 ### Community 129 - "Top 50 Problems: AI Agents in Software Engineering & DevOps"
-Cohesion: 0.05
-Nodes (38): agentmemory Mechanism, DevOps Blast Radius, Context Degradation Cluster, Delivery Risk Cluster, DevOps Hazards Cluster, Knowledge Blindness Cluster, Process Bypass Cluster, Traceability Drift Cluster (+30 more)
+Cohesion: 0.04
+Nodes (53): Code-Intelligence Stack, CMF Worksheet v3.0 — Silver Bullet Homepage, Evidence and Proof, Aspirational Future State, Host Runtime Contract, Identity Hook, Install Call to Action, Problem Articulation (+45 more)
 
 ### Community 130 - "License Research Report"
 Cohesion: 0.06
 Nodes (40): Heather Meeker, Artifex Software v. HashiCorp, Debian, Ethical-Use Restriction, Hippocratic License 3.0, License Legal Enforceability, Noncommercial-Purpose Ambiguity, OpenTofu (+32 more)
 
 ### Community 131 - "run_py"
-Cohesion: 0.10
-Nodes (12): _has_openpyxl(), _maybe_emit_fixture_xlsx(), run_py(), seed_landscape_fixture(), TestCompareSolutions, TestNeedProfileGate, TestPhaseGateShortlist, TestShortlist (+4 more)
+Cohesion: 0.08
+Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run_py(), seed_landscape_fixture(), TestCompareSolutions, TestMatrixOpenpyxl (+7 more)
 
 ### Community 132 - "install-cursor.sh"
 Cohesion: 0.09
@@ -4303,19 +4735,19 @@ Nodes (25): claude_child_lines(), cleanup(), discover_batch_pid(), handle_networ
 
 ### Community 135 - "skills/silver-deep-research-multi-ai/scripts/validate_landscape_content.py"
 Cohesion: 0.12
-Nodes (22): assert_file_free_of_compression_markers(), assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Path, _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
+Nodes (22): assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
 
 ### Community 136 - "run_py"
-Cohesion: 0.08
-Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run_py(), seed_landscape_fixture(), TestCompareSolutions, TestMatrixOpenpyxl (+7 more)
+Cohesion: 0.10
+Nodes (12): _has_openpyxl(), _maybe_emit_fixture_xlsx(), run_py(), seed_landscape_fixture(), TestCompareSolutions, TestNeedProfileGate, TestPhaseGateShortlist, TestShortlist (+4 more)
 
-### Community 137 - "/silver:validate Workflow"
-Cohesion: 0.13
-Nodes (19): BLOCK Finding, chrome.css, Chrome JavaScript, Help Common JavaScript, INFO Finding, Lucide 0.469.0, neutral-variants.css, PLAN.md (+11 more)
+### Community 137 - "Structured JSON Logging"
+Cohesion: 0.15
+Nodes (23): TC-02 Observability Intent Seed, Correlation ID Middleware Propagation, Observability-Only Scope, README On-Call Runbook, Request Correlation ID, README Observability Runbook, Existing middleware, Zero database migrations (+15 more)
 
 ### Community 138 - "properties"
-Cohesion: 0.06
-Nodes (36): items, type, workflow, items, type, type, slug, type (+28 more)
+Cohesion: 0.07
+Nodes (29): items, type, items, type, items, type, type, type (+21 more)
 
 ### Community 139 - ".r9-pilot-rows-1-6-11-sequential.sh"
 Cohesion: 0.06
@@ -4326,12 +4758,12 @@ Cohesion: 0.06
 Nodes (5): cleanup_workspace(), port_is_available(), restore_session_state(), helpers.sh script, start_app_server()
 
 ### Community 141 - "Critical Self-Review: multi-ai-task v2.0.0"
-Cohesion: 0.05
-Nodes (46): Critical Self-Review: multi-ai-task v2.0.0, Undefined Confidence Scoring, Qwen3 7 Max Self-Review, Extractor Model Failure Gap, Missing Machine-Readable Rule Catalog, Parallel Wall-Time Formula Defect, User-Invocable Contradiction, Audit trail (+38 more)
+Cohesion: 0.06
+Nodes (39): Critical Self-Review: multi-ai-task v2.0.0, Audit trail, Code-review task example, Concurrency policy, Conflict resolution rule registry, all-collected conflict rule, concatenate-all conflict rule, lowest-of-majors conflict rule (+31 more)
 
 ### Community 142 - "id"
 Cohesion: 0.06
-Nodes (33): additionalProperties, required, type, artifact, intent_ledger, process_pack, required, additionalProperties (+25 more)
+Nodes (33): additionalProperties, required, type, artifact, evidence_record, intent_ledger, additionalProperties, required (+25 more)
 
 ### Community 143 - "graphify-am-global.sh"
 Cohesion: 0.11
@@ -4418,8 +4850,8 @@ Cohesion: 0.07
 Nodes (31): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_INTERACTIVE_TIMEOUT, CLAUDE_MODEL, CLAUDE_SETTINGS_FILE (+23 more)
 
 ### Community 164 - "skill-source/silver-deep-research-multi-ai/scripts/generate_spa_report.py"
-Cohesion: 0.16
-Nodes (27): collect_general(), collect_landscape(), generate_spa_report_file(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt() (+19 more)
+Cohesion: 0.17
+Nodes (25): collect_general(), collect_landscape(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt(), load_manifest() (+17 more)
 
 ### Community 165 - "skill-source/silver-deep-research-multi-ai/scripts/landscape_preview_render.py"
 Cohesion: 0.17
@@ -4430,16 +4862,16 @@ Cohesion: 0.16
 Nodes (27): collect_general(), collect_landscape(), generate_spa_report_file(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt() (+19 more)
 
 ### Community 167 - "Spec Elicitation Workflow"
-Cohesion: 0.16
-Nodes (17): Acceptance criteria, PR Traceability, artifact_review, Assumption Consolidation, .planning/DESIGN.md, Silver Feature Path, Spec Workflow Help Page, .planning/REQUIREMENTS.md (+9 more)
+Cohesion: 0.10
+Nodes (28): Acceptance criteria, silver:validate, Assumption blocks, PR Traceability, Machine-readable findings, silver:validate, Open questions, artifact_review (+20 more)
 
 ### Community 168 - "silver:doctor Skill"
-Cohesion: 0.07
-Nodes (42): agentmemory, silver:doctor Skill, Brownfield Documentation Reconciliation, Documentation Authority, silver:ensure-docs, Documentation Safety Rules, Documentation Scheme Recovery, Semantic Documentation Audit (+34 more)
+Cohesion: 0.08
+Nodes (37): agentmemory, silver:doctor Skill, Brownfield Documentation Reconciliation, Documentation Authority, silver:ensure-docs, Documentation Safety Rules, Documentation Scheme Recovery, Semantic Documentation Audit (+29 more)
 
 ### Community 169 - "skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py"
-Cohesion: 0.17
-Nodes (31): _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison(), _enrich_chart_data(), _find_landscape_markdown(), _inject_matrix_ui(), _inject_modern_theme() (+23 more)
+Cohesion: 0.16
+Nodes (33): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison(), _enrich_chart_data(), _find_landscape_markdown() (+25 more)
 
 ### Community 170 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4450,16 +4882,16 @@ Cohesion: 0.07
 Nodes (36): GNU Affero General Public License, Anti-SaaS Hosted-Service Prohibition, Apache License 2.0, Attribution and Notice Requirements, Bright-Line Restriction, Business Source License 1.1, Claims JSONL, Separate Commercial License (+28 more)
 
 ### Community 172 - "properties"
-Cohesion: 0.11
-Nodes (19): items, minItems, type, process, enum, type, devops, mixed (+11 more)
+Cohesion: 0.10
+Nodes (21): items, minItems, type, process, enum, type, devops, mixed (+13 more)
 
 ### Community 173 - "orchestrator-directive.sh"
-Cohesion: 0.08
-Nodes (16): sb_agent_delegation_activate(), sb_orchestrator_directive_from_pending_outcome(), sb_orchestrator_directive_write(), sb_orchestrator_directive_write_batch(), sb_orchestrator_ensure_worker_template_mapper(), sb_orchestrator_seed_delegation_directive(), sb_orchestrator_sync_directive_from_state(), orchestrator-directive.sh script (+8 more)
+Cohesion: 0.11
+Nodes (11): sb_orchestrator_directive_from_pending_outcome(), sb_orchestrator_directive_write(), sb_orchestrator_directive_write_batch(), sb_orchestrator_ensure_worker_template_mapper(), sb_orchestrator_sync_directive_from_state(), orchestrator-directive.sh script, fail(), pass() (+3 more)
 
-### Community 174 - "SolutionClassifierTests"
-Cohesion: 0.19
-Nodes (4): _envelopes(), PackSchemaTests, Tests for pack-driven solution classifier., SolutionClassifierTests
+### Community 174 - "test-enterprise-e2e-matrix-routing.sh"
+Cohesion: 0.17
+Nodes (10): sb_e2e_matrix_clear_routing_row_marker(), sb_e2e_matrix_routing_row_active(), sb_e2e_matrix_set_routing_row_marker(), e2e-matrix-routing.sh script, assert_fail(), assert_ok(), HOME, SB_RUNTIME_PRESERVE_STATE_DIR (+2 more)
 
 ### Community 175 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4475,7 +4907,7 @@ Nodes (25): openpyxl_importable(), Shared optional-dependency probes for deep-re
 
 ### Community 178 - "matrix.sh"
 Cohesion: 0.08
-Nodes (35): codex-r3-force36-launch.sh script, score_row(), matrix-quiesce.sh script, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_DELAY_MS, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_MODEL, CLAUDE_PERMISSION_MODE (+27 more)
+Nodes (34): codex-r3-force36-launch.sh script, matrix-quiesce.sh script, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_DELAY_MS, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_MODEL, CLAUDE_PERMISSION_MODE, enterprise_e2e_matrix_ensure_internal_gate_markers() (+26 more)
 
 ### Community 179 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4490,16 +4922,16 @@ Cohesion: 0.07
 Nodes (34): Round 6 Resume Wait Checkpoint, Audit Security of Skill, Compare Skills, Find Skills, AgentSkill.sh Adapter, Claude Plugins Official Adapter, ClawHub Adapter, Cursor Directory Adapter (+26 more)
 
 ### Community 182 - "package_solution_outputs"
-Cohesion: 0.14
-Nodes (26): collect(), _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args() (+18 more)
+Cohesion: 0.16
+Nodes (25): assert_file_free_of_compression_markers(), Path, _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs() (+17 more)
 
 ### Community 183 - "search-cli"
 Cohesion: 0.06
 Nodes (34): Deep Research Capability Rubric, HTML Generation Guide, Adaptive Depth Control, Citation Intelligence, Deep Research Methodology, Graph-of-Thoughts Reasoning, Parallel Agent Deployment, Deep Research Requirements (+26 more)
 
 ### Community 184 - "codex/silver-deep-research-multi-ai/scripts/generate_spa_report.py"
-Cohesion: 0.17
-Nodes (25): collect_general(), collect_landscape(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt(), load_manifest() (+17 more)
+Cohesion: 0.16
+Nodes (27): collect_general(), collect_landscape(), generate_spa_report_file(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt() (+19 more)
 
 ### Community 185 - ".tui-monitor-batch-continuation.py"
 Cohesion: 0.13
@@ -4511,15 +4943,15 @@ Nodes (22): cursor_in_session_response_for_request(), respond_pending(), cursor-
 
 ### Community 187 - "Phase 38 Gitignore and Documentation Refresh Plan"
 Cohesion: 0.06
-Nodes (35): Commit 0b86dc6, Commit 4339060, Commit 6cb66c5, Commit e247ff3, CONS-01 Broken Skill References, CONS-02 Required Skill Schema Drift, DOC-02 Public Surface Refresh, gh run watch (+27 more)
+Nodes (34): Commit 0b86dc6, Commit 4339060, Commit 6cb66c5, Commit e247ff3, CONS-01 Broken Skill References, CONS-02 Required Skill Schema Drift, DOC-02 Public Surface Refresh, gh run watch (+26 more)
 
 ### Community 188 - "required"
 Cohesion: 0.09
 Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
 
 ### Community 189 - "required"
-Cohesion: 0.10
-Nodes (28): items, type, items, minItems, type, items, items, minItems (+20 more)
+Cohesion: 0.09
+Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
 
 ### Community 190 - "test-workflow-chain-guard.sh"
 Cohesion: 0.08
@@ -4546,12 +4978,12 @@ Cohesion: 0.10
 Nodes (19): env.sh script, SB_ROOT, invoke.sh script, usage(), agent_claude_apply_delegate_env(), agent_claude_apply_runtime_env(), agent_claude_ensure_plugin_cache(), agent_claude_prepare_lightweight_config_dir() (+11 more)
 
 ### Community 196 - "Stop Hook Audit"
-Cohesion: 0.11
-Nodes (20): Branch-Scoped Session State, Stop Hook Audit, Git Deployment Anchor, Phantom Required Skills, PostToolUse Write/Edit Event, Required Planning Floor, Silver Bullet Runtime State File, S-02 No Silver Bullet Configuration (+12 more)
+Cohesion: 0.06
+Nodes (33): Branch-Scoped Session State, Stop Hook Audit, Git Deployment Anchor, Phantom Required Skills, PostToolUse Write/Edit Event, Required Planning Floor, Silver Bullet Runtime State File, S-02 No Silver Bullet Configuration (+25 more)
 
 ### Community 197 - "Cursor Hooks"
-Cohesion: 0.05
-Nodes (44): additional_context, afterMCPExecution, alo-labs-cursor-marketplace, beforeMCPExecution, beforeSubmitPrompt, Cursor, cursor-hook-bridge.sh, Cursor Hooks (+36 more)
+Cohesion: 0.06
+Nodes (36): additional_context, afterMCPExecution, AGENTS.md, alo-labs-cursor-marketplace, beforeMCPExecution, beforeSubmitPrompt, Cursor, cursor-hook-bridge.sh (+28 more)
 
 ### Community 198 - "merge-token-compression-config.py"
 Cohesion: 0.19
@@ -4602,24 +5034,24 @@ Cohesion: 0.07
 Nodes (27): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_INTERACTIVE_TIMEOUT, CLAUDE_MODEL, CLAUDE_SETTINGS_FILE (+19 more)
 
 ### Community 210 - "SB Tri-Criteria Live Validation Plan"
-Cohesion: 0.10
-Nodes (38): silver:orchestrator, Orchestrator Directive, Cursor Multi-Workflow Criteria, APO Dynamic Rules, SB Tri-Criteria E2E Design, Orchestrator Events JSONL, Parent Orchestrator Loop, Scheduler Composition Log (+30 more)
+Cohesion: 0.09
+Nodes (39): Orchestrator Directive, Cursor Multi-Workflow Criteria, APO Dynamic Rules, SB Tri-Criteria E2E Design, Orchestrator Events JSONL, Parent Orchestrator Loop, Scheduler Composition Log, Supervision Loop (+31 more)
 
 ### Community 211 - "package_solution_outputs"
+Cohesion: 0.14
+Nodes (26): collect(), _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args() (+18 more)
+
+### Community 212 - "required"
+Cohesion: 0.10
+Nodes (28): items, type, items, minItems, type, items, items, minItems (+20 more)
+
+### Community 213 - "package_solution_outputs"
 Cohesion: 0.16
 Nodes (25): assert_file_free_of_compression_markers(), Path, _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs() (+17 more)
 
-### Community 212 - "required"
-Cohesion: 0.09
-Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
-
-### Community 213 - "package_solution_outputs"
-Cohesion: 0.18
-Nodes (23): _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args(), Namespace (+15 more)
-
 ### Community 214 - "Deep Research Skill"
-Cohesion: 0.08
-Nodes (31): Human Checkpoints, Human Checkpoint, Mutually Exclusive Conclusions, Provider Signup Checkpoint, User-Owned Decision, Adversarial Review Protocol, Red-Team Agent, Reviewer Agent (+23 more)
+Cohesion: 0.10
+Nodes (28): AF-DOCUMENT atomic flow, AF-PHASE-MANAGE atomic flow, Standard Composition Chain, Adversarial Review Protocol, Red-Team Agent, Reviewer Agent, Skeptic Agent, Auto-Continuation Protocol (+20 more)
 
 ### Community 215 - "test-live-review-fix-ladder-full-ladder.sh"
 Cohesion: 0.12
@@ -4634,8 +5066,8 @@ Cohesion: 0.19
 Nodes (25): main(), Path, validate_structure(), artifact_satisfied(), _category_packs_dir(), check_category_pack_gate(), check_mode_complete(), check_need_profile_gate() (+17 more)
 
 ### Community 218 - "required"
-Cohesion: 0.08
-Nodes (27): required, required, required, artifacts, atomic_flows, capability_class, catalog_version, execution (+19 more)
+Cohesion: 0.06
+Nodes (37): required, workflow, required, slug, required, additionalProperties, required, type (+29 more)
 
 ### Community 219 - "prompt-reminder.sh"
 Cohesion: 0.10
@@ -4653,9 +5085,9 @@ Nodes (31): Phase 054 Code Review Report, IN-01 Candidate Count Divergence, IN-0
 Cohesion: 0.07
 Nodes (26): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_BRANCH, SB_E2E_FROZEN_BASELINE_SHA, SB_E2E_FROZEN_RESCORE_LOG, SB_E2E_LEDGER_FILE, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE (+18 more)
 
-### Community 223 - ".cursor3-process-row.sh"
-Cohesion: 0.29
-Nodes (6): SB_E2E_ENTERPRISE_MATRIX, SB_E2E_LEDGER_FILE, SB_E2E_MATRIX_GRAPHIFY_REF, SB_TEST_ENTERPRISE_APP_ROOT, .cursor3-process-row.sh script, enterprise_e2e_outcome_assess_session()
+### Community 223 - "skills/silver-multi-ai-task/scripts/live_dispatch.py"
+Cohesion: 0.11
+Nodes (30): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for(), cursor_models_to_try(), cursor_output_is_failure() (+22 more)
 
 ### Community 224 - "Terms of Use"
 Cohesion: 0.07
@@ -4666,8 +5098,8 @@ Cohesion: 0.19
 Nodes (25): main(), Path, validate_structure(), artifact_satisfied(), _category_packs_dir(), check_category_pack_gate(), check_mode_complete(), check_need_profile_gate() (+17 more)
 
 ### Community 226 - "skill-source/silver-multi-ai-task/scripts/live_dispatch.py"
-Cohesion: 0.19
-Nodes (25): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_output_is_failure(), _delegate_work_dir(), dispatch_agent(), dispatch_phase_parallel() (+17 more)
+Cohesion: 0.11
+Nodes (31): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for(), cursor_models_to_try(), cursor_output_is_failure() (+23 more)
 
 ### Community 227 - "round9-gate3-driver.sh"
 Cohesion: 0.08
@@ -4690,12 +5122,12 @@ Cohesion: 0.11
 Nodes (30): Claude additionalContext Output, SENTINEL Audit Report: Silver Bullet v0.8.0, CLAUDE_PLUGIN_ROOT Environment Variable, Deployment Recommendation: Deploy With Mitigations, FC-10-A Devops Workflow Consistency Gap, FC-10-B Unvalidated Mode File, FC-1-A Raw File Content Injection, FC-1-B Unvalidated Mode From Command String (+22 more)
 
 ### Community 232 - "Goose"
-Cohesion: 0.08
-Nodes (24): Agent Client Protocol, Goose ACP Server, Agentic AI Foundation, Anthropic, API, Azure, Bedrock, Block (+16 more)
+Cohesion: 0.07
+Nodes (30): Agent Client Protocol, Goose ACP Client, Goose ACP Server, Agentic AI Foundation, Amp, Anthropic, API, Azure (+22 more)
 
-### Community 233 - "skills/silver-multi-ai-task/scripts/live_dispatch.py"
-Cohesion: 0.06
-Nodes (59): PoolResolutionTests, sha256_json(), build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for() (+51 more)
+### Community 233 - "skills/silver-multi-ai-task/scripts/multi_ai_core.py"
+Cohesion: 0.11
+Nodes (29): PoolResolutionTests, Pool completeness hard-fail and resolution tests for DR live runner., BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args() (+21 more)
 
 ### Community 234 - "test-e2e-live-full-surface-journey.sh"
 Cohesion: 0.12
@@ -4709,9 +5141,9 @@ Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), bu
 Cohesion: 0.20
 Nodes (12): load_phases_config(), main(), Any, Enum, Path, Phase instruction scaffold — not a runtime orchestrator., Nine DR phases aligned with SKILL.md DR-* steps., ResearchEngine (+4 more)
 
-### Community 237 - "id"
-Cohesion: 0.08
-Nodes (26): type, properties, evidence_record, additionalProperties, properties, type, $ref, type (+18 more)
+### Community 237 - "enum"
+Cohesion: 0.07
+Nodes (36): type, properties, properties, $ref, enum, type, type, artifact_or_tool_ref (+28 more)
 
 ### Community 238 - "PA-11.1 Continuous Integration Pipeline"
 Cohesion: 0.07
@@ -4723,11 +5155,11 @@ Nodes (25): FreeTypeFont, Image, ImageDraw, add_glow(), add_grid(), _alpha255(),
 
 ### Community 240 - "agent-delegation-state.sh"
 Cohesion: 0.10
-Nodes (19): sb_agent_delegation_deactivate(), sb_agent_delegation_guard_disabled(), sb_agent_delegation_is_active(), sb_agent_delegation_path_in_scope(), sb_agent_delegation_v2_enabled(), agent-delegation-state.sh script, agent_delegate_write_degraded_fallback_evidence(), check() (+11 more)
+Nodes (21): sb_agent_delegation_activate(), sb_agent_delegation_deactivate(), sb_agent_delegation_guard_disabled(), sb_agent_delegation_is_active(), sb_agent_delegation_path_in_scope(), sb_agent_delegation_v2_enabled(), agent-delegation-state.sh script, sb_orchestrator_seed_delegation_directive() (+13 more)
 
 ### Community 241 - "Provenance Ledger"
 Cohesion: 0.09
-Nodes (33): Provenance Ledger, Admiralty Grading, Explicit Non-dependencies, Milestone 1 Core Contract, Milestone 2 Retrieval, Milestone 3 Reporting, Milestone 4 Evaluation, Refresh Protocol (+25 more)
+Nodes (34): Provenance Ledger, Admiralty Grading, Explicit Non-dependencies, Milestone 1 Core Contract, Milestone 2 Retrieval, Milestone 3 Reporting, Milestone 4 Evaluation, Refresh Protocol (+26 more)
 
 ### Community 242 - "ResearchEngine"
 Cohesion: 0.20
@@ -4735,7 +5167,7 @@ Nodes (12): load_phases_config(), main(), Any, Enum, Path, Phase instruction sca
 
 ### Community 243 - ".cursor3-monitor-loop.sh"
 Cohesion: 0.11
-Nodes (20): append(), mark_processed(), pipeline_driver_alive(), process_completed_row(), row_done_in_state(), row_processed(), run_phase_c(), SB_E2E_BRANCH (+12 more)
+Nodes (21): append(), mark_processed(), pipeline_driver_alive(), process_completed_row(), row_done_in_state(), row_processed(), run_phase_c(), SB_E2E_BRANCH (+13 more)
 
 ### Community 244 - "ResearchEngine"
 Cohesion: 0.20
@@ -4775,7 +5207,7 @@ Nodes (28): Check Mode Behavior, Reviewer Interface Contract, Finding Structure,
 
 ### Community 253 - "type"
 Cohesion: 0.04
-Nodes (56): items, type, items, type, properties, type, type, flow_step (+48 more)
+Nodes (57): items, type, properties, type, type, items, type, flow_step (+49 more)
 
 ### Community 254 - "properties"
 Cohesion: 0.08
@@ -4794,8 +5226,8 @@ Cohesion: 0.08
 Nodes (28): Cache Integrity, Command Injection, Identity Spoofing, Intentional Bypass, Markdown Injection, Overall Risk Low-Medium, Path Confusion, Path Traversal (+20 more)
 
 ### Community 258 - "OCG Qwen3 7 Max Self-Review"
-Cohesion: 0.10
-Nodes (21): Critical Self-Review of multi-ai-task Skill Round 5, Self-assessment rubric mismatch, OCG Minimax M3 Multi-AI Self-Review, OCG Qwen3 7 Max Self-Review, Verifier Call, Consolidated Record Type Gap, Cross-source verification, Default Model Discovery Algorithm (+13 more)
+Cohesion: 0.08
+Nodes (25): Critical Self-Review of multi-ai-task Skill Round 5, Self-assessment rubric mismatch, OCG Minimax M3 Multi-AI Self-Review, Confidence Assessment, OCG Qwen3 7 Max Self-Review, Enforcement Gap, Fact-Check Example, Research Prior-Art Run (+17 more)
 
 ### Community 259 - "recommended-tools/common.sh"
 Cohesion: 0.10
@@ -4850,8 +5282,8 @@ Cohesion: 0.08
 Nodes (23): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_BRANCH, SB_E2E_LEDGER_FILE, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_FORCE_ALL (+15 more)
 
 ### Community 272 - "run_dr_live"
-Cohesion: 0.16
-Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index(), build_phase_query(), build_run_manifest() (+12 more)
+Cohesion: 0.19
+Nodes (16): build_multi_phase_result_index(), build_phase_query(), build_run_manifest(), deterministic_work_item_id(), Any, Path, PoolSelection, Hard-fail when any resolved-pool agent lacks an envelope for any phase. (+8 more)
 
 ### Community 273 - "run_cm"
 Cohesion: 0.11
@@ -4870,8 +5302,8 @@ Cohesion: 0.26
 Nodes (22): ensure_context_mode_cli(), log(), optimize_context_mode_claude(), optimize_context_mode_codex(), optimize_context_mode_cursor(), optimize_context_mode_goose(), optimize_context_mode_hermes(), optimize_context_mode_opencode() (+14 more)
 
 ### Community 277 - "run_dr_live"
-Cohesion: 0.10
-Nodes (29): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index() (+21 more)
+Cohesion: 0.16
+Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index(), build_phase_query(), build_run_manifest() (+12 more)
 
 ### Community 278 - "run_cm"
 Cohesion: 0.11
@@ -4895,7 +5327,7 @@ Nodes (8): sb_cert_run_bypass(), sb_cert_run_bypass_active(), cert-bypass.sh scr
 
 ### Community 283 - "orchestrator-parent.sh"
 Cohesion: 0.12
-Nodes (12): sb_orchestrator_guard_applies_to_workspace(), sb_orchestrator_is_parent_session(), sb_orchestrator_is_worker_session(), sb_orchestrator_parent_bash_allowed(), sb_orchestrator_parent_context_block(), sb_orchestrator_parent_delegate_bash_allowed(), sb_orchestrator_parent_queue_pending(), sb_orchestrator_parent_skill_allowed() (+4 more)
+Nodes (13): sb_orchestrator_guard_applies_to_workspace(), sb_orchestrator_is_parent_session(), sb_orchestrator_is_worker_session(), sb_orchestrator_parent_bash_allowed(), sb_orchestrator_parent_context_block(), sb_orchestrator_parent_delegate_bash_allowed(), sb_orchestrator_parent_queue_pending(), sb_orchestrator_parent_resolve_ledger_bash_allowed() (+5 more)
 
 ### Community 284 - "cursor3-real-pipeline-driver.sh"
 Cohesion: 0.10
@@ -4915,7 +5347,7 @@ Nodes (21): comparison_to_builder_config(), generate_comparison_xlsx(), main(), 
 
 ### Community 288 - "Silver Multi AI Task Skill"
 Cohesion: 0.09
-Nodes (25): AF-MULTI-AI-TASK, silver-multi-ai-task, FS-MULTI-AI-CAPABILITY-PROBE, FS-MULTI-AI-DISPATCH, FS-MULTI-AI-INDEX, FS-MULTI-AI-RECONCILE, FS-MULTI-AI-RESERVE, FS-MULTI-AI-RESOLVE (+17 more)
+Nodes (26): AF-MULTI-AI-TASK, silver-multi-ai-task, FS-MULTI-AI-CAPABILITY-PROBE, FS-MULTI-AI-DISPATCH, FS-MULTI-AI-INDEX, FS-MULTI-AI-RECONCILE, FS-MULTI-AI-RESERVE, FS-MULTI-AI-RESOLVE (+18 more)
 
 ### Community 289 - "properties"
 Cohesion: 0.10
@@ -4930,12 +5362,12 @@ Cohesion: 0.13
 Nodes (19): sb_instruction_ledger_all_resolved(), sb_instruction_ledger_auto_resolve_parents(), sb_instruction_ledger_clear(), sb_instruction_ledger_current_scope(), sb_instruction_ledger_drop_if_scope_mismatch(), sb_instruction_ledger_jq_update(), sb_instruction_ledger_resolve_item(), sb_instruction_ledger_scope_mismatch() (+11 more)
 
 ### Community 292 - "recommended-tools.sh"
-Cohesion: 0.12
-Nodes (11): sb_graphify_platform_artifact_present(), sb_graphify_required(), sb_recommended_tool_config_string(), sb_recommended_tool_consent_prompt_block(), sb_recommended_tool_enforced(), sb_recommended_tool_enforcement_suspended(), sb_recommended_tool_install_failure_reason(), sb_recommended_tool_install_status() (+3 more)
+Cohesion: 0.10
+Nodes (16): sb_graphify_platform_artifact_present(), sb_graphify_required(), sb_recommended_tool_config_string(), sb_recommended_tool_consent_prompt_block(), sb_recommended_tool_enforced(), sb_recommended_tool_enforcement_suspended(), sb_recommended_tool_install_failure_reason(), sb_recommended_tool_install_status() (+8 more)
 
 ### Community 293 - "properties"
-Cohesion: 0.11
-Nodes (20): type, type, type, minLength, type, properties, adjacent_class, exclusion_class (+12 more)
+Cohesion: 0.10
+Nodes (22): type, type, type, minLength, type, properties, type, adjacent_class (+14 more)
 
 ### Community 294 - "properties"
 Cohesion: 0.09
@@ -4958,8 +5390,8 @@ Cohesion: 0.13
 Nodes (12): HTMLVerifier, main(), Path, Verify no emojis are present in HTML, Verify HTML has proper structure, Verify HTML research reports, Verify citations are present, Verify bibliography is present and formatted (+4 more)
 
 ### Community 299 - "skill-source/silver-multi-ai-task/scripts/cursor_host_adapter.py"
-Cohesion: 0.17
-Nodes (12): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+4 more)
+Cohesion: 0.18
+Nodes (11): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+3 more)
 
 ### Community 300 - "check-apo-invariants.py"
 Cohesion: 0.18
@@ -4998,12 +5430,12 @@ Cohesion: 0.09
 Nodes (25): 199 Biotechnologies Claude Deep Research Skill, Blessonism OpenClaw Search Skills, Deep Research Skills Landscape, Hoolulu Deep Research, Deep Research Skills Landscape Critique, Deep Research Skills Landscape Decision Record, Deep Research Skills Feature Matrix, Feature Matrix Ranking (+17 more)
 
 ### Community 309 - "skills/silver-multi-ai-task/scripts/cursor_host_adapter.py"
-Cohesion: 0.12
-Nodes (23): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+15 more)
+Cohesion: 0.17
+Nodes (12): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+4 more)
 
 ### Community 310 - "test-stop-check.sh"
-Cohesion: 0.08
-Nodes (32): sb_e2e_matrix_clear_routing_row_marker(), sb_e2e_matrix_routing_row_active(), sb_e2e_matrix_set_routing_row_marker(), e2e-matrix-routing.sh script, add_contract_required_key(), assert_blocks(), assert_contains(), assert_decoded_message_real_newlines() (+24 more)
+Cohesion: 0.11
+Nodes (24): sb_skill_is_installed(), skill-discovery.sh script, add_contract_required_key(), assert_blocks(), assert_contains(), assert_decoded_message_real_newlines(), assert_empty(), assert_passes() (+16 more)
 
 ### Community 311 - "Research Report Markdown Template"
 Cohesion: 0.12
@@ -5022,8 +5454,8 @@ Cohesion: 0.20
 Nodes (10): ChainTracker, extract_links(), load_or_create(), main(), normalize_domain(), Any, Path, save_tracker() (+2 more)
 
 ### Community 315 - "Extended Cursor Verification"
-Cohesion: 0.10
-Nodes (25): AGENTS.md, Cursor Rules Documentation, RTK Allow-List, Cursor cli-config.json, Context Mode in Cursor Verification, context-mode Cursor Hook, ctx_execute, ctx_fetch_and_index (+17 more)
+Cohesion: 0.12
+Nodes (22): RTK Allow-List, Cursor cli-config.json, Context Mode in Cursor Verification, context-mode Cursor Hook, ctx_execute, ctx_fetch_and_index, ctx_stats, Cursor (+14 more)
 
 ### Community 316 - "CitationVerifier"
 Cohesion: 0.14
@@ -5041,9 +5473,9 @@ Nodes (21): type, format, type, minimum, type, type, properties, type (+13 more)
 Cohesion: 0.10
 Nodes (21): properties, type, minimum, type, minimum, type, null, string (+13 more)
 
-### Community 320 - "Silver Bullet Benefits Over Plain GSD"
-Cohesion: 0.03
-Nodes (89): workflow, enum, enum, Composable Flows Contract Reference, APO Catalog, Generate APO Artifacts Script, Local V-Loop, Workflow Composition Tree (+81 more)
+### Community 320 - "Core Concepts Help Page"
+Cohesion: 0.04
+Nodes (70): workflow, enum, enum, Composable Flows Contract Reference, APO Catalog, Generate APO Artifacts Script, Local V-Loop, Workflow Composition Tree (+62 more)
 
 ### Community 321 - "silver:multi-ai-task/scripts/cursor_host_adapter.py"
 Cohesion: 0.18
@@ -5058,24 +5490,24 @@ Cohesion: 0.13
 Nodes (9): sb_context_mode_claude_plugin_present(), sb_context_mode_cli_available(), sb_context_mode_cli_path(), sb_context_mode_hooks_present(), sb_context_mode_instruction_fragment_present(), sb_context_mode_node_ok(), sb_context_mode_platform_artifact_present(), sb_context_mode_prompt_reminder_line() (+1 more)
 
 ### Community 324 - "lib/graphify-gate.sh"
-Cohesion: 0.12
-Nodes (10): sb_graphify_cli_available(), sb_graphify_cli_path(), sb_graphify_command_is_exempt(), sb_graphify_command_is_index_build(), sb_graphify_command_is_retrieval(), sb_graphify_index_exists(), sb_graphify_prompt_reminder_line(), sb_graphify_query_is_fresh() (+2 more)
+Cohesion: 0.13
+Nodes (9): sb_graphify_cli_available(), sb_graphify_cli_path(), sb_graphify_command_is_exempt(), sb_graphify_command_is_index_build(), sb_graphify_command_is_retrieval(), sb_graphify_index_exists(), sb_graphify_prompt_reminder_line(), sb_graphify_query_is_fresh() (+1 more)
 
 ### Community 325 - "Round 6 Gates"
 Cohesion: 0.11
 Nodes (24): Round 1 Ledger, Round 2 Ledger, Round 5 Gates, Round 5 Ledger, Round 6 Gates, Round 6 Ledger, Round 6 Operational Addendum, Round 6 Outcomes (+16 more)
 
-### Community 326 - "DevOps Quality Gates"
-Cohesion: 0.04
-Nodes (72): DevOps Quality Gates, record-skill Marker Writer, Usability Dimension, Ranked Hypothesis List, Systematic Debugging, Blast Radius, Systematic debugging, DevOps Cycle Workflow (+64 more)
+### Community 326 - "Silver Bullet Major Issues Analysis"
+Cohesion: 0.06
+Nodes (38): Ranked Hypothesis List, Systematic Debugging, Blast Radius, Systematic debugging, Fix plan, GitHub CLI Dependency, Ranked hypotheses, Regression guard (+30 more)
 
 ### Community 327 - "Deep Research Methodology"
 Cohesion: 0.12
 Nodes (24): Critique Phase, Outline Refinement Phase, Package Phase, Plan Phase, Refine Phase, Retrieve Phase, Scope Phase, Silver Deep Research Skill (+16 more)
 
 ### Community 328 - "orchestrator-event-log.sh"
-Cohesion: 0.16
-Nodes (15): sb_orchestrator_event_append(), sb_orchestrator_event_apply_resume_checkpoint(), sb_orchestrator_event_record_advance(), sb_orchestrator_event_record_dispatch(), sb_orchestrator_event_record_retry(), sb_orchestrator_event_record_stop_block(), sb_orchestrator_saga_begin(), sb_orchestrator_saga_complete() (+7 more)
+Cohesion: 0.17
+Nodes (14): sb_orchestrator_event_append(), sb_orchestrator_event_record_advance(), sb_orchestrator_event_record_dispatch(), sb_orchestrator_event_record_retry(), sb_orchestrator_event_record_stop_block(), sb_orchestrator_saga_begin(), sb_orchestrator_saga_complete(), sb_orchestrator_saga_rollback_hint() (+6 more)
 
 ### Community 329 - "test-kay-codex-isolation.sh"
 Cohesion: 0.18
@@ -5110,8 +5542,8 @@ Cohesion: 0.10
 Nodes (21): properties, type, minimum, type, minimum, type, null, string (+13 more)
 
 ### Community 337 - "codex/silver-multi-ai-task/scripts/cursor_host_adapter.py"
-Cohesion: 0.18
-Nodes (11): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+3 more)
+Cohesion: 0.17
+Nodes (12): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+4 more)
 
 ### Community 338 - "codex-r8-force16-only-driver.sh"
 Cohesion: 0.10
@@ -5130,8 +5562,8 @@ Cohesion: 0.10
 Nodes (21): type, properties, artifact_paths, query, report_dir, run_id, schema_id, spine (+13 more)
 
 ### Community 342 - "properties"
-Cohesion: 0.10
-Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
+Cohesion: 0.12
+Nodes (17): default, description, type, minLength, type, type, minLength, type (+9 more)
 
 ### Community 343 - "ChainTracker"
 Cohesion: 0.19
@@ -5186,8 +5618,8 @@ Cohesion: 0.12
 Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
 
 ### Community 356 - "properties"
-Cohesion: 0.10
-Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
+Cohesion: 0.12
+Nodes (17): default, description, type, minLength, type, type, minLength, type (+9 more)
 
 ### Community 357 - "Graphify and agentmemory Goose Verification"
 Cohesion: 0.11
@@ -5242,12 +5674,12 @@ Cohesion: 0.12
 Nodes (6): collect_shell_in_scope_targets(), main(), matches_src_scope(), sb_bash_touches_state_sentinel_only(), sb_state_sentinel_path_allowed(), dev-cycle-check.sh script
 
 ### Community 370 - "quality-gates-mode.sh"
-Cohesion: 0.16
-Nodes (16): sb_dqg_pre_ship_marker_recorded(), sb_dqg_preplan_marker_recorded(), sb_qg_artifact_has_body(), sb_qg_detect_mode(), sb_qg_pre_ship_marker_recorded(), sb_qg_preplan_marker_recorded(), sb_qg_repo_requires_pre_ship_marker(), sb_qg_state_has_marker() (+8 more)
+Cohesion: 0.17
+Nodes (15): sb_dqg_pre_ship_marker_recorded(), sb_dqg_preplan_marker_recorded(), sb_qg_artifact_has_body(), sb_qg_detect_mode(), sb_qg_pre_ship_marker_recorded(), sb_qg_preplan_marker_recorded(), sb_qg_repo_requires_pre_ship_marker(), sb_qg_state_has_marker() (+7 more)
 
 ### Community 371 - "run_dr_live"
-Cohesion: 0.19
-Nodes (16): build_multi_phase_result_index(), build_phase_query(), build_run_manifest(), deterministic_work_item_id(), Any, Path, PoolSelection, Hard-fail when any resolved-pool agent lacks an envelope for any phase. (+8 more)
+Cohesion: 0.16
+Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index(), build_phase_query(), build_run_manifest() (+12 more)
 
 ### Community 372 - "scripts/semantic-compress.sh"
 Cohesion: 0.12
@@ -5273,9 +5705,9 @@ Nodes (22): Verified Agent Client Protocol, ACP Subscription Reuse, Verified adv
 Cohesion: 0.09
 Nodes (22): Automatic Host Detection, Codex, Context Mode Sandbox, Cursor, RTK + Context Mode README, Goose, Graphify + agentmemory Stack, Hermes (+14 more)
 
-### Community 378 - "/silver:deep-research workflow page"
-Cohesion: 0.09
-Nodes (31): /silver:content workflow page, /silver:deep-research workflow page, capability_score, chain_tracker, compare_solutions.py, comparison-report.md, competitive-intelligence-report.md, decision-record.md (+23 more)
+### Community 378 - "properties"
+Cohesion: 0.10
+Nodes (20): description, pattern, type, minItems, type, minItems, type, type (+12 more)
 
 ### Community 379 - "Deep Research Capability Rubric"
 Cohesion: 0.10
@@ -5318,8 +5750,8 @@ Cohesion: 0.11
 Nodes (19): CLAUDE_INTERACTIVE_TIMEOUT, CURSOR_AGENT_MODEL, CURSOR_MODEL, RTK_DISABLED, SB_E2E_BRANCH, SB_E2E_CHECKPOINT_EXIT_REASON, SB_E2E_CHECKPOINT_LAST_ROW, SB_E2E_LEDGER_FILE (+11 more)
 
 ### Community 389 - "properties"
-Cohesion: 0.10
-Nodes (22): type, type, type, minLength, type, properties, type, adjacent_class (+14 more)
+Cohesion: 0.11
+Nodes (20): type, type, type, minLength, type, properties, adjacent_class, exclusion_class (+12 more)
 
 ### Community 390 - "$ref"
 Cohesion: 0.10
@@ -5339,7 +5771,7 @@ Nodes (19): build_display_number_to_source_id(), canonicalize_locator(), cmd_rep
 
 ### Community 394 - "skill-source/silver-deep-research/tests/test_verify_claim_support.py"
 Cohesion: 0.14
-Nodes (9): Evidence with partial overlap should result in partial status., Run verify_claim_support.py., Claims with matching evidence should be supported., Claims without evidence should be unsupported., run_vcs(), TestVerifyPartial, TestVerifySupported, TestVerifyUnsupported (+1 more)
+Nodes (9): Mixed claim types with different thresholds., Evidence with partial overlap should result in partial status., Run verify_claim_support.py., Claims without evidence should be unsupported., run_vcs(), TestVerifyMixed, TestVerifyPartial, TestVerifyUnsupported (+1 more)
 
 ### Community 395 - "properties"
 Cohesion: 0.10
@@ -5394,8 +5826,8 @@ Cohesion: 0.10
 Nodes (20): pattern, type, type, properties, input_hash, output_schema_ref, run_id, schema_id (+12 more)
 
 ### Community 408 - "Review Loop Algorithm"
-Cohesion: 0.08
-Nodes (26): Clear Review State, Display All Findings, Emit Review Metric, Invoke Reviewer, Load Review State, Record Review Round, Resolve Review Depth, Review Loop Algorithm (+18 more)
+Cohesion: 0.10
+Nodes (21): Clear Review State, Display All Findings, Emit Review Metric, Invoke Reviewer, Load Review State, Record Review Round, Resolve Review Depth, Review Loop Algorithm (+13 more)
 
 ### Community 409 - "silver:deep-research-multi-ai/scripts/generate_spa_report.py"
 Cohesion: 0.16
@@ -5410,16 +5842,16 @@ Cohesion: 0.11
 Nodes (19): items, type, items, type, items, type, type, items (+11 more)
 
 ### Community 412 - "Session Startup Sequence"
-Cohesion: 0.13
-Nodes (18): Active Host Plugin Manager, Shared Codex Marketplace, Graphify Results, Project Context, Latest GitHub Release, session-start Hook, Path Composition, Session Startup (+10 more)
+Cohesion: 0.12
+Nodes (19): Active Host Plugin Manager, Shared Codex Marketplace, Graphify Results, Project Context, Latest GitHub Release, session-start Hook, Path Composition, Session Startup (+11 more)
 
 ### Community 413 - "properties"
 Cohesion: 0.11
 Nodes (19): items, minItems, type, type, description, items, type, type (+11 more)
 
 ### Community 414 - "properties"
-Cohesion: 0.09
-Nodes (23): type, type, enum, type, properties, cursor, ocg, type (+15 more)
+Cohesion: 0.11
+Nodes (19): type, type, type, properties, type, type, pattern, type (+11 more)
 
 ### Community 415 - "required"
 Cohesion: 0.11
@@ -5438,16 +5870,16 @@ Cohesion: 0.10
 Nodes (21): Decision Record, Airbnb, Amazon/AWS, Apple, Atlassian, GitHub, Google, LinkedIn (+13 more)
 
 ### Community 419 - "properties"
-Cohesion: 0.11
-Nodes (19): type, type, type, properties, type, type, pattern, type (+11 more)
+Cohesion: 0.09
+Nodes (23): type, type, enum, type, properties, cursor, ocg, type (+15 more)
 
 ### Community 420 - ".codex-prerelease-validation-run.sh"
 Cohesion: 0.14
 Nodes (18): FAILURES, GITHUB_REPOSITORY, log(), RTK_DISABLED, run_check(), run_check_allow_fail(), run_skip(), SB_E2E_LEDGER_FILE (+10 more)
 
-### Community 421 - "codex-r2-force1516-driver.sh"
-Cohesion: 0.11
-Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+10 more)
+### Community 421 - "enterprise-e2e-live-common.sh"
+Cohesion: 0.06
+Nodes (28): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+20 more)
 
 ### Community 422 - "codex-r2-matrix-driver.sh"
 Cohesion: 0.11
@@ -5457,9 +5889,9 @@ Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB
 Cohesion: 0.10
 Nodes (21): Silver Ingest Workflow Help Page, ARTIFACT MISSING Block, Two Consecutive Clean Artifact Review Passes, Confluence Source, Cross-Repository Specification, Figma Source, User-Selected Figma Target Frames, Google Docs Source (+13 more)
 
-### Community 424 - "enterprise-e2e-live-common.sh"
-Cohesion: 0.06
-Nodes (28): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+20 more)
+### Community 424 - "codex-r2-tierb-smoke-driver.sh"
+Cohesion: 0.11
+Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+10 more)
 
 ### Community 425 - "codex-r8-force1516-driver.sh"
 Cohesion: 0.11
@@ -5478,8 +5910,8 @@ Cohesion: 0.13
 Nodes (18): CLAUDE_INTERACTIVE_TIMEOUT, CURSOR_AGENT_MODEL, CURSOR_MODEL, log(), mark_done(), phase_done(), RTK_DISABLED, run_outcome_assessment_with_retry() (+10 more)
 
 ### Community 429 - "Router Subagent Surfaces Plan"
-Cohesion: 0.19
-Nodes (16): A-loop, Doctor Diagnostics, Router Subagent Surfaces Plan, I-loop, Iterate Ladder, Knowledge and Learnings Gates, Levels 0–3 Defect Recovery, Migration Barrier (+8 more)
+Cohesion: 0.14
+Nodes (20): A-loop, Doctor Diagnostics, Router Subagent Surfaces Plan, I-loop, Iterate Ladder, Knowledge and Learnings Gates, Levels 0–3 Defect Recovery, Migration Barrier (+12 more)
 
 ### Community 430 - "r8-resume-row14-kill-batch.sh"
 Cohesion: 0.13
@@ -5522,8 +5954,8 @@ Cohesion: 0.11
 Nodes (19): items, minItems, type, type, description, items, type, type (+11 more)
 
 ### Community 440 - "properties"
-Cohesion: 0.09
-Nodes (23): type, type, enum, type, properties, cursor, ocg, type (+15 more)
+Cohesion: 0.11
+Nodes (19): type, type, type, properties, type, type, pattern, type (+11 more)
 
 ### Community 441 - "test-session-start.sh"
 Cohesion: 0.15
@@ -5562,8 +5994,8 @@ Cohesion: 0.23
 Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+8 more)
 
 ### Community 450 - "silver:agent-opencode skill"
-Cohesion: 0.14
-Nodes (19): MiMo V2.5 model, OpenCode CLI, opencode-go provider, opencode run, Pi CLI, pi -p invocation, Direct delegation fallback, SB_AGENT_DELEGATE_V2 (+11 more)
+Cohesion: 0.13
+Nodes (20): MiMo V2.5 model, OpenCode CLI, opencode-go provider, opencode run, Pi CLI, pi -p invocation, Direct delegation fallback, SB_AGENT_DELEGATE_V2 (+12 more)
 
 ### Community 451 - "properties"
 Cohesion: 0.11
@@ -5597,9 +6029,9 @@ Nodes (18): items, type, additionalProperties, required, type, attempt_id, effec
 Cohesion: 0.16
 Nodes (11): env.sh script, SB_ROOT, invoke.sh script, usage(), agent_pi_apply_delegate_env(), agent_pi_apply_runtime_env(), _agent_pi_source_cli(), _agent_pi_source_common() (+3 more)
 
-### Community 459 - "migrate_v3_to_v4"
+### Community 459 - "sha256_json"
 Cohesion: 0.23
-Nodes (15): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+7 more)
+Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+8 more)
 
 ### Community 460 - "market_entry"
 Cohesion: 0.16
@@ -5618,16 +6050,16 @@ Cohesion: 0.20
 Nodes (16): assert_command_fails(), assert_command_succeeds(), assert_contains(), assert_file_absent(), assert_file_exists(), assert_hook_command_matchers(), assert_hook_trust_state_for_source(), assert_no_async_true() (+8 more)
 
 ### Community 464 - "Landscape Consolidation Guide"
-Cohesion: 0.13
-Nodes (19): Comparator Reference, Weighted Matrix Scoring, Solution Compare Reference, Landscape Consolidation Guide, Adjacent Markets, Landscape Category Pack, Core Solutions, Explicitly Excluded Solutions (+11 more)
+Cohesion: 0.14
+Nodes (18): Comparator Reference, Weighted Matrix Scoring, Solution Compare Reference, Landscape Consolidation Guide, Adjacent Markets, Landscape Category Pack, Core Solutions, Explicitly Excluded Solutions (+10 more)
 
 ### Community 465 - "$ref"
 Cohesion: 0.10
 Nodes (20): items, type, items, type, items, minItems, type, $ref (+12 more)
 
 ### Community 466 - "properties"
-Cohesion: 0.12
-Nodes (17): default, description, type, minLength, type, type, minLength, type (+9 more)
+Cohesion: 0.10
+Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
 
 ### Community 467 - "silver:deep-research/scripts/citation_manager.py"
 Cohesion: 0.21
@@ -5658,32 +6090,32 @@ Cohesion: 0.15
 Nodes (6): sb_required_skills_config_is_legacy(), sb_required_skills_dedupe(), sb_required_skills_normalize_configured_list(), __sb_rs_populate(), __sb_rs_version_lt(), required-skills.sh script
 
 ### Community 474 - "rtk-compat.sh"
-Cohesion: 0.17
-Nodes (14): sb_rtk_compat_enable(), sb_rtk_compat_verbatim(), sb_rtk_user_opted_in(), rtk-compat.sh script, SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP, SB_E2E_MATRIX_LOG, SB_RTK_COMPAT_MODE, live-test.sh script (+6 more)
+Cohesion: 0.31
+Nodes (8): sb_rtk_compat_enable(), sb_rtk_compat_verbatim(), sb_rtk_user_opted_in(), rtk-compat.sh script, run_step(), SB_RTK_COMPAT_MODE, preflight-round.sh script, usage()
 
 ### Community 475 - "Agent Host Delegation Sibling Prompt"
 Cohesion: 0.09
 Nodes (24): Cursor Pilot Absolute Log Path Fix Commit, Absolute Log and Brief Paths, Delegation Anti-patterns, Claude Host, Codex Host, Cursor Delegation Commit 7a901af4, Codex Delegation Commit 83e42c34, Dedicated Worktree (+16 more)
 
-### Community 476 - "properties"
-Cohesion: 0.12
-Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
+### Community 476 - "/silver:validate Workflow"
+Cohesion: 0.13
+Nodes (19): BLOCK Finding, chrome.css, Chrome JavaScript, Help Common JavaScript, INFO Finding, Lucide 0.469.0, neutral-variants.css, PLAN.md (+11 more)
 
 ### Community 477 - "Learnings — 2026-05"
 Cohesion: 0.11
 Nodes (19): Active Session Ledger, Archive Namespace and Move Manifest, Authoritative Upstream Content, Canonical Policy, Completion Hook, DevOps Automation Practices, Current Documentation Inventory, Learnings — 2026-05 (+11 more)
 
 ### Community 478 - "lib/rtk-gate.sh"
-Cohesion: 0.15
-Nodes (7): sb_rtk_cli_available(), sb_rtk_cli_path(), sb_rtk_is_wrong_binary(), sb_rtk_platform_hook_present(), sb_rtk_prompt_reminder_line(), sb_rtk_version_ok(), rtk-gate.sh script
+Cohesion: 0.08
+Nodes (14): sb_alumnium_npx_available(), sb_alumnium_platform_artifact_present(), sb_alumnium_prompt_reminder_line(), alumnium-gate.sh script, sb_rtk_cli_available(), sb_rtk_cli_path(), sb_rtk_is_wrong_binary(), sb_rtk_platform_hook_present() (+6 more)
 
 ### Community 479 - "properties"
-Cohesion: 0.10
-Nodes (20): description, pattern, type, minItems, type, minItems, type, type (+12 more)
+Cohesion: 0.12
+Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
 
 ### Community 480 - "properties"
-Cohesion: 0.12
-Nodes (17): minLength, type, type, minLength, description, minLength, type, type (+9 more)
+Cohesion: 0.10
+Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
 
 ### Community 481 - "properties"
 Cohesion: 0.07
@@ -5697,9 +6129,9 @@ Nodes (16): append_jsonl(), canonicalize_locator(), cmd_assign_display_numbers()
 Cohesion: 0.17
 Nodes (16): _close_sections(), _convert_bibliography_section(), _convert_content_section(), _convert_lists(), convert_markdown_to_html(), _convert_paragraphs(), _convert_tables(), main() (+8 more)
 
-### Community 484 - "round8-matrix-driver.sh"
-Cohesion: 0.12
-Nodes (16): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT, SB_E2E_MONITOR_AUTO_RESTART (+8 more)
+### Community 484 - "Enterprise E2E Validation Plan"
+Cohesion: 0.14
+Nodes (18): Enterprise E2E Validation Plan, First-Hour Unsafe PR Claim, Help Ship Readiness Claim, Hero Capabilities Claim, Hero Evidence Gates Claim, Free Forever No Telemetry Claim, Ten-Times-Lower-Cost Claim, Onboarding SLO (+10 more)
 
 ### Community 485 - "live-verify-track-host.sh"
 Cohesion: 0.22
@@ -5813,13 +6245,13 @@ Nodes (13): 1. Independence Statement, 2.1 Product-architecture fit (overview §
 Cohesion: 0.14
 Nodes (13): 1. Independence Statement, 2.1 Finding 1 — `blocked_validation_state` missing from canonical blockers enum, 2.2 Finding 2 — Four canonical blockers with no defined trigger predicate, 2. Cycle-1 Findings — Closure Verification, 3.1 Enum completeness — all 28 canonical blockers now have trigger predicates, 3.2 New predicate semantics — internal consistency, 3.3 Locked decisions, state machines, and traceability untouched, 3.4 Frontmatter and structure integrity (+5 more)
 
-### Community 513 - "Critical Self-Review: multi-ai-task Skill v2.0.0"
-Cohesion: 0.20
-Nodes (14): Dynamic Rule, Critical Self-Review: multi-ai-task Skill v2.0.0, Dispatch and Consolidation Pipeline, Research-Domain Alias Leakage, Schema Auto-Injection, Schema Contract Gaps, Skill Rubric Score, Task-Agnosticism (+6 more)
+### Community 513 - "Silver Bullet Benefits Over Plain GSD"
+Cohesion: 0.11
+Nodes (19): Silver Bullet Benefits Over Plain GSD, Artifact Protection, Artifact Review Governance, Compliance Visibility, Cross-Plugin Orchestration, DevOps Safety, Documentation Governance, Plain GSD (+11 more)
 
 ### Community 514 - "enforcement-tier-gate.sh"
-Cohesion: 0.13
-Nodes (4): sb_capability_hooks_present(), sb_capability_tier_name(), capability-tier.sh script, enforcement-tier-gate.sh script
+Cohesion: 0.11
+Nodes (11): sb_capability_hooks_present(), sb_capability_tier_name(), capability-tier.sh script, sb_enforcement_tier_persist(), enforcement-tier-gate.sh script, assert_contains(), assert_executable(), assert_file_exists() (+3 more)
 
 ### Community 515 - "properties"
 Cohesion: 0.14
@@ -5830,12 +6262,12 @@ Cohesion: 0.12
 Nodes (15): additionalProperties, $id, launch, result, schema_id, version, properties, schema_id (+7 more)
 
 ### Community 517 - "Intent Route Table"
-Cohesion: 0.03
-Nodes (82): orchestrator-directive.json, /silver Smart Skill Orchestrator, silver:clarify, silver:refactor, silver:worktree, tdd, Orchestrator Workflow Queue, workflows.sh Helper (+74 more)
+Cohesion: 0.04
+Nodes (70): orchestrator-directive.json, /silver Smart Skill Orchestrator, silver:refactor, silver:worktree, tdd, Orchestrator Workflow Queue, workflows.sh Helper, Search Output for Silver Quality Gates (+62 more)
 
 ### Community 518 - "Deep Research Multi AI Skill"
-Cohesion: 0.21
-Nodes (12): Contribution Envelopes, Cursor and OCG Backends, Deep Research Multi AI Skill, Landscape HTML Report, General HTML Report, Result Index, Multi-AI Task V2 Spine, Multi AI Task Primitive (+4 more)
+Cohesion: 0.24
+Nodes (11): Contribution Envelopes, Cursor and OCG Backends, Deep Research Multi AI Skill, Landscape HTML Report, General HTML Report, Result Index, Multi AI Task Primitive, DR Critique Phase (+3 more)
 
 ### Community 519 - "properties"
 Cohesion: 0.12
@@ -5934,8 +6366,8 @@ Cohesion: 0.18
 Nodes (9): cmd_preflight(), cmd_score(), cmd_start(), cmd_status(), main(), SB_ROOT, minimal-intent-autonomous-e2e.sh script, usage() (+1 more)
 
 ### Community 543 - "properties"
-Cohesion: 0.14
-Nodes (16): properties, required, type, manifest_path, manifest_sha256, phase_id, work_item_id, items (+8 more)
+Cohesion: 0.12
+Nodes (18): properties, required, type, manifest_path, manifest_sha256, phase_id, work_item_id, items (+10 more)
 
 ### Community 544 - "skills/silver-multi-ai-task/schemas/cursor-host-adapter-v1.schema.json"
 Cohesion: 0.12
@@ -6081,9 +6513,9 @@ Nodes (12): assert_exit0(), assert_false(), assert_has_context(), assert_has_enf
 Cohesion: 0.20
 Nodes (16): Plan 061-01, Issue #59, Issue #61, Issue #62, Issue #83, SKL-01, SKL-02, SKL-03 (+8 more)
 
-### Community 580 - "Phase 28 Plan 01"
-Cohesion: 0.05
-Nodes (61): HOOK-06 silver:migrate Requirement, Legacy Marker Fallback, Artifact-to-Path Inference, User Confirmation Before Write, WORKFLOW.md-First Enforcement, Phase 23 Summary 01, Composable Path Sections, Phase 21 Foundation Dependency (+53 more)
+### Community 580 - "Phase 23 Summary 01"
+Cohesion: 0.23
+Nodes (16): Phase 23 Summary 01, Composable Path Sections, Phase 21 Foundation Dependency, Phase 22 Core Paths Dependency, Phase 23 Summary 02, UI Quality Review Cycle, Phase 23 Context, UI Phase Trigger Detection (+8 more)
 
 ### Community 581 - "test-reload-receipts.sh"
 Cohesion: 0.15
@@ -6122,8 +6554,8 @@ Cohesion: 0.24
 Nodes (11): apply_persona_priority(), _catalog(), get_persona(), list_persona_ids(), max_priority(), _priority_rank(), Any, Load need-profile personas for weighted comparison-matrix scoring. (+3 more)
 
 ### Community 590 - "Getting Started Help Page"
-Cohesion: 0.11
-Nodes (19): Getting Started Help Page, AI-Driven Development, alo-labs/agent-plugins Marketplace, alo-labs-cursor Package, Catalog-Backed Workflow State, Catalog Inventory: 27 Atomic Flows, 22 Workflows, 85 Flow Steps, Optional DevOps and Provider Extensions, GitHub CLI (+11 more)
+Cohesion: 0.13
+Nodes (16): Getting Started Help Page, AI-Driven Development, Catalog-Backed Workflow State, Catalog Inventory: 27 Atomic Flows, 22 Workflows, 85 Flow Steps, Optional DevOps and Provider Extensions, GitHub CLI, Graphify Project-Memory Retrieval, Workflow Enforcement Hooks (+8 more)
 
 ### Community 591 - "properties"
 Cohesion: 0.19
@@ -6133,21 +6565,21 @@ Nodes (14): type, properties, null, string, type, authoritative_attempt_id, logi
 Cohesion: 0.14
 Nodes (13): 1. What Silver Bullet is, 2. Product surfaces users see, 3. Hierarchy (APO mental model), 4.1 Orchestrator (parent ≠ implementer), 4.2 Enforcement machinery, 4.3 Hosts, 4. Inner workings — how a run actually proceeds, 5. Quality behavior as product (not ceremony) (+5 more)
 
-### Community 593 - "required"
-Cohesion: 0.14
-Nodes (14): execution, additionalProperties, required, type, dependencies, dispatch_mode, join_condition, mutation_scopes (+6 more)
+### Community 593 - "SolutionClassifierTests"
+Cohesion: 0.19
+Nodes (4): _envelopes(), PackSchemaTests, Tests for pack-driven solution classifier., SolutionClassifierTests
 
 ### Community 594 - "properties"
 Cohesion: 0.19
 Nodes (14): type, format, type, null, string, properties, type, budget_stop_reason (+6 more)
 
-### Community 595 - "lib/alumnium-gate.sh"
-Cohesion: 0.15
-Nodes (7): sb_alumnium_npx_available(), sb_alumnium_platform_artifact_present(), sb_alumnium_prompt_reminder_line(), alumnium-gate.sh script, PATH, recommended-tools-preflight.sh script, SILVER_BULLET_RUNTIME
-
-### Community 596 - "LiveDispatchModelRoutingTests"
+### Community 595 - "Critical Self-Review: multi-ai-task Skill v2.0.0"
 Cohesion: 0.16
-Nodes (5): cursor_last_resort_model(), cursor_models_to_try(), parse_cursor_cli_failure(), LiveDispatchModelRoutingTests, Unit tests for live_dispatch cursor model routing.
+Nodes (17): Dynamic Rule, Critical Self-Review: multi-ai-task Skill v2.0.0, Dispatch and Consolidation Pipeline, Research-Domain Alias Leakage, Schema Auto-Injection, Schema Contract Gaps, Skill Rubric Score, Task-Agnosticism (+9 more)
+
+### Community 596 - "Reusability Skill"
+Cohesion: 0.23
+Nodes (17): Consumer-Centered API Design, Reusable Package Boundaries, Parameterize, Do Not Fork, Silver: Reusability, Reusability Skill, Consumer Perspective API Design, Parameterize Rather Than Fork, Reusability Skill (+9 more)
 
 ### Community 597 - "market_entry"
 Cohesion: 0.16
@@ -6298,8 +6730,8 @@ Cohesion: 0.15
 Nodes (13): Silver Bullet v0.49.1 Release Memory, Silver Bullet Setup Session 1782200310, Silver Bullet Setup Session 1782200410, Setup Validation Memory, Agentmemory and Graphify Stack, Clarify Round-2 Ratification, Feature Matrix Sticky Header Commit, Plugin-Dev Compliance Audit (+5 more)
 
 ### Community 634 - "properties"
-Cohesion: 0.19
-Nodes (14): type, format, type, null, string, properties, type, budget_stop_reason (+6 more)
+Cohesion: 0.23
+Nodes (12): type, format, type, null, string, properties, budget_stop_reason, finished_at (+4 more)
 
 ### Community 635 - "inclusion_criteria"
 Cohesion: 0.15
@@ -6317,9 +6749,9 @@ Nodes (14): Finishing a Development Branch, Main Branch, Enterprise E2E Cherry-P
 Cohesion: 0.14
 Nodes (13): additionalProperties, description, canonical_locator, metadata_status, raw_url, registered_at, source_id, source_type (+5 more)
 
-### Community 639 - "Orchestration Workflows Topic"
+### Community 639 - "Command Reference Topic"
 Cohesion: 0.16
-Nodes (16): 85 Catalog Flow Steps, AF Alias Table, 27 AF Atomic Flows, Agent Teams and Parallelism, APO Catalog docs/apo-catalog.json, Command Reference Topic, Core Concepts Topic, Silver Bullet Help Center Index (+8 more)
+Nodes (14): 85 Catalog Flow Steps, AF Alias Table, 27 AF Atomic Flows, Agent Teams and Parallelism, APO Catalog docs/apo-catalog.json, Command Reference Topic, Core Concepts Topic, Silver Bullet Help Center Index (+6 more)
 
 ### Community 640 - "Silver Bullet Site Design System"
 Cohesion: 0.14
@@ -6337,9 +6769,9 @@ Nodes (14): Lifecycle Hooks, Subagents, Claude Desktop, Hook JSON Payload, hooks
 Cohesion: 0.24
 Nodes (11): apply_persona_priority(), _catalog(), get_persona(), list_persona_ids(), max_priority(), _priority_rank(), Any, Load need-profile personas for weighted comparison-matrix scoring. (+3 more)
 
-### Community 644 - "properties"
-Cohesion: 0.13
-Nodes (15): type, type, items, type, properties, type, conflict_resolution, name (+7 more)
+### Community 644 - "Silver Bullet DevOps Cycle"
+Cohesion: 0.23
+Nodes (14): Silver Bullet DevOps Cycle, Blast-Radius Assessment, Infrastructure Context, Deploy Readiness, DevOps Workflow Lifecycle, Infrastructure Execution, Infrastructure Orientation, Infrastructure Plan (+6 more)
 
 ### Community 645 - "Autonomous health endpoint task brief"
 Cohesion: 0.15
@@ -6350,8 +6782,8 @@ Cohesion: 0.19
 Nodes (14): type, properties, null, string, type, authoritative_attempt_id, logical_model_id, status (+6 more)
 
 ### Community 647 - "test-agentmemory-gate.sh"
-Cohesion: 0.22
-Nodes (11): sb_agentmemory_record_usage(), assert_allow(), assert_deny(), install_mock_agentmemory(), PATH, setup(), test-agentmemory-gate.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED (+3 more)
+Cohesion: 0.18
+Nodes (13): sb_agentmemory_record_usage(), sb_graphify_record_query(), assert_allow(), assert_deny(), install_mock_agentmemory(), PATH, SB_AGENTMEMORY_MCP_ARTIFACT, setup() (+5 more)
 
 ### Community 648 - "test-orchestrator-parent-guard.sh"
 Cohesion: 0.18
@@ -6365,9 +6797,9 @@ Nodes (11): fail(), pass(), SB_RUNTIME_PLUGIN_CACHE_ROOT, SB_RUNTIME_PRESERVE_ST
 Cohesion: 0.14
 Nodes (13): author, dependencies, playwright, description, playwright, keywords, license, main (+5 more)
 
-### Community 651 - "enum"
-Cohesion: 0.22
-Nodes (13): enum, enum, analysis, command_evidence, demonstration, insert, inspection, loop (+5 more)
+### Community 651 - "properties"
+Cohesion: 0.12
+Nodes (16): type, process_pack, items, type, additionalProperties, properties, type, type (+8 more)
 
 ### Community 652 - "properties"
 Cohesion: 0.15
@@ -6417,9 +6849,9 @@ Nodes (13): attempt_id, deadline, hard_token_ceiling, idempotency_key, logical_m
 Cohesion: 0.15
 Nodes (13): type, type, properties, type, attempt_id, entry_id, logical_model_id, status (+5 more)
 
-### Community 664 - "Enterprise E2E Validation Plan"
-Cohesion: 0.14
-Nodes (18): Enterprise E2E Validation Plan, First-Hour Unsafe PR Claim, Help Ship Readiness Claim, Hero Capabilities Claim, Hero Evidence Gates Claim, Free Forever No Telemetry Claim, Ten-Times-Lower-Cost Claim, Onboarding SLO (+10 more)
+### Community 664 - "ups-coalesce.sh"
+Cohesion: 0.18
+Nodes (11): sb_ups_coalesce_begin(), sb_ups_coalesce_claim(), sb_ups_coalesce_reset(), sb_ups_emit_additional_context(), ups-coalesce.sh script, assert_contains(), assert_false(), assert_not_contains() (+3 more)
 
 ### Community 665 - "GSD-2 Gap Narrowing Design Specification"
 Cohesion: 0.19
@@ -6442,8 +6874,8 @@ Cohesion: 0.15
 Nodes (13): properties, default, type, default, type, claims, evidence, report (+5 more)
 
 ### Community 670 - "properties"
-Cohesion: 0.15
-Nodes (13): description, type, properties, canonical_locator, raw_url, registered_at, title, description (+5 more)
+Cohesion: 0.12
+Nodes (17): description, type, properties, canonical_locator, raw_url, registered_at, reliability_code, title (+9 more)
 
 ### Community 671 - "codex/silver-deep-research/tests/test_comparison_xlsx.py"
 Cohesion: 0.26
@@ -6466,8 +6898,8 @@ Cohesion: 0.17
 Nodes (12): /silver:add Work Item Filing, enterprise-test-app E2E Journey, Deduplication, Work item classification rubric, Finding deduplication, Finding fingerprint, GitHub CLI, Git CLI (+4 more)
 
 ### Community 676 - "Phase 27 Plan 01"
-Cohesion: 0.19
-Nodes (13): Autonomous Scope Escalation, FAST-01 Requirement, FAST-02 Requirement, FAST-03 Requirement, gsd-quick Flag Composition, Three-Tier Complexity Triage, Phase 27 Plan 01, Phase 27 Plan 01 Summary (+5 more)
+Cohesion: 0.21
+Nodes (12): Autonomous Scope Escalation, FAST-01 Requirement, FAST-02 Requirement, FAST-03 Requirement, gsd-quick Flag Composition, Three-Tier Complexity Triage, Phase 27 Plan 01, Phase 27 Plan 01 Summary (+4 more)
 
 ### Community 677 - "properties"
 Cohesion: 0.15
@@ -6481,9 +6913,9 @@ Nodes (13): Silver Bullet Site QA Report, Issue 10-A Wrong Verification Step Num
 Cohesion: 0.22
 Nodes (13): Claude Runtime, Codex Runtime, Shared Live Matrix, Runtime Adapters, Shared Scenario Suite, Serialized Multi-Runtime Runs, Shared Silver Bullet State Path, Cross-Runtime Delegation (+5 more)
 
-### Community 680 - "CMF Worksheet v3.0 — Silver Bullet Homepage"
+### Community 680 - "Phase 28 Plan 01"
 Cohesion: 0.17
-Nodes (13): Code-Intelligence Stack, CMF Worksheet v3.0 — Silver Bullet Homepage, Evidence and Proof, Aspirational Future State, Host Runtime Contract, Identity Hook, Install Call to Action, Problem Articulation (+5 more)
+Nodes (16): PATH 0: BOOTSTRAP, PATH 10: SECURE, PATH 12: QUALITY GATE, PATH 13: SHIP, PATH 14: DEBUG, PATH 17: RELEASE, PATH 1: ORIENT, PATH 5: PLAN (+8 more)
 
 ### Community 681 - "Review Requirements Skill"
 Cohesion: 0.15
@@ -6542,8 +6974,8 @@ Cohesion: 0.15
 Nodes (13): properties, default, type, default, type, claims, evidence, report (+5 more)
 
 ### Community 696 - "properties"
-Cohesion: 0.12
-Nodes (17): description, type, properties, canonical_locator, raw_url, registered_at, reliability_code, title (+9 more)
+Cohesion: 0.15
+Nodes (13): description, type, properties, canonical_locator, raw_url, registered_at, title, description (+5 more)
 
 ### Community 697 - "skills/silver-deep-research/tests/test_comparison_xlsx.py"
 Cohesion: 0.26
@@ -6570,8 +7002,8 @@ Cohesion: 0.22
 Nodes (7): assert_blocks(), assert_passes(), setup(), setup_bare(), test-planning-file-guard.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, teardown()
 
 ### Community 703 - "test-prompt-reminder.sh"
-Cohesion: 0.24
-Nodes (9): assert_contains(), assert_noop_json(), assert_not_contains(), setup(), test-prompt-reminder.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, teardown(), write_cfg() (+1 more)
+Cohesion: 0.20
+Nodes (11): assert_contains(), assert_noop_json(), assert_not_contains(), SB_ORCHESTRATOR_WORKER, setup(), test-prompt-reminder.sh script, SILVER_BULLET_RUNTIME, SILVER_BULLET_TEST_HOOK_ENFORCED (+3 more)
 
 ### Community 704 - "test-record-requested-skill.sh"
 Cohesion: 0.24
@@ -6585,9 +7017,9 @@ Nodes (5): agent_transcript_dir(), codex_transcript_dir(), kay_capture_transcrip
 Cohesion: 0.27
 Nodes (11): assert_codex_skill_titles_match_picker_namespace(), assert_command_succeeds(), assert_contains(), assert_file_exists(), assert_not_contains(), assert_not_symlink(), assert_path_absent(), fail() (+3 more)
 
-### Community 707 - "Stop Hook False-Positive Audit v0.30.0"
-Cohesion: 0.15
-Nodes (13): Branch File Write Verification, Stop Hook False-Positive Audit v0.30.0, Empty Branch State Guard, v0.30 Required Deploy Delivery Gate, v0.30 Required Planning Floor, Runtime Hook False Positives, SessionStart Mutation Guard, Skipped Flow Terminal State (+5 more)
+### Community 707 - "codex-r3-force4-driver.sh"
+Cohesion: 0.12
+Nodes (15): RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MONITOR_AUTO_RESTART (+7 more)
 
 ### Community 708 - "sha256_json"
 Cohesion: 0.23
@@ -6595,7 +7027,7 @@ Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_r
 
 ### Community 709 - "startup"
 Cohesion: 0.15
-Nodes (13): Developer Experience, Pricing and licensing, Time to value, Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, startup (+5 more)
+Nodes (13): Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, Limited budget, Prefer low operational overhead, Small team, startup (+5 more)
 
 ### Community 710 - "SEED-001 Skill Gap Check"
 Cohesion: 0.17
@@ -6657,9 +7089,9 @@ Nodes (12): New Workflow Convert Mode, New Workflow Create Mode, New Workflow Me
 Cohesion: 0.17
 Nodes (12): type, type, budget_stopped, cancelled, completed, failed, partial, cancellation_acknowledged (+4 more)
 
-### Community 725 - "Reusability Skill"
-Cohesion: 0.23
-Nodes (17): Consumer-Centered API Design, Reusable Package Boundaries, Parameterize, Do Not Fork, Silver: Reusability, Reusability Skill, Consumer Perspective API Design, Parameterize Rather Than Fork, Reusability Skill (+9 more)
+### Community 725 - "Phase 28 Plan 02"
+Cohesion: 0.19
+Nodes (14): HOOK-06 silver:migrate Requirement, Legacy Marker Fallback, Artifact-to-Path Inference, User Confirmation Before Write, WORKFLOW.md-First Enforcement, Phase 26 Plan 02, Phase 26 Plan 02 Summary, Phase 26 Context (+6 more)
 
 ### Community 726 - "required"
 Cohesion: 0.17
@@ -6697,21 +7129,21 @@ Nodes (11): additionalProperties, $id, audience, category, interview_complete, l
 Cohesion: 0.17
 Nodes (12): pattern, type, properties, evidence_validated, implicit, user_confirmed, assumption_id, status (+4 more)
 
-### Community 735 - "verify_runtime_dependency_access"
-Cohesion: 0.20
-Nodes (11): assert_command_succeeds(), assert_file_absent(), assert_file_contains(), assert_file_contains_any(), assert_file_exists(), assert_file_not_contains(), assert_not_contains(), claude_bootstrap_needed() (+3 more)
+### Community 735 - "required"
+Cohesion: 0.14
+Nodes (14): execution, additionalProperties, required, type, dependencies, dispatch_mode, join_condition, mutation_scopes (+6 more)
 
 ### Community 736 - "Silver Bullet Gaps Report Page"
 Cohesion: 0.18
 Nodes (12): Silver Bullet Gaps Report Page, 50-Problem Audit, Agent Reliability Failure Modes, Cost Failure Modes, HTML Data Theme Attribute, DevOps Failure Modes, Google Fonts Static Host, Google Fonts Stylesheet (+4 more)
 
 ### Community 737 - "DevOps & IaC Workflow Help Page"
-Cohesion: 0.12
-Nodes (17): DevOps & IaC Workflow Help Page, CI/CD Layer, Compute Layer, GitHub Actions Workflow, Helm Chart, Kubernetes Manifest, Kubernetes Operations Extension, Monitoring Layer (+9 more)
+Cohesion: 0.17
+Nodes (12): DevOps & IaC Workflow Help Page, CI/CD Layer, Compute Layer, Kubernetes Operations Extension, Monitoring Layer, Networking Layer, Production Deployment, Rollback Checks (+4 more)
 
-### Community 738 - "Minimax M3 critique"
-Cohesion: 0.12
-Nodes (17): Cavekit Version Split, Category Pack, GPT Luna Critique Source, Factory Factory.ai Alias, Hard Exclusion Classes, Startup Weighted Matrix, Minimax M3 critique, Seven inclusion criteria (+9 more)
+### Community 738 - "LiveDispatchModelRoutingTests"
+Cohesion: 0.16
+Nodes (5): cursor_last_resort_model(), cursor_models_to_try(), parse_cursor_cli_failure(), LiveDispatchModelRoutingTests, Unit tests for live_dispatch cursor model routing.
 
 ### Community 739 - "items"
 Cohesion: 0.17
@@ -6746,12 +7178,12 @@ Cohesion: 0.17
 Nodes (12): items, type, additionalProperties, required, type, attempt_id, entry_id, logical_model_id (+4 more)
 
 ### Community 747 - "silver-plan"
-Cohesion: 0.13
-Nodes (16): Verification Evidence, Phase 056 verification evidence, Full suite green, Review Verification, Requirements, silver-plan, Changed files, Risk areas (+8 more)
+Cohesion: 0.18
+Nodes (12): Requirements, silver-plan, Changed files, Risk areas, silver-review-request, Feature requirements, silver-spec, SPEC.md (+4 more)
 
-### Community 748 - "skill-discovery.sh"
-Cohesion: 0.26
-Nodes (9): sb_skill_is_installed(), skill-discovery.sh script, assert_eq(), assert_installed(), assert_missing(), make_skill(), setup_fixture(), test-skill-discovery.sh script (+1 more)
+### Community 748 - "round6-matrix-driver.sh"
+Cohesion: 0.15
+Nodes (12): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT, SB_E2E_MONITOR_AUTO_RESTART (+4 more)
 
 ### Community 749 - "R9 smoke RED triage"
 Cohesion: 0.20
@@ -6813,9 +7245,9 @@ Nodes (9): capability_rubric, comparison, existing, FOUND, sbTop10, scored, shor
 Cohesion: 0.33
 Nodes (11): copy_evidence(), drain_composer_chain(), drain_flow_queue(), log_task_worker(), run_flow_advance(), SB_RUNTIME_PRESERVE_STATE_DIR, SB_RUNTIME_STATE_DIR, live-verify-track.sh script (+3 more)
 
-### Community 764 - "codex-r3-force4-driver.sh"
-Cohesion: 0.12
-Nodes (15): RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MONITOR_AUTO_RESTART (+7 more)
+### Community 764 - "CategoryPackSchemaTests"
+Cohesion: 0.17
+Nodes (4): format_inclusion_criteria_prose(), Plain-language inclusion criteria for landscape report Section 1., CategoryPackSchemaTests, Unit tests for category market pack schema and loader.
 
 ### Community 765 - "regulated"
 Cohesion: 0.17
@@ -6905,17 +7337,21 @@ Nodes (11): Architecture Quality, Community Health, DeepSeek Critique, Hard Excl
 Cohesion: 0.20
 Nodes (11): Chart And Matrix Artifacts, Commercial OSS Stratification, Confidence Scoring, Kimi Critique, Evidence Truncation, Factory Alias Normalization, Inclusion Criteria Scoring, Primary APO Coverage (+3 more)
 
+### Community 787 - "Content and Search Workflow"
+Cohesion: 0.17
+Nodes (12): Alumnium MCP, Clarify, Compare, and Hand Off, Visual Companion, Named Solution Comparison, Agentmemory Save, Composer 2.5 Worker Model, Instruction Ledger Gate, Live Publish Evidence Gate (+4 more)
+
 ### Community 788 - "enterprise_e2e_code_intel_preflight"
 Cohesion: 0.44
 Nodes (9): enterprise_e2e_any_tool_enforced(), enterprise_e2e_code_intel_preflight(), enterprise_e2e_preflight_agentmemory(), enterprise_e2e_preflight_context_mode(), enterprise_e2e_preflight_fail(), enterprise_e2e_preflight_graphify(), enterprise_e2e_preflight_rtk(), enterprise_e2e_source_code_intel_libs() (+1 more)
 
-### Community 789 - "Multi AI Pool Algebra"
-Cohesion: 0.14
-Nodes (14): glm-5.2, Multi AI Pool Algebra, ocg-glm-5.2, ocg-mimo-v2.5, Apply Exclude, Apply Include Only, Cursor Pool Dimension, Default Dry Run (+6 more)
+### Community 789 - "CategoryPackSchemaTests"
+Cohesion: 0.17
+Nodes (4): format_inclusion_criteria_prose(), Plain-language inclusion criteria for landscape report Section 1., CategoryPackSchemaTests, Unit tests for category market pack schema and loader.
 
 ### Community 790 - "startup"
 Cohesion: 0.17
-Nodes (12): Developer Experience, Pricing and licensing, Time to value, API access, Managed hosting, Self-serve signup, startup, audience_default (+4 more)
+Nodes (12): Developer Experience, Pricing and licensing, Time to value, Limited budget, Prefer low operational overhead, Small team, startup, audience_default (+4 more)
 
 ### Community 791 - "skills/silver-deep-research/schemas/need_profile.schema.json"
 Cohesion: 0.17
@@ -6994,8 +7430,8 @@ Cohesion: 0.09
 Nodes (22): items, type, enum, type, type, properties, type, type (+14 more)
 
 ### Community 810 - "regulated"
-Cohesion: 0.18
-Nodes (11): Data residency controls, HIPAA, Immutable audit log, On-prem or dedicated tenancy, Regulatory attestation, regulated, audience_default, description (+3 more)
+Cohesion: 0.17
+Nodes (11): description, On-prem or dedicated tenancy, Regulatory attestation, personas, regulated, audience_default, description, label (+3 more)
 
 ### Community 811 - "properties"
 Cohesion: 0.18
@@ -7061,9 +7497,9 @@ Nodes (7): sb_find_project_config(), sb_find_project_config_from(), _sb_find_pro
 Cohesion: 0.22
 Nodes (10): 276 Breakpoint and Theme Combinations, Mobile Code Block Internal Scrolling, Mobile Hamburger Navigation, Mobile Overflow Fix, Post-Fix Ship Readiness Pass, Pre-Fix Ship Readiness Fail, 46 Public Pages Tested, Mobile Table Overflow (+2 more)
 
-### Community 827 - "enterprise_e2e_export_live_defaults"
-Cohesion: 0.25
-Nodes (8): enterprise_e2e_apply_isolated_claude_runtime_paths(), enterprise_e2e_export_live_defaults(), enterprise_e2e_preflight_claude_token_gateway(), enterprise_e2e_preflight_host(), enterprise_e2e_prepend_harness_path(), enterprise_e2e_run_install_claude(), enterprise_e2e_run_install_host(), enterprise_e2e_source_host_adapter()
+### Community 827 - "Search Orchestration"
+Cohesion: 0.24
+Nodes (11): Search Orchestration, Host Search Fallback, Intent Classification, Manifest Recording, Portal Dispatch, Provider Routing, search-cli, ctx_fetch host fallback (+3 more)
 
 ### Community 828 - "Requested State Sidecar"
 Cohesion: 0.22
@@ -7185,9 +7621,9 @@ Nodes (11): type, additionalProperties, properties, type, bypass, capability_cac
 Cohesion: 0.18
 Nodes (10): A. Foundation claims (well-triangulated), B. AI-Assisted / Agentic claims (mixed evidence), C. Under-evidenced or context-dependent claims, D. Claims where we explicitly did NOT find evidence and chose not to invent, E. Sources by tier (counts), F. Source diversity check, G. Evidence sufficiency per Process Area, H. Notable cross-source agreements worth highlighting (+2 more)
 
-### Community 858 - "verify_runtime_hook_delivery"
-Cohesion: 0.29
-Nodes (8): clear_hook_audit_log(), disable_hook_audit(), emit_hook_delivery_diagnostic(), enable_hook_audit(), hook_audit_has_entry(), probe_dev_cycle_bash_command(), verify_runtime_hook_delivery(), wait_for_hook_audit_entry()
+### Community 858 - "Minimax M3 critique"
+Cohesion: 0.18
+Nodes (11): Cavekit Version Split, Minimax M3 critique, Seven inclusion criteria, Cavekit v4, Hard-exclusion list, AWS AI-DLC, Conductor.build, Devin (+3 more)
 
 ### Community 859 - "test-app-branch.sh"
 Cohesion: 0.35
@@ -7226,8 +7662,8 @@ Cohesion: 0.18
 Nodes (11): Data residency controls, HIPAA, Immutable audit log, On-prem or dedicated tenancy, Regulatory attestation, regulated, audience_default, description (+3 more)
 
 ### Community 868 - "properties"
-Cohesion: 0.20
-Nodes (10): format, type, properties, extracted_at, section_id, text, description, type (+2 more)
+Cohesion: 0.18
+Nodes (11): description, pattern, type, format, type, properties, claim_id, extracted_at (+3 more)
 
 ### Community 869 - "continuation"
 Cohesion: 0.18
@@ -7253,9 +7689,9 @@ Nodes (10): $id, backends, probed_at, schema_id, spine, version, required, $sche
 Cohesion: 0.18
 Nodes (11): type, additionalProperties, properties, type, bypass, capability_cache, refresh, ttl_seconds (+3 more)
 
-### Community 875 - "CategoryPackSchemaTests"
-Cohesion: 0.17
-Nodes (4): format_inclusion_criteria_prose(), Plain-language inclusion criteria for landscape report Section 1., CategoryPackSchemaTests, Unit tests for category market pack schema and loader.
+### Community 875 - "verify_runtime_dependency_access"
+Cohesion: 0.20
+Nodes (11): assert_command_succeeds(), assert_file_absent(), assert_file_contains(), assert_file_contains_any(), assert_file_exists(), assert_file_not_contains(), assert_not_contains(), claude_bootstrap_needed() (+3 more)
 
 ### Community 876 - "Issue tracker routing"
 Cohesion: 0.22
@@ -7266,8 +7702,8 @@ Cohesion: 0.22
 Nodes (9): CAPT-01, CAPT-02, CAPT-03, Knowledge and Lessons Capture, Post-Release Items Summary, Phase 050 Research, Silver-remove Removal Flow, Phase 051 Research (+1 more)
 
 ### Community 878 - "Phase 051 Plan 03 Summary"
-Cohesion: 0.29
-Nodes (10): CAPT-05, gsd-complete-milestone, Items Filed Session Log Section, Milestone Window, Phase 051 Plan 01, Phase 051 Plan 02, Untrusted Data Shell Safety, Phase 051 Plan 03 Summary (+2 more)
+Cohesion: 0.33
+Nodes (9): CAPT-05, Items Filed Session Log Section, Milestone Window, Phase 051 Plan 01, Phase 051 Plan 02, Untrusted Data Shell Safety, Phase 051 Plan 03 Summary, Phase 051 Plan 04 (+1 more)
 
 ### Community 879 - "Delegation Brief"
 Cohesion: 0.22
@@ -7441,9 +7877,9 @@ Nodes (3): github-run-list.sh script, verify-release-announcement-ci.sh script, 
 Cohesion: 0.29
 Nodes (7): sb_scheduler_catalog_atom_exists(), sb_scheduler_resolve_atom_id(), orchestrator-skill-atom.sh script, fail(), pass(), resolve(), test-skill-atom-mapping.sh script
 
-### Community 923 - "Minimax M3 DR-RETRIEVE Evidence"
-Cohesion: 0.06
-Nodes (35): Codex AGENTS.md, Codex config.toml, Codex Context Mode Doctor, OpenAI Codex CLI, Codex hooks.json, RTK Prompt Layer, Missing updatedInput Limitation, Adjacent-Only Products (+27 more)
+### Community 923 - "Generic coding agent exclusion"
+Cohesion: 0.08
+Nodes (24): Codex AGENTS.md, Codex config.toml, Codex Context Mode Doctor, OpenAI Codex CLI, Codex hooks.json, RTK Prompt Layer, Missing updatedInput Limitation, Adjacent-Only Products (+16 more)
 
 ### Community 924 - "plugin-cache-guard.sh"
 Cohesion: 0.24
@@ -7597,9 +8033,9 @@ Nodes (9): install_claude_hint(), install_codex_agents(), install_cursor_global(
 Cohesion: 0.27
 Nodes (7): agent_delegate_preflight_recommended_tools(), assert_allow(), SB_AGENT_CERT_RUN, setup(), test-cert-bypass.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, write_cfg()
 
-### Community 962 - "AI/LLM Safety Design Enforcement"
-Cohesion: 0.25
-Nodes (7): Agentic Workflows, AI/LLM Safety Design Enforcement, External Content, LLM Agents, Sandbox, Tool Use, Untrusted Data
+### Community 962 - "skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
+Cohesion: 0.39
+Nodes (11): build_worker_prompt(), ocg_model_for(), Strip noisy raw agent output from prior-phase context passed to workers., sanitize_phase_context(), load_request(), _log(), main(), Any (+3 more)
 
 ### Community 963 - "run-pre-release-host-smoke.sh"
 Cohesion: 0.58
@@ -7875,7 +8311,7 @@ Nodes (3): run_script(), TestPhaseGate, TestPhasesConfig
 
 ### Community 1038 - "properties"
 Cohesion: 0.22
-Nodes (9): type, format, type, properties, format, type, cache_identity, expires_at (+1 more)
+Nodes (9): type, pattern, type, properties, format, type, cache_identity, evidence_hash (+1 more)
 
 ### Community 1039 - "type"
 Cohesion: 0.25
@@ -8009,13 +8445,13 @@ Nodes (6): Graphify Build From JSON Function, Graphify Build Merge Function, Gra
 Cohesion: 0.33
 Nodes (6): Graphify GraphML Export, Graphify Neo4j Export, Graphify SVG Export, Graphify Wiki Export, Graphify MCP Serve Module, Graphify Exports Reference
 
-### Community 1075 - "Confidence Assessment"
-Cohesion: 0.29
-Nodes (7): Confidence Assessment, Enforcement Gap, Fact-Check Example, Research Prior-Art Run, Schema Dispatch and Consolidation Rules, Task-Agnosticism Claim, Worked Code-Review Example
+### Community 1075 - "Research Output Contract"
+Cohesion: 0.20
+Nodes (10): Default Research Type, Compare Smoke Fixture, Landscape Smoke Fixture, Need Profile Artifact, Serverless Report HTML, Research Output Contract, Solution Capability Reports, Compare Validator (+2 more)
 
-### Community 1076 - "test-leanctx-gate-lib.sh"
-Cohesion: 0.28
-Nodes (7): fail(), HOME, pass(), PATH, SB_LEANCTX_MCP_ARTIFACT, test-leanctx-gate-lib.sh script, SILVER_BULLET_RUNTIME
+### Community 1076 - "Human Checkpoints"
+Cohesion: 0.22
+Nodes (9): Human Checkpoints, Human Checkpoint, Mutually Exclusive Conclusions, Provider Signup Checkpoint, User-Owned Decision, Ambiguous Scope Checkpoint, Human Checkpoints, Mutually Exclusive Conclusions Checkpoint (+1 more)
 
 ### Community 1077 - "test-orchestrator-non-sb-workspace-guard.sh"
 Cohesion: 0.36
@@ -8033,9 +8469,9 @@ Nodes (5): ledger_narrative_matrix_complete(), ledger_narrative_reconcile_comple
 Cohesion: 0.36
 Nodes (7): fail(), pass(), run_bash_hook(), run_mcp_hook(), setup(), test-record-leanctx-usage.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
-### Community 1081 - "/silver:verify"
-Cohesion: 0.05
-Nodes (73): silver:deploy Skill, silver:devops Skill, Critical Gate Catalog, silver:domain-audit, Domain Quality Contracts, Domain Audit Evidence Schema, Domain Audit Exit Gate, Domain Audit Pack Selection (+65 more)
+### Community 1081 - "silver:undo"
+Cohesion: 0.29
+Nodes (7): Cleanup decision, Git, silver:undo, silver:worktree, Raw git reset, Raw git revert, Ship gates
 
 ### Community 1082 - "hooks/test-semantic-compress.sh"
 Cohesion: 0.33
@@ -8069,9 +8505,9 @@ Nodes (7): assert_contains(), assert_eq(), assert_file_absent(), assert_file_exi
 Cohesion: 0.33
 Nodes (6): New Workflow Audit Mode, New Workflow Audit Clean Verdict, Workflow Compliance Script, New Workflow Audit RFL Closeout, Target Resolution, v_loop.id jq Path Fix
 
-### Community 1090 - "silver:ui-review"
-Cohesion: 0.04
-Nodes (57): accessibility pack, silver:ui-review, silver:validate, silver:verify, Alumnium, Assumption blocks, Browser evidence, Changed UI files (+49 more)
+### Community 1090 - "silver-test"
+Cohesion: 0.17
+Nodes (12): Baseline tests, .planning/REFACTOR.md, silver-refactor, Test health, RED/GREEN evidence, silver-test, TEST-ENGINEERING.md, RED/GREEN/REFACTOR cycle (+4 more)
 
 ### Community 1091 - ".test_package_emits_xlsx_and_reports"
 Cohesion: 0.32
@@ -8097,9 +8533,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1097 - "skill-source/silver-deep-research/reference/landscape/category-packs/schema.json"
-Cohesion: 0.29
-Nodes (6): additionalProperties, description, $id, $schema, title, type
+### Community 1097 - "Claude Opus Critique"
+Cohesion: 0.25
+Nodes (8): BMAD, Nascent APO Market Claim, Secondary Packs Lack Gates And State Claim, Silver Bullet Most Complete Claim, Comparative Measurement, Claude Opus Critique, Primary Seed Evidence, Startup Buyer Weighting
 
 ### Community 1098 - "required"
 Cohesion: 0.25
@@ -8129,9 +8565,9 @@ Nodes (8): budget_stopped, cancelled, completed, excluded, failed, partial, pend
 Cohesion: 0.25
 Nodes (8): entries, ledger_generation, ledger_head_hash, run_id, schema_id, spine, version, required
 
-### Community 1105 - "prepare_workspace"
-Cohesion: 0.38
-Nodes (7): backup_session_state(), bootstrap_claude_dependencies(), ensure_e2e_recommended_tools_opt_in(), prepare_workspace(), refresh_runtime_installation(), setup_workspace(), trust_runtime_workspace()
+### Community 1105 - "OverviewQualityTests"
+Cohesion: 0.18
+Nodes (3): OverviewQualityTests, Durable DR landscape report-builder contracts (not one-off fullpool tweaks)., TemplateContractTests
 
 ### Community 1106 - "compliance-status.sh"
 Cohesion: 0.32
@@ -8157,9 +8593,9 @@ Nodes (3): run_doc_scheme_task_gate(), sb_skill_is_installed(), stop-check.sh sc
 Cohesion: 0.32
 Nodes (4): PackageSolutionOutputsTests, Path, skipUnless, Package solution outputs for DR-multi-AI.
 
-### Community 1112 - "ensure_runtime_dependency_access_preflight"
-Cohesion: 0.29
-Nodes (7): dependency_access_preflight_ready(), ensure_runtime_dependency_access_preflight(), ensure_runtime_hook_delivery_preflight(), hook_delivery_preflight_ready(), verify_runtime_installation(), write_dependency_access_preflight_marker(), write_hook_delivery_preflight_marker()
+### Community 1112 - "enterprise_e2e_export_live_defaults"
+Cohesion: 0.25
+Nodes (8): enterprise_e2e_apply_isolated_claude_runtime_paths(), enterprise_e2e_export_live_defaults(), enterprise_e2e_preflight_claude_token_gateway(), enterprise_e2e_preflight_host(), enterprise_e2e_prepend_harness_path(), enterprise_e2e_run_install_claude(), enterprise_e2e_run_install_host(), enterprise_e2e_source_host_adapter()
 
 ### Community 1113 - "enterprise"
 Cohesion: 0.25
@@ -8181,9 +8617,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1118 - "Goose ACP Client"
-Cohesion: 0.33
-Nodes (6): Goose ACP Client, Amp, Codex, Copilot, Gemini, Pi
+### Community 1118 - "enterprise_e2e_assert_row_matrix_baseline_rev_increase"
+Cohesion: 0.39
+Nodes (8): enterprise_e2e_assert_row3_api_currency_commit(), enterprise_e2e_assert_row_matrix_baseline_rev_increase(), enterprise_e2e_assert_row_product_commit_delta(), enterprise_e2e_assert_row_product_commit_rescore(), enterprise_e2e_product_work_cumulative_mode(), enterprise_e2e_row_outcome_only_rerun(), enterprise_e2e_row_requires_product_commit(), enterprise_e2e_row_uses_matrix_baseline_rev_gate()
 
 ### Community 1119 - "Silver DevOps Skill"
 Cohesion: 0.33
@@ -8273,9 +8709,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1141 - "Silver Bullet Core Enforcement Rules"
-Cohesion: 0.33
-Nodes (6): Silver Bullet Core Enforcement Rules, Agentmemory Capture Gate, Context Mode Install Gate, Graphify Retrieval Gate, Silver Bullet Review Loop Discipline, RTK Install Gate
+### Community 1141 - "Phase 29 Plan 01"
+Cohesion: 0.42
+Nodes (9): PATH 11: VERIFY, PATH 16: DOCUMENT, PATH 9: REVIEW, Artifact Review Assessor Triage, Phase 29 Plan 01, Dual-Mode Quality Gates, SITE-01, SITE-02 (+1 more)
 
 ### Community 1142 - "required"
 Cohesion: 0.25
@@ -8309,13 +8745,13 @@ Nodes (8): entries, ledger_generation, ledger_head_hash, run_id, schema_id, spin
 Cohesion: 0.25
 Nodes (7): Confidence Summary, Contradictions and Debates, Major Assertions and Source Independence, Method, Single-Source or Limited-Evidence Areas, Source Credibility Notes, Triangulation Report: Canonical SDLC Process Architecture
 
-### Community 1150 - "consolidate"
-Cohesion: 0.60
-Nodes (5): consolidate(), main(), normalize_claim(), Any, validate_inputs()
+### Community 1150 - "enterprise_e2e_ledger_row_is_pass"
+Cohesion: 0.29
+Nodes (8): _enterprise_e2e_ensure_ledger_reconcile_sourced(), enterprise_e2e_incomplete_rows(), enterprise_e2e_ledger_row_is_pass(), enterprise_e2e_matrix_should_skip_row_at_version(), enterprise_e2e_record_row_pass_at_install_version(), enterprise_e2e_row_complete_in_log(), enterprise_e2e_row_passed_at_install_version(), enterprise_e2e_ledger_status_is_pass()
 
-### Community 1151 - "enterprise_e2e_assert_row_matrix_baseline_rev_increase"
-Cohesion: 0.39
-Nodes (8): enterprise_e2e_assert_row3_api_currency_commit(), enterprise_e2e_assert_row_matrix_baseline_rev_increase(), enterprise_e2e_assert_row_product_commit_delta(), enterprise_e2e_assert_row_product_commit_rescore(), enterprise_e2e_product_work_cumulative_mode(), enterprise_e2e_row_outcome_only_rerun(), enterprise_e2e_row_requires_product_commit(), enterprise_e2e_row_uses_matrix_baseline_rev_gate()
+### Community 1151 - "Responsive QA Post-Fix Report"
+Cohesion: 0.29
+Nodes (8): Commit 667114ef, Commit 9ad5bb8b, Gemini 3.5 Flash, Silver Bullet Live Site, SDG Test Image, Responsive QA Fix, Responsive QA Post-Fix Report, Visual QA Pipeline
 
 ### Community 1152 - "silver-ui-contract"
 Cohesion: 0.33
@@ -8325,9 +8761,9 @@ Nodes (6): UI data contracts, Screens and states, silver-ui-contract, silver-ui-
 Cohesion: 0.40
 Nodes (5): Agent-Claude Autonomous Assessment Methodology, Agent-Claude Autonomous Criteria, Agent-Claude Evidence Template, Agent-Claude Autonomous Vision Test, Agent-Claude Autonomous Runbook
 
-### Community 1154 - "enterprise_e2e_ledger_row_is_pass"
-Cohesion: 0.29
-Nodes (8): _enterprise_e2e_ensure_ledger_reconcile_sourced(), enterprise_e2e_incomplete_rows(), enterprise_e2e_ledger_row_is_pass(), enterprise_e2e_matrix_should_skip_row_at_version(), enterprise_e2e_record_row_pass_at_install_version(), enterprise_e2e_row_complete_in_log(), enterprise_e2e_row_passed_at_install_version(), enterprise_e2e_ledger_status_is_pass()
+### Community 1154 - "AI/LLM Safety Design Enforcement"
+Cohesion: 0.25
+Nodes (7): Agentic Workflows, AI/LLM Safety Design Enforcement, External Content, LLM Agents, Sandbox, Tool Use, Untrusted Data
 
 ### Community 1155 - "Academic Source Matrix"
 Cohesion: 0.40
@@ -8457,17 +8893,17 @@ Nodes (8): entries, ledger_generation, ledger_head_hash, run_id, schema_id, spin
 Cohesion: 0.33
 Nodes (7): nope(), ok(), setup(), test-phase-lock-claim.sh script, SILVER_BULLET_RUNTIME, SILVER_BULLET_TEST_HOOK_ENFORCED, teardown()
 
-### Community 1187 - "test-debug-dump.sh"
-Cohesion: 0.43
-Nodes (6): assert_empty(), assert_fail(), assert_pass(), test-debug-dump.sh script, SILVER_BULLET_RUNTIME, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 1187 - "Incident Fast Path"
+Cohesion: 0.25
+Nodes (8): Incident Fast Path, Change Advisory Board, HOTFIX Commit, Incident Record, Incident Response Runbook, Incident Ticket, Minimal Emergency Change, Post-Incident Review
 
 ### Community 1188 - "TST-01 Sentinel Lock UUID Assertion"
 Cohesion: 0.70
 Nodes (5): TST-01 Sentinel Lock UUID Assertion, TST-02 Quote Literal Exemption Edge Cases, Phase 060 Test Coverage Plan, Phase 060 Test Coverage Summary, Phase 060 Verification Report
 
-### Community 1189 - "silver:doctor Skill"
-Cohesion: 0.25
-Nodes (9): Bootstrap Marker, Node Project Scaffold, Users Schema, silver:doctor Skill, /silver:update skill, Silver Bootstrap Milestone, Silver Bootstrap Project, Silver Init (+1 more)
+### Community 1189 - "Silver Init"
+Cohesion: 0.67
+Nodes (4): Bootstrap Marker, Silver Bootstrap Milestone, Silver Bootstrap Project, Silver Init
 
 ### Community 1190 - "test-kay-project-hook-bridge.sh"
 Cohesion: 0.32
@@ -8513,9 +8949,9 @@ Nodes (6): fail(), HOME, pass(), PATH, test-rtk-gate-lib.sh script, SILVER_BULLE
 Cohesion: 0.29
 Nodes (5): assert_true(), SB_RUNTIME_PRESERVE_STATE_DIR, SB_RUNTIME_STATE_DIR, test-sb-project-gate.sh script, SILVER_BULLET_PROJECT_ROOT
 
-### Community 1201 - "TestMatrixOpenpyxl"
-Cohesion: 0.40
-Nodes (3): skipIf, skipUnless, TestMatrixOpenpyxl
+### Community 1201 - "verify_runtime_hook_delivery"
+Cohesion: 0.29
+Nodes (8): clear_hook_audit_log(), disable_hook_audit(), emit_hook_delivery_diagnostic(), enable_hook_audit(), hook_audit_has_entry(), probe_dev_cycle_bash_command(), verify_runtime_hook_delivery(), wait_for_hook_audit_entry()
 
 ### Community 1202 - "test-skill-execution-paths.sh"
 Cohesion: 0.43
@@ -8561,9 +8997,9 @@ Nodes (7): assert_contains(), assert_file(), assert_json(), assert_not_contains(
 Cohesion: 0.29
 Nodes (7): auditPage(), { chromium }, __dirname, main(), manifest, OUT, require
 
-### Community 1215 - "test-recommended-tools-policy.sh"
-Cohesion: 0.67
-Nodes (5): assert_grep(), fail(), pass(), test-recommended-tools-policy.sh script, SILVER_BULLET_RUNTIME
+### Community 1215 - "test-debug-dump.sh"
+Cohesion: 0.43
+Nodes (6): assert_empty(), assert_fail(), assert_pass(), test-debug-dump.sh script, SILVER_BULLET_RUNTIME, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 1216 - "enum"
 Cohesion: 0.29
@@ -8617,9 +9053,9 @@ Nodes (5): sb_run_hooked_command(), hook-subproc-timeout.sh script, fail(), pass
 Cohesion: 0.38
 Nodes (4): sb_prereq_check_jq(), sb_prereq_check_plugin_cache(), sb_prereq_run_probe(), prerequisite-probe.sh script
 
-### Community 1230 - "Silver Multi AI Task Skill"
-Cohesion: 0.13
-Nodes (21): Pool Algebra Reference, Canonical Logical IDs, Cursor Pool, Multi-AI Budget Defaults, multi-ai-task-v2, OCG Pool, Pool Selection Algebra, GLM-5.2 Subscription Routing (+13 more)
+### Community 1230 - "Multi AI Pool Algebra"
+Cohesion: 0.07
+Nodes (34): Pool Algebra Reference, Canonical Logical IDs, Cursor Pool, glm-5.2, Multi AI Pool Algebra, Multi-AI Budget Defaults, ocg-glm-5.2, ocg-mimo-v2.5 (+26 more)
 
 ### Community 1231 - "Handoff — Codex Cloud guide + CI unwedge (PR #246)"
 Cohesion: 0.14
@@ -8641,9 +9077,9 @@ Nodes (7): Audit and traceability, Data residency, Governance, Identity and acce
 Cohesion: 0.29
 Nodes (7): suggested_must_haves, Audit log, Data residency controls, Encryption at rest, RBAC, SSO, suggested_must_haves
 
-### Community 1238 - "Multi-Agent Safety"
-Cohesion: 0.33
-Nodes (6): Agent Isolation, Capability Delegation, Message Authentication, Multi-Agent Safety, Recursive Injection Prevention, Termination Guarantees
+### Community 1238 - "Qwen3 7 Max Self-Review"
+Cohesion: 0.29
+Nodes (7): Undefined Confidence Scoring, Qwen3 7 Max Self-Review, Extractor Model Failure Gap, Missing Machine-Readable Rule Catalog, Parallel Wall-Time Formula Defect, User-Invocable Contradiction, Four-phase multi-ai-task pipeline
 
 ### Community 1239 - "enum"
 Cohesion: 0.29
@@ -8789,9 +9225,9 @@ Nodes (6): Attribution, Code of Conduct, Enforcement, Our Pledge, Our Standards,
 Cohesion: 0.29
 Nodes (6): Acknowledgments, Reporting a Vulnerability, Response Timeline, Scope, Security Policy, Supported Versions
 
-### Community 1282 - "enum"
-Cohesion: 0.33
-Nodes (6): evidence_validated, implicit, user_confirmed, status, enum, type
+### Community 1282 - ".cursor3-process-row.sh"
+Cohesion: 0.29
+Nodes (6): SB_E2E_ENTERPRISE_MATRIX, SB_E2E_LEDGER_FILE, SB_E2E_MATRIX_GRAPHIFY_REF, SB_TEST_ENTERPRISE_APP_ROOT, .cursor3-process-row.sh script, enterprise_e2e_outcome_assess_session()
 
 ### Community 1283 - "enum"
 Cohesion: 0.29
@@ -8905,7 +9341,7 @@ Nodes (6): check_context_mode(), check_rtk(), err(), hint(), ok(), enable-rtk-co
 Cohesion: 0.50
 Nodes (4): Assembly Prompt, validate_report.py, verify_citations.py, verify_claim_support.py
 
-### Community 1311 - "skills/silver-deep-research/reference/landscape/category-packs/schema.json"
+### Community 1311 - "skill-source/silver-deep-research/reference/landscape/category-packs/schema.json"
 Cohesion: 0.29
 Nodes (6): additionalProperties, description, $id, $schema, title, type
 
@@ -8985,13 +9421,17 @@ Nodes (7): required, backend, cache_identity, evidence_hash, expires_at, probed_
 Cohesion: 0.29
 Nodes (7): effective_model_id, status, usage, result, additionalProperties, required, type
 
-### Community 1336 - "test-step-vloop-runtime-rollup.sh"
-Cohesion: 0.47
-Nodes (5): fail(), pass(), SB_APO_CATALOG_FILE, SB_RUNTIME_STATE_DIR, test-step-vloop-runtime-rollup.sh script
+### Community 1336 - "live-test.sh"
+Cohesion: 0.38
+Nodes (6): SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP, SB_E2E_MATRIX_LOG, SB_RTK_COMPAT_MODE, live-test.sh script, start_harness_background(), usage()
 
-### Community 1337 - "silver:deep-research/reference/need-profile-personas.json"
-Cohesion: 0.40
-Nodes (4): description, personas, $schema, version
+### Community 1337 - "skills/silver-deep-research/reference/landscape/category-packs/schema.json"
+Cohesion: 0.29
+Nodes (6): additionalProperties, description, $id, $schema, title, type
+
+### Community 1338 - "build_capabilities_stub"
+Cohesion: 0.43
+Nodes (6): build_capabilities_stub(), main(), Any, Return backend-capabilities-v1 snapshot (stub unless --live)., validate_profile(), utc_now_iso()
 
 ### Community 1339 - "project-active.sh"
 Cohesion: 0.43
@@ -9093,17 +9533,17 @@ Nodes (6): claim_id, claim_type, section_id, support_status, text, required
 Cohesion: 0.33
 Nodes (6): commercial, mixed, oss, enum, type, license_preference
 
-### Community 1364 - "Research Output Contract"
-Cohesion: 0.20
-Nodes (10): Default Research Type, Compare Smoke Fixture, Landscape Smoke Fixture, Need Profile Artifact, Serverless Report HTML, Research Output Contract, Solution Capability Reports, Compare Validator (+2 more)
+### Community 1364 - "prepare_workspace"
+Cohesion: 0.38
+Nodes (7): backup_session_state(), bootstrap_claude_dependencies(), ensure_e2e_recommended_tools_opt_in(), prepare_workspace(), refresh_runtime_installation(), setup_workspace(), trust_runtime_workspace()
 
 ### Community 1366 - "required"
 Cohesion: 0.33
 Nodes (6): required, type, cancellation_proven, hard_ceiling_enforced, usage_metered, evidence
 
-### Community 1367 - "suggested_constraints"
-Cohesion: 0.50
-Nodes (4): Limited budget, Prefer low operational overhead, Small team, suggested_constraints
+### Community 1367 - "Getting Started Help Page Mobile Hero Screenshot, Light Theme, 375px"
+Cohesion: 0.33
+Nodes (6): Canonical Atomic Flow Catalog, Flow Step Catalog, Silver Init Command, AF-BOOTSTRAP Atomic Flow, Getting Started Help Page Mobile Hero Screenshot, Light Theme, 375px, Canonical Workflow Catalog
 
 ### Community 1368 - "usage"
 Cohesion: 0.33
@@ -9269,9 +9709,9 @@ Nodes (5): additionalProperties, $id, $schema, title, type
 Cohesion: 0.33
 Nodes (6): budget, phases, work_item_refs, required, type, multi_ai
 
-### Community 1413 - "category_pack_id"
-Cohesion: 0.50
-Nodes (4): description, minLength, type, category_pack_id
+### Community 1413 - "ensure_runtime_dependency_access_preflight"
+Cohesion: 0.29
+Nodes (7): dependency_access_preflight_ready(), ensure_runtime_dependency_access_preflight(), ensure_runtime_hook_delivery_preflight(), hook_delivery_preflight_ready(), verify_runtime_installation(), write_dependency_access_preflight_marker(), write_hook_delivery_preflight_marker()
 
 ### Community 1414 - "enum"
 Cohesion: 0.33
@@ -9301,13 +9741,13 @@ Nodes (6): claim_id, claim_type, section_id, support_status, text, required
 Cohesion: 0.33
 Nodes (6): commercial, mixed, oss, enum, type, license_preference
 
-### Community 1421 - "Artifact Injection"
-Cohesion: 0.53
-Nodes (6): Artifact Injection, Context Gathering, Figma Reference, Google Doc Reference, JIRA Reference, Presentation Reference
-
-### Community 1423 - "TC-03 Criteria (Net-New Workflow Creation)"
+### Community 1421 - "Pilot Pass Checklist"
 Cohesion: 0.33
-Nodes (6): TC-03 Criteria (Net-New Workflow Creation), Compliance Evidence Bundle, Net-New Workflow Spec Artifact, NEW-WORKFLOW Worker, Novel Workflow ID, TC-03 Runbook (Net-New Workflow)
+Nodes (6): Acceptance Criteria Evidence, Graphify Update Requirement, Live Session Evidence, Log Floor, Parent Summary, Pilot Pass Checklist
+
+### Community 1423 - "TestMatrixOpenpyxl"
+Cohesion: 0.40
+Nodes (3): skipIf, skipUnless, TestMatrixOpenpyxl
 
 ### Community 1424 - "required"
 Cohesion: 0.33
@@ -9509,9 +9949,9 @@ Nodes (6): high, low, medium, enum, type, materiality
 Cohesion: 0.67
 Nodes (3): TDD skill, Failing-test-first policy, Red-Green-Refactor process
 
-### Community 1476 - "Pilot Pass Checklist"
-Cohesion: 0.33
-Nodes (6): Acceptance Criteria Evidence, Graphify Update Requirement, Live Session Evidence, Log Floor, Parent Summary, Pilot Pass Checklist
+### Community 1476 - "18-Path Catalog"
+Cohesion: 0.40
+Nodes (6): Phase 24 Plan 01 Summary, 18-Path Catalog, Phase 25 Plan 01 Plan, Dynamic Path Insertion, Four-Tier Anti-Stall, Phase 25 Plan 01 Summary
 
 ### Community 1477 - "required"
 Cohesion: 0.33
@@ -9561,13 +10001,13 @@ Nodes (5): RTK_DISABLED, SB_E2E_LIVE_RUNTIME, smoke-matrix.sh script, SILVER_BUL
 Cohesion: 0.40
 Nodes (3): agent_codex_prepare_lightweight_codex_home(), agent_codex_strip_mcp_config_toml(), codex-cli.sh script
 
-### Community 1493 - "agentmemory Dependency Flow"
-Cohesion: 0.50
-Nodes (4): .agentmemory Export Root, @agentmemory/agentmemory Package, gitleaks, agentmemory Dependency Flow
+### Community 1493 - "enum"
+Cohesion: 0.33
+Nodes (6): high, low, medium, enum, type, materiality
 
 ### Community 1494 - "silver:verify"
-Cohesion: 0.06
-Nodes (42): Alumnium MCP, Clarify, Compare, and Hand Off, Visual Companion, Named Solution Comparison, Agentmemory Save, Composer 2.5 Worker Model, Instruction Ledger Gate, Live Publish Evidence Gate (+34 more)
+Cohesion: 0.04
+Nodes (70): accessibility pack, Critical Gate Catalog, silver:domain-audit, Domain Quality Contracts, Domain Audit Evidence Schema, Domain Audit Exit Gate, Domain Audit Pack Selection, silver:execute (+62 more)
 
 ### Community 1495 - "probe-agentmemory.sh"
 Cohesion: 0.53
@@ -9593,9 +10033,9 @@ Nodes (5): run_apply(), run_report(), run_verify(), sb-optimize-stack.sh script,
 Cohesion: 0.33
 Nodes (5): additionalProperties, $id, $schema, title, type
 
-### Community 1501 - "Search Orchestration"
-Cohesion: 0.24
-Nodes (11): Search Orchestration, Host Search Fallback, Intent Classification, Manifest Recording, Portal Dispatch, Provider Routing, search-cli, ctx_fetch host fallback (+3 more)
+### Community 1501 - "TC-03 Criteria (Net-New Workflow Creation)"
+Cohesion: 0.33
+Nodes (6): TC-03 Criteria (Net-New Workflow Creation), Compliance Evidence Bundle, Net-New Workflow Spec Artifact, NEW-WORKFLOW Worker, Novel Workflow ID, TC-03 Runbook (Net-New Workflow)
 
 ### Community 1502 - "required"
 Cohesion: 0.33
@@ -9698,8 +10138,8 @@ Cohesion: 0.33
 Nodes (6): additionalProperties, required, type, currency_micro_usd_cap, total_tokens_cap, budget
 
 ### Community 1601 - "silver-ship"
-Cohesion: 0.33
-Nodes (6): Security blockers, Security checks, silver-secure, Branch finishing, Delivery readiness, silver-ship
+Cohesion: 0.14
+Nodes (14): Verification Evidence, Phase 056 verification evidence, Full suite green, Review Verification, Security blockers, Security checks, silver-secure, Branch finishing (+6 more)
 
 ### Community 1602 - "test-recommended-tools.sh"
 Cohesion: 0.53
@@ -9709,9 +10149,9 @@ Nodes (5): fail(), pass(), test-recommended-tools.sh script, SILVER_BULLET_TEST_
 Cohesion: 0.60
 Nodes (4): assert_blocks(), assert_passes(), is_blocked(), test-compression-marker-guard.sh script
 
-### Community 1605 - "test-core-rules-integrity.sh"
-Cohesion: 0.53
-Nodes (5): assert_eq(), assert_fail(), assert_ok(), test-core-rules-integrity.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 1605 - "consolidate"
+Cohesion: 0.60
+Nodes (5): consolidate(), main(), normalize_claim(), Any, validate_inputs()
 
 ### Community 1614 - "test-five-tool-mcp-namespace.sh"
 Cohesion: 0.47
@@ -9733,9 +10173,9 @@ Nodes (4): check(), has_word(), missing_word(), test-required-skills-consistency
 Cohesion: 0.40
 Nodes (3): assert_eq(), test-semantic-compress-hook.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
-### Community 1631 - "Tool Use Safety"
+### Community 1631 - "Multi-Agent Safety"
 Cohesion: 0.33
-Nodes (6): Audit Logging, Confirmation Gates, Least Privilege, Output Sanitization, Rate Limiting, Tool Use Safety
+Nodes (6): Agent Isolation, Capability Delegation, Message Authentication, Multi-Agent Safety, Recursive Injection Prevention, Termination Guarantees
 
 ### Community 1632 - "test-enterprise-e2e-matrix-force.sh"
 Cohesion: 0.40
@@ -9753,9 +10193,9 @@ Nodes (4): fail(), HOME, pass(), test-merge-leanctx-mcp-config.sh script
 Cohesion: 0.73
 Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-model-selection-boundary.sh script
 
-### Community 1662 - "test-parallel-scheduling-safety.sh"
-Cohesion: 0.47
-Nodes (5): fail(), pass(), SB_APO_CATALOG_FILE, SB_RUNTIME_STATE_DIR, test-parallel-scheduling-safety.sh script
+### Community 1662 - "Tool Use Safety"
+Cohesion: 0.33
+Nodes (6): Audit Logging, Confirmation Gates, Least Privilege, Output Sanitization, Rate Limiting, Tool Use Safety
 
 ### Community 1663 - "suggested_must_haves"
 Cohesion: 0.50
@@ -9793,9 +10233,9 @@ Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-site-c
 Cohesion: 0.87
 Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-site-content-freshness.sh script
 
-### Community 1672 - "allow_adjacent_section"
-Cohesion: 0.50
-Nodes (4): default, description, type, allow_adjacent_section
+### Community 1672 - "TestMatrixOpenpyxl"
+Cohesion: 0.40
+Nodes (3): skipIf, skipUnless, TestMatrixOpenpyxl
 
 ### Community 1673 - "test-validate-host-agnostic-core.sh"
 Cohesion: 0.67
@@ -9971,15 +10411,15 @@ Nodes (5): feature_priority_overrides, Audit log, RBAC, SOC 2, SSO
 
 ### Community 1740 - "enum"
 Cohesion: 0.33
-Nodes (6): high, low, medium, enum, type, materiality
+Nodes (6): evidence_validated, implicit, user_confirmed, status, enum, type
 
 ### Community 1741 - "enum"
 Cohesion: 0.40
 Nodes (5): deep, quick, standard, ultradeep, enum
 
-### Community 1744 - "suggested_constraints"
-Cohesion: 0.50
-Nodes (4): Limited budget, Prefer low operational overhead, Small team, suggested_constraints
+### Community 1744 - "test-orchestrator-worker-templates.sh"
+Cohesion: 0.47
+Nodes (4): assert_queue_matches_catalog(), assert_template(), test-orchestrator-worker-templates.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 1814 - "items"
 Cohesion: 0.40
@@ -10065,9 +10505,9 @@ Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve si
 Cohesion: 0.40
 Nodes (5): deep, quick, standard, ultradeep, enum
 
-### Community 3298 - "claim_id"
-Cohesion: 0.50
-Nodes (4): description, pattern, type, claim_id
+### Community 3298 - "test-step-vloop-runtime-rollup.sh"
+Cohesion: 0.47
+Nodes (5): fail(), pass(), SB_APO_CATALOG_FILE, SB_RUNTIME_STATE_DIR, test-step-vloop-runtime-rollup.sh script
 
 ### Community 3301 - "items"
 Cohesion: 0.40
@@ -10093,13 +10533,9 @@ Nodes (3): assert_json(), assert_no_bare_hook_event_name(), test-codex-hook-cont
 Cohesion: 0.60
 Nodes (3): fail(), pass(), test-context-mode-read-deny-lib.sh script
 
-### Community 3308 - "run_hook_probe_strict"
-Cohesion: 0.50
-Nodes (4): run_hook_probe_strict(), run_prompt(), run_prompt_strict(), seed_workspace_requested_skills()
-
-### Community 3309 - "test-enterprise-e2e-matrix-quota.sh"
-Cohesion: 0.83
-Nodes (3): assert_fail(), assert_ok(), test-enterprise-e2e-matrix-quota.sh script
+### Community 3308 - "Review Loop Rules"
+Cohesion: 0.40
+Nodes (5): Review Loop Rules, Review Analytics JSONL, Review Rounds Audit Trail, Review State File, Commit Review Trail
 
 ### Community 3310 - "test-enterprise-policy-runtime.sh"
 Cohesion: 0.60
@@ -10133,9 +10569,9 @@ Nodes (5): 1. Product / architecture / inner workings (mandatory first), 2. Plan
 Cohesion: 0.70
 Nodes (4): assert_equals(), assert_fails(), assert_passes(), test-run-release-live-matrix.sh script
 
-### Community 3322 - "Site Release Audit"
-Cohesion: 0.67
-Nodes (3): Site Release Audit, v0.51.0, v0.51.1
+### Community 3322 - "feature_priority_overrides"
+Cohesion: 0.40
+Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, feature_priority_overrides
 
 ### Community 3323 - "test-run-sb-live-tests-codex.sh"
 Cohesion: 0.70
@@ -10173,25 +10609,25 @@ Nodes (4): assert_contains(), assert_not_contains(), test-verify-release-announc
 Cohesion: 0.40
 Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, feature_priority_overrides
 
-### Community 3332 - "test-rm-safety.sh"
-Cohesion: 0.60
-Nodes (4): fail(), pass(), test-rm-safety.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 3332 - "YAML and JSON Infrastructure-Code Rule"
+Cohesion: 0.40
+Nodes (5): GitHub Actions Workflow, Helm Chart, Kubernetes Manifest, Terraform File, YAML and JSON Infrastructure-Code Rule
 
 ### Community 3333 - "evidence_ids"
 Cohesion: 0.50
 Nodes (4): default, description, type, evidence_ids
 
-### Community 3334 - "extracted_at"
-Cohesion: 0.67
-Nodes (3): format, type, extracted_at
+### Community 3334 - "test-cursor-hooks-paths.sh"
+Cohesion: 0.60
+Nodes (4): fail(), pass(), test-cursor-hooks-paths.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 3335 - "must_research"
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
-### Community 3336 - "evidence_hash"
-Cohesion: 0.67
-Nodes (3): pattern, type, evidence_hash
+### Community 3336 - "test-orchestrator-delegation-directive.sh"
+Cohesion: 0.50
+Nodes (4): check(), SB_RUNTIME_PRESERVE_STATE_DIR, SB_RUNTIME_STATE_DIR, test-orchestrator-delegation-directive.sh script
 
 ### Community 3337 - "source_id"
 Cohesion: 0.50
@@ -10233,9 +10669,9 @@ Nodes (3): Learnings — 2026-08, practice:documentation, practice:release
 Cohesion: 0.83
 Nodes (3): emit_deny(), payload_has_compression_markers(), compression-marker-guard.sh script
 
-### Community 3352 - "workspace_trust_config_files"
-Cohesion: 0.67
-Nodes (3): codex_config_file(), kay_active_config_file(), workspace_trust_config_files()
+### Community 3352 - "Review charter"
+Cohesion: 0.60
+Nodes (4): divide(), Division-by-Zero Explicit Error Behavior, smoke-target.py, Review charter
 
 ### Community 3356 - "Dependency-Aware Scheduler"
 Cohesion: 0.50
@@ -10245,13 +10681,13 @@ Nodes (4): Host-Native Concurrency, Orchestrator Hooks, Dependency-Aware Schedul
 Cohesion: 0.50
 Nodes (4): API access, Managed hosting, Self-serve signup, suggested_must_haves
 
-### Community 3359 - "feature_priority_overrides"
+### Community 3359 - "enum"
 Cohesion: 0.50
-Nodes (4): Data residency controls, HIPAA, Immutable audit log, feature_priority_overrides
+Nodes (4): enum, cursor, ocg, backend
 
-### Community 3360 - "feature_priority_overrides"
-Cohesion: 0.40
-Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, feature_priority_overrides
+### Community 3360 - "test-rm-safety.sh"
+Cohesion: 0.60
+Nodes (4): fail(), pass(), test-rm-safety.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 3361 - "evidence_ids"
 Cohesion: 0.50
@@ -10261,9 +10697,9 @@ Nodes (4): default, description, type, evidence_ids
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
-### Community 3364 - "reliability_code"
+### Community 3364 - "category_priority_floor"
 Cohesion: 0.50
-Nodes (4): reliability_code, description, pattern, type
+Nodes (4): Developer Experience, Pricing and licensing, Time to value, category_priority_floor
 
 ### Community 3365 - "source_id"
 Cohesion: 0.50
@@ -10345,9 +10781,9 @@ Nodes (4): PATCH FOR: FINDING-1.1 + FINDING-1.2, PATCH FOR: FINDING-5.1, PATCH F
 Cohesion: 0.25
 Nodes (7): 1. Product briefing + byte parity confirmation, 2. Verified evidence (machine-checked, not asserted), 3. Charter-item coverage audit (locked decisions vs plan text), 4. Adversarial probes that did **not** produce material findings, 5. Non-material observations (explicitly **not** blocking, no fix required for this verdict), 6. Findings, RFL Rung 5 — Opus Thinking High — Cycle 1
 
-### Community 3390 - "codex_plugin_registered"
-Cohesion: 0.67
-Nodes (3): codex_plugin_registered(), codex_plugin_registered_any(), codex_plugin_surface_exists_any()
+### Community 3390 - "feature_priority_overrides"
+Cohesion: 0.50
+Nodes (4): Data residency controls, HIPAA, Immutable audit log, feature_priority_overrides
 
 ### Community 3391 - "evidence_ids"
 Cohesion: 0.50
@@ -10357,9 +10793,9 @@ Nodes (4): default, description, type, evidence_ids
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
-### Community 3393 - "Merge status"
-Cohesion: 0.25
-Nodes (7): A–G presence on tip, Fix C/D — #249 #250 instruction ledger, Fix F — #252 tri-host timeout, Fix G — #253 kay isolation concurrency, Gaps, Integration status check (post Fix G / C/D), Merge status
+### Community 3393 - "agentmemory Dependency Flow"
+Cohesion: 0.50
+Nodes (4): .agentmemory Export Root, @agentmemory/agentmemory Package, gitleaks, agentmemory Dependency Flow
 
 ### Community 3394 - "source_id"
 Cohesion: 0.50
@@ -10376,6 +10812,10 @@ Nodes (4): type, null, string, disable_reason
 ### Community 3398 - "enum"
 Cohesion: 0.50
 Nodes (4): disabled, enabled, status, enum
+
+### Community 3399 - "Environment Promotion"
+Cohesion: 0.50
+Nodes (4): Environment Promotion, Development Environment, Production Environment, Staging Environment
 
 ### Community 3401 - "Solution Capability Report: agenthub"
 Cohesion: 0.50
@@ -10461,6 +10901,10 @@ Nodes (4): default, description, type, evidence_ids
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
+### Community 3429 - "reliability_code"
+Cohesion: 0.50
+Nodes (4): reliability_code, description, pattern, type
+
 ### Community 3430 - "source_id"
 Cohesion: 0.50
 Nodes (4): source_id, description, pattern, type
@@ -10480,6 +10924,10 @@ Nodes (4): disabled, enabled, status, enum
 ### Community 3435 - "reliability_code"
 Cohesion: 0.50
 Nodes (4): reliability_code, description, pattern, type
+
+### Community 3437 - "enum"
+Cohesion: 0.50
+Nodes (4): enum, cursor, ocg, backend
 
 ### Community 3438 - "test-route-smoke-transcript.sh"
 Cohesion: 0.83
@@ -10528,6 +10976,10 @@ Nodes (3): fail(), pass(), test-claude-agent-surface-isolation.sh script
 ### Community 3449 - "test-claude-plugin-surface.sh"
 Cohesion: 0.83
 Nodes (3): fail(), pass(), test-claude-plugin-surface.sh script
+
+### Community 3451 - "feature_priority_overrides"
+Cohesion: 0.50
+Nodes (4): Data residency controls, HIPAA, Immutable audit log, feature_priority_overrides
 
 ### Community 3452 - "test-export-enterprise-evidence.sh"
 Cohesion: 0.83
@@ -10621,13 +11073,17 @@ Nodes (3): assert_contains(), test-verify-release-commit-ci.sh script, write_run
 Cohesion: 0.50
 Nodes (3): { chromium }, __dirname, require
 
-### Community 3477 - "enum"
+### Community 3477 - "category_pack_id"
 Cohesion: 0.50
-Nodes (4): enum, cursor, ocg, backend
+Nodes (4): description, minLength, type, category_pack_id
 
 ### Community 3478 - "_json_out"
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
+
+### Community 3479 - "Multi-Market Landscape Critique"
+Cohesion: 0.50
+Nodes (4): APO Core Seed Coverage Gap, Multi-Market Landscape Critique, Feature Comparison Matrix Gap, Unsupported Most Complete APO Superlative
 
 ### Community 3480 - "outputs"
 Cohesion: 0.67
@@ -10713,6 +11169,18 @@ Nodes (6): assert_exists(), assert_removed(), run_hook(), setup(), test-trivial-
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
 
+### Community 3527 - "expires_at"
+Cohesion: 0.67
+Nodes (3): format, type, expires_at
+
+### Community 3528 - "text"
+Cohesion: 0.67
+Nodes (3): text, description, type
+
+### Community 3546 - "category_pack_id"
+Cohesion: 0.50
+Nodes (4): description, minLength, type, category_pack_id
+
 ### Community 3547 - "_json_out"
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
@@ -10729,13 +11197,29 @@ Nodes (3): default, type, outputs
 Cohesion: 0.29
 Nodes (6): 1. Mechanical cross-checks (independent, current bytes), 2. The `e5c58009` launch↔deny fix — independently re-derived, 3. Fresh adversarial challenges (beyond c1's enumerated probes), 4. Non-material observations (recorded, not blocking), 5. Conclusion, RFL Rung 3 — Kimi K3 Max — Adversarial Architecture Review (Cycle 2)
 
+### Community 3710 - "run_hook_probe_strict"
+Cohesion: 0.50
+Nodes (4): run_hook_probe_strict(), run_prompt(), run_prompt_strict(), seed_workspace_requested_skills()
+
 ### Community 3716 - "expires_at"
 Cohesion: 0.67
 Nodes (3): format, type, expires_at
 
-### Community 3722 - "text"
+### Community 3719 - "test-enterprise-e2e-matrix-quota.sh"
+Cohesion: 0.83
+Nodes (3): assert_fail(), assert_ok(), test-enterprise-e2e-matrix-quota.sh script
+
+### Community 3721 - "text"
 Cohesion: 0.67
 Nodes (3): text, description, type
+
+### Community 3722 - "extracted_at"
+Cohesion: 0.67
+Nodes (3): format, type, extracted_at
+
+### Community 3723 - "alo-labs/agent-plugins Marketplace"
+Cohesion: 0.67
+Nodes (3): alo-labs/agent-plugins Marketplace, alo-labs-cursor Package, Public Host Marketplace
 
 ### Community 3724 - "expires_at"
 Cohesion: 0.67
@@ -10756,6 +11240,14 @@ Nodes (5): Conclusion, Finding 1 closure verification (cycle-1 material finding)
 ### Community 3728 - "RFL Rung 3 — Kimi K3 High — Adversarial Architecture Re-Review (Cycle 3)"
 Cohesion: 0.33
 Nodes (5): 1. Cycle-2 closure re-derived (not rubber-stamped), 2. Fresh adversarial challenges (beyond cycle 2's sweep), 3. Non-material observations (recorded, not blocking), 4. Conclusion, RFL Rung 3 — Kimi K3 High — Adversarial Architecture Re-Review (Cycle 3)
+
+### Community 3729 - "workspace_trust_config_files"
+Cohesion: 0.67
+Nodes (3): codex_config_file(), kay_active_config_file(), workspace_trust_config_files()
+
+### Community 3730 - "codex_plugin_registered"
+Cohesion: 0.67
+Nodes (3): codex_plugin_registered(), codex_plugin_registered_any(), codex_plugin_surface_exists_any()
 
 ### Community 3731 - "test-codex-runtime-bootstrap.sh"
 Cohesion: 0.47
@@ -10818,8 +11310,8 @@ Cohesion: 0.40
 Nodes (4): description, personas, $schema, version
 
 ### Community 3747 - "silver-triage"
-Cohesion: 0.13
-Nodes (17): divide(), Division-by-Zero Explicit Error Behavior, smoke-target.py, Implementation diff, review-fix-ladder.py, Review charter, silver-review-fix-ladder, Two-pass verification (+9 more)
+Cohesion: 0.17
+Nodes (13): Implementation diff, review-fix-ladder.py, silver-review-fix-ladder, Two-pass verification, Review findings, silver-review, PM items, Raw review findings (+5 more)
 
 ### Community 3750 - "RFL Rung 1 Review — Gemini 3.6 Flash High"
 Cohesion: 0.50
@@ -11030,7 +11522,7 @@ Nodes (3): Material findings, Review basis, RFL Rung 4 — GPT-5.6 Sol XHigh —
   research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ateam/scr.md · relation: references
 
 ## Knowledge Gaps
-- **12486 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `PATH`, `SB_ORCHESTRATOR_WORKER`, `SB_ORCHESTRATOR_PARENT` (+12481 more)
+- **12487 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `PATH`, `SB_ORCHESTRATOR_WORKER`, `SB_ORCHESTRATOR_PARENT` (+12482 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **1946 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 

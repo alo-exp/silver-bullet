@@ -3845,9 +3845,9 @@
     "semantic_hash": "f34164bf449a46baa8387859d10f1625"
   },
   "hooks/agentmemory-gate.sh": {
-    "mtime": 1786496445.3342621,
-    "ast_hash": "3e8a4f3f6f969ad2edde34732a8ebc3e",
-    "semantic_hash": "3e8a4f3f6f969ad2edde34732a8ebc3e"
+    "mtime": 1786508856.2539403,
+    "ast_hash": "37fdd64d854d3fab08448546387fae5c",
+    "semantic_hash": ""
   },
   "hooks/alumnium-gate.sh": {
     "mtime": 1786496445.4811456,
@@ -3950,8 +3950,8 @@
     "semantic_hash": "34f2b35278b9b721c8ff6b997aa106bb"
   },
   "hooks/instruction-ledger-gate.sh": {
-    "mtime": 1786499094.1980112,
-    "ast_hash": "c3af80f79d3beeb66e9e1382b222d601",
+    "mtime": 1786509205.087402,
+    "ast_hash": "a802042114377cc1cec64bdeccb1e963",
     "semantic_hash": ""
   },
   "hooks/kay-project-hook-bridge.sh": {
@@ -3970,8 +3970,8 @@
     "semantic_hash": "aa7bf70d59d32f700e28fe0bbfc04b6a"
   },
   "hooks/lib/agentmemory-gate.sh": {
-    "mtime": 1786496445.480528,
-    "ast_hash": "8430b20178f7baf5853ff5b733bd6aa8",
+    "mtime": 1786508871.7243648,
+    "ast_hash": "9ce3f69c079ca01d9d28952cb67a271c",
     "semantic_hash": ""
   },
   "hooks/lib/alumnium-gate.sh": {
@@ -4090,9 +4090,9 @@
     "semantic_hash": "4f9e2b0713306cd037524cdb27d2bfb0"
   },
   "hooks/lib/enforcement-tier-gate.sh": {
-    "mtime": 1786119200.608569,
-    "ast_hash": "7ab77c018b7bc4063d18c44c5088c9c5",
-    "semantic_hash": "7ab77c018b7bc4063d18c44c5088c9c5"
+    "mtime": 1786508629.9426978,
+    "ast_hash": "3b7548b7318554300684c78c4a0724b7",
+    "semantic_hash": ""
   },
   "hooks/lib/enterprise-policy.sh": {
     "mtime": 1786498474.06769,
@@ -4160,19 +4160,19 @@
     "semantic_hash": "febcf7c4ca9cd23fcad5535519c350ff"
   },
   "hooks/lib/orchestrator-directive.sh": {
-    "mtime": 1786119200.6109252,
-    "ast_hash": "417153b28085032c49c1bccf8da32959",
-    "semantic_hash": "417153b28085032c49c1bccf8da32959"
+    "mtime": 1786508629.943968,
+    "ast_hash": "d891968d28be428080fcbd108a168541",
+    "semantic_hash": ""
   },
   "hooks/lib/orchestrator-event-log.sh": {
-    "mtime": 1786119200.61104,
-    "ast_hash": "36c7a036628926eca12be3c455fe9133",
-    "semantic_hash": "36c7a036628926eca12be3c455fe9133"
+    "mtime": 1786508629.9450047,
+    "ast_hash": "ca102d2aa0aefb764a5cd314380741ea",
+    "semantic_hash": ""
   },
   "hooks/lib/orchestrator-parent.sh": {
-    "mtime": 1786496445.3273325,
-    "ast_hash": "2f06588e4df96ada2559ba4ff30f47a7",
-    "semantic_hash": "2f06588e4df96ada2559ba4ff30f47a7"
+    "mtime": 1786508814.5464447,
+    "ast_hash": "1d0cc973a160fd0ca079001ab66e8198",
+    "semantic_hash": ""
   },
   "hooks/lib/orchestrator-scheduler.sh": {
     "mtime": 1786119200.611701,
@@ -4185,9 +4185,9 @@
     "semantic_hash": "88e09bfb6cd70a1e39c08d05d14c124a"
   },
   "hooks/lib/orchestrator-state.sh": {
-    "mtime": 1786496445.4617472,
-    "ast_hash": "c7262ff572ee0a50978065e8446a876c",
-    "semantic_hash": "c7262ff572ee0a50978065e8446a876c"
+    "mtime": 1786508629.9466136,
+    "ast_hash": "d40367f412bb0eec9fddfeb6dd40f8a2",
+    "semantic_hash": ""
   },
   "hooks/lib/outcomes-gate.sh": {
     "mtime": 1786119200.612104,
@@ -4320,9 +4320,9 @@
     "semantic_hash": "6ac750dc1083e20be3c0de98bbb4ae1a"
   },
   "hooks/lib/tool-input/command_looks_read_only.py": {
-    "mtime": 1786119200.6166172,
-    "ast_hash": "1eb6425cc8752226ca725e7b0923f5af",
-    "semantic_hash": "1eb6425cc8752226ca725e7b0923f5af"
+    "mtime": 1786508803.5245485,
+    "ast_hash": "b6684a40c216a3c58091764325da394f",
+    "semantic_hash": ""
   },
   "hooks/lib/tool-input/invoked_script_path.py": {
     "mtime": 1786119200.6167314,
@@ -4370,9 +4370,9 @@
     "semantic_hash": "a48fff482fa53879ccc716e733e02c24"
   },
   "hooks/outcomes-check.sh": {
-    "mtime": 1786119200.6177726,
-    "ast_hash": "70a07437aacc62c7cc54660589768d30",
-    "semantic_hash": "70a07437aacc62c7cc54660589768d30"
+    "mtime": 1786509203.4021661,
+    "ast_hash": "01830add91279e31fbc9a8704a24d825",
+    "semantic_hash": ""
   },
   "hooks/phase-archive.sh": {
     "mtime": 1786119200.6178796,
@@ -4405,9 +4405,9 @@
     "semantic_hash": "903643210be69299d9b7cb2d726c3298"
   },
   "hooks/prompt-reminder.sh": {
-    "mtime": 1786496445.4802988,
-    "ast_hash": "e8a9e649e6edb9d1e727eadbaa9303e1",
-    "semantic_hash": "e8a9e649e6edb9d1e727eadbaa9303e1"
+    "mtime": 1786509216.5364997,
+    "ast_hash": "b7c6b2b788c57466543c3a24a5b2afeb",
+    "semantic_hash": ""
   },
   "hooks/record-agentmemory-usage.sh": {
     "mtime": 1786119200.6187842,
@@ -4430,9 +4430,9 @@
     "semantic_hash": "39d745841e9a9d3326b7f489fc72d38d"
   },
   "hooks/record-requested-skill.sh": {
-    "mtime": 1786119200.6192067,
-    "ast_hash": "7603dab213e8a13df6dc1952ce4bfc77",
-    "semantic_hash": "7603dab213e8a13df6dc1952ce4bfc77"
+    "mtime": 1786509200.630098,
+    "ast_hash": "b1f7465c821add61a16faf6a3c1d89e8",
+    "semantic_hash": ""
   },
   "hooks/record-site-session.sh": {
     "mtime": 1786119200.6193047,
@@ -4535,9 +4535,9 @@
     "semantic_hash": "0666079f6b7859e2c44a92f56c97ba9a"
   },
   "hooks/subagent-stop-enforcement.sh": {
-    "mtime": 1786119200.6235738,
-    "ast_hash": "3e9b6caa6bd97398e3fefeef09e6a66e",
-    "semantic_hash": "3e9b6caa6bd97398e3fefeef09e6a66e"
+    "mtime": 1786509230.425729,
+    "ast_hash": "19bf88d9ee853bc32d79c6b9c7ca0953",
+    "semantic_hash": ""
   },
   "hooks/timeout-check.sh": {
     "mtime": 1786119200.623675,
@@ -7000,9 +7000,9 @@
     "semantic_hash": "98100f8c80bbe2556c1ef75d7381028c"
   },
   "scripts/lib/recommended-tools/common.sh": {
-    "mtime": 1786119200.8031766,
-    "ast_hash": "e225e42b8f2539f913273f59329792a8",
-    "semantic_hash": "e225e42b8f2539f913273f59329792a8"
+    "mtime": 1786508629.948059,
+    "ast_hash": "5058e3a557c7178266d2cac4e19f50f5",
+    "semantic_hash": ""
   },
   "scripts/lib/recommended-tools/graphify-worktree.sh": {
     "mtime": 1786119200.8032868,
@@ -7270,8 +7270,8 @@
     "semantic_hash": "b0d10fe8e3d39f5c8e483f6521408966"
   },
   "scripts/sb-doctor.sh": {
-    "mtime": 1786496445.4804544,
-    "ast_hash": "94306b3f3e743f3a404d215bdfab1f05",
+    "mtime": 1786508629.9500804,
+    "ast_hash": "c003e70148873a9ac9245474c2b91db5",
     "semantic_hash": ""
   },
   "scripts/sb-migrate-config.sh": {
@@ -8275,9 +8275,9 @@
     "semantic_hash": "a8ae4e3347f0d6229fc4cbce6a179361"
   },
   "tests/hooks/test-agentmemory-gate.sh": {
-    "mtime": 1786496445.48108,
-    "ast_hash": "c2cada3a23c337e3e942bae155f1cb38",
-    "semantic_hash": "c2cada3a23c337e3e942bae155f1cb38"
+    "mtime": 1786509005.8416147,
+    "ast_hash": "427cced5783e98929177ba1a85d13363",
+    "semantic_hash": ""
   },
   "tests/hooks/test-agentmemory-graphify-synergy.sh": {
     "mtime": 1786119200.9339247,
@@ -8500,9 +8500,9 @@
     "semantic_hash": "75f40bfead361f102df6aeaadc5a78f7"
   },
   "tests/hooks/test-orchestrator-parent-guard.sh": {
-    "mtime": 1786119200.9392188,
-    "ast_hash": "aa09380c291011da585fa314e058d523",
-    "semantic_hash": "aa09380c291011da585fa314e058d523"
+    "mtime": 1786509082.2085044,
+    "ast_hash": "63de7edbeba61934b91fc27726ffd336",
+    "semantic_hash": ""
   },
   "tests/hooks/test-orchestrator-queue-order.sh": {
     "mtime": 1786496445.4739447,
@@ -8575,9 +8575,9 @@
     "semantic_hash": "cf8788ce87adf985436a8253bf3ca8c6"
   },
   "tests/hooks/test-prompt-reminder.sh": {
-    "mtime": 1786119200.9410284,
-    "ast_hash": "a10253552c1e6d2f36afb3623a1af886",
-    "semantic_hash": "a10253552c1e6d2f36afb3623a1af886"
+    "mtime": 1786509222.2943616,
+    "ast_hash": "fa3319e92cf87717d0c96608816baadc",
+    "semantic_hash": ""
   },
   "tests/hooks/test-quality-gates-mode.sh": {
     "mtime": 1786119200.9411418,
@@ -8705,9 +8705,9 @@
     "semantic_hash": ""
   },
   "tests/hooks/test-shell-read-only.sh": {
-    "mtime": 1786119200.9440732,
-    "ast_hash": "cd85fd6495a36afb5a1beafec8ca6235",
-    "semantic_hash": "cd85fd6495a36afb5a1beafec8ca6235"
+    "mtime": 1786508917.9415982,
+    "ast_hash": "4a9a50f87d35c42b89dd29a35f8f5965",
+    "semantic_hash": ""
   },
   "tests/hooks/test-site-session-gates.sh": {
     "mtime": 1786119200.944233,
@@ -9645,8 +9645,8 @@
     "semantic_hash": "f40610056446ca01ad6104894d682786"
   },
   "tests/scripts/test-silver-doctor.sh": {
-    "mtime": 1786496445.4739933,
-    "ast_hash": "cd2ff73f898fab47d9761edd5f9ebd45",
+    "mtime": 1786508629.9514458,
+    "ast_hash": "f8774ae7a3c81ef7e44d30755d5afe51",
     "semantic_hash": ""
   },
   "tests/scripts/test-silver-init-merge-hooks.sh": {
@@ -23875,8 +23875,8 @@
     "semantic_hash": "05191a3c7aec454264fa508c408aef3d"
   },
   "scripts/validate-graphify-artifacts.sh": {
-    "mtime": 1786144477.890442,
-    "ast_hash": "06de9c2e7a56918ea80f8a1cfb257d92",
+    "mtime": 1786499894.018428,
+    "ast_hash": "51c3d7141d3c972a1ee894ad988fdfc0",
     "semantic_hash": ""
   },
   "docs/LEANCTX-OPERATING-GUIDE.md": {
@@ -24224,11 +24224,6 @@
     "ast_hash": "e23cb7f374260ae45d98b3d4d59b0242",
     "semantic_hash": ""
   },
-  "tests/hooks/test-skill-discovery.sh": {
-    "mtime": 1786498587.7885776,
-    "ast_hash": "23ea7682137c61e62499c836994e99b9",
-    "semantic_hash": ""
-  },
   "scripts/lib/command-timeout.sh": {
     "mtime": 1786498955.5017567,
     "ast_hash": "80206bef398b94fc997d80c0408d1314",
@@ -24244,9 +24239,19 @@
     "ast_hash": "008b296cf3fd5dacfd882d4e50e89141",
     "semantic_hash": ""
   },
-  "merge-status.md": {
-    "mtime": 1786499284.7174377,
-    "ast_hash": "627d74cdbb7e62327e336a342599f24c",
+  ".agentmemory/memory/2026-08-12-pr255-graphify-hyperedges-ci.md": {
+    "mtime": 1786499917.3585327,
+    "ast_hash": "1ecdd7932883a2e052755e616d5a2103",
+    "semantic_hash": ""
+  },
+  "hooks/lib/ups-coalesce.sh": {
+    "mtime": 1786509197.5829694,
+    "ast_hash": "eaeb224f6d709441e2acbc29aefe9cf7",
+    "semantic_hash": ""
+  },
+  "tests/hooks/test-ups-coalesce.sh": {
+    "mtime": 1786509221.6671371,
+    "ast_hash": "e42097b2721e57b0b32a6414d9954280",
     "semantic_hash": ""
   }
 }

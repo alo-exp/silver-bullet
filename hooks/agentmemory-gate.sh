@@ -112,13 +112,13 @@ if ! sb_agentmemory_cli_available; then
   exit 0
 fi
 
+# Soft-warn when server/MCP unavailable — do not hard-block edits (#259).
+# Usage freshness is only enforced when capture infrastructure is reachable.
 if ! sb_agentmemory_server_healthy "$config_file"; then
-  emit_block "$(sb_agentmemory_block_message_no_server "$config_file")"
   exit 0
 fi
 
 if ! sb_agentmemory_platform_artifact_present "$project_root" "$config_file"; then
-  emit_block "$(sb_agentmemory_block_message_no_mcp "$config_file")"
   exit 0
 fi
 

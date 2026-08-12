@@ -55,5 +55,14 @@ echo "--- not read-only: real redirects ---"
 assert_not_read_only "tee append to src file" "printf 'x' | tee -a /tmp/src/app.js"
 assert_not_read_only "redirect stdout to file" "echo probe > /tmp/src/app.js"
 
+echo "--- read-only: graphify retrieval (#258) ---"
+assert_read_only "graphify query" 'graphify query "hooks graphify-gate"'
+assert_read_only "graphify path" 'graphify path "A" "B"'
+assert_read_only "graphify explain" 'graphify explain "orchestrator"'
+assert_read_only "graphifyy query alias" 'graphifyy query "foo"'
+assert_not_read_only "graphify update mutates index" 'graphify update .'
+assert_not_read_only "graphify install not read-only" 'graphify install --project'
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
+

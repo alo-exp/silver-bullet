@@ -74,6 +74,7 @@ setup() {
   TMPSTATE="${SB_TEST_DIR}/test-state-${TEST_RUN_ID}"
   TMPCFG="${TMPDIR_TEST}/.silver-bullet.json"
   rm -f "$TMPSTATE"
+  rm -f "${SB_TEST_DIR}/ups-coalesce-turn" "${SB_TEST_DIR}/ups-coalesce-seen" 2>/dev/null || true
   # Init a git repo so branch-detection tests work (hook silently handles no-git too)
   git -C "$TMPDIR_TEST" init -q
   git -C "$TMPDIR_TEST" config user.email "test@test.com"
@@ -96,9 +97,9 @@ run_hook() {
   local input
   if [[ -n "$prompt" ]]; then
     input=$(jq -n --arg p "$prompt" '{hook_event_name:"UserPromptSubmit", prompt:$p}')
-    ( cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
+    ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_TEST_DIR}" SILVER_BULLET_STATE_FILE="$TMPSTATE" printf '%s' "$input" | bash "$HOOK" 2>/dev/null )
   else
-    ( cd "$TMPDIR_TEST" && printf '{}' | bash "$HOOK" 2>/dev/null )
+    ( cd "$TMPDIR_TEST" && SB_RUNTIME_PRESERVE_STATE_DIR=1 SB_RUNTIME_STATE_DIR="${SB_TEST_DIR}" SILVER_BULLET_STATE_FILE="$TMPSTATE" printf '{}' | bash "$HOOK" 2>/dev/null )
   fi
 }
 
@@ -247,18 +248,36 @@ assert_not_contains "path traversal: evil core-rules not injected" "$out" "CANAR
 rm -rf "$evil_dir"
 teardown
 
-# Test 8: Bare end-user work prompt -> inject Silver router-first instruction
+# Test 8: Bare end-user work prompt -> inject Silver router-first instruction (host-aware #260)
 echo "--- Test 8: Bare work prompt -> route through Silver before direct work ---"
 setup
 write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
+export SILVER_BULLET_RUNTIME=cursor
 out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')
+unset SILVER_BULLET_RUNTIME
 assert_contains "bare work prompt: hook identifies bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
-assert_contains "bare work prompt: hook uses package-local Silver adapter path" "$out" "scripts/silver-bullet"
-assert_contains "bare work prompt: hook instructs Codex to invoke Silver router" "$out" "invoke-skill silver"
-assert_not_contains "bare work prompt: hook does not rely on PATH-only adapter command" "$out" "  silver-bullet invoke-skill silver"
+assert_contains "bare work prompt: Claude/Cursor Skill form (#260)" "$out" 'Skill tool with skill'
+assert_contains "bare work prompt: names silver skill (#260)" "$out" 'skill \\"silver\\"'
+assert_not_contains "bare work prompt: no Codex invoke-skill on cursor" "$out" "invoke-skill silver"
+assert_not_contains "bare work prompt: no Codex adapter branding on cursor" "$out" "Codex SB adapter"
 assert_contains "bare work prompt: hook forbids direct implementation before routing" "$out" "Do not inspect, edit, run tests, or implement directly before routing"
 assert_contains "bare work prompt: original prompt included as router context" "$out" "Add a due date field to todos"
+teardown
+
+# Test 8c: Codex host (non-parent worker) still gets invoke-skill adapter form
+echo "--- Test 8c: Codex bare prompt -> invoke-skill adapter ---"
+setup
+write_cfg
+echo "silver-quality-gates" > "$TMPSTATE"
+export SILVER_BULLET_RUNTIME=codex
+export SB_ORCHESTRATOR_WORKER=1
+out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in the API payload and return it in todo responses.')
+unset SILVER_BULLET_RUNTIME SB_ORCHESTRATOR_WORKER
+assert_contains "codex bare prompt: identifies interception" "$out" "BARE PROMPT INTERCEPTED"
+assert_contains "codex bare prompt: uses package-local Silver adapter path" "$out" "scripts/silver-bullet"
+assert_contains "codex bare prompt: instructs invoke-skill silver" "$out" "invoke-skill silver"
+assert_not_contains "codex bare prompt: does not rely on PATH-only adapter" "$out" "  silver-bullet invoke-skill silver"
 teardown
 
 # Test 8b: Legacy config required_deploy is normalized to current gates
@@ -286,6 +305,7 @@ echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook 'What does Silver Bullet aim to achieve?')
 assert_not_contains "explanatory question: no bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
 assert_not_contains "explanatory question: no forced Silver router invocation" "$out" "invoke-skill silver"
+assert_not_contains "explanatory question: no Skill router injection" "$out" 'Skill tool with skill "silver"'
 teardown
 
 # ── Composed-workflow position tests (Pass 1: workflows/ dir) ────────────────
@@ -348,3 +368,4 @@ teardown
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
+
