@@ -306,6 +306,26 @@ assert_file_missing "branch changed -> instruction-ledger.json deleted" "$LEDGER
 rm -rf "$HOOK_WORKDIR" "$LEDGER_DIR"
 rm -f "$TMPBRANCH"
 
+# Test 1d: Branch change clears pending-completion-audit.json (SB-FRICTION-3)
+echo "--- Test 1d: Branch change clears pending-completion-audit.json ---"
+HOOK_WORKDIR=$(make_git_repo)
+AUDIT_DIR="${SB_TEST_DIR}/session-start-pending-audit-${TEST_RUN_ID}"
+mkdir -p "$AUDIT_DIR"
+printf '{"pending":true,"task_preview":"stale from other branch"}' \
+  > "$AUDIT_DIR/pending-completion-audit.json"
+printf 'silver-quality-gates\n' > "$TMPSTATE"
+printf 'old-branch-xyz' > "$TMPBRANCH"
+( cd "$HOOK_WORKDIR" && \
+  SB_RUNTIME_PRESERVE_STATE_DIR=1 \
+  SB_RUNTIME_STATE_DIR="$AUDIT_DIR" \
+  SILVER_BULLET_STATE_FILE="$TMPSTATE" \
+  SILVER_BULLET_BRANCH_FILE="$TMPBRANCH" \
+  SILVER_BULLET_VERIFY_TESTS_STATE_FILE="$VERIFY_TESTS_FILE" \
+  bash "$HOOK" </dev/null 2>/dev/null ) || true
+assert_file_missing "branch changed -> pending-completion-audit.json deleted" "$AUDIT_DIR/pending-completion-audit.json"
+rm -rf "$HOOK_WORKDIR" "$AUDIT_DIR"
+rm -f "$TMPBRANCH"
+
 # Test 2: Same branch -> state file preserved
 echo "--- Test 2: Same branch -> state file preserved ---"
 HOOK_WORKDIR=$(make_git_repo)

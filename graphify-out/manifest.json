@@ -4280,8 +4280,8 @@
     "semantic_hash": "7a283633ace7312d39dfe168f273c131"
   },
   "hooks/lib/site-session.sh": {
-    "mtime": 1786181200.2489119,
-    "ast_hash": "0484a6a37bf59888a46c8677c5f49f3d",
+    "mtime": 1786521447.9191248,
+    "ast_hash": "6247ada453163203b9a07f6a01788ddb",
     "semantic_hash": ""
   },
   "hooks/lib/skill-discovery.sh": {
@@ -4480,8 +4480,8 @@
     "semantic_hash": "add1e2b4cc0727b7cb8165274a465484"
   },
   "hooks/session-start": {
-    "mtime": 1786499094.200712,
-    "ast_hash": "13e2a7eca9e40bd9aa0a108600bbac67",
+    "mtime": 1786521327.0311875,
+    "ast_hash": "ee3e6c2857680c1b044bcc0a6673a84d",
     "semantic_hash": ""
   },
   "hooks/site-chrome-guard.sh": {
@@ -4495,8 +4495,8 @@
     "semantic_hash": "56b64b63d37ac85aa2c7229c0f82988e"
   },
   "hooks/site-regression-gate.sh": {
-    "mtime": 1786181214.742033,
-    "ast_hash": "f3b60eaca9de35332ba93eb34a7ba0c9",
+    "mtime": 1786521325.3561776,
+    "ast_hash": "c4b5597932bf50efc8a6b6b97a5e3ff8",
     "semantic_hash": ""
   },
   "hooks/site-visual-evidence-gate.sh": {
@@ -8700,8 +8700,8 @@
     "semantic_hash": "714161f28fa3ea06a0bc4a8b58f31cd9"
   },
   "tests/hooks/test-session-start.sh": {
-    "mtime": 1786499094.2035367,
-    "ast_hash": "5a42fb0d6756b118d80c354b28e40bec",
+    "mtime": 1786521360.5609782,
+    "ast_hash": "b169210f4ddc9185894744be8dba8934",
     "semantic_hash": ""
   },
   "tests/hooks/test-shell-read-only.sh": {
@@ -9250,8 +9250,8 @@
     "semantic_hash": "f0c62a613b8bc186ba2cc70568589330"
   },
   "tests/scripts/test-enterprise-e2e-certification-status.sh": {
-    "mtime": 1786495186.237667,
-    "ast_hash": "ba3876f61bd2e2dd5fd04b249cb000e7",
+    "mtime": 1786521330.2007208,
+    "ast_hash": "05d1e0a822880dc06d8acfc540939c6b",
     "semantic_hash": ""
   },
   "tests/scripts/test-enterprise-e2e-matrix-evidence.sh": {
@@ -9310,9 +9310,9 @@
     "semantic_hash": "6bb64eeb601c3f4bef1b794b444d7e3e"
   },
   "tests/scripts/test-five-tool-prerelease-cursor.sh": {
-    "mtime": 1786119200.9600005,
-    "ast_hash": "f32f39e2b4db4fec7a3fadff013ea5d6",
-    "semantic_hash": "f32f39e2b4db4fec7a3fadff013ea5d6"
+    "mtime": 1786521334.2659094,
+    "ast_hash": "72973b2122617bad8245dff07902f243",
+    "semantic_hash": ""
   },
   "tests/scripts/test-flow-step-vloop.sh": {
     "mtime": 1786119200.9601018,
@@ -24010,8 +24010,8 @@
     "semantic_hash": ""
   },
   "tests/scripts/test-site-regression-log-path.sh": {
-    "mtime": 1786181302.8118844,
-    "ast_hash": "9b20cd0121420bae7976c64cf49847f9",
+    "mtime": 1786521396.1822066,
+    "ast_hash": "b12cb0a2a892ed6f134adbd5aae65765",
     "semantic_hash": ""
   },
   "tests/hooks/test-instruction-ledger-gate.sh": {
@@ -24252,6 +24252,11 @@
   "tests/hooks/test-ups-coalesce.sh": {
     "mtime": 1786509221.6671371,
     "ast_hash": "e42097b2721e57b0b32a6414d9954280",
+    "semantic_hash": ""
+  },
+  "tests/hooks/test-site-session-mktemp-portability.sh": {
+    "mtime": 1786521395.5349603,
+    "ast_hash": "1f3716decd3cfe34df35f4107304dd86",
     "semantic_hash": ""
   }
 }
