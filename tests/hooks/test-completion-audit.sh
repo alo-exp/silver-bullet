@@ -380,6 +380,38 @@ assert_passes() {
   fi
 }
 
+
+assert_decoded_message_real_newlines() {
+  # SB-BUG-B / #248: gate reason/message must decode to real newlines, not literal \n.
+  local label="$1"
+  local output="$2"
+  local decoded
+  decoded=$(printf '%s' "$output" | jq -r '
+    .reason
+    // .permissionDecisionReason
+    // .hookSpecificOutput.permissionDecisionReason
+    // .hookSpecificOutput.message
+    // empty
+  ' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    echo "  FAIL: $label — could not decode reason/message from: $output"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$decoded" != *$'\n'* ]]; then
+    echo "  FAIL: $label — decoded text has no real newline characters"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$decoded" | grep -qF '\n'; then
+    echo "  FAIL: $label — decoded text still contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  PASS: $label"
+  PASS=$((PASS + 1))
+}
+
 assert_contains() {
   local label="$1"
   local output="$2"
@@ -408,6 +440,7 @@ setup
 out=$(run_hook "PreToolUse" "git commit -m 'test'")
 assert_blocks "git commit blocked without silver-quality-gates" "$out"
 assert_contains "block message mentions planning" "$out" "COMMIT BLOCKED"
+assert_decoded_message_real_newlines "NEWLINE: planning-tier COMMIT BLOCKED uses real newlines not literal \\n" "$out"
 teardown
 
 setup
@@ -489,6 +522,7 @@ echo "silver-quality-gates" > "$TMPSTATE"  # only planning done, not full workfl
 out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
 assert_blocks "gh pr create blocked with only silver-quality-gates" "$out"
 assert_contains "block message mentions COMPLETION BLOCKED" "$out" "COMPLETION BLOCKED"
+assert_decoded_message_real_newlines "NEWLINE: deploy-tier COMPLETION BLOCKED uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 7: gh pr create passes with all required_deploy skills
