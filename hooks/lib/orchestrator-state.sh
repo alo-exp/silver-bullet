@@ -214,7 +214,7 @@ sb_orchestrator_write_json() {
   file="$(sb_orchestrator_state_file)"
   dir="$(dirname "$file")"
   mkdir -p "$dir" 2>/dev/null || true
-  printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
 }
 
 sb_orchestrator_seed_intent() {
