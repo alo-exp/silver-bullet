@@ -56,6 +56,39 @@ is_blocked() {
   printf '%s' "$output" | grep -qE '"decision"\s*:\s*"block"|"permissionDecision"\s*:\s*"deny"'
 }
 
+
+assert_decoded_message_real_newlines() {
+  # SB-BUG-B / #248: gate reason/message must decode to real newlines, not literal \n.
+  local label="$1"
+  local output="$2"
+  local decoded
+  decoded=$(printf '%s' "$output" | jq -r '
+    .reason
+    // .permissionDecisionReason
+    // .hookSpecificOutput.permissionDecisionReason
+    // .hookSpecificOutput.message
+    // empty
+  ' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    echo "  FAIL: $label — could not decode reason/message from: $output"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$decoded" != *$'\n'* ]]; then
+    echo "  FAIL: $label — decoded text has no real newline characters"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$decoded" | grep -qF '\n'; then
+    echo "  FAIL: $label — decoded text still contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  PASS: $label"
+  PASS=$((PASS + 1))
+}
+
+
 assert_blocks() {
   local label="$1" output="$2"
   if is_blocked "$output"; then
@@ -168,6 +201,7 @@ git -C "$TMPDIR_TEST" add \
   "$TMPDIR_TEST/.planning/phases/24-cross-cutting-paths-quality-gate-dual-mode/24-01-SUMMARY.md"
 out=$(run_hook "PreToolUse" "git commit -m 'Phases 23+24 complete'")
 assert_blocks "one unticked among multiple stages: blocks" "$out"
+assert_decoded_message_real_newlines "NEWLINE: roadmap unticked phases use real newlines not literal \\n" "$out"
 teardown
 
 # 8. ROADMAP.md missing — passes silently (no roadmap to check against)
