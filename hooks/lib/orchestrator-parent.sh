@@ -174,7 +174,7 @@ sb_orchestrator_mark_worker_spawn() {
     --arg args "$args" \
     --arg at "$now" \
     '{skill:$skill, template:$template, args:$args, spawned_at:$at}')"
-  printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
 }
 
 sb_orchestrator_clear_worker_marker() {

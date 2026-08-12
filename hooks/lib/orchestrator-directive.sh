@@ -159,7 +159,7 @@ sb_orchestrator_directive_write() {
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
 }
 
 # Write directive including scheduler batch_dispatch handoff metadata (parent Task contract).
@@ -204,7 +204,7 @@ sb_orchestrator_directive_write_batch() {
       updated_at: $updated_at
     }' 2>/dev/null || true)"
   [[ -n "$json" ]] || return 1
-  printf '%s' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
+  printf '%s\n' "$json" >"${file}.tmp" 2>/dev/null && mv "${file}.tmp" "$file"
 }
 
 sb_orchestrator_directive_clear() {
