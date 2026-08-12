@@ -182,6 +182,38 @@ assert_passes() {
   fi
 }
 
+
+assert_decoded_message_real_newlines() {
+  # SB-BUG-B / #248: gate reason/message must decode to real newlines, not literal \n.
+  local label="$1"
+  local output="$2"
+  local decoded
+  decoded=$(printf '%s' "$output" | jq -r '
+    .reason
+    // .permissionDecisionReason
+    // .hookSpecificOutput.permissionDecisionReason
+    // .hookSpecificOutput.message
+    // empty
+  ' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    echo "  FAIL: $label — could not decode reason/message from: $output"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$decoded" != *$'\n'* ]]; then
+    echo "  FAIL: $label — decoded text has no real newline characters"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$decoded" | grep -qF '\n'; then
+    echo "  FAIL: $label — decoded text still contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  PASS: $label"
+  PASS=$((PASS + 1))
+}
+
 assert_contains() {
   local label="$1"
   local output="$2"
@@ -241,6 +273,7 @@ setup
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_blocks "Stage A: source edit blocked without silver-quality-gates" "$out"
 assert_contains "Stage A block message mentions HARD STOP" "$out" "HARD STOP"
+assert_decoded_message_real_newlines "NEWLINE: Stage A HARD STOP uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 2: Stage A — no planning → HARD STOP on Write to src
@@ -278,6 +311,7 @@ rm -f "${TMPCFG}.bak"
 out=$(run_hook_edit "PreToolUse" "$TMPFILE" "old content here long enough to exceed the small-edit bypass threshold" "new content here long enough to exceed the small-edit bypass threshold too")
 assert_passes "Stage A: uninstalled planning skill warns and allows source edit" "$out"
 assert_contains "Stage A warning mentions uninstalled skill" "$out" "not installed anywhere invocable"
+assert_decoded_message_real_newlines "NEWLINE: Stage A uninstalled warning uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 3: Stage A — non-src file passes even without planning
