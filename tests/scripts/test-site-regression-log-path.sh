@@ -6,6 +6,9 @@
 # created that exact filename and every later call failed EEXIST, so the
 # function returned before running anything and the gate emitted
 # "Log: unknown" — permanently blocking git push and Stop.
+#
+# Complementary coverage (RED/GREEN portability + fallback):
+#   tests/hooks/test-site-session-mktemp-portability.sh
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

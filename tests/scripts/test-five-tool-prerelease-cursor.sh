@@ -111,7 +111,10 @@ else
   export CURSOR_AGENT_MODEL="${CURSOR_AGENT_MODEL:-composer-2.5}"
   export CURSOR_MODEL="${CURSOR_MODEL:-composer-2.5}"
 
-  live_log="$(mktemp "${TMPDIR:-/tmp}/sb-five-tool-prerelease-live.XXXXXX.log")"
+  # BSD/macOS mktemp only randomizes trailing X's — create then add .log.
+  live_log_base="$(mktemp "${TMPDIR:-/tmp}/sb-five-tool-prerelease-live.XXXXXX")"
+  live_log="${live_log_base}.log"
+  mv "$live_log_base" "$live_log"
   live_exit=0
   if bash "${REPO_ROOT}/tests/live/test-live-five-tool-stack-cursor.sh" >"$live_log" 2>&1; then
     pass "live five-tool prerelease scenarios green"
@@ -133,3 +136,4 @@ fi
 echo ""
 echo "Five-tool pre-release: ${PASS} passed, ${FAIL} failed, ${SKIP} skipped"
 [[ "$FAIL" -eq 0 ]]
+

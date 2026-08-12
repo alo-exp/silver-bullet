@@ -292,7 +292,8 @@ elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branc
         "${SB_STATE_DIR}/orchestrator-directive.json" \
         "${SB_STATE_DIR}/orchestrator-worker-active.json" \
         "${SB_STATE_DIR}/stall-block" \
-        "${SB_STATE_DIR}/instruction-ledger.json" 2>/dev/null || true
+        "${SB_STATE_DIR}/instruction-ledger.json" \
+        "${SB_STATE_DIR}/pending-completion-audit.json" 2>/dev/null || true
   if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
     # shellcheck source=lib/graphify-gate.sh
     source "$_lib_dir/graphify-gate.sh"

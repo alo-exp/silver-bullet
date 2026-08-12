@@ -58,7 +58,11 @@ assert_contains "certification script sources ledger reconcile" "$SCRIPT" "enter
 assert_contains "certification script uses strict-clean-check" "$SCRIPT" "strict-clean-check.sh"
 assert_contains "certification script reads host sources" "$SCRIPT" "host-certification-sources.json"
 
-TMP_ARTIFACT="$(mktemp "${TEST_TMP}/cert-status.XXXXXX.json")"
+# BSD/macOS mktemp only randomizes a trailing run of X's — never put a suffix
+# after the X's (cert-status.XXXXXX.json would be taken literally).
+TMP_ARTIFACT_BASE="$(mktemp "${TEST_TMP}/cert-status.XXXXXX")"
+TMP_ARTIFACT="${TMP_ARTIFACT_BASE}.json"
+mv "$TMP_ARTIFACT_BASE" "$TMP_ARTIFACT"
 trap 'rm -f "$TMP_ARTIFACT"; rm -rf "$TEST_TMP"' EXIT
 
 if RTK_DISABLED=1 SB_CERT_ARTIFACT="$TMP_ARTIFACT" bash "$SCRIPT" --json --write >/dev/null 2>&1; then
@@ -99,3 +103,4 @@ fi
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
+
