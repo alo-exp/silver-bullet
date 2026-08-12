@@ -161,7 +161,8 @@ run_hook_smoke() {
   local hook_path="$1" event="$2"
   local payload
   payload="$(jq -n --arg e "$event" '{hook_event_name:$e, prompt:"sb-doctor smoke"}')"
-  if ( cd "$PROJ_ROOT" && printf '%s' "$payload" | bash "$hook_path" >/dev/null 2>&1 ); then
+  # SB_HOOK_SMOKE: session-start must not persist/mutate project config during doctor smoke (#257).
+  if ( cd "$PROJ_ROOT" && printf '%s' "$payload" | env SB_HOOK_SMOKE=1 bash "$hook_path" >/dev/null 2>&1 ); then
     return 0
   fi
   return 1
@@ -498,25 +499,35 @@ run_doctor_checks() {
 
 
   # D11 — hook smoke
-  local hook_root hook_name
-  hook_root="$(readlink -f "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
-  hooks_manifest="${hook_root}/hooks"
-  for hook_name in session-start outcomes-check stop-check; do
-    local hook_path smoke_event="Stop"
-    case "$hook_name" in
-      session-start) smoke_event="SessionStart" ;;
-      outcomes-check) smoke_event="UserPromptSubmit" ;;
-    esac
-    if hook_path="$(resolve_hook_path "$hooks_manifest" "$hook_name")"; then
-      if run_hook_smoke "$hook_path" "$smoke_event"; then
-        record pass D11 "${hook_name} smoke exit 0"
-      else
-        record fail D11 "${hook_name} smoke failed"
-      fi
+  # --dry-run must not mutate project files via live session-start persist (#257 / F8).
+  if [[ "$DOCTOR_DRY_RUN" -eq 1 ]]; then
+    record pass D11 "hook smoke skipped (dry-run)"
+  else
+    local hook_root hook_name
+    # Prefer source-tree hooks when present so smoke matches this checkout (not stale plugin cache).
+    if [[ -f "${REPO_ROOT}/hooks/session-start" ]]; then
+      hook_root="${REPO_ROOT}"
     else
-      record fail D11 "${hook_name} not found under ${hooks_manifest}"
+      hook_root="$(readlink -f "${cache_root}/current" 2>/dev/null || echo "${REPO_ROOT}")"
     fi
-  done
+    hooks_manifest="${hook_root}/hooks"
+    for hook_name in session-start outcomes-check stop-check; do
+      local hook_path smoke_event="Stop"
+      case "$hook_name" in
+        session-start) smoke_event="SessionStart" ;;
+        outcomes-check) smoke_event="UserPromptSubmit" ;;
+      esac
+      if hook_path="$(resolve_hook_path "$hooks_manifest" "$hook_name")"; then
+        if run_hook_smoke "$hook_path" "$smoke_event"; then
+          record pass D11 "${hook_name} smoke exit 0"
+        else
+          record fail D11 "${hook_name} smoke failed"
+        fi
+      else
+        record fail D11 "${hook_name} not found under ${hooks_manifest}"
+      fi
+    done
+  fi
 
   # D12 — state paths writable
   export SILVER_BULLET_RUNTIME="$runtime"

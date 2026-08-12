@@ -374,6 +374,50 @@ if [[ -f "$RT_COMMON" ]]; then
   fi
 fi
 
+
+# ── Report 1 / #256: persist preserves trailing newline ──────────────────────
+PERSIST_NL_TMP="$(mktemp -d)"
+PERSIST_NL_CFG="${PERSIST_NL_TMP}/.silver-bullet.json"
+jq -n '{sb_initiated:true, sb_enforcement_tier:0}' >"$PERSIST_NL_CFG"
+# shellcheck source=../../hooks/lib/enforcement-tier-gate.sh
+source "${REPO_ROOT}/hooks/lib/enforcement-tier-gate.sh"
+sb_enforcement_tier_persist "$PERSIST_NL_CFG" "0"
+if [[ "$(tail -c1 "$PERSIST_NL_CFG" | xxd -p)" == "0a" ]]; then
+  echo "PASS: sb_enforcement_tier_persist preserves trailing newline"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: sb_enforcement_tier_persist stripped trailing newline"
+  xxd -l 16 -s -16 "$PERSIST_NL_CFG" || true
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$PERSIST_NL_TMP"
+
+# ── F8 / #257: doctor --dry-run D11 must not dirty .silver-bullet.json ───────
+DRY_NL_TMP="$(mktemp -d)"
+DRY_NL_CFG="${DRY_NL_TMP}/.silver-bullet.json"
+# Use a jq-normalized config that session-start would otherwise rewrite.
+jq -n '{
+  sb_initiated: true,
+  sb_enforcement_tier: 0,
+  config_version: "0.0.0"
+}' >"$DRY_NL_CFG"
+printf '# silver-bullet\n' >"${DRY_NL_TMP}/silver-bullet.md"
+DRY_BEFORE="$(cksum "$DRY_NL_CFG")"
+bash "$DOCTOR" --dry-run "$DRY_NL_TMP" >/dev/null 2>&1 || true
+DRY_AFTER="$(cksum "$DRY_NL_CFG")"
+if [[ "$DRY_BEFORE" == "$DRY_AFTER" ]] && [[ "$(tail -c1 "$DRY_NL_CFG" | xxd -p)" == "0a" ]]; then
+  echo "PASS: doctor --dry-run leaves .silver-bullet.json byte-identical (D11 smoke)"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: doctor --dry-run dirtied .silver-bullet.json"
+  echo "  before=$DRY_BEFORE"
+  echo "  after=$DRY_AFTER"
+  echo "  eof=$(tail -c1 "$DRY_NL_CFG" | xxd -p)"
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$DRY_NL_TMP"
+
+
 echo
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

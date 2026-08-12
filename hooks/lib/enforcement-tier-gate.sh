@@ -30,11 +30,13 @@ sb_enforcement_tier_probe() {
 sb_enforcement_tier_persist() {
   local config_file="$1"
   local tier="$2"
+  # Doctor / hook smoke must not mutate project config (F8 / #257).
+  [[ "${SB_HOOK_SMOKE:-0}" == "1" ]] && return 0
   [[ -n "$config_file" && -f "$config_file" && -n "$tier" ]] || return 0
   command -v jq >/dev/null 2>&1 || return 0
   local updated
   updated="$(jq --argjson t "$tier" '.sb_enforcement_tier = $t' "$config_file" 2>/dev/null || true)"
-  [[ -n "$updated" ]] && printf '%s' "$updated" >"${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
+  [[ -n "$updated" ]] && printf '%s\n' "$updated" >"${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
 }
 
 sb_enforcement_tier_effective() {
