@@ -310,6 +310,31 @@ else
   echo "  ok: Legacy retired wrappers excluded from SB bundle"
 fi
 
+# Missing-rsync preflight: the sync prunes tracked trees before repopulating
+# them, so it must refuse to start rather than leave the checkout gutted.
+# Regression guard — without the preflight this wiped 52 tracked files under
+# plugins/silver-bullet/templates/ plus agents/{codex,cursor}.
+_preflight_stub="$(mktemp -d)"
+for _tool in bash env printf command python3 find git jq sed grep mkdir rm cp mv ln readlink dirname basename sort uniq wc tr head tail cat date chmod install; do
+  _resolved="$(command -v "$_tool" 2>/dev/null || true)"
+  [[ -n "$_resolved" ]] && ln -sf "$_resolved" "${_preflight_stub}/${_tool}" 2>/dev/null || true
+done
+_templates_before="$(find "$REPO_ROOT/plugins/silver-bullet/templates" -type f 2>/dev/null | wc -l | tr -d ' ')"
+_preflight_rc=0
+PATH="$_preflight_stub" bash "$REPO_ROOT/scripts/sync-codex-package.sh" >/dev/null 2>&1 || _preflight_rc=$?
+_templates_after="$(find "$REPO_ROOT/plugins/silver-bullet/templates" -type f 2>/dev/null | wc -l | tr -d ' ')"
+rm -rf "$_preflight_stub"
+if [[ "$_preflight_rc" -ne 0 ]]; then
+  pass "sync-codex-package refuses to run without rsync"
+else
+  fail "sync-codex-package refuses to run without rsync"
+fi
+if [[ "$_templates_before" == "$_templates_after" && "$_templates_before" != "0" ]]; then
+  pass "sync-codex-package preflight leaves tracked templates intact ($_templates_after files)"
+else
+  fail "sync-codex-package preflight destroyed templates ($_templates_before -> $_templates_after)"
+fi
+
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]]

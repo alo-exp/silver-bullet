@@ -341,7 +341,11 @@ doctor_apply_fixes() {
           csba_fix_flags+=(--global)
         fi
         printf 'sb-doctor: --fix running install-cursor-sb-agents.sh for D21\n' >&2
-        bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
+        # Target the project being doctored, not this checkout — the D21 probe
+        # above already scopes itself with CSBA_REPO_ROOT, and without the same
+        # scoping here --fix writes its config and agents into Silver Bullet.
+        CSBA_REPO_ROOT="$PROJ_ROOT" \
+          bash "${REPO_ROOT}/scripts/install-cursor-sb-agents.sh" "${csba_fix_flags[@]}" >&2 || true
         fixed=1
         ;;
     esac

@@ -32,7 +32,6 @@ assert_contains() {
 SCRIPT="${REPO_ROOT}/scripts/enterprise-e2e-certification-status.sh"
 SOURCES="${REPO_ROOT}/docs/testing/host-certification-sources.json"
 BASELINE="${REPO_ROOT}/docs/testing/autonomous-enterprise-proof-baseline.json"
-ARTIFACT="${REPO_ROOT}/.planning/enterprise-e2e/CERTIFICATION-STATUS.json"
 
 assert_executable "$SCRIPT" "certification-status script executable"
 assert_file_exists "$SOURCES" "host-certification-sources.json exists"
@@ -62,27 +61,27 @@ assert_contains "certification script reads host sources" "$SCRIPT" "host-certif
 TMP_ARTIFACT="$(mktemp "${TEST_TMP}/cert-status.XXXXXX.json")"
 trap 'rm -f "$TMP_ARTIFACT"; rm -rf "$TEST_TMP"' EXIT
 
-if RTK_DISABLED=1 bash "$SCRIPT" --json --write >/dev/null 2>&1; then
+if RTK_DISABLED=1 SB_CERT_ARTIFACT="$TMP_ARTIFACT" bash "$SCRIPT" --json --write >/dev/null 2>&1; then
   pass "certification-status --json --write exits 0"
 else
   fail "certification-status --json --write failed"
 fi
 
-assert_file_exists "$ARTIFACT" "CERTIFICATION-STATUS.json written"
+assert_file_exists "$TMP_ARTIFACT" "CERTIFICATION-STATUS.json written"
 
 if command -v jq >/dev/null 2>&1; then
-  if jq -e '.hosts | length == 3' "$ARTIFACT" >/dev/null 2>&1; then
+  if jq -e '.hosts | length == 3' "$TMP_ARTIFACT" >/dev/null 2>&1; then
     pass "artifact has 3 host entries"
   else
     fail "artifact host count != 3"
   fi
-  if jq -e '.conservative_summary.public_autonomous_enterprise_claim_ready == false' "$ARTIFACT" >/dev/null 2>&1; then
+  if jq -e '.conservative_summary.public_autonomous_enterprise_claim_ready == false' "$TMP_ARTIFACT" >/dev/null 2>&1; then
     pass "artifact conservatively marks public claim not ready"
   else
     fail "artifact should not claim public autonomous enterprise ready"
   fi
   for host in cursor codex claude; do
-    if jq -e --arg h "$host" '.hosts[] | select(.host == $h) | .proof_level' "$ARTIFACT" >/dev/null 2>&1; then
+    if jq -e --arg h "$host" '.hosts[] | select(.host == $h) | .proof_level' "$TMP_ARTIFACT" >/dev/null 2>&1; then
       pass "artifact includes proof_level for $host"
     else
       fail "artifact missing proof_level for $host"
