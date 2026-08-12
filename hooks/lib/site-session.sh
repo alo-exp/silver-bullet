@@ -200,16 +200,30 @@ sb_site_session_mark_regression_pass() {
 
 sb_site_session_run_regression_tests() {
   local repo_root="$1"
-  local log_file log_base rc
+  local log_file log_base state_dir rc
   [[ -n "$repo_root" && -d "$repo_root/tests" ]] || return 90
   # BSD/macOS mktemp only randomizes a TRAILING run of X's. A template like
   # site-regression.XXXXXX.log is taken literally, so the first call creates
   # that exact filename and every later call fails EEXIST — wedging the gate.
-  # Create with trailing X's, then add the .log suffix.
-  log_base="$(mktemp "${SB_RUNTIME_STATE_DIR:-/tmp}/site-regression.XXXXXX" 2>/dev/null)" || return 91
-  log_file="${log_base}.log"
-  if ! mv "$log_base" "$log_file" 2>/dev/null; then
-    log_file="$log_base"
+  # Create with trailing X's, then add the .log suffix. Ensure the state dir
+  # exists; if mktemp still fails, fall back to an unwedgeable pid path so
+  # log-alloc failure is never mistaken for a test failure.
+  state_dir="${SB_RUNTIME_STATE_DIR:-/tmp}"
+  mkdir -p "$state_dir" 2>/dev/null || true
+  log_base="$(mktemp "${state_dir}/site-regression.XXXXXX" 2>/dev/null)" || log_base=""
+  if [[ -n "$log_base" ]]; then
+    log_file="${log_base}.log"
+    if ! mv "$log_base" "$log_file" 2>/dev/null; then
+      log_file="$log_base"
+    fi
+  else
+    # mktemp failed (dir missing/unwritable). Do not retry the same directory —
+    # use an unwedgeable pid path under TMPDIR so log-alloc is never a test failure.
+    log_file="${TMPDIR:-/tmp}/site-regression-$$.log"
+    if ! : >"$log_file" 2>/dev/null; then
+      log_file="/tmp/site-regression-$$.log"
+      : >"$log_file" 2>/dev/null || return 91
+    fi
   fi
   (
     cd "$repo_root" || exit 1
@@ -434,3 +448,4 @@ sb_site_preview_healthy() {
   fi
   return 1
 }
+
