@@ -113,7 +113,13 @@ assert_file_unchanged() {
   fi
 }
 
-TMP="$(mktemp -d)"
+TEST_RUN_ID="${TEST_RUN_ID:-$$}"
+export TEST_RUN_ID
+# Keep mktemp under a slash-normalized root so pathlib prefix rewrites match
+# fixture paths (TMPDIR on macOS often ends with /).
+_SB_KAY_TMP_ROOT="${TMPDIR:-/tmp}"
+_SB_KAY_TMP_ROOT="${_SB_KAY_TMP_ROOT%/}"
+TMP="$(mktemp -d "${_SB_KAY_TMP_ROOT}/sb-kay-codex-isolation-${TEST_RUN_ID}.XXXXXX")"
 cleanup_tmp_dir() {
   if [[ -n "${BRIDGE_WORKSPACE:-}" && -d "${BRIDGE_WORKSPACE:-}" ]]; then
     chmod -R u+w "$BRIDGE_WORKSPACE" 2>/dev/null || true
@@ -128,6 +134,8 @@ trap cleanup_tmp_dir EXIT
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ORIGINAL_HOME="$TMP/original-home"
 FAKE_BIN="$TMP/bin/kay"
+# Portable trusted-project fixture path (avoid machine-specific absolute paths).
+FIXTURE_PROJECT_PATH="$TMP/fixture-project"
 mkdir -p "$ORIGINAL_HOME/.kay" "$(dirname "$FAKE_BIN")"
 mkdir -p "$ORIGINAL_HOME/.codex/hooks" "$ORIGINAL_HOME/.codex/plugins" "$ORIGINAL_HOME/.codex/skills/external-discuss-phase" "$ORIGINAL_HOME/.agents/skills/external-plan-phase" "$ORIGINAL_HOME/.codex/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/.codex-plugin"
 mkdir -p "$ORIGINAL_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.37.4/.codex-plugin"
@@ -185,7 +193,7 @@ enabled = true
 CODEX_HOME = "${ORIGINAL_HOME}/.codex"
 NODE_REPL_TRUSTED_CODE_PATHS = "${ORIGINAL_HOME}/.codex"
 
-[projects."/Users/shafqat/projects/silver-bullet"]
+[projects."${FIXTURE_PROJECT_PATH}"]
 trust_level = "trusted"
 EOF
 cat > "$ORIGINAL_HOME/.codex/hooks.json" <<'EOF'
@@ -242,7 +250,7 @@ EOF
 export HOME="$ORIGINAL_HOME"
 export CODEX_BIN="$FAKE_BIN"
 unset MINIMAX_API_KEY OPENCODE_GO_API_KEY SB_LIVE_CODEX_ISOLATION_ACTIVE SB_LIVE_CODEX_ISOLATION_DIR SB_LIVE_ORIGINAL_HOME
-unset KAY_HOME KAY_SB_TEST_HOME
+unset KAY_HOME KAY_SB_TEST_HOME SB_LIVE_CODEX_ISOLATION_PARENT
 
 # shellcheck source=tests/live/lib/kay-codex-isolation.sh
 source "$REPO_ROOT/tests/live/lib/kay-codex-isolation.sh"
@@ -298,7 +306,8 @@ assert_file_not_contains "Projected Kay Codex config omits Product Management pl
 assert_file_contains "Isolated Kay config pins MiniMax provider" "$KAY_HOME/.kay/config.toml" 'model_provider = "minimax"'
 assert_file_contains "Isolated Kay config pins MiniMax M3" "$KAY_HOME/.kay/config.toml" 'model = "MiniMax-M3"'
 assert_file_contains "Isolated Kay config pins low reasoning" "$KAY_HOME/.kay/config.toml" 'model_reasoning_effort = "low"'
-assert_file_contains "Projected Kay config keeps trusted projects" "$KAY_HOME/.kay/config.toml" '[projects."/Users/shafqat/projects/silver-bullet"]'
+assert_file_contains "Projected Kay config keeps trusted projects" "$KAY_HOME/.kay/config.toml" "[projects.\"${FIXTURE_PROJECT_PATH}\"]"
+assert_contains "Kay isolation parent is namespaced per TEST_RUN_ID" "$KAY_HOME" "/.tmp/kay-isolation-${TEST_RUN_ID}/"
 assert_file_contains "Projected Kay config keeps trusted project level" "$KAY_HOME/.kay/config.toml" 'trust_level = "trusted"'
 assert_file_not_contains "Projected Kay config strips Codex plugin registry sections" "$KAY_HOME/.kay/config.toml" '[plugins."silver-bullet@alo-labs-codex"]'
 assert_file_not_contains "Projected Kay config strips Codex hook trust state blocks" "$KAY_HOME/.kay/config.toml" '[hooks.state]'
