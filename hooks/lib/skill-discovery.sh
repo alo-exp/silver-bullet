@@ -24,6 +24,31 @@ fi
 sb_skill_discovery_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sb_skill_discovery_repo_root="$(cd "$sb_skill_discovery_script_dir/../.." && pwd)"
 
+# Emit unique skill-name variants for path/frontmatter probes (hyphen⇄colon).
+# Always includes the original name. One variant per line on stdout.
+# Example: silver-quality-gates ↔ silver:quality-gates
+sb_skill_name_variants() {
+  local skill="${1:-}"
+  [[ -n "$skill" ]] || return 1
+
+  printf '%s\n' "$skill"
+
+  if [[ "$skill" == *:* ]]; then
+    local hyphenated="${skill//:/-}"
+    if [[ "$hyphenated" != "$skill" ]]; then
+      printf '%s\n' "$hyphenated"
+    fi
+  fi
+
+  # First hyphen → colon so silver-quality-gates also probes silver:quality-gates.
+  if [[ "$skill" == *-* && "$skill" != *:* ]]; then
+    local colon_form="${skill%%-*}:${skill#*-}"
+    if [[ "$colon_form" != "$skill" ]]; then
+      printf '%s\n' "$colon_form"
+    fi
+  fi
+}
+
 sb_skill_is_installed() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
@@ -59,52 +84,60 @@ sb_skill_is_installed() {
     )
   fi
 
-  local root candidate
-  for root in "${search_roots[@]}"; do
-    [[ -n "$root" ]] || continue
-    case "$root" in
-      *"/plugins/cache")
-        shopt -s nullglob
-        for candidate in \
-          "$root"/*/skills/"$skill"/SKILL.md \
-          "$root"/*/*/skills/"$skill"/SKILL.md \
-          "$root"/*/*/*/skills/"$skill"/SKILL.md \
-          "$root"/*/upstream/skills/"$skill"/SKILL.md \
-          "$root"/*/*/upstream/skills/"$skill"/SKILL.md \
-          "$root"/*/*/*/upstream/skills/"$skill"/SKILL.md; do
-          if [[ -f "$candidate" ]]; then
-            shopt -u nullglob
-            return 0
-          fi
-        done
-        shopt -u nullglob
-        ;;
-      *)
-        for candidate in \
-          "$root/skills/$skill/SKILL.md" \
-          "$root/$skill/SKILL.md"; do
-          if [[ -f "$candidate" ]]; then
-            return 0
-          fi
-        done
+  local variants=()
+  local variant
+  while IFS= read -r variant; do
+    [[ -n "$variant" ]] || continue
+    variants+=("$variant")
+  done < <(sb_skill_name_variants "$skill")
 
-        local search_dirs=()
-        [[ -d "$root/skills" ]] && search_dirs+=("$root/skills")
-        if [[ ${#search_dirs[@]} -gt 0 ]]; then
-          local escaped_skill
-          escaped_skill=$(printf '%s' "$skill" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
-          if command -v rg >/dev/null 2>&1; then
-            if rg -l -m1 -g 'SKILL.md' "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+  local root candidate escaped_skill
+  for variant in "${variants[@]}"; do
+    for root in "${search_roots[@]}"; do
+      [[ -n "$root" ]] || continue
+      case "$root" in
+        *"/plugins/cache")
+          shopt -s nullglob
+          for candidate in \
+            "$root"/*/skills/"$variant"/SKILL.md \
+            "$root"/*/*/skills/"$variant"/SKILL.md \
+            "$root"/*/*/*/skills/"$variant"/SKILL.md \
+            "$root"/*/upstream/skills/"$variant"/SKILL.md \
+            "$root"/*/*/upstream/skills/"$variant"/SKILL.md \
+            "$root"/*/*/*/upstream/skills/"$variant"/SKILL.md; do
+            if [[ -f "$candidate" ]]; then
+              shopt -u nullglob
               return 0
             fi
-          else
-            if grep -Rls -E "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+          done
+          shopt -u nullglob
+          ;;
+        *)
+          for candidate in \
+            "$root/skills/$variant/SKILL.md" \
+            "$root/$variant/SKILL.md"; do
+            if [[ -f "$candidate" ]]; then
               return 0
+            fi
+          done
+
+          local search_dirs=()
+          [[ -d "$root/skills" ]] && search_dirs+=("$root/skills")
+          if [[ ${#search_dirs[@]} -gt 0 ]]; then
+            escaped_skill=$(printf '%s' "$variant" | sed 's/[][(){}.^$*+?|\\]/\\&/g')
+            if command -v rg >/dev/null 2>&1; then
+              if rg -l -m1 -g 'SKILL.md' "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+                return 0
+              fi
+            else
+              if grep -Rls -E "^name:[[:space:]]*${escaped_skill}[[:space:]]*$" "${search_dirs[@]}" >/dev/null 2>&1; then
+                return 0
+              fi
             fi
           fi
-        fi
-        ;;
-    esac
+          ;;
+      esac
+    done
   done
 
   return 1
@@ -137,3 +170,4 @@ sb_skill_canonical_name() {
 
   printf '%s' "$skill"
 }
+
