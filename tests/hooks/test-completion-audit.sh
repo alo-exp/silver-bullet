@@ -1654,6 +1654,74 @@ out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-
 assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill silver-ship is not delivery-gated" "$out"
 teardown
 
+
+# ── #282 change-class delivery floor ──────────────────────────────────────────
+echo "--- #282: docs-only PR uses light required_deploy subset ---"
+setup
+mkdir -p "$TMPDIR_TEST/docs"
+echo "# notes" > "$TMPDIR_TEST/docs/notes.md"
+git -C "$TMPDIR_TEST" add docs/notes.md
+git -C "$TMPDIR_TEST" commit -q -m "docs only"
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+silver-context
+silver-plan
+silver-completion-audit
+finishing-a-development-branch
+EOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'docs'")
+assert_passes "#282 docs-only PR passes with light floor (no tdd/verify-tests)" "$out"
+if printf '%s' "$out" | grep -qE "tdd|verify-tests|test-driven-development|silver-execute"; then
+  echo "  FAIL: docs-only still demanding src skills"
+  FAIL=$((FAIL + 1))
+else
+  echo "  PASS: docs-only does not demand tdd/verify-tests/execute"
+  PASS=$((PASS + 1))
+fi
+teardown
+
+echo "--- #282: src change still requires full required_deploy ---"
+setup
+mkdir -p "$TMPDIR_TEST/src"
+echo "console.log(1)" > "$TMPDIR_TEST/src/app.js"
+git -C "$TMPDIR_TEST" add src/app.js
+git -C "$TMPDIR_TEST" commit -q -m "src change"
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+silver-context
+silver-plan
+silver-completion-audit
+finishing-a-development-branch
+EOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'feat'")
+assert_blocks "#282 src PR blocked without full required_deploy" "$out"
+assert_contains "#282 src PR reports change class" "$out" "Change class:"
+teardown
+
+echo "--- #282: config-only PR uses light floor ---"
+setup
+git -C "$TMPDIR_TEST" add .silver-bullet.json silver-bullet.md
+git -C "$TMPDIR_TEST" commit -q -m "config baseline" 2>/dev/null || true
+python3 - "$TMPDIR_TEST/.silver-bullet.json" <<'PY'
+import json,sys
+p=sys.argv[1]
+d=json.load(open(p))
+d["compactPrompt"]="config-only-change"
+json.dump(d, open(p,"w"), indent=2)
+PY
+git -C "$TMPDIR_TEST" add .silver-bullet.json
+git -C "$TMPDIR_TEST" commit -q -m "config tweak"
+cat > "$TMPSTATE" << 'EOF'
+silver-quality-gates
+silver-context
+silver-plan
+silver-completion-audit
+finishing-a-development-branch
+EOF
+out=$(run_hook "PreToolUse" "gh pr create --title 'config'")
+assert_passes "#282 config-only PR passes with light floor" "$out"
+teardown
+
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

@@ -244,6 +244,12 @@ for skill in $all_skills; do
   fi
 done
 
+# #282: change-class delivery floor — subset required_deploy for docs|site|config.
+ca_change_class="mixed"
+if declare -f ca_apply_change_class_floor >/dev/null 2>&1; then
+  ca_apply_change_class_floor "$project_root" "$config_file"
+fi
+
 # ── Check required skills ─────────────────────────────────────────────────────
 missing=""
 ignored=""
@@ -375,7 +381,7 @@ if [[ -n "$missing" ]]; then
   done
   ordering_note=""
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
-  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "$missing_lines" "$ordering_note")
+  msg=$(printf '🛑 COMPLETION BLOCKED — Workflow incomplete.\n\nChange class: %s\nYou are attempting to create a PR/deploy but these required steps are missing:\n%s%sComplete ALL required workflow steps before finalizing.\nDo NOT proceed with this action.' "${ca_change_class:-mixed}" "$missing_lines" "$ordering_note")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
