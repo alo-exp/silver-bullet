@@ -52,27 +52,41 @@ RED_STATE="$TMP_ROOT/red-state"
 mkdir -p "$RED_STATE"
 export SB_RUNTIME_STATE_DIR="$RED_STATE"
 
+# GNU mktemp (Linux CI) may still randomize X's before a suffix, so the classic
+# wedge is macOS/BSD-only. Inject a BSD-faithful mktemp for the RED section so
+# CI proves the same failure mode the gate hit on Darwin.
+mktemp() {
+  local template="${1:-}"
+  case "$template" in
+    *XXXXXX.*)
+      if [[ -e "$template" ]]; then
+        return 1
+      fi
+      : >"$template" || return 1
+      printf '%s\n' "$template"
+      return 0
+      ;;
+  esac
+  command mktemp "$@"
+}
+
 rc_old1=0
 log_old1="$(sb_site_session_run_regression_tests_OLD "$STUB_REPO")" || rc_old1=$?
 rc_old2=0
 log_old2="$(sb_site_session_run_regression_tests_OLD "$STUB_REPO")" || rc_old2=$?
 
-if [[ $rc_old1 -eq 0 && -f "$log_old1" ]]; then
-  pass "RED setup: first OLD call succeeds (creates literal XXXXXX.log on BSD)"
+unset -f mktemp
+
+if [[ $rc_old1 -eq 0 && -f "$log_old1" && "${log_old1##*/}" == *XXXXXX* ]]; then
+  pass "RED setup: first OLD call creates literal XXXXXX.log (BSD-faithful mktemp)"
 else
-  fail "RED setup: first OLD call failed unexpectedly (rc=$rc_old1 log=[$log_old1])"
+  fail "RED setup: first OLD call unexpected (rc=$rc_old1 log=[$log_old1])"
 fi
 
-# On BSD/macOS the second call must fail EEXIST. On GNU mktemp (Linux CI) the
-# suffix template may still randomize — accept either wedge or literal basename
-# as proving the OLD pattern is unsafe / non-portable.
-base_old1="${log_old1##*/}"
 if [[ $rc_old2 -ne 0 ]]; then
   pass "RED proven: second OLD call fails (rc=$rc_old2) — classic BSD EEXIST wedge"
-elif [[ "$base_old1" == *XXXXXX* ]]; then
-  pass "RED proven: OLD path contains literal XXXXXX basename ($base_old1)"
 else
-  fail "RED not proven: second OLD call succeeded without literal XXXXXX (rc=$rc_old2 log=[$log_old2])"
+  fail "RED not proven: second OLD call succeeded (rc=$rc_old2 log=[$log_old2])"
 fi
 
 echo "--- GREEN: live sb_site_session_run_regression_tests ---"
