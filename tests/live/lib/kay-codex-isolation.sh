@@ -28,10 +28,14 @@ PY
 }
 
 default_kay_isolation_parent() {
+  # Namespace per PID / TEST_RUN_ID so concurrent runners do not share one
+  # workspace .tmp root (SB-BUG-G / #253). Keep under workspace .tmp (not
+  # /var/folders) so isolated Kay homes stay outside symlinked system temp.
   local workspace_root
+  local run_id="${TEST_RUN_ID:-$$}"
   workspace_root="$(cd "${SB_ROOT}/.." && pwd)"
-  mkdir -p "${workspace_root}/.tmp"
-  printf '%s\n' "${workspace_root}/.tmp"
+  mkdir -p "${workspace_root}/.tmp/kay-isolation-${run_id}"
+  printf '%s\n' "${workspace_root}/.tmp/kay-isolation-${run_id}"
 }
 
 setup_kay_shell_profile_bridge() {
