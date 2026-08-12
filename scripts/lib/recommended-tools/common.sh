@@ -294,7 +294,7 @@ rt_atomic_write_json() {
   dir="$(dirname "$dest")"
   mkdir -p "$dir" 2>/dev/null || true
   tmp="$(mktemp "${dir}/.rt-atomic.XXXXXX")"
-  printf '%s' "$content" >"$tmp"
+  printf '%s\n' "$content" >"$tmp"
   mv -f "$tmp" "$dest"
 }
 
