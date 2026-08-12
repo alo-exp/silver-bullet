@@ -7250,9 +7250,9 @@
     "semantic_hash": "85963dd6c5fb645d9c1d7d29428b2965"
   },
   "scripts/run-tri-host-install-smoke.sh": {
-    "mtime": 1786496445.474577,
-    "ast_hash": "b200abc4d1d778c1d05999e76d2353df",
-    "semantic_hash": "b200abc4d1d778c1d05999e76d2353df"
+    "mtime": 1786498955.5030525,
+    "ast_hash": "29f1ec9931c8732241f10273df91d443",
+    "semantic_hash": ""
   },
   "scripts/run-visual-qa-pipeline.sh": {
     "mtime": 1786119200.8100767,
@@ -9775,8 +9775,8 @@
     "semantic_hash": "144fc03b7587ad156de8e9273dcea13a"
   },
   "tests/scripts/test-tri-host-install-smoke.sh": {
-    "mtime": 1786496445.4807024,
-    "ast_hash": "225e2bc47ca5324c4576c3fe7b40931f",
+    "mtime": 1786498955.5040405,
+    "ast_hash": "c24b6aac2c6f1573ec44e53d5d3fbbf3",
     "semantic_hash": ""
   },
   "tests/scripts/test-triple-alignment.sh": {
@@ -24227,6 +24227,16 @@
   "tests/hooks/test-skill-discovery.sh": {
     "mtime": 1786498587.7885776,
     "ast_hash": "23ea7682137c61e62499c836994e99b9",
+    "semantic_hash": ""
+  },
+  "scripts/lib/command-timeout.sh": {
+    "mtime": 1786498955.5017567,
+    "ast_hash": "80206bef398b94fc997d80c0408d1314",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-12-sb-bug-f-252-tri-host-timeout.md": {
+    "mtime": 1786498955.4093657,
+    "ast_hash": "8c0b39942002f3817b4d2df3e8909871",
     "semantic_hash": ""
   }
 }
