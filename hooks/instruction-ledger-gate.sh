@@ -68,6 +68,11 @@ if declare -f sb_trivial_bypass >/dev/null 2>&1; then
   sb_trivial_bypass "$trivial_file"
 fi
 
+# Foreign branch/worktree ledger must not deadlock Stop (SB-BUG-C #249).
+if declare -f sb_instruction_ledger_drop_if_scope_mismatch >/dev/null 2>&1; then
+  sb_instruction_ledger_drop_if_scope_mismatch "$PWD" 2>/dev/null || true
+fi
+
 sb_instruction_ledger_auto_resolve_parents 2>/dev/null || true
 if sb_instruction_ledger_all_resolved; then
   exit 0
@@ -81,10 +86,12 @@ if [[ -f "$_lib_dir/stop-coalesce.sh" ]]; then
     exit 0
   fi
 fi
-reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nResolve each item or defer to project planning before Stop.' "$summary")
+reason=$(printf 'Cannot complete — instruction ledger has unresolved items.\n\n%s\n\nDo not Edit %s/instruction-ledger.json (state tamper blocks it). Use scripts/resolve-instruction-ledger.sh to mark each leaf done or deferred with evidence, then Stop.' \
+  "$summary" "${SB_RUNTIME_STATE_DIR}")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
   sb_stop_coalesce_record "$reason"
 fi
 printf '{"decision":"block","reason":%s}' "$json_reason"
 exit 0
+

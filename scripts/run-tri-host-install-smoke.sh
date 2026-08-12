@@ -8,9 +8,15 @@
 #   2. sb-diagnostics.sh (SB_DIAG_SMOKE=1)
 #   3. claims-audit.sh + check-apo-invariants.py site-doc-freshness (repo SB scripts)
 #
+# Timeouts (macOS-safe via scripts/lib/command-timeout.sh):
+#   SB_TRIHOST_OVERALL_TIMEOUT  wall-clock for entire runner (default 900s)
+#   SB_TRIHOST_CMD_TIMEOUT      per install/claims command (default 180s)
+#   SB_TRIHOST_DIAG_TIMEOUT     per diagnostics command (default 90s)
+#
 # Usage:
 #   RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh
 #   RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host cursor
+#   SB_TRIHOST_CMD_TIMEOUT=5 RTK_DISABLED=1 bash scripts/run-tri-host-install-smoke.sh --host cursor
 #
 # Claude host is skipped only when claude CLI is unavailable (first-class when present).
 set -euo pipefail
@@ -18,9 +24,34 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# shellcheck source=scripts/lib/command-timeout.sh
+source "${REPO_ROOT}/scripts/lib/command-timeout.sh"
+
 if [[ -f "${REPO_ROOT}/hooks/lib/runtime-paths.sh" ]]; then
   # shellcheck source=hooks/lib/runtime-paths.sh
   source "${REPO_ROOT}/hooks/lib/runtime-paths.sh"
+fi
+
+SB_TRIHOST_OVERALL_TIMEOUT="${SB_TRIHOST_OVERALL_TIMEOUT:-900}"
+SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
+SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
+
+# Re-exec under overall wall-clock so a hung host cannot stall run-all-tests forever.
+if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
+  export SB_TRIHOST_INNER=1
+  overall_rc=0
+  sb_run_with_timeout "$SB_TRIHOST_OVERALL_TIMEOUT" "tri-host-install-smoke overall" -- \
+    env SB_TRIHOST_INNER=1 \
+      SB_TRIHOST_OVERALL_TIMEOUT="$SB_TRIHOST_OVERALL_TIMEOUT" \
+      SB_TRIHOST_CMD_TIMEOUT="$SB_TRIHOST_CMD_TIMEOUT" \
+      SB_TRIHOST_DIAG_TIMEOUT="$SB_TRIHOST_DIAG_TIMEOUT" \
+      bash "$0" "$@" || overall_rc=$?
+  if [[ $overall_rc -eq 124 ]]; then
+    echo "ERROR: tri-host install smoke hung — overall timeout ${SB_TRIHOST_OVERALL_TIMEOUT}s" >&2
+    echo "ERROR: set SB_TRIHOST_CMD_TIMEOUT / SB_TRIHOST_DIAG_TIMEOUT / SB_TRIHOST_OVERALL_TIMEOUT to tune" >&2
+    exit 124
+  fi
+  exit "$overall_rc"
 fi
 
 HOST_FILTER="${1:-all}"
@@ -36,14 +67,39 @@ smoke_pass() { echo "PASS: $1"; PASS=$((PASS + 1)); }
 smoke_fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 smoke_skip() { echo "SKIP: $1"; SKIP=$((SKIP + 1)); }
 
+# Run command with timeout; stdout/stderr → log. Loud FAIL on hang (rc 124).
+# Returns 0 on success, 124 on timeout, else command rc.
+run_timed() {
+  local label="$1"
+  local seconds="$2"
+  shift 2
+  local log_file rc=0
+  # macOS mktemp requires the template to end in XXXXXX (no suffix after).
+  log_file="$(mktemp "${TMPDIR:-/tmp}/sb-trihost.XXXXXX")"
+  sb_run_with_timeout "$seconds" "$label" -- "$@" >"$log_file" 2>&1 || rc=$?
+  if [[ $rc -eq 124 ]]; then
+    smoke_fail "${label} (TIMED OUT after ${seconds}s — log ${log_file})"
+    echo "ERROR: hang detected for ${label}; refusing to wait forever. Log: ${log_file}" >&2
+    return 124
+  fi
+  if [[ $rc -ne 0 ]]; then
+    echo "ERROR: ${label} failed (rc=${rc}). Log: ${log_file}" >&2
+    return "$rc"
+  fi
+  rm -f "$log_file"
+  return 0
+}
+
 run_sb_invocations() {
   local label="$1"
-  if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh" >/dev/null 2>&1; then
+  if run_timed "${label}: claims-audit.sh" "$SB_TRIHOST_CMD_TIMEOUT" \
+    env RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/claims-audit.sh"; then
     smoke_pass "${label}: claims-audit.sh"
   else
     smoke_fail "${label}: claims-audit.sh"
   fi
-  if python3 "${REPO_ROOT}/scripts/check-apo-invariants.py" site-doc-freshness >/dev/null 2>&1; then
+  if run_timed "${label}: check-apo-invariants site-doc-freshness" "$SB_TRIHOST_CMD_TIMEOUT" \
+    python3 "${REPO_ROOT}/scripts/check-apo-invariants.py" site-doc-freshness; then
     smoke_pass "${label}: check-apo-invariants site-doc-freshness"
   else
     smoke_fail "${label}: check-apo-invariants site-doc-freshness"
@@ -58,10 +114,18 @@ smoke_codex() {
   trap 'rm -rf "$tmp_home"' RETURN
 
   smoke_pass "codex: isolated HOME ${tmp_home}"
-  local attempt=0 install_ok=0
+  local attempt=0 install_ok=0 last_rc=0
   while [[ $attempt -lt 3 ]]; do
-    if bash "${REPO_ROOT}/scripts/install-codex.sh" >/dev/null 2>&1; then
+    last_rc=0
+    if run_timed "codex: install-codex.sh (attempt $((attempt + 1)))" "$SB_TRIHOST_CMD_TIMEOUT" \
+      bash "${REPO_ROOT}/scripts/install-codex.sh"; then
       install_ok=1
+      break
+    else
+      last_rc=$?
+    fi
+    # Do not retry after a hard timeout — network/git hang will recur.
+    if [[ $last_rc -eq 124 ]]; then
       break
     fi
     attempt=$((attempt + 1))
@@ -73,7 +137,8 @@ smoke_codex() {
     smoke_fail "codex: install-codex.sh"
     return
   fi
-  if SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=codex bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null 2>&1; then
+  if run_timed "codex: sb-diagnostics.sh" "$SB_TRIHOST_DIAG_TIMEOUT" \
+    env SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=codex bash "${REPO_ROOT}/scripts/sb-diagnostics.sh"; then
     smoke_pass "codex: sb-diagnostics.sh"
   else
     smoke_fail "codex: sb-diagnostics.sh"
@@ -90,7 +155,8 @@ smoke_cursor() {
   trap 'rm -rf "$tmp_home"' RETURN
 
   smoke_pass "cursor: isolated HOME ${tmp_home}"
-  if bash "${REPO_ROOT}/scripts/install-cursor.sh" >/dev/null 2>&1; then
+  if run_timed "cursor: install-cursor.sh" "$SB_TRIHOST_CMD_TIMEOUT" \
+    bash "${REPO_ROOT}/scripts/install-cursor.sh"; then
     smoke_pass "cursor: install-cursor.sh"
   else
     smoke_fail "cursor: install-cursor.sh"
@@ -105,7 +171,8 @@ smoke_cursor() {
     return
   fi
   smoke_pass "cursor: hooks.json merged"
-  if SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null 2>&1; then
+  if run_timed "cursor: sb-diagnostics.sh" "$SB_TRIHOST_DIAG_TIMEOUT" \
+    env SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=cursor bash "${REPO_ROOT}/scripts/sb-diagnostics.sh"; then
     smoke_pass "cursor: sb-diagnostics.sh"
   else
     smoke_fail "cursor: sb-diagnostics.sh"
@@ -128,13 +195,16 @@ smoke_claude() {
   trap 'rm -rf "$tmp_home"' RETURN
 
   smoke_pass "claude: isolated HOME ${tmp_home}"
-  if HOME="$tmp_home" CLAUDE_BIN="$claude_bin" bash "${REPO_ROOT}/scripts/install-claude.sh" >/dev/null 2>&1; then
+  if run_timed "claude: install-claude.sh" "$SB_TRIHOST_CMD_TIMEOUT" \
+    env HOME="$tmp_home" CLAUDE_BIN="$claude_bin" bash "${REPO_ROOT}/scripts/install-claude.sh"; then
     smoke_pass "claude: install-claude.sh"
   else
     smoke_fail "claude: install-claude.sh"
     return
   fi
-  if SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=claude HOME="$tmp_home" bash "${REPO_ROOT}/scripts/sb-diagnostics.sh" >/dev/null 2>&1; then
+  if run_timed "claude: sb-diagnostics.sh" "$SB_TRIHOST_DIAG_TIMEOUT" \
+    env SB_DIAG_SMOKE=1 SILVER_BULLET_RUNTIME=claude HOME="$tmp_home" \
+    bash "${REPO_ROOT}/scripts/sb-diagnostics.sh"; then
     smoke_pass "claude: sb-diagnostics.sh"
   else
     smoke_fail "claude: sb-diagnostics.sh"
@@ -144,6 +214,7 @@ smoke_claude() {
 
 echo "=== Tri-host install smoke ==="
 echo "REPO_ROOT=${REPO_ROOT}"
+echo "timeouts: overall=${SB_TRIHOST_OVERALL_TIMEOUT}s cmd=${SB_TRIHOST_CMD_TIMEOUT}s diag=${SB_TRIHOST_DIAG_TIMEOUT}s (via $(sb_timeout_bin))"
 echo ""
 
 case "$HOST_FILTER" in

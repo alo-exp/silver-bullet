@@ -34,13 +34,13 @@ ca_run_planning_tier_gate() {
   if [[ -n "$missing_planning" ]]; then
     missing_lines=""
     for skill in $missing_planning; do
-      missing_lines="${missing_lines}  ❌ /${skill}\n"
+      missing_lines="${missing_lines}  ❌ /${skill}"$'\n'
     done
     msg=$(printf '🚫 COMMIT BLOCKED — Planning incomplete.\n\nYou must complete these planning steps before any commits:\n%s\nRun the missing planning skills first, then commit.' "$missing_lines")
     if [[ -n "$ignored_planning" ]]; then
       ignored_lines=""
       for skill in $ignored_planning; do
-        ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+        ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
       done
       msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$msg" "$ignored_lines")
     fi
@@ -77,7 +77,7 @@ ca_run_planning_tier_gate() {
   if [[ -n "$ignored_planning" ]]; then
     ignored_lines=""
     for skill in $ignored_planning; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '✅ Planning verified. Intermediate commit allowed.\n\nIgnored required skills:\n%s' "$ignored_lines")
     jq -n --arg m "$msg" '{"hookSpecificOutput":{"message":$m}}'

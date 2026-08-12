@@ -151,6 +151,8 @@ sb_enterprise_policy_human_deploy_marker_file() {
   printf '%s/enterprise-human-deploy-approved' "${SB_RUNTIME_STATE_DIR:-/tmp}"
 }
 
+# Marker must be created by a human operator outside the agent session.
+# Do not allowlist enterprise-human-deploy-approved for agent Edit/Write/Bash touch.
 sb_enterprise_policy_human_deploy_approved() {
   [[ "${SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL:-0}" == "1" ]] && return 0
   local marker
@@ -184,13 +186,17 @@ sb_enterprise_policy_delivery_blocked() {
 
 sb_enterprise_policy_delivery_block_message() {
   local config_file="$1"
-  local active label
+  local active label marker
   active="$(sb_enterprise_policy_read_active "$config_file" 2>/dev/null || echo supervised)"
   label="$(sb_enterprise_policy_profile_field "$config_file" "$active" label 2>/dev/null || echo "$active")"
+  marker="$(sb_enterprise_policy_human_deploy_marker_file)"
   cat <<EOF
 🛑 ENTERPRISE POLICY BLOCK — Profile ${active} (${label}) requires human approval for production delivery (PR, release, deploy).
 
-Record explicit approval: touch $(sb_enterprise_policy_human_deploy_marker_file) after human sign-off, or set SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1 for audited automation tests only.
+Human operator: after you sign off, create the approval marker from your own terminal (outside the agent session):
+  touch ${marker}
+
+The agent must NOT create this marker (no Edit/Write/Bash touch). For audited automation tests only, set SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL=1.
 EOF
 }
 
@@ -255,3 +261,4 @@ sb_enterprise_policy_session_banner() {
 Enterprise policy profile: ${active} (${label}). ${mode_line} Runtime markers:${runtime_note:- none}.
 EOF
 }
+

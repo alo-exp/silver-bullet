@@ -50,6 +50,17 @@ else
   fail "deploy should block without approval"
 fi
 
+block_msg="$(sb_enterprise_policy_delivery_block_message "$WORK/.silver-bullet.json")"
+if printf '%s' "$block_msg" | grep -qF 'Human operator:' \
+  && printf '%s' "$block_msg" | grep -qF 'from your own terminal' \
+  && printf '%s' "$block_msg" | grep -qF 'agent must NOT create this marker' \
+  && printf '%s' "$block_msg" | grep -qF "$(sb_enterprise_policy_human_deploy_marker_file)" \
+  && ! printf '%s' "$block_msg" | grep -qF 'Record explicit approval:'; then
+  pass "deploy block message addresses human operator (not agent touch)"
+else
+  fail "deploy block message must tell human to touch marker; agent must not create it"
+fi
+
 printf 'approved\n' >"$(sb_enterprise_policy_human_deploy_marker_file)"
 if ! sb_enterprise_policy_delivery_blocked "$WORK/.silver-bullet.json" "gh pr create --title test"; then
   pass "human deploy marker allows delivery"
@@ -74,3 +85,4 @@ fi
 echo
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
+
