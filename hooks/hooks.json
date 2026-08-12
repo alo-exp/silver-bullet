@@ -504,6 +504,18 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-leanctx-usage.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       }
