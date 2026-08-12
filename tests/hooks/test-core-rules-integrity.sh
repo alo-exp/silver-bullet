@@ -76,5 +76,39 @@ rm -rf "$TMP_HOOKS_DIR"
 content="$(sb_core_rules_read_verified "$CORE_RULES" "$HOOKS_DIR" | head -1)"
 assert_eq "read verified returns content" "# Silver Bullet — Core Enforcement Rules" "$content"
 
+
+verified="$(sb_core_rules_read_verified "$CORE_RULES" "$HOOKS_DIR")"
+digest="$(sb_core_rules_compact_digest "$verified" "$CORE_RULES")"
+digest_bytes=$(printf '%s' "$digest" | wc -c | tr -d ' ')
+if [[ "$digest_bytes" -le 3072 ]]; then
+  echo "PASS: compact digest size ${digest_bytes}B <= 3072B"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: compact digest size ${digest_bytes}B > 3072B"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$digest" | grep -q "Non-Negotiable\|Process is non-negotiable"; then
+  echo "PASS: digest keeps non-negotiable markers"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: digest missing non-negotiable markers"
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$digest" | grep -q "Full rules (on demand)\|core-rules.md"; then
+  echo "PASS: digest points to full core-rules path"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: digest missing full-rules pointer"
+  FAIL=$((FAIL + 1))
+fi
+vdigest="$(sb_core_rules_read_verified_digest "$CORE_RULES" "$HOOKS_DIR" || true)"
+if [[ -n "$vdigest" ]]; then
+  echo "PASS: read_verified_digest returns content"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: read_verified_digest empty"
+  FAIL=$((FAIL + 1))
+fi
+
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]

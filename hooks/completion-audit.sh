@@ -5,7 +5,7 @@ trap 'exit 0' ERR
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 # shellcheck source=lib/hook-bootstrap.sh
 source "${_lib_dir}/hook-bootstrap.sh"
-for _ca_mod in classify gates state-helpers planning-tier deploy-tier; do
+for _ca_mod in classify gates state-helpers planning-tier change-class deploy-tier; do
   # shellcheck source=/dev/null
   source "${_lib_dir}/completion-audit/${_ca_mod}.sh"
 done
