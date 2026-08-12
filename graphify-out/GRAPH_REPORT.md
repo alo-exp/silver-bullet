@@ -1,16 +1,16 @@
 # Graph Report - repo  (2026-08-12)
 
 ## Corpus Check
-- 4131 files · ~8,970,778 words
+- 4131 files · ~8,971,003 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 30244 nodes · 42618 edges · 3747 communities (1802 shown, 1945 thin omitted)
+- 30248 nodes · 42622 edges · 3737 communities (1791 shown, 1946 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 1500 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `746a7a62`
+- Built from commit: `cfe23b06`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -22,11 +22,11 @@
 - Order Validation API
 - silver-scan.py
 - PA-18 (Referenced Process Area)
-- Intent Route Table
+- AF-DOCUMENT
 - skill-source/silver-deep-research-multi-ai/scripts/synthesize_landscape.py
 - skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py
 - Graphify
-- PA-09 Testing
+- SB Prior-Art User Prompt
 - codex/silver-deep-research-multi-ai/scripts/synthesize_landscape.py
 - enterprise-e2e-outcome-assessment.sh
 - LeanCTX
@@ -34,11 +34,11 @@
 - silver:review
 - Prior-Art Landscape GLM 5.2
 - silver:deep-research-multi-ai/scripts/synthesize_landscape.py
-- codex/silver-deep-research-multi-ai/scripts/category_pack.py
-- Canonical Process-Area Taxonomy
+- classify_solutions
+- Consolidated SDLC Process Architecture Report
 - silver:deep-research-multi-ai/scripts/materialize_solution_artifacts.py
 - classify_solutions
-- skills/silver-deep-research-multi-ai/scripts/category_pack.py
+- classify_solutions
 - Claude Code
 - codex/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py
 - classify_solutions
@@ -60,22 +60,22 @@
 - run_ec
 - .r9-pilot-row3-launch-inner.sh
 - load_category_pack
-- load_category_pack
+- skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py
 - Canonical SDLC Process Architecture Research Report
 - silver:multi-ai-task/scripts/multi_ai_core.py
 - Silver Bullet Prior-Art Landscape
 - properties
 - Consolidated Prior-Art Landscape Report
-- DevOps Quality Gates
+- security skill
 - Incident-Ready Waitlist SaaS Slice
-- Runtime Hooks
+- Incident Fast Path
 - Full Capability-Only Ranking — Deep Research Skills
 - properties
 - properties
 - agentmemory MCP
 - paths.sh
 - properties
-- silver:create-release
+- SDLC Gap Analysis
 - enterprise-e2e-row-pass-registry.sh
 - skill_md_retrieval_plan
 - run_py
@@ -88,16 +88,16 @@
 - SENTINEL Security Audit Report
 - logical_to_family
 - skill_md_retrieval_plan
-- UX and Product Design
+- Kimi Research Scope
 - AF-AGENT-DELEGATE
-- Unified Process Catalog
-- Consolidated SDLC Process Architecture Report
+- Process Area 18: AI-Assisted / Agentic Software Engineering
+- Silver Bullet Major Issues Analysis
 - Enterprise E2E Silver Bullet Issues
 - Consolidated Landscape Report
-- validation_block
+- $defs
 - Observability-only change
 - Refactor Workflow Documentation
-- Minimax M3 DR-RETRIEVE Evidence
+- Zuvo Solution Capability Report
 - logical_to_family
 - skill_md_retrieval_plan
 - logical_to_family
@@ -115,7 +115,7 @@
 - Agentic Process Orchestrator
 - ReportValidator
 - global-toolstack/common.sh
-- skills/silver-multi-ai-task/scripts/multi_ai_core.py
+- Pi
 - ReportValidator
 - run_es
 - properties
@@ -144,7 +144,7 @@
 - DR-RETRIEVE
 - run_py
 - skill-source/silver-deep-research-multi-ai/scripts/validate_landscape_content.py
-- SB Problem Map — Research Clusters → Mechanisms
+- Top 50 Problems: AI Agents in Software Engineering & DevOps
 - License Research Report
 - run_py
 - install-cursor.sh
@@ -152,12 +152,12 @@
 - monitor-enterprise-e2e-matrix.sh
 - skills/silver-deep-research-multi-ai/scripts/validate_landscape_content.py
 - run_py
-- Process Area 18: AI-Assisted / Agentic Software Engineering
+- /silver:validate Workflow
 - properties
 - .r9-pilot-rows-1-6-11-sequential.sh
 - e2e-live/helpers.sh
 - Critical Self-Review: multi-ai-task v2.0.0
-- $defs
+- id
 - graphify-am-global.sh
 - agent-opencode/lib.sh
 - .r9-pilot-row3-then-11.sh
@@ -187,9 +187,9 @@
 - skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py
 - comparison_matrix_xlsx_path
 - Best Source-Available License for Maximum User Freedom - Markdown Report
-- id
+- properties
 - orchestrator-directive.sh
-- classify_solutions
+- SolutionClassifierTests
 - comparison_matrix_xlsx_path
 - codex-r3-force1416-driver.sh
 - comparison_matrix_xlsx_path
@@ -203,7 +203,7 @@
 - .tui-monitor-batch-continuation.py
 - review-fix-ladder-triage-scenario.sh
 - Phase 38 Gitignore and Documentation Refresh Plan
-- jobs_to_be_done
+- required
 - required
 - test-workflow-chain-guard.sh
 - review-spec skill
@@ -218,7 +218,7 @@
 - test-completion-audit.sh
 - package_solution_outputs
 - Silver Feature Skill
-- properties
+- enum
 - Proactive Skill Discovery
 - Autonomous Enterprise Status
 - properties
@@ -227,7 +227,7 @@
 - enterprise-e2e/.r9-pilot-row3-launch-inner.sh
 - SB Tri-Criteria Live Validation Plan
 - package_solution_outputs
-- jobs_to_be_done
+- required
 - package_solution_outputs
 - Deep Research Skill
 - test-live-review-fix-ladder-full-ladder.sh
@@ -238,7 +238,7 @@
 - codex/silver-deep-research/scripts/phase_gate.py
 - Phase 054 Verification Report
 - codex-r3-force141619-driver.sh
-- test-outcome-assessment.sh script
+- .cursor3-process-row.sh
 - Terms of Use
 - skill-source/silver-deep-research/scripts/phase_gate.py
 - skill-source/silver-multi-ai-task/scripts/live_dispatch.py
@@ -252,7 +252,7 @@
 - test-e2e-live-full-surface-journey.sh
 - run_dr_live
 - ResearchEngine
-- properties
+- id
 - PA-11.1 Continuous Integration Pipeline
 - gen_og_image.py
 - agent-delegation-state.sh
@@ -332,16 +332,16 @@
 - ChainTracker
 - Extended Cursor Verification
 - CitationVerifier
-- PA-16 (Referenced Process Area)
+- PA-11 CI Release
 - properties
 - properties
-- Core Concepts Help Page
+- Silver Bullet Benefits Over Plain GSD
 - silver:multi-ai-task/scripts/cursor_host_adapter.py
 - Deep Research Mode
 - lib/context-mode-gate.sh
 - lib/graphify-gate.sh
 - Round 6 Gates
-- Silver Bullet Major Issues Analysis
+- DevOps Quality Gates
 - Deep Research Methodology
 - orchestrator-event-log.sh
 - test-kay-codex-isolation.sh
@@ -359,7 +359,7 @@
 - properties
 - properties
 - ChainTracker
-- Strangler Fig Modernization
+- Golden Path Engineering
 - PA-18.4 Agentic Engineering Task
 - CitationVerifier
 - properties
@@ -436,10 +436,10 @@
 - DR-006 Company Coverage Selection
 - properties
 - .codex-prerelease-validation-run.sh
-- enterprise-e2e-live-common.sh
+- codex-r2-force1516-driver.sh
 - codex-r2-matrix-driver.sh
 - Silver Ingest Workflow Help Page
-- codex-r2-tierb-smoke-driver.sh
+- enterprise-e2e-live-common.sh
 - codex-r8-force1516-driver.sh
 - codex-r8-force716-driver.sh
 - codex-r8-tierbc-driver.sh
@@ -465,7 +465,7 @@
 - test-outcomes-check.sh
 - tool-input.sh
 - sha256_json
-- OpenCode Dynamically Launching Model-Specific Subagents
+- silver:agent-opencode skill
 - properties
 - required
 - scan-raw-logs.mjs
@@ -474,7 +474,7 @@
 - properties
 - required
 - agent-pi/lib.sh
-- sha256_json
+- migrate_v3_to_v4
 - market_entry
 - required
 - kay-codex-isolation.sh
@@ -487,7 +487,7 @@
 - silver:deep-research/scripts/md_to_html.py
 - Comparator Capability Framework
 - Landscape Research Prompt Template
-- test-enterprise-e2e-matrix-routing.sh
+- test-enterprise-e2e-matrix-evidence.sh
 - required-skills.sh
 - rtk-compat.sh
 - Agent Host Delegation Sibling Prompt
@@ -499,7 +499,7 @@
 - properties
 - codex/silver-deep-research/scripts/citation_manager.py
 - codex/silver-deep-research/scripts/md_to_html.py
-- Lean Context
+- round8-matrix-driver.sh
 - live-verify-track-host.sh
 - skill-source/silver-deep-research/scripts/citation_manager.py
 - Review Loop Rules
@@ -512,13 +512,13 @@
 - workflows.sh
 - serve.sh
 - inclusion_criteria
-- Multi-Agent Safety
+- Context Integrity
 - skills/silver-deep-research/scripts/citation_manager.py
 - skills/silver-deep-research/scripts/md_to_html.py
 - properties
 - silver:multi-ai-task/schemas/cursor-host-adapter-v1.schema.json
 - properties
-- HTML Generation Reference
+- Deep Research Dependencies
 - Silver Add Skill
 - properties
 - OCG MIMO v2.5 Pro Self-Review
@@ -532,7 +532,7 @@
 - enforcement-tier-gate.sh
 - properties
 - codex/silver-multi-ai-task/schemas/cursor-host-adapter-v1.schema.json
-- Operational Efficiency
+- Intent Route Table
 - Deep Research Multi AI Skill
 - properties
 - properties
@@ -579,7 +579,7 @@
 - build_matrix
 - codex/silver-deep-research/scripts/shortlist_candidates.py
 - properties
-- build_matrix
+- generate_comparison_xlsx
 - silver:multi-ai-task Skill
 - quality-gate-state
 - OMP Fact-Check Report
@@ -600,7 +600,7 @@
 - Thermo-Nuclear Code Quality Review Round 1
 - Provenance Ledger
 - properties
-- silver:deep-research/reference/landscape/category-packs/schema.json
+- market_entry
 - inclusion_criteria
 - inclusion_criteria
 - required
@@ -634,7 +634,7 @@
 - HTML Generation Guide
 - properties
 - Valid Chinese Research Report Fixture
-- skill-source/silver-deep-research/reference/landscape/category-packs/schema.json
+- market_entry
 - Pi Desktop
 - inclusion_criteria
 - inclusion_criteria
@@ -654,12 +654,12 @@
 - RTK Recommended Tool
 - Enterprise E2E Cherry-Pick Harness Fixes
 - required
-- Silver Bullet Benefits Over Plain GSD
+- Orchestration Workflows Topic
 - Silver Bullet Site Design System
 - silver-agent-cursor skill
 - Lifecycle Hooks
 - apply_persona_priority
-- Silver Bullet DevOps Cycle
+- properties
 - Autonomous health endpoint task brief
 - properties
 - test-agentmemory-gate.sh
@@ -690,7 +690,7 @@
 - required
 - properties
 - cursor-triage-ladder-driver.sh
-- Top 50 Problems: AI Agents in Software Engineering & DevOps
+- silver-add skill
 - Phase 27 Plan 01
 - properties
 - Silver Bullet Site QA Report
@@ -722,7 +722,7 @@
 - test-record-requested-skill.sh
 - kay/agent.sh
 - test-sync-codex-package.sh
-- classify_solutions
+- Stop Hook False-Positive Audit v0.30.0
 - sha256_json
 - startup
 - SEED-001 Skill Gap Check
@@ -750,12 +750,12 @@
 - Pi GUI
 - codex/silver-deep-research/schemas/need_profile.schema.json
 - properties
-- Environment Promotion
+- verify_runtime_dependency_access
 - Silver Bullet Gaps Report Page
 - DevOps & IaC Workflow Help Page
 - Minimax M3 critique
 - items
-- Tri-Host Result Matrix
+- SB Tri-Criteria Log Audit
 - enum
 - enum
 - codex/silver-deep-research/scripts/compare_solutions.py
@@ -802,8 +802,8 @@
 - silver-add.sh
 - DeepSeek Critique
 - Kimi Critique
-- Agent-Claude AF Delegation Integration Plan
-- round6-matrix-driver.sh
+- CategoryPackSchemaTests
+- enterprise_e2e_code_intel_preflight
 - Multi AI Pool Algebra
 - startup
 - skills/silver-deep-research/schemas/need_profile.schema.json
@@ -817,7 +817,7 @@
 - skills/silver-deep-research/scripts/compare_solutions.py
 - properties
 - required
-- skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py
+- Supervision Loop
 - route-smoke-transcript.py
 - test-record-token-compression-usage.sh
 - test-session-log-init.sh
@@ -842,7 +842,7 @@
 - CategoryPackSchemaTests
 - sb-project-gate.sh
 - Silver Bullet Responsive Visual QA Report
-- LiveDispatchModelRoutingTests
+- enterprise_e2e_export_live_defaults
 - Requested State Sidecar
 - In Scope
 - OpenCode RTK and Context Mode Verification
@@ -873,7 +873,7 @@
 - skill-source/silver-multi-ai-task/schemas/backend-capabilities-v1.schema.json
 - properties
 - Triangulation — Canonical SDLC Process Architecture
-- .r9-followup-row11-row3-operator.sh
+- verify_runtime_hook_delivery
 - test-app-branch.sh
 - generate-apo-artifacts.py
 - agentmemory-gate.sh script
@@ -881,7 +881,7 @@
 - run-sb-live-tests-codex.sh
 - run-sb-live-tests-kay.sh
 - required
-- is_unusable_overview_claim
+- test-orchestrator-workflow-csv.sh
 - regulated
 - properties
 - continuation
@@ -938,11 +938,11 @@
 - lib/context-mode-read-deny.sh
 - github-run-list.sh
 - orchestrator-skill-atom.sh
-- Generic coding agent exclusion
+- Minimax M3 DR-RETRIEVE Evidence
 - plugin-cache-guard.sh
 - recommended-tools-registry.sh
 - rtk-cm-global.sh
-- Kimi Research Scope
+- test-record-agentmemory-usage.sh
 - properties
 - run-rc-validation-matrix.sh
 - silver:branch-finish skill
@@ -1059,7 +1059,7 @@
 - properties
 - items
 - enum
-- Trunk-Based Development with Feature Flags
+- silver:deep-research/reference/landscape/category-packs/schema.json
 - legacy-marketplace.sh
 - minimax-openai-proxy.mjs
 - run-tri-host-install-smoke.sh
@@ -1090,7 +1090,7 @@
 - Round 7 Rows 1–5 Checkpoint
 - Graphify Incremental Update Reference
 - Graphify Exports Reference
-- test-enterprise-e2e-row-pass-registry.sh
+- Confidence Assessment
 - test-leanctx-gate-lib.sh
 - test-orchestrator-non-sb-workspace-guard.sh
 - test-phase-lock-heartbeat.sh
@@ -1105,14 +1105,14 @@
 - Review Ingestion Manifest Skill
 - test-workflows.sh
 - New Workflow Audit RFL Closeout
-- silver-test
+- silver:ui-review
 - .test_package_emits_xlsx_and_reports
 - enterprise
 - cited_source_ids
 - enum
 - required
 - enum
-- Graphify + agentmemory Optimization Digest
+- skill-source/silver-deep-research/reference/landscape/category-packs/schema.json
 - required
 - type
 - required
@@ -1120,20 +1120,20 @@
 - properties
 - enum
 - required
-- silver:agent-claude skill
+- prepare_workspace
 - compliance-status.sh
 - Pre-Release Quality Gate
 - core-rules-integrity.sh
 - config-scope.sh
 - stop-check.sh
 - .test_package_emits_xlsx_and_reports
-- enum
+- ensure_runtime_dependency_access_preflight
 - enterprise
 - cited_source_ids
 - enum
 - required
 - enum
-- Observability Pipeline Design
+- Goose ACP Client
 - Silver DevOps Skill
 - required
 - type
@@ -1156,7 +1156,7 @@
 - enum
 - required
 - enum
-- Process Area 12: Platform Engineering and IDP
+- Silver Bullet Core Enforcement Rules
 - required
 - properties
 - required
@@ -1165,7 +1165,7 @@
 - enum
 - required
 - Triangulation Report: Canonical SDLC Process Architecture
-- Structured Code Review
+- consolidate
 - enterprise_e2e_assert_row_matrix_baseline_rev_increase
 - silver-ui-contract
 - Agent-Claude Autonomous Criteria
@@ -1204,11 +1204,11 @@
 - test-phase-lock-claim.sh
 - test-debug-dump.sh
 - TST-01 Sentinel Lock UUID Assertion
-- Silver Init
+- silver:doctor Skill
 - test-kay-project-hook-bridge.sh
 - Phase 062 Plan 01
 - Phase 20 Plan 02
-- properties
+- poll-r8-resume-row14.sh
 - Workflow Atomic Flow Audit Closeout
 - generate_comparison_xlsx
 - test-record-graphify-query.sh
@@ -1216,7 +1216,7 @@
 - test-rtk-compat.sh
 - test-rtk-gate-lib.sh
 - test-sb-project-gate.sh
-- allow_adjacent_section
+- TestMatrixOpenpyxl
 - test-skill-execution-paths.sh
 - test-skill-refs.sh
 - claude/agent.sh
@@ -1253,7 +1253,7 @@
 - enum
 - category_priority_floor
 - suggested_must_haves
-- SLO-Driven Operations
+- Multi-Agent Safety
 - enum
 - score_run
 - properties
@@ -1297,7 +1297,7 @@
 - Security Policy
 - MigrateRunManifestTests
 - SpaProfileRoutingTests
-- feature_priority_overrides
+- enum
 - enum
 - category_priority_floor
 - suggested_must_haves
@@ -1351,9 +1351,9 @@
 - properties
 - required
 - result
-- build_capabilities_stub
-- Golden Path Engineering
-- Landscape Research Prompt Template
+- test-step-vloop-runtime-rollup.sh
+- silver:deep-research/reference/need-profile-personas.json
+- TestVerifyMixed
 - project-active.sh
 - test-enterprise-e2e-validation-overlay.sh
 - test-agentmemory-platform-install.sh
@@ -1374,7 +1374,7 @@
 - required
 - enum
 - product_aliases
-- enum
+- Prompt Construction
 - priority_hints
 - silver:deep-research/schemas/claim.schema.json
 - required
@@ -1382,7 +1382,7 @@
 - Research Output Contract
 - TestSourceEvaluatorAdmiralty
 - required
-- enum
+- suggested_constraints
 - usage
 - silver:multi-ai-task/schemas/multi-ai-dispatch-ledger-v1.schema.json
 - type
@@ -1428,7 +1428,7 @@
 - workflow-chain-guard.sh
 - codex/silver-deep-research-multi-ai/schemas/run-manifest-v4.schema.json
 - required
-- generate_comparison_xlsx
+- category_pack_id
 - enum
 - enum
 - product_aliases
@@ -1440,7 +1440,7 @@
 - TestSourceEvaluatorAdmiralty
 - TC-03 Criteria (Net-New Workflow Creation)
 - required
-- Context Integrity
+- reliability_code
 - usage
 - codex/silver-multi-ai-task/schemas/multi-ai-dispatch-ledger-v1.schema.json
 - WeasyPrint
@@ -1508,7 +1508,7 @@
 - scripts/lib/codex-cli.sh
 - install-common.sh
 - merge-cursor-hooks.py
-- TestMatrixOpenpyxl
+- agentmemory Dependency Flow
 - silver:verify
 - probe-agentmemory.sh
 - probe-cross-tool.sh
@@ -1678,7 +1678,7 @@
 - Silver Bullet Enforcement Tier
 - test-model-selection-boundary.sh
 - test-parallel-scheduling-safety.sh
-- Process Bypass Cluster
+- suggested_must_haves
 - test-round9-gate3-driver.sh
 - test-runtime-composition-tailoring.sh
 - test-scheduler-queue-batch-gate.sh
@@ -1687,14 +1687,14 @@
 - test-silver-triage-adapter.sh
 - test-site-chrome-regression.sh
 - test-site-content-freshness.sh
-- Review Loop Rules
+- allow_adjacent_section
 - test-validate-host-agnostic-core.sh
 - test-validate-host-install-surface.sh
 - test-validate-host-skill-surface.sh
 - budget
 - enum
 - SynthesisMembershipTests
-- skill-source/silver-deep-research/reference/need-profile-personas.json
+- feature_priority_overrides
 - feature_priority_overrides
 - outputs
 - enum
@@ -1736,7 +1736,7 @@
 - enum
 - TestEvalHarness
 - TestSupportScore
-- consolidate
+- suggested_must_haves
 - items
 - properties
 - enum
@@ -1759,7 +1759,7 @@
 - enum
 - TestEvalHarness
 - TestSupportScore
-- TestVerifySupported
+- suggested_constraints
 - Dark desktop screenshot of Silver Ship Readiness workflow help page
 - Agent-Claude Initial Evidence
 - AUTO-C01 Score Triage
@@ -3313,7 +3313,7 @@
 - feature_priority_overrides
 - enum
 - TestEvalHarness
-- Technical Debt Reduction
+- claim_id
 - TestSupportScore
 - TestVerifySupported
 - items
@@ -3323,8 +3323,8 @@
 - recommended-tools-e2e.sh
 - test-codex-hook-contract.sh
 - test-context-mode-read-deny-lib.sh
-- test-enforcement-tier.sh
-- Collaborative Programming and Mob Programming
+- run_hook_probe_strict
+- test-enterprise-e2e-matrix-quota.sh
 - test-enterprise-policy-runtime.sh
 - test-plugin-integrity.sh
 - smoke-target.py
@@ -3337,7 +3337,7 @@
 - test-pre-release-host-smoke.sh
 - test-rc-validation-matrix.sh
 - test-run-release-live-matrix.sh
-- test-cursor-hooks-paths.sh
+- Site Release Audit
 - test-run-sb-live-tests-codex.sh
 - test-run-sb-live-tests-kay.sh
 - test-sb-optimize-stack.sh
@@ -3349,9 +3349,9 @@
 - feature_priority_overrides
 - test-rm-safety.sh
 - evidence_ids
-- YAML and JSON Infrastructure-Code Rule
+- extracted_at
 - must_research
-- category_priority_floor
+- evidence_hash
 - source_id
 - silver:deep-research/tests/test_offline_fixture.py
 - enum
@@ -3367,7 +3367,7 @@
 - cursor-hook-bridge.sh
 - deploy-tier.sh
 - state-helpers.sh
-- test-enterprise-policy.sh
+- workspace_trust_config_files
 - orchestrator-directive-guard.sh
 - pr-traceability.sh
 - spec-session-record.sh
@@ -3405,7 +3405,7 @@
 - [0.9.0] — 2026-04-08
 - Step 7 — Remediation Output
 - RFL Rung 5 — Opus Thinking High — Cycle 1
-- feature_priority_overrides
+- codex_plugin_registered
 - evidence_ids
 - must_research
 - Merge status
@@ -3414,7 +3414,6 @@
 - enum
 - type
 - enum
-- Decision Record — v2 Landscape Replay
 - skill-source/silver-multi-ai-task/scripts/provision-cursor-agents.sh
 - Solution Capability Report: agenthub
 - Solution Capability Report: AgentSys
@@ -3444,7 +3443,6 @@
 - certification-status.js
 - evidence_ids
 - must_research
-- suggested_constraints
 - source_id
 - skills/silver-deep-research/tests/test_offline_fixture.py
 - enum
@@ -3452,7 +3450,6 @@
 - enum
 - reliability_code
 - skills/silver-multi-ai-task/scripts/provision-cursor-agents.sh
-- enum
 - test-route-smoke-transcript.sh
 - test-stack-optimizer-agentmemory.sh
 - test-stack-optimizer-graphify.sh
@@ -3466,7 +3463,6 @@
 - test-claude-agent-surface-isolation.sh
 - test-claude-plugin-surface.sh
 - test-codex-skill-frontmatter-yaml.sh
-- allow_adjacent_section
 - test-export-enterprise-evidence.sh
 - test-flow-step-vloop.sh
 - test-graphify-am-global-setup.sh
@@ -3494,7 +3490,6 @@
 - overflow-check.mjs
 - enum
 - _json_out
-- FEATURE DEVOPS RELEASE Workflow Chain
 - outputs
 - graphify reference: GitHub clone and cross-repo merge
 - graphify reference: transcribe video and audio
@@ -3542,8 +3537,6 @@
 - [0.48.6] — 2026-06-27
 - test-trivial-file-clear.sh
 - _json_out
-- expires_at
-- section_id
 - agent-delegation-cleanup.sh
 - dogfood-orchestrator-parent-surface.sh
 - export-enterprise-evidence.sh
@@ -3561,7 +3554,6 @@
 - sync-cursor-package.sh
 - validate-github-release-notes.sh
 - preview-server-daemon.sh
-- section_id
 - _json_out
 - RFL Rung 3 — Kimi K3 Max / XHigh — Adversarial Architecture Review (Cycle 1)
 - outputs
@@ -3711,9 +3703,7 @@
 - Parallel Join
 - Workflow as Component
 - expires_at
-- live-test.sh
 - resolve-instruction-ledger.sh
-- alo-labs/agent-plugins Marketplace
 - text
 - expires_at
 - Phase 25 Plan 02
@@ -3763,29 +3753,29 @@
   skills/silver-deep-research/schemas/source.schema.json → site/help/index.html
 - `silver:feature` --references--> `Post-execution sequencing`  [EXTRACTED]
   agents/claude/silver:feature/SKILL.md → .visual-audit/responsive-full/2026-06-30-post-fix/help-workflows-silver-refactor-dark-1280px.png
-- `Refactor Workflow Documentation` --references--> `/silver:test workflow`  [EXTRACTED]
-  site/help/workflows/silver-refactor.html → .visual-audit/responsive-full/2026-06-30-post-fix/help-workflows-silver-refactor-dark-1280px.png
+- `Claude Code Recursive Nesting Conflict` --semantically_similar_to--> `Claude Code`  [INFERRED] [semantically similar]
+  docs/research-260624/multi-ai-out/conflicts.md → research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/gpt-5-6-luna-medium-attempt-2c5abefe-0016-47b0-bd95-ea4c6b24adf6.txt
 
 ## Import Cycles
 - None detected.
 
-## Communities (3747 total, 1945 thin omitted)
+## Communities (3737 total, 1946 thin omitted)
 
 ### Community 0 - "Silver Feature"
-Cohesion: 0.02
-Nodes (224): GSD Ship, GSD Verify Work, ai-llm-safety, FLOW 1, FLOW 10, FLOW 11, FLOW 12, FLOW 13 (+216 more)
+Cohesion: 0.03
+Nodes (205): Search Output for Silver Quality Gates, GSD Ship, GSD Verify Work, ai-llm-safety, FLOW 1, FLOW 10, FLOW 11, FLOW 12 (+197 more)
 
 ### Community 1 - "Silver Bullet"
-Cohesion: 0.03
-Nodes (113): Dependency Orchestration, Final-Delivery Enforcement, Precondition Checks, Conductor Composable Workflow DSL, DevOps Routing, Feature Delivery, PROC-SB-SE-DEVOPS, Process Pack (+105 more)
+Cohesion: 0.02
+Nodes (157): Dependency Orchestration, Final-Delivery Enforcement, Precondition Checks, Spec Kit Constitution to Implement Phases, Spec-Driven Constitution Plan and Tasks, DevOps Routing, Feature Delivery, PROC-SB-SE-DEVOPS (+149 more)
 
 ### Community 2 - "Changelog"
 Cohesion: 0.01
 Nodes (367): 0.1.0 (2026-03-31), [0.28.0] — 2026-04-27, [0.29.0] — 2026-04-28, [0.29.1] — 2026-04-28, [0.30.0] — 2026-04-28, [0.31.0] — 2026-04-28, [0.31.1] — 2026-05-06, [0.32.1] — 2026-05-07 (+359 more)
 
 ### Community 3 - "Website Content Audit"
-Cohesion: 0.03
-Nodes (87): gsd-complete-milestone, Bare Instruction Interception, Configuration, Content Drift, Website Content Audit, File Safety Rules, GSD Execute, GSD Knowledge (+79 more)
+Cohesion: 0.04
+Nodes (82): Bare Instruction Interception, Configuration, Content Drift, Website Content Audit, File Safety Rules, GSD Execute, GSD Knowledge, GSD Plan (+74 more)
 
 ### Community 4 - "Order Validation API"
 Cohesion: 0.02
@@ -3796,64 +3786,64 @@ Cohesion: 0.07
 Nodes (100): CompletedProcess, audit_fingerprint(), normalize_text(), Canonical normalization for fingerprints (aligned with silver-scan.py)., Stable fingerprint for structured audit findings (silver:add dedup)., Stable fingerprint for silver-scan deferred-work candidates., scan_fingerprint(), sha256_text() (+92 more)
 
 ### Community 6 - "PA-18 (Referenced Process Area)"
-Cohesion: 0.06
-Nodes (63): Agent Runtimes, Deprecation Policy, Foundation Models, IDE Integrations, PA-03 UX, PA-12 Platform, PA-14 SRE, PA-17 (Referenced Process Area) (+55 more)
+Cohesion: 0.03
+Nodes (108): Agent Runtimes, AI-Assisted Code, AI-Generated Tests, Contract Testing, Deprecation Policy, Foundation Models, Google Reviewer Guidelines, Hermetic Content-Addressed Builds (+100 more)
 
-### Community 7 - "Intent Route Table"
-Cohesion: 0.02
-Nodes (123): silver-clarify Runtime Command, silver-ensure-docs Runtime Command, silver-validate Runtime Command, orchestrator-directive.json, /silver Smart Skill Orchestrator, silver:clarify, silver:refactor, silver:worktree (+115 more)
+### Community 7 - "AF-DOCUMENT"
+Cohesion: 0.03
+Nodes (90): silver-clarify Runtime Command, silver-ensure-docs Runtime Command, silver-validate Runtime Command, AF-PHASE-MANAGE, FLOW 16, FLOW 17, FLOW 2, FLOW 3 (+82 more)
 
 ### Community 8 - "skill-source/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
 Nodes (77): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_known_solutions(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim() (+69 more)
 
 ### Community 9 - "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
-Cohesion: 0.07
-Nodes (67): _effective_overview_seeds(), build_chart_data(), _build_chart_support(), build_link_pairs(), build_multi_market_chart_data(), build_report_markdown(), _build_solution_profile(), build_vendor_buckets() (+59 more)
+Cohesion: 0.05
+Nodes (76): Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, build_chart_data() (+68 more)
 
 ### Community 10 - "Graphify"
 Cohesion: 0.04
-Nodes (88): Agentmemory, .agentmemory Export Root, @agentmemory/agentmemory Package, gitleaks, Graphify Dependency Flow, agentmemory Dependency Flow, composer-2.5, Completion Evidence Gate (+80 more)
+Nodes (79): Agentmemory, Graphify Dependency Flow, composer-2.5, Completion Evidence Gate, Context Mode Integration, Delegation Directive Contract, ownership_scope, Structured STATUS block (+71 more)
 
-### Community 11 - "PA-09 Testing"
-Cohesion: 0.04
-Nodes (55): AI-Assisted Code, AI-Generated Tests, Contract Testing, Google Reviewer Guidelines, Hermetic Content-Addressed Builds, PA-08 Review, PA-11 CI Release, PA-13 Governance (+47 more)
+### Community 11 - "SB Prior-Art User Prompt"
+Cohesion: 0.05
+Nodes (43): OPA Rego Policy and Decision Logs, OPA Policy as Code, Aider, Cursor, Silver Bullet Prior-Art Research Prompt, CI/CD and Policy Gates, Deep Research Methodology, IDE Agent Orchestrators (+35 more)
 
 ### Community 12 - "codex/silver-deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
-Nodes (71): build_overview_seeds(), Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, build_chart_data() (+63 more)
+Nodes (75): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution… (+67 more)
 
 ### Community 13 - "enterprise-e2e-outcome-assessment.sh"
 Cohesion: 0.06
 Nodes (57): enterprise-e2e-outcome-assessment.sh script, enterprise_e2e_outcome_assess_round(), enterprise_e2e_outcome_directive_drained(), enterprise_e2e_outcome_evidence_resolved(), enterprise_e2e_outcome_find_orchestrator_file(), enterprise_e2e_outcome_is_routing_row(), enterprise_e2e_outcome_is_tri_criteria_row(), enterprise_e2e_outcome_log_has_agentmemory_capture() (+49 more)
 
 ### Community 14 - "LeanCTX"
-Cohesion: 0.04
-Nodes (86): Recommended Tools Opt-In, RTK, RTK Dependency Flow, LeanCTX Dependency Flow, Recommended Tools Reconciliation, RTK, Context Mode, hooks.json (+78 more)
+Cohesion: 0.03
+Nodes (98): Recommended Tools Opt-In, RTK, RTK Dependency Flow, LeanCTX Dependency Flow, Recommended Tools Reconciliation, RTK, Context Mode, hooks.json (+90 more)
 
 ### Community 15 - "Artifact Review Assessor"
 Cohesion: 0.03
-Nodes (94): DISMISS Findings, MUST-FIX Findings, NICE-TO-HAVE Findings, REQUIREMENTS.md, ROADMAP.md, SPEC.md, UAT.md, Artifact Review Assessor Skill (+86 more)
+Nodes (80): DISMISS Findings, MUST-FIX Findings, NICE-TO-HAVE Findings, FLOW 5, WF-SILVER-CONTENT, REQUIREMENTS.md, ROADMAP.md, SPEC.md (+72 more)
 
 ### Community 16 - "silver:review"
-Cohesion: 0.04
-Nodes (126): Extensibility, Modularity, Reliability, Reusability, Impure Shell, Pure Core, Pure Business Logic, /testability — Testable Design Enforcement, Testability Checklist (+118 more)
+Cohesion: 0.06
+Nodes (98): Extensibility, Modularity, Reliability, Reusability, Impure Shell, Pure Core, Pure Business Logic, /testability — Testable Design Enforcement, Testability Checklist (+90 more)
 
 ### Community 17 - "Prior-Art Landscape GLM 5.2"
 Cohesion: 0.04
-Nodes (78): OpenHands CodeAct Sandbox Loop, Agentic SDLC Frameworks, Anthropic Building Effective Agents, Anthropic Orchestrator-Workers Pattern, Antigravity Workflows Agents Skills Architecture, Antigravity Ultimate SDLC Framework, AutoGen, BMAD Method / Devin (+70 more)
+Nodes (82): Aider, Aider Architect Editor Split, OpenHands CodeAct Sandbox Loop, Agentic SDLC Frameworks, Anthropic Building Effective Agents, Anthropic Orchestrator-Workers Pattern, Antigravity Workflows Agents Skills Architecture, Antigravity Ultimate SDLC Framework (+74 more)
 
 ### Community 18 - "silver:deep-research-multi-ai/scripts/synthesize_landscape.py"
 Cohesion: 0.06
 Nodes (77): build_overview_seeds(), Load pack from need_profile; return None when category_pack_id absent., Pack may carry overview_seeds dict; otherwise empty (synthesis uses SCR)., resolve_pack_from_need(), _effective_known_solutions(), _effective_overview_seeds(), is_matrix_dump_claim(), is_unusable_overview_claim() (+69 more)
 
-### Community 19 - "codex/silver-deep-research-multi-ai/scripts/category_pack.py"
-Cohesion: 0.09
+### Community 19 - "classify_solutions"
+Cohesion: 0.10
 Nodes (67): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+59 more)
 
-### Community 20 - "Canonical Process-Area Taxonomy"
-Cohesion: 0.08
-Nodes (49): Backstage-Style Developer Portals, Canary and Blue-Green Deployment, Golden Paths, Internal Developer Platforms, PA-06 Development Environment and Toolchain, PA-07 Software Implementation, PA-10 Build, Integration and Artifact Management, PA-11 CI, Release and Deployment (+41 more)
+### Community 20 - "Consolidated SDLC Process Architecture Report"
+Cohesion: 0.05
+Nodes (79): Human-in-the-Loop Approval, AI Governance, Backstage-Style Developer Portals, Canary and Blue-Green Deployment, Consolidated SDLC Process Architecture Report, 18 Process Area Capability Model, GitHub Accenture Copilot Study, Golden Paths (+71 more)
 
 ### Community 21 - "silver:deep-research-multi-ai/scripts/materialize_solution_artifacts.py"
 Cohesion: 0.11
@@ -3863,17 +3853,17 @@ Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_pr
 Cohesion: 0.10
 Nodes (63): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), catalog_entries_from_pack(), _dedupe_preserve_order(), expand_by_slug_aliases() (+55 more)
 
-### Community 23 - "skills/silver-deep-research-multi-ai/scripts/category_pack.py"
-Cohesion: 0.09
-Nodes (65): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), build_overview_seeds(), catalog_entries_from_pack(), _dedupe_preserve_order() (+57 more)
+### Community 23 - "classify_solutions"
+Cohesion: 0.06
+Nodes (80): apply_parent_child_dedupe(), build_alias_map(), build_homepage_by_slug(), build_known_solutions(), build_license_by_slug(), build_overview_seeds(), catalog_entries_from_pack(), category_packs_dir() (+72 more)
 
 ### Community 24 - "Claude Code"
-Cohesion: 0.04
-Nodes (65): Claude Agent Tool Frontmatter, Claude Code Recursive Nesting Conflict, Cross-Model Conflicts — Subagent Nesting Research, nicobailon/pi-subagents, OpenCode Subagent Nesting Conflict, OpenCode permission.task Configuration, Pi Extension Subagents Conflict, OpenCode TaskAgentTools (+57 more)
+Cohesion: 0.06
+Nodes (47): Claude Code Hook System, Runtime Extensibility Comparison, Bash hooks.json Protocol, Claude Code Hooks Reference, Codex, Codex Hooks Reference, Stop and SubagentStop Completion Gates, Cursor (+39 more)
 
 ### Community 25 - "codex/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py"
-Cohesion: 0.11
-Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+44 more)
+Cohesion: 0.10
+Nodes (54): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+46 more)
 
 ### Community 26 - "classify_solutions"
 Cohesion: 0.10
@@ -3888,16 +3878,16 @@ Cohesion: 0.03
 Nodes (83): Committed Product Delta, Ledger Monitor Reconciliation, SB E2E Ledger File, Enterprise E2E Host Certification Methodology, Anti-faking methodology, Fixture Branch Lock, Claude Round 6 host, Claude round-N branch (+75 more)
 
 ### Community 29 - "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py"
-Cohesion: 0.11
-Nodes (52): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+44 more)
+Cohesion: 0.10
+Nodes (54): _all_template_features(), _apply_matrix_row(), _apply_slug_scoped_prose(), _assign_support(), build_features_json(), build_scr_md(), _canonical_known_slug(), _default_inclusion_features() (+46 more)
 
 ### Community 30 - "silver:deep-research/scripts/matrix_ops.py"
 Cohesion: 0.09
 Nodes (59): add_platform(), _all_categories(), _all_features(), _apply_col_styles(), _backfill_formulas(), _cache_col_styles(), _clone_style(), _compute_score() (+51 more)
 
 ### Community 31 - "runtime-paths.sh"
-Cohesion: 0.04
-Nodes (38): nofollow-guard.sh script, sb_runtime_skill_receipt_dirs(), runtime-paths.sh script, trivial-bypass.sh script, assert_field(), test-cursor-hook-bridge.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, test-cursor-runtime-bootstrap.sh script (+30 more)
+Cohesion: 0.05
+Nodes (33): nofollow-guard.sh script, sb_runtime_skill_receipt_dirs(), runtime-paths.sh script, trivial-bypass.sh script, assert_field(), test-cursor-hook-bridge.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, fail() (+25 more)
 
 ### Community 32 - "codex/silver-deep-research/scripts/matrix_ops.py"
 Cohesion: 0.09
@@ -3912,16 +3902,16 @@ Cohesion: 0.09
 Nodes (59): add_platform(), _all_categories(), _all_features(), _apply_col_styles(), _backfill_formulas(), _cache_col_styles(), _clone_style(), _compute_score() (+51 more)
 
 ### Community 35 - "/silver:init"
-Cohesion: 0.04
-Nodes (58): bypassPermissions Mode, Forensics Security Boundary, GitHub Account Takeover, Invocation-Based Enforcement, LLM Instruction-Following Boundary, Overall Risk: High, Documentation Prompt Injection Risk, SENTINEL Audit Report (+50 more)
+Cohesion: 0.03
+Nodes (70): bypassPermissions Mode, Forensics Security Boundary, GitHub Account Takeover, Invocation-Based Enforcement, LLM Instruction-Following Boundary, Overall Risk: High, Documentation Prompt Injection Risk, SENTINEL Audit Report (+62 more)
 
 ### Community 36 - "site-session.sh"
 Cohesion: 0.05
 Nodes (36): sb_live_publish_evidence_valid(), sb_site_prompt_is_agent_delegation_intent(), sb_site_session_active(), sb_site_session_gates_apply(), sb_site_session_has_site_work(), sb_site_session_init_vloops(), sb_site_session_mark_live_claim_pending(), sb_site_session_mark_push_intent() (+28 more)
 
 ### Community 37 - "detach-background.sh"
-Cohesion: 0.07
-Nodes (35): codex-r2-force1516-driver.sh script, codex-r2-matrix-driver.sh script, codex-r2-tierb-smoke-driver.sh script, codex-r8-force1516-driver.sh script, codex-r8-force16-only-driver.sh script, codex-r8-force716-driver.sh script, codex-r8-tierbc-driver.sh script, round6-matrix-driver.sh script (+27 more)
+Cohesion: 0.08
+Nodes (31): codex-r2-force1516-driver.sh script, codex-r2-matrix-driver.sh script, codex-r2-tierb-smoke-driver.sh script, codex-r8-force1516-driver.sh script, codex-r8-force16-only-driver.sh script, codex-r8-force716-driver.sh script, codex-r8-tierbc-driver.sh script, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY (+23 more)
 
 ### Community 38 - "run_ec"
 Cohesion: 0.06
@@ -3951,9 +3941,9 @@ Nodes (49): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERA
 Cohesion: 0.06
 Nodes (17): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., Merge need_profile overrides onto the base category pack., resolve_pack_from_need_profile(), CategoryPackLoaderTests (+9 more)
 
-### Community 45 - "load_category_pack"
-Cohesion: 0.06
-Nodes (16): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., Merge need_profile overrides onto the base category pack., resolve_pack_from_need_profile(), CategoryPackLoaderTests (+8 more)
+### Community 45 - "skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py"
+Cohesion: 0.18
+Nodes (4): MultiMarketChartTests, MultiMarketMaterializeTests, MultiMarketPackTests, Multi-market landscape engine contracts.
 
 ### Community 46 - "Canonical SDLC Process Architecture Research Report"
 Cohesion: 0.07
@@ -3964,32 +3954,32 @@ Cohesion: 0.19
 Nodes (24): BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args(), Namespace, BudgetPolicy (+16 more)
 
 ### Community 48 - "Silver Bullet Prior-Art Landscape"
-Cohesion: 0.05
-Nodes (56): Aider, Aider Architect Editor Split, AutoGen AgentChat and Handoffs, Cline, CrewAI Flows and Crews, Cursor, Dagger, Silver Bullet Prior-Art Landscape (+48 more)
+Cohesion: 0.06
+Nodes (49): AutoGen AgentChat and Handoffs, Cline, CrewAI Flows and Crews, Cursor, Dagger, Silver Bullet Prior-Art Landscape, GSD, LangGraph Stateful DAG and Checkpoints (+41 more)
 
 ### Community 49 - "properties"
 Cohesion: 0.05
 Nodes (45): additionalProperties, format, type, description, description, pattern, type, description (+37 more)
 
 ### Community 50 - "Consolidated Prior-Art Landscape Report"
-Cohesion: 0.03
-Nodes (116): Durable Execution Substrate, Antigravity Ultimate SDLC, GLM 5.2 Research Output, Earthly Lunar, GitHub Agentic Workflows, Codex (OpenAI), Codex agents config.toml, Argo Kubernetes DAG and Retry (+108 more)
-
-### Community 51 - "DevOps Quality Gates"
 Cohesion: 0.05
-Nodes (68): scalability skill, security skill, Asynchronous Processing, Authentication and Authorization, Caching Strategy, DevOps Quality Gates, Plugin Interface, Defense in Depth (+60 more)
+Nodes (74): Durable Execution Substrate, Antigravity Ultimate SDLC, GLM 5.2 Research Output, Earthly Lunar, GitHub Agentic Workflows, Argo Kubernetes DAG and Retry, Camunda BPMN Zeebe and DMN, Harness CI/CD and Policy Governance (+66 more)
+
+### Community 51 - "security skill"
+Cohesion: 0.07
+Nodes (55): scalability skill, security skill, Asynchronous Processing, Authentication and Authorization, Caching Strategy, Plugin Interface, Defense in Depth, Dependency Security (+47 more)
 
 ### Community 52 - "Incident-Ready Waitlist SaaS Slice"
 Cohesion: 0.04
 Nodes (55): TC-01 Intent Seed 20260706T023311Z, TC-01 Intent Seed 20260706T084149Z, TC-01 Intent Seed 20260706T092844Z, TC-01 waitlist vision, Fixture app, TC-01 intent seed, TC-01 waitlist vision, TC-01 intent seed (+47 more)
 
-### Community 53 - "Runtime Hooks"
-Cohesion: 0.14
-Nodes (15): All Tracked Skills, Accessibility Review Skill, Finalization Step 14, Runtime Hooks, Orchestrator Directive Guard, Stop Check, UAT Gate, Workflow Chain Guard (+7 more)
+### Community 53 - "Incident Fast Path"
+Cohesion: 0.09
+Nodes (23): All Tracked Skills, Accessibility Review Skill, Finalization Step 14, Runtime Hooks, Orchestrator Directive Guard, Stop Check, UAT Gate, Workflow Chain Guard (+15 more)
 
 ### Community 54 - "Full Capability-Only Ranking — Deep Research Skills"
-Cohesion: 0.04
-Nodes (71): 199-biotechnologies/claude-deep-research-skill (rank 6), 24601/agent-deep-research (rank 19), affaan-m/deep-research (rank 21), alo-exp/silver-bullet/silver-deep-research (rank 2), anthony-maio/pieces-agent-skills (rank 29), arun-8687/gemini-deep-research (rank 46), baranwang/mcp-deep-research (rank 53), cam10001110101/ollama-deep-researcher (rank 39) (+63 more)
+Cohesion: 0.03
+Nodes (76): 199-biotechnologies/claude-deep-research-skill (rank 6), 24601/agent-deep-research (rank 19), affaan-m/deep-research (rank 21), alo-exp/silver-bullet/silver-deep-research (rank 2), anthony-maio/pieces-agent-skills (rank 29), arun-8687/gemini-deep-research (rank 46), baranwang/mcp-deep-research (rank 53), blessonism OpenClaw Search Skills (+68 more)
 
 ### Community 55 - "properties"
 Cohesion: 0.05
@@ -4011,13 +4001,13 @@ Nodes (21): rt_heartbeat_cadence_due(), rt_heartbeat_write(), heartbeat.sh scrip
 Cohesion: 0.05
 Nodes (45): additionalProperties, format, type, description, description, pattern, type, description (+37 more)
 
-### Community 60 - "silver:create-release"
-Cohesion: 0.17
-Nodes (12): Release Tag, Release Notes and GitHub Release, Release Notes, Pre-Release Quality Gate, CHANGELOG, GitHub Release, Release Management Gap, silver:create-release (+4 more)
+### Community 60 - "SDLC Gap Analysis"
+Cohesion: 0.04
+Nodes (54): Release Tag, Release Notes and GitHub Release, Release Notes, Design Plugin, Pre-Release Quality Gate, API Contract Design, API Contract Gap, CHANGELOG (+46 more)
 
 ### Community 61 - "enterprise-e2e-row-pass-registry.sh"
-Cohesion: 0.11
-Nodes (13): driver_alive(), log(), SB_E2E_INSTALL_FP, SB_E2E_LEDGER_FILE, poll-r8-resume-row14.sh script, reg_count(), registry-migrate-install.sh script, record_fail() (+5 more)
+Cohesion: 0.08
+Nodes (31): append_ledger(), fp(), log_line(), reg_count(), register_row(), row11_done(), row11_pass(), row3_done() (+23 more)
 
 ### Community 62 - "skill_md_retrieval_plan"
 Cohesion: 0.08
@@ -4037,23 +4027,23 @@ Nodes (51): DevOps Skill Router, awslabs:amazon-location-service, awslabs:aws-am
 
 ### Community 66 - "Silver Bullet Prior-Art & Adjacent-Landscape Research Report"
 Cohesion: 0.06
-Nodes (50): DeepSeek V4 Pro Research Output, Capella, Kimi K2.6 Research Output, Mimo V2.5 Pro Research Output, MiniMax M3 Research Output, Haystack, Aider, Airflow (+42 more)
+Nodes (52): DeepSeek V4 Pro Research Output, Capella, Kimi K2.6 Research Output, Mimo V2.5 Pro Research Output, MiniMax M3 Research Output, Haystack, Aider, Airflow (+44 more)
 
 ### Community 67 - "Followup GLM 5.2 Context Tools Feature Matrix"
-Cohesion: 0.06
-Nodes (41): OpenCode permission.task Glob, OpenCode, MCP-First Architecture, LeanCTX Addon Mode, recommended-tools.mdc, AST Read Compression, F1 glm-5.2-report.md, F2 consolidated.md (+33 more)
+Cohesion: 0.05
+Nodes (55): OpenCode permission.task Glob, OpenCode, PathJail, Pre-Model Injection Detection, Layer 1 Wire Foundation, MCP-First Architecture, PathJail Allowlist, Phase 1 Wire Foundation (+47 more)
 
 ### Community 68 - "SB Posture Audit Bundle"
 Cohesion: 0.07
-Nodes (51): feature/tri-codex-tc-03-20260706t023103z-tc-03 Branch, TC-03 Agent Brief, TC-03 Intent Seed, feature/tc03-posture-audit Branch, TC-03 Vision, Last graphify update Timestamp, Posture Audit Replay Script, Cold Replay Verification Script (+43 more)
+Nodes (49): feature/tri-codex-tc-03-20260706t023103z-tc-03 Branch, TC-03 Agent Brief, TC-03 Intent Seed, feature/tc03-posture-audit Branch, TC-03 Vision, Last graphify update Timestamp, Posture Audit Replay Script, Cold Replay Verification Script (+41 more)
 
 ### Community 69 - "skill_md_retrieval_plan"
 Cohesion: 0.08
 Nodes (28): load_catalog(), Any, Load catalog by stem (e.g. intent_classes). Prefers .json over .yaml., build_skill_md_raw_url(), enrich_github_search_hits(), naive_skill_md_raw_url(), parse_github_full_name(), Any (+20 more)
 
 ### Community 70 - "SENTINEL Security Audit Report"
-Cohesion: 0.03
-Nodes (81): alo-exp Silver Bullet Repository, Design Plugin, SENTINEL Security Audit Report, SENTINEL Audit Pass 2 Report, API Contract Design, API Contract Gap, CI/CD Setup, CI/CD Scaffolding Gap (+73 more)
+Cohesion: 0.06
+Nodes (47): alo-exp Silver Bullet Repository, SENTINEL Security Audit Report, SENTINEL Audit Pass 2 Report, Silver Bullet Orchestrated Dev Workflows Design Spec, Orchestrated Development Workflows, Product Management Plugin, Invocation-Based Enforcement Model, Engineering Plugin (+39 more)
 
 ### Community 71 - "logical_to_family"
 Cohesion: 0.05
@@ -4063,45 +4053,45 @@ Nodes (42): aliases, ocg-glm-5.2, sb-dr-glm-5.2, cursor_default_pool, claude-opu
 Cohesion: 0.08
 Nodes (28): load_catalog(), Any, Load catalog by stem (e.g. intent_classes). Prefers .json over .yaml., build_skill_md_raw_url(), enrich_github_search_hits(), naive_skill_md_raw_url(), parse_github_full_name(), Any (+20 more)
 
-### Community 73 - "UX and Product Design"
-Cohesion: 0.16
-Nodes (16): Opportunity Assessment, User Research and Problem Discovery, Implementation, Discovery Requirements and Product Definition, UX and Product Design, Planning and Work Management, Subagent 2 Process Areas and Workflows, NIST SSDF (+8 more)
+### Community 73 - "Kimi Research Scope"
+Cohesion: 0.05
+Nodes (49): Opportunity Assessment, User Research and Problem Discovery, CI Release and Deployment, Security Privacy Risk and Compliance, Reliability Operations and SRE, Observability and Production Feedback, Measurement DevEx and Continuous Improvement, Maintenance Evolution and Retirement (+41 more)
 
 ### Community 74 - "AF-AGENT-DELEGATE"
-Cohesion: 0.16
-Nodes (15): AF-AGENT-DELEGATE, Claude TUI Subagent Delegation Skill, Codex TUI Subagent Delegation Skill, Cursor Agent TUI Subagent Delegation Skill, APO Authoring Compliance Audit, FS-DELEGATE-BRIEF, FS-DELEGATE-LAUNCH, silver-agent-claude (+7 more)
+Cohesion: 0.07
+Nodes (30): AF-AGENT-DELEGATE, Claude TUI Subagent Delegation Skill, Codex TUI Subagent Delegation Skill, Cursor Agent TUI Subagent Delegation Skill, APO Authoring Compliance Audit, FS-DELEGATE-BRIEF, FS-DELEGATE-LAUNCH, silver-agent-claude (+22 more)
 
-### Community 75 - "Unified Process Catalog"
-Cohesion: 0.09
-Nodes (27): Agent Comparison, AI as Engineering Amplifier, Deprecated Software Delivery Practices, Leading-Edge Mainstream Practices, Minimum Standard Leading-Edge Maturity Tiers, Universal Software Delivery Core, Unified Process Catalog, AI-Assisted Coding Requires Governance and Quality Controls (+19 more)
+### Community 75 - "Process Area 18: AI-Assisted / Agentic Software Engineering"
+Cohesion: 0.05
+Nodes (48): Agent Comparison, AI as Engineering Amplifier, Deprecated Software Delivery Practices, Leading-Edge Mainstream Practices, Minimum Standard Leading-Edge Maturity Tiers, Universal Software Delivery Core, Unified Process Catalog, Agent-Run Incident Response (+40 more)
 
-### Community 76 - "Consolidated SDLC Process Architecture Report"
-Cohesion: 0.10
-Nodes (30): Human-in-the-Loop Approval, AI Governance, Consolidated SDLC Process Architecture Report, 18 Process Area Capability Model, GitHub Accenture Copilot Study, Google Engineering Practices, Google SRE Guidance, PA-01 Strategy, Portfolio and Product Direction (+22 more)
+### Community 76 - "Silver Bullet Major Issues Analysis"
+Cohesion: 0.08
+Nodes (27): GitHub CLI Dependency, SDLC Coverage, Silver Bullet State File, AI-Native SDLC Playbook, Branch-Scoped State Reset, compactPrompt Configuration, Defense-in-Depth Stack, Silver Bullet Enforcement Techniques Reference (+19 more)
 
 ### Community 77 - "Enterprise E2E Silver Bullet Issues"
 Cohesion: 0.05
 Nodes (58): Custom API Key Disclaimer, Codex Harness, Codex Installation Process, Codex Product Audit Methodology, Enterprise E2E Silver Bullet Issues, E2E-002 Context Recovery Used Compact, E2E-003 Residual Session State Errors, E2E-004 Stop Denials Actionable (+50 more)
 
 ### Community 78 - "Consolidated Landscape Report"
-Cohesion: 0.08
-Nodes (50): Catalog Flow Order, Workflow Composition, Factory.ai, Atomic Flow Catalog, Automated Review Loops, BMAD (rank 4, score 32), CC10x, Codex (+42 more)
+Cohesion: 0.07
+Nodes (55): Quality Gates and Standards, Anti-fatigue Protocol, Bibliography Requirements, Citation Verification, Superpowers Coding Workflow, Catalog Flow Order, Workflow Composition, Atomic Flow Catalog (+47 more)
 
-### Community 79 - "validation_block"
-Cohesion: 0.09
-Nodes (24): items, type, items, type, validation_block, verification_block, items, minItems (+16 more)
+### Community 79 - "$defs"
+Cohesion: 0.05
+Nodes (42): additionalProperties, items, type, additionalProperties, type, items, type, type (+34 more)
 
 ### Community 80 - "Observability-only change"
 Cohesion: 0.07
 Nodes (46): TC-02 Observability Intent Seed, Correlation ID Middleware Propagation, Observability-Only Scope, README On-Call Runbook, Request Correlation ID, README Observability Runbook, TC-02 agent brief, TC-02 intent seed (+38 more)
 
 ### Community 81 - "Refactor Workflow Documentation"
-Cohesion: 0.05
-Nodes (62): AF-BRANCH-FINISH atomic flow, AF-COMPLETION-AUDIT atomic flow, AF-DOCUMENT atomic flow, AF-EXECUTE atomic flow, AF-PHASE-MANAGE atomic flow, AF-PLAN atomic flow, AF-QUALITY-GATE atomic flow, AF-REVIEW atomic flow (+54 more)
+Cohesion: 0.07
+Nodes (51): AF-BRANCH-FINISH atomic flow, AF-COMPLETION-AUDIT atomic flow, AF-DOCUMENT atomic flow, AF-EXECUTE atomic flow, AF-PHASE-MANAGE atomic flow, AF-PLAN atomic flow, AF-QUALITY-GATE atomic flow, AF-REVIEW atomic flow (+43 more)
 
-### Community 82 - "Minimax M3 DR-RETRIEVE Evidence"
-Cohesion: 0.04
-Nodes (78): Category Pack, Spec Kit Constitution to Implement Phases, Superpowers Coding Workflow, Spec-Driven Constitution Plan and Tasks, GSD, GSD, Spec-driven and Context-engineering Workflows, BMAD (+70 more)
+### Community 82 - "Zuvo Solution Capability Report"
+Cohesion: 0.20
+Nodes (12): Category Pack, Zuvo Solution Capability Report, APO Market, BMAD, GSD, Oh My, Open Source License, Primary Repository License File (+4 more)
 
 ### Community 83 - "logical_to_family"
 Cohesion: 0.05
@@ -4117,7 +4107,7 @@ Nodes (42): aliases, ocg-glm-5.2, sb-dr-glm-5.2, cursor_default_pool, claude-opu
 
 ### Community 86 - "Design Reviewer Skill"
 Cohesion: 0.05
-Nodes (45): Server Implementation, Spec Skill, Review Context Skill, Decision Contradictions, Decisions Section, Discretion Context, Structured Findings Output, Review Cross Artifact Skill (+37 more)
+Nodes (44): Server Implementation, Spec Skill, Review Context Skill, Decision Contradictions, Decisions Section, Discretion Context, Structured Findings Output, Review Cross Artifact Skill (+36 more)
 
 ### Community 87 - "Parent / Worker Orchestrator Mode"
 Cohesion: 0.23
@@ -4132,8 +4122,8 @@ Cohesion: 0.05
 Nodes (10): append_pre_ship_quality_gates_marker(), assert_allowed(), assert_blocked(), emit_required_deploy_skills(), is_blocked(), SB_ENTERPRISE_HUMAN_DEPLOY_APPROVAL, seed_lifecycle_artifacts(), common.sh script (+2 more)
 
 ### Community 90 - "Enterprise E2E Effectiveness Plan"
-Cohesion: 0.10
-Nodes (28): Round 3 Ledger, MiMo V2.5 model, OpenCode CLI, opencode-go provider, opencode run, Pi CLI, pi -p invocation, Direct delegation fallback (+20 more)
+Cohesion: 0.09
+Nodes (35): Round 3 Ledger, Absolute Export Root, agentmemory Markdown Export, cost_minimized Profile, Graphify + agentmemory Optimization Digest, Git Bridge, agentmemory Gitignore Fix, Obsidian Export (+27 more)
 
 ### Community 91 - "ReportValidator"
 Cohesion: 0.06
@@ -4152,8 +4142,8 @@ Cohesion: 0.06
 Nodes (22): load_report_profile(), main(), Any, Path, Verify profile section labels appear for selected language., Chapter/section headings at ### level must be unique., Report metadata block required at tail., Flag overconfident forecast phrasing per profile. (+14 more)
 
 ### Community 95 - "codex/silver-multi-ai-task/scripts/live_dispatch.py"
-Cohesion: 0.19
-Nodes (25): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_output_is_failure(), _delegate_work_dir(), dispatch_agent(), dispatch_phase_parallel() (+17 more)
+Cohesion: 0.11
+Nodes (31): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for(), cursor_models_to_try(), cursor_output_is_failure() (+23 more)
 
 ### Community 96 - "skill-source/silver-multi-ai-task/scripts/multi_ai_core.py"
 Cohesion: 0.11
@@ -4171,9 +4161,9 @@ Nodes (22): load_report_profile(), main(), Any, Path, Verify profile section lab
 Cohesion: 0.06
 Nodes (21): common.sh script, ts_agentmemory_export_rel_path(), ts_agentmemory_health_url(), ts_agentmemory_usage_state_path(), ts_agentmemory_usage_ttl_seconds(), ts_effective_export_root(), ts_effective_graph_path(), ts_effective_health_url() (+13 more)
 
-### Community 100 - "skills/silver-multi-ai-task/scripts/multi_ai_core.py"
-Cohesion: 0.12
-Nodes (28): PoolResolutionTests, BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args(), Namespace (+20 more)
+### Community 100 - "Pi"
+Cohesion: 0.11
+Nodes (20): Claude Agent Tool Frontmatter, Claude Code Recursive Nesting Conflict, Cross-Model Conflicts — Subagent Nesting Research, nicobailon/pi-subagents, OpenCode Subagent Nesting Conflict, OpenCode permission.task Configuration, Pi Extension Subagents Conflict, OpenCode TaskAgentTools (+12 more)
 
 ### Community 101 - "ReportValidator"
 Cohesion: 0.06
@@ -4185,11 +4175,11 @@ Nodes (23): append_jsonl(), cmd_add(), cmd_export(), cmd_init(), cmd_list(), com
 
 ### Community 103 - "properties"
 Cohesion: 0.10
-Nodes (21): items, type, v_loop_rollup, type, type, items, type, child_v_loop_refs (+13 more)
+Nodes (21): items, type, items, type, v_loop_rollup, type, type, child_v_loop_refs (+13 more)
 
 ### Community 104 - "codex/silver-multi-ai-task/scripts/multi_ai_core.py"
-Cohesion: 0.11
-Nodes (29): PoolResolutionTests, Pool completeness hard-fail and resolution tests for DR live runner., BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args() (+21 more)
+Cohesion: 0.12
+Nodes (28): PoolResolutionTests, BudgetPolicy, PoolSelection, run_multi_ai_live(), stub_mode(), main(), parse_args(), Namespace (+20 more)
 
 ### Community 105 - "Multi-Model Deep Research Skill"
 Cohesion: 0.05
@@ -4220,8 +4210,8 @@ Cohesion: 0.12
 Nodes (22): assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
 
 ### Community 112 - "Decision Record — Canonical SDLC Process Architecture"
-Cohesion: 0.06
-Nodes (34): AI Integration, 7.2 Percent Delivery Stability Decrease per 25 Percent AI Adoption Increase, Research Plan, AWS Well-Architected Framework, Azure Well-Architected Framework, CNCF TAGs, COBIT, DORA State of DevOps Reports (+26 more)
+Cohesion: 0.05
+Nodes (42): AI Integration, 7.2 Percent Delivery Stability Decrease per 25 Percent AI Adoption Increase, DeepSeek Research Scope, AI-Assisted and Agentic Software Engineering, Developer Experience and SPACE Framework, DORA Metrics and Capabilities, NIST SSDF, Observability and SRE (+34 more)
 
 ### Community 113 - "orchestrator-scheduler.sh"
 Cohesion: 0.09
@@ -4245,7 +4235,7 @@ Nodes (38): additionalProperties, allOf, type, $id, attempt_id, DR-CRITIQUE, DR-
 
 ### Community 118 - "lib/core.sh"
 Cohesion: 0.06
-Nodes (31): enterprise_e2e_any_tool_enforced(), enterprise_e2e_apply_isolated_claude_runtime_paths(), enterprise_e2e_assert_matrix_log_mutable(), enterprise_e2e_assert_session0_or_skip(), enterprise_e2e_code_intel_preflight(), enterprise_e2e_commit_touches_api_currency(), enterprise_e2e_ensure_matrix_log(), enterprise_e2e_export_live_defaults() (+23 more)
+Nodes (14): enterprise_e2e_assert_matrix_log_mutable(), enterprise_e2e_assert_session0_or_skip(), enterprise_e2e_commit_touches_api_currency(), enterprise_e2e_ensure_matrix_log(), enterprise_e2e_fixture_assert_branch_lock(), enterprise_e2e_fixture_code_intel_opted_in(), enterprise_e2e_fixture_ensure_branch(), enterprise_e2e_fixture_is_git_repo() (+6 more)
 
 ### Community 119 - "properties"
 Cohesion: 0.05
@@ -4269,7 +4259,7 @@ Nodes (17): sb_leanctx_cli_available(), sb_leanctx_cli_path(), sb_leanctx_platfo
 
 ### Community 124 - "load_category_pack"
 Cohesion: 0.06
-Nodes (14): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., CategoryPackLoaderTests, CategoryPackSchemaTests, Unit tests for category market pack schema and loader. (+6 more)
+Nodes (13): category_packs_dir(), _deep_research_skill_root(), load_category_pack(), Path, Load a category pack JSON by stable pack id (filename without .json)., CategoryPackLoaderTests, CategoryPackSchemaTests, Unit tests for category market pack schema and loader. (+5 more)
 
 ### Community 125 - "lib/stack-compression-coordinator.sh"
 Cohesion: 0.08
@@ -4287,17 +4277,17 @@ Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run
 Cohesion: 0.12
 Nodes (22): assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
 
-### Community 129 - "SB Problem Map — Research Clusters → Mechanisms"
-Cohesion: 0.09
-Nodes (22): agentmemory Mechanism, DevOps Blast Radius, Context Degradation Cluster, Delivery Risk Cluster, DevOps Hazards Cluster, Knowledge Blindness Cluster, Quality Theater Cluster, Traceability Drift Cluster (+14 more)
+### Community 129 - "Top 50 Problems: AI Agents in Software Engineering & DevOps"
+Cohesion: 0.05
+Nodes (38): agentmemory Mechanism, DevOps Blast Radius, Context Degradation Cluster, Delivery Risk Cluster, DevOps Hazards Cluster, Knowledge Blindness Cluster, Process Bypass Cluster, Traceability Drift Cluster (+30 more)
 
 ### Community 130 - "License Research Report"
 Cohesion: 0.06
 Nodes (40): Heather Meeker, Artifex Software v. HashiCorp, Debian, Ethical-Use Restriction, Hippocratic License 3.0, License Legal Enforceability, Noncommercial-Purpose Ambiguity, OpenTofu (+32 more)
 
 ### Community 131 - "run_py"
-Cohesion: 0.08
-Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run_py(), seed_landscape_fixture(), TestCompareSolutions, TestMatrixOpenpyxl (+7 more)
+Cohesion: 0.10
+Nodes (12): _has_openpyxl(), _maybe_emit_fixture_xlsx(), run_py(), seed_landscape_fixture(), TestCompareSolutions, TestNeedProfileGate, TestPhaseGateShortlist, TestShortlist (+4 more)
 
 ### Community 132 - "install-cursor.sh"
 Cohesion: 0.09
@@ -4316,32 +4306,32 @@ Cohesion: 0.12
 Nodes (22): assert_file_free_of_compression_markers(), assert_no_compression_markers(), contains_compression_markers(), find_compression_marker_snippets(), Path, _check_catalog_audit_gates(), _collect_topn_slugs(), _critical_fill_rate() (+14 more)
 
 ### Community 136 - "run_py"
-Cohesion: 0.10
-Nodes (12): _has_openpyxl(), _maybe_emit_fixture_xlsx(), run_py(), seed_landscape_fixture(), TestCompareSolutions, TestNeedProfileGate, TestPhaseGateShortlist, TestShortlist (+4 more)
+Cohesion: 0.08
+Nodes (15): _has_openpyxl(), _maybe_emit_fixture_xlsx(), skipIf, skipUnless, run_py(), seed_landscape_fixture(), TestCompareSolutions, TestMatrixOpenpyxl (+7 more)
 
-### Community 137 - "Process Area 18: AI-Assisted / Agentic Software Engineering"
-Cohesion: 0.11
-Nodes (21): Agent-Run Incident Response, AI-Reviewed Pull Requests, WF-18.06 AI Observability and Incident Response, Platform Engineering, Security Engineering, Documentation Standards, Operations and Incident Response, Requirements Engineering (+13 more)
+### Community 137 - "/silver:validate Workflow"
+Cohesion: 0.13
+Nodes (19): BLOCK Finding, chrome.css, Chrome JavaScript, Help Common JavaScript, INFO Finding, Lucide 0.469.0, neutral-variants.css, PLAN.md (+11 more)
 
 ### Community 138 - "properties"
-Cohesion: 0.08
-Nodes (26): items, type, items, type, type, type, composition_tree, enforcement_queue (+18 more)
+Cohesion: 0.06
+Nodes (36): items, type, workflow, items, type, type, slug, type (+28 more)
 
 ### Community 139 - ".r9-pilot-rows-1-6-11-sequential.sh"
 Cohesion: 0.06
 Nodes (34): CLAUDE_CONFIG_DIR, CLAUDE_SETTINGS_FILE, .r9-pilot-row6-11.sh script, CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_TIMEOUT (+26 more)
 
 ### Community 140 - "e2e-live/helpers.sh"
-Cohesion: 0.04
-Nodes (48): assert_command_succeeds(), assert_file_absent(), assert_file_contains(), assert_file_contains_any(), assert_file_exists(), assert_file_not_contains(), assert_not_contains(), backup_session_state() (+40 more)
+Cohesion: 0.06
+Nodes (5): cleanup_workspace(), port_is_available(), restore_session_state(), helpers.sh script, start_app_server()
 
 ### Community 141 - "Critical Self-Review: multi-ai-task v2.0.0"
 Cohesion: 0.05
 Nodes (46): Critical Self-Review: multi-ai-task v2.0.0, Undefined Confidence Scoring, Qwen3 7 Max Self-Review, Extractor Model Failure Gap, Missing Machine-Readable Rule Catalog, Parallel Wall-Time Formula Defect, User-Invocable Contradiction, Audit trail (+38 more)
 
-### Community 142 - "$defs"
+### Community 142 - "id"
 Cohesion: 0.06
-Nodes (34): additionalProperties, additionalProperties, type, type, $defs, atomic_flow, composition_log, entity_id (+26 more)
+Nodes (33): additionalProperties, required, type, artifact, intent_ledger, process_pack, required, additionalProperties (+25 more)
 
 ### Community 143 - "graphify-am-global.sh"
 Cohesion: 0.11
@@ -4356,8 +4346,8 @@ Cohesion: 0.06
 Nodes (33): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_INTERACTIVE_TIMEOUT, CLAUDE_MODEL, CLAUDE_SETTINGS_FILE (+25 more)
 
 ### Community 146 - "enterprise-e2e-validation-overlay.sh"
-Cohesion: 0.19
-Nodes (23): enterprise-e2e-validation-overlay.sh script, validation_overlay_check_apo_catalog_counts(), validation_overlay_check_apo_invariants(), validation_overlay_check_claims_audit(), validation_overlay_check_evidence_gates_surface(), validation_overlay_check_help_catalog_sot(), validation_overlay_check_help_ship_readiness_page(), validation_overlay_check_help_tri_host() (+15 more)
+Cohesion: 0.13
+Nodes (25): enterprise_e2e_telemetry_append(), enterprise-e2e-token-telemetry.sh script, enterprise-e2e-validation-overlay.sh script, validation_overlay_check_apo_catalog_counts(), validation_overlay_check_apo_invariants(), validation_overlay_check_claims_audit(), validation_overlay_check_evidence_gates_surface(), validation_overlay_check_help_catalog_sot() (+17 more)
 
 ### Community 147 - "properties"
 Cohesion: 0.07
@@ -4405,11 +4395,11 @@ Nodes (31): _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_pay
 
 ### Community 158 - "properties"
 Cohesion: 0.09
-Nodes (22): type, description, minLength, type, minLength, type, minItems, type (+14 more)
+Nodes (22): type, description, minLength, type, minLength, type, primary, secondary (+14 more)
 
 ### Community 159 - "codex/silver-deep-research-multi-ai/scripts/landscape_preview_render.py"
-Cohesion: 0.15
-Nodes (35): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison(), _enrich_chart_data(), _find_landscape_markdown() (+27 more)
+Cohesion: 0.17
+Nodes (31): _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison(), _enrich_chart_data(), _find_landscape_markdown(), _inject_matrix_ui(), _inject_modern_theme() (+23 more)
 
 ### Community 160 - "SENTINEL Adversarial Audit Pass 2 Silver Bullet v0.8.0"
 Cohesion: 0.06
@@ -4444,12 +4434,12 @@ Cohesion: 0.16
 Nodes (17): Acceptance criteria, PR Traceability, artifact_review, Assumption Consolidation, .planning/DESIGN.md, Silver Feature Path, Spec Workflow Help Page, .planning/REQUIREMENTS.md (+9 more)
 
 ### Community 168 - "silver:doctor Skill"
-Cohesion: 0.08
-Nodes (36): agentmemory, silver:doctor Skill, Brownfield Documentation Reconciliation, Documentation Authority, silver:ensure-docs, Documentation Safety Rules, Documentation Scheme Recovery, Semantic Documentation Audit (+28 more)
+Cohesion: 0.07
+Nodes (42): agentmemory, silver:doctor Skill, Brownfield Documentation Reconciliation, Documentation Authority, silver:ensure-docs, Documentation Safety Rules, Documentation Scheme Recovery, Semantic Documentation Audit (+34 more)
 
 ### Community 169 - "skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py"
-Cohesion: 0.14
-Nodes (37): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), Remove compression marker lines and inline marker segments., sanitize_compression_markers(), _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison() (+29 more)
+Cohesion: 0.17
+Nodes (31): _audit_link_slugs(), _chart_slugs_from_data(), collect_landscape_payload(), _derive_vendors_from_comparison(), _enrich_chart_data(), _find_landscape_markdown(), _inject_matrix_ui(), _inject_modern_theme() (+23 more)
 
 ### Community 170 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4459,17 +4449,17 @@ Nodes (25): openpyxl_importable(), Shared optional-dependency probes for deep-re
 Cohesion: 0.07
 Nodes (36): GNU Affero General Public License, Anti-SaaS Hosted-Service Prohibition, Apache License 2.0, Attribution and Notice Requirements, Bright-Line Restriction, Business Source License 1.1, Claims JSONL, Separate Commercial License (+28 more)
 
-### Community 172 - "id"
-Cohesion: 0.06
-Nodes (33): type, items, minItems, type, enum, type, $ref, devops (+25 more)
+### Community 172 - "properties"
+Cohesion: 0.11
+Nodes (19): items, minItems, type, process, enum, type, devops, mixed (+11 more)
 
 ### Community 173 - "orchestrator-directive.sh"
 Cohesion: 0.08
 Nodes (16): sb_agent_delegation_activate(), sb_orchestrator_directive_from_pending_outcome(), sb_orchestrator_directive_write(), sb_orchestrator_directive_write_batch(), sb_orchestrator_ensure_worker_template_mapper(), sb_orchestrator_seed_delegation_directive(), sb_orchestrator_sync_directive_from_state(), orchestrator-directive.sh script (+8 more)
 
-### Community 174 - "classify_solutions"
-Cohesion: 0.26
-Nodes (5): classify_solutions(), Classify discovered candidates. Returns catalog audit dict., _envelopes(), Tests for pack-driven solution classifier., SolutionClassifierTests
+### Community 174 - "SolutionClassifierTests"
+Cohesion: 0.19
+Nodes (4): _envelopes(), PackSchemaTests, Tests for pack-driven solution classifier., SolutionClassifierTests
 
 ### Community 175 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4484,8 +4474,8 @@ Cohesion: 0.11
 Nodes (25): openpyxl_importable(), Shared optional-dependency probes for deep-research scripts., comparison_matrix_xlsx_filename(), comparison_matrix_xlsx_href(), comparison_matrix_xlsx_path(), default_spa_report_path(), priority_weight(), Any (+17 more)
 
 ### Community 178 - "matrix.sh"
-Cohesion: 0.07
-Nodes (31): CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_DELAY_MS, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_MODEL, CLAUDE_PERMISSION_MODE, enterprise_e2e_matrix_ensure_internal_gate_markers(), enterprise_e2e_matrix_seed_internal_gate_markers(), main() (+23 more)
+Cohesion: 0.08
+Nodes (35): codex-r3-force36-launch.sh script, score_row(), matrix-quiesce.sh script, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_DELAY_MS, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_MODEL, CLAUDE_PERMISSION_MODE (+27 more)
 
 ### Community 179 - "comparison_matrix_xlsx_path"
 Cohesion: 0.11
@@ -4500,16 +4490,16 @@ Cohesion: 0.07
 Nodes (34): Round 6 Resume Wait Checkpoint, Audit Security of Skill, Compare Skills, Find Skills, AgentSkill.sh Adapter, Claude Plugins Official Adapter, ClawHub Adapter, Cursor Directory Adapter (+26 more)
 
 ### Community 182 - "package_solution_outputs"
-Cohesion: 0.18
-Nodes (23): _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args(), Namespace (+15 more)
+Cohesion: 0.14
+Nodes (26): collect(), _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args() (+18 more)
 
 ### Community 183 - "search-cli"
 Cohesion: 0.06
 Nodes (34): Deep Research Capability Rubric, HTML Generation Guide, Adaptive Depth Control, Citation Intelligence, Deep Research Methodology, Graph-of-Thoughts Reasoning, Parallel Agent Deployment, Deep Research Requirements (+26 more)
 
 ### Community 184 - "codex/silver-deep-research-multi-ai/scripts/generate_spa_report.py"
-Cohesion: 0.14
-Nodes (28): collect(), collect_general(), collect_landscape(), generate_spa_report_file(), load_comparison(), load_consolidation(), load_envelopes(), _load_json() (+20 more)
+Cohesion: 0.17
+Nodes (25): collect_general(), collect_landscape(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt(), load_manifest() (+17 more)
 
 ### Community 185 - ".tui-monitor-batch-continuation.py"
 Cohesion: 0.13
@@ -4521,15 +4511,15 @@ Nodes (22): cursor_in_session_response_for_request(), respond_pending(), cursor-
 
 ### Community 187 - "Phase 38 Gitignore and Documentation Refresh Plan"
 Cohesion: 0.06
-Nodes (34): Commit 0b86dc6, Commit 4339060, Commit 6cb66c5, Commit e247ff3, CONS-01 Broken Skill References, CONS-02 Required Skill Schema Drift, DOC-02 Public Surface Refresh, gh run watch (+26 more)
+Nodes (35): Commit 0b86dc6, Commit 4339060, Commit 6cb66c5, Commit e247ff3, CONS-01 Broken Skill References, CONS-02 Required Skill Schema Drift, DOC-02 Public Surface Refresh, gh run watch (+27 more)
 
-### Community 188 - "jobs_to_be_done"
-Cohesion: 0.40
-Nodes (5): minLength, items, minItems, type, jobs_to_be_done
-
-### Community 189 - "required"
+### Community 188 - "required"
 Cohesion: 0.09
 Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
+
+### Community 189 - "required"
+Cohesion: 0.10
+Nodes (28): items, type, items, minItems, type, items, items, minItems (+20 more)
 
 ### Community 190 - "test-workflow-chain-guard.sh"
 Cohesion: 0.08
@@ -4556,8 +4546,8 @@ Cohesion: 0.10
 Nodes (19): env.sh script, SB_ROOT, invoke.sh script, usage(), agent_claude_apply_delegate_env(), agent_claude_apply_runtime_env(), agent_claude_ensure_plugin_cache(), agent_claude_prepare_lightweight_config_dir() (+11 more)
 
 ### Community 196 - "Stop Hook Audit"
-Cohesion: 0.06
-Nodes (33): Branch-Scoped Session State, Stop Hook Audit, Git Deployment Anchor, Phantom Required Skills, PostToolUse Write/Edit Event, Required Planning Floor, Silver Bullet Runtime State File, S-02 No Silver Bullet Configuration (+25 more)
+Cohesion: 0.11
+Nodes (20): Branch-Scoped Session State, Stop Hook Audit, Git Deployment Anchor, Phantom Required Skills, PostToolUse Write/Edit Event, Required Planning Floor, Silver Bullet Runtime State File, S-02 No Silver Bullet Configuration (+12 more)
 
 ### Community 197 - "Cursor Hooks"
 Cohesion: 0.05
@@ -4583,9 +4573,9 @@ Nodes (25): assert_file_free_of_compression_markers(), Path, _bootstrap(), defau
 Cohesion: 0.09
 Nodes (32): Tech Debt Plugin, Silver Bullet and Legacy GSD Compatibility, Silver Bullet Without GSD, Bugfix, Phase 051 Plan 02, Phase 051 Plan 02 Summary, silver-blast-radius Skill, silver-bugfix Skill (+24 more)
 
-### Community 203 - "properties"
-Cohesion: 0.06
-Nodes (31): type, enum, type, flow_step, additionalProperties, properties, type, const (+23 more)
+### Community 203 - "enum"
+Cohesion: 0.20
+Nodes (10): enum, type, classification, atomic-flow-implementation, deprecated, distribution-only, precomposed-workflow, process-router (+2 more)
 
 ### Community 204 - "Proactive Skill Discovery"
 Cohesion: 0.08
@@ -4612,24 +4602,24 @@ Cohesion: 0.07
 Nodes (27): CLAUDE_CONFIG_DIR, CLAUDE_INTERACTIVE_BYPASS_STRATEGY, CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_QUIET_TIMEOUT, CLAUDE_INTERACTIVE_READY_TIMEOUT, CLAUDE_INTERACTIVE_TIMEOUT, CLAUDE_MODEL, CLAUDE_SETTINGS_FILE (+19 more)
 
 ### Community 210 - "SB Tri-Criteria Live Validation Plan"
-Cohesion: 0.11
-Nodes (34): silver:orchestrator, Orchestrator Directive, Cursor Multi-Workflow Criteria, APO Dynamic Rules, SB Tri-Criteria E2E Design, Orchestrator Events JSONL, Parent Orchestrator Loop, Scheduler Composition Log (+26 more)
+Cohesion: 0.10
+Nodes (38): silver:orchestrator, Orchestrator Directive, Cursor Multi-Workflow Criteria, APO Dynamic Rules, SB Tri-Criteria E2E Design, Orchestrator Events JSONL, Parent Orchestrator Loop, Scheduler Composition Log (+30 more)
 
 ### Community 211 - "package_solution_outputs"
 Cohesion: 0.16
 Nodes (25): assert_file_free_of_compression_markers(), Path, _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs() (+17 more)
 
-### Community 212 - "jobs_to_be_done"
-Cohesion: 0.40
-Nodes (5): minLength, items, minItems, type, jobs_to_be_done
+### Community 212 - "required"
+Cohesion: 0.09
+Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
 
 ### Community 213 - "package_solution_outputs"
 Cohesion: 0.18
 Nodes (23): _bootstrap(), default_output_root(), load_parallel_phases(), main(), needs_solution_packaging(), _package_solution_outputs(), parse_args(), Namespace (+15 more)
 
 ### Community 214 - "Deep Research Skill"
-Cohesion: 0.07
-Nodes (35): Human Checkpoints, Human Checkpoint, Mutually Exclusive Conclusions, Provider Signup Checkpoint, User-Owned Decision, Standard Composition Chain, Adversarial Review Protocol, Red-Team Agent (+27 more)
+Cohesion: 0.08
+Nodes (31): Human Checkpoints, Human Checkpoint, Mutually Exclusive Conclusions, Provider Signup Checkpoint, User-Owned Decision, Adversarial Review Protocol, Red-Team Agent, Reviewer Agent (+23 more)
 
 ### Community 215 - "test-live-review-fix-ladder-full-ladder.sh"
 Cohesion: 0.12
@@ -4644,8 +4634,8 @@ Cohesion: 0.19
 Nodes (25): main(), Path, validate_structure(), artifact_satisfied(), _category_packs_dir(), check_category_pack_gate(), check_mode_complete(), check_need_profile_gate() (+17 more)
 
 ### Community 218 - "required"
-Cohesion: 0.05
-Nodes (45): required, required, workflow, required, required, id, slug, required (+37 more)
+Cohesion: 0.08
+Nodes (27): required, required, required, artifacts, atomic_flows, capability_class, catalog_version, execution (+19 more)
 
 ### Community 219 - "prompt-reminder.sh"
 Cohesion: 0.10
@@ -4663,9 +4653,9 @@ Nodes (31): Phase 054 Code Review Report, IN-01 Candidate Count Divergence, IN-0
 Cohesion: 0.07
 Nodes (26): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_BRANCH, SB_E2E_FROZEN_BASELINE_SHA, SB_E2E_FROZEN_RESCORE_LOG, SB_E2E_LEDGER_FILE, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE (+18 more)
 
-### Community 223 - "test-outcome-assessment.sh script"
-Cohesion: 0.11
-Nodes (18): codex-r3-force36-launch.sh script, score_row(), SB_E2E_ENTERPRISE_MATRIX, SB_E2E_LEDGER_FILE, SB_E2E_MATRIX_GRAPHIFY_REF, SB_TEST_ENTERPRISE_APP_ROOT, .cursor3-process-row.sh script, enterprise_e2e_outcome_assess_session() (+10 more)
+### Community 223 - ".cursor3-process-row.sh"
+Cohesion: 0.29
+Nodes (6): SB_E2E_ENTERPRISE_MATRIX, SB_E2E_LEDGER_FILE, SB_E2E_MATRIX_GRAPHIFY_REF, SB_TEST_ENTERPRISE_APP_ROOT, .cursor3-process-row.sh script, enterprise_e2e_outcome_assess_session()
 
 ### Community 224 - "Terms of Use"
 Cohesion: 0.07
@@ -4692,20 +4682,20 @@ Cohesion: 0.07
 Nodes (30): Tech Stack Detection Reference, Silver Init Phase 2.3 Stack Detection, Dart Flutter Stack, .NET C# Stack, Elixir Stack, Go Stack, Tech Stack Detection, Java Gradle Stack (+22 more)
 
 ### Community 230 - "Silver Init Skill"
-Cohesion: 0.08
-Nodes (32): GitHub CLI, Host Hooks Manifest, Host Runtime Install, Context Mode Dependency Flow, Version Freshness Check, Project Management Configuration, Phase 3 Scaffold, Project Instruction File (+24 more)
+Cohesion: 0.09
+Nodes (30): Host Hooks Manifest, Host Runtime Install, Context Mode Dependency Flow, Version Freshness Check, Phase 3 Scaffold, Project Instruction File, Silver Bullet Configuration, Silver Bullet Latest Release API (+22 more)
 
 ### Community 231 - "SENTINEL Audit Report: Silver Bullet v0.8.0"
 Cohesion: 0.11
 Nodes (30): Claude additionalContext Output, SENTINEL Audit Report: Silver Bullet v0.8.0, CLAUDE_PLUGIN_ROOT Environment Variable, Deployment Recommendation: Deploy With Mitigations, FC-10-A Devops Workflow Consistency Gap, FC-10-B Unvalidated Mode File, FC-1-A Raw File Content Injection, FC-1-B Unvalidated Mode From Command String (+22 more)
 
 ### Community 232 - "Goose"
-Cohesion: 0.07
-Nodes (30): Agent Client Protocol, Goose ACP Client, Goose ACP Server, Agentic AI Foundation, Amp, Anthropic, API, Azure (+22 more)
+Cohesion: 0.08
+Nodes (24): Agent Client Protocol, Goose ACP Server, Agentic AI Foundation, Anthropic, API, Azure, Bedrock, Block (+16 more)
 
 ### Community 233 - "skills/silver-multi-ai-task/scripts/live_dispatch.py"
-Cohesion: 0.11
-Nodes (31): build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for(), cursor_models_to_try(), cursor_output_is_failure() (+23 more)
+Cohesion: 0.06
+Nodes (59): PoolResolutionTests, sha256_json(), build_envelope(), cursor_allow_model_fallback(), cursor_attempt_succeeded(), cursor_failure_transient(), cursor_last_resort_model(), cursor_model_for() (+51 more)
 
 ### Community 234 - "test-e2e-live-full-surface-journey.sh"
 Cohesion: 0.12
@@ -4719,9 +4709,9 @@ Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), bu
 Cohesion: 0.20
 Nodes (12): load_phases_config(), main(), Any, Enum, Path, Phase instruction scaffold — not a runtime orchestrator., Nine DR phases aligned with SKILL.md DR-* steps., ResearchEngine (+4 more)
 
-### Community 237 - "properties"
-Cohesion: 0.07
-Nodes (27): additionalProperties, type, properties, type, artifact, evidence_record, additionalProperties, properties (+19 more)
+### Community 237 - "id"
+Cohesion: 0.08
+Nodes (26): type, properties, evidence_record, additionalProperties, properties, type, $ref, type (+18 more)
 
 ### Community 238 - "PA-11.1 Continuous Integration Pipeline"
 Cohesion: 0.07
@@ -4737,7 +4727,7 @@ Nodes (19): sb_agent_delegation_deactivate(), sb_agent_delegation_guard_disabled
 
 ### Community 241 - "Provenance Ledger"
 Cohesion: 0.09
-Nodes (34): Provenance Ledger, Admiralty Grading, Explicit Non-dependencies, Milestone 1 Core Contract, Milestone 2 Retrieval, Milestone 3 Reporting, Milestone 4 Evaluation, Refresh Protocol (+26 more)
+Nodes (33): Provenance Ledger, Admiralty Grading, Explicit Non-dependencies, Milestone 1 Core Contract, Milestone 2 Retrieval, Milestone 3 Reporting, Milestone 4 Evaluation, Refresh Protocol (+25 more)
 
 ### Community 242 - "ResearchEngine"
 Cohesion: 0.20
@@ -4776,16 +4766,16 @@ Cohesion: 0.08
 Nodes (24): For /graphify add and --watch, For /graphify query, For the commit hook and native CLAUDE.md integration, For --update and --cluster-only, /graphify, Honesty Rules, Interpreter guard for subcommands, Part A - Structural extraction for code files (+16 more)
 
 ### Community 251 - "Tenant-Scoped Waitlist API"
-Cohesion: 0.17
-Nodes (28): feature/tri-codex-tc-01-20260706t021645z-tc-01 Branch, TC-01 Agent Brief, feature/tc01-waitlist-saas Branch, TC-01 Vision, Minimal API-Wired Landing Page, TC-01 Agent Brief 20260706T023311Z, TC-01 Vision 20260706T023311Z, Canary Deploy Checklist (+20 more)
+Cohesion: 0.15
+Nodes (31): feature/tri-codex-tc-01-20260706t021645z-tc-01 Branch, TC-01 Agent Brief, feature/tc01-waitlist-saas Branch, TC-01 Vision, FEATURE DEVOPS RELEASE Workflow Chain, Minimal API-Wired Landing Page, TC-01 Agent Brief 20260706T023311Z, TC-01 Vision 20260706T023311Z (+23 more)
 
 ### Community 252 - "Fix Application Contract"
 Cohesion: 0.11
 Nodes (28): Check Mode Behavior, Reviewer Interface Contract, Finding Structure, Reviewer Input Contract, Reviewer Output Contract, Reviewer Read-Only Prohibition, SB Artifact Reviewer, commit_review_trail (+20 more)
 
 ### Community 253 - "type"
-Cohesion: 0.07
-Nodes (35): items, type, items, type, properties, type, $ref, type (+27 more)
+Cohesion: 0.04
+Nodes (56): items, type, items, type, properties, type, type, flow_step (+48 more)
 
 ### Community 254 - "properties"
 Cohesion: 0.08
@@ -4804,8 +4794,8 @@ Cohesion: 0.08
 Nodes (28): Cache Integrity, Command Injection, Identity Spoofing, Intentional Bypass, Markdown Injection, Overall Risk Low-Medium, Path Confusion, Path Traversal (+20 more)
 
 ### Community 258 - "OCG Qwen3 7 Max Self-Review"
-Cohesion: 0.08
-Nodes (25): Critical Self-Review of multi-ai-task Skill Round 5, Self-assessment rubric mismatch, OCG Minimax M3 Multi-AI Self-Review, Confidence Assessment, OCG Qwen3 7 Max Self-Review, Enforcement Gap, Fact-Check Example, Research Prior-Art Run (+17 more)
+Cohesion: 0.10
+Nodes (21): Critical Self-Review of multi-ai-task Skill Round 5, Self-assessment rubric mismatch, OCG Minimax M3 Multi-AI Self-Review, OCG Qwen3 7 Max Self-Review, Verifier Call, Consolidated Record Type Gap, Cross-source verification, Default Model Discovery Algorithm (+13 more)
 
 ### Community 259 - "recommended-tools/common.sh"
 Cohesion: 0.10
@@ -4880,8 +4870,8 @@ Cohesion: 0.26
 Nodes (22): ensure_context_mode_cli(), log(), optimize_context_mode_claude(), optimize_context_mode_codex(), optimize_context_mode_cursor(), optimize_context_mode_goose(), optimize_context_mode_hermes(), optimize_context_mode_opencode() (+14 more)
 
 ### Community 277 - "run_dr_live"
-Cohesion: 0.19
-Nodes (16): build_multi_phase_result_index(), build_phase_query(), build_run_manifest(), deterministic_work_item_id(), Any, Path, PoolSelection, Hard-fail when any resolved-pool agent lacks an envelope for any phase. (+8 more)
+Cohesion: 0.10
+Nodes (29): Load pack from need_profile; return None when category_pack_id absent., resolve_pack_from_need(), consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index() (+21 more)
 
 ### Community 278 - "run_cm"
 Cohesion: 0.11
@@ -4944,8 +4934,8 @@ Cohesion: 0.12
 Nodes (11): sb_graphify_platform_artifact_present(), sb_graphify_required(), sb_recommended_tool_config_string(), sb_recommended_tool_consent_prompt_block(), sb_recommended_tool_enforced(), sb_recommended_tool_enforcement_suspended(), sb_recommended_tool_install_failure_reason(), sb_recommended_tool_install_status() (+3 more)
 
 ### Community 293 - "properties"
-Cohesion: 0.10
-Nodes (22): type, type, type, minLength, type, properties, type, adjacent_class (+14 more)
+Cohesion: 0.11
+Nodes (20): type, type, type, minLength, type, properties, adjacent_class, exclusion_class (+12 more)
 
 ### Community 294 - "properties"
 Cohesion: 0.09
@@ -4961,7 +4951,7 @@ Nodes (20): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, CLAUDE_INTERACTIVE_TIMEO
 
 ### Community 297 - "properties"
 Cohesion: 0.09
-Nodes (22): type, description, minLength, type, minLength, type, minItems, type (+14 more)
+Nodes (22): type, description, minLength, type, minLength, type, primary, secondary (+14 more)
 
 ### Community 298 - "HTMLVerifier"
 Cohesion: 0.13
@@ -4988,8 +4978,8 @@ Cohesion: 0.14
 Nodes (16): batch_alive(), CLAUDE_INTERACTIVE_QUIET_TIMEOUT, log(), matrix_done(), monitor_alive(), run_final_gates(), SB_E2E_LEDGER_FILE, SB_E2E_MATRIX_LOG (+8 more)
 
 ### Community 304 - "properties"
-Cohesion: 0.11
-Nodes (20): type, type, type, minLength, type, properties, adjacent_class, exclusion_class (+12 more)
+Cohesion: 0.10
+Nodes (22): type, type, type, minLength, type, properties, type, adjacent_class (+14 more)
 
 ### Community 305 - "properties"
 Cohesion: 0.09
@@ -5008,12 +4998,12 @@ Cohesion: 0.09
 Nodes (25): 199 Biotechnologies Claude Deep Research Skill, Blessonism OpenClaw Search Skills, Deep Research Skills Landscape, Hoolulu Deep Research, Deep Research Skills Landscape Critique, Deep Research Skills Landscape Decision Record, Deep Research Skills Feature Matrix, Feature Matrix Ranking (+17 more)
 
 ### Community 309 - "skills/silver-multi-ai-task/scripts/cursor_host_adapter.py"
-Cohesion: 0.18
-Nodes (11): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+3 more)
+Cohesion: 0.12
+Nodes (23): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+15 more)
 
 ### Community 310 - "test-stop-check.sh"
-Cohesion: 0.14
-Nodes (22): add_contract_required_key(), assert_blocks(), assert_contains(), assert_decoded_message_real_newlines(), assert_empty(), assert_passes(), assert_skillnorm_rc(), is_blocked() (+14 more)
+Cohesion: 0.08
+Nodes (32): sb_e2e_matrix_clear_routing_row_marker(), sb_e2e_matrix_routing_row_active(), sb_e2e_matrix_set_routing_row_marker(), e2e-matrix-routing.sh script, add_contract_required_key(), assert_blocks(), assert_contains(), assert_decoded_message_real_newlines() (+24 more)
 
 ### Community 311 - "Research Report Markdown Template"
 Cohesion: 0.12
@@ -5039,9 +5029,9 @@ Nodes (25): AGENTS.md, Cursor Rules Documentation, RTK Allow-List, Cursor cli-co
 Cohesion: 0.14
 Nodes (11): CitationVerifier, main(), Path, Verify DOI exists and get metadata. Returns (success, metadata_dict), Verify URL is accessible (2025 CiteGuard enhancement). Returns (accessible,…, Detect common LLM hallucination patterns in citations (2025 CiteGuard). Returns…, Simple title similarity check (word overlap). Returns score 0.0-1.0, Verify a single bibliography entry (Enhanced 2025 with CiteGuard) (+3 more)
 
-### Community 317 - "PA-16 (Referenced Process Area)"
-Cohesion: 0.16
-Nodes (15): CI/CD Pipelines, Developer Surveys, Flow Metrics, PA-16 (Referenced Process Area), Team OKRs, Engineering Telemetry, Version Control and Branching, WF-16.01 DORA Metrics Collection (+7 more)
+### Community 317 - "PA-11 CI Release"
+Cohesion: 0.09
+Nodes (25): CI/CD Pipelines, Developer Surveys, Flow Metrics, PA-11 CI Release, PA-16 (Referenced Process Area), Team OKRs, Engineering Telemetry, Version Control and Branching (+17 more)
 
 ### Community 318 - "properties"
 Cohesion: 0.10
@@ -5051,17 +5041,17 @@ Nodes (21): type, format, type, minimum, type, type, properties, type (+13 more)
 Cohesion: 0.10
 Nodes (21): properties, type, minimum, type, minimum, type, null, string (+13 more)
 
-### Community 320 - "Core Concepts Help Page"
+### Community 320 - "Silver Bullet Benefits Over Plain GSD"
 Cohesion: 0.03
-Nodes (89): Orchestrator Worker Templates, workflow, enum, enum, Composable Flows Contract Reference, APO Catalog, Generate APO Artifacts Script, Local V-Loop (+81 more)
+Nodes (89): workflow, enum, enum, Composable Flows Contract Reference, APO Catalog, Generate APO Artifacts Script, Local V-Loop, Workflow Composition Tree (+81 more)
 
 ### Community 321 - "silver:multi-ai-task/scripts/cursor_host_adapter.py"
 Cohesion: 0.18
 Nodes (12): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+4 more)
 
 ### Community 322 - "Deep Research Mode"
-Cohesion: 0.18
-Nodes (22): critique.md, decision-record.md, Deep Research Mode, DR-CRITIQUE Adversarial Review Phase, DR-OUTLINE Outline and Refine Phase, DR-PACKAGE Package Phase, DR-PLAN Plan Phase, DR-RETRIEVE Retrieve Phase (+14 more)
+Cohesion: 0.16
+Nodes (25): critique.md, decision-record.md, Deep Research Mode, DR-CRITIQUE Adversarial Review Phase, DR-OUTLINE Outline and Refine Phase, DR-PACKAGE Package Phase, DR-PLAN Plan Phase, DR-REFINE Verify and Refresh Phase (+17 more)
 
 ### Community 323 - "lib/context-mode-gate.sh"
 Cohesion: 0.13
@@ -5075,9 +5065,9 @@ Nodes (10): sb_graphify_cli_available(), sb_graphify_cli_path(), sb_graphify_com
 Cohesion: 0.11
 Nodes (24): Round 1 Ledger, Round 2 Ledger, Round 5 Gates, Round 5 Ledger, Round 6 Gates, Round 6 Ledger, Round 6 Operational Addendum, Round 6 Outcomes (+16 more)
 
-### Community 326 - "Silver Bullet Major Issues Analysis"
-Cohesion: 0.03
-Nodes (75): DevOps Quality Gates, record-skill Marker Writer, Usability Dimension, Ranked Hypothesis List, Systematic Debugging, Blast Radius, Systematic debugging, DevOps Cycle Workflow (+67 more)
+### Community 326 - "DevOps Quality Gates"
+Cohesion: 0.04
+Nodes (72): DevOps Quality Gates, record-skill Marker Writer, Usability Dimension, Ranked Hypothesis List, Systematic Debugging, Blast Radius, Systematic debugging, DevOps Cycle Workflow (+64 more)
 
 ### Community 327 - "Deep Research Methodology"
 Cohesion: 0.12
@@ -5088,8 +5078,8 @@ Cohesion: 0.16
 Nodes (15): sb_orchestrator_event_append(), sb_orchestrator_event_apply_resume_checkpoint(), sb_orchestrator_event_record_advance(), sb_orchestrator_event_record_dispatch(), sb_orchestrator_event_record_retry(), sb_orchestrator_event_record_stop_block(), sb_orchestrator_saga_begin(), sb_orchestrator_saga_complete() (+7 more)
 
 ### Community 329 - "test-kay-codex-isolation.sh"
-Cohesion: 0.17
-Nodes (15): teardown_kay_codex_isolation(), assert_command_succeeds(), assert_contains(), assert_eq(), assert_file_contains(), assert_file_exists(), assert_file_not_contains(), assert_file_unchanged() (+7 more)
+Cohesion: 0.18
+Nodes (14): assert_command_succeeds(), assert_contains(), assert_eq(), assert_file_contains(), assert_file_exists(), assert_file_not_contains(), assert_file_unchanged(), CODEX_BIN (+6 more)
 
 ### Community 330 - "lib/token-compression-tools-gate.sh"
 Cohesion: 0.13
@@ -5120,8 +5110,8 @@ Cohesion: 0.10
 Nodes (21): properties, type, minimum, type, minimum, type, null, string (+13 more)
 
 ### Community 337 - "codex/silver-multi-ai-task/scripts/cursor_host_adapter.py"
-Cohesion: 0.17
-Nodes (12): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+4 more)
+Cohesion: 0.18
+Nodes (11): cancel(), cas_select_authoritative_attempt(), launch(), _launch_echo(), LaunchRequest, live_status(), main(), Any (+3 more)
 
 ### Community 338 - "codex-r8-force16-only-driver.sh"
 Cohesion: 0.10
@@ -5140,16 +5130,16 @@ Cohesion: 0.10
 Nodes (21): type, properties, artifact_paths, query, report_dir, run_id, schema_id, spine (+13 more)
 
 ### Community 342 - "properties"
-Cohesion: 0.12
-Nodes (16): minLength, type, type, minLength, type, type, type, properties (+8 more)
+Cohesion: 0.10
+Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
 
 ### Community 343 - "ChainTracker"
 Cohesion: 0.19
 Nodes (10): ChainTracker, extract_links(), load_or_create(), main(), normalize_domain(), Any, Path, save_tracker() (+2 more)
 
-### Community 344 - "Strangler Fig Modernization"
-Cohesion: 0.17
-Nodes (12): Archived Documentation, Data Migration Plan, Data Retention Requirements, Feature Flag System, Legacy System, Modernization Target Architecture, Modernized Components, Replacement System (+4 more)
+### Community 344 - "Golden Path Engineering"
+Cohesion: 0.05
+Nodes (48): WF-17.04 Technical Debt Backlog and Reduction, Postmortem Action Items, Adoption Metrics, AI Coding Assistant, Archived Documentation, Compliance Requirements, Data Migration Plan, Data Retention Requirements (+40 more)
 
 ### Community 345 - "PA-18.4 Agentic Engineering Task"
 Cohesion: 0.10
@@ -5176,8 +5166,8 @@ Cohesion: 0.17
 Nodes (5): PoolResolutionTests, Pool completeness hard-fail and resolution tests for DR live runner., PoolSelection, MultiAiContractTests, Contract tests for multi-ai-task-v2 primitive.
 
 ### Community 351 - "Category Market Packs README"
-Cohesion: 0.12
-Nodes (16): Agentic SDLC Process Orchestrator Pack, Category Market Packs README, APO Category Pack, Category Market Pack Contract, Category Pack JSON File, category_pack.py, Need Profile Category Pack Overrides, category_pack.resolve_pack_from_need_profile (+8 more)
+Cohesion: 0.09
+Nodes (23): Agentic SDLC Process Orchestrator Pack, Category Market Packs README, APO Category Pack, Category Market Pack Contract, Category Pack JSON File, category_pack.py, Need Profile Category Pack Overrides, CATEGORY_PACK Prompt Block (+15 more)
 
 ### Community 352 - "merge-leanctx-mcp-config.py"
 Cohesion: 0.28
@@ -5192,12 +5182,12 @@ Cohesion: 0.10
 Nodes (21): type, properties, artifact_paths, query, report_dir, run_id, schema_id, spine (+13 more)
 
 ### Community 355 - "properties"
-Cohesion: 0.10
-Nodes (20): description, pattern, type, minItems, type, minItems, type, type (+12 more)
+Cohesion: 0.12
+Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
 
 ### Community 356 - "properties"
-Cohesion: 0.12
-Nodes (16): minLength, type, type, minLength, type, type, type, properties (+8 more)
+Cohesion: 0.10
+Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
 
 ### Community 357 - "Graphify and agentmemory Goose Verification"
 Cohesion: 0.11
@@ -5256,8 +5246,8 @@ Cohesion: 0.16
 Nodes (16): sb_dqg_pre_ship_marker_recorded(), sb_dqg_preplan_marker_recorded(), sb_qg_artifact_has_body(), sb_qg_detect_mode(), sb_qg_pre_ship_marker_recorded(), sb_qg_preplan_marker_recorded(), sb_qg_repo_requires_pre_ship_marker(), sb_qg_state_has_marker() (+8 more)
 
 ### Community 371 - "run_dr_live"
-Cohesion: 0.16
-Nodes (20): consolidate(), main(), normalize_claim(), Any, validate_inputs(), build_multi_phase_result_index(), build_phase_query(), build_run_manifest() (+12 more)
+Cohesion: 0.19
+Nodes (16): build_multi_phase_result_index(), build_phase_query(), build_run_manifest(), deterministic_work_item_id(), Any, Path, PoolSelection, Hard-fail when any resolved-pool agent lacks an envelope for any phase. (+8 more)
 
 ### Community 372 - "scripts/semantic-compress.sh"
 Cohesion: 0.12
@@ -5285,11 +5275,11 @@ Nodes (22): Automatic Host Detection, Codex, Context Mode Sandbox, Cursor, RTK +
 
 ### Community 378 - "/silver:deep-research workflow page"
 Cohesion: 0.09
-Nodes (31): Need Profile Interview, /silver:content workflow page, /silver:deep-research workflow page, capability_score, chain_tracker, compare_solutions.py, comparison-report.md, competitive-intelligence-report.md (+23 more)
+Nodes (31): /silver:content workflow page, /silver:deep-research workflow page, capability_score, chain_tracker, compare_solutions.py, comparison-report.md, competitive-intelligence-report.md, decision-record.md (+23 more)
 
 ### Community 379 - "Deep Research Capability Rubric"
-Cohesion: 0.08
-Nodes (28): User Intent Ledger, V-Loop Rollup, Adversarial Review, Citation and Evidence, Composability, Human in the Loop, Multilingual Support, Phases and Modes (+20 more)
+Cohesion: 0.10
+Nodes (22): Adversarial Review, Citation and Evidence, Composability, Human in the Loop, Multilingual Support, Phases and Modes, Portability, Report Formats (+14 more)
 
 ### Community 380 - "$ref"
 Cohesion: 0.10
@@ -5349,7 +5339,7 @@ Nodes (19): build_display_number_to_source_id(), canonicalize_locator(), cmd_rep
 
 ### Community 394 - "skill-source/silver-deep-research/tests/test_verify_claim_support.py"
 Cohesion: 0.14
-Nodes (9): Mixed claim types with different thresholds., Evidence with partial overlap should result in partial status., Run verify_claim_support.py., Claims without evidence should be unsupported., run_vcs(), TestVerifyMixed, TestVerifyPartial, TestVerifyUnsupported (+1 more)
+Nodes (9): Evidence with partial overlap should result in partial status., Run verify_claim_support.py., Claims with matching evidence should be supported., Claims without evidence should be unsupported., run_vcs(), TestVerifyPartial, TestVerifySupported, TestVerifyUnsupported (+1 more)
 
 ### Community 395 - "properties"
 Cohesion: 0.10
@@ -5404,16 +5394,16 @@ Cohesion: 0.10
 Nodes (20): pattern, type, type, properties, input_hash, output_schema_ref, run_id, schema_id (+12 more)
 
 ### Community 408 - "Review Loop Algorithm"
-Cohesion: 0.10
-Nodes (21): Clear Review State, Display All Findings, Emit Review Metric, Invoke Reviewer, Load Review State, Record Review Round, Resolve Review Depth, Review Loop Algorithm (+13 more)
+Cohesion: 0.08
+Nodes (26): Clear Review State, Display All Findings, Emit Review Metric, Invoke Reviewer, Load Review State, Record Review Round, Resolve Review Depth, Review Loop Algorithm (+18 more)
 
 ### Community 409 - "silver:deep-research-multi-ai/scripts/generate_spa_report.py"
 Cohesion: 0.16
 Nodes (27): collect_general(), collect_landscape(), generate_spa_report_file(), load_comparison(), load_consolidation(), load_envelopes(), _load_json(), load_landscape_excerpt() (+19 more)
 
 ### Community 410 - "required"
-Cohesion: 0.10
-Nodes (22): market_entry, adjacent_classes, category_id, chart_eligible, core_seeds, definition, display_name, exclusion_classes (+14 more)
+Cohesion: 0.11
+Nodes (19): adjacent_classes, category_id, chart_eligible, core_seeds, definition, display_name, exclusion_classes, feature_axes (+11 more)
 
 ### Community 411 - "type"
 Cohesion: 0.11
@@ -5455,9 +5445,9 @@ Nodes (19): type, type, type, properties, type, type, pattern, type (+11 more)
 Cohesion: 0.14
 Nodes (18): FAILURES, GITHUB_REPOSITORY, log(), RTK_DISABLED, run_check(), run_check_allow_fail(), run_skip(), SB_E2E_LEDGER_FILE (+10 more)
 
-### Community 421 - "enterprise-e2e-live-common.sh"
-Cohesion: 0.06
-Nodes (28): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+20 more)
+### Community 421 - "codex-r2-force1516-driver.sh"
+Cohesion: 0.11
+Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+10 more)
 
 ### Community 422 - "codex-r2-matrix-driver.sh"
 Cohesion: 0.11
@@ -5467,9 +5457,9 @@ Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB
 Cohesion: 0.10
 Nodes (21): Silver Ingest Workflow Help Page, ARTIFACT MISSING Block, Two Consecutive Clean Artifact Review Passes, Confluence Source, Cross-Repository Specification, Figma Source, User-Selected Figma Target Frames, Google Docs Source (+13 more)
 
-### Community 424 - "codex-r2-tierb-smoke-driver.sh"
-Cohesion: 0.11
-Nodes (18): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+10 more)
+### Community 424 - "enterprise-e2e-live-common.sh"
+Cohesion: 0.06
+Nodes (28): CODEX_INTERACTIVE_IDLE_TIMEOUT, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+20 more)
 
 ### Community 425 - "codex-r8-force1516-driver.sh"
 Cohesion: 0.11
@@ -5488,8 +5478,8 @@ Cohesion: 0.13
 Nodes (18): CLAUDE_INTERACTIVE_TIMEOUT, CURSOR_AGENT_MODEL, CURSOR_MODEL, log(), mark_done(), phase_done(), RTK_DISABLED, run_outcome_assessment_with_retry() (+10 more)
 
 ### Community 429 - "Router Subagent Surfaces Plan"
-Cohesion: 0.14
-Nodes (20): A-loop, Doctor Diagnostics, Router Subagent Surfaces Plan, I-loop, Iterate Ladder, Knowledge and Learnings Gates, Levels 0–3 Defect Recovery, Migration Barrier (+12 more)
+Cohesion: 0.19
+Nodes (16): A-loop, Doctor Diagnostics, Router Subagent Surfaces Plan, I-loop, Iterate Ladder, Knowledge and Learnings Gates, Levels 0–3 Defect Recovery, Migration Barrier (+8 more)
 
 ### Community 430 - "r8-resume-row14-kill-batch.sh"
 Cohesion: 0.13
@@ -5500,12 +5490,12 @@ Cohesion: 0.11
 Nodes (18): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MAIN_REPO, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG (+10 more)
 
 ### Community 432 - "required"
-Cohesion: 0.10
-Nodes (22): market_entry, adjacent_classes, category_id, chart_eligible, core_seeds, definition, display_name, exclusion_classes (+14 more)
+Cohesion: 0.11
+Nodes (19): adjacent_classes, category_id, chart_eligible, core_seeds, definition, display_name, exclusion_classes, feature_axes (+11 more)
 
 ### Community 433 - "type"
-Cohesion: 0.12
-Nodes (16): items, type, items, type, items, type, type, items (+8 more)
+Cohesion: 0.11
+Nodes (19): items, type, items, type, items, type, type, items (+11 more)
 
 ### Community 434 - "properties"
 Cohesion: 0.11
@@ -5520,8 +5510,8 @@ Cohesion: 0.15
 Nodes (10): csba_collect_managed_agents(), csba_default_config_json(), csba_expected_names(), csba_file_has_managed_marker(), csba_load_merged_config(), csba_names_match(), common.sh script, emit_json() (+2 more)
 
 ### Community 437 - "type"
-Cohesion: 0.12
-Nodes (16): items, type, items, type, items, type, type, items (+8 more)
+Cohesion: 0.11
+Nodes (19): items, type, items, type, items, type, type, items (+11 more)
 
 ### Community 438 - "Documentation Scheme"
 Cohesion: 0.10
@@ -5532,8 +5522,8 @@ Cohesion: 0.11
 Nodes (19): items, minItems, type, type, description, items, type, type (+11 more)
 
 ### Community 440 - "properties"
-Cohesion: 0.11
-Nodes (19): type, type, type, properties, type, type, pattern, type (+11 more)
+Cohesion: 0.09
+Nodes (23): type, type, enum, type, properties, cursor, ocg, type (+15 more)
 
 ### Community 441 - "test-session-start.sh"
 Cohesion: 0.15
@@ -5548,12 +5538,12 @@ Cohesion: 0.13
 Nodes (14): 1. Blocker enum completeness (re-verified via grep), 2. Traceability matrix coverage (re-verified via grep), 3. Byte-identical mirror (independent `cmp`), 4. Structural integrity (independent grep), 5. State-machine holes (re-audited), 6. Adversarial challenges raised beyond cycle 1, 7. Locked decisions ↔ plan body (independent re-check), 8. Product fit (overview §§1–8) (+6 more)
 
 ### Community 444 - "properties"
-Cohesion: 0.10
-Nodes (21): type, description, pattern, type, minItems, type, type, description (+13 more)
+Cohesion: 0.12
+Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
 
 ### Community 445 - "properties"
 Cohesion: 0.11
-Nodes (29): items, items, minLength, type, type, items, items, additionalProperties (+21 more)
+Nodes (18): minLength, type, type, pattern, type, properties, minLength, type (+10 more)
 
 ### Community 446 - "required"
 Cohesion: 0.12
@@ -5571,9 +5561,9 @@ Nodes (13): sb_shell_candidate_write_paths(), sb_shell_command_looks_read_only()
 Cohesion: 0.23
 Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+8 more)
 
-### Community 450 - "OpenCode Dynamically Launching Model-Specific Subagents"
-Cohesion: 0.33
-Nodes (7): Deep Research Skill, Qwen3 7 Max Research Output, OpenCode Dynamically Launching Model-Specific Subagents, Per-Call Model Override, Static Subagent Model Mapping, Subagent Model Variant Inheritance, Prior-Art Multi-AI Research Index
+### Community 450 - "silver:agent-opencode skill"
+Cohesion: 0.14
+Nodes (19): MiMo V2.5 model, OpenCode CLI, opencode-go provider, opencode run, Pi CLI, pi -p invocation, Direct delegation fallback, SB_AGENT_DELEGATE_V2 (+11 more)
 
 ### Community 451 - "properties"
 Cohesion: 0.11
@@ -5597,7 +5587,7 @@ Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_r
 
 ### Community 456 - "properties"
 Cohesion: 0.11
-Nodes (29): items, items, minLength, type, type, items, items, additionalProperties (+21 more)
+Nodes (18): minLength, type, type, pattern, type, properties, minLength, type (+10 more)
 
 ### Community 457 - "required"
 Cohesion: 0.12
@@ -5607,9 +5597,9 @@ Nodes (18): items, type, additionalProperties, required, type, attempt_id, effec
 Cohesion: 0.16
 Nodes (11): env.sh script, SB_ROOT, invoke.sh script, usage(), agent_pi_apply_delegate_env(), agent_pi_apply_runtime_env(), _agent_pi_source_cli(), _agent_pi_source_common() (+3 more)
 
-### Community 459 - "sha256_json"
+### Community 459 - "migrate_v3_to_v4"
 Cohesion: 0.23
-Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+8 more)
+Nodes (15): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+7 more)
 
 ### Community 460 - "market_entry"
 Cohesion: 0.16
@@ -5620,24 +5610,24 @@ Cohesion: 0.12
 Nodes (18): items, type, additionalProperties, required, type, attempt_id, effective_model_id, logical_model_id (+10 more)
 
 ### Community 462 - "kay-codex-isolation.sh"
-Cohesion: 0.17
-Nodes (10): kay-cli.sh script, mirror_kay_codex_runtime_surface(), seed_kay_codex_cli_shims(), seed_kay_codex_dependency_cache(), seed_kay_codex_local_marketplaces(), seed_kay_codex_runtime_config(), setup_kay_codex_isolation(), setup_kay_shell_profile_bridge() (+2 more)
+Cohesion: 0.16
+Nodes (11): kay-cli.sh script, mirror_kay_codex_runtime_surface(), seed_kay_codex_cli_shims(), seed_kay_codex_dependency_cache(), seed_kay_codex_local_marketplaces(), seed_kay_codex_runtime_config(), setup_kay_codex_isolation(), setup_kay_shell_profile_bridge() (+3 more)
 
 ### Community 463 - "test-install-codex.sh"
 Cohesion: 0.20
 Nodes (16): assert_command_fails(), assert_command_succeeds(), assert_contains(), assert_file_absent(), assert_file_exists(), assert_hook_command_matchers(), assert_hook_trust_state_for_source(), assert_no_async_true() (+8 more)
 
 ### Community 464 - "Landscape Consolidation Guide"
-Cohesion: 0.14
-Nodes (18): Comparator Reference, Weighted Matrix Scoring, Solution Compare Reference, Landscape Consolidation Guide, Adjacent Markets, Landscape Category Pack, Core Solutions, Explicitly Excluded Solutions (+10 more)
+Cohesion: 0.13
+Nodes (19): Comparator Reference, Weighted Matrix Scoring, Solution Compare Reference, Landscape Consolidation Guide, Adjacent Markets, Landscape Category Pack, Core Solutions, Explicitly Excluded Solutions (+11 more)
 
 ### Community 465 - "$ref"
 Cohesion: 0.10
 Nodes (20): items, type, items, type, items, minItems, type, $ref (+12 more)
 
 ### Community 466 - "properties"
-Cohesion: 0.10
-Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
+Cohesion: 0.12
+Nodes (17): default, description, type, minLength, type, type, minLength, type (+9 more)
 
 ### Community 467 - "silver:deep-research/scripts/citation_manager.py"
 Cohesion: 0.21
@@ -5659,25 +5649,25 @@ Nodes (19): Comparator Capability Framework, Add-platform Operation, Build Opera
 Cohesion: 0.13
 Nodes (19): Landscape Research Prompt Template, Prompt Adjacent Markets, Buying Guidance, Category Market Contract, Competitive Positioning, Core Exclusions, Prompt Explicitly Excluded, Fitness Scorecard (+11 more)
 
-### Community 472 - "test-enterprise-e2e-matrix-routing.sh"
-Cohesion: 0.09
-Nodes (24): sb_e2e_matrix_clear_routing_row_marker(), sb_e2e_matrix_routing_row_active(), sb_e2e_matrix_set_routing_row_marker(), e2e-matrix-routing.sh script, matrix-quiesce.sh script, enterprise_e2e_test_fixture_init(), enterprise-e2e-fixture.sh script, assert_ok() (+16 more)
+### Community 472 - "test-enterprise-e2e-matrix-evidence.sh"
+Cohesion: 0.12
+Nodes (17): enterprise_e2e_outcome_assess_structural_wiring(), enterprise_e2e_outcome_row_failures(), enterprise_e2e_test_fixture_init(), enterprise-e2e-fixture.sh script, assert_ok(), HOME, SB_E2E_ENTERPRISE_MATRIX, SB_ROOT (+9 more)
 
 ### Community 473 - "required-skills.sh"
 Cohesion: 0.15
 Nodes (6): sb_required_skills_config_is_legacy(), sb_required_skills_dedupe(), sb_required_skills_normalize_configured_list(), __sb_rs_populate(), __sb_rs_version_lt(), required-skills.sh script
 
 ### Community 474 - "rtk-compat.sh"
-Cohesion: 0.31
-Nodes (8): sb_rtk_compat_enable(), sb_rtk_compat_verbatim(), sb_rtk_user_opted_in(), rtk-compat.sh script, run_step(), SB_RTK_COMPAT_MODE, preflight-round.sh script, usage()
+Cohesion: 0.17
+Nodes (14): sb_rtk_compat_enable(), sb_rtk_compat_verbatim(), sb_rtk_user_opted_in(), rtk-compat.sh script, SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP, SB_E2E_MATRIX_LOG, SB_RTK_COMPAT_MODE, live-test.sh script (+6 more)
 
 ### Community 475 - "Agent Host Delegation Sibling Prompt"
 Cohesion: 0.09
 Nodes (24): Cursor Pilot Absolute Log Path Fix Commit, Absolute Log and Brief Paths, Delegation Anti-patterns, Claude Host, Codex Host, Cursor Delegation Commit 7a901af4, Codex Delegation Commit 83e42c34, Dedicated Worktree (+16 more)
 
 ### Community 476 - "properties"
-Cohesion: 0.10
-Nodes (21): type, description, pattern, type, minItems, type, type, description (+13 more)
+Cohesion: 0.12
+Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
 
 ### Community 477 - "Learnings — 2026-05"
 Cohesion: 0.11
@@ -5688,16 +5678,16 @@ Cohesion: 0.15
 Nodes (7): sb_rtk_cli_available(), sb_rtk_cli_path(), sb_rtk_is_wrong_binary(), sb_rtk_platform_hook_present(), sb_rtk_prompt_reminder_line(), sb_rtk_version_ok(), rtk-gate.sh script
 
 ### Community 479 - "properties"
-Cohesion: 0.12
-Nodes (17): type, description, pattern, type, minItems, type, description, pattern (+9 more)
+Cohesion: 0.10
+Nodes (20): description, pattern, type, minItems, type, minItems, type, type (+12 more)
 
 ### Community 480 - "properties"
-Cohesion: 0.10
-Nodes (21): default, description, type, minLength, type, type, minLength, description (+13 more)
+Cohesion: 0.12
+Nodes (17): minLength, type, type, minLength, description, minLength, type, type (+9 more)
 
 ### Community 481 - "properties"
-Cohesion: 0.06
-Nodes (37): items, type, enum, type, intent_ledger, enum, type, additionalProperties (+29 more)
+Cohesion: 0.07
+Nodes (29): enum, type, enum, type, properties, failed, partial, pending (+21 more)
 
 ### Community 482 - "codex/silver-deep-research/scripts/citation_manager.py"
 Cohesion: 0.21
@@ -5707,9 +5697,9 @@ Nodes (16): append_jsonl(), canonicalize_locator(), cmd_assign_display_numbers()
 Cohesion: 0.17
 Nodes (16): _close_sections(), _convert_bibliography_section(), _convert_content_section(), _convert_lists(), convert_markdown_to_html(), _convert_paragraphs(), _convert_tables(), main() (+8 more)
 
-### Community 484 - "Lean Context"
-Cohesion: 0.08
-Nodes (35): AST Read Path Compression, FTS5 Search Stores, Lean Context, MCP Namespace Collision, PathJail, RTK, Wire Proxy, silver:phase (+27 more)
+### Community 484 - "round8-matrix-driver.sh"
+Cohesion: 0.12
+Nodes (16): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT, SB_E2E_MONITOR_AUTO_RESTART (+8 more)
 
 ### Community 485 - "live-verify-track-host.sh"
 Cohesion: 0.22
@@ -5728,8 +5718,8 @@ Cohesion: 0.17
 Nodes (16): _close_sections(), _convert_bibliography_section(), _convert_content_section(), _convert_lists(), convert_markdown_to_html(), _convert_paragraphs(), _convert_tables(), main() (+8 more)
 
 ### Community 489 - "SB Flow Adversarial Review"
-Cohesion: 0.11
-Nodes (19): SB Flow Adversarial Review, Orchestrator State Queues, Plan-Only Validate Mode, R1 DevOps Validation Gap, R1 Fast Tier 2 Optional Validation, R1 UI Validation Gap, R3 Fast Deploy Chain Gap, R3 UI Specification Gap (+11 more)
+Cohesion: 0.09
+Nodes (23): Orchestrator Worker Templates, SB Flow Adversarial Review, Orchestrator State Queues, Plan-Only Validate Mode, R1 DevOps Validation Gap, R1 Fast Tier 2 Optional Validation, R1 UI Validation Gap, R3 Fast Deploy Chain Gap (+15 more)
 
 ### Community 490 - "Research Plan: Canonical SDLC Process Architecture"
 Cohesion: 0.12
@@ -5759,9 +5749,9 @@ Nodes (16): cleanup_stale_pid(), cmd_restart(), cmd_start(), cmd_status(), cmd_s
 Cohesion: 0.15
 Nodes (14): additionalProperties, properties, required, type, criteria, min_pass_count, rule, minimum (+6 more)
 
-### Community 497 - "Multi-Agent Safety"
+### Community 497 - "Context Integrity"
 Cohesion: 0.14
-Nodes (18): External Content as Untrusted Data, AI LLM Safety Skill, Planning and Review Safety Gate, Silver AI LLM Safety Skill, Prompt Construction Safety, Untrusted Data Handling, AI and LLM Safety skill, Agent Isolation (+10 more)
+Nodes (18): External Content as Untrusted Data, AI LLM Safety Skill, Planning and Review Safety Gate, Silver AI LLM Safety Skill, Prompt Construction Safety, Untrusted Data Handling, AI and LLM Safety skill, Authority Escalation (+10 more)
 
 ### Community 498 - "skills/silver-deep-research/scripts/citation_manager.py"
 Cohesion: 0.21
@@ -5776,20 +5766,20 @@ Cohesion: 0.14
 Nodes (16): properties, required, type, manifest_path, manifest_sha256, phase_id, work_item_id, items (+8 more)
 
 ### Community 501 - "silver:multi-ai-task/schemas/cursor-host-adapter-v1.schema.json"
-Cohesion: 0.18
-Nodes (10): additionalProperties, $id, launch, result, schema_id, version, required, $schema (+2 more)
+Cohesion: 0.12
+Nodes (15): additionalProperties, $id, launch, result, schema_id, version, properties, schema_id (+7 more)
 
 ### Community 502 - "properties"
 Cohesion: 0.12
 Nodes (16): minimum, type, pattern, type, properties, generation, head_hash, run_id (+8 more)
 
-### Community 503 - "HTML Generation Reference"
-Cohesion: 0.33
-Nodes (6): McKinsey Report HTML Template, md_to_html.py, HTML Generation Reference, report.html, verify_html.py, weasyprint
+### Community 503 - "Deep Research Dependencies"
+Cohesion: 0.15
+Nodes (13): comparison-matrix.xlsx, matrix_builder.py, matrix_ops.py, McKinsey Report HTML Template, md_to_html.py, openpyxl, phases.json, HTML Generation Reference (+5 more)
 
 ### Community 504 - "Silver Add Skill"
-Cohesion: 0.08
-Nodes (28): Issue Tracker Configuration, /silver:add Work Item Filing, enterprise-test-app E2E Journey, Allowed Commands, Backlog Type, Deduplication, Enterprise Journey Tagging, Filing Confirmation (+20 more)
+Cohesion: 0.12
+Nodes (18): GitHub CLI, Project Management Configuration, Issue Tracker Configuration, Allowed Commands, Backlog Type, Enterprise Journey Tagging, Filing Confirmation, GitHub Filing (+10 more)
 
 ### Community 505 - "properties"
 Cohesion: 0.12
@@ -5824,8 +5814,8 @@ Cohesion: 0.14
 Nodes (13): 1. Independence Statement, 2.1 Finding 1 — `blocked_validation_state` missing from canonical blockers enum, 2.2 Finding 2 — Four canonical blockers with no defined trigger predicate, 2. Cycle-1 Findings — Closure Verification, 3.1 Enum completeness — all 28 canonical blockers now have trigger predicates, 3.2 New predicate semantics — internal consistency, 3.3 Locked decisions, state machines, and traceability untouched, 3.4 Frontmatter and structure integrity (+5 more)
 
 ### Community 513 - "Critical Self-Review: multi-ai-task Skill v2.0.0"
-Cohesion: 0.16
-Nodes (17): Dynamic Rule, Critical Self-Review: multi-ai-task Skill v2.0.0, Dispatch and Consolidation Pipeline, Research-Domain Alias Leakage, Schema Auto-Injection, Schema Contract Gaps, Skill Rubric Score, Task-Agnosticism (+9 more)
+Cohesion: 0.20
+Nodes (14): Dynamic Rule, Critical Self-Review: multi-ai-task Skill v2.0.0, Dispatch and Consolidation Pipeline, Research-Domain Alias Leakage, Schema Auto-Injection, Schema Contract Gaps, Skill Rubric Score, Task-Agnosticism (+6 more)
 
 ### Community 514 - "enforcement-tier-gate.sh"
 Cohesion: 0.13
@@ -5839,9 +5829,9 @@ Nodes (16): properties, required, type, manifest_path, manifest_sha256, phase_id
 Cohesion: 0.12
 Nodes (15): additionalProperties, $id, launch, result, schema_id, version, properties, schema_id (+7 more)
 
-### Community 517 - "Operational Efficiency"
-Cohesion: 0.14
-Nodes (14): Automatic Model Routing, Automatic Model Switching Plan, Automatic Model Switching Summary, AF Gates, APO, Dependency Skill Check Hook, External Connectors, Host-Native Model Controls (+6 more)
+### Community 517 - "Intent Route Table"
+Cohesion: 0.03
+Nodes (82): orchestrator-directive.json, /silver Smart Skill Orchestrator, silver:clarify, silver:refactor, silver:worktree, tdd, Orchestrator Workflow Queue, workflows.sh Helper (+74 more)
 
 ### Community 518 - "Deep Research Multi AI Skill"
 Cohesion: 0.21
@@ -6027,9 +6017,9 @@ Nodes (11): _is_commercial_license(), license_ok(), load_jsonl(), main(), _norma
 Cohesion: 0.13
 Nodes (15): type, properties, mode, query, report_dir, started_at, version, description (+7 more)
 
-### Community 564 - "build_matrix"
-Cohesion: 0.24
-Nodes (14): build_matrix(), _countif(), _init_styles(), main(), Any, Neutralize spreadsheet formula injection for user-controlled strings., Apply style to a cell (only non-None attributes)., Write a user-controlled value with formula neutralization + optional style. (+6 more)
+### Community 564 - "generate_comparison_xlsx"
+Cohesion: 0.16
+Nodes (21): comparison_to_builder_config(), generate_comparison_xlsx(), main(), Any, Path, Map DR comparison.json rows to matrix_builder config., _solution_order(), build_matrix() (+13 more)
 
 ### Community 565 - "silver:multi-ai-task Skill"
 Cohesion: 0.09
@@ -6111,13 +6101,13 @@ Nodes (16): Provenance Ledger, Blessonism OpenClaw Search Skills, Daizedong Mark
 Cohesion: 0.19
 Nodes (14): type, format, type, null, string, properties, type, budget_stop_reason (+6 more)
 
-### Community 585 - "silver:deep-research/reference/landscape/category-packs/schema.json"
-Cohesion: 0.12
-Nodes (17): additionalProperties, $defs, named_entry, seed_entry, description, $id, name, slug (+9 more)
+### Community 585 - "market_entry"
+Cohesion: 0.16
+Nodes (14): $defs, market_entry, named_entry, seed_entry, name, slug, additionalProperties, type (+6 more)
 
 ### Community 586 - "inclusion_criteria"
-Cohesion: 0.12
-Nodes (17): minItems, type, additionalProperties, properties, required, type, criteria, min_pass_count (+9 more)
+Cohesion: 0.15
+Nodes (14): additionalProperties, properties, required, type, criteria, min_pass_count, rule, minimum (+6 more)
 
 ### Community 587 - "inclusion_criteria"
 Cohesion: 0.15
@@ -6132,8 +6122,8 @@ Cohesion: 0.24
 Nodes (11): apply_persona_priority(), _catalog(), get_persona(), list_persona_ids(), max_priority(), _priority_rank(), Any, Load need-profile personas for weighted comparison-matrix scoring. (+3 more)
 
 ### Community 590 - "Getting Started Help Page"
-Cohesion: 0.13
-Nodes (16): Getting Started Help Page, AI-Driven Development, Catalog-Backed Workflow State, Catalog Inventory: 27 Atomic Flows, 22 Workflows, 85 Flow Steps, Optional DevOps and Provider Extensions, GitHub CLI, Graphify Project-Memory Retrieval, Workflow Enforcement Hooks (+8 more)
+Cohesion: 0.11
+Nodes (19): Getting Started Help Page, AI-Driven Development, alo-labs/agent-plugins Marketplace, alo-labs-cursor Package, Catalog-Backed Workflow State, Catalog Inventory: 27 Atomic Flows, 22 Workflows, 85 Flow Steps, Optional DevOps and Provider Extensions, GitHub CLI (+11 more)
 
 ### Community 591 - "properties"
 Cohesion: 0.19
@@ -6247,17 +6237,17 @@ Nodes (14): type, format, type, null, string, properties, type, budget_stop_reas
 Cohesion: 0.13
 Nodes (15): Report Validation, Valid Chinese Research Report Fixture, 中文报告发现一：现状, 中文报告发现二：挑战, 中文报告发现三：展望, 测试进展, 市场展望, 现状分析 (+7 more)
 
-### Community 619 - "skill-source/silver-deep-research/reference/landscape/category-packs/schema.json"
-Cohesion: 0.12
-Nodes (17): additionalProperties, $defs, named_entry, seed_entry, description, $id, name, slug (+9 more)
+### Community 619 - "market_entry"
+Cohesion: 0.16
+Nodes (14): $defs, market_entry, named_entry, seed_entry, name, slug, additionalProperties, type (+6 more)
 
 ### Community 620 - "Pi Desktop"
 Cohesion: 0.13
 Nodes (15): Council Planning, Pi Desktop, Windows Electron Packaging, Pi Desktop Capability Report, Claude, CodeMirror 6 Editor, Codex, Diff Viewer (+7 more)
 
 ### Community 621 - "inclusion_criteria"
-Cohesion: 0.12
-Nodes (17): minItems, type, additionalProperties, properties, required, type, criteria, min_pass_count (+9 more)
+Cohesion: 0.15
+Nodes (14): additionalProperties, properties, required, type, criteria, min_pass_count, rule, minimum (+6 more)
 
 ### Community 622 - "inclusion_criteria"
 Cohesion: 0.15
@@ -6327,9 +6317,9 @@ Nodes (14): Finishing a Development Branch, Main Branch, Enterprise E2E Cherry-P
 Cohesion: 0.14
 Nodes (13): additionalProperties, description, canonical_locator, metadata_status, raw_url, registered_at, source_id, source_type (+5 more)
 
-### Community 639 - "Silver Bullet Benefits Over Plain GSD"
-Cohesion: 0.11
-Nodes (19): Silver Bullet Benefits Over Plain GSD, Artifact Protection, Artifact Review Governance, Compliance Visibility, Cross-Plugin Orchestration, DevOps Safety, Documentation Governance, Plain GSD (+11 more)
+### Community 639 - "Orchestration Workflows Topic"
+Cohesion: 0.16
+Nodes (16): 85 Catalog Flow Steps, AF Alias Table, 27 AF Atomic Flows, Agent Teams and Parallelism, APO Catalog docs/apo-catalog.json, Command Reference Topic, Core Concepts Topic, Silver Bullet Help Center Index (+8 more)
 
 ### Community 640 - "Silver Bullet Site Design System"
 Cohesion: 0.14
@@ -6347,9 +6337,9 @@ Nodes (14): Lifecycle Hooks, Subagents, Claude Desktop, Hook JSON Payload, hooks
 Cohesion: 0.24
 Nodes (11): apply_persona_priority(), _catalog(), get_persona(), list_persona_ids(), max_priority(), _priority_rank(), Any, Load need-profile personas for weighted comparison-matrix scoring. (+3 more)
 
-### Community 644 - "Silver Bullet DevOps Cycle"
-Cohesion: 0.23
-Nodes (14): Silver Bullet DevOps Cycle, Blast-Radius Assessment, Infrastructure Context, Deploy Readiness, DevOps Workflow Lifecycle, Infrastructure Execution, Infrastructure Orientation, Infrastructure Plan (+6 more)
+### Community 644 - "properties"
+Cohesion: 0.13
+Nodes (15): type, type, items, type, properties, type, conflict_resolution, name (+7 more)
 
 ### Community 645 - "Autonomous health endpoint task brief"
 Cohesion: 0.15
@@ -6408,8 +6398,8 @@ Cohesion: 0.14
 Nodes (14): Valid English Research Report Fixture, Valid Report Finding 1: Current State, Valid Report Finding 2: Key Challenges, Valid Report Finding 3: Future Outlook, Test Research Advances, Market Outlook, Current State Analysis, Comprehensive Review (+6 more)
 
 ### Community 659 - "properties"
-Cohesion: 0.12
-Nodes (17): description, type, properties, canonical_locator, raw_url, registered_at, reliability_code, title (+9 more)
+Cohesion: 0.15
+Nodes (13): description, type, properties, canonical_locator, raw_url, registered_at, title, description (+5 more)
 
 ### Community 660 - "Landscape Fixture Comparison Matrix"
 Cohesion: 0.14
@@ -6420,8 +6410,8 @@ Cohesion: 0.26
 Nodes (6): skipUnless, Tests for comparison-matrix.xlsx export and need-profile personas., Two solutions with different ticks must get different weighted scores., run_py(), TestGenerateComparisonXlsx, TestMatrixBuilderSanitization
 
 ### Community 662 - "required"
-Cohesion: 0.20
-Nodes (10): attempt_id, deadline, hard_token_ceiling, idempotency_key, logical_model_id, output_root, requested_model_id, run_id (+2 more)
+Cohesion: 0.15
+Nodes (13): attempt_id, deadline, hard_token_ceiling, idempotency_key, logical_model_id, output_root, requested_model_id, run_id (+5 more)
 
 ### Community 663 - "properties"
 Cohesion: 0.15
@@ -6441,7 +6431,7 @@ Nodes (13): properties, type, type, type, currency_micro_usd_actual, currency_mi
 
 ### Community 667 - "startup"
 Cohesion: 0.17
-Nodes (12): API access, Limited budget, Managed hosting, Prefer low operational overhead, Self-serve signup, Small team, startup, audience_default (+4 more)
+Nodes (12): Developer Experience, Pricing and licensing, Time to value, Limited budget, Prefer low operational overhead, Small team, startup, audience_default (+4 more)
 
 ### Community 668 - "codex/silver-deep-research/schemas/run_manifest.schema.json"
 Cohesion: 0.15
@@ -6471,9 +6461,9 @@ Nodes (13): type, type, properties, type, attempt_id, entry_id, logical_model_id
 Cohesion: 0.17
 Nodes (12): CURSOR_AGENT, CURSOR_AGENT_MODEL, CURSOR_MODEL, _in_session_driver(), RTK_DISABLED, SB_LIVE_CURSOR_IN_SESSION, SB_LIVE_REVIEW_FIX_LADDER_LITE_PROMPT, SB_LIVE_REVIEW_FIX_LADDER_LIVE (+4 more)
 
-### Community 675 - "Top 50 Problems: AI Agents in Software Engineering & DevOps"
-Cohesion: 0.15
-Nodes (13): Context Degradation, Cost and Model Risk, Delivery Risk, DevOps Hazards, Knowledge Blindness, Process Bypass, Quality Theater, Traceability Drift (+5 more)
+### Community 675 - "silver-add skill"
+Cohesion: 0.17
+Nodes (12): /silver:add Work Item Filing, enterprise-test-app E2E Journey, Deduplication, Work item classification rubric, Finding deduplication, Finding fingerprint, GitHub CLI, Git CLI (+4 more)
 
 ### Community 676 - "Phase 27 Plan 01"
 Cohesion: 0.19
@@ -6540,8 +6530,8 @@ Cohesion: 0.18
 Nodes (13): SENTINEL Audit: silver-bullet v0.15.1, Finding 10.1: Background Sentinel Process, Finding 1.1: Prompt Injection via Skill Arguments, Finding 3.1: Config Pattern Misuse, Finding 5.1: Shell and FileWrite Scope, Finding 8.1: PR Traceability Auto-Commit, Finding 9.1: Unescaped PR Body Content, SENTINEL Audit: silver:init (+5 more)
 
 ### Community 693 - "Deep Research Capability Rubric"
-Cohesion: 0.10
-Nodes (20): Adversarial Capability, Citation and Evidence Capability, comparison-matrix.xlsx, Composability Capability, Deep Research Capability Rubric, Human-in-the-Loop Capability, matrix_builder.py, matrix_ops.py (+12 more)
+Cohesion: 0.15
+Nodes (13): Adversarial Capability, Citation and Evidence Capability, Composability Capability, Deep Research Capability Rubric, Human-in-the-Loop Capability, Multilingual Capability, Phases and Modes Capability, Portability Capability (+5 more)
 
 ### Community 694 - "skills/silver-deep-research/schemas/run_manifest.schema.json"
 Cohesion: 0.15
@@ -6595,17 +6585,17 @@ Nodes (5): agent_transcript_dir(), codex_transcript_dir(), kay_capture_transcrip
 Cohesion: 0.27
 Nodes (11): assert_codex_skill_titles_match_picker_namespace(), assert_command_succeeds(), assert_contains(), assert_file_exists(), assert_not_contains(), assert_not_symlink(), assert_path_absent(), fail() (+3 more)
 
-### Community 707 - "classify_solutions"
-Cohesion: 0.26
-Nodes (5): classify_solutions(), Classify discovered candidates. Returns catalog audit dict., _envelopes(), Tests for pack-driven solution classifier., SolutionClassifierTests
+### Community 707 - "Stop Hook False-Positive Audit v0.30.0"
+Cohesion: 0.15
+Nodes (13): Branch File Write Verification, Stop Hook False-Positive Audit v0.30.0, Empty Branch State Guard, v0.30 Required Deploy Delivery Gate, v0.30 Required Planning Floor, Runtime Hook False Positives, SessionStart Mutation Guard, Skipped Flow Terminal State (+5 more)
 
 ### Community 708 - "sha256_json"
 Cohesion: 0.23
 Nodes (16): atomic_write(), build_audit_record(), classify_v3(), deterministic_run_id(), deterministic_work_item_id(), main(), migrate_v3_to_v4(), Any (+8 more)
 
 ### Community 709 - "startup"
-Cohesion: 0.17
-Nodes (12): Developer Experience, Pricing and licensing, Time to value, Limited budget, Prefer low operational overhead, Small team, startup, audience_default (+4 more)
+Cohesion: 0.15
+Nodes (13): Developer Experience, Pricing and licensing, Time to value, Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, startup (+5 more)
 
 ### Community 710 - "SEED-001 Skill Gap Check"
 Cohesion: 0.17
@@ -6636,8 +6626,8 @@ Cohesion: 0.20
 Nodes (12): Hermes Graphify Add Watch Reference, Hermes Graphify Export Reference, Hermes Graphify Extraction Specification, Hermes Graphify GitHub Merge Reference, Hermes Graphify Hooks Reference, Hermes Graphify Query Reference, Hermes Graphify Transcription Reference, Hermes Graphify Update Reference (+4 more)
 
 ### Community 717 - "Canonical SDLC Process Architecture Areas"
-Cohesion: 0.14
-Nodes (14): Atlassian Agile Handbook, CNCF Platform Engineering Maturity Model, Canonical SDLC Process Architecture Areas, DORA Capabilities and Metrics, GitHub Agent PR Review Guidance, GitLab Engineering Handbook, Google Engineering Practices, Google SRE Book and Workbook (+6 more)
+Cohesion: 0.08
+Nodes (24): Alert Configuration, Atlassian Agile Handbook, CNCF Platform Engineering Maturity Model, Canonical SDLC Process Architecture Areas, DORA Capabilities and Metrics, GitHub Agent PR Review Guidance, GitLab Engineering Handbook, Google Engineering Practices (+16 more)
 
 ### Community 718 - "record-skill.sh"
 Cohesion: 0.21
@@ -6707,29 +6697,29 @@ Nodes (11): additionalProperties, $id, audience, category, interview_complete, l
 Cohesion: 0.17
 Nodes (12): pattern, type, properties, evidence_validated, implicit, user_confirmed, assumption_id, status (+4 more)
 
-### Community 735 - "Environment Promotion"
-Cohesion: 0.17
-Nodes (12): Environment Promotion, Incident Fast Path, Change Advisory Board, Development Environment, HOTFIX Commit, Incident Record, Incident Response Runbook, Incident Ticket (+4 more)
+### Community 735 - "verify_runtime_dependency_access"
+Cohesion: 0.20
+Nodes (11): assert_command_succeeds(), assert_file_absent(), assert_file_contains(), assert_file_contains_any(), assert_file_exists(), assert_file_not_contains(), assert_not_contains(), claude_bootstrap_needed() (+3 more)
 
 ### Community 736 - "Silver Bullet Gaps Report Page"
 Cohesion: 0.18
 Nodes (12): Silver Bullet Gaps Report Page, 50-Problem Audit, Agent Reliability Failure Modes, Cost Failure Modes, HTML Data Theme Attribute, DevOps Failure Modes, Google Fonts Static Host, Google Fonts Stylesheet (+4 more)
 
 ### Community 737 - "DevOps & IaC Workflow Help Page"
-Cohesion: 0.17
-Nodes (12): DevOps & IaC Workflow Help Page, CI/CD Layer, Compute Layer, Kubernetes Operations Extension, Monitoring Layer, Networking Layer, Production Deployment, Rollback Checks (+4 more)
+Cohesion: 0.12
+Nodes (17): DevOps & IaC Workflow Help Page, CI/CD Layer, Compute Layer, GitHub Actions Workflow, Helm Chart, Kubernetes Manifest, Kubernetes Operations Extension, Monitoring Layer (+9 more)
 
 ### Community 738 - "Minimax M3 critique"
-Cohesion: 0.18
-Nodes (11): Cavekit Version Split, Minimax M3 critique, Seven inclusion criteria, Cavekit v4, Hard-exclusion list, AWS AI-DLC, Conductor.build, Devin (+3 more)
+Cohesion: 0.12
+Nodes (17): Cavekit Version Split, Category Pack, GPT Luna Critique Source, Factory Factory.ai Alias, Hard Exclusion Classes, Startup Weighted Matrix, Minimax M3 critique, Seven inclusion criteria (+9 more)
 
 ### Community 739 - "items"
 Cohesion: 0.17
 Nodes (12): default, items, type, additionalProperties, required, type, assumption_id, materiality (+4 more)
 
-### Community 740 - "Tri-Host Result Matrix"
-Cohesion: 0.16
-Nodes (16): OUT-KM-01, OUT-TRACE-01, OUT-VLOOP-01, SB Tri-Criteria Greenfield Results, Canonical PASS Matrix, SB Tri-Criteria Log Audit, Greenfield Batch 6/6 PASS, SB Tri-Criteria Raw Log Sweep (+8 more)
+### Community 740 - "SB Tri-Criteria Log Audit"
+Cohesion: 0.39
+Nodes (8): OUT-KM-01, OUT-TRACE-01, OUT-VLOOP-01, SB Tri-Criteria Greenfield Results, Canonical PASS Matrix, SB Tri-Criteria Log Audit, Greenfield Batch 6/6 PASS, SB Tri-Criteria Raw Log Sweep
 
 ### Community 741 - "enum"
 Cohesion: 0.21
@@ -6828,12 +6818,12 @@ Cohesion: 0.12
 Nodes (15): RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_BATCH_PID_FILE, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MONITOR_AUTO_RESTART (+7 more)
 
 ### Community 765 - "regulated"
-Cohesion: 0.18
-Nodes (11): Data residency controls, HIPAA, Immutable audit log, On-prem or dedicated tenancy, Regulatory attestation, regulated, audience_default, description (+3 more)
+Cohesion: 0.17
+Nodes (11): description, On-prem or dedicated tenancy, Regulatory attestation, personas, regulated, audience_default, description, label (+3 more)
 
 ### Community 766 - "startup"
 Cohesion: 0.17
-Nodes (12): Developer Experience, Pricing and licensing, Time to value, API access, Managed hosting, Self-serve signup, startup, audience_default (+4 more)
+Nodes (12): Developer Experience, Pricing and licensing, Time to value, Limited budget, Prefer low operational overhead, Small team, startup, audience_default (+4 more)
 
 ### Community 767 - "skill-source/silver-deep-research/schemas/need_profile.schema.json"
 Cohesion: 0.17
@@ -6915,13 +6905,9 @@ Nodes (11): Architecture Quality, Community Health, DeepSeek Critique, Hard Excl
 Cohesion: 0.20
 Nodes (11): Chart And Matrix Artifacts, Commercial OSS Stratification, Confidence Scoring, Kimi Critique, Evidence Truncation, Factory Alias Normalization, Inclusion Criteria Scoring, Primary APO Coverage (+3 more)
 
-### Community 787 - "Agent-Claude AF Delegation Integration Plan"
-Cohesion: 0.13
-Nodes (15): agent-claude-delegate.sh Wrapper, agent-delegate-common.sh, APO Catalog Generation, Agent-Claude AF Delegation Integration Plan, Claude Harness Smoke Failure, silver-agent-claude to AF-AGENT-DELEGATE Migration, Orchestrator Parent Guard, silver-agent-claude Skill (+7 more)
-
-### Community 788 - "round6-matrix-driver.sh"
-Cohesion: 0.15
-Nodes (12): CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY, RTK_DISABLED, SB_E2E_LEDGER_FILE, SB_E2E_LEDGER_NO_UX_APPEND, SB_E2E_MATRIX_FORCE, SB_E2E_MATRIX_LOG, SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT, SB_E2E_MONITOR_AUTO_RESTART (+4 more)
+### Community 788 - "enterprise_e2e_code_intel_preflight"
+Cohesion: 0.44
+Nodes (9): enterprise_e2e_any_tool_enforced(), enterprise_e2e_code_intel_preflight(), enterprise_e2e_preflight_agentmemory(), enterprise_e2e_preflight_context_mode(), enterprise_e2e_preflight_fail(), enterprise_e2e_preflight_graphify(), enterprise_e2e_preflight_rtk(), enterprise_e2e_source_code_intel_libs() (+1 more)
 
 ### Community 789 - "Multi AI Pool Algebra"
 Cohesion: 0.14
@@ -6929,7 +6915,7 @@ Nodes (14): glm-5.2, Multi AI Pool Algebra, ocg-glm-5.2, ocg-mimo-v2.5, Apply Ex
 
 ### Community 790 - "startup"
 Cohesion: 0.17
-Nodes (12): Developer Experience, Pricing and licensing, Time to value, Limited budget, Prefer low operational overhead, Small team, startup, audience_default (+4 more)
+Nodes (12): Developer Experience, Pricing and licensing, Time to value, API access, Managed hosting, Self-serve signup, startup, audience_default (+4 more)
 
 ### Community 791 - "skills/silver-deep-research/schemas/need_profile.schema.json"
 Cohesion: 0.17
@@ -6937,15 +6923,15 @@ Nodes (11): additionalProperties, $id, audience, category, interview_complete, l
 
 ### Community 792 - "properties"
 Cohesion: 0.17
-Nodes (12): pattern, type, properties, evidence_validated, implicit, user_confirmed, assumption_id, status (+4 more)
+Nodes (12): pattern, type, properties, high, low, medium, enum, type (+4 more)
 
 ### Community 793 - "items"
 Cohesion: 0.17
 Nodes (12): default, items, type, additionalProperties, required, type, assumption_id, materiality (+4 more)
 
 ### Community 794 - "Auto-Continuation Protocol"
-Cohesion: 0.18
-Nodes (14): citation_manager.py, claims.jsonl, Continuation State JSON, DR-REFINE Verify and Refresh Phase, evidence.jsonl, Evidence Quality Control Loop, Auto-Continuation Protocol, Quality Gates and Standards (+6 more)
+Cohesion: 0.20
+Nodes (11): citation_manager.py, claims.jsonl, Continuation State JSON, evidence.jsonl, Evidence Quality Control Loop, Auto-Continuation Protocol, Quality Gates and Standards, sources.jsonl (+3 more)
 
 ### Community 795 - "enum"
 Cohesion: 0.21
@@ -6975,9 +6961,9 @@ Nodes (12): type, type, budget_stopped, cancelled, completed, failed, partial, c
 Cohesion: 0.17
 Nodes (12): items, type, additionalProperties, required, type, attempt_id, entry_id, logical_model_id (+4 more)
 
-### Community 802 - "skills/silver-multi-ai-task/scripts/ocg_pool_cohort.py"
-Cohesion: 0.39
-Nodes (11): build_worker_prompt(), ocg_model_for(), Strip noisy raw agent output from prior-phase context passed to workers., sanitize_phase_context(), load_request(), _log(), main(), Any (+3 more)
+### Community 802 - "Supervision Loop"
+Cohesion: 0.25
+Nodes (8): Flow Advance, Anti-Stall Detection, Composition Evaluation, Supervision Loop, Exit Condition Check, Flow Heartbeat, Progress Report, WORKFLOW.md Update
 
 ### Community 803 - "route-smoke-transcript.py"
 Cohesion: 0.41
@@ -7008,8 +6994,8 @@ Cohesion: 0.09
 Nodes (22): items, type, enum, type, type, properties, type, type (+14 more)
 
 ### Community 810 - "regulated"
-Cohesion: 0.17
-Nodes (11): description, On-prem or dedicated tenancy, Regulatory attestation, personas, regulated, audience_default, description, label (+3 more)
+Cohesion: 0.18
+Nodes (11): Data residency controls, HIPAA, Immutable audit log, On-prem or dedicated tenancy, Regulatory attestation, regulated, audience_default, description (+3 more)
 
 ### Community 811 - "properties"
 Cohesion: 0.18
@@ -7075,9 +7061,9 @@ Nodes (7): sb_find_project_config(), sb_find_project_config_from(), _sb_find_pro
 Cohesion: 0.22
 Nodes (10): 276 Breakpoint and Theme Combinations, Mobile Code Block Internal Scrolling, Mobile Hamburger Navigation, Mobile Overflow Fix, Post-Fix Ship Readiness Pass, Pre-Fix Ship Readiness Fail, 46 Public Pages Tested, Mobile Table Overflow (+2 more)
 
-### Community 827 - "LiveDispatchModelRoutingTests"
-Cohesion: 0.16
-Nodes (5): cursor_last_resort_model(), cursor_models_to_try(), parse_cursor_cli_failure(), LiveDispatchModelRoutingTests, Unit tests for live_dispatch cursor model routing.
+### Community 827 - "enterprise_e2e_export_live_defaults"
+Cohesion: 0.25
+Nodes (8): enterprise_e2e_apply_isolated_claude_runtime_paths(), enterprise_e2e_export_live_defaults(), enterprise_e2e_preflight_claude_token_gateway(), enterprise_e2e_preflight_host(), enterprise_e2e_prepend_harness_path(), enterprise_e2e_run_install_claude(), enterprise_e2e_run_install_host(), enterprise_e2e_source_host_adapter()
 
 ### Community 828 - "Requested State Sidecar"
 Cohesion: 0.22
@@ -7173,7 +7159,7 @@ Nodes (3): OverviewQualityTests, Durable DR landscape report-builder contracts (
 
 ### Community 851 - "properties"
 Cohesion: 0.18
-Nodes (11): description, pattern, type, format, type, properties, claim_id, extracted_at (+3 more)
+Nodes (11): description, pattern, type, properties, claim_id, section_id, text, description (+3 more)
 
 ### Community 852 - "continuation"
 Cohesion: 0.18
@@ -7199,9 +7185,9 @@ Nodes (11): type, additionalProperties, properties, type, bypass, capability_cac
 Cohesion: 0.18
 Nodes (10): A. Foundation claims (well-triangulated), B. AI-Assisted / Agentic claims (mixed evidence), C. Under-evidenced or context-dependent claims, D. Claims where we explicitly did NOT find evidence and chose not to invent, E. Sources by tier (counts), F. Source diversity check, G. Evidence sufficiency per Process Area, H. Notable cross-source agreements worth highlighting (+2 more)
 
-### Community 858 - ".r9-followup-row11-row3-operator.sh"
-Cohesion: 0.24
-Nodes (13): append_ledger(), fp(), log_line(), register_row(), row11_done(), row11_pass(), row3_done(), row3_pass() (+5 more)
+### Community 858 - "verify_runtime_hook_delivery"
+Cohesion: 0.29
+Nodes (8): clear_hook_audit_log(), disable_hook_audit(), emit_hook_delivery_diagnostic(), enable_hook_audit(), hook_audit_has_entry(), probe_dev_cycle_bash_command(), verify_runtime_hook_delivery(), wait_for_hook_audit_entry()
 
 ### Community 859 - "test-app-branch.sh"
 Cohesion: 0.35
@@ -7231,17 +7217,17 @@ Nodes (10): CODEX_REASONING_EFFORT, SB_DISABLE_MINIMAX_IO_TESTS, SB_E2E_LIVE_AGE
 Cohesion: 0.18
 Nodes (11): mode, multi_ai, query, report_dir, research_type, run_id, schema_id, spine (+3 more)
 
-### Community 866 - "is_unusable_overview_claim"
-Cohesion: 0.14
-Nodes (7): is_matrix_dump_claim(), is_unusable_overview_claim(), Return True when claim text is a cross-vendor matrix/score dump, not solution…, Reject meta-research / multi-vendor dumps unsuitable as a solution Overview…, OverviewQualityTests, Durable DR landscape report-builder contracts (not one-off fullpool tweaks)., TemplateContractTests
+### Community 866 - "test-orchestrator-workflow-csv.sh"
+Cohesion: 0.32
+Nodes (6): assert_all_complete(), assert_eq(), SB_RUNTIME_PRESERVE_STATE_DIR, SB_RUNTIME_STATE_DIR, test-orchestrator-workflow-csv.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 867 - "regulated"
 Cohesion: 0.18
 Nodes (11): Data residency controls, HIPAA, Immutable audit log, On-prem or dedicated tenancy, Regulatory attestation, regulated, audience_default, description (+3 more)
 
 ### Community 868 - "properties"
-Cohesion: 0.18
-Nodes (11): description, pattern, type, format, type, properties, claim_id, extracted_at (+3 more)
+Cohesion: 0.20
+Nodes (10): format, type, properties, extracted_at, section_id, text, description, type (+2 more)
 
 ### Community 869 - "continuation"
 Cohesion: 0.18
@@ -7280,8 +7266,8 @@ Cohesion: 0.22
 Nodes (9): CAPT-01, CAPT-02, CAPT-03, Knowledge and Lessons Capture, Post-Release Items Summary, Phase 050 Research, Silver-remove Removal Flow, Phase 051 Research (+1 more)
 
 ### Community 878 - "Phase 051 Plan 03 Summary"
-Cohesion: 0.33
-Nodes (9): CAPT-05, Items Filed Session Log Section, Milestone Window, Phase 051 Plan 01, Phase 051 Plan 02, Untrusted Data Shell Safety, Phase 051 Plan 03 Summary, Phase 051 Plan 04 (+1 more)
+Cohesion: 0.29
+Nodes (10): CAPT-05, gsd-complete-milestone, Items Filed Session Log Section, Milestone Window, Phase 051 Plan 01, Phase 051 Plan 02, Untrusted Data Shell Safety, Phase 051 Plan 03 Summary (+2 more)
 
 ### Community 879 - "Delegation Brief"
 Cohesion: 0.22
@@ -7455,9 +7441,9 @@ Nodes (3): github-run-list.sh script, verify-release-announcement-ci.sh script, 
 Cohesion: 0.29
 Nodes (7): sb_scheduler_catalog_atom_exists(), sb_scheduler_resolve_atom_id(), orchestrator-skill-atom.sh script, fail(), pass(), resolve(), test-skill-atom-mapping.sh script
 
-### Community 923 - "Generic coding agent exclusion"
-Cohesion: 0.08
-Nodes (26): Codex AGENTS.md, Codex config.toml, Codex Context Mode Doctor, OpenAI Codex CLI, Codex hooks.json, RTK Prompt Layer, Missing updatedInput Limitation, Adjacent-Only Products (+18 more)
+### Community 923 - "Minimax M3 DR-RETRIEVE Evidence"
+Cohesion: 0.06
+Nodes (35): Codex AGENTS.md, Codex config.toml, Codex Context Mode Doctor, OpenAI Codex CLI, Codex hooks.json, RTK Prompt Layer, Missing updatedInput Limitation, Adjacent-Only Products (+27 more)
 
 ### Community 924 - "plugin-cache-guard.sh"
 Cohesion: 0.24
@@ -7471,9 +7457,9 @@ Nodes (4): recommended-tools-registry.sh script, fail(), pass(), test-recommende
 Cohesion: 0.24
 Nodes (5): rtcm_backup_file(), rtcm_detect_configured_hosts(), rtcm_dry_run(), rtcm_host_config_present(), rtk-cm-global.sh script
 
-### Community 927 - "Kimi Research Scope"
-Cohesion: 0.17
-Nodes (12): CI Release and Deployment, Security Privacy Risk and Compliance, Reliability Operations and SRE, Observability and Production Feedback, Measurement DevEx and Continuous Improvement, Maintenance Evolution and Retirement, Kimi Research Scope, Strategy Portfolio and Product Direction (+4 more)
+### Community 927 - "test-record-agentmemory-usage.sh"
+Cohesion: 0.39
+Nodes (6): fail(), pass(), run_bash_hook(), setup(), test-record-agentmemory-usage.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 928 - "properties"
 Cohesion: 0.18
@@ -7612,8 +7598,8 @@ Cohesion: 0.27
 Nodes (7): agent_delegate_preflight_recommended_tools(), assert_allow(), SB_AGENT_CERT_RUN, setup(), test-cert-bypass.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED, write_cfg()
 
 ### Community 962 - "AI/LLM Safety Design Enforcement"
-Cohesion: 0.15
-Nodes (12): Agentic Workflows, AI/LLM Safety Design Enforcement, External Content, Least-Privilege Prompting, LLM Agents, Output Validation, Prompt Construction, Sandbox (+4 more)
+Cohesion: 0.25
+Nodes (7): Agentic Workflows, AI/LLM Safety Design Enforcement, External Content, LLM Agents, Sandbox, Tool Use, Untrusted Data
 
 ### Community 963 - "run-pre-release-host-smoke.sh"
 Cohesion: 0.58
@@ -7889,7 +7875,7 @@ Nodes (3): run_script(), TestPhaseGate, TestPhasesConfig
 
 ### Community 1038 - "properties"
 Cohesion: 0.22
-Nodes (9): type, pattern, type, properties, format, type, cache_identity, evidence_hash (+1 more)
+Nodes (9): type, format, type, properties, format, type, cache_identity, expires_at (+1 more)
 
 ### Community 1039 - "type"
 Cohesion: 0.25
@@ -7911,9 +7897,9 @@ Nodes (9): items, type, additionalProperties, required, type, logical_model_id, 
 Cohesion: 0.22
 Nodes (9): budget_stopped, cancelled, completed, excluded, failed, partial, queued, running (+1 more)
 
-### Community 1044 - "Trunk-Based Development with Feature Flags"
-Cohesion: 0.24
-Nodes (12): CI Results, Deployment Artifact, GitHub Agent PR Review Guidelines, Platform Engineering & IDP, Development Environment & Toolchain, Software Implementation, Code Review & Knowledge Sharing, CI/CD (+4 more)
+### Community 1044 - "silver:deep-research/reference/landscape/category-packs/schema.json"
+Cohesion: 0.29
+Nodes (6): additionalProperties, description, $id, $schema, title, type
 
 ### Community 1046 - "minimax-openai-proxy.mjs"
 Cohesion: 0.28
@@ -8023,9 +8009,9 @@ Nodes (6): Graphify Build From JSON Function, Graphify Build Merge Function, Gra
 Cohesion: 0.33
 Nodes (6): Graphify GraphML Export, Graphify Neo4j Export, Graphify SVG Export, Graphify Wiki Export, Graphify MCP Serve Module, Graphify Exports Reference
 
-### Community 1075 - "test-enterprise-e2e-row-pass-registry.sh"
-Cohesion: 0.26
-Nodes (11): enterprise_e2e_matrix_should_skip_row_at_version(), enterprise_e2e_row_pass_registry_has_pass(), enterprise_e2e_row_pass_registry_should_skip(), assert_contains(), fail(), pass(), SB_E2E_LIVE_RUNTIME, SB_E2E_MATRIX_FORCE (+3 more)
+### Community 1075 - "Confidence Assessment"
+Cohesion: 0.29
+Nodes (7): Confidence Assessment, Enforcement Gap, Fact-Check Example, Research Prior-Art Run, Schema Dispatch and Consolidation Rules, Task-Agnosticism Claim, Worked Code-Review Example
 
 ### Community 1076 - "test-leanctx-gate-lib.sh"
 Cohesion: 0.28
@@ -8048,8 +8034,8 @@ Cohesion: 0.36
 Nodes (7): fail(), pass(), run_bash_hook(), run_mcp_hook(), setup(), test-record-leanctx-usage.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 1081 - "/silver:verify"
-Cohesion: 0.04
-Nodes (86): silver:deploy Skill, silver:devops Skill, Critical Gate Catalog, silver:domain-audit, Domain Quality Contracts, Domain Audit Evidence Schema, Domain Audit Exit Gate, Domain Audit Pack Selection (+78 more)
+Cohesion: 0.05
+Nodes (73): silver:deploy Skill, silver:devops Skill, Critical Gate Catalog, silver:domain-audit, Domain Quality Contracts, Domain Audit Evidence Schema, Domain Audit Exit Gate, Domain Audit Pack Selection (+65 more)
 
 ### Community 1082 - "hooks/test-semantic-compress.sh"
 Cohesion: 0.33
@@ -8083,9 +8069,9 @@ Nodes (7): assert_contains(), assert_eq(), assert_file_absent(), assert_file_exi
 Cohesion: 0.33
 Nodes (6): New Workflow Audit Mode, New Workflow Audit Clean Verdict, Workflow Compliance Script, New Workflow Audit RFL Closeout, Target Resolution, v_loop.id jq Path Fix
 
-### Community 1090 - "silver-test"
-Cohesion: 0.13
-Nodes (15): Baseline tests, .planning/REFACTOR.md, silver-refactor, Test health, RED/GREEN evidence, silver-test, TEST-ENGINEERING.md, RED/GREEN/REFACTOR cycle (+7 more)
+### Community 1090 - "silver:ui-review"
+Cohesion: 0.04
+Nodes (57): accessibility pack, silver:ui-review, silver:validate, silver:verify, Alumnium, Assumption blocks, Browser evidence, Changed UI files (+49 more)
 
 ### Community 1091 - ".test_package_emits_xlsx_and_reports"
 Cohesion: 0.32
@@ -8111,9 +8097,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1097 - "Graphify + agentmemory Optimization Digest"
-Cohesion: 0.20
-Nodes (10): Absolute Export Root, agentmemory Markdown Export, cost_minimized Profile, Graphify + agentmemory Optimization Digest, Git Bridge, agentmemory Gitignore Fix, Obsidian Export, Platform Matrix (+2 more)
+### Community 1097 - "skill-source/silver-deep-research/reference/landscape/category-packs/schema.json"
+Cohesion: 0.29
+Nodes (6): additionalProperties, description, $id, $schema, title, type
 
 ### Community 1098 - "required"
 Cohesion: 0.25
@@ -8143,9 +8129,9 @@ Nodes (8): budget_stopped, cancelled, completed, excluded, failed, partial, pend
 Cohesion: 0.25
 Nodes (8): entries, ledger_generation, ledger_head_hash, run_id, schema_id, spine, version, required
 
-### Community 1105 - "silver:agent-claude skill"
-Cohesion: 0.51
-Nodes (10): silver:agent-claude skill, silver:agent-codex skill, silver:agent-cursor skill, AF-AGENT-DELEGATE contract, Agentmemory capture, Delegation brief contract, Graphify query, Graphify update (+2 more)
+### Community 1105 - "prepare_workspace"
+Cohesion: 0.38
+Nodes (7): backup_session_state(), bootstrap_claude_dependencies(), ensure_e2e_recommended_tools_opt_in(), prepare_workspace(), refresh_runtime_installation(), setup_workspace(), trust_runtime_workspace()
 
 ### Community 1106 - "compliance-status.sh"
 Cohesion: 0.32
@@ -8171,9 +8157,9 @@ Nodes (3): run_doc_scheme_task_gate(), sb_skill_is_installed(), stop-check.sh sc
 Cohesion: 0.32
 Nodes (4): PackageSolutionOutputsTests, Path, skipUnless, Package solution outputs for DR-multi-AI.
 
-### Community 1112 - "enum"
-Cohesion: 0.33
-Nodes (6): high, low, medium, enum, type, materiality
+### Community 1112 - "ensure_runtime_dependency_access_preflight"
+Cohesion: 0.29
+Nodes (7): dependency_access_preflight_ready(), ensure_runtime_dependency_access_preflight(), ensure_runtime_hook_delivery_preflight(), hook_delivery_preflight_ready(), verify_runtime_installation(), write_dependency_access_preflight_marker(), write_hook_delivery_preflight_marker()
 
 ### Community 1113 - "enterprise"
 Cohesion: 0.25
@@ -8195,9 +8181,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1118 - "Observability Pipeline Design"
-Cohesion: 0.20
-Nodes (10): Alert Configuration, Improvement Tickets, Incident Reports, Observability Dashboards, OpenTelemetry Documentation, Production Telemetry Data, Telemetry Pipeline, User Feedback (+2 more)
+### Community 1118 - "Goose ACP Client"
+Cohesion: 0.33
+Nodes (6): Goose ACP Client, Amp, Codex, Copilot, Gemini, Pi
 
 ### Community 1119 - "Silver DevOps Skill"
 Cohesion: 0.33
@@ -8208,8 +8194,8 @@ Cohesion: 0.25
 Nodes (8): required, type, $defs, backend_entry, adapter_id, adapter_version, evidence, status
 
 ### Community 1121 - "type"
-Cohesion: 0.38
-Nodes (7): type, type, null, string, type, disable_reason, model_identity_hash
+Cohesion: 0.32
+Nodes (8): type, type, null, string, type, config_hash, disable_reason, model_identity_hash
 
 ### Community 1122 - "required"
 Cohesion: 0.25
@@ -8287,9 +8273,9 @@ Nodes (8): additionalProperties, required, type, claims, evidence, report, sourc
 Cohesion: 0.25
 Nodes (8): doi_verified, title_matched, unverified, url_verified, description, enum, type, metadata_status
 
-### Community 1141 - "Process Area 12: Platform Engineering and IDP"
-Cohesion: 0.31
-Nodes (10): PA-10 Security, Process Area 12: Platform Engineering and IDP, Process Area 14: Reliability Operations and SRE, Process Area 15: Observability and Production Feedback, Process Area 17: Maintenance, Evolution and Retirement, PA-5 Monitoring and Alerting, PA-6 Toolchain, PA-7 Implementation (+2 more)
+### Community 1141 - "Silver Bullet Core Enforcement Rules"
+Cohesion: 0.33
+Nodes (6): Silver Bullet Core Enforcement Rules, Agentmemory Capture Gate, Context Mode Install Gate, Graphify Retrieval Gate, Silver Bullet Review Loop Discipline, RTK Install Gate
 
 ### Community 1142 - "required"
 Cohesion: 0.25
@@ -8323,9 +8309,9 @@ Nodes (8): entries, ledger_generation, ledger_head_hash, run_id, schema_id, spin
 Cohesion: 0.25
 Nodes (7): Confidence Summary, Contradictions and Debates, Major Assertions and Source Independence, Method, Single-Source or Limited-Evidence Areas, Source Credibility Notes, Triangulation Report: Canonical SDLC Process Architecture
 
-### Community 1150 - "Structured Code Review"
-Cohesion: 0.22
-Nodes (9): AI Review Assistant, Code Diff, CODEOWNERS, Human Reviewer Approval, Merged Code, Pull Request, Review Comments, Specification Context (+1 more)
+### Community 1150 - "consolidate"
+Cohesion: 0.60
+Nodes (5): consolidate(), main(), normalize_claim(), Any, validate_inputs()
 
 ### Community 1151 - "enterprise_e2e_assert_row_matrix_baseline_rev_increase"
 Cohesion: 0.39
@@ -8340,8 +8326,8 @@ Cohesion: 0.40
 Nodes (5): Agent-Claude Autonomous Assessment Methodology, Agent-Claude Autonomous Criteria, Agent-Claude Evidence Template, Agent-Claude Autonomous Vision Test, Agent-Claude Autonomous Runbook
 
 ### Community 1154 - "enterprise_e2e_ledger_row_is_pass"
-Cohesion: 0.33
-Nodes (7): _enterprise_e2e_ensure_ledger_reconcile_sourced(), enterprise_e2e_incomplete_rows(), enterprise_e2e_ledger_row_is_pass(), enterprise_e2e_record_row_pass_at_install_version(), enterprise_e2e_row_complete_in_log(), enterprise_e2e_row_passed_at_install_version(), enterprise_e2e_ledger_status_is_pass()
+Cohesion: 0.29
+Nodes (8): _enterprise_e2e_ensure_ledger_reconcile_sourced(), enterprise_e2e_incomplete_rows(), enterprise_e2e_ledger_row_is_pass(), enterprise_e2e_matrix_should_skip_row_at_version(), enterprise_e2e_record_row_pass_at_install_version(), enterprise_e2e_row_complete_in_log(), enterprise_e2e_row_passed_at_install_version(), enterprise_e2e_ledger_status_is_pass()
 
 ### Community 1155 - "Academic Source Matrix"
 Cohesion: 0.40
@@ -8479,9 +8465,9 @@ Nodes (6): assert_empty(), assert_fail(), assert_pass(), test-debug-dump.sh scri
 Cohesion: 0.70
 Nodes (5): TST-01 Sentinel Lock UUID Assertion, TST-02 Quote Literal Exemption Edge Cases, Phase 060 Test Coverage Plan, Phase 060 Test Coverage Summary, Phase 060 Verification Report
 
-### Community 1189 - "Silver Init"
-Cohesion: 0.50
-Nodes (5): Bootstrap Marker, Node Project Scaffold, Silver Bootstrap Milestone, Silver Bootstrap Project, Silver Init
+### Community 1189 - "silver:doctor Skill"
+Cohesion: 0.25
+Nodes (9): Bootstrap Marker, Node Project Scaffold, Users Schema, silver:doctor Skill, /silver:update skill, Silver Bootstrap Milestone, Silver Bootstrap Project, Silver Init (+1 more)
 
 ### Community 1190 - "test-kay-project-hook-bridge.sh"
 Cohesion: 0.32
@@ -8495,9 +8481,9 @@ Nodes (5): Phase 062 Plan 01, Silver Bullet Hooks Active Without GSD, DOC-01 Req
 Cohesion: 0.40
 Nodes (5): Phase 20 Summary 01, Phase 20 Plan 02, Cross-Artifact Review Gate, Milestone Completion Gate, Phase 20 Summary 02
 
-### Community 1193 - "properties"
-Cohesion: 0.25
-Nodes (8): additionalProperties, type, properties, launch, schema_id, version, const, const
+### Community 1193 - "poll-r8-resume-row14.sh"
+Cohesion: 0.47
+Nodes (5): driver_alive(), log(), SB_E2E_INSTALL_FP, SB_E2E_LEDGER_FILE, poll-r8-resume-row14.sh script
 
 ### Community 1194 - "Workflow Atomic Flow Audit Closeout"
 Cohesion: 0.40
@@ -8527,9 +8513,9 @@ Nodes (6): fail(), HOME, pass(), PATH, test-rtk-gate-lib.sh script, SILVER_BULLE
 Cohesion: 0.29
 Nodes (5): assert_true(), SB_RUNTIME_PRESERVE_STATE_DIR, SB_RUNTIME_STATE_DIR, test-sb-project-gate.sh script, SILVER_BULLET_PROJECT_ROOT
 
-### Community 1201 - "allow_adjacent_section"
-Cohesion: 0.21
-Nodes (8): default, description, type, description, minLength, type, allow_adjacent_section, category_pack_id
+### Community 1201 - "TestMatrixOpenpyxl"
+Cohesion: 0.40
+Nodes (3): skipIf, skipUnless, TestMatrixOpenpyxl
 
 ### Community 1202 - "test-skill-execution-paths.sh"
 Cohesion: 0.43
@@ -8655,9 +8641,9 @@ Nodes (7): Audit and traceability, Data residency, Governance, Identity and acce
 Cohesion: 0.29
 Nodes (7): suggested_must_haves, Audit log, Data residency controls, Encryption at rest, RBAC, SSO, suggested_must_haves
 
-### Community 1238 - "SLO-Driven Operations"
-Cohesion: 0.25
-Nodes (8): Postmortem Action Items, Error Budget Policy, Incident Signals, Monitoring Infrastructure, Postmortem Document, SLO Targets, SLO-Driven Operations, Incident Response and Learning
+### Community 1238 - "Multi-Agent Safety"
+Cohesion: 0.33
+Nodes (6): Agent Isolation, Capability Delegation, Message Authentication, Multi-Agent Safety, Recursive Injection Prevention, Termination Guarantees
 
 ### Community 1239 - "enum"
 Cohesion: 0.29
@@ -8668,8 +8654,8 @@ Cohesion: 0.57
 Nodes (6): _exists(), main(), Any, Path, score_run(), score_skill_tree()
 
 ### Community 1241 - "properties"
-Cohesion: 0.25
-Nodes (8): type, properties, type, cancellation_proven, config_hash, hard_ceiling_enforced, usage_metered, type
+Cohesion: 0.29
+Nodes (7): type, properties, type, cancellation_proven, hard_ceiling_enforced, usage_metered, type
 
 ### Community 1242 - "required"
 Cohesion: 0.29
@@ -8803,9 +8789,9 @@ Nodes (6): Attribution, Code of Conduct, Enforcement, Our Pledge, Our Standards,
 Cohesion: 0.29
 Nodes (6): Acknowledgments, Reporting a Vulnerability, Response Timeline, Scope, Security Policy, Supported Versions
 
-### Community 1282 - "feature_priority_overrides"
-Cohesion: 0.40
-Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve signup, feature_priority_overrides
+### Community 1282 - "enum"
+Cohesion: 0.33
+Nodes (6): evidence_validated, implicit, user_confirmed, status, enum, type
 
 ### Community 1283 - "enum"
 Cohesion: 0.29
@@ -8999,17 +8985,13 @@ Nodes (7): required, backend, cache_identity, evidence_hash, expires_at, probed_
 Cohesion: 0.29
 Nodes (7): effective_model_id, status, usage, result, additionalProperties, required, type
 
-### Community 1336 - "build_capabilities_stub"
-Cohesion: 0.43
-Nodes (6): build_capabilities_stub(), main(), Any, Return backend-capabilities-v1 snapshot (stub unless --live)., validate_profile(), utc_now_iso()
+### Community 1336 - "test-step-vloop-runtime-rollup.sh"
+Cohesion: 0.47
+Nodes (5): fail(), pass(), SB_APO_CATALOG_FILE, SB_RUNTIME_STATE_DIR, test-step-vloop-runtime-rollup.sh script
 
-### Community 1337 - "Golden Path Engineering"
-Cohesion: 0.25
-Nodes (8): Adoption Metrics, Compliance Requirements, Developer Workflow Analysis, Golden Path Template, Infrastructure Capability Inventory, Platform Orchestrator, Service Catalog, Golden Path Engineering
-
-### Community 1338 - "Landscape Research Prompt Template"
-Cohesion: 0.29
-Nodes (7): CATEGORY_PACK Prompt Block, In-scope core solution set, Landscape Consolidation Guide, Landscape Research Prompt Template, Market Landscape Report, Solution category, SMB decision-maker audience
+### Community 1337 - "silver:deep-research/reference/need-profile-personas.json"
+Cohesion: 0.40
+Nodes (4): description, personas, $schema, version
 
 ### Community 1339 - "project-active.sh"
 Cohesion: 0.43
@@ -9091,9 +9073,9 @@ Nodes (6): deep, quick, standard, ultradeep, enum, mode
 Cohesion: 0.33
 Nodes (6): minLength, type, additionalProperties, description, type, product_aliases
 
-### Community 1359 - "enum"
-Cohesion: 0.33
-Nodes (6): primary, secondary, tertiary, role, enum, type
+### Community 1359 - "Prompt Construction"
+Cohesion: 0.40
+Nodes (5): Least-Privilege Prompting, Output Validation, Prompt Construction, Structured Message Formats, System/User Separation
 
 ### Community 1360 - "priority_hints"
 Cohesion: 0.60
@@ -9119,9 +9101,9 @@ Nodes (10): Default Research Type, Compare Smoke Fixture, Landscape Smoke Fixtur
 Cohesion: 0.33
 Nodes (6): required, type, cancellation_proven, hard_ceiling_enforced, usage_metered, evidence
 
-### Community 1367 - "enum"
-Cohesion: 0.33
-Nodes (6): primary, secondary, tertiary, role, enum, type
+### Community 1367 - "suggested_constraints"
+Cohesion: 0.50
+Nodes (4): Limited budget, Prefer low operational overhead, Small team, suggested_constraints
 
 ### Community 1368 - "usage"
 Cohesion: 0.33
@@ -9287,9 +9269,9 @@ Nodes (5): additionalProperties, $id, $schema, title, type
 Cohesion: 0.33
 Nodes (6): budget, phases, work_item_refs, required, type, multi_ai
 
-### Community 1413 - "generate_comparison_xlsx"
-Cohesion: 0.46
-Nodes (7): comparison_to_builder_config(), generate_comparison_xlsx(), main(), Any, Path, Map DR comparison.json rows to matrix_builder config., _solution_order()
+### Community 1413 - "category_pack_id"
+Cohesion: 0.50
+Nodes (4): description, minLength, type, category_pack_id
 
 ### Community 1414 - "enum"
 Cohesion: 0.33
@@ -9331,9 +9313,9 @@ Nodes (6): TC-03 Criteria (Net-New Workflow Creation), Compliance Evidence Bundl
 Cohesion: 0.33
 Nodes (6): required, type, cancellation_proven, hard_ceiling_enforced, usage_metered, evidence
 
-### Community 1425 - "Context Integrity"
-Cohesion: 0.33
-Nodes (6): Authority Escalation, Context Integrity, Context Poisoning, Context Provenance Tracking, Instruction Smuggling, Role Confusion
+### Community 1425 - "reliability_code"
+Cohesion: 0.50
+Nodes (4): reliability_code, description, pattern, type
 
 ### Community 1426 - "usage"
 Cohesion: 0.33
@@ -9579,13 +9561,13 @@ Nodes (5): RTK_DISABLED, SB_E2E_LIVE_RUNTIME, smoke-matrix.sh script, SILVER_BUL
 Cohesion: 0.40
 Nodes (3): agent_codex_prepare_lightweight_codex_home(), agent_codex_strip_mcp_config_toml(), codex-cli.sh script
 
-### Community 1493 - "TestMatrixOpenpyxl"
-Cohesion: 0.40
-Nodes (3): skipIf, skipUnless, TestMatrixOpenpyxl
+### Community 1493 - "agentmemory Dependency Flow"
+Cohesion: 0.50
+Nodes (4): .agentmemory Export Root, @agentmemory/agentmemory Package, gitleaks, agentmemory Dependency Flow
 
 ### Community 1494 - "silver:verify"
-Cohesion: 0.04
-Nodes (66): accessibility pack, Alumnium MCP, Clarify, Compare, and Hand Off, Visual Companion, Named Solution Comparison, Agentmemory Save, Composer 2.5 Worker Model, Instruction Ledger Gate (+58 more)
+Cohesion: 0.06
+Nodes (42): Alumnium MCP, Clarify, Compare, and Hand Off, Visual Companion, Named Solution Comparison, Agentmemory Save, Composer 2.5 Worker Model, Instruction Ledger Gate, Live Publish Evidence Gate (+34 more)
 
 ### Community 1495 - "probe-agentmemory.sh"
 Cohesion: 0.53
@@ -9752,8 +9734,8 @@ Cohesion: 0.40
 Nodes (3): assert_eq(), test-semantic-compress-hook.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
 
 ### Community 1631 - "Tool Use Safety"
-Cohesion: 0.29
-Nodes (7): Input Validation, Audit Logging, Confirmation Gates, Least Privilege, Output Sanitization, Rate Limiting, Tool Use Safety
+Cohesion: 0.33
+Nodes (6): Audit Logging, Confirmation Gates, Least Privilege, Output Sanitization, Rate Limiting, Tool Use Safety
 
 ### Community 1632 - "test-enterprise-e2e-matrix-force.sh"
 Cohesion: 0.40
@@ -9775,9 +9757,9 @@ Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-model-
 Cohesion: 0.47
 Nodes (5): fail(), pass(), SB_APO_CATALOG_FILE, SB_RUNTIME_STATE_DIR, test-parallel-scheduling-safety.sh script
 
-### Community 1663 - "Process Bypass Cluster"
-Cohesion: 0.40
-Nodes (5): Process Bypass Cluster, Governed Fast Path, Prompt Re-Injection, Spec Floor, Workflow Admission
+### Community 1663 - "suggested_must_haves"
+Cohesion: 0.50
+Nodes (4): API access, Managed hosting, Self-serve signup, suggested_must_haves
 
 ### Community 1664 - "test-round9-gate3-driver.sh"
 Cohesion: 0.87
@@ -9811,9 +9793,9 @@ Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-site-c
 Cohesion: 0.87
 Nodes (5): assert_contains(), assert_not_contains(), fail(), pass(), test-site-content-freshness.sh script
 
-### Community 1672 - "Review Loop Rules"
-Cohesion: 0.40
-Nodes (5): Review Loop Rules, Review Analytics JSONL, Review Rounds Audit Trail, Review State File, Commit Review Trail
+### Community 1672 - "allow_adjacent_section"
+Cohesion: 0.50
+Nodes (4): default, description, type, allow_adjacent_section
 
 ### Community 1673 - "test-validate-host-agnostic-core.sh"
 Cohesion: 0.67
@@ -9835,9 +9817,9 @@ Nodes (5): required, type, currency_micro_usd_cap, total_tokens_cap, budget
 Cohesion: 0.40
 Nodes (5): default, solution-compare, solution-landscape, research_type, enum
 
-### Community 1679 - "skill-source/silver-deep-research/reference/need-profile-personas.json"
-Cohesion: 0.40
-Nodes (4): description, personas, $schema, version
+### Community 1679 - "feature_priority_overrides"
+Cohesion: 0.50
+Nodes (4): Data residency controls, HIPAA, Immutable audit log, feature_priority_overrides
 
 ### Community 1680 - "feature_priority_overrides"
 Cohesion: 0.40
@@ -9915,9 +9897,9 @@ Nodes (5): feature_priority_overrides, Audit log, RBAC, SOC 2, SSO
 Cohesion: 0.40
 Nodes (5): deep, quick, standard, ultradeep, enum
 
-### Community 1721 - "consolidate"
-Cohesion: 0.60
-Nodes (5): consolidate(), main(), normalize_claim(), Any, validate_inputs()
+### Community 1721 - "suggested_must_haves"
+Cohesion: 0.50
+Nodes (4): API access, Managed hosting, Self-serve signup, suggested_must_haves
 
 ### Community 1722 - "items"
 Cohesion: 0.40
@@ -9995,6 +9977,10 @@ Nodes (6): high, low, medium, enum, type, materiality
 Cohesion: 0.40
 Nodes (5): deep, quick, standard, ultradeep, enum
 
+### Community 1744 - "suggested_constraints"
+Cohesion: 0.50
+Nodes (4): Limited budget, Prefer low operational overhead, Small team, suggested_constraints
+
 ### Community 1814 - "items"
 Cohesion: 0.40
 Nodes (5): items, type, additionalProperties, type, entries
@@ -10060,8 +10046,8 @@ Cohesion: 0.40
 Nodes (5): default, solution-compare, solution-landscape, research_type, enum
 
 ### Community 3292 - "required"
-Cohesion: 0.10
-Nodes (28): items, type, items, minItems, type, items, items, minItems (+20 more)
+Cohesion: 0.09
+Nodes (29): items, items, minItems, type, items, minItems, type, items (+21 more)
 
 ### Community 3293 - "test-agentmemory-gate-lib.sh"
 Cohesion: 0.53
@@ -10079,9 +10065,9 @@ Nodes (5): Managed hosting, Predictable pricing, Quick onboarding, Self-serve si
 Cohesion: 0.40
 Nodes (5): deep, quick, standard, ultradeep, enum
 
-### Community 3298 - "Technical Debt Reduction"
-Cohesion: 0.40
-Nodes (5): WF-17.04 Technical Debt Backlog and Reduction, Dependency Manifests, System Health Metrics, Technical Debt Inventory, Technical Debt Reduction
+### Community 3298 - "claim_id"
+Cohesion: 0.50
+Nodes (4): description, pattern, type, claim_id
 
 ### Community 3301 - "items"
 Cohesion: 0.40
@@ -10107,13 +10093,13 @@ Nodes (3): assert_json(), assert_no_bare_hook_event_name(), test-codex-hook-cont
 Cohesion: 0.60
 Nodes (3): fail(), pass(), test-context-mode-read-deny-lib.sh script
 
-### Community 3308 - "test-enforcement-tier.sh"
-Cohesion: 0.60
-Nodes (4): assert_false(), assert_true(), test-enforcement-tier.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 3308 - "run_hook_probe_strict"
+Cohesion: 0.50
+Nodes (4): run_hook_probe_strict(), run_prompt(), run_prompt_strict(), seed_workspace_requested_skills()
 
-### Community 3309 - "Collaborative Programming and Mob Programming"
-Cohesion: 0.40
-Nodes (5): AI Coding Assistant, Harness Configuration, Implementation Code, Test Suite, Collaborative Programming and Mob Programming
+### Community 3309 - "test-enterprise-e2e-matrix-quota.sh"
+Cohesion: 0.83
+Nodes (3): assert_fail(), assert_ok(), test-enterprise-e2e-matrix-quota.sh script
 
 ### Community 3310 - "test-enterprise-policy-runtime.sh"
 Cohesion: 0.60
@@ -10147,9 +10133,9 @@ Nodes (5): 1. Product / architecture / inner workings (mandatory first), 2. Plan
 Cohesion: 0.70
 Nodes (4): assert_equals(), assert_fails(), assert_passes(), test-run-release-live-matrix.sh script
 
-### Community 3322 - "test-cursor-hooks-paths.sh"
-Cohesion: 0.60
-Nodes (4): fail(), pass(), test-cursor-hooks-paths.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 3322 - "Site Release Audit"
+Cohesion: 0.67
+Nodes (3): Site Release Audit, v0.51.0, v0.51.1
 
 ### Community 3323 - "test-run-sb-live-tests-codex.sh"
 Cohesion: 0.70
@@ -10195,17 +10181,17 @@ Nodes (4): fail(), pass(), test-rm-safety.sh script, SILVER_BULLET_TEST_HOOK_ENF
 Cohesion: 0.50
 Nodes (4): default, description, type, evidence_ids
 
-### Community 3334 - "YAML and JSON Infrastructure-Code Rule"
-Cohesion: 0.40
-Nodes (5): GitHub Actions Workflow, Helm Chart, Kubernetes Manifest, Terraform File, YAML and JSON Infrastructure-Code Rule
+### Community 3334 - "extracted_at"
+Cohesion: 0.67
+Nodes (3): format, type, extracted_at
 
 ### Community 3335 - "must_research"
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
-### Community 3336 - "category_priority_floor"
-Cohesion: 0.50
-Nodes (4): Developer Experience, Pricing and licensing, Time to value, category_priority_floor
+### Community 3336 - "evidence_hash"
+Cohesion: 0.67
+Nodes (3): pattern, type, evidence_hash
 
 ### Community 3337 - "source_id"
 Cohesion: 0.50
@@ -10247,9 +10233,9 @@ Nodes (3): Learnings — 2026-08, practice:documentation, practice:release
 Cohesion: 0.83
 Nodes (3): emit_deny(), payload_has_compression_markers(), compression-marker-guard.sh script
 
-### Community 3352 - "test-enterprise-policy.sh"
-Cohesion: 0.60
-Nodes (4): assert_contains(), assert_eq(), test-enterprise-policy.sh script, SILVER_BULLET_TEST_HOOK_ENFORCED
+### Community 3352 - "workspace_trust_config_files"
+Cohesion: 0.67
+Nodes (3): codex_config_file(), kay_active_config_file(), workspace_trust_config_files()
 
 ### Community 3356 - "Dependency-Aware Scheduler"
 Cohesion: 0.50
@@ -10359,9 +10345,9 @@ Nodes (4): PATCH FOR: FINDING-1.1 + FINDING-1.2, PATCH FOR: FINDING-5.1, PATCH F
 Cohesion: 0.25
 Nodes (7): 1. Product briefing + byte parity confirmation, 2. Verified evidence (machine-checked, not asserted), 3. Charter-item coverage audit (locked decisions vs plan text), 4. Adversarial probes that did **not** produce material findings, 5. Non-material observations (explicitly **not** blocking, no fix required for this verdict), 6. Findings, RFL Rung 5 — Opus Thinking High — Cycle 1
 
-### Community 3390 - "feature_priority_overrides"
-Cohesion: 0.50
-Nodes (4): Data residency controls, HIPAA, Immutable audit log, feature_priority_overrides
+### Community 3390 - "codex_plugin_registered"
+Cohesion: 0.67
+Nodes (3): codex_plugin_registered(), codex_plugin_registered_any(), codex_plugin_surface_exists_any()
 
 ### Community 3391 - "evidence_ids"
 Cohesion: 0.50
@@ -10372,8 +10358,8 @@ Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
 ### Community 3393 - "Merge status"
-Cohesion: 0.50
-Nodes (3): Fix F — #252 tri-host timeout, Fix G — #253 kay isolation concurrency, Merge status
+Cohesion: 0.25
+Nodes (7): A–G presence on tip, Fix C/D — #249 #250 instruction ledger, Fix F — #252 tri-host timeout, Fix G — #253 kay isolation concurrency, Gaps, Integration status check (post Fix G / C/D), Merge status
 
 ### Community 3394 - "source_id"
 Cohesion: 0.50
@@ -10390,10 +10376,6 @@ Nodes (4): type, null, string, disable_reason
 ### Community 3398 - "enum"
 Cohesion: 0.50
 Nodes (4): disabled, enabled, status, enum
-
-### Community 3399 - "Decision Record — v2 Landscape Replay"
-Cohesion: 0.50
-Nodes (4): Evidence E003, Evidence E004, Evidence E010, Decision Record — v2 Landscape Replay
 
 ### Community 3401 - "Solution Capability Report: agenthub"
 Cohesion: 0.50
@@ -10479,10 +10461,6 @@ Nodes (4): default, description, type, evidence_ids
 Cohesion: 0.50
 Nodes (4): description, items, type, must_research
 
-### Community 3429 - "suggested_constraints"
-Cohesion: 0.50
-Nodes (4): Limited budget, Prefer low operational overhead, Small team, suggested_constraints
-
 ### Community 3430 - "source_id"
 Cohesion: 0.50
 Nodes (4): source_id, description, pattern, type
@@ -10502,10 +10480,6 @@ Nodes (4): disabled, enabled, status, enum
 ### Community 3435 - "reliability_code"
 Cohesion: 0.50
 Nodes (4): reliability_code, description, pattern, type
-
-### Community 3437 - "enum"
-Cohesion: 0.50
-Nodes (4): enum, cursor, ocg, backend
 
 ### Community 3438 - "test-route-smoke-transcript.sh"
 Cohesion: 0.83
@@ -10554,10 +10528,6 @@ Nodes (3): fail(), pass(), test-claude-agent-surface-isolation.sh script
 ### Community 3449 - "test-claude-plugin-surface.sh"
 Cohesion: 0.83
 Nodes (3): fail(), pass(), test-claude-plugin-surface.sh script
-
-### Community 3451 - "allow_adjacent_section"
-Cohesion: 0.21
-Nodes (8): default, description, type, description, minLength, type, allow_adjacent_section, category_pack_id
 
 ### Community 3452 - "test-export-enterprise-evidence.sh"
 Cohesion: 0.83
@@ -10659,10 +10629,6 @@ Nodes (4): enum, cursor, ocg, backend
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
 
-### Community 3479 - "FEATURE DEVOPS RELEASE Workflow Chain"
-Cohesion: 0.67
-Nodes (3): FEATURE DEVOPS RELEASE Workflow Chain, TC-01 Vision 20260706T084149Z, TC-01 Vision 20260706T092844Z
-
 ### Community 3480 - "outputs"
 Cohesion: 0.67
 Nodes (3): default, type, outputs
@@ -10747,18 +10713,6 @@ Nodes (6): assert_exists(), assert_removed(), run_hook(), setup(), test-trivial-
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
 
-### Community 3527 - "expires_at"
-Cohesion: 0.67
-Nodes (3): format, type, expires_at
-
-### Community 3528 - "section_id"
-Cohesion: 0.67
-Nodes (3): section_id, description, type
-
-### Community 3546 - "section_id"
-Cohesion: 0.67
-Nodes (3): section_id, description, type
-
 ### Community 3547 - "_json_out"
 Cohesion: 0.67
 Nodes (3): _json_out(), Any, Print JSON to stdout.
@@ -10778,14 +10732,6 @@ Nodes (6): 1. Mechanical cross-checks (independent, current bytes), 2. The `e5c5
 ### Community 3716 - "expires_at"
 Cohesion: 0.67
 Nodes (3): format, type, expires_at
-
-### Community 3719 - "live-test.sh"
-Cohesion: 0.38
-Nodes (6): SB_E2E_HOOK_DELIVERY_SKIP_BOOTSTRAP, SB_E2E_MATRIX_LOG, SB_RTK_COMPAT_MODE, live-test.sh script, start_harness_background(), usage()
-
-### Community 3721 - "alo-labs/agent-plugins Marketplace"
-Cohesion: 0.67
-Nodes (3): alo-labs/agent-plugins Marketplace, alo-labs-cursor Package, Public Host Marketplace
 
 ### Community 3722 - "text"
 Cohesion: 0.67
@@ -11084,9 +11030,9 @@ Nodes (3): Material findings, Review basis, RFL Rung 4 — GPT-5.6 Sol XHigh —
   research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ateam/scr.md · relation: references
 
 ## Knowledge Gaps
-- **12483 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `PATH`, `SB_ORCHESTRATOR_WORKER`, `SB_ORCHESTRATOR_PARENT` (+12478 more)
+- **12486 isolated node(s):** `$schema`, `.opencode/plugins/graphify.js`, `PATH`, `SB_ORCHESTRATOR_WORKER`, `SB_ORCHESTRATOR_PARENT` (+12481 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **1945 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1946 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
