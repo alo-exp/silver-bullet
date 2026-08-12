@@ -346,7 +346,19 @@ sb_orchestrator_parent_delegate_bash_allowed() {
   return 1
 }
 
-# Parent may use Bash for Codex invoke-skill router adapter or read-only state inspection.
+# Parent may clear own-scope instruction ledger via sanctioned resolve CLI (#264).
+sb_orchestrator_parent_resolve_ledger_bash_allowed() {
+  local command_str="$1"
+  [[ -n "$command_str" ]] || return 1
+  # Allow scripts/resolve-instruction-ledger.sh (and bash/sh wrappers) for list/done/deferred/help.
+  if ! printf '%s' "$command_str" | grep -qE '(^|[[:space:]/"'"'"'])(\./)?scripts/resolve-instruction-ledger\.sh([[:space:]"'"'"']|$)'; then
+    return 1
+  fi
+  return 0
+}
+
+# Parent may use Bash for Codex invoke-skill router adapter, sanctioned ledger resolve,
+# or read-only state inspection (incl. graphify query/path/explain via read-only classifier).
 sb_orchestrator_parent_bash_allowed() {
   local command_str="$1"
   [[ -n "$command_str" ]] || return 1
@@ -359,6 +371,10 @@ sb_orchestrator_parent_bash_allowed() {
   fi
 
   if sb_orchestrator_parent_delegate_bash_allowed "$command_str"; then
+    return 0
+  fi
+
+  if sb_orchestrator_parent_resolve_ledger_bash_allowed "$command_str"; then
     return 0
   fi
 

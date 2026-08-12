@@ -61,8 +61,14 @@ emit_block() {
       [[ "${SB_KAY_HOOK_BRIDGE_INVOKED:-}" == "1" ]] && { printf '%s\n' "$reason" >&2; exit 2; }
       ;;
     UserPromptSubmit|beforeSubmitPrompt)
-      ctx=$(printf '%s' "$reason" | jq -Rs '.')
-      printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+      if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+        # shellcheck source=lib/ups-coalesce.sh
+        source "$_lib_dir/ups-coalesce.sh"
+        sb_ups_emit_additional_context "$reason" "UserPromptSubmit"
+      else
+        ctx=$(printf '%s' "$reason" | jq -Rs '.')
+        printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+      fi
       ;;
     *)
       printf '{"decision":"block","reason":%s}' "$json_reason"
@@ -160,3 +166,4 @@ emit_block "Subagent completion gate (§3c) — Task workers ran this session bu
 
 Invoke /silver:completion-audit to verify worker claims before Stop.
 Parent must not accept subagent \"done\" without independent verification."
+

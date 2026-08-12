@@ -171,8 +171,26 @@ assert_deny "no CLI blocks edit" "$out"
 setup
 write_cfg true true
 install_mock_agentmemory
+export SB_AGENTMEMORY_MCP_ARTIFACT="/no/such/agentmemory-mcp-${TEST_RUN_ID}.json"
 out="$(run_edit)"
-assert_deny "CLI without MCP blocks edit" "$out"
+unset SB_AGENTMEMORY_MCP_ARTIFACT
+assert_allow "CLI without MCP soft-allows edit (#259)" "$out"
+
+setup
+write_cfg true true
+install_mock_agentmemory
+# Force unhealthy server: mock curl fails health
+cat >"$MOCK_BIN/curl" <<'EOF'
+#!/usr/bin/env bash
+if printf '%s' "$*" | grep -q 'agentmemory/health'; then exit 1; fi
+command -v /usr/bin/curl >/dev/null && exec /usr/bin/curl "$@" || exit 1
+EOF
+chmod +x "$MOCK_BIN/curl"
+wire_test_mcp
+rm -f "$AM_STATE"
+out="$(run_edit)"
+unwire_test_mcp
+assert_allow "server down soft-allows edit (#259)" "$out"
 
 setup
 write_cfg true true
