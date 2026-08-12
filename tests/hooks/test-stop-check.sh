@@ -174,6 +174,38 @@ assert_contains() {
   fi
 }
 
+
+assert_decoded_message_real_newlines() {
+  # SB-BUG-B / #248: gate reason/message must decode to real newlines, not literal \n.
+  local label="$1"
+  local output="$2"
+  local decoded
+  decoded=$(printf '%s' "$output" | jq -r '
+    .reason
+    // .permissionDecisionReason
+    // .hookSpecificOutput.permissionDecisionReason
+    // .hookSpecificOutput.message
+    // empty
+  ' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    echo "  FAIL: $label — could not decode reason/message from: $output"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$decoded" != *$'\n'* ]]; then
+    echo "  FAIL: $label — decoded text has no real newline characters"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$decoded" | grep -qF '\n'; then
+    echo "  FAIL: $label — decoded text still contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  PASS: $label"
+  PASS=$((PASS + 1))
+}
+
 assert_empty() {
   local label="$1"
   local output="$2"
@@ -331,6 +363,7 @@ git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_blocks "missing skills -> decision:block" "$out"
 assert_contains "block output contains 'silver-quality-gates'" "$out" "silver-quality-gates"
+assert_decoded_message_real_newlines "NEWLINE: missing-skills reason uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 3b: Uninstalled required skill -> warning only, no block
@@ -357,6 +390,7 @@ git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_passes "uninstalled required skill -> no block" "$out"
 assert_contains "warning output mentions uninstalled skill" "$out" "not installed anywhere invocable"
+assert_decoded_message_real_newlines "NEWLINE: uninstalled-skill warning uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 4: Trivial file present -> exit 0, no block
