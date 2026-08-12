@@ -290,21 +290,21 @@ if has_skill "silver-review-request" && has_skill "silver-review"; then
   req_line=$(skill_line "silver-review-request")
   cr_line=$(skill_line "silver-review")
   if [[ "$req_line" -gt 0 && "$cr_line" -gt 0 && "$cr_line" -lt "$req_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /silver-review was run BEFORE /silver-review-request (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review was run BEFORE /silver-review-request (wrong order)"$'\n'
   fi
 fi
 if has_skill "silver-review" && has_skill "silver-review-triage"; then
   cr_line=$(skill_line "silver-review")
   recv_line=$(skill_line "silver-review-triage")
   if [[ "$cr_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$cr_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review (wrong order)"$'\n'
   fi
 fi
 if has_skill "silver-review-request" && has_skill "silver-review-triage"; then
   req_line=$(skill_line "silver-review-request")
   recv_line=$(skill_line "silver-review-triage")
   if [[ "$req_line" -gt 0 && "$recv_line" -gt 0 && "$recv_line" -lt "$req_line" ]]; then
-    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review-request (wrong order)\n"
+    ordering_issues="${ordering_issues}  ⚠️  /silver-review-triage was run BEFORE /silver-review-request (wrong order)"$'\n'
   fi
 fi
 
@@ -322,7 +322,7 @@ find_planning_artifact() {
 
 # silver-execute should produce .planning/STATE.md
 if has_skill "silver-execute" && [[ ! -f "$project_root/.planning/STATE.md" ]]; then
-  artifact_blocks="${artifact_blocks}  ❌ /silver-execute was recorded but .planning/STATE.md is absent — was execution actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-execute was recorded but .planning/STATE.md is absent — was execution actually completed?"$'\n'
 fi
 
 # silver-verify should produce UAT/verification artifacts.
@@ -331,26 +331,26 @@ if has_skill "silver-verify" && \
    ! find_planning_artifact '*-UAT.md' && \
    ! find_planning_artifact '*VERIFICATION.md' && \
    ! find_planning_artifact 'VERIFICATION.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /silver-verify was recorded but no UAT/VERIFICATION artifact was found under .planning/ — was verification actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-verify was recorded but no UAT/VERIFICATION artifact was found under .planning/ — was verification actually completed?"$'\n'
 fi
 
 if has_skill "silver-review" && \
    [[ ! -f "$project_root/.planning/REVIEW.md" ]] && \
    ! find_planning_artifact '*-REVIEW.md' && \
    ! find_planning_artifact 'REVIEW.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /silver-review was recorded but no REVIEW artifact was found under .planning/ — was code review actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-review was recorded but no REVIEW artifact was found under .planning/ — was code review actually completed?"$'\n'
 fi
 
 if has_skill "silver-secure" && \
    ! find_planning_artifact '*-SECURITY.md' && \
    ! find_planning_artifact 'SECURITY.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /silver-secure was recorded but no SECURITY artifact was found under .planning/ — was security verification actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-secure was recorded but no SECURITY artifact was found under .planning/ — was security verification actually completed?"$'\n'
 fi
 
 if has_skill "silver-validate" && \
    ! find_planning_artifact '*-VALIDATION.md' && \
    ! find_planning_artifact 'VALIDATION.md'; then
-  artifact_blocks="${artifact_blocks}  ❌ /silver-validate was recorded but no VALIDATION artifact was found under .planning/ — was validation actually completed?\n"
+  artifact_blocks="${artifact_blocks}  ❌ /silver-validate was recorded but no VALIDATION artifact was found under .planning/ — was validation actually completed?"$'\n'
 fi
 
 # Fresh test execution marker: if verify-tests is required and has been recorded,
@@ -371,7 +371,7 @@ fi
 if [[ -n "$missing" ]]; then
   missing_lines=""
   for skill in $missing; do
-    missing_lines="${missing_lines}  ❌ /${skill}\n"
+    missing_lines="${missing_lines}  ❌ /${skill}"$'\n'
   done
   ordering_note=""
   [[ -n "$ordering_issues" ]] && ordering_note=$(printf '\n⚠️  Ordering issues detected:\n%s' "$ordering_issues")
@@ -379,7 +379,7 @@ if [[ -n "$missing" ]]; then
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$msg" "$ignored_lines")
   fi
@@ -390,7 +390,7 @@ elif [[ -n "$test_freshness_warning" ]]; then
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
@@ -401,7 +401,7 @@ elif [[ -n "$ordering_issues" ]]; then
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
@@ -412,7 +412,7 @@ elif [[ -n "$artifact_blocks" ]]; then
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '%s\n\nIgnored required skills:\n%s' "$msg" "$ignored_lines")
   fi
@@ -422,7 +422,7 @@ else
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do
-      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)\n"
+      ignored_lines="${ignored_lines}  ⚠️ /${skill} (not installed anywhere invocable)"$'\n'
     done
     msg=$(printf '✅ Workflow compliance verified. Proceed.\n\nIgnored required skills:\n%s' "$ignored_lines")
     if [[ -n "${EVIDENCE_SCHEMA_WARN:-}" ]]; then

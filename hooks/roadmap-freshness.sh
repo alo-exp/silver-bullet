@@ -122,7 +122,7 @@ while IFS= read -r summary_path; do
     phase_title=$(grep -E "^- \[ \] \*\*Phase ${phase_num}:" "$roadmap_file" | head -1 | sed 's/^- \[ \] //')
     # Strip to safe chars only — prevents control chars or injection content in block message (SEC: content injection guard)
     phase_title=$(printf '%s' "$phase_title" | tr -dc 'a-zA-Z0-9 .:,_-')
-    unticked_phases="${unticked_phases}  [UNTICKED] Phase ${phase_num}: ${phase_title}\n"
+    unticked_phases="${unticked_phases}  [UNTICKED] Phase ${phase_num}: ${phase_title}"$'\n'
   fi
   # If already [x] or not found in ROADMAP — silent pass
 

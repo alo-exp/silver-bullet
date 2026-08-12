@@ -174,6 +174,38 @@ assert_contains() {
   fi
 }
 
+
+assert_decoded_message_real_newlines() {
+  # SB-BUG-B / #248: gate reason/message must decode to real newlines, not literal \n.
+  local label="$1"
+  local output="$2"
+  local decoded
+  decoded=$(printf '%s' "$output" | jq -r '
+    .reason
+    // .permissionDecisionReason
+    // .hookSpecificOutput.permissionDecisionReason
+    // .hookSpecificOutput.message
+    // empty
+  ' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    echo "  FAIL: $label — could not decode reason/message from: $output"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$decoded" != *$'\n'* ]]; then
+    echo "  FAIL: $label — decoded text has no real newline characters"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$decoded" | grep -qF '\n'; then
+    echo "  FAIL: $label — decoded text still contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  PASS: $label"
+  PASS=$((PASS + 1))
+}
+
 assert_empty() {
   local label="$1"
   local output="$2"
@@ -331,6 +363,7 @@ git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_blocks "missing skills -> decision:block" "$out"
 assert_contains "block output contains 'silver-quality-gates'" "$out" "silver-quality-gates"
+assert_decoded_message_real_newlines "NEWLINE: missing-skills reason uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 3b: Uninstalled required skill -> warning only, no block
@@ -357,6 +390,7 @@ git -C "$TMPDIR_TEST" add wip.txt
 out=$(run_hook)
 assert_passes "uninstalled required skill -> no block" "$out"
 assert_contains "warning output mentions uninstalled skill" "$out" "not installed anywhere invocable"
+assert_decoded_message_real_newlines "NEWLINE: uninstalled-skill warning uses real newlines not literal \\n" "$out"
 teardown
 
 # Test 4: Trivial file present -> exit 0, no block
@@ -901,6 +935,90 @@ else
 fi
 teardown
 
+
+# ── SKILLNORM: colon↔hyphen skill discovery (#247 / SB-BUG-A) ─────────────────
+echo "--- SKILLNORM: colon install / hyphen require / absent (#247) ---"
+# shellcheck source=hooks/lib/skill-discovery.sh
+source "$REPO_ROOT/hooks/lib/skill-discovery.sh"
+
+assert_skillnorm_rc() {
+  local label="$1"
+  local expected_rc="$2"
+  local actual_rc="$3"
+  if [[ "$actual_rc" -eq "$expected_rc" ]]; then
+    echo "  PASS: $label"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: $label — expected rc=$expected_rc got rc=$actual_rc"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+SKILLNORM_ROOT=$(mktemp -d)
+mkdir -p "$SKILLNORM_ROOT/silver:quality-gates"
+cat > "$SKILLNORM_ROOT/silver:quality-gates/SKILL.md" <<'EOF'
+---
+name: silver:quality-gates
+description: SKILLNORM colon-path fixture
+---
+EOF
+export SILVER_BULLET_SKILL_ROOTS="$SKILLNORM_ROOT"
+
+_rc=0
+sb_skill_is_installed "silver-quality-gates" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-A: colon-on-disk matches hyphen require" 0 "$_rc"
+
+_rc=0
+sb_skill_is_installed "silver:quality-gates" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-B: colon-on-disk matches colon require" 0 "$_rc"
+
+_rc=0
+sb_skill_is_installed "definitely-not-installed-skill-zzz" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-C: absent skill remains not installed" 1 "$_rc"
+
+SKILLNORM_ROOT2=$(mktemp -d)
+mkdir -p "$SKILLNORM_ROOT2/skills/other-dir"
+cat > "$SKILLNORM_ROOT2/skills/other-dir/SKILL.md" <<'EOF'
+---
+name: silver:quality-gates
+description: SKILLNORM frontmatter fixture
+---
+EOF
+export SILVER_BULLET_SKILL_ROOTS="$SKILLNORM_ROOT2"
+_rc=0
+sb_skill_is_installed "silver-quality-gates" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-D: frontmatter colon name matches hyphen require" 0 "$_rc"
+
+SKILLNORM_ROOT3=$(mktemp -d)
+mkdir -p "$SKILLNORM_ROOT3/skills/silver-quality-gates"
+cat > "$SKILLNORM_ROOT3/skills/silver-quality-gates/SKILL.md" <<'EOF'
+---
+name: silver-quality-gates
+description: SKILLNORM hyphen-path fixture
+---
+EOF
+export SILVER_BULLET_SKILL_ROOTS="$SKILLNORM_ROOT3"
+_rc=0
+sb_skill_is_installed "silver:quality-gates" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-E: hyphen-on-disk matches colon require" 0 "$_rc"
+
+if declare -F sb_skill_name_variants >/dev/null 2>&1; then
+  variant_list=$(sb_skill_name_variants "silver-quality-gates" | tr '\n' ' ')
+  if printf '%s' "$variant_list" | grep -Fq 'silver-quality-gates' \
+    && printf '%s' "$variant_list" | grep -Fq 'silver:quality-gates'; then
+    echo "  PASS: SKILLNORM-F: sb_skill_name_variants emits hyphen and colon forms"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: SKILLNORM-F: variants missing expected forms: $variant_list"
+    FAIL=$((FAIL + 1))
+  fi
+else
+  echo "  FAIL: SKILLNORM-F: sb_skill_name_variants is not defined"
+  FAIL=$((FAIL + 1))
+fi
+
+unset SILVER_BULLET_SKILL_ROOTS
+rm -rf "$SKILLNORM_ROOT" "$SKILLNORM_ROOT2" "$SKILLNORM_ROOT3"
 # ── Results ───────────────────────────────────────────────────────────────────
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
