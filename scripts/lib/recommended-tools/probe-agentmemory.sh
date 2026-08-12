@@ -67,6 +67,9 @@ rt_repair_agentmemory() {
     npm install -g @agentmemory/agentmemory 2>/dev/null && actions+=("npm_install_agentmemory") || failures+=("npm_install_failed")
   fi
   if ! sb_agentmemory_server_healthy "$(rt_project_config)" 2>/dev/null; then
+    # The redirect creates the log file, not its parent — without this the
+    # start fails with "No such file or directory" on a fresh HOME.
+    mkdir -p "${HOME}/.agentmemory" 2>/dev/null || true
     nohup agentmemory >"${HOME}/.agentmemory/server.log" 2>&1 &
     sleep 1
     sb_agentmemory_server_healthy "$(rt_project_config)" 2>/dev/null && actions+=("server_started") || failures+=("server_start_failed")

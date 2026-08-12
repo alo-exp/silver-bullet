@@ -13,6 +13,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLANNING_DIR="${REPO_ROOT}/.planning/sb-tri-criteria-e2e"
+# SB_E2E_RUNS_DIR redirects per-run artifacts (including --dry-run output)
+# away from the tracked .planning tree so callers and tests do not leave
+# run directories behind in the checkout. Matrix/fixture reads still use
+# PLANNING_DIR.
+RUNS_DIR="${SB_E2E_RUNS_DIR:-${PLANNING_DIR}/runs}"
 UMBRELLA_MATRIX="${PLANNING_DIR}/MATRIX.json"
 STRUCT_TEST="${REPO_ROOT}/tests/scripts/test-sb-tri-criteria-e2e.sh"
 
@@ -292,7 +297,7 @@ cmd_start() {
 
   local run_id run_dir install_fp sb_sha
   run_id="$(run_id_new)-${track_id}"
-  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  run_dir="${RUNS_DIR}/${run_id}"
   mkdir -p "$run_dir"
 
   install_fp="$(enterprise_e2e_install_fingerprint)"
@@ -353,7 +358,7 @@ cmd_score() {
   [[ -n "$run_id" ]] || { echo "ERROR: --run required" >&2; exit 2; }
   [[ -n "$track_id" ]] || { echo "ERROR: --track required" >&2; exit 2; }
 
-  local run_dir="${PLANNING_DIR}/runs/${run_id}"
+  local run_dir="${RUNS_DIR}/${run_id}"
   [[ -d "$run_dir" ]] || { echo "ERROR: run dir not found: $run_dir" >&2; exit 1; }
 
   log_path="${log_path:-${run_dir}/parent-session.log}"
@@ -469,7 +474,7 @@ cmd_live() {
 
   local run_id run_dir
   run_id="$(run_id_new)-${track_id}"
-  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  run_dir="${RUNS_DIR}/${run_id}"
   mkdir -p "$run_dir"
 
   local track_dir row_id install_fp sb_sha
@@ -558,7 +563,7 @@ cmd_cold() {
 
   local run_id run_dir
   run_id="$(run_id_new)-${track_id}"
-  run_dir="${PLANNING_DIR}/runs/${run_id}"
+  run_dir="${RUNS_DIR}/${run_id}"
   mkdir -p "$run_dir"
 
   # Prepare vision/prefs/ledger via start dry path
@@ -603,7 +608,7 @@ cmd_status() {
   done
 
   if [[ -n "$run_id" ]]; then
-    local ledger="${PLANNING_DIR}/runs/${run_id}/ledger.json"
+    local ledger="${RUNS_DIR}/${run_id}/ledger.json"
     [[ -f "$ledger" ]] && cat "$ledger" || echo "No ledger for $run_id"
     return 0
   fi

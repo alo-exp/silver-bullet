@@ -265,6 +265,7 @@ if env HOME="$D21_HOME" \
   SB_CURSOR_SB_AGENTS_OFFLINE=1 \
   SB_CURSOR_MODELS_CATALOG="$D21_HOME/.config/silver-bullet/cursor-models-catalog.json" \
   SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" \
+  CSBA_REPO_ROOT="$D21_PROJ" \
   REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   --global --non-interactive >/dev/null 2>&1; then
   d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
