@@ -123,6 +123,18 @@ out_readonly=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name"
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows read-only Bash" "$out_readonly"
 
+out_graphify=$(cd "$WORK" && jq -n '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:"graphify query \"parent friction 258\""}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows graphify query (#258)" "$out_graphify"
+
+out_graphify_update=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"graphify update ."}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_contains "parent blocks graphify update" "$out_graphify_update" "ORCHESTRATOR PARENT"
+
+out_resolve=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash scripts/resolve-instruction-ledger.sh list"}}' | \
+  SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
+assert_empty "parent allows resolve-instruction-ledger (#264)" "$out_resolve"
+
 out_write_bash=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"echo test > foo.txt"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks write Bash" "$out_write_bash" "ORCHESTRATOR PARENT"
@@ -258,3 +270,4 @@ unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
+
