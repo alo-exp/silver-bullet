@@ -537,20 +537,66 @@ fi
 rm -rf "$HOOK_WORKDIR"
 rm -f "$TMPBRANCH"
 
-# Test 8: core-rules.md content injected when file exists
-echo "--- Test 8: core-rules.md content injected ---"
+# Test 8: core-rules SessionStart digest injected when file exists (#263)
+echo "--- Test 8: core-rules SessionStart digest injected ---"
 HOOK_WORKDIR=$(make_git_repo)
 new_branch=$(git -C "$HOOK_WORKDIR" rev-parse --abbrev-ref HEAD 2>/dev/null)
 printf '%s' "$new_branch" > "$TMPBRANCH"
 CORE_RULES="$(dirname "$HOOK")/core-rules.md"
 if [[ -f "$CORE_RULES" ]]; then
   out=$(run_hook "$HOOK_WORKDIR")
-  if printf '%s' "$out" | grep -q "Non-Negotiable\|Enforcement Model\|Process is non-negotiable"; then
-    echo "  PASS: core-rules.md content present in output"
+  decoded=$(printf '%s' "$out" | python3 -c 'import json,sys
+try:
+  d=json.load(sys.stdin)
+  print(d.get("hookSpecificOutput",{}).get("additionalContext",""))
+except Exception:
+  pass' 2>/dev/null || true)
+  if [[ -z "$decoded" ]]; then
+    decoded="$out"
+  fi
+  if printf '%s' "$decoded" | grep -q "Non-Negotiable\|Process is non-negotiable\|SessionStart digest"; then
+    echo "  PASS: core-rules digest markers present in output"
     PASS=$((PASS + 1))
   else
-    echo "  FAIL: core-rules.md content not found in output: ${out:0:200}..."
+    echo "  FAIL: core-rules digest not found in output: ${decoded:0:200}..."
     FAIL=$((FAIL + 1))
+  fi
+  if printf '%s' "$decoded" | grep -q "Full rules (on demand)\|core-rules.md"; then
+    echo "  PASS: digest points to full core-rules.md"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: digest missing on-demand full-rules pointer"
+    FAIL=$((FAIL + 1))
+  fi
+  digest_bytes=$(printf '%s' "$decoded" | python3 -c '
+import sys
+text=sys.stdin.read()
+markers=["# Silver Bullet — Core Enforcement Rules", "SessionStart digest"]
+start=-1
+for m in markers:
+  start=text.find(m)
+  if start>=0:
+    break
+if start<0:
+  print(0)
+  raise SystemExit
+end=text.find("\n---\n", start+1)
+chunk=text[start: end if end>start else start+4000]
+print(len(chunk.encode("utf-8")))
+' 2>/dev/null || echo 0)
+  if [[ "$digest_bytes" -gt 0 && "$digest_bytes" -le 3072 ]]; then
+    echo "  PASS: SessionStart digest size ${digest_bytes}B <= 3072B"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: SessionStart digest size ${digest_bytes}B exceeds 3072B budget (or missing)"
+    FAIL=$((FAIL + 1))
+  fi
+  if printf '%s' "$decoded" | grep -q "16. \*\*Context Mode install gate\*\*"; then
+    echo "  FAIL: full core-rules layer list still inlined (digest not applied)"
+    FAIL=$((FAIL + 1))
+  else
+    echo "  PASS: full 16-layer core-rules body not inlined"
+    PASS=$((PASS + 1))
   fi
 else
   echo "  PASS: core-rules.md not installed — skip injection test"
