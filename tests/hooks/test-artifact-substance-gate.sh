@@ -37,10 +37,34 @@ run_gate() {
   local state_contents="$1"
   (
     emit_warn() { :; }
-    emit_block() { echo blocked; exit 0; }
+    emit_block() { printf 'blocked\n%s\n' "$1"; exit 0; }
     sb_artifact_substance_gate_enforce "$TMPDIR_TEST" emit_warn emit_block 1 "$state_contents" || true
     echo passed
   )
+}
+
+
+assert_message_real_newlines() {
+  local name="$1" result="$2"
+  local msg
+  msg=$(printf '%s' "$result" | sed -n '2,$p')
+  if [[ -z "$msg" ]]; then
+    echo "  FAIL: $name — no message captured"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if [[ "$msg" != *$'\n'* ]]; then
+    echo "  FAIL: $name — message has no real newlines"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  if printf '%s' "$msg" | grep -qF '\n'; then
+    echo "  FAIL: $name — message contains literal backslash-n"
+    FAIL=$((FAIL + 1))
+    return
+  fi
+  echo "  ok: $name"
+  PASS=$((PASS + 1))
 }
 
 assert_blocked() {
@@ -75,6 +99,7 @@ TODO fill later
 MD
 result=$(run_gate $'silver-verify\n')
 assert_blocked "stub VERIFICATION.md blocks delivery when silver-verify recorded" "$result"
+assert_message_real_newlines "NEWLINE: stub VERIFICATION block message uses real newlines" "$result"
 teardown
 
 setup

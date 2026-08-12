@@ -47,7 +47,7 @@ if [[ -n "$missing_skills" ]]; then
   if [[ -n "$unavailable_skills" ]]; then
     unavailable_display=""
     for us in $unavailable_skills; do
-      unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)\n"
+      unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)"$'\n'
     done
     stage_a_msg=$(printf '%s\n\nIgnored required skills:\n%s\nInstall them if you want them enforced.' "$stage_a_msg" "$unavailable_display")
   fi
@@ -58,7 +58,7 @@ fi
 if [[ -n "$unavailable_skills" ]]; then
   unavailable_display=""
   for us in $unavailable_skills; do
-    unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)\n"
+    unavailable_display="${unavailable_display}⚠️ ${us} (not installed anywhere invocable)"$'\n'
   done
   stage_a_msg=$(printf '⚠️ Planning skills not installed anywhere invocable, so they were not enforced:\n%s\nProceeding with source edits.' "$unavailable_display")
   sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "$stage_a_msg" "${file_path:-${command_str:-}}"
@@ -120,3 +120,4 @@ fi
 sb_hook_audit_record "dev-cycle-check" "$hook_event" "allow" "All workflow phases complete. Proceed freely." "${file_path:-${command_str:-}}"
 printf '{"hookSpecificOutput":{"message":"✅ All workflow phases complete. Proceed freely."}}'
 exit 0
+

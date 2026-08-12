@@ -670,13 +670,13 @@ done
 if [[ -n "$missing" ]]; then
   missing_lines=""
   for skill in $missing; do
-    missing_lines="${missing_lines}  - ${skill}\n"
+    missing_lines="${missing_lines}  - ${skill}"$'\n'
   done
   reason=$(printf 'Cannot complete -- missing required skills:\n%s\nRun these skills before declaring task complete.' "$missing_lines")
   if [[ -n "$uninstalled" ]]; then
     unavailable_lines=""
     for skill in $uninstalled; do
-      unavailable_lines="${unavailable_lines}  - ${skill}\n"
+      unavailable_lines="${unavailable_lines}  - ${skill}"$'\n'
     done
     reason=$(printf '%s\n\nThese required skills are not installed anywhere invocable and were ignored:\n%s\nInstall them if you want them enforced.' "$reason" "$unavailable_lines")
   fi
@@ -689,7 +689,7 @@ elif [[ -n "$uninstalled" ]]; then
   run_doc_scheme_task_gate "$search_dir"
   unavailable_lines=""
   for skill in $uninstalled; do
-    unavailable_lines="${unavailable_lines}  - ${skill}\n"
+    unavailable_lines="${unavailable_lines}  - ${skill}"$'\n'
   done
   reason=$(printf '⚠️  Some required skills are not installed anywhere invocable and were ignored:\n%s\nInstall them if you want them enforced.' "$unavailable_lines")
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
