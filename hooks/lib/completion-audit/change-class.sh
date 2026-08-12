@@ -31,8 +31,13 @@ ca_classify_path() {
   local path="$1"
   local src_pattern="${2:-/src/}"
 
-  # Release / version / plugin packaging surfaces
-  if printf '%s' "$path" | grep -qE '(^|/)(package\.json|package-lock\.json|\.claude-plugin/|\.cursor-plugin/|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)'; then
+  # Release / version / plugin packaging surfaces (host-agnostic: no host plugin literals)
+  if printf '%s' "$path" | grep -qE '(^|/)(package\.json|package-lock\.json|plugins/silver-bullet/|scripts/pre-release-gate\.sh|scripts/sync-release|scripts/verify-release)'; then
+    printf 'release'
+    return 0
+  fi
+  # Marketplace plugin dirs: .*-plugin/ without host-specific literals
+  if printf '%s' "$path" | grep -qE '(^|/)\.[a-z0-9-]+-plugin/'; then
     printf 'release'
     return 0
   fi
@@ -48,7 +53,7 @@ ca_classify_path() {
   fi
 
   # Config (project + hook wiring; not application src)
-  if printf '%s' "$path" | grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.cursor/hooks\.json$|(^|/)\.codex/|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config'; then
+  if printf '%s' "$path" | grep -qE '(^|/)\.silver-bullet\.json$|(^|/)hooks\.json$|(^|/)\.[a-z0-9_-]+/hooks\.json$|(^|/)mcp\.json$|(^|/)templates/silver-bullet\.config'; then
     printf 'config'
     return 0
   fi
@@ -176,3 +181,4 @@ ca_apply_change_class_floor() {
       ;;
   esac
 }
+
