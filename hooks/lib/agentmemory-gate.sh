@@ -322,17 +322,17 @@ sb_agentmemory_block_message_no_server() {
   local url
   url="$(sb_agentmemory_health_url "$config_file")"
   cat <<EOF
-🚫 AGENTMEMORY SERVER DOWN — start the memory engine before substantive work.
+⚠️ AGENTMEMORY SERVER DOWN — soft-warn (edits allowed).
 
 Health check failed: ${url}
 
-From a shell:
+Start the memory engine when convenient:
   mkdir -p ~/.agentmemory
   nohup agentmemory > ~/.agentmemory/server.log 2>&1 &
 
 Verify: curl -sf ${url}
 
-Hooks block substantive edits until the server responds.
+Usage enforcement is skipped while the server is unreachable.
 EOF
 }
 
@@ -342,7 +342,7 @@ sb_agentmemory_block_message_no_mcp() {
   host="$(sb_runtime_host)"
   artifact="$(sb_agentmemory_platform_artifact_path "$(dirname "$config_file")" "$host")"
   cat <<EOF
-🚫 AGENTMEMORY MCP NOT WIRED — connect the agent before substantive work.
+⚠️ AGENTMEMORY MCP NOT WIRED — soft-warn (edits allowed).
 
 Expected MCP registration for host ${host} in:
   ${artifact}
@@ -351,6 +351,7 @@ Run platform connect from the project root (host: ${host}):
 $(sb_recommended_tool_platform_install_commands "$config_file" agentmemory "$host" 2>/dev/null || true)
 
 See docs/AGENTMEMORY.md for Cursor MCP merge steps.
+Usage enforcement is skipped while MCP is unavailable.
 EOF
 }
 
@@ -400,9 +401,9 @@ sb_agentmemory_prompt_reminder_line() {
       elif ! sb_agentmemory_cli_available; then
         printf '%s' "agentmemory: CLI missing — install @agentmemory/agentmemory; hooks block substantive work until installed."
       elif ! sb_agentmemory_server_healthy "$config_file"; then
-        printf '%s' "agentmemory: server down — run \`nohup agentmemory > ~/.agentmemory/server.log 2>&1 &\`; hooks block until healthy."
+        printf '%s' "agentmemory: WARN — server down (edits allowed; usage gate skipped). Run \`nohup agentmemory > ~/.agentmemory/server.log 2>&1 &\`."
       elif ! sb_agentmemory_platform_artifact_present "$project_root" "$config_file"; then
-        printf '%s' "agentmemory: MCP not wired — run platform connect (see docs/AGENTMEMORY.md)."
+        printf '%s' "agentmemory: WARN — MCP not wired (edits allowed; usage gate skipped). See docs/AGENTMEMORY.md."
       elif ! sb_agentmemory_export_exists "$project_root" "$config_file"; then
         printf '%s' "agentmemory: export root missing — mkdir -p ${export_rel}/memory; hooks block until present."
       elif sb_agentmemory_graphify_synergy_active "$config_file"; then

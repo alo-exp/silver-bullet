@@ -48,6 +48,12 @@ git_read_only_subcommands = {
     "status",
     "tag",
 }
+# Parent Graphify gate requires query/path/explain; treat as read-only (#258).
+graphify_read_only_subcommands = {
+    "explain",
+    "path",
+    "query",
+}
 shell_names = {"bash", "sh", "zsh"}
 stdout_redirect_commands = {"echo", "printf"}
 test_command_names = {
@@ -311,6 +317,11 @@ while pending_chunks:
             if idx >= len(args) or args[idx] not in git_read_only_subcommands:
                 raise SystemExit(1)
             continue
+        if command_name in {"graphify", "graphifyy"}:
+            idx = first_non_option(args)
+            if idx is None or args[idx] not in graphify_read_only_subcommands:
+                raise SystemExit(1)
+            continue
         if looks_like_test_command(command_name, args):
             continue
         if command_name == "sed":
@@ -321,3 +332,4 @@ while pending_chunks:
             raise SystemExit(1)
 
 print("read-only")
+
