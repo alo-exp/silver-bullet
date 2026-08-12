@@ -58,3 +58,87 @@ sb_core_rules_read_verified() {
 sb_core_rules_integrity_warning() {
   printf '%s' '⚠️ core-rules.md integrity check failed or is missing a pin — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin.'
 }
+
+# Hard budget for SessionStart inline rules (#263). Hosts truncate ~10KB+ payloads
+# to ~2KB previews; keep the injected digest within 2–3KB so non-negotiables survive.
+SB_CORE_RULES_DIGEST_MAX_BYTES="${SB_CORE_RULES_DIGEST_MAX_BYTES:-3072}"
+
+# Build a compact SessionStart digest from verified core-rules content.
+# Args: <verified_content> <core_rules_file_path>
+# Prints digest to stdout (never larger than SB_CORE_RULES_DIGEST_MAX_BYTES).
+sb_core_rules_compact_digest() {
+  local verified="${1:-}"
+  local core_rules_file="${2:-}"
+  local max_bytes="${SB_CORE_RULES_DIGEST_MAX_BYTES:-3072}"
+  local digest path_note non_neg
+
+  [[ -n "$verified" ]] || return 1
+  path_note="${core_rules_file:-hooks/core-rules.md}"
+
+  # Prefer the Non-Negotiable Rules section when present; fall back to a head slice.
+  non_neg="$(printf '%s\n' "$verified" | awk '
+    BEGIN { keep=0 }
+    /^## Non-Negotiable Rules/ { keep=1 }
+    keep { print }
+    /^## / && !/^## Non-Negotiable Rules/ { if (keep) exit }
+  ')"
+  if [[ -z "$non_neg" ]]; then
+    non_neg="$(printf '%s\n' "$verified" | head -n 40)"
+  fi
+
+  digest="$(cat <<EOF
+# Silver Bullet — Core Enforcement Rules (SessionStart digest)
+
+> **Motto: Process is non-negotiable. Hooks enforce. Vacuous invocation is a violation.**
+
+${non_neg}
+
+## Full rules (on demand)
+
+Host SessionStart budgets truncate large payloads. This is a compact digest (~2–3KB).
+Read the full enforcement model (16 layers), Active Workflow, Review Loop, and Anti-Rationalization at:
+\`${path_note}\`
+
+Do NOT skip required skills; do NOT declare complete without the planning/delivery floors.
+EOF
+)"
+
+  # Hard byte cap — prefer keeping the header + non-negotiables + path footer.
+  if [[ ${#digest} -gt "$max_bytes" ]]; then
+    local header footer body room
+    header="# Silver Bullet — Core Enforcement Rules (SessionStart digest)
+
+> **Motto: Process is non-negotiable. Hooks enforce. Vacuous invocation is a violation.**
+
+"
+    footer="
+
+## Full rules (on demand)
+
+Host SessionStart budgets truncate large payloads. Read full rules at:
+\`${path_note}\`
+"
+    room=$((max_bytes - ${#header} - ${#footer}))
+    if [[ "$room" -lt 200 ]]; then
+      room=200
+    fi
+    body="$(printf '%s\n' "$non_neg" | head -c "$room")"
+    digest="${header}${body}${footer}"
+    if [[ ${#digest} -gt "$max_bytes" ]]; then
+      digest="$(printf '%s' "$digest" | head -c "$max_bytes")"
+    fi
+  fi
+
+  printf '%s' "$digest"
+}
+
+# Verified compact digest for SessionStart injection (#263).
+sb_core_rules_read_verified_digest() {
+  local core_rules_file="${1:-}"
+  local hooks_dir="${2:-}"
+  local verified
+  verified="$(sb_core_rules_read_verified "$core_rules_file" "$hooks_dir" 2>/dev/null || true)"
+  [[ -n "$verified" ]] || return 1
+  sb_core_rules_compact_digest "$verified" "$core_rules_file"
+}
+
