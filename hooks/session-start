@@ -438,13 +438,15 @@ if [[ -n "${SB_BRANCH_RESET_BANNER:-}" ]]; then
   combined="${SB_BRANCH_RESET_BANNER}"
 fi
 
-# Append core enforcement rules so they survive compaction (Tier 2 rule injection)
+# Append core enforcement rules so they survive compaction (Tier 2 rule injection).
+# #263: inject a hard-budget (~2–3KB) digest so host SessionStart truncation
+# does not drop Non-Negotiable rules; full core-rules.md remains on disk for on-demand reads.
 if [[ -f "$core_rules_file" ]]; then
   _cr_content=""
   if [[ -f "$_lib_dir/core-rules-integrity.sh" ]]; then
     # shellcheck source=lib/core-rules-integrity.sh
     source "$_lib_dir/core-rules-integrity.sh"
-    _cr_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
+    _cr_content="$(sb_core_rules_read_verified_digest "$core_rules_file" "$script_dir" 2>/dev/null || true)"
     if [[ -z "$_cr_content" ]]; then
       _cr_content="$(sb_core_rules_integrity_warning)"
     fi
