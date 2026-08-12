@@ -51,8 +51,14 @@ if [[ "$hook_event" == "UserPromptSubmit" ]]; then
   sb_instruction_ledger_seed_from_prompt "$prompt"
   summary="$(sb_instruction_ledger_pending_summary 2>/dev/null || true)"
   [[ -n "$summary" ]] || exit 0
-  ctx="$(printf '%s' "$summary" | jq -Rs '.')"
-  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+  if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+    # shellcheck source=lib/ups-coalesce.sh
+    source "$_lib_dir/ups-coalesce.sh"
+    sb_ups_emit_additional_context "$summary" "UserPromptSubmit"
+  else
+    ctx="$(printf '%s' "$summary" | jq -Rs '.')"
+    printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$ctx"
+  fi
   exit 0
 fi
 
@@ -94,4 +100,5 @@ if declare -f sb_stop_coalesce_record >/dev/null 2>&1; then
 fi
 printf '{"decision":"block","reason":%s}' "$json_reason"
 exit 0
+
 

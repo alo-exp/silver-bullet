@@ -174,5 +174,13 @@ if declare -F sb_session_ledger_append_request >/dev/null 2>&1; then
   sb_session_ledger_append_request "$prompt" "${ledger_skills[@]}" || true
 fi
 
+# Start UPS coalesce turn so downstream additionalContext emitters can dedupe (#262).
+if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+  # shellcheck source=lib/ups-coalesce.sh
+  source "$_lib_dir/ups-coalesce.sh"
+  sb_ups_coalesce_reset
+fi
+
 emit_noop_json
 exit 0
+
