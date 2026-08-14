@@ -3070,7 +3070,7 @@
     "semantic_hash": "38c9d418a72d6604552a170e2232e5e7"
   },
   ".silver-bullet.json": {
-    "mtime": 1786665687.7755642,
+    "mtime": 1786689789.073251,
     "ast_hash": "4a6ed9073c0059fc8d66620341fd0a1d",
     "semantic_hash": ""
   },
@@ -3160,9 +3160,9 @@
     "semantic_hash": "6421bc9ac288b87da921ee3ca3bcbe17"
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/category_pack.py": {
-    "mtime": 1786119200.8492436,
-    "ast_hash": "43222eba208890e477fe49739603decf",
-    "semantic_hash": "43222eba208890e477fe49739603decf"
+    "mtime": 1786686380.1862388,
+    "ast_hash": "9f6f4f3c1edf911da0b177d61b97bcc4",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/compression_markers.py": {
     "mtime": 1786119200.8493717,
@@ -3195,19 +3195,19 @@
     "semantic_hash": "38b87b45bd354521c315bf013740df46"
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/generate_spa_report.py": {
-    "mtime": 1786119200.8500268,
-    "ast_hash": "c133a00fa8d961e90f06cf7f7570dbc8",
-    "semantic_hash": "c133a00fa8d961e90f06cf7f7570dbc8"
+    "mtime": 1786686380.186987,
+    "ast_hash": "9cc3dc4393a6086173137417060ce454",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/landscape_preview_render.py": {
-    "mtime": 1786119200.850193,
-    "ast_hash": "ef99457413ed7ab5b94e83a90ea550a0",
-    "semantic_hash": "ef99457413ed7ab5b94e83a90ea550a0"
+    "mtime": 1786686380.1896224,
+    "ast_hash": "1747d149aed0704c31d6d67f58e61557",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8504078,
-    "ast_hash": "f90292226ee4d26feb49e78b4c4939ad",
-    "semantic_hash": "f90292226ee4d26feb49e78b4c4939ad"
+    "mtime": 1786686380.1903958,
+    "ast_hash": "78606f6788c083fd0ae750e4f0445d12",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/migrate_run_manifest.py": {
     "mtime": 1786119200.850557,
@@ -3225,24 +3225,24 @@
     "semantic_hash": "282b8def2c80db3670c2103ee2ee682a"
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/solution_classifier.py": {
-    "mtime": 1786119200.850907,
-    "ast_hash": "b2fd3e2999ff2aa888d08e4f9e67c075",
-    "semantic_hash": "b2fd3e2999ff2aa888d08e4f9e67c075"
+    "mtime": 1786686380.1908782,
+    "ast_hash": "7a1b087b3e90887e3dbf38e5adf90752",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/synthesize_landscape.py": {
-    "mtime": 1786119200.8510482,
-    "ast_hash": "fff72ffe043eeebf2720f83618d3ee74",
-    "semantic_hash": "fff72ffe043eeebf2720f83618d3ee74"
+    "mtime": 1786686380.1939125,
+    "ast_hash": "f31cf052aa34e64f43b596e2ed6166d7",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/validate_landscape_content.py": {
-    "mtime": 1786119200.8511922,
-    "ast_hash": "72477ae1d5cfa7efb7a682bbc441a859",
-    "semantic_hash": "72477ae1d5cfa7efb7a682bbc441a859"
+    "mtime": 1786686380.1947668,
+    "ast_hash": "1308825c2413cb6fd40fbcfc5ad10fc0",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/scripts/vendor_link_labels.py": {
-    "mtime": 1786119200.851306,
-    "ast_hash": "c3385ae759fe57da95dc00dda9448c19",
-    "semantic_hash": "c3385ae759fe57da95dc00dda9448c19"
+    "mtime": 1786686380.1952748,
+    "ast_hash": "05d018134590aa5daf406f7889ad1b7c",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/fixtures/forbidden_envelope.json": {
     "mtime": 1786119200.851511,
@@ -3275,19 +3275,19 @@
     "semantic_hash": "825f034508f2219e25f1277ff497a278"
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_dr_live_pool_completeness.py": {
-    "mtime": 1786119200.8521008,
-    "ast_hash": "4f351c5ac1f85a9a9349fa206537af3b",
-    "semantic_hash": "4f351c5ac1f85a9a9349fa206537af3b"
+    "mtime": 1786686380.195839,
+    "ast_hash": "de3990f1fec796c5448971885bcc4aa4",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_landscape_report_builder.py": {
-    "mtime": 1786119200.8522258,
-    "ast_hash": "b517dc7ce56c8fa5731648098153ae4b",
-    "semantic_hash": "b517dc7ce56c8fa5731648098153ae4b"
+    "mtime": 1786686380.1971383,
+    "ast_hash": "43ff5d234071211480ff93f5370d8b46",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8523688,
-    "ast_hash": "e3296d0b399fbbfa5a34a99c03bde24d",
-    "semantic_hash": "e3296d0b399fbbfa5a34a99c03bde24d"
+    "mtime": 1786686380.1978328,
+    "ast_hash": "fcb4e4c24432bde94ff29f5b83bfbf7d",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_migrate_run_manifest.py": {
     "mtime": 1786119200.8524778,
@@ -3295,9 +3295,9 @@
     "semantic_hash": "29da7436786c5121b9ae95d74104dd09"
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_multi_market_landscape.py": {
-    "mtime": 1786119200.8525832,
-    "ast_hash": "e1824c990184cc8722cb2d22eecc4052",
-    "semantic_hash": "e1824c990184cc8722cb2d22eecc4052"
+    "mtime": 1786686380.1984246,
+    "ast_hash": "bb75ee1ef2f0fb835af7e76622997d75",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_package_solution_outputs.py": {
     "mtime": 1786119200.8526974,
@@ -3310,14 +3310,14 @@
     "semantic_hash": "908d4250900f95e061adb3ede5385ce5"
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_spa_profiles.py": {
-    "mtime": 1786119200.8531547,
-    "ast_hash": "9070335ffe4847fc3696ec01626a3a54",
-    "semantic_hash": "9070335ffe4847fc3696ec01626a3a54"
+    "mtime": 1786686380.1995387,
+    "ast_hash": "bfe02b7a6e79f6144368d5fd8cbba390",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_synthesis_membership.py": {
-    "mtime": 1786119200.8532891,
-    "ast_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb",
-    "semantic_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb"
+    "mtime": 1786686380.2012131,
+    "ast_hash": "0ed0bf92a1b23632b7faceea4c747d6b",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research-multi-ai/tests/test_validate_landscape_catalog_gates.py": {
     "mtime": 1786119200.8534398,
@@ -3345,9 +3345,9 @@
     "semantic_hash": "e17a8056a34659a0e50c8be79f8c2e2c"
   },
   "agents/claude/silver:deep-research/reference/catalogs/authority_domains.json": {
-    "mtime": 1786119200.8548133,
-    "ast_hash": "2ec76cd842c888bb011219ff2486992c",
-    "semantic_hash": "2ec76cd842c888bb011219ff2486992c"
+    "mtime": 1786686380.2036064,
+    "ast_hash": "97c1c1fd498c0a61ed11d12e0b5184c9",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/reference/catalogs/intent_classes.json": {
     "mtime": 1786119200.8549044,
@@ -3360,19 +3360,19 @@
     "semantic_hash": "dd264164257ffda505303959bf07c372"
   },
   "agents/claude/silver:deep-research/reference/catalogs/source_channels.json": {
-    "mtime": 1786119200.8551166,
-    "ast_hash": "4a97477def0efd948ac5853beeac8d99",
-    "semantic_hash": "4a97477def0efd948ac5853beeac8d99"
+    "mtime": 1786686380.204137,
+    "ast_hash": "4421355a44dd1033ecad35748903a170",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json": {
-    "mtime": 1786119200.856527,
-    "ast_hash": "0004511eddcd39bd2f5f42d983be25a7",
-    "semantic_hash": "0004511eddcd39bd2f5f42d983be25a7"
+    "mtime": 1786686380.2047734,
+    "ast_hash": "d1d71e98db24b57c6e5c3832d6454d4a",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/reference/landscape/category-packs/schema.json": {
-    "mtime": 1786119200.856658,
-    "ast_hash": "eb43cea1327407fc9fb2ea63992aa76f",
-    "semantic_hash": "eb43cea1327407fc9fb2ea63992aa76f"
+    "mtime": 1786686380.205469,
+    "ast_hash": "00ff118b9404550932855efe8f98f3b6",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/reference/need-profile-personas.json": {
     "mtime": 1786119200.8572261,
@@ -3430,9 +3430,9 @@
     "semantic_hash": "590d8f5090f077e99c3daadf192cfa6d"
   },
   "agents/claude/silver:deep-research/scripts/compare_solutions.py": {
-    "mtime": 1786119200.861496,
-    "ast_hash": "b57cee13616295f854ea0d4a003a582f",
-    "semantic_hash": "b57cee13616295f854ea0d4a003a582f"
+    "mtime": 1786686380.205981,
+    "ast_hash": "4abf386b22af24a565a9c6837dcf8406",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/scripts/deps_probe.py": {
     "mtime": 1786119200.8617969,
@@ -4590,9 +4590,9 @@
     "semantic_hash": "6421bc9ac288b87da921ee3ca3bcbe17"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/category_pack.py": {
-    "mtime": 1786119200.8492436,
-    "ast_hash": "43222eba208890e477fe49739603decf",
-    "semantic_hash": "43222eba208890e477fe49739603decf"
+    "mtime": 1786686380.2817128,
+    "ast_hash": "9f6f4f3c1edf911da0b177d61b97bcc4",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/compression_markers.py": {
     "mtime": 1786119200.8493717,
@@ -4625,19 +4625,19 @@
     "semantic_hash": "38b87b45bd354521c315bf013740df46"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/generate_spa_report.py": {
-    "mtime": 1786119200.8500268,
-    "ast_hash": "c133a00fa8d961e90f06cf7f7570dbc8",
-    "semantic_hash": "c133a00fa8d961e90f06cf7f7570dbc8"
+    "mtime": 1786686380.2820494,
+    "ast_hash": "9cc3dc4393a6086173137417060ce454",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/landscape_preview_render.py": {
-    "mtime": 1786119200.850193,
-    "ast_hash": "ef99457413ed7ab5b94e83a90ea550a0",
-    "semantic_hash": "ef99457413ed7ab5b94e83a90ea550a0"
+    "mtime": 1786686380.2852054,
+    "ast_hash": "1747d149aed0704c31d6d67f58e61557",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8504078,
-    "ast_hash": "f90292226ee4d26feb49e78b4c4939ad",
-    "semantic_hash": "f90292226ee4d26feb49e78b4c4939ad"
+    "mtime": 1786686380.28578,
+    "ast_hash": "78606f6788c083fd0ae750e4f0445d12",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/migrate_run_manifest.py": {
     "mtime": 1786119200.850557,
@@ -4655,24 +4655,24 @@
     "semantic_hash": "282b8def2c80db3670c2103ee2ee682a"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/solution_classifier.py": {
-    "mtime": 1786119200.850907,
-    "ast_hash": "b2fd3e2999ff2aa888d08e4f9e67c075",
-    "semantic_hash": "b2fd3e2999ff2aa888d08e4f9e67c075"
+    "mtime": 1786686380.286107,
+    "ast_hash": "7a1b087b3e90887e3dbf38e5adf90752",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/synthesize_landscape.py": {
-    "mtime": 1786119200.8510482,
-    "ast_hash": "fff72ffe043eeebf2720f83618d3ee74",
-    "semantic_hash": "fff72ffe043eeebf2720f83618d3ee74"
+    "mtime": 1786686380.2867131,
+    "ast_hash": "f31cf052aa34e64f43b596e2ed6166d7",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/validate_landscape_content.py": {
-    "mtime": 1786119200.8511922,
-    "ast_hash": "72477ae1d5cfa7efb7a682bbc441a859",
-    "semantic_hash": "72477ae1d5cfa7efb7a682bbc441a859"
+    "mtime": 1786686380.2870529,
+    "ast_hash": "1308825c2413cb6fd40fbcfc5ad10fc0",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/scripts/vendor_link_labels.py": {
-    "mtime": 1786119200.851306,
-    "ast_hash": "c3385ae759fe57da95dc00dda9448c19",
-    "semantic_hash": "c3385ae759fe57da95dc00dda9448c19"
+    "mtime": 1786686380.2876513,
+    "ast_hash": "05d018134590aa5daf406f7889ad1b7c",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/fixtures/forbidden_envelope.json": {
     "mtime": 1786119200.851511,
@@ -4705,19 +4705,19 @@
     "semantic_hash": "825f034508f2219e25f1277ff497a278"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_dr_live_pool_completeness.py": {
-    "mtime": 1786119200.8521008,
-    "ast_hash": "4f351c5ac1f85a9a9349fa206537af3b",
-    "semantic_hash": "4f351c5ac1f85a9a9349fa206537af3b"
+    "mtime": 1786686380.288199,
+    "ast_hash": "de3990f1fec796c5448971885bcc4aa4",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_landscape_report_builder.py": {
-    "mtime": 1786119200.8522258,
-    "ast_hash": "b517dc7ce56c8fa5731648098153ae4b",
-    "semantic_hash": "b517dc7ce56c8fa5731648098153ae4b"
+    "mtime": 1786686380.2891,
+    "ast_hash": "43ff5d234071211480ff93f5370d8b46",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8523688,
-    "ast_hash": "e3296d0b399fbbfa5a34a99c03bde24d",
-    "semantic_hash": "e3296d0b399fbbfa5a34a99c03bde24d"
+    "mtime": 1786686380.2896128,
+    "ast_hash": "fcb4e4c24432bde94ff29f5b83bfbf7d",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_migrate_run_manifest.py": {
     "mtime": 1786119200.8524778,
@@ -4725,9 +4725,9 @@
     "semantic_hash": "29da7436786c5121b9ae95d74104dd09"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py": {
-    "mtime": 1786119200.8525832,
-    "ast_hash": "e1824c990184cc8722cb2d22eecc4052",
-    "semantic_hash": "e1824c990184cc8722cb2d22eecc4052"
+    "mtime": 1786686380.2899241,
+    "ast_hash": "bb75ee1ef2f0fb835af7e76622997d75",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_package_solution_outputs.py": {
     "mtime": 1786119200.8526974,
@@ -4740,14 +4740,14 @@
     "semantic_hash": "908d4250900f95e061adb3ede5385ce5"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_spa_profiles.py": {
-    "mtime": 1786119200.8531547,
-    "ast_hash": "9070335ffe4847fc3696ec01626a3a54",
-    "semantic_hash": "9070335ffe4847fc3696ec01626a3a54"
+    "mtime": 1786686380.290729,
+    "ast_hash": "bfe02b7a6e79f6144368d5fd8cbba390",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_synthesis_membership.py": {
-    "mtime": 1786119200.8532891,
-    "ast_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb",
-    "semantic_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb"
+    "mtime": 1786686380.2910192,
+    "ast_hash": "0ed0bf92a1b23632b7faceea4c747d6b",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research-multi-ai/tests/test_validate_landscape_catalog_gates.py": {
     "mtime": 1786119200.8534398,
@@ -4775,9 +4775,9 @@
     "semantic_hash": "e17a8056a34659a0e50c8be79f8c2e2c"
   },
   "host-bundles/codex/silver-deep-research/reference/catalogs/authority_domains.json": {
-    "mtime": 1786119200.8548133,
-    "ast_hash": "2ec76cd842c888bb011219ff2486992c",
-    "semantic_hash": "2ec76cd842c888bb011219ff2486992c"
+    "mtime": 1786686380.2916064,
+    "ast_hash": "97c1c1fd498c0a61ed11d12e0b5184c9",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/reference/catalogs/intent_classes.json": {
     "mtime": 1786119200.8549044,
@@ -4790,19 +4790,19 @@
     "semantic_hash": "dd264164257ffda505303959bf07c372"
   },
   "host-bundles/codex/silver-deep-research/reference/catalogs/source_channels.json": {
-    "mtime": 1786119200.8551166,
-    "ast_hash": "4a97477def0efd948ac5853beeac8d99",
-    "semantic_hash": "4a97477def0efd948ac5853beeac8d99"
+    "mtime": 1786686380.2936983,
+    "ast_hash": "4421355a44dd1033ecad35748903a170",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json": {
-    "mtime": 1786119200.856527,
-    "ast_hash": "0004511eddcd39bd2f5f42d983be25a7",
-    "semantic_hash": "0004511eddcd39bd2f5f42d983be25a7"
+    "mtime": 1786686380.2941272,
+    "ast_hash": "d1d71e98db24b57c6e5c3832d6454d4a",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/reference/landscape/category-packs/schema.json": {
-    "mtime": 1786119200.856658,
-    "ast_hash": "eb43cea1327407fc9fb2ea63992aa76f",
-    "semantic_hash": "eb43cea1327407fc9fb2ea63992aa76f"
+    "mtime": 1786686380.2945921,
+    "ast_hash": "00ff118b9404550932855efe8f98f3b6",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/reference/need-profile-personas.json": {
     "mtime": 1786119200.8572261,
@@ -4860,9 +4860,9 @@
     "semantic_hash": "590d8f5090f077e99c3daadf192cfa6d"
   },
   "host-bundles/codex/silver-deep-research/scripts/compare_solutions.py": {
-    "mtime": 1786119200.861496,
-    "ast_hash": "b57cee13616295f854ea0d4a003a582f",
-    "semantic_hash": "b57cee13616295f854ea0d4a003a582f"
+    "mtime": 1786686380.295037,
+    "ast_hash": "4abf386b22af24a565a9c6837dcf8406",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/scripts/deps_probe.py": {
     "mtime": 1786119200.8617969,
@@ -5195,7 +5195,7 @@
     "semantic_hash": ""
   },
   "plugins/silver-bullet/.silver-bullet.json": {
-    "mtime": 1786665687.7755642,
+    "mtime": 1786689789.073251,
     "ast_hash": "4a6ed9073c0059fc8d66620341fd0a1d",
     "semantic_hash": ""
   },
@@ -5220,9 +5220,9 @@
     "semantic_hash": "6421bc9ac288b87da921ee3ca3bcbe17"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/category_pack.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "43222eba208890e477fe49739603decf",
-    "semantic_hash": "43222eba208890e477fe49739603decf"
+    "mtime": 1786686380.2966616,
+    "ast_hash": "9f6f4f3c1edf911da0b177d61b97bcc4",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/compression_markers.py": {
     "mtime": 1786119200.0,
@@ -5255,19 +5255,19 @@
     "semantic_hash": "38b87b45bd354521c315bf013740df46"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/generate_spa_report.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "c133a00fa8d961e90f06cf7f7570dbc8",
-    "semantic_hash": "c133a00fa8d961e90f06cf7f7570dbc8"
+    "mtime": 1786686380.2970214,
+    "ast_hash": "9cc3dc4393a6086173137417060ce454",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/landscape_preview_render.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "ef99457413ed7ab5b94e83a90ea550a0",
-    "semantic_hash": "ef99457413ed7ab5b94e83a90ea550a0"
+    "mtime": 1786686380.2983382,
+    "ast_hash": "1747d149aed0704c31d6d67f58e61557",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "f90292226ee4d26feb49e78b4c4939ad",
-    "semantic_hash": "f90292226ee4d26feb49e78b4c4939ad"
+    "mtime": 1786686380.2987425,
+    "ast_hash": "78606f6788c083fd0ae750e4f0445d12",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/migrate_run_manifest.py": {
     "mtime": 1786119200.0,
@@ -5285,24 +5285,24 @@
     "semantic_hash": "282b8def2c80db3670c2103ee2ee682a"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/solution_classifier.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "b2fd3e2999ff2aa888d08e4f9e67c075",
-    "semantic_hash": "b2fd3e2999ff2aa888d08e4f9e67c075"
+    "mtime": 1786686380.2990298,
+    "ast_hash": "7a1b087b3e90887e3dbf38e5adf90752",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/synthesize_landscape.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "fff72ffe043eeebf2720f83618d3ee74",
-    "semantic_hash": "fff72ffe043eeebf2720f83618d3ee74"
+    "mtime": 1786686380.2999527,
+    "ast_hash": "f31cf052aa34e64f43b596e2ed6166d7",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/validate_landscape_content.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "72477ae1d5cfa7efb7a682bbc441a859",
-    "semantic_hash": "72477ae1d5cfa7efb7a682bbc441a859"
+    "mtime": 1786686380.3004131,
+    "ast_hash": "1308825c2413cb6fd40fbcfc5ad10fc0",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/vendor_link_labels.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "c3385ae759fe57da95dc00dda9448c19",
-    "semantic_hash": "c3385ae759fe57da95dc00dda9448c19"
+    "mtime": 1786686380.3007176,
+    "ast_hash": "05d018134590aa5daf406f7889ad1b7c",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/fixtures/forbidden_envelope.json": {
     "mtime": 1786119200.0,
@@ -5335,19 +5335,19 @@
     "semantic_hash": "825f034508f2219e25f1277ff497a278"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_dr_live_pool_completeness.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "4f351c5ac1f85a9a9349fa206537af3b",
-    "semantic_hash": "4f351c5ac1f85a9a9349fa206537af3b"
+    "mtime": 1786686380.3009996,
+    "ast_hash": "de3990f1fec796c5448971885bcc4aa4",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_landscape_report_builder.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "b517dc7ce56c8fa5731648098153ae4b",
-    "semantic_hash": "b517dc7ce56c8fa5731648098153ae4b"
+    "mtime": 1786686380.302016,
+    "ast_hash": "43ff5d234071211480ff93f5370d8b46",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_materialize_solution_artifacts.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "e3296d0b399fbbfa5a34a99c03bde24d",
-    "semantic_hash": "e3296d0b399fbbfa5a34a99c03bde24d"
+    "mtime": 1786686380.3024578,
+    "ast_hash": "fcb4e4c24432bde94ff29f5b83bfbf7d",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_migrate_run_manifest.py": {
     "mtime": 1786119200.0,
@@ -5355,9 +5355,9 @@
     "semantic_hash": "29da7436786c5121b9ae95d74104dd09"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "e1824c990184cc8722cb2d22eecc4052",
-    "semantic_hash": "e1824c990184cc8722cb2d22eecc4052"
+    "mtime": 1786686380.3027499,
+    "ast_hash": "bb75ee1ef2f0fb835af7e76622997d75",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_package_solution_outputs.py": {
     "mtime": 1786119200.0,
@@ -5370,14 +5370,14 @@
     "semantic_hash": "908d4250900f95e061adb3ede5385ce5"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_spa_profiles.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "9070335ffe4847fc3696ec01626a3a54",
-    "semantic_hash": "9070335ffe4847fc3696ec01626a3a54"
+    "mtime": 1786686380.3033292,
+    "ast_hash": "bfe02b7a6e79f6144368d5fd8cbba390",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_synthesis_membership.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb",
-    "semantic_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb"
+    "mtime": 1786686380.3037894,
+    "ast_hash": "0ed0bf92a1b23632b7faceea4c747d6b",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_validate_landscape_catalog_gates.py": {
     "mtime": 1786119200.0,
@@ -5405,9 +5405,9 @@
     "semantic_hash": "e17a8056a34659a0e50c8be79f8c2e2c"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/catalogs/authority_domains.json": {
-    "mtime": 1786119200.0,
-    "ast_hash": "2ec76cd842c888bb011219ff2486992c",
-    "semantic_hash": "2ec76cd842c888bb011219ff2486992c"
+    "mtime": 1786686380.3048542,
+    "ast_hash": "97c1c1fd498c0a61ed11d12e0b5184c9",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/catalogs/intent_classes.json": {
     "mtime": 1786119200.0,
@@ -5420,19 +5420,19 @@
     "semantic_hash": "dd264164257ffda505303959bf07c372"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/catalogs/source_channels.json": {
-    "mtime": 1786119200.0,
-    "ast_hash": "4a97477def0efd948ac5853beeac8d99",
-    "semantic_hash": "4a97477def0efd948ac5853beeac8d99"
+    "mtime": 1786686380.3051422,
+    "ast_hash": "4421355a44dd1033ecad35748903a170",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json": {
-    "mtime": 1786119200.0,
-    "ast_hash": "0004511eddcd39bd2f5f42d983be25a7",
-    "semantic_hash": "0004511eddcd39bd2f5f42d983be25a7"
+    "mtime": 1786686380.30547,
+    "ast_hash": "d1d71e98db24b57c6e5c3832d6454d4a",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/landscape/category-packs/schema.json": {
-    "mtime": 1786119200.0,
-    "ast_hash": "eb43cea1327407fc9fb2ea63992aa76f",
-    "semantic_hash": "eb43cea1327407fc9fb2ea63992aa76f"
+    "mtime": 1786686380.3059032,
+    "ast_hash": "00ff118b9404550932855efe8f98f3b6",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/reference/need-profile-personas.json": {
     "mtime": 1786119200.0,
@@ -5490,9 +5490,9 @@
     "semantic_hash": "590d8f5090f077e99c3daadf192cfa6d"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/scripts/compare_solutions.py": {
-    "mtime": 1786119200.0,
-    "ast_hash": "b57cee13616295f854ea0d4a003a582f",
-    "semantic_hash": "b57cee13616295f854ea0d4a003a582f"
+    "mtime": 1786686380.306511,
+    "ast_hash": "4abf386b22af24a565a9c6837dcf8406",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/scripts/deps_probe.py": {
     "mtime": 1786119200.0,
@@ -5985,279 +5985,279 @@
     "semantic_hash": "7eea8a268ccc670113aeec3f20b96b12"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/comparison/comparison.json": {
-    "mtime": 1786119200.758342,
-    "ast_hash": "2b778fcea21e4a48eefe247ffd0e76c6",
-    "semantic_hash": "2b778fcea21e4a48eefe247ffd0e76c6"
+    "mtime": 1786686380.4590988,
+    "ast_hash": "e064f1e662a1c072e2a587623bc5cd0f",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/consolidated/consolidation.json": {
-    "mtime": 1786119200.758869,
-    "ast_hash": "8259461b0deb5a8f59cfc9731cef61e5",
-    "semantic_hash": "8259461b0deb5a8f59cfc9731cef61e5"
+    "mtime": 1786686380.4604545,
+    "ast_hash": "d5c9caaa8529279da97b90be3f04d040",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/contributions/all-envelopes.json": {
-    "mtime": 1786119200.7591994,
-    "ast_hash": "d5d2e464737fa269f6fb0ba051ecb89a",
-    "semantic_hash": "d5d2e464737fa269f6fb0ba051ecb89a"
+    "mtime": 1786686380.461941,
+    "ast_hash": "f8f4f5f5fbe2d30df62800ab743e2a6f",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/catalog_audit.json": {
-    "mtime": 1786119200.7604258,
-    "ast_hash": "f7aff494dda2fbfe283e3504dc8b6348",
-    "semantic_hash": "f7aff494dda2fbfe283e3504dc8b6348"
+    "mtime": 1786686380.4774156,
+    "ast_hash": "ec1dd3521990e6e0c676e4b1278302d6",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/chart-data.json": {
-    "mtime": 1786119200.760571,
-    "ast_hash": "0442846de00000b730a0deaa88c25895",
-    "semantic_hash": "0442846de00000b730a0deaa88c25895"
+    "mtime": 1786686380.4780598,
+    "ast_hash": "4ebf0654d2b7e23952c42c81fead9ffe",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/need_profile.json": {
-    "mtime": 1786119200.7609181,
+    "mtime": 1784477788.0,
     "ast_hash": "d7fad22e58af01e299f50ef17bd20c08",
     "semantic_hash": "d7fad22e58af01e299f50ef17bd20c08"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-cohort-request-attempt-51881c3e-8026-41a5-99eb-5fd210e1d793.json": {
-    "mtime": 1786119200.7630131,
+    "mtime": 1784477788.0,
     "ast_hash": "965099f50be3e5344fa23588025e5e95",
     "semantic_hash": "965099f50be3e5344fa23588025e5e95"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-cohort-result-attempt-51881c3e-8026-41a5-99eb-5fd210e1d793.json": {
-    "mtime": 1786119200.763177,
+    "mtime": 1784477788.0,
     "ast_hash": "dd06e9d3531383ff06d2b27de7833a56",
     "semantic_hash": "dd06e9d3531383ff06d2b27de7833a56"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/final-retrieve-clean.json": {
-    "mtime": 1786119200.7658994,
-    "ast_hash": "a26ff466f9adca561271fa36cb25d60f",
-    "semantic_hash": "a26ff466f9adca561271fa36cb25d60f"
+    "mtime": 1786686380.496712,
+    "ast_hash": "118d7a031b02d1f2c5af703fd8fffe0b",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/final-retrieve-perfect.json": {
-    "mtime": 1786119200.7660656,
-    "ast_hash": "ad5aa00c14d8e97dcd00cc1a9aa15daf",
-    "semantic_hash": "ad5aa00c14d8e97dcd00cc1a9aa15daf"
+    "mtime": 1786686380.4973834,
+    "ast_hash": "b8f9b7ec31c2c3c0ae743ce90cef1414",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/final-retrieve-selection.json": {
-    "mtime": 1786119200.7662137,
-    "ast_hash": "5ffba5346c17575629e04dd9520467a1",
-    "semantic_hash": "5ffba5346c17575629e04dd9520467a1"
+    "mtime": 1786686380.4980307,
+    "ast_hash": "270df30bfd3fd84b77fd1e3ae4cbcdb2",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/final-retrieve.json": {
-    "mtime": 1786119200.76636,
-    "ast_hash": "e6f00b9e085e08d6da558d33a131aa72",
-    "semantic_hash": "e6f00b9e085e08d6da558d33a131aa72"
+    "mtime": 1786686380.4984014,
+    "ast_hash": "8eece1b0921699a3ca126e6ce4a6777c",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/merged-retrieve.json": {
-    "mtime": 1786119200.766984,
-    "ast_hash": "359ad2743f316e6421e8498649f2c870",
-    "semantic_hash": "359ad2743f316e6421e8498649f2c870"
+    "mtime": 1786686380.4987688,
+    "ast_hash": "634bdefb455fcbaecd0383a3495431db",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-cohort-request-attempt-8d31852f-0dc0-4ccf-bf27-8d41005ee6f4.json": {
-    "mtime": 1786119200.7673037,
+    "mtime": 1784477788.0,
     "ast_hash": "14683cfcb2992e1467a36a78af126cc1",
     "semantic_hash": "14683cfcb2992e1467a36a78af126cc1"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-cohort-result-attempt-8d31852f-0dc0-4ccf-bf27-8d41005ee6f4.json": {
-    "mtime": 1786119200.767518,
+    "mtime": 1784477788.0,
     "ast_hash": "2f26643233258cd2cf44d5b2921cd41e",
     "semantic_hash": "2f26643233258cd2cf44d5b2921cd41e"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-cohort-request-attempt-c8afd14a-e25d-4ebc-bd6f-24faf05fec84.json": {
-    "mtime": 1786119200.7699645,
+    "mtime": 1784477788.0,
     "ast_hash": "ef1cfc730ddeb4d1386fad20c86daa76",
     "semantic_hash": "ef1cfc730ddeb4d1386fad20c86daa76"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-cohort-result-attempt-c8afd14a-e25d-4ebc-bd6f-24faf05fec84.json": {
-    "mtime": 1786119200.7701197,
+    "mtime": 1784477788.0,
     "ast_hash": "055e576ea9f11e754ba7549c3c1cd10e",
     "semantic_hash": "055e576ea9f11e754ba7549c3c1cd10e"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/result-index.json": {
-    "mtime": 1786119200.7712278,
+    "mtime": 1784477788.0,
     "ast_hash": "a1699436668c910d9712f0907006501d",
     "semantic_hash": "a1699436668c910d9712f0907006501d"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/run_manifest.json": {
-    "mtime": 1786119200.771336,
+    "mtime": 1784477788.0,
     "ast_hash": "f9f0d02a3b6bd5e08c375836c369ba2f",
     "semantic_hash": "f9f0d02a3b6bd5e08c375836c369ba2f"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/shortlist/shortlist.json": {
-    "mtime": 1786119200.7715685,
+    "mtime": 1784477788.0,
     "ast_hash": "ef0191214f9f6614b000a68f16dff352",
     "semantic_hash": "ef0191214f9f6614b000a68f16dff352"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions.json": {
-    "mtime": 1786119200.771673,
+    "mtime": 1784477788.0,
     "ast_hash": "1ef2fb31594203c415eed572b2ca7aa3",
     "semantic_hash": "1ef2fb31594203c415eed572b2ca7aa3"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/agenthub/features.json": {
-    "mtime": 1786119200.7718897,
-    "ast_hash": "d479ac376fa49cb0a283ca477c9d6709",
-    "semantic_hash": "d479ac376fa49cb0a283ca477c9d6709"
+    "mtime": 1786686380.4993813,
+    "ast_hash": "364a02acd1e0bb05cef4325ac3747914",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/agentsys/features.json": {
-    "mtime": 1786119200.7721276,
-    "ast_hash": "006f15e8e48a4db50dfe83e0b1a644cc",
-    "semantic_hash": "006f15e8e48a4db50dfe83e0b1a644cc"
+    "mtime": 1786686380.5015006,
+    "ast_hash": "f12a1451dbe12cb24ea348101be1242c",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ai-dlc/features.json": {
-    "mtime": 1786119200.77235,
-    "ast_hash": "25c49c5aedeaa6c594889d6419175f33",
-    "semantic_hash": "25c49c5aedeaa6c594889d6419175f33"
+    "mtime": 1786686380.5023386,
+    "ast_hash": "c65d551e9744ee81f35b198fb7959253",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ateam/features.json": {
-    "mtime": 1786119200.7725766,
-    "ast_hash": "8ca20be8148d1fb5be3e00756a3dfcec",
-    "semantic_hash": "8ca20be8148d1fb5be3e00756a3dfcec"
+    "mtime": 1786686380.5032642,
+    "ast_hash": "4a516b8e10f61342cf2c4af4875786b2",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/augment-cosmos/features.json": {
-    "mtime": 1786119200.772826,
-    "ast_hash": "1bf7724557e9c58a5a04c29c0e54f649",
-    "semantic_hash": "1bf7724557e9c58a5a04c29c0e54f649"
+    "mtime": 1786686380.5039716,
+    "ast_hash": "7d02a769c460512389f9b45862350ddb",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/barkain-workflow-orchestrator/features.json": {
-    "mtime": 1786119200.7730927,
-    "ast_hash": "5668d0517018d6ff0cd833f3a5ba6120",
-    "semantic_hash": "5668d0517018d6ff0cd833f3a5ba6120"
+    "mtime": 1786686380.5047953,
+    "ast_hash": "a0f72fb79db94544dfc8e06bee889fd9",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/bmad/features.json": {
-    "mtime": 1786119200.773347,
-    "ast_hash": "4260625b0063a3855451393082028c6f",
-    "semantic_hash": "4260625b0063a3855451393082028c6f"
+    "mtime": 1786686380.5055485,
+    "ast_hash": "36195287690966a0f7df68b829ab6032",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cavekit-v31/features.json": {
-    "mtime": 1786119200.7736027,
-    "ast_hash": "9692c4b2f04b84a8ffbba5bfb0cd2f39",
-    "semantic_hash": "9692c4b2f04b84a8ffbba5bfb0cd2f39"
+    "mtime": 1786686380.5062616,
+    "ast_hash": "b7ad298bb3e355bdb0cbd1acc678a7c4",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cc10x/features.json": {
-    "mtime": 1786119200.774044,
-    "ast_hash": "ee6f694b7c291ba1ad0c4818ac2770d6",
-    "semantic_hash": "ee6f694b7c291ba1ad0c4818ac2770d6"
+    "mtime": 1786686380.5068986,
+    "ast_hash": "f213f1f3d1550dcd45b1bdfb7a4d65aa",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-code-expert/features.json": {
-    "mtime": 1786119200.7743852,
+    "mtime": 1784477788.0,
     "ast_hash": "83c04d94ec6792856ba08c78d906d407",
     "semantic_hash": "83c04d94ec6792856ba08c78d906d407"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-code/features.json": {
-    "mtime": 1786119200.7746415,
-    "ast_hash": "2041505f140517fa3f4341dee5e49584",
-    "semantic_hash": "2041505f140517fa3f4341dee5e49584"
+    "mtime": 1786686380.5075316,
+    "ast_hash": "e3d9d03017e521e3c61f2d7c8af83ab7",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-harness/features.json": {
-    "mtime": 1786119200.7749007,
-    "ast_hash": "17a81b2618bc052f03b44fd212eee07d",
-    "semantic_hash": "17a81b2618bc052f03b44fd212eee07d"
+    "mtime": 1786686380.5080876,
+    "ast_hash": "c9a10c8d647e7862fee8864ebf9c375a",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/codex/features.json": {
-    "mtime": 1786119200.7751389,
-    "ast_hash": "230c3ee06ca909663722394f6c08bb82",
-    "semantic_hash": "230c3ee06ca909663722394f6c08bb82"
+    "mtime": 1786686380.5087333,
+    "ast_hash": "011f7c5603ab9759f92de2687ed92042",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cognition-scout/features.json": {
-    "mtime": 1786119200.7753818,
-    "ast_hash": "640ea7db61897973a8eca5b84e26df90",
-    "semantic_hash": "640ea7db61897973a8eca5b84e26df90"
+    "mtime": 1786686380.509852,
+    "ast_hash": "086d27aa2aa554c4649ad7ec9111cb31",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/conductor/features.json": {
-    "mtime": 1786119200.7756119,
-    "ast_hash": "7e4514448bdc93081fd2d20c03a11cce",
-    "semantic_hash": "7e4514448bdc93081fd2d20c03a11cce"
+    "mtime": 1786686380.5105567,
+    "ast_hash": "1c0b1745a1a245913b8ea88a762f25d4",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cursor/features.json": {
-    "mtime": 1786119200.7758496,
-    "ast_hash": "50e0f4b57db4186e63f3b9784dacb1b9",
-    "semantic_hash": "50e0f4b57db4186e63f3b9784dacb1b9"
+    "mtime": 1786686380.5111997,
+    "ast_hash": "d92f7bc63a7b06dbe575e4079857122a",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/deepwork/features.json": {
-    "mtime": 1786119200.7761075,
-    "ast_hash": "2418a5df76e9b3bcae6c5fe0d7b529bf",
-    "semantic_hash": "2418a5df76e9b3bcae6c5fe0d7b529bf"
+    "mtime": 1786686380.5119603,
+    "ast_hash": "ead1df442990959e21b1b84db9a6fd06",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/devin/features.json": {
-    "mtime": 1786119200.77635,
-    "ast_hash": "f2f9262d190715005ef91f40cec174e3",
-    "semantic_hash": "f2f9262d190715005ef91f40cec174e3"
+    "mtime": 1786686380.5125344,
+    "ast_hash": "9878fcd83f2ea0617b718321a224de44",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/director/features.json": {
-    "mtime": 1786119200.7765849,
-    "ast_hash": "a4780c4c2ca818cd6da3c3f9c3de42e7",
-    "semantic_hash": "a4780c4c2ca818cd6da3c3f9c3de42e7"
+    "mtime": 1786686380.513466,
+    "ast_hash": "ca3326acb7e39c8cad22c48c52f2297b",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/factory-ai/features.json": {
-    "mtime": 1786119200.7768118,
-    "ast_hash": "266075efbc38dfcb3e3e5fb03e651a94",
-    "semantic_hash": "266075efbc38dfcb3e3e5fb03e651a94"
+    "mtime": 1786686380.5140429,
+    "ast_hash": "1244f062109d51bd7a66cb51f3b8b227",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/github-copilot/features.json": {
-    "mtime": 1786119200.7770543,
-    "ast_hash": "14061aa4edb5a6fcc88dc8a0f1207d70",
-    "semantic_hash": "14061aa4edb5a6fcc88dc8a0f1207d70"
+    "mtime": 1786686380.514626,
+    "ast_hash": "9ca90f57f2c01a30fce68b4708a5b1bf",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/gsd/features.json": {
-    "mtime": 1786119200.7772975,
-    "ast_hash": "5b94610f3ec20e82dc50067e1f9f0444",
-    "semantic_hash": "5b94610f3ec20e82dc50067e1f9f0444"
+    "mtime": 1786686380.515167,
+    "ast_hash": "81cac3fd962b20403e3634cfb6e14a46",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/magic-dev/features.json": {
-    "mtime": 1786119200.7776597,
-    "ast_hash": "40b8e710c965bfb1f2c7f51e027923b8",
-    "semantic_hash": "40b8e710c965bfb1f2c7f51e027923b8"
+    "mtime": 1786686380.5162823,
+    "ast_hash": "c117d26deb87d8cbb3f0fd66dbce95ec",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/oh-my-pi/features.json": {
-    "mtime": 1786119200.777891,
-    "ast_hash": "54af3f13df1b6802392a374f1b623652",
-    "semantic_hash": "54af3f13df1b6802392a374f1b623652"
+    "mtime": 1786686380.5166276,
+    "ast_hash": "a4d907d64a507e19f5c47a34a3fa45da",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ruflo/features.json": {
-    "mtime": 1786119200.77812,
-    "ast_hash": "918ed2c4afc0302e235ce424f480eed4",
-    "semantic_hash": "918ed2c4afc0302e235ce424f480eed4"
+    "mtime": 1786686380.5181713,
+    "ast_hash": "9c9a67bd5d87d4e73478602ea723b3d7",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/sdlc-plugin/features.json": {
-    "mtime": 1786119200.778363,
-    "ast_hash": "c324cce30ffde42541809e410eee47a4",
-    "semantic_hash": "c324cce30ffde42541809e410eee47a4"
+    "mtime": 1786686380.519343,
+    "ast_hash": "541dfd8c9eca0f22a41e3ce29d406e31",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/silver-bullet/features.json": {
-    "mtime": 1786119200.7785962,
-    "ast_hash": "b33246b94ffb0dfad0f90f2a26ac135a",
-    "semantic_hash": "b33246b94ffb0dfad0f90f2a26ac135a"
+    "mtime": 1786686380.5201895,
+    "ast_hash": "a306872b0943aba30572521aae46df15",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/spec-kit/features.json": {
-    "mtime": 1786119200.7788172,
-    "ast_hash": "62a4513c88791e817332ac9331fde2b6",
-    "semantic_hash": "62a4513c88791e817332ac9331fde2b6"
+    "mtime": 1786686380.52091,
+    "ast_hash": "c1b14b977609480905b4ea872e11d0a8",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/superclaude/features.json": {
-    "mtime": 1786119200.7790449,
-    "ast_hash": "cdc24121b3ee7f58968a79564a298dd5",
-    "semantic_hash": "cdc24121b3ee7f58968a79564a298dd5"
+    "mtime": 1786686380.5217872,
+    "ast_hash": "91801e4651f24ac00135cdcabae08f19",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/superpowers/features.json": {
-    "mtime": 1786119200.7793105,
-    "ast_hash": "c1256bc6d07d2cb812be0ed08c7d35b3",
-    "semantic_hash": "c1256bc6d07d2cb812be0ed08c7d35b3"
+    "mtime": 1786686380.5225332,
+    "ast_hash": "eff44f23c8b69efb786ef9a386e15931",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/tembo/features.json": {
-    "mtime": 1786119200.779585,
-    "ast_hash": "0f72c52024e6983bed35aa21073cbe0f",
-    "semantic_hash": "0f72c52024e6983bed35aa21073cbe0f"
+    "mtime": 1786686380.5234256,
+    "ast_hash": "1a5e4c994b8afee97323d981427aa8ce",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/turboshovel/features.json": {
-    "mtime": 1786119200.7798412,
-    "ast_hash": "467cb6ea5ff14d09cdea801ac96327f2",
-    "semantic_hash": "467cb6ea5ff14d09cdea801ac96327f2"
+    "mtime": 1786686380.5243285,
+    "ast_hash": "b8cdd6f18756a7929ba12626b567b253",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/workflow-manager/features.json": {
-    "mtime": 1786119200.7801385,
-    "ast_hash": "a028b2f96d8c9bc232fe5c98b6b99068",
-    "semantic_hash": "a028b2f96d8c9bc232fe5c98b6b99068"
+    "mtime": 1786686380.5261905,
+    "ast_hash": "01ea8dfb6ef7bf641283ef3ac5f655e4",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/zuvo/features.json": {
-    "mtime": 1786119200.7803934,
-    "ast_hash": "a5ad3a33c1adb28c1fe74777da1127fa",
-    "semantic_hash": "a5ad3a33c1adb28c1fe74777da1127fa"
+    "mtime": 1786686380.5274293,
+    "ast_hash": "6c1eb492788f4d4691fcfc999304856e",
+    "semantic_hash": ""
   },
   "scripts/agent-claude-autonomous-test.sh": {
     "mtime": 1786495186.209474,
@@ -7560,9 +7560,9 @@
     "semantic_hash": "6421bc9ac288b87da921ee3ca3bcbe17"
   },
   "skills/silver-deep-research-multi-ai/scripts/category_pack.py": {
-    "mtime": 1786119200.8492436,
-    "ast_hash": "43222eba208890e477fe49739603decf",
-    "semantic_hash": "43222eba208890e477fe49739603decf"
+    "mtime": 1786686380.5316145,
+    "ast_hash": "9f6f4f3c1edf911da0b177d61b97bcc4",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/compression_markers.py": {
     "mtime": 1786119200.8493717,
@@ -7595,19 +7595,19 @@
     "semantic_hash": "38b87b45bd354521c315bf013740df46"
   },
   "skills/silver-deep-research-multi-ai/scripts/generate_spa_report.py": {
-    "mtime": 1786119200.8500268,
-    "ast_hash": "c133a00fa8d961e90f06cf7f7570dbc8",
-    "semantic_hash": "c133a00fa8d961e90f06cf7f7570dbc8"
+    "mtime": 1786686380.5320644,
+    "ast_hash": "9cc3dc4393a6086173137417060ce454",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py": {
-    "mtime": 1786119200.850193,
-    "ast_hash": "ef99457413ed7ab5b94e83a90ea550a0",
-    "semantic_hash": "ef99457413ed7ab5b94e83a90ea550a0"
+    "mtime": 1786686380.534386,
+    "ast_hash": "1747d149aed0704c31d6d67f58e61557",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8504078,
-    "ast_hash": "f90292226ee4d26feb49e78b4c4939ad",
-    "semantic_hash": "f90292226ee4d26feb49e78b4c4939ad"
+    "mtime": 1786686380.535188,
+    "ast_hash": "78606f6788c083fd0ae750e4f0445d12",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/migrate_run_manifest.py": {
     "mtime": 1786119200.850557,
@@ -7625,24 +7625,24 @@
     "semantic_hash": "282b8def2c80db3670c2103ee2ee682a"
   },
   "skills/silver-deep-research-multi-ai/scripts/solution_classifier.py": {
-    "mtime": 1786119200.850907,
-    "ast_hash": "b2fd3e2999ff2aa888d08e4f9e67c075",
-    "semantic_hash": "b2fd3e2999ff2aa888d08e4f9e67c075"
+    "mtime": 1786686380.5357563,
+    "ast_hash": "7a1b087b3e90887e3dbf38e5adf90752",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/synthesize_landscape.py": {
-    "mtime": 1786119200.8510482,
-    "ast_hash": "fff72ffe043eeebf2720f83618d3ee74",
-    "semantic_hash": "fff72ffe043eeebf2720f83618d3ee74"
+    "mtime": 1786689784.1495154,
+    "ast_hash": "f39469e376d5e636b49d7abb9239df39",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/validate_landscape_content.py": {
-    "mtime": 1786119200.8511922,
-    "ast_hash": "72477ae1d5cfa7efb7a682bbc441a859",
-    "semantic_hash": "72477ae1d5cfa7efb7a682bbc441a859"
+    "mtime": 1786686380.5368528,
+    "ast_hash": "1308825c2413cb6fd40fbcfc5ad10fc0",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/scripts/vendor_link_labels.py": {
-    "mtime": 1786119200.851306,
-    "ast_hash": "c3385ae759fe57da95dc00dda9448c19",
-    "semantic_hash": "c3385ae759fe57da95dc00dda9448c19"
+    "mtime": 1786686380.537139,
+    "ast_hash": "05d018134590aa5daf406f7889ad1b7c",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/fixtures/forbidden_envelope.json": {
     "mtime": 1786119200.851511,
@@ -7665,9 +7665,9 @@
     "semantic_hash": "0c3c5e7bb8eb4bb42b0f54bf21dffb4a"
   },
   "skills/silver-deep-research-multi-ai/tests/test_compression_markers.py": {
-    "mtime": 1786119200.8518987,
-    "ast_hash": "5f676d04040f015d5048922f89956408",
-    "semantic_hash": "5f676d04040f015d5048922f89956408"
+    "mtime": 1786689597.6665354,
+    "ast_hash": "3d91cd3a29e234fb34a08f808d3a9f9d",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_contracts.py": {
     "mtime": 1786119200.8519952,
@@ -7675,19 +7675,19 @@
     "semantic_hash": "825f034508f2219e25f1277ff497a278"
   },
   "skills/silver-deep-research-multi-ai/tests/test_dr_live_pool_completeness.py": {
-    "mtime": 1786119200.8521008,
-    "ast_hash": "4f351c5ac1f85a9a9349fa206537af3b",
-    "semantic_hash": "4f351c5ac1f85a9a9349fa206537af3b"
+    "mtime": 1786689433.9942286,
+    "ast_hash": "2690cbef58b9ed3b1f8d9ee4b53872f4",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_landscape_report_builder.py": {
-    "mtime": 1786119200.8522258,
-    "ast_hash": "b517dc7ce56c8fa5731648098153ae4b",
-    "semantic_hash": "b517dc7ce56c8fa5731648098153ae4b"
+    "mtime": 1786686380.5380533,
+    "ast_hash": "43ff5d234071211480ff93f5370d8b46",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_materialize_solution_artifacts.py": {
-    "mtime": 1786119200.8523688,
-    "ast_hash": "e3296d0b399fbbfa5a34a99c03bde24d",
-    "semantic_hash": "e3296d0b399fbbfa5a34a99c03bde24d"
+    "mtime": 1786686380.53851,
+    "ast_hash": "fcb4e4c24432bde94ff29f5b83bfbf7d",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_migrate_run_manifest.py": {
     "mtime": 1786119200.8524778,
@@ -7695,14 +7695,14 @@
     "semantic_hash": "29da7436786c5121b9ae95d74104dd09"
   },
   "skills/silver-deep-research-multi-ai/tests/test_multi_market_landscape.py": {
-    "mtime": 1786119200.8525832,
-    "ast_hash": "e1824c990184cc8722cb2d22eecc4052",
-    "semantic_hash": "e1824c990184cc8722cb2d22eecc4052"
+    "mtime": 1786686380.5388684,
+    "ast_hash": "bb75ee1ef2f0fb835af7e76622997d75",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_package_solution_outputs.py": {
-    "mtime": 1786119200.8526974,
-    "ast_hash": "4c94316e699e1457b6e95fcc55e66558",
-    "semantic_hash": "4c94316e699e1457b6e95fcc55e66558"
+    "mtime": 1786689433.9962575,
+    "ast_hash": "e3b858098175ad87ced7e839aec82bdd",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_solution_classifier.py": {
     "mtime": 1786119200.8528826,
@@ -7710,14 +7710,14 @@
     "semantic_hash": "908d4250900f95e061adb3ede5385ce5"
   },
   "skills/silver-deep-research-multi-ai/tests/test_spa_profiles.py": {
-    "mtime": 1786119200.8531547,
-    "ast_hash": "9070335ffe4847fc3696ec01626a3a54",
-    "semantic_hash": "9070335ffe4847fc3696ec01626a3a54"
+    "mtime": 1786686380.539535,
+    "ast_hash": "bfe02b7a6e79f6144368d5fd8cbba390",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_synthesis_membership.py": {
-    "mtime": 1786119200.8532891,
-    "ast_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb",
-    "semantic_hash": "3be29f3e8d71ecaf9bd3712ffb2f55eb"
+    "mtime": 1786686380.539961,
+    "ast_hash": "0ed0bf92a1b23632b7faceea4c747d6b",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research-multi-ai/tests/test_validate_landscape_catalog_gates.py": {
     "mtime": 1786119200.8534398,
@@ -7745,9 +7745,9 @@
     "semantic_hash": "e17a8056a34659a0e50c8be79f8c2e2c"
   },
   "skills/silver-deep-research/reference/catalogs/authority_domains.json": {
-    "mtime": 1786119200.8548133,
-    "ast_hash": "2ec76cd842c888bb011219ff2486992c",
-    "semantic_hash": "2ec76cd842c888bb011219ff2486992c"
+    "mtime": 1786686380.5404928,
+    "ast_hash": "97c1c1fd498c0a61ed11d12e0b5184c9",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/reference/catalogs/intent_classes.json": {
     "mtime": 1786119200.8549044,
@@ -7760,19 +7760,19 @@
     "semantic_hash": "dd264164257ffda505303959bf07c372"
   },
   "skills/silver-deep-research/reference/catalogs/source_channels.json": {
-    "mtime": 1786119200.8551166,
-    "ast_hash": "4a97477def0efd948ac5853beeac8d99",
-    "semantic_hash": "4a97477def0efd948ac5853beeac8d99"
+    "mtime": 1786686380.5407324,
+    "ast_hash": "4421355a44dd1033ecad35748903a170",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json": {
-    "mtime": 1786119200.856527,
-    "ast_hash": "0004511eddcd39bd2f5f42d983be25a7",
-    "semantic_hash": "0004511eddcd39bd2f5f42d983be25a7"
+    "mtime": 1786686380.5413117,
+    "ast_hash": "d1d71e98db24b57c6e5c3832d6454d4a",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/reference/landscape/category-packs/schema.json": {
-    "mtime": 1786119200.856658,
-    "ast_hash": "eb43cea1327407fc9fb2ea63992aa76f",
-    "semantic_hash": "eb43cea1327407fc9fb2ea63992aa76f"
+    "mtime": 1786686380.5418096,
+    "ast_hash": "00ff118b9404550932855efe8f98f3b6",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/reference/need-profile-personas.json": {
     "mtime": 1786119200.8572261,
@@ -7830,9 +7830,9 @@
     "semantic_hash": "590d8f5090f077e99c3daadf192cfa6d"
   },
   "skills/silver-deep-research/scripts/compare_solutions.py": {
-    "mtime": 1786119200.861496,
-    "ast_hash": "b57cee13616295f854ea0d4a003a582f",
-    "semantic_hash": "b57cee13616295f854ea0d4a003a582f"
+    "mtime": 1786686380.542735,
+    "ast_hash": "4abf386b22af24a565a9c6837dcf8406",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/scripts/deps_probe.py": {
     "mtime": 1786119200.8617969,
@@ -14520,13 +14520,13 @@
     "semantic_hash": "063986b86f0102dbf8b460b13512b259"
   },
   ".planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md": {
-    "mtime": 1786669497.095528,
-    "ast_hash": "7fe0aa22e8599ab54e312664226e089e",
+    "mtime": 1786687374.8013904,
+    "ast_hash": "d5a5b56614eae6de2f21a38971acc6b8",
     "semantic_hash": ""
   },
   ".planning/router_subagent_surfaces_85bf9f09.plan.md": {
-    "mtime": 1786668839.450215,
-    "ast_hash": "449ffbbe8f51c76abef1fa4df271144c",
+    "mtime": 1786689289.9865453,
+    "ast_hash": "1b28c55d8cafdbabec673eae3a94fb3d",
     "semantic_hash": ""
   },
   ".planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md": {
@@ -16035,9 +16035,9 @@
     "semantic_hash": "ce237b05763aa0c41d0c8c9907edc12d"
   },
   "agents/claude/silver:deep-research-multi-ai/assets/landscape-preview.template.html": {
-    "mtime": 1786119200.84865,
-    "ast_hash": "4317d9504fe8e93667e51b22afc84eca",
-    "semantic_hash": "4317d9504fe8e93667e51b22afc84eca"
+    "mtime": 1786686380.1851814,
+    "ast_hash": "c40c2c45786ee3c5e48d833d8ea351e2",
+    "semantic_hash": ""
   },
   "agents/claude/silver:deep-research/README.md": {
     "mtime": 1786119200.8536513,
@@ -18010,9 +18010,9 @@
     "semantic_hash": "5573f599d2a442d3906ac55a60259538"
   },
   "host-bundles/codex/silver-deep-research-multi-ai/assets/landscape-preview.template.html": {
-    "mtime": 1786119200.84865,
-    "ast_hash": "4317d9504fe8e93667e51b22afc84eca",
-    "semantic_hash": "4317d9504fe8e93667e51b22afc84eca"
+    "mtime": 1786686380.281356,
+    "ast_hash": "c40c2c45786ee3c5e48d833d8ea351e2",
+    "semantic_hash": ""
   },
   "host-bundles/codex/silver-deep-research/README.md": {
     "mtime": 1786119200.8536513,
@@ -19105,9 +19105,9 @@
     "semantic_hash": "fd901d6c588f1e1f668be037042aee9a"
   },
   "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/assets/landscape-preview.template.html": {
-    "mtime": 1786119200.0,
-    "ast_hash": "4317d9504fe8e93667e51b22afc84eca",
-    "semantic_hash": "4317d9504fe8e93667e51b22afc84eca"
+    "mtime": 1786686380.296092,
+    "ast_hash": "c40c2c45786ee3c5e48d833d8ea351e2",
+    "semantic_hash": ""
   },
   "plugins/silver-bullet/skill-source/silver-deep-research/README.md": {
     "mtime": 1786119200.0,
@@ -19885,304 +19885,304 @@
     "semantic_hash": "696896602f9a80b6b41bd4d284314723"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/comparison/comparison-matrix.md": {
-    "mtime": 1786119200.7582378,
-    "ast_hash": "0d3f27799651d99f90f65548123c65a6",
-    "semantic_hash": "0d3f27799651d99f90f65548123c65a6"
+    "mtime": 1786686380.4577973,
+    "ast_hash": "41305e60238811cb28d0672a4fbaf9ea",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/handoff.md": {
-    "mtime": 1786119200.7593184,
+    "mtime": 1784477788.0,
     "ast_hash": "13a21d5f4b3911c0f077725bf148ac2c",
     "semantic_hash": "13a21d5f4b3911c0f077725bf148ac2c"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html": {
-    "mtime": 1786119200.7598414,
-    "ast_hash": "4f2d5bf3ccf3717e274cfa171a97bc6d",
-    "semantic_hash": "4f2d5bf3ccf3717e274cfa171a97bc6d"
+    "mtime": 1786686380.4641678,
+    "ast_hash": "3ad3844c689119366738868c0a297425",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.md": {
-    "mtime": 1786119200.7607975,
-    "ast_hash": "9e22e6c5410470dfb8f0907584837ad9",
-    "semantic_hash": "9e22e6c5410470dfb8f0907584837ad9"
+    "mtime": 1786686380.4849355,
+    "ast_hash": "de159ec2ded1dd4ac7e6a4ad8e4b6444",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/claude-opus-4-8-medium-attempt-a4902940-18c5-49c6-8758-a67d039bf727.txt": {
-    "mtime": 1786119200.7615676,
+    "mtime": 1784477788.0,
     "ast_hash": "370385ff6a6c2965ef71c80af375bc7f",
     "semantic_hash": "370385ff6a6c2965ef71c80af375bc7f"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/gemini-3-5-flash-attempt-a71fff19-a589-4277-a33b-a59d389824df.txt": {
-    "mtime": 1786119200.7621753,
+    "mtime": 1784477788.0,
     "ast_hash": "2a089f7b6305dc28770f32b09bfdff9a",
     "semantic_hash": "2a089f7b6305dc28770f32b09bfdff9a"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/gpt-5-6-luna-medium-attempt-03121dd5-656a-4767-ae70-8658f0035445.txt": {
-    "mtime": 1786119200.7624476,
+    "mtime": 1784477788.0,
     "ast_hash": "f175b57d2c122cc7a611382cab475d46",
     "semantic_hash": "f175b57d2c122cc7a611382cab475d46"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-deepseek-v4-flash-opencode-go-deepseek-v4-flash.raw.txt": {
-    "mtime": 1786119200.7640793,
+    "mtime": 1784477788.0,
     "ast_hash": "8acbdb331b8bab189190e5cde5e5388a",
     "semantic_hash": "8acbdb331b8bab189190e5cde5e5388a"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-kimi-k2.7-code-opencode-go-kimi-k2.7-code.raw.txt": {
-    "mtime": 1786119200.7642505,
+    "mtime": 1784477788.0,
     "ast_hash": "0a703f0e35afd5b4e285f9a2876b2271",
     "semantic_hash": "0a703f0e35afd5b4e285f9a2876b2271"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-mimo-v2.5-opencode-go-mimo-v2.5.raw.txt": {
-    "mtime": 1786119200.7643669,
+    "mtime": 1784477788.0,
     "ast_hash": "047d9e6a6c145ae048235f7af17132ae",
     "semantic_hash": "047d9e6a6c145ae048235f7af17132ae"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-minimax-m3-opencode-go-minimax-m3.raw.txt": {
-    "mtime": 1786119200.7646692,
+    "mtime": 1784477788.0,
     "ast_hash": "6056e26d89c18e8280e05ac4f9d56707",
     "semantic_hash": "6056e26d89c18e8280e05ac4f9d56707"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-CRITIQUE/ocg-qwen3.7-plus-opencode-go-qwen3.7-plus.raw.txt": {
-    "mtime": 1786119200.7647915,
+    "mtime": 1784477788.0,
     "ast_hash": "a61e95a3aa31c81df899f6828e801d3b",
     "semantic_hash": "a61e95a3aa31c81df899f6828e801d3b"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/claude-opus-4-8-medium-attempt-c0051eab-61e9-4fac-bbef-06a6ff2732b9.txt": {
-    "mtime": 1786119200.765286,
+    "mtime": 1784477788.0,
     "ast_hash": "18c1749f751a63a8cc7c7f7818e7a312",
     "semantic_hash": "18c1749f751a63a8cc7c7f7818e7a312"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-kimi-k2.7-code-opencode-go-kimi-k2.7-code.raw.txt": {
-    "mtime": 1786119200.767784,
+    "mtime": 1784477788.0,
     "ast_hash": "623df35f66d7a78b393371ae4c0e43ef",
     "semantic_hash": "623df35f66d7a78b393371ae4c0e43ef"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-mimo-v2.5-opencode-go-mimo-v2.5.raw.txt": {
-    "mtime": 1786119200.7679107,
+    "mtime": 1784477788.0,
     "ast_hash": "75481f05ae587e64a4f7d789a09fbd8a",
     "semantic_hash": "75481f05ae587e64a4f7d789a09fbd8a"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-minimax-m3-opencode-go-minimax-m3.raw.txt": {
-    "mtime": 1786119200.7680726,
+    "mtime": 1784477788.0,
     "ast_hash": "7e86b880503ebc2b5fc1d23f09ff36fd",
     "semantic_hash": "7e86b880503ebc2b5fc1d23f09ff36fd"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-qwen3.7-plus-opencode-go-qwen3.7-plus.raw.txt": {
-    "mtime": 1786119200.7681854,
+    "mtime": 1784477788.0,
     "ast_hash": "7e016038eeae85bcc25048737c112f12",
     "semantic_hash": "7e016038eeae85bcc25048737c112f12"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/claude-opus-4-8-medium-attempt-6df81206-4d9a-413c-acfa-d53584d2c6e5.txt": {
-    "mtime": 1786119200.7687755,
+    "mtime": 1784477788.0,
     "ast_hash": "5a05e348c5cfc5a6ce91e3f7aaa550a7",
     "semantic_hash": "5a05e348c5cfc5a6ce91e3f7aaa550a7"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/gemini-3-5-flash-attempt-835f7f00-ee24-401f-8efb-c65f4ba31424.txt": {
-    "mtime": 1786119200.769287,
+    "mtime": 1784477788.0,
     "ast_hash": "b3332026fea8bb16376a29b8466145c7",
     "semantic_hash": "b3332026fea8bb16376a29b8466145c7"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/gpt-5-6-luna-medium-attempt-2c5abefe-0016-47b0-bd95-ea4c6b24adf6.txt": {
-    "mtime": 1786119200.7694514,
+    "mtime": 1784477788.0,
     "ast_hash": "97da4de1734948d04c3d226d00ff4086",
     "semantic_hash": "97da4de1734948d04c3d226d00ff4086"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-deepseek-v4-flash-opencode-go-deepseek-v4-flash.raw.txt": {
-    "mtime": 1786119200.770382,
+    "mtime": 1784477788.0,
     "ast_hash": "7876a8a6ed78f9c6c44b2d025b8bad74",
     "semantic_hash": "7876a8a6ed78f9c6c44b2d025b8bad74"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-kimi-k2.7-code-opencode-go-kimi-k2.7-code.raw.txt": {
-    "mtime": 1786119200.7704945,
+    "mtime": 1784477788.0,
     "ast_hash": "ee35670327f98509addc3be3f3e80678",
     "semantic_hash": "ee35670327f98509addc3be3f3e80678"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-mimo-v2.5-opencode-go-mimo-v2.5.raw.txt": {
-    "mtime": 1786119200.7705994,
+    "mtime": 1784477788.0,
     "ast_hash": "7f2ea06a3fd5e336eaa3993ef646dee5",
     "semantic_hash": "7f2ea06a3fd5e336eaa3993ef646dee5"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-minimax-m3-opencode-go-minimax-m3.raw.txt": {
-    "mtime": 1786119200.7708817,
+    "mtime": 1784477788.0,
     "ast_hash": "9aaecfa3b30ca688ea1e1853c05409a3",
     "semantic_hash": "9aaecfa3b30ca688ea1e1853c05409a3"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/report.html": {
-    "mtime": 1786119200.77111,
+    "mtime": 1784490002.0,
     "ast_hash": "416f080b874fb49bf6c171884c272493",
     "semantic_hash": "416f080b874fb49bf6c171884c272493"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/scope.md": {
-    "mtime": 1786119200.7714195,
+    "mtime": 1784477788.0,
     "ast_hash": "8f02fabe1176cf22c438f552d8c9697d",
     "semantic_hash": "8f02fabe1176cf22c438f552d8c9697d"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/agenthub/scr.md": {
-    "mtime": 1786119200.7719903,
-    "ast_hash": "fb7feffc3b7cf886fac481fd9b2f70e9",
-    "semantic_hash": "fb7feffc3b7cf886fac481fd9b2f70e9"
+    "mtime": 1786686380.5001504,
+    "ast_hash": "8896c554acf601913e54e1e849d8f007",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/agentsys/scr.md": {
-    "mtime": 1786119200.7722147,
-    "ast_hash": "dea2de430ecb8333287d9a15469c046d",
-    "semantic_hash": "dea2de430ecb8333287d9a15469c046d"
+    "mtime": 1786686380.5019808,
+    "ast_hash": "4b4fcaa19d4f65b12bf4528eccb5f641",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ai-dlc/scr.md": {
-    "mtime": 1786119200.7724469,
-    "ast_hash": "1c9868021c35b2b049ac87c47ba890d2",
-    "semantic_hash": "1c9868021c35b2b049ac87c47ba890d2"
+    "mtime": 1786686380.5029,
+    "ast_hash": "9da5d8b8d1365a76c89c6b8a001b2067",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ateam/scr.md": {
-    "mtime": 1786119200.772661,
-    "ast_hash": "1af202b84e832929479adfc2f5c5339b",
-    "semantic_hash": "1af202b84e832929479adfc2f5c5339b"
+    "mtime": 1786686380.5036094,
+    "ast_hash": "f01aed903d7f6bc6f7c719c93f79a5cb",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/augment-cosmos/scr.md": {
-    "mtime": 1786119200.772944,
-    "ast_hash": "63cd51ff862d5173796f3e08e90164e8",
-    "semantic_hash": "63cd51ff862d5173796f3e08e90164e8"
+    "mtime": 1786686380.5044005,
+    "ast_hash": "36936b9ddb70b89d06f79c6a241b0587",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/barkain-workflow-orchestrator/scr.md": {
-    "mtime": 1786119200.7731912,
-    "ast_hash": "1bfe978de57a3c6fc6293cc63beca109",
-    "semantic_hash": "1bfe978de57a3c6fc6293cc63beca109"
+    "mtime": 1786686380.5052104,
+    "ast_hash": "8c72d652f23eb2bed6e66e40e88e2cc8",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/bmad/scr.md": {
-    "mtime": 1786119200.773449,
-    "ast_hash": "97d713504600feb6c5de720606c9ccc0",
-    "semantic_hash": "97d713504600feb6c5de720606c9ccc0"
+    "mtime": 1786686380.505964,
+    "ast_hash": "a37afb2afce6ba577ccb009cdb828a25",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cavekit-v31/scr.md": {
-    "mtime": 1786119200.7736943,
-    "ast_hash": "d4c540a289cc64a45d164f19a9ac2964",
-    "semantic_hash": "d4c540a289cc64a45d164f19a9ac2964"
+    "mtime": 1786686380.50657,
+    "ast_hash": "6f88cc216419bd84fb7c41bb1e621dc4",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cc10x/scr.md": {
-    "mtime": 1786119200.7742324,
-    "ast_hash": "02de18b415cf5f71ec46bbb3a29071b1",
-    "semantic_hash": "02de18b415cf5f71ec46bbb3a29071b1"
+    "mtime": 1786686380.5072293,
+    "ast_hash": "ab6bde32584e483ed78891818f4522af",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-code-expert/scr.md": {
-    "mtime": 1786119200.7744849,
+    "mtime": 1784477788.0,
     "ast_hash": "0047f242fe412c42abb4b35da2df035f",
     "semantic_hash": "0047f242fe412c42abb4b35da2df035f"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-code/scr.md": {
-    "mtime": 1786119200.7747464,
-    "ast_hash": "f95ad5af5fdfb39521f335b98b60531f",
-    "semantic_hash": "f95ad5af5fdfb39521f335b98b60531f"
+    "mtime": 1786686380.507805,
+    "ast_hash": "aac5ab0503876971ebfe0bcac9239532",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/claude-harness/scr.md": {
-    "mtime": 1786119200.7750041,
-    "ast_hash": "579a81ca37f05160ab5a6a35dbd0171c",
-    "semantic_hash": "579a81ca37f05160ab5a6a35dbd0171c"
+    "mtime": 1786686380.5083508,
+    "ast_hash": "52d45be2d26957c558a27a3a0bde801f",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/codex/scr.md": {
-    "mtime": 1786119200.775236,
-    "ast_hash": "aa471db6952e85de8c1b19ba04d74e6c",
-    "semantic_hash": "aa471db6952e85de8c1b19ba04d74e6c"
+    "mtime": 1786686380.5092955,
+    "ast_hash": "5cb24f9dacf28ebc6aa52fb497a4c840",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cognition-scout/scr.md": {
-    "mtime": 1786119200.7754798,
-    "ast_hash": "acc287693798261ceecc9b2c5a6af090",
-    "semantic_hash": "acc287693798261ceecc9b2c5a6af090"
+    "mtime": 1786686380.5102534,
+    "ast_hash": "b141ec99844d1f02183b096a943ba321",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/conductor/scr.md": {
-    "mtime": 1786119200.7757068,
-    "ast_hash": "75fe25da3c96ecee39361abf80192602",
-    "semantic_hash": "75fe25da3c96ecee39361abf80192602"
+    "mtime": 1786686380.5109158,
+    "ast_hash": "3877452c190a3ebf44740257b8503635",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/cursor/scr.md": {
-    "mtime": 1786119200.7759657,
-    "ast_hash": "13467ac80a3086def1be50f79b578373",
-    "semantic_hash": "13467ac80a3086def1be50f79b578373"
+    "mtime": 1786686380.5114772,
+    "ast_hash": "40691f7c62ac81588c73894b7d0a4616",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/deepwork/scr.md": {
-    "mtime": 1786119200.7761993,
-    "ast_hash": "46bd3e2e74cf5e7f29d6b211fc5cc2b2",
-    "semantic_hash": "46bd3e2e74cf5e7f29d6b211fc5cc2b2"
+    "mtime": 1786686380.512256,
+    "ast_hash": "21eb963ebb1f05498ab79dc0879b54d5",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/devin/scr.md": {
-    "mtime": 1786119200.7764442,
-    "ast_hash": "e04c5054f75f6c3e257f5278e4e36458",
-    "semantic_hash": "e04c5054f75f6c3e257f5278e4e36458"
+    "mtime": 1786686380.5129342,
+    "ast_hash": "fb1383339e4ce45086624328e554bbb6",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/director/scr.md": {
-    "mtime": 1786119200.7766743,
-    "ast_hash": "dde5a9c54ea2cc4b3c4e0cc84b334b78",
-    "semantic_hash": "dde5a9c54ea2cc4b3c4e0cc84b334b78"
+    "mtime": 1786686380.5137544,
+    "ast_hash": "fe9c075483b218da12d88745a28b3ea2",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/factory-ai/scr.md": {
-    "mtime": 1786119200.7769105,
-    "ast_hash": "7e81935bc18ab6cb6bcc1f9a39f9062c",
-    "semantic_hash": "7e81935bc18ab6cb6bcc1f9a39f9062c"
+    "mtime": 1786686380.5143275,
+    "ast_hash": "9063f0f36fcbbe96ea50becbf43b8869",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/github-copilot/scr.md": {
-    "mtime": 1786119200.7771583,
-    "ast_hash": "88bcc289dbca799ee8e860f2a59aac7a",
-    "semantic_hash": "88bcc289dbca799ee8e860f2a59aac7a"
+    "mtime": 1786686380.5148954,
+    "ast_hash": "c6d5943a7dde523fc416e39c17573e1d",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/gsd/scr.md": {
-    "mtime": 1786119200.7775235,
-    "ast_hash": "7121eafaafefbe6df98c528b9b15fc6d",
-    "semantic_hash": "7121eafaafefbe6df98c528b9b15fc6d"
+    "mtime": 1786686380.5156748,
+    "ast_hash": "6dd998bac8d04d885a46e4a101d3f37a",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/magic-dev/scr.md": {
-    "mtime": 1786119200.7777455,
+    "mtime": 1784477788.0,
     "ast_hash": "75dc469cc7a6f19fd479dcc95a498002",
     "semantic_hash": "75dc469cc7a6f19fd479dcc95a498002"
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/oh-my-pi/scr.md": {
-    "mtime": 1786119200.7779872,
-    "ast_hash": "66c916bba48c42b954704936029eac81",
-    "semantic_hash": "66c916bba48c42b954704936029eac81"
+    "mtime": 1786686380.5173569,
+    "ast_hash": "9585bd1dc69b466a583804f6668d89bb",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/ruflo/scr.md": {
-    "mtime": 1786119200.778215,
-    "ast_hash": "2865833748a67067d3f9fc2961d8b759",
-    "semantic_hash": "2865833748a67067d3f9fc2961d8b759"
+    "mtime": 1786686380.518591,
+    "ast_hash": "8f6bf3a41da12e4734a9ef225d42ba4c",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/sdlc-plugin/scr.md": {
-    "mtime": 1786119200.7784631,
-    "ast_hash": "b3bba4f5f7eb609a55a9e7f8fa787aa9",
-    "semantic_hash": "b3bba4f5f7eb609a55a9e7f8fa787aa9"
+    "mtime": 1786686380.519828,
+    "ast_hash": "1cc5f565076ab36a04ead4adfb2b84e6",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/silver-bullet/scr.md": {
-    "mtime": 1786119200.7786896,
-    "ast_hash": "63cc4e6221e69275f989f470c4005c8d",
-    "semantic_hash": "63cc4e6221e69275f989f470c4005c8d"
+    "mtime": 1786686380.5205488,
+    "ast_hash": "b57f287b0692078143ef044147ed3695",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/spec-kit/scr.md": {
-    "mtime": 1786119200.7789087,
-    "ast_hash": "a0cfa6d7e0713a0f5961a9816b558524",
-    "semantic_hash": "a0cfa6d7e0713a0f5961a9816b558524"
+    "mtime": 1786686380.5213344,
+    "ast_hash": "ae53a669c39429df5bdd014cc1ac7b0b",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/superclaude/scr.md": {
-    "mtime": 1786119200.7791553,
-    "ast_hash": "8dfe809f395495f13df9b387eff0310d",
-    "semantic_hash": "8dfe809f395495f13df9b387eff0310d"
+    "mtime": 1786686380.522217,
+    "ast_hash": "d8b666c809e678860aea4fd7857a6442",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/superpowers/scr.md": {
-    "mtime": 1786119200.7794251,
-    "ast_hash": "129ca182fd5e7284b4699ffe9fd4de1d",
-    "semantic_hash": "129ca182fd5e7284b4699ffe9fd4de1d"
+    "mtime": 1786686380.5229747,
+    "ast_hash": "7939b842921cc2a83b45f4624ed1574b",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/tembo/scr.md": {
-    "mtime": 1786119200.7796876,
-    "ast_hash": "e98833da9003e8c25b416e37bc4f2738",
-    "semantic_hash": "e98833da9003e8c25b416e37bc4f2738"
+    "mtime": 1786686380.523884,
+    "ast_hash": "1e9cfce5a9a15e20fdb3f9f59454436c",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/turboshovel/scr.md": {
-    "mtime": 1786119200.7799568,
-    "ast_hash": "95f377855e15b81d0eb6c03c01c743ef",
-    "semantic_hash": "95f377855e15b81d0eb6c03c01c743ef"
+    "mtime": 1786686380.524612,
+    "ast_hash": "c169f42af34cf34f9cd59255a45008aa",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/workflow-manager/scr.md": {
-    "mtime": 1786119200.7802374,
-    "ast_hash": "face1f0948bdf983d1b1c7a837059f95",
-    "semantic_hash": "face1f0948bdf983d1b1c7a837059f95"
+    "mtime": 1786686380.526989,
+    "ast_hash": "8929565b224cd0988bc2c653f866ae55",
+    "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/solutions/zuvo/scr.md": {
-    "mtime": 1786119200.780495,
-    "ast_hash": "5586f03a3443ef209f0e4e593e313d92",
-    "semantic_hash": "5586f03a3443ef209f0e4e593e313d92"
+    "mtime": 1786686380.5277483,
+    "ast_hash": "bd01cedee3ee608c573a9667cdd98024",
+    "semantic_hash": ""
   },
   "research/README.md": {
     "mtime": 1786119200.7806034,
@@ -20750,9 +20750,9 @@
     "semantic_hash": "087afdee8a212e41b9b8febba59667fa"
   },
   "skills/silver-deep-research-multi-ai/assets/landscape-preview.template.html": {
-    "mtime": 1786119200.84865,
-    "ast_hash": "4317d9504fe8e93667e51b22afc84eca",
-    "semantic_hash": "4317d9504fe8e93667e51b22afc84eca"
+    "mtime": 1786689784.1524086,
+    "ast_hash": "b1c3e2850f8f4b14aaf7c802a90b19ca",
+    "semantic_hash": ""
   },
   "skills/silver-deep-research/README.md": {
     "mtime": 1786119200.8536513,
@@ -23915,22 +23915,22 @@
     "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/gemini-3-5-flash-attempt-819f03bf-44b2-4b6a-8a6f-30edbc55fd6d.txt": {
-    "mtime": 1786119200.7665608,
+    "mtime": 1784477788.0,
     "ast_hash": "0b91e3758c5d8e790c76087e18f065d3",
     "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/gpt-5-6-luna-medium-attempt-7009c301-2a38-49c2-992b-e5aa2d96f53c.txt": {
-    "mtime": 1786119200.7668715,
+    "mtime": 1784477788.0,
     "ast_hash": "58efe00628c8288cd2e97d963f904079",
     "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-RETRIEVE/ocg-deepseek-v4-flash-opencode-go-deepseek-v4-flash.raw.txt": {
-    "mtime": 1786119200.7676544,
+    "mtime": 1784477788.0,
     "ast_hash": "2cc7602e39405eb2b9d8ecc67f29516e",
     "semantic_hash": ""
   },
   "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/phases/DR-TRIANGULATE/ocg-qwen3.7-plus-opencode-go-qwen3.7-plus.raw.txt": {
-    "mtime": 1786119200.7709916,
+    "mtime": 1784477788.0,
     "ast_hash": "7d5fa8deaa22ac56846790f4c31008fa",
     "semantic_hash": ""
   },
@@ -24045,8 +24045,8 @@
     "semantic_hash": ""
   },
   ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md": {
-    "mtime": 1786488891.7685156,
-    "ast_hash": "53cc603c94b1c7ab9d0dbc40e6da7dec",
+    "mtime": 1786687374.800587,
+    "ast_hash": "93b68653b2b3e67b49d48498db70d517",
     "semantic_hash": ""
   },
   ".planning/rfl-router-subagent-surfaces-85bf9f09-20260812/rung-gemini-3.6-flash-high-task-c1.md": {
@@ -24327,6 +24327,1121 @@
   ".agentmemory/memory/2026-08-14-router-surfaces-r4.md": {
     "mtime": 1786657780.7591412,
     "ast_hash": "c94404326c20535fc861e9f4e474f104",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-13-session-intent-audit-landscape.json": {
+    "mtime": 1786614903.7105532,
+    "ast_hash": "860762555e05f84de6847fe9ec779a02",
+    "semantic_hash": ""
+  },
+  "agents/claude/silver:deep-research-multi-ai/scripts/landscape_critique_artifacts.py": {
+    "mtime": 1786686380.187799,
+    "ast_hash": "427fc73da9d67a000b28da698519e35b",
+    "semantic_hash": ""
+  },
+  "agents/claude/silver:deep-research-multi-ai/scripts/landscape_independent_pdf.py": {
+    "mtime": 1786686380.1888852,
+    "ast_hash": "cc6d5c5b209efadc710c311d18d96033",
+    "semantic_hash": ""
+  },
+  "agents/claude/silver:deep-research-multi-ai/tests/test_independent_landscape_pdf.py": {
+    "mtime": 1786686380.196417,
+    "ast_hash": "fa83bdbe53f928944175b476163b32ad",
+    "semantic_hash": ""
+  },
+  "agents/claude/silver:deep-research-multi-ai/tests/test_realistic_chart_scoring.py": {
+    "mtime": 1786686380.1990383,
+    "ast_hash": "7221d68045f6f30404f8e78f43226794",
+    "semantic_hash": ""
+  },
+  "agents/claude/silver:deep-research-multi-ai/tests/test_vendor_link_and_buckets.py": {
+    "mtime": 1786686380.2026353,
+    "ast_hash": "dee2f1edef1c8300ea22a9dd319afefd",
+    "semantic_hash": ""
+  },
+  "host-bundles/codex/silver-deep-research-multi-ai/scripts/landscape_critique_artifacts.py": {
+    "mtime": 1786686380.2823694,
+    "ast_hash": "427fc73da9d67a000b28da698519e35b",
+    "semantic_hash": ""
+  },
+  "host-bundles/codex/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py": {
+    "mtime": 1786686380.28289,
+    "ast_hash": "cc6d5c5b209efadc710c311d18d96033",
+    "semantic_hash": ""
+  },
+  "host-bundles/codex/silver-deep-research-multi-ai/tests/test_independent_landscape_pdf.py": {
+    "mtime": 1786686380.2885215,
+    "ast_hash": "fa83bdbe53f928944175b476163b32ad",
+    "semantic_hash": ""
+  },
+  "host-bundles/codex/silver-deep-research-multi-ai/tests/test_realistic_chart_scoring.py": {
+    "mtime": 1786686380.2904162,
+    "ast_hash": "7221d68045f6f30404f8e78f43226794",
+    "semantic_hash": ""
+  },
+  "host-bundles/codex/silver-deep-research-multi-ai/tests/test_vendor_link_and_buckets.py": {
+    "mtime": 1786686380.2913005,
+    "ast_hash": "dee2f1edef1c8300ea22a9dd319afefd",
+    "semantic_hash": ""
+  },
+  "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/landscape_critique_artifacts.py": {
+    "mtime": 1786686380.2975745,
+    "ast_hash": "427fc73da9d67a000b28da698519e35b",
+    "semantic_hash": ""
+  },
+  "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py": {
+    "mtime": 1786686380.29799,
+    "ast_hash": "cc6d5c5b209efadc710c311d18d96033",
+    "semantic_hash": ""
+  },
+  "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_independent_landscape_pdf.py": {
+    "mtime": 1786686380.3016458,
+    "ast_hash": "fa83bdbe53f928944175b476163b32ad",
+    "semantic_hash": ""
+  },
+  "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_realistic_chart_scoring.py": {
+    "mtime": 1786686380.3030329,
+    "ast_hash": "7221d68045f6f30404f8e78f43226794",
+    "semantic_hash": ""
+  },
+  "plugins/silver-bullet/skill-source/silver-deep-research-multi-ai/tests/test_vendor_link_and_buckets.py": {
+    "mtime": 1786686380.3042517,
+    "ast_hash": "dee2f1edef1c8300ea22a9dd319afefd",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-critique-artifacts/VERIFY.json": {
+    "mtime": 1786686380.307574,
+    "ast_hash": "d019f5329c9816d718c5acd0f98681ee",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-critique-artifacts/vloop/VERIFY.json": {
+    "mtime": 1786686380.3081558,
+    "ast_hash": "447d137f453f8e07aa67160f0bdc46be",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-live-tab-critique/vloop/VERIFY.json": {
+    "mtime": 1786686380.313135,
+    "ast_hash": "71ac4281e8f0da155164ff9d84cdd443",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/AFTER-membership.json": {
+    "mtime": 1786686380.3227806,
+    "ast_hash": "da708a6aa13b12dc26f182b1a7bd5d41",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/BEFORE-membership.json": {
+    "mtime": 1786686380.3231823,
+    "ast_hash": "3b1b668985c68253b54d8081604c851c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/apply-chart-membership.mjs": {
+    "mtime": 1786686380.3244107,
+    "ast_hash": "77120e353eb009416d351757cd1e3b29",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/playwright-fileurl.json": {
+    "mtime": 1786686380.329801,
+    "ast_hash": "8682c2a89338e9acf2f0a312d19fcb0b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/playwright-p1.mjs": {
+    "mtime": 1786686380.3302696,
+    "ast_hash": "9a94e8e52d666a981aae6114254d4121",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/render-result.json": {
+    "mtime": 1786686380.3305445,
+    "ast_hash": "a5365b4bc67de2b78c7d33db926793c9",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/render_outputs.py": {
+    "mtime": 1786686380.3309507,
+    "ast_hash": "1d70a9b5337c2339107f8224ec553b81",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/sync-plotted-slugs-report.json": {
+    "mtime": 1786686380.331306,
+    "ast_hash": "e6728e609467fcec77ecf422d4b4f204",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/sync-plotted-slugs.mjs": {
+    "mtime": 1786686380.3316863,
+    "ast_hash": "44d028812ecf248919ec91803189fc0e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/vloop-result.json": {
+    "mtime": 1786686380.3320014,
+    "ast_hash": "139f37f70c85e5dfc2083d7708366f1a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/vloop-verify.mjs": {
+    "mtime": 1786686380.3323479,
+    "ast_hash": "bc539a512bf0b83cd42da30f4db362bd",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/pdf-uris.py": {
+    "mtime": 1786686380.3329215,
+    "ast_hash": "6031f62e76212733d97a94f2aa3a1095",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/playwright-fileurl.json": {
+    "mtime": 1786686380.3347588,
+    "ast_hash": "6587654de143bdf82030f631fbef5025",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/probe-fileurl.mjs": {
+    "mtime": 1786686380.3353686,
+    "ast_hash": "5f51a566d74faa8a4ab7b2e4dc65240a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/counts.json": {
+    "mtime": 1786686380.3367922,
+    "ast_hash": "92aebc851ccba01f487357b544a61a52",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/live-urls.json": {
+    "mtime": 1786686380.3370643,
+    "ast_hash": "968c44e265d497b2a957039c73ad9433",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/lockstep.json": {
+    "mtime": 1786686380.3374147,
+    "ast_hash": "b5023d6edf513632ad4ec66f756ba9c1",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/packs.json": {
+    "mtime": 1786686380.3377273,
+    "ast_hash": "30c9db17e0803dd3b73d51b5c4664651",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/pdf-uris.json": {
+    "mtime": 1786686380.3380437,
+    "ast_hash": "7ebf87c1124e40d04774c56aeda9b684",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit-AFTER.json": {
+    "mtime": 1786686380.3564374,
+    "ast_hash": "6e8624a9e9570240957dd42dd2888e2e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit-BEFORE.json": {
+    "mtime": 1786686380.3573806,
+    "ast_hash": "f4ccb35c28c86583ecf105c26d1cb5cc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit-after.mjs": {
+    "mtime": 1786686380.360084,
+    "ast_hash": "3626002acd9a8a9842990da487c8c41e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit.mjs": {
+    "mtime": 1786686380.360949,
+    "ast_hash": "dee3cf561c438be16fd128b646881f1d",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/deep-dark-sdlc.json": {
+    "mtime": 1786686380.3614867,
+    "ast_hash": "8f6a614a16373339c49374ec3ea1216f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/deep-probe.json": {
+    "mtime": 1786686380.3618994,
+    "ast_hash": "d5efe1c0f67ad8c2dca5cae32cb76c39",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/package.json": {
+    "mtime": 1786686380.362208,
+    "ast_hash": "4a33a9e8162887e588f7d78833049c2c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/vloop-fileurl.mjs": {
+    "mtime": 1786686380.3679686,
+    "ast_hash": "4f06834f165f029b9938abdcdb5f91b6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/vloop-recheck.json": {
+    "mtime": 1786686380.3684978,
+    "ast_hash": "bcfd57643c8c327d75f08575d1e8c72c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/AFTER-membership.json": {
+    "mtime": 1786686380.3735034,
+    "ast_hash": "a3ce406b6151c07aca362f03d56ebf5b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/BEFORE-membership-from-prior.json": {
+    "mtime": 1786686380.3737798,
+    "ast_hash": "eb82e724364db22d5b63d47ed635316e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/verify-result.json": {
+    "mtime": 1786686380.3781836,
+    "ast_hash": "a6f5c3fee4432422b95ec519a4a8ef35",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/verify.mjs": {
+    "mtime": 1786686380.3788111,
+    "ast_hash": "e42b942c1d31a371b4d62e84e1dedd06",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/RESULT.json": {
+    "mtime": 1786686380.379661,
+    "ast_hash": "f262b56c9c9b7ff966fb58c481cf43ce",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/SOFT-RESIDUALS.json": {
+    "mtime": 1786686380.3799655,
+    "ast_hash": "9dff0cc70da570f04a8e06f807c47026",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/harness-dom-probe.json": {
+    "mtime": 1786686380.381463,
+    "ast_hash": "40d334afc73ad90f40046a620dfd5a44",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/membership.json": {
+    "mtime": 1786686380.3821542,
+    "ast_hash": "009faef4ea7dc343d9e5b88ed1dc51d3",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/static-probe.json": {
+    "mtime": 1786686380.382643,
+    "ast_hash": "278b367b85e294326fb69f7e8d48ef1b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/vloop-verify.mjs": {
+    "mtime": 1786686380.388716,
+    "ast_hash": "1559ad3d41da2ea04cb160ed86cad217",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/_extract_ocg.js": {
+    "mtime": 1786686380.3906004,
+    "ast_hash": "b88e191baf305bb70d8073653291f1b0",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/_recover_mimo.js": {
+    "mtime": 1786686380.391742,
+    "ast_hash": "719912346ec540edbc37fa68b474f234",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/APPLY-SUMMARY.json": {
+    "mtime": 1786686380.3931406,
+    "ast_hash": "4184d2c4b93778cd0d21c7ed58660d38",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/FILE-RENDER.json": {
+    "mtime": 1786686380.394436,
+    "ast_hash": "3a89ea837ae83e91aebd22124635e36c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/apply-non-coi.py": {
+    "mtime": 1786686380.3949707,
+    "ast_hash": "199b19aca4031e037ca54e396fce78ba",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/all-envelopes.json": {
+    "mtime": 1786686380.396137,
+    "ast_hash": "b7a50fceed164796d322e624211ff79c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/catalog_audit.json": {
+    "mtime": 1786686380.3967135,
+    "ast_hash": "5b068e3b07589b41d5b98f6fce8d980c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/chart-data.json": {
+    "mtime": 1786686380.3983278,
+    "ast_hash": "1462b8fced49883676bacb186185e140",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/final-retrieve-clean.json": {
+    "mtime": 1786686380.398981,
+    "ast_hash": "a26ff466f9adca561271fa36cb25d60f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/final-retrieve-perfect.json": {
+    "mtime": 1786686380.3995557,
+    "ast_hash": "ad5aa00c14d8e97dcd00cc1a9aa15daf",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/final-retrieve-selection.json": {
+    "mtime": 1786686380.4000027,
+    "ast_hash": "5ffba5346c17575629e04dd9520467a1",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/final-retrieve.json": {
+    "mtime": 1786686380.4018083,
+    "ast_hash": "e6f00b9e085e08d6da558d33a131aa72",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/merged-retrieve.json": {
+    "mtime": 1786686380.4031441,
+    "ast_hash": "359ad2743f316e6421e8498649f2c870",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/blue-ocean-rescore.json": {
+    "mtime": 1786686380.4042542,
+    "ast_hash": "ef2bdf05c95399d3fd9a7829c01def24",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/ibm-scrub.json": {
+    "mtime": 1786686380.4049132,
+    "ast_hash": "4dd8d8d999a7c3ba9e6422c450a521e8",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/inclusion-ledger-summary.json": {
+    "mtime": 1786686380.4052818,
+    "ast_hash": "5d47dcfc934bc01181709a4891998c4f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/pros-lint.json": {
+    "mtime": 1786686380.4055738,
+    "ast_hash": "ac5a3bbd8f26a2e446370263e366dc3e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/tembo-decision.json": {
+    "mtime": 1786686380.4058616,
+    "ast_hash": "d5553e16f95bb0ff64dc6b050fbf2548",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/vloop/FILE-RENDER.json": {
+    "mtime": 1786686380.406304,
+    "ast_hash": "3a89ea837ae83e91aebd22124635e36c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/vloop/RESULT.json": {
+    "mtime": 1786686380.4071043,
+    "ast_hash": "fab21c4d2ed3627c14fb5bdd1a0817c2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/vloop/VERIFY-PARTIAL.json": {
+    "mtime": 1786686380.407516,
+    "ast_hash": "0db14d62aa12c40698188a7725d34940",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/AFTER-chart-summary.json": {
+    "mtime": 1786686380.4100986,
+    "ast_hash": "9a63c786b9424e129eea774d6e7cd395",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/BEFORE-chart-summary.json": {
+    "mtime": 1786686380.4111001,
+    "ast_hash": "b4f6fa56908b37ec328e1e0dd6b8b734",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/FILE-RENDER.json": {
+    "mtime": 1786686380.411762,
+    "ast_hash": "b448c562134eb9c1c582bc251c8f985a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/apply-address-all.mjs": {
+    "mtime": 1786686380.412242,
+    "ast_hash": "0418b5da86160ca807eacaa5ff50d96e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/checklist.json": {
+    "mtime": 1786686380.4125578,
+    "ast_hash": "2e4743fa52fef97e77d71aa0125f6e0f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/vloop/FILE-RENDER.json": {
+    "mtime": 1786686380.4132779,
+    "ast_hash": "355c6788b5d8be19407ec57b1d0cd0a1",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/vloop/RESULT.json": {
+    "mtime": 1786686380.4138699,
+    "ast_hash": "924eddced65f94e8f2e36f84d4f3a40c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/vloop/vloop-verify.mjs": {
+    "mtime": 1786686380.4148736,
+    "ast_hash": "3bcc3cb98801a7ba0495ad09f315f239",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/context/membership-summary.json": {
+    "mtime": 1786686380.4222932,
+    "ast_hash": "f415221f3fabbaa377fa651f4b86dde9",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/context/mq-digest.json": {
+    "mtime": 1786686380.422617,
+    "ast_hash": "20d8442c2142861d9bcaa712aab90f6e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/contributions/work-e3341b367f137dd92e48c6ff5b930183.json": {
+    "mtime": 1786686380.4235888,
+    "ast_hash": "0b978f16c9a5121aecce29b7d2650e67",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/dispatch-ledger.json": {
+    "mtime": 1786686380.4239154,
+    "ast_hash": "f6a0dd3fb3594950991f7bfe24fa04fc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/merged-findings.json": {
+    "mtime": 1786686380.4246478,
+    "ast_hash": "e91a7890dc4b13efa29503f82defee9a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/_index.json": {
+    "mtime": 1786686380.4254973,
+    "ast_hash": "4c45329066da1856540957b55d01e973",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-cohort-request-attempt-3476c234-bfca-4f22-b791-a69535a4bc0c.json": {
+    "mtime": 1786686380.4298627,
+    "ast_hash": "271573477dd49ae545ba53e1e8f9d82d",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-cohort-request-attempt-785a0f5a-984a-4568-a677-8b786c736d0f.json": {
+    "mtime": 1786686380.4303212,
+    "ast_hash": "7cb0efd2ea9e980eaf45fd65da42336f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-cohort-result-attempt-3476c234-bfca-4f22-b791-a69535a4bc0c.json": {
+    "mtime": 1786686380.431178,
+    "ast_hash": "f2ae8f23d655dd836891e7c6558222b8",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/result-index.json": {
+    "mtime": 1786686380.4387918,
+    "ast_hash": "580183834827879ac61addbdba0e4f5f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/theme-clusters.json": {
+    "mtime": 1786686380.4394739,
+    "ast_hash": "3c4b87d473d4730627896c95f484a80f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/work-items/work-e3341b367f137dd92e48c6ff5b930183/multi-ai-work-item-manifest-v1.json": {
+    "mtime": 1786686380.4398956,
+    "ast_hash": "9152ac8f0ae0641f369cca7f5cc720c1",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/_vloop-raw.json": {
+    "mtime": 1786686380.4405754,
+    "ast_hash": "8fc98e6641f7c015376a79f20d2bc355",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/apply-p0-fixes.mjs": {
+    "mtime": 1786686380.4409919,
+    "ast_hash": "5453138a7f53d1f848af216cbf25e16b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/checklist.json": {
+    "mtime": 1786686380.4415665,
+    "ast_hash": "d9ecad37e276ae521050373f4b182c5a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/ibm-scrub.json": {
+    "mtime": 1786686380.4467003,
+    "ast_hash": "6b4d9c6dd795dfd288cbbf868c318930",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/vloop/VERDICT.json": {
+    "mtime": 1786686380.448288,
+    "ast_hash": "e7d18a65da9aabca126be7a590f0e2c6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/vloop/http-render.json": {
+    "mtime": 1786686380.448916,
+    "ast_hash": "b314691043d21f4436e240bc2c55f4d2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/vloop/scrub-note.json": {
+    "mtime": 1786686380.4492338,
+    "ast_hash": "e263022146606b2b7b13ef5b9a688745",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_session-intent-audit/playwright-verify.json": {
+    "mtime": 1786686380.4499357,
+    "ast_hash": "7d86ef656a21763d1b78e7a441b9a598",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_session-intent-audit/verify-file-spa.mjs": {
+    "mtime": 1786686380.4565535,
+    "ast_hash": "8f3daf10131ba5b1fc7734d3bbbfaeb0",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/inclusion-ledger.json": {
+    "mtime": 1786686380.4786813,
+    "ast_hash": "7bfeb6f898fbc4ae44afefb4111abd96",
+    "semantic_hash": ""
+  },
+  "skills/silver-deep-research-multi-ai/scripts/landscape_critique_artifacts.py": {
+    "mtime": 1786686380.5324082,
+    "ast_hash": "427fc73da9d67a000b28da698519e35b",
+    "semantic_hash": ""
+  },
+  "skills/silver-deep-research-multi-ai/scripts/landscape_independent_pdf.py": {
+    "mtime": 1786686380.5328295,
+    "ast_hash": "cc6d5c5b209efadc710c311d18d96033",
+    "semantic_hash": ""
+  },
+  "skills/silver-deep-research-multi-ai/tests/test_independent_landscape_pdf.py": {
+    "mtime": 1786686380.5377488,
+    "ast_hash": "fa83bdbe53f928944175b476163b32ad",
+    "semantic_hash": ""
+  },
+  "skills/silver-deep-research-multi-ai/tests/test_realistic_chart_scoring.py": {
+    "mtime": 1786686380.5392163,
+    "ast_hash": "7221d68045f6f30404f8e78f43226794",
+    "semantic_hash": ""
+  },
+  "skills/silver-deep-research-multi-ai/tests/test_vendor_link_and_buckets.py": {
+    "mtime": 1786686380.5402267,
+    "ast_hash": "dee2f1edef1c8300ea22a9dd319afefd",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-20-landscape-categorization-underline-fix.md": {
+    "mtime": 1786613098.832637,
+    "ast_hash": "9e596c22660656eb7bde1c242bd809a1",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-20-vloop-vendor-corrections-recheck.md": {
+    "mtime": 1784489502.0708032,
+    "ast_hash": "e07af7a7f57d3957cfb7037041ddab03",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-analyst-grade-landscape-membership-review.md": {
+    "mtime": 1784630749.209304,
+    "ast_hash": "4e8fd9994d7d9460f7d5e3e68568b7ca",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-fix-duplicate-vendor-ids.md": {
+    "mtime": 1784634410.8783789,
+    "ast_hash": "1baf53d676d4fbf2d536164249006391",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-p0-multi-ai-critique-fixes.md": {
+    "mtime": 1784658461.5689747,
+    "ast_hash": "8cde082f7c517a3c75aee9851495dcda",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-realistic-charts-matrix-pass.md": {
+    "mtime": 1784640906.1199272,
+    "ast_hash": "d4d07219a414a0b3a0a2a4fbeb2aa259",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-sb-chart-placement-review.md": {
+    "mtime": 1786613098.8920188,
+    "ast_hash": "f5b720413b315083afa6940f0d817bd6",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-vloop-realistic-charts-matrix.md": {
+    "mtime": 1784641235.778471,
+    "ast_hash": "0e308a8c19082387a801f8ddb76cbf2a",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-21-vloop-sb-chart-placement.md": {
+    "mtime": 1784639235.4078674,
+    "ast_hash": "b3fa5ec8f6a3f99bb0b7e2f83fe7ed99",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-address-all-multi-ai-critique.md": {
+    "mtime": 1784661203.4331226,
+    "ast_hash": "3a6622e08f6e537a2bb62ca01aad5e2c",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-address-all-non-coi-critique.md": {
+    "mtime": 1784668221.9683468,
+    "ast_hash": "c41bc774791d2b5d74bf692a87828291",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-multi-ai-critique-sol-opus-unblock.md": {
+    "mtime": 1786613098.8926687,
+    "ast_hash": "42c5659ef3cd9b5c62ef4c6dfa508d6b",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-multi-ai-critique-terra-high.md": {
+    "mtime": 1784657719.0613523,
+    "ast_hash": "730120647a69c4b25aff817d02d661d0",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-multi-ai-critique-unblock.md": {
+    "mtime": 1784647265.1227062,
+    "ast_hash": "e481ab84b85d4c0aa42e6dc2480578b9",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-multi-ai-landscape-critique.md": {
+    "mtime": 1786613098.8927274,
+    "ast_hash": "cd6f0d862ea7ff7b9223ec5420b83b26",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-07-22-vloop-address-all-critique-fixes.md": {
+    "mtime": 1784661540.1709712,
+    "ast_hash": "60327a1f4d92f56e5e92f230dc99fb85",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-13-vloop-zuvo-unquarantine.md": {
+    "mtime": 1786630768.2581205,
+    "ast_hash": "f44059ae95049f4ed894f2eb3fe0150b",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-chart-unique-xy-labels.md": {
+    "mtime": 1786635335.9166515,
+    "ast_hash": "28e15792ea3624ec4b585152c9c584b0",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-dr-must-search-channels-vloop.md": {
+    "mtime": 1786679760.121421,
+    "ast_hash": "cd792a56e511271d5ff82184d1e1dde6",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-dr-must-search-gitlab-social.md": {
+    "mtime": 1786682385.977851,
+    "ast_hash": "61fb4c09f97c5245435e879e901aeaea",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-landscape-adversarial-fail.md": {
+    "mtime": 1786643230.9250479,
+    "ast_hash": "33b596d8f00a7c1e25f6c2d0b159d8d6",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-live-tab-critique.md": {
+    "mtime": 1786655243.6471605,
+    "ast_hash": "496731e0f55905ae8b3fdbad83361bdc",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-vloop-independent-pdf-quality.md": {
+    "mtime": 1786633334.3522773,
+    "ast_hash": "4c98d4fc2a9ebdb070ebb3d137eba033",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-vloop-live-tab-critique.md": {
+    "mtime": 1786655864.7632563,
+    "ast_hash": "4c5d8fdf0b911a61cb1cadbf3eb90f45",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-vloop-social-must-search.md": {
+    "mtime": 1786682697.2177403,
+    "ast_hash": "ce8b3d92b8c4cbc72d33084e74d8170a",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/landscape-critique-artifacts-2026-08-14.md": {
+    "mtime": 1786653177.5212529,
+    "ast_hash": "9165877a9ca0f84eb239e1e6c3d3a6d6",
+    "semantic_hash": ""
+  },
+  ".planning/rfl-router-subagent-surfaces-85bf9f09-20260814/DEFS-INVENTORY.md": {
+    "mtime": 1786687374.9837925,
+    "ast_hash": "6bd5a4a45c681aeb9ba780ab88ffc909",
+    "semantic_hash": ""
+  },
+  ".planning/rfl-router-subagent-surfaces-85bf9f09-20260814/composer-2.5-medium-c1-fixes.md": {
+    "mtime": 1786687374.984188,
+    "ast_hash": "3d782747825b9261cdfbdd843ee7c20c",
+    "semantic_hash": ""
+  },
+  ".planning/rfl-router-subagent-surfaces-85bf9f09-20260814/gpt56-sol-medium-triage.md": {
+    "mtime": 1786687374.9844642,
+    "ast_hash": "f69fe15564d32591aa704767af5ce260",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-critique-artifacts/RESULT.md": {
+    "mtime": 1786686380.3071718,
+    "ast_hash": "901e493c89746ce0725548f3ba9248cb",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-critique-artifacts/vloop/VLOOP.md": {
+    "mtime": 1786686380.3100984,
+    "ast_hash": "8b578be1489fc6522cdbb149f06b78c5",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-live-tab-critique/ACT-ON.md": {
+    "mtime": 1786686380.3127608,
+    "ast_hash": "9c806b60b5d1e76709b735f96bfb3fdc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-live-tab-critique/vloop/VLOOP.md": {
+    "mtime": 1786686380.3138218,
+    "ast_hash": "2da9bef43e55b1f4a2d61cb2e169d4b2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/FINDINGS.md": {
+    "mtime": 1786686380.3191988,
+    "ast_hash": "1ff9bbe861dd4f7c81937f86e3cc5069",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/EVIDENCE.md": {
+    "mtime": 1786686380.3238466,
+    "ast_hash": "c8582c222f2940aee958817a435c5943",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/FINDINGS.md": {
+    "mtime": 1786686380.3247724,
+    "ast_hash": "bd443b30fd8e2c05fe92591b63951534",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/METHOD.md": {
+    "mtime": 1786686380.3359976,
+    "ast_hash": "793dd0d5caede7e0a1ee9eb162bc858e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/vloop-urls/VERDICT.md": {
+    "mtime": 1786686380.336441,
+    "ast_hash": "dc1036b88ac5e964b5cc73007d164233",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/FINDINGS.md": {
+    "mtime": 1786686380.3559422,
+    "ast_hash": "6b0d4250c17b92a10e9fac7f7e7831e4",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit-after-run.txt": {
+    "mtime": 1786686380.3584034,
+    "ast_hash": "141585128f478512083b04911de970e0",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/audit-after-run2.txt": {
+    "mtime": 1786686380.359381,
+    "ast_hash": "2fbc0aad1a40c4d3654035d708962a3a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-RECHECK.md": {
+    "mtime": 1786686380.364989,
+    "ast_hash": "5095a6f1d2c6cdb8c9d0d8d362d42da2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/FINDINGS.md": {
+    "mtime": 1786686380.3744442,
+    "ast_hash": "3c6e4322da975ecaed547075468380af",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/REPORT.md": {
+    "mtime": 1786686380.379204,
+    "ast_hash": "483d4dcba867194f97e7f3d4def9b39d",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/RUN.md": {
+    "mtime": 1786686380.3895755,
+    "ast_hash": "3ee99e46ca3c04a9d6163ac0ae9a008b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/SYNTHESIS.md": {
+    "mtime": 1786686380.3901803,
+    "ast_hash": "fb035276e9556047eeb8e5295660ad49",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/CHECKLIST.md": {
+    "mtime": 1786686380.3940556,
+    "ast_hash": "38568d045e9fa0680b28ad361e2ac19e",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/landscape-report.md": {
+    "mtime": 1786686380.4028447,
+    "ast_hash": "34bc8f39b3f253add944878cbf9e68c9",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/backups/scr.md": {
+    "mtime": 1786686380.403798,
+    "ast_hash": "794ec7c548d4de2426d8b2dd5353ed83",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/vloop/REPORT.md": {
+    "mtime": 1786686380.4066246,
+    "ast_hash": "47f25e272ea41b6fefa147b0f2813c12",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all-non-coi/vloop/agentmemory-note.md": {
+    "mtime": 1786686380.4081397,
+    "ast_hash": "4b614a4eea3d3a5d782adf0b4a4da374",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/BEFORE-AFTER.md": {
+    "mtime": 1786686380.4106739,
+    "ast_hash": "54a7ddfa6c3e53c091ba604486dd71df",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/CHECKLIST.md": {
+    "mtime": 1786686380.4114602,
+    "ast_hash": "a34cb6ab3070a5ed9e565c5be53151c4",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/vloop/REPORT.md": {
+    "mtime": 1786686380.4135547,
+    "ast_hash": "5b2311f8d06b2590b42e728ff8a4feca",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/address-all/vloop/agentmemory-note.md": {
+    "mtime": 1786686380.4142845,
+    "ast_hash": "60327a1f4d92f56e5e92f230dc99fb85",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/agent-claude-opus48-high/CRITIQUE.md": {
+    "mtime": 1786686380.4153385,
+    "ast_hash": "4f3e0c172f8a77c514453de70b8d22b6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/agent-codex-gpt56-sol-high/BLOCKED.md": {
+    "mtime": 1786686380.41639,
+    "ast_hash": "9ea3608f59297d6bf4f9938817ca2b8f",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/agent-codex-gpt56-terra-high/CRITIQUE.md": {
+    "mtime": 1786686380.4192474,
+    "ast_hash": "e6535a6e07fa53248ddb88acb1a0e525",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/briefs/CLAUDE-OPUS48-HIGH-BRIEF.md": {
+    "mtime": 1786686380.4197674,
+    "ast_hash": "5618b05429c4a34ab63635f3b839352b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/briefs/CODEX-GPT56-SOL-HIGH-BRIEF.md": {
+    "mtime": 1786686380.420234,
+    "ast_hash": "63a3bf1fbeca480c1bd81e5eb70bf08a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/briefs/OCG-TASK-PROMPT.txt": {
+    "mtime": 1786686380.4208052,
+    "ast_hash": "67a20b7b4c2fe146571abff99a6aaf1d",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/briefs/SHARED-REVIEW-BRIEF.md": {
+    "mtime": 1786686380.4212515,
+    "ast_hash": "db69788c5563cc9d263809ffd6e2c2cd",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/context/REPORT-DIGEST.md": {
+    "mtime": 1786686380.4217472,
+    "ast_hash": "80173285b5140c5ab0c0b1db6a60ab7c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/ocg-deepseek-v4-flash.md": {
+    "mtime": 1786686380.4263291,
+    "ast_hash": "10f5fd53176d77d2f1ff642136ddf457",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/ocg-kimi-k2.6.md": {
+    "mtime": 1786686380.4269936,
+    "ast_hash": "51c0bdd2062829fe53f063c03d5b2c6b",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/ocg-mimo-v2.5.md": {
+    "mtime": 1786686380.4275322,
+    "ast_hash": "76b6a758dba3a8e1a554eed2691798f6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/ocg-minimax-m3.md": {
+    "mtime": 1786686380.427882,
+    "ast_hash": "32f92e4faf2b8715d32800cce0952edf",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/per-contributor/ocg-qwen3.7-plus.md": {
+    "mtime": 1786686380.4282084,
+    "ast_hash": "63a72726cd98be814d3ba613c3e5ba36",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-deepseek-v4-flash-opencode-go-deepseek-v4-flash.raw.txt": {
+    "mtime": 1786686380.4319615,
+    "ast_hash": "3f50abc83fc7e2886ef1a5be26a7ed11",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-kimi-k2.6-opencode-go-kimi-k2.6.raw.txt": {
+    "mtime": 1786686380.4323401,
+    "ast_hash": "4f28e781ae07e20ea46960e6ddc2f0f6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-mimo-v2.5-opencode-go-mimo-v2.5.raw.txt": {
+    "mtime": 1786686380.4326904,
+    "ast_hash": "8cfd1bec2fead34e40e8a7cd22e757c0",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-minimax-m3-opencode-go-minimax-m3.raw.txt": {
+    "mtime": 1786686380.437143,
+    "ast_hash": "a6bc069dfd00d7a4d5eea4770e87dafc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/ocg-lite/phases/DR-CRITIQUE/ocg-qwen3.7-plus-opencode-go-qwen3.7-plus.raw.txt": {
+    "mtime": 1786686380.438211,
+    "ast_hash": "c40619db3c2384c2b12c75d05e7454e6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/CHECKLIST.md": {
+    "mtime": 1786686380.440247,
+    "ast_hash": "4cc6c948b78146d511a1d94324aafacc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_multi-ai-critique/p0-fixes/vloop/VLOOP.md": {
+    "mtime": 1786686380.4486206,
+    "ast_hash": "2a785ae3a3a10f345b727b10a9be5a33",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_session-intent-audit/INTENT-MATRIX.md": {
+    "mtime": 1786686380.4496434,
+    "ast_hash": "7554f811ebfb41f2432f3771e53d7ccc",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.print.html": {
+    "mtime": 1786686380.476143,
+    "ast_hash": "5ba8f7e52621eeb99962287b10ae8c41",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/inclusion-ledger.md": {
+    "mtime": 1786686380.4794989,
+    "ast_hash": "c29ec2a5ba605bde143e6c38f875709c",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.html": {
+    "mtime": 1786686380.4811966,
+    "ast_hash": "3ad3844c689119366738868c0a297425",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.print.html": {
+    "mtime": 1786686380.4956822,
+    "ast_hash": "22c108e37140710d2b990e518a215ec2",
+    "semantic_hash": ""
+  },
+  "research/2026-08-14-dr-must-search-channels/SEARCH-CHANNELS.md": {
+    "mtime": 1786686380.5285306,
+    "ast_hash": "f0df6ed2134ceb3b17a910e9e9737c89",
+    "semantic_hash": ""
+  },
+  "research/2026-08-14-dr-must-search-channels/SOCIAL-AND-GITLAB.md": {
+    "mtime": 1786686380.5290253,
+    "ast_hash": "9fdcd9666c8221e6779e3a02dd814139",
+    "semantic_hash": ""
+  },
+  "research/2026-08-14-dr-must-search-channels/vloop-social/VLOOP.md": {
+    "mtime": 1786686380.5296404,
+    "ast_hash": "9b8b45ec52ea55eec71307883640386a",
+    "semantic_hash": ""
+  },
+  "research/2026-08-14-dr-must-search-channels/vloop/VLOOP.md": {
+    "mtime": 1786686380.530336,
+    "ast_hash": "a38157d730bfbb071afb5c7d667976c5",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.pdf": {
+    "mtime": 1786686380.470611,
+    "ast_hash": "f3ab889b4c14eb0f88160fb2e0e6ae58",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.pdf": {
+    "mtime": 1786686380.4892483,
+    "ast_hash": "f3ab889b4c14eb0f88160fb2e0e6ae58",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-critique-artifacts/vloop/file-render.png": {
+    "mtime": 1786686380.3122346,
+    "ast_hash": "34cda200b0fb4408d1441a2e261dd029",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_act-on-live-tab-critique/vloop/landscape-report-file.png": {
+    "mtime": 1786686380.3182735,
+    "ast_hash": "a3c83421b985aeacd03c17d1b97223fb",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/fileurl-1280.png": {
+    "mtime": 1786686380.321218,
+    "ast_hash": "4f967e7624112de04c1942a1c580a454",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/fileurl-375.png": {
+    "mtime": 1786686380.3221636,
+    "ast_hash": "42c17a581c137e15efab1f4d872fcf45",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/fileurl-1280.png": {
+    "mtime": 1786686380.3285131,
+    "ast_hash": "72627c07c1353f5c79059f37d5b4fdd7",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-analysis-now/p1-fixes/vloop/fileurl-375.png": {
+    "mtime": 1786686380.3293014,
+    "ast_hash": "42c17a581c137e15efab1f4d872fcf45",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-1280.png": {
+    "mtime": 1786686380.340351,
+    "ast_hash": "093bde21c7d0d14de6de337f186c0eea",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-375.png": {
+    "mtime": 1786686380.344728,
+    "ast_hash": "388cbc21008b4430df6bda0546d75e1a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/AFTER-dark-1280.png": {
+    "mtime": 1786686380.3472211,
+    "ast_hash": "df9c3fd2c35cc997a1b54f800b6477e6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-1280.png": {
+    "mtime": 1786686380.3493254,
+    "ast_hash": "d77ffdd8b6c55a2b744fd815c7c38c5d",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-375.png": {
+    "mtime": 1786686380.351213,
+    "ast_hash": "18ea3c0572e0362aeb89879d6da8c5d0",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-768.png": {
+    "mtime": 1786686380.352911,
+    "ast_hash": "b548217c3a6d5484fe7ac0e4aa40dae1",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/BEFORE-dark-1280.png": {
+    "mtime": 1786686380.355126,
+    "ast_hash": "7fb28317fb04913649e21fe65601b0d2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-1280.png": {
+    "mtime": 1786686380.363714,
+    "ast_hash": "093bde21c7d0d14de6de337f186c0eea",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-375.png": {
+    "mtime": 1786686380.3645556,
+    "ast_hash": "388cbc21008b4430df6bda0546d75e1a",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_adversarial-audit/vloop-recheck/VLOOP-dark-1280.png": {
+    "mtime": 1786686380.3668818,
+    "ast_hash": "df9c3fd2c35cc997a1b54f800b6477e6",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/AFTER-1280.png": {
+    "mtime": 1786686380.3698635,
+    "ast_hash": "db3955c69321f748577ce76f2e993969",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/AFTER-375.png": {
+    "mtime": 1786686380.3708677,
+    "ast_hash": "13449052bd31e7d29e3f5955f5e42888",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/AFTER-dark-1280.png": {
+    "mtime": 1786686380.373131,
+    "ast_hash": "6ad0ab8c3381fb39fdc1393b34b125d5",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/vloop-1280.png": {
+    "mtime": 1786686380.3868797,
+    "ast_hash": "18a6bcebf79d2f57984e7bbda2e41ca2",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_analyst-grade-review/vloop-recheck/vloop-375.png": {
+    "mtime": 1786686380.3876257,
+    "ast_hash": "13449052bd31e7d29e3f5955f5e42888",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_session-intent-audit/spa-dark-1280.png": {
+    "mtime": 1786686380.4539118,
+    "ast_hash": "51fa04244491417dcc5c57d4acb0ab25",
+    "semantic_hash": ""
+  },
+  "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/_session-intent-audit/spa-light-1280.png": {
+    "mtime": 1786686380.4558914,
+    "ast_hash": "a93179f8ea75c8a06a9bac313008fadc",
+    "semantic_hash": ""
+  },
+  ".agentmemory/memory/2026-08-14-cherry-pick-3ht3-onto-local-main.md": {
+    "mtime": 1786687438.6020703,
+    "ast_hash": "3cb3c072a9f02c865b4bfd682bc0d198",
     "semantic_hash": ""
   }
 }

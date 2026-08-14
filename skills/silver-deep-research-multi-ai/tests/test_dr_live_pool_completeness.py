@@ -24,10 +24,10 @@ class PoolResolutionTests(unittest.TestCase):
         self.assertEqual(len(resolved), 11)
         ids = {item["logical_model_id"] for item in resolved}
         self.assertIn("composer-2.5", ids)
-        self.assertIn("ocg-kimi-k2.6", ids)
+        self.assertIn("ocg-kimi-k2.7-code", ids)
 
     def test_include_only_subset_resolves_n(self) -> None:
-        subset = ["composer-2.5", "grok-4.5", "ocg-kimi-k2.6"]
+        subset = ["composer-2.5", "grok-4.5", "ocg-kimi-k2.7-code"]
         resolved = resolve_pool(
             PoolSelection(ocg_pool="lite", cursor_pool="default", include_only=subset)
         )

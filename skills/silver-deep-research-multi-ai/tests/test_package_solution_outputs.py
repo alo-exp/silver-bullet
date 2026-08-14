@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -120,6 +121,11 @@ class PackageSolutionOutputsTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 check=False,
+                env={
+                    **os.environ,
+                    "SB_SKIP_LANDSCAPE_PDF": "1",
+                    "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1",
+                },
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
             data = json.loads(proc.stdout)
