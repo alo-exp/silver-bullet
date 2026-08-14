@@ -2,7 +2,8 @@
 
 **Audience:** Adversarial architecture reviewers of plan `router_subagent_surfaces_85bf9f09`  
 **Purpose:** Product and runtime mental model — **not** a rules dump. Absorb this before reading the plan.  
-**Sources synthesized:** `docs/PRD-Overview.md`, `docs/ARCHITECTURE.md`, `docs/ORCHESTRATOR.md`, `AGENTS.md`, `docs/apo-catalog.json`, `silver-bullet.md` (workflow/orchestrator product lens only).
+**Sources synthesized:** `docs/PRD-Overview.md`, `docs/ARCHITECTURE.md`, `docs/ORCHESTRATOR.md`, `AGENTS.md`, `docs/apo-catalog.json`, `silver-bullet.md` (workflow/orchestrator product lens only).  
+**Ladder hygiene (2026-08-14):** §§1–4 are **current-product `/silver` context** (today’s router, workflow names, and install hosts). They are **not** the architecture under review. Judge MVP scope from the plan + clarify: Cursor **host adapter** on MVP; Codex/Claude/OpenCode host adapters **after MVP**; `sb:agent-*` rename in the MVP ship; ILM-01 bootstrap migrate on MVP; MIG-01 reverse-bridge / PROD-01 freeze/drain / OFF-01 **after MVP**. §5 already matches the spec for quality loops.
 
 ---
 
@@ -32,7 +33,7 @@ It is **process authority**, not a business-logic framework:
 | **Steps / Skills** | Concrete work units; ~85 skills under `skills/`; ~36 also exposed as command stubs |
 | **Help / site catalog** | Public explanation of Process → Workflow → AF ordering (SDLC presentation order) |
 
-Day-1 **hosts/adapters:** Cursor, Codex, Claude Code. OpenCode is deferred in the architecture plan under review. Installers materialize host-specific wiring; the **core contract is host-generic**.
+**Current-product hosts** (today’s `/silver` plugin install): Cursor, Codex, Claude Code. **Architecture under review (ratified Q5):** MVP = Cursor **host adapter** (Orchestrator as parent inside Cursor) plus `sb:agent-*` rename in the MVP ship. Codex, Claude Code, and OpenCode **host adapters** (Orchestrator as parent inside those hosts) sequence **after MVP**. Do not treat this section as requiring three parent-host adapters on day-1 of the plan. Installers materialize host-specific wiring; the **core contract is host-generic**.
 
 ---
 
@@ -119,38 +120,44 @@ State lives under runtime state dir (`orchestrator.json`, `orchestrator-directiv
 | **Codex** | Bundle under `plugins/silver-bullet/`; invoke-skill adapter |
 | **Claude Code** | `.claude-plugin/` surface; Skill tool + hooks |
 
-Capability tiers differ (Task/subagent required for full parent blocks). Plan review must ask: does each Authorizer/admission/callback rule have a host-adapter story on day-1 hosts?
+Capability tiers differ (Task/subagent required for full parent blocks). This table is **current-product** install surfaces, not the architecture MVP host-adapter slice. Plan review: the Cursor host adapter must enforce Authorizer + prompt/work-spec + callbacks on MVP; Codex/Claude/OpenCode parent-host adapters are post-MVP (renamed `sb:agent-*` delegates are not those adapters).
 
 ---
 
 ## 5. Quality behavior as product (not ceremony)
 
-SB already has review/verify culture (review triad, verify, quality gates, completion audit). The architecture plan under review **names and hardens** ordinary delivery quality loops:
+SB already has review/verify culture (review triad, verify, quality gates, completion audit). The architecture plan under review **names and hardens** ordinary delivery quality loops. Historical P-loop (`poa_draft` / executor drafts) and Val-at-every-scope are superseded; this section matches the spec.
 
 | Loop | Product meaning | Who |
 |------|-----------------|-----|
-| **P-loop (Planning)** | Before implementation: plan-of-action reviewed by Advisor until satisfied | Implementation executors |
-| **I-loop** | Executor self-adversarial iterate until two consecutive clean | Executor |
-| **A-loop** | Mentor/Advisor mentorship until two consecutive clean; no open Advisor findings before V | Advisor (deny-all leaf) |
-| **V-loop** | Independent contract/completeness verification (never fixes) | Verifier |
-| **Validation-loop** | Fit-for-purpose judgment **always after V**; mandatory at AF + Workflow + Process | Validator |
+| **Advisor-first plan** | Before ordinary I: Orchestrator hands the work spec to Advisor; Advisor produces the plan of action (one-way; Executor never plans) | Advisor |
+| **I-loop** | Executor implements. I-clean is judged by Advisor A-loop (two consecutive A-clean rounds). Executor does not self-attest. Process-synthesis I is packet-local composition/findings only | Executor |
+| **A-loop** | Mentor/Advisor mentorship until two consecutive A-clean; no open Advisor findings before V. Includes Process-scope A after the top Workflow join | Advisor |
+| **V-loop** | Independent contract/completeness verification (never fixes). AF and Workflow stop at V. Process-scope V two-clean after the top Workflow join is mandatory before Process-final Val | Verifier |
+| **Process-synthesis** | After the **top** Workflow join only: packet-local composition and findings (projector-only). Inner nested Workflow joins are not Process-scope | Executor (Process-synthesis) |
+| **Validation-loop** | Fit-for-purpose judgment vs original user intent, **Process-final only**, once at roll-up. Fail receipt; Orchestrator+Advisor map onto WBS. Not run at AF or Workflow | Validator |
 
-Canonical ordinary order (plan-locked product behavior):
+Canonical ordinary order (architecture spec):
 
 ```text
 Knowledge/Learnings pre-read
-  → P-loop (poa_draft → poa_advisor_review → poa_satisfied)
-  → I-loop (implementation)
-  → A-loop
-  → V-loop
-  → Validation-loop
+  → Advisor planning → one-way plan handoff
+  → I-loop (implementation; no self-attest)
+  → A-loop (I-clean)
+  → V-loop                    ← AF and Workflow stop here
+  → (merge code if extra host_native worktree)
+  → top Workflow join
+  → Process-synthesis I       ← 9a; inner nested Workflow joins do not run this
+  → Process-scope A two-clean ← 9b
+  → Process-scope V two-clean ← 9c
+  → Process-final Validation-loop
   → Knowledge/Learnings post-write (or explicit no-insights receipt)
   → return to parent
 ```
 
-**Control-plane leaves** (advisor / verifier / validator / defect_escalation) must not recursively run the full P/I/A/V/Val stack on themselves — otherwise the product deadlocks.
+**Control-plane leaves** (advisor / verifier / validator / defect_escalation) must not recursively run the full I/A/V/Val stack on themselves — otherwise the product deadlocks. They execute role work, return a signed role receipt, and terminate.
 
-**Iterate Ladder** is a separate, activated fitness ladder (explicit user or critical policy) — not required for ordinary delivery. Legacy “Review Fix Ladder” public ceremony is being cut over via `silver:migrate`.
+**Iterate Ladder** is a separate, activated fitness ladder (explicit user or critical policy) — not required for ordinary delivery, and post-MVP. Until Iterate exists, public `sb:review-fix-ladder` remains as a Verifier+Process-final-Val path or thin alias.
 
 **Knowledge / Learnings:** project insights → `docs/knowledge/`; portable → `docs/learnings/`; Graphify-first retrieval when opted in. Pre-read before work; post-verify write (or no-insights receipt) before parent return.
 
@@ -163,7 +170,7 @@ These are the inner-workings concepts the plan expands; review them for executab
 - **Authorizer:** owns project trust/signing outside VCS (`~/.silver-bullet/authorizer-trust/...`), capability tokens, fences, CAS, launch intents — children do not sign authority.
 - **Launch admission:** every host subagent spawn needs **prompt-engineered launch prompt + work spec** (goal, outputs, acceptance, scope, context refs); fail-closed.
 - **Callbacks / effects / producers:** at-least-once delivery with exactly-once logical identity; outboxes, watermarks, crash recovery.
-- **`silver:migrate`:** universal mapping from legacy RFL/orchestrator state into Iterate + I/A/V/Val records; six ordered ingress states; reverse-bridge rollback after activation — no authority resurrection.
+- **Migration:** current-product name `silver:migrate`. Architecture: bootstrap `bash scripts/sb-migrate-from-silver.sh` (ILM-01) is MVP and must run when `/silver` is already gone; six ordered ingress states plus reverse-bridge rollback (MIG-01) and freeze/drain (PROD-01) sequence **after MVP** — no authority resurrection.
 
 ---
 
@@ -186,10 +193,10 @@ Progress UX is expected to show **WBS context** (`Process > Workflow > AF > Step
 Judge the plan against this product machine:
 
 1. **Fit:** Does it strengthen Process → Workflow → AF → Step → Skill without inventing a second public Process router?
-2. **Host realism:** Can Cursor/Codex/Claude adapters enforce Authorizer + prompt/work-spec + callbacks without host APIs that don’t exist?
+2. **Host realism:** Can the **Cursor** MVP host adapter enforce Authorizer + prompt/work-spec + callbacks without host APIs that don’t exist? Codex/Claude/OpenCode parent-host adapters are post-MVP; do not reopen Q5.
 3. **Orchestrator realism:** Parent still never implements; workers remain fenced; deny-all leaves don’t recurse quality loops.
 4. **Quality product:** P→I→A→V→Val (+ K/L) is unambiguous at AF/Workflow/Process; leaf Step vs AF handoff is clear.
-5. **Migration product:** Legacy users can cut over via `silver:migrate` without losing evidence or resurrecting authority.
+5. **Migration product:** Legacy users can cut over via bootstrap `sb-migrate-from-silver.sh` (ILM-01, MVP) without losing evidence or resurrecting authority. Freeze/drain (PROD-01) and reverse-bridge rollback (MIG-01) are post-MVP; current-product `silver:migrate` naming in §§1–4 is not the architecture sequence.
 6. **Traceability / Doctor:** Implementers and Doctor can prove obligations without orphan IDs or ceremony that SB already retired.
 
 **Out of scope for this briefing:** line-by-line enforcement rules from `silver-bullet.md` §0–§11. Use this overview for product/architecture context; use the plan + clarify brief for the proposed contract.
@@ -204,3 +211,4 @@ Judge the plan against this product machine:
 4. Then adversarial review for contradictions, gaps vs locked decisions, state-machine holes, traceability orphans, executability, and fit with §§1–8 above.
 
 Ignore obsolete RFL ceremony (`verify_1`/`verify_2`, charter-signal grep, orchestrator grep, PM filing).
+

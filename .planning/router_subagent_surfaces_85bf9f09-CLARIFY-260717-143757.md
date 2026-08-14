@@ -8,9 +8,9 @@
 > - **Q7** hard-cut delete public RFL — keep `sb:review-fix-ladder` until Iterate exists (Verifier+Process-final-Val path or thin alias).
 > - **Q9c** trust path `host/org/repo` as CAS — Authorizer trust is `~/.silver-bullet/authorizer-trust/<repo-id>/`; host is metadata, not a second CAS.
 > - **Q11** ship-everything / pending lock — MVP slice as named in the spec.
-> - **Q12** I-loop two consecutive clean — spec-wins: I has no self-attested two-clean; two-clean applies to A, V, and Process-final Val (when Val runs).
+> - **Q12** I-loop two consecutive clean — spec-wins: I has no self-attested two-clean; two-clean applies to A (including Process-scope A), V (including Process-scope V), and Process-final Val (when Val runs).
 > - **Q14** AF Val after merge — AF does V, not Val; Val is Process-final only.
-> - **Q18** `val_*` on ordinary AF/Workflow SM — canonical order I→A→V; Val is Process-final only (separate last step after Workflow join).
+> - **Q18** `val_*` on ordinary AF/Workflow SM — canonical order I→A→V at AF/Workflow; after the top Workflow join: Process-synthesis I → Process-scope A/V (mandatory) → Process-final Val.
 > - **Q21** “Val always after V” at AF (answer B) — Process-final Val only; AF/Workflow run V.
 > - **Q22** AF + Workflow + Process all mandatory Val — only Process runs Val.
 > - **Note 15** path-as-CAS / `remote_id_sha256` suffix — trust path remains `~/.silver-bullet/authorizer-trust/<repo-id>/`.
@@ -25,7 +25,7 @@
 
 **UTC file stamp:** 2026-07-17T14:37:57Z (session local 2026-07-18)
 **Clarify run:** 2026-07-17T14:37:57Z (interactive `/silver:clarify`, Grok 4.5 High)  
-**Round-5 alignment:** 2026-08-14 — historical. **Round-1 fix 2026-08-14:** architecture spec supersedes the contradicting Qs listed in the banner (round-4 executor-draft P-loop remains superseded; Q4 public IDs remain `sb:<route>`). **Round-2 fix 2026-08-14:** Q18 `val_*` on ordinary AF/Workflow SM superseded; note 15 `remote_id_sha256` path suffix superseded. **Round-10 fix 2026-08-14:** Q12 I-loop two consecutive clean superseded — I has no self-attested two-clean.  
+**Round-5 alignment:** 2026-08-14 — historical. **Round-1 fix 2026-08-14:** architecture spec supersedes the contradicting Qs listed in the banner (round-4 executor-draft P-loop remains superseded; Q4 public IDs remain `sb:<route>`). **Round-2 fix 2026-08-14:** Q18 `val_*` on ordinary AF/Workflow SM superseded; note 15 `remote_id_sha256` path suffix superseded. **Round-10 fix 2026-08-14:** Q12 I-loop two consecutive clean superseded — I has no self-attested two-clean. **Composer-Medium RFL fix 2026-08-14:** Process-scope A/V and Process-synthesis I are mandatory after the top Workflow join before Process-final Val (ordinary-delivery steps 9a–9c); VLP-01/ILP-01/ESC-02/`step_yield`/overlap live E2E aligned. **Kimi-K3-High parent-side fix 2026-08-14:** live canonical-order chains (this banner, Universal Advisor L64, Validation-loop Order) include Process-synthesis I and Process-scope A/V after the **top** Workflow join only.  
 **Source plan:** `.planning/router_subagent_surfaces_85bf9f09.plan.md`  
 **Cursor mirror:** `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` (byte-identical after incorporation)  
 **Do not overwrite:** `.planning/CLARIFY.md` (multi-AI deep-research brief — unrelated)
@@ -34,7 +34,7 @@
 
 ## Problem Statement
 
-Silver Bullet needs a Process-first `/sb` router architecture with Authorizer-admitted / Orchestrator-spawned hierarchical execution, nested quality loops (**I → A → V** at AF and Workflow; **Process-final Val** after Workflow join), Levels 0–3 defect recovery (post-MVP with Iterate), optional Iterate Ladder (post-MVP), and universal migration — clarified interactively before implementation. Public routes are `sb:<route>`. Product name `silver-bullet.md` / `~/.silver-bullet/` may remain.
+Silver Bullet needs a Process-first `/sb` router architecture with Authorizer-admitted / Orchestrator-spawned hierarchical execution, nested quality loops (**I → A → V** at AF and Workflow; after the **top** Workflow join: Process-synthesis I → Process-scope A/V → **Process-final Val**), Levels 0–3 defect recovery (post-MVP with Iterate), optional Iterate Ladder (post-MVP), and universal migration — clarified interactively before implementation. Public routes are `sb:<route>`. Product name `silver-bullet.md` / `~/.silver-bullet/` may remain.
 
 ---
 
@@ -61,7 +61,7 @@ Silver Bullet needs a Process-first `/sb` router architecture with Authorizer-ad
 
 ## Universal Advisor / A-loop
 
-Canonical order: `pre-read Knowledge/Learnings → Advisor planning (Advisor produces plan of action) → one-way plan handoff to Executor → I-loop(s) → A-loop → (return to I if needed) → V-loop → (merge code if extra host_native worktree) → Workflow join → Process-final Validation-loop → post-verify Knowledge/Learnings write → return to parent`. AF and Workflow stop at V. Ordinary AF/Workflow SM has no `val_*` states.
+Canonical order: `pre-read Knowledge/Learnings → Advisor planning (Advisor produces plan of action) → one-way plan handoff to Executor → I-loop(s) → A-loop → (return to I if needed) → V-loop → (merge code if extra host_native worktree) → top Workflow join → Process-synthesis I → Process-scope A two-clean → Process-scope V two-clean → Process-final Validation-loop → post-verify Knowledge/Learnings write → return to parent`. AF and Workflow stop at V. Inner nested Workflow joins are not Process-scope. Ordinary AF/Workflow SM has no `val_*` states.
 
 Round-4 executor-draft **P-loop** (`poa_draft` / executor drafts then Advisor reviews) is **superseded**. Executor never plans.
 
@@ -155,7 +155,7 @@ Interactive `/silver:clarify` round-2 (Grok 4.5 High). All blockers answered; in
 |------|------|
 | Distinction | Validation ≠ Verification (V-loop) ≠ Advisor (A-loop) |
 | Meaning | Fit-for-purpose / right-thing judgment (Planning/Validation tier) |
-| Order | **I → A → V** at AF and Workflow. **Process-final Val** is a separate last step after Workflow join: `I → A → V → (merge code if extra host_native worktree) → Workflow join → Process-final Val`. **SUPERSEDED:** always after V at every scope; `val_*` on ordinary AF/Workflow SM |
+| Order | **I → A → V** at AF and Workflow. After the **top** Workflow join: Process-synthesis I → Process-scope A/V (mandatory) → **Process-final Val**. Chain: `I → A → V → (merge code if extra host_native worktree) → top Workflow join → Process-synthesis I → Process-scope A two-clean → Process-scope V two-clean → Process-final Val`. Inner nested Workflow joins stop at V. **SUPERSEDED:** always after V at every scope; `val_*` on ordinary AF/Workflow SM |
 | Scopes | **SUPERSEDED:** Process only. Historical: AF, Workflow, and Process — all mandatory |
 | Owner | Validator role (not Verifier; not Advisor) |
 | Two-clean | Yes for A, V, and Process-final Val (when Val runs). I has no self-attested two-clean |
@@ -176,7 +176,7 @@ Interactive requirements lock (Grok 4.5 High). Incorporated into plan + mirror.
 ### Ratified
 
 - **Launch prompt + work spec (mandatory admission gate)** — Every host subagent launch must include a prompt-engineered launch prompt **and** a well-specified work spec with clear **output** and **outcome** requirements. Fail-closed without them: blocker `blocked_launch_prompt_spec` (no spawn / no lease/capability/channel).
-- **Work-spec minimum fields** — `goal_outcome`, `required_outputs`, `acceptance_criteria`, `scope_bounds`, `context_refs` (Knowledge/Learnings/pre-read + packet/ancestry refs). Prompt binds work-spec hash, WBS path, role, denies, callback/return contract.
+- **Work-spec exactly these fields** — `goal_outcome`, `required_outputs`, `acceptance_criteria`, `scope_bounds`, `context_refs` (Knowledge/Learnings/pre-read + packet/ancestry refs). Unknown properties fail closed (`additionalProperties: false`). Prompt binds work-spec hash, WBS path, role, denies, callback/return contract.
 - **ASCII WBS progress visualization (mandatory UX)** — On every governing-scope step transition and every user-facing status: path `Process > Workflow > AF > Step` (optional ` > Skill`), markers `[x]` complete / `[>]` current / `[ ]` pending / `[!]` blocked. Missing viz → `blocked_progress_viz`.
 - Traceability: **LPS-01** (`VAL/TST-RFL-616`), **WBS-01** (`VAL/TST-RFL-617`).
 
@@ -244,6 +244,7 @@ Clarifying elaborations recorded into the plan during adversarial RFL (do not re
 21. **Blocker total precedence:** complete ordered mutually exclusive table over canonical `blocked_*` IDs (now including `blocked_replan_budget` and `blocked_executor_unavailable`; `blocked_triage_unresolved` retired as Val-triage) with disjoint predicates and explicit resume targets.
 
 22. **Non-material RFL polish (Opus High/XHigh + earlier-rung nits, 2026-08-12):** occurrence-ordinal cross-refs use § anchors (not brittle line numbers); `drain_only` named in ingress substate whitelist; `launch_intent` enumerates Authorizer-minted `scope_execution_id`/`execution_attempt_id`; dependency-matrix rows 2–4 name WBS/LPS/POA acceptance; ESC-01 repair-rejoin ordinal fixture; uniform `revalidation_cycle_id` `trigger_kind` 3-tuple; TRUST-01 local-fallback realpath/symlink fixture + migrate re-bind; LPS envelope escaping + RFC 8785 JCS hash equality; labelled leaf-Step `a_two_clean → step_yield` terminal; ordinary budget/oscillation note (no Iterate-style ladder-conflict counterpart); Process-synthesis Workhorse tier; A-loop Mentor continuity + knowledge-candidate buffering; rows 6↔12 phase labels + overlap fixture; callback gap-vs-unresolved tiebreaker; I-loop dirty-round disposition mapping; `final-validation` = `val_validated` synonym; mandatory A/Val "floor" wording.
+
 
 
 
