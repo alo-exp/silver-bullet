@@ -362,6 +362,23 @@ def validate_landscape_content(
                 "chart-data.json Value Curve missing MQ leader series: "
                 + ", ".join(missing_vc)
             )
+        # Durable gate: vendor/homepage URLs must not be 404 / non-OK.
+        vendor_urls = chart_raw.get("vendor_urls") if isinstance(chart_raw.get("vendor_urls"), dict) else {}
+        if vendor_urls:
+            from vendor_link_labels import filter_healthy_vendor_urls
+
+            _kept, dropped = filter_healthy_vendor_urls(
+                {str(k): str(v) for k, v in vendor_urls.items()}
+            )
+            metrics["vendor_url_health_dropped"] = dropped
+            if dropped:
+                sample = "; ".join(
+                    f"{d.get('label')}→{d.get('url')} ({d.get('error') or d.get('status')})"
+                    for d in dropped[:8]
+                )
+                errors.append(
+                    f"chart-data.json vendor_urls include dead/non-OK links ({len(dropped)}): {sample}"
+                )
     elif manifest := _load_json(research_dir / "run_manifest.json"):
         if manifest.get("research_type") in {"solution-landscape", "solution-compare"}:
             errors.append("landscape/chart-data.json missing")
@@ -448,3 +465,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

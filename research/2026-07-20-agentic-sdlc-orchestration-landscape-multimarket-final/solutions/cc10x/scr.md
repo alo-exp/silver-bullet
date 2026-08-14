@@ -4,11 +4,11 @@ Slug: `cc10x`
 
 ## Executive summary
 
-Startup-weighted comparison: in sdlc-plugins market, all entries are OSS/zero-cost → no commercial bias. In agentic-sdlc-saas, weight by adoption signals (Factory/Devin/Cosmos dominant). In APO, Silver Bullet is the anchor; secondary seeds (AI-DLC, Conductor, cc10x) carry lower public footprint.
+cc10x is a primary-market APO candidate — a Claude Code–oriented enhancement pack for multi-agent coordination, process enforcement, and host-integrated packaging. Public footprint is thinner than Silver Bullet or AI-DLC; treat adoption claims as unverified without primary metrics.
 
 ## Evidence-backed notes
 
-- Startup-weighted comparison: in sdlc-plugins market, all entries are OSS/zero-cost → no commercial bias. In agentic-sdlc-saas, weight by adoption signals (Factory/Devin/Cosmos dominant). In APO, Silver Bullet is the anchor; secondary seeds (AI-DLC, Conductor, cc10x) carry lower public footprint.
+- cc10x SCR previously leaked report methodology / SB-anchor scoring prose into the overview; replaced with product identity (P0 card corruption fix).
 - cc10x is a primary-market APO candidate — Claude Code enhancement, multi-agent coordination, process enforcement, host-integrated packaging.
 - The primary APO market is structurally immature: most named seeds (Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, cc10x, Director, AgentHub, ATeam, Claude Harness) are single-maintainer OSS packs without pricing, SLAs, or enterprise governance, meaning competition is on process depth and host-compatibility rather than commercial moat.
 - The Agentic Process Orchestrator (APO) primary market is thinly populated, with Silver Bullet, Conductor, AI-DLC, and cc10x as the leading verifiable solutions. Conductor provides active workflow-orchestration positioning, AI-DLC represents an enterprise-lifecycle methodology, and cc10x provides host-integrated packing for Claude Code.

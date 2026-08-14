@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -42,7 +43,11 @@ class SpaProfileRoutingTests(unittest.TestCase):
                 json.dumps({"query": "q", "research_type": "solution-landscape", "mode": "deep"}) + "\n",
                 encoding="utf-8",
             )
-            subprocess.run([sys.executable, str(GEN_LANDSCAPE), "--dir", str(root)], check=True)
+            subprocess.run(
+                [sys.executable, str(GEN_LANDSCAPE), "--dir", str(root)],
+                check=True,
+                env={**os.environ, "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
+            )
             report = root / "landscape-report.html"
             proc = subprocess.run(
                 [sys.executable, str(VALIDATOR), "--report", str(report), "--profile", "landscape"],
@@ -100,6 +105,7 @@ class SpaProfileRoutingTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 check=False,
+                env={**os.environ, "SB_SKIP_LANDSCAPE_PDF": "1", "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1"},
             )
             self.assertNotEqual(proc.returncode, 0, proc.stdout)
             self.assertIn('"status": "error"', proc.stderr)
@@ -107,4 +113,5 @@ class SpaProfileRoutingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

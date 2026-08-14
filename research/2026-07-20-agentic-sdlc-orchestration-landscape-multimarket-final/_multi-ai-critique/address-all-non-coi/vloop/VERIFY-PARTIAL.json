@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "claim": "Tembo NOT in SaaS MQ Leaders/core plotted; adjacent/unplotted",
+    "verdict": "PASS",
+    "evidence": {
+      "saas_mq_slugs": [
+        "augment-cosmos",
+        "devin",
+        "factory-ai",
+        "magic-dev"
+      ],
+      "core": [
+        "augment-cosmos",
+        "devin",
+        "factory-ai",
+        "magic-dev"
+      ],
+      "adjacent_has_tembo": true,
+      "unplotted_has_tembo": true,
+      "html_tembo_mq_point": false
+    }
+  },
+  {
+    "id": 2,
+    "claim": "inclusion-ledger.md exists and referenced from report \u00a71",
+    "verdict": "PASS",
+    "evidence": {
+      "exists": true,
+      "in_sec1": true,
+      "in_html": true,
+      "sec1_snippet": [
+        "| Candidate | Envelope signal | Exact gap blocking inclusion |",
+        "**Inclusion criteria**",
+        "**Cavekit versioning policy:** Cavekit v3.1 remains the APO-listed seed from the inclusion ledger for this run; Cavekit v4 stays adjacent until a verified envelope shows process-layer (not framework-only) evidence that clears 3-of-7. This is an evidence gate \u2014 not a claim that v3.1 is \u201cnewer/better.\u201d"
+      ]
+    }
+  },
+  {
+    "id": 3,
+    "claim": "Blue Ocean scores are 1/3/5 feature-pass; Zuvo absent from BO",
+    "verdict": "PASS",
+    "evidence": {
+      "bo_unique_values": [
+        1,
+        3,
+        5
+      ],
+      "zuvo_in_bo": false
+    }
+  },
+  {
+    "id": 4,
+    "claim": "developer.ibm.com count = 0 in landscape-report.html",
+    "verdict": "PASS",
+    "evidence": {
+      "count": 0
+    }
+  },
+  {
+    "id": 5,
+    "claim": "COI ignored for SB demotion \u2014 SB still plotted high/Leaders",
+    "verdict": "PASS",
+    "evidence": {
+      "sb_mq": {
+        "apo": {
+          "q": "Leaders",
+          "x": 9.5,
+          "y": 8.8
+        },
+        "sdlc-plugins": {
+          "q": "Leaders",
+          "x": 9.2,
+          "y": 8.6
+        }
+      }
+    }
+  },
+  {
+    "id": 6,
+    "claim": "CHECKLIST has no DEFERRED-NEED-USER rows",
+    "verdict": "PASS",
+    "evidence": {
+      "deferred_table_rows": [],
+      "other_mentions": []
+    }
+  },
+  {
+    "id": 7,
+    "claim": "file:// renders",
+    "verdict": "PENDING",
+    "evidence": {
+      "path": "/Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html"
+    }
+  },
+  {
+    "id": 8,
+    "claim": "Prior hard fixes intact: Director\u2260Superpowers, cc10x clean, Harness not\u2192claude-code homepage, plugins MQ not all y=9.5",
+    "verdict": "PASS",
+    "evidence": {
+      "director": {
+        "slug": "director",
+        "label": "Director",
+        "x": 5.2,
+        "y": 3.4,
+        "q": "Niche Players",
+        "evidence_status": "thin",
+        "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+      },
+      "superpowers": {
+        "slug": "superpowers",
+        "label": "Superpowers",
+        "x": 7.6,
+        "y": 5.2,
+        "q": "Visionaries"
+      },
+      "cc10x_urls": {
+        "cc10x": "https://cc10x.dev/"
+      },
+      "harness_bad_homepage_count": 0,
+      "plugin_ys": [
+        8.6,
+        7.9,
+        7.6,
+        7.3,
+        6.5,
+        6.2,
+        5.9,
+        5.2,
+        3.6
+      ]
+    }
+  }
+]

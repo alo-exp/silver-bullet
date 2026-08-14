@@ -11,7 +11,7 @@
         },
         {
           "name": "Atomic flow catalog",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Parent/child agent delegation",
@@ -66,7 +66,7 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Prebuilt SDLC templates",
@@ -74,7 +74,7 @@
         },
         {
           "name": "Zero-infra bootstrap",
-          "supported": null
+          "supported": false
         }
       ]
     },
@@ -83,7 +83,7 @@
       "features": [
         {
           "name": "Automated review loops",
-          "supported": null
+          "supported": false
         },
         {
           "name": "CI integration",

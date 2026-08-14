@@ -11,15 +11,15 @@
         },
         {
           "name": "Atomic flow catalog",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Parent/child agent delegation",
-          "supported": null
+          "supported": true
         },
         {
           "name": "Hook-enforced gates",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -32,7 +32,7 @@
         },
         {
           "name": "Quick onboarding",
-          "supported": null
+          "supported": false
         },
         {
           "name": "IDE-native integration",
@@ -40,7 +40,7 @@
         },
         {
           "name": "Skill/plugin marketplace",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -53,7 +53,7 @@
         },
         {
           "name": "Free tier / OSS core",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Per-seat transparency",
@@ -66,15 +66,15 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": true
         },
         {
           "name": "Prebuilt SDLC templates",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Zero-infra bootstrap",
-          "supported": null
+          "supported": false
         }
       ]
     },
@@ -83,11 +83,11 @@
       "features": [
         {
           "name": "Automated review loops",
-          "supported": null
+          "supported": false
         },
         {
           "name": "CI integration",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Visual/E2E verification",

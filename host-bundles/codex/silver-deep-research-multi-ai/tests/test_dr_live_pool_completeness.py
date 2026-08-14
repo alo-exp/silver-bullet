@@ -24,10 +24,10 @@ class PoolResolutionTests(unittest.TestCase):
         self.assertEqual(len(resolved), 11)
         ids = {item["logical_model_id"] for item in resolved}
         self.assertIn("composer-2.5", ids)
-        self.assertIn("ocg-kimi-k2.7-code", ids)
+        self.assertIn("ocg-kimi-k2.6", ids)
 
     def test_include_only_subset_resolves_n(self) -> None:
-        subset = ["composer-2.5", "grok-4.5", "ocg-kimi-k2.7-code"]
+        subset = ["composer-2.5", "grok-4.5", "ocg-kimi-k2.6"]
         resolved = resolve_pool(
             PoolSelection(ocg_pool="lite", cursor_pool="default", include_only=subset)
         )
@@ -42,15 +42,15 @@ class PoolCompletenessTests(unittest.TestCase):
             {
                 "phase_id": "DR-RETRIEVE",
                 "workers": [
-                    {"logical_model_id": "a", "has_envelope": True},
-                    {"logical_model_id": "b", "has_envelope": True},
+                    {"logical_model_id": "a", "has_envelope": True, "status": "completed"},
+                    {"logical_model_id": "b", "has_envelope": True, "status": "completed"},
                 ],
             },
             {
                 "phase_id": "DR-TRIANGULATE",
                 "workers": [
-                    {"logical_model_id": "a", "has_envelope": True},
-                    {"logical_model_id": "b", "has_envelope": True},
+                    {"logical_model_id": "a", "has_envelope": True, "status": "completed"},
+                    {"logical_model_id": "b", "has_envelope": True, "status": "completed"},
                 ],
             },
         ]
@@ -64,8 +64,8 @@ class PoolCompletenessTests(unittest.TestCase):
             {
                 "phase_id": "DR-RETRIEVE",
                 "workers": [
-                    {"logical_model_id": "a", "has_envelope": True},
-                    {"logical_model_id": "b", "has_envelope": False},
+                    {"logical_model_id": "a", "has_envelope": True, "status": "completed"},
+                    {"logical_model_id": "b", "has_envelope": False, "status": "failed"},
                 ],
             },
         ]
@@ -77,3 +77,5 @@ class PoolCompletenessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+

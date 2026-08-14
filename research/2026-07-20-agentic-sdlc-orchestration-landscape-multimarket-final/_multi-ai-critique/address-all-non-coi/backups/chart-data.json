@@ -1,0 +1,2446 @@
+{
+  "primary_market_id": "apo",
+  "markets": {
+    "apo": {
+      "anchors": {
+        "mq": [
+          "3A",
+          "Process Orchestration"
+        ],
+        "gmq": [
+          "3B",
+          "Magic Quadrant"
+        ],
+        "wave": [
+          "3C",
+          "Wave-Style"
+        ],
+        "vc": [
+          "3D",
+          "Value Curve"
+        ]
+      },
+      "titles": {
+        "mq": "3A · Primary — Agentic Process Orchestrators (APO) Positioning Matrix",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "gmq": "3B · Magic Quadrant — Primary — Agentic Process Orchestrators (APO)",
+        "gmq_x": "X-axis: Completeness of Vision",
+        "gmq_y": "Y-axis: Ability to Execute",
+        "wave": "3C · Wave-Style Assessment — Primary — Agentic Process Orchestrators (APO)",
+        "vc": "3D · Blue Ocean Value Curve (Leaders Radar) — Primary — Agentic Process Orchestrators (APO)"
+      },
+      "mq_data": [
+        {
+          "slug": "agenthub",
+          "label": "AgentHub",
+          "x": 5.9,
+          "y": 5.7,
+          "q": "Leaders"
+        },
+        {
+          "slug": "agentsys",
+          "label": "AgentSys",
+          "x": 4.8,
+          "y": 5.9,
+          "q": "Challengers"
+        },
+        {
+          "slug": "ai-dlc",
+          "label": "AI-DLC",
+          "x": 6.6,
+          "y": 5.9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "ateam",
+          "label": "ATeam",
+          "x": 4.7,
+          "y": 5.8,
+          "q": "Challengers"
+        },
+        {
+          "slug": "barkain-workflow-orchestrator",
+          "label": "Barkain Workflow Orchestrator",
+          "x": 5.2,
+          "y": 3.4,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        },
+        {
+          "slug": "cavekit-v31",
+          "label": "Cavekit v3.1",
+          "x": 5.2,
+          "y": 3.6,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        },
+        {
+          "slug": "cc10x",
+          "label": "cc10x",
+          "x": 9.4,
+          "y": 4.3,
+          "q": "Visionaries",
+          "evidence_status": "thin",
+          "evidence_note": "Public footprint thinner than SB/AI-DLC; adoption metrics unverified."
+        },
+        {
+          "slug": "deepwork",
+          "label": "Deepwork",
+          "x": 5.2,
+          "y": 3.4,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        },
+        {
+          "slug": "director",
+          "label": "Director",
+          "x": 5.2,
+          "y": 3.4,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        },
+        {
+          "slug": "metagpt",
+          "label": "MetaGPT",
+          "x": 2.7,
+          "y": 3.2,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "x": 9.5,
+          "y": 8.8,
+          "q": "Leaders"
+        },
+        {
+          "slug": "turboshovel",
+          "label": "Turboshovel",
+          "x": 5.2,
+          "y": 3.3,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        },
+        {
+          "slug": "workflow-manager",
+          "label": "Workflow Manager",
+          "x": 5.2,
+          "y": 3.5,
+          "q": "Niche Players",
+          "evidence_status": "thin",
+          "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+        }
+      ],
+      "mq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "gmq_data": [
+        {
+          "slug": "agenthub",
+          "label": "AgentHub",
+          "x": 4.9,
+          "y": 6.1,
+          "q": "Challengers"
+        },
+        {
+          "slug": "agentsys",
+          "label": "AgentSys",
+          "x": 4.5,
+          "y": 6,
+          "q": "Challengers"
+        },
+        {
+          "slug": "ai-dlc",
+          "label": "AI-DLC",
+          "x": 9,
+          "y": 3.7,
+          "q": "Visionaries"
+        },
+        {
+          "slug": "ateam",
+          "label": "ATeam",
+          "x": 4.4,
+          "y": 5.9,
+          "q": "Challengers"
+        },
+        {
+          "slug": "barkain-workflow-orchestrator",
+          "label": "Barkain Workflow Orchestrator",
+          "x": 4.7,
+          "y": 4.4,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "cavekit-v31",
+          "label": "Cavekit v3.1",
+          "x": 4.9,
+          "y": 4.6,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "cc10x",
+          "label": "cc10x",
+          "x": 8.1,
+          "y": 7,
+          "q": "Leaders"
+        },
+        {
+          "slug": "deepwork",
+          "label": "Deepwork",
+          "x": 4.6,
+          "y": 4.4,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "director",
+          "label": "Director",
+          "x": 5.1,
+          "y": 4.5,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "metagpt",
+          "label": "MetaGPT",
+          "x": 2.3,
+          "y": 2.6,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "x": 9.5,
+          "y": 9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "turboshovel",
+          "label": "Turboshovel",
+          "x": 5,
+          "y": 4.3,
+          "q": "Niche Players"
+        },
+        {
+          "slug": "workflow-manager",
+          "label": "Workflow Manager",
+          "x": 4.6,
+          "y": 4.5,
+          "q": "Niche Players"
+        }
+      ],
+      "gmq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "wave_data": [
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "offering": 4,
+          "strategy": 4,
+          "presence": 3
+        },
+        {
+          "slug": "cc10x",
+          "label": "cc10x",
+          "offering": 4,
+          "strategy": 3.1,
+          "presence": 3
+        },
+        {
+          "slug": "ai-dlc",
+          "label": "AI-DLC",
+          "offering": 3.4,
+          "strategy": 2.2,
+          "presence": 3
+        },
+        {
+          "slug": "cavekit-v31",
+          "label": "Cavekit v3.1",
+          "offering": 2.6,
+          "strategy": 1.7,
+          "presence": 2
+        },
+        {
+          "slug": "director",
+          "label": "Director",
+          "offering": 2.6,
+          "strategy": 2,
+          "presence": 2
+        },
+        {
+          "slug": "agenthub",
+          "label": "AgentHub",
+          "offering": 2.5,
+          "strategy": 1.9,
+          "presence": 2
+        },
+        {
+          "slug": "agentsys",
+          "label": "AgentSys",
+          "offering": 2.5,
+          "strategy": 2,
+          "presence": 2
+        },
+        {
+          "slug": "ateam",
+          "label": "ATeam",
+          "offering": 2.4,
+          "strategy": 2,
+          "presence": 2
+        }
+      ],
+      "vc_kcfs": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Hook-enforced gates",
+        "Parent/child delegation",
+        "Managed hosting",
+        "Prebuilt SDLC templates",
+        "CI integration",
+        "IDE-native integration",
+        "Free tier / OSS core",
+        "Predictable pricing"
+      ],
+      "vc_commercial": [
+        {
+          "label": "cc10x",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#4f46e5"
+        },
+        {
+          "label": "AgentHub",
+          "data": [
+            5,
+            3,
+            3,
+            5,
+            3,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#4f46e5"
+        }
+      ],
+      "vc_oss": [
+        {
+          "label": "Silver Bullet",
+          "data": [
+            5,
+            5,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "AI-DLC",
+          "data": [
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        }
+      ],
+      "link_pairs": [
+        [
+          "Barkain Workflow Orchestrator",
+          "https://barkain.com/"
+        ],
+        [
+          "Silver Bullet",
+          "https://sb.alolabs.dev/"
+        ],
+        [
+          "Cavekit v3.1",
+          "https://cavekit.ai/"
+        ],
+        [
+          "AgentHub",
+          "https://www.agenthub.ai/"
+        ],
+        [
+          "AgentSys",
+          "https://github.com/agent-sh/agentsys"
+        ],
+        [
+          "MetaGPT",
+          "https://github.com/FoundationAgents/MetaGPT"
+        ],
+        [
+          "AI-DLC",
+          "https://github.com/awslabs/aidlc-workflows"
+        ],
+        [
+          "cc10x",
+          "https://cc10x.dev/"
+        ],
+        [
+          "ATeam",
+          "https://www.a.team/"
+        ]
+      ],
+      "vendor_buckets": {
+        "commercial": [
+          "AgentHub",
+          "Barkain Workflow Orchestrator",
+          "cc10x",
+          "Workflow Manager",
+          "Turboshovel",
+          "Cavekit v3.1",
+          "ATeam",
+          "Deepwork"
+        ],
+        "oss": [
+          "Silver Bullet",
+          "AI-DLC",
+          "MetaGPT",
+          "AgentSys",
+          "Director"
+        ],
+        "leaders": [
+          "AgentHub",
+          "AI-DLC",
+          "Silver Bullet"
+        ],
+        "challengers": [
+          "AgentSys",
+          "ATeam"
+        ],
+        "visionaries": [
+          "cc10x"
+        ],
+        "niche_players": [
+          "Barkain Workflow Orchestrator",
+          "Cavekit v3.1",
+          "Deepwork",
+          "Director",
+          "MetaGPT",
+          "Turboshovel",
+          "Workflow Manager"
+        ],
+        "leader_definition": "Canonical MQ Leaders = markets.<id>.mq_data where q==='Leaders' (axes in market titles). GMQ uses separate Completeness×Ability axes — do not union GMQ Leaders into MQ Leaders. Blue Ocean radar is a KCF contrast set, not a Leader definition."
+      },
+      "vendor_urls": {
+        "Barkain Workflow Orchestrator": "https://barkain.com/",
+        "Silver Bullet": "https://sb.alolabs.dev/",
+        "Cavekit v3.1": "https://cavekit.ai/",
+        "AgentHub": "https://www.agenthub.ai/",
+        "AgentSys": "https://github.com/agent-sh/agentsys",
+        "MetaGPT": "https://github.com/FoundationAgents/MetaGPT",
+        "AI-DLC": "https://github.com/awslabs/aidlc-workflows",
+        "cc10x": "https://cc10x.dev/",
+        "ATeam": "https://www.a.team/"
+      },
+      "market_id": "apo",
+      "membership": {
+        "core": [
+          "agenthub",
+          "agentsys",
+          "ai-dlc",
+          "ateam",
+          "barkain-workflow-orchestrator",
+          "cavekit-v31",
+          "cc10x",
+          "deepwork",
+          "director",
+          "metagpt",
+          "silver-bullet",
+          "turboshovel",
+          "workflow-manager"
+        ],
+        "adjacent": [
+          "axonflow",
+          "cavekit-v4",
+          "crewai",
+          "langchain",
+          "langgraph"
+        ],
+        "listed": [
+          "agenthub",
+          "agentsys",
+          "ai-dlc",
+          "ateam",
+          "axonflow",
+          "barkain-workflow-orchestrator",
+          "cavekit-v31",
+          "cavekit-v4",
+          "cc10x",
+          "crewai",
+          "deepwork",
+          "director",
+          "langchain",
+          "langgraph",
+          "metagpt",
+          "silver-bullet",
+          "turboshovel",
+          "workflow-manager"
+        ],
+        "unplotted": [
+          {
+            "slug": "axonflow",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "cavekit-v4",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "crewai",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "langchain",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "langgraph",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          }
+        ]
+      },
+      "plotted_slugs": [
+        "agenthub",
+        "agentsys",
+        "ai-dlc",
+        "ateam",
+        "barkain-workflow-orchestrator",
+        "cavekit-v31",
+        "cc10x",
+        "deepwork",
+        "director",
+        "metagpt",
+        "silver-bullet",
+        "turboshovel",
+        "workflow-manager"
+      ],
+      "listed_slugs": [
+        "agenthub",
+        "agentsys",
+        "ai-dlc",
+        "ateam",
+        "axonflow",
+        "barkain-workflow-orchestrator",
+        "cavekit-v31",
+        "cavekit-v4",
+        "cc10x",
+        "crewai",
+        "deepwork",
+        "director",
+        "langchain",
+        "langgraph",
+        "metagpt",
+        "silver-bullet",
+        "turboshovel",
+        "workflow-manager"
+      ],
+      "unplotted": [
+        {
+          "slug": "axonflow",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "cavekit-v4",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "crewai",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "langchain",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "langgraph",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        }
+      ],
+      "market_role": "primary",
+      "market_display_name": "Agentic Process Orchestrators (APO)",
+      "methodology": {
+        "mq_axes": "X=process orchestration completeness; Y=autonomous execution depth (startup-weighted feature envelope + SCR).",
+        "wave_selection": "Wave plots top-N by offering×strategy composite among MQ-plotted cores (N=8 for APO). Non-Wave MQ vendors remain MQ-plotted but are not Wave-scored.",
+        "wave_omitted": [
+          "barkain-workflow-orchestrator",
+          "deepwork",
+          "metagpt",
+          "turboshovel",
+          "workflow-manager"
+        ],
+        "gmq_vs_mq": "GMQ uses Completeness of Vision × Ability to Execute — independent of MQ axes. Do not merge Leader sets.",
+        "thin_evidence_policy": "Vendors with templated/unverified commercial evidence are Niche Players and must not drive shortlists."
+      }
+    },
+    "sdlc-plugins": {
+      "anchors": {
+        "mq": [
+          "3A",
+          "Process Orchestration"
+        ],
+        "gmq": [
+          "3B",
+          "Magic Quadrant"
+        ],
+        "wave": [
+          "3C",
+          "Wave-Style"
+        ],
+        "vc": [
+          "3D",
+          "Value Curve"
+        ]
+      },
+      "titles": {
+        "mq": "3A · Secondary — SDLC Plugins & Methodology Packs Positioning Matrix",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "gmq": "3B · Magic Quadrant — Secondary — SDLC Plugins & Methodology Packs",
+        "gmq_x": "X-axis: Completeness of Vision",
+        "gmq_y": "Y-axis: Ability to Execute",
+        "wave": "3C · Wave-Style Assessment — Secondary — SDLC Plugins & Methodology Packs",
+        "vc": "3D · Blue Ocean Value Curve (Leaders Radar) — Secondary — SDLC Plugins & Methodology Packs"
+      },
+      "mq_data": [
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "x": 9.2,
+          "y": 8.6,
+          "q": "Leaders"
+        },
+        {
+          "slug": "bmad",
+          "label": "BMAD-METHOD",
+          "x": 8.5,
+          "y": 7.9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "gsd",
+          "label": "GSD (Get Shit Done)",
+          "x": 8.3,
+          "y": 7.6,
+          "q": "Leaders"
+        },
+        {
+          "slug": "oh-my-pi",
+          "label": "Oh My Pi (OMP)",
+          "x": 8,
+          "y": 7.3,
+          "q": "Leaders"
+        },
+        {
+          "slug": "spec-kit",
+          "label": "GitHub Spec Kit",
+          "x": 7.4,
+          "y": 6.5,
+          "q": "Challengers"
+        },
+        {
+          "slug": "ruflo",
+          "label": "Ruflo (formerly Claude Flow)",
+          "x": 7.1,
+          "y": 6.2,
+          "q": "Challengers"
+        },
+        {
+          "slug": "superclaude",
+          "label": "SuperClaude",
+          "x": 6.9,
+          "y": 5.9,
+          "q": "Challengers"
+        },
+        {
+          "slug": "superpowers",
+          "label": "Superpowers",
+          "x": 7.6,
+          "y": 5.2,
+          "q": "Visionaries"
+        },
+        {
+          "slug": "claude-harness",
+          "label": "Claude Harness",
+          "x": 4.2,
+          "y": 3.6,
+          "q": "Niche Players",
+          "evidence_status": "unverified"
+        }
+      ],
+      "mq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "gmq_data": [
+        {
+          "slug": "bmad",
+          "label": "BMAD-METHOD",
+          "x": 9.5,
+          "y": 9.5,
+          "q": "Leaders"
+        },
+        {
+          "slug": "claude-harness",
+          "label": "Claude Harness",
+          "x": 4.8,
+          "y": 6.2,
+          "q": "Challengers"
+        },
+        {
+          "slug": "gsd",
+          "label": "GSD (Get Shit Done)",
+          "x": 9.5,
+          "y": 9.3,
+          "q": "Leaders"
+        },
+        {
+          "slug": "oh-my-pi",
+          "label": "Oh My Pi (OMP)",
+          "x": 9.5,
+          "y": 9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "ruflo",
+          "label": "Ruflo (formerly Claude Flow)",
+          "x": 7,
+          "y": 6.5,
+          "q": "Challengers"
+        },
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "x": 9.5,
+          "y": 8.6,
+          "q": "Leaders"
+        },
+        {
+          "slug": "spec-kit",
+          "label": "GitHub Spec Kit",
+          "x": 7.2,
+          "y": 6.8,
+          "q": "Challengers"
+        },
+        {
+          "slug": "superclaude",
+          "label": "SuperClaude",
+          "x": 6.8,
+          "y": 6.3,
+          "q": "Challengers"
+        },
+        {
+          "slug": "superpowers",
+          "label": "Superpowers",
+          "x": 8.2,
+          "y": 5,
+          "q": "Visionaries"
+        }
+      ],
+      "gmq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "wave_data": [
+        {
+          "slug": "silver-bullet",
+          "label": "Silver Bullet",
+          "offering": 4,
+          "strategy": 4,
+          "presence": 3
+        },
+        {
+          "slug": "gsd",
+          "label": "GSD (Get Shit Done)",
+          "offering": 4,
+          "strategy": 3.4,
+          "presence": 3
+        },
+        {
+          "slug": "oh-my-pi",
+          "label": "Oh My Pi (OMP)",
+          "offering": 4,
+          "strategy": 3.6,
+          "presence": 3
+        },
+        {
+          "slug": "bmad",
+          "label": "BMAD-METHOD",
+          "offering": 4,
+          "strategy": 3.5,
+          "presence": 3
+        },
+        {
+          "slug": "ruflo",
+          "label": "Ruflo (formerly Claude Flow)",
+          "offering": 3.9,
+          "strategy": 3.2,
+          "presence": 3
+        },
+        {
+          "slug": "superpowers",
+          "label": "Superpowers",
+          "offering": 3.9,
+          "strategy": 3.1,
+          "presence": 3
+        },
+        {
+          "slug": "spec-kit",
+          "label": "GitHub Spec Kit",
+          "offering": 3.7,
+          "strategy": 3.2,
+          "presence": 3
+        }
+      ],
+      "vc_kcfs": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Hook-enforced gates",
+        "Parent/child delegation",
+        "Managed hosting",
+        "Prebuilt SDLC templates",
+        "CI integration",
+        "IDE-native integration",
+        "Free tier / OSS core",
+        "Predictable pricing"
+      ],
+      "vc_commercial": [],
+      "vc_oss": [
+        {
+          "label": "BMAD-METHOD",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "GSD (Get Shit Done)",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Oh My Pi (OMP)",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Ruflo / Claude Flow",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Silver Bullet",
+          "data": [
+            5,
+            5,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "GitHub Spec Kit",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "SuperClaude",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Superpowers",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Zuvo",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        },
+        {
+          "label": "Claude Harness",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#22d3ee"
+        }
+      ],
+      "link_pairs": [
+        [
+          "GSD (Get Shit Done)",
+          "https://github.com/gsd-build/get-shit-done"
+        ],
+        [
+          "Ruflo / Claude Flow",
+          "https://github.com/ruvnet/ruflo"
+        ],
+        [
+          "GitHub Spec Kit",
+          "https://github.com/github/spec-kit"
+        ],
+        [
+          "Silver Bullet",
+          "https://sb.alolabs.dev/"
+        ],
+        [
+          "BMAD-METHOD",
+          "https://github.com/bmad-code-org/BMAD-METHOD"
+        ],
+        [
+          "SuperClaude",
+          "https://github.com/SuperClaude-Org/SuperClaude_Framework"
+        ],
+        [
+          "Superpowers",
+          "https://github.com/obra/superpowers"
+        ]
+      ],
+      "vendor_buckets": {
+        "commercial": [],
+        "oss": [
+          "Silver Bullet",
+          "BMAD-METHOD",
+          "GitHub Spec Kit",
+          "Oh My Pi (OMP)",
+          "SuperClaude",
+          "GSD (Get Shit Done)",
+          "Claude Harness",
+          "Superpowers",
+          "Ruflo / Claude Flow"
+        ],
+        "leaders": [
+          "Silver Bullet",
+          "BMAD-METHOD",
+          "GSD (Get Shit Done)",
+          "Oh My Pi (OMP)"
+        ],
+        "challengers": [
+          "GitHub Spec Kit",
+          "Ruflo (formerly Claude Flow)",
+          "SuperClaude"
+        ],
+        "visionaries": [
+          "Superpowers"
+        ],
+        "niche_players": [
+          "Claude Harness"
+        ],
+        "leader_definition": "Canonical MQ Leaders = markets.<id>.mq_data where q==='Leaders' (axes in market titles). GMQ uses separate Completeness×Ability axes — do not union GMQ Leaders into MQ Leaders. Blue Ocean radar is a KCF contrast set, not a Leader definition."
+      },
+      "vendor_urls": {
+        "GSD (Get Shit Done)": "https://github.com/gsd-build/get-shit-done",
+        "Ruflo / Claude Flow": "https://github.com/ruvnet/ruflo",
+        "GitHub Spec Kit": "https://github.com/github/spec-kit",
+        "Silver Bullet": "https://sb.alolabs.dev/",
+        "BMAD-METHOD": "https://github.com/bmad-code-org/BMAD-METHOD",
+        "SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+        "Superpowers": "https://github.com/obra/superpowers"
+      },
+      "market_id": "sdlc-plugins",
+      "membership": {
+        "core": [
+          "bmad",
+          "claude-harness",
+          "gsd",
+          "oh-my-pi",
+          "ruflo",
+          "silver-bullet",
+          "spec-kit",
+          "superclaude",
+          "superpowers"
+        ],
+        "adjacent": [
+          "crewai",
+          "langgraph",
+          "zuvo"
+        ],
+        "listed": [
+          "bmad",
+          "claude-harness",
+          "crewai",
+          "gsd",
+          "langgraph",
+          "oh-my-pi",
+          "ruflo",
+          "silver-bullet",
+          "spec-kit",
+          "superclaude",
+          "superpowers",
+          "zuvo"
+        ],
+        "unplotted": [
+          {
+            "slug": "crewai",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "langgraph",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "zuvo",
+            "reason": "quarantined — identity/OSS/license unverified; watchlist only (not MQ/Wave/Leader)"
+          }
+        ]
+      },
+      "plotted_slugs": [
+        "bmad",
+        "claude-harness",
+        "gsd",
+        "oh-my-pi",
+        "ruflo",
+        "silver-bullet",
+        "spec-kit",
+        "superclaude",
+        "superpowers"
+      ],
+      "listed_slugs": [
+        "bmad",
+        "claude-harness",
+        "crewai",
+        "gsd",
+        "langgraph",
+        "oh-my-pi",
+        "ruflo",
+        "silver-bullet",
+        "spec-kit",
+        "superclaude",
+        "superpowers",
+        "zuvo"
+      ],
+      "unplotted": [
+        {
+          "slug": "crewai",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "langgraph",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "zuvo",
+          "reason": "QUARANTINED — identity/license unverified; not plotted on MQ/Wave"
+        }
+      ],
+      "market_role": "secondary",
+      "market_display_name": "SDLC Plugins & Methodology Packs",
+      "methodology": {
+        "mq_axes": "X=process orchestration completeness of the method pack; Y=autonomous execution / enforcement depth on a host.",
+        "wave_selection": "Wave plots top-N by offering×strategy (N=7 for plugins). Claude Harness (unverified) excluded from Wave.",
+        "wave_omitted": [
+          "superclaude",
+          "claude-harness"
+        ],
+        "y_ceiling_fix": "Prior pass pinned y=9.5 for nearly all plugins (degenerate Leaders). Rescored with real execution spread."
+      }
+    },
+    "agentic-sdlc-saas": {
+      "anchors": {
+        "mq": [
+          "3A",
+          "Process Orchestration"
+        ],
+        "gmq": [
+          "3B",
+          "Magic Quadrant"
+        ],
+        "wave": [
+          "3C",
+          "Wave-Style"
+        ],
+        "vc": [
+          "3D",
+          "Value Curve"
+        ]
+      },
+      "titles": {
+        "mq": "3A · Tertiary — Agentic SDLC SaaS & Autonomous Delivery Positioning Matrix",
+        "mq_x": "← Low process orchestration         High process orchestration →",
+        "mq_y": "← Low autonomous execution         High autonomous execution →",
+        "gmq": "3B · Magic Quadrant — Tertiary — Agentic SDLC SaaS & Autonomous Delivery",
+        "gmq_x": "X-axis: Completeness of Vision",
+        "gmq_y": "Y-axis: Ability to Execute",
+        "wave": "3C · Wave-Style Assessment — Tertiary — Agentic SDLC SaaS & Autonomous Delivery",
+        "vc": "3D · Blue Ocean Value Curve (Leaders Radar) — Tertiary — Agentic SDLC SaaS & Autonomous Delivery"
+      },
+      "mq_data": [
+        {
+          "slug": "augment-cosmos",
+          "label": "Augment Code (Cosmos)",
+          "x": 8.5,
+          "y": 5.4,
+          "q": "Visionaries",
+          "identity_note": "Public brand is Augment Code; Cosmos is an Augment agentic SDLC capability/surface — not a separate standalone vendor."
+        },
+        {
+          "slug": "devin",
+          "label": "Devin",
+          "x": 8.8,
+          "y": 7.5,
+          "q": "Leaders"
+        },
+        {
+          "slug": "factory-ai",
+          "label": "Factory.ai",
+          "x": 9,
+          "y": 6.9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "magic-dev",
+          "label": "Magic.dev",
+          "x": 7,
+          "y": 5,
+          "q": "Visionaries"
+        },
+        {
+          "slug": "tembo",
+          "label": "Tembo",
+          "x": 7.8,
+          "y": 5,
+          "q": "Visionaries",
+          "identity_note": "IDENTITY RISK: tembo.io is widely known as a Postgres platform. Agentic-SDLC-SaaS placement depends on a distinct agent product surface — treat as provisional until product page evidence confirms agentic SDLC scope.",
+          "evidence_status": "identity-risk"
+        }
+      ],
+      "mq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "gmq_data": [
+        {
+          "slug": "augment-cosmos",
+          "label": "Augment Code (Cosmos)",
+          "x": 8.9,
+          "y": 5.4,
+          "q": "Visionaries"
+        },
+        {
+          "slug": "devin",
+          "label": "Devin",
+          "x": 8.4,
+          "y": 7.5,
+          "q": "Leaders"
+        },
+        {
+          "slug": "factory-ai",
+          "label": "Factory.ai",
+          "x": 9.3,
+          "y": 6.9,
+          "q": "Leaders"
+        },
+        {
+          "slug": "magic-dev",
+          "label": "Magic.dev",
+          "x": 7,
+          "y": 5,
+          "q": "Visionaries"
+        },
+        {
+          "slug": "tembo",
+          "label": "Tembo",
+          "x": 8.8,
+          "y": 5.1,
+          "q": "Visionaries"
+        }
+      ],
+      "gmq_colors": {
+        "Leaders": "#1f3864",
+        "Challengers": "#475569",
+        "Visionaries": "#2f5597",
+        "Niche Players": "#94a3b8"
+      },
+      "wave_data": [
+        {
+          "slug": "devin",
+          "label": "Devin",
+          "offering": 4,
+          "strategy": 2.7,
+          "presence": 4
+        },
+        {
+          "slug": "factory-ai",
+          "label": "Factory.ai",
+          "offering": 3.7,
+          "strategy": 2.3,
+          "presence": 3
+        },
+        {
+          "slug": "augment-cosmos",
+          "label": "Augment Code (Cosmos)",
+          "offering": 3.5,
+          "strategy": 2,
+          "presence": 3
+        },
+        {
+          "slug": "tembo",
+          "label": "Tembo",
+          "offering": 3,
+          "strategy": 2.1,
+          "presence": 2
+        },
+        {
+          "slug": "magic-dev",
+          "label": "Magic.dev",
+          "offering": 2.8,
+          "strategy": 1.6,
+          "presence": 2
+        }
+      ],
+      "vc_kcfs": [
+        "Workflow composition",
+        "Atomic flow catalog",
+        "Hook-enforced gates",
+        "Parent/child delegation",
+        "Managed hosting",
+        "Prebuilt SDLC templates",
+        "CI integration",
+        "IDE-native integration",
+        "Free tier / OSS core",
+        "Predictable pricing"
+      ],
+      "vc_commercial": [
+        {
+          "label": "Devin",
+          "data": [
+            5,
+            3,
+            3,
+            3,
+            5,
+            3,
+            3,
+            5,
+            5,
+            5
+          ],
+          "color": "#4f46e5"
+        },
+        {
+          "label": "Factory.ai",
+          "data": [
+            5,
+            3,
+            3,
+            5,
+            5,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#4f46e5"
+        },
+        {
+          "label": "Augment Cosmos",
+          "data": [
+            5,
+            3,
+            3,
+            5,
+            5,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#4f46e5"
+        },
+        {
+          "label": "Magic.dev",
+          "data": [
+            5,
+            3,
+            3,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#4f46e5"
+        },
+        {
+          "label": "Tembo",
+          "data": [
+            5,
+            3,
+            3,
+            5,
+            5,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#4f46e5"
+        }
+      ],
+      "vc_oss": [],
+      "link_pairs": [
+        [
+          "Augment Code (Cosmos)",
+          "https://www.augmentcode.com/"
+        ],
+        [
+          "Factory.ai",
+          "https://www.factory.ai/"
+        ],
+        [
+          "Magic.dev",
+          "https://magic.dev/"
+        ],
+        [
+          "Devin",
+          "https://devin.ai/"
+        ],
+        [
+          "Tembo",
+          "https://tembo.io/"
+        ]
+      ],
+      "vendor_buckets": {
+        "commercial": [
+          "Augment Code (Cosmos)",
+          "Devin",
+          "Factory.ai",
+          "Tembo",
+          "Magic.dev"
+        ],
+        "oss": [],
+        "leaders": [
+          "Devin",
+          "Factory.ai"
+        ],
+        "challengers": [],
+        "visionaries": [
+          "Augment Code (Cosmos)",
+          "Magic.dev",
+          "Tembo"
+        ],
+        "niche_players": [],
+        "leader_definition": "Canonical MQ Leaders = markets.<id>.mq_data where q==='Leaders' (axes in market titles). GMQ uses separate Completeness×Ability axes — do not union GMQ Leaders into MQ Leaders. Blue Ocean radar is a KCF contrast set, not a Leader definition."
+      },
+      "vendor_urls": {
+        "Factory.ai": "https://www.factory.ai/",
+        "Magic.dev": "https://magic.dev/",
+        "Devin": "https://devin.ai/",
+        "Tembo": "https://tembo.io/",
+        "Augment Code (Cosmos)": "https://www.augmentcode.com/"
+      },
+      "market_id": "agentic-sdlc-saas",
+      "membership": {
+        "core": [
+          "augment-cosmos",
+          "devin",
+          "factory-ai",
+          "magic-dev",
+          "tembo"
+        ],
+        "adjacent": [
+          "claude-code",
+          "codex",
+          "cognition-scout",
+          "conductor",
+          "cursor",
+          "github-copilot",
+          "replit-agent"
+        ],
+        "listed": [
+          "augment-cosmos",
+          "claude-code",
+          "codex",
+          "cognition-scout",
+          "conductor",
+          "cursor",
+          "devin",
+          "factory-ai",
+          "github-copilot",
+          "magic-dev",
+          "replit-agent",
+          "tembo"
+        ],
+        "unplotted": [
+          {
+            "slug": "claude-code",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "codex",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "cognition-scout",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "conductor",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "cursor",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "github-copilot",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          },
+          {
+            "slug": "replit-agent",
+            "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+          }
+        ]
+      },
+      "plotted_slugs": [
+        "augment-cosmos",
+        "devin",
+        "factory-ai",
+        "magic-dev",
+        "tembo"
+      ],
+      "listed_slugs": [
+        "augment-cosmos",
+        "claude-code",
+        "codex",
+        "cognition-scout",
+        "conductor",
+        "cursor",
+        "devin",
+        "factory-ai",
+        "github-copilot",
+        "magic-dev",
+        "replit-agent",
+        "tembo"
+      ],
+      "unplotted": [
+        {
+          "slug": "claude-code",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "codex",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "cognition-scout",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "conductor",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "cursor",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "github-copilot",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        },
+        {
+          "slug": "replit-agent",
+          "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+        }
+      ],
+      "market_role": "tertiary",
+      "market_display_name": "Agentic SDLC SaaS & Autonomous Delivery",
+      "methodology": {
+        "mq_axes": "X=process orchestration in autonomous delivery; Y=autonomous execution maturity.",
+        "wave_selection": "Wave includes all SaaS MQ-plotted cores (N=5) — no truncation.",
+        "wave_omitted": [],
+        "empty_challengers_rationale": "With only five verified SaaS cores and two clear Leaders (Devin, Factory.ai), remaining peers are Visionaries by axis placement. No honest Challenger (high execution / lower vision) exists in the verified set without inventing vendors — Challengers remain empty by evidence, not by all-Leaders collapse."
+      }
+    }
+  },
+  "anchors": {
+    "mq": [
+      "3A",
+      "Process Orchestration"
+    ],
+    "gmq": [
+      "3B",
+      "Magic Quadrant"
+    ],
+    "wave": [
+      "3C",
+      "Wave-Style"
+    ],
+    "vc": [
+      "3D",
+      "Value Curve"
+    ]
+  },
+  "titles": {
+    "mq": "3A · Primary — Agentic Process Orchestrators (APO) Positioning Matrix",
+    "mq_x": "← Low process orchestration         High process orchestration →",
+    "mq_y": "← Low autonomous execution         High autonomous execution →",
+    "gmq": "3B · Magic Quadrant — Primary — Agentic Process Orchestrators (APO)",
+    "gmq_x": "X-axis: Completeness of Vision",
+    "gmq_y": "Y-axis: Ability to Execute",
+    "wave": "3C · Wave-Style Assessment — Primary — Agentic Process Orchestrators (APO)",
+    "vc": "3D · Blue Ocean Value Curve (Leaders Radar) — Primary — Agentic Process Orchestrators (APO)"
+  },
+  "mq_data": [
+    {
+      "slug": "agenthub",
+      "label": "AgentHub",
+      "x": 5.9,
+      "y": 5.7,
+      "q": "Leaders"
+    },
+    {
+      "slug": "agentsys",
+      "label": "AgentSys",
+      "x": 4.8,
+      "y": 5.9,
+      "q": "Challengers"
+    },
+    {
+      "slug": "ai-dlc",
+      "label": "AI-DLC",
+      "x": 6.6,
+      "y": 5.9,
+      "q": "Leaders"
+    },
+    {
+      "slug": "ateam",
+      "label": "ATeam",
+      "x": 4.7,
+      "y": 5.8,
+      "q": "Challengers"
+    },
+    {
+      "slug": "barkain-workflow-orchestrator",
+      "label": "Barkain Workflow Orchestrator",
+      "x": 5.2,
+      "y": 3.4,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    },
+    {
+      "slug": "cavekit-v31",
+      "label": "Cavekit v3.1",
+      "x": 5.2,
+      "y": 3.6,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    },
+    {
+      "slug": "cc10x",
+      "label": "cc10x",
+      "x": 9.4,
+      "y": 4.3,
+      "q": "Visionaries",
+      "evidence_status": "thin",
+      "evidence_note": "Public footprint thinner than SB/AI-DLC; adoption metrics unverified."
+    },
+    {
+      "slug": "deepwork",
+      "label": "Deepwork",
+      "x": 5.2,
+      "y": 3.4,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    },
+    {
+      "slug": "director",
+      "label": "Director",
+      "x": 5.2,
+      "y": 3.4,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    },
+    {
+      "slug": "metagpt",
+      "label": "MetaGPT",
+      "x": 2.7,
+      "y": 3.2,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "silver-bullet",
+      "label": "Silver Bullet",
+      "x": 9.5,
+      "y": 8.8,
+      "q": "Leaders"
+    },
+    {
+      "slug": "turboshovel",
+      "label": "Turboshovel",
+      "x": 5.2,
+      "y": 3.3,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    },
+    {
+      "slug": "workflow-manager",
+      "label": "Workflow Manager",
+      "x": 5.2,
+      "y": 3.5,
+      "q": "Niche Players",
+      "evidence_status": "thin",
+      "evidence_note": "Primary commercial footprint thin or templated; capabilities treated as unknown unless SCR-cited."
+    }
+  ],
+  "mq_colors": {
+    "Leaders": "#1f3864",
+    "Challengers": "#475569",
+    "Visionaries": "#2f5597",
+    "Niche Players": "#94a3b8"
+  },
+  "gmq_data": [
+    {
+      "slug": "agenthub",
+      "label": "AgentHub",
+      "x": 4.9,
+      "y": 6.1,
+      "q": "Challengers"
+    },
+    {
+      "slug": "agentsys",
+      "label": "AgentSys",
+      "x": 4.5,
+      "y": 6,
+      "q": "Challengers"
+    },
+    {
+      "slug": "ai-dlc",
+      "label": "AI-DLC",
+      "x": 9,
+      "y": 3.7,
+      "q": "Visionaries"
+    },
+    {
+      "slug": "ateam",
+      "label": "ATeam",
+      "x": 4.4,
+      "y": 5.9,
+      "q": "Challengers"
+    },
+    {
+      "slug": "barkain-workflow-orchestrator",
+      "label": "Barkain Workflow Orchestrator",
+      "x": 4.7,
+      "y": 4.4,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "cavekit-v31",
+      "label": "Cavekit v3.1",
+      "x": 4.9,
+      "y": 4.6,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "cc10x",
+      "label": "cc10x",
+      "x": 8.1,
+      "y": 7,
+      "q": "Leaders"
+    },
+    {
+      "slug": "deepwork",
+      "label": "Deepwork",
+      "x": 4.6,
+      "y": 4.4,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "director",
+      "label": "Director",
+      "x": 5.1,
+      "y": 4.5,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "metagpt",
+      "label": "MetaGPT",
+      "x": 2.3,
+      "y": 2.6,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "silver-bullet",
+      "label": "Silver Bullet",
+      "x": 9.5,
+      "y": 9,
+      "q": "Leaders"
+    },
+    {
+      "slug": "turboshovel",
+      "label": "Turboshovel",
+      "x": 5,
+      "y": 4.3,
+      "q": "Niche Players"
+    },
+    {
+      "slug": "workflow-manager",
+      "label": "Workflow Manager",
+      "x": 4.6,
+      "y": 4.5,
+      "q": "Niche Players"
+    }
+  ],
+  "gmq_colors": {
+    "Leaders": "#1f3864",
+    "Challengers": "#475569",
+    "Visionaries": "#2f5597",
+    "Niche Players": "#94a3b8"
+  },
+  "wave_data": [
+    {
+      "slug": "silver-bullet",
+      "label": "Silver Bullet",
+      "offering": 4,
+      "strategy": 4,
+      "presence": 3
+    },
+    {
+      "slug": "cc10x",
+      "label": "cc10x",
+      "offering": 4,
+      "strategy": 3.1,
+      "presence": 3
+    },
+    {
+      "slug": "ai-dlc",
+      "label": "AI-DLC",
+      "offering": 3.4,
+      "strategy": 2.2,
+      "presence": 3
+    },
+    {
+      "slug": "cavekit-v31",
+      "label": "Cavekit v3.1",
+      "offering": 2.6,
+      "strategy": 1.7,
+      "presence": 2
+    },
+    {
+      "slug": "director",
+      "label": "Director",
+      "offering": 2.6,
+      "strategy": 2,
+      "presence": 2
+    },
+    {
+      "slug": "agenthub",
+      "label": "AgentHub",
+      "offering": 2.5,
+      "strategy": 1.9,
+      "presence": 2
+    },
+    {
+      "slug": "agentsys",
+      "label": "AgentSys",
+      "offering": 2.5,
+      "strategy": 2,
+      "presence": 2
+    },
+    {
+      "slug": "ateam",
+      "label": "ATeam",
+      "offering": 2.4,
+      "strategy": 2,
+      "presence": 2
+    }
+  ],
+  "vc_kcfs": [
+    "Workflow composition",
+    "Atomic flow catalog",
+    "Hook-enforced gates",
+    "Parent/child delegation",
+    "Managed hosting",
+    "Prebuilt SDLC templates",
+    "CI integration",
+    "IDE-native integration",
+    "Free tier / OSS core",
+    "Predictable pricing"
+  ],
+  "vc_commercial": [
+    {
+      "label": "cc10x",
+      "data": [
+        5,
+        3,
+        5,
+        3,
+        3,
+        3,
+        3,
+        5,
+        5,
+        3
+      ],
+      "color": "#4f46e5"
+    },
+    {
+      "label": "AgentHub",
+      "data": [
+        5,
+        3,
+        3,
+        5,
+        3,
+        3,
+        3,
+        5,
+        3,
+        3
+      ],
+      "color": "#4f46e5"
+    }
+  ],
+  "vc_oss": [
+    {
+      "label": "Silver Bullet",
+      "data": [
+        5,
+        5,
+        5,
+        5,
+        3,
+        5,
+        3,
+        5,
+        5,
+        3
+      ],
+      "color": "#22d3ee"
+    },
+    {
+      "label": "AI-DLC",
+      "data": [
+        5,
+        3,
+        3,
+        3,
+        3,
+        5,
+        3,
+        3,
+        5,
+        3
+      ],
+      "color": "#22d3ee"
+    }
+  ],
+  "link_pairs": [
+    [
+      "Barkain Workflow Orchestrator",
+      "https://barkain.com/"
+    ],
+    [
+      "GitHub Copilot Enterprise",
+      "https://github.com/features/copilot"
+    ],
+    [
+      "Linear Agent Integrations",
+      "https://linear.app/"
+    ],
+    [
+      "GitHub Copilot Workspace",
+      "https://githubnext.com/projects/copilot-workspace"
+    ],
+    [
+      "Cursor Background Agents",
+      "https://cursor.com/docs/background-agent"
+    ],
+    [
+      "JetBrains AI Assistant",
+      "https://www.jetbrains.com/ai/"
+    ],
+    [
+      "GSD (Get Shit Done)",
+      "https://github.com/gsd-build/get-shit-done"
+    ],
+    [
+      "Ruflo / Claude Flow",
+      "https://github.com/ruvnet/ruflo"
+    ],
+    [
+      "Windsurf (Codeium)",
+      "https://codeium.com/windsurf"
+    ],
+    [
+      "Tabnine Enterprise",
+      "https://www.tabnine.com/"
+    ],
+    [
+      "Amazon Q Developer",
+      "https://aws.amazon.com/q/developer/"
+    ],
+    [
+      "LangGraph Platform",
+      "https://www.langchain.com/langgraph"
+    ],
+    [
+      "Devin (Cognition)",
+      "https://devin.ai/"
+    ],
+    [
+      "Microsoft AutoGen",
+      "https://github.com/microsoft/autogen"
+    ],
+    [
+      "Sourcegraph Cody",
+      "https://sourcegraph.com/cody"
+    ],
+    [
+      "Open Interpreter",
+      "https://github.com/OpenInterpreter/open-interpreter"
+    ],
+    [
+      "Cognition Scout",
+      "https://cognition.ai/"
+    ],
+    [
+      "GitHub spec-kit",
+      "https://github.com/github/spec-kit"
+    ],
+    [
+      "Semantic Kernel",
+      "https://github.com/microsoft/semantic-kernel"
+    ],
+    [
+      "Claude Harness",
+      "https://github.com/anthropics/claude-code"
+    ],
+    [
+      "Silver Bullet",
+      "https://sb.alolabs.dev/"
+    ],
+    [
+      "Replit Agent",
+      "https://replit.com/"
+    ],
+    [
+      "Augment Code",
+      "https://www.augmentcode.com/"
+    ],
+    [
+      "GPT-Engineer",
+      "https://github.com/gpt-engineer-org/gpt-engineer"
+    ],
+    [
+      "Cavekit v3.1",
+      "https://cavekit.ai/"
+    ],
+    [
+      "BMAD-METHOD",
+      "https://github.com/bmad-code-org/BMAD-METHOD"
+    ],
+    [
+      "SuperClaude",
+      "https://github.com/SuperClaude-Org/SuperClaude_Framework"
+    ],
+    [
+      "Superpowers",
+      "https://github.com/obra/superpowers"
+    ],
+    [
+      "Claude Code",
+      "https://docs.anthropic.com/en/docs/claude-code/overview"
+    ],
+    [
+      "Factory.ai",
+      "https://www.factory.ai/"
+    ],
+    [
+      "CodeRabbit",
+      "https://coderabbit.ai/"
+    ],
+    [
+      "Superagent",
+      "https://github.com/homanp/superagent"
+    ],
+    [
+      "Magic.dev",
+      "https://magic.dev/"
+    ],
+    [
+      "OpenHands",
+      "https://github.com/All-Hands-AI/OpenHands"
+    ],
+    [
+      "SWE-agent",
+      "https://github.com/SWE-agent/SWE-agent"
+    ],
+    [
+      "PraisonAI",
+      "https://github.com/MervinPraison/PraisonAI"
+    ],
+    [
+      "LangChain",
+      "https://github.com/langchain-ai/langchain"
+    ],
+    [
+      "Conductor",
+      "https://conductor.build/"
+    ],
+    [
+      "Poolside",
+      "https://poolside.ai/"
+    ],
+    [
+      "Continue",
+      "https://github.com/continuedev/continue"
+    ],
+    [
+      "AgentGPT",
+      "https://github.com/reworkd/AgentGPT"
+    ],
+    [
+      "AgentHub",
+      "https://www.agenthub.ai/"
+    ],
+    [
+      "AgentSys",
+      "https://github.com/agent-sh/agentsys"
+    ],
+    [
+      "AxonFlow",
+      "https://www.axonflow.ai/"
+    ],
+    [
+      "MetaGPT",
+      "https://github.com/FoundationAgents/MetaGPT"
+    ],
+    [
+      "CrewAI",
+      "https://github.com/crewAIInc/crewAI"
+    ],
+    [
+      "Devika",
+      "https://github.com/stitionai/devika"
+    ],
+    [
+      "AI-DLC",
+      "https://github.com/awslabs/aidlc-workflows"
+    ],
+    [
+      "Cursor",
+      "https://cursor.com/"
+    ],
+    [
+      "Sweep",
+      "https://sweep.dev/"
+    ],
+    [
+      "Tembo",
+      "https://tembo.io/"
+    ],
+    [
+      "Cline",
+      "https://github.com/cline/cline"
+    ],
+    [
+      "Aider",
+      "https://github.com/paul-gauthier/aider"
+    ],
+    [
+      "ATeam",
+      "https://www.a.team/"
+    ],
+    [
+      "cc10x",
+      "https://cc10x.dev/"
+    ],
+    [
+      "Codex",
+      "https://openai.com/codex/"
+    ],
+    [
+      "Zuvo",
+      "https://zuvo.dev/"
+    ]
+  ],
+  "vendor_buckets": {
+    "commercial": [
+      "AgentHub",
+      "Barkain Workflow Orchestrator",
+      "cc10x",
+      "Workflow Manager",
+      "Turboshovel",
+      "Cavekit v3.1",
+      "ATeam",
+      "Deepwork"
+    ],
+    "oss": [
+      "Silver Bullet",
+      "AI-DLC",
+      "MetaGPT",
+      "AgentSys",
+      "Director"
+    ],
+    "leaders": [
+      "AgentHub",
+      "AI-DLC",
+      "Silver Bullet"
+    ],
+    "challengers": [
+      "AgentSys",
+      "ATeam"
+    ],
+    "challengers_note": "Per-market buckets sync from that market's mq_data quadrants. Primary top-level buckets mirror APO mq_data.",
+    "visionaries": [
+      "cc10x"
+    ],
+    "niche_players": [
+      "Barkain Workflow Orchestrator",
+      "Cavekit v3.1",
+      "Deepwork",
+      "Director",
+      "MetaGPT",
+      "Turboshovel",
+      "Workflow Manager"
+    ],
+    "leader_definition": "Canonical MQ Leaders = markets.<id>.mq_data where q==='Leaders' (axes in market titles). GMQ uses separate Completeness×Ability axes — do not union GMQ Leaders into MQ Leaders. Blue Ocean radar is a KCF contrast set, not a Leader definition."
+  },
+  "vendor_urls": {
+    "Barkain Workflow Orchestrator": "https://barkain.com/",
+    "GitHub Copilot Enterprise": "https://github.com/features/copilot",
+    "Linear Agent Integrations": "https://linear.app/",
+    "GitHub Copilot Workspace": "https://githubnext.com/projects/copilot-workspace",
+    "Cursor Background Agents": "https://cursor.com/docs/background-agent",
+    "JetBrains AI Assistant": "https://www.jetbrains.com/ai/",
+    "GSD (Get Shit Done)": "https://github.com/gsd-build/get-shit-done",
+    "Ruflo / Claude Flow": "https://github.com/ruvnet/ruflo",
+    "Windsurf (Codeium)": "https://codeium.com/windsurf",
+    "Tabnine Enterprise": "https://www.tabnine.com/",
+    "Amazon Q Developer": "https://aws.amazon.com/q/developer/",
+    "LangGraph Platform": "https://www.langchain.com/langgraph",
+    "Devin (Cognition)": "https://devin.ai/",
+    "Microsoft AutoGen": "https://github.com/microsoft/autogen",
+    "Sourcegraph Cody": "https://sourcegraph.com/cody",
+    "Open Interpreter": "https://github.com/OpenInterpreter/open-interpreter",
+    "Cognition Scout": "https://cognition.ai/",
+    "GitHub spec-kit": "https://github.com/github/spec-kit",
+    "Semantic Kernel": "https://github.com/microsoft/semantic-kernel",
+    "Claude Harness": "https://github.com/anthropics/claude-code",
+    "Silver Bullet": "https://sb.alolabs.dev/",
+    "Replit Agent": "https://replit.com/",
+    "Augment Code": "https://www.augmentcode.com/",
+    "GPT-Engineer": "https://github.com/gpt-engineer-org/gpt-engineer",
+    "Cavekit v3.1": "https://cavekit.ai/",
+    "BMAD-METHOD": "https://github.com/bmad-code-org/BMAD-METHOD",
+    "SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+    "Superpowers": "https://github.com/obra/superpowers",
+    "Claude Code": "https://docs.anthropic.com/en/docs/claude-code/overview",
+    "Factory.ai": "https://www.factory.ai/",
+    "CodeRabbit": "https://coderabbit.ai/",
+    "Superagent": "https://github.com/homanp/superagent",
+    "Magic.dev": "https://magic.dev/",
+    "OpenHands": "https://github.com/All-Hands-AI/OpenHands",
+    "SWE-agent": "https://github.com/SWE-agent/SWE-agent",
+    "PraisonAI": "https://github.com/MervinPraison/PraisonAI",
+    "LangChain": "https://github.com/langchain-ai/langchain",
+    "Conductor": "https://conductor.build/",
+    "Poolside": "https://poolside.ai/",
+    "Continue": "https://github.com/continuedev/continue",
+    "AgentGPT": "https://github.com/reworkd/AgentGPT",
+    "AgentHub": "https://www.agenthub.ai/",
+    "AgentSys": "https://github.com/agent-sh/agentsys",
+    "AxonFlow": "https://www.axonflow.ai/",
+    "MetaGPT": "https://github.com/FoundationAgents/MetaGPT",
+    "CrewAI": "https://github.com/crewAIInc/crewAI",
+    "Devika": "https://github.com/stitionai/devika",
+    "AI-DLC": "https://github.com/awslabs/aidlc-workflows",
+    "Cursor": "https://cursor.com/",
+    "Sweep": "https://sweep.dev/",
+    "Tembo": "https://tembo.io/",
+    "Cline": "https://github.com/cline/cline",
+    "Aider": "https://github.com/paul-gauthier/aider",
+    "ATeam": "https://www.a.team/",
+    "cc10x": "https://cc10x.dev/",
+    "Codex": "https://openai.com/codex/",
+    "Zuvo": "https://zuvo.dev/"
+  },
+  "membership": {
+    "core": [
+      "agenthub",
+      "agentsys",
+      "ai-dlc",
+      "ateam",
+      "barkain-workflow-orchestrator",
+      "cavekit-v31",
+      "cc10x",
+      "deepwork",
+      "director",
+      "metagpt",
+      "silver-bullet",
+      "turboshovel",
+      "workflow-manager"
+    ],
+    "adjacent": [
+      "axonflow",
+      "cavekit-v4",
+      "crewai",
+      "langchain",
+      "langgraph"
+    ],
+    "listed": [
+      "agenthub",
+      "agentsys",
+      "ai-dlc",
+      "ateam",
+      "axonflow",
+      "barkain-workflow-orchestrator",
+      "cavekit-v31",
+      "cavekit-v4",
+      "cc10x",
+      "crewai",
+      "deepwork",
+      "director",
+      "langchain",
+      "langgraph",
+      "metagpt",
+      "silver-bullet",
+      "turboshovel",
+      "workflow-manager"
+    ],
+    "unplotted": [
+      {
+        "slug": "axonflow",
+        "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+      },
+      {
+        "slug": "cavekit-v4",
+        "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+      },
+      {
+        "slug": "crewai",
+        "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+      },
+      {
+        "slug": "langchain",
+        "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+      },
+      {
+        "slug": "langgraph",
+        "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+      }
+    ]
+  },
+  "plotted_slugs": [
+    "agenthub",
+    "agentsys",
+    "ai-dlc",
+    "ateam",
+    "barkain-workflow-orchestrator",
+    "cavekit-v31",
+    "cc10x",
+    "deepwork",
+    "director",
+    "metagpt",
+    "silver-bullet",
+    "turboshovel",
+    "workflow-manager"
+  ],
+  "listed_slugs": [
+    "agenthub",
+    "agentsys",
+    "ai-dlc",
+    "ateam",
+    "axonflow",
+    "barkain-workflow-orchestrator",
+    "cavekit-v31",
+    "cavekit-v4",
+    "cc10x",
+    "crewai",
+    "deepwork",
+    "director",
+    "langchain",
+    "langgraph",
+    "metagpt",
+    "silver-bullet",
+    "turboshovel",
+    "workflow-manager"
+  ],
+  "unplotted": [
+    {
+      "slug": "axonflow",
+      "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+    },
+    {
+      "slug": "cavekit-v4",
+      "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+    },
+    {
+      "slug": "crewai",
+      "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+    },
+    {
+      "slug": "langchain",
+      "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+    },
+    {
+      "slug": "langgraph",
+      "reason": "adjacent competitor — listed for the market, not MQ/Wave core"
+    }
+  ],
+  "scoring_methodology": {
+    "version": "2026-07-22-address-all",
+    "mq": "Quadrants from mid=5.5 on market-specific X/Y axes derived from feature envelopes + SCR evidence. Thin/unverified evidence demotes toward Niche / lowers Y.",
+    "gmq": "Independent Completeness of Vision × Ability to Execute axes — not interchangeable with MQ Leaders.",
+    "wave": "Offering / Strategy / Presence scores; Wave roster is top-N composite among MQ cores (see per-market methodology.wave_selection).",
+    "blue_ocean": "KCF radar for contrast among a shortlisted peer set — not an alternate Leader definition.",
+    "unknowns": "Unsupported matrix cells and thin SCR claims must read as unknown — never inferred capability.",
+    "coi": "Report authored in the Silver Bullet repo via silver-deep-research-multi-ai; SB appears in charts — see report COI disclosure."
+  }
+}

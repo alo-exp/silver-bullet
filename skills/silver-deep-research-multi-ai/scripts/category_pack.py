@@ -319,6 +319,8 @@ def pack_prompt_block(pack: dict[str, Any]) -> str:
         markets_block = f"""
 **Multi-market landscape (chart + solution cards per market):**
 {chr(10).join(market_lines)}
+
+**Membership is NOT mutually exclusive:** a solution may compete as core/adjacent in one OR multiple markets when evidence supports it (e.g. Silver Bullet in both APO and sdlc-plugins). Do not force exclusive single-market placement.
 """
     hard_names = ", ".join(
         e.get("name", e.get("slug", "")) for e in get_hard_exclusions(pack)
@@ -457,6 +459,14 @@ def _seed_homepage(seed: dict[str, Any]) -> str | None:
     return None
 
 
+def _seed_github(seed: dict[str, Any]) -> str | None:
+    for key in ("github", "github_url", "repo", "repo_url"):
+        value = seed.get(key)
+        if value:
+            return str(value).strip()
+    return None
+
+
 def build_homepage_by_slug(pack: dict[str, Any]) -> dict[str, str]:
     """Slug → official homepage from pack seeds, homepage_by_slug map, and aliases."""
     urls: dict[str, str] = {}
@@ -483,6 +493,32 @@ def build_homepage_by_slug(pack: dict[str, Any]) -> dict[str, str]:
     return urls
 
 
+def build_github_by_slug(pack: dict[str, Any]) -> dict[str, str]:
+    """Slug → canonical GitHub repo from pack github_by_slug map and seed fields."""
+    urls: dict[str, str] = {}
+    pack_map = pack.get("github_by_slug") or {}
+    if isinstance(pack_map, dict):
+        for slug, url in pack_map.items():
+            if slug and url:
+                urls[str(slug)] = str(url).strip()
+
+    for market in get_markets(pack):
+        for seed in (market.get("seeds") or []) + (market.get("adjacent_seeds") or []):
+            if not isinstance(seed, dict) or not seed.get("slug"):
+                continue
+            slug = str(seed["slug"])
+            github = _seed_github(seed)
+            if github:
+                urls[slug] = github
+
+    for alias, canonical in get_product_aliases(pack).items():
+        if canonical in urls and alias not in urls:
+            urls[alias] = urls[canonical]
+        if alias in urls and canonical not in urls:
+            urls[canonical] = urls[alias]
+    return urls
+
+
 def catalog_entries_from_pack(
     pack: dict[str, Any],
     core_slugs: list[str],
@@ -493,6 +529,7 @@ def catalog_entries_from_pack(
     names = build_known_solutions(pack)
     license_by_slug = build_license_by_slug(pack)
     homepage_by_slug = build_homepage_by_slug(pack)
+    github_by_slug = build_github_by_slug(pack)
 
     commercial: list[dict[str, str]] = []
     oss: list[dict[str, str]] = []
@@ -509,6 +546,9 @@ def catalog_entries_from_pack(
         homepage = homepage_by_slug.get(slug)
         if homepage:
             entry["url"] = homepage
+        github = github_by_slug.get(slug)
+        if github:
+            entry["github"] = github
         lic = license_by_slug.get(slug, "commercial")
         if lic == "oss":
             entry["license"] = "OSS"
@@ -527,3 +567,4 @@ def market_slug_sets(pack: dict[str, Any]) -> dict[str, set[str]]:
             continue
         out[mid] = {str(s["slug"]) for s in (market.get("seeds") or []) if s.get("slug")}
     return out
+

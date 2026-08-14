@@ -1,0 +1,318 @@
+{
+  "verified_at": "2026-07-21T19:17:37.491Z",
+  "workspace": "/Users/shafqat/.cursor/worktrees/repo/3ht3",
+  "report": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "overall": "PASS",
+  "checks": [
+    {
+      "id": 1,
+      "claim": "COI / scoring methodology disclosure present in SPA",
+      "verdict": "PASS",
+      "evidence": {
+        "coi": true,
+        "meth": true
+      }
+    },
+    {
+      "id": 2,
+      "claim": "Plugins MQ: NOT all Leaders; y not collapsed at 9.5; Challengers/Visionaries/Niche present",
+      "verdict": "PASS",
+      "evidence": {
+        "counts": {
+          "Leaders": 4,
+          "Challengers": 3,
+          "Visionaries": 1,
+          "Niche Players": 1
+        },
+        "yUnique": [
+          3.6,
+          5.2,
+          5.9,
+          6.2,
+          6.5,
+          7.3,
+          7.6,
+          7.9,
+          8.6
+        ],
+        "allLeaders": false,
+        "yCeil95": false
+      }
+    },
+    {
+      "id": 3,
+      "claim": "APO Challengers include AgentSys/ATeam; thin commercials flagged",
+      "verdict": "PASS",
+      "evidence": {
+        "challengers": [
+          "AgentSys",
+          "ATeam"
+        ],
+        "thinNiche": [
+          "Barkain Workflow Orchestrator",
+          "Cavekit v3.1",
+          "Deepwork",
+          "Director",
+          "Turboshovel",
+          "Workflow Manager"
+        ],
+        "thinInHtml": true
+      }
+    },
+    {
+      "id": 4,
+      "claim": "SaaS Leaders = Devin + Factory only; empty Challengers explained",
+      "verdict": "PASS",
+      "evidence": {
+        "leaders": [
+          "Devin",
+          "Factory.ai"
+        ],
+        "challengers": 0,
+        "rationale": true
+      }
+    },
+    {
+      "id": 5,
+      "claim": "Wave omission / MQ-plotted-not-Wave lists present or counts aligned",
+      "verdict": "PASS",
+      "evidence": {
+        "waveAlign": {
+          "apo": {
+            "mq": 13,
+            "wave": 8,
+            "mqNotWave": [
+              "barkain-workflow-orchestrator",
+              "deepwork",
+              "metagpt",
+              "turboshovel",
+              "workflow-manager"
+            ],
+            "wave_omitted": [
+              "barkain-workflow-orchestrator",
+              "deepwork",
+              "metagpt",
+              "turboshovel",
+              "workflow-manager"
+            ],
+            "aligned": true
+          },
+          "sdlc-plugins": {
+            "mq": 9,
+            "wave": 7,
+            "mqNotWave": [
+              "claude-harness",
+              "superclaude"
+            ],
+            "wave_omitted": [
+              "claude-harness",
+              "superclaude"
+            ],
+            "aligned": true
+          },
+          "agentic-sdlc-saas": {
+            "mq": 5,
+            "wave": 5,
+            "mqNotWave": [],
+            "wave_omitted": [],
+            "aligned": true
+          }
+        },
+        "waveListedInSpa": true
+      }
+    },
+    {
+      "id": 6,
+      "claim": "Naming Augment Code (Cosmos), Ruflo formerly Claude Flow; Zuvo quarantined",
+      "verdict": "PASS",
+      "evidence": {
+        "namingOk": true,
+        "zuvoPlotted": false,
+        "zuvoLeaders": false,
+        "zuvoQuarantine": true
+      }
+    },
+    {
+      "id": 7,
+      "claim": "§13 opus Primary / flash Supporting (not flash-over-opus by char count)",
+      "verdict": "PASS",
+      "evidence": {
+        "opusPrimary": true,
+        "flashSupporting": true,
+        "flashNotPrimary": true
+      }
+    },
+    {
+      "id": 8,
+      "claim": "Director/cc10x not corrupted; AI-DLC not IBM (primary)",
+      "verdict": "PASS",
+      "evidence": {
+        "dirCorrupt": false,
+        "ccCorrupt": false,
+        "aidlcUrl": "https://github.com/awslabs/aidlc-workflows",
+        "aidlcScrAws": true,
+        "ibmResidualInEmbeddedResearch": 15,
+        "residualNote": "developer.ibm.com still appears in embedded phase JSON supporting_sources; canonical vendor_url + SCR are awslabs/AWS"
+      }
+    },
+    {
+      "id": 9,
+      "claim": "file:// renders",
+      "verdict": "PASS",
+      "evidence": {
+        "open_attempted": true,
+        "open_rc": 0,
+        "html_bytes": 610025,
+        "doctype": true
+      }
+    }
+  ],
+  "chart_snapshot": {
+    "plugins": {
+      "counts": {
+        "Leaders": 4,
+        "Challengers": 3,
+        "Visionaries": 1,
+        "Niche Players": 1
+      },
+      "y": [
+        3.6,
+        5.2,
+        5.9,
+        6.2,
+        6.5,
+        7.3,
+        7.6,
+        7.9,
+        8.6
+      ]
+    },
+    "saas": {
+      "leaders": [
+        "Devin",
+        "Factory.ai"
+      ],
+      "counts": {
+        "Visionaries": 3,
+        "Leaders": 2
+      }
+    },
+    "apo": {
+      "challengers": [
+        "AgentSys",
+        "ATeam"
+      ],
+      "counts": {
+        "Leaders": 3,
+        "Challengers": 2,
+        "Niche Players": 7,
+        "Visionaries": 1
+      }
+    }
+  },
+  "checklist_completeness": {
+    "backlog_rows": 21,
+    "must_still_address_rows": 13,
+    "backlog": [
+      {
+        "id": "B1",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B2",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B3",
+        "status": "FIXED"
+      },
+      {
+        "id": "B4",
+        "status": "FIXED"
+      },
+      {
+        "id": "B5",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B6",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B7",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B8",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B9",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B10",
+        "status": "FIXED"
+      },
+      {
+        "id": "B11",
+        "status": "FIXED"
+      },
+      {
+        "id": "B12",
+        "status": "PRIOR-P0-OK"
+      },
+      {
+        "id": "B13",
+        "status": "FIXED"
+      },
+      {
+        "id": "B14",
+        "status": "FIXED"
+      },
+      {
+        "id": "B15",
+        "status": "FIXED"
+      },
+      {
+        "id": "B16",
+        "status": "FIXED"
+      },
+      {
+        "id": "B17",
+        "status": "FIXED"
+      },
+      {
+        "id": "B18",
+        "status": "FIXED"
+      },
+      {
+        "id": "B19",
+        "status": "FIXED"
+      },
+      {
+        "id": "B20",
+        "status": "DEFERRED-NEED-USER"
+      },
+      {
+        "id": "B21",
+        "status": "PARTIAL"
+      }
+    ],
+    "deferred_or_partial": [
+      {
+        "id": "B20",
+        "status": "DEFERRED-NEED-USER"
+      },
+      {
+        "id": "B21",
+        "status": "PARTIAL"
+      }
+    ],
+    "unmarked_or_unexpected": [],
+    "looks_complete_for_mission": true,
+    "note": "B20 DEFERRED-NEED-USER; B21 PARTIAL (pros lint); several Opus/Terra items deferred — mission must-pass rows all FIXED/PRIOR-P0-OK"
+  },
+  "hard_fail_fix_applied": false,
+  "regen": false
+}

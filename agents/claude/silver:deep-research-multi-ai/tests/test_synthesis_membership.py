@@ -103,6 +103,10 @@ class SynthesisMembershipTests(unittest.TestCase):
             )
             self.assertIn("Adjacent Markets", md)
             self.assertIn("Explicitly Excluded", md)
+            self.assertIn("Consensus Patterns", md)
+            self.assertIn("Scoring methodology", md)
+            self.assertIn("Lean startup / spec-first packs", md)
+            self.assertNotIn("Prioritise Silver Bullet and OSS core orchestrators", md)
             self.assertNotRegex(md, r"### Cline \(OSS")
             self.assertNotRegex(md, r"### Aider \(OSS")
             matrix_slugs = {r["solution"] for r in comparison["rankings"]}
@@ -112,3 +116,4 @@ class SynthesisMembershipTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

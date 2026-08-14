@@ -1,0 +1,135 @@
+{
+  "pass": true,
+  "fileUrl": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "errors": [],
+  "bodyFw": "300",
+  "pFw": "300",
+  "h1Fw": "500",
+  "linkStats": {
+    "count": 193,
+    "sample": [
+      {
+        "text": "Cursor Background Agents",
+        "href": "https://cursor.com/docs/background-agent",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Cline",
+        "href": "https://github.com/cline/cline",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Aider",
+        "href": "https://github.com/paul-gauthier/aider",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Continue",
+        "href": "https://github.com/continuedev/continue",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "OpenHands",
+        "href": "https://github.com/All-Hands-AI/OpenHands",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "SWE-agent",
+        "href": "https://github.com/SWE-agent/SWE-agent",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Devin",
+        "href": "https://devin.ai/",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "GitHub Copilot Workspace",
+        "href": "https://githubnext.com/projects/copilot-workspace",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "AgentGPT",
+        "href": "https://github.com/reworkd/AgentGPT",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Devika",
+        "href": "https://github.com/stitionai/devika",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://cc10x.dev/",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://cavekit.ai/",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      },
+      {
+        "text": "AgentHub",
+        "href": "https://www.agenthub.ai/",
+        "target": "_blank",
+        "rel": "noopener noreferrer",
+        "td": "none"
+      }
+    ],
+    "underlined": 0,
+    "badTarget": 0
+  },
+  "cardIds": {
+    "total": 26,
+    "unique": 26,
+    "sb": [
+      "vendor-silver-bullet--apo",
+      "vendor-silver-bullet--sdlc-plugins"
+    ],
+    "hasDup": false
+  },
+  "marked": "https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js",
+  "darkLink": {
+    "color": "rgb(94, 200, 255)",
+    "href": "https://cursor.com/docs/background-agent",
+    "text": "Cursor Background Agents"
+  }
+}

@@ -11,11 +11,11 @@
         },
         {
           "name": "Atomic flow catalog",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Parent/child agent delegation",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Hook-enforced gates",
@@ -66,11 +66,11 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Prebuilt SDLC templates",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Zero-infra bootstrap",

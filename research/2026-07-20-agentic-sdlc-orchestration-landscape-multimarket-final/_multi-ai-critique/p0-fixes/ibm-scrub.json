@@ -1,0 +1,22 @@
+[
+  {
+    "rel": "solutions/ai-dlc/scr.md",
+    "ibm_before": 4,
+    "ibm_after": 0
+  },
+  {
+    "rel": "solutions/conductor/scr.md",
+    "ibm_before": 4,
+    "ibm_after": 0
+  },
+  {
+    "rel": "consolidated/consolidation.json",
+    "ibm_before": 2,
+    "ibm_after": 0
+  },
+  {
+    "rel": "contributions/all-envelopes.json",
+    "ibm_before": 18,
+    "ibm_after": 4
+  }
+]

@@ -192,3 +192,26 @@ class MaterializeSolutionArtifactsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OverviewIdentityLeakTests(unittest.TestCase):
+    def test_director_superpowers_overview_rejected(self) -> None:
+        from materialize_solution_artifacts import is_unusable_overview_claim
+
+        self.assertTrue(
+            is_unusable_overview_claim(
+                "Superpowers is distributed through the first-party Claude plugin directory.",
+                focus_name="Director",
+            )
+        )
+
+    def test_cc10x_methodology_leak_rejected(self) -> None:
+        from materialize_solution_artifacts import is_unusable_overview_claim
+
+        self.assertTrue(
+            is_unusable_overview_claim(
+                "Startup-weighted comparison: Silver Bullet remains the anchor score.",
+                focus_name="cc10x",
+            )
+        )
+

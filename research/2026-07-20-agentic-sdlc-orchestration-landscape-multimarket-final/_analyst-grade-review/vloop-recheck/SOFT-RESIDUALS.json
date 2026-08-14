@@ -1,0 +1,28 @@
+[
+  {
+    "sev": "soft",
+    "id": "harness-apo-prose-in-report-data",
+    "detail": "report-data.markdown still contains Claude Harness ... primary-market APO candidate (scrubbed from rendered #content)"
+  },
+  {
+    "sev": "info",
+    "id": "cce-in-excluded-and-research",
+    "detail": "Claude Code Expert appears 1x in markdown (excluded list + research notes); 0 product cards"
+  },
+  {
+    "sev": "info",
+    "id": "harness-mq-quadrant",
+    "detail": {
+      "slug": "claude-harness",
+      "label": "Claude Harness",
+      "x": 8.3,
+      "y": 3.8,
+      "q": "Visionaries"
+    }
+  },
+  {
+    "sev": "info",
+    "id": "conductor-stale-seed-lists",
+    "detail": "clean"
+  }
+]

@@ -194,6 +194,17 @@ def compare_solutions(
     if len(features) < 2:
         raise ValueError("Need at least 2 solutions with features.json")
 
+    try:
+        from category_pack import get_hard_exclusion_slugs, resolve_pack_from_need
+
+        pack = resolve_pack_from_need(need)
+        if pack:
+            forbidden = {str(s) for s in get_hard_exclusion_slugs(pack, need) if s}
+            if forbidden:
+                features = {k: v for k, v in features.items() if k not in forbidden}
+    except Exception:
+        pack = None
+
     comparison = build_comparison_json(features, need)
     comp_dir = out_dir / "comparison"
     comp_dir.mkdir(parents=True, exist_ok=True)
@@ -248,5 +259,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 

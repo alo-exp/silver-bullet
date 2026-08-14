@@ -11,15 +11,15 @@
         },
         {
           "name": "Atomic flow catalog",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Parent/child agent delegation",
-          "supported": true
+          "supported": false
         },
         {
           "name": "Hook-enforced gates",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -40,7 +40,7 @@
         },
         {
           "name": "Skill/plugin marketplace",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -49,7 +49,7 @@
       "features": [
         {
           "name": "Predictable pricing",
-          "supported": null
+          "supported": true
         },
         {
           "name": "Free tier / OSS core",
@@ -57,7 +57,7 @@
         },
         {
           "name": "Per-seat transparency",
-          "supported": null
+          "supported": true
         }
       ]
     },
@@ -66,15 +66,15 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": true
         },
         {
           "name": "Prebuilt SDLC templates",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Zero-infra bootstrap",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -83,11 +83,11 @@
       "features": [
         {
           "name": "Automated review loops",
-          "supported": null
+          "supported": true
         },
         {
           "name": "CI integration",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Visual/E2E verification",

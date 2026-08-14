@@ -102,6 +102,17 @@ def _classify_slug_for_market(
             return "core", f"{market_id} market_seed"
         return "excluded", f"{market_id} seed without envelope evidence (gap)"
     if slug in adjacent_seeds:
+        seed = next(
+            (s for s in (market.get("adjacent_seeds") or []) if str(s.get("slug") or "") == slug),
+            None,
+        )
+        if isinstance(seed, dict) and seed.get("quarantine"):
+            return (
+                "adjacent",
+                f"{market_id} quarantined watchlist — identity/OSS/license unverified; not MQ/Wave/Leader",
+            )
+        if isinstance(seed, dict) and "demot" in str(seed.get("notes") or "").lower():
+            return "adjacent", f"{market_id} demoted adjacent (not core plotted)"
         return "adjacent", f"{market_id} adjacent_seed"
     return "excluded", f"not in {market_id} seeds"
 

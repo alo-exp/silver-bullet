@@ -33,8 +33,8 @@
       "label": "divergent"
     },
     {
-      "claim_key": "ai-dlc (ibm) is the weakest apo core seed by enforcement depth: it defines a conceptual lifecycle for methodology guidance without shipping deterministic gates, cross-session state, or host-integrated plugin packaging. it belongs in the apo market per inclusion criteria \u00a7lifecycle_span alone but ranks below all shipped products.",
-      "text": "AI-DLC (IBM) is the weakest APO core seed by enforcement depth: it defines a conceptual lifecycle for methodology guidance without shipping deterministic gates, cross-session state, or host-integrated plugin packaging. It belongs in the APO market per inclusion criteria \u00a7lifecycle_span alone but ranks below all shipped products.",
+      "claim_key": "ai-dlc (aws / awslabs) is the weakest apo core seed by enforcement depth: it defines a conceptual lifecycle for methodology guidance without shipping deterministic gates, cross-session state, or host-integrated plugin packaging. it belongs in the apo market per inclusion criteria \u00a7lifecycle_span alone but ranks below all shipped products.",
+      "text": "AI-DLC (AWS / awslabs) is the weakest APO core seed by enforcement depth: it defines a conceptual lifecycle for methodology guidance without shipping deterministic gates, cross-session state, or host-integrated plugin packaging. It belongs in the APO market per inclusion criteria \u00a7lifecycle_span alone but ranks below all shipped products.",
       "support_count": 1,
       "resolved_pool": 8,
       "supporting_agents": [
@@ -59,8 +59,8 @@
       "label": "divergent"
     },
     {
-      "claim_key": "ai-dlc represents enterprise-grade apo with ibm-backed lifecycle orchestration and devops integration",
-      "text": "AI-DLC represents enterprise-grade APO with IBM-backed lifecycle orchestration and DevOps integration",
+      "claim_key": "ai-dlc represents enterprise-grade apo with AWS-backed lifecycle orchestration and devops integration",
+      "text": "AI-DLC represents enterprise-grade APO with AWS-backed lifecycle orchestration and DevOps integration",
       "support_count": 1,
       "resolved_pool": 8,
       "supporting_agents": [

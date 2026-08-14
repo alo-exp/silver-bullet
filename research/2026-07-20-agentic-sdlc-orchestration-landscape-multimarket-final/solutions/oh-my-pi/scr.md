@@ -4,14 +4,13 @@ Slug: `oh-my-pi`
 
 ## Executive summary
 
-Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin_skill_hook_packaging + process_layer_above_host. Lifecycle coverage narrower than BMAD/Superpowers.
+Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin/skill/hook packaging + process layer above host runtime. Lifecycle coverage narrower than BMAD/Superpowers.
 
 ## Evidence-backed notes
 
-- Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin_skill_hook_packaging + process_layer_above_host. Lifecycle coverage narrower than BMAD/Superpowers.
-- Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin_skill_hook_packaging + process_layer_above_host. Lifecycle coverage narrower than BMAD/Superpowers.
+- Oh My Pi (OMP) is a host-integrated plugin pack; satisfies plugin/skill/hook packaging + process layer above host runtime. Lifecycle coverage narrower than BMAD/Superpowers.
 - Oh My Pi (OMP) is an OSS plugin collection for Claude Code providing skills, hooks, and workflow extensions — secondary-market substitute with host-integrated packaging.
-- SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in secondary market. These OSS packs typically satisfy 3-5 of 7 APO inclusion criteria — strongest on lifecycle_span and packaging, weakest on cross_session_state and deterministic_gates.
+- SDLC Plugins & Methodology Packs (BMAD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo, Oh My Pi) represent formidable substitutes in secondary market. These OSS packs typically satisfy 3-5 of 7 APO inclusion criteria — strongest on multi-phase lifecycle coverage and packaging, weakest on cross-session state and deterministic quality gates.
 - SuperClaude, Ruflo / Claude Flow, and Oh My Pi (OMP) are secondary-market Claude/Cursor plugin-style substitutes; their public evidence for deterministic gates, cross-session state, and full lifecycle enforcement is limited.
 - SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) is the formidable substitute pool: each ships as a methodology pack/plugin above a host runtime and can replicate APO-grade enforcement without the APO brand. Zuvo is OSS-licensed per pack note.
 - GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated packaging and at least one of {deterministic gates, cross-session state, specialist agents}; they belong in the secondary market chart and matrix, not in adjacent-only.

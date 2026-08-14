@@ -4,11 +4,11 @@ Slug: `director`
 
 ## Executive summary
 
-Superpowers is distributed through the first-party Claude plugin directory, giving it the lowest-friction install path among secondary-market substitutes.
+Director is a primary-market APO candidate — agent orchestration, workflow composition, deterministic gates, and specialist agent routing. Canonical product URL was not independently verified in this pass (prior candidate repo returned 404); treat identity as seed-level until a primary source is confirmed.
 
 ## Evidence-backed notes
 
-- Superpowers is distributed through the first-party Claude plugin directory, giving it the lowest-friction install path among secondary-market substitutes.
+- Director SCR previously leaked Superpowers install-path prose; corrected to Director-only identity (P0 card corruption fix).
 - Director is a primary-market APO candidate — agent orchestration, workflow composition, deterministic gates, specialist agent routing.
 - Silver Bullet ships as a plugin/skill/hook layer with directories hooks/, skills/, templates/, scripts/, and .claude-plugin/.cursor-plugin/.agents/plugins/ packaging, not as a standalone host runtime.
 - The primary APO market is structurally immature: most named seeds (Turboshovel, Cavekit v3.1, Barkain Workflow Orchestrator, cc10x, Director, AgentHub, ATeam, Claude Harness) are single-maintainer OSS packs without pricing, SLAs, or enterprise governance, meaning competition is on process depth and host-compatibility rather than commercial moat.

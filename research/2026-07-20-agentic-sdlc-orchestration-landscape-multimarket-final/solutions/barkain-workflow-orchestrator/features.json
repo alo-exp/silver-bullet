@@ -15,11 +15,11 @@
         },
         {
           "name": "Parent/child agent delegation",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Hook-enforced gates",
-          "supported": true
+          "supported": false
         }
       ]
     },
@@ -40,7 +40,7 @@
         },
         {
           "name": "Skill/plugin marketplace",
-          "supported": null
+          "supported": false
         }
       ]
     },
@@ -53,7 +53,7 @@
         },
         {
           "name": "Free tier / OSS core",
-          "supported": true
+          "supported": false
         },
         {
           "name": "Per-seat transparency",
@@ -66,7 +66,7 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Prebuilt SDLC templates",
@@ -74,7 +74,7 @@
         },
         {
           "name": "Zero-infra bootstrap",
-          "supported": null
+          "supported": false
         }
       ]
     },

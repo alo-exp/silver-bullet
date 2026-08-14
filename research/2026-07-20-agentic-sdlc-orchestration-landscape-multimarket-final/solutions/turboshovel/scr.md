@@ -4,7 +4,7 @@ Slug: `turboshovel`
 
 ## Executive summary
 
-Turboshovel is a primary-market APO candidate — automated workflow execution, specialist agent routing, compliance layer above host runtime.
+THIN EVIDENCE — Turboshovel is a seed-level APO commercial candidate. Product URL and capabilities are **unknown/unverified** here.
 
 ## Evidence-backed notes
 
