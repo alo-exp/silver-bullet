@@ -3309,7 +3309,7 @@ def build_report_markdown(
 
     # Section 4 — findings: charts then vendors
     lines.extend(["## 4. Findings", ""])
-    lines.extend(["### Competitive positioning — analyst frameworks", ""])
+    lines.extend(["### Competitive Positioning — Analyst Frameworks", ""])
     market_charts = (chart.get("markets") or {}) if isinstance(chart.get("markets"), dict) else {}
     if market_charts:
         for m_idx, (mid, mchart) in enumerate(market_charts.items(), start=1):
@@ -3406,7 +3406,8 @@ def build_report_markdown(
         for idx, kcf in enumerate(KCF_NAMES):
             row = [kcf]
             for vc in (chart["vc_commercial"] + chart["vc_oss"])[:5]:
-                row.append(str(vc["data"][idx]))
+                data = vc.get("data") or []
+                row.append(str(data[idx]) if idx < len(data) else "1")
             lines.append("| " + " | ".join(row) + " |")
     lines.append("")
 
