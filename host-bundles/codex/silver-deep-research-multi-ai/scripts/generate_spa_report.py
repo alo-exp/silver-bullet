@@ -700,7 +700,7 @@ PROFILES: dict[str, dict[str, Any]] = {
     "landscape": {
         "default_out": "landscape-report.html",
         "collect": collect_landscape,
-        "render": None,  # landscape_preview_render.render_landscape_preview
+        "render": None,  # landscape_preview_render.render_landscape_outputs
         "validate_root": lambda root: _require_landscape_type(root),
         "markers": None,  # set by landscape_preview_render
     },
@@ -728,9 +728,9 @@ def generate_spa_report_file(
     out_path = out if out else root / spec["default_out"]
 
     if profile == "landscape":
-        from landscape_preview_render import render_landscape_preview_file
+        from landscape_preview_render import render_landscape_outputs
 
-        return render_landscape_preview_file(root, out=out_path)
+        return render_landscape_outputs(root, out=out_path)
 
     collect = spec["collect"]
     render = spec["render"]
@@ -764,4 +764,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
 

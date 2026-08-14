@@ -6,9 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Report Preview</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto-condensed@5.0.8/400.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto-condensed@5.0.8/500.css">
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Broken fontsource@5.0.8 weight 500 removed; Roboto Condensed 300/400/500 via Google Fonts -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
@@ -149,25 +151,13 @@
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
-  @font-face {
-    font-family: 'Roboto Condensed';
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto-condensed@5.0.8/files/roboto-condensed-latin-400-normal.woff2') format('woff2');
-  }
-  @font-face {
-    font-family: 'Roboto Condensed';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('https://cdn.jsdelivr.net/npm/@fontsource/roboto-condensed@5.0.8/files/roboto-condensed-latin-500-normal.woff2') format('woff2');
-  }
+  /* Roboto Condensed loaded via Google Fonts stylesheet (300+400+500). */
   html {
     font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
   }
   body {
     font-family: inherit;
+    font-weight: 300;
     background: var(--sb-page); color: var(--sb-ink); line-height: 1.6;
     transition: background-color .2s ease, color .2s ease;
   }
@@ -217,11 +207,11 @@
   #content h3 { font-size: 1.25rem; font-weight: 500; margin: 28px 0 10px; color: var(--sb-primary-mid); line-height: 1.3;
                 scroll-margin-top: calc(var(--sb-topbar-h) + 108px); }
   #content h4 { font-size: 1.0625rem; font-weight: 500; margin: 18px 0 8px; color: var(--sb-primary-mid); line-height: 1.35; }
-  #content p { margin: 0 0 12px; font-size: 1rem; }
+  #content p { margin: 0 0 12px; font-size: 1rem; font-weight: 300; }
   #content ul, #content ol { margin: 0 0 12px 24px; }
-  #content li { margin: 4px 0; }
+  #content li { margin: 4px 0; font-weight: 300; }
   #content th { border: none; }
-  #content td { border: none; }
+  #content td { border: none; font-weight: 300; }
   #content code { background: var(--sb-surface-hover); padding: 2px 6px; border-radius: 4px;
                   font-family: 'SF Mono', Consolas, monospace; font-size: 0.875em; }
   #content pre { background: var(--sb-sidebar-bg); color: var(--sb-sidebar-ink); padding: 16px; border-radius: 8px;
@@ -237,7 +227,7 @@
   .info-card-header { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:var(--sb-surface-muted); cursor:pointer; font-weight:500; font-size:1.0625rem; color:var(--sb-ink); user-select:none; }
   .info-card-header:hover { background:var(--sb-accent-soft); }
   .info-card-toggle { color:var(--sb-muted-light); flex-shrink:0; padding-left:10px; line-height:1; display:inline-flex; align-items:center; }
-  .info-card-body { display:none; padding:12px 18px 16px; font-size:14px; }
+  .info-card-body { display:none; padding:12px 18px 16px; font-size:14px; font-weight:300; }
   .info-card-body.open { display:block; }
   #stats { font-size: 11px; color: var(--sb-muted); margin-top: 8px; padding-top: 8px;
            border-top: 1px solid var(--sb-sidebar-hover); }
@@ -431,7 +421,7 @@
   .tc-icon { margin-bottom:8px; display:flex; align-items:center; color:var(--sb-primary-mid); }
   .tc-icon .lucide-icon { width:22px; height:22px; }
   .tc-title { font-size:1.0625rem; font-weight:500; color:var(--sb-ink); margin-bottom:6px; }
-  .tc-body { font-size:12px; color:var(--sb-muted); line-height:1.5; }
+  .tc-body { font-size:12px; color:var(--sb-muted); line-height:1.5; font-weight:300; }
 
   /* Vendor Profile Cards */
   .vendor-card { border:1px solid var(--sb-border); border-radius:10px; margin:16px 0; overflow:hidden; }
@@ -454,15 +444,23 @@
   /* Filterable Vendor View */
   .vfbtn { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--sb-border); background: var(--sb-surface); cursor: pointer; color: var(--sb-ink); white-space: nowrap; }
   .vfbtn.active { background: var(--sb-primary-mid); color: #fff; border-color: var(--sb-primary-mid); }
-  .vfbtn:hover:not(.active) { background: var(--sb-surface-muted); }
+  .vfbtn:hover:not(.active):not(:disabled) { background: var(--sb-surface-muted); }
   .vfbtn.is-hidden { display: none !important; }
+  .vfbtn:disabled, .vfbtn.is-empty {
+    opacity: 0.45; cursor: not-allowed; text-decoration: line-through;
+  }
+  .matrix-fill-gap {
+    margin: 12px 0 18px; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid var(--sb-border); background: var(--sb-surface-muted);
+    color: var(--sb-ink); font-size: 13px; line-height: 1.45;
+  }
+  .matrix-fill-gap strong { color: var(--sb-ink); }
   .vc-name a, .vc-name-link {
     color: var(--sb-link);
     text-decoration: none;
-    border-bottom: 1px solid var(--sb-link-underline);
-    transition: color .15s ease, border-color .15s ease;
+    transition: color .15s ease;
   }
-  .vc-name a:hover, .vc-name-link:hover { color: var(--sb-link-hover); border-bottom-color: var(--sb-link-hover); }
+  .vc-name a:hover, .vc-name-link:hover { color: var(--sb-link-hover); }
   .snav-btn.is-filtered-out { display: none !important; }
   a.snav-btn { text-decoration: none; display: inline-block; }
   .vendor-card.is-filtered-out { display: none !important; }
@@ -470,16 +468,12 @@
   /* Vendor Name Links */
   .vname-link {
     cursor: pointer;
-    text-decoration: underline dotted;
-    text-underline-offset: 2px;
+    text-decoration: none;
     color: var(--sb-link);
-    text-decoration-color: var(--sb-link-underline);
-    transition: color .15s ease, text-decoration-color .15s ease;
+    transition: color .15s ease;
   }
   .vname-link:hover {
     color: var(--sb-link-hover);
-    text-decoration-color: var(--sb-link-hover);
-    text-decoration-style: solid;
   }
 
   /* Content hyperlinks — markdown, tables, compare matrix */
@@ -487,10 +481,8 @@
   #compareResultsBody a,
   .chart-source-table a {
     color: var(--sb-link);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    text-decoration-color: var(--sb-link-underline);
-    transition: color .15s ease, text-decoration-color .15s ease;
+    text-decoration: none;
+    transition: color .15s ease;
   }
   #content a:not(.snav-btn):hover,
   #compareResultsBody a:hover,
@@ -498,12 +490,10 @@
   #content a:not(.snav-btn):focus-visible,
   #compareResultsBody a:focus-visible {
     color: var(--sb-link-hover);
-    text-decoration-color: var(--sb-link-hover);
   }
   #content a:not(.snav-btn):visited:not(:hover),
   #compareResultsBody a:visited:not(:hover) {
     color: var(--sb-link-visited);
-    text-decoration-color: color-mix(in srgb, var(--sb-link-visited) 50%, transparent);
   }
   #content a:not(.snav-btn):focus-visible,
   #compareResultsBody a:focus-visible {
@@ -903,6 +893,52 @@ Chart.defaults.font.family = "'Roboto Condensed', 'Arial Narrow', Arial, sans-se
 Chart.defaults.font.size = 11;
 marked.setOptions({ breaks: true, gfm: true });
 
+/** Stamp http(s) anchors so they always open in a new tab. */
+function ensureExternalLinksNewTab(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  scope.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (/^https?:\/\//i.test(href) || href.startsWith('//')) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+}
+
+try {
+  const renderer = new marked.Renderer();
+  const priorLink = renderer.link.bind(renderer);
+  renderer.link = function (href, title, text) {
+    // marked v9+ may pass a single token object as the first arg
+    const html = (href && typeof href === 'object')
+      ? priorLink(href)
+      : priorLink(href, title, text);
+    const url = (href && typeof href === 'object')
+      ? String(href.href || '')
+      : String(href || '');
+    if (!(/^https?:\/\//i.test(url) || url.startsWith('//'))) return html;
+    let out = html.replace(/\s+target="[^"]*"/gi, '').replace(/\s+rel="[^"]*"/gi, '');
+    return out.replace(/<a\s/i, '<a target="_blank" rel="noopener noreferrer" ');
+  };
+  const priorCodespan = renderer.codespan.bind(renderer);
+  renderer.codespan = function (code) {
+    const html = (code && typeof code === 'object') ? priorCodespan(code) : priorCodespan(code);
+    const text = (code && typeof code === 'object') ? String(code.text || '') : String(code || '');
+    const raw = String(text).trim();
+    let url = raw;
+    while (url && /[.,;:!?]$/.test(url)) url = url.slice(0, -1);
+    if (!/^https?:\/\//i.test(url)) return html;
+    const safe = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    return html.replace(/^<code>([\s\S]*)<\/code>$/i, (_all, inner) => {
+      if (/<a\s/i.test(inner)) return _all;
+      return `<code><a href="${safe}" target="_blank" rel="noopener noreferrer">${inner}</a></code>`;
+    });
+  };
+  marked.use({ renderer });
+} catch (e) {
+  console.warn('marked renderer target=_blank wiring failed', e);
+}
+
 function lucideIconHtml(name, className = 'lucide-icon') {
   return `<i data-lucide="${name}" class="${className}" aria-hidden="true"></i>`;
 }
@@ -966,7 +1002,6 @@ function sbChartTheme() {
 }
 
 function sbWaveZoneFills() {
-  // WAVE_ZONE_FILLS: durable marker for the rendered Forrester Wave zone palette.
   const z = sbChartTheme().zones;
   return { leaders: z.leaders, strong: z.strong, mid: z.mid, contenders: z.contenders };
 }
@@ -1282,24 +1317,44 @@ function _rectOverlapsAnyPoint(rect, points, pad = _POINT_LABEL_PAD) {
   return false;
 }
 
-const _LABEL_OFFSETS = [
-  { dx: 0, dy: -16, align: 'center', baseline: 'bottom' },
-  { dx: 0, dy: 16, align: 'center', baseline: 'top' },
-  { dx: 18, dy: 0, align: 'left', baseline: 'middle' },
-  { dx: -18, dy: 0, align: 'right', baseline: 'middle' },
-  { dx: 14, dy: -14, align: 'left', baseline: 'bottom' },
-  { dx: -14, dy: -14, align: 'right', baseline: 'bottom' },
-  { dx: 14, dy: 14, align: 'left', baseline: 'top' },
-  { dx: -14, dy: 14, align: 'right', baseline: 'top' },
-  { dx: 0, dy: -30, align: 'center', baseline: 'bottom' },
-  { dx: 0, dy: 30, align: 'center', baseline: 'top' },
-  { dx: 32, dy: 0, align: 'left', baseline: 'middle' },
-  { dx: -32, dy: 0, align: 'right', baseline: 'middle' },
-  { dx: 24, dy: -24, align: 'left', baseline: 'bottom' },
-  { dx: -24, dy: -24, align: 'right', baseline: 'bottom' },
-  { dx: 24, dy: 24, align: 'left', baseline: 'top' },
-  { dx: -24, dy: 24, align: 'right', baseline: 'top' },
-];
+function _labelOffsetRing() {
+  if (_labelOffsetRing._c) return _labelOffsetRing._c;
+  const angles = [90, 270, 0, 180, 45, 135, 225, 315, 60, 120, 240, 300, 30, 150, 210, 330];
+  const dists = [14, 22, 32, 44, 58, 74, 92, 112, 134];
+  const out = [];
+  for (const d of dists) {
+    for (const ang of angles) {
+      const rad = ang * Math.PI / 180;
+      const dx = Math.cos(rad) * d;
+      const dy = -Math.sin(rad) * d;
+      let align = 'center', baseline = 'bottom';
+      if (Math.abs(dx) >= Math.abs(dy) * 0.75) {
+        align = dx >= 0 ? 'left' : 'right';
+        baseline = 'middle';
+      } else if (dy > 0) {
+        baseline = 'top';
+      }
+      out.push({ dx, dy, align, baseline });
+    }
+  }
+  _labelOffsetRing._c = out;
+  return out;
+}
+
+function _rectInChartArea(rect, area, pad = 1) {
+  return rect.x >= area.left + pad && rect.y >= area.top + pad &&
+         rect.x + rect.w <= area.right - pad && rect.y + rect.h <= area.bottom - pad;
+}
+
+function _clampRectToChartArea(rect, area, pad = 1) {
+  const maxW = Math.max(8, area.right - area.left - pad * 2);
+  const maxH = Math.max(8, area.bottom - area.top - pad * 2);
+  const w = Math.min(rect.w, maxW);
+  const h = Math.min(rect.h, maxH);
+  const x = Math.min(area.right - pad - w, Math.max(area.left + pad, rect.x));
+  const y = Math.min(area.bottom - pad - h, Math.max(area.top + pad, rect.y));
+  return { x, y, w, h };
+}
 
 function _labelBBox(px, py, w, h, off) {
   let x = px + off.dx;
@@ -1343,71 +1398,93 @@ function _resolveLabelCollisions(chart, items, chartArea) {
   const layout = [];
   const sorted = [...items].sort((a, b) => a.py - b.py || a.px - b.px);
   const pointObstacles = items.map(it => ({ px: it.px, py: it.py, r: it.r }));
+  const offsets = _labelOffsetRing();
+  const area = {
+    left: chartArea.left,
+    right: chartArea.right,
+    top: chartArea.top,
+    bottom: chartArea.bottom,
+  };
+
+  function fromRect(rect, w, h, off) {
+    let align = off.align, baseline = off.baseline;
+    let labelX, labelY;
+    if (align === 'center') labelX = rect.x + w / 2;
+    else if (align === 'right') labelX = rect.x + w;
+    else labelX = rect.x;
+    if (baseline === 'middle') labelY = rect.y + h / 2;
+    else if (baseline === 'bottom') labelY = rect.y + h;
+    else labelY = rect.y;
+    return { align, baseline, labelX, labelY };
+  }
 
   for (const item of sorted) {
     const { w, h } = _measureLabelText(ctx, item.text);
     let best = null;
-    let bestScore = Infinity;
-
-    for (let i = 0; i < _LABEL_OFFSETS.length; i++) {
-      const off = _LABEL_OFFSETS[i];
-      const rect = _labelBBox(item.px, item.py, w, h, off);
-      const margin = 2;
-      if (rect.x < chartArea.left - margin || rect.y < chartArea.top - margin ||
-          rect.x + rect.w > chartArea.right + margin || rect.y + rect.h > chartArea.bottom + margin) {
-        continue;
-      }
+    for (let i = 0; i < offsets.length; i++) {
+      const off = offsets[i];
+      const rect = _clampRectToChartArea(_labelBBox(item.px, item.py, w, h, off), area);
+      if (!_rectInChartArea(rect, area)) continue;
       let collides = false;
       for (const p of placed) {
         if (_labelRectsOverlap(rect, p, _LABEL_PAD)) { collides = true; break; }
       }
-      if (!collides && _rectOverlapsAnyPoint(rect, pointObstacles)) {
-        collides = true;
+      if (!collides && _rectOverlapsAnyPoint(rect, pointObstacles)) collides = true;
+      if (!collides) {
+        best = { rect, off, collides: false };
+        break;
       }
-      const score = i + (collides ? 120 : 0);
-      if (score < bestScore) {
-        bestScore = score;
-        best = { rect, off, collides };
-        if (!collides) break;
-      }
+      if (!best) best = { rect, off, collides: true };
     }
 
-    const visible = !!(best && !best.collides);
-    let labelX = item.px;
-    let labelY = item.py - 16;
-    let align = 'center';
-    let baseline = 'bottom';
-    if (best) {
-      align = best.off.align;
-      baseline = best.off.baseline;
-      if (align === 'center') labelX = best.rect.x + w / 2;
-      else if (align === 'right') labelX = best.rect.x + w;
-      else labelX = best.rect.x;
-      if (baseline === 'middle') labelY = best.rect.y + h / 2;
-      else if (baseline === 'bottom') labelY = best.rect.y + h;
-      else labelY = best.rect.y;
+    let rect = best ? best.rect : _clampRectToChartArea(
+      { x: item.px - w / 2, y: item.py - h - 8, w, h }, area
+    );
+    if (best && best.collides) {
+      const dirs = [[0,-8],[0,8],[8,0],[-8,0],[6,-6],[-6,-6],[6,6],[-6,6]];
+      outer: for (let g = 0; g < 18; g++) {
+        let hit = placed.some(p => _labelRectsOverlap(rect, p, _LABEL_PAD));
+        if (!hit && !_rectOverlapsAnyPoint(rect, pointObstacles) && _rectInChartArea(rect, area)) break;
+        for (const [dx, dy] of dirs) {
+          const nxt = _clampRectToChartArea({ x: rect.x + dx, y: rect.y + dy, w: rect.w, h: rect.h }, area);
+          const nHit = placed.some(p => _labelRectsOverlap(nxt, p, 1));
+          if (!nHit && _rectInChartArea(nxt, area)) {
+            rect = nxt;
+            if (!_rectOverlapsAnyPoint(nxt, pointObstacles)) break outer;
+          }
+        }
+        rect = _clampRectToChartArea(rect, area);
+      }
     }
+    rect = _clampRectToChartArea(rect, area);
+    const off = best ? best.off : { dx: 0, dy: -16, align: 'center', baseline: 'bottom' };
+    const pos = fromRect(rect, w, h, off);
     layout.push({
       ...item,
       w,
       h,
-      visible,
-      rect: best ? best.rect : null,
-      labelX,
-      labelY,
-      align,
-      baseline,
-      leader: !!(best && (best.off.dx || best.off.dy)),
+      visible: true,
+      rect,
+      labelX: pos.labelX,
+      labelY: pos.labelY,
+      align: pos.align,
+      baseline: pos.baseline,
+      leader: Math.hypot((rect.x + rect.w / 2) - item.px, (rect.y + rect.h / 2) - item.py) > 10,
     });
-    if (visible && best) placed.push(best.rect);
+    placed.push(rect);
   }
   return layout;
 }
 
 function _drawResolvedLabels(chart, layout, colorFn) {
-  const { ctx } = chart;
+  const { ctx, chartArea } = chart;
   const hover = chart._hoverLabelKey;
   ctx.save();
+  if (chartArea) {
+    ctx.beginPath();
+    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.clip();
+  }
   for (const L of layout) {
     const show = L.visible || (hover && hover === L.key);
     if (!show) continue;
@@ -1434,6 +1511,7 @@ function _drawResolvedLabels(chart, layout, colorFn) {
 
 function vendorUrlForLabel(label) {
   if (!label) return '';
+  if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
   if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
   const hit = (LINK_PAIRS || []).find(([name]) => name === label);
   return hit ? hit[1] : '';
@@ -1837,6 +1915,67 @@ function linkify() {
   }
 }
 
+function _trimUrlTrail(raw) {
+  let url = String(raw || '');
+  let trail = '';
+  while (url && /[.,;:!?]$/.test(url)) {
+    trail = url.slice(-1) + trail;
+    url = url.slice(0, -1);
+  }
+  while (url.endsWith(')') && (url.split('(').length - 1) < (url.split(')').length - 1)) {
+    trail = ')' + trail;
+    url = url.slice(0, -1);
+  }
+  return [url, trail];
+}
+
+/** Wrap leftover bare http(s) URLs in text nodes (including CODE). Skip existing <a>. */
+function linkifyBareHttpUrls(root) {
+  const content = root && root.querySelectorAll ? root : document.getElementById('content');
+  if (!content) return;
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      let el = node.parentElement;
+      while (el && el !== content) {
+        if (['A', 'SCRIPT', 'STYLE'].includes(el.tagName)) return NodeFilter.FILTER_REJECT;
+        el = el.parentElement;
+      }
+      return /https?:\/\//i.test(node.textContent || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  const re = /https?:\/\/[^\s<>"'`\\]+/gi;
+  for (const tn of nodes) {
+    const txt = tn.textContent || '';
+    re.lastIndex = 0;
+    if (!re.test(txt)) continue;
+    re.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m;
+    while ((m = re.exec(txt))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+      const [url, trail] = _trimUrlTrail(m[0]);
+      if (/^https?:\/\//i.test(url)) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = url;
+        frag.appendChild(a);
+        if (trail) frag.appendChild(document.createTextNode(trail));
+      } else {
+        frag.appendChild(document.createTextNode(m[0]));
+      }
+      last = m.index + m[0].length;
+    }
+    if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+    tn.parentNode.replaceChild(frag, tn);
+  }
+}
+
 
 // ─── Chart → vendor card navigation ─────────────────────────────────────────
 let VENDOR_SLUG_MAP = {};
@@ -1853,6 +1992,119 @@ function _slugify(label) {
     .replace(/[\s_]+/g, '-');
 }
 
+/** Market-scoped DOM id: vendor-{slug}--{marketId} when market known, else vendor-{slug}. */
+function _vendorCardDomId(slug, marketId) {
+  const s = String(slug || '').trim();
+  if (!s) return '';
+  const mid = String(marketId || '').trim();
+  return mid ? ('vendor-' + s + '--' + mid) : ('vendor-' + s);
+}
+
+function _marketIdFromHeadingText(text) {
+  const t = String(text || '').toLowerCase();
+  const charts = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS : {};
+  for (const [mid, chart] of Object.entries(charts)) {
+    const dn = String((chart && chart.market_display_name) || '').toLowerCase();
+    if (dn && t.includes(dn)) return String(mid);
+    const role = String((chart && chart.market_role) || '');
+    if (role && t.includes(role + ' market')) return String(mid);
+  }
+  return '';
+}
+
+function _findPrecedingH2(el) {
+  let n = el;
+  while (n) {
+    if (n.tagName === 'H2') return n;
+    n = n.previousElementSibling;
+  }
+  return null;
+}
+
+function _resolveMarketIdFromNode(node) {
+  if (!node) return '';
+  if (node.dataset && node.dataset.market) return String(node.dataset.market);
+  if (node.tagName === 'H2' || node.tagName === 'H1') {
+    return _marketIdFromHeadingText(node.textContent);
+  }
+  // Prefer the heading's own text (3.2.1 Plugins — Positioning Matrix) over a
+  // generic parent H2 such as "3. Competitive Positioning — Analyst Frameworks".
+  const fromSelf = _marketIdFromHeadingText(node.textContent);
+  if (fromSelf) return fromSelf;
+  const h2 = _findPrecedingH2(node);
+  if (h2) {
+    const fromH2 = _marketIdFromHeadingText(h2.textContent);
+    if (fromH2) return fromH2;
+  }
+  let n = node;
+  while (n) {
+    const mid = _marketIdFromHeadingText(n.textContent);
+    if (mid) return mid;
+    n = n.previousElementSibling;
+  }
+  return '';
+}
+
+function _cloneChartRecord(d) {
+  if (!d || typeof d !== 'object') return d;
+  const out = Object.assign({}, d);
+  if (Array.isArray(d.data)) out.data = d.data.slice();
+  return out;
+}
+
+function _cloneChartRecords(arr) {
+  return (Array.isArray(arr) ? arr : []).map(_cloneChartRecord);
+}
+
+/** Snapshot per-market chart arrays at inject time. whenChartParentReady is rAF-deferred
+ *  and injectCharts restores PRIMARY (APO) globals before those callbacks run. */
+function _marketChartSource(anchor) {
+  const mid = _resolveMarketIdFromNode(anchor) || '';
+  const charts = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS : {};
+  const src = (mid && charts[mid]) ? charts[mid] : null;
+  const titles = Object.assign({}, (src && src.titles) || CHART_TITLES || {});
+  return {
+    marketId: mid,
+    titles,
+    mq_data: _cloneChartRecords((src && src.mq_data) || MQ_DATA),
+    gmq_data: _cloneChartRecords((src && src.gmq_data) || (src && src.mq_data) || GMQ_DATA),
+    wave_data: _cloneChartRecords((src && src.wave_data) || WAVE_DATA),
+    vc_kcfs: ((src && src.vc_kcfs) || VC_KCFS || []).slice(),
+    vc_commercial: _cloneChartRecords((src && src.vc_commercial) || VC_COMMERCIAL),
+    vc_oss: _cloneChartRecords((src && src.vc_oss) || VC_OSS),
+    vendor_buckets: (src && src.vendor_buckets) || VENDOR_BUCKETS || {},
+  };
+}
+
+function _seriesColorFromPayload(label, payload) {
+  const palette = themedSeriesPalette();
+  const wave = (payload && payload.wave_data) || [];
+  const wi = wave.findIndex(d => d && d.label === label);
+  if (wi >= 0) return palette[wi % palette.length];
+  const labels = [...new Set([
+    ...((payload && payload.mq_data) || []),
+    ...((payload && payload.gmq_data) || []),
+    ...wave,
+  ].map(d => d && d.label).filter(Boolean))];
+  const i = labels.indexOf(label);
+  return palette[(i >= 0 ? i : 0) % palette.length];
+}
+
+function _marketShortLabel(marketId) {
+  const mid = String(marketId || '');
+  if (mid === 'apo') return 'APO';
+  if (mid === 'sdlc-plugins') return 'Plugins';
+  if (mid === 'agentic-sdlc-saas') return 'SaaS';
+  const chart = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS[mid] : null;
+  const dn = chart && chart.market_display_name;
+  if (dn) {
+    const paren = String(dn).match(/\(([^)]+)\)/);
+    if (paren) return paren[1];
+    return String(dn).split(/\s+/).slice(0, 2).join(' ');
+  }
+  return mid;
+}
+
 function _lookupSlugFromCharts(label) {
   const norm = _chartNormLabel(label);
   for (const d of [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA]) {
@@ -1864,6 +2116,17 @@ function _lookupSlugFromCharts(label) {
     if (!s) continue;
     const sl = _chartNormLabel(s.label);
     if (s.label === label || sl === norm || s.slug === label) return s.slug || _slugify(sl);
+  }
+  // Prefer per-market chart points when global arrays were swapped.
+  if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+    for (const chart of Object.values(MARKET_CHARTS)) {
+      if (!chart) continue;
+      for (const d of [...(chart.mq_data || []), ...(chart.gmq_data || []), ...(chart.wave_data || [])]) {
+        if (!d) continue;
+        const dl = _chartNormLabel(d.label);
+        if (d.label === label || dl === norm || d.slug === label) return d.slug || _slugify(dl);
+      }
+    }
   }
   return _slugify(norm || label);
 }
@@ -1881,6 +2144,15 @@ function _buildVendorSlugMap() {
   };
   [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA].forEach(d => reg(d.slug, d.label));
   [...VC_COMMERCIAL, ...VC_OSS].forEach(v => reg(v.slug, v.label));
+  if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+    Object.values(MARKET_CHARTS).forEach(chart => {
+      if (!chart) return;
+      [...(chart.mq_data || []), ...(chart.gmq_data || []), ...(chart.wave_data || [])]
+        .forEach(d => reg(d && d.slug, d && d.label));
+      [...(chart.vc_commercial || []), ...(chart.vc_oss || [])]
+        .forEach(v => reg(v && v.slug, v && v.label));
+    });
+  }
   (LINK_PAIRS || []).forEach(([name]) => reg(_slugify(name), name));
   const cmp = window.__SB_REPORT__ && window.__SB_REPORT__.comparison;
   if (cmp && cmp.rankings) cmp.rankings.forEach(r => reg(r.solution, r.solution));
@@ -1896,20 +2168,51 @@ function _buildVendorSlugMap() {
 function _resolveVendorSlug(labelOrSlug) {
   if (!labelOrSlug) return '';
   const key = String(labelOrSlug);
+  // Allow hash-style "slug--market" or full "vendor-slug--market".
+  const bare = key.replace(/^#?vendor-/, '');
+  const m = bare.match(/^(.*?)--([a-z0-9-]+)$/i);
+  if (m && VENDOR_SLUG_MAP[m[1]]) return VENDOR_SLUG_MAP[m[1]];
+  if (m) return m[1];
   if (VENDOR_SLUG_MAP[key]) return VENDOR_SLUG_MAP[key];
   const norm = _chartNormLabel(key);
   if (VENDOR_SLUG_MAP[norm]) return VENDOR_SLUG_MAP[norm];
   return _lookupSlugFromCharts(key);
 }
 
-function _scrollToVendorCard(labelOrSlug) {
-  const slug = _resolveVendorSlug(labelOrSlug);
-  let card = slug ? document.getElementById('vendor-' + slug) : null;
+function _cardsForSlug(slug) {
+  if (!slug) return [];
+  return [...document.querySelectorAll('.vendor-card')].filter(c => {
+    if (c.dataset.slug === slug) return true;
+    const id = c.id || '';
+    return id === ('vendor-' + slug) || id.startsWith('vendor-' + slug + '--');
+  });
+}
+
+function _scrollToVendorCard(labelOrSlug, marketId) {
+  let mid = marketId != null ? String(marketId || '') : '';
+  let rawKey = String(labelOrSlug || '');
+  const bare = rawKey.replace(/^#?vendor-/, '');
+  const scoped = bare.match(/^(.*?)--([a-z0-9-]+)$/i);
+  if (scoped && !mid) {
+    mid = scoped[2];
+    rawKey = scoped[1];
+  }
+  const slug = _resolveVendorSlug(rawKey);
+  let card = null;
+  if (slug && mid) card = document.getElementById(_vendorCardDomId(slug, mid));
+  if (!card && slug) card = document.getElementById('vendor-' + slug);
+  if (!card && slug) {
+    const cards = _cardsForSlug(slug);
+    if (mid) card = cards.find(c => c.dataset.market === mid) || null;
+    if (!card) card = cards[0] || null;
+  }
   if (!card) {
     const norm = _chartNormLabel(labelOrSlug);
     document.querySelectorAll('.vendor-card').forEach(c => {
       const d = _chartNormLabel(c.dataset.vendor || '');
-      if (d === norm || c.dataset.vendor === labelOrSlug) card = c;
+      if (d === norm || c.dataset.vendor === labelOrSlug) {
+        if (!mid || c.dataset.market === mid) card = c;
+      }
     });
   }
   if (!card) return false;
@@ -1930,22 +2233,24 @@ function _scrollToVendorCard(labelOrSlug) {
   window.scrollTo({ top, behavior: 'smooth' });
   card.classList.add('is-chart-target');
   setTimeout(() => card.classList.remove('is-chart-target'), 2000);
-  if (window.location.hash !== '#vendor-' + slug) {
-    try { history.replaceState(null, '', '#vendor-' + slug); } catch (e) {}
+  const hash = '#' + (card.id || _vendorCardDomId(slug, card.dataset.market || mid));
+  if (window.location.hash !== hash) {
+    try { history.replaceState(null, '', hash); } catch (e) {}
   }
   return true;
 }
 
-function attachChartVendorNav(chart, labelFn) {
+function attachChartVendorNav(chart, labelFn, marketId) {
   if (!chart || !chart.options) return;
   const pick = labelFn || ((raw, ds) => (raw && (raw.label || raw.slug)) || (ds && ds.label));
+  const mid = marketId != null ? String(marketId || '') : '';
   chart.options.onClick = (_evt, elements) => {
     if (!elements || !elements.length) return;
     const el = elements[0];
     const ds = chart.data.datasets[el.datasetIndex];
     const raw = ds && ds.data && ds.data[el.index];
     const label = pick(raw, ds, el);
-    if (label) _scrollToVendorCard(label);
+    if (label) _scrollToVendorCard(label, mid || (chart.canvas && chart.canvas.closest('.chart-frame') || {}).dataset?.market);
   };
   const prevHover = chart.options.onHover;
   chart.options.onHover = (evt, elements) => {
@@ -1961,21 +2266,30 @@ function _wireLegendVendorNav(el, label) {
   el.setAttribute('tabindex', '0');
   el.setAttribute('role', 'button');
   el.setAttribute('aria-label', 'View ' + label + ' solution card');
-  el.addEventListener('click', () => _scrollToVendorCard(label));
+  const mid = () => {
+    const frame = el.closest && el.closest('.chart-frame');
+    return (frame && frame.dataset.market) || '';
+  };
+  el.addEventListener('click', () => _scrollToVendorCard(label, mid()));
   el.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _scrollToVendorCard(label); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _scrollToVendorCard(label, mid()); }
   });
 }
 
 // ─── 3A: Positioning Matrix ─────────────────────────────────────────────────
 function inject2x2(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
+  const titles = payload.titles || {};
+  const mqData = payload.mq_data;
   wrap.innerHTML = `
-    <div class="chart-title">${CHART_TITLES.mq || '3A · Positioning Matrix'}</div>
+    <div class="chart-title">${titles.mq || '3A · Positioning Matrix'}</div>
     <div class="chart-subtitle">
-      ${CHART_TITLES.mq_x || '← Lower (x-axis)         Higher (x-axis) →'} &nbsp;|&nbsp;
-      ${CHART_TITLES.mq_y || '← Lower (y-axis)         Higher (y-axis) →'}
+      ${titles.mq_x || '← Lower (x-axis)         Higher (x-axis) →'} &nbsp;|&nbsp;
+      ${titles.mq_y || '← Lower (y-axis)         Higher (y-axis) →'}
     </div>
     <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('mqChart')}"></canvas></div>
     <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12px;">
@@ -1993,9 +2307,9 @@ function inject2x2(anchorH3) {
   const ctx = mqCanvas.getContext('2d');
   const datasets = [{
     label: 'Solutions',
-    data: MQ_DATA.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
-    backgroundColor: MQ_DATA.map(d => vendorChartColor(d.label) + 'cc'),
-    borderColor: MQ_DATA.map(d => vendorChartColor(d.label)),
+    data: mqData.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
+    backgroundColor: mqData.map(d => _seriesColorFromPayload(d.label, payload) + 'cc'),
+    borderColor: mqData.map(d => _seriesColorFromPayload(d.label, payload)),
     borderWidth: 1.5,
     pointRadius: 9,
     pointHoverRadius: 11,
@@ -2012,14 +2326,14 @@ function inject2x2(anchorH3) {
       scales: {
         x: {
           min: 0, max: 10,
-          title: { display: true, text: CHART_TITLES.mq_x || '← Lower         Higher →',
+          title: { display: true, text: titles.mq_x || '← Lower         Higher →',
                    font: { size: 11 }, color: sbChartTheme().label },
           grid: { color: chartGridColor() },
           ticks: { display: false },
         },
         y: {
           min: 0, max: 10,
-          title: { display: true, text: CHART_TITLES.mq_y || '← Lower         Higher →',
+          title: { display: true, text: titles.mq_y || '← Lower         Higher →',
                    font: { size: 11 }, color: sbChartTheme().label },
           grid: { color: chartGridColor() },
           ticks: { display: false },
@@ -2064,12 +2378,12 @@ function inject2x2(anchorH3) {
         ctx.restore();
       }
     },
-    createCollidingPointLabelsPlugin((v) => v.label, (L) => vendorChartColor(L.text))]
+    createCollidingPointLabelsPlugin((v) => v.label, (L) => _seriesColorFromPayload(L.text, payload))]
   });
   _charts.push(c);
-  attachChartVendorNav(c);
+  attachChartVendorNav(c, null, wrap.dataset.market || _chartMarketId);
   window._mqChart = c;
-  const has3B = [...document.querySelectorAll('#content h3')].some(h =>
+  const has3B = [...document.querySelectorAll('#content h3, #content h4')].some(h =>
     /\b3B\b/.test(h.textContent) || h.textContent.includes('Magic Quadrant'));
   if (!has3B) injectGMQ(wrap);
   });
@@ -2077,6 +2391,9 @@ function inject2x2(anchorH3) {
 
 // ─── 3B: Gartner Magic Quadrant ──────────────────────────────────────────────
 function injectGMQ(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const gmqData = payload.gmq_data;
   const legendHTML = `
     <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;">
       ${Object.entries(sbQuadrantColors()).map(([q,c])=>`
@@ -2087,11 +2404,15 @@ function injectGMQ(anchorH3) {
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId
+    || (anchorH3 && anchorH3.dataset && anchorH3.dataset.market)
+    || '';
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
   wrap.innerHTML = `
-    <div class="chart-title">${CHART_TITLES.gmq || '3B · Magic Quadrant'}</div>
+    <div class="chart-title">${titles.gmq || '3B · Magic Quadrant'}</div>
     <div class="chart-subtitle">
-      ${CHART_TITLES.gmq_x || 'X-axis: Completeness of Vision'} &nbsp;|&nbsp;
-      ${CHART_TITLES.gmq_y || 'Y-axis: Ability to Execute'}
+      ${titles.gmq_x || 'X-axis: Completeness of Vision'} &nbsp;|&nbsp;
+      ${titles.gmq_y || 'Y-axis: Ability to Execute'}
     </div>
     <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('gmqChart')}"></canvas></div>
     ${legendHTML}`;
@@ -2105,9 +2426,9 @@ function injectGMQ(anchorH3) {
   const ctx = gmqCanvas.getContext('2d');
   const datasets = [{
     label: 'Solutions',
-    data: GMQ_DATA.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
-    backgroundColor: GMQ_DATA.map(d => vendorChartColor(d.label) + 'cc'),
-    borderColor: GMQ_DATA.map(d => vendorChartColor(d.label)),
+    data: gmqData.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
+    backgroundColor: gmqData.map(d => _seriesColorFromPayload(d.label, payload) + 'cc'),
+    borderColor: gmqData.map(d => _seriesColorFromPayload(d.label, payload)),
     borderWidth: 1.5,
     pointRadius: 9,
     pointHoverRadius: 11,
@@ -2182,18 +2503,21 @@ function injectGMQ(anchorH3) {
         ctx.restore();
       }
     },
-    createCollidingPointLabelsPlugin((v) => v.label, (L) => vendorChartColor(L.text))]
+    createCollidingPointLabelsPlugin((v) => v.label, (L) => _seriesColorFromPayload(L.text, payload))]
   });
   _charts.push(g);
-  attachChartVendorNav(g);
+  attachChartVendorNav(g, null, wrap.dataset.market || _chartMarketId);
   window._gmqChart = g;
   });
 }
 
 // ─── 3B: Forrester Wave ─────────────────────────────────────────────────────
 function injectWave(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const waveData = payload.wave_data;
   const palette = themedSeriesPalette();
-  const legendHTML = WAVE_DATA.map((d, i) => `
+  const legendHTML = waveData.map((d, i) => `
     <span data-wave-idx="${i}" style="display:flex;align-items:center;gap:5px;font-size:12px;
           cursor:pointer;padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;">
       <span style="display:inline-block;width:13px;height:13px;border-radius:50%;
@@ -2203,8 +2527,10 @@ function injectWave(anchorH3) {
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
   wrap.innerHTML = `
-    <div class="chart-title">${CHART_TITLES.wave || '3C · Wave-Style Assessment'}</div>
+    <div class="chart-title">${titles.wave || '3C · Wave-Style Assessment'}</div>
     <div class="chart-subtitle">
       X-axis: Strength of Strategy &nbsp;|&nbsp; Y-axis: Strength of Offering &nbsp;|&nbsp;
       Bubble size = Market Presence &nbsp;·&nbsp; Strong=4 · Good=3 · Moderate=2
@@ -2220,7 +2546,7 @@ function injectWave(anchorH3) {
   whenChartParentReady(waveCanvas, () => {
   // Forrester convention: X = Strategy, Y = Offering
   const bubbleR = { 4: 26, 3: 18, 2: 13, 1: 8 };
-  const datasets = WAVE_DATA.map((d, i) => ({
+  const datasets = waveData.map((d, i) => ({
     label: d.label,
     data: [{ x: d.strategy, y: d.offering, r: bubbleR[d.presence] }],
     backgroundColor: palette[i % palette.length] + '66',
@@ -2339,7 +2665,7 @@ function injectWave(anchorH3) {
     )]
   });
   _charts.push(c);
-  attachChartVendorNav(c, (_raw, ds) => ds && ds.label);
+  attachChartVendorNav(c, (_raw, ds) => ds && ds.label, wrap.dataset.market || _chartMarketId);
   window._waveChart = c;
 
   // ── Wave legend hover ──────────────────────────────────────────────────────
@@ -2372,7 +2698,7 @@ function injectWave(anchorH3) {
   }
   wrap.querySelectorAll('[data-wave-idx]').forEach(el => {
     const idx = +el.dataset.waveIdx;
-    const lbl = (WAVE_DATA[idx] && WAVE_DATA[idx].label) || '';
+    const lbl = (waveData[idx] && waveData[idx].label) || '';
     _wireLegendVendorNav(el, lbl);
     el.addEventListener('mouseenter', () => applyWaveHover(idx));
     el.addEventListener('mouseleave', () => applyWaveHover(-1));
@@ -2382,10 +2708,14 @@ function injectWave(anchorH3) {
 
 // ─── 3C: Blue Ocean Value Curve ─────────────────────────────────────────────
 function injectValueCurve(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const vcKcfs = payload.vc_kcfs;
+  const palette = themedSeriesPalette();
   const leaderLabels = new Set(
-    ((VENDOR_BUCKETS && VENDOR_BUCKETS.leaders) || [])
-      .concat(GMQ_DATA.filter(d => d.q === 'Leaders').map(d => d.label))
-      .concat(MQ_DATA.filter(d => d.q === 'Leaders').map(d => d.label))
+    ((payload.vendor_buckets && payload.vendor_buckets.leaders) || [])
+      .concat(payload.gmq_data.filter(d => d.q === 'Leaders').map(d => d.label))
+      .concat(payload.mq_data.filter(d => d.q === 'Leaders').map(d => d.label))
       .filter(Boolean)
   );
   const isLeader = (label) => {
@@ -2399,8 +2729,9 @@ function injectValueCurve(anchorH3) {
     }
     return false;
   };
-  const leaderSeries = [...VC_COMMERCIAL, ...VC_OSS].filter(s => isLeader(s.label));
-  const allSeries = leaderSeries.length ? leaderSeries : [...VC_COMMERCIAL, ...VC_OSS].slice(0, 6);
+  const leaderSeries = [...payload.vc_commercial, ...payload.vc_oss].filter(s => isLeader(s.label));
+  const allSeries = (leaderSeries.length ? leaderSeries : [...payload.vc_commercial, ...payload.vc_oss].slice(0, 6))
+    .map((s, i) => Object.assign({}, s, { color: s.color || palette[i % palette.length] }));
 
   const mkSwatch = s =>
     `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${s.color}"></span>`;
@@ -2415,10 +2746,12 @@ function injectValueCurve(anchorH3) {
 
   const wrap = document.createElement('div');
   wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
   wrap.innerHTML = `
-    <div class="chart-title">${CHART_TITLES.vc || '3D · Blue Ocean Value Curve (Leaders Radar)'}</div>
+    <div class="chart-title">${titles.vc || '3D · Blue Ocean Value Curve (Leaders Radar)'}</div>
     <div class="chart-subtitle">
-      Magic Quadrant Leaders only · Scale 1–5 across ${VC_KCFS.length || 'N'} Key Competitive Factors
+      Magic Quadrant Leaders only · Scale 1–5 across ${vcKcfs.length || 'N'} Key Competitive Factors
     </div>
     <div class="chart-canvas-wrap chart-canvas-wrap--vc"><canvas id="${nextChartCanvasId('vcChart')}"></canvas></div>
     <div style="margin-top:14px;">${legendHTML}</div>`;
@@ -2445,7 +2778,7 @@ function injectValueCurve(anchorH3) {
   const LEVEL = ['','Weak','Fair','Good','Strong','Best'];
   const c = new Chart(ctx, {
     type: 'radar',
-    data: { labels: VC_KCFS, datasets },
+    data: { labels: vcKcfs, datasets },
     options: {
       animation: false,
       responsive: true,
@@ -2507,7 +2840,7 @@ function injectValueCurve(anchorH3) {
     }]
   });
   _charts.push(c);
-  attachChartVendorNav(c, (_raw, ds) => ds && ds.label);
+  attachChartVendorNav(c, (_raw, ds) => ds && ds.label, wrap.dataset.market || _chartMarketId);
   window._vcChart = c;
   let _hovIdx = -1;
 
@@ -2580,6 +2913,11 @@ function injectCharts() {
       inject2x2(h);
     }
   });
+  // Restore primary market as the filter/membership baseline. Chart injects snapshot
+  // per-market arrays via _marketChartSource before whenChartParentReady (rAF).
+  if (PRIMARY_CHART_DATA && Object.keys(PRIMARY_CHART_DATA).length) {
+    applyChartData(PRIMARY_CHART_DATA);
+  }
   setupChartResizeObserver();
   requestAnimationFrame(() => resizeAllCharts());
 }
@@ -2593,6 +2931,7 @@ async function loadFile(path) {
     const r = await fetch('/' + path);
     const md = await r.text();
     document.getElementById('content').innerHTML = marked.parse(md);
+    ensureExternalLinksNewTab(document.getElementById('content'));
     buildTOC();
     document.getElementById('stats').textContent =
       `${(md.length/1000).toFixed(1)}K chars · ${md.split('\n').length} lines`;
@@ -2602,10 +2941,12 @@ async function loadFile(path) {
       setTimeout(() => {
         injectCharts();
         linkify();
+        linkifyBareHttpUrls(document.getElementById('content'));
+        ensureExternalLinksNewTab(document.getElementById('content'));
         setTimeout(() => postRender(), 0);
       }, 0);
     } else {
-      setTimeout(() => { linkify(); setTimeout(() => postRender(), 0); }, 0);
+      setTimeout(() => { linkify(); linkifyBareHttpUrls(document.getElementById('content')); ensureExternalLinksNewTab(document.getElementById('content')); setTimeout(() => postRender(), 0); }, 0);
     }
   } catch(e) {
     document.getElementById('content').innerHTML = `<pre style="color:red">${e}</pre>`;
@@ -2758,198 +3099,30 @@ async function copyForGoogleDocs() {
 }
 
 // ─── Export to PDF ──────────────────────────────────────────────────────────
+// Engine writes sibling landscape-report.pdf at regen time (Playwright page.pdf).
+// Button opens that relative file in a new tab — never a blob URL, never a print dialog.
 async function exportToPDF() {
   const btn = document.getElementById('pdfExportBtn');
   const origHTML = btn.innerHTML;
-  btn.innerHTML = lucideIconHtml('loader-2', 'btn-icon lucide-icon is-spinning') + ' Building…';
-  refreshLucideIcons(btn);
+  const pdfHref = 'landscape-report.pdf?v=' + Date.now();
   btn.disabled = true;
-
   try {
-    // 1. Expand all collapsed vendor cards
-    const collapsedBodies = document.querySelectorAll('.vc-body.vc-collapsed');
-    collapsedBodies.forEach(b => b.classList.remove('vc-collapsed'));
-
-    // 2. Expand all collapsed subsections
-    const collapsedH3s = document.querySelectorAll('#content h3.collapsible.is-closed');
-    collapsedH3s.forEach(h3 => {
-      const bodyDiv = h3.nextElementSibling;
-      if (bodyDiv && bodyDiv.classList.contains('collapsible-body')) {
-        bodyDiv.style.maxHeight = bodyDiv.scrollHeight + 'px';
-        h3.classList.remove('is-closed');
-        h3.setAttribute('aria-expanded', 'true');
-      }
-    });
-
-    // Allow layout to settle
-    await new Promise(r => setTimeout(r, 100));
-
-    // 3. Clone #content
-    const content = document.getElementById('content');
-    const clone = content.cloneNode(true);
-
-    // 4. Convert canvases to images
-    const origCanvases = content.querySelectorAll('canvas');
-    const cloneCanvases = clone.querySelectorAll('canvas');
-    origCanvases.forEach((origCanvas, i) => {
-      try {
-        const dataUrl = origCanvas.toDataURL('image/png', 1.0);
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.style.cssText = 'max-width:100%;height:auto;display:block;margin:8px auto;';
-        if (cloneCanvases[i]) cloneCanvases[i].parentNode.replaceChild(img, cloneCanvases[i]);
-      } catch(e) {}
-    });
-
-    // 5. Remove UI-only elements
-    clone.querySelectorAll('#vendorFilterBar, .vc-toggle').forEach(el => el.remove());
-    clone.querySelectorAll('.vname-link').forEach(el => {
-      const text = document.createTextNode(el.textContent);
-      el.replaceWith(text);
-    });
-
-    // 6. Un-hide H3s inside vendor cards, remove vc-header
-    clone.querySelectorAll('.vendor-card > h3').forEach(h3 => {
-      h3.style.display = 'block';
-    });
-    clone.querySelectorAll('.vc-header').forEach(h => h.remove());
-    clone.querySelectorAll('.vc-tags').forEach(t => t.remove());
-    clone.querySelectorAll('.vc-body').forEach(b => {
-      b.style.display = 'block';
-    });
-
-    // 7. Clean collapsible markers
-    clone.querySelectorAll('h3.collapsible').forEach(h3 => {
-      h3.textContent = h3.textContent.replace(/^[▸▾]\s*/, '');
-    });
-    clone.querySelectorAll('.collapsible-body').forEach(b => {
-      b.style.maxHeight = 'none';
-      b.style.overflow = 'visible';
-    });
-
-    // 8. Build standalone HTML document for printing
-    const printHTML = `<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>${(window.__SB_REPORT__ && window.__SB_REPORT__.title) || document.title || 'Market Landscape Report'}</title>
-<style>
-  @page {
-    size: A4;
-    margin: 20mm 18mm 20mm 18mm;
-  }
-  @media print {
-    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    font-size: 10pt; color: #1a1a1a; line-height: 1.55;
-    max-width: 100%; padding: 0;
-  }
-  h1 { font-size: 20pt; color: #1f3864; font-weight: 500; border-bottom: 2px solid #d0d7de;
-       padding-bottom: 8px; margin: 16px 0 10px; page-break-after: avoid; }
-  h2 { font-size: 14pt; color: #1f3864; font-weight: 500; border-bottom: 1px solid #e1e4e8;
-       padding-bottom: 6px; margin: 20px 0 8px; page-break-after: avoid; }
-  h3 { font-size: 11.5pt; color: #2f5597; font-weight: 500; margin: 14px 0 5px; page-break-after: avoid; }
-  h4 { font-size: 10.5pt; color: #2f5597; font-weight: 500; margin: 10px 0 4px; }
-  p  { margin: 0 0 7px; line-height: 1.55; }
-  ul, ol { margin: 0 0 8px 20px; }
-  li { margin: 2px 0; line-height: 1.5; }
-  strong { font-weight: 500; }
-  a { color: #2563eb; text-decoration: underline; }
-  hr { border: none; border-top: 1px solid #d0d7de; margin: 16px 0; }
-  code { background: #f0f3f6; padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Consolas, monospace; font-size: 9pt; }
-  pre { background: #f6f8fa; padding: 10px; border-radius: 5px; margin: 8px 0; font-size: 9pt; font-family: 'SF Mono', Consolas, monospace; border: 1px solid #d0d7de; overflow-x: auto; white-space: pre-wrap; }
-  pre code { background: none; padding: 0; }
-  blockquote, .callout { border-left: 4px solid #2f5597; padding: 8px 14px; margin: 10px 0; background: #e8eef4; font-size: 10pt; }
-  .callout-signal { background: #f1f5f9; border-color: #64748b; }
-  .callout-risk   { background: #f8fafc; border-color: #475569; }
-  .callout-stat   { background: #e8eef4; border-color: #1f3864; }
-  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9pt; page-break-inside: auto; }
-  th { background: #e8eaed; color: #1a1a1a; font-weight: 500; font-size: 8.5pt; text-transform: uppercase;
-       letter-spacing: 0.3px; padding: 7px 8px; border: 1px solid #d0d7de; text-align: left; }
-  td { padding: 6px 8px; border: 1px solid #d0d7de; vertical-align: top; }
-  tbody tr:nth-child(even) { background: #f6f8fa; }
-  img { max-width: 100%; height: auto; display: block; margin: 6px auto; }
-
-  /* Section colours */
-  .sec-color-0 { border-left: 4px solid #1f3864; padding-left: 10px; }
-  .sec-color-1 { border-left: 4px solid #2f5597; padding-left: 10px; }
-  .sec-color-2 { border-left: 4px solid #3d6fa8; padding-left: 10px; }
-  .sec-color-3 { border-left: 4px solid #5b7fa6; padding-left: 10px; }
-  .sec-color-4 { border-left: 4px solid #64748b; padding-left: 10px; }
-  .sec-color-5 { border-left: 4px solid #475569; padding-left: 10px; }
-  .sec-color-6 { border-left: 4px solid #334155; padding-left: 10px; }
-  .sec-color-7 { border-left: 4px solid #94a3b8; padding-left: 10px; }
-
-  /* Chart frames */
-  .chart-frame { border: 1px solid #d0d7de; border-radius: 8px; padding: 14px 18px; margin: 12px 0; background: #fff;
-                 page-break-inside: avoid; opacity: 1 !important; transform: none !important; }
-  .chart-title { font-size: 9pt; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6368; margin-bottom: 3px; }
-  .chart-subtitle { font-size: 8.5pt; color: #80868b; margin-bottom: 10px; }
-
-  /* Vendor cards */
-  .vendor-card { border: 1px solid #d0d7de; border-radius: 8px; padding: 10px 14px; margin: 10px 0;
-                 page-break-inside: avoid; }
-
-  /* Pros / Cons grid */
-  .pros-cons-grid { display: flex; gap: 16px; margin: 8px 0; }
-  .pros-col, .cons-col { flex: 1; }
-  .pros-col strong { color: var(--sb-pros); }
-  .cons-col strong { color: var(--sb-cons); }
-  .pros-col ul, .cons-col ul { padding-left: 16px; font-size: 9.5pt; }
-
-  /* Trend cards */
-  .trend-strip { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
-  .trend-card { flex: 0 0 calc(25% - 8px); border: 1px solid #d0d7de; border-radius: 6px; padding: 10px; background: #f6f8fa; page-break-inside: avoid; }
-  .tc-icon { font-size: 18pt; margin-bottom: 4px; }
-  .tc-title { font-size: 9pt; font-weight: 500; color: #1a1a1a; margin-bottom: 3px; }
-  .tc-body { font-size: 8.5pt; color: #5f6368; line-height: 1.4; }
-
-  /* Legend styles */
-  .wave-legend, .vc-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 8.5pt; }
-  .wave-legend span, .vc-legend span { display: flex; align-items: center; gap: 4px; }
-  .wave-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-  .vc-legend i { display: inline-block; width: 20px; height: 3px; border-radius: 2px; }
-</style>
-</head><body>${clone.innerHTML}</body></html>`;
-
-    // 9. Open print window
-    const printWin = window.open('', '_blank', 'width=900,height=700');
-    printWin.document.write(printHTML);
-    printWin.document.close();
-
-    // Wait for images to load then trigger print
-    printWin.onload = () => {
-      setTimeout(() => {
-        printWin.print();
-      }, 500);
-    };
-    // Fallback if onload doesn't fire
-    setTimeout(() => {
-      try { printWin.print(); } catch(e) {}
-    }, 3000);
-
-    // 10. Re-collapse
-    collapsedBodies.forEach(b => b.classList.add('vc-collapsed'));
-    collapsedH3s.forEach(h3 => {
-      const bodyDiv = h3.nextElementSibling;
-      if (bodyDiv && bodyDiv.classList.contains('collapsible-body')) {
-        bodyDiv.style.maxHeight = '0';
-        h3.classList.add('is-closed');
-        h3.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    setActionBtnState(btn, 'check', 'Done');
-    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
-
-  } catch(e) {
+    const opened = window.open(pdfHref, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      const a = document.createElement('a');
+      a.href = pdfHref;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setActionBtnState(btn, 'check', 'Opened');
+  } catch (e) {
     console.error('PDF export failed:', e);
-    collapsedBodies.forEach(b => b.classList.add('vc-collapsed'));
-    setActionBtnState(btn, 'circle-x', 'Failed');
-    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
+    setActionBtnState(btn, 'circle-x', 'PDF missing — regenerate the landscape report');
   }
+  setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
 }
 
 function _inlineStylesForGDocs(root) {
@@ -2983,9 +3156,9 @@ function _inlineStylesForGDocs(root) {
   // Bold & italic
   root.querySelectorAll('strong').forEach(el => { el.style.fontWeight = '500'; });
 
-  // Links — make them blue and underlined
+  // Links — blue, no underline (a11y via color + focus outline elsewhere)
   root.querySelectorAll('a').forEach(el => {
-      el.style.cssText = 'color:#2563eb;text-decoration:underline;';
+      el.style.cssText = 'color:#2563eb;text-decoration:none;';
   });
 
   // Blockquotes / callouts
@@ -3129,14 +3302,43 @@ function _inlineStylesForGDocs(root) {
   }
 
   function _refreshVendorSets() {
-    const buckets = (typeof VENDOR_BUCKETS === 'object' && VENDOR_BUCKETS) ? VENDOR_BUCKETS : {};
-    COMMERCIAL_LABELS = new Set(buckets.commercial || VC_COMMERCIAL.map(s => s.label));
-    OSS_LABELS = new Set(buckets.oss || VC_OSS.map(s => s.label));
+    // Active market chart buckets drive filters so Commercial/OSS/Leaders match
+    // the plotted membership for the market currently injected into MQ/GMQ/Wave.
+    // Fall back to PRIMARY only when the active chart has empty buckets.
+    const activeBuckets = (typeof VENDOR_BUCKETS === 'object' && VENDOR_BUCKETS)
+      ? VENDOR_BUCKETS
+      : null;
+    const primaryBuckets = (typeof PRIMARY_CHART_DATA === 'object' && PRIMARY_CHART_DATA)
+      ? PRIMARY_CHART_DATA.vendor_buckets
+      : null;
+    const activeHasLists = !!(activeBuckets && (
+      (activeBuckets.commercial && activeBuckets.commercial.length) ||
+      (activeBuckets.oss && activeBuckets.oss.length)
+    ));
+    const buckets = activeHasLists
+      ? activeBuckets
+      : ((primaryBuckets && typeof primaryBuckets === 'object') ? primaryBuckets : (activeBuckets || {}));
+    // Union commercial/oss across all markets so multi-market cores (e.g. SB in
+    // APO ∩ plugins) remain filterable when the sidebar spans the full report.
+    const unionCommercial = new Set(buckets.commercial || []);
+    const unionOss = new Set(buckets.oss || []);
+    if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+      Object.values(MARKET_CHARTS).forEach(ch => {
+        const vb = ch && ch.vendor_buckets;
+        if (!vb) return;
+        (vb.commercial || []).forEach(l => unionCommercial.add(l));
+        (vb.oss || []).forEach(l => unionOss.add(l));
+      });
+    }
+    COMMERCIAL_LABELS = unionCommercial;
+    OSS_LABELS = unionOss;
+    // Leaders/Challengers stay market-chart-specific (active MQ authority).
     LEADER_LABELS = new Set(buckets.leaders || GMQ_DATA.filter(d => d.q === 'Leaders').map(d => d.label));
     CHALLENGER_LABELS = new Set(buckets.challengers || GMQ_DATA.filter(d => d.q === 'Challengers').map(d => d.label));
     ALL_VENDORS = new Set([
       ...(LINK_PAIRS || []).map(([name]) => name),
       ...Object.keys(VENDOR_URLS || {}),
+      ...Object.keys(typeof HOMEPAGE_VENDOR_URLS === 'object' ? HOMEPAGE_VENDOR_URLS : {}),
       ...MQ_DATA.map(d => d.label),
       ...GMQ_DATA.map(d => d.label),
       ...WAVE_DATA.map(d => d.label),
@@ -3149,9 +3351,31 @@ function _inlineStylesForGDocs(root) {
 
   function _vendorUrl(label) {
     if (!label) return '';
+    if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
     if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
     const hit = (LINK_PAIRS || []).find(([name]) => name === label);
     return hit ? hit[1] : '';
+  }
+
+  function _homepageFromHeading(h3, displayName) {
+    const anchors = [...(h3.querySelectorAll('a[href^="http"]') || [])];
+    if (!anchors.length) return '';
+    const want = String(displayName || '').trim();
+    const exact = anchors.find(a => (a.textContent || '').trim() === want);
+    if (exact) return exact.href;
+    const fuzzy = anchors.find(a => {
+      const t = (a.textContent || '').trim();
+      return t && want && (want.includes(t) || t.includes(want));
+    });
+    if (fuzzy) return fuzzy.href;
+    return anchors[anchors.length - 1].href || '';
+  }
+
+  function _escAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;');
   }
 
   function _normalizeVendorLabel(name) {
@@ -3225,9 +3449,14 @@ function _inlineStylesForGDocs(root) {
     markSourceReliabilitySection();
     setupCollapsibles();
     insertVendorFilterBar();
+    annotateCriticalFillGaps();
     wrapContentTables();
     layoutExportBarForViewport();
     wrapVendorNameLinks();
+    ensureExternalLinksNewTab(document.getElementById('content'));
+    ensureExternalLinksNewTab(document.getElementById('solutionNav'));
+    ensureExternalLinksNewTab(document.getElementById('matrixPanelBody'));
+    ensureExternalLinksNewTab(document.getElementById('compareResultsBody'));
     _buildVendorSlugMap();
     _ensureCompareSection();
     _renderCompareTable();
@@ -3237,6 +3466,15 @@ function _inlineStylesForGDocs(root) {
     setupQuadrantCompareOverlays();
     requestAnimationFrame(() => { resizeAllCharts(); syncExportBarClearance(); });
     refreshLucideIcons();
+    // Honor #vendor-{slug}[--{market}] deep links after cards exist.
+    const hash = String(window.location.hash || '').replace(/^#/, '');
+    if (hash.startsWith('vendor-')) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) _scrollToVendorCard(hash);
+        else _scrollToVendorCard(hash.replace(/^vendor-/, ''));
+      }, 0);
+    }
     const compareBtn = document.getElementById('compareBtn');
     if (compareBtn && !compareBtn.dataset.compareWired) {
       compareBtn.dataset.compareWired = '1';
@@ -3561,13 +3799,16 @@ function _inlineStylesForGDocs(root) {
         card.dataset.vendor = rawName;
         const cardSlug = _lookupSlugFromCharts(displayName) || _slugify(displayName);
         card.dataset.slug = cardSlug;
-        card.id = 'vendor-' + cardSlug;
+        // Resolve market before H3 is moved into the card (needs preceding H2).
+        const marketId = _resolveMarketIdFromNode(h3);
+        if (marketId) card.dataset.market = marketId;
+        card.id = _vendorCardDomId(cardSlug, marketId);
 
         const header = document.createElement('div');
         header.className = 'vc-header';
-        const vendorUrl = _vendorUrl(displayName) || _vendorUrl(rawName);
+        const vendorUrl = _vendorUrl(displayName) || _vendorUrl(rawName) || _homepageFromHeading(h3, displayName);
         const nameHtml = vendorUrl
-          ? `<a class="vc-name-link" href="${vendorUrl}" target="_blank" rel="noopener noreferrer">${displayName}</a>`
+          ? `<a class="vc-name-link" href="${_escAttr(vendorUrl)}" target="_blank" rel="noopener noreferrer">${displayName}</a>`
           : displayName;
         header.innerHTML =
           `<label class="vc-compare" title="Add to Compare"><input type="checkbox" class="vc-compare-cb" data-vendor="${displayName.replace(/"/g, '&quot;')}" aria-label="Compare ${displayName.replace(/"/g, '')}"></label>` +
@@ -3765,73 +4006,82 @@ function _inlineStylesForGDocs(root) {
     commRow.querySelectorAll('.snav-btn').forEach(b => b.remove());
     ossRow.querySelectorAll('.snav-btn').forEach(b => b.remove());
 
-    // Collect vendor names from DOM sections
-    function collectVendorNames(sectionTest) {
-      const names = [];
+    // Collect vendor occurrences from DOM sections (multi-market keeps each market).
+    function collectVendorEntries(sectionTest) {
+      const entries = [];
+      const seen = new Set();
       for (const h2 of document.querySelectorAll('#content h2')) {
-        if (sectionTest(h2.textContent)) {
-          let sib = h2.nextElementSibling;
-          while (sib && sib.tagName !== 'H2') {
-            if (sib.tagName === 'H3') {
-              names.push(sib.textContent.replace(/^[▸▾]\s*/, '').trim());
+        if (!sectionTest(h2.textContent)) continue;
+        const marketId = _resolveMarketIdFromNode(h2);
+        let sib = h2.nextElementSibling;
+        while (sib && sib.tagName !== 'H2') {
+          if (sib.tagName === 'H3') {
+            const raw = sib.textContent.replace(/^[▸▾]\s*/, '').trim();
+            const display = raw.replace(/^\d+\.\s*/, '').replace(/\s*\(.*\)\s*$/, '').trim();
+            const key = display.toLowerCase() + '::' + (marketId || '');
+            if (raw && !seen.has(key)) {
+              seen.add(key);
+              entries.push({ raw, display, marketId });
             }
-            sib = sib.nextElementSibling;
           }
-          break;
+          sib = sib.nextElementSibling;
         }
       }
-      return names;
+      return entries;
     }
 
-    const commVendorsRaw = collectVendorNames(t => /commercial/i.test(t));
-    const ossVendorsRaw  = collectVendorNames(t => /open[\s\-]source|oss/i.test(t));
-    // Strip leading "N. " and trailing parenthetical "(type info)"
-    function stripNavName(n) { return n.replace(/^\d+\.\s*/, '').replace(/\s*\(.*\)\s*$/, '').trim(); }
-    const commVendors = commVendorsRaw.map(stripNavName);
-    const ossVendors  = ossVendorsRaw.map(stripNavName);
+    const commEntries = collectVendorEntries(t => /commercial/i.test(t));
+    const ossEntries  = collectVendorEntries(t => /open[\s\-]source|oss/i.test(t));
 
-    function addPills(row, displayNames, rawNames) {
-      displayNames.forEach((name, i) => {
-        const raw = rawNames[i];
-        const vendorUrl = _vendorUrl(name) || _vendorUrl(raw);
-        const el = document.createElement(vendorUrl ? 'a' : 'button');
+    function addPills(row, entries) {
+      const nameCounts = {};
+      entries.forEach(e => {
+        const k = e.display.toLowerCase();
+        nameCounts[k] = (nameCounts[k] || 0) + 1;
+      });
+      entries.forEach(entry => {
+        const { raw, display, marketId } = entry;
+        const multi = nameCounts[display.toLowerCase()] > 1;
+        const slug = _lookupSlugFromCharts(display) || _slugify(display);
+        const cardId = _vendorCardDomId(slug, marketId);
+        const vendorUrl = _vendorUrl(display) || _vendorUrl(raw);
+        // Multi-market duplicates: in-page anchors so both cards are reachable via snav.
+        // Unique vendors with a homepage: keep external link behavior.
+        const useInPage = multi || !vendorUrl;
+        const el = document.createElement(useInPage || vendorUrl ? 'a' : 'button');
         el.className = 'snav-btn';
         el.dataset.vendor = raw;
-        el.textContent = name;
-        if (vendorUrl) {
-          el.href = vendorUrl;
-          el.target = '_blank';
-          el.rel = 'noopener noreferrer';
-          el.title = `Open ${name} website (Ctrl/Cmd+click)`;
+        if (marketId) el.dataset.market = marketId;
+        el.dataset.slug = slug;
+        el.textContent = multi && marketId
+          ? `${display} · ${_marketShortLabel(marketId)}`
+          : display;
+        if (useInPage) {
+          el.href = '#' + cardId;
+          el.title = multi && marketId
+            ? `Jump to ${display} (${_marketShortLabel(marketId)})`
+            : `Jump to ${display}`;
           el.addEventListener('click', (e) => {
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
             e.preventDefault();
-            const card = document.querySelector(`.vendor-card[data-vendor="${CSS.escape(raw)}"]`);
-            if (card) {
-              const navH = navEl.offsetHeight;
-              const bcH  = document.getElementById('breadcrumb')?.offsetHeight || 0;
-              const top  = card.getBoundingClientRect().top + window.scrollY - navH - bcH - 12;
-              window.scrollTo({ top, behavior: 'smooth' });
+            if (typeof window._scrollToVendorCard === 'function') {
+              window._scrollToVendorCard(slug, marketId);
+            } else {
+              _scrollToVendorCard(slug, marketId);
             }
           });
         } else {
-          el.type = 'button';
-          el.addEventListener('click', () => {
-            const card = document.querySelector(`.vendor-card[data-vendor="${CSS.escape(raw)}"]`);
-            if (card) {
-              const navH = navEl.offsetHeight;
-              const bcH  = document.getElementById('breadcrumb')?.offsetHeight || 0;
-              const top  = card.getBoundingClientRect().top + window.scrollY - navH - bcH - 12;
-              window.scrollTo({ top, behavior: 'smooth' });
-            }
-          });
+          el.href = vendorUrl;
+          el.target = '_blank';
+          el.rel = 'noopener noreferrer';
+          el.title = `Open ${display} website (new tab)`;
+          // Primary click opens homepage in a new tab; do not preventDefault.
         }
         row.appendChild(el);
       });
     }
 
-    addPills(commRow, commVendors, commVendorsRaw);
-    addPills(ossRow,  ossVendors, ossVendorsRaw);
+    addPills(commRow, commEntries);
+    addPills(ossRow, ossEntries);
 
     // Adjust positions dynamically based on actual nav height
     syncTopChrome();
@@ -3842,9 +4092,11 @@ function _inlineStylesForGDocs(root) {
       entries.forEach(e => {
         if (e.isIntersecting) {
           const name = e.target.dataset.vendor;
+          const market = e.target.dataset.market || '';
           document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
-          document.querySelectorAll(`.snav-btn[data-vendor="${CSS.escape(name)}"]`)
-            .forEach(b => b.classList.add('active'));
+          document.querySelectorAll(`.snav-btn[data-vendor="${CSS.escape(name)}"]`).forEach(b => {
+            if (!market || (b.dataset.market || '') === market) b.classList.add('active');
+          });
         }
       });
     }, { threshold: 0.3 });
@@ -3856,16 +4108,25 @@ function _inlineStylesForGDocs(root) {
     const bar = document.getElementById('vendorFilterBar');
     if (!bar) return;
 
+    const challengerCount = (typeof CHALLENGER_LABELS !== 'undefined' && CHALLENGER_LABELS)
+      ? CHALLENGER_LABELS.size : 0;
+    const challengerDisabled = !challengerCount;
+    const challengerClass = challengerDisabled ? 'vfbtn is-empty' : 'vfbtn';
+    const challengerExtra = challengerDisabled
+      ? ' disabled title="No Challengers in current market chart data"'
+      : '';
+
     bar.innerHTML =
       `<span class="vf-label">Filter</span>` +
       `<button class="vfbtn active" type="button" data-filter="all">All Vendors</button>` +
       `<button class="vfbtn" type="button" data-filter="commercial">Commercial</button>` +
       `<button class="vfbtn" type="button" data-filter="oss">OSS</button>` +
       `<button class="vfbtn" type="button" data-filter="leader">Leaders</button>` +
-      `<button class="vfbtn" type="button" data-filter="challenger">Challengers</button>`;
+      `<button class="${challengerClass}" type="button" data-filter="challenger"${challengerExtra}>Challengers</button>`;
 
     bar.querySelectorAll('.vfbtn').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.disabled) return;
         bar.querySelectorAll('.vfbtn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _applyVendorFilter(btn.dataset.filter);
@@ -3875,6 +4136,39 @@ function _inlineStylesForGDocs(root) {
     const active = bar.querySelector('.vfbtn.active');
     _applyVendorFilter(active ? active.dataset.filter : 'all');
     syncTopChrome();
+  }
+
+  function annotateCriticalFillGaps() {
+    const existing = document.getElementById('matrixFillGapBanner');
+    if (existing) existing.remove();
+    const report = window.__SB_REPORT__;
+    const rows = report && report.comparison && Array.isArray(report.comparison.rows)
+      ? report.comparison.rows : [];
+    const gaps = [];
+    for (const row of rows) {
+      if (!row || row.type !== 'feature' || row.priority !== 'Critical') continue;
+      const sols = row.solutions || {};
+      const keys = Object.keys(sols);
+      if (!keys.length) continue;
+      const filled = keys.filter(k => String(sols[k] || '').trim()).length;
+      if (filled === 0) {
+        gaps.push(`${row.name} (0/${keys.length})`);
+      }
+    }
+    if (!gaps.length) return;
+    const banner = document.createElement('div');
+    banner.id = 'matrixFillGapBanner';
+    banner.className = 'matrix-fill-gap';
+    banner.setAttribute('role', 'note');
+    banner.innerHTML =
+      `<strong>Critical matrix gaps (missing research evidence):</strong> ` +
+      `${gaps.join('; ')}. Empty cells render as — and must not be read as feature support.`;
+    const content = document.getElementById('content');
+    if (content && content.firstChild) {
+      content.insertBefore(banner, content.firstChild);
+    } else if (content) {
+      content.appendChild(banner);
+    }
   }
 
   function _setScatterPointVisibility(chart, filter) {

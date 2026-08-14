@@ -1,0 +1,74 @@
+{
+  "tembo": {
+    "decision": "demote_core_to_adjacent_unplotted",
+    "reason": "Run envelopes include both agent-surface claims (tembo.io, medium confidence) and an explicit inclusion judgment that Tembo 'Satisfies 2 of 7 inclusion criteria at most — qualifies as tertiary Adjacent, not Top-N' plus IDENTITY RISK (Postgres-first brand). Core/MQ/Wave/Blue Ocean require ≥3-of-7 clear evidence; keep listed adjacent/watchlist only.",
+    "sources": [
+      "solutions/tembo/scr.md",
+      "contributions/all-envelopes.json (Tembo 2-of-7 claim)",
+      "https://tembo.io/",
+      "https://www.tembo.io/blog/autonomous-software-maintenance-has-arrived"
+    ],
+    "date": "2026-07-22",
+    "reviewer": "address-all-non-coi-pass"
+  },
+  "blue_ocean_markets": [
+    "apo",
+    "sdlc-plugins",
+    "agentic-sdlc-saas"
+  ],
+  "inclusion_vendors": 27,
+  "pros_lint": {
+    "files_changed": [
+      "solutions/agenthub/scr.md",
+      "solutions/agentsys/scr.md",
+      "solutions/ai-dlc/scr.md",
+      "solutions/ateam/scr.md",
+      "solutions/augment-cosmos/scr.md",
+      "solutions/bmad/scr.md",
+      "solutions/claude-code/scr.md",
+      "solutions/codex/scr.md",
+      "solutions/cognition-scout/scr.md",
+      "solutions/conductor/scr.md",
+      "solutions/cursor/scr.md",
+      "solutions/devin/scr.md",
+      "solutions/factory-ai/scr.md",
+      "solutions/github-copilot/scr.md",
+      "solutions/gsd/scr.md",
+      "solutions/oh-my-pi/scr.md",
+      "solutions/ruflo/scr.md",
+      "solutions/sdlc-plugin/scr.md",
+      "solutions/silver-bullet/scr.md",
+      "solutions/spec-kit/scr.md",
+      "solutions/superclaude/scr.md",
+      "solutions/superpowers/scr.md",
+      "solutions/zuvo/scr.md",
+      "landscape/landscape-report.md"
+    ],
+    "count": 24
+  },
+  "ibm_scrub": {
+    "before": 15,
+    "after": 4,
+    "path": "contributions/all-envelopes.json",
+    "phases/DR-RETRIEVE/final-retrieve.json": {
+      "before": 2,
+      "after": 0
+    },
+    "phases/DR-RETRIEVE/final-retrieve-clean.json": {
+      "before": 2,
+      "after": 0
+    },
+    "phases/DR-RETRIEVE/final-retrieve-perfect.json": {
+      "before": 2,
+      "after": 0
+    },
+    "phases/DR-RETRIEVE/merged-retrieve.json": {
+      "before": 2,
+      "after": 0
+    },
+    "phases/DR-RETRIEVE/final-retrieve-selection.json": {
+      "before": 2,
+      "after": 0
+    }
+  }
+}

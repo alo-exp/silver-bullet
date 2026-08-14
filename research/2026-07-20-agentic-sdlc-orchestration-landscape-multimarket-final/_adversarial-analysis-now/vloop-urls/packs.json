@@ -1,0 +1,31 @@
+{
+  "homepage_by_slug": {
+    "cc10x": "https://github.com/romiluz13/cc10x",
+    "cavekit-v31": "https://github.com/JuliusBrussee/cavekit",
+    "cavekit-v4": "https://github.com/JuliusBrussee/cavekit",
+    "barkain-workflow-orchestrator": "https://github.com/barkain/claude-code-workflow-orchestration"
+  },
+  "pack_copies_ok": [
+    "agents/claude/silver:deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json",
+    "skills/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json",
+    "plugins/silver-bullet/skill-source/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json",
+    "host-bundles/codex/silver-deep-research/reference/landscape/category-packs/agentic-sdlc-process-orchestrator.json"
+  ],
+  "pack_forbidden_leftover": "none",
+  "vendor_link_labels_rewrites": {
+    "https://cc10x.dev": "https://github.com/romiluz13/cc10x",
+    "https://cavekit.ai": "https://github.com/JuliusBrussee/cavekit",
+    "https://barkain.com": "https://github.com/barkain/claude-code-workflow-orchestration"
+  },
+  "pipeline": {
+    "synthesize_landscape.py": {
+      "rewrite_vendor_url": 1,
+      "homepage_by_slug": 2,
+      "scrub_embedded_vendor_urls": 1
+    },
+    "landscape_preview_render.py": {
+      "scrub_embedded_vendor_urls": 2,
+      "vendor_link_labels": 2
+    }
+  }
+}

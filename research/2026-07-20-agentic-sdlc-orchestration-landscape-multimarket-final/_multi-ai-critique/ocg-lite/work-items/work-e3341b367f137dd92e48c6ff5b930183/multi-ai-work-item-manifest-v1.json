@@ -1,0 +1,112 @@
+{
+  "schema_id": "multi-ai-work-item-manifest-v1",
+  "version": "1.0.0",
+  "spine": "multi-ai-task-v2",
+  "run_id": "run-669f16b82b1410119835b2f8772ce933",
+  "work_item_id": "work-e3341b367f137dd92e48c6ff5b930183",
+  "input_hash": "5d322ea848d79df5742f8a18f3d182b724af03935eb64f89bd5667dde3b52c2b",
+  "resolved_logical_ids": [
+    {
+      "logical_model_id": "ocg-minimax-m3",
+      "model_family_id": "minimax",
+      "requested_model_id": "ocg-minimax-m3",
+      "effective_model_id": "ocg-minimax-m3",
+      "backend": "ocg",
+      "model_family_registry_version": "1.0.0",
+      "model_family_registry_sha256": "d8fcdd0970da20d8472b9de781f0b3e59a551f8f289680762c94921a04d56ec0"
+    },
+    {
+      "logical_model_id": "ocg-qwen3.7-plus",
+      "model_family_id": "qwen",
+      "requested_model_id": "ocg-qwen3.7-plus",
+      "effective_model_id": "ocg-qwen3.7-plus",
+      "backend": "ocg",
+      "model_family_registry_version": "1.0.0",
+      "model_family_registry_sha256": "d8fcdd0970da20d8472b9de781f0b3e59a551f8f289680762c94921a04d56ec0"
+    },
+    {
+      "logical_model_id": "ocg-deepseek-v4-flash",
+      "model_family_id": "deepseek",
+      "requested_model_id": "ocg-deepseek-v4-flash",
+      "effective_model_id": "ocg-deepseek-v4-flash",
+      "backend": "ocg",
+      "model_family_registry_version": "1.0.0",
+      "model_family_registry_sha256": "d8fcdd0970da20d8472b9de781f0b3e59a551f8f289680762c94921a04d56ec0"
+    },
+    {
+      "logical_model_id": "ocg-kimi-k2.6",
+      "model_family_id": "kimi",
+      "requested_model_id": "ocg-kimi-k2.6",
+      "effective_model_id": "ocg-kimi-k2.6",
+      "backend": "ocg",
+      "model_family_registry_version": "1.0.0",
+      "model_family_registry_sha256": "d8fcdd0970da20d8472b9de781f0b3e59a551f8f289680762c94921a04d56ec0"
+    },
+    {
+      "logical_model_id": "ocg-mimo-v2.5",
+      "model_family_id": "mimo",
+      "requested_model_id": "ocg-mimo-v2.5",
+      "effective_model_id": "ocg-mimo-v2.5",
+      "backend": "ocg",
+      "model_family_registry_version": "1.0.0",
+      "model_family_registry_sha256": "d8fcdd0970da20d8472b9de781f0b3e59a551f8f289680762c94921a04d56ec0"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt_id": "attempt-3476c234-bfca-4f22-b791-a69535a4bc0c",
+      "logical_model_id": "ocg-minimax-m3",
+      "status": "completed",
+      "backend": "ocg",
+      "authoritative": true,
+      "effective_model_id": "opencode-go/minimax-m3",
+      "error": null
+    },
+    {
+      "attempt_id": "attempt-3476c234-bfca-4f22-b791-a69535a4bc0c",
+      "logical_model_id": "ocg-qwen3.7-plus",
+      "status": "completed",
+      "backend": "ocg",
+      "authoritative": true,
+      "effective_model_id": "opencode-go/qwen3.7-plus",
+      "error": null
+    },
+    {
+      "attempt_id": "attempt-3476c234-bfca-4f22-b791-a69535a4bc0c",
+      "logical_model_id": "ocg-deepseek-v4-flash",
+      "status": "completed",
+      "backend": "ocg",
+      "authoritative": true,
+      "effective_model_id": "opencode-go/deepseek-v4-flash",
+      "error": null
+    },
+    {
+      "attempt_id": "attempt-3476c234-bfca-4f22-b791-a69535a4bc0c",
+      "logical_model_id": "ocg-kimi-k2.6",
+      "status": "completed",
+      "backend": "ocg",
+      "authoritative": true,
+      "effective_model_id": "opencode-go/kimi-k2.6",
+      "error": null
+    },
+    {
+      "attempt_id": "attempt-3476c234-bfca-4f22-b791-a69535a4bc0c",
+      "logical_model_id": "ocg-mimo-v2.5",
+      "status": "completed",
+      "backend": "ocg",
+      "authoritative": true,
+      "effective_model_id": "opencode-go/mimo-v2.5",
+      "error": null
+    }
+  ],
+  "budget": {
+    "currency_micro_usd_cap": 25000000,
+    "total_tokens_cap": 2000000,
+    "currency_micro_usd_actual": 0,
+    "total_tokens_actual": 0,
+    "price_known": true,
+    "usage_metered": true,
+    "budget_stop_reason": null
+  },
+  "outputs": []
+}

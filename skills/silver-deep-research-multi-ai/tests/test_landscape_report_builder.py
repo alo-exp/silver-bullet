@@ -339,16 +339,26 @@ class ChartBuilderTests(unittest.TestCase):
                 report_date="July 19, 2026",
             )
         self.assertNotRegex(md, r"(?m)^Axes:\s*\*\*")
-        self.assertIn("### 3A.", md)
-        self.assertIn("### 3B.", md)
+        self.assertIn("Scoring methodology", md)
+        self.assertIn("Executive Summary", md)
+        self.assertIn("Vendor inclusion ledger", md)
+        self.assertIn("Coverage completeness matrix", md)
+        self.assertIn("Consensus Resolution Table", md)
+        self.assertIn("Consensus Patterns", md)
+        self.assertTrue(
+            "### 3A." in md or "### 3.1 " in md or "### 4.1 " in md,
+            "expected positioning headings",
+        )
         self.assertIn("Radar of Key Competitive Factors", md)
         self.assertIn("### Model response weights", md)
         self.assertNotIn("min_pass_count", md)
         self.assertIn("core peer set", md)
+        self.assertNotIn("tiny deterministic jitter", md)
+        self.assertNotIn("0.85·jitter", md)
 
 
     def test_value_curve_includes_barkain_and_cc10x_mq_leaders(self) -> None:
-        """APO-style fixture: Barkain + cc10x must be Leaders on MQ/GMQ and on VC radar."""
+        """Barkain stays Leader on APO axes; cc10x is plotted but not a Leader on sparse execute ticks."""
         comparison = {
             "rankings": [
                 {"solution": "deepwork", "score": 25},
@@ -533,11 +543,29 @@ class ChartBuilderTests(unittest.TestCase):
         gmq_leaders = {p["label"] for p in chart["gmq_data"] if p["q"] == "Leaders"}
         mq_leaders = {p["label"] for p in chart["mq_data"] if p["q"] == "Leaders"}
         vc_labels = {s["label"] for s in chart["vc_commercial"] + chart["vc_oss"]}
+        plotted = {p["slug"] for p in chart["gmq_data"] + chart["mq_data"]}
         self.assertIn("Barkain Workflow Orchestrator", gmq_leaders | mq_leaders)
-        self.assertIn("cc10x", gmq_leaders | mq_leaders)
+        self.assertIn("cc10x", plotted)
+        self.assertNotIn("cc10x", {p["slug"] for p in chart["gmq_data"] + chart["mq_data"] if p["q"] == "Leaders"})
         self.assertIn("Barkain Workflow Orchestrator", vc_labels)
-        self.assertIn("cc10x", vc_labels)
         self.assertTrue((gmq_leaders | mq_leaders).issubset(vc_labels))
+        plugin_chart = build_chart_data(
+            comparison,
+            category="Agentic SDLC orchestration",
+            support=support,
+            need={"category_pack_id": "agentic-sdlc-process-orchestrator"},
+            scope_text="agentic sdlc orchestration landscape",
+            commercial=commercial,
+            oss=[{"slug": "silver-bullet", "name": "Silver Bullet"}],
+            known=known,
+            market_id="sdlc-plugins",
+        )
+        plugin_leaders = {
+            p["slug"]
+            for p in plugin_chart["gmq_data"] + plugin_chart["mq_data"]
+            if p["q"] == "Leaders"
+        }
+        self.assertNotIn("cc10x", plugin_leaders)
 
 
 class TemplateContractTests(unittest.TestCase):
@@ -562,13 +590,207 @@ class TemplateContractTests(unittest.TestCase):
             "_scrollToVendorCard",
             "compareResultsSection",
             "attachChartVendorNav",
-            "vendor-' + cardSlug",
+            "_vendorCardDomId(cardSlug, marketId)",
+            "vendor-' + s + '--' + mid",
             "setupQuadrantCompareOverlays",
             "quadrant-compare-btn",
             "_formatCompareScore",
             "cmp-score-row",
+            "HOMEPAGE_VENDOR_URLS",
+            "_homepageFromHeading",
+            "vc-name-link",
+            "ensureExternalLinksNewTab",
+            'target="_blank"',
+            "noopener noreferrer",
+            "landscape-report.pdf",
+            "landscape-report.pdf?v=",
+            "Date.now()",
+            "window.open(pdfHref, '_blank', 'noopener,noreferrer')",
+            "function _marketChartSource(anchor)",
+            "whenChartParentReady is rAF-deferred",
+            "payload.mq_data",
+            "payload.gmq_data",
+            "#content h3, #content h4",
         ):
             self.assertIn(needle, template, msg=f"missing {needle!r}")
+
+    def test_inject_snapshots_per_market_chart_data_before_raf(self) -> None:
+        """MQ/GMQ/Wave must not read restored PRIMARY globals inside whenChartParentReady."""
+        template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
+        mq = template.split("function inject2x2(", 1)[1].split("function injectGMQ(", 1)[0]
+        gmq = template.split("function injectGMQ(", 1)[1].split("function injectWave(", 1)[0]
+        wave = template.split("function injectWave(", 1)[1].split("function injectValueCurve(", 1)[0]
+        self.assertIn("const payload = _marketChartSource(anchorH3);", mq)
+        self.assertIn("const mqData = payload.mq_data;", mq)
+        self.assertIn("data: mqData.map(", mq)
+        self.assertNotIn("MQ_DATA.map(", mq)
+        self.assertIn("const gmqData = payload.gmq_data;", gmq)
+        self.assertIn("data: gmqData.map(", gmq)
+        self.assertNotIn("GMQ_DATA.map(", gmq)
+        self.assertIn("const waveData = payload.wave_data;", wave)
+        self.assertIn("waveData.map(", wave)
+        self.assertNotIn("WAVE_DATA.map(", wave)
+        # Fallback GMQ must see Magic Quadrant h4 headings, not only h3.
+        self.assertIn("querySelectorAll('#content h3, #content h4')", mq)
+
+    def test_external_links_open_in_new_tab(self) -> None:
+        """Homepage / card / prose links must use target=_blank + noopener."""
+        template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
+        self.assertIn("function ensureExternalLinksNewTab", template)
+        self.assertIn("a.setAttribute('target', '_blank')", template)
+        self.assertIn("a.setAttribute('rel', 'noopener noreferrer')", template)
+        # Unique homepage snav pills keep new-tab; multi-market in-page anchors preventDefault.
+        snav = template.split("function addPills", 1)[1].split("function insertVendorFilterBar", 1)[0]
+        self.assertIn("Open ${display} website (new tab)", snav)
+        self.assertIn("el.target = '_blank'", snav)
+        self.assertIn("e.preventDefault()", snav)
+        self.assertIn("_vendorCardDomId", snav)
+        self.assertIn("Jump to ${display}", snav)
+        # Card titles keep new-tab attrs
+        self.assertIn('target="_blank" rel="noopener noreferrer"', template)
+        from landscape_preview_render import _patch_chart_bootstrap
+
+        boot = _patch_chart_bootstrap(template)
+        self.assertIn("ensureExternalLinksNewTab", boot)
+        self.assertIn('target="_blank" rel="noopener noreferrer"', boot)
+
+    def test_pdf_export_opens_sibling_file_not_blob_or_print(self) -> None:
+        """Create PDF must open sibling landscape-report.pdf — never blob:null or print()."""
+        from landscape_preview_render import _patch_pdf_export
+
+        template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
+        fn = template.split("async function exportToPDF()", 1)[1].split(
+            "function _inlineStylesForGDocs", 1
+        )[0]
+        self.assertIn("landscape-report.pdf", fn)
+        self.assertIn("landscape-report.pdf?v=", fn)
+        self.assertIn("Date.now()", fn)
+        self.assertIn("window.open(pdfHref, '_blank', 'noopener,noreferrer')", fn)
+        self.assertNotIn("createObjectURL", fn)
+        self.assertNotIn("window.print(", fn)
+        self.assertNotIn("blobUrl", fn)
+        patched = _patch_pdf_export(template)
+        pfn = patched.split("async function exportToPDF()", 1)[1].split(
+            "function _inlineStylesForGDocs", 1
+        )[0]
+        self.assertIn("landscape-report.pdf?v=", pfn)
+        self.assertIn("Date.now()", pfn)
+        self.assertIn("window.open(pdfHref, '_blank'", pfn)
+        self.assertNotIn("createObjectURL", pfn)
+        self.assertNotIn("window.print(", pfn)
+
+    def test_write_sibling_landscape_pdf_invokes_playwright(self) -> None:
+        from unittest.mock import patch
+
+        from landscape_independent_pdf import PRINT_ROOT_ID
+        from landscape_preview_render import write_sibling_landscape_pdf
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            html_path = root / "landscape-report.html"
+            html_path.write_text("<html><body id='content'>ok</body></html>", encoding="utf-8")
+            (root / "landscape").mkdir()
+            (root / "landscape" / "chart-data.json").write_text(
+                json.dumps(
+                    {
+                        "primary_market_id": "apo",
+                        "markets": {
+                            "apo": {
+                                "titles": {"mq": "MQ", "gmq": "GMQ", "wave": "Wave"},
+                                "mq_data": [
+                                    {"slug": "a", "label": "A", "x": 6, "y": 7, "q": "Leaders"}
+                                ],
+                                "gmq_data": [
+                                    {"slug": "a", "label": "A", "x": 6, "y": 7, "q": "Leaders"}
+                                ],
+                                "wave_data": [
+                                    {
+                                        "slug": "a",
+                                        "label": "A",
+                                        "offering": 3,
+                                        "strategy": 3,
+                                        "presence": 2,
+                                    }
+                                ],
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "landscape" / "landscape-report.md").write_text(
+                "# T\n\n## 1. Market Definition & Scope\n\nScope.\n",
+                encoding="utf-8",
+            )
+            pdf_path = html_path.with_name("landscape-report.pdf")
+
+            def _fake_run(cmd, check):
+                pdf_path.write_bytes(b"%PDF-1.4 fake")
+                class _R:
+                    returncode = 0
+                return _R()
+
+            with patch("landscape_independent_pdf.subprocess.run", side_effect=_fake_run) as mocked:
+                info = write_sibling_landscape_pdf(html_path)
+            self.assertEqual(info["status"], "ok")
+            self.assertEqual(Path(info["pdf"]).resolve(), pdf_path.resolve())
+            self.assertTrue(pdf_path.is_file())
+            argv = mocked.call_args[0][0]
+            self.assertIn("pdf", argv)
+            self.assertEqual(Path(argv[-1]).resolve(), pdf_path.resolve())
+            self.assertTrue(str(argv[-2]).startswith("file:"))
+            self.assertNotIn("landscape-report.html", str(argv[-2]))
+            self.assertIn("--wait-for-selector", argv)
+            self.assertIn(f"#{PRINT_ROOT_ID}", argv)
+            self.assertNotIn("#content", argv)
+
+    def test_patch_pdf_export_rewrites_print_dialog_body(self) -> None:
+        from landscape_preview_render import _patch_pdf_export
+
+        stale = (
+            "async function exportToPDF() {\n"
+            "  const blobUrl = URL.createObjectURL(blob);\n"
+            "  window.print();\n"
+            "}\n\n"
+            "function _inlineStylesForGDocs(root) {}\n"
+        )
+        patched = _patch_pdf_export(stale)
+        self.assertIn("landscape-report.pdf?v=", patched)
+        self.assertIn("Date.now()", patched)
+        self.assertIn("window.open(pdfHref, '_blank'", patched)
+        self.assertNotIn("window.print(", patched)
+        self.assertNotIn("createObjectURL", patched)
+
+    def test_multi_market_vendor_card_ids_are_market_scoped(self) -> None:
+        """Same vendor in APO + sdlc-plugins must not emit duplicate HTML ids."""
+        template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
+        self.assertIn("function _vendorCardDomId(slug, marketId)", template)
+        self.assertIn("card.id = _vendorCardDomId(cardSlug, marketId)", template)
+        self.assertIn("function _resolveMarketIdFromNode(node)", template)
+        self.assertIn("const fromSelf = _marketIdFromHeadingText(node.textContent);", template)
+        self.assertIn("if (fromSelf) return fromSelf;", template)
+        # snav keeps both market occurrences reachable
+        snav = template.split("function addPills", 1)[1].split("function insertVendorFilterBar", 1)[0]
+        self.assertIn("multi && marketId", snav)
+        self.assertIn("_marketShortLabel(marketId)", snav)
+        self.assertIn("el.href = '#' + cardId", snav)
+        # Bare vendor-{slug} assignment must not remain as the only id path.
+        self.assertNotIn("card.id = 'vendor-' + cardSlug;", template)
+
+    def test_bootstrap_accumulates_homepage_vendor_urls(self) -> None:
+        """Per-market chart swaps must not drop homepage URLs used for card titles."""
+        from landscape_preview_render import _patch_chart_bootstrap
+
+        template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
+        boot = _patch_chart_bootstrap(template)
+        self.assertIn("let HOMEPAGE_VENDOR_URLS = {}", boot)
+        apply_fn = boot.split("function applyChartData", 1)[1].split(
+            "function applyMarketChartFromHeading", 1
+        )[0]
+        self.assertIn("HOMEPAGE_VENDOR_URLS[label] = url", apply_fn)
+        self.assertIn("_homepageFromHeading(h3, displayName)", boot)
+        vendor_url_fn = boot.split("function _vendorUrl", 1)[1].split("function ", 1)[0]
+        self.assertIn("HOMEPAGE_VENDOR_URLS[label]", vendor_url_fn)
 
     def test_matrix_charts_use_quadrant_fills_not_wave_zones(self) -> None:
         template = (ASSETS / "landscape-preview.template.html").read_text(encoding="utf-8")
@@ -649,3 +871,4 @@ class TemplateContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

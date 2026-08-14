@@ -66,7 +66,7 @@
       "features": [
         {
           "name": "Managed hosting",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Prebuilt SDLC templates",
@@ -87,7 +87,7 @@
         },
         {
           "name": "CI integration",
-          "supported": null
+          "supported": false
         },
         {
           "name": "Visual/E2E verification",
@@ -100,7 +100,7 @@
       "features": [
         {
           "name": "SSO",
-          "supported": null
+          "supported": false
         },
         {
           "name": "RBAC",

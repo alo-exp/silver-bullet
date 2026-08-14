@@ -1,0 +1,22 @@
+{
+  "overall": "PASS",
+  "file_open": true,
+  "html_bytes": 610025,
+  "embedded_quadrants": {
+    "apo": { "Leaders": 3, "Challengers": 2, "Niche Players": 7, "Visionaries": 1 },
+    "sdlc-plugins": { "Leaders": 4, "Challengers": 3, "Visionaries": 1, "Niche Players": 1 },
+    "agentic-sdlc-saas": { "Leaders": 2, "Visionaries": 3, "Challengers": 0 }
+  },
+  "plugins_y_unique": [3.6, 5.2, 5.9, 6.2, 6.5, 7.3, 7.6, 7.9, 8.6],
+  "markers": {
+    "coi": true,
+    "methodology": true,
+    "thin_evidence": true,
+    "tembo_identity_risk": true,
+    "augment_code_cosmos": true,
+    "opus_primary": true,
+    "flash_supporting": true,
+    "product_shapes": true
+  },
+  "spa_log": "generate-spa.log"
+}

@@ -263,14 +263,24 @@ def is_unusable_overview_claim(text: str, *, focus_name: str = "") -> bool:
         return True
     if len(t) > 420:
         return True
+    focus = (focus_name or "").lower()
+    lower = t.lower()
+    # Card identity leaks: another product's install path or report methodology prose.
+    if focus and "director" in focus and "superpowers" in lower:
+        return True
+    if focus and "cc10x" in focus and (
+        "startup-weighted comparison" in lower
+        or "silver bullet" in lower and "anchor" in lower
+        or "methodology" in lower and "score" in lower
+    ):
+        return True
     # Claims that list many other products are landscape notes, not overviews.
     others = 0
-    focus = (focus_name or "").lower()
     for display in KNOWN_SOLUTIONS.values():
         name = display.lower()
         if not name or (focus and (name == focus or name in focus or focus in name)):
             continue
-        if name in t.lower():
+        if name in lower:
             others += 1
             if others >= 3:
                 return True

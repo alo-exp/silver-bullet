@@ -4,7 +4,7 @@ Slug: `barkain-workflow-orchestrator`
 
 ## Executive summary
 
-Barkain Workflow Orchestrator is a primary-market APO candidate — multi-step workflow orchestration, quality gates, cross-session state, specialist routing.
+THIN EVIDENCE — Barkain Workflow Orchestrator is seed-listed. Persistence/gate claims are **unknown** without independent corroboration.
 
 ## Evidence-backed notes
 

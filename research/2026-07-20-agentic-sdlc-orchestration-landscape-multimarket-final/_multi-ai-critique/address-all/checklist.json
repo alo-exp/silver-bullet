@@ -1,0 +1,122 @@
+[
+  {
+    "id": "FIX-apo-challengers-thin",
+    "status": "FIXED",
+    "detail": "APO MQ now has Challengers (AgentSys, ATeam); thin commercials demoted to Niche Players"
+  },
+  {
+    "id": "FIX-plugins-mq-spread",
+    "status": "FIXED",
+    "detail": "Plugins MQ decompressed (y spread + Challengers/Visionaries/Niche); Zuvo residual purged from plots"
+  },
+  {
+    "id": "FIX-saas-spread-identity",
+    "status": "FIXED",
+    "detail": "SaaS MQ no longer all-Leaders; Augment Cosmos renamed; Tembo identity risk flagged; empty Challengers explained"
+  },
+  {
+    "id": "FIX-coi-methodology",
+    "status": "FIXED",
+    "detail": "Added COI disclosure + scoring methodology contract after §1"
+  },
+  {
+    "id": "FIX-autogen-naming",
+    "status": "FIXED",
+    "detail": "AutoGen no longer called legacy/sunset; framed as active framework, out of APO scope"
+  },
+  {
+    "id": "FIX-mq-wave-tables",
+    "status": "FIXED",
+    "detail": "Rebuilt MQ/Wave tables from updated chart-data + Leader/Wave rules"
+  },
+  {
+    "id": "FIX-blue-ocean-language",
+    "status": "FIXED",
+    "detail": "Blue Ocean captions no longer claim Leaders-only conflation"
+  },
+  {
+    "id": "FIX-thin-vendor-unknown",
+    "status": "FIXED",
+    "detail": "Thin APO commercials rewritten to unknown/thin-evidence language"
+  },
+  {
+    "id": "FIX-augment-naming",
+    "status": "FIXED",
+    "detail": "Augment Cosmos → Augment Code (Cosmos) with identity note"
+  },
+  {
+    "id": "FIX-tembo-identity",
+    "status": "FIXED",
+    "detail": "Tembo identity risk disclosed; agentic claims marked unverified"
+  },
+  {
+    "id": "FIX-ruflo-naming",
+    "status": "FIXED",
+    "detail": "Ruflo clarified as rename of Claude Flow, not slash-ambiguous dual product"
+  },
+  {
+    "id": "FIX-superpowers-url",
+    "status": "FIXED",
+    "detail": "Superpowers canonical URL remains https://github.com/obra/superpowers"
+  },
+  {
+    "id": "FIX-persistence-claim",
+    "status": "FIXED",
+    "detail": "Removed absolute SB-only persistence claim; thin peers marked unverified"
+  },
+  {
+    "id": "FIX-buying-product-shapes",
+    "status": "FIXED",
+    "detail": "§11 rewritten: product shapes + criteria-first; SB COI; procurement gaps"
+  },
+  {
+    "id": "FIX-section13-weights",
+    "status": "FIXED",
+    "detail": "§13 reweighted: opus primary; flash demoted; security evidence gap noted"
+  },
+  {
+    "id": "SCR-deepwork",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-turboshovel",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-workflow-manager",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-barkain-workflow-orchestrator",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-cavekit-v31",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-tembo",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-augment-cosmos",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "SCR-ruflo",
+    "status": "FIXED",
+    "detail": "Executive summary updated for critique honesty"
+  },
+  {
+    "id": "FIX-comparison-provenance",
+    "status": "FIXED",
+    "detail": "comparison.json provenance + caveats; matrix md refreshed"
+  }
+]

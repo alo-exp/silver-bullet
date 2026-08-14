@@ -1,0 +1,279 @@
+# Critique — ocg-kimi-k2.6
+
+backend: ocg
+status: completed
+attempt: attempt-3476c234-bfca-4f22-b791-a69535a4bc0c
+run_id: run-669f16b82b1410119835b2f8772ce933
+
+## Critiques (18)
+
+- **[P0][gap]** All market segments (APO, SDLC plugins, SaaS): Every segment declares empty 'challengers' arrays while simultaneously assigning wave counts (8, 8, 5). A Forrester Wave or Magic Quadrant with zero challengers and 100% leader rates across all three markets is structurally unrealistic and suggests the evaluation model was tuned to eliminate competitive pressure rather than reflect actual market positioning.
+- **[P0][inconsistency]** SDLC Plugins & SaaS leader designations: SDLC plugins labels all 10 core entries as leaders (100% leader density); SaaS labels all 5 core entries as leaders. APO labels only 3 of 13 as leaders (23% density). The 100% leader density in smaller markets contradicts standard analyst taxonomy where 'leader' implies relative superiority within a peer set. If every vendor is a leader, the category becomes meaningless.
+- **[P0][gap]** Exclusion rationale for major enterprise players: Amazon Q Developer, JetBrains AI Assistant, Poolside, Sourcegraph Cody, Sweep, Windsurf, and Cursor Background Agents are excluded with reason 'hard_veto from need_profile'. This reveals a methodology biased toward products that supplied research profiles or had easily scrapable public data, rather than the most impactful market participants. A landscape report that excludes the majority of funded, deployed enterprise tools due to data-availability gating severely misrepresents buyer options.
+- **[P1][inconsistency]** Zuvo coverage gap note vs. membership list: The digest lists Zuvo under 'Coverage gaps (must-research seeds missing from envelopes)' yet the membership JSON places zuvo firmly in the sdlc-plugins core. This is a direct contradiction: a vendor cannot simultaneously be a core peer and a missing research seed.
+- **[P1][information]** Superpowers GitHub URL: The Superpowers link points to github.com/obra/superpowers. The widely known Superpowers HTML5 game engine is under sparklinlabs/superpowers-core. 'obra' (Jesse Vincent) is not a recognized maintainer of an agentic SDLC plugin. This URL is likely incorrect or points to an unrelated personal stub, undermining the plugin's verifiability.
+- **[P1][inconsistency]** Cavekit versioning (v3.1 core vs v4 adjacent): Cavekit v3.1 is in the APO core while Cavekit v4 is relegated to adjacent. Ordinarily the newer major version (v4) would supersede the older (v3.1) in core placement, or both would be treated as the same product lineage. The inverted placement suggests version confusion or that v4 was not evaluated deeply enough to displace v3.1.
+- **[P1][gap]** APO core vendor obscurity: Several APO core entries—cc10x, Turboshovel, Workflow Manager, Deepwork, Barkain Workflow Orchestrator—have negligible or unverifiable public presence relative to excluded adjacent players such as LangGraph, CrewAI, or Conductor. Their elevation to 'core' over proven frameworks with active communities and funding raises questions about the inclusion scoring (3-of-7 criteria) being gamed or inconsistently applied.
+- **[P1][quality]** Wave counts vs. plotted vendor counts: APO wave_count=8 with 13 plotted; SDLC plugins wave_count=8 with 10 plotted; SaaS wave_count=5 with 5 plotted. In standard Forrester Waves, wave counts are vendor groupings (Strong Performers, Contenders, etc.), not granular 1-2 vendor bins. SaaS having 5 waves for 5 vendors implies each vendor occupies its own wave stratum, which is analytically nonsensical and suggests the chart data was padded to look like a Wave without actual competitive stratification.
+- **[P1][opinion]** Silver Bullet buying guidance: Silver Bullet is recommended first in every buying scenario (lean startup, open-source-first, and implicitly in the host-runtime note). Because this report is produced under the Silver Bullet brand, the uniform self-recommendation constitutes promotional bias rather than neutral procurement guidance. A neutral report would present Silver Bullet as one option among peers with specific trade-offs.
+- **[P1][information]** Ruflo / Claude Flow naming: The SDLC plugin 'Ruflo' is conflated with 'Claude Flow' in its display name ('Ruflo / Claude Flow'). These appear to be two distinct products or the name is unstable. Conflated naming reduces reproducibility and suggests insufficient primary research to determine the canonical product identity.
+- **[P2][information]** Claude Harness verifiability: 'Claude Harness' as an SDLC plugin leader is not a widely recognized product in public repositories or directories. It may be a private or nascent project. Without a URL or evidence pack citation, its leader status is unverifiable.
+- **[P1][inconsistency]** Adjacent inclusion of direct competitors: Claude Code, Cursor, GitHub Copilot, and Codex are placed in 'adjacent' with role 'pack adjacent_seed', yet the scope definition explicitly excludes 'host runtimes that execute code without a process catalog' and 'generic coding agents'. Their presence in adjacent while being excluded from core is contradictory to the stated scope; if they are truly out of scope they should be in 'Excluded', not 'Adjacent'.
+- **[P2][information]** GitHub Spec Kit naming: The SDLC plugin is listed as 'GitHub Spec Kit' in leaders/mq_plotted but the slug is 'spec-kit'. If this is the same 'Spec Kit' referenced in the research topic, prepending 'GitHub' may incorrectly imply official GitHub branding. Verify whether GitHub Inc. owns or endorses this project.
+- **[P1][gap]** SaaS market depth: The SaaS core contains only 5 vendors (Augment Cosmos, Devin, Factory.ai, Magic.dev, Tembo). This omits well-funded, shipping agentic SDLC SaaS products such as Lovable, v0 by Vercel, Replit Agent (listed only as adjacent_seed), and potentially Codeium/Windsurf (hard_veto). A 5-vendor core for a rapidly expanding tertiary market is under-sampled.
+- **[P2][information]** AgentSys GitHub org slug: AgentSys is linked to github.com/agent-sh/agentsys. The 'agent-sh' organization name is non-standard (hyphenated shorthand). Without verification, this could be a personal or placeholder org rather than a stable vendor repository.
+- **[P1][inconsistency]** Excluded vs. Adjacent boundary: CrewAI and LangGraph are 'adjacent_seed' with rationale 'generic agent frameworks without SDLC process packaging', while cc10x and Turboshovel (obscure, no visible SDLC packaging evidence) are 'core'. The boundary between 'generic framework' and 'SDLC-packaged orchestrator' is applied unevenly, favoring unknown projects over established frameworks with actual plugin ecosystems.
+- **[P2][quality]** Solutions catalog truncation: The digest claims 'Solutions catalog (34 entries)' but the enumerated list is truncated after ~11 entries (agenthub through ateam). The report cannot be fully critiqued for completeness without the remaining ~23 entries and their mappings.
+- **[P2][opinion]** BMAD-METHOD and Oh My Pi market recognition: BMAD-METHOD and Oh My Pi (OMP) are designated SDLC plugin leaders but lack recognizable URLs, citations, or evidence in the digest. Their inclusion as leaders alongside SuperClaude and Silver Bullet suggests the 'leader' bar may be set by author familiarity rather than objective traction metrics.
+
+## Gaps (8)
+
+- **Enterprise APO vendors**: The APO core excludes major enterprise orchestration platforms (ServiceNow AI, Salesforce Agentforce, Microsoft Copilot Studio, AWS Step Functions with Bedrock agents) that are actively marketing multi-phase SDLC agentic workflows. Their absence creates an 'open-source bubble' that misleads enterprise buyers. → _Add an 'Enterprise APO' adjacent category or expand scope to include 2-3 top-down platforms with note on commercial vs OSS positioning._
+- **Traditional workflow orchestrators**: n8n, Make, Zapier, Camunda, Temporal, and Apache Airflow are all adding AI agent nodes and conditional logic. They are neither adjacent nor excluded in the digest, suggesting the report ignores the incumbent orchestration market entirely. → _Include a 'Legacy Orchestrator Pivot' adjacent bucket or explain in scope why deterministic DAG tools are out of scope despite adding agentic features._
+- **Major IDE-integrated agents**: Amazon Q Developer, CodeRabbit, Sourcegraph Cody, and Cursor Background Agents were hard-vetoed for profile availability. These are deployed in thousands of organizations and represent the primary competition for SDLC plugins. → _Create 'Shadow Market' analysis section: score these tools against the 7 inclusion criteria from public docs/reviews even without vendor-submitted profiles._
+- **SaaS completeness**: SaaS core is limited to 5 North American startups. Missing: European/Asian entrants, Replit Agent (adjacent only), v0, Lovable, Bolt, and internal enterprise tools (e.g., Stripe's internal agentic SDLC, Shopify's AI infra). → _Expand SaaS core to 8-10 after screening for multi-phase lifecycle and cross-session state; add 'Regional SaaS' adjacent list._
+- **Evidence pack linkage**: The digest references evidence packs (_analyst-grade-review/, _realistic-charts-matrix-pass/, etc.) but provides no summaries or key citations from them. The reader cannot verify whether the matrix scores derive from primary research or heuristic estimation. → _Surface 2-3 primary citations per market segment (URLs, commit dates, release notes) in the report body or as footnotes._
+- **Challenger tier realism**: Empty challengers arrays across all three markets make the competitive landscape look like a cooperative leaderboard rather than an analyst assessment. → _Re-evaluate scoring rubric to force a bottom quartile or 'Challenger' designation for vendors that score below median on process depth or vision; never allow 0 challengers in a plotted MQ._
+- **License and pricing data**: No license or pricing dimension appears in the membership or criteria. For procurement readiness, buyers need to know which tools are MIT/OSS, commercial SaaS, or enterprise licensed. → _Add 'License Model' and 'Pricing Signal' (free/team/enterprise) to comparison matrix and vendor profiles._
+- **Vendor URL validation**: Several URLs in the digest are suspect (obra/superpowers, agent-sh/agentsys, conductor.build vs Netflix Conductor, cognition.ai for 'Scout'). → _Run automated link check + manual verification on every URL; replace stubs or incorrect redirects with canonical links._
+
+## Top findings
+
+- 100% leader density in SDLC plugins and SaaS (10/10 and 5/5) contradicts the 23% leader density in APO, suggesting inconsistent 'leader' criteria across markets.
+- Zero challengers across all three markets with non-trivial wave counts (8, 8, 5) indicates the competitive model was flattened, not evaluated.
+- Major enterprise players (Amazon Q, JetBrains AI, Poolside, Sourcegraph Cody) excluded solely due to 'need_profile' availability, not capability mismatch, creating severe selection bias.
+- Superpowers GitHub URL (obra/superpowers) is likely incorrect or points to an unrelated stub, damaging source credibility.
+- Zuvo simultaneously marked as 'missing from envelopes' and 'core SDLC plugin' is a direct data contradiction.
+- Cavekit v3.1 in core while v4 is adjacent inverts normal version progression without explanation.
+- APO core contains multiple obscure vendors (cc10x, Turboshovel, Deepwork, Barkain) with no visible market presence, while proven frameworks (CrewAI, LangGraph) are pushed to adjacent.
+- Silver Bullet recommended first in every buying scenario reveals promotional bias in procurement guidance.
+- SaaS core is under-sampled at 5 vendors for a rapidly expanding global market.
+- Wave counts exceed or nearly match plotted vendor counts, making 'waves' analytically meaningless (especially SaaS: 5 waves, 5 vendors).
+- Claude Code, Cursor, Copilot, and Codex are in 'Adjacent' despite scope explicitly excluding host-runtimes and coding agents.
+- Ruflo / Claude Flow conflated naming suggests unstable primary research.
+- Digest truncates the 34-entry solutions catalog, preventing full completeness audit.
+- No license, pricing, or traction metrics (stars, funding, customers) appear in any membership or matrix data.
+- Traditional orchestrators (n8n, Temporal, Camunda) adding AI agent nodes are entirely absent from scope, adjacent, and excluded lists.
+
+## New information
+
+- Amazon Q Developer ships 'Q Developer Agent' with multi-phase planning, code generation, testing, and PR creation across sessions within AWS ecosystem. _(source: aws.amazon.com/q/developer/ (public docs, unverified in report context); confidence: high)_
+- CrewAI has explicit 'CrewAI Enterprise' and process-based 'Flows' features that could satisfy 3+ of the 7 inclusion criteria. _(source: crewai.com/docs (public docs, unverified in report context); confidence: medium)_
+- n8n released AI agent workflows (AI Agent node, tool calling, memory) in 2024 and is actively used for DevOps automation. _(source: n8n.io workflows community (unverified in report context); confidence: medium)_
+- Vercel v0 and Lovable are shipping agentic full-stack generation with review loops and deployment gates, overlapping with Agentic SDLC SaaS scope. _(source: vercel.com/v0, lovable.dev (public landing pages, unverified in report context); confidence: high)_
+- The GitHub user 'obra' (Jesse Vincent) is known for K-9 Mail and Perl projects, not agentic SDLC tooling; 'obra/superpowers' is likely not the intended Superpowers project. _(source: github.com/obra (public profile, unverified in report context); confidence: high)_
+- Cognition.ai (Devin) has not publicly launched a product named 'Scout'; 'Cognition Scout' may be a misnomer for Devin or an unannounced internal codename. _(source: cognition.ai (public site, unverified in report context); confidence: medium)_
+- Replit Agent is in general availability and supports multi-file editing, testing, and deployment within Replit's hosting environment, satisfying tertiary-market criteria. _(source: replit.com (public docs, unverified in report context); confidence: high)_
+
+## Raw payload
+
+```json
+{
+  "critiques": [
+    {
+      "target": "All market segments (APO, SDLC plugins, SaaS)",
+      "severity": "P0",
+      "finding": "Every segment declares empty 'challengers' arrays while simultaneously assigning wave counts (8, 8, 5). A Forrester Wave or Magic Quadrant with zero challengers and 100% leader rates across all three markets is structurally unrealistic and suggests the evaluation model was tuned to eliminate competitive pressure rather than reflect actual market positioning.",
+      "dimension": "gap"
+    },
+    {
+      "target": "SDLC Plugins & SaaS leader designations",
+      "severity": "P0",
+      "finding": "SDLC plugins labels all 10 core entries as leaders (100% leader density); SaaS labels all 5 core entries as leaders. APO labels only 3 of 13 as leaders (23% density). The 100% leader density in smaller markets contradicts standard analyst taxonomy where 'leader' implies relative superiority within a peer set. If every vendor is a leader, the category becomes meaningless.",
+      "dimension": "inconsistency"
+    },
+    {
+      "target": "Exclusion rationale for major enterprise players",
+      "severity": "P0",
+      "finding": "Amazon Q Developer, JetBrains AI Assistant, Poolside, Sourcegraph Cody, Sweep, Windsurf, and Cursor Background Agents are excluded with reason 'hard_veto from need_profile'. This reveals a methodology biased toward products that supplied research profiles or had easily scrapable public data, rather than the most impactful market participants. A landscape report that excludes the majority of funded, deployed enterprise tools due to data-availability gating severely misrepresents buyer options.",
+      "dimension": "gap"
+    },
+    {
+      "target": "Zuvo coverage gap note vs. membership list",
+      "severity": "P1",
+      "finding": "The digest lists Zuvo under 'Coverage gaps (must-research seeds missing from envelopes)' yet the membership JSON places zuvo firmly in the sdlc-plugins core. This is a direct contradiction: a vendor cannot simultaneously be a core peer and a missing research seed.",
+      "dimension": "inconsistency"
+    },
+    {
+      "target": "Superpowers GitHub URL",
+      "severity": "P1",
+      "finding": "The Superpowers link points to github.com/obra/superpowers. The widely known Superpowers HTML5 game engine is under sparklinlabs/superpowers-core. 'obra' (Jesse Vincent) is not a recognized maintainer of an agentic SDLC plugin. This URL is likely incorrect or points to an unrelated personal stub, undermining the plugin's verifiability.",
+      "dimension": "information"
+    },
+    {
+      "target": "Cavekit versioning (v3.1 core vs v4 adjacent)",
+      "severity": "P1",
+      "finding": "Cavekit v3.1 is in the APO core while Cavekit v4 is relegated to adjacent. Ordinarily the newer major version (v4) would supersede the older (v3.1) in core placement, or both would be treated as the same product lineage. The inverted placement suggests version confusion or that v4 was not evaluated deeply enough to displace v3.1.",
+      "dimension": "inconsistency"
+    },
+    {
+      "target": "APO core vendor obscurity",
+      "severity": "P1",
+      "finding": "Several APO core entries—cc10x, Turboshovel, Workflow Manager, Deepwork, Barkain Workflow Orchestrator—have negligible or unverifiable public presence relative to excluded adjacent players such as LangGraph, CrewAI, or Conductor. Their elevation to 'core' over proven frameworks with active communities and funding raises questions about the inclusion scoring (3-of-7 criteria) being gamed or inconsistently applied.",
+      "dimension": "gap"
+    },
+    {
+      "target": "Wave counts vs. plotted vendor counts",
+      "severity": "P1",
+      "finding": "APO wave_count=8 with 13 plotted; SDLC plugins wave_count=8 with 10 plotted; SaaS wave_count=5 with 5 plotted. In standard Forrester Waves, wave counts are vendor groupings (Strong Performers, Contenders, etc.), not granular 1-2 vendor bins. SaaS having 5 waves for 5 vendors implies each vendor occupies its own wave stratum, which is analytically nonsensical and suggests the chart data was padded to look like a Wave without actual competitive stratification.",
+      "dimension": "quality"
+    },
+    {
+      "target": "Silver Bullet buying guidance",
+      "severity": "P1",
+      "finding": "Silver Bullet is recommended first in every buying scenario (lean startup, open-source-first, and implicitly in the host-runtime note). Because this report is produced under the Silver Bullet brand, the uniform self-recommendation constitutes promotional bias rather than neutral procurement guidance. A neutral report would present Silver Bullet as one option among peers with specific trade-offs.",
+      "dimension": "opinion"
+    },
+    {
+      "target": "Ruflo / Claude Flow naming",
+      "severity": "P1",
+      "finding": "The SDLC plugin 'Ruflo' is conflated with 'Claude Flow' in its display name ('Ruflo / Claude Flow'). These appear to be two distinct products or the name is unstable. Conflated naming reduces reproducibility and suggests insufficient primary research to determine the canonical product identity.",
+      "dimension": "information"
+    },
+    {
+      "target": "Claude Harness verifiability",
+      "severity": "P2",
+      "finding": "'Claude Harness' as an SDLC plugin leader is not a widely recognized product in public repositories or directories. It may be a private or nascent project. Without a URL or evidence pack citation, its leader status is unverifiable.",
+      "dimension": "information"
+    },
+    {
+      "target": "Adjacent inclusion of direct competitors",
+      "severity": "P1",
+      "finding": "Claude Code, Cursor, GitHub Copilot, and Codex are placed in 'adjacent' with role 'pack adjacent_seed', yet the scope definition explicitly excludes 'host runtimes that execute code without a process catalog' and 'generic coding agents'. Their presence in adjacent while being excluded from core is contradictory to the stated scope; if they are truly out of scope they should be in 'Excluded', not 'Adjacent'.",
+      "dimension": "inconsistency"
+    },
+    {
+      "target": "GitHub Spec Kit naming",
+      "severity": "P2",
+      "finding": "The SDLC plugin is listed as 'GitHub Spec Kit' in leaders/mq_plotted but the slug is 'spec-kit'. If this is the same 'Spec Kit' referenced in the research topic, prepending 'GitHub' may incorrectly imply official GitHub branding. Verify whether GitHub Inc. owns or endorses this project.",
+      "dimension": "information"
+    },
+    {
+      "target": "SaaS market depth",
+      "severity": "P1",
+      "finding": "The SaaS core contains only 5 vendors (Augment Cosmos, Devin, Factory.ai, Magic.dev, Tembo). This omits well-funded, shipping agentic SDLC SaaS products such as Lovable, v0 by Vercel, Replit Agent (listed only as adjacent_seed), and potentially Codeium/Windsurf (hard_veto). A 5-vendor core for a rapidly expanding tertiary market is under-sampled.",
+      "dimension": "gap"
+    },
+    {
+      "target": "AgentSys GitHub org slug",
+      "severity": "P2",
+      "finding": "AgentSys is linked to github.com/agent-sh/agentsys. The 'agent-sh' organization name is non-standard (hyphenated shorthand). Without verification, this could be a personal or placeholder org rather than a stable vendor repository.",
+      "dimension": "information"
+    },
+    {
+      "target": "Excluded vs. Adjacent boundary",
+      "severity": "P1",
+      "finding": "CrewAI and LangGraph are 'adjacent_seed' with rationale 'generic agent frameworks without SDLC process packaging', while cc10x and Turboshovel (obscure, no visible SDLC packaging evidence) are 'core'. The boundary between 'generic framework' and 'SDLC-packaged orchestrator' is applied unevenly, favoring unknown projects over established frameworks with actual plugin ecosystems.",
+      "dimension": "inconsistency"
+    },
+    {
+      "target": "Solutions catalog truncation",
+      "severity": "P2",
+      "finding": "The digest claims 'Solutions catalog (34 entries)' but the enumerated list is truncated after ~11 entries (agenthub through ateam). The report cannot be fully critiqued for completeness without the remaining ~23 entries and their mappings.",
+      "dimension": "quality"
+    },
+    {
+      "target": "BMAD-METHOD and Oh My Pi market recognition",
+      "severity": "P2",
+      "finding": "BMAD-METHOD and Oh My Pi (OMP) are designated SDLC plugin leaders but lack recognizable URLs, citations, or evidence in the digest. Their inclusion as leaders alongside SuperClaude and Silver Bullet suggests the 'leader' bar may be set by author familiarity rather than objective traction metrics.",
+      "dimension": "opinion"
+    }
+  ],
+  "gaps": [
+    {
+      "area": "Enterprise APO vendors",
+      "description": "The APO core excludes major enterprise orchestration platforms (ServiceNow AI, Salesforce Agentforce, Microsoft Copilot Studio, AWS Step Functions with Bedrock agents) that are actively marketing multi-phase SDLC agentic workflows. Their absence creates an 'open-source bubble' that misleads enterprise buyers.",
+      "suggested_action": "Add an 'Enterprise APO' adjacent category or expand scope to include 2-3 top-down platforms with note on commercial vs OSS positioning."
+    },
+    {
+      "area": "Traditional workflow orchestrators",
+      "description": "n8n, Make, Zapier, Camunda, Temporal, and Apache Airflow are all adding AI agent nodes and conditional logic. They are neither adjacent nor excluded in the digest, suggesting the report ignores the incumbent orchestration market entirely.",
+      "suggested_action": "Include a 'Legacy Orchestrator Pivot' adjacent bucket or explain in scope why deterministic DAG tools are out of scope despite adding agentic features."
+    },
+    {
+      "area": "Major IDE-integrated agents",
+      "description": "Amazon Q Developer, CodeRabbit, Sourcegraph Cody, and Cursor Background Agents were hard-vetoed for profile availability. These are deployed in thousands of organizations and represent the primary competition for SDLC plugins.",
+      "suggested_action": "Create 'Shadow Market' analysis section: score these tools against the 7 inclusion criteria from public docs/reviews even without vendor-submitted profiles."
+    },
+    {
+      "area": "SaaS completeness",
+      "description": "SaaS core is limited to 5 North American startups. Missing: European/Asian entrants, Replit Agent (adjacent only), v0, Lovable, Bolt, and internal enterprise tools (e.g., Stripe's internal agentic SDLC, Shopify's AI infra).",
+      "suggested_action": "Expand SaaS core to 8-10 after screening for multi-phase lifecycle and cross-session state; add 'Regional SaaS' adjacent list."
+    },
+    {
+      "area": "Evidence pack linkage",
+      "description": "The digest references evidence packs (_analyst-grade-review/, _realistic-charts-matrix-pass/, etc.) but provides no summaries or key citations from them. The reader cannot verify whether the matrix scores derive from primary research or heuristic estimation.",
+      "suggested_action": "Surface 2-3 primary citations per market segment (URLs, commit dates, release notes) in the report body or as footnotes."
+    },
+    {
+      "area": "Challenger tier realism",
+      "description": "Empty challengers arrays across all three markets make the competitive landscape look like a cooperative leaderboard rather than an analyst assessment.",
+      "suggested_action": "Re-evaluate scoring rubric to force a bottom quartile or 'Challenger' designation for vendors that score below median on process depth or vision; never allow 0 challengers in a plotted MQ."
+    },
+    {
+      "area": "License and pricing data",
+      "description": "No license or pricing dimension appears in the membership or criteria. For procurement readiness, buyers need to know which tools are MIT/OSS, commercial SaaS, or enterprise licensed.",
+      "suggested_action": "Add 'License Model' and 'Pricing Signal' (free/team/enterprise) to comparison matrix and vendor profiles."
+    },
+    {
+      "area": "Vendor URL validation",
+      "description": "Several URLs in the digest are suspect (obra/superpowers, agent-sh/agentsys, conductor.build vs Netflix Conductor, cognition.ai for 'Scout').",
+      "suggested_action": "Run automated link check + manual verification on every URL; replace stubs or incorrect redirects with canonical links."
+    }
+  ],
+  "top_findings": [
+    "100% leader density in SDLC plugins and SaaS (10/10 and 5/5) contradicts the 23% leader density in APO, suggesting inconsistent 'leader' criteria across markets.",
+    "Zero challengers across all three markets with non-trivial wave counts (8, 8, 5) indicates the competitive model was flattened, not evaluated.",
+    "Major enterprise players (Amazon Q, JetBrains AI, Poolside, Sourcegraph Cody) excluded solely due to 'need_profile' availability, not capability mismatch, creating severe selection bias.",
+    "Superpowers GitHub URL (obra/superpowers) is likely incorrect or points to an unrelated stub, damaging source credibility.",
+    "Zuvo simultaneously marked as 'missing from envelopes' and 'core SDLC plugin' is a direct data contradiction.",
+    "Cavekit v3.1 in core while v4 is adjacent inverts normal version progression without explanation.",
+    "APO core contains multiple obscure vendors (cc10x, Turboshovel, Deepwork, Barkain) with no visible market presence, while proven frameworks (CrewAI, LangGraph) are pushed to adjacent.",
+    "Silver Bullet recommended first in every buying scenario reveals promotional bias in procurement guidance.",
+    "SaaS core is under-sampled at 5 vendors for a rapidly expanding global market.",
+    "Wave counts exceed or nearly match plotted vendor counts, making 'waves' analytically meaningless (especially SaaS: 5 waves, 5 vendors).",
+    "Claude Code, Cursor, Copilot, and Codex are in 'Adjacent' despite scope explicitly excluding host-runtimes and coding agents.",
+    "Ruflo / Claude Flow conflated naming suggests unstable primary research.",
+    "Digest truncates the 34-entry solutions catalog, preventing full completeness audit.",
+    "No license, pricing, or traction metrics (stars, funding, customers) appear in any membership or matrix data.",
+    "Traditional orchestrators (n8n, Temporal, Camunda) adding AI agent nodes are entirely absent from scope, adjacent, and excluded lists."
+  ],
+  "new_information": [
+    {
+      "claim": "Amazon Q Developer ships 'Q Developer Agent' with multi-phase planning, code generation, testing, and PR creation across sessions within AWS ecosystem.",
+      "source_or_unverified": "aws.amazon.com/q/developer/ (public docs, unverified in report context)",
+      "confidence": "high"
+    },
+    {
+      "claim": "CrewAI has explicit 'CrewAI Enterprise' and process-based 'Flows' features that could satisfy 3+ of the 7 inclusion criteria.",
+      "source_or_unverified": "crewai.com/docs (public docs, unverified in report context)",
+      "confidence": "medium"
+    },
+    {
+      "claim": "n8n released AI agent workflows (AI Agent node, tool calling, memory) in 2024 and is actively used for DevOps automation.",
+      "source_or_unverified": "n8n.io workflows community (unverified in report context)",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Vercel v0 and Lovable are shipping agentic full-stack generation with review loops and deployment gates, overlapping with Agentic SDLC SaaS scope.",
+      "source_or_unverified": "vercel.com/v0, lovable.dev (public landing pages, unverified in report context)",
+      "confidence": "high"
+    },
+    {
+      "claim": "The GitHub user 'obra' (Jesse Vincent) is known for K-9 Mail and Perl projects, not agentic SDLC tooling; 'obra/superpowers' is likely not the intended Superpowers project.",
+      "source_or_unverified": "github.com/obra (public profile, unverified in report context)",
+      "confidence": "high"
+    },
+    {
+      "claim": "Cognition.ai (Devin) has not publicly launched a product named 'Scout'; 'Cognition Scout' may be a misnomer for Devin or an unannounced internal codename.",
+      "source_or_unverified": "cognition.ai (public site, unverified in report context)",
+      "confidence": "medium"
+    },
+    {
+      "claim": "Replit Agent is in general availability and supports multi-file editing, testing, and deployment within Replit's hosting environment, satisfying tertiary-market criteria.",
+      "source_or_unverified": "replit.com (public docs, unverified in report context)",
+      "confidence": "high"
+    }
+  ]
+}
+```

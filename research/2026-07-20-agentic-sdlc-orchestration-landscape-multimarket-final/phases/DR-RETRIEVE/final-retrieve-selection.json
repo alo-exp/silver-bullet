@@ -21,8 +21,8 @@
       "relevance": "primary-anchor"
     },
     {
-      "title": "AI-DLC — AI-Driven Development Lifecycle (developer.ibm.com / community)",
-      "url": "https://developer.ibm.com/articles/ai-driven-development-life-cycle/",
+      "title": "AI-DLC — AI-Driven Development Lifecycle (AWS Labs / awslabs/aidlc-workflows)",
+      "url": "https://github.com/awslabs/aidlc-workflows",
       "relevance": "apo"
     },
     {
@@ -223,7 +223,7 @@
       "confidence": "medium"
     },
     {
-      "claim": "Conductor.build and AI-DLC (IBM) are the most credible non-SB APO entrants in the primary market; AI-DLC carries the methodology/IBM pedigree, Conductor carries explicit workflow-orchestration branding for coding agents.",
+      "claim": "Conductor.build and AI-DLC (AWS / awslabs) are the most credible non-SB APO entrants in the primary market; AI-DLC carries the methodology/IBM pedigree, Conductor carries explicit workflow-orchestration branding for coding agents.",
       "source_ref": "https://conductor.build/ + IBM developer article",
       "confidence": "medium"
     },

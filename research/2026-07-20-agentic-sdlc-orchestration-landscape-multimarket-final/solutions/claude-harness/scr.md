@@ -4,7 +4,7 @@ Slug: `claude-harness`
 
 ## Executive summary
 
-Claude Harness is a primary-market APO candidate — Claude Code wrapper, process enforcement, compliance layer above host, deterministic gates.
+UNVERIFIED IDENTITY: Claude Harness is listed as a methodology/process pack candidate, but no distinct canonical repository or homepage was verified in this pass. Do **not** treat `anthropics/claude-code` (the host runtime) as the Harness product source. Capabilities below are seed-asserted only until a primary source is confirmed.
 
 ## Evidence-backed notes
 

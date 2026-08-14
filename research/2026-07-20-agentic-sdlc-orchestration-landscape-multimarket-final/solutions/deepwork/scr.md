@@ -4,7 +4,7 @@ Slug: `deepwork`
 
 ## Executive summary
 
-Deepwork is a primary-market APO candidate — focused agent sessions, cross-session memory, workflow persistence, specialist agent routing.
+THIN EVIDENCE — Deepwork is a seed-level APO commercial candidate. Capabilities are **unknown** without primary product documentation in this pass.
 
 ## Evidence-backed notes
 

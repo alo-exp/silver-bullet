@@ -1,0 +1,33 @@
+{
+  "audit": "independent-analyst-grade-vloop",
+  "date": "2026-08-14",
+  "workspace": "/Users/shafqat/.cursor/worktrees/repo/3ht3",
+  "prior_pass_trusted": false,
+  "engine_edited": false,
+  "commit": false,
+  "files": {
+    "md": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape/landscape-report.md",
+    "html": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+    "comparison": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/comparison/comparison.json"
+  },
+  "hashes": {
+    "md_sha256_16": "521157542716b1a9",
+    "md_bytes": 78782,
+    "md_lines": 891,
+    "html_bytes": 617434,
+    "report_data_markdown_equal_md": true
+  },
+  "checks": [
+    {"id": 1, "name": "Executive Summary near top with leader shortlist / buyer guidance", "result": "PASS", "evidence": "H2 at line 8; ### Leader shortlist (per market); ### Buyer guidance"},
+    {"id": 2, "name": "Vendor inclusion ledger table (criteria pass/fail)", "result": "PASS", "evidence": "### Vendor inclusion ledger line 165; header C1–C7 + Final decision; 29 P/F/U vendor rows"},
+    {"id": 3, "name": "Coverage completeness matrix present", "result": "PASS", "evidence": "### Coverage completeness matrix line 201; 29 data rows; Vendor | Evidence available | Scoring complete | Market placement | Gaps"},
+    {"id": 4, "name": "Consensus Resolution Table with final analyst decision column", "result": "PASS", "evidence": "### Consensus Resolution Table line 843; header includes Final analyst decision"},
+    {"id": 5, "name": "Magic.dev not in comparison rankings/columns; scoring/exec does not call SB most complete in report voice", "result": "PASS", "evidence": "comparison.json magic.dev substring count 0; 22 ranking slugs and 22 feature column slugs exclude magic-dev; exec L21 denies superlative; 0 own-voice 'most complete' candidates"},
+    {"id": 6, "name": "Section order Problem Market Framework Findings Guidance Outlook", "result": "PASS", "evidence": "H2: Executive Summary | 1. Problem | 2. Market | 3. Framework | 4. Findings | 5. Buying Guidance & Shortlist Profiles | 6. Future Outlook & Emerging Disruptors | 7. Source Reliability Assessment"},
+    {"id": 7, "name": "HTML #report-data locksteps with .md", "result": "PASS", "evidence": "embedded markdown 78782 bytes, 891 lines, sha prefix 521157542716b1a9 identical to landscape-report.md"},
+    {"id": 8, "name": "file:// renders", "result": "PASS", "evidence": "Chrome headless file:// screenshot 249556 bytes; dump-dom contains Executive Summary, ledger, coverage, Consensus Resolution Table; system open invoked"}
+  ],
+  "overall": "PASS",
+  "comparison_rank_slugs": ["silver-bullet", "gsd", "oh-my-pi", "bmad", "devin", "cc10x", "ruflo", "superpowers", "zuvo", "factory-ai", "spec-kit", "superclaude", "augment-cosmos", "ai-dlc", "claude-harness", "cavekit-v31", "director", "agentsys", "barkain-workflow-orchestrator", "deepwork", "turboshovel", "workflow-manager"],
+  "comparison_column_slugs": ["agentsys", "ai-dlc", "augment-cosmos", "barkain-workflow-orchestrator", "bmad", "cavekit-v31", "cc10x", "claude-harness", "deepwork", "devin", "director", "factory-ai", "gsd", "oh-my-pi", "ruflo", "silver-bullet", "spec-kit", "superclaude", "superpowers", "turboshovel", "workflow-manager", "zuvo"]
+}

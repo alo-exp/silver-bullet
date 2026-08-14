@@ -1,0 +1,366 @@
+{
+  "url": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "ev": {
+    "h1": "Agentic SDLC Process Orchestrators Market Landscape Report",
+    "fail": false,
+    "httpCount": 333,
+    "uniqCount": 47,
+    "hrefs": [
+      "https://aws.amazon.com/q/developer/",
+      "https://coderabbit.ai/",
+      "https://cognition.ai/",
+      "https://conductor.build/",
+      "https://cursor.com/",
+      "https://cursor.com/docs/background-agent",
+      "https://devin.ai/",
+      "https://docs.anthropic.com/en/docs/claude-code/overview",
+      "https://github.com/All-Hands-AI/OpenHands",
+      "https://github.com/FoundationAgents/MetaGPT",
+      "https://github.com/JuliusBrussee/cavekit",
+      "https://github.com/OpenInterpreter/open-interpreter",
+      "https://github.com/SWE-agent/SWE-agent",
+      "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+      "https://github.com/agent-sh/agentsys",
+      "https://github.com/awslabs/aidlc-workflows",
+      "https://github.com/barkain/claude-code-workflow-orchestration",
+      "https://github.com/bmad-code-org/BMAD-METHOD",
+      "https://github.com/cline/cline",
+      "https://github.com/continuedev/continue",
+      "https://github.com/features/copilot",
+      "https://github.com/github/spec-kit",
+      "https://github.com/gsd-build/get-shit-done",
+      "https://github.com/obra/superpowers",
+      "https://github.com/paul-gauthier/aider",
+      "https://github.com/reworkd/AgentGPT",
+      "https://github.com/romiluz13/cc10x",
+      "https://github.com/ruvnet/ruflo",
+      "https://github.com/stitionai/devika",
+      "https://githubnext.com/projects/copilot-workspace",
+      "https://magic.dev/",
+      "https://openai.com/codex/",
+      "https://poolside.ai/",
+      "https://replit.com/ai",
+      "https://sb.alolabs.dev/",
+      "https://sourcegraph.com/cody",
+      "https://sweep.dev/",
+      "https://tembo.io/",
+      "https://www.a.team/",
+      "https://www.agenthub.ai/",
+      "https://www.augmentcode.com/",
+      "https://www.axonflow.ai/",
+      "https://www.crewai.com/",
+      "https://www.factory.ai/",
+      "https://www.jetbrains.com/ai/",
+      "https://www.langchain.com/",
+      "https://zuvo.dev/"
+    ],
+    "bad": [],
+    "sampleLinks": [
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "AgentSys",
+        "href": "https://github.com/agent-sh/agentsys"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      },
+      {
+        "text": "MetaGPT",
+        "href": "https://github.com/FoundationAgents/MetaGPT"
+      },
+      {
+        "text": "Zuvo",
+        "href": "https://zuvo.dev/"
+      },
+      {
+        "text": "AgentSys",
+        "href": "https://github.com/agent-sh/agentsys"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "MetaGPT",
+        "href": "https://github.com/FoundationAgents/MetaGPT"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "AgentSys",
+        "href": "https://github.com/agent-sh/agentsys"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Zuvo",
+        "href": "https://zuvo.dev/"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Zuvo",
+        "href": "https://zuvo.dev/"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Zuvo",
+        "href": "https://zuvo.dev/"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Barkain Workflow Orchestrator",
+        "href": "https://github.com/barkain/claude-code-workflow-orchestration"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "Cavekit v3.1",
+        "href": "https://github.com/JuliusBrussee/cavekit"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "cc10x",
+        "href": "https://github.com/romiluz13/cc10x"
+      },
+      {
+        "text": "Silver Bullet",
+        "href": "https://sb.alolabs.dev/"
+      },
+      {
+        "text": "AI-DLC",
+        "href": "https://github.com/awslabs/aidlc-workflows"
+      }
+    ],
+    "challengerBtn": [
+      {
+        "t": "Commercial",
+        "disabled": false,
+        "cls": "vfbtn",
+        "title": null
+      },
+      {
+        "t": "OSS",
+        "disabled": false,
+        "cls": "vfbtn",
+        "title": null
+      },
+      {
+        "t": "Leaders",
+        "disabled": false,
+        "cls": "vfbtn",
+        "title": null
+      },
+      {
+        "t": "Challengers",
+        "disabled": true,
+        "cls": "vfbtn is-empty",
+        "title": "No Challengers in current market chart data"
+      }
+    ],
+    "canvases": [
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 440,
+        "parent": "chart-canvas-wrap chart-canvas-wrap--vc"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 440,
+        "parent": "chart-canvas-wrap chart-canvas-wrap--vc"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 480,
+        "parent": "chart-canvas-wrap"
+      },
+      {
+        "w": 858,
+        "h": 440,
+        "parent": "chart-canvas-wrap chart-canvas-wrap--vc"
+      }
+    ],
+    "chartCount": 12,
+    "oobLabels": [],
+    "overflow": false,
+    "scrollW": 1280,
+    "clientW": 1280,
+    "contentLen": 18395,
+    "expert": true,
+    "divergences": true,
+    "buying": true
+  },
+  "ov375": {
+    "overflow": 0,
+    "scrollW": 375,
+    "clientW": 375
+  },
+  "consoleErrors": [],
+  "pageErrors": [],
+  "failed": []
+}
