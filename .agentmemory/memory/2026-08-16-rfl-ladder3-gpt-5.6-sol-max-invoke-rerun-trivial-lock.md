@@ -12,3 +12,5 @@
 - Nested: cursor-grok-4.6-high only
 - Ignore aborted Max files (5fdbeb, f4f696a)
 - Round-7 lock in brief: classified-trivial uses sb:fast / WF-SILVER-FAST / AF-FAST-PATH; no synthesize; Job + GST still record
+- Outcome: VERDICT NOT CLEAN; Blockers none; Highs none; Mediums M1 (ABU-01/GST-01 vs VAL/TST-RFL-620/621) M2 (PUB-01 orphan)
+- Plan copies remained byte-identical at frozen SHA; no commit
