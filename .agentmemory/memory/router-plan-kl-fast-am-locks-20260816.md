@@ -33,6 +33,7 @@ Same insights at two stages, not two equal git knowledge trees.
 ESC-02 no A; Authorizer not Approver; `process_v_verified`; FAST not a Job; wrap at `/sb`; BOA parallel; no `AF-meta-six-role`.
 
 Clarify: `.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md` (round-9)
-Plan SHA-256: `6bd715cd81abbfa367b81674624d55eabea02f7a2e44bf58fe499c9791dd6a52`
+Plan SHA-256 (after round-9 locks, then concurrent round-10 AM-first/fan-out on the same copies): `db8cec806a33cfea991316c3ba9034281a229efe7424194625a51ce9527c06ed`
+Round-9 SHA-256 (superseded as frozen pair): `6bd715cd81abbfa367b81674624d55eabea02f7a2e44bf58fe499c9791dd6a52`
 Prior SHA-256 (invalidated): `276806b3091dea955ae6aeecf06562d4f9b7b8ceb105580238e0550d252aaae8`
 Opus High aborted: yes (wrapper pid 20387 / `claude --print --model claude-opus-5` / dir `.planning/agent-claude/rfl-opus-high-ladder3-20260816/`)
