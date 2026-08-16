@@ -35,3 +35,6 @@ Internal run may use Advisor to formulate the definition. Orchestrator still doe
 WS1 generator + catalog; WS2 skill/docs stubs. `VAL/TST-RFL-625` / WFM-01 golden fixture.
 
 Extra High H-1–H-5 / M-1–M-4 remain. KEEP REJECT untouched.
+
+Plan SHA-256 (both copies, byte-identical after Round-18): `65fde3d6f4521e7a8aed89ceb07efc6bcfdbf1b5518e3d1ce0e921c43ac7fd8c`
+Extra High ACCEPT SHA (before Round-18): `3b980a2006e8c05448ed02a38e879d6e47cfa2bec8e20ecfb66cb3e772e15fcc`
