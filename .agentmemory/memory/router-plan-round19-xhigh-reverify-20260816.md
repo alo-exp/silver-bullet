@@ -14,3 +14,4 @@ KEEP REJECT untouched (generator bar intact; session is Job with Advisor compose
 Verbatim review: `.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/opus-5-xhigh-ladder3/review-real-xhigh-reverify-65fde3d6.md`
 
 Frozen SHA at Extra High review: `65fde3d6f4521e7a8aed89ceb07efc6bcfdbf1b5518e3d1ce0e921c43ac7fd8c`
+Round-19 ACCEPT SHA (both copies, byte-identical): `b673de8cc11bb46dfb12ed8bd48fa1d9ecc642f9e4ea4b9047d46b8e9c240c18`
