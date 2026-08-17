@@ -1,2 +1,0 @@
-[2026-07-21T15:03:04.838893+00:00] COHORT_START phase=DR-CRITIQUE models=5 per_model_timeout=300s
-[2026-07-21T15:03:04.839563+00:00] START ocg-minimax-m3 model=opencode-go/minimax-m3 timeout=300s

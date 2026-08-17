@@ -1,9 +1,0 @@
-CK1=4132499449 18790 /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.smAulbgXbb/.silver-bullet.json
-BEFORE=2815408961 46 /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.BJruMJplA5/.silver-bullet.json
-0a
-0000002a: 3a30 7d0a                                :0}.
-AFTER=856379007 54 /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.BJruMJplA5/.silver-bullet.json
-00000032: 2032 0a7d                                 2.}
-
-endswith_nl False
-len 54
