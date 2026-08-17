@@ -1,8 +1,0 @@
-{
-  "session_scope": "full_chain",
-  "branch": "feature/tc01-waitlist-saas",
-  "ship": "pr_only",
-  "min_workflow_ids": 3,
-  "expected_workflows": ["WF-SILVER-FEATURE", "WF-SILVER-DEVOPS", "WF-SILVER-RELEASE"],
-  "blocking_decisions_only": true
-}
