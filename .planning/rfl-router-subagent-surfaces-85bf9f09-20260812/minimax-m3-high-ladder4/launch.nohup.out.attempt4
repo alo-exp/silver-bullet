@@ -1,0 +1,13 @@
+--- Code-intel preflight (Graphify / agentmemory / RTK / Context Mode) ---
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+  rtk: global wiring (opted in via /Users/shafqat/projects/silver-bullet/repo/.silver-bullet.json)
+  context-mode: /Users/shafqat/projects/silver-bullet/repo (opted in)
+ERROR: enterprise E2E code-intel preflight: Context Mode MCP not wired for host=opencode — see docs/CONTEXT-MODE.md
+    context-mode doctor OK (platform=opencode)
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+Code-intel preflight OK.
+{"type":"prompt.submitted","model":"opencode-go/minimax-m3","work_dir":"/Users/shafqat/projects/silver-bullet/repo"}

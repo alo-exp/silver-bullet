@@ -7,9 +7,70 @@ user-invocable: false
 
 # /silver:review-fix-ladder — Progressive Review / Fix Ladder
 
-Escalate review and fix work through a host-aware model/reasoning ladder. Each rung audits, fixes, and verifies against a context-derived review charter — not generic “find issues” heuristics.
+Escalate review and fix work through a host-aware model/reasoning ladder. Each rung audits against a context-derived review charter — not generic “find issues” heuristics. The launcher applies ACCEPT fixes; the rung model does not implement. The launcher reports findings after every rung.
 
 **Orchestrator role:** The parent agent (you) MUST personally orchestrate every rung. Subagents execute one phase at a time. You MUST NOT delegate the ladder loop itself to a single subagent.
+
+**RFL session exception:** Inside a review-fix-ladder session, the launcher / parent of the ladder triages findings and applies ACCEPT fixes with Edit/Write. This is an explicit exception to any "parent orchestrator never implements" rule. Rung workers remain REVIEW ONLY.
+
+## Triage and Fix Owner (HARD)
+
+Applies to **both ladders, all rungs**.
+
+### Policy A — triage
+
+Incorporate every finding that is not wrong. Reject only if the finding is wrong or mistaken.
+
+**Forbidden reject reasons** (do not use these):
+
+- "advisory", "doc-only", "documentation nit", "non-gating", "nice-to-have", "not a contract hole", "CLEAN so ignore mediums", "CLEAN for ladder purposes", "non-blocking nit"
+
+**Allowed reject reasons** (must state why it is **wrong**):
+
+- Contradicts a locked decision (example: putting A back on ESC-02 when the lock is I then V, no A)
+- KEEP REJECT / user-locked reject (do not reopen KEEP REJECT)
+- Mistaken about the spec vs shipped product
+- Already fully specified (duplicate)
+- Would rename/break a locked identifier (example: `process_v_two_clean` vs `process_v_verified`)
+- Factually false on re-read of the current spec
+- Superseded/stale claim, or no longer true on the current freeze
+- Historical changelog / KEEP REJECT alias pointer churn (anti-churn; do not reopen KEEP REJECT)
+
+Parent still triages (not every finding is automatically valid) — but the bar is **wrong vs not wrong**, not severity.
+
+If a rung returns CLEAN with findings that are not wrong, the launcher still applies them before the next rung.
+
+### Policy B — who applies fixes
+
+After each rung's review, the agent that launched the RFL applies ACCEPT fixes. The rung model does not implement.
+
+- Rung workers: REVIEW ONLY. No plan edits, no spec patches, no "while I'm here" fixes.
+- Launcher / parent of the ladder: triage then Edit/Write the spec (and tests/docs if the finding is about those).
+- Do not ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch the plan after NOT CLEAN.
+- Next rung waits until the launcher has applied ACCEPTs (or recorded REJECT-as-wrong). Do not skip Extra High/Max when those slugs exist.
+
+**APPLY ACCEPT completeness (HARD):** After review, APPLY ACCEPT / fix MUST land **every finding that is not wrong**, including **Low, deferred, nitpicks, and minor** items that are still applicable. Skip only: KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items that are no longer true on the current freeze. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit. Anti-churn for historical changelog / KEEP REJECT aliases still applies — do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung.
+
+**Anti-stall (Policy B leftover loop — HARD):** Do not idle waiting for the user between required state-machine steps. Policy C reports still happen; they do not pause the loop.
+
+- After each verify **FAIL**, Policy B the leftovers in the **same** follow-up turn (launcher Edit/Write; still one subagent `Task` per turn), then launch re-verify as the next Task. Do not wait for the user.
+- After **CLEAN** `verify_1` and clean orchestrator grep, immediately launch `verify_2`. After two **CLEAN** verifies + greps, immediately start the next rung.
+- **Corpus sweep, not one-line cycles:** If the same defect class fails verify more than **twice**, the next Policy B pass MUST scan **all** in-scope plan/spec artifacts for that class and patch every live hit in one pass.
+- **Cap residual loops:** After **5** leftover cycles on the same rung verify, STOP and escalate to the user with the remaining `file:line` list. Do not start a sixth one-line patch.
+- **Skip after 3 timed-out retries (HARD):** If the **same ladder rung** fails **3 timed-out retries** (model/host never returns a review: timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, hung invoke with no `review.md`), the launcher **skips that rung** and immediately starts the **next** rung. Do **not** spin a 4th timeout retry. Record SKIP in the rung dir (`SKIPPED.md`: reason, attempt count, timestamps, next rung). Do **not** skip because of a CLEAN/NOT CLEAN review — only when the rung **failed to produce a verdict** three times. Mixed-host: skip does not change the next rung’s required model (still spawn GLM from parent, etc.). Skipping a rung is **not** permission to use Fast or a different family as a silent substitute **on that skipped rung**; the skipped rung is recorded incomplete and the ladder continues. **Never Fast.**
+
+### Policy C — launcher reports after every rung
+
+After each rung's review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) must message the user with a severity-grouped update. Do this after every rung, not only at family or ladder end. Do not dump raw review.md.
+
+The update MUST include:
+
+- **Rung identity** — family + High / Extra High / Max
+- **Verdict** — CLEAN or NOT CLEAN
+- **Blockers / Highs / Mediums** — one line each finding, or **none**
+- **Disposition** — whether findings are being ACCEPT-applied before the next rung, or REJECT-as-wrong (with why)
+
+CLEAN with no findings still gets the three **none** lines. The severity-grouped list is the update.
 
 ## When to Use
 
@@ -82,24 +143,26 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 
 | Check | Pass criterion |
 |-------|----------------|
-| Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep |
-| Review/triage separation | Review subagent did **not** triage or fix; triage subagent used **host model**, not rung model |
-| PM filing evidence | Valid findings filed or deduped via `/silver:add` before fix agents launched; triage table lists PM ids |
-| Fix model lock | Fix subagents used **host current model**, not rung model; parallel only per triage grouping |
+| Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep — **or** the previous rung was skipped after 3 timed-out/no-verdict retries with `SKIPPED.md` recorded |
+| Review/triage separation | Review subagent did **not** triage or fix; launcher/parent triaged with Policy A (wrong vs not wrong), not the rung model |
+| Per-rung user report | After review returned, launcher posted a severity-grouped Blockers / Highs / Mediums update (or **none**) to the user; did this after every rung, not only at family or ladder end; did not dump raw review.md |
+| PM filing evidence | When PM tracking is in use, ACCEPT findings filed or deduped via `/silver:add`; triage table lists PM ids. Does not delay launcher ACCEPT application |
+| Fix owner | Launcher/parent applied ACCEPT fixes (Edit/Write); the rung model did **not** implement; did not re-ask the same rung to patch after NOT CLEAN |
 | Separate verify invocations | `verify_1` and `verify_2` were **separate** subagent `Task` calls — not one combined prompt |
 | Orchestrator grep | Orchestrator ran **every** charter verification signal between verify passes and logged command + output + pass/fail |
 | Scope | No reads, edits, or commands touched paths outside locked scope |
 | Readonly verify | Both verify subagents used `readonly: true` (Task-capable hosts) or explicit verify-only directive |
 | No parallel rungs | No other rung's audit-fix or verify was launched while this rung was incomplete |
-| Advance gate | Advanced to next rung **only** after orchestrator confirmed **two consecutive clean** verify passes |
+| Advance gate | Advanced to next rung **only** after orchestrator confirmed **two consecutive clean** verify passes **and** ACCEPTs applied (or REJECT-as-wrong recorded) — **or** after 3 timed-out/no-verdict retries with `SKIPPED.md` (incomplete rung; not a CLEAN advance) |
 
 **On failure:** STOP. Report the violation. Fix the process, skill, or orchestrator prompt. Resume **only** after the fix is in place — re-run the failed phase on the **same** rung, not the next rung.
 
 ### Full-Ladder Requirement
 
-- **Default:** Execute **every resolved rung** in order. A clean rung is not a completion condition; it is the gate that permits advancement to the next rung.
+- **Default:** Execute **every resolved rung** in order. A clean rung is not a completion condition; it is the gate that permits advancement to the next rung. **Timeout skip:** after 3 timed-out retries with no verdict, skip that rung (`SKIPPED.md`) and continue immediately; this is not a CLEAN advance and not a Fast/family substitute.
 - **Two consecutive clean rounds per rung:** For each rung, `verify_1` and `verify_2` must both be clean, and the orchestrator verification signals after each pass must also be clean.
-- **Advance after clean rung:** After two consecutive clean rounds and clean orchestrator signals, the orchestrator MUST advance to rung N+1 unless N is the final resolved rung.
+- **Advance after clean rung:** After two consecutive clean rounds, clean orchestrator signals, and launcher ACCEPT application (or REJECT-as-wrong), the orchestrator MUST advance to rung N+1 unless N is the final resolved rung.
+- **CLEAN with leftover findings:** If a rung returns CLEAN with findings that are not wrong, the launcher still applies them before the next rung.
 - **Stop after first compliance failure** — never "push through" remaining rungs while the process is broken.
 - A smoke demonstration may be run only when the user explicitly asks for a smoke test; otherwise the ladder must continue through the final resolved rung.
 
@@ -108,7 +171,7 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 STOP and do **not** advance when any of the following is true:
 
 1. **Compliance gate failure** — any row in the compliance gate table fails
-2. **Skipped state** — tempted to skip review, triage, PM filing, fix, either verify pass, or orchestrator grep
+2. **Skipped state** — tempted to skip review, triage, PM filing, fix, either verify pass, or orchestrator grep — **except** Policy B skip-after-3-timed-out-retries (`SKIPPED.md` then start the next rung)
 3. **Combined verify passes** — one subagent asked to "do 2 passes" or verify_1 and verify_2 merged
 4. **Subagent-only gate** — advancing on subagent VERIFY_PASS without orchestrator grep evidence
 5. **Scope violation** — any command or edit outside locked paths
@@ -116,6 +179,9 @@ STOP and do **not** advance when any of the following is true:
 7. **Verify subagent edited files** — verify pass was not readonly
 8. **Final rung complete** — the last resolved rung completed `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
 9. **User stop** — user directs halt or scope change
+10. **Unapplied ACCEPTs** — next rung started before the launcher applied ACCEPTs (or recorded REJECT-as-wrong)
+11. **Skipped Policy C report** — review returned without a launcher user-facing update listing Blockers / Highs / Mediums (or **none**)
+12. **Leftover-cycle cap** — five leftover Policy B cycles on the same rung verify without CLEAN; escalate the remaining `file:line` list instead of a sixth one-line patch
 
 ### Recovery Procedure (before resuming)
 
@@ -140,19 +206,21 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 
 ### Anti-Skip Rules (MUST / FORBIDDEN)
 
-1. **One rung at a time** — **FORBIDDEN** to launch multiple ladder rungs in parallel. **FORBIDDEN** to batch `Task` calls for different rungs in one turn. Exactly one subagent `Task` per turn.
+1. **One rung at a time** — **FORBIDDEN** to launch multiple ladder rungs in parallel. **FORBIDDEN** to batch `Task` calls for different rungs in one turn. Exactly one subagent `Task` per turn. Anti-stall means **no user-wait** between phases (Policy B leftovers, then the next verify Task) — not parallel Tasks. After **3 timed-out retries** with no verdict, skip that rung (`SKIPPED.md`) and start the next rung in the **following** turn — still one Task per turn.
 
 2. **Two-pass gate** — Per rung:
    - (a) review-only subagent (raw findings, no triage/fix)
-   - (b) triage subagent via `/silver:triage` — **host model**, not rung model
-   - (c) orchestrator files valid issues via `/silver:add` (or confirms dedupe links)
-   - (d) fix subagent(s) — **host model**, parallel only when triage parallel groups allow
+   - (b) launcher/parent posts Policy C user update (rung identity, verdict, Blockers / Highs / Mediums or **none**, ACCEPT-apply vs REJECT-as-wrong), then triages with Policy A (ACCEPT vs REJECT-as-wrong) — **not** the rung model
+   - (c) orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use (or confirms dedupe links)
+   - (d) launcher/parent applies ACCEPT fixes with Edit/Write — **not** the rung model; **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch after NOT CLEAN
    - (e) verify-only subagent pass 1 — if clean, proceed; if fail, return to (d) on **same** rung
    - (f) verify-only subagent pass 2 — only if pass 1 was clean
-   - Advance to rung N+1 **only** if **both** verify passes are clean; after they are clean, advancement is mandatory unless N is the final resolved rung.
+   - Advance to rung N+1 **only** if **both** verify passes are clean **and** ACCEPTs are applied (or REJECT-as-wrong recorded); after they are clean, advancement is mandatory unless N is the final resolved rung.
    - **FORBIDDEN** to combine passes into one subagent prompt (e.g. "do 2 passes" in a single Task).
    - **FORBIDDEN** to advance after only one clean verify pass.
    - **FORBIDDEN** for review subagent to triage or fix its own findings.
+   - **FORBIDDEN** to reject a finding as "advisory", "doc-only", "documentation nit", "non-gating", "nice-to-have", "not a contract hole", "CLEAN so ignore mediums", "CLEAN for ladder purposes", or "non-blocking nit".
+   - **FORBIDDEN** to skip the per-rung Policy C user update, to wait until family or ladder end, or to dump raw review.md in place of the severity-grouped list.
 
 3. **Verify-only passes** — Subagents on verify passes MUST NOT edit files. Use `readonly: true` on the host `Task` tool or explicit "verify only, no edits" in the prompt. **FORBIDDEN** for verify subagents to apply fixes.
 
@@ -160,13 +228,13 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 
 5. **Scope lock** — **FORBIDDEN** to read/edit/run tests outside locked scope paths.
 
-6. **Model lock** — Each rung uses exactly the `model` + `reasoning` from resolver JSON. **FORBIDDEN** to substitute models unless the host rejects the slug — then document the rejection and use the nearest host-documented slug, one substitution per rung.
+6. **Model lock** — Each rung uses exactly the `model` + `reasoning` from resolver JSON. **FORBIDDEN** to substitute models unless the host rejects the slug — then document the rejection and use the nearest host-documented slug, one substitution per rung. Do not skip Extra High/Max when those slugs exist. Skipping a hung rung after 3 timed-out retries is **not** permission to run that skipped rung on Fast or a different family; leave it incomplete and continue at the **next** rung’s required model.
 
 7. **State machine** — Document current state in close-out (`rung_N_review`, `rung_N_triage`, `rung_N_file_valid_issues`, `rung_N_fix_parallel`, `rung_N_verify_1`, etc.). **STOP** if tempted to skip.
 
-8. **No parallel rung launches** — **FORBIDDEN** to launch review for rung N+1 while rung N verify is incomplete.
+8. **No parallel rung launches** — **FORBIDDEN** to launch review for rung N+1 while rung N verify is incomplete or ACCEPTs remain unapplied.
 
-9. **Host-model triage and fix** — Triage and fix subagents MUST use the orchestrator's pinned host model (parent session model), **not** the rung `model` + `reasoning` from resolver JSON. Only the **review** subagent uses the rung model pair.
+9. **Launcher triage and apply** — Triage and ACCEPT application are done by the ladder launcher/parent, **not** the rung `model` + `reasoning` from resolver JSON. Only the **review** (and verify) subagent uses the rung model pair. Inside an RFL session this is an explicit exception to parent-orchestrator-never-implements.
 
 ### Per-Rung Workflow (Orchestrator Checklist)
 
@@ -174,15 +242,15 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 
 | Step | State | Action |
 |------|-------|--------|
-| 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only). **Cursor:** use `delegation` from resolver JSON — `task` → `Task` with `task_slug`; `agent-cursor` → `/silver:agent-cursor` brief + `agent-cursor-delegate.sh` |
-| 2 | `rung_N_triage` | Launch **one** triage subagent (`/silver:triage`) at **host model** |
-| 3 | `rung_N_file_valid_issues` | Orchestrator files valid items via `/silver:add`; record PM ids in triage table |
-| 4 | `rung_N_fix_parallel` | Launch fix subagent(s) at **host model** — parallel per triage groups only |
-| 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same `delegation` routing as review (`task` or `agent-cursor`) |
+| 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only). **Cursor:** subscription-first for GPT/Claude (see Host Delegation); otherwise `Task(subagent_type=<subagent_name>)` |
+| 2 | `rung_N_triage` | **Policy C:** launcher messages the user with rung identity, verdict, Blockers / Highs / Mediums (or **none**), and ACCEPT-apply vs REJECT-as-wrong. Then launcher/parent triages with Policy A (wrong vs not wrong). Do **not** spawn the rung model to classify or reject as "advisory". Do this after every rung. Do not dump raw review.md. |
+| 3 | `rung_N_file_valid_issues` | Orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use; record PM ids in triage table |
+| 4 | `rung_N_fix_parallel` | Launcher/parent applies ACCEPT fixes (Edit/Write), including every finding that is not wrong (**Low, deferred, nitpicks, and minor** if still applicable). **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch; **FORBIDDEN** to skip a still-valid nit because the rung was CLEAN or the item is a "non-blocking nit" |
+| 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
 | 6 | — | Orchestrator runs each charter verification signal; log pass/fail |
-| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 at rung model. **Cursor:** same `delegation` routing as review |
+| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
 | 8 | — | Orchestrator runs charter signals again; log pass/fail |
-| 9 | advance | If steps 6 **and** 8 are clean, advance to rung N+1 unless N is the final resolved rung; else return to step 4 |
+| 9 | advance | If steps 6 **and** 8 are clean **and** ACCEPTs are applied (or REJECT-as-wrong recorded), advance to rung N+1 unless N is the final resolved rung; else return to step 4 |
 
 ### Repo-wide mode (only after user confirms)
 
@@ -195,8 +263,10 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 
 Report:
 
+- **Per-rung Policy C updates** — already posted after each review (rung identity, verdict, Blockers / Highs / Mediums or **none**, ACCEPT-apply vs REJECT-as-wrong); do not replace those with a raw review.md dump at close-out
 - **Compliance log** — per rung: compliance gate pass/fail, any STOP events, recovery actions taken
 - Per-rung pass table: rung → verify_1 evidence → verify_2 evidence → advanced (yes/no)
+- Triage table: ACCEPT vs REJECT-as-wrong (with why-wrong evidence)
 - Charter coverage matrix (goal → evidence / status)
 - Residual risks
 - Files touched (scoped paths only)
@@ -210,34 +280,62 @@ Resolve the ladder first (`python3 scripts/review-fix-ladder.py --host cursor --
 
 | Field | Meaning |
 |-------|---------|
-| `delegation` | `custom-subagent` — use host `Task` with `subagent_type` set to `subagent_name` |
+| `delegation` | `custom-subagent` — Cursor `Task` fallback with `subagent_type` set to `subagent_name` |
 | `subagent_name` | Installed `sb-*` custom subagent slug (e.g. `sb-composer-2-5-medium`) |
 | `model_param` | Optional `Task` `model` override when required; Composer rungs use `composer-2.5` only |
+| `subscription_first` | `true` for GPT and Claude/Opus rungs — try the subsidized host CLI before Cursor Task |
+| `subscription_invoke` | `scripts/agent-codex/invoke.sh` (GPT) or `scripts/agent-claude/invoke.sh` (Claude/Opus) |
 
-**Routing rule:** For **review** and **verify** phases on Cursor, spawn `Task(subagent_type=<subagent_name>)`. **Omit `model`** when the custom subagent encodes the rung model — the hook waives the rung model check for matching `subagent_type`. **Never** use `agent-cursor` or `/silver:agent-cursor` for RFL review/verify on Cursor.
+**Subscription-first (GPT / Claude) — every launch, including re-verify and Max:** Cursor GPT/Claude quota is far less subsidized than Codex/Claude subscriptions. Before every GPT or Claude/Opus **review** and **verify** launch:
+
+1. Run `python3 scripts/review-fix-ladder.py --decide-launch --model {model} --reasoning {reasoning}`.
+2. If `action` is `invoke_subscription`: invoke `/silver:agent-codex` (GPT) or `/silver:agent-claude` (Claude/Opus) via the existing `subscription_invoke` helper — do **not** invent a second spawn stack.
+3. Re-run `--decide-launch` with `--subscription-exit` and `--subscription-output` / `--subscription-output-file` from that attempt.
+4. `accept_subscription` (success, including a NOT CLEAN review) — **do not** also launch Cursor Task for that rung.
+5. `cursor_fallback` (`reason: quota-exhaustion` only) — log host + matched signal, run `--mark-quota-fallback --quota-host <codex|claude> --quota-signal '<signal>'`, then spawn **one** `Task(subagent_type=<subagent_name>)`.
+6. `fail` (`missing-cli`, `hash-mismatch`, or other non-quota failure) — **do not** fall back to Cursor. Missing CLI: install/fix or fail clearly. HASH MISMATCH: relaunch still goes through this gate (subscription first again).
+
+Quota exhaustion signals (narrow): `429`, `rate limit`, `token plan`, `out of quota`, `quota retries exhausted` / `quota exhaust|exceed`, `usage cap` / `usage limit`, `billed-quota`, `over quota`, or in-repo bare `quota` after missing-CLI and HASH MISMATCH are ruled out.
+
+**Not quota (no Cursor fallback):** brief bugs, HASH MISMATCH, missing CLI install, network blips, NOT CLEAN review results.
+
+Grok, Composer, GLM, Gemini, and Kimi rungs are unchanged: Cursor `Task` only. `--decide-launch` returns `action: cursor_task` and does not call this gate. OpenCode family rungs are **not** Cursor `sb-*` Tasks — see **OpenCode Go models** below.
+
+**Routing rule:** For **review** and **verify** on Cursor, follow `--decide-launch`. Non-GPT/Claude: spawn `Task(subagent_type=<subagent_name>)`. **Omit `model`** when the custom subagent encodes the rung model — **except** empty/"Let" re-spawns below. **Never** use `agent-cursor` or `/silver:agent-cursor` for RFL review/verify on Cursor.
+
+**Empty / "Let" nested Tasks:** If a nested `Task` returns empty or dies after "Let", the parent MUST re-spawn immediately with an explicit `model` so the child does not inherit the wrong wrapper. Do not wait for the user. Mixed-host ladders: nested GLM under Grok dies after "Let"; parent re-spawns with explicit GLM model (do not nest GLM under Grok). Never Fast. Empty/"Let" after re-spawn with still no review counts toward the **3 timed-out retries**; after 3, skip the rung (`SKIPPED.md`) — do not spin a 4th timeout retry.
 
 Phase routing detail:
 
 ```bash
 python3 scripts/review-fix-ladder.py --host cursor --json --project-root . --rung 2 --phase verify_1
+python3 scripts/review-fix-ladder.py --decide-launch --model gpt-5.6-sol --reasoning xhigh
 ```
 
-For `delegation: custom-subagent`:
+For non-subscription `delegation: custom-subagent` (and GPT/Claude **after** quota fallback):
 
 1. Read `subagent_name` from resolver JSON for the active rung.
 2. Spawn **one** `Task` with `subagent_type: <subagent_name>` and the phase prompt (Template A or B).
 3. On verify passes, also set `readonly: true`.
-4. Do **not** pass `model` unless resolver emits `model_param` and host policy requires it.
+4. Do **not** pass `model` unless resolver emits `model_param` and host policy requires it — **except** when re-spawning after an empty/"Let" Task (then pass explicit `model`).
 
 Install or refresh agents before the ladder: `bash scripts/install-cursor-sb-agents.sh` (see `scripts/lib/cursor-sb-agents/`).
 
 | Host | Delegation |
 |------|------------|
-| **Cursor (custom subagent)** | `Task(subagent_type=<subagent_name>)` from resolver JSON. Default ladder: 6 rungs (`composer-2.5` + `grok-4.5` × medium/high/xhigh). Verify passes: `readonly: true`. **Forbidden:** `agent-cursor`, `composer-2.5-fast`, Fast/Max/Low unless explicitly opted in. |
+| **Cursor (custom subagent)** | GPT → `/silver:agent-codex` first; Claude/Opus → `/silver:agent-claude` first; Cursor `Task` **only** on quota exhaustion. Other families: `Task(subagent_type=<subagent_name>)`. Verify passes: `readonly: true`. **Forbidden:** `agent-cursor`, `composer-2.5-fast`, Fast. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every review/verify launch (not once per family). |
 | **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Secondary host agent** | `Codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
 
 Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-bullet.md`.
+
+### OpenCode Go models (not Cursor `sb-*`)
+
+OpenCode family rungs (DeepSeek, MiniMax, Qwen, and any other Go-listed model) **must** take model ids and display names from [OpenCode Go](http://opencode.ai/docs/go/) (live catalog also at `https://opencode.ai/zen/go/v1/models`). Re-fetch that page before naming a rung. **Do not** invent Cursor Task slugs such as `sb-opencode-max`, `sb-deepseek-*`, or treat “OpenCode Max” as a Cursor `subagent_type`.
+
+Go lists **distinct model SKUs**, not High vs Max reasoning-effort tiers. “Max” / “Plus” / “Pro” / “Flash” in names such as Qwen3.8 Max, DeepSeek V4 Pro, and DeepSeek V4 Flash are product names, not Cursor-style High/Max effort. There is no `sb-opencode-max`.
+
+**Quota STOP (once):** Codex/Claude usage-limit → Cursor subagent fallback (`cursor_fallback` above). OpenCode billed quota / weekly limit (user must replenish keys) → report STOP once and wait for the user; do **not** spin retries or invent Cursor `sb-*` stand-ins. **Unless** the failure is an unavailable/timeout class (timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, hung invoke with no `review.md`) that already retried: those count toward **3 timed-out retries**, then **skip the rung** (do not block the whole ladder). Do not skip because of CLEAN/NOT CLEAN.
 
 
 ## Subagent Prompt Templates
@@ -264,8 +362,9 @@ Tasks:
 3. Do NOT classify, triage, file issues, or apply fixes.
 
 FORBIDDEN behaviors:
-- Do NOT triage findings (orchestrator runs /silver:triage separately).
+- Do NOT triage findings (launcher/parent triages with Policy A after you return).
 - Do NOT fix gaps — report only.
+- Do NOT edit plans, specs, tests, or docs — no "while I'm here" fixes.
 - Do NOT read/edit/run commands outside locked scope.
 - Do NOT claim PASS or recommend advancing — orchestrator verifies.
 - Do NOT launch subagents or parallel work.
@@ -273,10 +372,10 @@ FORBIDDEN behaviors:
 
 ### Template A2 — Triage (`rung_N_triage`)
 
-Host orchestrator launches triage at **host model** (not rung model). Invoke `/silver:triage` behavior.
+Launcher / parent of the ladder triages **in-session** (not the rung model). Do **not** spawn the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to classify findings. After review returns, post the Policy C user update first.
 
 ```
-Phase: TRIAGE (rung_N_triage) — host model, NOT rung model
+Phase: TRIAGE (rung_N_triage) — launcher/parent, NOT rung model
 
 Scope: {scope}
 Review charter: {goals}
@@ -284,31 +383,35 @@ Raw findings from review subagent:
 {raw_findings}
 
 Tasks:
-1. Classify each finding (VALID-BLOCKER, VALID-NONBLOCKER, DUPLICATE, ALREADY-FIXED, FALSE-POSITIVE, NEEDS-USER-DECISION).
-2. Produce triage table with evidence and parallelization groups.
-3. Do NOT fix or file — orchestrator files via /silver:add next.
+1. Message the user with a severity-grouped Policy C update: rung identity (family + High / Extra High / Max), verdict, Blockers / Highs / Mediums (one line each finding, or none), and whether findings are being ACCEPT-applied before the next rung or REJECT-as-wrong (with why). Do this after every rung. Do not dump raw review.md. CLEAN with no findings still gets the three none lines.
+2. Incorporate every finding that is not wrong. Reject only if the finding is wrong or mistaken.
+3. Classify each finding ACCEPT or REJECT-as-wrong (state why it is wrong).
+4. Forbidden reject reasons: advisory, doc-only, documentation nit, non-gating, nice-to-have, not a contract hole, CLEAN so ignore mediums, CLEAN for ladder purposes, non-blocking nit.
+5. Produce a triage table. Do not spawn a fix Task at the rung model.
 
-FORBIDDEN: fixing files, filing to PM, combining with review pass.
+FORBIDDEN: asking the rung model to patch; rejecting for severity or "advisory"; skipping the per-rung user update.
 ```
 
-### Template A3 — Fix (`rung_N_fix_parallel`)
+### Template A3 — Apply ACCEPT (`rung_N_fix_parallel`)
 
-Host orchestrator launches fix agent(s) at **host model** after PM filing. One Task per parallel group when safe.
+Launcher / parent applies ACCEPT fixes with Edit/Write after triage. This is an explicit exception to parent-orchestrator-never-implements **inside an RFL session**.
 
 ```
-Phase: FIX (rung_N_fix_parallel) — host model, NOT rung model
-Parallel group: {group_id}
+Phase: APPLY ACCEPT (rung_N_fix_parallel) — launcher/parent Edit/Write, NOT rung model
 
 Scope: {scope}
-Triage table / filed issues: {triage_summary}
-Fix workflow: {fix_workflow}  (e.g. /silver:bugfix, /silver:refactor)
+Triage table: {triage_summary}
 
 Tasks:
-1. Fix only issues in this parallel group within scope.
-2. Smallest safe change; cite PM id in commit/session notes.
-3. Report diffs and residual gaps.
+1. Apply every ACCEPT finding that is not wrong within scope (spec, and tests/docs if the finding is about those), including **Low, deferred, nitpicks, and minor** items that are still applicable.
+2. Skip only KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items that are no longer true on the current freeze. Do not reopen KEEP REJECT. Anti-churn for historical changelog / KEEP REJECT aliases still applies.
+3. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit.
+4. Record REJECT-as-wrong with why-wrong evidence.
+5. Smallest safe change.
 
-FORBIDDEN: re-triage, expand scope, launch other rung phases.
+FORBIDDEN: asking the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch the plan after NOT CLEAN.
+FORBIDDEN: advancing to the next rung before ACCEPTs are applied (or REJECT-as-wrong recorded).
+FORBIDDEN: skipping a still-valid Low, deferred, nitpick, or minor because the rung was CLEAN or the item is a "non-blocking nit".
 ```
 
 ### Template B — Verify-Only (`rung_N_verify_1` or `rung_N_verify_2`)
@@ -346,5 +449,7 @@ After each verify-only subagent returns, the orchestrator MUST:
 
 1. Run every charter verification signal (grep, line count, pattern checks).
 2. Record command + output + pass/fail.
-3. Only proceed to the next verify pass if signals are clean; after `verify_2`, proceed to the next rung if signals are clean and another resolved rung remains.
+3. Only proceed to the next verify pass if signals are clean; after `verify_2`, proceed to the next rung if signals are clean, ACCEPTs are applied (or REJECT-as-wrong recorded), and another resolved rung remains.
 4. **IGNORE** subagent VERIFY_PASS if orchestrator signals fail.
+5. If verify returns CLEAN with findings that are not wrong, apply those ACCEPTs before the next rung.
+6. **Do not idle:** verify FAIL → Policy B leftovers then re-verify; CLEAN `verify_1` → grep then `verify_2`; two CLEAN verifies + greps → next rung. Same defect class failing verify more than twice → corpus sweep on the next Policy B. After 5 leftover cycles on this rung verify, escalate `file:line` leftovers instead of a sixth one-line patch. After 3 timed-out retries with no verdict on this rung, skip (`SKIPPED.md`) and start the next rung — do not spin a 4th timeout retry.

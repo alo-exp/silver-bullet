@@ -1,0 +1,33 @@
+--- Code-intel preflight (Graphify / agentmemory / RTK / Context Mode) ---
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+  rtk: global wiring (opted in via /Users/shafqat/projects/silver-bullet/repo/.silver-bullet.json)
+  context-mode: /Users/shafqat/projects/silver-bullet/repo (opted in)
+ERROR: enterprise E2E code-intel preflight: Context Mode MCP not wired for host=opencode — see docs/CONTEXT-MODE.md
+    context-mode doctor OK (platform=opencode)
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+Code-intel preflight OK.
+{"type":"prompt.submitted","model":"opencode-go/mimo-v2.5","work_dir":"/Users/shafqat/projects/silver-bullet/repo"}
+--- Code-intel preflight (Graphify / agentmemory / RTK / Context Mode) ---
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+  rtk: global wiring (opted in via /Users/shafqat/projects/silver-bullet/repo/.silver-bullet.json)
+  context-mode: /Users/shafqat/projects/silver-bullet/repo (opted in)
+ERROR: enterprise E2E code-intel preflight: Context Mode MCP not wired for host=opencode — see docs/CONTEXT-MODE.md
+    context-mode doctor OK (platform=opencode)
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+Code-intel preflight OK.
+{"type":"prompt.submitted","model":"opencode-go/mimo-v2.5","work_dir":"/Users/shafqat/projects/silver-bullet/repo"}
+[agent-opencode] log: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/qwen-high-ladder4/opencode-run.log (16098 B)
+[0m
+> build · qwen3.8-max
+[0m
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"shasum -a 256 /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md"}
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"wc -l -c /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md"}
+Starting ladder-4 High review. First: hash gate + file inventory.

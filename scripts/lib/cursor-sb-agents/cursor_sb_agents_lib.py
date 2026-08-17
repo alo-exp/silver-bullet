@@ -33,6 +33,40 @@ GROK_FAST_EFFORT_MAP = {
     "high": "cursor-grok-4.5-high-fast",
     "xhigh": "grok-4.5-fast-xhigh",
 }
+# Cursor Agent CLI lists cursor-grok-4.6-{low,medium,high,xhigh} (+ fast).
+# Extra High is cursor-grok-4.6-xhigh (there is no unprefixed grok-4.6-xhigh).
+GROK_46_EFFORT_MAP = {
+    "low": "cursor-grok-4.6-low",
+    "medium": "cursor-grok-4.6-medium",
+    "high": "cursor-grok-4.6-high",
+    "xhigh": "cursor-grok-4.6-xhigh",
+}
+GROK_46_FAST_EFFORT_MAP = {
+    "low": "cursor-grok-4.6-low-fast",
+    "medium": "cursor-grok-4.6-medium-fast",
+    "high": "cursor-grok-4.6-high-fast",
+    "xhigh": "cursor-grok-4.6-xhigh-fast",
+}
+# Families whose Cursor slugs are not `{base}-{effort}`. Config `rfl_effort_maps`
+# overrides these. Never include Fast slugs here.
+BUILTIN_EFFORT_MAPS = {
+    "opus-5": {
+        "medium": "claude-opus-5-thinking-medium",
+        "high": "claude-opus-5-thinking-high",
+        "xhigh": "claude-opus-5-thinking-xhigh",
+        "max": "claude-opus-5-thinking-max",
+    },
+    "glm-5.2": {
+        "high": "glm-5.2-high",
+        "xhigh": "glm-5.2-max",
+        "max": "glm-5.2-max",
+    },
+    "kimi-k3": {
+        "high": "kimi-k3-high",
+        "xhigh": "kimi-k3-max",
+        "max": "kimi-k3-max",
+    },
+}
 
 FAST_RE = re.compile(r"(?:^|-)fast(?:-|$)", re.I)
 MAX_ID_RE = re.compile(r"(?:^|-)max(?:-|$)|\[context=", re.I)
@@ -207,7 +241,22 @@ def base_model_from_slug(model_id: str) -> str:
     # Normalize both cursor-grok-4.5-* and legacy grok-4.5-* to base grok-4.5
     if model_id.startswith("cursor-grok-4.5") or model_id.startswith("grok-4.5"):
         return "grok-4.5"
-    for effort in ("xhigh", "extra-high", "high", "medium", "low", "none"):
+    if model_id.startswith("cursor-grok-4.6") or model_id.startswith("grok-4.6"):
+        return "grok-4.6"
+    for effort in (
+        "thinking-max",
+        "thinking-xhigh",
+        "thinking-high",
+        "thinking-medium",
+        "thinking-low",
+        "xhigh",
+        "extra-high",
+        "high",
+        "medium",
+        "low",
+        "none",
+        "max",
+    ):
         suffix = f"-{effort}"
         if model_id.endswith(suffix):
             return model_id[: -len(suffix)]
@@ -241,6 +290,14 @@ def effort_from_slug(model_id: str, base: str) -> str | None:
         if model_id in legacy:
             return legacy[model_id]
         return None
+    if base == "grok-4.6":
+        for effort, slug in GROK_46_EFFORT_MAP.items():
+            if model_id == slug:
+                return effort
+        for effort, slug in GROK_46_FAST_EFFORT_MAP.items():
+            if model_id == slug:
+                return effort
+        return None
     remainder = model_id[len(base) :].lstrip("-")
     if remainder.startswith("fast-"):
         remainder = remainder[5:]
@@ -251,6 +308,12 @@ def effort_from_slug(model_id: str, base: str) -> str | None:
         "medium": "medium",
         "low": "low",
         "none": "medium",
+        "max": "max",
+        "thinking-max": "max",
+        "thinking-xhigh": "xhigh",
+        "thinking-high": "high",
+        "thinking-medium": "medium",
+        "thinking-low": "low",
     }
     return mapping.get(remainder)
 
@@ -316,7 +379,7 @@ def build_catalog(
     for base in bases:
         if base.startswith("composer-"):
             bases[base]["effort_values"] = list(DEFAULT_EFFORT_LEVELS)
-        elif base == "grok-4.5":
+        elif base in ("grok-4.5", "grok-4.6"):
             bases[base]["effort_values"] = list(DEFAULT_EFFORT_LEVELS)
         else:
             ev = [e for e in bases[base]["effort_values"] if e != "low"]
@@ -362,7 +425,14 @@ def resolve_model_param(
     effort: str,
     catalog: dict[str, Any] | None = None,
     include_fast: bool = False,
+    config: dict[str, Any] | None = None,
 ) -> str:
+    maps: dict[str, dict[str, str]] = dict(BUILTIN_EFFORT_MAPS)
+    if config:
+        maps.update(config.get("rfl_effort_maps") or {})
+    if base_model in maps and effort in maps[base_model]:
+        return maps[base_model][effort]
+
     if base_model.startswith("composer-"):
         if include_fast and base_model.endswith("-fast"):
             return base_model
@@ -372,6 +442,11 @@ def resolve_model_param(
         if include_fast:
             return GROK_FAST_EFFORT_MAP.get(effort, f"grok-4.5-fast-{effort}")
         return GROK_EFFORT_MAP.get(effort, f"grok-4.5-{effort}")
+
+    if base_model == "grok-4.6":
+        if include_fast:
+            return GROK_46_FAST_EFFORT_MAP.get(effort, f"cursor-grok-4.6-{effort}-fast")
+        return GROK_46_EFFORT_MAP.get(effort, f"cursor-grok-4.6-{effort}")
 
     composite = f"{base_model}-{effort}"
     if include_fast:
@@ -402,11 +477,22 @@ def id_in_catalog(model_id: str, catalog: dict[str, Any]) -> bool:
     return False
 
 
+def efforts_for_model(config: dict[str, Any], model: str) -> list[str]:
+    maps = config.get("rfl_effort_maps") or {}
+    if model in maps and maps[model]:
+        return list(maps[model].keys())
+    levels = list(config.get("effort_levels", DEFAULT_EFFORT_LEVELS))
+    builtin = BUILTIN_EFFORT_MAPS.get(model, {})
+    if config.get("include_max") and "max" in builtin and "max" not in levels:
+        levels = [*levels, "max"]
+    return levels
+
+
 def expected_agent_names(config: dict[str, Any]) -> list[str]:
     prefix = config.get("agent_name_prefix", "sb")
     names: list[str] = []
     for model in config.get("selected_models", []):
-        for effort in config.get("effort_levels", DEFAULT_EFFORT_LEVELS):
+        for effort in efforts_for_model(config, model):
             names.append(agent_name(model, effort, prefix))
     return names
 
@@ -415,9 +501,11 @@ def expected_model_params(config: dict[str, Any], catalog: dict[str, Any]) -> di
     params: dict[str, str] = {}
     include_fast = bool(config.get("include_fast"))
     for model in config.get("selected_models", []):
-        for effort in config.get("effort_levels", DEFAULT_EFFORT_LEVELS):
+        for effort in efforts_for_model(config, model):
             name = agent_name(model, effort, config.get("agent_name_prefix", "sb"))
-            params[name] = resolve_model_param(model, effort, catalog, include_fast)
+            params[name] = resolve_model_param(
+                model, effort, catalog, include_fast, config
+            )
     return params
 
 
@@ -444,14 +532,24 @@ def render_agent_markdown(
     model_param: str,
     template: str,
 ) -> str:
+    label = "opus-5 thinking" if base_model == "opus-5" else base_model
+    mapped = ""
+    if effort == "xhigh" and model_param.endswith("-max"):
+        mapped = " (mapped to max)"
     description = (
-        f"SB reusable ladder agent — {base_model} effort={effort}"
+        f"SB reusable ladder agent — {label} effort={effort}{mapped}"
         + (f" (Cursor slug {model_param})." if model_param != base_model else ".")
     )
-    body = (
-        f"You are a Silver Bullet reusable review/verify agent at {base_model} / {effort}.\n"
-        "Follow the brief: review-only or verify-only as instructed. Do not triage or fix."
-    )
+    if base_model == "opus-5" or mapped:
+        body = (
+            f"You are a Silver Bullet reusable review/verify agent at {label} effort={effort}{mapped}.\n"
+            "Follow the brief: review-only or verify-only as instructed. Do not triage or fix unless the brief says incorporate/fix."
+        )
+    else:
+        body = (
+            f"You are a Silver Bullet reusable review/verify agent at {label} / {effort}.\n"
+            "Follow the brief: review-only or verify-only as instructed. Do not triage or fix."
+        )
     content = template.replace("{{AGENT_NAME}}", agent_name_value)
     content = content.replace("{{DESCRIPTION}}", description)
     content = content.replace("{{MODEL_PARAM}}", model_param)
@@ -520,4 +618,5 @@ def has_managed_marker(path: Path) -> bool:
         return MANAGED_MARKER in path.read_text(encoding="utf-8")
     except OSError:
         return False
+
 

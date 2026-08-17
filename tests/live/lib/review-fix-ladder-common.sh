@@ -137,7 +137,7 @@ Review-fix ladder smoke rung ${rung_index}/${rung_total}: model=${model}, reason
 Run exactly this command first: \`silver-bullet invoke-skill silver-review-fix-ladder smoke-target.py\`.
 Then read only smoke-target.py and CHARTER.md in this workspace.
 
-Pass ${clean_pass}: audit divide() against the charter. Reply with a line starting "LADDER_PASS:" and one sentence naming the zero-check defect, OR fix divide() minimally in smoke-target.py and verify with a one-line python3 command. Do not expand scope beyond smoke-target.py.
+Pass ${clean_pass}: audit divide() against the charter. Reply with a line starting "LADDER_PASS:" and one sentence naming the zero-check defect. Review/verify only — do not edit files or patch smoke-target.py. The launcher applies ACCEPT fixes.
 EOF
       ;;
     *)
@@ -146,10 +146,40 @@ Review-fix ladder smoke rung ${rung_index}/${rung_total}: model=${model}, reason
 
 Scope: smoke-target.py only. Read CHARTER.md for goals. Run python3 scripts/review-fix-ladder.py --json if helpful.
 
-Pass ${clean_pass}: audit divide() against the charter. Reply with a line starting "LADDER_PASS:" and one sentence naming the zero-check defect, OR fix divide() minimally in smoke-target.py and verify with a one-line python3 command. Do not expand scope.
+Pass ${clean_pass}: audit divide() against the charter. Reply with a line starting "LADDER_PASS:" and one sentence naming the zero-check defect. Review/verify only — do not edit files or patch smoke-target.py. The launcher applies ACCEPT fixes.
 EOF
       ;;
   esac
+}
+
+# Policy B APPLY ACCEPT: launcher (not the rung) patches the smoke fixture.
+# Completeness: land every finding that is not wrong, including Low/deferred/nitpicks/minor.
+review_fix_ladder_launcher_apply_accept() {
+  local work_dir="$1"
+  local target="${work_dir}/smoke-target.py"
+
+  python3 - "$target" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+old = '''def divide(a: float, b: float) -> float:
+    """Divide a by b. BUG: no zero check."""
+    return a / b
+'''
+new = '''def divide(a: float, b: float) -> float:
+    """Divide a by b. Reject zero divisors."""
+    if b == 0:
+        raise ValueError("division by zero")
+    return a / b
+'''
+if "b == 0" in text:
+    sys.exit(0)
+if old not in text:
+    sys.exit(1)
+path.write_text(text.replace(old, new, 1))
+PY
 }
 
 review_fix_ladder_response_passes() {

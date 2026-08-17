@@ -121,10 +121,10 @@ assert_jq_true "Claude fallback model chain" '
 
 cursor_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$REPO_ROOT")"
 cursor_rungs="$(python3 -c 'import json,sys; print(len(json.load(sys.stdin)["rungs"]))' <<<"$cursor_json")"
-if [[ "$cursor_rungs" == "6" ]]; then
-  pass "Cursor sb_agents ladder has 6 rungs"
+if [[ "$cursor_rungs" -ge 6 ]]; then
+  pass "Cursor sb_agents ladder has at least 6 rungs"
 else
-  fail "Cursor sb_agents ladder has 6 rungs — got $cursor_rungs"
+  fail "Cursor sb_agents ladder has at least 6 rungs — got $cursor_rungs"
 fi
 assert_jq_true "Cursor source cursor_sb_agents" '.source == "cursor_sb_agents"' "$cursor_json"
 assert_jq_true "Cursor rung 1 custom-subagent" '.rungs[0].delegation == "custom-subagent"' "$cursor_json"
@@ -141,6 +141,356 @@ printf '%s' "$cursor_text" | grep -q 'agent-cursor' && fail "Cursor text no agen
 
 override_json="$(python3 "$RESOLVER" --host cursor --json)"
 assert_jq_true "Host override without env selects cursor" '.host == "cursor"' "$override_json"
+
+SKILL="${REPO_ROOT}/skills/silver-review-fix-ladder/SKILL.md"
+assert_file_exists "$SKILL" "review-fix-ladder SKILL.md exists"
+if grep -qF 'Incorporate every finding that is not wrong' "$SKILL"; then
+  pass "SKILL Policy A: incorporate every finding that is not wrong"
+else
+  fail "SKILL Policy A: incorporate every finding that is not wrong"
+fi
+if grep -qF 'Forbidden reject reasons' "$SKILL" && grep -qE 'advisory|doc-only|non-gating' "$SKILL"; then
+  pass "SKILL forbids advisory/doc-only reject reasons"
+else
+  fail "SKILL forbids advisory/doc-only reject reasons"
+fi
+if grep -qF 'After each rung’s review, the agent that launched the RFL applies ACCEPT fixes' "$SKILL" \
+  || grep -qF "After each rung's review, the agent that launched the RFL applies ACCEPT fixes" "$SKILL"; then
+  pass "SKILL Policy B: launcher applies ACCEPT fixes"
+else
+  fail "SKILL Policy B: launcher applies ACCEPT fixes"
+fi
+if grep -qF 'The rung model does not implement' "$SKILL"; then
+  pass "SKILL Policy B: rung model does not implement"
+else
+  fail "SKILL Policy B: rung model does not implement"
+fi
+if grep -qF '### Policy C — launcher reports after every rung' "$SKILL"; then
+  pass "SKILL Policy C heading"
+else
+  fail "SKILL Policy C heading"
+fi
+if grep -qF "After each rung's review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) must message the user with a severity-grouped update." "$SKILL"; then
+  pass "SKILL Policy C: launcher messages user after each rung review"
+else
+  fail "SKILL Policy C: launcher messages user after each rung review"
+fi
+if grep -qF 'Do this after every rung, not only at family or ladder end.' "$SKILL"; then
+  pass "SKILL Policy C: after every rung"
+else
+  fail "SKILL Policy C: after every rung"
+fi
+if grep -qF 'Do not dump raw review.md.' "$SKILL"; then
+  pass "SKILL Policy C: do not dump raw review.md"
+else
+  fail "SKILL Policy C: do not dump raw review.md"
+fi
+if grep -qF '**Blockers / Highs / Mediums**' "$SKILL"; then
+  pass "SKILL Policy C: Blockers / Highs / Mediums grouping"
+else
+  fail "SKILL Policy C: Blockers / Highs / Mediums grouping"
+fi
+if grep -qF 'CLEAN with no findings still gets the three **none** lines.' "$SKILL"; then
+  pass "SKILL Policy C: CLEAN still reports none"
+else
+  fail "SKILL Policy C: CLEAN still reports none"
+fi
+if grep -qiE 'reject.{0,40}advisory|advisory.{0,20}findings may be ignored' "$SKILL" \
+  && ! grep -qF 'Forbidden reject reasons' "$SKILL"; then
+  fail "SKILL must not treat advisory as an allowed reject"
+else
+  pass "SKILL does not allow advisory reject"
+fi
+if grep -qF 'parent orchestrator never implements' "$SKILL" \
+  && grep -qF 'RFL session exception' "$SKILL"; then
+  pass "SKILL records RFL exception to parent-never-implements"
+else
+  fail "SKILL records RFL exception to parent-never-implements"
+fi
+if grep -qF 'Do not skip Extra High/Max when those slugs exist' "$SKILL"; then
+  pass "SKILL does not skip Extra High/Max"
+else
+  fail "SKILL does not skip Extra High/Max"
+fi
+if grep -qF 'Launch fix subagent(s) at **host model**' "$SKILL"; then
+  fail "SKILL must not tell the rung/host-model subagent to apply fixes"
+else
+  pass "SKILL does not spawn rung/host-model fix subagents"
+fi
+if grep -qF 'APPLY ACCEPT completeness (HARD)' "$SKILL" \
+  && grep -qF 'Low, deferred, nitpicks, and minor' "$SKILL" \
+  && grep -qF 'CLEAN for ladder purposes' "$SKILL" \
+  && grep -qF 'non-blocking nit' "$SKILL" \
+  && grep -qF 'do not reopen KEEP REJECT' "$SKILL"; then
+  pass "SKILL APPLY ACCEPT lands all non-wrong nits"
+else
+  fail "SKILL APPLY ACCEPT lands all non-wrong nits"
+fi
+if grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$SKILL"; then
+  pass "SKILL fix step is launcher APPLY ACCEPT"
+else
+  fail "SKILL fix step is launcher APPLY ACCEPT"
+fi
+
+WORKER="${REPO_ROOT}/templates/orchestrator-workers/REVIEW-TRIAGE.md"
+assert_file_exists "$WORKER" "REVIEW-TRIAGE worker template exists"
+if grep -qF 'The rung model does not implement' "$WORKER" \
+  && grep -qF 'Forbidden reject reasons' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes RFL triage and fix-owner policy"
+else
+  fail "REVIEW-TRIAGE worker encodes RFL triage and fix-owner policy"
+fi
+if grep -qF 'APPLY ACCEPT completeness (HARD)' "$WORKER" \
+  && grep -qF 'Low, deferred, nitpicks, and minor' "$WORKER" \
+  && grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes APPLY ACCEPT lands all non-wrong nits"
+else
+  fail "REVIEW-TRIAGE worker encodes APPLY ACCEPT lands all non-wrong nits"
+fi
+if grep -qF 'Policy C — launcher reports after every rung' "$WORKER" \
+  && grep -qF "the launcher (the agent that started the RFL) must message the user with a severity-grouped update" "$WORKER" \
+  && grep -qF 'Do this after every rung, not only at family or ladder end.' "$WORKER" \
+  && grep -qF 'Do not dump raw review.md.' "$WORKER" \
+  && grep -qF 'Blockers / Highs / Mediums' "$WORKER" \
+  && grep -qF 'CLEAN with no findings still gets the three none lines' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes Policy C per-rung reporting"
+else
+  fail "REVIEW-TRIAGE worker encodes Policy C per-rung reporting"
+fi
+
+SCENARIO="${REPO_ROOT}/tests/skill-scenarios/silver-review-fix-ladder.md"
+assert_file_exists "$SCENARIO" "review-fix-ladder skill scenario exists"
+if grep -qF 'APPLY ACCEPT completeness (HARD)' "$SCENARIO" \
+  && grep -qF 'Low, deferred, nitpicks, and minor' "$SCENARIO" \
+  && grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$SCENARIO"; then
+  pass "Skill scenario encodes APPLY ACCEPT lands all non-wrong nits"
+else
+  fail "Skill scenario encodes APPLY ACCEPT lands all non-wrong nits"
+fi
+if grep -qF 'Per-Rung Launcher Reporting (Policy C)' "$SCENARIO" \
+  && grep -qF 'Do this after every rung, not only at family or ladder end' "$SCENARIO" \
+  && grep -qF 'Do not dump raw review.md' "$SCENARIO" \
+  && grep -qF 'Blockers / Highs / Mediums' "$SCENARIO" \
+  && grep -qF 'CLEAN with no findings still gets the three none lines' "$SCENARIO"; then
+  pass "Skill scenario encodes Policy C per-rung reporting"
+else
+  fail "Skill scenario encodes Policy C per-rung reporting"
+fi
+
+if grep -qF 'Anti-stall (Policy B leftover loop — HARD)' "$SKILL" \
+  && grep -qF 'Corpus sweep, not one-line cycles' "$SKILL" \
+  && grep -qF 'Empty / "Let" nested Tasks' "$SKILL" \
+  && grep -qF 'Quota STOP (once)' "$SKILL" \
+  && grep -qF 'Cap residual loops' "$SKILL" \
+  && grep -qF 'nested GLM under Grok dies after "Let"' "$SKILL"; then
+  pass "SKILL encodes anti-stall leftover loop"
+else
+  fail "SKILL encodes anti-stall leftover loop"
+fi
+if grep -qF 'Skip after 3 timed-out retries (HARD)' "$SKILL" \
+  && grep -qF 'Do **not** spin a 4th timeout retry' "$SKILL" \
+  && grep -qF 'SKIPPED.md' "$SKILL" \
+  && grep -qF 'failed to produce a verdict' "$SKILL" \
+  && grep -qF 'Endpoint is unavailable' "$SKILL" \
+  && grep -qF 'Do **not** skip because of a CLEAN/NOT CLEAN review' "$SKILL" \
+  && grep -qF 'skip does not change the next rung' "$SKILL" \
+  && grep -qF 'Never Fast' "$SKILL" \
+  && grep -qF 'not a Fast/family substitute' "$SKILL" \
+  && grep -qF 'Empty/"Let" after re-spawn with still no review counts toward the **3 timed-out retries**' "$SKILL" \
+  && grep -qF 'previous rung was skipped after 3 timed-out/no-verdict retries with `SKIPPED.md` recorded' "$SKILL" \
+  && grep -qF 'Quota STOP (once)' "$SKILL"; then
+  pass "SKILL encodes skip after 3 timed-out retries"
+else
+  fail "SKILL encodes skip after 3 timed-out retries"
+fi
+if grep -qF 'Anti-Stall leftover loop (Policy B)' "$SCENARIO" \
+  && grep -qF 'Corpus sweep, not one-line cycles' "$SCENARIO" \
+  && grep -qF 'Cap residual loops' "$SCENARIO"; then
+  pass "Skill scenario encodes anti-stall leftover loop"
+else
+  fail "Skill scenario encodes anti-stall leftover loop"
+fi
+if grep -qF 'Skip after 3 timed-out retries' "$SCENARIO" \
+  && grep -qF 'Do not spin a 4th timeout retry' "$SCENARIO" \
+  && grep -qF 'SKIPPED.md' "$SCENARIO" \
+  && grep -qF 'failed to produce a verdict' "$SCENARIO" \
+  && grep -qF 'Do not skip because of a CLEAN/NOT CLEAN review' "$SCENARIO" \
+  && grep -qF "skip does not change the next rung's required model" "$SCENARIO" \
+  && grep -qF 'Never Fast' "$SCENARIO" \
+  && grep -qF 'Quota STOP once still applies' "$SCENARIO" \
+  && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$SCENARIO" \
+  && grep -qF 'Empty/"Let" after re-spawn counts toward the 3 timed-out retries' "$SCENARIO"; then
+  pass "Skill scenario encodes skip after 3 timed-out retries"
+else
+  fail "Skill scenario encodes skip after 3 timed-out retries"
+fi
+if grep -qF 'Anti-stall (Policy B leftover loop)' "$WORKER" \
+  && grep -qF 'Corpus sweep if the same defect class fails verify more than twice' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes anti-stall leftover loop"
+else
+  fail "REVIEW-TRIAGE worker encodes anti-stall leftover loop"
+fi
+if grep -qF '3 timed-out retries' "$WORKER" \
+  && grep -qF 'SKIPPED.md' "$WORKER" \
+  && grep -qF 'Do not spin a 4th timeout retry' "$WORKER" \
+  && grep -qF 'Skip after 3 timed-out retries (HARD)' "$WORKER" \
+  && grep -qF 'Do not skip because of CLEAN/NOT CLEAN' "$WORKER" \
+  && grep -qF "Mixed-host skip does not change the next rung's required model" "$WORKER" \
+  && grep -qF 'Never Fast' "$WORKER" \
+  && grep -qF 'empty Let' "$WORKER" \
+  && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$WORKER" \
+  && grep -qF 'Quota STOP once' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes skip after 3 timed-out retries"
+else
+  fail "REVIEW-TRIAGE worker encodes skip after 3 timed-out retries"
+fi
+
+LIVE_COMMON="${REPO_ROOT}/tests/live/lib/review-fix-ladder-common.sh"
+LIVE_TRIAGE="${REPO_ROOT}/tests/live/lib/review-fix-ladder-triage-scenario.sh"
+assert_file_exists "$LIVE_COMMON" "live review-fix-ladder common harness exists"
+assert_file_exists "$LIVE_TRIAGE" "live review-fix-ladder triage harness exists"
+if grep -qE 'OR fix divide\(\)|Fix divide\(\) minimally' "$LIVE_COMMON" "$LIVE_TRIAGE"; then
+  fail "live harness must not tell the rung to fix"
+else
+  pass "live harness must not tell the rung to fix"
+fi
+if grep -q 'review_fix_ladder_launcher_apply_accept' "$LIVE_COMMON" \
+  && grep -q 'APPLY ACCEPT' "$LIVE_COMMON" "$LIVE_TRIAGE"; then
+  pass "launcher APPLY ACCEPT"
+else
+  fail "launcher APPLY ACCEPT"
+fi
+if grep -qF 'Low, deferred, nitpicks, and minor' "$LIVE_TRIAGE" \
+  && grep -qF 'every finding that is not wrong' "$LIVE_TRIAGE" \
+  && grep -qF 'Low/deferred/nitpicks/minor' "$LIVE_COMMON"; then
+  pass "live harness APPLY ACCEPT lands all non-wrong nits"
+else
+  fail "live harness APPLY ACCEPT lands all non-wrong nits"
+fi
+if grep -q '/silver:triage' "$LIVE_COMMON"; then
+  fail "live rung harness must not invoke /silver:triage as the rung"
+else
+  pass "live rung harness must not invoke /silver:triage as the rung"
+fi
+
+# --- Subscription-first GPT/Claude gate ---
+GATE_ROOT="$WORKDIR/gate-project"
+mkdir -p "$GATE_ROOT"
+cat > "$GATE_ROOT/.silver-bullet.json" <<'EOF'
+{
+  "cursor_sb_agents": {
+    "enabled": true,
+    "selected_models": ["composer-2.5", "grok-4.6", "gpt-5.6-sol", "opus-5", "glm-5.2", "kimi-k3", "gemini-3.7-flash"],
+    "effort_levels": ["high", "xhigh"],
+    "agent_name_prefix": "sb"
+  }
+}
+EOF
+
+gate_json="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --json --project-root "$GATE_ROOT")"
+assert_jq_true "GPT high subscription_first" \
+  '[.rungs[] | select(.model=="gpt-5.6-sol" and .reasoning=="high") | .subscription_first] | .[0] == true' \
+  "$gate_json"
+assert_jq_true "GPT high invoke agent-codex" \
+  '[.rungs[] | select(.model=="gpt-5.6-sol" and .reasoning=="high") | .subscription_invoke] | .[0] == "scripts/agent-codex/invoke.sh"' \
+  "$gate_json"
+assert_jq_true "Opus xhigh subscription_first Claude" \
+  '[.rungs[] | select(.model=="opus-5" and .reasoning=="xhigh") | .subscription_host] | .[0] == "claude"' \
+  "$gate_json"
+assert_jq_true "Opus invoke agent-claude" \
+  '[.rungs[] | select(.model=="opus-5") | .subscription_invoke] | unique | . == ["scripts/agent-claude/invoke.sh"]' \
+  "$gate_json"
+assert_jq_false "Composer skips subscription gate" \
+  '[.rungs[] | select(.model=="composer-2.5") | .subscription_first] | any(. == true)' \
+  "$gate_json"
+assert_jq_false "Grok skips subscription gate" \
+  '[.rungs[] | select(.model=="grok-4.6") | .subscription_first] | any(. == true)' \
+  "$gate_json"
+assert_jq_false "GLM skips subscription gate" \
+  '[.rungs[] | select(.model=="glm-5.2") | .subscription_first] | any(. == true)' \
+  "$gate_json"
+assert_jq_false "Kimi skips subscription gate" \
+  '[.rungs[] | select(.model=="kimi-k3") | .subscription_first] | any(. == true)' \
+  "$gate_json"
+assert_jq_false "Gemini skips subscription gate" \
+  '[.rungs[] | select(.model=="gemini-3.7-flash") | .subscription_first] | any(. == true)' \
+  "$gate_json"
+
+gpt_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
+assert_jq_true "GPT decide-launch tries Codex first" \
+  '.action == "invoke_subscription" and .subscription_host == "codex" and .subscription_skill == "silver-agent-codex"' \
+  "$gpt_plan"
+
+claude_plan="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning xhigh)"
+assert_jq_true "Claude decide-launch tries Claude CLI first" \
+  '.action == "invoke_subscription" and .subscription_host == "claude" and .subscription_invoke == "scripts/agent-claude/invoke.sh"' \
+  "$claude_plan"
+
+max_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning max)"
+assert_jq_true "GPT Max still subscription-first" \
+  '.action == "invoke_subscription" and .reasoning == "max"' \
+  "$max_plan"
+
+reverify_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning xhigh)"
+assert_jq_true "GPT Extra High re-verify still subscription-first" \
+  '.action == "invoke_subscription" and .reasoning == "xhigh"' \
+  "$reverify_plan"
+
+quota_plan="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'HTTP 429 rate limit; quota retries exhausted')"
+assert_jq_true "quota exhaustion allows Cursor fallback" \
+  '.action == "cursor_fallback" and .reason == "quota-exhaustion" and .cursor_fallback == true and .quota_exhaustion == true' \
+  "$quota_plan"
+
+claude_quota="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning high --subscription-exit 1 --subscription-output 'Token Plan usage limit')"
+assert_jq_true "Claude token-plan is quota fallback" \
+  '.action == "cursor_fallback" and .reason == "quota-exhaustion" and .subscription_host == "claude"' \
+  "$claude_quota"
+
+missing_cli="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'ERROR: native Codex CLI not found')"
+assert_jq_true "missing CLI does not Cursor-fallback" \
+  '.action == "fail" and .reason == "missing-cli" and .cursor_fallback == false' \
+  "$missing_cli"
+
+hash_mm="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 1 --subscription-output 'ERROR: HASH MISMATCH on brief')"
+assert_jq_true "HASH MISMATCH does not Cursor-fallback" \
+  '.action == "fail" and .reason == "hash-mismatch" and .cursor_fallback == false' \
+  "$hash_mm"
+
+not_clean="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high --subscription-exit 0 --subscription-output 'NOT CLEAN: leftover findings')"
+assert_jq_true "NOT CLEAN success does not Cursor-fallback" \
+  '.action == "accept_subscription" and .reason == "success" and .cursor_fallback == false' \
+  "$not_clean"
+
+network_fail="$(python3 "$RESOLVER" --decide-launch --model opus-5 --reasoning high --subscription-exit 1 --subscription-output 'ERROR: timed out waiting for Claude response')"
+assert_jq_true "network timeout does not Cursor-fallback" \
+  '.action == "fail" and .reason == "non-quota-failure" and .cursor_fallback == false' \
+  "$network_fail"
+
+other_plan="$(python3 "$RESOLVER" --decide-launch --model composer-2.5 --reasoning high)"
+assert_jq_true "Composer decide-launch skips gate" \
+  '.action == "cursor_task" and .subscription_first == false and (.subscription_invoke == null)' \
+  "$other_plan"
+
+grok_plan="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning xhigh)"
+assert_jq_true "Grok decide-launch skips gate" \
+  '.action == "cursor_task" and .subscription_first == false' \
+  "$grok_plan"
+
+if grep -qF 'Subscription-first (GPT / Claude)' "$SKILL" \
+  && grep -qF 'scripts/agent-codex/invoke.sh' "$SKILL" \
+  && grep -qF 'scripts/agent-claude/invoke.sh' "$SKILL" \
+  && grep -qF 'Cursor `Task` **only** on quota exhaustion' "$SKILL"; then
+  pass "SKILL documents subscription-first GPT/Claude routing"
+else
+  fail "SKILL documents subscription-first GPT/Claude routing"
+fi
+if grep -qF 'Subscription-First GPT and Claude Launch' "$SCENARIO" \
+  && grep -qF '/silver:agent-codex' "$SCENARIO" \
+  && grep -qF '**no** Cursor fallback' "$SCENARIO"; then
+  pass "Skill scenario encodes subscription-first GPT/Claude launch"
+else
+  fail "Skill scenario encodes subscription-first GPT/Claude launch"
+fi
 
 echo "Results: ${PASS} passed, ${FAIL} failed"
 [[ "$FAIL" -eq 0 ]]

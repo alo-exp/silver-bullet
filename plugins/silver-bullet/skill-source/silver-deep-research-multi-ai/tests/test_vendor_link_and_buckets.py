@@ -32,24 +32,68 @@ class VendorLinkCollisionTests(unittest.TestCase):
         self.assertEqual(by_label.get("Zuvo"), "https://zuvo.dev/")
 
     def test_check_url_health_rejects_404(self) -> None:
+        import os
         import sys
+        import urllib.error
+        from unittest.mock import patch
 
         sys.path.insert(0, str(SCRIPTS))
         from vendor_link_labels import check_url_health, filter_healthy_vendor_urls
 
-        dead = check_url_health("https://aws.amazon.com/ai-dlc/")
-        self.assertFalse(dead.get("ok"))
-        self.assertEqual(dead.get("status"), 404)
+        dead_url = "https://example.test/missing-vendor"
+        live_url = "https://example.test/alive-vendor"
 
-        kept, dropped = filter_healthy_vendor_urls(
-            {
-                "AI-DLC-dead": "https://aws.amazon.com/ai-dlc/",
-                "AgentSys": "https://github.com/agent-sh/agentsys",
-            }
-        )
+        def fake_urlopen(req, timeout=None, context=None):
+            target = getattr(req, "full_url", None) or str(req)
+            if "missing-vendor" in target:
+                raise urllib.error.HTTPError(target, 404, "Not Found", hdrs=None, fp=None)
+
+            class _Resp:
+                status = 200
+
+                def geturl(self):
+                    return live_url
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *args):
+                    return False
+
+            return _Resp()
+
+        with patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "0"}, clear=False):
+            with patch("vendor_link_labels.urllib.request.urlopen", side_effect=fake_urlopen):
+                dead = check_url_health(dead_url)
+                self.assertFalse(dead.get("ok"))
+                self.assertEqual(dead.get("status"), 404)
+                kept, dropped = filter_healthy_vendor_urls(
+                    {"AI-DLC-dead": dead_url, "AgentSys": live_url}
+                )
         self.assertNotIn("AI-DLC-dead", kept)
         self.assertIn("AgentSys", kept)
         self.assertTrue(any(d.get("label") == "AI-DLC-dead" for d in dropped))
+
+    def test_filter_healthy_keeps_http_429(self) -> None:
+        import sys
+        from unittest.mock import patch
+
+        sys.path.insert(0, str(SCRIPTS))
+        from vendor_link_labels import filter_healthy_vendor_urls
+
+        def fake_check(url: str, *, timeout: float = 12.0):
+            return {
+                "ok": False,
+                "status": 429,
+                "final_url": url,
+                "error": "http-429",
+                "transport_error": False,
+            }
+
+        with patch("vendor_link_labels.check_url_health", side_effect=fake_check):
+            kept, dropped = filter_healthy_vendor_urls({"Devin": "https://devin.ai/"})
+        self.assertIn("Devin", kept)
+        self.assertEqual(dropped, [])
 
     def test_shared_url_with_no_token_match_drops_all(self) -> None:
         import sys

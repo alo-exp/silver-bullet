@@ -39,6 +39,7 @@ from materialize_solution_artifacts import (
     discover_solutions,
     is_matrix_dump_claim,
     is_unusable_overview_claim,
+    write_run_features_json,
 )
 from vendor_link_labels import (
     filter_healthy_link_pairs,
@@ -3309,7 +3310,7 @@ def build_report_markdown(
 
     # Section 4 — findings: charts then vendors
     lines.extend(["## 4. Findings", ""])
-    lines.extend(["### Competitive positioning — analyst frameworks", ""])
+    lines.extend(["### Competitive Positioning — Analyst Frameworks", ""])
     market_charts = (chart.get("markets") or {}) if isinstance(chart.get("markets"), dict) else {}
     if market_charts:
         for m_idx, (mid, mchart) in enumerate(market_charts.items(), start=1):
@@ -3406,7 +3407,8 @@ def build_report_markdown(
         for idx, kcf in enumerate(KCF_NAMES):
             row = [kcf]
             for vc in (chart["vc_commercial"] + chart["vc_oss"])[:5]:
-                row.append(str(vc["data"][idx]))
+                data = vc.get("data") or []
+                row.append(str(data[idx]) if idx < len(data) else "1")
             lines.append("| " + " | ".join(row) + " |")
     lines.append("")
 
@@ -3690,6 +3692,12 @@ def synthesize_landscape(
         matrix_md_path = comparison_path.parent / "comparison-matrix.md"
         matrix_md_path.write_text(_comparison_rankings_markdown(comparison), encoding="utf-8")
     support = _build_chart_support(comparison, root=research_dir)
+    write_run_features_json(
+        research_dir,
+        comparison=comparison,
+        support=support,
+        known=known,
+    )
 
     report_date = date.today().strftime("%B %d, %Y")
     markdown = build_report_markdown(

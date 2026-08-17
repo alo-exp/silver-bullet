@@ -39,6 +39,7 @@ from materialize_solution_artifacts import (
     discover_solutions,
     is_matrix_dump_claim,
     is_unusable_overview_claim,
+    write_run_features_json,
 )
 from vendor_link_labels import (
     filter_healthy_link_pairs,
@@ -3691,6 +3692,12 @@ def synthesize_landscape(
         matrix_md_path = comparison_path.parent / "comparison-matrix.md"
         matrix_md_path.write_text(_comparison_rankings_markdown(comparison), encoding="utf-8")
     support = _build_chart_support(comparison, root=research_dir)
+    write_run_features_json(
+        research_dir,
+        comparison=comparison,
+        support=support,
+        known=known,
+    )
 
     report_date = date.today().strftime("%B %d, %Y")
     markdown = build_report_markdown(

@@ -174,6 +174,8 @@ def scrub_embedded_vendor_urls(obj: Any) -> Any:
 _SKIP_HEALTH_ENV = "SB_SKIP_VENDOR_URL_HEALTH"
 _DEFAULT_HEALTH_TIMEOUT = 12.0
 _OK_STATUSES = frozenset({200, 201, 202, 203, 204, 301, 302, 303, 307, 308})
+# Rate-limit / gateway blips are not dead homepages — keep unless STRICT.
+_TRANSIENT_HTTP = frozenset({429, 502, 503, 504})
 
 
 def normalize_vendor_link_label(label: str) -> str:
@@ -321,6 +323,10 @@ def filter_healthy_vendor_urls(
             continue
         if report.get("transport_error") and not strict_transport:
             # Ambiguous network failure — do not unlink (avoid false 404 drops).
+            kept[label_n] = url_n
+            continue
+        status = report.get("status")
+        if status in _TRANSIENT_HTTP and not strict_transport:
             kept[label_n] = url_n
             continue
         dropped.append(

@@ -129,6 +129,7 @@ sb_rfl_activate() {
         host_model: $host_model,
         subagent_name: (if $subagent_name == "" then null else $subagent_name end),
         model_param: (if $model_param == "" then null else $model_param end),
+        subscription_quota_fallback: false,
         pm_filed: false,
         verify_pass: 0,
         grep_after_verify: 0,
@@ -200,7 +201,7 @@ sb_rfl_advance_rung() {
     return 0
   fi
   jq --argjson next "$((rung + 1))" \
-    '.rung = $next | .phase = "review" | .pm_filed = false | .verify_pass = 0 | .grep_after_verify = 0' \
+    '.rung = $next | .phase = "review" | .pm_filed = false | .verify_pass = 0 | .grep_after_verify = 0 | .subscription_quota_fallback = false | .subscription_quota_host = "" | .subscription_quota_signal = ""' \
     "$file" >"${file}.tmp" && mv "${file}.tmp" "$file"
   sb_rfl_sync_rung_metadata "$((rung + 1))"
 }
@@ -223,7 +224,7 @@ sb_rfl_prompt_phase_hint() {
     printf 'review'
   elif printf '%s' "$lower" | grep -qiE '/silver:triage|silver:triage|rung_[0-9]+_triage|triage_pass|classify'; then
     printf 'triage'
-  elif printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|fix divide'; then
+  elif printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept'; then
     printf 'fix'
   elif printf '%s' "$lower" | grep -qiE 'verify_2|second verify|verify pass 2'; then
     printf 'verify_2'
@@ -249,6 +250,40 @@ sb_rfl_prompt_has_review_triage_mix() {
   printf '%s' "$lower" | grep -qiE 'review-only|raw findings' && has_review=1
   printf '%s' "$lower" | grep -qiE 'silver:triage|/silver:triage|valid-blocker|valid-nonblocker|triage_pass' && has_triage=1
   [[ "$has_review" -eq 1 && "$has_triage" -eq 1 ]]
+}
+
+sb_rfl_subagent_requires_subscription_first() {
+  local name="$1"
+  [[ "$name" == sb-gpt-* || "$name" == sb-opus-* || "$name" == sb-claude-* ]]
+}
+
+sb_rfl_mark_subscription_quota_fallback() {
+  local host="${1:-}" signal="${2:-}"
+  sb_rfl_set_bool subscription_quota_fallback true || return 1
+  [[ -n "$host" ]] && sb_rfl_set_field subscription_quota_host "$host"
+  [[ -n "$signal" ]] && sb_rfl_set_field subscription_quota_signal "$signal"
+  return 0
+}
+
+sb_rfl_clear_subscription_quota_fallback() {
+  sb_rfl_set_bool subscription_quota_fallback false || return 0
+  sb_rfl_set_field subscription_quota_host "" || true
+  sb_rfl_set_field subscription_quota_signal "" || true
+}
+
+sb_rfl_subscription_cursor_task_denied() {
+  local name="$1"
+  sb_rfl_subagent_requires_subscription_first "$name" || return 1
+  [[ "$(sb_rfl_read_field subscription_quota_fallback false)" == "true" ]] && return 1
+  return 0
+}
+
+sb_rfl_deny_unqualified_subscription_task() {
+  local name="$1"
+  [[ -n "$name" ]] || return 0
+  sb_rfl_subscription_cursor_task_denied "$name" || return 0
+  printf '%s' "Review-fix-ladder: ${name} requires subscription-first (/silver:agent-codex for GPT, /silver:agent-claude for Claude/Opus). Cursor Task is allowed only after quota exhaustion. Record with: python3 scripts/review-fix-ladder.py --mark-quota-fallback --quota-host <codex|claude> --quota-signal '<matched signal>'."
+  return 1
 }
 
 sb_rfl_validate_task_spawn() {
@@ -290,6 +325,7 @@ sb_rfl_validate_task_spawn() {
           return 1
         fi
       fi
+      sb_rfl_deny_unqualified_subscription_task "${subagent_type:-$expected_subagent}" || return 1
       custom_subagent=0
       [[ -n "$expected_subagent" && "$subagent_type" == "$expected_subagent" ]] && custom_subagent=1
       if [[ "$custom_subagent" -eq 0 && -n "$model" && -n "$rung_model" && "$model" != "$rung_model" ]]; then
@@ -333,6 +369,7 @@ sb_rfl_validate_task_spawn() {
           return 1
         fi
       fi
+      sb_rfl_deny_unqualified_subscription_task "${subagent_type:-$expected_subagent}" || return 1
       if [[ "$hint" == "fix" || "$hint" == "triage" ]]; then
         printf '%s' "Review-fix-ladder: verify_1 — verify-only subagent (readonly), no fix or triage."
         return 1
@@ -358,6 +395,7 @@ sb_rfl_validate_task_spawn() {
           return 1
         fi
       fi
+      sb_rfl_deny_unqualified_subscription_task "${subagent_type:-$expected_subagent}" || return 1
       if [[ "$hint" == "fix" || "$hint" == "triage" || "$hint" == "verify_1" ]]; then
         printf '%s' "Review-fix-ladder: verify_2 — second verify-only pass only."
         return 1
@@ -395,6 +433,7 @@ sb_rfl_advance_after_task() {
   case "$phase" in
     review)
       [[ "$hint" == "review" || "$hint" == "unknown" ]] && sb_rfl_set_field phase triage
+      sb_rfl_clear_subscription_quota_fallback
       ;;
     triage)
       [[ "$hint" == "triage" || "$hint" == "unknown" ]] && sb_rfl_set_field phase file_valid_issues
@@ -404,9 +443,11 @@ sb_rfl_advance_after_task() {
       ;;
     verify_1)
       [[ "$hint" == "verify_1" || "$hint" == "unknown" ]] && sb_rfl_set_field phase orchestrator_grep_1
+      sb_rfl_clear_subscription_quota_fallback
       ;;
     verify_2)
       [[ "$hint" == "verify_2" || "$hint" == "unknown" ]] && sb_rfl_set_field phase orchestrator_grep_2
+      sb_rfl_clear_subscription_quota_fallback
       ;;
   esac
 }

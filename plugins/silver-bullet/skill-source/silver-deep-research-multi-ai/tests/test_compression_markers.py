@@ -51,7 +51,7 @@ class CompressionMarkerTests(unittest.TestCase):
         md = build_report_markdown(
             category="Agentic SDLC Orchestration",
             platform_list="composer-2.5",
-            scope_text="Scope without markers.",
+            scope_text="Scope without markers. Keep real consensus.",
             need={},
             comparison={"rows": [], "rankings": []},
             consolidation=consolidation,

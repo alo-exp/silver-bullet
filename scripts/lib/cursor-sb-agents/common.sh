@@ -85,10 +85,13 @@ PY
 
 csba_expected_count() {
   local config_json="$1"
-  CONFIG_JSON="$config_json" "${CSBA_PYTHON}" - <<'PY'
-import json, os
+  CONFIG_JSON="$config_json" CSBA_LIB_DIR="$CSBA_LIB_DIR" \
+    "${CSBA_PYTHON}" - <<'PY'
+import json, os, sys
+sys.path.insert(0, os.environ["CSBA_LIB_DIR"])
+from cursor_sb_agents_lib import expected_agent_names
 cfg = json.loads(os.environ["CONFIG_JSON"])
-print(len(cfg.get("selected_models", [])) * len(cfg.get("effort_levels", [])))
+print(len(expected_agent_names(cfg)))
 PY
 }
 
@@ -122,3 +125,4 @@ csba_names_match() {
   local actual_file="$2"
   sort "$expected_file" | cmp -s - <(sort "$actual_file")
 }
+

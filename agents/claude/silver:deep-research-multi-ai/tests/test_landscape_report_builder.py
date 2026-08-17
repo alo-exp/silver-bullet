@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
@@ -18,7 +20,11 @@ from materialize_solution_artifacts import (  # noqa: E402
     is_unusable_overview_claim,
 )
 from skill_paths import resolve_multi_ai_scripts  # noqa: E402
-from synthesize_landscape import build_chart_data, build_report_markdown  # noqa: E402
+from synthesize_landscape import (  # noqa: E402
+    build_chart_data,
+    build_report_markdown,
+    synthesize_landscape,
+)
 
 
 class OverviewQualityTests(unittest.TestCase):
@@ -827,34 +833,35 @@ class TemplateContractTests(unittest.TestCase):
     def test_linkify_skips_generic_sdlc_but_keeps_product_names(self) -> None:
         from synthesize_landscape import _linkify_markdown_vendors, build_link_pairs
 
-        pairs = build_link_pairs(
-            None,
-            commercial=[
-                {
-                    "slug": "sdlc-plugin",
-                    "name": "SDLC",
-                    "url": "https://claude.com/plugins",
+        with mock.patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "1"}):
+            pairs = build_link_pairs(
+                None,
+                commercial=[
+                    {
+                        "slug": "sdlc-plugin",
+                        "name": "SDLC",
+                        "url": "https://claude.com/plugins",
+                    },
+                    {"slug": "bmad-method", "name": "BMAD-METHOD", "url": "https://bmad.ai/"},
+                    {"slug": "gsd", "name": "GSD", "url": "https://github.com/gsd"},
+                    {"slug": "devin", "name": "Devin (Cognition)", "url": "https://devin.ai/"},
+                    {"slug": "zuvo", "name": "Zuvo", "url": "https://zuvo.dev/"},
+                ],
+                known={
+                    "sdlc-plugin": "SDLC",
+                    "bmad-method": "BMAD-METHOD",
+                    "gsd": "GSD",
+                    "devin": "Devin (Cognition)",
+                    "zuvo": "Zuvo",
                 },
-                {"slug": "bmad-method", "name": "BMAD-METHOD", "url": "https://bmad.ai/"},
-                {"slug": "gsd", "name": "GSD", "url": "https://github.com/gsd"},
-                {"slug": "devin", "name": "Devin (Cognition)", "url": "https://devin.ai/"},
-                {"slug": "zuvo", "name": "Zuvo", "url": "https://zuvo.dev/"},
-            ],
-            known={
-                "sdlc-plugin": "SDLC",
-                "bmad-method": "BMAD-METHOD",
-                "gsd": "GSD",
-                "devin": "Devin (Cognition)",
-                "zuvo": "Zuvo",
-            },
-        )
-        labels = {label for label, _url in pairs}
-        self.assertNotIn("SDLC", labels)
-        self.assertIn("SDLC Plugin", labels)
-        self.assertIn("BMAD-METHOD", labels)
-        self.assertIn("GSD", labels)
-        self.assertIn("Devin (Cognition)", labels)
-        self.assertIn("Zuvo", labels)
+            )
+            labels = {label for label, _url in pairs}
+            self.assertNotIn("SDLC", labels)
+            self.assertIn("SDLC Plugin", labels)
+            self.assertIn("BMAD-METHOD", labels)
+            self.assertIn("GSD", labels)
+            self.assertIn("Devin (Cognition)", labels)
+            self.assertIn("Zuvo", labels)
 
         prose = (
             "Agentic SDLC orchestration compares BMAD-METHOD, GSD, Devin, and Zuvo. "
@@ -867,6 +874,196 @@ class TemplateContractTests(unittest.TestCase):
         self.assertIn("[Devin](", linked)
         self.assertIn("[Zuvo](", linked)
         self.assertIn("[SDLC Plugin](", linked)
+
+
+class FreshSynthesizeRenderContractTests(unittest.TestCase):
+    """Engine defaults for a *new* run — not the locked APO HTML."""
+
+    def setUp(self) -> None:
+        self._health_skip = mock.patch.dict(os.environ, {"SB_SKIP_VENDOR_URL_HEALTH": "1"})
+        self._health_skip.start()
+        self.addCleanup(self._health_skip.stop)
+
+    def _seed_run(self, root: Path) -> None:
+        (root / "contributions").mkdir(parents=True)
+        (root / "consolidated").mkdir(parents=True)
+        (root / "comparison").mkdir(parents=True)
+        (root / "run_manifest.json").write_text(
+            json.dumps(
+                {
+                    "query": "Agentic SDLC orchestration landscape",
+                    "research_type": "solution-landscape",
+                    "mode": "deep",
+                    "run_id": "test-fresh-synthesize",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (root / "need_profile.json").write_text(
+            json.dumps(
+                {
+                    "category": "Agentic SDLC orchestration",
+                    "category_pack_id": "agentic-sdlc-process-orchestrator",
+                    "persona_id": "startup",
+                    "license_preference": "mixed",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (root / "contributions" / "all-envelopes.json").write_text(
+            json.dumps(
+                [
+                    {
+                        "phase_id": "DR-RETRIEVE",
+                        "logical_model_id": "test-a",
+                        "payload": {
+                            "evidence": [
+                                {
+                                    "claim": "Silver Bullet composes workflows with hook-enforced gates."
+                                }
+                            ]
+                        },
+                    },
+                    {
+                        "phase_id": "DR-RETRIEVE",
+                        "logical_model_id": "test-b",
+                        "payload": {
+                            "evidence": [
+                                {
+                                    "claim": "Factory.ai provides managed hosting for agentic delivery."
+                                }
+                            ]
+                        },
+                    },
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (root / "consolidated" / "consolidation.json").write_text(
+            json.dumps(
+                {
+                    "consensus": [
+                        {
+                            "text": "Process orchestration sits above coding agents.",
+                            "support_count": 2,
+                        }
+                    ],
+                    "divergence": [
+                        {
+                            "text": "Whether managed hosting is required for SMB APO buyers.",
+                            "sides": [
+                                {"stance": "required", "agents": ["test-a"]},
+                                {"stance": "optional", "agents": ["test-b"]},
+                            ],
+                        }
+                    ],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (root / "comparison" / "comparison.json").write_text(
+            json.dumps(
+                {
+                    "rankings": [
+                        {"solution": "silver-bullet", "score": 20, "rank": 1},
+                        {"solution": "factory-ai", "score": 16, "rank": 2},
+                    ],
+                    "winner": "silver-bullet",
+                    "runner_up": "factory-ai",
+                    "rows": [
+                        {"type": "category", "name": "Process orchestration"},
+                        {
+                            "type": "feature",
+                            "name": "Workflow composition",
+                            "priority": "Critical",
+                            "solutions": {"silver-bullet": True, "factory-ai": True},
+                        },
+                        {
+                            "type": "feature",
+                            "name": "Hook-enforced gates",
+                            "priority": "High",
+                            "solutions": {"silver-bullet": True, "factory-ai": False},
+                        },
+                    ],
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    def test_fresh_synthesize_render_emits_analyst_defaults_and_lockstep(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._seed_run(root)
+            syn = synthesize_landscape(root, force=True)
+            self.assertEqual(syn.get("status"), "ok")
+            md = (root / "landscape" / "landscape-report.md").read_text(encoding="utf-8")
+            self.assertIn("Executive Summary", md)
+            self.assertIn("Vendor inclusion ledger", md)
+            self.assertIn("Coverage completeness matrix", md)
+            self.assertIn("Consensus Resolution Table", md)
+            self.assertIn("Final analyst decision", md)
+            self.assertIn("Consensus Patterns", md)
+            rubric = json.loads((root / "landscape" / "features-rubric.json").read_text())
+            self.assertEqual(rubric.get("source"), "comparison.json")
+            names = [f for cat in rubric["categories"] for f in cat["features"]]
+            self.assertIn("Workflow composition", names)
+            self.assertNotIn("Visual/E2E verification", names)
+
+            from landscape_preview_render import render_landscape_outputs
+
+            env = {
+                **os.environ,
+                "SB_SKIP_LANDSCAPE_PDF": "1",
+                "SB_ALLOW_SKIP_LANDSCAPE_PDF": "1",
+            }
+            with mock.patch.dict(os.environ, env, clear=False):
+                result = render_landscape_outputs(root)
+            self.assertEqual(result.get("status"), "ok")
+            self.assertEqual(result.get("pdf_href"), "landscape-report.pdf")
+            html = (root / "landscape-report.html").read_text(encoding="utf-8")
+            self.assertIn('id="report-data"', html)
+            self.assertIn("data-sb-landscape-viewer", html)
+            self.assertIn('target="_blank"', html)
+            self.assertIn("noopener noreferrer", html)
+            self.assertIn("landscape-report.pdf?v=", html)
+            start = html.find('id="report-data"')
+            self.assertGreater(start, 0)
+            script_start = html.find(">", start) + 1
+            script_end = html.find("</script>", script_start)
+            payload = json.loads(html[script_start:script_end])
+            self.assertEqual(payload.get("markdown"), md)
+
+    def test_fresh_render_invokes_sibling_pdf_writer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._seed_run(root)
+            synthesize_landscape(root, force=True)
+            from landscape_preview_render import render_landscape_outputs
+
+            with mock.patch(
+                "landscape_preview_render.write_sibling_landscape_pdf",
+                return_value={"pdf": str(root / "landscape-report.pdf"), "bytes": 12},
+            ) as writer:
+                with mock.patch.dict(os.environ, {"SB_SKIP_LANDSCAPE_PDF": ""}, clear=False):
+                    result = render_landscape_outputs(root)
+            writer.assert_called_once()
+            self.assertEqual(result.get("pdf_href"), "landscape-report.pdf")
+            self.assertNotEqual(result.get("pdf"), "skipped")
+
+    def test_legacy_landscape_spa_retired(self) -> None:
+        spa = (SCRIPTS / "generate_spa_report.py").read_text(encoding="utf-8")
+        self.assertNotIn("def render_landscape(", spa)
+        self.assertNotIn("data-landscape-marker", spa)
+        wrapper = (SCRIPTS / "generate_landscape_report.py").read_text(encoding="utf-8")
+        self.assertIn("render_landscape_outputs", wrapper)
+        self.assertNotIn("from generate_spa_report import main", wrapper)
+
+
 
 
 if __name__ == "__main__":

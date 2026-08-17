@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Shared helpers for review-fix-ladder triage scenario (review → triage → file → fix → verify).
+# Shared helpers for review-fix-ladder triage scenario
+# (review → triage → file → launcher APPLY ACCEPT → verify).
 
 review_fix_ladder_triage_scenario_enabled() {
   [[ "${SB_LIVE_REVIEW_FIX_LADDER_TRIAGE_SCENARIO:-0}" == "1" ]]
@@ -57,7 +58,7 @@ review_fix_ladder_phase_from_prompt() {
     printf 'review\n'
   elif printf '%s' "$prompt" | grep -qiE '/silver:triage|silver:triage|rung_[0-9]+_triage|triage subagent'; then
     printf 'triage\n'
-  elif printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix divide'; then
+  elif printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_fix|fix subagent|APPLY ACCEPT|launcher apply accept'; then
     printf 'fix\n'
   elif printf '%s' "$prompt" | grep -qiE 'verify-only|verify_1|verify_2|readonly: true'; then
     printf 'verify\n'
@@ -105,9 +106,9 @@ EOF
       ;;
     fix)
       cat <<EOF
-Review-fix ladder triage scenario rung ${rung_index}/${rung_total}: state=rung_${rung_index}_fix_parallel.
+Review-fix ladder triage scenario: APPLY ACCEPT (launcher, not rung).
 
-Fix divide() minimally in smoke-target.py to reject zero divisors. Reply with FIX_PASS: after editing.
+The launcher applies ACCEPT fixes to smoke-target.py, including every finding that is not wrong (Low, deferred, nitpicks, and minor if still applicable). Do not spawn a rung or fix subagent to patch the fixture. Do not tell the rung to fix.
 EOF
       ;;
     verify)

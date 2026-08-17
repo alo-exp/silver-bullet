@@ -15,6 +15,8 @@ from materialize_solution_artifacts import (  # noqa: E402
     build_features_json,
     materialize_solution_artifacts,
     parse_feature_support,
+    synthesize_feature_rubric,
+    write_run_features_json,
 )
 
 LIVE_MATRIX_CLAIMS = [
@@ -112,14 +114,72 @@ class MaterializeSolutionArtifactsTests(unittest.TestCase):
 
     def test_unknown_features_omitted_not_false(self) -> None:
         features = build_features_json("silver-bullet", {"silver-bullet": {"Workflow composition": True}})
+        names = [f["name"] for cat in features["categories"] for f in cat["features"]]
         wf = next(
             f for cat in features["categories"] for f in cat["features"] if f["name"] == "Workflow composition"
         )
-        atomic = next(
-            f for cat in features["categories"] for f in cat["features"] if f["name"] == "Atomic flow catalog"
-        )
         self.assertTrue(wf["supported"])
-        self.assertIsNone(atomic["supported"])
+        self.assertIn("Workflow composition", names)
+        self.assertNotIn("Atomic flow catalog", names)
+        self.assertNotEqual(features.get("rubric_source"), "fallback-template")
+
+    def test_comparison_rows_synthesize_rubric_not_canned_template(self) -> None:
+        comparison = {
+            "rankings": [{"solution": "alpha", "score": 5, "rank": 1}],
+            "rows": [
+                {"type": "category", "name": "Orchestration"},
+                {
+                    "type": "feature",
+                    "name": "Widget orchestration",
+                    "solutions": {"alpha": True, "beta": False},
+                },
+            ],
+        }
+        rubric = synthesize_feature_rubric(comparison=comparison)
+        self.assertEqual(rubric["source"], "comparison.json")
+        names = [f for cat in rubric["categories"] for f in cat["features"]]
+        self.assertEqual(names, ["Widget orchestration"])
+        self.assertNotIn("Visual/E2E verification", names)
+        features = build_features_json(
+            "alpha",
+            {"alpha": {"Widget orchestration": True}},
+            comparison=comparison,
+        )
+        feat_names = [f["name"] for cat in features["categories"] for f in cat["features"]]
+        self.assertEqual(feat_names, ["Widget orchestration"])
+
+    def test_write_run_features_json_emits_rubric_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            comparison = {
+                "rankings": [
+                    {"solution": "alpha", "score": 4, "rank": 1},
+                    {"solution": "beta", "score": 2, "rank": 2},
+                ],
+                "rows": [
+                    {"type": "category", "name": "Core"},
+                    {
+                        "type": "feature",
+                        "name": "Custom gate",
+                        "solutions": {"alpha": True, "beta": False},
+                    },
+                ],
+            }
+            result = write_run_features_json(
+                root,
+                comparison=comparison,
+                support={"alpha": {"Custom gate": True}, "beta": {"Custom gate": False}},
+                known={"alpha": "Alpha", "beta": "Beta"},
+            )
+            self.assertEqual(result["rubric_source"], "comparison.json")
+            rubric = json.loads((root / "landscape" / "features-rubric.json").read_text())
+            self.assertEqual(rubric["source"], "comparison.json")
+            alpha = json.loads((root / "solutions" / "alpha" / "features.json").read_text())
+            names = [f["name"] for cat in alpha["categories"] for f in cat["features"]]
+            self.assertEqual(names, ["Custom gate"])
+            self.assertTrue(
+                next(f for cat in alpha["categories"] for f in cat["features"])["supported"]
+            )
 
     def test_parse_solution_led_matrix_entry_prose(self) -> None:
         claims = [
