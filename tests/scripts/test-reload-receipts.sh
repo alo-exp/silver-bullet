@@ -12,13 +12,18 @@ TMP=""
 TEST_HOME=""
 WT_LINKED=""
 
-WT_LINKED=""
-
 cleanup() {
+  # EXIT trap must not fail the script after a green assertion run.
+  # lean-ctx may still be writing $HOME/.local/share/lean-ctx when HOME=$TEST_HOME.
+  set +e
   if [[ -n "${TMP:-}" && -n "${WT_LINKED:-}" && -d "${WT_LINKED}" ]]; then
     git -C "$TMP" worktree remove "$WT_LINKED" --force 2>/dev/null || rm -rf "$WT_LINKED"
   fi
-  rm -rf "$TMP" "$TEST_HOME"
+  chmod -R u+w "$TMP" "$TEST_HOME" 2>/dev/null
+  rm -rf "$TMP" "$TEST_HOME" 2>/dev/null || {
+    sleep 0.2
+    rm -rf "$TMP" "$TEST_HOME" 2>/dev/null || true
+  }
 }
 trap cleanup EXIT
 

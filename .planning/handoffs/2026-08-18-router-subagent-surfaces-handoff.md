@@ -9,7 +9,7 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 - **Repo:** silver-bullet (`alo-exp/silver-bullet`)
 - **Origin:** https://github.com/alo-exp/silver-bullet.git
 - **Canonical root:** [`/Users/shafqat/projects/silver-bullet/repo`](/Users/shafqat/projects/silver-bullet/repo)
-- **Branch:** `main` (stay here). At handoff write: `e970ddd6` (`memory: auto-snapshot 2026-08-16T15:59:33Z`), **ahead 53** of `origin/main`, dirty with plan/RFL/RFL-instruction work. The wrapping session commits + pushes this slice to `origin/main` after this file lands — start the next session from the post-push SHA on `main`.
+- **Branch:** `main` (stay here). Pushed slice: [`e4d0761c`](https://github.com/alo-exp/silver-bullet/commit/e4d0761c) (Round-41 freeze + APPLY ACCEPT completeness) then [`2bc8157e`](https://github.com/alo-exp/silver-bullet/commit/2bc8157e) (host-agnostic worker wording). CI on `2bc8157e` failed because `test-reload-receipts.sh` assertions passed (30/0) then EXIT-trap `rm` raced a leftover `~/.local/share/lean-ctx` dir. Start the next session from the post-fix SHA on `main` after that cleanup commit is green.
 - **Plugin / tag:** `v0.52.0` (`package.json` 0.52.0). Not a plugin-release slice.
 - **Working tree junk (do not commit):** `.alumnium/logs/`, `${SB_RUNTIME_HOME_ROOT}/...`, MCP logs, secrets.
 
@@ -43,6 +43,7 @@ Reusable handoff prompt for a **fresh session on `main`**. Task-detail mode incl
 - Coverage MUST **PASS** at plan L30 / L98 / L711.
 - Policy B live harness: [`tests/live/lib/review-fix-ladder-common.sh`](../../tests/live/lib/review-fix-ladder-common.sh) (`review_fix_ladder_launcher_apply_accept`), [`tests/live/lib/review-fix-ladder-triage-scenario.sh`](../../tests/live/lib/review-fix-ladder-triage-scenario.sh). Launcher APPLY ACCEPT; rungs review-only.
 - Targeted RFL tests green after the completeness instruction: `bash tests/scripts/test-review-fix-ladder.sh` (80/0), `bash tests/hooks/test-review-fix-ladder-guard.sh` (28/0).
+- **CI:** Secret Scan green on `2bc8157e`. CI validate failed on five-tool offline `test-reload-receipts.sh` cleanup (not assertions). Cleanup is now fail-closed for leftover lean-ctx cache; re-run CI on the follow-up commit.
 - Latest tag **v0.52.0**. No plugin release for this slice. Site-only exemption does not apply.
 
 ## Open Follow-ups
