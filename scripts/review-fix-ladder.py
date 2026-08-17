@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -59,6 +60,48 @@ CLAUDE_FALLBACK_MODELS = (
 
 CODEX_FALLBACK_MODELS = ("gpt-5.4", "gpt-5.5")
 
+# Cursor GPT/Claude rungs try the subsidized host CLI first (Codex / Claude
+# subscriptions). Cursor Task is allowed only after quota exhaustion.
+SUBSCRIPTION_PLANS: dict[str, dict[str, str]] = {
+    "gpt": {
+        "subscription_host": "codex",
+        "subscription_skill": "silver-agent-codex",
+        "subscription_invoke": "scripts/agent-codex/invoke.sh",
+    },
+    "claude": {
+        "subscription_host": "claude",
+        "subscription_skill": "silver-agent-claude",
+        "subscription_invoke": "scripts/agent-claude/invoke.sh",
+    },
+}
+
+# Narrow quota classifier: billed-quota / rate-limit / usage-cap only.
+# Bare "quota" matches in-repo agent_delegate_is_quota_error, but missing-CLI
+# and HASH MISMATCH are classified first and never fall back to Cursor.
+QUOTA_EXHAUSTION_RE = re.compile(
+    r"\b429\b|"
+    r"rate[\s_-]*limit|"
+    r"token[\s_-]*plan|"
+    r"out of quota|"
+    r"quota[\s_-]*(?:exhaust|exceed)|"
+    r"quota retries exhausted|"
+    r"usage[\s_-]*(?:cap|limit)|"
+    r"billed[\s_-]*quota|"
+    r"over[\s_-]*quota|"
+    r"\bquota\b",
+    re.IGNORECASE,
+)
+MISSING_CLI_RE = re.compile(
+    r"CLI not found|"
+    r"native Codex CLI not found|"
+    r"Claude CLI not found|"
+    r"missing delegate|"
+    r"not installed|"
+    r"command not found",
+    re.IGNORECASE,
+)
+HASH_MISMATCH_RE = re.compile(r"HASH\s*MISMATCH", re.IGNORECASE)
+
 
 def detect_host() -> str:
     runtime = os.environ.get("SILVER_BULLET_RUNTIME", "").strip().lower()
@@ -94,6 +137,158 @@ def sanitize_model_for_agent_name(model: str) -> str:
 
 def subagent_name_for(model: str, effort: str, prefix: str = "sb") -> str:
     return f"{prefix}-{sanitize_model_for_agent_name(model)}-{effort}"
+
+
+def subscription_family_for_model(model: str) -> str | None:
+    """Return 'gpt' or 'claude' when the rung must try a subsidized CLI first."""
+    slug = (model or "").strip().lower()
+    if not slug:
+        return None
+    if slug.startswith(("opus-", "claude-", "sb-opus-", "sb-claude-")):
+        return "claude"
+    if slug.startswith(("gpt-", "chatgpt-", "sb-gpt-")):
+        return "gpt"
+    return None
+
+
+def _first_regex_match(pattern: re.Pattern[str], blob: str) -> str | None:
+    match = pattern.search(blob or "")
+    if not match:
+        return None
+    return match.group(0).strip()
+
+
+def subscription_fields_for_model(model: str) -> dict[str, Any]:
+    family = subscription_family_for_model(model)
+    if family is None:
+        return {
+            "subscription_first": False,
+            "subscription_family": None,
+            "subscription_host": None,
+            "subscription_skill": None,
+            "subscription_invoke": None,
+            "cursor_fallback": None,
+        }
+    plan = SUBSCRIPTION_PLANS[family]
+    return {
+        "subscription_first": True,
+        "subscription_family": family,
+        "subscription_host": plan["subscription_host"],
+        "subscription_skill": plan["subscription_skill"],
+        "subscription_invoke": plan["subscription_invoke"],
+        "cursor_fallback": "quota-exhaustion-only",
+    }
+
+
+def classify_subscription_attempt(exit_code: int, output: str) -> dict[str, Any]:
+    """Classify a Codex/Claude CLI attempt. Cursor fallback only on quota."""
+    blob = output or ""
+    if int(exit_code) == 0:
+        return {
+            "quota_exhaustion": False,
+            "cursor_fallback": False,
+            "reason": "success",
+            "signal": None,
+        }
+    if MISSING_CLI_RE.search(blob):
+        return {
+            "quota_exhaustion": False,
+            "cursor_fallback": False,
+            "reason": "missing-cli",
+            "signal": _first_regex_match(MISSING_CLI_RE, blob),
+        }
+    if HASH_MISMATCH_RE.search(blob):
+        return {
+            "quota_exhaustion": False,
+            "cursor_fallback": False,
+            "reason": "hash-mismatch",
+            "signal": _first_regex_match(HASH_MISMATCH_RE, blob),
+        }
+    if QUOTA_EXHAUSTION_RE.search(blob):
+        return {
+            "quota_exhaustion": True,
+            "cursor_fallback": True,
+            "reason": "quota-exhaustion",
+            "signal": _first_regex_match(QUOTA_EXHAUSTION_RE, blob),
+        }
+    return {
+        "quota_exhaustion": False,
+        "cursor_fallback": False,
+        "reason": "non-quota-failure",
+        "signal": None,
+    }
+
+
+def decide_launch(
+    model: str,
+    reasoning: str,
+    *,
+    prefix: str = "sb",
+    subscription_exit: int | None = None,
+    subscription_output: str = "",
+) -> dict[str, Any]:
+    """Per-launch gate: GPT/Claude try subscription CLI; others stay on Cursor Task."""
+    family = subscription_family_for_model(model)
+    payload: dict[str, Any] = {
+        "model": model,
+        "reasoning": reasoning,
+        "subagent_name": subagent_name_for(model, reasoning, prefix),
+        **subscription_fields_for_model(model),
+    }
+    if family is None:
+        payload.update(
+            {
+                "action": "cursor_task",
+                "reason": "non-subscription-family",
+                "quota_exhaustion": False,
+                "signal": None,
+            }
+        )
+        payload["cursor_fallback"] = False
+        return payload
+    if subscription_exit is None:
+        payload.update(
+            {
+                "action": "invoke_subscription",
+                "reason": "subscription-first",
+                "quota_exhaustion": False,
+                "signal": None,
+            }
+        )
+        return payload
+    classified = classify_subscription_attempt(subscription_exit, subscription_output)
+    if classified["reason"] == "success":
+        payload.update({"action": "accept_subscription", **classified})
+        return payload
+    if classified["cursor_fallback"]:
+        payload.update({"action": "cursor_fallback", **classified})
+        return payload
+    payload.update({"action": "fail", **classified})
+    return payload
+
+
+def rfl_state_file() -> Path:
+    state_dir = os.environ.get("SB_RUNTIME_STATE_DIR", "/tmp")
+    return Path(state_dir) / "review-fix-ladder-state.json"
+
+
+def mark_quota_cursor_fallback(*, host: str = "", signal: str = "") -> dict[str, Any]:
+    path = rfl_state_file()
+    payload = load_json_file(path) or {}
+    payload["subscription_quota_fallback"] = True
+    if host:
+        payload["subscription_quota_host"] = host
+    if signal:
+        payload["subscription_quota_signal"] = signal
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return {
+        "ok": True,
+        "state_file": str(path),
+        "subscription_quota_fallback": True,
+        "subscription_quota_host": payload.get("subscription_quota_host"),
+        "subscription_quota_signal": payload.get("subscription_quota_signal"),
+    }
 
 
 def load_json_file(path: Path) -> dict[str, Any] | None:
@@ -170,7 +365,7 @@ def enrich_cursor_sb_rung(
     catalog_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     model_param = resolve_model_param(model, reasoning, catalog_ids)
-    return {
+    payload: dict[str, Any] = {
         "model": model,
         "reasoning": reasoning,
         "delegation": "custom-subagent",
@@ -179,6 +374,8 @@ def enrich_cursor_sb_rung(
         "task_slug": None,
         "agent_model": None,
     }
+    payload.update(subscription_fields_for_model(model))
+    return payload
 
 
 def cursor_sb_agents_rungs(
@@ -397,7 +594,7 @@ def resolve_rung_phase(
         raise ValueError(f"unsupported phase {phase!r} (expected review|verify_1|verify_2)")
 
     rung = rungs[rung_index - 1]
-    return {
+    phase_payload: dict[str, Any] = {
         "host": payload.get("host"),
         "rung": rung_index,
         "rung_total": len(rungs),
@@ -410,6 +607,8 @@ def resolve_rung_phase(
         "task_slug": None,
         "agent_model": None,
     }
+    phase_payload.update(subscription_fields_for_model(str(rung.get("model", ""))))
+    return phase_payload
 
 
 def main() -> int:
@@ -429,7 +628,67 @@ def main() -> int:
         help="Rung phase for routing (review, verify_1, verify_2)",
     )
     parser.add_argument("--check-agents", action="store_true", help="Check expected sb-* custom subagents exist")
+    parser.add_argument(
+        "--decide-launch",
+        action="store_true",
+        help="Emit subscription-first vs Cursor Task plan for one model/reasoning pair",
+    )
+    parser.add_argument("--model", help="Model slug for --decide-launch")
+    parser.add_argument("--reasoning", help="Reasoning/effort for --decide-launch")
+    parser.add_argument(
+        "--subscription-exit",
+        type=int,
+        help="Exit code from agent-codex/agent-claude invoke (omit = not attempted yet)",
+    )
+    parser.add_argument(
+        "--subscription-output",
+        default="",
+        help="Stdout/stderr from the subscription CLI attempt",
+    )
+    parser.add_argument(
+        "--subscription-output-file",
+        type=Path,
+        help="Read subscription CLI output from a file",
+    )
+    parser.add_argument(
+        "--classify-quota",
+        action="store_true",
+        help="Classify subscription CLI output as quota vs non-quota (no Cursor fallback unless quota)",
+    )
+    parser.add_argument(
+        "--mark-quota-fallback",
+        action="store_true",
+        help="Record quota exhaustion on the active RFL state file so Cursor Task is allowed",
+    )
+    parser.add_argument("--quota-host", default="", help="Host that exhausted quota (codex|claude)")
+    parser.add_argument("--quota-signal", default="", help="Matched quota signal to record")
     args = parser.parse_args()
+
+    if args.classify_quota or args.decide_launch or args.mark_quota_fallback:
+        output = args.subscription_output
+        if args.subscription_output_file is not None:
+            output = args.subscription_output_file.read_text(encoding="utf-8")
+        if args.classify_quota:
+            exit_code = 1 if args.subscription_exit is None else args.subscription_exit
+            print(json.dumps(classify_subscription_attempt(exit_code, output), indent=2))
+            return 0
+        if args.mark_quota_fallback:
+            print(json.dumps(mark_quota_cursor_fallback(host=args.quota_host, signal=args.quota_signal), indent=2))
+            return 0
+        if not args.model or not args.reasoning:
+            parser.error("--decide-launch requires --model and --reasoning")
+        print(
+            json.dumps(
+                decide_launch(
+                    args.model,
+                    args.reasoning,
+                    subscription_exit=args.subscription_exit,
+                    subscription_output=output,
+                ),
+                indent=2,
+            )
+        )
+        return 0
 
     host = args.host or detect_host()
     project_root = args.project_root or Path.cwd()
@@ -470,7 +729,8 @@ def main() -> int:
             print(
                 f"  {index}. {model} / {reasoning} "
                 f"(delegation: {rung.get('delegation')}, subagent: {rung.get('subagent_name')}, "
-                f"model_param: {rung.get('model_param')})"
+                f"model_param: {rung.get('model_param')}"
+                f"{', subscription_first: ' + str(rung.get('subscription_host')) if rung.get('subscription_first') else ''})"
             )
         else:
             print(f"  {index}. {model} / {reasoning}")

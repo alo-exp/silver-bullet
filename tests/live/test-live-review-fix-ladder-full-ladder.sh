@@ -297,6 +297,7 @@ run_full_ladder_for_host() {
     if evaluate_rung_passes "$response" "$WORK_DIR"; then
       rung_status="PASS"
       pass "rung ${rung_index}/${rung_count} ${model}/${reasoning}"
+      review_fix_ladder_launcher_apply_accept "$WORK_DIR" || true
     else
       rung_status="FAIL"
       fail "rung ${rung_index}/${rung_count} ${model}/${reasoning}"

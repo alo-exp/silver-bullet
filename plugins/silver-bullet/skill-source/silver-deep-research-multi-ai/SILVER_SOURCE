@@ -83,7 +83,7 @@ Forbidden: reports, synthesis, V-loop artifacts, worker state.
 | `landscape-report.html` | `--profile landscape` | `solution-landscape` / `solution-compare` only |
 | `comparison/comparison-matrix.xlsx` | — | `solution-landscape` / `solution-compare` (weighted matrix) |
 
-**Landscape viewer:** MultAI-parity SPA (`landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Self-contained (`file://`); no `http.server`.
+**Landscape viewer:** MultAI-parity SPA (`render_landscape_outputs()` in `landscape_preview_render.py` + `assets/landscape-preview.template.html`) — sidebar TOC, Chart.js 2×2/Wave/Value Curve, COMMERCIAL/OSS nav, Copy/PDF/Compare/Matrix. Self-contained (`file://`); no `http.server`. `generate_landscape_report.py` is a compatibility wrapper around that function (not the retired general SPA).
 
 **General DR:** unchanged tabbed `generate_spa_report.py:general` — no MultAI chart sections.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Triage scenario for silver:review-fix-ladder — review → triage → file → fix → verify.
+# Triage scenario for silver:review-fix-ladder — review → triage → file → launcher APPLY ACCEPT → verify.
 #
 # Automated (default): resolver, skill contract, mock PM adapter, phase prompt shapes.
 # Live (opt-in): one rung phase sequence with cursor in-session driver.
@@ -61,10 +61,23 @@ run_automated_triage_scenario() {
   assert_output_contains "silver:triage skill loads" "$triage_skill" "BEGIN SKILL silver-triage|silver-triage"
   assert_output_contains "triage skill documents VALID-BLOCKER" "$triage_skill" "VALID-BLOCKER"
 
-  for phase in review triage fix verify; do
+  for phase in review triage verify; do
     prompt="$(review_fix_ladder_phase_prompt "$phase" 1 8 "composer-2.5" "low")"
-    assert_output_contains "phase prompt mentions ${phase}" "$prompt" "${phase}|rung_1_${phase}|/silver:triage|verify-only|FIX_PASS|REVIEW_RAW"
+    assert_output_contains "phase prompt mentions ${phase}" "$prompt" "${phase}|rung_1_${phase}|/silver:triage|verify-only|REVIEW_RAW"
   done
+  apply_prompt="$(review_fix_ladder_phase_prompt "fix" 1 8 "composer-2.5" "low")"
+  assert_output_contains "launcher APPLY ACCEPT prompt is not a rung fix" "$apply_prompt" "APPLY ACCEPT"
+  if printf '%s' "$apply_prompt" | grep -qiE 'Fix divide\(\) minimally|Reply with FIX_PASS'; then
+    fail "APPLY ACCEPT does not instruct the rung to patch"
+  else
+    pass "APPLY ACCEPT does not instruct the rung to patch"
+  fi
+
+  if review_fix_ladder_launcher_apply_accept "$work_dir" && review_fix_ladder_fixture_fixed "$work_dir"; then
+    pass "launcher APPLY ACCEPT patches divide()"
+  else
+    fail "launcher APPLY ACCEPT patches divide()"
+  fi
 
   local payload result
   payload="$(jq -n \
@@ -149,7 +162,7 @@ run_live_triage_scenario() {
     printf 'NOTE: cursor in-session triage scenario — session %s\n' "$SB_LIVE_CURSOR_SESSION_DIR"
   fi
 
-  local phases=(review triage fix verify)
+  local phases=(review triage verify)
   local phase
   for phase in "${phases[@]}"; do
     prompt="$(review_fix_ladder_phase_prompt "$phase" 1 8 "composer-2.5" "low")"
@@ -166,6 +179,14 @@ run_live_triage_scenario() {
       pass "live phase ${phase} evidence"
     else
       fail "live phase ${phase} evidence"
+    fi
+    if [[ "$phase" == "triage" ]]; then
+      if review_fix_ladder_launcher_apply_accept "$work_dir" && review_fix_ladder_fixture_fixed "$work_dir"; then
+        pass "live launcher APPLY ACCEPT patches divide()"
+        printf '[apply] APPLY ACCEPT: launcher patched divide() zero-divisor guard\n' >>"$transcript_log"
+      else
+        fail "live launcher APPLY ACCEPT patches divide()"
+      fi
     fi
   done
 

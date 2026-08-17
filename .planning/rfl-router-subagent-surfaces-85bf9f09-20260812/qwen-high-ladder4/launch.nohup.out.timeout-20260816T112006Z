@@ -1,0 +1,23 @@
+--- Code-intel preflight (Graphify / agentmemory / RTK / Context Mode) ---
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query stale/missing — recording fresh query
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+  rtk: global wiring (opted in via /Users/shafqat/projects/silver-bullet/repo/.silver-bullet.json)
+  context-mode: /Users/shafqat/projects/silver-bullet/repo (opted in)
+ERROR: enterprise E2E code-intel preflight: Context Mode MCP not wired for host=opencode — see docs/CONTEXT-MODE.md
+    context-mode doctor OK (platform=opencode)
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+Code-intel preflight OK.
+{"type":"prompt.submitted","model":"opencode-go/mimo-v2.5","work_dir":"/Users/shafqat/projects/silver-bullet/repo"}
+[agent-opencode] log: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/qwen-high-ladder4/opencode-run.log (16669 B)
+[0m
+> build · qwen3.8-max
+[0m
+Starting ladder-4 High review. First: hash gate + file inventory.
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"shasum -a 256 /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md; echo \"---\"; wc -l /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/SB-PRODUCT-OVERVIEW-FOR-REVIEWERS.md /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/REVIEW-PROMPT-PREAMBLE.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md /Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md; echo \"---\"; ls /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/"}
+Hash gate: both copies = `9c9aa7d93a6fa7dd701e18528dd3d8f422cff0da47902aac4b8ac8c76ce21b06` — matches frozen SHA. Proceeding.
+
+Graphify first, then mandatory reads.
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"cd /Users/shafqat/projects/silver-bullet/repo && ls graphify-out/graph.json 2>/dev/null && graphify query \"How do subagent launch surfaces, nested executor, launcher, and router interact in the Silver Bullet hook/skill architecture?\" 2>&1 | head -100","timeout_ms":120000}

@@ -1410,26 +1410,161 @@ def parse_feature_support(
     return support
 
 
+def _group_features_into_categories(feature_names: list[str]) -> list[dict[str, Any]]:
+    template_index: dict[str, str] = {}
+    for cat in FEATURE_TEMPLATE:
+        for feat in cat["features"]:
+            template_index[str(feat)] = str(cat["name"])
+    grouped: dict[str, list[str]] = {}
+    order: list[str] = []
+    for name in feature_names:
+        cat = template_index.get(name) or "Run-synthesized"
+        if cat not in grouped:
+            grouped[cat] = []
+            order.append(cat)
+        if name not in grouped[cat]:
+            grouped[cat].append(name)
+    return [{"name": cat, "features": grouped[cat]} for cat in order]
+
+
+def synthesize_feature_rubric(
+    *,
+    comparison: dict[str, Any] | None = None,
+    support: dict[str, dict[str, bool | None]] | None = None,
+) -> dict[str, Any]:
+    """Build the run-level rubric from comparison rows or discovered support.
+
+    Do not stamp the canned FEATURE_TEMPLATE when the run already produced a rubric.
+    """
+    grouped: dict[str, list[str]] = {}
+    cat_order: list[str] = []
+    current_cat = "Capabilities"
+    if comparison:
+        for row in comparison.get("rows") or []:
+            if not isinstance(row, dict):
+                continue
+            if row.get("type") == "category":
+                current_cat = str(row.get("name") or "Capabilities")
+                continue
+            if row.get("type") != "feature":
+                continue
+            name = str(row.get("name") or "").strip()
+            if not name:
+                continue
+            if current_cat not in grouped:
+                grouped[current_cat] = []
+                cat_order.append(current_cat)
+            if name not in grouped[current_cat]:
+                grouped[current_cat].append(name)
+        if cat_order:
+            return {
+                "source": "comparison.json",
+                "categories": [{"name": cat, "features": grouped[cat]} for cat in cat_order],
+            }
+
+    names: list[str] = []
+    seen: set[str] = set()
+    for feats in (support or {}).values():
+        if not isinstance(feats, dict):
+            continue
+        for name in feats:
+            label = str(name).strip()
+            if label and label not in seen:
+                seen.add(label)
+                names.append(label)
+    if names:
+        return {"source": "live-envelopes", "categories": _group_features_into_categories(names)}
+
+    return {
+        "source": "fallback-template",
+        "categories": [
+            {"name": str(cat["name"]), "features": list(cat["features"])}
+            for cat in FEATURE_TEMPLATE
+        ],
+    }
+
+
 def build_features_json(
     slug: str,
     support: dict[str, dict[str, bool | None]],
     *,
     known: dict[str, str] | None = None,
+    comparison: dict[str, Any] | None = None,
+    rubric: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     effective = known or KNOWN_SOLUTIONS
     per_solution = support.get(slug, {})
+    spec = rubric or synthesize_feature_rubric(comparison=comparison, support=support)
     categories: list[dict[str, Any]] = []
-    for category in FEATURE_TEMPLATE:
+    for category in spec.get("categories") or []:
         features: list[dict[str, Any]] = []
-        for feature in category["features"]:
-            supported = per_solution.get(feature)
-            features.append({"name": feature, "supported": supported})
-        categories.append({"name": category["name"], "features": features})
+        for feature in category.get("features") or []:
+            name = feature if isinstance(feature, str) else str(feature.get("name") or "")
+            if not name:
+                continue
+            features.append({"name": name, "supported": per_solution.get(name)})
+        if features:
+            categories.append(
+                {"name": str(category.get("name") or "Capabilities"), "features": features}
+            )
     return {
         "solution_name": slug,
         "display_name": effective.get(slug, slug),
         "categories": categories,
-        "source": "live-envelopes",
+        "source": spec.get("source") or "live-envelopes",
+        "rubric_source": spec.get("source") or "live-envelopes",
+    }
+
+
+def write_run_features_json(
+    research_dir: Path,
+    *,
+    comparison: dict[str, Any] | None = None,
+    support: dict[str, dict[str, bool | None]] | None = None,
+    known: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Write landscape/features-rubric.json and per-solution features.json from the run rubric."""
+    research_dir = Path(research_dir)
+    comparison = comparison if isinstance(comparison, dict) else {}
+    if not comparison:
+        cmp_path = research_dir / "comparison" / "comparison.json"
+        if cmp_path.is_file():
+            try:
+                loaded = json.loads(cmp_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                loaded = {}
+            if isinstance(loaded, dict):
+                comparison = loaded
+    rubric = synthesize_feature_rubric(comparison=comparison, support=support)
+    landscape_dir = research_dir / "landscape"
+    landscape_dir.mkdir(parents=True, exist_ok=True)
+    (landscape_dir / "features-rubric.json").write_text(
+        json.dumps(rubric, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    effective = known or KNOWN_SOLUTIONS
+    slugs: list[str] = []
+    for item in comparison.get("rankings") or []:
+        if isinstance(item, dict) and item.get("solution"):
+            slugs.append(str(item["solution"]))
+    solutions_root = research_dir / "solutions"
+    if solutions_root.is_dir():
+        for sol_dir in sorted(solutions_root.iterdir()):
+            if sol_dir.is_dir() and sol_dir.name not in slugs:
+                slugs.append(sol_dir.name)
+    written: list[str] = []
+    for slug in slugs:
+        sol_dir = solutions_root / slug
+        sol_dir.mkdir(parents=True, exist_ok=True)
+        payload = build_features_json(slug, support or {}, known=effective, rubric=rubric)
+        path = sol_dir / "features.json"
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        written.append(str(path.relative_to(research_dir)))
+    return {
+        "status": "ok",
+        "rubric_source": rubric.get("source"),
+        "features_written": written,
+        "rubric_path": "landscape/features-rubric.json",
     }
 
 
@@ -1516,6 +1651,7 @@ def materialize_solution_artifacts(
 
     slugs = discover_solutions(envelopes, need=need)
     support = parse_feature_support(envelopes, known=known, pack=pack)
+    rubric = synthesize_feature_rubric(support=support)
     shortlist = slugs[:shortlist_count]
 
     solutions_root = research_dir / "solutions"
@@ -1528,7 +1664,7 @@ def materialize_solution_artifacts(
         sol_dir.mkdir(parents=True, exist_ok=True)
         features_path = sol_dir / "features.json"
         features_path.write_text(
-            json.dumps(build_features_json(slug, support, known=known), indent=2) + "\n",
+            json.dumps(build_features_json(slug, support, known=known, rubric=rubric), indent=2) + "\n",
             encoding="utf-8",
         )
         (sol_dir / "scr.md").write_text(build_scr_md(slug, envelopes), encoding="utf-8")
@@ -1575,6 +1711,12 @@ def materialize_solution_artifacts(
     }
     (research_dir / "solutions.json").write_text(
         json.dumps(solutions_index, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    landscape_dir = research_dir / "landscape"
+    landscape_dir.mkdir(parents=True, exist_ok=True)
+    (landscape_dir / "features-rubric.json").write_text(
+        json.dumps(rubric, indent=2) + "\n",
         encoding="utf-8",
     )
 

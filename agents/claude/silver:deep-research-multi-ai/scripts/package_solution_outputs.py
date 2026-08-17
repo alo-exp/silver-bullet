@@ -65,7 +65,9 @@ def package_solution_outputs(
             from synthesize_landscape import synthesize_landscape
 
             results["landscape_synthesis"] = synthesize_landscape(research_dir, force=True)
-            results["report_landscape"] = generate_spa_report_file(research_dir, "landscape")
+            from landscape_preview_render import render_landscape_outputs
+
+            results["report_landscape"] = render_landscape_outputs(research_dir)
             from validate_landscape_content import validate_landscape_content
 
             content_gate = validate_landscape_content(research_dir)
