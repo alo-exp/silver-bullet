@@ -287,8 +287,8 @@ if grep -qF 'Anti-stall (Policy B leftover loop — HARD)' "$SKILL" \
 else
   fail "SKILL encodes anti-stall leftover loop"
 fi
-if grep -qF 'Skip after 3 timed-out retries (HARD)' "$SKILL" \
-  && grep -qF 'Do **not** spin a 4th timeout retry' "$SKILL" \
+if grep -qF 'Launch/timeout retry then skip (HARD)' "$SKILL" \
+  && grep -qF 'retry **once immediately**' "$SKILL" \
   && grep -qF 'SKIPPED.md' "$SKILL" \
   && grep -qF 'failed to produce a verdict' "$SKILL" \
   && grep -qF 'Endpoint is unavailable' "$SKILL" \
@@ -296,12 +296,12 @@ if grep -qF 'Skip after 3 timed-out retries (HARD)' "$SKILL" \
   && grep -qF 'skip does not change the next rung' "$SKILL" \
   && grep -qF 'Never Fast' "$SKILL" \
   && grep -qF 'not a Fast/family substitute' "$SKILL" \
-  && grep -qF 'Empty/"Let" after re-spawn with still no review counts toward the **3 timed-out retries**' "$SKILL" \
-  && grep -qF 'previous rung was skipped after 3 timed-out/no-verdict retries with `SKIPPED.md` recorded' "$SKILL" \
+  && grep -qF 'retry skipped rungs once more' "$SKILL" \
+  && grep -qF 'previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded' "$SKILL" \
   && grep -qF 'Quota STOP (once)' "$SKILL"; then
-  pass "SKILL encodes skip after 3 timed-out retries"
+  pass "SKILL encodes launch/timeout retry-once-then-skip"
 else
-  fail "SKILL encodes skip after 3 timed-out retries"
+  fail "SKILL encodes launch/timeout retry-once-then-skip"
 fi
 if grep -qF 'Anti-Stall leftover loop (Policy B)' "$SCENARIO" \
   && grep -qF 'Corpus sweep, not one-line cycles' "$SCENARIO" \
@@ -310,8 +310,8 @@ if grep -qF 'Anti-Stall leftover loop (Policy B)' "$SCENARIO" \
 else
   fail "Skill scenario encodes anti-stall leftover loop"
 fi
-if grep -qF 'Skip after 3 timed-out retries' "$SCENARIO" \
-  && grep -qF 'Do not spin a 4th timeout retry' "$SCENARIO" \
+if grep -qF 'Skip after launch/timeout retry-once-then-skip' "$SCENARIO" \
+  && grep -qF 'Retry once immediately' "$SCENARIO" \
   && grep -qF 'SKIPPED.md' "$SCENARIO" \
   && grep -qF 'failed to produce a verdict' "$SCENARIO" \
   && grep -qF 'Do not skip because of a CLEAN/NOT CLEAN review' "$SCENARIO" \
@@ -319,10 +319,10 @@ if grep -qF 'Skip after 3 timed-out retries' "$SCENARIO" \
   && grep -qF 'Never Fast' "$SCENARIO" \
   && grep -qF 'Quota STOP once still applies' "$SCENARIO" \
   && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$SCENARIO" \
-  && grep -qF 'Empty/"Let" after re-spawn counts toward the 3 timed-out retries' "$SCENARIO"; then
-  pass "Skill scenario encodes skip after 3 timed-out retries"
+  && grep -qF 'Empty/"Let" after re-spawn counts toward the launch/timeout retry-once-then-skip policy' "$SCENARIO"; then
+  pass "Skill scenario encodes launch/timeout retry-once-then-skip"
 else
-  fail "Skill scenario encodes skip after 3 timed-out retries"
+  fail "Skill scenario encodes launch/timeout retry-once-then-skip"
 fi
 if grep -qF 'Anti-stall (Policy B leftover loop)' "$WORKER" \
   && grep -qF 'Corpus sweep if the same defect class fails verify more than twice' "$WORKER"; then
@@ -330,19 +330,19 @@ if grep -qF 'Anti-stall (Policy B leftover loop)' "$WORKER" \
 else
   fail "REVIEW-TRIAGE worker encodes anti-stall leftover loop"
 fi
-if grep -qF '3 timed-out retries' "$WORKER" \
+if grep -qF 'retry once immediately' "$WORKER" \
   && grep -qF 'SKIPPED.md' "$WORKER" \
-  && grep -qF 'Do not spin a 4th timeout retry' "$WORKER" \
-  && grep -qF 'Skip after 3 timed-out retries (HARD)' "$WORKER" \
+  && grep -qF 'Launch/timeout retry-once-then-skip (HARD)' "$WORKER" \
   && grep -qF 'Do not skip because of CLEAN/NOT CLEAN' "$WORKER" \
   && grep -qF "Mixed-host skip does not change the next rung's required model" "$WORKER" \
   && grep -qF 'Never Fast' "$WORKER" \
   && grep -qF 'empty Let' "$WORKER" \
   && grep -qF 'Sequential rung advance is allowed if the previous rung has SKIPPED.md' "$WORKER" \
-  && grep -qF 'Quota STOP once' "$WORKER"; then
-  pass "REVIEW-TRIAGE worker encodes skip after 3 timed-out retries"
+  && grep -qF 'Quota STOP once' "$WORKER" \
+  && grep -qF 'retry skipped rungs once more' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes launch/timeout retry-once-then-skip"
 else
-  fail "REVIEW-TRIAGE worker encodes skip after 3 timed-out retries"
+  fail "REVIEW-TRIAGE worker encodes launch/timeout retry-once-then-skip"
 fi
 
 LIVE_COMMON="${REPO_ROOT}/tests/live/lib/review-fix-ladder-common.sh"
@@ -475,6 +475,14 @@ grok_plan="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning xh
 assert_jq_true "Grok decide-launch skips gate" \
   '.action == "cursor_task" and .subscription_first == false' \
   "$grok_plan"
+
+assert_jq_true "Grok decide-launch default host is Cursor" \
+  '.default_agent_route == "/silver:agent-cursor" and .preserves_host_mode == true' \
+  "$grok_plan"
+assert_jq_true "GPT decide-launch default host is Codex" \
+  '.default_agent_host == "codex"' \
+  "$gpt_plan"
+
 
 if grep -qF 'Subscription-first (GPT / Claude)' "$SKILL" \
   && grep -qF 'scripts/agent-codex/invoke.sh' "$SKILL" \
