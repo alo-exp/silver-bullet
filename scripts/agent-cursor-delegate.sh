@@ -10,9 +10,11 @@ source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
 usage() {
   cat <<'EOF'
 Usage: agent-cursor-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH | --prompt-file PATH)
-       [--log PATH] [--mode permissive|strict] [--sb-root PATH]
+       [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
+       [--sb-root PATH] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to cursor-agent via tests/live/agents/cursor/agent.sh (headless).
+Delegates a single task to cursor-agent via tests/live/agents/cursor/agent.sh.
+NI: print/stream-json. Interactive: session-id follow-up (new process, same conversation id).
 Requires full SB checkout (agent adapter). Parent supervisors: see /silver:agent-cursor.
 EOF
 }
@@ -32,8 +34,15 @@ while [[ $# -gt 0 ]]; do
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     --brief-file) BRIEF_FILE="$2"; shift 2 ;;
     --log) LOG_FILE="$2"; shift 2 ;;
-    --mode) MODE="$2"; shift 2 ;;
+    --mode)
+      MODE="$2"; shift 2
+      agent_mode_note_permission_mode "$MODE" || exit 2
+      ;;
     --sb-root) SB_ROOT="$2"; shift 2 ;;
+    --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive)
+      agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      shift "$SB_AM_SHIFT"
+      ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -53,6 +62,7 @@ if [[ -n "$LOG_FILE" ]]; then
 fi
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
+agent_mode_run_delegate_resolver "cursor" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
 
 AGENT_SH="${SB_ROOT}/tests/live/agents/cursor/agent.sh"
 [[ -f "$AGENT_SH" ]] || {
@@ -86,8 +96,12 @@ agent_cursor_apply_lightweight_env() {
 
   export SB_ORCHESTRATOR_WORKER="${SB_ORCHESTRATOR_WORKER:-1}"
   export SB_ORCHESTRATOR_PARENT="${SB_ORCHESTRATOR_PARENT:-0}"
-  export SB_LIVE_CURSOR_FORCE_HEADLESS="${SB_LIVE_CURSOR_FORCE_HEADLESS:-1}"
-  export SB_LIVE_CURSOR_IN_SESSION=0
+  if [[ "${SB_AGENT_CURSOR_SESSION:-0}" == "1" ]]; then
+    export SB_LIVE_CURSOR_FORCE_HEADLESS=0
+  else
+    export SB_LIVE_CURSOR_FORCE_HEADLESS="${SB_LIVE_CURSOR_FORCE_HEADLESS:-1}"
+    export SB_LIVE_CURSOR_IN_SESSION=0
+  fi
   export SB_AGENT_CURSOR_STREAM_JSON="${SB_AGENT_CURSOR_STREAM_JSON:-1}"
 }
 
@@ -142,6 +156,16 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     break
   fi
 done
+
+if [[ "$final_exit" -ne 0 ]]; then
+  missing=0
+  [[ -f "${SB_AM_TASK_DIR}/result.md" ]] || missing=1
+  agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
+  if agent_mode_maybe_escalate "cursor" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
+    agent_mode_apply_host_launch_env "cursor"
+    final_output="$(agent_cursor_invoke_once)" && final_exit=0 || final_exit=$?
+  fi
+fi
 
 printf '%s' "$final_output"
 exit "$final_exit"

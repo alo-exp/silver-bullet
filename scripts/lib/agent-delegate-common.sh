@@ -2,6 +2,10 @@
 # Shared delegate wrapper behavior for agent-codex-delegate.sh, agent-cursor-delegate.sh, and agent-claude-delegate.sh.
 # shellcheck shell=bash
 
+_AGENT_DELEGATE_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/agent-mode.sh
+source "${_AGENT_DELEGATE_COMMON_DIR}/agent-mode.sh"
+
 # Canonicalize a repo-relative path to absolute.
 agent_delegate_canonicalize_path() {
   local path="$1"
@@ -242,8 +246,32 @@ EOF
 
 agent_delegate_normalize_failure_class() {
   local exit_code="$1" output="$2" log_file="${3:-}"
+  if [[ -n "${SB_AM_FAILURE_CLASS:-}" ]]; then
+    printf '%s' "$SB_AM_FAILURE_CLASS"
+    return 0
+  fi
   if [[ "$exit_code" -eq 0 ]]; then
     printf 'success'
+    return 0
+  fi
+  if [[ "$output" == *mode-unavailable* ]]; then
+    printf 'mode-unavailable'
+    return 0
+  fi
+  if [[ "$output" == *mode-conflict* ]]; then
+    printf 'mode-conflict'
+    return 0
+  fi
+  if [[ "$output" == *escalate-unavailable* ]]; then
+    printf 'escalate-unavailable'
+    return 0
+  fi
+  if [[ "$output" == *max-turns* ]]; then
+    printf 'max-turns'
+    return 0
+  fi
+  if [[ "$output" == *hook-trust* ]]; then
+    printf 'hook-trust'
     return 0
   fi
   if agent_delegate_is_quota_error "$output"; then
@@ -314,4 +342,3 @@ agent_delegate_preflight_recommended_tools() {
   fi
   return 0
 }
-
