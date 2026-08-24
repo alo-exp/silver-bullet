@@ -12,9 +12,9 @@
 2. Derive review charter from `.planning/`, user request, and project docs
 3. Resolve ladder via `python3 scripts/review-fix-ladder.py --json`
 4. Execute sequential rungs with **review → launcher report → launcher triage → apply ACCEPT → two-pass verify** per rung:
-   - review subagent (rung model, REVIEW ONLY) → launcher posts Policy C user update (rung identity, verdict, Blockers / Highs / Mediums or none, ACCEPT-apply vs REJECT-as-wrong) → launcher/parent triages (Policy A: wrong vs not wrong) → launcher applies ACCEPT fixes (Edit/Write) → verify-only pass 1 → orchestrator charter grep → verify-only pass 2 → orchestrator charter grep → advance
+   - review subagent (rung model, REVIEW ONLY) → launcher posts Policy C user update (rung identity, verdict, HIGH/MED/LOW/NIT issue table, triage table, resolved table after fixes, Blockers / Highs / Mediums or none, ACCEPT-apply vs REJECT-as-wrong) → launcher/parent triages (Policy A: wrong vs not wrong) → launcher applies ACCEPT fixes (Edit/Write) → verify-only pass 1 → orchestrator charter grep → verify-only pass 2 → orchestrator charter grep → advance
    - **FORBIDDEN:** parallel rung launches, combined verify passes, reviewer self-triage, asking the same rung to patch after NOT CLEAN, rejecting as “advisory”/“doc-only”, advancing on subagent self-reported PASS alone, advancing before ACCEPTs are applied, skipping the per-rung Policy C user update, dumping raw review.md instead of the severity-grouped list
-5. Close out with per-rung verify_1/verify_2 evidence table, charter coverage matrix, and residual risks
+5. Close out with per-rung verify_1/verify_2 evidence table, ladder-complete matrix (Rung / Reviewer / HIGH / MED / LOW / NIT / Reported / Accepted), charter coverage matrix, and residual risks
 
 ### Scenario: General Invocation Asks Scope
 
@@ -58,7 +58,7 @@
 2. GPT rungs invoke `/silver:agent-codex` (`scripts/agent-codex/invoke.sh`) first; Claude/Opus rungs invoke `/silver:agent-claude` (`scripts/agent-claude/invoke.sh`) first
 3. Quota exhaustion (`429`, `rate limit`, `token plan`, `out of quota`, `quota retries exhausted`, `usage cap`/`usage limit`, `billed-quota`) → log host+signal, `--mark-quota-fallback`, then Cursor `Task`
 4. Non-quota failure (missing CLI, HASH MISMATCH, network blip, brief bug, NOT CLEAN) → **no** Cursor fallback
-5. Grok, Composer, GLM, Gemini, Kimi, OpenCode rungs skip this gate and keep Cursor `Task`
+5. Grok and Composer default to `/silver:agent-cursor`. Gemini defaults to Gemini CLI (if the user did not name an agent), else Pi, else OpenCode, else Cursor. Other models default to Pi or OpenCode, or the agent the user named. User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Grok, Composer, GLM, Gemini, Kimi, OpenCode rungs skip the GPT/Claude subscription-first quota gate
 
 ### Scenario: Review-Triage-Fix Separation
 
@@ -66,7 +66,7 @@
 
 **Workflow:**
 1. Review subagent reports raw findings only — no classification, plan edits, spec patches, or “while I’m here” fixes
-2. After the review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) messages the user with a severity-grouped Policy C update: rung identity (family + High / Extra High / Max), verdict, Blockers / Highs / Mediums (one line each finding, or none), and whether findings are being ACCEPT-applied before the next rung or REJECT-as-wrong (with why). Do this after every rung, not only at family or ladder end. Do not dump raw review.md. CLEAN with no findings still gets the three none lines
+2. After the review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) messages the user with a severity-grouped Policy C update: rung identity (family + High / Extra High / Max), verdict, HIGH/MED/LOW/NIT issue table, triage table (accepted vs rejected + reason), Blockers / Highs / Mediums (one line each finding, or none), and whether findings are being ACCEPT-applied before the next rung or REJECT-as-wrong (with why). After ACCEPT fixes, re-present the table with a Resolved column. Do this after every rung, not only at family or ladder end. Do not dump raw review.md. CLEAN with no findings still gets the three none lines
 3. Launcher/parent triages in-session: incorporate every finding that is not wrong; REJECT only if wrong or mistaken
 4. Forbidden reject reasons: advisory, doc-only, documentation nit, non-gating, nice-to-have, not a contract hole, CLEAN so ignore mediums, CLEAN for ladder purposes, non-blocking nit
 5. Launcher/parent applies ACCEPT fixes with Edit/Write (RFL exception to parent-orchestrator-never-implements). APPLY ACCEPT completeness (HARD): land every finding that is not wrong, including Low, deferred, nitpicks, and minor items that are still applicable. Skip only KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items no longer true on the current freeze. Do not treat CLEAN for ladder purposes or non-blocking nit as a reason to skip a still-valid nit. Do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung. Do not ask the same rung to patch after NOT CLEAN
@@ -79,7 +79,7 @@
 
 **Workflow:**
 1. The launcher (the agent that started the RFL) must message the user with a severity-grouped update after each rung's review is in
-2. Include rung identity (family + High / Extra High / Max), verdict, Blockers / Highs / Mediums (one line each finding, or none), and ACCEPT-apply vs REJECT-as-wrong (with why)
+2. Include rung identity (family + High / Extra High / Max), verdict, HIGH/MED/LOW/NIT issue table, triage table (accepted vs rejected + reason), Blockers / Highs / Mediums (one line each finding, or none), and ACCEPT-apply vs REJECT-as-wrong (with why). After fixes, present the table with a Resolved column
 3. Do this after every rung, not only at family or ladder end. Do not dump raw review.md
 4. CLEAN with no findings still gets the three none lines
 
@@ -91,20 +91,20 @@
 1. Do not idle. After verify FAIL, Policy B leftovers in the same follow-up turn, then re-verify. After CLEAN verify_1, immediately grep then verify_2. After two CLEAN verifies + greps, immediately start the next rung
 2. Corpus sweep, not one-line cycles: if the same defect class fails verify more than twice, the next Policy B scans all in-scope plan/spec artifacts for that class and patches every live hit in one pass
 3. Empty/Let nested Tasks: parent re-spawns immediately with explicit model so the child does not inherit the wrong wrapper. Nested GLM under Grok dies after Let; parent re-spawns with explicit GLM model. Do not wait for the user. Never Fast
-4. Quota STOP once: Codex/Claude usage-limit → Cursor subagent fallback. OpenCode billed quota/key → wait for the user; do not spin retries. Timeout / Endpoint is unavailable / empty Let / hung invoke with no review.md count toward 3 timed-out retries, then skip the rung (SKIPPED.md) and start the next rung. Do not spin a 4th timeout retry. Do not skip because of CLEAN/NOT CLEAN
+4. Quota STOP once: Codex/Claude usage-limit → Cursor subagent fallback. OpenCode billed quota/key → wait for the user; do not spin retries. Timeout / Endpoint is unavailable / empty Let / hung invoke with no review.md: retry once immediately, then skip the rung (SKIPPED.md) and start the next rung. After the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN
 5. Cap residual loops: after 5 leftover cycles on the same rung verify, escalate remaining file:line instead of a sixth one-line patch
 
-### Scenario: Skip after 3 timed-out retries
+### Scenario: Skip after launch/timeout retry-once-then-skip
 
-**Trigger:** Same ladder rung fails 3 timed-out retries (timeout, empty/Let after re-spawn, OpenCode Endpoint is unavailable, hung invoke with no review.md)
+**Trigger:** Same ladder rung cannot be launched or times out (timeout, empty/Let after re-spawn, OpenCode Endpoint is unavailable, hung invoke with no review.md)
 
 **Workflow:**
-1. Count timeout / endpoint-unavailable / no-verdict retries toward 3. After 3, skip that rung and immediately start the next rung. Do not spin a 4th timeout retry
-2. Record SKIP in the rung dir (SKIPPED.md: reason, attempt count, timestamps, next rung)
-3. Do not skip because of a CLEAN/NOT CLEAN review — only when the rung failed to produce a verdict three times
+1. Retry once immediately. If that fails, skip that rung and immediately start the next rung. After the entire ladder finishes, retry skipped rungs once more
+2. Record SKIP/retry in the rung dir (SKIPPED.md: reason, attempt count, timestamps, next rung, post_ladder_retry_pending)
+3. Do not skip because of a CLEAN/NOT CLEAN review — only when the rung failed to produce a verdict
 4. Mixed-host: skip does not change the next rung's required model. Never Fast. Skipping is not permission to use Fast or a different family as a silent substitute on that skipped rung
-5. Quota STOP once still applies for billed quota / weekly limit — report STOP and wait unless the failure is an unavailable/timeout class that already retried
-6. Sequential rung advance is allowed if the previous rung has SKIPPED.md (incomplete, not a CLEAN advance). Empty/"Let" after re-spawn counts toward the 3 timed-out retries
+5. Quota STOP once still applies for billed quota / weekly limit — report STOP and wait unless the failure is an unavailable/timeout class that already retried once
+6. Sequential rung advance is allowed if the previous rung has SKIPPED.md (incomplete, not a CLEAN advance). Empty/"Let" after re-spawn counts toward the launch/timeout retry-once-then-skip policy
 
 ### Scenario: Compliance Gate — Stop on Violation
 
@@ -135,4 +135,3 @@
 2. Execute rung 1 only: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep
 3. Run compliance gate before any rung 2 work
 4. **STOP** — report compliance log; do not continue to higher rungs unless user explicitly requests and compliance passes
-
