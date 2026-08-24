@@ -14,7 +14,8 @@ source "${REPO_ROOT}/scripts/agent-opencode/lib.sh"
 usage() {
   cat <<'EOF'
 Usage: agent-opencode-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH | --prompt-file PATH)
-       [--log PATH] [--mode permissive|strict] [--sb-root PATH] [--use-interactive]
+       [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
+       [--sb-root PATH] [--use-interactive] [--attach] [--no-escalate] [--allow-mode-fallback]
        [--delegation-mode default|multi-ai-worker-v1|multi-ai-pool-v1]
        [--multi-ai-profile PROFILE_ID] [--multi-ai-pool lite|regular]
        [--cohort-request PATH] [--cohort-output PATH]
@@ -45,9 +46,15 @@ while [[ $# -gt 0 ]]; do
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     --brief-file) BRIEF_FILE="$2"; shift 2 ;;
     --log) LOG_FILE="$2"; shift 2 ;;
-    --mode) MODE="$2"; shift 2 ;;
+    --mode)
+      MODE="$2"; shift 2
+      agent_mode_note_permission_mode "$MODE" || exit 2
+      ;;
     --sb-root) SB_ROOT="$2"; shift 2 ;;
-    --use-interactive) USE_INTERACTIVE=1; shift ;;
+    --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive)
+      agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      shift "$SB_AM_SHIFT"
+      ;;
     --delegation-mode) DELEGATION_MODE="$2"; shift 2 ;;
     --multi-ai-profile) MULTI_AI_PROFILE="$2"; shift 2 ;;
     --multi-ai-pool) MULTI_AI_POOL="$2"; shift 2 ;;
@@ -75,6 +82,13 @@ if [[ "$DELEGATION_MODE" != "multi-ai-pool-v1" ]]; then
   PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 else
   PROMPT_TEXT="${PROMPT_TEXT:-OCG pool cohort dispatch}"
+fi
+
+agent_mode_run_delegate_resolver "opencode" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
+if [[ "$SB_AM_RESOLVED" == "interactive" ]]; then
+  USE_INTERACTIVE=1
+else
+  USE_INTERACTIVE=0
 fi
 
 unset SB_AGENT_OPENCODE_DELEGATION_MODE SB_MULTI_AI_OCG_PROFILE SB_MULTI_AI_OCG_POOL SB_MULTI_AI_OCG_VALIDATED
@@ -237,7 +251,16 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
   fi
 done
 
+if [[ "$final_exit" -ne 0 ]]; then
+  missing=0
+  [[ -f "${SB_AM_TASK_DIR}/result.md" ]] || missing=1
+  agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
+  if agent_mode_maybe_escalate "opencode" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
+    agent_mode_apply_host_launch_env "opencode"
+    USE_INTERACTIVE=1
+    final_output="$(agent_opencode_invoke_once)" && final_exit=0 || final_exit=$?
+  fi
+fi
+
 printf '%s' "$final_output"
 exit "$final_exit"
-
-

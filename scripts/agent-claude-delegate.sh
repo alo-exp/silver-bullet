@@ -14,9 +14,10 @@ source "${REPO_ROOT}/hooks/lib/cert-bypass.sh"
 usage() {
   cat <<'EOF'
 Usage: agent-claude-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PATH | --prompt-file PATH)
-       [--log PATH] [--mode permissive|strict] [--sb-root PATH] [--use-print]
+       [--log PATH] [--mode permissive|strict] [--interaction-mode auto|interactive|non-interactive]
+       [--sb-root PATH] [--use-print] [--attach] [--no-escalate] [--allow-mode-fallback]
 
-Delegates a single task to Claude via tests/live/agents/claude/agent.sh (expect TUI or --print).
+Delegates a single task to Claude via tests/live/agents/claude/agent.sh (NI: claude --print; interactive: expect PTY).
 Requires full SB checkout (agent adapter). Parent supervisors: see /silver:agent-claude.
 EOF
 }
@@ -37,9 +38,15 @@ while [[ $# -gt 0 ]]; do
     --prompt-file) PROMPT_FILE="$2"; shift 2 ;;
     --brief-file) BRIEF_FILE="$2"; shift 2 ;;
     --log) LOG_FILE="$2"; shift 2 ;;
-    --mode) MODE="$2"; shift 2 ;;
+    --mode)
+      MODE="$2"; shift 2
+      agent_mode_note_permission_mode "$MODE" || exit 2
+      ;;
     --sb-root) SB_ROOT="$2"; shift 2 ;;
-    --use-print) USE_PRINT=1; shift ;;
+    --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive)
+      agent_mode_handle_flag "$1" "${2:-}" || exit 2
+      shift "$SB_AM_SHIFT"
+      ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'ERROR: unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -63,6 +70,12 @@ if [[ -n "$LOG_FILE" ]]; then
 fi
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
+agent_mode_run_delegate_resolver "claude" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
+if [[ "$SB_AM_RESOLVED" == "non-interactive" ]]; then
+  USE_PRINT=1
+else
+  USE_PRINT=0
+fi
 
 if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "claude"; then
   printf 'ERROR: recommended-tools preflight failed — fix Graphify/agentmemory before delegation\n' >&2
@@ -171,6 +184,17 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     break
   fi
 done
+
+if [[ "$final_exit" -ne 0 ]]; then
+  missing=0
+  [[ -f "${SB_AM_TASK_DIR}/result.md" ]] || missing=1
+  agent_mode_normalize_incomplete_result "$SB_AM_TASK_DIR" "$missing"
+  if agent_mode_maybe_escalate "claude" "$SB_AM_TASK_DIR" "${LOG_FILE:-}"; then
+    agent_mode_apply_host_launch_env "claude"
+    USE_PRINT=0
+    final_output="$(agent_claude_invoke_once)" && final_exit=0 || final_exit=$?
+  fi
+fi
 
 printf '%s' "$final_output"
 exit "$final_exit"

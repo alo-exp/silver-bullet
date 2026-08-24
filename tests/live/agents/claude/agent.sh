@@ -24,6 +24,9 @@ agent_preflight() {
 
 claude_should_use_interactive() {
   local prompt="$1"
+  if [[ "${CLAUDE_USE_INTERACTIVE:-}" == "0" ]]; then
+    return 1
+  fi
   if [[ "${CLAUDE_USE_INTERACTIVE:-}" == "1" ]]; then
     return 0
   fi
