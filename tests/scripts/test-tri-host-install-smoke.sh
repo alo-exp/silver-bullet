@@ -10,6 +10,17 @@ fail() { echo "FAIL: $1"; (( FAIL++ )) || true; }
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 
+dump_log() {
+  local path="$1"
+  echo "----- ${path} -----"
+  if [[ -f "$path" ]]; then
+    cat "$path"
+  else
+    echo "(missing)"
+  fi
+}
+
+
 assert_file_exists() {
   [[ -f "$1" ]] && pass "$2" || fail "$2 — missing $1"
 }
@@ -42,6 +53,8 @@ assert_contains "smoke runner documents per-command timeout env" \
   "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" "SB_TRIHOST_CMD_TIMEOUT"
 assert_contains "smoke runner loud-fails on hang" \
   "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" "hang detected"
+assert_contains "smoke runner skips installer post-install reconcile" \
+  "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" "RT_SKIP_POST_INSTALL"
 
 assert_file_exists "${REPO_ROOT}/docs/testing/pre-release-claims-registry.json" "pre-release claims registry exists"
 assert_contains "pre-release registry wires tri-host smoke" \
@@ -112,8 +125,10 @@ fi
 if RTK_DISABLED=1 bash "${REPO_ROOT}/scripts/run-tri-host-install-smoke.sh" --host cursor >/tmp/sb-trihost-cursor.log 2>&1; then
   pass "cursor tri-host smoke executes"
 elif grep -q 'TIMED OUT\|timed out after' /tmp/sb-trihost-cursor.log 2>/dev/null; then
+  dump_log /tmp/sb-trihost-cursor.log
   fail "cursor tri-host smoke TIMED OUT — see /tmp/sb-trihost-cursor.log"
 else
+  dump_log /tmp/sb-trihost-cursor.log
   fail "cursor tri-host smoke failed — see /tmp/sb-trihost-cursor.log"
 fi
 
