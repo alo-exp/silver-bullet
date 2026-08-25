@@ -131,6 +131,11 @@ rt_installer_post_install() {
   if [[ -n "$project_root" ]]; then
     scope=all
   fi
+  # Isolated install smokes should not run five-tool apply (slow/networky).
+  if [[ "${RT_SKIP_POST_INSTALL:-0}" == "1" ]]; then
+    printf 'SKIP: installer post-install reconcile (RT_SKIP_POST_INSTALL=1)\n'
+    return 0
+  fi
   # Already inside a reconcile apply: that run owns convergence and will finish
   # it after this installer returns. Calling back into it here closes the
   # reconcile -> optimize -> install -> reconcile cycle.

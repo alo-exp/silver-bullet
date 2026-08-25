@@ -35,6 +35,7 @@ fi
 SB_TRIHOST_OVERALL_TIMEOUT="${SB_TRIHOST_OVERALL_TIMEOUT:-900}"
 SB_TRIHOST_CMD_TIMEOUT="${SB_TRIHOST_CMD_TIMEOUT:-180}"
 SB_TRIHOST_DIAG_TIMEOUT="${SB_TRIHOST_DIAG_TIMEOUT:-90}"
+export RT_SKIP_POST_INSTALL="${RT_SKIP_POST_INSTALL:-1}"
 
 # Re-exec under overall wall-clock so a hung host cannot stall run-all-tests forever.
 if [[ "${SB_TRIHOST_INNER:-0}" != "1" ]]; then
