@@ -291,6 +291,125 @@ else
 fi
 rm -rf "$D21_HOME" "$D21_PROJ"
 
+
+# D10 default-path five-tool coverage contracts
+if grep -q "CONTEXT_MODE_PLATFORM" "$SKILL" && grep -q "CONFIGURED ≠ LIVE\|CONFIGURED != LIVE\|configuration, not" "$SKILL"; then
+  echo "PASS: skill documents default CM doctor + CONFIGURED vs LIVE"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: skill missing default CM doctor / CONFIGURED vs LIVE wording"
+  FAIL=$((FAIL + 1))
+fi
+if grep -q "vendor_doctor_failed" "$REPO_ROOT/scripts/lib/recommended-tools/probe-context-mode.sh"; then
+  echo "PASS: context-mode probe maps vendor doctor failure on default path"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: context-mode probe missing vendor_doctor_failed"
+  FAIL=$((FAIL + 1))
+fi
+if grep -q "duplicate_mcp_keys" "$REPO_ROOT/scripts/lib/recommended-tools/probe-leanctx.sh"; then
+  echo "PASS: leanctx probe treats duplicate MCP keys as D10 evidence"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: leanctx probe missing duplicate_mcp_keys"
+  FAIL=$((FAIL + 1))
+fi
+
+if grep -q "D10-alumnium" "$SKILL" && grep -q "Alumnium" "$SKILL"; then
+  echo "PASS: skill documents D10 alumnium coverage"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: skill missing D10 alumnium coverage"
+  FAIL=$((FAIL + 1))
+fi
+if grep -q "mcp_not_configured" "$REPO_ROOT/scripts/lib/recommended-tools/probe-alumnium.sh" \
+  && grep -q "cli_missing" "$REPO_ROOT/scripts/lib/recommended-tools/probe-alumnium.sh" \
+  && grep -q "vendor_doctor_failed" "$REPO_ROOT/scripts/lib/recommended-tools/probe-alumnium.sh"; then
+  echo "PASS: alumnium probe has CLI/MCP/vendor-doctor D10 evidence"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: alumnium probe missing CLI/MCP/vendor-doctor evidence"
+  FAIL=$((FAIL + 1))
+fi
+if grep -q 'source "${RT_LIB}/probe-alumnium.sh"' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh" \
+  && grep -q 'rt_run_component alumnium' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh"; then
+  echo "PASS: live reconciler sources and runs alumnium D10 probe"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: live reconciler missing probe-alumnium.sh / rt_run_component alumnium"
+  FAIL=$((FAIL + 1))
+fi
+if grep -q 'doctor_record_reconciler_d10' "$DOCTOR" && ! grep -q 'lib/sb-doctor/checks.sh' "$DOCTOR"; then
+  echo "PASS: sb-doctor D10 uses reconciler (not checks.sh consent loop)"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: sb-doctor D10 must use reconciler, not checks.sh"
+  FAIL=$((FAIL + 1))
+fi
+
+# Live D10-alumnium via sb-doctor.sh (install + MCP wiring, not consent-only)
+ALU_HOME="$(mktemp -d)"
+ALU_PROJ="$(mktemp -d)"
+ALU_BIN="$(mktemp -d)"
+mkdir -p "$ALU_HOME/.cursor" "$ALU_PROJ/docs/workflows" "$ALU_PROJ/scripts"
+cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$ALU_PROJ/.silver-bullet.json"
+jq '.sb_initiated = true' "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
+mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
+cp "$REPO_ROOT/silver-bullet.md" "$ALU_PROJ/silver-bullet.md"
+cp "$REPO_ROOT/scripts/workflows.sh" "$ALU_PROJ/scripts/workflows.sh"
+chmod +x "$ALU_PROJ/scripts/workflows.sh"
+printf '{"mcpServers":{}}\n' >"$ALU_HOME/.cursor/mcp.json"
+printf '{"hooks":{"preToolUse":[]}}\n' >"$ALU_HOME/.cursor/hooks.json"
+
+alu_run_doctor() {
+  env -u SB_RUNTIME_NAME HOME="$ALU_HOME" SILVER_BULLET_RUNTIME=cursor \
+    PATH="${ALU_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
+    bash "$DOCTOR" "$ALU_PROJ" 2>&1 || true
+}
+
+alu_na_out="$(alu_run_doctor)"
+if printf '%s' "$alu_na_out" | grep -qE 'PASS: D10-alumnium — alumnium (pending|disabled)'; then
+  echo "PASS: live D10-alumnium PASS N/A when not opted in"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: live D10-alumnium PASS N/A when not opted in"
+  printf '%s\n' "$alu_na_out" | grep 'D10-alumnium' || true
+  FAIL=$((FAIL + 1))
+fi
+if printf '%s' "$alu_na_out" | grep -qE 'FAIL: D10-alumnium'; then
+  echo "FAIL: live D10-alumnium must not FAIL the default/not-opted-in tree"
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: live D10-alumnium does not FAIL when not opted in"
+  PASS=$((PASS + 1))
+fi
+
+jq '.recommended_tools.alumnium.enabled_by_user = true' \
+  "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
+mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
+alu_cli_out="$(alu_run_doctor)"
+if printf '%s' "$alu_cli_out" | grep -qE 'FAIL: D10-alumnium'; then
+  echo "PASS: live D10-alumnium FAILs when opted in and CLI missing"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: live D10-alumnium FAILs when opted in and CLI missing"
+  printf '%s\n' "$alu_cli_out" | grep 'D10-alumnium' || true
+  FAIL=$((FAIL + 1))
+fi
+
+printf '#!/usr/bin/env bash\nexit 0\n' >"${ALU_BIN}/alumnium"
+chmod +x "${ALU_BIN}/alumnium"
+alu_mcp_out="$(alu_run_doctor)"
+if printf '%s' "$alu_mcp_out" | grep -qE 'FAIL: D10-alumnium'; then
+  echo "PASS: live D10-alumnium FAILs when MCP server missing"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: live D10-alumnium FAILs when MCP server missing"
+  printf '%s\n' "$alu_mcp_out" | grep 'D10-alumnium' || true
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$ALU_HOME" "$ALU_PROJ" "$ALU_BIN"
+
 # Live dogfood repo should PASS when environment is healthy (soft — warn only on fail)
 if bash "$DOCTOR" "$REPO_ROOT" >/tmp/sb-doctor-live-$$.txt 2>&1; then
   echo "PASS: doctor PASS on live repo"
