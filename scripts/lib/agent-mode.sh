@@ -50,7 +50,7 @@ agent_mode_reset
 agent_mode_reason_ok() {
   local r="$1"
   case "$r" in
-    tui-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|d3-in-wave-cursor|classifier-interactive|classifier-ni|pin)
+    tui-unavailable|mode-unavailable|incomplete|result-missing|escalate-unavailable|escalated|d3-process-alive|d3-continue|d3-in-wave-cursor|classifier-interactive|classifier-ni|pin)
       return 0 ;;
     fallback_drop:attach|fallback_drop:control-dir|fallback_drop:max-turns|fallback_drop:auto-policy)
       return 0 ;;
@@ -95,6 +95,12 @@ agent_mode_fail_conflict() {
 
 agent_mode_fail_unavailable() {
   SB_AM_FAILURE_CLASS="${1:-mode-unavailable}"
+  if [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" ]]; then
+    agent_mode_reason_append "mode-unavailable" || true
+    if [[ -n "${SB_AM_TASK_DIR:-}" ]]; then
+      agent_mode_persist_mode_json "$SB_AM_TASK_DIR" || true
+    fi
+  fi
   printf 'ERROR: %s\n' "$SB_AM_FAILURE_CLASS" >&2
   return 3
 }
@@ -928,8 +934,10 @@ agent_mode_apply_host_launch_env() {
     opencode)
       if [[ "$SB_AM_RESOLVED" == "interactive" ]]; then
         export OPENCODE_USE_INTERACTIVE=1
+        export SB_LIVE_OPENCODE_USE_INTERACTIVE=1
       else
         export OPENCODE_USE_INTERACTIVE=0
+        export SB_LIVE_OPENCODE_USE_INTERACTIVE=0
       fi
       ;;
     pi)

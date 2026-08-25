@@ -303,8 +303,12 @@ export SB_AGENT_MODE_TUI_AVAILABLE=0
 if agent_mode_resolve_mode "pi" "$D3DIR" "continue" "continue" 2>/dev/null; then
   check "D3 TUI miss is mode-unavailable not NI" fail
 else
-  [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" ]] && check "D3 TUI miss is mode-unavailable not NI" pass \
-    || check "D3 TUI miss is mode-unavailable not NI" fail
+  if [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" ]] && [[ -f "${D3DIR}/mode.json" ]] \
+    && grep -q 'mode-unavailable' "${D3DIR}/mode.json"; then
+    check "D3 TUI miss is mode-unavailable not NI" pass
+  else
+    check "D3 TUI miss is mode-unavailable not NI" fail
+  fi
 fi
 kill "$SLEEP2" 2>/dev/null || true
 
@@ -329,8 +333,12 @@ SB_AM_REQUESTED="interactive"
 if agent_mode_resolve_mode "pi" "$TASKA" "do it" "" 2>/dev/null; then
   check "pinned interactive TUI miss without fallback is mode-unavailable" fail
 else
-  [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" ]] && check "pinned interactive TUI miss without fallback is mode-unavailable" pass \
-    || check "pinned interactive TUI miss without fallback is mode-unavailable" fail
+  if [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" ]] && [[ -f "${TASKA}/mode.json" ]] \
+    && grep -q 'mode-unavailable' "${TASKA}/mode.json"; then
+    check "pinned interactive TUI miss without fallback is mode-unavailable" pass
+  else
+    check "pinned interactive TUI miss without fallback is mode-unavailable" fail
+  fi
 fi
 
 # pin interactive TUI miss WITH fallback (I-56/I-61)
@@ -452,8 +460,16 @@ agent_mode_apply_host_launch_env "pi"
 agent_mode_reset
 SB_AM_RESOLVED="non-interactive"
 agent_mode_apply_host_launch_env "opencode"
-[[ "$OPENCODE_USE_INTERACTIVE" == "0" ]] && check "OpenCode NI sets USE_INTERACTIVE=0 (run)" pass \
+[[ "$OPENCODE_USE_INTERACTIVE" == "0" && "${SB_LIVE_OPENCODE_USE_INTERACTIVE:-}" == "0" ]] \
+  && check "OpenCode NI sets USE_INTERACTIVE=0 (run)" pass \
   || check "OpenCode NI sets USE_INTERACTIVE=0 (run)" fail
+
+agent_mode_reset
+SB_AM_RESOLVED="interactive"
+agent_mode_apply_host_launch_env "opencode"
+[[ "$OPENCODE_USE_INTERACTIVE" == "1" && "$SB_LIVE_OPENCODE_USE_INTERACTIVE" == "1" ]] \
+  && check "OpenCode interactive sets SB_LIVE_OPENCODE_USE_INTERACTIVE=1" pass \
+  || check "OpenCode interactive sets SB_LIVE_OPENCODE_USE_INTERACTIVE=1" fail
 
 # Cursor follow-up env: interactive sets session flag
 agent_mode_reset
@@ -518,6 +534,107 @@ agent_mode_append_event "$REDDIR" "assistant" "token=${FAKE_SK}"
 ! grep -q 'sk-abc' "${REDDIR}/events.jsonl" && grep -q 'REDACTED' "${REDDIR}/events.jsonl" \
   && check "events.jsonl assistant payloads are redacted" pass \
   || check "events.jsonl assistant payloads are redacted" fail
+
+# relative --work-dir becomes absolute before chdir/exec
+REL_PARENT="${TMPROOT}/rel-wd"
+mkdir -p "${REL_PARENT}/nested"
+if (
+  cd "$REL_PARENT"
+  # shellcheck source=../../scripts/lib/agent-delegate-common.sh
+  source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
+  got="$(agent_delegate_resolve_work_dir "nested")"
+  [[ "$got" == /* && "$got" == *"/nested" && "$got" != nested ]]
+); then
+  check "relative work-dir resolves to absolute" pass
+else
+  check "relative work-dir resolves to absolute" fail
+fi
+
+# OpenCode adapter honors SB_LIVE_OPENCODE_USE_INTERACTIVE (never silent opencode run)
+MOCK_BIN="${TMPROOT}/oc-mock-bin"
+mkdir -p "$MOCK_BIN"
+cat >"${MOCK_BIN}/opencode" <<'MOCK'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then
+  printf 'opencode mock 0.0.0\n'
+  exit 0
+fi
+: "${OPENCODE_MOCK_ARGV_FILE:?}"
+printf '%s\n' "$@" >"$OPENCODE_MOCK_ARGV_FILE"
+exit 0
+MOCK
+chmod +x "${MOCK_BIN}/opencode"
+IXWORK="${TMPROOT}/oc-ix-work"
+NIWORK="${TMPROOT}/oc-ni-work"
+mkdir -p "$IXWORK" "$NIWORK"
+if (
+  unset SB_AGENT_OPENCODE_DELEGATION_MODE SB_MULTI_AI_OCG_PROFILE SB_MULTI_AI_OCG_POOL SB_MULTI_AI_OCG_VALIDATED
+  export OPENCODE_BIN="${MOCK_BIN}/opencode"
+  export OPENCODE_WORK_DIR="$IXWORK"
+  export WORK_DIR="$IXWORK"
+  export SB_LIVE_OPENCODE_USE_INTERACTIVE=1
+  export OPENCODE_USE_INTERACTIVE=1
+  export SB_AGENT_OPENCODE_DELEGATE=1
+  export OPENCODE_MOCK_ARGV_FILE="${TMPROOT}/oc-ix-argv.txt"
+  export OPENCODE_RUN_TIMEOUT=10
+  # shellcheck source=../../tests/live/agents/opencode/agent.sh
+  source "${REPO_ROOT}/tests/live/agents/opencode/agent.sh"
+  agent_invoke permissive "ping" >/dev/null
+  [[ -f "$OPENCODE_MOCK_ARGV_FILE" ]] || exit 1
+  first="$(head -n 1 "$OPENCODE_MOCK_ARGV_FILE")"
+  [[ "$first" != "run" ]] && ! grep -qx 'run' "$OPENCODE_MOCK_ARGV_FILE"
+); then
+  check "OpenCode interactive does not launch opencode run" pass
+else
+  check "OpenCode interactive does not launch opencode run" fail
+fi
+if (
+  unset SB_AGENT_OPENCODE_DELEGATION_MODE SB_MULTI_AI_OCG_PROFILE SB_MULTI_AI_OCG_POOL SB_MULTI_AI_OCG_VALIDATED
+  export OPENCODE_BIN="${MOCK_BIN}/opencode"
+  export OPENCODE_WORK_DIR="$NIWORK"
+  export WORK_DIR="$NIWORK"
+  export SB_LIVE_OPENCODE_USE_INTERACTIVE=0
+  export OPENCODE_USE_INTERACTIVE=0
+  export SB_AGENT_OPENCODE_DELEGATE=1
+  export OPENCODE_MOCK_ARGV_FILE="${TMPROOT}/oc-ni-argv.txt"
+  export OPENCODE_RUN_TIMEOUT=10
+  # shellcheck source=../../tests/live/agents/opencode/agent.sh
+  source "${REPO_ROOT}/tests/live/agents/opencode/agent.sh"
+  agent_invoke permissive "ping" >/dev/null || true
+  [[ -f "$OPENCODE_MOCK_ARGV_FILE" ]] || exit 1
+  first="$(head -n 1 "$OPENCODE_MOCK_ARGV_FILE")"
+  [[ "$first" == "run" ]]
+); then
+  check "OpenCode NI still launches opencode run" pass
+else
+  check "OpenCode NI still launches opencode run" fail
+fi
+
+# run_delegate_resolver writes mode.json on mode-unavailable
+UNAV="${TMPROOT}/work-unav"
+mkdir -p "$UNAV"
+agent_mode_reset
+export SB_AGENT_MODE_TUI_AVAILABLE=0
+agent_mode_parse_argv --interaction-mode interactive --task-id unav-1
+agent_mode_preflight_flags
+if agent_mode_run_delegate_resolver "pi" "$UNAV" "do it" "" 2>/dev/null; then
+  check "run_delegate_resolver writes mode.json on mode-unavailable" fail
+else
+  MODE_FILE="${UNAV}/.planning/agent-pi/unav-1/mode.json"
+  if [[ "$SB_AM_FAILURE_CLASS" == "mode-unavailable" && -f "$MODE_FILE" ]] \
+    && python3 - "$MODE_FILE" <<'JSONCHK'
+import json, sys
+obj = json.load(open(sys.argv[1]))
+assert obj["requested"] == "interactive"
+assert "mode-unavailable" in obj["reason"]
+print("ok")
+JSONCHK
+  then
+    check "run_delegate_resolver writes mode.json on mode-unavailable" pass
+  else
+    check "run_delegate_resolver writes mode.json on mode-unavailable" fail
+  fi
+fi
 
 echo
 echo "=== results: ${PASS} passed, ${FAIL} failed ==="

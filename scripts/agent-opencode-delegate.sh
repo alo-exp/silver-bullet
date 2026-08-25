@@ -65,7 +65,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-agent_delegate_validate_work_dir "$WORK_DIR" || exit 2
+WORK_DIR="$(agent_delegate_resolve_work_dir "$WORK_DIR")" || exit 2
 agent_delegate_clear_matrix_env
 
 if [[ -n "$BRIEF_FILE" ]]; then

@@ -45,7 +45,7 @@ Env: `SB_AGENT_INTERACTION_MODE`. Concrete leftover env without argv pin → `mo
 - `mode.json` `{requested, classified, resolved, reason[], turns?, wave_started_at?}` — both modes. `classified` is `null` when pinned. `turns`/`wave_started_at` interactive-only.
 - `events.jsonl` + `control/` — interactive only (never NI).
 - `session.json` `{status: live|dead, conversation_id, pid?, pid_started_at?, updated_at, turns?, wave_started_at?}`.
-- Closed `reason[]`: `tui-unavailable` | `mode_fallback:interactive→non-interactive:<cause>:<via>` | `fallback_drop:<flag>` (`attach`|`control-dir`|`max-turns`|`auto-policy`) | `incomplete` | `result-missing` | `escalate-unavailable` | `escalated` | `d3-process-alive` | `d3-continue` | `d3-in-wave-cursor` | `classifier-interactive` | `classifier-ni` | `pin`.
+- Closed `reason[]`: `tui-unavailable` | `mode-unavailable` | `mode_fallback:interactive→non-interactive:<cause>:<via>` | `fallback_drop:<flag>` (`attach`|`control-dir`|`max-turns`|`auto-policy`) | `incomplete` | `result-missing` | `escalate-unavailable` | `escalated` | `d3-process-alive` | `d3-continue` | `d3-in-wave-cursor` | `classifier-interactive` | `classifier-ni` | `pin`.
 
 ## Host matrix
 
