@@ -264,10 +264,8 @@ doctor_record_reconciler_d10() {
     record warn D10-routes "cross_tool component missing from reconciler output — run reconcile or /silver:doctor --fix=host"
   fi
   if [[ "$DOCTOR_DEEP" -eq 1 ]]; then
-    if command -v context-mode >/dev/null 2>&1; then
-      context-mode doctor >/dev/null 2>&1 && record pass D10-deep-cm "context-mode doctor OK" \
-        || record warn D10-deep-cm "context-mode doctor reported issues"
-    fi
+    # Context Mode vendor doctor runs on the default D10 probe path (FAIL when
+    # opted in). --deep keeps the Graphify MCP stdio handshake as WARN only.
     if command -v graphify-mcp >/dev/null 2>&1; then
       timeout 5 graphify-mcp --transport stdio </dev/null >/dev/null 2>&1 \
         && record pass D10-deep-graphify "graphify-mcp stdio handshake OK" \

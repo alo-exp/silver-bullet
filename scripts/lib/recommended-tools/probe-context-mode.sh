@@ -3,6 +3,8 @@
 
 # shellcheck source=common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# shellcheck source=vendor-doctor.sh
+source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_probe_context_mode_mcp() {
   local host="${RT_HOST:-cursor}"
@@ -15,11 +17,28 @@ rt_probe_context_mode_mcp() {
   esac
 }
 
+# Default D10 path: CONTEXT_MODE_PLATFORM=cursor context-mode doctor (bounded).
+# 0=pass 1=fail 2=skip
+rt_probe_context_mode_vendor_doctor() {
+  local -a cmd
+  if [[ -n "${RT_CONTEXT_MODE_DOCTOR_CMD:-}" ]]; then
+    # Test seam — caller supplies a non-interactive argv string.
+    # shellcheck disable=SC2206
+    cmd=(${RT_CONTEXT_MODE_DOCTOR_CMD})
+    rt_run_vendor_doctor "${cmd[@]}"
+    return $?
+  fi
+  command -v context-mode >/dev/null 2>&1 || return 2
+  export CONTEXT_MODE_PLATFORM="${CONTEXT_MODE_PLATFORM:-cursor}"
+  rt_run_vendor_doctor context-mode doctor
+}
+
 rt_probe_context_mode() {
   local tool_id="context_mode" consent activation="none" canonical repairable=0
   local cfg="${RT_CONFIG_FILE:-$(rt_project_config)}"
   local evidence=()
   local fu=0 fd=0 fp=0 fs=0 ff=0 frr=0 frp=0 fr=0
+  local vd_rc=0
 
   consent="$(rt_consent_for "$tool_id")"
   if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
@@ -33,7 +52,16 @@ rt_probe_context_mode() {
         elif ! sb_context_mode_cli_available 2>/dev/null; then frp=1; repairable=1; evidence+=("cli_missing")
         elif ! rt_probe_context_mode_mcp; then frp=1; repairable=1; activation="partial"; evidence+=("mcp_not_configured")
         elif ! sb_context_mode_instruction_fragment_present "${RT_PROJECT_ROOT:-}" 2>/dev/null; then frp=1; repairable=1; evidence+=("instruction_fragment_missing")
-        else activation="full"; fr=1
+        else
+          # Opted-in default D10: vendor doctor FAIL (not --deep WARN).
+          set +e
+          rt_probe_context_mode_vendor_doctor
+          vd_rc=$?
+          set -e
+          case "$vd_rc" in
+            1) frp=1; repairable=1; evidence+=("vendor_doctor_failed") ;;
+            *) activation="full"; fr=1 ;;
+          esac
         fi
         ;;
     esac

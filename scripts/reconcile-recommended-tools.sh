@@ -28,7 +28,7 @@ usage() {
 Usage: bash scripts/reconcile-recommended-tools.sh [options]
 
 Canonical consent-aware probe/reconcile engine for Graphify, agentmemory,
-RTK, Context Mode, LeanCTX, and cross-tool convergence.
+RTK, Context Mode, LeanCTX, Alumnium (opt-in), and cross-tool convergence.
 
 Options:
   --project-root <path>     Canonical SB project root (required for project scope)
@@ -118,6 +118,8 @@ source "${RT_LIB}/probe-rtk.sh"
 source "${RT_LIB}/probe-context-mode.sh"
 # shellcheck source=lib/recommended-tools/probe-leanctx.sh
 source "${RT_LIB}/probe-leanctx.sh"
+# shellcheck source=lib/recommended-tools/probe-alumnium.sh
+source "${RT_LIB}/probe-alumnium.sh"
 # shellcheck source=lib/recommended-tools/probe-cross-tool.sh
 source "${RT_LIB}/probe-cross-tool.sh"
 # shellcheck source=lib/recommended-tools/heartbeat.sh
@@ -235,6 +237,7 @@ rt_run_component agentmemory
 rt_run_component rtk
 rt_run_component context_mode
 rt_run_component leanctx
+rt_run_component alumnium
 rt_run_component cross_tool
 
 if [[ "$RT_MODE" == "apply" ]]; then
