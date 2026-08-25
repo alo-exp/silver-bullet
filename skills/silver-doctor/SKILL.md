@@ -53,17 +53,17 @@ When a tool is opted in (`enabled_by_user`) on a supported host (Cursor), defaul
 
 | Tool | Default D10 coverage |
 |------|----------------------|
-| Graphify | CLI on PATH; `graphify-mcp` binary; `~/.cursor/mcp.json` server `graphify`; real `graphify-out` index when the project has a graph. No invented `graphify doctor`. `--deep`: stdio handshake as WARN. |
+| Graphify | CLI on PATH; `graphify-mcp` binary; Cursor `mcp.json` server `graphify`; real `graphify-out` index when the project has a graph. No invented `graphify doctor`. `--deep`: stdio handshake as WARN. |
 | agentmemory | CLI; HTTP health `localhost:3111`; MCP `agentmemory` / `user-agentmemory`; export dir when contracted. |
-| RTK | CLI; min version; `~/.cursor/hooks.json` has `rtk hook cursor`; RTK before Context Mode on preToolUse; no LeanCTX shell rewrite when RTK owns `sb_shell`. Vendor `rtk doctor` if that subcommand exists and is non-interactive (timeout-bounded); otherwise hook/CLI probes stand. |
+| RTK | CLI; min version; Cursor `hooks.json` has `rtk hook cursor`; RTK before Context Mode on preToolUse; no LeanCTX shell rewrite when RTK owns `sb_shell`. Vendor `rtk doctor` if that subcommand exists and is non-interactive (timeout-bounded); otherwise hook/CLI probes stand. |
 | Context Mode | Node min; CLI; MCP `context-mode` / `user-context-mode`; instruction fragment; **`CONTEXT_MODE_PLATFORM=cursor context-mode doctor` on the default D10 path** (timeout-bounded). Vendor doctor failure → `D10-context_mode` FAIL when opted in. |
 | LeanCTX | CLI; MCP key `leanctx` (or `lean-ctx` / `user-leanctx`); `LEANCTX_MCP_TOOL_PREFIX=lctx_`; overlap MCP off (`LEANCTX_DISABLE_{SHELL,SANDBOX,FETCH}_MCP`, `LEANCTX_DISABLE_FTS=1`) when five_tool_routed. Duplicate `leanctx` **and** `lean-ctx` keys → D10 config FAIL when opted in (D22 remains a catalog WARN). Vendor `lean-ctx doctor` if non-interactive. Never `lean-ctx init --agent *`. |
-| Alumnium | When opted in: CLI `alumnium` on PATH; Cursor MCP `alumnium` / `user-alumnium` in `~/.cursor/mcp.json` (`npx -y alumnium mcp` per `docs/ALUMNIUM.md`). Vendor `alumnium doctor` if that subcommand exists and is non-interactive (timeout-bounded, stdin closed). No invented provider-key checks. Not opted in → PASS N/A. |
+| Alumnium | When opted in: CLI `alumnium` on PATH; Cursor MCP `alumnium` / `user-alumnium` in Cursor `mcp.json` (`npx -y alumnium mcp` per `docs/ALUMNIUM.md`). Vendor `alumnium doctor` if that subcommand exists and is non-interactive (timeout-bounded, stdin closed). No invented provider-key checks. Not opted in → PASS N/A. |
 | five_tool_routed | Exclusive owners, RTK shell, no double rewrite, RTK-before-CM. |
 
 **D10-routes WARN (not FAIL)** when no five-tool consent is active (`consent != enabled` on all five tools) and `cross_tool` is `repairable` solely because of `heartbeat_absent_or_invalid` — routes/heartbeat are N/A until opt-in. Any other `cross_tool` evidence (hook order, route drift, shell rewrite) still FAILs.
 
-**CONFIGURED ≠ LIVE:** MCP keys in `~/.cursor/mcp.json` and hook lines in `~/.cursor/hooks.json` prove **configuration**, not that Cursor has loaded those MCP tools in **this chat**. `reload_required` means config was written but this session has not proven tool liveness. Do not treat bash `command -v` or a JSON key as live MCP. Phase C adds receipt verification; until then, toggle MCP or start a new chat after repair.
+**CONFIGURED ≠ LIVE:** MCP keys in Cursor `mcp.json` and hook lines in Cursor `hooks.json` prove **configuration**, not that Cursor has loaded those MCP tools in **this chat**. `reload_required` means config was written but this session has not proven tool liveness. Do not treat bash `command -v` or a JSON key as live MCP. Phase C adds receipt verification; until then, toggle MCP or start a new chat after repair.
 
 ### Step 3: Fix FAILs inline
 

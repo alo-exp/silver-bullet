@@ -1,5 +1,5 @@
 ---
-name: silver-review-fix-ladder
+name: silver:review-fix-ladder
 description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder, requiring two consecutive clean passes at each rung before advancing. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
 user-invocable: false
 ---
@@ -346,8 +346,8 @@ Install or refresh agents before the ladder: `bash scripts/install-cursor-sb-age
 | Host | Delegation |
 |------|------------|
 | **Cursor (custom subagent)** | GPT → `/silver:agent-codex` first; Claude/Opus → `/silver:agent-claude` first; Cursor `Task` **only** on quota exhaustion. Grok/Composer default host: `/silver:agent-cursor`. Gemini: Gemini CLI, else Pi, else OpenCode, else Cursor. Other families: Pi or OpenCode (or the agent the user named). User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Verify passes: `readonly: true`. **Forbidden:** Fast, `composer-2.5-fast`. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every GPT/Claude review/verify launch (not once per family). |
-| **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
-| **Secondary host agent** | `secondary host exec -m <model> -c model_reasoning_effort=<reasoning>` (native secondary host binary, not Kay shim) |
+| **the active host agent** | Subagent with model `primary-model`, `Claude Code-opus-4-7`, or `Claude Code-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
+| **Secondary host agent** | `Codex exec -m <model> -c model_reasoning_effort=<reasoning>` (native Codex binary, not Kay shim) |
 
 Model slug maps live in `scripts/review-fix-ladder.py` only — not in `silver-bullet.md`.
 

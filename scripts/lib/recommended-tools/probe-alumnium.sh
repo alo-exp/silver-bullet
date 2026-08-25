@@ -12,7 +12,7 @@ rt_probe_alumnium_cli() {
   command -v alumnium >/dev/null 2>&1
 }
 
-# Cursor MCP: mcpServers.alumnium or user-alumnium in ~/.cursor/mcp.json
+# Cursor MCP: mcpServers.alumnium or user-alumnium in Cursor mcp.json
 # (same artifact the rest of D10 probes and docs/ALUMNIUM.md use).
 rt_probe_alumnium_mcp() {
   local host="${RT_HOST:-cursor}"
