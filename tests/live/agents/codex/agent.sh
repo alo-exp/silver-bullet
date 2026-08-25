@@ -165,6 +165,9 @@ agent_invoke() {
   local auto_trust_hooks
 
   cli="$(agent_cli_path)"
+  [[ -n "${WORK_DIR:-}" && -d "$WORK_DIR" ]] || { printf 'ERROR: WORK_DIR required\n' >&2; return 1; }
+  WORK_DIR="$(cd "$WORK_DIR" && pwd)" || return 1
+  export WORK_DIR
   tmpdir="${TMPDIR:-/tmp}"
   last_message_file="$(mktemp "${tmpdir}/codex-live-last-message-XXXXXX")"
   prompt_file="$(mktemp "${tmpdir}/codex-live-prompt-XXXXXX")"

@@ -99,6 +99,13 @@ agent_delegate_validate_work_dir() {
   }
 }
 
+# Resolve --work-dir to an absolute path before any chdir/exec (Codex/OpenCode).
+agent_delegate_resolve_work_dir() {
+  local work_dir="$1"
+  agent_delegate_validate_work_dir "$work_dir" || return $?
+  (cd "$work_dir" && pwd)
+}
+
 agent_delegate_write_log_header() {
   local log_file="$1" host_label="$2" work_dir="$3" sb_root="$4" attempt="$5"
   local extra="${6:-}"
