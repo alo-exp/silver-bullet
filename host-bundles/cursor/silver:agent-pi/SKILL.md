@@ -1,10 +1,12 @@
 ---
 name: silver:agent-pi
 description: On-demand parent-supervised delegation of a single real task to Pi CLI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while Pi executes via pi -p in a target project CWD. Not for enterprise E2E matrix runs.
-argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--checkpoint <n>]"
+argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--interaction-mode auto|interactive|non-interactive] [--checkpoint <n>]"
 user-invocable: true
 version: 0.1.0
 ---
+
+**Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
 # /silver:agent-pi — Pi CLI Subagent Delegation
 

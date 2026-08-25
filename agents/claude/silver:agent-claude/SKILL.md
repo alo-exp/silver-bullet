@@ -1,10 +1,12 @@
 ---
 name: silver:agent-claude
 description: On-demand parent-supervised delegation of a single real task to Claude TUI as a subagent — briefings, checkpoints, failure escalation, and completion evidence. Use when the host agent (Cursor, Codex, or Claude parent) should supervise while Claude Code executes in a target project CWD. Not for enterprise E2E matrix runs.
-argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--checkpoint <n>]"
+argument-hint: "<task brief> [--work-dir <path>] [--log <path>] [--interaction-mode auto|interactive|non-interactive] [--checkpoint <n>]"
 user-invocable: true
 version: 0.1.0
 ---
+
+**Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Session continuity requires interactive. Auto-selected NI that misses acceptance gets one interactive retry. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
 # /silver:agent-claude — Claude TUI Subagent Delegation
 
