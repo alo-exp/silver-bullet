@@ -9,9 +9,12 @@ version: 0.1.0
 
 **Interaction modes:** `--interaction-mode auto|interactive|non-interactive` (default `auto`). Permission `--mode` remains `permissive|strict`. Spec: [`docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md`](../../docs/specs/AGENT-DELEGATION-INTERACTION-MODES.md).
 
+**Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
+
+
 # /silver:agent-pi — Pi CLI Subagent Delegation
 
-On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Pi CLI** executes in the target project working directory via **`pi -p --provider opencode-go --model mimo-v2.5`** (always).
+On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Pi CLI** executes in the target project working directory via **`pi -p --provider opencode-go --model mimo-v2.5`** (NI) or **`pi`** without `-p` (interactive REPL).
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
@@ -233,6 +236,7 @@ Sidekick-inspired **single-task** lifecycle:
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once |
 | **Quota (429)** | `rate limit`, `429`, `token plan` in log | delegate.sh retries automatically; if exhausted, schedule resume |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh Pi credentials; do not rotate keys in prompt |
+| **OmniRoute/OpenCode 401** | `401`, `Missing API key`, `invalid_api_key` after attempt + one retry | Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as unspecified default. Do not skip-failed. |
 | **Model policy** | `PI_PROVIDER must be opencode-go` / `PI_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |
 | **Harness** | `ERROR:` from adapter harness | Fix SB harness; file issue if reproducible |
 | **Product** | Pi completed but acceptance fails | New brief with gap list; do not claim PASS |

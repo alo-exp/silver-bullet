@@ -99,7 +99,7 @@
 **Trigger:** Same ladder rung cannot be launched or times out (timeout, empty/Let after re-spawn, OpenCode Endpoint is unavailable, hung invoke with no review.md)
 
 **Workflow:**
-1. Retry once immediately. If that fails, skip that rung and immediately start the next rung. After the entire ladder finishes, retry skipped rungs once more
+1. Retry once immediately. If that fails and the host is OpenCode or Pi (including OmniRoute 401 Missing API key), substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high`); never Fast; never Extra High as unspecified default. Other hosts: skip that rung and immediately start the next rung. After the entire ladder finishes, retry skipped rungs once more
 2. Record SKIP/retry in the rung dir (SKIPPED.md: reason, attempt count, timestamps, next rung, post_ladder_retry_pending)
 3. Do not skip because of a CLEAN/NOT CLEAN review — only when the rung failed to produce a verdict
 4. Mixed-host: skip does not change the next rung's required model. Never Fast. Skipping is not permission to use Fast or a different family as a silent substitute on that skipped rung

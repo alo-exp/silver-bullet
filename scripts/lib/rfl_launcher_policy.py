@@ -13,6 +13,8 @@ from typing import Any, Iterable
 RFL_SEVERITIES = ("HIGH", "MED", "LOW", "NIT")
 LAUNCH_FAIL_OUTCOMES = frozenset({"cannot_launch", "timeout"})
 DEFAULT_AVAILABLE_HOSTS = ("pi", "opencode", "cursor", "codex", "claude", "gemini-cli")
+GROK_SUBSTITUTE_MODEL = "cursor-grok-4.6-high"
+GROK_SUBSTITUTE_HOSTS = frozenset({"opencode", "pi"})
 LAUNCHER_MANDATORY_STEPS = (
     "issue_table",
     "launcher_triage",
@@ -192,10 +194,12 @@ def next_launch_action(
     attempts: int,
     outcome: str,
     phase: str = "rung",
+    host: str | None = None,
 ) -> dict[str, Any]:
-    """Launch/timeout retry: retry once immediately, then skip; post-ladder retry once more."""
+    """Launch/timeout retry: retry once immediately, then skip; OpenCode/Pi substitute Grok 4.6 High."""
     outcome_n = (outcome or "").strip().lower()
     phase_n = (phase or "rung").strip().lower()
+    failed_host = normalize_user_agent(host)
     if attempts < 1:
         raise ValueError("attempts must be >= 1")
     if phase_n not in {"rung", "post_ladder"}:
@@ -226,6 +230,24 @@ def next_launch_action(
                 "retry_kind": "immediate",
                 "post_ladder_retry_pending": False,
                 "post_ladder_retry_done": False,
+            }
+        if failed_host in GROK_SUBSTITUTE_HOSTS:
+            cursor = AGENT_HOST_CATALOG["cursor"]
+            return {
+                "action": "substitute_grok",
+                "outcome": outcome_n,
+                "phase": phase_n,
+                "attempts": attempts,
+                "skipped": False,
+                "retry": False,
+                "retry_kind": None,
+                "post_ladder_retry_pending": False,
+                "post_ladder_retry_done": False,
+                "failed_host": failed_host,
+                "substitute_host": "cursor",
+                "substitute_model": GROK_SUBSTITUTE_MODEL,
+                "substitute_route": cursor["route"],
+                "substitute_skill": cursor["skill"],
             }
         return {
             "action": "skip",
@@ -259,10 +281,11 @@ def skip_retry_artifact(
     attempts: int,
     next_rung: str | int | None = None,
     phase: str = "rung",
+    host: str | None = None,
 ) -> dict[str, Any]:
     """JSON + SKIPPED.md body for `.planning/rfl-*/rung-*/` so the launcher can present skip/retry."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    policy = next_launch_action(attempts=attempts, outcome=outcome, phase=phase)
+    policy = next_launch_action(attempts=attempts, outcome=outcome, phase=phase, host=host)
     payload: dict[str, Any] = {
         "rung": rung,
         "next_rung": next_rung,
@@ -273,14 +296,27 @@ def skip_retry_artifact(
         "timestamp": now,
         **policy,
         "skipped_md": (
-            f"# SKIPPED — rung {rung}\n\n"
-            f"- reason: `{outcome}`\n"
-            f"- event: `{policy['action']}`\n"
-            f"- attempts: {attempts}\n"
-            f"- phase: `{phase}`\n"
-            f"- timestamp: {now}\n"
-            f"- next_rung: {next_rung if next_rung is not None else 'n/a'}\n"
-            f"- post_ladder_retry_pending: {policy['post_ladder_retry_pending']}\n"
+            (
+                f"# SUBSTITUTE GROK — rung {rung}\n\n"
+                f"- reason: `{outcome}`\n"
+                f"- event: `{policy['action']}`\n"
+                f"- attempts: {attempts}\n"
+                f"- phase: `{phase}`\n"
+                f"- timestamp: {now}\n"
+                f"- substitute_model: `{policy.get('substitute_model')}`\n"
+                f"- next_rung: {next_rung if next_rung is not None else 'n/a'}\n"
+            )
+            if policy.get("action") == "substitute_grok"
+            else (
+                f"# SKIPPED — rung {rung}\n\n"
+                f"- reason: `{outcome}`\n"
+                f"- event: `{policy['action']}`\n"
+                f"- attempts: {attempts}\n"
+                f"- phase: `{phase}`\n"
+                f"- timestamp: {now}\n"
+                f"- next_rung: {next_rung if next_rung is not None else 'n/a'}\n"
+                f"- post_ladder_retry_pending: {policy['post_ladder_retry_pending']}\n"
+            )
         ),
     }
     return payload
@@ -459,7 +495,12 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--launch-policy",
         action="store_true",
-        help="Emit next action for a launch/timeout attempt (retry once, then skip, then post-ladder retry)",
+        help="Emit next action for a launch/timeout attempt (retry once, then skip or OpenCode/Pi Grok substitute)",
+    )
+    parser.add_argument(
+        "--host",
+        default=None,
+        help="Failed host for --launch-policy (opencode/pi substitute Grok 4.6 High after retry)",
     )
     parser.add_argument("--attempts", type=int, default=1, help="Finished launch attempts including the current outcome")
     parser.add_argument(
@@ -534,6 +575,7 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
                     attempts=args.attempts,
                     outcome=args.outcome,
                     phase=args.policy_phase,
+                    host=getattr(args, "host", None) or args.user_agent,
                 ),
                 indent=2,
             )
@@ -553,6 +595,7 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
                     attempts=args.attempts,
                     next_rung=args.next_rung,
                     phase=args.policy_phase,
+                    host=getattr(args, "host", None) or args.user_agent,
                 ),
                 indent=2,
             )
