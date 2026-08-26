@@ -50,6 +50,21 @@ assert_jq_true "cannot_launch attempt 2 skips" \
   '.action == "skip" and .skipped == true' \
   "$launch2"
 
+oc401="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host opencode)"
+assert_jq_true "OpenCode cannot_launch attempt 2 substitutes Grok 4.6 High" \
+  '.action == "substitute_grok" and .skipped == false and .substitute_model == "cursor-grok-4.6-high" and .substitute_host == "cursor" and .failed_host == "opencode"' \
+  "$oc401"
+
+pi401="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome cannot_launch --policy-phase rung --host pi)"
+assert_jq_true "Pi cannot_launch attempt 2 substitutes Grok 4.6 High" \
+  '.action == "substitute_grok" and .skipped == false and .substitute_model == "cursor-grok-4.6-high" and .failed_host == "pi"' \
+  "$pi401"
+
+cursor_skip="$(python3 "$RESOLVER" --launch-policy --attempts 2 --outcome timeout --policy-phase rung --host cursor)"
+assert_jq_true "Cursor timeout attempt 2 still skips" \
+  '.action == "skip" and .skipped == true' \
+  "$cursor_skip"
+
 post_ok="$(python3 "$RESOLVER" --launch-policy --attempts 1 --outcome success --policy-phase post_ladder)"
 assert_jq_true "post-ladder success recovers skipped rung" \
   '.action == "recovered" and .skipped == false and .post_ladder_retry_done == true' \
@@ -64,6 +79,11 @@ skip_art="$(python3 "$RESOLVER" --skip-artifact --rung-id 4 --next-rung 5 --atte
 assert_jq_true "skip artifact records retry/skip for launcher" \
   '.skipped == true and .post_ladder_retry_pending == true and (.skipped_md | contains("SKIPPED"))' \
   "$skip_art"
+
+sub_art="$(python3 "$RESOLVER" --skip-artifact --rung-id 4 --next-rung 5 --attempts 2 --outcome cannot_launch --policy-phase rung --host opencode)"
+assert_jq_true "OpenCode skip-artifact after retry records Grok substitute" \
+  '.action == "substitute_grok" and .skipped == false and (.skipped_md | contains("SUBSTITUTE GROK")) and (.skipped_md | contains("cursor-grok-4.6-high"))' \
+  "$sub_art"
 
 # --- mandatory launcher tables ---
 steps="$(python3 "$RESOLVER" --launcher-steps)"

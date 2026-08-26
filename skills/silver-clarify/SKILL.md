@@ -180,6 +180,10 @@ Write a concise brief to the resolved clarify output path with:
 
 If `--chain` is set and the project/phase context is already known, hand the brief off to `silver:context` or `silver:plan` after writing it. If not, state the exact next SB lifecycle step needed to make that handoff possible.
 
+## Multi-host `--auto` ladders (Pi / OpenCode)
+
+When `/silver:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails with OmniRoute/OpenCode `401` `Missing API key` (or `cannot_launch` / timeout) after **attempt + one retry**, substitute Cursor **Grok 4.6 High** (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Do not skip-failed. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host pi --attempts 2 --outcome cannot_launch`.
+
 ## Exit Condition
 
 The brief is written, the decision boundary is clear, and the next SB lifecycle step is obvious.
