@@ -3044,7 +3044,7 @@ Doctor is inspect-only for **unrelated** IDE prefs (model, telemetry, permission
   - Required callback missing/past deadline/identity-join mismatch where rows 1–2 do not match; or parent-proxy requester rebind failure (Cursor cannot rebind the yielded requester after child completion or child failure)
 - **Resume:** Retransmit/rejoin, reviewed abort, or (rebind failure) do not relaunch the consult child
 
-#### VAL/TST-RFL-626 (architecture)
+#### `blocked_launch_prompt_spec` (row 4)
 
 - **Blocker:** `blocked_launch_prompt_spec`
 - **Trigger:**
