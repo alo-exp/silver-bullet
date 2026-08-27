@@ -1,0 +1,15 @@
+VERIFY-ONLY pass 2/2 written to `verify-2.md`.
+
+**SHA + byte-identity:** both copies hashed to `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0`, 621095 bytes, byte-identical (`cmp` exit 0).
+
+**Independent checks (all PASS):**
+- 33/33 YAML todos `status: pending` (34th `status: pending` match is the meta-statement at L4162, not a todo)
+- Exactly 1 mermaid fence (L1438)
+- F-2 HOLD heading at L3246 in row-14 form (`#### `blocked_advisor_state` (row 14)`, body states "retired/non-classifying")
+- `ws0--ws0b` = 0 (only canonical single-hyphen `ws0-ws0b` slug survives)
+- KEEP REJECT / Q1–Q3 / Part A → Part B all closed (L4070 / L4072 / L647 + YAML order L25–L106)
+- FAST is not a Job and not a legal compose `<route>` (L141 / L159 / L376 / L407 / L584 / L747 / L787 / L875)
+
+**Charter alignment:** confirmed — `/sb:multi-ai-task` and `sb:agent-wrap` forbidden-only, OmniRoute routing-only, LS-post-val-kl Executor as producer, FAST short-order E→Ver→Val + thin capture, TOC-GFM single-hyphen anchors.
+
+**Verdict: CLEAN.** Leftovers: none. **VERIFY_PASS.** SHA recorded: `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0`.

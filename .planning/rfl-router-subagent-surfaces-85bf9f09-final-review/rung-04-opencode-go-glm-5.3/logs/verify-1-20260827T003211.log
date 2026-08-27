@@ -1,0 +1,2 @@
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 143
+INVOKE_EXIT=143
