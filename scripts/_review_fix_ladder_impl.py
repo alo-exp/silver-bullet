@@ -741,16 +741,16 @@ def main() -> int:
             parser.error("quota-retry / ladder-status commands require --run-dir")
         run_id = args.run_id or args.run_dir.name
         if args.mark_ladder_status:
-            print(
-                json.dumps(
-                    rfl_quota_retry.mark_ladder_status(
-                        args.run_dir,
-                        args.mark_ladder_status,
-                        now=now,
-                    ),
-                    indent=2,
+            try:
+                marked = rfl_quota_retry.mark_ladder_status(
+                    args.run_dir,
+                    args.mark_ladder_status,
+                    now=now,
                 )
-            )
+            except ValueError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                return 2
+            print(json.dumps(marked, indent=2))
             return 0
         if args.quota_retry_due:
             print(json.dumps(rfl_quota_retry.due_quota_retries(args.run_dir, now=now), indent=2))

@@ -121,6 +121,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -130,6 +136,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/review-fix-ladder-guard.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -289,6 +301,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
             "async": false,
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
+            "async": false,
+            "timeout": 10
           }
         ]
       },
@@ -328,6 +346,12 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/spec-floor-check.sh\"",
+            "async": false,
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
             "async": false,
             "timeout": 10
           }
@@ -543,6 +567,12 @@
       {
         "matcher": ".*",
         "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
+            "async": false,
+            "timeout": 10
+          },
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/stop-check.sh\"",

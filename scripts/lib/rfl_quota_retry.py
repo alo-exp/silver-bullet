@@ -240,6 +240,13 @@ def mark_ladder_status(
     normalized = (status or "").strip().lower()
     if normalized not in {"active", "completed", "aborted", "done", "finished", "policy_d"}:
         raise ValueError(f"unsupported ladder status {status!r}")
+    if normalized in {"completed", "done", "finished", "policy_d"}:
+        from rfl_policy_c import assert_run_ready_for_complete
+
+        gated = assert_run_ready_for_complete(Path(run_dir))
+        if not gated.get("ok"):
+            detail = "; ".join(gated.get("errors") or ["Policy C missing"])
+            raise ValueError(f"cannot mark ladder completed: {detail}")
     path = ladder_status_path(run_dir)
     payload = _read_json(path)
     payload["status"] = normalized

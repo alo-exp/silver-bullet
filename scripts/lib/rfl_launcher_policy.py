@@ -16,6 +16,7 @@ DEFAULT_AVAILABLE_HOSTS = ("pi", "opencode", "cursor", "codex", "claude", "gemin
 GROK_SUBSTITUTE_MODEL = "cursor-grok-4.6-high"
 GROK_SUBSTITUTE_HOSTS = frozenset({"opencode", "pi"})
 LAUNCHER_MANDATORY_STEPS = (
+    "policy_c_artifact",
     "issue_table",
     "launcher_triage",
     "triage_table",
@@ -534,8 +535,33 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--resolved-table", action="store_true", help="Render issue table with Resolved column from JSON")
     parser.add_argument("--ladder-matrix", action="store_true", help="Render ladder-complete summary matrix from JSON")
     parser.add_argument("--launcher-steps", action="store_true", help="Emit mandatory launcher steps JSON")
-    parser.add_argument("--table-json", default=None, help="Inline JSON array for table/matrix commands")
-    parser.add_argument("--table-json-file", type=Path, default=None, help="JSON file for table/matrix commands")
+    parser.add_argument(
+        "--write-policy-c",
+        action="store_true",
+        help="Write POLICY-C.json + POLICY-C.md under --rung-dir and print markdown",
+    )
+    parser.add_argument(
+        "--assert-policy-c",
+        action="store_true",
+        help="Exit non-zero if --rung-dir Policy C artifact is missing or schema-invalid",
+    )
+    parser.add_argument(
+        "--assert-rfl-advance",
+        action="store_true",
+        help="Exit non-zero if the active RFL run is missing Policy C or sibling failure artifacts",
+    )
+    parser.add_argument("--rung-dir", type=Path, default=None, help="Rung directory for Policy C / skip artifacts")
+    parser.add_argument("--run-dir", type=Path, default=None, help="RFL run directory (.planning/rfl-<id>/)")
+    parser.add_argument("--project-root", type=Path, default=None, help="Project root for discovering active RFL runs")
+    parser.add_argument(
+        "--next-action",
+        default="task",
+        help="task|verify_1|verify_2|next_rung_review|mark_completed|stop",
+    )
+    parser.add_argument("--current-phase", default=None, help="Documented rung phase (e.g. rung_1_fix_parallel)")
+    parser.add_argument("--prompt", default="", help="Task/skill prompt used to infer --next-action")
+    parser.add_argument("--table-json", default=None, help="Inline JSON array/object for table/matrix/Policy C commands")
+    parser.add_argument("--table-json-file", type=Path, default=None, help="JSON file for table/matrix/Policy C commands")
 
 
 def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
@@ -550,6 +576,9 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
             args.resolved_table,
             args.ladder_matrix,
             args.launcher_steps,
+            getattr(args, "write_policy_c", False),
+            getattr(args, "assert_policy_c", False),
+            getattr(args, "assert_rfl_advance", False),
         )
     )
     if not policy_requested:
@@ -597,21 +626,71 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
         if not args.outcome or args.rung_id is None:
             print("ERROR: --skip-artifact requires --rung-id and --outcome", file=sys.stderr)
             return 2
-        print(
-            json.dumps(
-                skip_retry_artifact(
-                    rung=args.rung_id,
-                    event="",
-                    outcome=args.outcome,
-                    attempts=args.attempts,
-                    next_rung=args.next_rung,
-                    phase=args.policy_phase,
-                    host=getattr(args, "host", None) or args.user_agent,
-                ),
-                indent=2,
-            )
+        payload = skip_retry_artifact(
+            rung=args.rung_id,
+            event="",
+            outcome=args.outcome,
+            attempts=args.attempts,
+            next_rung=args.next_rung,
+            phase=args.policy_phase,
+            host=getattr(args, "host", None) or args.user_agent,
         )
+        rung_dir = getattr(args, "rung_dir", None)
+        if rung_dir is not None:
+            path = Path(rung_dir)
+            path.mkdir(parents=True, exist_ok=True)
+            (path / "SKIPPED.md").write_text(str(payload.get("skipped_md") or ""), encoding="utf-8")
+            payload["skipped_md_path"] = str(path / "SKIPPED.md")
+        print(json.dumps(payload, indent=2))
         return 0
+
+    if getattr(args, "write_policy_c", False):
+        from rfl_policy_c import write_policy_c
+
+        if getattr(args, "rung_dir", None) is None:
+            print("ERROR: --write-policy-c requires --rung-dir", file=sys.stderr)
+            return 2
+        try:
+            body = _load_json_arg(args.table_json, args.table_json_file)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        if not isinstance(body, dict):
+            print("ERROR: Policy C JSON must be an object", file=sys.stderr)
+            return 2
+        result = write_policy_c(args.rung_dir, body)
+        print(result["markdown"], end="")
+        if not result["ok"]:
+            print("ERROR: " + "; ".join(result["errors"]), file=sys.stderr)
+            return 2
+        return 0
+
+    if getattr(args, "assert_policy_c", False):
+        from rfl_policy_c import assert_policy_c
+
+        if getattr(args, "rung_dir", None) is None:
+            print("ERROR: --assert-policy-c requires --rung-dir", file=sys.stderr)
+            return 2
+        result = assert_policy_c(
+            args.rung_dir,
+            current_phase=getattr(args, "current_phase", None),
+        )
+        print(json.dumps({"ok": result["ok"], "errors": result["errors"], "rung_dir": result["rung_dir"]}, indent=2))
+        return 0 if result["ok"] else 2
+
+    if getattr(args, "assert_rfl_advance", False):
+        from rfl_policy_c import assert_rfl_advance
+
+        result = assert_rfl_advance(
+            getattr(args, "run_dir", None),
+            rung_dir=getattr(args, "rung_dir", None),
+            project_root=getattr(args, "project_root", None),
+            next_action=getattr(args, "next_action", "task") or "task",
+            current_phase=getattr(args, "current_phase", None),
+            prompt=getattr(args, "prompt", "") or "",
+        )
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 2
 
     try:
         payload = _load_json_arg(args.table_json, args.table_json_file)
@@ -637,13 +716,13 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="RFL launcher policy helpers")
+    parser = argparse.ArgumentParser(description="RFL launcher policy helpers", allow_abbrev=False)
     parser.add_argument("--model", help="Model slug for --default-host-route")
     add_policy_arguments(parser)
     args = parser.parse_args()
     code = dispatch_policy_cli(args)
     if code is None:
-        parser.error("one of --default-host-route/--launch-policy/--skip-artifact/--issue-table/--triage-table/--resolved-table/--ladder-matrix/--launcher-steps is required")
+        parser.error("one of --default-host-route/--launch-policy/--skip-artifact/--write-policy-c/--assert-policy-c/--assert-rfl-advance/--issue-table/--triage-table/--resolved-table/--ladder-matrix/--launcher-steps is required")
     return code
 
 
