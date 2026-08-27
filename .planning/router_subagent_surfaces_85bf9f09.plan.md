@@ -431,8 +431,8 @@ Goals and non-goals are stated **once** here (plus the canonical catalogs in §2
 
 
 - Per-child `SB_WORKTREE_CWD` is not required in process env; if five-tool is opted in at that primary and the gate cannot resolve process env `SB_PRIMARY_CHECKOUT` when set, else cannot resolve `rt_git_main_worktree_root` (git main-worktree is fallback only when env is unset), the gate blocks); `silver` → `sb` with no dual public prefix and a shell bootstrap migrate (ILM-01); five-tool opt-in then mandatory on every selected runtime after an init probe (brownfield opt-in re-probes recorded runtimes: warn and unselect a failing runtime, continue for runtimes that passed, refuse opt-in only if every recorded runtime fails); live E2E as the MVP required test.
-- **Also (live-spec MUST):** `/sb:new-workflow` conventional-skill extract/decompose/recompose (arbitrary conventional AI skill(s) in → catalog-legal WF of AFs / Flow Steps / optional leaf Skills; not wrap-`SKILL.md`-as-one-`AF-EXECUTE`; Job authoring session; PUB-01 Authorizer-admitted publish; Cursor MVP; named test coverage — see §4.2 Proposed architecture and WFM-01).
-- **Also (live-spec MUST):** workflow evolution of shared WF / AF / Flow Step / Skill from improvement-tagged Learnings (`/sb:improve` is always a Job — never FAST; `/sb:contribute` explicit PR Job, WS4 runtime / WS7 docs; latest evolved installed versions; FAST is not subject to Evolution or `/sb:improve`; FAST thin-capture skip tags unless a durable learning is still captured; general-improvement not per-user forks — see §4.2 Proposed architecture).
+- **Also (live-spec MUST):** `/sb:new-workflow` conventional-skill extract/decompose/recompose (arbitrary conventional AI skill(s) in → catalog-legal WF of AFs / Flow Steps / optional leaf Skills; not wrap-`SKILL.md`-as-one-`AF-EXECUTE`; Job authoring session; PUB-01 Authorizer-admitted publish; Cursor MVP; named test coverage — see §4.2 Process router `/sb`, catalog generation, FAST vs Job and WFM-01).
+- **Also (live-spec MUST):** workflow evolution of shared WF / AF / Flow Step / Skill from improvement-tagged Learnings (`/sb:improve` is always a Job — never FAST; `/sb:contribute` explicit PR Job, WS4 runtime / WS7 docs; latest evolved installed versions; FAST is not subject to Evolution or `/sb:improve`; FAST thin-capture skip tags unless a durable learning is still captured; general-improvement not per-user forks — see §4.2 Process router `/sb`, catalog generation, FAST vs Job).
 - **Also (same ship, absorbed):** opt into each `/sb:agent-*` host separately; OmniRoute is an extra optional routing-only proxy for Pi and for the `omni/` slug prefix (not a bundle that always installs all five agents). Consent, slugs, `/sb:init` 1.1h–1.1m after LeanCTX, and `/sb:doctor --fix` are specified in WS6 / LS-agent-pin (plus WS2/WS7 callouts) — not before WS0/WS0b. Origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`.
 
 **Plan-executed test coverage (live-spec MUST)** — full lock: [LS-plan-executed-coverage](#ls-plan-executed-coverage) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
@@ -920,7 +920,7 @@ The current spawn-only parent, dual `silver:*` surfaces, missing Authorizer/Veri
 
 This section is the **only canonical KEEP REJECT catalog**. Do **not** reopen these as open decisions. Elsewhere, use the KR-* pointer.
 
-Every KEEP REJECT lock from the freeze is listed in full below (changelog “KEEP REJECT intact” round receipts live in [Appendix A](#a-sha-lineage-and-round-receipts), not here).
+Every KEEP REJECT lock from the freeze is listed in full below as KR-* entries or as compact pointers to the LS-* / Architecture sentences they cite (changelog “KEEP REJECT intact” round receipts live in [Appendix A](#a-sha-lineage-and-round-receipts), not here). Compact pointers: no `/sb:multi-ai-task` ([LS-retire-multi-ai](#ls-retire-multi-ai)); no public `/sb:agent-omni` and OmniRoute routing-only ([LS-agent-pin](#ls-agent-pin)); `/sb:improve` always a Job ([LS-workflow-evolution](#ls-workflow-evolution)); `primary_checkout` sole write root ([§4.3](#43-wbs-projector-spawn-proxy-primary_checkout-extra-worktrees)).
 
 ### KR-catalog-generated
 
@@ -1203,16 +1203,16 @@ Each Orchestrator, Executor, Verifier, and Validator preference entry is `{ runt
 - This supersedes the RUNTIME-COMPATIBILITY rule that Silver Bullet does not route models.
 - The already-running Orchestrator **session** model remains the host UI’s choice; Orchestrator preference rows are advisory for that session and binding for any nested Orchestrator-shaped child the architecture actually launches (MVP does not launch a nested Orchestrator).
 
-Canonical thinking effort is `low | medium | high | xhigh` where those exist, plus `max` where the agent documents it as thinking-effort. Do not collapse `xhigh` into High. Cursor Max Mode is a model class, not thinking-effort. Other roles default `high`. Executor defaults to the highest available thinking effort for that runtime unless the user specifies a level. **Executor complexity tiers overlay this:** Trivial → FAST; Regular / Complex are Job Executor thinking-levels. User-named per-tier or shared-all-tiers `{ model, thinking-level }` wins. When a tier thinking-level is unspecified, use the host built-in Executor tuple (Cursor: Grok 4.6 High — not XHigh as the unspecified default). Fast remains forbidden unless the user explicitly says Fast.
+Canonical thinking effort is `low | medium | high | xhigh` where those exist, plus `max` where the agent documents it as thinking-effort. Do not collapse `xhigh` into High. Cursor Max Mode is a model class, not thinking-effort. Other roles default `high`. **Executor complexity tiers overlay this:** Trivial → FAST; Regular / Complex are Job Executor thinking-levels. User-named per-tier or shared-all-tiers `{ model, thinking-level }` wins (user-named Extra High / XHigh still wins when explicit). When a tier thinking-level is unspecified, use the host built-in Executor tuple (Cursor: Grok 4.6 High — not XHigh as the unspecified default; not highest-available). Fast remains forbidden unless the user explicitly says Fast.
 
 | Runtime | Canonical efforts | Executor default | Other-role default | Notes |
 |---|---|---|---|---|
-| Cursor (`host_native` / Task) | `low`, `medium`, `high`, `xhigh` when the slug supports them; Composer: none | `xhigh` if supported, else `high`; Composer: no suffix | `high` | Cursor Max Mode ≠ thinking-effort |
-| Codex | `low`, `medium`, `high` (`xhigh`/`max` iff documented) | highest available unless the user specifies | `high` | Host adapter after MVP; `/sb:agent-codex` already exists |
-| Claude Code | `low`, `medium`, `high` (`xhigh`/`max` iff documented) | highest available unless the user specifies | `high` | Host adapter after MVP; `/sb:agent-claude` already exists |
-| Pi | `low\|medium\|high\|xhigh` plus `max` if documented | highest available unless the user specifies | `high` | Honor recorded `{model,effort}` when the key is available in the host/OS store or env (need not be in the same prefs JSON write); retire any hard MiMo pin in that case; prefs never store the key; configure from official docs |
-| OpenCode | as documented (`low\|medium\|high\|xhigh` and `max` if documented) | highest available unless the user specifies | `high` | Host adapter after MVP; `/sb:agent-opencode` already exists (rename in this ship) |
-| Goose / Hermes | as documented when the agent skill exists | highest available unless the user specifies | `high` | Include in the enum only when the corresponding `sb:agent-*` skill exists; nested-executor profile |
+| Cursor (`host_native` / Task) | `low`, `medium`, `high`, `xhigh` when the slug supports them; Composer: none | `high` (Grok 4.6 High; not XHigh as unspecified default); Composer: no suffix | `high` | Cursor Max Mode ≠ thinking-effort |
+| Codex | `low`, `medium`, `high` (`xhigh`/`max` iff documented) | built-in Executor tuple (not highest/xhigh unspecified); user-named Extra High wins if explicit | `high` | Host adapter after MVP; `/sb:agent-codex` already exists |
+| Claude Code | `low`, `medium`, `high` (`xhigh`/`max` iff documented) | built-in Executor tuple (not highest/xhigh unspecified); user-named Extra High wins if explicit | `high` | Host adapter after MVP; `/sb:agent-claude` already exists |
+| Pi | `low\|medium\|high\|xhigh` plus `max` if documented | built-in Executor tuple (not highest/xhigh unspecified); user-named Extra High wins if explicit | `high` | Honor recorded `{model,effort}` when the key is available in the host/OS store or env (need not be in the same prefs JSON write); retire any hard MiMo pin in that case; prefs never store the key; configure from official docs |
+| OpenCode | as documented (`low\|medium\|high\|xhigh` and `max` if documented) | built-in Executor tuple (not highest/xhigh unspecified); user-named Extra High wins if explicit | `high` | Host adapter after MVP; `/sb:agent-opencode` already exists (rename in this ship) |
+| Goose / Hermes | as documented when the agent skill exists | built-in Executor tuple (not highest/xhigh unspecified); user-named Extra High wins if explicit | `high` | Include in the enum only when the corresponding `sb:agent-*` skill exists; nested-executor profile |
 
 First `/sb:init`, or any later init if any of the five preference keys is missing, collects those keys (not skip-forever).
 
@@ -1283,7 +1283,7 @@ The Advisor preference key is a **Board of Advisors**: one or more Advisor model
 **Generalized Board (quality-order roles).** The Advisor Board remains the default Board shape (one or more members; unify via Authorizer-admitted deny-all unifier leaf; Board of one still launches the unifier).
 
 - The same multi-member shape MUST be available on Orchestrator, Executor, Verifier, and Validator preference keys.
-- Multi-member mode is **Ladder** (default) or **Fusion**; both patterns are also public `/sb:ladder` and `/sb:fusion`. **Panel** (`/sb:panel`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Proposed architecture.
+- Multi-member mode is **Ladder** (default) or **Fusion**; both patterns are also public `/sb:ladder` and `/sb:fusion`. **Panel** (`/sb:panel`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Process router `/sb`, catalog generation, FAST vs Job.
 - A member MAY pin `host_native` or a specific `/sb:agent-*`; the host-native wrapper enforces external-agent duty parity.
 - Authorizer MUST NOT gain a preference key or Board.
 - Q-loop checker and code-review model default to the Advisor tuple / Consolidator identity unless the user set distinct optional override tuples at init (not new user-facing roles).
@@ -1595,7 +1595,7 @@ One-way rule (**non-trivial**): `/sb` work-spec + Advisor invoke → Advisor com
 - `hooks/lib/orchestrator-admission.sh` **requests** that projector to persist `context-refs-snapshot/` and is **not** a second packet writer.
 - Spawn-proxy jsonl child append and ancestor consume both go through `hooks/lib/sb-spawn-proxy.sh` (to-be-created; not a packet write; not raw Edit/Write).
 - Both helpers take `primary_checkout` (absolute path) as the sole write root for `.planning/` artifacts and do not write unless the write-root argument equals `$SB_PRIMARY_CHECKOUT` (process env `$SB_PRIMARY_CHECKOUT` when set is the primary even when it is not git's main worktree; git main-worktree is fallback only when env is unset); they do not trust the LLM envelope path alone.
-#### `blocked_corrupt_state` (worktree merge)
+#### `blocked_corrupt_state` (row 1)
 
 - Merge is `hooks/lib/orchestrator-worktree-merge.sh` (to-be-created; code-only: fail-closed `blocked_corrupt_state` on tracked ledger-omit diffs on `merge-base..worktree-branch` — not vs live primary HEAD — and/or filesystem presence of those paths in the extra tree; then `git merge --no-ff --no-commit` and restore ledger-omit paths from the pre-merge primary working-tree snapshot (not HEAD); after restore, `git commit` the merge (code-only) or `git merge --abort` on fail-closed oracle; every join including the first requires a clean index (no leftover `MERGE_HEAD`; `--no-ff` so a fast-forward cannot skip `MERGE_HEAD`); `git merge` has no pathspec;
 - never merge ledger bytes from the extra branch; after a successful extra-worktree merge, `graphify update` against `$primary_checkout` before Process-final Val; split-brain detection runs before merge and before Process-final Val).
@@ -2197,7 +2197,7 @@ The written Task is saved when work starts.
 - The launch envelope may embed JSON for hosts that accept only a string prompt; prompt-only delivery without the file is not sufficient.
 - The envelope always includes `primary_checkout` as an absolute path.
 - Missing `primary_checkout`, or a write-root that does not equal `$SB_PRIMARY_CHECKOUT` (process env `$SB_PRIMARY_CHECKOUT` when set is the primary even when it is not git's main worktree; git main-worktree is fallback only when env is unset), is fail-closed: no helper write, no host spawn (`blocked_launch_prompt_spec`).
-#### `blocked_launch_prompt_spec`
+#### `blocked_launch_prompt_spec` (row 4)
 
 - When the extra-worktree heuristic created a tree, the envelope also includes `worktree_cwd` as **envelope metadata** (absolute extra-tree path, distinct from `primary_checkout`; not inner-prompt bytes; not a `prompt_hash` input; Authorizer `launch_intent` **declares** it as the absolute path / tree id matching hashed work-spec `scope_bounds` / WBS tree assignment; the ancestor **stamps** envelope/jsonl `worktree_cwd` at consume **or at nested-Task launch** (pre-persisted descendants; no parent-proxy consume) to that declared value;
 - mismatch vs admit or vs hashed `scope_bounds`/WBS tree is fail-closed `blocked_launch_prompt_spec` (row 4) — stale/tampered cwd must not retain valid hashes + admission **and must not bypass row 4 because consume never ran**); missing `worktree_cwd` in that case is the same fail-closed outcome.
@@ -2240,7 +2240,7 @@ Example: Task “Add a login page” is saved at start. A later rewrite to “Ad
 #### Advisor compose
 
 - Advisor composes the **initial user-intent** wrapping Workflow (pre-existing or new) and puts it in the **Work Plan**.
-- Direct `sb:<route>` / AF invokes still wrap as specified in §4.2 Proposed architecture (work-spec + Advisor invoke, or catalog dispatch of an already-existing AF/WF id).
+- Direct `sb:<route>` / AF invokes still wrap as specified in §4.2 Process router `/sb`, catalog generation, FAST vs Job (work-spec + Advisor invoke, or catalog dispatch of an already-existing AF/WF id).
 - **Exception:** resolve of `WF-SILVER-NEW-WORKFLOW` is **Advisor-compose-gated** (work-spec + Advisor invoke); catalog dispatch of this already-existing id without Advisor is row 39 (`type: precomposed` does **not** mean skip-Advisor for this route).
 - **Do not** catalog the six-role quality order as an Atomic Flow or Workflow (no `AF-meta-six-role` or equivalent).
 - The six-role loop remains Process quality order.
@@ -2254,7 +2254,7 @@ Example: Task “Add a login page” is saved at start. A later rewrite to “Ad
 #### Composition Validation-loop
 
 - Creating a **new PUB-01 definition / new catalog WF record** mid-I is **out of plan** → `blocked_executor_wf_out_of_plan` (row 40) → Advisor re-compose + composition-Val + plan-time Val **re-bind** the closure before Executor resumes.
-#### `blocked_corrupt_state` (row 1 remint)
+#### `blocked_corrupt_state` (row 1)
 
 - Executor admission of the replacement revision is bound to current `definition_closure_hash` / `composition_generation` (or equivalent named stamps); composition remint **mints a new `launch_id`** for that Executor replacement revision (same exception class as Val-fail 9a–9c / Process-scope dirty); **before** admitting the replacement, revoke the old `launch_id`'s Authorizer-bound lease, capabilities, callbacks, and expected writes/effects (same bind-at-launch model); admission payload **includes** `definition_closure_hash` + `composition_generation`; conflicting payload on the **old** `launch_id` stays blocked (CORR-17 fence);
 - observable post-revoke effects after remint are `blocked_corrupt_state` (row 1); a live-but-fenced old Executor is not row 1; the new `launch_id` carries the re-bound closure; do not ack generation-N as a duplicate of generation-N+1. A resume that does not carry the re-bound closure is not admitted.
@@ -2401,7 +2401,7 @@ After each generating hop that emits a work spec, analysis, design, plan, or cod
 
 #### Unified thermos code review
 
-- After Advisor is satisfied with Executor **code** (A-loop two-clean), run the **unified SB code-review** (thermos-absorbed; see §4.2 Proposed architecture); Executor fixes remaining non-wrong findings.
+- After Advisor is satisfied with Executor **code** (A-loop two-clean), run the **unified SB code-review** (thermos-absorbed; see §4.2 Process router `/sb`, catalog generation, FAST vs Job); Executor fixes remaining non-wrong findings.
 - When a hop’s role has multiple models, run **Ladder** (default) or **Fusion** as specified for that task; quality-order Ladder fix = preceding role; Fusion Consolidator is the hop’s final role-player.
 - After Process-final Val vs user intent **passes**, Executor performs Job-scope K/L capture and key-doc revision; Advisor reviews and Verifier verifies that hop (no second Process-final Val; Q-loop/thermos skip unless code was emitted).
 
@@ -2744,7 +2744,7 @@ Canonical MUST text:
 - **Generalized multi-model roles — Ladder, Fusion, and Panel (live-spec MUST)** — full lock: [LS-ladder-parallel](#ls-ladder-parallel) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut. **Panel** (`/sb:panel` / `/sb:panel-end`) is specified in that same catalog entry (Job collaboration pattern; not FAST).
 - **Per-member `/sb:agent-*` pin (live-spec MUST)** — full lock: [LS-agent-pin](#ls-agent-pin) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut. Slug/consent for those leaves: absorbed omni origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` (WS6 named slice).
 - **Retire `/silver:multi-ai-task` with no transition (live-spec MUST)** — full lock: [LS-retire-multi-ai](#ls-retire-multi-ai) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
-Architecture implications remain in §4.2 Proposed architecture (after pointers) and in Roles / Board above.
+Architecture implications remain in §4.2 Process router `/sb`, catalog generation, FAST vs Job (after pointers) and in Roles / Board above.
 
 ### 4.7 Workflow evolution (`/sb:improve`, `/sb:contribute`)
 
@@ -4035,7 +4035,7 @@ YAML todo → test → WS map lives in **one** place: [Appendix B](#b-yaml-todo-
 - missing `worktree_cwd` when the heuristic created a tree is fail-closed (mismatch vs `launch_intent`-declared value or vs hashed `scope_bounds`/WBS tree is the same fail-closed row 4)), five-tool query/path/explain/update/export and PreToolUse/PostToolUse gates (`graphify-gate`, `agentmemory-gate`, `rtk-gate`, `context-mode-gate`, `leanctx-gate`, `token-compression-tools-gate`) use `$primary_checkout` as the tool/index root not session cwd, session-start on the Task-capable ancestor exports process env `SB_PRIMARY_CHECKOUT` for subsequent hooks in that ancestor session (not a documented descendant Task env; extra-tree child bind is env or `rt_git_main_worktree_root`;
 - LPS-01 must not fail solely on missing descendant env when main-worktree resolves; on Cursor extra-tree isolation requires operator primary == git main-worktree so the env-unset fallback **is** primary (if operator primary is a non-main linked worktree, TAT does not create extra trees — same-tree isolation only; do not invent a Cursor Task env API)).
 
-#### `blocked_corrupt_state` (specified risks)
+#### `blocked_corrupt_state` (row 1)
 
 - Per-child `SB_WORKTREE_CWD` is not required in process env, if five-tool is opted in at that primary and the gate cannot resolve process env `SB_PRIMARY_CHECKOUT` when set, else cannot resolve `rt_git_main_worktree_root` (git main-worktree is fallback only when env is unset) the gate blocks rather than skipping on a missing local `.silver-bullet.json` walk from extra-tree cwd — process env `SB_PRIMARY_CHECKOUT` (or alias not pointing at extra-tree) **is** the primary even when it is not git's main worktree; git main-worktree (`rt_git_main_worktree_root`) is fallback **only when env is unset**;
 - extra-tree cwd still must not win — that env-or-fallback always binds even when extra-tree cwd still has `.silver-bullet.json` + `silver-bullet.md`; PWD config walk must not win; `hooks/lib/sb-project-gate.sh` honors `SB_PRIMARY_CHECKOUT` (and `SILVER_BULLET_PROJECT_ROOT` as an alias of `SB_PRIMARY_CHECKOUT` (when set, that path is the primary even when it is not git's main worktree; git main-worktree is fallback only when env and alias are unset); if the alias points at an extra-tree (heuristic overlap worktree) path, treat it as unset and do not bind extra-tree) before PWD; Skip = no deny JSON + exit 0; Block = existing `emit_block` deny JSON + exit 0 (Cursor PreToolUse) / exit 2 (Kay);
