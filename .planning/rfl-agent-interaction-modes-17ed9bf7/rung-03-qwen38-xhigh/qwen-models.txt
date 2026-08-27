@@ -1,0 +1,15 @@
+total_models_lines=41 qwen_lines=4
+opencode-go/qwen3.6-plus
+opencode-go/qwen3.7-max
+opencode-go/qwen3.7-plus
+opencode-go/qwen3.8-max
+--- help keywords ---
+variant idx=2470
+xhigh idx=-1
+effort idx=2526
+model idx=1197
+auto idx=2871
+--- help lines ---
+  -m, --model        model to use in the format of provider/model                           [string]
+      --variant      model variant (provider-specific reasoning effort, e.g., high, max, minimal)
+      --auto         auto-approve permissions that are not explicitly denied (dangerous!)

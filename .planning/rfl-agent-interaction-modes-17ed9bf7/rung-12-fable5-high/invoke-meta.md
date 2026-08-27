@@ -1,0 +1,21 @@
+# Invoke metadata — RFL rung 12 Fable 5 High (REVIEW ONLY, retry)
+
+- Skill: `skills/silver-agent-claude/SKILL.md` (`/silver:agent-claude`)
+- Path: `bash scripts/agent-claude/invoke.sh --skip-preflight --use-print --mode strict`
+- Model: `CLAUDE_MODEL=claude-fable-5` (CLI help alias: `fable`; full name: `claude-fable-5`)
+- Effort: `CLAUDE_EFFORT=high` (CLI levels: low|medium|high|xhigh|max; not Fast; not Extra High)
+- Permission: `CLAUDE_PERMISSION_MODE=plan`
+- Print: `--use-print` → `CLAUDE_USE_INTERACTIVE=0` (non-PTY NI). Brief does **not** start with `/silver:` so adapter stays on `--print`.
+- Lightweight: `SB_AGENT_CLAUDE_LIGHTWEIGHT=1`
+- Direct fallback: `SB_AGENT_DELEGATE_DIRECT_FALLBACK=1` (no nested Task worker; parent is this rung agent)
+- Settings export: `CLAUDE_PRINT_SKIP_SETTINGS_EXPORT=1` (missing `scripts/lib/claude-matrix-auth.sh`)
+- Timeout: `CLAUDE_INTERACTIVE_TIMEOUT=900`
+- Quota retries: `AGENT_CLAUDE_QUOTA_RETRY_MAX=1` (spend-limit is not a 429)
+- Work dir: `/Users/shafqat/projects/silver-bullet/repo`
+- Branch intent: **main** (do not switch; no commit). Current HEAD is detached rebase of main at `1569b060`.
+- Plan: `.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md`
+- Plan SHA256: `5192423a986d602beb4170d3cdf474e7e573974d14666afc2d9da577b894501e` (415 lines)
+- Brief: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-12-fable5-high/brief.md`
+- Log: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-12-fable5-high/claude-run.log`
+- Prior blocked wave: `.planning/rfl-agent-interaction-modes-17ed9bf7/rung-12-fable5-high/prior-blocked-20260824/`
+- **No Opus remap.** No Fast. No Grok. No Extra High.

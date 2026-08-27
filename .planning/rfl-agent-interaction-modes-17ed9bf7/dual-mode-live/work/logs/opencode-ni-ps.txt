@@ -1,0 +1,5 @@
+76723 /Users/shafqat/.opencode/bin/opencode run --dir .planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work -m opencode-go/mimo-v2.5 --auto --auto Reply with exactly the word pong and nothing else. Do not use tools.
+76723 /Users/shafqat/.opencode/bin/opencode run --dir .planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work -m opencode-go/mimo-v2.5 --auto --auto Reply with exactly the word pong and nothing else. Do not use tools.
+76723 /Users/shafqat/.opencode/bin/opencode run --dir .planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work -m opencode-go/mimo-v2.5 --auto --auto Reply with exactly the word pong and nothing else. Do not use tools.
+76723 /Users/shafqat/.opencode/bin/opencode run --dir .planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work -m opencode-go/mimo-v2.5 --auto --auto Reply with exactly the word pong and nothing else. Do not use tools.
+76723 /Users/shafqat/.opencode/bin/opencode run --dir .planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work -m opencode-go/mimo-v2.5 --auto --auto Reply with exactly the word pong and nothing else. Do not use tools.
