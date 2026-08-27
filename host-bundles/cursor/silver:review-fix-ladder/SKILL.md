@@ -60,26 +60,43 @@ After each rung's review, the agent that launched the RFL applies ACCEPT fixes. 
 
 ### Policy C — launcher reports after every rung
 
+These launcher steps are **mandatory**. **Artifact-first:** write/validate Policy C via the encoder, then paste encoder stdout to the user.
+
 After each rung's review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) must message the user with a severity-grouped update. Do this after every rung, not only at family or ladder end. Do not dump raw review.md.
 
-These launcher steps are **mandatory** (not optional prose). The **RFL launcher agent** (parent, not the rung model) MUST:
 
-1. Present reported issues as a **table grouped by severity** (HIGH / MED / LOW / NIT). Empty groups still show **none**.
-2. **Triage** the issues (Policy A: wrong vs not wrong). The rung model does not triage.
-3. Present a **triage table** (accepted vs rejected/invalid + reason).
-4. **Fix** accepted issues (Edit/Write). The rung model does not implement.
-5. After fixes, present the table again with a **Resolved** column.
+Canonical files (both): `.planning/rfl-<id>/rung-NN-*/POLICY-C.json` and `POLICY-C.md`.
 
-Encoder: `python3 scripts/review-fix-ladder.py --issue-table|--triage-table|--resolved-table|--launcher-steps`.
+MUST include a **table grouped by severity** (empty groups still `"none"`), a **triage table**, and after APPLY a **Resolved** column:
 
-The update MUST also include:
+1. Rung identity (family + High / Extra High / Max)
+2. Verdict: CLEAN | NOT CLEAN | BLOCKED | SKIPPED
+3. Issue table grouped HIGH / MED / LOW / NIT
+4. Triage table: ACCEPT vs REJECT-as-wrong + reason (or n/a if no findings)
+5. **Blockers / Highs / Mediums** (or none)
+6. Disposition: ACCEPT-apply | REJECT-as-wrong | HOLD | SKIP
+7. After APPLY: resolved table (`pending` only while `rung_N_fix_parallel`)
 
-- **Rung identity** — family + High / Extra High / Max
-- **Verdict** — CLEAN or NOT CLEAN
-- **Blockers / Highs / Mediums** — map onto HIGH / MED; LOW and NIT have their own groups — one line or table row each finding, or **none**
-- **Disposition** — whether findings are being ACCEPT-applied before the next rung, or REJECT-as-wrong (with why)
+```bash
+python3 scripts/review-fix-ladder.py --write-policy-c --rung-dir .planning/rfl-<id>/rung-NN-*/ --table-json-file POLICY-C.json
+python3 scripts/review-fix-ladder.py --assert-policy-c --rung-dir .planning/rfl-<id>/rung-NN-*/
+python3 scripts/review-fix-ladder.py --assert-rfl-advance --run-dir .planning/rfl-<id>/
+python3 scripts/review-fix-ladder.py --issue-table|--triage-table|--resolved-table|--launcher-steps
+```
 
-CLEAN with no findings still gets the three **none** lines. Empty HIGH / MED / LOW / NIT groups still show **none**. The severity-grouped list is the update.
+CLEAN with no findings still gets the three **none** lines. FORBIDDEN: short verdict-only chat. FORBIDDEN: waiting until family/ladder end. FORBIDDEN: dumping raw review.md. Physical gate: `hooks/rfl-policy-c-gate.sh` + stop-check deny when `--assert-policy-c` / `--assert-rfl-advance` fail for an active `LADDER-STATUS.json`.
+
+Sibling asserts (same encoder / gate; reuse `LADDER-STATUS.json` + `rfl_quota_retry.py`):
+
+| Step | Artifact | Gate |
+|------|----------|------|
+| Policy C | `POLICY-C.json` + `.md` | before next phase |
+| BLOCKED / quota | `BLOCKED.md` + `QUOTA-CLASSIFY.json` (`should_schedule`) | before next rung or substitute |
+| Skip after retry-once | `SKIPPED.md` | before starting N+1 |
+| STOP / compliance | `STOP.md` with which check failed | block advance |
+| ACCEPT apply | `APPLY.md` or resolved table complete | before `rung_{N+1}_review` |
+| Two verifies | `verify-1.md` + `verify-2.md` (or BLOCKED/SKIPPED) | before N+1 |
+
 
 ### Policy D — ladder-complete matrix (HARD)
 
@@ -167,7 +184,7 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 |-------|----------------|
 | Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep — **or** the previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded |
 | Review/triage separation | Review subagent did **not** triage or fix; launcher/parent triaged with Policy A (wrong vs not wrong), not the rung model |
-| Per-rung user report | After review returned, launcher posted the mandatory Policy C tables (issue table by HIGH/MED/LOW/NIT, triage table, then resolved table after ACCEPT fixes) plus a severity-grouped Blockers / Highs / Mediums update (or **none**) to the user; did this after every rung, not only at family or ladder end; did not dump raw review.md |
+| Per-rung user report | After review returned, `POLICY-C.json` + `POLICY-C.md` exist and `python3 scripts/review-fix-ladder.py --assert-policy-c --rung-dir <rung>` exits 0; launcher pasted encoder stdout (not a short verdict). Gate: `hooks/rfl-policy-c-gate.sh` |
 | PM filing evidence | When PM tracking is in use, ACCEPT findings filed or deduped via `/silver:add`; triage table lists PM ids. Does not delay launcher ACCEPT application |
 | Fix owner | Launcher/parent applied ACCEPT fixes (Edit/Write); the rung model did **not** implement; did not re-ask the same rung to patch after NOT CLEAN |
 | Separate verify invocations | `verify_1` and `verify_2` were **separate** subagent `Task` calls — not one combined prompt |
@@ -202,7 +219,7 @@ STOP and do **not** advance when any of the following is true:
 8. **Final rung complete** — the last resolved rung completed `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
 9. **User stop** — user directs halt or scope change
 10. **Unapplied ACCEPTs** — next rung started before the launcher applied ACCEPTs (or recorded REJECT-as-wrong)
-11. **Skipped Policy C report** — review returned without the mandatory launcher tables (issue table by HIGH/MED/LOW/NIT, triage table, resolved table after fixes) and Blockers / Highs / Mediums (or **none**)
+11. **Skipped Policy C report** — review returned without `POLICY-C.json` / `POLICY-C.md`, or `--assert-policy-c` fails; write `STOP.md` with `check: policy_c` and do not advance
 12. **Leftover-cycle cap** — five leftover Policy B cycles on the same rung verify without CLEAN; escalate the remaining `file:line` list instead of a sixth one-line patch
 
 ### Recovery Procedure (before resuming)
@@ -242,7 +259,7 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
    - **FORBIDDEN** to advance after only one clean verify pass.
    - **FORBIDDEN** for review subagent to triage or fix its own findings.
    - **FORBIDDEN** to reject a finding as "advisory", "doc-only", "documentation nit", "non-gating", "nice-to-have", "not a contract hole", "CLEAN so ignore mediums", "CLEAN for ladder purposes", or "non-blocking nit".
-   - **FORBIDDEN** to skip the per-rung Policy C user update, to wait until family or ladder end, or to dump raw review.md in place of the severity-grouped list.
+   - **FORBIDDEN** to skip the per-rung Policy C artifact (`--write-policy-c` / `--assert-policy-c`), to wait until family or ladder end, or to dump raw review.md / a short verdict in place of encoder stdout. The harness denies the next Task/Stop when the assert fails.
 
 3. **Verify-only passes** — Subagents on verify passes MUST NOT edit files. Use `readonly: true` on the host `Task` tool or explicit "verify only, no edits" in the prompt. **FORBIDDEN** for verify subagents to apply fixes.
 
@@ -265,7 +282,7 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 | Step | State | Action |
 |------|-------|--------|
 | 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only). **Cursor:** subscription-first for GPT/Claude (see Host Delegation); otherwise `Task(subagent_type=<subagent_name>)` |
-| 2 | `rung_N_triage` | **Policy C (mandatory):** launcher presents HIGH/MED/LOW/NIT issue table, triages, presents triage table (accepted vs rejected + reason), applies ACCEPT fixes, then presents the resolved table. Also message rung identity, verdict, Blockers / Highs / Mediums (or **none**), and ACCEPT-apply vs REJECT-as-wrong. Do **not** spawn the rung model to classify or reject as "advisory". Do this after every rung. Do not dump raw review.md. |
+| 2 | `rung_N_triage` | **Policy C (mandatory, artifact-first):** `--write-policy-c` then `--assert-policy-c` (paste encoder stdout). Do **not** spawn the rung model to classify. Do not dump raw review.md or a short verdict. |
 | 3 | `rung_N_file_valid_issues` | Orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use; record PM ids in triage table |
 | 4 | `rung_N_fix_parallel` | Launcher/parent applies ACCEPT fixes (Edit/Write), including every finding that is not wrong (**Low, deferred, nitpicks, and minor** if still applicable). **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch; **FORBIDDEN** to skip a still-valid nit because the rung was CLEAN or the item is a "non-blocking nit" |
 | 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
@@ -408,7 +425,7 @@ FORBIDDEN behaviors:
 
 ### Template A2 — Triage (`rung_N_triage`)
 
-Launcher / parent of the ladder triages **in-session** (not the rung model). Do **not** spawn the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to classify findings. After review returns, post the Policy C user update first (mandatory issue table → triage → triage table → fix → resolved table).
+Launcher / parent of the ladder triages **in-session** (not the rung model). Do **not** spawn the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to classify findings. After review returns, write Policy C via `--write-policy-c`, `--assert-policy-c`, then paste encoder stdout (mandatory issue table → triage → triage table → fix → resolved table).
 
 ```
 Phase: TRIAGE (rung_N_triage) — launcher/parent, NOT rung model

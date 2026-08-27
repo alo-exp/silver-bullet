@@ -16,7 +16,8 @@ trap 'exit 0' ERR
 #   1. jq-missing warning          (fail-open, visible)
 #   2. ERR trap                    (fail-open, visible)
 #   3. No .silver-bullet.json      (fail-open — project not using SB)
-#   4. Trivial bypass              (lib/trivial-bypass.sh)
+#   4. RFL Policy C gate           (active LADDER-STATUS.json only)
+#   5. Trivial bypass              (lib/trivial-bypass.sh)
 #   5. HOOK-14 read-only gate      (fail-open — fixes #14, hardened #17)
 #   6. HOOK-04 empty state         (fail-open — non-dev session)
 #   7. Required-skills check       (block or exit 0)
@@ -165,6 +166,24 @@ if [[ -f "$lib_dir/phase-path.sh" ]]; then
   source "$lib_dir/phase-path.sh"
   if declare -f _phase_lock_peek_on_exit >/dev/null 2>&1; then
     trap _phase_lock_peek_on_exit EXIT
+  fi
+fi
+
+# ── RFL Policy C / failure-management (active LADDER-STATUS.json only) ──────
+# Blocks session end when rung_N_review has returned without POLICY-C.
+# Fail-open when no active RFL run exists (do not false-positive every chat).
+if [[ -f "$lib_dir/rfl-policy-c-assert.sh" ]]; then
+  # shellcheck source=lib/rfl-policy-c-assert.sh
+  source "$lib_dir/rfl-policy-c-assert.sh"
+  _rfl_root="${search_dir:-$PWD}"
+  if [[ "${SB_ORCHESTRATOR_WORKER:-}" != "1" ]] && ! sb_rfl_policy_c_gate_disabled && sb_rfl_policy_c_has_active_run "$_rfl_root"; then
+    _rfl_json=""
+    if ! _rfl_json="$(sb_rfl_policy_c_run_assert "$_rfl_root" stop "")"; then
+      _rfl_reason="$(sb_rfl_policy_c_reason_from_json "$_rfl_json")"
+      _rfl_json_reason=$(printf '%s' "$_rfl_reason" | jq -Rs '.')
+      printf '{"decision":"block","reason":%s}' "$_rfl_json_reason"
+      exit 0
+    fi
   fi
 fi
 

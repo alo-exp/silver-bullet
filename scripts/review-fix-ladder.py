@@ -57,7 +57,7 @@ _impl.decide_launch = decide_launch  # type: ignore[method-assign]
 
 
 def main() -> int:
-    pre = argparse.ArgumentParser(add_help=False)
+    pre = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
     pre.add_argument("--model")
     _rfl_policy.add_policy_arguments(pre)
     known, _rest = pre.parse_known_args()

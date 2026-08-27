@@ -88,7 +88,7 @@ assert_jq_true "OpenCode skip-artifact after retry records Grok substitute" \
 # --- mandatory launcher tables ---
 steps="$(python3 "$RESOLVER" --launcher-steps)"
 assert_jq_true "launcher mandatory steps include issue/triage/resolved/matrix" \
-  '.steps == ["issue_table","launcher_triage","triage_table","launcher_fix","resolved_table","ladder_complete_matrix"]' \
+  '.steps == ["policy_c_artifact","issue_table","launcher_triage","triage_table","launcher_fix","resolved_table","ladder_complete_matrix"]' \
   "$steps"
 
 issues_json='[{"id":"H1","severity":"HIGH","title":"broken lock"},{"id":"M1","severity":"MED","title":"missing table"},{"id":"L1","severity":"LOW","title":"typo"},{"id":"N1","severity":"NIT","title":"nitpick"}]'
