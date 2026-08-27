@@ -131,6 +131,12 @@ def resolve_rung_dir(run_dir: Path, rung_dir: Path | str | None = None) -> Path 
         as_path = Path(current)
         if as_path.is_dir():
             return as_path
+        if current.isdigit():
+            number = int(current)
+            for path in list_rung_dirs(run_dir):
+                name = path.name
+                if name.startswith(f"rung-{number:02d}-") or name.startswith(f"rung-{number}-"):
+                    return path
     rungs = list_rung_dirs(run_dir)
     missing = [path for path in rungs if review_returned(path) and not policy_c_json_path(path).is_file()]
     if missing:
@@ -366,12 +372,17 @@ def _render_resolved_table(rows: list[dict[str, Any]]) -> str:
     return render_resolved_table(rows)
 
 
-def write_policy_c(rung_dir: Path, payload: dict[str, Any]) -> dict[str, Any]:
+def write_policy_c(
+    rung_dir: Path,
+    payload: dict[str, Any],
+    *,
+    current_phase: str | None = None,
+) -> dict[str, Any]:
     root = Path(rung_dir)
     root.mkdir(parents=True, exist_ok=True)
     data = dict(payload)
     data.setdefault("schema", POLICY_C_SCHEMA)
-    errors = validate_policy_c(data)
+    errors = validate_policy_c(data, current_phase=current_phase)
     json_path, md_path = policy_c_paths(root)
     json_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     md = render_policy_c_md(data)

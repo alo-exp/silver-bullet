@@ -85,7 +85,7 @@ python3 scripts/review-fix-ladder.py --assert-rfl-advance --run-dir .planning/rf
 python3 scripts/review-fix-ladder.py --issue-table|--triage-table|--resolved-table|--launcher-steps
 ```
 
-CLEAN with no findings still gets the three **none** lines. FORBIDDEN: short verdict-only chat. FORBIDDEN: waiting until family/ladder end. FORBIDDEN: dumping raw review.md. Physical gate: `hooks/rfl-policy-c-gate.sh` + stop-check deny when `--assert-policy-c` / `--assert-rfl-advance` fail for an active `LADDER-STATUS.json`.
+CLEAN with no findings still gets the three **none** lines. FORBIDDEN: short verdict-only chat. FORBIDDEN: waiting until family/ladder end. FORBIDDEN: dumping raw review.md. Physical gate: `hooks/rfl-policy-c-gate.sh` + stop-check deny when `--assert-policy-c` / `--assert-rfl-advance` fail for an active `LADDER-STATUS.json`. New ladders MUST `--mark-ladder-status active` at start or the live run is invisible to the gate.
 
 Sibling asserts (same encoder / gate; reuse `LADDER-STATUS.json` + `rfl_quota_retry.py`):
 
@@ -110,6 +110,7 @@ Last row MUST be **TOTAL** summing HIGH, MED, LOW, NIT, Reported, and Accepted. 
 Severity columns = reported counts; **Accepted** = after launcher triage (rejects excluded). Footnote ID collisions / CLEAN rungs / skipped-then-retried rungs.
 
 Encoder: `python3 scripts/review-fix-ladder.py --ladder-matrix`.
+At ladder start (before rung 1 review), persist durable status so the Policy C gate can see the run: `python3 scripts/review-fix-ladder.py --mark-ladder-status active --run-dir .planning/rfl-<id>/ --rung-id <rung-dir-or-N> --current-phase <phase>`. New ladders MUST do this — a missing `LADDER-STATUS.json` makes an in-flight ladder invisible to `--assert-rfl-advance` auto-discovery.
 When the ladder finishes or aborts, persist durable status so a later quota retry can detect “already over”: `python3 scripts/review-fix-ladder.py --mark-ladder-status completed --run-dir .planning/rfl-<id>/` (or `aborted`). Quota-retry activation uses `LADDER-STATUS.json` plus Policy D artifacts.
 
 ## When to Use
