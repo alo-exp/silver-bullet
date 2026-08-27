@@ -29,6 +29,8 @@ agent_mode_reset() {
   SB_AM_MAX_WALL_SEC=""
   SB_AM_IDLE_SEC=""
   SB_AM_TASK_ID=""
+  SB_AM_QUOTA_RETRY=0
+  SB_AM_SKIP_PREFLIGHT=0
   SB_AM_PERMISSION_MODE=""
   SB_AM_CLASSIFIED=""
   SB_AM_RESOLVED=""
@@ -235,6 +237,14 @@ agent_mode_handle_flag() {
     --task-id)
       SB_AM_SHIFT=2
       SB_AM_TASK_ID="$value"
+      return 0
+      ;;
+    --quota-retry)
+      SB_AM_QUOTA_RETRY=1
+      return 0
+      ;;
+    --skip-preflight)
+      SB_AM_SKIP_PREFLIGHT=1
       return 0
       ;;
     --delegation-mode)
@@ -648,11 +658,8 @@ agent_mode_tui_available() {
       return 0
       ;;
     cursor)
-      # Session transport: available when CLI can reuse a conversation/session id,
-      # or the test/harness override is set. Probe is opt-in via env.
-      if [[ "${SB_AGENT_CURSOR_SESSION_AVAILABLE:-}" == "1" ]]; then
-        return 0
-      fi
+      command -v cursor-agent >/dev/null 2>&1 && return 0
+      command -v agent >/dev/null 2>&1 && return 0
       return 1
       ;;
     pi)
@@ -666,35 +673,7 @@ agent_mode_tui_available() {
 }
 
 agent_mode_pi_tui_probe() {
-  local cli
-  cli="$(command -v pi 2>/dev/null || true)"
-  [[ -n "$cli" ]] || return 1
-  python3 - "$cli" <<'PY'
-import subprocess, sys
-cli = sys.argv[1]
-try:
-    proc = subprocess.Popen(
-        [cli],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-except Exception:
-    sys.exit(1)
-try:
-    out, _ = proc.communicate(timeout=2)
-except subprocess.TimeoutExpired:
-    proc.kill()
-    out = b""
-    try:
-        out, _ = proc.communicate(timeout=1)
-    except Exception:
-        pass
-text = (out or b"").decode("utf-8", "replace").lower()
-if any(tok in text for tok in ("banner", "status", "repl", "interactive", "session")):
-    sys.exit(0)
-sys.exit(1)
-PY
+  command -v pi >/dev/null 2>&1
 }
 
 agent_mode_drop_interactive_only_flags() {
@@ -1176,6 +1155,21 @@ agent_mode_run_delegate_resolver() {
   local task_dir="${SB_AGENT_TASK_DIR:-${work_dir}/.planning/agent-${host}/${task_id}}"
   mkdir -p "$task_dir"
   printf '%s' "$brief" >"${task_dir}/brief.md"
+  # Pinned NI: persist mode.json and return — no classify / D3 / TUI / D4.
+  if [[ "$SB_AM_CONCRETE_PIN" -eq 1 && "$SB_AM_REQUESTED" == "non-interactive" ]]; then
+    SB_AM_HOST="$host"
+    SB_AM_TASK_DIR="$task_dir"
+    SB_AM_REASONS=()
+    SB_AM_DROPPED=()
+    SB_AM_CLASSIFIED=""
+    SB_AM_RESOLVED="non-interactive"
+    SB_AM_D3_SIGNAL=""
+    agent_mode_reason_append "pin"
+    agent_mode_persist_mode_json "$task_dir"
+    agent_mode_prepare_artifact_dir "$host" "$work_dir" >/dev/null
+    agent_mode_apply_host_launch_env "$host"
+    return 0
+  fi
   agent_mode_resolve_mode "$host" "$task_dir" "$brief" "$utterance" || return $?
   agent_mode_post_classify_conflicts || return $?
   if [[ "$SB_AM_RESOLVED" == "interactive" && -z "$SB_AM_AUTO_POLICY" ]]; then

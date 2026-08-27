@@ -192,15 +192,19 @@ matrix_mode = os.environ.get("SB_E2E_ENTERPRISE_MATRIX") == "1"
 delegate_stream = os.environ.get("SB_AGENT_CURSOR_STREAM_JSON") == "1"
 output_format = "stream-json" if (matrix_mode or delegate_stream) else "text"
 
+interactive = os.environ.get("CURSOR_AGENT_INTERACTIVE") == "1" or os.environ.get("SB_AGENT_CURSOR_SESSION") == "1" or os.environ.get("SB_AGENT_RESOLVED_MODE") == "interactive"
+resume = os.environ.get("CURSOR_AGENT_RESUME") or ""
 args = [
     cli,
-    "--print",
     "--trust",
     "--force",
     "--workspace", os.getcwd(),
-    "--output-format", output_format,
 ]
-if matrix_mode or delegate_stream:
+if not interactive:
+    args.extend(["--print", "--output-format", output_format])
+elif resume:
+    args.extend(["--resume", resume])
+if (not interactive) and (matrix_mode or delegate_stream):
     args.append("--stream-partial-output")
 if model:
     args.extend(["--model", model])

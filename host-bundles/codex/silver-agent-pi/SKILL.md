@@ -234,7 +234,7 @@ Sidekick-inspired **single-task** lifecycle:
 | Class | Signals | Parent action |
 |-------|---------|---------------|
 | **Stuck** | Idle timeout, no post-submit output | Re-brief with narrower scope; retry once |
-| **Quota (429)** | `rate limit`, `429`, `token plan` in log | delegate.sh retries automatically; if exhausted, schedule resume |
+| **Quota (429)** | `rate limit`, `429`, `token plan`, `5-hour usage limit` in log | short 60s retries only for unknown/transient 429; 5-hour/weekly/monthly fail-fast. RFL `--schedule-quota-retry` after classify (arms at/launchd + SessionStart wake); `--quota-retry-wake` retries the same model if the ladder is still active, else asks the user via QUOTA-RETRY-ASK.md |
 | **Auth** | `auth`, `login`, `not logged in` | Stop — user must refresh Pi credentials; do not rotate keys in prompt |
 | **OmniRoute/OpenCode 401** | `401`, `Missing API key`, `invalid_api_key` after attempt + one retry | Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as unspecified default. Do not skip-failed. |
 | **Model policy** | `PI_PROVIDER must be opencode-go` / `PI_MODEL must be mimo-v2.5` | Fix env — harness enforces pin; do not override in brief |

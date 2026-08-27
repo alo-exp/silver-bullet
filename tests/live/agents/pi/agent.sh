@@ -47,14 +47,42 @@ agent_invoke() {
   tail_idle="${PI_RUN_TAIL_IDLE_TIMEOUT:-45}"
   log_file="${CLAUDE_INTERACTIVE_LOG_FILE:-${PI_RUN_LOG_FILE:-}}"
 
-  args=(-p --provider "$provider" --model "$model")
-  if [[ "$mode" == "permissive" ]]; then
-    :
+  local use_interactive=0
+  if [[ "${PI_USE_INTERACTIVE:-0}" == "1" || "${SB_AGENT_RESOLVED_MODE:-}" == "interactive" ]]; then
+    use_interactive=1
   fi
-  args+=("$prompt")
+
+  if [[ "$use_interactive" -eq 1 ]]; then
+    args=(--provider "$provider" --model "$model")
+  else
+    args=(-p --provider "$provider" --model "$model")
+    args+=("$prompt")
+  fi
 
   printf '{"type":"prompt.submitted","provider":"%s","model":"%s","work_dir":"%s"}\n' \
     "$provider" "$model" "$work_dir" >&2
+
+  if [[ "$use_interactive" -eq 1 ]]; then
+    local host_exec="${SB_ROOT:-${SCRIPT_DIR}/../../../..}/scripts/lib/agent-host-exec.sh"
+    if [[ -f "$host_exec" ]]; then
+      # shellcheck source=scripts/lib/agent-host-exec.sh
+      source "$host_exec"
+      output="$(agent_host_run_pty "pi" "$work_dir" "$prompt" "$mode" "$timeout")"
+      invoke_rc=$?
+      if [[ -n "$log_file" && "${SB_AGENT_PI_DELEGATE:-}" != "1" ]]; then
+        printf '%s' "$output" >"$log_file"
+      fi
+      printf '%s' "$output"
+      if [[ "$invoke_rc" -ne 0 ]]; then
+        printf 'ERROR: mode-unavailable\n' >&2
+        if declare -f agent_mode_fail_unavailable >/dev/null 2>&1; then
+          agent_mode_fail_unavailable "mode-unavailable"
+        fi
+        return 3
+      fi
+      return 0
+    fi
+  fi
 
   output="$(
     cd "$work_dir" && \
