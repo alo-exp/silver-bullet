@@ -7,7 +7,7 @@ overview: >
   implementation from it. Canonical locks live in the body: PRD (§2, including the §2.7
   LS-* MUST catalog), Analysis KEEP REJECT (§3), Architecture (§4), and Design/workstreams
   (§5). YAML todos are one-line pointers (23 original ids remain pending; 3 locked-clarify
-  adds; 5 OmniRoute / `/sb:agent-*` opt-in absorbed; 1 autonomous E2E order; 1 ladder-fusion-panel-compose; 1 sb-panel; 1 ap10-partial-emit). FAST equals classified-trivial: required `/sb:fast`, not a Job, not evolution;
+  adds; 5 OmniRoute / `/sb:agent-*` opt-in absorbed; 1 autonomous E2E order; 1 ladder-panel-panel-start-compose; 1 sb-panel-start; 1 ap10-partial-emit). FAST equals classified-trivial: required `/sb:fast`, not a Job, not evolution;
   short quality order Executor → Verifier → Validator. Non-trivial Jobs follow Process
   resolve → Advisor compose → nested I/A/Verification → Process-final Validation.
   Same ship: OmniRoute / `/sb:agent-*` opt-in is **absorbed** into this freeze (WS6 + LS-agent-pin + WS7 `/sb:doctor` setup/health/diagnosis/`--fix`).
@@ -23,7 +23,7 @@ todos:
     content: "WS0b key spec/analysis/architecture/design docs; after WS0, before WS1."
     status: pending
   - id: execution-registry
-    content: "Part A prereq: WS1 catalog/lock/schema emit (routes only, not quality-order runtime); include `/sb:panel` + `/sb:panel-end`."
+    content: "Part A prereq: WS1 catalog/lock/schema emit (routes only, not quality-order runtime); include `/sb:panel-start` + `/sb:panel-end`."
     status: pending
   - id: capability-contract
     content: "Part A prereq: WS3 retry-safe admission, sequenced ingress, reconciliation."
@@ -56,16 +56,16 @@ todos:
     content: "Part B: post-Val Executor K/L + key-doc hop after Part A Process-final Val; LS-post-val-kl."
     status: pending
   - id: generalized-role-boards
-    content: "Part B: multi-model Ladder/Fusion/Panel overlay on Part A roles; `/sb:ladder`; LS-ladder-parallel / WS4."
-    status: pending
-  - id: sb-fusion
-    content: "Part B: public `/sb:fusion` Job + compose; Consolidator unifies then ends member sessions; invokes Part A."
+    content: "Part B: multi-model Ladder/Panel/Panel-start overlay on Part A roles; `/sb:ladder`; LS-ladder-parallel / WS4."
     status: pending
   - id: sb-panel
-    content: "Part B: public `/sb:panel` Job + `/sb:panel-end`; interactive member sessions; WS1 routes / WS4 Job / WS7 docs; not FAST."
+    content: "Part B: public `/sb:panel` Job + compose; Consolidator unifies then ends member sessions; invokes Part A."
     status: pending
-  - id: sb-ladder-fusion-panel-compose
-    content: "Part B: `/sb:ladder|fusion|panel <route>` any Job WF/AF; inner route uses Part A; FAST not a legal route."
+  - id: sb-panel-start
+    content: "Part B: public `/sb:panel-start` Job + `/sb:panel-end`; interactive member sessions; WS1 routes / WS4 Job / WS7 docs; not FAST."
+    status: pending
+  - id: sb-ladder-panel-panel-start-compose
+    content: "Part B: `/sb:ladder|panel|panel-start <route>` any Job WF/AF; inner route uses Part A; FAST not a legal route."
     status: pending
   - id: workflow-evolution-improve
     content: "Part B: `/sb:improve` always a Job on Part A runtime (`test-sb-improve.sh`); WS4; never FAST."
@@ -107,7 +107,7 @@ todos:
     content: "Part B: bootstrap migrate via projector; not a second quality-order; WS5."
     status: pending
   - id: retire-multi-ai-task
-    content: "Part B: remove `/silver:multi-ai-task`; absorb into `/sb:ladder`/`/sb:fusion` (Part A inner order)."
+    content: "Part B: remove `/silver:multi-ai-task`; absorb into `/sb:ladder`/`/sb:panel` (Part A inner order)."
     status: pending
   - id: validation-tests
     content: "100% plan-executed coverage; VAL/TST-RFL map including Part A `test-orchestrator-quality-loops.sh` / `test-sb-fast.sh`."
@@ -145,7 +145,7 @@ Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog).
 | Term | Definition (freeze) |
 |---|---|
 | **Job** | User intent for **non-trivial** `/sb` work. Listed on GST-01. **FAST is not a Job.** |
-| **FAST** | Same as **classified-trivial** (one concept). Required public `/sb:fast` (`WF-SILVER-FAST` / `AF-FAST-PATH`). Not a Job; not GST-01; not Evolution/`/sb:improve`. Maps Executor tier **Trivial**. Short quality order **Executor → Verifier → Validator**. Overlay is generator-side. **Not** a legal `/sb:ladder\|fusion\|panel <route>`. |
+| **FAST** | Same as **classified-trivial** (one concept). Required public `/sb:fast` (`WF-SILVER-FAST` / `AF-FAST-PATH`). Not a Job; not GST-01; not Evolution/`/sb:improve`. Maps Executor tier **Trivial**. Short quality order **Executor → Verifier → Validator**. Overlay is generator-side. **Not** a legal `/sb:ladder\|panel\|panel-start <route>`. |
 | **Wrap** | Advisor-composed wrapping user-intent Workflow (static catalog WF or composed from AFs). There is **no** `sb:agent-wrap`. |
 | **Authorizer** | Admission TCB. Not Approver. Not a preference key. Hooks admit; they never invoke host `Task`. |
 | **primary_checkout** | Operator primary == git main-worktree (Cursor / hosts without descendant env inheritance). Five-tool and ledger live here. |
@@ -163,7 +163,7 @@ Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog).
 | **five preference keys** | Orchestrator, Advisor, Executor, Verifier, Validator. Authorizer excluded. |
 | **OmniRoute** | Optional routing-only proxy (`recommended_tools.omniroute`). Not a second `/sb` router. Omni compression/memory **off** (five-tool owns those surfaces). Origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` (absorbed in WS6). |
 | **agent_* consent** | `recommended_tools.agent_{claude,codex,cursor,opencode,pi}` Graphify-style `enabled_by_user` (`null` ask / `true` / `false`). Not role preference keys. Not Authorizer. |
-| **Ladder/Fusion/Panel compose** | `/sb:ladder <route>` / `/sb:fusion <route>` / `/sb:panel <route>` run any Job catalog WF/AF (one-level XOR; not nested). Bare `/sb:ladder`/`/sb:fusion`/`/sb:panel` stay standalone Jobs. `/sb:fast` is not a legal `<route>`. `/sb:panel-end` ends panel + member sessions. |
+| **Ladder/Panel/Panel-start compose** | `/sb:ladder <route>` / `/sb:panel <route>` / `/sb:panel-start <route>` run any Job catalog WF/AF (one-level XOR; not nested). Bare `/sb:ladder`/`/sb:panel`/`/sb:panel-start` stay standalone Jobs. `/sb:fast` is not a legal `<route>`. `/sb:panel-end` ends the current live `/sb:panel-start` (`panel_session_id` or current-panel). Fail-closed if none matching. End-twice idempotent. After one-off `/sb:panel`, `/sb:panel-end` is an idempotent no-op (members already ended). Does not mint a Job. Does **not** apply to Ladder. Help: `/sb:panel` is **not** a room; `-start` is. |
 | **agent slug** | Transport-first model id: `omni/<provider>/<model>` (Omni HTTP via `scripts/agent-omni-delegate.sh`; does not require Pi), `<host>/<model>` (native `/sb:agent-<host>`), or unprefixed among **opted-in** hosts (`default_agent_host_route`). Not a public `/sb:agent-omni` command. |
 | **WS0b** | Pre-implementation key spec / analysis / architecture / design matching this freeze (before WS1). Q-loop applies (analysis/design artifacts). Not runtime K/L. |
 | **post-Val K/L hop** | After Process-final Val on a **Job**, Executor captures Job-scope K/L + key-doc revision (KLW-01). Runtime. Does **not** replace WS0b or docs-release. Q-loop does **not** apply (knowledge/docs/technical writing). |
@@ -275,7 +275,7 @@ Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog).
   - [Process-synthesis and ancestry-preserving repair](#process-synthesis-and-ancestry-preserving-repair)
   - [Levels 0–3 (post-MVP)](#levels-03-post-mvp)
   - [Iterate Ladder (post-MVP)](#iterate-ladder-post-mvp)
-  - [4.6 Q-loop, unified thermos review, ladder/fusion/panel, agent pin](#46-q-loop-unified-thermos-review-ladderfusionpanel-agent-pin)
+  - [4.6 Q-loop, unified thermos review, ladder/panel/panel-start, agent pin](#46-q-loop-unified-thermos-review-ladder-panel-panel-start-agent-pin)
   - [4.7 Workflow evolution (`/sb:improve`, `/sb:contribute`)](#47-workflow-evolution-sbimprove-sbcontribute)
   - [4.8 Agent Plugins 1.0 packaging (partial emit)](#48-agent-plugins-10-packaging-partial-emit)
 - [5. Design](#5-design)
@@ -353,7 +353,7 @@ Live-spec MUST text lives only in [§2.7](#27-canonical-live-spec-must-catalog).
 |---|---|
 | Title | Router Subagent Surfaces — Architecture and Design Change |
 | Date | 2026-08-17 |
-| Revised | 2026-08-27 — Agent Plugins 1.0 ([agent-plugins.org](https://agent-plugins.org/)): **partial, not 1:1 replace** of the three host plugin surfaces (portable core = skills+MCP; hooks/commands/marketplace stay host adapters; Claude Code not listed as AP client in this fetch). YAML +1 `ap10-partial-emit` (after docs-release; §3.4 / §4.8). No KEEP REJECT / Q1–Q3 reopen. Prior same-day: Public trio `/sb:ladder\|fusion\|panel` (formerly parallel/council; no public aliases). Executor complexity tiers (Trivial=FAST, Regular/Complex Job thinking-levels; shared or per-tier). Public `/sb:panel` + `/sb:panel-end` (Job collaboration; interactive member sessions). YAML +1 `sb-panel`. Reconstructed 2026-08-27 Doctor `/sb:doctor` setup/health/diagnosis/`--fix` expansions onto this freeze. No KEEP REJECT / Q1–Q3 reopen. Prior Revised: 2026-08-25 — Part A/B execution order inside WS1–WS7 so quality-order core (`nested-quality-loops` + `fast-short-quality-order`) lands before consumers. Same day: absorb companion OmniRoute / `/sb:agent-*` opt-in into this freeze (origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; implementers do not need that file). Named WS6 slice + WS2/WS7; not before WS0/WS0b. YAML todos remain pending. No KEEP REJECT reopen; no new §6 A/B/C. Prior Revised (clarify Q1–Q3 on freeze `eb9c7bb0…`): [Appendix A](#a-sha-lineage-and-round-receipts). |
+| Revised | 2026-08-28 — Retire live public `/sb:fusion` (KEEP REJECT: no public aliases). `/sb:panel` is one-off fuse-and-done (formerly `/sb:fusion`); former sitting-body `/sb:panel` is `/sb:panel-start`; `/sb:panel-end` ends live `panel-start` (idempotent no-op after one-off `/sb:panel`; not Ladder). Public trio `/sb:ladder` | `/sb:panel` | `/sb:panel-start` (+ `/sb:panel-end`). Help: `/sb:panel` is **not** a room; `-start` is. YAML/tests renamed (`sb-panel` / `sb-panel-start` / `sb-ladder-panel-panel-start-compose`; `test-sb-panel.sh` one-off, `test-sb-panel-start.sh` sitting). Prior same-day: Agent Plugins 1.0 ([agent-plugins.org](https://agent-plugins.org/)): **partial, not 1:1 replace** of the three host plugin surfaces (portable core = skills+MCP; hooks/commands/marketplace stay host adapters; Claude Code not listed as AP client in this fetch). YAML +1 `ap10-partial-emit` (after docs-release; §3.4 / §4.8). No KEEP REJECT / Q1–Q3 reopen. Prior same-day: Public trio `/sb:ladder\|panel\|panel-start` (formerly parallel/council; no public aliases). Executor complexity tiers (Trivial=FAST, Regular/Complex Job thinking-levels; shared or per-tier). Public `/sb:panel-start` + `/sb:panel-end` (Job collaboration; interactive member sessions). YAML +1 `sb-panel-start`. Reconstructed 2026-08-27 Doctor `/sb:doctor` setup/health/diagnosis/`--fix` expansions onto this freeze. No KEEP REJECT / Q1–Q3 reopen. Prior Revised: 2026-08-25 — Part A/B execution order inside WS1–WS7 so quality-order core (`nested-quality-loops` + `fast-short-quality-order`) lands before consumers. Same day: absorb companion OmniRoute / `/sb:agent-*` opt-in into this freeze (origin [`omni_agent_opt-in_67f2f73a.plan.md`](/Users/shafqat/.cursor/plans/omni_agent_opt-in_67f2f73a.plan.md) SHA-256 `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26`; implementers do not need that file). Named WS6 slice + WS2/WS7; not before WS0/WS0b. YAML todos remain pending. No KEEP REJECT reopen; no new §6 A/B/C. Prior Revised (clarify Q1–Q3 on freeze `eb9c7bb0…`): [Appendix A](#a-sha-lineage-and-round-receipts). |
 | Replaces | Parent-spawn-only orchestrator (`silver:*` parent mode; parent never implements; hooks cannot invoke Cursor `Task`) |
 | Audience | Human reviewer and executing agent. The body is the spec. |
 | Copies | `.planning/router_subagent_surfaces_85bf9f09.plan.md` and `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` MUST stay byte-identical. |
@@ -475,8 +475,8 @@ Inventory of `/sb` and `sb:` tokens cited in this freeze (complete list, not a s
 | `/sb:agent-opencode` | Public MVP leaf (instruction-only host; HINST-01). |
 | `/sb:agent-pi` | Public MVP leaf (instruction-only host; HINST-01). |
 | `/sb:contribute` | Public Job (LS-workflow-evolution). Fail-closes if init opt-in unset/false. No auto-PR. WS4 runtime; WS7 docs. |
-| `/sb:panel` | Public first-class Job (LS-ladder-parallel). Specified multiple models (host Task or `/sb:agent-*` / Pi per host table), like `/sb:fusion` spawn — **not** Fusion (fuse-and-done). **Difference:** member **interactive sessions are maintained** (sitting body; explicitly **not** Perplexity’s one-shot Model Council). Cycle (each user intent round): members execute → launching agent consolidates artifacts → share that unified view to each member for review → incorporate → final member review → address remaining → present to user; sessions stay live. `/sb:panel <route>` = one-level Job compose. Not FAST. No `/sb:multi-ai-task`. |
-| `/sb:panel-end` | Public terminator (WS1 catalog). Ends the selected panel Job (`panel_session_id` or current-panel) **and** all its member agent sessions. Fail-closed if no matching live panel. End-twice idempotent. Partial member shutdown → recovery receipt; retry continues remaining members. Not FAST. Does not mint a new Job. |
+| `/sb:panel-start` | Public first-class Job (LS-ladder-parallel). Specified multiple models (host Task or `/sb:agent-*` / Pi per host table), like `/sb:panel` spawn — **not** Panel (fuse-and-done). **Difference:** member **interactive sessions are maintained** (sitting body; explicitly **not** Perplexity’s one-shot Model Council). Cycle (each user intent round): members execute → launching agent consolidates artifacts → share that unified view to each member for review → incorporate → final member review → address remaining → present to user; sessions stay live. `/sb:panel-start <route>` = one-level Job compose. Not FAST. No `/sb:multi-ai-task`. |
+| `/sb:panel-end` | Public terminator (WS1 catalog). Ends the current live `/sb:panel-start` (`panel_session_id` or current-panel) **and** all its member agent sessions. Fail-closed if none matching. End-twice idempotent. After one-off `/sb:panel`, this is an **idempotent no-op** (members already ended). Does not mint a Job. Does **not** apply to Ladder. Partial member shutdown → recovery receipt; retry continues remaining members. Not FAST. |
 | `/sb:deep-research` | Public Job. Fresh `WF-DEEP-RESEARCH` under new workflow mechanisms + full Job quality order (LS-deep-research). |
 | `/sb:fast` | **Required** user-facing command. FAST = classified-trivial. **Not a Job.** Short quality order Executor → Verifier → Validator (LS-fast-short-order). |
 | `/sb:improve` | Public Job always (LS-workflow-evolution). Never FAST/trivial. PUB-01 / generator; no JSON-edit catalog. Empty-tag no-op may fail-closed as a Job. |
@@ -486,7 +486,7 @@ Inventory of `/sb` and `sb:` tokens cited in this freeze (complete list, not a s
 | `/sb:migrate` | In-product migrate once `/sb` exists; historical cutover also uses `sb-migrate-from-silver.sh`. |
 | `/sb:multi-ai-task` | **RETIRED this ship** (LS-retire-multi-ai). Must **not** appear as a public `/sb` or `/silver` route. **No alias.** Target deep-research is `WF-DEEP-RESEARCH` / `/sb:deep-research`, not `AF-MULTI-AI-TASK`. |
 | `/sb:new-workflow` | Public authoring generator Job (WFM-01 / VAL/TST-RFL-625). |
-| `/sb:fusion` | Public first-class Job (LS-ladder-parallel). Bare = standalone. `/sb:fusion <route>` = one-level independent multi-member run of that Job; Consolidator **fuses** outputs into one response/artifact(s), then **ends member sessions** as soon as they have provided their outputs (fuse-and-done; not leave streams running). |
+| `/sb:panel` | Public first-class Job (LS-ladder-parallel). Bare = standalone. `/sb:panel <route>` = one-level independent multi-member run of that Job; Consolidator **fuses** outputs into one response/artifact(s), then **ends member sessions** as soon as they have provided their outputs (fuse-and-done; not leave streams running). |
 | `sb:agent-*` | Same family as `/sb:agent-*` (catalog/lock ids). |
 | `sb:agent-delegate` | Catalog AF `AF-AGENT-DELEGATE` / WF `WF-AGENT-DELEGATE-ENTRY`. **Not** a second public wrap name. |
 | `sb:agent-wrap` | **FORBIDDEN.** No public/catalog surface (KEEP REJECT). Do not alias; do not add `WF-SB-AGENT-WRAP`. |
@@ -599,7 +599,7 @@ Scannable index. Stable IDs point at canonical LS/KR and Architecture/Design. Th
 | FR-10 | Five-tool opt-in then mandatory on selected runtimes. |
 | FR-11 | Public `/sb` only — no dual `/silver` identifiers. |
 | FR-12 | Workflow evolution via `/sb:improve` and `/sb:contribute` (see LS-workflow-evolution). |
-| FR-13 | `/sb:ladder`, `/sb:fusion`, and `/sb:panel` first-class public Jobs; `/sb:ladder\|fusion\|panel <route>` compose of any Job catalog WF/AF (see LS-ladder-parallel). `/sb:panel-end` terminates panel sessions. |
+| FR-13 | `/sb:ladder`, `/sb:panel`, and `/sb:panel-start` first-class public Jobs; `/sb:ladder\|panel\|panel-start <route>` compose of any Job catalog WF/AF (see LS-ladder-parallel). `/sb:panel-end` terminates panel-start sessions. |
 | FR-14 | `/sb:new-workflow` skill extract/decompose/recompose (see LS-skill-extract). |
 | FR-15 | 100% tests of plan-executed change (see LS-plan-executed-coverage). |
 | FR-16 | Ship sequence WS0 → WS0b → WS1–7 → WS8 → docs-release (see LS-ship-sequence). |
@@ -709,7 +709,7 @@ The following entries are the **only canonical live-spec MUST text**. Elsewhere,
 **Q-loop (live-spec MUST).** After any **generated** work spec, analysis, design, plan, or **code** artifact — and **not** after documentation or technical writing — Process MUST run a **Q-loop**: evaluate the artifact against Silver Bullet’s nine Design Quality Gates in skill order (`modularity`, `reusability`, `scalability`, `security`, `reliability`, `usability`, `testability`, `extensibility`, and `ai-llm-safety` when the artifact includes AI/LLM behavior).
 
 - If any applicable gate is unsatisfied, the **generating** role (the role that produced that artifact) MUST address the findings and the Q-loop MUST re-run on the revised artifact until all applicable gates pass or the hop fail-closes (`blocked_q_loop` or the existing fail-closed row that owns that hop — do not invent a silent skip).
-- Q-loop **check** (the gate evaluation, not the fix) MUST use the same `{ runtime, model, effort }` as **Advisor** by default, including the Board Consolidator identity when Advisor is multi-model Fusion.
+- Q-loop **check** (the gate evaluation, not the fix) MUST use the same `{ runtime, model, effort }` as **Advisor** by default, including the Board Consolidator identity when Advisor is multi-model Panel.
 - During `/sb:init` (or later init if prefs are missing) the user MAY assign a distinct Q-loop checker tuple; that override is a preference entry, **not** a sixth user-facing role and **not** an Authorizer key.
 - Authorizer remains hook/admission TCB. FAST / classified-trivial / `/sb:fast` MUST skip Q-loop (Q-loop is Job generated-artifact machinery; FAST short order is Executor → Verifier → Validator only).
 - Cursor MVP first; do not expand host adapters for Q-loop.
@@ -728,13 +728,13 @@ The following entries are the **only canonical live-spec MUST text**. Elsewhere,
 
 ### LS-ladder-parallel
 
-**Generalized multi-model roles — Ladder, Fusion, and Panel (live-spec MUST)** — canonical.
+**Generalized multi-model roles — Ladder, Panel, and Panel-start (live-spec MUST)** — canonical.
 
-**Generalized multi-model roles — Ladder, Fusion, and Panel (live-spec MUST).** For **any** quality-order LLM role (Orchestrator, Advisor, Executor, Verifier, Validator) the user MAY specify **multiple** `{ runtime, model, effort }` members.
+**Generalized multi-model roles — Ladder, Panel, and Panel-start (live-spec MUST).** For **any** quality-order LLM role (Orchestrator, Advisor, Executor, Verifier, Validator) the user MAY specify **multiple** `{ runtime, model, effort }` members.
 
 - **Authorizer is not a preference key** and MUST NOT become a multi-model Board (KEEP REJECT).
-- **Ladder**, **Fusion**, and **Panel** are first-class **workflow patterns**, not quality-order-only modes.
-- The user MAY invoke them **directly** as public **`/sb:ladder`**, **`/sb:fusion`**, and **`/sb:panel`** (independent Jobs: Orchestrator work-spec + Advisor compose; catalog ids may remain `WF-SILVER-*`; public ids `sb` / `sb:` / `/sb` only — no dual `/silver` window).
+- **Ladder**, **Panel**, and **Panel-start** are first-class **workflow patterns**, not quality-order-only modes.
+- The user MAY invoke them **directly** as public **`/sb:ladder`**, **`/sb:panel`**, and **`/sb:panel-start`** (independent Jobs: Orchestrator work-spec + Advisor compose; catalog ids may remain `WF-SILVER-*`; public ids `sb` / `sb:` / `/sb` only — no dual `/silver` window).
 - Inside quality-order, if the user specifies no mode, **Ladder is the default**.
 - The user MAY override the mode **per task**.
 - **Ladder:** members run **one after another on the same artifact**.
@@ -742,26 +742,26 @@ The following entries are the **only canonical live-spec MUST text**. Elsewhere,
 - SB MUST order rungs **least capable → most capable** even if the user listed another order (in-repo slug catalog / ranking already used by RFL; do not invent OpenCode Max; Fast remains forbidden unless the user explicitly says Fast).
 - When a Ladder is **inside** the quality-order, the **preceding** role executes the fix step after each rung: Executor fixes when an Advisor Ladder reviews Executor work; Advisor fixes when a Validator Ladder reviews Advisor work; similarly for other adjacent hops.
 - Standalone `/sb:ladder` keeps launcher APPLY ACCEPT (100% RFL).
-- **Fusion:** all specified member tuples launch together; a **Consolidator** coordinates, collects review feedback, de-duplicates, and **is the final role-player** for that hop (generalize today’s Authorizer-admitted `advisor_board_unify` deny-all unifier; Board of one still launches the unifier). After members have provided their outputs, **end those member subagent sessions**. User-visible product is fuse-and-done, not leaving parallel streams running.
-- Unresolved Fusion conflict fail-closes as `blocked_plan_of_action_review` (existing row 6), not a new silent merge.
-- Standalone `/sb:fusion` is the same pattern as a Job: Consolidator reviews/unifies only (does not implement product fixes); APPLY ACCEPT of the synthesized set is the Job launcher unless a generating role is already in-session. End member sessions as soon as they have provided their outputs.
-- **Panel:** first-class **Job collaboration pattern**, peer to Ladder and Fusion (public **`/sb:panel`**). Specified **multiple** `{ runtime, model, effort }` members (host Task or `/sb:agent-*` / Pi per the host table — same spawn as Fusion). **Difference from Fusion:** panel member **interactive sessions are maintained** (not one-shot). Cycle (**each** user question/intent round): (1) members execute the task; (2) launching agent **consolidates** response / task-output / artifact(s); (3) that consolidated view is **shared back to each member** for review and feedback so they see the **unified viewpoints**; (4) launching agent **incorporates** feedback; (5) **final review** by members; (6) launching agent **addresses** remaining feedback and **presents to the user**; member sessions **stay live** so the user can interact further. **`/sb:panel-end`** ends the panel session **and** all panel member agent sessions. Panel is a **Job**, not FAST. Do **not** invent `/sb:multi-ai-task`. Explicitly **not** Perplexity’s one-shot Model Council, and **not** Fusion. Panel = sitting body that stays in the room.
-- **`/sb:panel-end` pairing / idempotence:** select the panel by `panel_session_id` when supplied; otherwise the **current-panel** rule (the live panel Job in this Orchestrator session). **Fail-closed** if no matching live panel (do not mint a new Job; do not end an unrelated panel). **End-twice is idempotent** (second `/sb:panel-end` on an already-ended `panel_session_id` is a no-op success, not a new Job). **Partial member shutdown** returns a recovery receipt listing remaining live members; a later `/sb:panel-end` for the same `panel_session_id` continues shutdown until all members are ended (idempotent).
-- Coverage MUST name `tests/scripts/test-sb-fusion.sh` (create it) alongside `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-ladder-fusion-panel-compose.sh`, `tests/scripts/test-sb-panel.sh`, and `tests/scripts/test-sb-panel-end.sh` (create at execute).
+- **Panel:** all specified member tuples launch together; a **Consolidator** coordinates, collects review feedback, de-duplicates, and **is the final role-player** for that hop (generalize today’s Authorizer-admitted `advisor_board_unify` deny-all unifier; Board of one still launches the unifier). After members have provided their outputs, **end those member subagent sessions**. User-visible product is fuse-and-done, not leaving parallel streams running.
+- Unresolved Panel conflict fail-closes as `blocked_plan_of_action_review` (existing row 6), not a new silent merge.
+- Standalone `/sb:panel` is the same pattern as a Job: Consolidator reviews/unifies only (does not implement product fixes); APPLY ACCEPT of the synthesized set is the Job launcher unless a generating role is already in-session. End member sessions as soon as they have provided their outputs.
+- **Panel-start:** first-class **Job collaboration pattern**, peer to Ladder and Panel (public **`/sb:panel-start`**). Specified **multiple** `{ runtime, model, effort }` members (host Task or `/sb:agent-*` / Pi per the host table — same spawn as Panel). **Difference from Panel:** panel-start member **interactive sessions are maintained** (not one-shot). Cycle (**each** user question/intent round): (1) members execute the task; (2) launching agent **consolidates** response / task-output / artifact(s); (3) that consolidated view is **shared back to each member** for review and feedback so they see the **unified viewpoints**; (4) launching agent **incorporates** feedback; (5) **final review** by members; (6) launching agent **addresses** remaining feedback and **presents to the user**; member sessions **stay live** so the user can interact further. **`/sb:panel-end`** ends the panel-start session **and** all panel-start member agent sessions. Panel-start is a **Job**, not FAST. Do **not** invent `/sb:multi-ai-task`. Explicitly **not** Perplexity’s one-shot Model Council, and **not** Panel. Panel-start = sitting body that stays in the room. Help: `/sb:panel` is **not** a room; `-start` is.
+- **`/sb:panel-end` pairing / idempotence:** select the current live `/sb:panel-start` by `panel_session_id` when supplied; otherwise the **current-panel** rule (the live panel-start Job in this Orchestrator session). **Fail-closed** if no matching live panel-start (do not mint a new Job; do not end an unrelated panel-start). **End-twice is idempotent** (second `/sb:panel-end` on an already-ended `panel_session_id` is a no-op success, not a new Job). **Partial member shutdown** returns a recovery receipt listing remaining live members; a later `/sb:panel-end` for the same `panel_session_id` continues shutdown until all members are ended (idempotent). After one-off `/sb:panel` (members already ended), `/sb:panel-end` is an **idempotent no-op**. Does **not** apply to Ladder.
+- Coverage MUST name `tests/scripts/test-sb-panel.sh` (create it) alongside `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-ladder-panel-panel-start-compose.sh`, `tests/scripts/test-sb-panel-start.sh`, and `tests/scripts/test-sb-panel-end.sh` (create at execute).
 
 #### Job-route compose (any catalog WF/AF)
 
-- **Any** Job catalog WF/AF (including `/sb:clarify` / `AF-CLARIFY`, spec, plan, execute, review, deep-research, feature, bugfix, …) MAY run in **Ladder mode, Fusion mode, or Panel mode** as a first-class compose. This is not only the six-role quality-order overlay and not only bare `/sb:ladder` as a standalone review-like Job with no inner WF.
-- **Locked public grammar (Cursor MVP):** `/sb:ladder <route>`, `/sb:fusion <route>`, and `/sb:panel <route>` where `<route>` is a catalog Job route (`clarify`, `sb:clarify`, or `/sb:clarify`). Examples: `/sb:ladder clarify`, `/sb:fusion clarify`, `/sb:panel clarify`. Do **not** offer three equivalent CLIs. Do **not** add a second public `/sb:clarify-ladder` (etc.) route per WF — compose is **one** ladder/fusion/panel WF wrapping the named inner route.
-- Bare `/sb:clarify` stays the **non-composed** Job AF (quality-order still applies; Advisor board may still exist). Explicit `/sb:ladder|fusion|panel clarify` **is** the multi-model independent (Fusion) or sequential capability-order (Ladder) run of **that** workflow.
-- Bare `/sb:ladder` / `/sb:fusion` / `/sb:panel` without `<route>` remain the standalone Jobs already specified (RFL absorb / Fusion consolidator Job / Panel sitting body).
-- **Fusion compose:** members `{ runtime, model, effort }` (and optional agent pin) each run the **same** inner WF/AF **independently**; Consolidator unifies; unresolved conflict → `blocked_plan_of_action_review`. Not last-write-wins. Consolidator remains review-only (does not implement product fixes). End member sessions as soon as they have provided their outputs.
+- **Any** Job catalog WF/AF (including `/sb:clarify` / `AF-CLARIFY`, spec, plan, execute, review, deep-research, feature, bugfix, …) MAY run in **Ladder mode, Panel mode, or Panel-start mode** as a first-class compose. This is not only the six-role quality-order overlay and not only bare `/sb:ladder` as a standalone review-like Job with no inner WF.
+- **Locked public grammar (Cursor MVP):** `/sb:ladder <route>`, `/sb:panel <route>`, and `/sb:panel-start <route>` where `<route>` is a catalog Job route (`clarify`, `sb:clarify`, or `/sb:clarify`). Examples: `/sb:ladder clarify`, `/sb:panel clarify`, `/sb:panel-start clarify`. Do **not** offer three equivalent CLIs. Do **not** add a second public `/sb:clarify-ladder` (etc.) route per WF — compose is **one** ladder/panel/panel-start WF wrapping the named inner route.
+- Bare `/sb:clarify` stays the **non-composed** Job AF (quality-order still applies; Advisor board may still exist). Explicit `/sb:ladder|panel|panel-start clarify` **is** the multi-model independent (Panel) or sequential capability-order (Ladder) run of **that** workflow.
+- Bare `/sb:ladder` / `/sb:panel` / `/sb:panel-start` without `<route>` remain the standalone Jobs already specified (RFL absorb / Panel consolidator Job / Panel-start sitting body).
+- **Panel compose:** members `{ runtime, model, effort }` (and optional agent pin) each run the **same** inner WF/AF **independently**; Consolidator unifies; unresolved conflict → `blocked_plan_of_action_review`. Not last-write-wins. Consolidator remains review-only (does not implement product fixes). End member sessions as soon as they have provided their outputs.
 - **Ladder compose:** same inner WF/AF, least-capable → most-capable. Standalone compose: launcher APPLY ACCEPT. If already inside a Job quality-order, preceding role fixes as already specified.
 - Authorizer is still not a member. Inner WF still Authorizer-admitted launches.
 - Inner WF still gets WBS/packets via projector when it is a Job (clarify as a hop inside a parent Job vs clarify as wrapping Job — both must work). If `/sb:ladder clarify` is itself a Job, it has GST/WBS per Job rules; inner clarify is the composed work.
 - **FAST:** `/sb:fast` is **not** a legal `<route>` (fail-closed). Clarify is a Job AF — legal.
-- **One-level compose:** ladder XOR fusion XOR panel; nested `/sb:ladder /sb:fusion /sb:panel <route>` (any pairing) **fail-closes**. Do not invent `/sb:multi-ai-task`.
-- **WS1** emit: `/sb:ladder` / `/sb:fusion` compose stays argument-on-existing-route; **also emit** public `/sb:panel` and `/sb:panel-end`. **WS4** Jobs runtime (panel is a Job, not FAST) owns panel-end occurrence pairing (`panel_session_id` / current-panel), fail-closed unmatched, end-twice idempotence, and partial-shutdown recovery. **WS7** docs.
+- **One-level compose:** ladder XOR panel XOR panel-start; nested `/sb:ladder /sb:panel /sb:panel-start <route>` (any pairing) **fail-closes**. Do not invent `/sb:multi-ai-task`.
+- **WS1** emit: `/sb:ladder` / `/sb:panel` / `/sb:panel-start` compose stays argument-on-existing-route; **also emit** `/sb:panel-end`. **WS4** Jobs runtime (panel-start is a Job, not FAST) owns panel-end occurrence pairing (`panel_session_id` / current-panel), fail-closed unmatched, end-twice idempotence, and partial-shutdown recovery. **WS7** docs.
 - Cursor MVP first.
 
 ### LS-retire-multi-ai
@@ -770,8 +770,8 @@ The following entries are the **only canonical live-spec MUST text**. Elsewhere,
 
 **Retire `/silver:multi-ai-task` with no transition (live-spec MUST).** Public `/silver:multi-ai-task` (catalog `AF-MULTI-AI-TASK` / wrapping WF / plugin command / `skills/silver-multi-ai-task/` / `templates/orchestrator-workers/MULTI-AI-TASK.md`) is **removed in this ship** — no deprecation window, no `/sb:multi-ai-task` alias, no dual `/silver` shim.
 
-- `/sb:ladder` and `/sb:fusion` replace it: they already launch native or `/sb:agent-*` members and their models.
-- **Absorb, then delete:** host-matrix fail-closed-before-dispatch (`SB_MULTI_AI_UNSUPPORTED_HOST` and `reference/host-matrix-v1.json`) into Ladder/Fusion host admission; model-family registry (`reference/model-family-registry-v1.json`) into least-capable→most-capable Ladder ordering and Fusion member identity; pool algebra / budget defaults only where the user did **not** already specify explicit member tuples (explicit `{ runtime, model, effort, optional agent pin }` wins); `--output-root` / contribution artifacts / consolidator spine into `/sb:fusion` Consolidator receipts (Authorizer-admitted unifier); sequential multi-model passes into `/sb:ladder` (do **not** fork a second RFL).
+- `/sb:ladder` and `/sb:panel` replace it: they already launch native or `/sb:agent-*` members and their models.
+- **Absorb, then delete:** host-matrix fail-closed-before-dispatch (`SB_MULTI_AI_UNSUPPORTED_HOST` and `reference/host-matrix-v1.json`) into Ladder/Panel host admission; model-family registry (`reference/model-family-registry-v1.json`) into least-capable→most-capable Ladder ordering and Panel member identity; pool algebra / budget defaults only where the user did **not** already specify explicit member tuples (explicit `{ runtime, model, effort, optional agent pin }` wins); `--output-root` / contribution artifacts / consolidator spine into `/sb:panel` Consolidator receipts (Authorizer-admitted unifier); sequential multi-model passes into `/sb:ladder` (do **not** fork a second RFL).
 - Do **not** keep `AF-MULTI-AI-TASK.execution.worker_template` pointed at `MULTI-AI-TASK.md` — retarget generator source so regen emits no public multi-ai-task route and no that worker template.
 - Named tests must **fail** if `silver-multi-ai-task` / `/silver:multi-ai-task` / `/sb:multi-ai-task` still appear as public routes after regen.
 - Target architecture for deep research is **`WF-DEEP-RESEARCH`** (fresh Job re-implementation, public `/sb:deep-research`, full Job quality order) — **not** `AF-MULTI-AI-TASK` and **not** `/sb:multi-ai-task`. Current `silver:deep-research-multi-ai` / `WF-SILVER-DEEP-RESEARCH-MULTI-AI` is **deprecated until retired** as public `/sb:legacy-dr` (not an alias of `/sb:multi-ai-task`). See [LS-deep-research](#ls-deep-research).
@@ -887,13 +887,13 @@ Process quality-order hops are marked **Process** (not an AF). Catalog WF/AF hop
 - **DevOps / infra:** `/sb:devops` (`WF-SILVER-DEVOPS`: blast-radius → devops-route → gates → secure → orient → plan → validate → execute → post-exec).
 - **Research-only:** `/sb:deep-research` as the wrapping Job (not a feature subtree insert).
 - **New-workflow authoring:** `/sb:new-workflow` (authoring Job; generator; not Advisor-invoke-only).
-- **Ladder / Fusion:** `/sb:ladder` / `/sb:fusion` as first-class Jobs, as quality-order modes (Ladder default inside quality-order), **and** as **mode compose on any Job route** (example: `/sb:fusion clarify`). Not only “replace wrapping WF.” `/sb:fast` is not a legal compose `<route>`.
+- **Ladder / Panel / Panel-start:** `/sb:ladder` / `/sb:panel` / `/sb:panel-start` as first-class Jobs, as quality-order modes (Ladder default inside quality-order), **and** as **mode compose on any Job route** (example: `/sb:panel clarify`). Not only “replace wrapping WF.” `/sb:fast` is not a legal compose `<route>`.
 - **Specialized:** `/sb:content`, `/sb:refactor`, `/sb:benchmark`, `/sb:compare`, `/sb:ingest` — Advisor-composed when intent matches; not the greenfield spine.
 - **FAST:** step 5 only (no Job WBS). **Improve/contribute:** step 28 only.
 
 #### This-ship completeness
 
-Catalog already contains discovery, work-spec (Process), research, UX, security, test/UAT, staging-as-deploy-target, deploy, rollback-readiness, canary, incident, doctor, GST, WBS (Job decomposition; projector-only). No new public `/sb` route and no new AF/WF this ship. Named test: `tests/scripts/test-sb-autonomous-e2e-order.sh` (must assert Job WBS mint is numbered spine hop 7; FAST has no Job WBS; VAL/TST-RFL-617 family). **WS4** runtime (Advisor compose + Job quality-order follows this spine for vague-to-operational intent; ladder/fusion/panel compose is `/sb:ladder|fusion|panel <route>` on existing Jobs). **WS7** documents runtime vs presentation. **WS1** emit unchanged (no per-WF `/sb:*-ladder` routes; `<route>` is an argument on existing `/sb:ladder` / `/sb:fusion`).
+Catalog already contains discovery, work-spec (Process), research, UX, security, test/UAT, staging-as-deploy-target, deploy, rollback-readiness, canary, incident, doctor, GST, WBS (Job decomposition; projector-only). No new public `/sb` route and no new AF/WF this ship. Named test: `tests/scripts/test-sb-autonomous-e2e-order.sh` (must assert Job WBS mint is numbered spine hop 7; FAST has no Job WBS; VAL/TST-RFL-617 family). **WS4** runtime (Advisor compose + Job quality-order follows this spine for vague-to-operational intent; ladder/panel/panel-start compose is `/sb:ladder|panel|panel-start <route>` on existing Jobs). **WS7** documents runtime vs presentation. **WS1** emit unchanged (no per-WF `/sb:*-ladder` routes; `<route>` is an argument on existing `/sb:ladder` / `/sb:panel`).
 
 ## 3. Analysis
 
@@ -973,7 +973,7 @@ KEEP REJECT — Authorizer is admission TCB: **not** Approver, **not** a user-fa
 
 ### KR-kr-13
 
-Pointer — first-class `/sb:ladder` and `/sb:fusion` (not quality-order-only modes) plus `/sb:ladder|fusion|panel <route>` compose of any Job catalog WF/AF. Canonical live-spec: [LS-ladder-parallel](#ls-ladder-parallel). Public ids `sb` / `sb:` / `/sb` only ([KR-no-dual-silver](#kr-no-dual-silver)). Authorizer remains not a Board ([KR-authorizer-not-pref](#kr-authorizer-not-pref)). Do not reopen KEEP REJECT.
+Pointer — first-class `/sb:ladder` and `/sb:panel` (not quality-order-only modes) plus `/sb:ladder|panel|panel-start <route>` compose of any Job catalog WF/AF. Canonical live-spec: [LS-ladder-parallel](#ls-ladder-parallel). Public ids `sb` / `sb:` / `/sb` only ([KR-no-dual-silver](#kr-no-dual-silver)). Authorizer remains not a Board ([KR-authorizer-not-pref](#kr-authorizer-not-pref)). Do not reopen KEEP REJECT.
 
 ### KR-cursor-mvp-first
 
@@ -1285,7 +1285,7 @@ The Advisor preference key is a **Board of Advisors**: one or more Advisor model
 **Generalized Board (quality-order roles).** The Advisor Board remains the default Board shape (one or more members; unify via Authorizer-admitted deny-all unifier leaf; Board of one still launches the unifier).
 
 - The same multi-member shape MUST be available on Orchestrator, Executor, Verifier, and Validator preference keys.
-- Multi-member mode is **Ladder** (default) or **Fusion**; both patterns are also public `/sb:ladder` and `/sb:fusion`. **Panel** (`/sb:panel`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Process router `/sb`, catalog generation, FAST vs Job.
+- Multi-member mode is **Ladder** (default) or **Panel**; both patterns are also public `/sb:ladder` and `/sb:panel`. **Panel-start** (`/sb:panel-start`) is the third public Job collaboration pattern (persistent interactive member sessions; see LS-ladder-parallel). See §4.2 Process router `/sb`, catalog generation, FAST vs Job.
 - A member MAY pin `host_native` or a specific `/sb:agent-*`; the host-native wrapper enforces external-agent duty parity.
 - Authorizer MUST NOT gain a preference key or Board.
 - Q-loop checker and code-review model default to the Advisor tuple / Consolidator identity unless the user set distinct optional override tuples at init (not new user-facing roles).
@@ -1416,7 +1416,7 @@ Process is the only public entry. `/sb` is a command where the host supports com
 
 **Unified code review / thermos absorb (live-spec MUST)** — full lock: [LS-unified-review](#ls-unified-review) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
 
-**Generalized multi-model roles — Ladder, Fusion, and Panel (live-spec MUST)** — full lock: [LS-ladder-parallel](#ls-ladder-parallel) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
+**Generalized multi-model roles — Ladder, Panel, and Panel-start (live-spec MUST)** — full lock: [LS-ladder-parallel](#ls-ladder-parallel) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
 
 **Retire `/silver:multi-ai-task` with no transition (live-spec MUST)** — full lock: [LS-retire-multi-ai](#ls-retire-multi-ai) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
 
@@ -2404,7 +2404,7 @@ After each generating hop that emits a work spec, analysis, design, plan, or cod
 #### Unified thermos code review
 
 - After Advisor is satisfied with Executor **code** (A-loop two-clean), run the **unified SB code-review** (thermos-absorbed; see §4.2 Process router `/sb`, catalog generation, FAST vs Job); Executor fixes remaining non-wrong findings.
-- When a hop’s role has multiple models, run **Ladder** (default) or **Fusion** as specified for that task; quality-order Ladder fix = preceding role; Fusion Consolidator is the hop’s final role-player.
+- When a hop’s role has multiple models, run **Ladder** (default; do not default to `/sb:panel`) or **Panel** (one-off) or **Panel-start** as specified for that task; quality-order Ladder fix = preceding role; Panel Consolidator is the hop’s final role-player.
 - After Process-final Val vs user intent **passes**, Executor performs Job-scope K/L capture and key-doc revision; Advisor reviews and Verifier verifies that hop (no second Process-final Val; Q-loop/thermos skip unless code was emitted).
 
 **Classified-trivial / `sb:fast` is not a Job and does not use any step of this Job cycle (including step 1).** Job step 1 / `blocked_knowledge_preread` / `pre_read_pending` are **Job-scoped**.
@@ -2738,12 +2738,12 @@ Iterate procedure:
 
 Ordinary delivery producers use `producer_kind=ordinary_delivery` and must not bind Iterate contract-binding / rung / `attempt_id` fields. Iterate-only authority-bearing events bind `contract_binding_hash`, `contract_binding_generation`, `callback_acceptance_fence`, canonical rung ID, and rung `attempt_id`.
 
-### 4.6 Q-loop, unified thermos review, ladder/fusion/panel, agent pin
+### 4.6 Q-loop, unified thermos review, ladder/panel/panel-start, agent pin
 
 Canonical MUST text:
 - **Q-loop (live-spec MUST)** — full lock: [LS-q-loop](#ls-q-loop) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
 - **Unified code review / thermos absorb (live-spec MUST)** — full lock: [LS-unified-review](#ls-unified-review) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
-- **Generalized multi-model roles — Ladder, Fusion, and Panel (live-spec MUST)** — full lock: [LS-ladder-parallel](#ls-ladder-parallel) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut. **Panel** (`/sb:panel` / `/sb:panel-end`) is specified in that same catalog entry (Job collaboration pattern; not FAST).
+- **Generalized multi-model roles — Ladder, Panel, and Panel-start (live-spec MUST)** — full lock: [LS-ladder-parallel](#ls-ladder-parallel) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut. **Panel-start** (`/sb:panel-start` / `/sb:panel-end`) is specified in that same catalog entry (Job collaboration pattern; not FAST).
 - **Per-member `/sb:agent-*` pin (live-spec MUST)** — full lock: [LS-agent-pin](#ls-agent-pin) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut. Slug/consent for those leaves: absorbed omni origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` (WS6 named slice).
 - **Retire `/silver:multi-ai-task` with no transition (live-spec MUST)** — full lock: [LS-retire-multi-ai](#ls-retire-multi-ai) in [§2.7 Canonical live-spec MUST catalog](#27-canonical-live-spec-must-catalog). Do not treat this pointer as a scope cut.
 Architecture implications remain in §4.2 Process router `/sb`, catalog generation, FAST vs Job (after pointers) and in Roles / Board above.
@@ -2770,7 +2770,7 @@ Optional `mcp.json` **declares** portable MCP; live five-tool opt-in, host `mcp.
 
 #### What stays host-specific
 
-Claude marketplace + `agents/claude/` + settings hooks; Cursor marketplace + `displayName`/`hooks` plugin.json + command stubs + `hooks.json`/rules; Codex marketplace + `.codex-plugin` + skill-source + `plugin_hooks`. OpenCode/Pi remain instruction-only (HINST-01 B5). Public trio remains **`/sb:ladder` | `/sb:fusion` | `/sb:panel`** (no parallel/council aliases). No `/sb:multi-ai-task`. No `sb:agent-wrap`. OmniRoute routing-only.
+Claude marketplace + `agents/claude/` + settings hooks; Cursor marketplace + `displayName`/`hooks` plugin.json + command stubs + `hooks.json`/rules; Codex marketplace + `.codex-plugin` + skill-source + `plugin_hooks`. OpenCode/Pi remain instruction-only (HINST-01 B5). Public trio remains **`/sb:ladder` | `/sb:panel` | `/sb:panel-start`** (+ terminator `/sb:panel-end`). Help: `/sb:panel` is **not** a room; `-start` is. No public aliases (formerly `/sb:fusion`). No `/sb:multi-ai-task`. No `sb:agent-wrap`. OmniRoute routing-only.
 
 ## 5. Design
 
@@ -3346,7 +3346,7 @@ Part A is **not** docs, Doctor, site, catalog-only emit, OmniRoute, or later pro
 
 Part B MUST **invoke** Part A’s implementation. Do not reimplement or stub the role loop, composition-Val, I/A/Verification, Process-final Val, or FAST Executor → Verifier → Validator.
 
-Consumers: WS2 host/public surfaces; `/sb:new-workflow`; Q-loop; unified thermos review; Ladder/Fusion/Panel and `/sb:ladder|fusion|panel <route>` compose; post-Val K/L; `/sb:improve` / `/sb:contribute` Jobs; `WF-DEEP-RESEARCH`; autonomous E2E order; WS6 role prefs and OmniRoute routing-only (no public `/sb:agent-omni`); WS5 migrate (projector, not a second loop); WS7 docs/Doctor/site.
+Consumers: WS2 host/public surfaces; `/sb:new-workflow`; Q-loop; unified thermos review; Ladder/Panel/Panel-start and `/sb:ladder|panel|panel-start <route>` compose; post-Val K/L; `/sb:improve` / `/sb:contribute` Jobs; `WF-DEEP-RESEARCH`; autonomous E2E order; WS6 role prefs and OmniRoute routing-only (no public `/sb:agent-omni`); WS5 migrate (projector, not a second loop); WS7 docs/Doctor/site.
 
 #### Agent Plugins 1.0 partial emit (after docs-release)
 
@@ -3383,7 +3383,7 @@ After WS0 and **before WS1**, create or update the **key spec, analysis, archite
 
 - These are Q-loop artifacts (analysis/design), not the “documentation or technical writing” exemption.
 - Do not implement product hooks/skills/tests in this step.
-- Coverage: `tests/scripts/test-pre-impl-key-docs.sh` (create it) asserting those docs exist and cite `/sb`, Q-loop, `/sb:ladder`/`/sb:fusion`/`/sb:panel`, post-Val Executor K/L, and no public `/silver:multi-ai-task`.
+- Coverage: `tests/scripts/test-pre-impl-key-docs.sh` (create it) asserting those docs exist and cite `/sb`, Q-loop, `/sb:ladder`/`/sb:panel`/`/sb:panel-start`, post-Val Executor K/L, and no public `/silver:multi-ai-task`.
 - Job post-Val Executor K/L+key-doc hop is **runtime** Job behavior after Process-final Val; it does **not** replace this ship step.
 
 ### WS1. Contract and route truth
@@ -3410,8 +3410,8 @@ Add red schema/content tests in `tests/scripts/test-router-contract-locks.sh` (*
 - `docs/apo-catalog.json` is **emitted** by `scripts/generate-apo-catalog.py` (`build_catalog()` overwrite) — **not** a hand-edit SOT for this ship’s field changes.
 - WS1 ordered steps (do **not** leave “regen then `--check`” as the first action while source still disagrees with committed): (1) **back-port** the committed catalog’s 3 semantic divergences into generator source (do **not** regen first); (2) then regen `docs/apo-catalog.json` via `python3 scripts/generate-apo-catalog.py`; (3) then `--check` / parity gate.
 - Named: `check-apo-invariants.py worker-template-parity`, `AF-MULTI-AI-TASK.execution.worker_template`.
-- **Intended truth for `worker_template` after this ship:** `/sb:ladder`, `/sb:fusion`, and `/sb:panel` worker templates under `templates/orchestrator-workers/` (committed + parity).
-- **Do not** keep `MULTI-AI-TASK.md` as a public multi-ai-task worker — retire `AF-MULTI-AI-TASK` / `silver-multi-ai-task` with no transition; `check-apo-invariants.py worker-template-parity` must track the Ladder/Fusion templates, not `MULTI-AI-TASK.md`.
+- **Intended truth for `worker_template` after this ship:** `/sb:ladder`, `/sb:panel` (`PANEL.md`; formerly `FUSION.md`), and `/sb:panel-start` (`PANEL-START.md`) worker templates under `templates/orchestrator-workers/` (committed + parity).
+- **Do not** keep `MULTI-AI-TASK.md` as a public multi-ai-task worker — retire `AF-MULTI-AI-TASK` / `silver-multi-ai-task` with no transition; `check-apo-invariants.py worker-template-parity` must track the Ladder/Panel/Panel-start templates, not `MULTI-AI-TASK.md`.
 - Fix [`ATOMIC_SPECS`](scripts/generate-apo-catalog.py) (today `skills/silver-multi-ai-task/SKILL.md`) and/or [`merge_multi_ai_catalog()`](scripts/lib/apo_multi_ai_catalog.py) so regen **sets** `worker_template` to that templates/ path and does **not** emit `SKILL.md`.
 - Round-24 H-3 artifact regen then stays consistent (`atomic-flow-index.json`, `composable-flows-contracts.md`).
 - Python builders are SOT **after** committed un-regenerable state is back-ported.
@@ -3531,7 +3531,7 @@ MVP run: `bash tests/scripts/test-router-contract-locks.sh`, `bash tests/scripts
 
 #### `/sb:improve` / `/sb:contribute` catalog emit (WS1)
 
-- Generator MUST also emit public `/sb:improve`, `/sb:contribute`, `/sb:fast`, `/sb:deep-research`, `/sb:legacy-dr`, `/sb:panel`, and `/sb:panel-end` (no `/silver` dual; not JSON-edit catalog). **Q2 locked:** WS1 = catalog/lock/schema emit only. **WS4** = Job runtime for `/sb:improve` and `/sb:contribute`, FAST short-order runtime, and `/sb:panel` Job collaboration. **WS7** = docs/Doctor/site/help only (documents contribute/panel; does not own those Job runtimes). `/sb:improve` is always a Job. FAST is not a Job. Panel is a Job. **Part A** = `nested-quality-loops` + `fast-short-quality-order`. Improve/contribute/panel Jobs are **Part B** on that runtime.
+- Generator MUST also emit public `/sb:improve`, `/sb:contribute`, `/sb:fast`, `/sb:deep-research`, `/sb:legacy-dr`, `/sb:panel-start`, and `/sb:panel-end` (no `/silver` dual; not JSON-edit catalog). **Q2 locked:** WS1 = catalog/lock/schema emit only. **WS4** = Job runtime for `/sb:improve` and `/sb:contribute`, FAST short-order runtime, and `/sb:panel-start` Job collaboration. **WS7** = docs/Doctor/site/help only (documents contribute/panel-start; does not own those Job runtimes). `/sb:improve` is always a Job. FAST is not a Job. Panel-start is a Job. **Part A** = `nested-quality-loops` + `fast-short-quality-order`. Improve/contribute/panel-start Jobs are **Part B** on that runtime.
 
 - Do not mark YAML todos completed.
 
@@ -3544,7 +3544,7 @@ Add red host-surface tests in `tests/scripts/test-router-native-subagent-surface
 - Update canonical `skills/sb/SKILL.md` (historical `skills/silver/SKILL.md` under the `silver`→`sb` rename), `scripts/render-agent-bundle.py`, `scripts/sync-codex-package.sh`, `scripts/generate-plugin-commands.sh`, and installer adapters under `scripts/lib/install-{claude,codex,cursor}/`.
 - Regenerate with `bash scripts/sync-codex-package.sh`, `bash scripts/generate-plugin-commands.sh`, and host installer fixture modes.
 
-This ship **removes** public `/silver:multi-ai-task` with no transition (no `/sb:multi-ai-task` alias); absorb reusable host-matrix / registry / consolidator / pool-default behavior into `/sb:ladder` and `/sb:fusion` then delete the skill, command stub, and `MULTI-AI-TASK.md` worker. Deep research is **not** that route: emit `/sb:deep-research` (`WF-DEEP-RESEARCH`) and `/sb:legacy-dr` (deprecated current impl) per [LS-deep-research](#ls-deep-research).
+This ship **removes** public `/silver:multi-ai-task` with no transition (no `/sb:multi-ai-task` alias); absorb reusable host-matrix / registry / consolidator / pool-default behavior into `/sb:ladder` and `/sb:panel` then delete the skill, command stub, and `MULTI-AI-TASK.md` worker. Deep research is **not** that route: emit `/sb:deep-research` (`WF-DEEP-RESEARCH`) and `/sb:legacy-dr` (deprecated current impl) per [LS-deep-research](#ls-deep-research).
 
 #### MVP accept: one `/sb`, one selected native-subagent surface per Workflow
 
@@ -3648,7 +3648,7 @@ Rewrite live parent-guard tests: Orchestrator must not implement product code; t
 
 ### WS4. Quality loops, Knowledge/Learnings, and Iterate
 
-**Part A (first in this WS):** Job quality-order runtime (`nested-quality-loops`) + FAST short-order runtime (`fast-short-quality-order`). After Part A, later YAML todos in this WS are **Part B** and MUST call that runtime — Q-loop, unified thermos review, Ladder/Fusion/Panel, post-Val K/L, `/sb:improve` / `/sb:contribute`, `/sb:panel`, `WF-DEEP-RESEARCH`, autonomous E2E order.
+**Part A (first in this WS):** Job quality-order runtime (`nested-quality-loops`) + FAST short-order runtime (`fast-short-quality-order`). After Part A, later YAML todos in this WS are **Part B** and MUST call that runtime — Q-loop, unified thermos review, Ladder/Panel/Panel-start, post-Val K/L, `/sb:improve` / `/sb:contribute`, `/sb:panel-start`, `WF-DEEP-RESEARCH`, autonomous E2E order.
 
 #### MVP quality-loop red tests
 
@@ -3664,9 +3664,9 @@ Rewrite live parent-guard tests: Orchestrator must not implement product code; t
 
 **Part B** (after Part A core in this WS):
 
-- WS4 also owns **Q-loop** (nine Design Quality Gates on generated work spec/analysis/design/plan/code; generating role fixes; checker defaults to Advisor tuple), **unified thermos-absorbed code review** after A-loop on Executor code (Executor fixes), and **generalized Ladder/Fusion/Panel** including public `/sb:ladder`, `/sb:fusion`, and `/sb:panel` (first-class patterns; quality-order fix = preceding role; Fusion Consolidator; Panel keeps interactive member sessions until `/sb:panel-end`).
-- Named red tests in `tests/hooks/test-orchestrator-quality-loops.sh` plus `tests/scripts/test-q-loop.sh`, `tests/scripts/test-unified-code-review-thermos.sh`, `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-fusion.sh`, `tests/scripts/test-sb-ladder-fusion-panel-compose.sh`, `tests/scripts/test-sb-panel.sh`, `tests/scripts/test-sb-panel-end.sh` (create them).
-- Do not JSON-edit catalog; generator then regen for `/sb:ladder`, `/sb:fusion`, `/sb:panel`, and `/sb:panel-end` public routes.
+- WS4 also owns **Q-loop** (nine Design Quality Gates on generated work spec/analysis/design/plan/code; generating role fixes; checker defaults to Advisor tuple), **unified thermos-absorbed code review** after A-loop on Executor code (Executor fixes), and **generalized Ladder/Panel/Panel-start** including public `/sb:ladder`, `/sb:panel`, and `/sb:panel-start` (first-class patterns; quality-order fix = preceding role; Panel Consolidator; Panel-start keeps interactive member sessions until `/sb:panel-end`).
+- Named red tests in `tests/hooks/test-orchestrator-quality-loops.sh` plus `tests/scripts/test-q-loop.sh`, `tests/scripts/test-unified-code-review-thermos.sh`, `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-panel.sh`, `tests/scripts/test-sb-ladder-panel-panel-start-compose.sh`, `tests/scripts/test-sb-panel-start.sh`, `tests/scripts/test-sb-panel-end.sh` (create them).
+- Do not JSON-edit catalog; generator then regen for `/sb:ladder`, `/sb:panel`, `/sb:panel-start`, and `/sb:panel-end` public routes.
 - WS4 consumes `/sb:agent-*` duty-parity via the host-native wrapper (WS2/WS3 own the nested_executor leaves).
 
 #### Post-Val K/L and key-doc hop
@@ -3701,7 +3701,7 @@ Add red resolver/install tests in `tests/scripts/test-model-preferences.sh` and 
 - **If WS6 touches instruction text**, retarget hardcoded `silver:` public routes in `silver-bullet.md` / `templates/silver-bullet.md.base` so `tests/scripts/test-instruction-flow-parity.sh` (P0-4 three-way with `docs/composable-flows-contracts.md`) stays green; generated docs must not advertise `/silver` public routes (catalog ids `WF-SILVER-*` may remain; public prefix is `/sb`).
 
 - WS1 owns the generator `POST_EXEC_SEQUENCING_LINES` retarget and the catalog SoT / router-flow-contract tests.
-- WS6 also collects optional Q-loop-checker and code-review `{ runtime, model, effort }` overrides (default Advisor), multi-member tuples per quality-order LLM role, default **Ladder** vs **Fusion** (per-task override), least-capable→most-capable Ladder ordering, and an optional per-member `/sb:agent-*` or `host_native` pin.
+- WS6 also collects optional Q-loop-checker and code-review `{ runtime, model, effort }` overrides (default Advisor), multi-member tuples per quality-order LLM role, default **Ladder** (do not default quality-order to `/sb:panel`); per-task override: ladder vs one-off `/sb:panel` (formerly Fusion) vs `/sb:panel-start` (formerly Panel), least-capable→most-capable Ladder ordering, and an optional per-member `/sb:agent-*` or `host_native` pin.
 - `/sb:init` also asks and stores the optional contribute-to-GitHub preference (PRs of generally improved workflow artifacts to `alo-exp/silver-bullet`; not a user-facing role; not an Authorizer key; opt-in does not auto-PR).
 - Authorizer remains not a preference key.
 
@@ -3774,7 +3774,7 @@ Reject / doctor-warn if the transport host is opted out. Do not smash host `--mo
 Add red coverage tests in `tests/scripts/test-router-traceability.sh` and `tests/scripts/test-router-doctor-report.sh`.
 
 - Create `tests/fixtures/rfl-test-manifest.json`.
-- Update `scripts/sb-doctor.sh`, `silver-bullet.md`, `templates/silver-bullet.md.base`, `docs/apo-catalog.json`, `docs/workflows/`, `docs/RUNTIME-COMPATIBILITY.md` (role-launch routing exception), and `site/help/workflows/` (including `/sb:fast`, `/sb:improve`, `/sb:contribute`, `/sb:ladder`, `/sb:fusion`, `/sb:panel`, `/sb:panel-end`, `/sb:deep-research`, `/sb:legacy-dr`, OmniRoute / agent-slug help, and **runtime autonomous E2E order** vs AGENTS.md presentation SDLC). WS7 is docs/Doctor/site only — contribute Job runtime stays WS4. Omni install/init runtime stays WS6. Autonomous E2E **runtime** stays WS4 (LS-autonomous-e2e-order). AP 1.0 partial-emit **docs** (not generators) may land here; generators stay `ap10-partial-emit` after docs-release.
+- Update `scripts/sb-doctor.sh`, `silver-bullet.md`, `templates/silver-bullet.md.base`, `docs/apo-catalog.json`, `docs/workflows/`, `docs/RUNTIME-COMPATIBILITY.md` (role-launch routing exception), and `site/help/workflows/` (including `/sb:fast`, `/sb:improve`, `/sb:contribute`, `/sb:ladder`, `/sb:panel`, `/sb:panel-start`, `/sb:panel-end`, `/sb:deep-research`, `/sb:legacy-dr`, OmniRoute / agent-slug help, and **runtime autonomous E2E order** vs AGENTS.md presentation SDLC). WS7 is docs/Doctor/site only — contribute Job runtime stays WS4. Omni install/init runtime stays WS6. Autonomous E2E **runtime** stays WS4 (LS-autonomous-e2e-order). AP 1.0 partial-emit **docs** (not generators) may land here; generators stay `ap10-partial-emit` after docs-release.
 - WS7 also owns Omni `/sb:doctor` **setup + health + diagnosis + troubleshooting/`--fix`** from absorbed omni origin SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` (origin todo `doctor-fix`; D10-style checks in `scripts/sb-doctor.sh` + `skills/silver-doctor/SKILL.md`): **setup** (`omniroute` binary, daemon `:20128`, host CLIs, Pi `defaultProvider` when both opted, dual-mode wrappers); **health** (daemon responding; Omni compression/memory/context **off**); **diagnosis** (provider active vs expired; missing CLI → `repairable`; opted-out transport → doctor-warn; Pi→Omni drift); **troubleshooting/`--fix`** (install/restart daemon; write compression/memory-off config; install host CLI per host-install-guide; restore `defaultProvider`; re-OAuth one user click). When `omniroute` is opted in, `/sb:doctor` setup/health/diagnosis/troubleshooting/`--fix` MUST consult the latest official OmniRoute documentation (README / USER_GUIDE) and [`docs/guides/TROUBLESHOOTING.md`](https://github.com/diegosouzapw/OmniRoute/blob/HEAD/docs/guides/TROUBLESHOOTING.md) (including `chat_admission_busy` / `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT`); prefer docs matching the installed OmniRoute version, else upstream default branch; record URL/ref used; do not treat SB `docs/OMNIROUTE.md` as the sole source of truth. Opted-out tools pass as `disabled` (same as Graphify). Minimal user bother: `--fix` does install/restart; only OAuth consent stays manual. Also `docs/OMNIROUTE.md` + `skills/silver-init/references/recommended-tools-opt-in.md` (and `skills/sb-init` / host-bundle mirrors) Phase 1.1h–1.1m.
 - Regenerate with `bash scripts/sync-templates.sh`, `bash scripts/sync-codex-package.sh`, and `bash scripts/generate-plugin-commands.sh`.
 
@@ -3813,7 +3813,7 @@ After WS1–WS7 product implementation (including retire-multi-ai-task deletions
 
 #### Coverage MUST also map YAML todos `q-loop`, `unified-code-review`, `generalized-role-boards`
 
-- Coverage MUST also map YAML todos `q-loop`, `unified-code-review`, `generalized-role-boards`, `sb-fusion`, `sb-panel`, `agent-runtime-pin`, `retire-multi-ai-task`, `post-val-kl-docs`, `pre-impl-repo-cleanup`, `pre-impl-key-docs`, and `post-impl-repo-cleanup`, `workflow-evolution-improve`, and `workflow-evolution-contribute`, `omni-agent-opt-in-schema`, `omni-agent-slug-resolver`, `omni-agent-install-configure`, `omni-agent-doctor`, `omni-agent-docs-tests`, `autonomous-e2e-order`, and `sb-ladder-fusion-panel-compose` (plus WS1/WS2/WS4/WS6/WS7) to named tests/assertions: `tests/scripts/test-q-loop.sh`, `tests/scripts/test-unified-code-review-thermos.sh`, `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-fusion.sh`, `tests/scripts/test-sb-ladder-fusion-panel-compose.sh`, `tests/scripts/test-sb-panel.sh`, `tests/scripts/test-sb-panel-end.sh`, `tests/scripts/test-host-capability-admission.sh`, `tests/scripts/test-multi-ai-task-retired.sh` (create it — public route absent), `tests/scripts/test-pre-impl-repo-hygiene.sh`, `tests/scripts/test-pre-impl-key-docs.sh`, `tests/scripts/test-post-impl-repo-hygiene.sh` (create/extend them), `tests/scripts/test-sb-improve.sh`, `tests/scripts/test-sb-contribute.sh`, `tests/scripts/test-sb-fast.sh`, `tests/scripts/test-sb-deep-research.sh`, `tests/scripts/test-sb-legacy-dr.sh`, `tests/scripts/test-agent-slug.sh`, `tests/scripts/test-agent-host-consent.sh`, `tests/scripts/test-omniroute-install.sh`, `tests/scripts/test-sb-autonomous-e2e-order.sh` (create them at execute) and extensions of `tests/hooks/test-orchestrator-quality-loops.sh` / `tests/scripts/test-review-fix-ladder.sh` / `tests/scripts/test-silver-doctor.sh` / `tests/scripts/test-recommended-tools-policy.sh` / skill-scenario + doctor dry-run fixtures.
+- Coverage MUST also map YAML todos `q-loop`, `unified-code-review`, `generalized-role-boards`, `sb-panel`, `sb-panel-start`, `agent-runtime-pin`, `retire-multi-ai-task`, `post-val-kl-docs`, `pre-impl-repo-cleanup`, `pre-impl-key-docs`, and `post-impl-repo-cleanup`, `workflow-evolution-improve`, and `workflow-evolution-contribute`, `omni-agent-opt-in-schema`, `omni-agent-slug-resolver`, `omni-agent-install-configure`, `omni-agent-doctor`, `omni-agent-docs-tests`, `autonomous-e2e-order`, and `sb-ladder-panel-panel-start-compose` (plus WS1/WS2/WS4/WS6/WS7) to named tests/assertions: `tests/scripts/test-q-loop.sh`, `tests/scripts/test-unified-code-review-thermos.sh`, `tests/scripts/test-sb-ladder.sh`, `tests/scripts/test-sb-panel.sh`, `tests/scripts/test-sb-ladder-panel-panel-start-compose.sh`, `tests/scripts/test-sb-panel-start.sh`, `tests/scripts/test-sb-panel-end.sh`, `tests/scripts/test-host-capability-admission.sh`, `tests/scripts/test-multi-ai-task-retired.sh` (create it — public route absent), `tests/scripts/test-pre-impl-repo-hygiene.sh`, `tests/scripts/test-pre-impl-key-docs.sh`, `tests/scripts/test-post-impl-repo-hygiene.sh` (create/extend them), `tests/scripts/test-sb-improve.sh`, `tests/scripts/test-sb-contribute.sh`, `tests/scripts/test-sb-fast.sh`, `tests/scripts/test-sb-deep-research.sh`, `tests/scripts/test-sb-legacy-dr.sh`, `tests/scripts/test-agent-slug.sh`, `tests/scripts/test-agent-host-consent.sh`, `tests/scripts/test-omniroute-install.sh`, `tests/scripts/test-sb-autonomous-e2e-order.sh` (create them at execute) and extensions of `tests/hooks/test-orchestrator-quality-loops.sh` / `tests/scripts/test-review-fix-ladder.sh` / `tests/scripts/test-silver-doctor.sh` / `tests/scripts/test-recommended-tools-policy.sh` / skill-scenario + doctor dry-run fixtures.
 
 
 The MVP required test is **live E2E**: real Cursor host, real subagent launch, real WBS path, covering the MVP slice only.
@@ -4157,7 +4157,7 @@ Agent Plugins 1.0 is **not** this silver→sb migrate. Additive AP emit + three-
 
 KEEP REJECT items in [§3.3](#33-options-considered-and-keep-reject) are **closed**. Do not reopen them except the Q1 amendment to [KR-fast-overlay](#kr-fast-overlay) (FAST short quality order). Post-MVP items (Iterate Ladder, Levels 0–3, Codex/Claude/OpenCode host adapters, OFF-01, MIG-01 reverse-bridge / offline rollback, PROD-01 freeze/drain, Alumnium/UI evidence, Most Competent slot) are **deferred scope**, not unresolved rejects.
 
-Q1–Q3 below are **decided** from `/silver:clarify` non-autonomous answers. YAML todos stay `pending` (23 original + 3 locked-clarify adds + 5 omni-agent-opt-in absorbed + 1 autonomous-e2e-order + 1 sb-ladder-fusion-panel-compose + 1 sb-panel + 1 ap10-partial-emit). Dual `/silver` still forbidden. No `sb:agent-wrap`. No `/sb:multi-ai-task` alias. Evolution still general not per-user. Contribute still fail-closed if opt-out. Catalog still generated. Absorbed omni is specified under existing `/sb:agent-*` / five-tool / init — **no new A/B/C**.
+Q1–Q3 below are **decided** from `/silver:clarify` non-autonomous answers. YAML todos stay `pending` (23 original + 3 locked-clarify adds + 5 omni-agent-opt-in absorbed + 1 autonomous-e2e-order + 1 sb-ladder-panel-panel-start-compose + 1 sb-panel-start + 1 ap10-partial-emit). Dual `/silver` still forbidden. No `sb:agent-wrap`. No `/sb:multi-ai-task` alias. Evolution still general not per-user. Contribute still fail-closed if opt-out. Catalog still generated. Absorbed omni is specified under existing `/sb:agent-*` / five-tool / init — **no new A/B/C**.
 
 #### Clarify Q1 — FAST / trivial / `/sb:improve` — **decided**
 
@@ -4227,9 +4227,9 @@ Pre-rewrite freeze SHA-256 `15e7c4218797fd0014913ec9779db5dc5e991efc34fc07337c4d
 | `unified-code-review` | `tests/scripts/test-unified-code-review-thermos.sh` | WS4 | B |
 | `post-val-kl-docs` | `tests/hooks/test-orchestrator-quality-loops.sh` (KLW-01) | WS4 | B |
 | `generalized-role-boards` | `tests/scripts/test-sb-ladder.sh` | WS4 | B |
-| `sb-fusion` | `tests/scripts/test-sb-fusion.sh` | WS4 | B |
-| `sb-panel` | `tests/scripts/test-sb-panel.sh` / `test-sb-panel-end.sh` | WS1 emit / WS4 Job / WS7 docs | B |
-| `sb-ladder-fusion-panel-compose` | `tests/scripts/test-sb-ladder-fusion-panel-compose.sh` | WS4 | B |
+| `sb-panel` | `tests/scripts/test-sb-panel.sh` | WS4 | B |
+| `sb-panel-start` | `tests/scripts/test-sb-panel-start.sh` / `test-sb-panel-end.sh` | WS1 emit / WS4 Job / WS7 docs | B |
+| `sb-ladder-panel-panel-start-compose` | `tests/scripts/test-sb-ladder-panel-panel-start-compose.sh` | WS4 | B |
 | `workflow-evolution-improve` | `tests/scripts/test-sb-improve.sh` | WS4 runtime / WS7 docs | B |
 | `workflow-evolution-contribute` | `tests/scripts/test-sb-contribute.sh` | WS4 runtime / WS7 docs | B |
 | `deep-research-reimplement` | `tests/scripts/test-sb-deep-research.sh` | WS1 emit / WS4 Job runtime / WS7 docs | B |
@@ -4249,7 +4249,7 @@ Pre-rewrite freeze SHA-256 `15e7c4218797fd0014913ec9779db5dc5e991efc34fc07337c4d
 | `docs-release` | `tests/scripts/test-site-doc-freshness.sh` / `test-site-content-freshness.sh` | after WS8 | docs |
 | `ap10-partial-emit` | `tests/scripts/test-ap10-plugin-emit.sh` (create it) | after docs-release (install generators + WS7 docs) | emit |
 
-All 35 YAML todos remain `status: pending` (23 original + 3 locked-clarify + 5 omni-agent-opt-in absorbed + 1 autonomous-e2e-order + 1 sb-ladder-fusion-panel-compose + 1 sb-panel + 1 ap10-partial-emit). Execution order is hygiene → Part A prereqs → Part A core → Part B → WS8 → docs-release → `ap10-partial-emit`. None may be marked completed in this planning rewrite.
+All 35 YAML todos remain `status: pending` (23 original + 3 locked-clarify + 5 omni-agent-opt-in absorbed + 1 autonomous-e2e-order + 1 sb-ladder-panel-panel-start-compose + 1 sb-panel-start + 1 ap10-partial-emit). Execution order is hygiene → Part A prereqs → Part A core → Part B → WS8 → docs-release → `ap10-partial-emit`. None may be marked completed in this planning rewrite.
 
 ### C. Named tests inventory
 
@@ -4295,15 +4295,15 @@ All 35 YAML todos remain `status: pending` (23 original + 3 locked-clarify + 5 o
 | `tests/scripts/test-sb-autonomous-e2e-order.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-contribute.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-panel-end.sh` | Named test (see Design coverage map) |
-| `tests/scripts/test-sb-panel.sh` | Named test (see Design coverage map) |
+| `tests/scripts/test-sb-panel-start.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-deep-research.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-fast.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-improve.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-ladder.sh` | Named test (see Design coverage map) |
-| `tests/scripts/test-sb-ladder-fusion-panel-compose.sh` | Named test (see Design coverage map) |
+| `tests/scripts/test-sb-ladder-panel-panel-start-compose.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-legacy-dr.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-sb-new-workflow.sh` | Named test (see Design coverage map) |
-| `tests/scripts/test-sb-fusion.sh` | Named test (see Design coverage map) |
+| `tests/scripts/test-sb-panel.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-silver-doctor.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-silver-new-workflow-audit.sh` | Named test (see Design coverage map) |
 | `tests/scripts/test-silver-new-workflow.sh` | Named test (see Design coverage map) |
@@ -4328,8 +4328,8 @@ Historical RFL coverage IDs present in this freeze: `VAL/TST-RFL-001` and `VAL/T
 | `/sb:agent-opencode` | Public MVP leaf (instruction-only host; HINST-01). |
 | `/sb:agent-pi` | Public MVP leaf (instruction-only host; HINST-01). |
 | `/sb:contribute` | Public Job (LS-workflow-evolution). Fail-closes if init opt-in unset/false. No auto-PR. WS4 runtime; WS7 docs. |
-| `/sb:panel` | Public first-class Job (LS-ladder-parallel). Specified multiple models (host Task or `/sb:agent-*` / Pi per host table), like `/sb:fusion` spawn — **not** Fusion (fuse-and-done). **Difference:** member **interactive sessions are maintained** (sitting body; explicitly **not** Perplexity’s one-shot Model Council). Cycle (each user intent round): members execute → launching agent consolidates artifacts → share that unified view to each member for review → incorporate → final member review → address remaining → present to user; sessions stay live. `/sb:panel <route>` = one-level Job compose. Not FAST. No `/sb:multi-ai-task`. |
-| `/sb:panel-end` | Public terminator (WS1 catalog). Ends the selected panel Job (`panel_session_id` or current-panel) **and** all its member agent sessions. Fail-closed if no matching live panel. End-twice idempotent. Partial member shutdown → recovery receipt; retry continues remaining members. Not FAST. Does not mint a new Job. |
+| `/sb:panel-start` | Public first-class Job (LS-ladder-parallel). Specified multiple models (host Task or `/sb:agent-*` / Pi per host table), like `/sb:panel` spawn — **not** Panel (fuse-and-done). **Difference:** member **interactive sessions are maintained** (sitting body; explicitly **not** Perplexity’s one-shot Model Council). Cycle (each user intent round): members execute → launching agent consolidates artifacts → share that unified view to each member for review → incorporate → final member review → address remaining → present to user; sessions stay live. `/sb:panel-start <route>` = one-level Job compose. Not FAST. No `/sb:multi-ai-task`. |
+| `/sb:panel-end` | Public terminator (WS1 catalog). Ends the current live `/sb:panel-start` (`panel_session_id` or current-panel) **and** all its member agent sessions. Fail-closed if none matching. End-twice idempotent. After one-off `/sb:panel`, this is an **idempotent no-op** (members already ended). Does not mint a Job. Does **not** apply to Ladder. Partial member shutdown → recovery receipt; retry continues remaining members. Not FAST. |
 | `/sb:deep-research` | Public Job. Fresh `WF-DEEP-RESEARCH` under new workflow mechanisms + full Job quality order (LS-deep-research). |
 | `/sb:fast` | **Required** user-facing command. FAST = classified-trivial. **Not a Job.** Short quality order Executor → Verifier → Validator (LS-fast-short-order). |
 | `/sb:improve` | Public Job always (LS-workflow-evolution). Never FAST/trivial. PUB-01 / generator; no JSON-edit catalog. Empty-tag no-op may fail-closed as a Job. |
@@ -4339,7 +4339,7 @@ Historical RFL coverage IDs present in this freeze: `VAL/TST-RFL-001` and `VAL/T
 | `/sb:migrate` | In-product migrate once `/sb` exists; historical cutover also uses `sb-migrate-from-silver.sh`. |
 | `/sb:multi-ai-task` | **RETIRED this ship** (LS-retire-multi-ai). Must **not** appear as a public `/sb` or `/silver` route. **No alias.** Target deep-research is `WF-DEEP-RESEARCH` / `/sb:deep-research`, not `AF-MULTI-AI-TASK`. |
 | `/sb:new-workflow` | Public authoring generator Job (WFM-01 / VAL/TST-RFL-625). |
-| `/sb:fusion` | Public first-class Job (LS-ladder-parallel). Bare = standalone. `/sb:fusion <route>` = one-level independent multi-member run of that Job; Consolidator **fuses** outputs into one response/artifact(s), then **ends member sessions** as soon as they have provided their outputs (fuse-and-done; not leave streams running). |
+| `/sb:panel` | Public first-class Job (LS-ladder-parallel). Bare = standalone. `/sb:panel <route>` = one-level independent multi-member run of that Job; Consolidator **fuses** outputs into one response/artifact(s), then **ends member sessions** as soon as they have provided their outputs (fuse-and-done; not leave streams running). |
 | `sb:agent-*` | Same family as `/sb:agent-*` (catalog/lock ids). |
 | `sb:agent-delegate` | Catalog AF `AF-AGENT-DELEGATE` / WF `WF-AGENT-DELEGATE-ENTRY`. **Not** a second public wrap name. |
 | `sb:agent-wrap` | **FORBIDDEN.** No public/catalog surface (KEEP REJECT). Do not alias; do not add `WF-SB-AGENT-WRAP`. |
@@ -4366,7 +4366,7 @@ Historical RFL coverage IDs present in this freeze: `VAL/TST-RFL-001` and `VAL/T
 Add red coverage tests in `tests/scripts/test-router-traceability.sh` and `tests/scripts/test-router-doctor-report.sh`.
 
 - Create `tests/fixtures/rfl-test-manifest.json`.
-- Update `scripts/sb-doctor.sh`, `silver-bullet.md`, `templates/silver-bullet.md.base`, `docs/apo-catalog.json`, `docs/workflows/`, `docs/RUNTIME-COMPATIBILITY.md` (role-launch routing exception), and `site/help/workflows/` (including `/sb:fast`, `/sb:improve`, `/sb:contribute`, `/sb:ladder`, `/sb:fusion`, `/sb:panel`, `/sb:panel-end`, `/sb:deep-research`, `/sb:legacy-dr`, OmniRoute / agent-slug help, and **runtime autonomous E2E order** vs AGENTS.md presentation SDLC). WS7 is docs/Doctor/site only — contribute Job runtime stays WS4. Omni install/init runtime stays WS6. Autonomous E2E **runtime** stays WS4 (LS-autonomous-e2e-order).
+- Update `scripts/sb-doctor.sh`, `silver-bullet.md`, `templates/silver-bullet.md.base`, `docs/apo-catalog.json`, `docs/workflows/`, `docs/RUNTIME-COMPATIBILITY.md` (role-launch routing exception), and `site/help/workflows/` (including `/sb:fast`, `/sb:improve`, `/sb:contribute`, `/sb:ladder`, `/sb:panel`, `/sb:panel-start`, `/sb:panel-end`, `/sb:deep-research`, `/sb:legacy-dr`, OmniRoute / agent-slug help, and **runtime autonomous E2E order** vs AGENTS.md presentation SDLC). WS7 is docs/Doctor/site only — contribute Job runtime stays WS4. Omni install/init runtime stays WS6. Autonomous E2E **runtime** stays WS4 (LS-autonomous-e2e-order).
 - Regenerate with `bash scripts/sync-templates.sh`, `bash scripts/sync-codex-package.sh`, and `bash scripts/generate-plugin-commands.sh`.
 
 MVP run: the two new tests, targeted commands from rows 1–6 that belong to the MVP slice, `bash tests/scripts/test-site-content-freshness.sh`, and `bash tests/scripts/test-site-doc-freshness.sh`.
