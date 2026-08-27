@@ -411,6 +411,7 @@ def render_ladder_complete_matrix(rungs: list[dict[str, Any]]) -> str:
         "|------|----------|------|-----|-----|-----|----------|----------|",
     ]
     footnotes: list[str] = []
+    tot_high = tot_med = tot_low = tot_nit = tot_reported = tot_accepted = 0
     for row in rungs:
         high = int(row.get("high", 0) or 0)
         med = int(row.get("med", 0) or 0)
@@ -424,6 +425,12 @@ def render_ladder_complete_matrix(rungs: list[dict[str, Any]]) -> str:
             f"{_md_cell(row.get('reviewer', ''))} | "
             f"{high} | {med} | {low} | {nit} | {reported} | {accepted} |"
         )
+        tot_high += high
+        tot_med += med
+        tot_low += low
+        tot_nit += nit
+        tot_reported += reported
+        tot_accepted += accepted
         notes = []
         if row.get("clean"):
             notes.append("CLEAN")
@@ -433,6 +440,10 @@ def render_ladder_complete_matrix(rungs: list[dict[str, Any]]) -> str:
             notes.append("skipped-then-retried")
         if notes:
             footnotes.append(f"- Rung {_md_cell(row.get('rung', ''))}: {'; '.join(notes)}")
+    parts.append(
+        f"| TOTAL | — | {tot_high} | {tot_med} | {tot_low} | {tot_nit} | "
+        f"{tot_reported} | {tot_accepted} |"
+    )
     parts.append("")
     parts.append(
         "Severity columns are reported counts. **Accepted** is after launcher triage "

@@ -87,9 +87,12 @@ When the whole ladder completes, the launcher MUST present a summary matrix:
 
 | Rung | Reviewer | HIGH | MED | LOW | NIT | Reported | Accepted |
 
+Last row MUST be **TOTAL** summing HIGH, MED, LOW, NIT, Reported, and Accepted. Reviewer on TOTAL is `—`.
+
 Severity columns = reported counts; **Accepted** = after launcher triage (rejects excluded). Footnote ID collisions / CLEAN rungs / skipped-then-retried rungs.
 
 Encoder: `python3 scripts/review-fix-ladder.py --ladder-matrix`.
+When the ladder finishes or aborts, persist durable status so a later quota retry can detect “already over”: `python3 scripts/review-fix-ladder.py --mark-ladder-status completed --run-dir .planning/rfl-<id>/` (or `aborted`). Quota-retry activation uses `LADDER-STATUS.json` plus Policy D artifacts.
 
 ## When to Use
 
@@ -357,7 +360,18 @@ OpenCode family rungs (DeepSeek, MiniMax, Qwen, and any other Go-listed model) *
 
 Go lists **distinct model SKUs**, not High vs Max reasoning-effort tiers. “Max” / “Plus” / “Pro” / “Flash” in names such as Qwen3.8 Max, DeepSeek V4 Pro, and DeepSeek V4 Flash are product names, not Cursor-style High/Max effort. There is no `sb-opencode-max`.
 
-**Quota STOP (once):** Codex/Claude usage-limit → Cursor subagent fallback (`cursor_fallback` above). OpenCode billed quota / weekly limit (user must replenish keys) → report STOP once and wait for the user; do **not** spin retries or invent Cursor `sb-*` stand-ins. **Unless** the failure is an unavailable/timeout/auth class (timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, OmniRoute/OpenCode `401` `Missing API key`, hung invoke with no `review.md`): retry **once immediately**, then for OpenCode/Pi **substitute Grok 4.6 High** (`cursor-grok-4.6-high`) instead of skip; other hosts **skip the rung** and continue the ladder; after the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN.
+**Quota windows (any model — not OpenCode-only):** Classify with `python3 scripts/review-fix-ladder.py --classify-quota-window --subscription-output '<blob>'`.
+
+- **5-hour usage cap** (`5-hour usage limit reached`, including `Resets in 3hr 6min` / `reset after 59m 36s`) → persist a retry for the **same named model** after the window: `python3 scripts/review-fix-ladder.py --schedule-quota-retry --run-dir .planning/rfl-<id>/ --run-id <id> --rung-id <rung> --model <model> --subscription-output '<blob>'`. Do **not** Grok-substitute for this quota class. Jobs are idempotent per run+rung+model.
+- **Weekly or monthly** exhaustion → do **not** auto-schedule unless the parsed reset is **≤ 5 hours**.
+- **Unknown** quota class → same as weekly/monthly: schedule only if a reset ≤ 5 hours is parsed.
+- **401 / insufficient balance** is billing, not a 5-hour window — do not schedule unless the message is clearly a 5-hour usage cap.
+
+`--schedule-quota-retry` **arms a timer** (`at` on Linux; launchd user agent on macOS) that runs `--quota-retry-wake` at the parsed reset. JSON under the run dir stays the source of truth. Cursor/Claude **SessionStart** and **UserPromptSubmit** also run `hooks/rfl-quota-retry-due.sh`, which activates **due** jobs when a session starts or the user types again — do not wait for a human to remember the CLI.
+
+When that scheduled worker fires (`--quota-retry-wake` / `--activate-quota-retry`): if the ladder run is **still active**, execute the deferred rung on the same named model (writes `QUOTA-RETRY-EXECUTE.md` and injects hook `additionalContext`). If the run is **already over** (completed / aborted / Policy D written / `LADDER-STATUS.json`), do **not** execute — write `QUOTA-RETRY-ASK.md`, print `[rfl] ASK: ...`, and inject the ask into hook context so the user sees it (not only stderr).
+
+**Quota STOP (once):** Codex/Claude usage-limit → Cursor subagent fallback (`cursor_fallback` above). OpenCode billed quota / weekly limit **with no reset within 5 hours** (user must replenish keys) → report STOP once and wait for the user; do **not** spin short retries or invent Cursor `sb-*` stand-ins. **Unless** the failure is an unavailable/timeout/auth class (timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, OmniRoute/OpenCode `401` `Missing API key`, hung invoke with no `review.md`): retry **once immediately**, then for OpenCode/Pi **substitute Grok 4.6 High** (`cursor-grok-4.6-high`) instead of skip; other hosts **skip the rung** and continue the ladder; after the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN. 5-hour caps use the schedule above instead of Grok substitute.
 
 
 ## Subagent Prompt Templates

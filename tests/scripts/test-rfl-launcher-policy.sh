@@ -138,11 +138,22 @@ else
   printf '%s\n' "$matrix_md"
 fi
 
+two_rung_json='[{"rung":"1","reviewer":"Composer 2.5 High","high":1,"med":2,"low":3,"nit":4,"reported":10,"accepted":5},{"rung":"2","reviewer":"Grok 4.6 High","high":2,"med":0,"low":1,"nit":1,"reported":4,"accepted":3}]'
+two_md="$(python3 "$RESOLVER" --ladder-matrix --table-json "$two_rung_json")"
+last_row="$(printf '%s\n' "$two_md" | grep '^|' | tail -1)"
+if [[ "$last_row" == "| TOTAL | — | 3 | 2 | 4 | 5 | 14 | 8 |" ]]; then
+  pass "2-rung ladder-complete matrix ends with TOTAL sums"
+else
+  fail "2-rung ladder-complete matrix ends with TOTAL sums"
+  printf 'last_row=%s\n%s\n' "$last_row" "$two_md"
+fi
+
 if grep -qF 'These launcher steps are **mandatory**' "$SKILL" \
   && grep -qF 'table grouped by severity' "$SKILL" \
   && grep -qF '**triage table**' "$SKILL" \
   && grep -qF '**Resolved** column' "$SKILL" \
-  && grep -qF '### Policy D — ladder-complete matrix (HARD)' "$SKILL"; then
+  && grep -qF '### Policy D — ladder-complete matrix (HARD)' "$SKILL" \
+  && grep -qF 'Last row MUST be **TOTAL**' "$SKILL"; then
   pass "SKILL encodes mandatory launcher tables + complete matrix"
 else
   fail "SKILL encodes mandatory launcher tables + complete matrix"

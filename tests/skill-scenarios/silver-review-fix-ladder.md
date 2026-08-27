@@ -91,7 +91,7 @@
 1. Do not idle. After verify FAIL, Policy B leftovers in the same follow-up turn, then re-verify. After CLEAN verify_1, immediately grep then verify_2. After two CLEAN verifies + greps, immediately start the next rung
 2. Corpus sweep, not one-line cycles: if the same defect class fails verify more than twice, the next Policy B scans all in-scope plan/spec artifacts for that class and patches every live hit in one pass
 3. Empty/Let nested Tasks: parent re-spawns immediately with explicit model so the child does not inherit the wrong wrapper. Nested GLM under Grok dies after Let; parent re-spawns with explicit GLM model. Do not wait for the user. Never Fast
-4. Quota STOP once: Codex/Claude usage-limit → Cursor subagent fallback. OpenCode billed quota/key → wait for the user; do not spin retries. Timeout / Endpoint is unavailable / empty Let / hung invoke with no review.md: retry once immediately, then skip the rung (SKIPPED.md) and start the next rung. After the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN
+4. Quota windows (any model): 5-hour usage cap → `--schedule-quota-retry` same named model after the window (arms `at`/launchd plus SessionStart/`rfl-quota-retry-due.sh` `--quota-retry-wake`); weekly/monthly/unknown schedule only if parsed reset ≤ 5 hours; 401 insufficient balance is not a 5-hour schedule. When the scheduled worker fires, if the ladder is already over, ASK the user (QUOTA-RETRY-ASK.md + hook context) and do not execute; if still active, retry the same model. Codex/Claude usage-limit still Cursor-fallback. OpenCode billed quota/weekly with reset > 5h → wait for the user; do not spin short retries. Timeout / Endpoint is unavailable / empty Let / hung invoke with no review.md: retry once immediately, then skip the rung (SKIPPED.md) and start the next rung. After the whole ladder, retry skipped rungs once more. Do not skip because of CLEAN/NOT CLEAN
 5. Cap residual loops: after 5 leftover cycles on the same rung verify, escalate remaining file:line instead of a sixth one-line patch
 
 ### Scenario: Skip after launch/timeout retry-once-then-skip
@@ -103,7 +103,7 @@
 2. Record SKIP/retry in the rung dir (SKIPPED.md: reason, attempt count, timestamps, next rung, post_ladder_retry_pending)
 3. Do not skip because of a CLEAN/NOT CLEAN review — only when the rung failed to produce a verdict
 4. Mixed-host: skip does not change the next rung's required model. Never Fast. Skipping is not permission to use Fast or a different family as a silent substitute on that skipped rung
-5. Quota STOP once still applies for billed quota / weekly limit — report STOP and wait unless the failure is an unavailable/timeout class that already retried once
+5. Quota STOP once still applies for billed quota / weekly limit with no reset within 5 hours — report STOP and wait unless the failure is an unavailable/timeout class that already retried once; 5-hour caps schedule a same-model retry instead
 6. Sequential rung advance is allowed if the previous rung has SKIPPED.md (incomplete, not a CLEAN advance). Empty/"Let" after re-spawn counts toward the launch/timeout retry-once-then-skip policy
 
 ### Scenario: Compliance Gate — Stop on Violation

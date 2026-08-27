@@ -16,6 +16,11 @@
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" sessionStart ${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-lifecycle.sh",
         "timeout": 10,
         "matcher": "startup|clear|compact"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" sessionStart ${CURSOR_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh",
+        "timeout": 10,
+        "matcher": "startup|clear|compact"
       }
     ],
     "preToolUse": [
@@ -461,6 +466,11 @@
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop-enforcement.sh",
+        "timeout": 10,
+        "matcher": ".*"
+      },
+      {
+        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" beforeSubmitPrompt ${CURSOR_PLUGIN_ROOT}/hooks/rfl-quota-retry-due.sh",
         "timeout": 10,
         "matcher": ".*"
       }
