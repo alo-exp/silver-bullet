@@ -1,0 +1,8 @@
+START 2026-08-26T11:51:31Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/minimax-m3
+phase=review attempt=3
+hang_sec=540 progress=review.md_only
+WATCH elapsed=15s progress=1 inv= kids= report=yes
+NAMED_REVIEW_OK bytes=11469
+EXIT:1
+END 2026-08-26T11:51:46Z

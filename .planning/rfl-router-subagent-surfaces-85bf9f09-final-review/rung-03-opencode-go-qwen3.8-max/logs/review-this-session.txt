@@ -1,0 +1,11 @@
+START 2026-08-26T17:09:58Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/qwen3.8-max
+phase=rung_03_review this-session
+brief SHA locked: edff7c0cca55e7e6662cafbbf3f10cea71230483c4992c2a5d5149c629a63e5e / 621101
+attempt=1 hang ~661961ms empty stdout no review.md EXIT:unknown
+attempt=2 retry hang ~658002ms cap=0B TCP localhost:20128 idle 0%CPU no review.md EXIT:unknown
+omniroute_20128=LISTEN_ACCEPT
+no 401 text captured (stdout never flushed)
+NO_GROK_SUBSTITUTE
+BLOCKED
+END 2026-08-26T17:32:16Z

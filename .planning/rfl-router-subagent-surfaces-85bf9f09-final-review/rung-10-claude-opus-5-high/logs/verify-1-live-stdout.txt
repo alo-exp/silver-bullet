@@ -1,0 +1,30 @@
+START 2026-08-27T02:03:20Z
+PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-high
+phase=rung_10_verify_1 attempt=1
+work-dir=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high
+PI_EXPECT_FILE_MIN_BYTES=2500
+`./verify-1.md` written (12,349 bytes) at `/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-10-claude-opus-5-high/verify-1.md`.
+
+**rung_10_verify_1 — Pi `claude/claude-opus-5-high` via `/silver:agent-pi`**
+
+Hashed both copies myself (one command, disk wins):
+- repo `.planning/router_subagent_surfaces_85bf9f09.plan.md` → `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / 621247
+- `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` → `3166a309…` / 621247
+- byte-identical **YES** (`cmp` clean). Not `1e2e775a…`/621246, not `4c18af57…`, `edff7c0c…`, `d5343ac1…`, `07b98609…`.
+
+Independent checks (from those bytes):
+- YAML **33 `- id:` / 33 `status: pending`** (L20–L116 stride-3; the 34th `status: pending` grep hit is prose at L4162) — PASS
+- Exactly **1** mermaid fence (L1438–L1496) — PASS
+- F-2 HOLD `#### \`blocked_advisor_state\` (row 14)` still at **L3246** — PASS
+- `ws0--ws0b` = **0** (F-1 REJECT stands) — PASS
+- NIT-1 APPLY at **L4122**: backticks even (1154), `comp_val_two_clean` 3/3 closed, `comp_val_verified` 4/4 closed — landed, confirmed only, not re-applied — PASS
+- Qwen NIT-1 escaped ladder pipe (L141, L590) and Qwen NIT-2 appendix 2-col cell (L4122) still present — PASS
+- KEEP REJECT closed (L4070, Q1 carve-out L916), Q1–Q3 decided (L4072), Part A then Part B (L128/L647/L3262/L3285) — PASS
+- FAST not a Job / not a legal `/sb:ladder\|parallel` route (L140/L141/L64) — PASS
+
+NIT-2 / NIT-3 / NIT-4 REJECT and F-1 REJECT / F-2 HOLD not reopened. Freeze untouched.
+
+**Verdict: CLEAN — leftovers none — SHA `3166a309…` / 621247 — VERIFY_PASS — EXIT**
+EXIT:0
+END 2026-08-27T02:05:54Z
+VERIFY1_BYTES=12349

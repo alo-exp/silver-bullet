@@ -1,0 +1,10 @@
+START 20260827T053013Z provider=omniroute model=opencode-go/kimi-k3-max
+**VERIFY_PASS** — rung 5/11, verify pass 1/2 complete.
+
+- **Model:** Pi `opencode-go/kimi-k3-max` via `/silver:agent-pi` (no remap, no Grok, not Fast)
+- **Freeze hashed by me:** SHA-256 `3166a309baa55fb49158df4531c7bf7e8f8609f1c720b0f4d0cae5c396346321` / **621247** bytes — **both** copies (`repo/.planning/` + `~/.cursor/plans/`), `cmp` byte-identical **YES**; no stale SHA cited as current
+- **All 10 independent checks PASS:** 33/33 YAML pending (34th match is prose self-ref L4162); exactly 1 mermaid; F-2 HOLD heading still at **L3246** (canonical row-14 at L3052 intact); `ws0--ws0b` = 0; Qwen NIT-1 escaped pipes at **L141/L590**; Qwen NIT-2 appendix headers (§A 2-col at L4122, §B header+separator L4126–4127); Claude NIT-1 L4122 lineage cell with even/closed backticks (1154 total, `comp_val_two_clean`×3 / `comp_val_verified`×4 closed); KEEP REJECT / Q1–Q3 / Part A then Part B still closed; FAST not a Job / not a compose route
+- **Verdict: CLEAN** — leftovers: **none** — HIGH 0 / MED 0 / LOW 0 / NIT 0 — EXIT
+- Stale `verify-1-prior-d5343ac1.md` untouched, not copied; official report written once, complete: `verify-1.md` (5513 bytes ≥ 2500)
+- No freeze edits, no clarify, no verify_2, no rung 11.
+END 20260827T053801Z EXIT:0

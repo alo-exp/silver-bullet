@@ -1,0 +1,23 @@
+START 2026-08-26T15:49:36Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/minimax-m3
+phase=rung_01_verify_1 attempt=1
+verify-1.md written. Independent VERIFY-ONLY pass 1/2 complete:
+
+**Hash + size:** SHA-256 `d5343ac14c24c23930140ffe39d34dea5ab799fde2e8f200571c5086131029e0` (both copies), 621095 bytes each, **byte-identical yes**.
+
+**Independent check results:**
+1. YAML todos: **33/33 `status: pending`** (33 YAML rows + 1 narrative confirmation at L4162) — PASS
+2. Mermaid fences: **exactly 1** (L1438) — PASS
+3. F-2 HOLD heading at L3246: `#### \`blocked_advisor_state\` (row 14)` exact match — PASS
+4. `ws0--ws0b` slug: **0 occurrences** — PASS
+5. KEEP REJECT (54 mentions, canonical §3.3) / Q1–Q3 all "decided" / Part A then Part B locked at L16/L647/L3262/L3285 — PASS
+6. FAST not a Job / not a legal compose `<route>` (L64, L3267, L3290, etc.) — PASS
+
+Charter signals all hold (forbid-only `/sb:multi-ai-task` + `sb:agent-wrap`; OmniRoute routing-only; LS-post-val-kl Executor producer; FAST E→Ver→Val + thin capture; TOC-GFM at L165 + L4282).
+
+`review.md` NOT opened or copied; Parent Policy A "APPLY no — REJECT-as-wrong" followed. Stale `SKIPPED.md` / `verify-1-grok-substitute.md` ignored.
+
+**Verdict: CLEAN** · **Leftovers: none** · **EXIT: VERIFY_PASS**
+EXIT:0
+END 2026-08-26T15:51:38Z
+    9809 /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-01-opencode-go-minimax-m3/verify-1.md

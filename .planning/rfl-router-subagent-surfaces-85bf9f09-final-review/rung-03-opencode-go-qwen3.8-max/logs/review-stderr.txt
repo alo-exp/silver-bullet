@@ -1,0 +1,4 @@
+401: {"message":"[401]: Missing API key.","type":"authentication_error","code":"invalid_api_key"}
+[agent-pi] expected file missing after pi -p; resuming with --continue: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md
+401: {"message":"[401]: Missing API key.","type":"authentication_error","code":"invalid_api_key"}
+ERROR: expected file missing after pi -p: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-final-review/rung-03-opencode-go-qwen3.8-max/review.md

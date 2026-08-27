@@ -1,0 +1,6 @@
+START 2026-08-25T23:56:12Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/qwen3.8-max
+phase=rung_03_verify_1 attempt=2
+401: {"message":"[401]: Missing API key.","type":"authentication_error","code":"invalid_api_key"}
+EXIT:1
+END 2026-08-25T23:56:13Z
