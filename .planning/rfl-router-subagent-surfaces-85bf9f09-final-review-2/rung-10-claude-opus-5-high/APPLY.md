@@ -18,7 +18,7 @@ Copies:
 
 Native Read of the freeze is lean-ctx-compressed. Exact bytes taken from on-disk hashlib + `fs.readFileSync`, then applied with a Node filesystem write (not Cursor `StrReplace`) so a compressed view cannot overwrite the freeze (F-5-1). Cursor UI file re-copied from repo after the freeze edit. YAML todos not executed (still 35 pending). No compression markers in the freeze.
 
-**Commit (freeze path; Cursor UI not in git; not pushed):** recorded after `git commit`. HEAD blob must match post-APPLY SHA-256.
+**Commit (freeze path; Cursor UI not in git; not pushed):** [`f507e80f`](https://github.com/alo-exp/silver-bullet/commit/f507e80f85dd5a5e0f0fa88da6e9e5d63fbb7a41) `Restate F-5-1 KEEP REJECT in §3.3 and disambiguate empty current-panel.` HEAD blob matches post-APPLY SHA-256. Snapshot hook did not steal the message.
 
 ## Per-finding disposition
 
