@@ -42,7 +42,7 @@ while [[ $# -gt 0 ]]; do
       agent_mode_note_permission_mode "$MODE" || exit 2
       ;;
     --sb-root) SB_ROOT="$2"; shift 2 ;;
-    --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive)
+    --interaction-mode|--interactive|--non-interactive|--attach|--no-escalate|--allow-mode-fallback|--auto-policy|--control-dir|--max-turns|--max-wall-sec|--idle-sec|--task-id|--use-print|--use-exec|--use-interactive|--quota-retry|--skip-preflight)
       agent_mode_handle_flag "$1" "${2:-}" || exit 2
       shift "$SB_AM_SHIFT"
       ;;
@@ -66,6 +66,12 @@ fi
 
 PROMPT_TEXT="$(agent_delegate_resolve_prompt "$BRIEF_FILE" "$PROMPT_FILE" "$PROMPT_TEXT")" || exit 2
 agent_mode_run_delegate_resolver "pi" "$WORK_DIR" "$PROMPT_TEXT" || exit $?
+if agent_delegate_is_pinned_ni; then
+  # Expect-file NI returns (does not exec). Exit so named models never fall
+  # through to pin_mimo. invoke.sh owns --continue / 401 fail-fast.
+  agent_delegate_exec_pinned_ni "pi" "$WORK_DIR" "$PROMPT_TEXT" "$MODE"
+  exit $?
+fi
 
 if ! agent_delegate_preflight_recommended_tools "$WORK_DIR" "$SB_ROOT" "pi"; then
   printf 'ERROR: recommended-tools preflight failed — fix Graphify/agentmemory before delegation\n' >&2
@@ -85,7 +91,7 @@ CLI="$(resolve_native_pi_cli_path "${PI_BIN:-}" || true)"
 }
 
 quota_retry_interval="${AGENT_PI_QUOTA_RETRY_INTERVAL:-60}"
-quota_retry_max="${AGENT_PI_QUOTA_RETRY_MAX:-5}"
+quota_retry_max="$(agent_delegate_quota_retry_max AGENT_PI_QUOTA_RETRY_MAX 5)"
 log_floor="${SB_AGENT_PI_LOG_FLOOR:-512}"
 attempt=0
 
@@ -150,6 +156,10 @@ while [[ "$attempt" -le "$quota_retry_max" ]]; do
     break
   fi
   if ! agent_delegate_is_quota_error "$final_output"; then
+    break
+  fi
+  if agent_delegate_quota_blocks_short_retry "$final_output"; then
+    printf '[agent-pi] quota window exhausted — skip short retry (RFL schedule)\n' >&2
     break
   fi
   if [[ "$attempt" -gt "$quota_retry_max" ]]; then

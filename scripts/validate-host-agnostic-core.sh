@@ -133,6 +133,8 @@ SCRIPTS_ALLOWLIST = {
     "scripts/review-fix-ladder.py",
     "scripts/_review_fix_ladder_impl.py",
     "scripts/lib/agent-mode.sh",
+    "scripts/lib/agent-host-exec.sh",
+    "scripts/lib/agent-delegate-common.sh",
     "scripts/lib/rfl_launcher_policy.py",
     "scripts/optimize-rtk-context-mode.sh",
     "scripts/optimize-five-tool-stack.sh",

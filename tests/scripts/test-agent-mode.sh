@@ -636,6 +636,185 @@ JSONCHK
   fi
 fi
 
+
+# --- lightweight launch (D7) ---
+agent_mode_reset
+TRACE="${TMPROOT}/ni-fast.trace"
+: >"$TRACE"
+agent_mode_classify_task() { printf 'classify\n' >>"$TRACE"; SB_AM_CLASSIFIED="non-interactive"; }
+agent_mode_detect_d3() { printf 'd3\n' >>"$TRACE"; return 1; }
+agent_mode_tui_available() { printf 'tui\n' >>"$TRACE"; return 1; }
+agent_mode_pi_tui_probe() { printf 'pi-probe\n' >>"$TRACE"; return 1; }
+NIFAST="${TMPROOT}/work-ni-fast"
+mkdir -p "$NIFAST"
+agent_mode_parse_argv --interaction-mode non-interactive --task-id ni-fast
+agent_mode_preflight_flags
+agent_mode_run_delegate_resolver "claude" "$NIFAST" "Implement and test." ""
+if [[ "$SB_AM_RESOLVED" == "non-interactive" && ! -s "$TRACE" ]] \
+  && python3 - "${SB_AM_TASK_DIR}/mode.json" <<'PY'
+import json, sys
+obj = json.load(open(sys.argv[1]))
+assert obj["requested"] == "non-interactive"
+assert obj["classified"] is None
+assert obj["resolved"] == "non-interactive"
+assert obj["reason"] == ["pin"]
+print("ok")
+PY
+then
+  check "pinned NI skips classify/D3/TUI and writes mode.json pin" pass
+else
+  check "pinned NI skips classify/D3/TUI and writes mode.json pin" fail
+fi
+# restore real functions
+# shellcheck source=../../scripts/lib/agent-mode.sh
+source "$MODE_LIB"
+
+# Cursor TUI available without SB_AGENT_CURSOR_SESSION_AVAILABLE
+CURBIN="${TMPROOT}/cur-bin"
+mkdir -p "$CURBIN"
+printf '#!/usr/bin/env bash\nexit 0\n' >"${CURBIN}/cursor-agent"
+chmod +x "${CURBIN}/cursor-agent"
+if (
+  unset SB_AGENT_CURSOR_SESSION_AVAILABLE SB_AGENT_MODE_TUI_AVAILABLE
+  export PATH="${CURBIN}:$PATH"
+  agent_mode_reset
+  agent_mode_tui_available cursor
+); then
+  check "Cursor TUI available when cursor-agent exists (no session env)" pass
+else
+  check "Cursor TUI available when cursor-agent exists (no session env)" fail
+fi
+
+# Pi TUI available without REPL banner grep
+PIBIN="${TMPROOT}/pi-bin"
+mkdir -p "$PIBIN"
+printf '#!/usr/bin/env bash\nexit 0\n' >"${PIBIN}/pi"
+chmod +x "${PIBIN}/pi"
+if (
+  unset SB_AGENT_MODE_TUI_AVAILABLE
+  export PATH="${PIBIN}:$PATH"
+  agent_mode_reset
+  agent_mode_tui_available pi
+); then
+  check "Pi TUI available when pi exists (no banner probe)" pass
+else
+  check "Pi TUI available when pi exists (no banner probe)" fail
+fi
+if ! grep -qE 'banner\|repl\|interactive' "$MODE_LIB"; then
+  check "Pi probe source has no magic-string grep" pass
+else
+  # specifically the probe function must not grep banners
+  if python3 - "$MODE_LIB" <<'PY'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text()
+m = re.search(r"agent_mode_pi_tui_probe\(\) \{.*?\n\}", text, re.S)
+assert m, "probe missing"
+body = m.group(0)
+assert "banner" not in body and "subprocess.Popen" not in body
+print("ok")
+PY
+  then
+    check "Pi probe source has no magic-string grep" pass
+  else
+    check "Pi probe source has no magic-string grep" fail
+  fi
+fi
+
+# Native argv: Pi interactive has no -p; Cursor interactive has no --print
+# shellcheck source=../../scripts/lib/agent-host-exec.sh
+source "${REPO_ROOT}/scripts/lib/agent-host-exec.sh"
+HOSTBIN="${TMPROOT}/host-bin"
+mkdir -p "$HOSTBIN"
+for fake in pi cursor-agent claude opencode; do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"${HOSTBIN}/${fake}"
+  chmod +x "${HOSTBIN}/${fake}"
+done
+printf '#!/usr/bin/env bash\nexit 0\n' >"${HOSTBIN}/codex"
+chmod +x "${HOSTBIN}/codex"
+if (
+  export PATH="${HOSTBIN}:$PATH"
+  unset SB_AGENT_HOST_ARGV_FILE
+  agent_host_build_argv pi interactive "$NIFAST" "hello" permissive
+  ! printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '-p'
+) && (
+  export PATH="${HOSTBIN}:$PATH"
+  agent_host_build_argv pi non-interactive "$NIFAST" "hello" permissive
+  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '-p'
+); then
+  check "Pi interactive argv has no -p; NI argv has -p" pass
+else
+  check "Pi interactive argv has no -p; NI argv has -p" fail
+fi
+if (
+  export PATH="${HOSTBIN}:$PATH"
+  agent_host_build_argv cursor interactive "$NIFAST" "hello" permissive
+  ! printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--print'
+) && (
+  export PATH="${HOSTBIN}:$PATH"
+  agent_host_build_argv cursor non-interactive "$NIFAST" "hello" permissive
+  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--print'
+); then
+  check "Cursor interactive argv has no --print; NI argv has --print" pass
+else
+  check "Cursor interactive argv has no --print; NI argv has --print" fail
+fi
+
+# Quota not default on pinned NI; --quota-retry re-enables
+# shellcheck source=../../scripts/lib/agent-delegate-common.sh
+source "${REPO_ROOT}/scripts/lib/agent-delegate-common.sh"
+agent_mode_reset
+SB_AM_CONCRETE_PIN=1
+SB_AM_REQUESTED="non-interactive"
+SB_AM_RESOLVED="non-interactive"
+got="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
+[[ "$got" == "0" ]] && check "pinned NI quota-retry max defaults to 0" pass \
+  || check "pinned NI quota-retry max defaults to 0" fail
+agent_mode_reset
+SB_AM_CONCRETE_PIN=1
+SB_AM_REQUESTED="non-interactive"
+SB_AM_RESOLVED="non-interactive"
+SB_AM_QUOTA_RETRY=1
+got="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
+[[ "$got" == "5" ]] && check "--quota-retry restores default max on pinned NI" pass \
+  || check "--quota-retry restores default max on pinned NI" fail
+agent_mode_reset
+got="$(agent_delegate_quota_retry_max AGENT_CLAUDE_QUOTA_RETRY_MAX 5)"
+[[ "$got" == "5" ]] && check "auto path keeps quota-retry default 5" pass \
+  || check "auto path keeps quota-retry default 5" fail
+
+# Pinned NI process tree: exec native mock, no expect/tmux/python idle watcher
+MOCKCLAUDE="${HOSTBIN}/claude"
+cat >"$MOCKCLAUDE" <<'MOCK'
+#!/usr/bin/env bash
+: "${SB_AGENT_HOST_TREE_FILE:?}"
+{
+  printf 'argv=%s\n' "$*"
+  ps -o comm= -p "$PPID" 2>/dev/null || true
+  pstree -p $$ 2>/dev/null || ps -ax -o pid,ppid,comm 2>/dev/null | head -n 20 || true
+} >"$SB_AGENT_HOST_TREE_FILE"
+exit 0
+MOCK
+chmod +x "$MOCKCLAUDE"
+TREE="${TMPROOT}/ni-tree.txt"
+ARGVF="${TMPROOT}/ni-argv.txt"
+NIEXEC="${TMPROOT}/ni-exec-work"
+mkdir -p "$NIEXEC"
+if (
+  export PATH="${HOSTBIN}:$PATH"
+  export CLAUDE_BIN="$MOCKCLAUDE"
+  export SB_AGENT_HOST_ARGV_FILE="$ARGVF"
+  export SB_AGENT_HOST_TREE_FILE="$TREE"
+  agent_host_exec_native claude "$NIEXEC" "ping" permissive
+); then
+  :
+fi
+if [[ -f "$ARGVF" ]] && grep -q -- '--print' "$ARGVF" \
+  && [[ -f "$TREE" ]] && ! grep -qiE 'expect|tmux|idle' "$TREE"; then
+  check "pinned NI exec tree has native argv and no expect/tmux/idle" pass
+else
+  check "pinned NI exec tree has native argv and no expect/tmux/idle" fail
+fi
+
 echo
 echo "=== results: ${PASS} passed, ${FAIL} failed ==="
 [[ "$FAIL" -eq 0 ]]

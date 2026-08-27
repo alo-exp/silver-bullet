@@ -6,6 +6,53 @@ _AGENT_DELEGATE_COMMON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/agent-mode.sh
 source "${_AGENT_DELEGATE_COMMON_DIR}/agent-mode.sh"
 
+# shellcheck source=scripts/lib/agent-host-exec.sh
+source "${_AGENT_DELEGATE_COMMON_DIR}/agent-host-exec.sh"
+
+agent_delegate_is_pinned_ni() {
+  [[ "${SB_AM_CONCRETE_PIN:-0}" -eq 1 && "${SB_AM_RESOLVED:-}" == "non-interactive" ]]
+}
+
+agent_delegate_quota_retry_max() {
+  local env_name="$1"
+  local default_auto="${2:-5}"
+  local env_val=""
+  eval "env_val=\"\${${env_name}:-}\""
+  if [[ "${SB_AM_QUOTA_RETRY:-0}" -eq 1 ]]; then
+    printf '%s' "${env_val:-$default_auto}"
+    return 0
+  fi
+  if agent_delegate_is_pinned_ni; then
+    printf '%s' "${env_val:-0}"
+    return 0
+  fi
+  printf '%s' "${env_val:-$default_auto}"
+}
+
+# Pinned NI: exec native argv only. Does not return on success.
+# Pi + expect-file: wrap first hop with zero-byte idle kill (do not exec) so a
+# hung Qwen thinking model cannot pin the parent for ~11 min. Gemini/MiniMax/
+# DeepSeek use a 600s first-byte window. --continue stays in invoke.sh.
+agent_delegate_exec_pinned_ni() {
+  local host="$1" work_dir="$2" prompt="$3" permission_mode="${4:-permissive}"
+  local expect_file="${SB_AGENT_EXPECT_FILE:-${PI_EXPECT_FILE:-}}"
+  if ! agent_host_build_argv "$host" "non-interactive" "$work_dir" "$prompt" "$permission_mode"; then
+    agent_mode_fail_unavailable "mode-unavailable"
+    return 3
+  fi
+  agent_host_dump_argv
+  cd "$work_dir" || return 1
+  if [[ "$host" == "pi" && -n "$expect_file" ]]; then
+    agent_host_pi_run_argv_zero_byte_guard "$expect_file"
+    return $?
+  fi
+  exec "${AGENT_HOST_ARGV[@]}" || {
+    agent_mode_fail_unavailable "mode-unavailable"
+    return 3
+  }
+}
+
+
 # Canonicalize a repo-relative path to absolute.
 agent_delegate_canonicalize_path() {
   local path="$1"
@@ -27,6 +74,19 @@ agent_delegate_clear_matrix_env() {
 agent_delegate_is_quota_error() {
   local blob="$1"
   grep -qiE '429|rate[[:space:]]*limit|token[[:space:]]*plan|quota' <<<"$blob"
+}
+
+# 5-hour / weekly / monthly windows are not 60s-retryable. RFL schedules those.
+agent_delegate_quota_blocks_short_retry() {
+  local blob="$1"
+  local repo_root resolver json
+  repo_root="$(cd "${_AGENT_DELEGATE_COMMON_DIR}/../.." && pwd)"
+  resolver="${repo_root}/scripts/review-fix-ladder.py"
+  [[ -f "$resolver" ]] || return 1
+  json="$(python3 "$resolver" --classify-quota-window --subscription-output "$blob" 2>/dev/null)" || return 1
+  python3 -c 'import json,sys
+d=json.load(sys.stdin)
+sys.exit(0 if d.get("should_short_retry") is False else 1)' <<<"$json"
 }
 
 # Redact secrets from log/progress surfaces (sk-*, ghp_*, key=value patterns).
@@ -321,6 +381,10 @@ agent_delegate_write_degraded_fallback_evidence() {
 # Ensures graphify index/query freshness and agentmemory server/export exist before substantive edits.
 agent_delegate_preflight_recommended_tools() {
   local work_dir="${1:-}" sb_root="${2:-}" host="${3:-claude}"
+  [[ "${SB_AM_SKIP_PREFLIGHT:-0}" -eq 1 || "${SB_AGENT_SKIP_PREFLIGHT:-}" == "1" ]] && return 0
+  if agent_delegate_is_pinned_ni; then
+    return 0
+  fi
   [[ "${SB_AGENT_CERT_RUN:-}" == "1" || "${SB_AGENT_CERT_RUN:-}" == "true" ]] && return 0
   [[ -n "$work_dir" && -d "$work_dir" && -f "${work_dir}/.silver-bullet/agent-cert-run" ]] && return 0
   [[ -n "$work_dir" && -d "$work_dir" ]] || return 0
