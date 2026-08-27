@@ -1,0 +1,181 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "claude",
+    "effort": "high",
+    "display": "Claude Opus 5 High",
+    "named_model": "claude/claude-opus-5-high",
+    "named_model_ran": false,
+    "pi_exits": [124, 124],
+    "substitute": "cursor-grok-4.6-high",
+    "substitute_reason": "hang×2: named Claude incomplete (Pi EXIT 124 twice); substitute Grok 4.6 High wrote review.md. Treat findings as the rung-10 review."
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "M1",
+        "title": "F-5-1 KEEP REJECT is not in the canonical §3.3 catalog; KR-kr-13 still names the old first-class duo"
+      },
+      {
+        "id": "M2",
+        "title": "/sb:panel-end empty current-panel outcome is not unique (fail-closed vs no-op)"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "L1",
+        "title": "Public inventory lists retired /sb:multi-ai-task but not retired /sb:fusion"
+      },
+      {
+        "id": "L2",
+        "title": "retire-multi-ai-task absorb text still names only ladder and panel"
+      },
+      {
+        "id": "L3",
+        "title": "Doctor / WS7 help list does not require fusion-retired language"
+      },
+      {
+        "id": "L4",
+        "title": "Compose parenthetical at L756 omits Panel-start"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "N1",
+        "title": "§5.2 heading omits ap10-partial-emit"
+      },
+      {
+        "id": "N2",
+        "title": "Mixed sb:fast vs /sb:fast in ordinary-delivery"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "M1",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Add §3.3 KR-* lock sentence no public /sb:fusion / no alias; update KR-kr-13 to first-class /sb:ladder, /sb:panel, and /sb:panel-start"
+    },
+    {
+      "id": "M2",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Disambiguate empty current-panel without panel_session_id via last-panel receipt fork; do not mint a Job; not Ladder; do not invent /sb:fusion"
+    },
+    {
+      "id": "L1",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Add RETIRED inventory row for /sb:fusion like /sb:multi-ai-task in §2.3 and Appendix D"
+    },
+    {
+      "id": "L2",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "retire-multi-ai-task absorb text names /sb:ladder / /sb:panel / /sb:panel-start"
+    },
+    {
+      "id": "L3",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "WS7/Doctor help MUST state /sb:fusion is retired and not an alias"
+    },
+    {
+      "id": "L4",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "L756 compose parenthetical includes Panel-start sitting cycle"
+    },
+    {
+      "id": "N1",
+      "severity": "NIT",
+      "decision": "REJECT-as-wrong",
+      "reason": "Do not put ap10-partial-emit in the §5.2 heading. Heading is the numbered ship sequence. AP is not a numbered workstream. Not a doc nit — heading/lock."
+    },
+    {
+      "id": "N2",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Ordinary-delivery prose uses public /sb:fast; keep catalog id sb:fast only where it is a catalog id"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "M1",
+      "title": "F-5-1 KEEP REJECT is not in the canonical §3.3 catalog; KR-kr-13 still names the old first-class duo"
+    },
+    {
+      "id": "M2",
+      "title": "/sb:panel-end empty current-panel outcome is not unique (fail-closed vs no-op)"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "leftover_count": 0,
+  "resolved": [
+    {
+      "id": "M1",
+      "severity": "MED",
+      "title": "F-5-1 KEEP REJECT is not in the canonical §3.3 catalog; KR-kr-13 still names the old first-class duo",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "M2",
+      "severity": "MED",
+      "title": "/sb:panel-end empty current-panel outcome is not unique (fail-closed vs no-op)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L1",
+      "severity": "LOW",
+      "title": "Public inventory lists retired /sb:multi-ai-task but not retired /sb:fusion",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L2",
+      "severity": "LOW",
+      "title": "retire-multi-ai-task absorb text still names only ladder and panel",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L3",
+      "severity": "LOW",
+      "title": "Doctor / WS7 help list does not require fusion-retired language",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L4",
+      "severity": "LOW",
+      "title": "Compose parenthetical at L756 omits Panel-start",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "N2",
+      "severity": "NIT",
+      "title": "Mixed sb:fast vs /sb:fast in ordinary-delivery",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "rejected_as_wrong": [
+    {
+      "id": "N1",
+      "severity": "NIT",
+      "title": "§5.2 heading omits ap10-partial-emit",
+      "decision": "REJECT-as-wrong",
+      "resolved": "n/a"
+    }
+  ],
+  "apply_sha": "088a18a6dc755ffee2ec68755cf72df0d28c5fde53d9c6f86198fb6672719f4e",
+  "apply_bytes": 648963
+}
