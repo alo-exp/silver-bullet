@@ -1,0 +1,17 @@
+## Rung-3 complete — `/silver:clarify --auto` verdict: **PASS, no edits (CL-03 no-op)**
+
+Report: `.planning/rfl-router-subagent-surfaces-85bf9f09-clarify-ladder/rung-03-opencode-go-qwen3.8-max/clarifications.md`
+
+**Freeze state:** both copies verified byte-identical before and after at SHA-256 `b9ed055d…c2d` (627,240 B, 4,397 lines); `main` branch; no checkout, no commit.
+
+**Independent re-read findings (full 4,397 lines + grep/sed ground truth):**
+
+✅ **All constraints intact** — 33 YAML todos all `pending` (34th `status:` is Appendix B prose); FAST-not-a-Job ×10 + short order; one-level `/sb:ladder|parallel <route>` ladder XOR parallel, no second CLI; Authorizer not a pref key; `sb:agent-wrap` FORBIDDEN-only (20 occ.); `/sb:multi-ai-task` retired no-alias (30 occ.); omni origin SHA `745c7f41…` ×22; KEEP REJECT closed; Q1–Q3 locked; rung-2 CL-01 intact (exactly one `## How to read this document`, TOC anchor resolves, zero `## Overview`).
+
+**Rung-2 flags re-adjudicated:**
+- Flag A (truncated `#### Invert …` heading): **confirmed, corrected counts** — heading ×3 (1025/1634/3628) + TOC ×3 (190/216/306), not "11"; plus truncated `#### WS3 owns invert …), s` (3784). Clean canonical siblings exist at 3631/3787.
+- Flag B (8 vs 91 vs 93 named tests): **unfounded** in current file — no `Total:` line exists, §C is a 52-row table, no numeric bullet claims.
+
+🆕 **New finding — systemic §4–§5 duplication corruption:** `blocked_primary_checkout_unbound` ×4, `VAL/TST-RFL-623/615` ×4, `blocked_corrupt_state/625/626` ×3, two divergent mermaid flowcharts (1438/1652), `## 5.`/`### 6.` numbering collision (2768/3691/3704/4026), truncated TOC entries (308/309/334) — violating the doc's own §F "exactly one occurrence per TOC heading."
+
+**Why no edits:** dedup requires canonical-copy judgment the `--auto` mode must not guess. Escalated as **`CLARIFY-R3-Q1`** (A/B/C, recommendation **A**: dedicated human editorial dedupe pass, then re-verify + re-run ladder).

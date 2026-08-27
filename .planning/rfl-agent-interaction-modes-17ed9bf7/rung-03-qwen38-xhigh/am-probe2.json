@@ -1,0 +1,142 @@
+[
+  {
+    "url": "http://127.0.0.1:3111/tools",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/tools",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/mcp",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/mcp",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/remember",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/remember",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/recall",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/recall",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/save",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/save",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/v1/remember",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/v1/remember",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/v1/save",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/v1/save",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/iii/remember",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/iii/remember",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/iii/memory",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/iii/memory",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/engine/memory",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/engine/memory",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/api/v1/memory",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/api/v1/memory",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/api/memory",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/api/memory",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/sessions",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/sessions",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/status",
+    "method": "GET",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "http://127.0.0.1:3111/status",
+    "method": "POST",
+    "error": "HTTP Error 404: Not Found"
+  }
+]

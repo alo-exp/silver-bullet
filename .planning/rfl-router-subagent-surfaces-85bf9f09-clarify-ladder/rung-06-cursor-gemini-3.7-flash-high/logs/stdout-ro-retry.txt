@@ -1,0 +1,24 @@
+Autonomous `/silver:clarify --auto` report for **Rung 6 (`cursor/gemini-3.7-flash-high`)** has been generated and written to [`clarifications.md`](.planning/rfl-router-subagent-surfaces-85bf9f09-clarify-ladder/rung-06-cursor-gemini-3.7-flash-high/clarifications.md).
+
+---
+
+### Key Findings & Status
+
+1. **Freeze Plan Unmodified (Read-Only Reporter):**
+   - Plan file [`router_subagent_surfaces_85bf9f09.plan.md`](.planning/router_subagent_surfaces_85bf9f09.plan.md) was read and audited without modifications.
+   - Verified SHA-256: `7581f0d2725bcaef7bd8225a7b096ceb72958d4f17d60befa8ab22610926d3a0` (618,769 bytes, 4,344 lines).
+
+2. **Constraints Verification (All Intact):**
+   - **YAML 33 todos pending:** Exactly 33 todos in YAML frontmatter; all 33 remain with `status: pending`.
+   - **FAST not a Job / not legal compose route:** Preserved across 44 citations; FAST short quality order Executor → Verifier → Validator intact.
+   - **One-level compose:** Enforced (ladder XOR parallel; nested compose fail-closes).
+   - **Authorizer not a pref key:** Confirmed (admission TCB, not a user-facing role key).
+   - **No `sb:agent-wrap`:** Confirmed (marked forbidden/retired with no alias).
+   - **No `/sb:multi-ai-task`:** Confirmed (retired with no alias).
+   - **Omni absorbed:** Provenance SHA `745c7f4166f70dff9181d7c8a639eb2e3519eedeb25487dda2f97e84425c2c26` cited verbatim in 22 locations.
+   - **KEEP REJECT closed:** All 18 canonical `KR-*` sections in §3.3 remain closed.
+   - **Q1–Q3 locked:** All clarify decisions from non-autonomous rounds remain locked in §6.
+   - **Public `/sb` only:** Unified to `/sb` and generated `sb:<route>` catalog; dual `/silver` window forbidden.
+
+3. **Human Decisions / `AskQuestion` Items:**
+   - **None.** No open forks or ambiguous decisions remain.

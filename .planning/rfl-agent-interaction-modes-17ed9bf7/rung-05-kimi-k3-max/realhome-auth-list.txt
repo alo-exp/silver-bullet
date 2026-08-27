@@ -1,0 +1,14 @@
+┌  Credentials [90m~/.local/share/opencode/auth.json
+│
+●  OpenCode Go [90mapi
+│
+●  MiniMax Token Plan (minimax.io) [90mapi
+│
+└  2 credentials
+
+┌  Environment
+│
+●  DeepSeek [90mDEEPSEEK_API_KEY
+│
+└  1 environment variable
+

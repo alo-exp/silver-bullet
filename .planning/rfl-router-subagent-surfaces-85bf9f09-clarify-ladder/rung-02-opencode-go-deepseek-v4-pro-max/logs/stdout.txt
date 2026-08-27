@@ -1,0 +1,18 @@
+Rung 2 complete. Summary:
+
+## Result
+
+**Independent re-read:** full 4,398-line freeze re-read from scratch (not a rung-1 replay). Confirmed all locks: Q1–Q3 decided, KEEP REJECT closed (only the Q1 FAST short-order amendment in force), omni absorbed (origin SHA `745c7f41…` verbatim), 33/33 YAML todos `pending`, all brief constraints intact.
+
+**One clarification applied (CL-01):** §F Document-integrity checklist demanded "exactly one `## Overview`" but the body has **zero** such headings — the rewrite replaced the old `## Overview` section with `## How to read this document` (exists exactly once, first TOC entry), leaving a stale checklist token that made the freeze violate its own integrity rule.
+
+- Fix: align the checklist token with the actual heading (checklist-side, not body-side — re-adding a section would invent structure the rewrite removed).
+- Non-blocking `autonomous_default` per the skill's decision taxonomy → **no AskQuestion**.
+
+**Verification:**
+- Pre-run SHA `cca61544e25d60e8f645910b55f456db35663a76440349c12de19895cfa726f2` → post-run SHA `b9ed055d1f67c451ef1658c8e38ec4e15abc805a3de55d226d32a743341c7b2d` on **both** freeze copies; delta proven byte-exact to the single token by reconstruction-hash.
+- 33/33 todos still `pending`; no KR-*/§3.3/§6 A/B/C text touched; no commit, stayed on `main`.
+
+**Report:** `.planning/rfl-router-subagent-surfaces-85bf9f09-clarify-ladder/rung-02-opencode-go-deepseek-v4-pro-max/clarifications.md`
+
+**Flagged for parent (observed, not edited):** 11 occurrences of the truncated `#### Invert scripts/lib/recommended-tools/graphify-worktree.sh …` heading vs 1 TOC entry — a pre-existing round-receipt editorial artifact inside locked body prose, beyond the `--auto` clarify envelope; recommend human decision rather than an auto-rung edit.

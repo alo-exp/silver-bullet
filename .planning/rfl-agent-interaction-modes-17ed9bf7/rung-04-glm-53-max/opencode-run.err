@@ -1,0 +1,10 @@
+[91m[1mError: [0mModel not found: opencode-go/glm-5.3. Did you mean: glm-5.3?
+[91m[1mError: [0mModel not found: opencode-go/glm-5.3. Did you mean: glm-5.3?
+[91m[1mError: [0mModel not found: opencode-go/glm-5.3. Did you mean: glm-5.3?
+[91m[1mError: [0m{
+  "name": "UnknownError",
+  "data": {
+    "message": "Unexpected server error. Check server logs for details.",
+    "ref": "err_0c6c8979"
+  }
+}

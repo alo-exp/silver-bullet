@@ -1,0 +1,10 @@
+┌  Credentials [90m~/.local/share/opencode/auth.json
+│
+└  0 credentials
+
+┌  Environment
+│
+●  DeepSeek [90mDEEPSEEK_API_KEY
+│
+└  1 environment variable
+

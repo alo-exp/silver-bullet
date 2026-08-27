@@ -1,0 +1,8 @@
+[agent-delegate] WARN: missing enterprise preflight lib at /Users/shafqat/projects/silver-bullet/repo/scripts/enterprise-e2e/lib/core.sh
+[agent-claude] seeded folder trust for /Users/shafqat/projects/silver-bullet/repo in /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-LnmoNa/.claude.json
+[agent-claude] seeded folder trust for /Users/shafqat/projects/silver-bullet/repo in /Users/shafqat/.codex.json
+[agent-claude] lightweight CLAUDE_CONFIG_DIR: /var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T//agent-claude-config-LnmoNa
+/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/claude/agent.sh: line 75: /Users/shafqat/projects/silver-bullet/repo/scripts/lib/claude-matrix-auth.sh: No such file or directory
+/Users/shafqat/projects/silver-bullet/repo/tests/live/agents/claude/agent.sh: line 166: claude_matrix_export_settings_env: command not found
+[agent-claude] log: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-agent-interaction-modes-17ed9bf7/rung-12-fable5-high/claude-run.log (332 B)
+[agent-claude] ERROR: log below floor (332 B < 512 B) — failure_class=log-floor
