@@ -27,6 +27,15 @@ assert_exit() {
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c.XXXXXX")"
 trap 'rm -rf "$WORKDIR" /tmp/rfl-policy-c-out.$$ /tmp/rfl-policy-c-err.$$' EXIT
 
+HELP_OUT="$(python3 "$RESOLVER" --help 2>&1 || true)"
+for flag in --assert-policy-c --write-policy-c --assert-rfl-advance; do
+  if printf '%s' "$HELP_OUT" | grep -q -- "$flag"; then
+    pass "review-fix-ladder.py --help lists $flag"
+  else
+    fail "review-fix-ladder.py --help missing $flag"
+  fi
+done
+
 RUN="$WORKDIR/.planning/rfl-test"
 RUNG="$RUN/rung-01-cursor-glm-5.2-high"
 mkdir -p "$RUNG"
@@ -100,6 +109,16 @@ assert_exit "write-policy-c CLEAN-none" 0 \
   python3 "$RESOLVER" --write-policy-c --rung-dir "$RUNG" --table-json-file "$WORKDIR/clean-none.json"
 assert_exit "assert-policy-c passes CLEAN-none" 0 \
   python3 "$RESOLVER" --assert-policy-c --rung-dir "$RUNG"
+
+printf '%s\n' '{"schema":"rfl.policy_c.v1","rung_identity":{"family":"kimi","effort":"high","display":"Kimi K3 High"},"verdict":"NOT CLEAN","issues":{"HIGH":[{"id":"H1","title":"h"}],"MED":"none","LOW":"none","NIT":"none"},"triage":[{"id":"H1","severity":"HIGH","decision":"ACCEPT","reason":"ok"}],"blockers":"none","highs":[{"id":"H1","title":"h"}],"mediums":"none","disposition":"ACCEPT-apply","resolved":"pending"}' >"$WORKDIR/pending.json"
+PEND="$WORKDIR/pending-rung"
+mkdir -p "$PEND"
+assert_exit "write-policy-c pending without phase fails" 2 \
+  python3 "$RESOLVER" --write-policy-c --rung-dir "$PEND" --table-json-file "$WORKDIR/pending.json"
+assert_exit "write-policy-c pending during fix_parallel" 0 \
+  python3 "$RESOLVER" --write-policy-c --rung-dir "$PEND" --current-phase rung_5_fix_parallel --table-json-file "$WORKDIR/pending.json"
+assert_exit "assert-policy-c pending during fix_parallel" 0 \
+  python3 "$RESOLVER" --assert-policy-c --rung-dir "$PEND" --current-phase rung_5_fix_parallel
 if grep -qF '| — | **none** |' "$RUNG/POLICY-C.md" && grep -qF '**Verdict:** CLEAN' "$RUNG/POLICY-C.md"; then
   pass "CLEAN-none markdown has none-rows"
 else

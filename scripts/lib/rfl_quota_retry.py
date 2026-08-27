@@ -235,6 +235,8 @@ def mark_ladder_status(
     reason: str = "",
     policy_d_written: bool | None = None,
     now: datetime | None = None,
+    current_rung: str | None = None,
+    current_phase: str | None = None,
 ) -> dict[str, Any]:
     moment = now or utcnow()
     normalized = (status or "").strip().lower()
@@ -257,6 +259,10 @@ def mark_ladder_status(
         payload["policy_d_written"] = bool(policy_d_written)
     elif normalized in {"completed", "done", "finished", "policy_d"}:
         payload["policy_d_written"] = True
+    if current_rung:
+        payload["current_rung"] = str(current_rung).strip()
+    if current_phase:
+        payload["current_phase"] = str(current_phase).strip()
     _write_json(path, payload)
     return {"ok": True, "path": str(path), **payload}
 

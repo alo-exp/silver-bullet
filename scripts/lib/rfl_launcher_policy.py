@@ -658,7 +658,11 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
         if not isinstance(body, dict):
             print("ERROR: Policy C JSON must be an object", file=sys.stderr)
             return 2
-        result = write_policy_c(args.rung_dir, body)
+        result = write_policy_c(
+            args.rung_dir,
+            body,
+            current_phase=getattr(args, "current_phase", None),
+        )
         print(result["markdown"], end="")
         if not result["ok"]:
             print("ERROR: " + "; ".join(result["errors"]), file=sys.stderr)

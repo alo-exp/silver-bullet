@@ -617,8 +617,32 @@ def resolve_rung_phase(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Resolve review-fix ladder rungs for the active host.")
+    parser = argparse.ArgumentParser(
+        description="Resolve review-fix ladder rungs for the active host.",
+        allow_abbrev=False,
+    )
     parser.add_argument("--host", choices=("cursor", "codex", "claude"), help="Override host detection")
+    parser.add_argument(
+        "--write-policy-c",
+        action="store_true",
+        help="Write POLICY-C.json + POLICY-C.md under --rung-dir and print markdown",
+    )
+    parser.add_argument(
+        "--assert-policy-c",
+        action="store_true",
+        help="Exit non-zero if --rung-dir Policy C artifact is missing or schema-invalid",
+    )
+    parser.add_argument(
+        "--assert-rfl-advance",
+        action="store_true",
+        help="Exit non-zero if the active RFL run is missing Policy C or sibling failure artifacts",
+    )
+    parser.add_argument("--rung-dir", type=Path, help="Rung directory for Policy C / skip artifacts")
+    parser.add_argument(
+        "--current-phase",
+        default="",
+        help="Documented rung phase stored on --mark-ladder-status (e.g. rung_5_fix_parallel)",
+    )
     parser.add_argument("--json", action="store_true", help="Emit JSON only")
     parser.add_argument(
         "--codex-home",
@@ -746,6 +770,8 @@ def main() -> int:
                     args.run_dir,
                     args.mark_ladder_status,
                     now=now,
+                    current_rung=args.rung_id or None,
+                    current_phase=args.current_phase or None,
                 )
             except ValueError as exc:
                 print(f"ERROR: {exc}", file=sys.stderr)
