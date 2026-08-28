@@ -1,18 +1,17 @@
-# Policy C — RFL round 2 rung 10 (Claude Opus 5 High)
+# Policy C — Claude Opus 5 High
 
-**Rung:** 10 — named `claude/claude-opus-5-high` **did not finish** (Pi hang×2, EXIT 124 twice). Substitute **Grok 4.6 High** wrote [review.md](review.md). Treat those findings as the rung-10 review.
-**Review:** [review.md](review.md) **NOT CLEAN** (M1, M2 remain at review time)
-**APPLY worker:** leftover APPLY only. Freeze YAML not executed. Rung 11 not started. No push / no branch switch.
-
-## Hang×2
-
-Named Claude incomplete. Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high`). Not 429.
+- **Rung identity:** Claude Opus 5 High (`claude` / `high`)
+- **Verdict:** NOT CLEAN
+- **Disposition:** ACCEPT-apply
 
 ## Blockers / Highs / Mediums
 
 - **Blockers:** none
 - **Highs:** none
-- **Mediums:** M1, M2 (ACCEPT-apply)
+- **Mediums:**
+  - M1
+  - M2
+  - M3
 
 ## Reported issues (by severity)
 
@@ -26,56 +25,54 @@ Named Claude incomplete. Substitute Cursor Grok 4.6 High (`cursor-grok-4.6-high`
 
 | ID | Title |
 |----|-------|
-| M1 | F-5-1 KEEP REJECT is not in the canonical §3.3 catalog; KR-kr-13 still names the old first-class duo |
-| M2 | `/sb:panel-end` empty `current-panel` outcome is not unique (fail-closed vs no-op) |
+| M1 | KR-no-public-fusion has no named test / coverage row while coverage MUST maps every KEEP REJECT lock |
+| M2 | Panel-start is both admitted and excluded as an in-quality-order hop mode; hop-level panel-start has no termination rule |
+| M3 | /sb:panel-end fail-closed has no canonical blocked_* row, contradicting the ordered-table MUST |
 
 ### LOW
 
 | ID | Title |
 |----|-------|
-| L1 | Public inventory lists retired `/sb:multi-ai-task` but not retired `/sb:fusion` |
-| L2 | `retire-multi-ai-task` absorb text still names only ladder and panel |
-| L3 | Doctor / WS7 help list does not require fusion-retired language |
-| L4 | Compose parenthetical at L756 omits Panel-start |
+| L1 | Broken TOC anchor at §4.6: GFM strips slashes but the href inserted hyphens (not the rejected -- class) |
+| L2 | Panel-end state has no named writer or store for panel_session_id, last-panel receipt, or recovery receipt |
+| L3 | Doctor must state fusion retirement but is never required to verify route absence |
+| L4 | Appendix C named-tests inventory omits tests/scripts/test-ap10-plugin-emit.sh |
 
 ### NIT
 
 | ID | Title |
 |----|-------|
-| N1 | §5.2 heading omits `ap10-partial-emit` |
-| N2 | Mixed `sb:fast` vs `/sb:fast` in ordinary-delivery |
+| N1 | PANEL.md; formerly FUSION.md cites a worker template that never existed in-repo |
+| N2 | Public inventory row order is unsorted after the F-5-1 rename (both catalogs) |
+| N3 | Rows 27 and 42 drop the Blocker/Trigger/Resume triple used by the other 39 rows |
 
 ## Triage (launcher, not rung model)
 
 | ID | Severity | Decision | Reason |
 |----|----------|----------|--------|
-| M1 | MED | **ACCEPT** | Add §3.3 KR-* whose lock sentence is no public `/sb:fusion` / no alias. Update KR-kr-13 so first-class public Jobs are `/sb:ladder`, `/sb:panel`, **and** `/sb:panel-start`. |
-| M2 | MED | **ACCEPT** | Disambiguate empty `current-panel` without `panel_session_id` via last-panel receipt. Do not mint a Job. Not Ladder. Do not invent `/sb:fusion`. |
-| L1 | LOW | **ACCEPT** | RETIRED inventory row for `/sb:fusion` like `/sb:multi-ai-task` in §2.3 and Appendix D. |
-| L2 | LOW | **ACCEPT** | Absorb text names `/sb:ladder` / `/sb:panel` / `/sb:panel-start`. |
-| L3 | LOW | **ACCEPT** | WS7/Doctor help MUST: `/sb:fusion` is retired and not an alias. |
-| L4 | LOW | **ACCEPT** | L756 includes Panel-start sitting cycle. |
-| N1 | NIT | **REJECT-as-wrong** | Do not put `ap10-partial-emit` in the §5.2 heading. Heading is the numbered ship sequence. AP is not a numbered workstream. Not a doc nit — heading/lock. |
-| N2 | NIT | **ACCEPT** | Ordinary-delivery prose uses public `/sb:fast`; catalog id `sb:fast` only where it is a catalog id. |
-
-**HIGH:** none.
+| M1 | MED | ACCEPT | Lock L979–981 was added by the prior substitute APPLY with no named-test MUST. LS-plan-executed-coverage and KR-coverage-plan-executed require every KEEP REJECT lock to map to a named test. New gap, not a re-litigation of substitute M1 catalog-row work. |
+| M2 | MED | ACCEPT | L1293 hop modes are Ladder or Panel; L2412 added Panel-start as a hop mode in the F-5-1 rename. Locked product: quality-order default Ladder; panel-start is the sitting Job, not a hop mode. Restore hop-mode set and bind /sb:panel-end to the live panel-start Job only. |
+| M3 | MED | ACCEPT | Ordered-table MUST: every failure classifies to exactly one blocked_*. Panel-end fail-closed is specified but unnamed. Precedent: blocked_fast_leaf is FAST-scoped / not a Job. Add scoped blocked_panel_end (row 43). Not a documentation nit. |
+| L1 | LOW | ACCEPT | New evidence: TOC href converts slashes to hyphens; GFM lock strips punctuation so the heading slug is ladderpanelpanel-start. Not the rejected -- double-hyphen class. Only unresolved TOC anchor. |
+| L2 | LOW | ACCEPT | Fail-closed vs no-op fork depends on last-panel receipt existence. KR-projector-exclusive stays: receipts are non-packet session-store, WS4 writer, not wbs-projector.sh. |
+| L3 | LOW | ACCEPT | Help-text-only retirement is unproven. Doctor / test-router-doctor-report.sh must assert catalog/lock contains no /sb:fusion, /sb:parallel, or /sb:council. Complements M1. |
+| L4 | LOW | ACCEPT | Appendix C is the inventory §5.4 dereferences. Body cites test-ap10-plugin-emit.sh at L122/L3366/L4255; inventory omitted it. Add the row. |
+| N1 | NIT | ACCEPT | Implementer reading formerly FUSION.md will look for a file to rename. No in-repo FUSION.md. Clarify create PANEL.md; do not imply a disk rename. Not rejected as a documentation nit. |
+| N2 | NIT | ACCEPT | panel-start/panel-end sit between contribute and deep-research while panel sits after new-workflow. Reorder both catalogs. Not rejected as a documentation nit. |
+| N3 | NIT | ACCEPT | Rows 27 and 42 use compressed dash form vs the Blocker/Trigger/Resume triple. Expand those two rows. Data already present; format must match the table contract. |
 
 ## Resolved (after launcher ACCEPT fixes)
 
 | ID | Severity | Title | Decision | Resolved |
 |----|----------|-------|----------|----------|
-| M1 | MED | F-5-1 KEEP REJECT not in §3.3; KR-kr-13 duo | ACCEPT | **yes** |
-| M2 | MED | empty `current-panel` fail-closed vs no-op | ACCEPT | **yes** |
-| L1 | LOW | no RETIRED `/sb:fusion` row | ACCEPT | **yes** |
-| L2 | LOW | absorb ladder+panel only | ACCEPT | **yes** |
-| L3 | LOW | Doctor/help fusion-retired MUST | ACCEPT | **yes** |
-| L4 | LOW | L756 omits Panel-start | ACCEPT | **yes** |
-| N2 | NIT | mixed `sb:fast` vs `/sb:fast` | ACCEPT | **yes** |
+| M1 | MED | KR-no-public-fusion has no named test / coverage row while coverage MUST maps every KEEP REJECT lock | ACCEPT | yes |
+| M2 | MED | Panel-start is both admitted and excluded as an in-quality-order hop mode; hop-level panel-start has no termination rule | ACCEPT | yes |
+| M3 | MED | /sb:panel-end fail-closed has no canonical blocked_* row, contradicting the ordered-table MUST | ACCEPT | yes |
+| L1 | LOW | Broken TOC anchor at §4.6: GFM strips slashes but the href inserted hyphens (not the rejected -- class) | ACCEPT | yes |
+| L2 | LOW | Panel-end state has no named writer or store for panel_session_id, last-panel receipt, or recovery receipt | ACCEPT | yes |
+| L3 | LOW | Doctor must state fusion retirement but is never required to verify route absence | ACCEPT | yes |
+| L4 | LOW | Appendix C named-tests inventory omits tests/scripts/test-ap10-plugin-emit.sh | ACCEPT | yes |
+| N1 | NIT | PANEL.md; formerly FUSION.md cites a worker template that never existed in-repo | ACCEPT | yes |
+| N2 | NIT | Public inventory row order is unsorted after the F-5-1 rename (both catalogs) | ACCEPT | yes |
+| N3 | NIT | Rows 27 and 42 drop the Blocker/Trigger/Resume triple used by the other 39 rows | ACCEPT | yes |
 
-**leftover_count:** 0 (ACCEPT items)
-
-**N1:** REJECT-as-wrong — §5.2 heading unchanged.
-
-## F-2 HOLD — do not change
-
-Duplicate `#### \`blocked_advisor_state\` (row 14)` at two sites (post-APPLY L3130 and L3324).
