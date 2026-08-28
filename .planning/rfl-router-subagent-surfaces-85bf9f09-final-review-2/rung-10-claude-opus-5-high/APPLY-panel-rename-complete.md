@@ -9,13 +9,13 @@ Native Read of the freeze is lean-ctx compressed (155 lines). Exact bytes taken 
 | | SHA-256 | Bytes | `rg -i fusion` match lines |
 |---|---|---|---|
 | Pre-APPLY (both copies) | `63680e37bb0ec004a11ceb750e8e828d495cdb3d5f25fbe2d1b981942741a994` | 652667 | **23** lines / **39** occurrences |
-| Post-APPLY (repo WT + Cursor UI) | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **0** |
+| Post-APPLY (repo WT + Cursor UI + HEAD blob) | `1e3c9866d47de094ba8815fadac95c9cc4ff47062cc0fa9c9a6b24326ed27b13` | 653189 | **0** |
 
-Copies:
+Copies (byte-identical SHA above):
 
 1. [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](../../router_subagent_surfaces_85bf9f09.plan.md)
 2. `~/.cursor/plans/router_subagent_surfaces_85bf9f09.plan.md` (Cursor UI, not in git)
-3. HEAD blob after freeze commit (recorded after commit)
+3. HEAD blob `HEAD:.planning/router_subagent_surfaces_85bf9f09.plan.md` after [`783e9fce`](https://github.com/alo-exp/silver-bullet/commit/783e9fce) (WT = UI = HEAD)
 
 `ws0--ws0b` count: **0**. mermaid fences: **1**. YAML todos: **35** `status: pending`. HOLD headings: **2**.
 
