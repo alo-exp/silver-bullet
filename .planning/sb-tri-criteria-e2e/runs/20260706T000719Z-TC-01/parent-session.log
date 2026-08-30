@@ -1,7 +1,0 @@
-# TC-01 Live Verify — 20260706T000719Z-TC-01
-# Fixture: enterprise-grade-test-app | SB sha: d46409736640 | fixture sha: 8e2f78c63b8b
-# bootstrap-orchestrator-track.sh: NOT USED (live verify)
-# SB_RUNTIME_PRESERVE_STATE_DIR=1 state: /Users/shafqat/.cursor/.silver-bullet/tri-criteria-live-20260706T000719Z-TC-01
-# execution_model: Cursor parent orchestrator + Task workers (model=composer-2.5)
-
-[session] product gate check before orchestrator drain

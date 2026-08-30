@@ -1,4 +1,0 @@
-start=2026-08-23T18:27:29Z
-OPENCODE=/Users/shafqat/.opencode/bin/opencode
-MODEL=opencode-go/glm-5.3
-VARIANT=max

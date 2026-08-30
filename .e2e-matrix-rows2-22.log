@@ -1,59 +1,0 @@
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 2: silver-research (/silver:research) ===
-  graphify: graphify query "silver-research routes hooks skills orchestrator"
-  evidence: docs/ADR-001-runtime.md
-  launching interactive Claude session...
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A1
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A2
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A3
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A4
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A5
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A6
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A7
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A8
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A9
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[72C[1A… 5m 10
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A1
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A2
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A3
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A4
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A5
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A6
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A7
-[2C[8A]0;⠂ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A8
-[2C[8A]0;⠐ ADR: Postgres vs SQLite for orders[2D[8B[78C[1A9
-[2C[8A
-  PASS: evidence at docs/ADR-001-runtime.md
-=== Row 3: silver-feature (/silver:feature) ===
-  graphify: graphify query "silver-feature routes hooks skills orchestrator"
-  evidence: .planning/workflows/feature-currency.md
-  launching interactive Claude session...
-
-
-
-[2C[7A]0;⠐ Add currency field to orders API[2D[7B[16A·
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[2C[7A
-  FAIL: missing evidence at .planning/workflows/feature-currency.md
-=== Row 4: silver-bugfix (/silver:bugfix) ===
-  graphify: graphify query "silver-bugfix routes hooks skills orchestrator"
-  evidence: .planning/workflows/bugfix-health.md
-  launching interactive Claude session...

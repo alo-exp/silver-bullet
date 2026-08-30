@@ -1,98 +1,0 @@
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 4: silver-bugfix (/silver:bugfix) ===
-  graphify: graphify query "silver-bugfix routes hooks skills orchestrator"
-  evidence: .planning/workflows/bugfix-health.md
-  launching interactive Claude session...
-=== Enterprise E2E Matrix Runner ===
-SB_ROOT:    /Users/shafqat/projects/silver-bullet/repo
-Fixture:    /Users/shafqat/projects/enterprise-grade-test-app
-Claude:     /Users/shafqat/.local/bin/claude
-
-=== Row 4: silver-bugfix (/silver:bugfix) ===
-  graphify: graphify query "silver-bugfix routes hooks skills orchestrator"
-  evidence: .planning/workflows/bugfix-health.md
-  launching interactive Claude session...
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A7
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A8
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A9
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[77C[1A30
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A1
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A2
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A3
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A4
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A5
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A6
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A7
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A8
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A9
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[77C[1A40
-[2C[7A]0;⠐ Fix health endpoint 500 bug]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A1
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A2
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A3
-[2C[7A]0;⠐ Fix health endpoint 500 bug[2D[7B[78C[1A4
-[2C[7A]0;⠂ Fix health endpoint 500 bug[2D[7B[78C[1A5
-[2C[7A]0;⠐ Fix health endpoint 500 bug
-  PASS: evidence at .planning/workflows/bugfix-health.md
-=== Row 5: silver-ui (/silver:ui) ===
-  graphify: graphify query "silver-ui routes hooks skills orchestrator"
-  evidence: .planning/workflows/ui-version-badge.md
-  launching interactive Claude session...
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A8
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A9
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[77C[1A50
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A1
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A2
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A3
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A4
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A5
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A6
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A7
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A8
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A9
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[74C[1A10m 0
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A1
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A2
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A3
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A4
-[2C[7A]0;⠂ Add API version to admin badge[2D[7B[78C[1A5
-[2C[7A]0;⠐ Add API version to admin badge[2D[7B[78C[1A6
-[2C[7A
-  FAIL: missing evidence at .planning/workflows/ui-version-badge.md
-=== Row 6: silver-fast (/silver:fast) ===
-  graphify: graphify query "silver-fast routes hooks skills orchestrator"
-  evidence: .planning/workflows/fast-readme.md
-  launching interactive Claude session...
-
-[2C[4A[2D[4B[34C[9A5
-
-
-
-
-
-
-
-
-[2C[4A[2D[4B[9A✽
-
-
-
-
-
-
-
-
-[2C[4A]0;✳ Fix README install instructions[2D[4B[2K[1A[2K[1A[2K[G[1A[6A✻[3GCogitated fo[16G 13m 26[24G[K[2C[1B[K[1B────────────────────────────────────────────────────────────────────────────────[1B❯ [7m [2B[27m  ⏵⏵[6Gbypass[13Gpermissions[25Gon[28G(shift+tab[39Gto[42Gcycle)[49G·[51G←[53Gfor[57Gagents[66G105708[73Gtokens[1B[K[1B[K[1B[K[2A[2C[3A
-  PASS: evidence at .planning/workflows/fast-readme.md
-=== Row 7: silver-test (/silver:test) ===
-  graphify: graphify query "silver-test routes hooks skills orchestrator"
-  evidence: .planning/workflows/test-orders-integration.md
-  launching interactive Claude session...

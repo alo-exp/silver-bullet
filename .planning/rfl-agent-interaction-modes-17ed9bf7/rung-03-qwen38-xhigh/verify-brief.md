@@ -1,1 +1,0 @@
-VERIFY-ONLY pass 1 **re-run** after residual fixes. Confirm I-25..I-31 including D4 inherits wave, zero_tokens, no prior_result.md, D4 not D3, pin-only fallback. WRITE verify_1.md (overwrite). No plan edits.

@@ -1,8 +1,0 @@
-=== agent-claude-delegate 2026-08-25T01:50:19Z ===
-work_dir=/tmp/sb-dml-iso
-sb_root=/Users/shafqat/projects/silver-bullet/repo
-attempt=1
-interactive=0
-
-pong
-=== agent-claude-delegate complete exit=1 attempt=1 ===

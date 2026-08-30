@@ -1,5 +1,0 @@
-{"id": "C001", "text": "Socialpranker leads on phased depth and source catalogs", "evidence_ids": ["E001"], "support_status": "supported", "type": "factual"}
-{"id": "C002", "text": "SB silver-deep-research v2 ranks second on composability with search_orchestrator", "evidence_ids": ["E003"], "support_status": "supported", "type": "factual"}
-{"id": "C003", "text": "skills.sh API is now functional for landscape discovery", "evidence_ids": ["E004"], "support_status": "supported", "type": "factual"}
-{"id": "C004", "text": "GitHub stars poorly predict feature leadership", "evidence_ids": ["E001", "E005"], "support_status": "supported", "type": "interpretive"}
-{"id": "C005", "text": "parallel-web leads portal installs but lacks SB-level validation automation", "evidence_ids": ["E009"], "support_status": "partial", "type": "interpretive"}

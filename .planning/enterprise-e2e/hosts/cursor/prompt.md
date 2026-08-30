@@ -1,1 +1,0 @@
-../CURSOR-TUI-PROTOCOL.md

@@ -1,4 +1,0 @@
-exit=1
-error: OpenCode treated the positional prompt as a --file path
-exact: File not found: RFL rung 2 REVIEW ONLY. Write NEW issues I-18+ only to ...
-fix: prompt.md + short positional "Review"

@@ -1,1 +1,0 @@
-Reply with exactly the word pong and nothing else.

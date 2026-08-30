@@ -1,9 +1,0 @@
-=== agent-claude-delegate 2026-08-24T17:14:33Z ===
-work_dir=/Users/shafqat/projects/silver-bullet/repo
-sb_root=/Users/shafqat/projects/silver-bullet/repo
-attempt=1
-interactive=0
-
-You've hit your monthly spend limit. Switch to another model, or manage usage credits at claude.ai/settings/usage?from=cc_cli_limit_message, to continue.
-Client.listTools() called but server does not advertise tools capability - returning empty list
-=== agent-claude-delegate complete exit=0 attempt=1 ===

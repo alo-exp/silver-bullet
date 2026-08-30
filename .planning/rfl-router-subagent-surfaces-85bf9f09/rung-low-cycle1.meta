@@ -1,8 +1,0 @@
-model_slug=cursor-grok-4.5-low
-started_at=2026-07-17T14:56:00Z
-prompt_file=/Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09/rfl-review-prompt-low.md
-plan=/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md
-exit_code=0
-finished_at=2026-07-17T15:04:20Z
-out_bytes=8687
-err_bytes=0

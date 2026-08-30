@@ -1,3 +1,0 @@
-/Users/shafqat/.cursor/worktrees/repo/3ht3/skills/silver-deep-research-multi-ai/scripts/landscape_preview_render.py:676: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
-  .replace(/\s*\([^)]*\)\s*/g, '')
-{"status": "ok", "out": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html", "profile": "landscape", "markers": ["data-sb-landscape-viewer", "id=\"sidebar\"", "id=\"toc\"", "id=\"exportBar\"", "chart-frame", "landscape-matrix-panel", "_scrollToVendorCard", "compareResultsSection", "attachChartVendorNav", "setupQuadrantCompareOverlays", "quadrant-compare-btn", "cmp-score-row"], "viewer": "multai-parity-v1"}
