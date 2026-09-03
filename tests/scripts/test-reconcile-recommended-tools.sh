@@ -871,6 +871,23 @@ printf '%s' "$sc_prov" | grep -q 'sk-live-should-never-appear' \
   && fail "D10 search_cli must not dump secrets" \
   || pass "D10 search_cli must not dump secrets"
 
+# Make the package-manager capability fixture deterministic on Linux CI. The
+# production probe still requires real macOS/Homebrew; this test only needs to
+# exercise the repairable older-version branch without depending on the runner.
+cat >"${D10_BIN}/uname" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-s" ]]; then
+  printf 'Darwin\n'
+else
+  /usr/bin/uname "$@"
+fi
+EOF
+cat >"${D10_BIN}/brew" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "${D10_BIN}/uname" "${D10_BIN}/brew"
+
 cat >"${D10_BIN}/search" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "--version" ]]; then echo "search 0.8.0"; exit 0; fi

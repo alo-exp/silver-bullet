@@ -1,6 +1,6 @@
 ---
 name: silver-review-fix-ladder
-description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder. Policy F: two consecutive CLEAN reviews (zero ACCEPT findings) at each rung before the next model. Policy G / pack-ledger: encoder --write-review-brief is the only legal hop brief. Canonical verify overlay: verify_2 required on CLEAN, skipped on already-triaged NOT CLEAN. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
+description: "Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder. Policy F: two consecutive CLEAN reviews (zero ACCEPT findings) at each rung before the next model. Policy G / pack-ledger: encoder --write-review-brief is the only legal hop brief. Canonical verify overlay: verify_2 required on CLEAN, skipped on already-triaged NOT CLEAN. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals."
 user-invocable: false
 ---
 

@@ -226,8 +226,12 @@
     "FS-SILVER_AGENT_CURSOR": [
       "AF-AGENT-DELEGATE"
     ],
-    "FS-SILVER_AGENT_OPENCODE": [],
-    "FS-SILVER_AGENT_PI": [],
+    "FS-SILVER_AGENT_OPENCODE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_PI": [
+      "AF-AGENT-DELEGATE"
+    ],
     "FS-SILVER_BENCHMARK": [
       "AF-FAST-PATH"
     ],

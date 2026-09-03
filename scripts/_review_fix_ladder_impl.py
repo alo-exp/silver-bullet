@@ -16,6 +16,7 @@ _LIB_DIR = Path(__file__).resolve().parent / "lib"
 if str(_LIB_DIR) not in sys.path:
     sys.path.insert(0, str(_LIB_DIR))
 import rfl_quota_retry  # noqa: E402
+import rfl_quota_claude5h  # noqa: E402
 
 REASONING_ORDER = ("low", "medium", "high", "xhigh")
 CLAUDE_THINKING_ORDER = ("medium", "high", "xhigh")
@@ -758,7 +759,15 @@ def main() -> int:
             output = args.subscription_output_file.read_text(encoding="utf-8")
         now = rfl_quota_retry.parse_iso_datetime(args.quota_now)
         if args.classify_quota_window:
-            print(json.dumps(rfl_quota_retry.classify_quota_window(output), indent=2))
+            print(json.dumps(
+                rfl_quota_claude5h.classify_quota_window(
+                    output,
+                    host=args.quota_host,
+                    model=args.model or "",
+                    now=now,
+                ),
+                indent=2,
+            ))
             return 0
         if args.quota_retry_wake:
             if args.run_dir is None and args.project_root is None:
@@ -795,13 +804,14 @@ def main() -> int:
         if not args.rung_id or not args.model:
             parser.error("quota-retry schedule/activate require --rung-id and --model")
         if args.schedule_quota_retry:
-            result = rfl_quota_retry.schedule_quota_retry(
+            result = rfl_quota_claude5h.schedule_quota_retry(
                 run_dir=args.run_dir,
                 run_id=run_id,
                 rung=args.rung_id,
                 model=args.model,
                 output=output,
                 now=now,
+                host=args.quota_host,
             )
             print(json.dumps(result, indent=2))
             return 0

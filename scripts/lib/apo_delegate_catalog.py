@@ -210,9 +210,11 @@ def merge_delegate_catalog(
             continue
         flow["owning_skills"] = ["silver-agent-codex", "silver-agent-cursor", "silver-agent-claude"]
         flow["flow_steps"] = list(DELEGATE_FLOW_STEP_ORDER)
+        # These legacy host steps remain catalog entities, but still roll up to
+        # the sole canonical external-agent delegation atomic flow.
         for step in flow_steps:
             if step["id"] in {"FS-SILVER_AGENT_OPENCODE", "FS-SILVER_AGENT_PI"}:
-                step["reusable_by_flows"] = [x for x in step.get("reusable_by_flows", []) if x != "AF-AGENT-DELEGATE"]
+                step["reusable_by_flows"] = ["AF-AGENT-DELEGATE"]
         flow["artifacts"] = ["ART-AGENT-DELEGATE"]
         flow["execution"]["parallelizable"] = False
         flow["dedup_gate"] = {

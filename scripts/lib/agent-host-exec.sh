@@ -122,8 +122,9 @@ agent_host_build_argv() {
             --thinking off
             --no-context-files
             --no-skills
+            --no-extensions
             --tools read,bash,edit,write
-            --append-system-prompt "NON-INTERACTIVE: your first or second tool call must be write to the named output file. Never end on a plan ('I will', 'Next I will', 'I'll'). Do not read AGENTS.md or graphify skills. If the user named an output file, call write before stopping. A text-only plan is a failed task."
+            --append-system-prompt "NON-INTERACTIVE: write the COMPLETE deliverable to the named output file in your first or second tool call. Never end on a plan ('I will', 'Next I will', 'I'll'). Do not read AGENTS.md or graphify skills. If the user named an output file, call write before stopping. A text-only plan is a failed task."
           )
         fi
         AGENT_HOST_ARGV+=("$prompt")
@@ -171,7 +172,7 @@ agent_host_dump_argv() {
 agent_host_pi_file_is_stub() {
   local expect_file="$1"
   [[ -f "$expect_file" ]] || return 1
-  grep -qiE '^[[:space:]]*IN_PROGRESS([[:space:]]*:|[[:space:]])|Do not treat this stub as final|Placeholder body so this path exists' "$expect_file"
+  grep -qiE '^[[:space:]]*IN_PROGRESS([[:space:]]*:|[[:space:]])|Do not treat this stub as final|Placeholder body so this path exists|analysis in progress at this checkpoint|final report replaces this content' "$expect_file"
 }
 
 agent_host_pi_file_ok() {
@@ -278,7 +279,8 @@ agent_host_pi_fresh_rewrite_for_file() {
       --thinking off
       --no-context-files
       --no-skills
-      --append-system-prompt "NON-INTERACTIVE: your first or second tool call must be write to the named output file. Never end on a plan ('I will', 'Next I will', 'I'll'). Do not read AGENTS.md or graphify skills. If the user named an output file, call write before stopping. A text-only plan is a failed task."
+      --no-extensions
+      --append-system-prompt "NON-INTERACTIVE: write the COMPLETE deliverable to the named output file in your first or second tool call. Never end on a plan ('I will', 'Next I will', 'I'll'). Do not read AGENTS.md or graphify skills. If the user named an output file, call write before stopping. A text-only plan is a failed task."
     )
   fi
   fresh+=("$prompt")
@@ -343,7 +345,8 @@ agent_host_pi_continue_for_file() {
         --thinking off
         --no-context-files
         --no-skills
-        --append-system-prompt "Call the write tool now. Do not emit assistant text before the write tool call. A plan sentence is a failed task."
+        --no-extensions
+        --append-system-prompt "Write the COMPLETE deliverable now. Do not emit assistant text before the write tool call. A plan sentence is a failed task."
       )
     fi
     cont+=("$prompt")
@@ -384,98 +387,14 @@ agent_host_pi_zero_byte_idle_sec() {
 }
 
 agent_host_pi_run_argv_zero_byte_guard() {
-  local idle hard expect_file
+  local idle hard expect_file min_bytes
   idle="$(agent_host_pi_zero_byte_idle_sec "${PI_MODEL:-}")"
   hard="${PI_RUN_TIMEOUT:-900}"
   expect_file="${1:-}"
-  python3 - "$idle" "$hard" "$expect_file" "${AGENT_HOST_ARGV[@]}" <<'PY'
-import os, select, signal, subprocess, sys, time
-
-idle_sec = int(sys.argv[1])
-hard_sec = int(sys.argv[2])
-expect_file = sys.argv[3]
-args = sys.argv[4:]
-
-proc = subprocess.Popen(
-    args,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.STDOUT,
-    start_new_session=True,
-)
-fd = proc.stdout.fileno()
-got_bytes = False
-start = time.monotonic()
-rc = 0
-
-
-def expect_ok():
-    if not expect_file:
-        return False
-    try:
-        return os.path.isfile(expect_file) and os.path.getsize(expect_file) > 0
-    except OSError:
-        return False
-
-
-try:
-    while proc.poll() is None:
-        now = time.monotonic()
-        if now - start >= hard_sec:
-            break
-        if not got_bytes and not expect_ok() and now - start >= idle_sec:
-            break
-        ready, _, _ = select.select([fd], [], [], 0.2)
-        if not ready:
-            continue
-        data = os.read(fd, 65536)
-        if not data:
-            # EOF: wait for waitpid rather than treating this as an idle kill.
-            time.sleep(0.05)
-            continue
-        if data.strip():
-            got_bytes = True
-        sys.stdout.buffer.write(data)
-        sys.stdout.buffer.flush()
-    # Drain remaining stdout before deciding kill vs natural exit.
-    if proc.poll() is not None:
-        leftover = proc.stdout.read() or b""
-        if leftover:
-            if leftover.strip():
-                got_bytes = True
-            sys.stdout.buffer.write(leftover)
-            sys.stdout.buffer.flush()
-        rc = proc.returncode or 0
-        sys.exit(rc)
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except OSError:
-        pass
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            pass
-        proc.wait(timeout=5)
-    leftover = proc.stdout.read() or b""
-    if leftover:
-        sys.stdout.buffer.write(leftover)
-        sys.stdout.buffer.flush()
-    reason = "hard-timeout" if (time.monotonic() - start >= hard_sec) else "zero-byte-idle"
-    sys.stderr.write(
-        "[agent-pi] %s kill after %.0fs (stdout_bytes=%s expect_ok=%s)\n"
-        % (reason, time.monotonic() - start, "yes" if got_bytes else "no", expect_ok())
-    )
-    sys.exit(124)
-except Exception as exc:
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except OSError:
-        pass
-    sys.stderr.write("[agent-pi] zero-byte guard error: %s\n" % exc)
-    sys.exit(124)
-PY
+  min_bytes="${PI_EXPECT_FILE_MIN_BYTES:-2500}"
+  [[ "$min_bytes" =~ ^[0-9]+$ ]] || min_bytes=2500
+  python3 "${_AGENT_HOST_EXEC_DIR}/pi-zero-byte-guard.py" \
+    "$idle" "$hard" "$expect_file" "$min_bytes" "${AGENT_HOST_ARGV[@]}"
 }
 
 agent_host_run_pi_until_file() {

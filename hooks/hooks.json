@@ -301,12 +301,6 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/uat-gate.sh\"",
             "async": false,
             "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh\"",
-            "async": false,
-            "timeout": 10
           }
         ]
       },

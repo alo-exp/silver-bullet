@@ -6570,7 +6570,9 @@
           "EV-FS-SILVER_AGENT_OPENCODE"
         ]
       },
-      "reusable_by_flows": [],
+      "reusable_by_flows": [
+        "AF-AGENT-DELEGATE"
+      ],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
@@ -6619,7 +6621,9 @@
           "EV-FS-SILVER_AGENT_PI"
         ]
       },
-      "reusable_by_flows": [],
+      "reusable_by_flows": [
+        "AF-AGENT-DELEGATE"
+      ],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
