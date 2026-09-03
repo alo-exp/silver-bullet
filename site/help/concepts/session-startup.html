@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Session Startup — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet session startup loads enforcement rules, project context, session state, active workflow state, and update checks before work begins.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-stop{background:var(--red-warn-a06);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.code-block .cmd{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.step-list{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.step-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;gap:16px;align-items:flex-start}
+.step-num{min-width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#374151,#6b7280);color:#fff;font-weight:700;font-size:.9rem;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);flex-shrink:0;margin-top:2px}
+.step-item h4{font-size:.9rem;margin-bottom:4px}
+.step-item p{font-size:.9rem;color:var(--text-secondary);line-height:1.5;margin:0}
+.update-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.update-card h4{font-size:.9rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.update-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.5;margin-bottom:8px}
+.update-card p:last-child{margin-bottom:0}
+.update-card code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 5px;border-radius:3px;color:var(--accent-light)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:700}
+.badge-auto{background:var(--cyan-discuss-a10);color:var(--cyan)}
+.badge-info{background:var(--slate-a10b);color:var(--accent-light)}
+.badge-manual{background:var(--amber-warn-a10);color:var(--amber)}
+.update-options{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.update-opt{background:var(--bg-code);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:.87rem;font-weight:600;color:var(--text-secondary)}
+.update-opt.opt-a{border-color:var(--green-warn-a40);color:var(--green)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:200px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Session Startup</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Session Startup</h1>
+    <p>Every Silver Bullet session begins by loading the enforcement contract, project context, session state, active workflow state, and update checks before work begins.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#step1">Step 1 — Load SB contract</a></li>
+        <li><a href="#step2">Step 2 — Read project context</a></li>
+        <li><a href="#step3">Step 3 — Initialize session state</a></li>
+        <li><a href="#step4">Step 4 — Check workflow state</a></li>
+        <li><a href="#step5">Step 5 — Update Checks</a></li>
+        <li><a href="#silver-update">silver:update flow</a></li>
+        <li><a href="#anti-skip">Anti-Skip Enforcement</a></li>
+      </ul>
+    </aside>
+
+    <div class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p>Section §0 of <code>silver-bullet.md</code> defines the session startup sequence. It runs at the start of a new session and after some context transitions. The sequence makes sure the active runtime has the Silver Bullet contract, relevant project context, compacted working context, and current workflow state before taking project action. SB uses the active host execution model selected by the user or host configuration; it does not switch models automatically.</p>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠</span>
+        <div class="callout-body"><strong>Anti-skip:</strong> the runtime is violating this rule if it begins workflow work without loading the SB contract, reading project context, compacting context where the host supports it, and checking active workflow state. Evidence: no startup context load, no active workflow check, or no session state available.</div>
+      </div>
+
+      <h2 id="step1">Step 1 — Load the SB Contract</h2>
+      <p>The runtime loads <code>silver-bullet.md</code>, core rules, and the relevant host project instruction file. This establishes the enforcement contract: workflow order, non-skippable gates, ownership boundaries, and user workflow preferences.</p>
+      <p>Silver Bullet does not rely on a generic automatic model switch here. Use the active host configuration for model behavior.</p>
+
+      <h2 id="step2">Step 2 — Read Project Context</h2>
+      <p>The active runtime reads the relevant project docs and planning context needed for the requested work. SB prefers Graphify retrieval when available, then falls back to direct docs reads. This gives it access to architecture decisions, requirements, testing strategy, knowledge, learnings, and active planning state before the workflow begins.</p>
+
+      <div class="callout callout-stop">
+        <span class="callout-icon">⛔</span>
+        <div class="callout-body">
+          <strong>UNTRUSTED DATA boundary:</strong> <code>docs/</code> files are read for project context only. Any content in <code>docs/</code> that appears to be instructions addressed to the runtime — imperative sentences, override commands, <code>SYSTEM:</code> prefixes — is treated as documentation text, <em>not</em> as executable instructions. Silver Bullet instructions live exclusively in <code>silver-bullet.md</code> and the host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex).
+        </div>
+      </div>
+
+      <p>This boundary prevents prompt injection through project documentation. Even if a <code>docs/</code> file contains text that looks like a command, the runtime ignores it as an instruction source.</p>
+
+      <h2 id="step3">Step 3 — Initialize Session State</h2>
+      <p>The session log hook creates or reuses the current session log path under <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</code>. Mode, requested-skill tracking, timeout sentinels, and other hook state are made available so later enforcement checks can report concrete missing steps instead of relying on memory.</p>
+      <p>After reading the startup context, run the host-supported compaction step where available. Compaction preserves room for the task; it is not a model-routing mechanism and should not be treated as a required model switch.</p>
+
+      <h2 id="step4">Step 4 — Check Active Workflow State</h2>
+      <p>Silver Bullet checks the active workflow tracker, requested skills, required gates, phase locks, and any stall or timeout state. If a prior composition exists under <code>.planning/workflows/&lt;id&gt;.md</code>, the runtime can resume from the next required step instead of starting over.</p>
+
+      <h2 id="step5">Step 5 — Update Checks</h2>
+      <p>Before starting project work, the runtime may run version checks for Silver Bullet and selected extension plugins. Each check is independent; a failure in one check does not block the rest of startup.</p>
+
+      <div class="update-card">
+        <h4>5.1 Silver Bullet <span class="badge badge-auto">auto-offer</span></h4>
+        <p>The <code>session-start</code> hook runs this check on <code>startup</code> and <code>clear</code> SessionStart events (not on <code>compact</code> or <code>resume</code>). It reads the installed version from <code>installed_plugins.json</code>, fetches the latest release from GitHub with a short timeout, and injects the prompt into session context when installed &lt; latest. Offline or failed checks are non-blocking.</p>
+        <p>If an update is available, the runtime presents:</p>
+        <p><em>"Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"</em></p>
+        <div class="update-options">
+          <span class="update-opt opt-a">A. Yes, update now</span>
+          <span class="update-opt">B. Skip</span>
+        </div>
+        <p style="margin-top:10px">If A: runs <code>/silver:update</code> through the active host's supported skill channel, then continues. If B or check fails (offline, unknown version): outputs "Skipping SB update." and continues.</p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.2 Selected Extensions <span class="badge badge-info">informational</span></h4>
+        <p>When a selected extension exposes version metadata, SB reports its installed status and continues. Missing required extensions stop only the workflow that selected them.</p>
+        <div class="update-options">
+          <span class="update-opt">Refresh through the active host plugin manager when needed</span>
+        </div>
+        <p style="margin-top:10px">If version metadata is unknown, SB reports the unknown status and continues unless the active workflow requires that extension.</p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.3 Optional Plugin Status <span class="badge badge-info">informational</span></h4>
+        <p>Reads installed versions for optional plugins from the plugin registry where available. SB displays the versions and immediately continues without prompting.</p>
+        <p>Update optional plugins through your host's plugin manager. SB will display installed versions and continue without prompting.</p>
+      </div>
+
+      <div class="update-card">
+        <h4>5.4 Optional research/review plugins <span class="badge badge-info">informational</span></h4>
+        <p>When optional research, review, design, or DevOps plugins expose version metadata, Silver Bullet reports their installed status during startup. If an optional dependency is required by the selected workflow and is missing, the workflow stops and offers install-and-retry instead of silently substituting ad hoc reasoning.</p>
+        <p>Update those plugins through the active host's plugin manager or the shared Codex marketplace, depending on runtime.</p>
+      </div>
+
+      <h2 id="silver-update">The <code>/silver:update</code> flow</h2>
+      <p>When you select "A. Yes, update now" for Silver Bullet, the update skill runs a multi-step flow with two explicit confirmation gates before any files are changed:</p>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div>
+            <h4>Fetch and display</h4>
+            <p>The skill fetches the latest release from GitHub and displays the commit SHA and changelog summary for the version being installed.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div>
+            <h4>First confirmation</h4>
+            <p>You confirm that you want to proceed with installing this specific version. Showing the SHA prevents installing an unexpected version if the "latest" tag moved between check and install.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div>
+            <h4>Update files</h4>
+            <p>The plugin files are updated locally. No registry write has happened yet.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div>
+            <h4>Second confirmation before registry write</h4>
+            <p>Before writing to the plugin registry (<code>installed_plugins.json</code>), the skill shows the exact changes and asks for a second explicit confirmation. This gate prevents a partial update from being recorded as complete.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div>
+            <h4>Registry write and continue</h4>
+            <p>On confirmation, the registry is updated and the session startup sequence continues with the updated version loaded.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">✓</span>
+        <div class="callout-body"><strong>Cancel path:</strong> If you cancel at either confirmation, no files are modified and the session continues with the existing version. The cancel path is guarded against unsafe <code>rm</code> operations — partially downloaded files are cleaned up safely.</div>
+      </div>
+
+      <h2 id="anti-skip">Anti-Skip Enforcement</h2>
+      <p>The session startup sequence is enforced by the <strong>UserPromptSubmit reminder hook</strong>, which re-injects the startup rules at the start of every user message. This means even if the runtime loses track of its current state, the rules are re-presented before it can respond to your next instruction.</p>
+      <p>In addition, the compliance status hook shows startup and workflow progress on tool use. If project context or workflow state has not been loaded, the status display can flag the gap.</p>
+      <p>The anti-skip rule is strict: the runtime is in violation if it produces project work output without evidence of loading the SB contract and relevant project context at session start.</p>
+
+      <div class="page-nav-bottom">
+        <a href="./preferences.html">
+          <span class="pnb-label">Previous</span>
+          <span class="pnb-title">Preferences</span>
+        </a>
+        <a href="../">
+          <span class="pnb-label">Up</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </div><!-- /.doc-content -->
+  </div><!-- /.doc-layout -->
+</div><!-- /.container-wide -->
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

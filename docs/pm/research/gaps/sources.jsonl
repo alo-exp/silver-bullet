@@ -1,0 +1,18 @@
+{"id":"S01","title":"2026 Agentic Coding Trends Report","authors":"Anthropic","year":2026,"type":"industry_report","url":"https://resources.anthropic.com/hubfs/2026%20Agentic%20Coding%20Trends%20Report.pdf","accessed":"2026-06-27"}
+{"id":"S02","title":"AI Tooling for Software Engineers in 2026","authors":"Pragmatic Engineer","year":2026,"type":"survey","url":"https://newsletter.pragmaticengineer.com/p/ai-tooling-2026","accessed":"2026-06-27"}
+{"id":"S03","title":"Assistance to Autonomy: Agentic AI across the SDLC","authors":"arXiv systematic review","year":2026,"type":"academic","url":"https://arxiv.org/html/2605.15245","accessed":"2026-06-27"}
+{"id":"S04","title":"Code as Agent Harness","authors":"arXiv survey","year":2026,"type":"academic","url":"https://arxiv.org/html/2605.18747v1","accessed":"2026-06-27"}
+{"id":"S05","title":"Six exploits broke AI coding agents","authors":"VentureBeat","year":2026,"type":"security_analysis","url":"https://venturebeat.com/security/six-exploits-broke-ai-coding-agents-iam-never-saw-them","accessed":"2026-06-27"}
+{"id":"S06","title":"Securing CI/CD in an agentic world","authors":"Microsoft Security","year":2026,"type":"security_advisory","url":"https://www.microsoft.com/en-us/security/blog/2026/06/05/securing-ci-cd-in-agentic-world-claude-code-github-action-case/","accessed":"2026-06-27"}
+{"id":"S07","title":"Top AI Security Vulnerabilities in 2026","authors":"Cycode","year":2026,"type":"security_report","url":"https://cycode.com/blog/ai-security-vulnerabilities/","accessed":"2026-06-27"}
+{"id":"S08","title":"The approval prompt is lying","authors":"Adversa AI","year":2026,"type":"security_research","url":"https://adversa.ai/blog/the-approval-prompt-is-lying-to-you-symlink-rce-in-five-ai-coding-agents-claude-code-cursor-antigravity-copilot-grok-build/","accessed":"2026-06-27"}
+{"id":"S09","title":"AI Security Incidents Attack Path Analysis","authors":"Foresiet","year":2026,"type":"incident_analysis","url":"https://foresiet.com/blog/ai-security-incidents-attack-paths-april-2026/","accessed":"2026-06-27"}
+{"id":"S10","title":"Silver Bullet SDLC Gap Analysis","authors":"SB internal","year":2026,"type":"internal","url":"docs/internal/sdlc-gap-analysis.md","accessed":"2026-06-27"}
+{"id":"S11","title":"AGENTMEMORY.md","authors":"Silver Bullet","year":2026,"type":"product_doc","url":"docs/AGENTMEMORY.md","accessed":"2026-06-27"}
+{"id":"S12","title":"CONTEXT-MODE.md","authors":"Silver Bullet","year":2026,"type":"product_doc","url":"docs/CONTEXT-MODE.md","accessed":"2026-06-27"}
+{"id":"S13","title":"No Silver Bullet","authors":"Fred Brooks","year":1986,"type":"essay","url":"https://www.cs.unc.edu/techreports/86-020.pdf","accessed":"2026-06-27"}
+{"id":"S14","title":"SWE-bench Verified leaderboard context","authors":"OpenAI/Princeton","year":2025,"type":"benchmark","url":"https://www.swebench.com/","accessed":"2026-06-27"}
+{"id":"S15","title":"DORA State of DevOps 2024","authors":"Google Cloud","year":2024,"type":"industry_report","url":"https://dora.dev/research/","accessed":"2026-06-27"}
+{"id":"S16","title":"GitHub Octoverse 2024","authors":"GitHub","year":2024,"type":"industry_report","url":"https://github.blog/news-insights/octoverse/","accessed":"2026-06-27"}
+{"id":"S17","title":"Nielsen Norman Group — loss aversion in UX","authors":"NN/g","year":2020,"type":"ux_research","url":"https://www.nngroup.com/articles/loss-aversion/","accessed":"2026-06-27"}
+{"id":"S18","title":"CMF v3.0 Content Messaging Framework","authors":"JobReady","year":2026,"type":"framework","url":"file:///Users/shafqat/Downloads/CT%20-%20JobReady%20Storefreont%20and%20LMS%20Knowledge%20Base%20(2).pdf","accessed":"2026-06-27"}

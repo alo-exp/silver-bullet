@@ -1,0 +1,99 @@
+{
+  "name": "alo-labs-codex",
+  "interface": {
+    "displayName": "Ālo Labs Codex Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "silver-bullet",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/alo-exp/silver-bullet.git",
+        "ref": "v0.51.3",
+        "path": "plugins/silver-bullet"
+      },
+      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. SB's Codex package contains Silver Bullet-owned skills, hooks, templates, and lifecycle workflows.",
+      "version": "0.52.0",
+      "author": {
+        "name": "Alo Labs",
+        "email": "info@alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/silver-bullet",
+      "repository": "https://github.com/alo-exp/silver-bullet",
+      "license": "BUSL-1.1",
+      "keywords": [
+        "silver-bullet",
+        "enforcement",
+        "orchestrator",
+        "devops",
+        "quality-gates",
+        "ci-cd"
+      ],
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development"
+    },
+    {
+      "name": "sidekick",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/alo-exp/sidekick.git",
+        "ref": "main"
+      },
+      "description": "Sidekick — AI coding-agent delegation workflows for Codex. Kay and Codex are the supported sidekicks on Claude Code, Codex, and Cursor hosts.",
+      "version": "0.8.4",
+      "author": {
+        "name": "Ālo Labs",
+        "url": "https://alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/sidekick",
+      "repository": "https://github.com/alo-exp/sidekick",
+      "license": "MIT",
+      "keywords": [
+        "sidekick",
+        "codex",
+        "kay",
+        "terminal-agent",
+        "coding-agent",
+        "orchestration"
+      ],
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development"
+    },
+    {
+      "name": "topgun",
+      "source": {
+        "source": "github",
+        "repo": "alo-labs/topgun"
+      },
+      "description": "Find, compare, security-audit, and install the best available skill for any job from 16 active registries.",
+      "version": "0.7.8",
+      "author": {
+        "name": "Alo Labs",
+        "url": "https://github.com/alo-labs/topgun"
+      },
+      "homepage": "https://github.com/alo-labs/topgun",
+      "repository": "https://github.com/alo-labs/topgun",
+      "license": "MIT",
+      "keywords": [
+        "topgun",
+        "skills",
+        "discovery",
+        "security-audit",
+        "registry",
+        "installation"
+      ],
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development",
+      "strict": true
+    }
+  ]
+}

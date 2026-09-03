@@ -1,0 +1,235 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "F-5-1",
+        "title": "Known component id is not a command allowlist for install_commands"
+      },
+      {
+        "id": "F-5-2",
+        "title": "Secret-safety tests omit stderr and receipts"
+      },
+      {
+        "id": "F-5-7",
+        "title": "Phase 3 Omni install has no WS6 prerequisite or deferral rule"
+      }
+    ],
+    "MED": [
+      {
+        "id": "F-5-3",
+        "title": "Every-key --fix is not proved beyond one five-tool fixture"
+      },
+      {
+        "id": "F-5-4",
+        "title": "search_cli provider-missing WARN has no reconciler state mapping"
+      },
+      {
+        "id": "F-5-5",
+        "title": "Non-TTY --fix without SB_DOCTOR_ASSUME_YES=1 is unspecified"
+      },
+      {
+        "id": "F-5-6",
+        "title": "Failed or malformed reconciler apply has no observable outcome"
+      },
+      {
+        "id": "F-5-8",
+        "title": "Omni five-CLI host matrix is not operationally defined"
+      },
+      {
+        "id": "F-5-9",
+        "title": "Deferred Omni both requires and forbids a coverage-table row"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F-5-10",
+        "title": "cross_tool docs_pin has no satisfiable pin semantics"
+      }
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "F-5-1",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Pin install_commands to repo-owned registry/script or exact argv/digest; known id + swapped payload must refuse"
+    },
+    {
+      "id": "F-5-2",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "No-secret contract covers stdout, stderr, JSON, and receipts; JSON remains parseable"
+    },
+    {
+      "id": "F-5-3",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Per-component repair-dispatch/plan tests for every advertised --fix; keep one live five-tool fixture"
+    },
+    {
+      "id": "F-5-4",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Provider-missing is ready Health plus advisory warning evidence mapped to doctor WARN"
+    },
+    {
+      "id": "F-5-5",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Non-TTY without assume-yes skips packages/network/daemon, nonzero exit, never hangs"
+    },
+    {
+      "id": "F-5-6",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Failed/malformed apply is not applied, nonzero, stderr kept, receipt honest"
+    },
+    {
+      "id": "F-5-7",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Phase 3 gated on landed WS6 installer; if absent, defer with no partial install --fix"
+    },
+    {
+      "id": "F-5-8",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Omni requires the current doctor host CLI only; OpenCode row inspects opencode; Pi is Omni CLI identity not five-tool RT_VALID_HOST"
+    },
+    {
+      "id": "F-5-9",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Deferred Omni is a coverage-table footnote, not an F4 schema row; rows exist only after phase 3"
+    },
+    {
+      "id": "F-5-10",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "cross_tool docs_pin is the SB five-tool/mutex contract at a Silver Bullet commit/ref"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "F-5-1",
+      "title": "Known-id install_commands must be registry-pinned"
+    },
+    {
+      "id": "F-5-2",
+      "title": "Secrets on stderr and receipts"
+    },
+    {
+      "id": "F-5-7",
+      "title": "Phase 3 gated on WS6 installer"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "F-5-3",
+      "title": "Per-component --fix dispatch tests"
+    },
+    {
+      "id": "F-5-4",
+      "title": "Provider-missing WARN mapping"
+    },
+    {
+      "id": "F-5-5",
+      "title": "Non-TTY skip/nonzero"
+    },
+    {
+      "id": "F-5-6",
+      "title": "Failed-apply observation"
+    },
+    {
+      "id": "F-5-8",
+      "title": "Omni current-host CLI"
+    },
+    {
+      "id": "F-5-9",
+      "title": "Deferred Omni footnote not F4 row"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "F-5-1",
+      "severity": "HIGH",
+      "title": "registry-pinned install_commands",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-2",
+      "severity": "HIGH",
+      "title": "secrets on stderr and receipts",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-3",
+      "severity": "MED",
+      "title": "per-component --fix dispatch",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-4",
+      "severity": "MED",
+      "title": "provider-missing WARN mapping",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-5",
+      "severity": "MED",
+      "title": "non-TTY skip/nonzero",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-6",
+      "severity": "MED",
+      "title": "failed-apply observation",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-7",
+      "severity": "HIGH",
+      "title": "Phase 3 WS6 installer gate",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-8",
+      "severity": "MED",
+      "title": "Omni current-host CLI",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-9",
+      "severity": "MED",
+      "title": "deferred Omni footnote",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5-10",
+      "severity": "LOW",
+      "title": "cross_tool docs_pin",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "b3c5327ef93e457d5c0b3501305ed2bbe5a1fdc309616178427fbeb85b3bd6d7"
+}

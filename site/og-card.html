@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Silver Bullet Social Preview (light)</title>
+<link rel="stylesheet" href="tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:630px;overflow:hidden}
+  body{
+    background:var(--bg-hero);
+    font-family:var(--font-heading);
+    position:relative;
+    color:var(--text-primary);
+  }
+
+  .grid-bg{
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--accent) 5%, transparent) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse 80% 70% at 30% 50%,#000 20%,transparent 75%);
+    pointer-events:none;
+  }
+
+  .glow-left{
+    position:absolute;width:520px;height:520px;border-radius:50%;
+    background:radial-gradient(circle,var(--mint-a28) 0%,transparent 68%);
+    top:50%;left:18%;transform:translate(-50%,-50%);pointer-events:none;
+  }
+  .glow-right{
+    position:absolute;width:400px;height:400px;border-radius:50%;
+    background:radial-gradient(circle,var(--mint-a18) 0%,transparent 70%);
+    bottom:-80px;right:-40px;pointer-events:none;
+  }
+
+  .border-top{
+    position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,transparent 5%,var(--accent) 35%,var(--accent-light) 50%,var(--accent) 65%,transparent 95%);
+  }
+  .border-left{
+    position:absolute;top:0;left:0;bottom:0;width:4px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2) 55%,transparent);
+    opacity:.75;
+  }
+
+  .version-badge{
+    position:absolute;top:28px;right:36px;
+    font-family:var(--font-mono);
+    font-size:12px;font-weight:600;letter-spacing:.06em;
+    color:var(--accent-light);
+    background:linear-gradient(135deg,var(--mint-a14),var(--accent-a08),var(--mint-a12));
+    border:1px solid var(--mint-a35);
+    border-radius:999px;
+    padding:6px 14px;
+    z-index:2;
+  }
+
+  .layout{
+    position:relative;z-index:1;
+    display:flex;align-items:center;
+    height:100%;padding:0 64px 0 56px;gap:48px;
+  }
+
+  .brand-col{
+    flex:0 0 280px;
+    display:flex;flex-direction:column;align-items:center;gap:28px;
+  }
+  .bullet{
+    width:120px;
+    filter:drop-shadow(0 8px 24px var(--accent-glow)) drop-shadow(3px 6px 10px rgba(0,0,0,.18));
+  }
+
+  .text-col{
+    flex:1;
+    display:flex;flex-direction:column;gap:16px;
+    padding-top:8px;
+  }
+
+  .label{
+    display:inline-block;align-self:flex-start;
+    font-size:12px;font-weight:700;letter-spacing:.08em;
+    color:var(--accent-light);
+    background:linear-gradient(135deg,var(--mint-a14),var(--accent-a08),var(--mint-a12));
+    border:1px solid var(--mint-a28);
+    border-radius:999px;padding:6px 14px;
+  }
+
+  h1{
+    font-size:72px;font-weight:800;line-height:.95;
+    letter-spacing:-.04em;
+  }
+  h1 .silver-bullet{
+    background:var(--chrome-gradient);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    display:block;
+  }
+
+  .tagline-caps{
+    font-size:13px;font-weight:700;letter-spacing:.22em;
+    color:var(--accent-light);text-transform:uppercase;
+  }
+
+  .sub-heading{
+    font-size:30px;font-weight:800;letter-spacing:-.03em;
+    color:var(--text-primary);line-height:1.2;
+  }
+  .sub-heading em{
+    font-style:normal;
+    color:var(--accent-light);
+  }
+
+  .desc{
+    font-size:16px;line-height:1.65;color:var(--text-secondary);
+    max-width:680px;
+  }
+
+  .pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .pill{
+    font-size:11px;font-weight:600;letter-spacing:.04em;
+    color:var(--accent-light);
+    background:linear-gradient(135deg,var(--mint-a13),var(--accent-a08),var(--mint-a10));
+    border:1px solid var(--mint-a28);
+    border-radius:999px;padding:6px 14px;
+  }
+  .pill.muted{
+    color:var(--text-dim);
+    background:rgba(236,230,220,.65);
+    border-color:var(--border);
+  }
+
+  .footer-url{
+    position:absolute;bottom:24px;right:36px;
+    font-family:var(--font-mono);
+    font-size:11px;color:var(--text-dim);letter-spacing:.02em;
+  }
+  .footer-brand{
+    position:absolute;bottom:24px;left:48px;
+    font-family:var(--font-mono);
+    font-size:11px;color:var(--text-dim);letter-spacing:.02em;
+  }
+</style>
+</head>
+<body>
+  <div class="border-top"></div>
+  <div class="border-left"></div>
+  <div class="grid-bg"></div>
+  <div class="glow-left"></div>
+  <div class="glow-right"></div>
+  <div class="version-badge">ALPHA · v0.52.0</div>
+
+  <div class="layout">
+    <div class="brand-col">
+      <img class="bullet" src="silver-bullet.png" alt="">
+    </div>
+
+    <div class="text-col">
+      <div class="label">Agentic Process Orchestrator for the AI Era</div>
+      <h1><span class="silver-bullet">Silver Bullet</span></h1>
+      <div class="tagline-caps">The process layer of AI-driven dev</div>
+      <div class="sub-heading">Maximize AI-driven <em>Dev Process Reliability</em></div>
+      <p class="desc">From spec to release with hook-enforced gates. 29 atomic flows, 26 catalog workflows (22 task-shaped + 4 reusable components), and 118 flow steps — Claude Code, Codex, and Cursor.</p>
+      <div class="pills">
+        <span class="pill">Hook Gates</span>
+        <span class="pill">V-Loop Evidence</span>
+        <span class="pill muted">Claude · Codex · Cursor</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-brand">Alo Labs</div>
+  <div class="footer-url">sb.alolabs.dev</div>
+</body>
+</html>

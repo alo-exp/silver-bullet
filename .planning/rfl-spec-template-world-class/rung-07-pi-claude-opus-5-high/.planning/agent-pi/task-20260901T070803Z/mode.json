@@ -1,0 +1,8 @@
+{
+  "requested": "non-interactive",
+  "classified": null,
+  "resolved": "non-interactive",
+  "reason": [
+    "pin"
+  ]
+}

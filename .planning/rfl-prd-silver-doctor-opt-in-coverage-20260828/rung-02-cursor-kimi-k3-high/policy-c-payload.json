@@ -1,0 +1,53 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "F-2-1", "title": "D10-routes no-consent case is PASS not WARN"},
+      {"id": "F-2-2", "title": "OQ4 vendor-doctor hermetic path is a mandate with no owner"},
+      {"id": "F-2-3", "title": "Unknown-id test row omitted PASS N/A unsupported emission"},
+      {"id": "F-2-4", "title": "cross_tool coverage row vs recommended_tools keys only"},
+      {"id": "F-2-5", "title": "AC 9 canary vs fail phrasing reads contradictory"},
+      {"id": "F-2-6", "title": "docs_pin backfill unphased"}
+    ],
+    "NIT": [
+      {"id": "F-2-7", "title": "Duplicate vendor-doctor skip test rows"},
+      {"id": "F-2-8", "title": "Open-question numbering interleaved"},
+      {"id": "F-2-9", "title": "Implementer prompt omitted SB_DOCTOR_ASSUME_YES"}
+    ]
+  },
+  "triage": [
+    {"id": "F-2-1", "severity": "LOW", "decision": "ACCEPT", "reason": "Describe no_five_tool_consent as PASS N/A; WARN only unsupported-host"},
+    {"id": "F-2-2", "severity": "LOW", "decision": "ACCEPT", "reason": "Lock OQ4 as Session A default 4; Phase 2 + AC 11 own hermetic vendor-doctor path"},
+    {"id": "F-2-3", "severity": "LOW", "decision": "ACCEPT", "reason": "Test row asserts PASS N/A reason unsupported; no installer; no --fix"},
+    {"id": "F-2-4", "severity": "LOW", "decision": "ACCEPT", "reason": "Require derived cross_tool / D10-routes coverage row in Goal 2, F4, AC 1"},
+    {"id": "F-2-5", "severity": "LOW", "decision": "ACCEPT", "reason": "AC 9: tests fail if stale loop used; canary only stale loop could green stays non-green"},
+    {"id": "F-2-6", "severity": "LOW", "decision": "ACCEPT", "reason": "Phase 2 docs_pin backfill for existing D10 rows"},
+    {"id": "F-2-7", "severity": "NIT", "decision": "ACCEPT", "reason": "Merge duplicate vendor-doctor skip rows"},
+    {"id": "F-2-8", "severity": "NIT", "decision": "ACCEPT", "reason": "Locked 1-5 sequential; still-open 6-7"},
+    {"id": "F-2-9", "severity": "NIT", "decision": "ACCEPT", "reason": "Name SB_DOCTOR_ASSUME_YES=1 in implementer prompt"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {"id": "F-2-1", "severity": "LOW", "title": "D10-routes no-consent PASS", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-2", "severity": "LOW", "title": "OQ4 mandate owner", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-3", "severity": "LOW", "title": "Unknown-id test emission", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-4", "severity": "LOW", "title": "cross_tool coverage row", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-5", "severity": "LOW", "title": "AC 9 canary phrasing", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-6", "severity": "LOW", "title": "docs_pin backfill phase", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-7", "severity": "NIT", "title": "Duplicate vendor-doctor rows", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-8", "severity": "NIT", "title": "OQ numbering", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-2-9", "severity": "NIT", "title": "Prompt ASSUME_YES", "decision": "ACCEPT", "resolved": "yes"}
+  ],
+  "apply_sha": "25c3110d91b6decb62ec2f517219619c6b302de1171771ae96eb909a0502507c"
+}

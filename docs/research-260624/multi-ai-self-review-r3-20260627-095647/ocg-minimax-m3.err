@@ -1,0 +1,145 @@
+[0m
+> build · minimax-m3
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m✱ [0mGrep "user-invocable"[90m in skills/multi-ai-task · 1 match[0m
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/ 2>&1 | head -30
+agent-output/
+multi-ai-self-review-20260627-083255/
+multi-ai-self-review-r2-20260627-093345/
+multi-ai-self-review-r3-20260627-095647/
+OPENCODE_DYNAMIC_SUBAGENT_MODELS.md  20.2K
+PRIOR-ART-MASTER-PROMPT.txt  16.6K
+PRIOR-ART-MULTI-AI-PROMPT.md  6.3K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.html  49.5K
+SB_CONSOLIDATED_PRIOR_ART_REPORT.md  31.5K
+SB_PRIOR_ART_RESEARCH_PROMPT.md  21.0K
+SB_PRIOR_ART_USER_PROMPT.md  16.4K
+atomic-flow-redesign.plan.md  50.2K
+dispatch-research-sequential.sh  1.9K
+dispatch-research.sh  2.1K
+prior-art-landscape-2026-06-27.md  10.3K
+prior-art-landscape-glm-5.2.md  31.5K
+prior-art-landscape-minimax-m3.md  28.9K
+prior-art-landscape-report.md  38.1K
+prior-art-landscape-research.md  32.1K
+prior-art-report.md  28.1K
+[0m
+[0m✱ [0mGrep "version"[90m in skills/multi-ai-task · 7 matches[0m
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && rtk ls -la /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/ /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/ /Users/shafqat/projects/silver-bullet/repo/skills/multi-ai-task/rules/examples/ 2>&1
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question-First Navigation Map'] | 16 nodes found
+
+NODE Documentation Scheme [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `docs/` — Your Project Documentation [src=docs/doc-scheme.md loc=L70 community=110]
+NODE Governance [src=docs/doc-scheme.md loc=L195 community=110]
+NODE Verification Policy [src=docs/doc-scheme.md loc=L216 community=110]
+NODE Glossary & Canonical Terms [src=docs/doc-scheme.md loc=L230 community=110]
+NODE Brownfield Archival Policy [src=docs/doc-scheme.md loc=L185 community=110]
+NODE Structure [src=docs/doc-scheme.md loc=L7 community=110]
+NODE Audience Model [src=docs/doc-scheme.md loc=L19 community=110]
+NODE doc-scheme.md [src=docs/doc-scheme.md loc=L1 community=110]
+NODE `.planning/` — Ephemeral Planning Artifacts [src=docs/doc-scheme.md loc=L114 community=110]
+NODE Size Caps [src=docs/doc-scheme.md loc=L136 community=110]
+NODE Documentation Taxonomy (Purpose-First) [src=docs/doc-scheme.md loc=L35 community=110]
+NODE Question-First Navigation Map [src=docs/doc-scheme.md loc=L53 community=110]
+NODE Non-redundancy rules [src=docs/doc-scheme.md loc=L250 community=110]
+NODE When docs get updated [src=docs/doc-scheme.md loc=L149 community=110]
+NODE Enforced Task Checklist [src=docs/doc-scheme.md loc=L161 community=110]
+EDGE Question-First Navigation Map --contains [EXTRACTED]--> Documentation Scheme
+EDGE Documentation Scheme --contains [EXTRACTED]--> doc-scheme.md
+EDGE Documentation Scheme --contains [EXTRACTED]--> Audience Model
+EDGE Documentation Scheme --contains [EXTRACTED]--> Brownfield Archival Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> `docs/` — Your Project Documentation
+EDGE Documentation Scheme --contains [EXTRACTED]--> Documentation Taxonomy (Purpose-First)
+EDGE Documentation Scheme --contains [EXTRACTED]--> Enforced Task Checklist
+EDGE Documentation Scheme --contains [EXTRACTED]--> Glossary & Canonical Terms
+EDGE Documentation Scheme --contains [EXTRACTED]--> Governance
+EDGE Documentation Scheme --contains [EXTRACTED]--> Non-redundancy rules
+EDGE Documentation Scheme --contains [EXTRACTED]--> `.planning/` — Ephemeral Planning Artifacts
+EDGE Documentation Scheme --contains [EXTRACTED]--> Size Caps
+EDGE Documentation Scheme --contains [EXTRACTED]--> Structure
+EDGE Documentation Scheme --contains [EXTRACTED]--> Verification Policy
+EDGE Documentation Scheme --contains [EXTRACTED]--> When docs get updated (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+755  rules/
+755  examples/
+644  SKILL.md  16.1K
+644  consolidation-rules.md  16.3K
+644  dispatch-mechanics.md  10.7K
+644  methodology.md  9.3K
+644  output-schema.md  8.1K
+644  code-review.md  5.3K
+644  fact-check.md  4.9K
+644  research-prior-art.md  8.7K
+[0m
+[0m$ [0mrtk ls /Users/shafqat/projects/silver-bullet/repo/docs/research-260624/multi-ai-self-review-r3-20260627-095647/ 2>&1 | head -30
+SELF_REVIEW_PROMPT.md  4.0K
+ocg-deepseek-v4-pro.err  956B
+ocg-deepseek-v4-pro.md  0B
+ocg-glm-5.2.err  948B
+ocg-glm-5.2.md  0B
+ocg-kimi-k2.6.err  950B
+ocg-kimi-k2.6.md  0B
+ocg-mimo-v2.5-pro.err  1018B
+ocg-mimo-v2.5-pro.md  0B
+ocg-minimax-m3.err  8.1K
+ocg-minimax-m3.md  0B
+ocg-qwen3-7-max.err  952B
+ocg-qwen3-7-max.md  0B
+[0m
+[0m✱ [0mGrep "aliases"[90m in skills/multi-ai-task · 13 matches[0m
+[0m✱ [0mGrep "run-manifest.json"[90m in skills/multi-ai-task · 17 matches[0m
+[0m✱ [0mGrep "--concurrency"[90m in skills/multi-ai-task · 2 matches[0m
+[0m✱ [0mGrep "extractor"[90m in skills/multi-ai-task · 7 matches[0m
+[0m→ [0mRead docs/research-260624/multi-ai-self-review-r3-20260627-095647/ocg-minimax-m3.err[90m [limit=30][0m
+[0m→ [0mRead docs/research-260624/multi-ai-self-review-r3-20260627-095647/SELF_REVIEW_PROMPT.md[90m [limit=20][0m
+[0m✱ [0mGrep "score-aggregate"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "thorough"[90m in skills/multi-ai-task · 10 matches[0m
+[0m✱ [0mGrep "confidence_self"[90m in skills/multi-ai-task · 1 match[0m
+[0m✱ [0mGrep "last_verified"[90m in skills/multi-ai-task · 4 matches[0m

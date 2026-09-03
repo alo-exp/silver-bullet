@@ -1,0 +1,91 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 3)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R5c-F01",
+        "title": "The stable-ID contract has no global uniqueness/shape check, allowing duplicate AC IDs to collapse traceability"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R5c-F02",
+        "title": "QC-10 enforces only the Change History heading, not the required table or current-version row"
+      },
+      {
+        "id": "R5c-F03",
+        "title": "Reverse NFR coverage can be bypassed through an undefined non-requirement disposition"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5c-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Named ID-integrity QC (file-unique + shape) for US-nn / AC-nn / pack-local IDs; duplicate AC-01 must FAIL Coverage Matrix / AC\u2192REQ. Fixtures: dup AC-01, malformed IDs, unlabeled US/OQ/OOS"
+    },
+    {
+      "id": "R5c-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "QC-10 / SPEC-F72 must require Change History table, current spec-version row, and non-placeholder summary \u2014 not heading-only"
+    },
+    {
+      "id": "R5c-F03",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Define reverse-NFR recorded non-requirement disposition as a concrete table/field/enum/parser rule so dropped QA-nn / SLO-nn / CTRL-nn cannot slip FAIL"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R5c-F01",
+      "title": "The stable-ID contract has no global uniqueness/shape check, allowing duplicate AC IDs to collapse traceability"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R5c-F02",
+      "title": "QC-10 enforces only the Change History heading, not the required table or current-version row"
+    },
+    {
+      "id": "R5c-F03",
+      "title": "Reverse NFR coverage can be bypassed through an undefined non-requirement disposition"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5c-F01",
+      "severity": "HIGH",
+      "title": "The stable-ID contract has no global uniqueness/shape check, allowing duplicate AC IDs to collapse traceability",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5c-F02",
+      "severity": "MED",
+      "title": "QC-10 enforces only the Change History heading, not the required table or current-version row",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5c-F03",
+      "severity": "MED",
+      "title": "Reverse NFR coverage can be bypassed through an undefined non-requirement disposition",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "506eca57afb3ea2dad0c8c69b486a2c0f7c632ad33bbff40b1f0e82665272d1a"
+}

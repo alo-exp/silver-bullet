@@ -1,0 +1,116 @@
+{
+  "schema_id": "deep-research-run-manifest-v4",
+  "version": "4.0.0",
+  "spine": "multi-ai-task-v2",
+  "run_id": "run-57f38dfa25d83cc50d224e283d4692f3",
+  "query": "Agentic SDLC orchestration landscape multimarket final \u2014 APO primary, SDLC plugins secondary (BMAD GSD Superpowers Spec Kit Oh My Zuvo OSS), agentic SDLC SaaS tertiary (Factory Devin Augment Cosmos)",
+  "mode": "ultradeep",
+  "research_type": "solution-landscape",
+  "started_at": "2026-07-19T14:32:48Z",
+  "finished_at": "2026-07-19T14:47:29Z",
+  "report_dir": "/Users/shafqat/.cursor/worktrees/repo/r41j/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final",
+  "workflow_id": "WF-SILVER-DEEP-RESEARCH-MULTI-AI",
+  "multi_ai": {
+    "budget": {
+      "currency_micro_usd_cap": 5000000,
+      "total_tokens_cap": 2000000,
+      "currency_micro_usd_actual": 0,
+      "total_tokens_actual": 0,
+      "price_known": false,
+      "usage_metered": true,
+      "budget_stop_reason": null
+    },
+    "phases": [
+      {
+        "phase_id": "DR-RETRIEVE",
+        "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+        "parallel": true
+      },
+      {
+        "phase_id": "DR-TRIANGULATE",
+        "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+        "parallel": true
+      },
+      {
+        "phase_id": "DR-CRITIQUE",
+        "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+        "parallel": true
+      }
+    ],
+    "work_item_refs": [
+      {
+        "work_item_id": "work-cad979016eeaa7748f3670e17def28db",
+        "manifest_path": "work-items/work-cad979016eeaa7748f3670e17def28db/multi-ai-work-item-manifest-v1.json",
+        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "work_item_id": "work-4145065a066a2b7efbd77c90ddc0959a",
+        "manifest_path": "work-items/work-4145065a066a2b7efbd77c90ddc0959a/multi-ai-work-item-manifest-v1.json",
+        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      {
+        "work_item_id": "work-1b8aaa25eb4fe996d9ca130354287452",
+        "manifest_path": "work-items/work-1b8aaa25eb4fe996d9ca130354287452/multi-ai-work-item-manifest-v1.json",
+        "manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "pool_config": {
+      "ocg_pool": "lite",
+      "cursor_pool": "none",
+      "include_only": [
+        "ocg-minimax-m3",
+        "ocg-qwen3.7-plus",
+        "ocg-deepseek-v4-flash",
+        "ocg-kimi-k2.7-code",
+        "ocg-mimo-v2.5",
+        "gemini-3.5-flash",
+        "gpt-5.6-luna-medium",
+        "claude-opus-4.8-medium"
+      ],
+      "resolved_pool": [
+        {
+          "logical_model_id": "ocg-minimax-m3",
+          "backend": "ocg"
+        },
+        {
+          "logical_model_id": "ocg-qwen3.7-plus",
+          "backend": "ocg"
+        },
+        {
+          "logical_model_id": "ocg-deepseek-v4-flash",
+          "backend": "ocg"
+        },
+        {
+          "logical_model_id": "ocg-kimi-k2.7-code",
+          "backend": "ocg"
+        },
+        {
+          "logical_model_id": "ocg-mimo-v2.5",
+          "backend": "ocg"
+        },
+        {
+          "logical_model_id": "gemini-3.5-flash",
+          "backend": "cursor"
+        },
+        {
+          "logical_model_id": "gpt-5.6-luna-medium",
+          "backend": "codex"
+        },
+        {
+          "logical_model_id": "claude-opus-4.8-medium",
+          "backend": "claude"
+        }
+      ],
+      "dispatch_mode": "live"
+    },
+    "result_index_path": "result-index.json",
+    "result_index_sha256": "f3ae1c8972ff9f359cd620ad27e1fb98c9d0edc6be24ba2d27b9cfeffb1491d6"
+  },
+  "artifact_paths": {
+    "scope": "scope.md",
+    "landscape": "landscape/landscape-report.md",
+    "shortlist": "shortlist/shortlist.json",
+    "comparison": "comparison/comparison.json",
+    "landscape_report_html": "landscape-report.html"
+  }
+}

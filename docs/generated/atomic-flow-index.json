@@ -1,0 +1,668 @@
+{
+  "atomic_flow_ids": [
+    "AF-AGENT-DELEGATE",
+    "AF-BLAST-RADIUS",
+    "AF-BOOTSTRAP",
+    "AF-BRANCH-FINISH",
+    "AF-CLARIFY",
+    "AF-COMPLETION-AUDIT",
+    "AF-DEBUG",
+    "AF-DECIDE",
+    "AF-DESIGN-CONTRACT",
+    "AF-DEVOPS-ROUTE",
+    "AF-DOCUMENT",
+    "AF-EXECUTE",
+    "AF-FAST-PATH",
+    "AF-MULTI-AI-TASK",
+    "AF-ORIENT",
+    "AF-PHASE-MANAGE",
+    "AF-PLAN",
+    "AF-QUALITY-GATE",
+    "AF-RELEASE",
+    "AF-REVIEW",
+    "AF-REVIEW-REQUEST",
+    "AF-REVIEW-TRIAGE",
+    "AF-ROUTE",
+    "AF-SECURE",
+    "AF-SHIP",
+    "AF-SPECIFY",
+    "AF-UI-QUALITY",
+    "AF-VALIDATE",
+    "AF-VERIFY"
+  ],
+  "catalog_version": "0.2.0-atomic-flow",
+  "runtime_queue_tokens": {
+    "FLOW-DESIGN-HANDOFF": "AF-DOCUMENT",
+    "FLOW-DEVOPS-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
+    "FLOW-DOCUMENT": "AF-DOCUMENT",
+    "FLOW-QUALITY-GATE": "AF-QUALITY-GATE",
+    "FLOW-QUALITY-GATE-PRESHIP": "AF-QUALITY-GATE",
+    "ROUTER": "AF-ROUTE",
+    "devops-quality-gates": "AF-QUALITY-GATE",
+    "devops-skill-router": "AF-DEVOPS-ROUTE",
+    "security": "AF-SECURE",
+    "silver-blast-radius": "AF-BLAST-RADIUS",
+    "silver-branch-finish": "AF-BRANCH-FINISH",
+    "silver-clarify": "AF-CLARIFY",
+    "silver-completion-audit": "AF-COMPLETION-AUDIT",
+    "silver-context": "AF-ORIENT",
+    "silver-create-release": "AF-RELEASE",
+    "silver-debug": "AF-DEBUG",
+    "silver-deep-research": "AF-DECIDE",
+    "silver-deep-research-multi-ai": "AF-DECIDE",
+    "silver-ensure-docs": "AF-DOCUMENT",
+    "silver-execute": "AF-EXECUTE",
+    "silver-handoff": "AF-DOCUMENT",
+    "silver-multi-ai-task": "AF-MULTI-AI-TASK",
+    "silver-new-workflow": "AF-PLAN",
+    "silver-plan": "AF-PLAN",
+    "silver-quality-gates": "AF-QUALITY-GATE",
+    "silver-review": "AF-REVIEW",
+    "silver-review-fix-ladder": "AF-REVIEW-TRIAGE",
+    "silver-review-request": "AF-REVIEW-REQUEST",
+    "silver-review-triage": "AF-REVIEW-TRIAGE",
+    "silver-scan": "AF-ORIENT",
+    "silver-secure": "AF-SECURE",
+    "silver-ship": "AF-SHIP",
+    "silver-spec": "AF-SPECIFY",
+    "silver-triage": "AF-REVIEW-TRIAGE",
+    "silver-ui-contract": "AF-DESIGN-CONTRACT",
+    "silver-ui-review": "AF-UI-QUALITY",
+    "silver-validate": "AF-VALIDATE",
+    "silver-verify": "AF-VERIFY"
+  },
+  "skill_worker_templates": {
+    "AF-DOCUMENT": {
+      "FLOW-DESIGN-HANDOFF": "templates/orchestrator-workers/DESIGN-HANDOFF.md",
+      "silver-handoff": "templates/orchestrator-workers/DESIGN-HANDOFF.md"
+    },
+    "AF-SECURE": {
+      "security": "templates/orchestrator-workers/SECURITY.md"
+    }
+  },
+  "source_of_truth": "docs/apo-catalog.json",
+  "step_to_flows": {
+    "FS-AI_LLM_SAFETY": [
+      "AF-SECURE"
+    ],
+    "FS-ARTIFACT_REVIEWER": [
+      "AF-REVIEW"
+    ],
+    "FS-ARTIFACT_REVIEW_ASSESSOR": [
+      "AF-REVIEW"
+    ],
+    "FS-DELEGATE-BRIEF": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CHECKPOINT": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CLAUDE-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CLAUDE-ROUTE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CODEX-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CODEX-ROUTE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-ROUTE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-GUARD_OFF": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-GUARD_ON": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-LAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-MENTOR": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-RELAUNCH": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DELEGATE-VERIFY": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-DEVOPS_QUALITY_GATES": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-DEVOPS_SKILL_ROUTER": [
+      "AF-DEVOPS-ROUTE"
+    ],
+    "FS-EXTENSIBILITY": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-MODULARITY": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-MULTI-AI-CAPABILITY-PROBE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-DISPATCH": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-INDEX": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RECONCILE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RESERVE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-MULTI-AI-RESOLVE": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-RELIABILITY": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-REUSABILITY": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-REVIEW_CONTEXT": [
+      "AF-PLAN"
+    ],
+    "FS-REVIEW_CROSS_ARTIFACT": [
+      "AF-REVIEW"
+    ],
+    "FS-REVIEW_DESIGN": [
+      "AF-DESIGN-CONTRACT"
+    ],
+    "FS-REVIEW_INGESTION_MANIFEST": [
+      "AF-SPECIFY"
+    ],
+    "FS-REVIEW_PLAN": [
+      "AF-PLAN"
+    ],
+    "FS-REVIEW_REQUIREMENTS": [
+      "AF-SPECIFY"
+    ],
+    "FS-REVIEW_RESEARCH": [
+      "AF-DECIDE"
+    ],
+    "FS-REVIEW_ROADMAP": [
+      "AF-REVIEW"
+    ],
+    "FS-REVIEW_SPEC": [
+      "AF-SPECIFY"
+    ],
+    "FS-REVIEW_UAT": [
+      "AF-REVIEW"
+    ],
+    "FS-REVIEW_VERIFICATION": [
+      "AF-VERIFY"
+    ],
+    "FS-SCALABILITY": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-SECURITY": [
+      "AF-SECURE"
+    ],
+    "FS-SILVER": [
+      "AF-ROUTE"
+    ],
+    "FS-SILVER_ADD": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_AGENT_CLAUDE": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_CODEX": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_CURSOR": [
+      "AF-AGENT-DELEGATE"
+    ],
+    "FS-SILVER_AGENT_OPENCODE": [],
+    "FS-SILVER_AGENT_PI": [],
+    "FS-SILVER_BENCHMARK": [
+      "AF-FAST-PATH"
+    ],
+    "FS-SILVER_BLAST_RADIUS": [
+      "AF-BLAST-RADIUS"
+    ],
+    "FS-SILVER_BOOTSTRAP_MILESTONE": [
+      "AF-BOOTSTRAP"
+    ],
+    "FS-SILVER_BOOTSTRAP_PROJECT": [
+      "AF-BOOTSTRAP"
+    ],
+    "FS-SILVER_BRANCH_FINISH": [
+      "AF-BRANCH-FINISH"
+    ],
+    "FS-SILVER_BUGFIX": [
+      "AF-DEBUG"
+    ],
+    "FS-SILVER_CANARY": [
+      "AF-SHIP"
+    ],
+    "FS-SILVER_CLARIFY": [
+      "AF-CLARIFY"
+    ],
+    "FS-SILVER_CLEAR_STACK_STATE": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_COMPARE": [
+      "AF-DECIDE"
+    ],
+    "FS-SILVER_COMPLETION_AUDIT": [
+      "AF-COMPLETION-AUDIT"
+    ],
+    "FS-SILVER_CONTENT": [
+      "AF-DOCUMENT"
+    ],
+    "FS-SILVER_CONTEXT": [
+      "AF-ORIENT"
+    ],
+    "FS-SILVER_CREATE_RELEASE": [
+      "AF-RELEASE"
+    ],
+    "FS-SILVER_DEBUG": [
+      "AF-DEBUG"
+    ],
+    "FS-SILVER_DEEP_RESEARCH": [
+      "AF-DECIDE"
+    ],
+    "FS-SILVER_DEEP_RESEARCH_MULTI_AI": [
+      "AF-DECIDE"
+    ],
+    "FS-SILVER_DEPLOY": [
+      "AF-SHIP"
+    ],
+    "FS-SILVER_DEVOPS": [
+      "AF-DEVOPS-ROUTE"
+    ],
+    "FS-SILVER_DOCTOR": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_DOMAIN_AUDIT": [
+      "AF-REVIEW"
+    ],
+    "FS-SILVER_ENSURE_DOCS": [
+      "AF-DOCUMENT"
+    ],
+    "FS-SILVER_EXECUTE": [
+      "AF-EXECUTE"
+    ],
+    "FS-SILVER_FAST": [
+      "AF-FAST-PATH"
+    ],
+    "FS-SILVER_FEATURE": [
+      "AF-FAST-PATH"
+    ],
+    "FS-SILVER_FORENSICS": [
+      "AF-DEBUG"
+    ],
+    "FS-SILVER_HANDOFF": [
+      "AF-DOCUMENT"
+    ],
+    "FS-SILVER_INCIDENT": [
+      "AF-FAST-PATH"
+    ],
+    "FS-SILVER_INGEST": [
+      "AF-SPECIFY"
+    ],
+    "FS-SILVER_INIT": [
+      "AF-BOOTSTRAP"
+    ],
+    "FS-SILVER_MIGRATE": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_MULTI_AI_TASK": [
+      "AF-MULTI-AI-TASK"
+    ],
+    "FS-SILVER_NEW_WORKFLOW": [
+      "AF-PLAN"
+    ],
+    "FS-SILVER_ORCHESTRATOR": [
+      "AF-ROUTE"
+    ],
+    "FS-SILVER_ORIENT": [
+      "AF-ORIENT"
+    ],
+    "FS-SILVER_PHASE": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_PLAN": [
+      "AF-PLAN"
+    ],
+    "FS-SILVER_QUALITY_GATES": [
+      "AF-QUALITY-GATE"
+    ],
+    "FS-SILVER_REFACTOR": [
+      "AF-EXECUTE"
+    ],
+    "FS-SILVER_RELEASE": [
+      "AF-RELEASE"
+    ],
+    "FS-SILVER_REM": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_REMOVE": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_RETRO": [
+      "AF-DOCUMENT"
+    ],
+    "FS-SILVER_REVIEW": [
+      "AF-REVIEW"
+    ],
+    "FS-SILVER_REVIEW_FIX_LADDER": [
+      "AF-REVIEW-TRIAGE"
+    ],
+    "FS-SILVER_REVIEW_REQUEST": [
+      "AF-REVIEW-REQUEST"
+    ],
+    "FS-SILVER_REVIEW_STATS": [
+      "AF-ORIENT"
+    ],
+    "FS-SILVER_REVIEW_TRIAGE": [
+      "AF-REVIEW-TRIAGE"
+    ],
+    "FS-SILVER_SCAN": [
+      "AF-ORIENT"
+    ],
+    "FS-SILVER_SECURE": [
+      "AF-SECURE"
+    ],
+    "FS-SILVER_SHIP": [
+      "AF-SHIP"
+    ],
+    "FS-SILVER_SPEC": [
+      "AF-SPECIFY"
+    ],
+    "FS-SILVER_SPIKE": [
+      "AF-EXECUTE"
+    ],
+    "FS-SILVER_TEST": [
+      "AF-VERIFY"
+    ],
+    "FS-SILVER_THREAD": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_TRIAGE": [
+      "AF-REVIEW-TRIAGE"
+    ],
+    "FS-SILVER_UI": [
+      "AF-UI-QUALITY"
+    ],
+    "FS-SILVER_UI_CONTRACT": [
+      "AF-DESIGN-CONTRACT"
+    ],
+    "FS-SILVER_UI_REVIEW": [
+      "AF-UI-QUALITY"
+    ],
+    "FS-SILVER_UNDO": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_UPDATE": [
+      "AF-PHASE-MANAGE"
+    ],
+    "FS-SILVER_VALIDATE": [
+      "AF-VALIDATE"
+    ],
+    "FS-SILVER_VERIFY": [
+      "AF-VERIFY"
+    ],
+    "FS-SILVER_WORKTREE": [
+      "AF-EXECUTE"
+    ],
+    "FS-TDD": [
+      "AF-EXECUTE"
+    ],
+    "FS-TESTABILITY": [
+      "AF-VERIFY"
+    ],
+    "FS-USABILITY": [
+      "AF-UI-QUALITY"
+    ],
+    "FS-VERIFY_TESTS": [
+      "AF-VERIFY"
+    ]
+  },
+  "worker_templates": {
+    "AF-AGENT-DELEGATE": "templates/orchestrator-workers/AGENT-DELEGATE.md",
+    "AF-BLAST-RADIUS": "templates/orchestrator-workers/BLAST-RADIUS.md",
+    "AF-BOOTSTRAP": "templates/orchestrator-workers/BOOTSTRAP.md",
+    "AF-BRANCH-FINISH": "templates/orchestrator-workers/BRANCH-FINISH.md",
+    "AF-CLARIFY": "templates/orchestrator-workers/CLARIFY.md",
+    "AF-COMPLETION-AUDIT": "templates/orchestrator-workers/COMPLETION-AUDIT.md",
+    "AF-DEBUG": "templates/orchestrator-workers/DEBUG.md",
+    "AF-DECIDE": "templates/orchestrator-workers/DECIDE.md",
+    "AF-DESIGN-CONTRACT": "templates/orchestrator-workers/DESIGN-CONTRACT.md",
+    "AF-DEVOPS-ROUTE": "templates/orchestrator-workers/DEVOPS-SKILL-ROUTER.md",
+    "AF-DOCUMENT": "templates/orchestrator-workers/DOCUMENT.md",
+    "AF-EXECUTE": "templates/orchestrator-workers/EXECUTE.md",
+    "AF-FAST-PATH": "templates/orchestrator-workers/FAST.md",
+    "AF-MULTI-AI-TASK": "skills/silver-multi-ai-task/SKILL.md",
+    "AF-ORIENT": "templates/orchestrator-workers/ORIENT.md",
+    "AF-PHASE-MANAGE": "templates/orchestrator-workers/PHASE.md",
+    "AF-PLAN": "templates/orchestrator-workers/PLAN.md",
+    "AF-QUALITY-GATE": "templates/orchestrator-workers/QUALITY-GATE.md",
+    "AF-RELEASE": "templates/orchestrator-workers/RELEASE.md",
+    "AF-REVIEW": "templates/orchestrator-workers/REVIEW.md",
+    "AF-REVIEW-REQUEST": "templates/orchestrator-workers/REVIEW-REQUEST.md",
+    "AF-REVIEW-TRIAGE": "templates/orchestrator-workers/REVIEW-TRIAGE.md",
+    "AF-ROUTE": "templates/orchestrator-workers/ROUTER.md",
+    "AF-SECURE": "templates/orchestrator-workers/SECURE.md",
+    "AF-SHIP": "templates/orchestrator-workers/SHIP.md",
+    "AF-SPECIFY": "templates/orchestrator-workers/SPECIFY.md",
+    "AF-UI-QUALITY": "templates/orchestrator-workers/UI-QUALITY.md",
+    "AF-VALIDATE": "templates/orchestrator-workers/VALIDATE.md",
+    "AF-VERIFY": "templates/orchestrator-workers/VERIFY.md"
+  },
+  "workflow_enforcement_queues": {
+    "silver": [
+      "silver-context"
+    ],
+    "silver-benchmark": [
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
+    "silver-bugfix": [
+      "silver-debug",
+      "silver-plan",
+      "silver-execute",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
+    ],
+    "silver-canary": [
+      "silver-blast-radius",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship"
+    ],
+    "silver-content": [
+      "silver-clarify",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
+    "silver-deep-research": [
+      "silver-clarify",
+      "silver-deep-research",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
+    "silver-deep-research-multi-ai": [
+      "silver-clarify",
+      "silver-deep-research-multi-ai",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
+    "silver-deploy": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-ship"
+    ],
+    "silver-devops": [
+      "silver-blast-radius",
+      "devops-skill-router",
+      "devops-quality-gates",
+      "security",
+      "silver-context",
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
+    ],
+    "silver-fast": [
+      "FLOW-QUALITY-GATE",
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-verify"
+    ],
+    "silver-feature": [
+      "FLOW-QUALITY-GATE",
+      "silver-context",
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
+    ],
+    "silver-forensics": [
+      "silver-debug",
+      "silver-execute",
+      "silver-ensure-docs",
+      "silver-validate"
+    ],
+    "silver-incident": [
+      "silver-blast-radius",
+      "silver-debug",
+      "silver-plan",
+      "silver-execute",
+      "security",
+      "silver-secure",
+      "silver-verify",
+      "silver-ensure-docs"
+    ],
+    "silver-multi-ai-task": [
+      "silver-multi-ai-task"
+    ],
+    "silver-new-workflow": [
+      "silver-clarify",
+      "silver-scan",
+      "silver-deep-research",
+      "silver-plan",
+      "silver-review-fix-ladder",
+      "silver-execute",
+      "silver-verify",
+      "silver-validate",
+      "silver-ensure-docs"
+    ],
+    "silver-refactor": [
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
+    ],
+    "silver-release": [
+      "FLOW-QUALITY-GATE",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship",
+      "silver-create-release"
+    ],
+    "silver-retro": [
+      "silver-context",
+      "silver-execute",
+      "silver-ensure-docs"
+    ],
+    "silver-test": [
+      "silver-plan",
+      "silver-validate",
+      "silver-execute",
+      "silver-verify"
+    ],
+    "silver-ui": [
+      "FLOW-QUALITY-GATE",
+      "silver-context",
+      "silver-plan",
+      "silver-ui-contract",
+      "silver-validate",
+      "silver-execute",
+      "silver-ui-review",
+      "silver-review-request",
+      "silver-review",
+      "silver-review-triage",
+      "silver-verify",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "FLOW-QUALITY-GATE-PRESHIP",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-ship"
+    ]
+  }
+}

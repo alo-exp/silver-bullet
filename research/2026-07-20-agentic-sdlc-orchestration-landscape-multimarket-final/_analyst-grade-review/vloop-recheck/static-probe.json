@@ -1,0 +1,295 @@
+{
+  "out": {
+    "apo": {
+      "id": "apo",
+      "mq_labels": [
+        "Silver Bullet:Leaders",
+        "cc10x:Leaders",
+        "AI-DLC:Leaders",
+        "AgentHub:Leaders",
+        "ATeam:Leaders",
+        "Cavekit v3.1:Visionaries",
+        "Director:Visionaries",
+        "AgentSys:Leaders",
+        "Barkain Workflow Orchestrator:Visionaries",
+        "Workflow Manager:Visionaries",
+        "Deepwork:Visionaries",
+        "Turboshovel:Visionaries",
+        "MetaGPT:Niche Players"
+      ],
+      "leaders": [
+        "Silver Bullet",
+        "cc10x",
+        "AI-DLC",
+        "AgentHub",
+        "ATeam",
+        "AgentSys"
+      ],
+      "commercial": [
+        "AgentHub",
+        "ATeam",
+        "Barkain Workflow Orchestrator",
+        "Cavekit v3.1",
+        "cc10x",
+        "Deepwork",
+        "Turboshovel",
+        "Workflow Manager"
+      ],
+      "oss": [
+        "AgentSys",
+        "AI-DLC",
+        "Director",
+        "MetaGPT",
+        "Silver Bullet"
+      ],
+      "adjacent": [],
+      "challengers": [],
+      "niche": [],
+      "visionaries": [],
+      "all_bucket_keys": [
+        "commercial",
+        "oss",
+        "leaders",
+        "challengers"
+      ]
+    },
+    "plugins": {
+      "id": "sdlc-plugins",
+      "mq_labels": [
+        "Oh My Pi (OMP):Leaders",
+        "GSD (Get Shit Done):Leaders",
+        "BMAD-METHOD:Leaders",
+        "Ruflo / Claude Flow:Leaders",
+        "Superpowers:Leaders",
+        "Zuvo:Leaders",
+        "GitHub Spec Kit:Leaders",
+        "SuperClaude:Leaders",
+        "Claude Harness:Visionaries"
+      ],
+      "leaders": [
+        "Oh My Pi (OMP)",
+        "GSD (Get Shit Done)",
+        "BMAD-METHOD",
+        "Ruflo / Claude Flow",
+        "Superpowers",
+        "Zuvo",
+        "GitHub Spec Kit",
+        "SuperClaude"
+      ],
+      "commercial": [],
+      "oss": [
+        "BMAD-METHOD",
+        "Claude Harness",
+        "GSD (Get Shit Done)",
+        "Oh My Pi (OMP)",
+        "Ruflo / Claude Flow",
+        "GitHub Spec Kit",
+        "SuperClaude",
+        "Superpowers",
+        "Zuvo"
+      ],
+      "adjacent": [],
+      "challengers": [],
+      "niche": [],
+      "visionaries": [],
+      "all_bucket_keys": [
+        "commercial",
+        "oss",
+        "leaders",
+        "challengers"
+      ]
+    },
+    "saas": {
+      "id": "agentic-sdlc-saas",
+      "mq_labels": [
+        "Augment Cosmos:Leaders",
+        "Devin:Leaders",
+        "Factory.ai:Leaders",
+        "Tembo:Visionaries",
+        "Magic.dev:Visionaries"
+      ],
+      "leaders": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai"
+      ],
+      "commercial": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai",
+        "Magic.dev",
+        "Tembo"
+      ],
+      "oss": [],
+      "adjacent": [],
+      "challengers": [],
+      "niche": [],
+      "visionaries": [],
+      "all_bucket_keys": [
+        "commercial",
+        "oss",
+        "leaders",
+        "challengers"
+      ]
+    }
+  },
+  "probes": {
+    "Cursor": [],
+    "Claude Code": [],
+    "Codex": [],
+    "Copilot": [],
+    "Conductor": [],
+    "Cognition Scout": [],
+    "Claude Harness": [
+      "mq:Claude Harness:Visionaries",
+      "bucket.oss:Claude Harness",
+      "gmq_data:Claude Harness",
+      "vc_oss:Claude Harness"
+    ],
+    "MetaGPT": [
+      "mq:MetaGPT:Niche Players",
+      "bucket.oss:MetaGPT",
+      "gmq_data:MetaGPT"
+    ],
+    "Factory": [
+      "mq:Factory.ai:Leaders",
+      "bucket.commercial:Factory.ai",
+      "bucket.leaders:Factory.ai",
+      "gmq_data:Factory.ai",
+      "vc_commercial:Factory.ai",
+      "wave_data:Factory.ai"
+    ],
+    "Devin": [
+      "mq:Devin:Leaders",
+      "bucket.commercial:Devin",
+      "bucket.leaders:Devin",
+      "gmq_data:Devin",
+      "vc_commercial:Devin",
+      "wave_data:Devin"
+    ],
+    "Augment": [
+      "mq:Augment Cosmos:Leaders",
+      "bucket.commercial:Augment Cosmos",
+      "bucket.leaders:Augment Cosmos",
+      "gmq_data:Augment Cosmos",
+      "vc_commercial:Augment Cosmos",
+      "wave_data:Augment Cosmos"
+    ],
+    "Tembo": [
+      "mq:Tembo:Visionaries",
+      "bucket.commercial:Tembo",
+      "gmq_data:Tembo",
+      "wave_data:Tembo"
+    ],
+    "Magic": [
+      "mq:Magic.dev:Visionaries",
+      "bucket.commercial:Magic.dev",
+      "gmq_data:Magic.dev",
+      "wave_data:Magic.dev"
+    ]
+  },
+  "checks": {
+    "agentsys_github": 12,
+    "agentsys_ai": 0,
+    "aws_ai_dlc": 0,
+    "claude_code_expert": 24,
+    "target_blank": 5,
+    "noopener": 10
+  },
+  "data_keys": [
+    "title",
+    "research_type",
+    "need_profile",
+    "comparison",
+    "xlsx_href",
+    "research_slug",
+    "landscape",
+    "chart_data",
+    "markdown",
+    "manifest",
+    "consolidation",
+    "envelopes",
+    "generated_by"
+  ],
+  "rankings_count": 26,
+  "rankings_sample": [
+    {
+      "solution": "oh-my-pi"
+    },
+    {
+      "solution": "silver-bullet"
+    },
+    {
+      "solution": "gsd"
+    },
+    {
+      "solution": "bmad"
+    },
+    {
+      "solution": "augment-cosmos"
+    },
+    {
+      "solution": "devin"
+    },
+    {
+      "solution": "factory-ai"
+    },
+    {
+      "solution": "cc10x"
+    },
+    {
+      "solution": "ruflo"
+    },
+    {
+      "solution": "superpowers"
+    },
+    {
+      "solution": "zuvo"
+    },
+    {
+      "solution": "ai-dlc"
+    },
+    {
+      "solution": "spec-kit"
+    },
+    {
+      "solution": "superclaude"
+    },
+    {
+      "solution": "agenthub"
+    },
+    {
+      "solution": "ateam"
+    },
+    {
+      "solution": "cavekit-v31"
+    },
+    {
+      "solution": "director"
+    },
+    {
+      "solution": "agentsys"
+    },
+    {
+      "solution": "barkain-workflow-orchestrator"
+    },
+    {
+      "solution": "claude-harness"
+    },
+    {
+      "solution": "workflow-manager"
+    },
+    {
+      "solution": "tembo"
+    },
+    {
+      "solution": "deepwork"
+    },
+    {
+      "solution": "turboshovel"
+    },
+    {
+      "solution": "magic-dev"
+    }
+  ]
+}

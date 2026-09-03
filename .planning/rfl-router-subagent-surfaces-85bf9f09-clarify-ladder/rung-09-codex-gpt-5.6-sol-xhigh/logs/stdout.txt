@@ -1,0 +1,19 @@
+Completed the read-only rung-9 review.
+
+Report written only to:
+
+`.planning/rfl-router-subagent-surfaces-85bf9f09-clarify-ladder/rung-09-codex-gpt-5.6-sol-xhigh/clarifications.md`
+
+Findings:
+
+- **R9-F1 — BLOCKER:** LS-post-val-kl Executor ownership remains contradicted by Advisor `knowledge_postwrite` enforcement text.
+- **R9-F2 — HIGH:** FAST WBS/terminal topology omits mandatory Verifier and Validator hops.
+- **R9-F3 — HIGH:** Two Mermaid blocks are byte-identical, violating the freeze’s no-duplicate-mermaid invariant.
+- **R9-F4 — MEDIUM:** The generated TOC contains numerous broken or orphaned fragment links.
+
+All constraints are intact except **LS-post-val-kl Executor producer conformance**. No AskQuestion fork was required.
+
+Both freeze copies remain byte-identical at canonical SHA:
+
+`babfc2d55bdce116cbd4ddda9ee0d265ad71bf38de5aecf0e0b0186e65dfed41` — `622457` bytes.
+EXIT:0

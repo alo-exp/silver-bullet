@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-AI Deep Research</title>
+<style>
+body { font-family: system-ui, sans-serif; margin: 0; padding: 1.5rem; line-height: 1.5; }
+nav button { margin-right: 0.5rem; }
+.panel { display: none; } .panel.active { display: block; }
+table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ccc; padding: 0.4rem; }
+</style>
+</head>
+<body>
+<header><h1>Multi-AI Deep Research</h1></header>
+<nav id="tabNav" role="tablist">
+  <button type="button" data-tab="overview" class="active">Overview</button>
+  <button type="button" data-tab="matrix">Matrix</button>
+</nav>
+<main>
+  <section id="panel-overview" class="panel active" data-tab-marker="overview"></section>
+  <section id="panel-matrix" class="panel" data-tab-marker="matrix"></section>
+</main>
+<script type="application/json" id="report-data">{"title": "Multi-AI Deep Research", "research_type": "solution-landscape", "need_profile": {"category": "solution-landscape"}, "comparison": {"consensus_count": 0}, "consolidation": {}, "generated_by": "silver-deep-research-multi-ai/generate_spa_report.py:general"}</script>
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('report-data').textContent);
+  const panels = document.querySelectorAll('.panel');
+  const buttons = document.querySelectorAll('#tabNav button[data-tab]');
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function showTab(name) {
+    panels.forEach(p => p.classList.toggle('active', p.dataset.tabMarker === name));
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  }
+  buttons.forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  document.getElementById('panel-overview').innerHTML = '<p>Research type: ' + esc(data.research_type || 'default') + '</p>';
+  let table = '';
+  const rows = (data.consolidation && data.consolidation.consensus) || [];
+  if (rows.length) {
+    table += '<table id="matrixTable"><thead><tr><th>Claim</th><th>Support</th></tr></thead><tbody>';
+    rows.forEach(r => { table += '<tr><td>' + esc(r.text || '') + '</td><td>' + esc(String(r.support_count || 0)) + '</td></tr>'; });
+    table += '</tbody></table>';
+  } else {
+    table = '<p>No consensus rows yet.</p>';
+  }
+  document.getElementById('panel-matrix').innerHTML = table;
+})();
+</script>
+</body>
+</html>

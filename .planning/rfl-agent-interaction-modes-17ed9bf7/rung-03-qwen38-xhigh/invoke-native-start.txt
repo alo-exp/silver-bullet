@@ -1,0 +1,4 @@
+2026-08-23T17:37:33Z
+OPENCODE=/Users/shafqat/.opencode/bin/opencode
+MODEL=opencode-go/qwen3.8-max
+VARIANT=xhigh

@@ -1,0 +1,21 @@
+{
+  "report": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "file_url": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "open": "PASS",
+  "mac_open_exit": 0,
+  "http_mirror": {
+    "url": "http://127.0.0.1:8877/landscape-report.html",
+    "status": 200
+  },
+  "ibm_developer_ibm_com": 0,
+  "tembo_in_saas_mq": false,
+  "blue_ocean_value_set": [
+    1,
+    3,
+    5
+  ],
+  "inclusion_ledger_linked": true,
+  "spa_regenerated": true,
+  "harness_anthropics_homepage": 0,
+  "coi_policy": "ignored-no-sb-demotion"
+}

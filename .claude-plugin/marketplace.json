@@ -1,0 +1,167 @@
+{
+  "name": "alo-labs",
+  "owner": {
+    "name": "Ālo Labs",
+    "email": "hello@alolabs.io"
+  },
+  "metadata": {
+    "description": "Ālo Labs Claude Code plugin marketplace",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "silver-bullet",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/silver-bullet"
+      },
+      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Enforced 20-step (app) and 24-step (DevOps) workflows with quality gates for Claude Code.",
+      "version": "0.52.0",
+      "author": {
+        "name": "Alo Labs",
+        "email": "info@alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/silver-bullet",
+      "repository": "https://github.com/alo-exp/silver-bullet",
+      "license": "BUSL-1.1",
+      "keywords": [
+        "silver-bullet",
+        "enforcement",
+        "orchestrator",
+        "gsd",
+        "devops",
+        "quality-gates",
+        "ci-cd"
+      ],
+      "category": "development",
+      "strict": true
+    },
+    {
+      "name": "sidekick",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/sidekick"
+      },
+      "description": "AI coding agents as Claude sidekicks. Forge (ForgeCode) auto-installs, configures with OpenRouter, and turns Claude into an orchestrator that delegates all coding, file-system, and git tasks.",
+      "version": "0.8.4",
+      "author": {
+        "name": "Ālo Labs",
+        "url": "https://alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/sidekick",
+      "repository": "https://github.com/alo-exp/sidekick",
+      "license": "MIT",
+      "keywords": [
+        "sidekick",
+        "claude-code",
+        "codex",
+        "kay",
+        "terminal-agent",
+        "coding-agent",
+        "orchestration"
+      ],
+      "category": "development",
+      "strict": true
+    },
+    {
+      "name": "multai",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/multai"
+      },
+      "description": "Submit research prompts to 7 AI platforms simultaneously (Claude.ai, ChatGPT, Copilot, Perplexity, Grok, DeepSeek, Gemini), synthesize results, maintain capability comparison matrices, and produce landscape reports — all from Claude Code.",
+      "version": "0.3.0",
+      "author": {
+        "name": "Ālo Labs",
+        "url": "https://alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/multai",
+      "repository": "https://github.com/alo-exp/multai",
+      "license": "MIT",
+      "keywords": [
+        "multi-ai",
+        "orchestration",
+        "research",
+        "playwright",
+        "comparison-matrix",
+        "deep-research"
+      ],
+      "category": "productivity",
+      "strict": true
+    },
+    {
+      "name": "topgun",
+      "source": {
+        "source": "github",
+        "repo": "alo-labs/topgun"
+      },
+      "description": "Find, compare, security-audit, and install the best available skill for any job from 16 active registries.",
+      "version": "0.7.8",
+      "author": {
+        "name": "Alo Labs",
+        "url": "https://github.com/alo-labs/topgun"
+      },
+      "homepage": "https://github.com/alo-labs/topgun",
+      "repository": "https://github.com/alo-labs/topgun",
+      "license": "MIT",
+      "keywords": [
+        "topgun",
+        "skills",
+        "discovery",
+        "security-audit",
+        "registry",
+        "installation"
+      ],
+      "category": "development",
+      "strict": true
+    },
+    {
+      "name": "wow",
+      "source": {
+        "source": "github",
+        "repo": "alo-labs/wow"
+      },
+      "description": "WOW — WordPress → Optimized WordPress. Autonomous Claude Code plugin for world-class WordPress performance optimization.",
+      "version": "0.1.2026040201",
+      "author": {
+        "name": "Shafqat Ullah",
+        "email": "shafqat@sourcevo.com"
+      },
+      "homepage": "https://alolabs.dev",
+      "repository": "https://github.com/alo-labs/wow",
+      "license": "MIT",
+      "keywords": [
+        "wordpress",
+        "performance",
+        "optimization",
+        "wow"
+      ],
+      "category": "development",
+      "strict": true
+    },
+    {
+      "name": "instadecks",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/instadecks"
+      },
+      "description": "Generate, review, content-review, and annotate polished presentation decks from any input.",
+      "version": "0.2.1",
+      "author": {
+        "name": "Alo Labs",
+        "url": "https://github.com/alo-exp/instadecks"
+      },
+      "homepage": "https://github.com/alo-exp/instadecks",
+      "repository": "https://github.com/alo-exp/instadecks",
+      "license": "Apache-2.0",
+      "keywords": [
+        "presentations",
+        "pptx",
+        "design-review",
+        "annotation"
+      ],
+      "category": "productivity",
+      "strict": true
+    }
+  ]
+}

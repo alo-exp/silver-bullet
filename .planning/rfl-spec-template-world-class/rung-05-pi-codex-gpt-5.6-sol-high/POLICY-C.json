@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 11)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R5k-F01",
+        "title": "NFR Source and Source Dispositions are not mutually exclusive"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5k-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Exclusive branches: a given source ID is either a live NFR Source or exactly one Source Dispositions row — not both. Named FAIL on overlap in review-requirements / XART / Step 8 and the NFR reverse-coverage check (not QC-3 uniqueness). Keep neither-only FAIL. Closed Disposition enum unchanged. Negative fixture: QA-01 as live NFR Source and out-of-scope (or deferred) must FAIL. R5h/R5i tombstones, Wave 6 1b, QC-2/QC-12/QC-13 unchanged."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R5k-F01",
+      "title": "NFR Source and Source Dispositions are not mutually exclusive"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5k-F01",
+      "severity": "MED",
+      "title": "NFR Source and Source Dispositions are not mutually exclusive",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "d45ccf6b686250638ba22778618c4f31761919c5fd00ef692569049ac6526401"
+}

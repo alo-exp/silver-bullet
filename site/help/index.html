@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="shortcut icon" href="../favicon.ico">
+<title>Silver Bullet Help Center</title>
+  <meta name="description" content="Silver Bullet v0.52.0 Help Center — APO catalog (docs/apo-catalog.json), Process → Workflow → Atomic Flow → Flow Step, 29 AF-* atomic flows, 26 workflows (22 task-shaped plus 4 reusable components), 118 flow steps, and hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
+<meta property="og:title" content="Silver Bullet Help Center — Composable Atomic Flows">
+<meta property="og:description" content="Docs for Silver Bullet v0.52.0: APO catalog-backed AF-* atomic flows, WF-* workflows, V-loop evidence, hook-enforced delivery gates, and spec-to-release traceability.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/help/">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Silver Bullet Help Center — Composable Atomic Flows">
+<meta name="twitter:description" content="APO catalog-backed AF-* atomic flows, WF-* workflows, and hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+/* NAV — chrome.css */
+/* HERO */
+.hero{background:var(--bg-hero);padding-bottom:80px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.hero .container{position:relative;z-index:1;text-align:center}
+.hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--slate-a10b);border:1px solid var(--slate-a25);border-radius:999px;padding:6px 16px;font-size:.9rem;color:var(--accent-light);font-weight:500;margin-bottom:32px}
+.hero h1{font-size:clamp(2rem,4vw,3rem);letter-spacing:-.04em;margin-bottom:40px;line-height:1.1}
+.hero p{font-size:1.1rem;color:var(--text-secondary);max-width:560px;margin:0 auto 40px;line-height:1.7}
+/* SEARCH BAR */
+.search-wrap{max-width:480px;margin:0 auto 0;position:relative}
+.search-wrap input{width:100%;padding:14px 20px 14px 48px;border-radius:999px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-primary);font-size:.95rem;font-family:var(--font-sans);outline:none;transition:border-color .2s,box-shadow .2s}
+.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--slate-a10b)}
+.search-wrap .search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:1rem}
+/* SECTIONS */
+section{padding:64px 0}
+section:nth-child(even){background:var(--section-alt)}
+.section-label{text-transform:uppercase;font-size:.75rem;letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px}
+.section-title{font-size:clamp(1.6rem,2.5vw,2rem);letter-spacing:-.03em;margin-bottom:12px}
+.section-desc{font-size:.95rem;color:var(--text-secondary);max-width:600px;margin-bottom:40px}
+/* HELP CARDS */
+.help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.help-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.help-grid{grid-template-columns:repeat(2,1fr)}}
+.help-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;transition:all .3s;text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden}
+.help-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--card-accent,linear-gradient(90deg,var(--accent),var(--accent2)));opacity:0;transition:opacity .3s}
+.help-card:hover{border-color:var(--border-hover);box-shadow:var(--card-shadow-hover);transform:translateY(-4px)}
+.help-card:hover::before{opacity:1}
+.help-card .card-icon{font-size:2rem;margin-bottom:16px}
+.help-card .card-badge{display:inline-block;padding:3px 12px;border-radius:999px;font-size:.7rem;font-weight:700;letter-spacing:.04em;margin-bottom:12px;text-transform:uppercase}
+.help-card h3{font-size:1.1rem;margin-bottom:8px}
+.help-card p{font-size:.875rem;color:var(--text-secondary);line-height:1.6;margin-bottom:16px}
+.help-card .card-topics{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
+.help-card .card-topics li{font-size:.9rem;color:var(--text-dim);display:flex;align-items:center;gap:6px}
+.help-card .card-topics li::before{content:'→';color:var(--accent-light);font-weight:700;font-size:.75rem}
+.help-card .card-cta{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:.9rem;font-weight:600;color:var(--accent-light);display:flex;align-items:center;gap:6px}
+/* QUICK LINKS */
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.quick-grid{grid-template-columns:repeat(2,1fr)}}
+.quick-link{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;text-decoration:none;color:var(--text-secondary);font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:10px;transition:all .2s}
+.quick-link:hover{border-color:var(--accent);color:var(--accent-light);transform:translateX(2px)}
+.quick-link .ql-icon{font-size:1.1rem}
+/* CALLOUT */
+.callout{background:linear-gradient(135deg,rgba(200,210,222,.14),var(--slate-a07) 50%,var(--neutral-a12));border:1px solid var(--slate-a20);border-radius:var(--radius-lg);padding:40px;text-align:center;max-width:680px;margin:0 auto}
+.callout p{font-size:1rem;color:var(--text-secondary);line-height:1.7}
+.callout strong{color:var(--text-primary)}
+/* FOOTER */
+/* SEARCH RESULTS */
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#search-results-section{padding:40px 0}
+.sr-list{display:flex;flex-direction:column;gap:12px;max-width:680px;margin:0 auto}
+.sr-item{display:flex;flex-direction:column;gap:4px;padding:20px 24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:inherit;transition:all .2s}
+.sr-item:hover{border-color:var(--accent);box-shadow:var(--card-shadow-hover);transform:translateY(-2px)}
+.sr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.sr-title{font-size:1rem;font-weight:700;color:var(--text-primary)}
+.sr-excerpt{font-size:.875rem;color:var(--text-secondary);line-height:1.5}
+.sr-none{text-align:center;color:var(--text-dim);padding:48px 0;font-size:.95rem}
+.sr-heading{font-size:1.2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:24px;text-align:center}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../#problem">Problem</a></li>
+      <li><a href="../#future">What If</a></li>
+      <li><a href="../#mechanism">How It Works</a></li>
+      <li><a href="../#workflow">Workflows</a></li>
+      <li><a href="../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../">Home</a><span class="sep">/</span><span class="current">Help Center</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="./getting-started/">Start</a><a href="./concepts/">Concepts</a><a href="./workflows/">Workflows</a><a href="./reference/">Reference</a><a href="./troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="badge"><i data-lucide="book-open"></i> Help Center</div>
+    <h1>How Can We Help You?</h1>
+    <div class="search-wrap">
+      <span class="search-icon"><i data-lucide="search"></i></span>
+      <input type="text" placeholder="Search topics, commands, concepts…" id="search-input" autocomplete="off">
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH RESULTS (shown when typing) -->
+<div id="search-results-section" style="display:none">
+  <div class="container">
+    <p class="sr-heading">Search results</p>
+    <div class="sr-list" id="search-results-list"></div>
+  </div>
+</div>
+
+<div id="main-help-content">
+<!-- QUICK LINKS -->
+<section style="padding:40px 0">
+  <div class="container">
+    <div class="quick-grid">
+      <a href="getting-started/" class="quick-link"><span class="ql-icon"><i data-lucide="rocket"></i></span> Quick Start</a>
+      <a href="getting-started/#install" class="quick-link"><span class="ql-icon"><i data-lucide="package"></i></span> Installation</a>
+      <a href="concepts/#skills" class="quick-link"><span class="ql-icon"><i data-lucide="puzzle"></i></span> What Are Skills?</a>
+      <a href="concepts/#session-modes" class="quick-link"><span class="ql-icon"><i data-lucide="sliders-horizontal"></i></span> Session Modes</a>
+      <a href="dev-workflow/" class="quick-link"><span class="ql-icon"><i data-lucide="settings"></i></span> Dev Workflow</a>
+      <a href="devops-workflow/" class="quick-link"><span class="ql-icon"><i data-lucide="hard-hat"></i></span> DevOps Workflow</a>
+      <a href="workflows/" class="quick-link"><span class="ql-icon"><i data-lucide="git-branch-plus"></i></span> Workflows</a>
+      <a href="concepts/#enforcement" class="quick-link"><span class="ql-icon"><i data-lucide="lock"></i></span> Enforcement Layers</a>
+      <a href="reference/" class="quick-link"><span class="ql-icon"><i data-lucide="clipboard-list"></i></span> Command Reference</a>
+      <a href="reference/#runtime-install" class="quick-link"><span class="ql-icon"><i data-lucide="monitor-smartphone"></i></span> Three-Host Install</a>
+      <a href="reference/#capability-matrix" class="quick-link"><span class="ql-icon"><i data-lucide="grid-3x3"></i></span> Capability Matrix</a>
+      <a href="concepts/cost-optimization.html" class="quick-link"><span class="ql-icon"><i data-lucide="cpu"></i></span> Operational Efficiency</a>
+      <a href="concepts/autonomous-enterprise-status.html" class="quick-link"><span class="ql-icon"><i data-lucide="shield-check"></i></span> Enterprise Status</a>
+      <a href="concepts/orchestrator-mode.html" class="quick-link"><span class="ql-icon"><i data-lucide="git-branch"></i></span> Orchestrator Mode</a>
+      <a href="workflows/silver-multi-ai-task.html" class="quick-link"><span class="ql-icon"><i data-lucide="split"></i></span> Multi-AI Tasks</a>
+      <a href="workflows/silver-agent-delegate.html" class="quick-link"><span class="ql-icon"><i data-lucide="users"></i></span> Agent Delegation</a>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CARDS -->
+<section>
+  <div class="container">
+    <div class="section-label">Documentation</div>
+    <h2 class="section-title">Browse by Topic</h2>
+    <p class="section-desc">Pick where you want to start — or read all sections end-to-end for a complete picture.</p>
+    <div class="help-grid" id="help-grid">
+
+      <a href="getting-started/" class="help-card" data-keywords="install setup prerequisites beginner first run session mode ai development intro">
+        <div class="card-icon"><i data-lucide="rocket"></i></div>
+        <span class="card-badge" style="background:var(--green-warn-a12);color:var(--green)">Start here</span>
+        <h3>Getting Started</h3>
+        <p>New to Silver Bullet? Install from a public marketplace, run <code>/silver:init</code>, then compose your first catalog-backed workflow with <code>/silver</code>.</p>
+        <ul class="card-topics">
+          <li>What AI-driven development is (and isn't)</li>
+          <li>Prerequisites: host agent, jq, Graphify; optional domain plugins when a workflow needs them</li>
+          <li>Three-host install: Claude, Codex, and Cursor marketplace packages</li>
+          <li><code>/silver:init</code> adoption path and hook activation</li>
+          <li>First <code>/silver</code> run and session mode selection</li>
+        </ul>
+        <div class="card-cta">Read guide →</div>
+      </a>
+
+      <a href="concepts/" class="help-card" data-keywords="concepts skills hooks silver bullet lifecycle quality gates session modes enforcement agents">
+        <div class="card-icon"><i data-lucide="brain"></i></div>
+        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Fundamentals</span>
+        <h3>Core Concepts</h3>
+        <p>Understand the building blocks: APO routing, lifecycle skills, hooks, optional extension plugins, and why enforcement matters.</p>
+        <ul class="card-topics">
+          <li>Skills and how they're invoked</li>
+          <li>Hooks and automated enforcement</li>
+          <li>Core lifecycle ownership and SB skill routing</li>
+          <li>8 core quality gates plus conditional gates</li>
+          <li>Agent teams and parallelism</li>
+        </ul>
+        <div class="card-cta">Read concepts →</div>
+      </a>
+
+      <a href="dev-workflow/" class="help-card" data-keywords="software engineering workflow composition discuss plan execute verify code review ship release">
+        <div class="card-icon"><i data-lucide="settings"></i></div>
+        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">Workflow</span>
+        <h3>Software Engineering Workflow</h3>
+        <p>The <code>WF-SILVER-FEATURE</code> application path — composed from AF-* atomic flows from orient through post-execute gates to ship and release.</p>
+        <ul class="card-topics">
+          <li>When to use feature vs fast vs clarify workflows</li>
+          <li>AF-ORIENT → AF-QUALITY-GATE → AF-PLAN → AF-EXECUTE</li>
+          <li>Post-execute: AF-REVIEW, AF-VERIFY, AF-SECURE, AF-SHIP</li>
+          <li>Phase-level ship vs milestone <code>/silver:release</code></li>
+          <li>Hook-enforced step order and two-tier delivery gates</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="devops-workflow/" class="help-card" data-keywords="devops infrastructure iac terraform kubernetes blast radius incident fast path environment promotion">
+        <div class="card-icon"><i data-lucide="hard-hat"></i></div>
+        <span class="card-badge" style="background:var(--cyan-discuss-a12);color:var(--cyan)">DevOps</span>
+        <h3>DevOps &amp; IaC Workflow</h3>
+        <p>The <code>WF-SILVER-DEVOPS</code> infrastructure path — AF-BLAST-RADIUS, AF-DEVOPS-ROUTE, IaC quality gates, environment promotion, and incident fast path.</p>
+        <ul class="card-topics">
+          <li>When to route to <code>/silver:devops</code> vs application workflows</li>
+          <li>AF-BLAST-RADIUS ratings (LOW → CRITICAL)</li>
+          <li>AF-QUALITY-GATE with 7 IaC-adapted dimensions</li>
+          <li>Environment promotion: dev → staging → prod</li>
+          <li>Optional DevOps plugin enrichment (not enforcement gates)</li>
+        </ul>
+        <div class="card-cta">Read workflow →</div>
+      </a>
+
+      <a href="reference/" class="help-card" data-keywords="reference commands silver bullet skills slash commands config json options file structure">
+        <div class="card-icon"><i data-lucide="clipboard-list"></i></div>
+        <span class="card-badge" style="background:var(--amber-a12);color:var(--amber)">Reference</span>
+        <h3>Command Reference</h3>
+        <p>Authoritative lookup for commands, <code>.silver-bullet.json</code>, the APO catalog, AF-* alias table, and planning artifacts.</p>
+        <ul class="card-topics">
+          <li>Three-host marketplace install and capability matrix</li>
+          <li>29 AF-* atomic flows with legacy FLOW alias column</li>
+          <li>26 workflows (22 task-shaped plus 4 reusable components) and 118 catalog flow steps</li>
+          <li>Config sample at version 0.52.0 and session log format</li>
+        </ul>
+        <div class="card-cta">Open reference →</div>
+      </a>
+
+      <a href="workflows/" class="help-card" data-keywords="workflows orchestration atomic flows APO catalog WF-SILVER composition silver clarify feature bugfix ui devops research release fast spec ingest validate routing">
+        <div class="card-icon"><i data-lucide="git-branch-plus"></i></div>
+        <span class="card-badge" style="background:var(--slate-a12);color:var(--accent-light)">v0.52.0</span>
+        <h3>Orchestration Workflows</h3>
+        <p>All 26 WF-* workflows from the APO catalog — 22 task-shaped routes plus 4 reusable components — including multi-AI research, workflow authoring, and supervised agent delegation.</p>
+        <ul class="card-topics">
+          <li>29 AF-* atomic flows; legacy FLOW 1–18 aliases for migration only</li>
+          <li>26 workflows (22 task-shaped plus 4 reusable components) and 118 flow steps in <code>docs/apo-catalog.json</code></li>
+          <li>WF-POST-EXEC-GATES: review, verify, secure, validate, ship</li>
+          <li>AF-MULTI-AI-TASK and AF-AGENT-DELEGATE execution routes</li>
+          <li>V-loop rollups and subagent execution contracts</li>
+          <li>Hook activation guard + recommended tools opt-in</li>
+        </ul>
+        <div class="card-cta">View workflows →</div>
+      </a>
+
+      <a href="troubleshooting/" class="help-card" data-keywords="troubleshoot debug error fix hook skill ci recovery config enforcement">
+        <div class="card-icon"><i data-lucide="wrench"></i></div>
+        <span class="card-badge" style="background:var(--red-warn-a10);color:var(--red)">6 topics</span>
+        <h3>Troubleshooting</h3>
+        <p>Common issues, CI failures, hook errors, and how to diagnose problems with the enforcement system.</p>
+        <ul class="card-topics">
+          <li>Hook failures and permission errors</li>
+          <li>CI gate and skill not found issues</li>
+          <li>Recovery from failed sessions</li>
+          <li>Configuration and enforcement bypass</li>
+        </ul>
+        <div class="card-cta">Troubleshoot issues →</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+</div><!-- #main-help-content -->
+
+<!-- CALLOUT -->
+<section style="padding:64px 0;background:var(--section-alt)">
+  <div class="container">
+    <div class="callout">
+      <div style="font-size:2rem;margin-bottom:12px"><i data-lucide="lightbulb"></i></div>
+      <p><strong>New to AI-driven development?</strong> Silver Bullet works best when you understand what it's doing and why. Start with <a href="getting-started/" style="color:var(--accent-light);font-weight:600">Getting Started</a>, then <a href="concepts/" style="color:var(--accent-light);font-weight:600">Core Concepts</a> before diving into workflows. The more you understand the system, the more you get from it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../help/">Help</a>
+      <a href="../terms/">Terms of Use</a>
+      <a href="../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="search.js"></script>
+<script src="common.js?v=s3-site-common-themefix1"></script>
+<script src="../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

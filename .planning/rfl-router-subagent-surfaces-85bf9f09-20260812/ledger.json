@@ -1,0 +1,99 @@
+{
+  "plan": ".planning/router_subagent_surfaces_85bf9f09.plan.md",
+  "clarify_brief": ".planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md",
+  "started_at": "2026-08-12T03:20:00+10:00",
+  "branch": "main",
+  "ladder": [
+    {
+      "rung": 1,
+      "model": "gemini-3.6-flash",
+      "efforts": [
+        "high"
+      ],
+      "slugs": {
+        "high": "gemini-3.6-flash-high"
+      },
+      "note": "no xhigh \u2014 high-only"
+    },
+    {
+      "rung": 2,
+      "model": "glm-5.2",
+      "efforts": [
+        "high",
+        "max"
+      ],
+      "slugs": {
+        "high": "glm-5.2-high",
+        "max": "glm-5.2-max"
+      }
+    },
+    {
+      "rung": 3,
+      "model": "kimi-k3",
+      "efforts": [
+        "high",
+        "max"
+      ],
+      "slugs": {
+        "high": "kimi-k3-high",
+        "max": "kimi-k3-max"
+      }
+    },
+    {
+      "rung": 4,
+      "model": "gpt-5.6-sol",
+      "efforts": [
+        "high",
+        "xhigh"
+      ],
+      "slugs": {
+        "high": "gpt-5.6-sol-high",
+        "xhigh": "gpt-5.6-sol-xhigh"
+      }
+    },
+    {
+      "rung": 5,
+      "model": "opus-5",
+      "efforts": [
+        "high",
+        "xhigh"
+      ],
+      "slugs": {
+        "high": "claude-opus-5-thinking-high",
+        "xhigh": "claude-opus-5-thinking-xhigh"
+      }
+    }
+  ],
+  "current": {
+    "rung": 1,
+    "effort": "high",
+    "slug": "gemini-3.6-flash-high",
+    "cycle": 3,
+    "consecutive_clean": 0,
+    "sb_overview": true
+  },
+  "cycles": [
+    {
+      "id": "rung-gemini-3.6-flash-high-c1",
+      "rung": 1,
+      "model": "gemini-3.6-flash",
+      "effort": "high",
+      "slug": "gemini-3.6-flash-high",
+      "cycle": 1,
+      "verdict": "NEEDS_FIXES",
+      "findings": 6,
+      "ended_at": "2026-08-11T17:28:29Z",
+      "invalidated": true,
+      "invalidated_reason": "lacked mandatory SB overview preamble; consecutive_clean reset"
+    }
+  ],
+  "commits": [],
+  "overall": "IN_PROGRESS_SB_OVERVIEW_PROTOCOL",
+  "protocol": {
+    "sb_overview_required": true,
+    "preamble": "REVIEW-PROMPT-PREAMBLE.md",
+    "prompt": "REVIEW-PROMPT.txt",
+    "reset_at": "2026-08-11T17:29:57Z",
+    "note": "User update 2026-08-12: all rungs must read silver-bullet.md + AGENTS/docs orientation before plan review; prior CLEANs without overview do not count."
+  }
+}

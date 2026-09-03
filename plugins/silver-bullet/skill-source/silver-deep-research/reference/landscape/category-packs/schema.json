@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sb.alolabs.dev/schemas/category_pack.schema.json",
+  "title": "CategoryPack",
+  "description": "Analyst-grade market contract for solution-landscape research. Defines in-scope core comps, adjacent markets, hard exclusions, and synthesis bounds.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "category_id",
+    "display_name",
+    "definition",
+    "jobs_to_be_done",
+    "inclusion_criteria",
+    "exclusion_classes",
+    "adjacent_classes",
+    "core_seeds",
+    "hard_exclusions",
+    "feature_axes",
+    "min_core_count",
+    "max_core_count"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "category_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Stable pack identifier; matches filename without .json"
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "definition": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Analyst market definition — what the category includes and excludes"
+    },
+    "jobs_to_be_done": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "inclusion_criteria": {
+      "type": "object",
+      "required": ["rule", "min_pass_count", "criteria"],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "enum": ["min_pass_count"]
+        },
+        "min_pass_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "description"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "label": { "type": "string", "minLength": 1 },
+              "description": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "exclusion_classes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "description"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "adjacent_classes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "description"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "core_seeds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/seed_entry" }
+    },
+    "adjacent_seeds": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/seed_entry" }
+    },
+    "hard_exclusions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/named_entry" }
+    },
+    "product_aliases": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "Map variant slug or name to canonical slug"
+    },
+    "homepage_by_slug": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "Canonical product homepage URL by slug"
+    },
+    "github_by_slug": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "Canonical GitHub repository URL by slug"
+    },
+    "parent_child_dedupe": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parent_slug", "prefer_slug", "reason"],
+        "properties": {
+          "parent_slug": { "type": "string", "minLength": 1 },
+          "prefer_slug": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sunset_registry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "name", "reason"],
+        "properties": {
+          "slug": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "feature_axes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "label": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "enforcement_ladder": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "min_core_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_core_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "notes": {
+      "type": "string"
+    },
+    "markets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/market_entry" },
+      "description": "Multi-market landscape segments (APO primary, SDLC plugins secondary, agentic SDLC SaaS tertiary)"
+    },
+    "primary_market_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Default market for matrix ranking and backward-compatible chart-data top level"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "market_entry": {
+      "type": "object",
+      "required": ["id", "display_name", "role", "definition", "seeds", "chart_eligible"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "display_name": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "enum": ["primary", "secondary", "tertiary"] },
+        "definition": { "type": "string", "minLength": 1 },
+        "seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/seed_entry" }
+        },
+        "adjacent_seeds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/seed_entry" }
+        },
+        "inclusion_criteria": {
+          "type": "object",
+          "properties": {
+            "rule": { "type": "string", "enum": ["min_pass_count"] },
+            "min_pass_count": { "type": "integer", "minimum": 1 },
+            "criteria": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "description"],
+                "properties": {
+                  "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+                  "label": { "type": "string", "minLength": 1 },
+                  "description": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "chart_eligible": { "type": "boolean" },
+        "min_core_count": { "type": "integer", "minimum": 1 },
+        "max_core_count": { "type": "integer", "minimum": 1 },
+        "feature_axes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "label": { "type": "string", "minLength": 1 },
+              "description": { "type": "string" },
+              "enforcement_ladder": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "named_entry": {
+      "type": "object",
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "exclusion_class": { "type": "string" },
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "seed_entry": {
+      "type": "object",
+      "required": ["slug", "name"],
+      "properties": {
+        "slug": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "license": {
+          "type": "string",
+          "enum": ["commercial", "oss", "mixed", "unknown"]
+        },
+        "must_research": { "type": "boolean" },
+        "tier": { "type": "integer", "minimum": 0 },
+        "adjacent_class": { "type": "string" },
+        "notes": { "type": "string" },
+        "homepage": { "type": "string", "minLength": 1 },
+        "github": { "type": "string", "minLength": 1 },
+        "quarantine": { "type": "boolean" },
+        "membership": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
+

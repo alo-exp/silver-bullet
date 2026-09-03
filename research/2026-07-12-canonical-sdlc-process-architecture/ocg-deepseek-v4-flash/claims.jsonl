@@ -1,0 +1,20 @@
+{"id":"C001","claim":"DORA defines five software delivery performance metrics: Deployment Frequency, Change Lead Time, Failed Deployment Recovery Time, Change Failure Rate","source_ids":["S001","S002"],"confidence":0.95}
+{"id":"C002","claim":"AI adoption increases individual productivity and satisfaction but negatively impacts delivery stability at scale","source_ids":["S002","S020"],"confidence":0.9}
+{"id":"C003","claim":"Platform engineering is the discipline of designing, building, and maintaining Internal Developer Platforms (IDPs) as products","source_ids":["S016","S017"],"confidence":0.85}
+{"id":"C004","claim":"Backstage (Spotify/CNCF) is the dominant open-source developer portal, but commercial alternatives exist","source_ids":["S009","S016"],"confidence":0.9}
+{"id":"C005","claim":"GitHub Copilot code review accounts for 1 in 5 code reviews on GitHub as of 2026","source_ids":["S007"],"confidence":0.85}
+{"id":"C006","claim":"Spotify reports >99% of engineers use AI coding tools weekly as of mid-2026","source_ids":["S009"],"confidence":0.85}
+{"id":"C007","claim":"DORA identifies 7 AI capabilities that amplify AI benefits: AI stance, data ecosystems, accessible data, version control, small batches, user-centric focus, platform engineering","source_ids":["S019"],"confidence":0.9}
+{"id":"C008","claim":"Code review at Google focuses on: design, functionality, complexity, tests, naming, comments, style, documentation","source_ids":["S004"],"confidence":0.95}
+{"id":"C009","claim":"NIST SSDF defines 19 practice activities across 4 practice areas: Prepare, Protect, Produce, Respond","source_ids":["S005"],"confidence":0.95}
+{"id":"C010","claim":"82% of developers used OpenAI GPT for development in the past year (Stack Overflow 2025)","source_ids":["S006"],"confidence":0.9}
+{"id":"C011","claim":"69% of AI agent users agree agents increased their productivity (Stack Overflow 2025)","source_ids":["S006"],"confidence":0.85}
+{"id":"C012","claim":"30% of developers trust AI-generated code 'a little' or 'not at all' (DORA/Google research)","source_ids":["S020"],"confidence":0.9}
+{"id":"C013","claim":"AI is an amplifier: it magnifies organizational strengths and weaknesses, not a silver bullet","source_ids":["S002","S020"],"confidence":0.95}
+{"id":"C014","claim":"Elite performers deploy 208x more frequently than low performers","source_ids":["S001","S002"],"confidence":0.85}
+{"id":"C015","claim":"Team Topologies defines four team types: stream-aligned, enabling, platform, complicated-subsystem","source_ids":["S024"],"confidence":0.95}
+{"id":"C016","claim":"Pipeline velocity (lead time for changes) at elite level is <1 hour","source_ids":["S001","S002"],"confidence":0.9}
+{"id":"C017","claim":"OWASP Top 10 is the reference standard for web application security risks","source_ids":["S014"],"confidence":0.95}
+{"id":"C018","claim":"SPACE framework measures developer productivity across: Satisfaction, Performance, Activity, Communication, Efficiency","source_ids":["S025"],"confidence":0.95}
+{"id":"C019","claim":"CI/CD adoption with trunk-based development and deployment automation is universal among high-performing organizations","source_ids":["S001","S003"],"confidence":0.9}
+{"id":"C020","claim":"Small batches working pattern is both core DORA capability and critical AI countermeasure","source_ids":["S001","S019"],"confidence":0.9}

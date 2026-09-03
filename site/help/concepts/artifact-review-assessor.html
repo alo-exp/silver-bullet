@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Artifact Review Assessor — Silver Bullet Help</title>
+<meta name="description" content="How the artifact-review-assessor triages reviewer findings into MUST-FIX, NICE-TO-HAVE, and DISMISS based on artifact contract — not subjective quality judgment.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-stop{background:var(--red-warn-a06);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* VERDICT BADGES */
+.verdict{display:inline-block;padding:3px 10px;border-radius:4px;font-size:.75rem;font-weight:700;letter-spacing:.03em}
+.verdict-must{background:var(--red-warn-a10);color:var(--red)}
+.verdict-nice{background:var(--amber-warn-a06);color:var(--amber)}
+.verdict-dismiss{background:var(--slate-a12);color:var(--text-dim)}
+/* FINDING TABLE */
+.finding-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.finding-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.finding-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.finding-table tr:last-child td{border-bottom:none}
+.finding-table tr:hover td{background:var(--slate-a02)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+/* NAV SEARCH */
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Artifact Review Assessor</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Artifact Review Assessor</h1>
+    <p>How the assessor triages reviewer findings into <strong>MUST-FIX</strong>, <strong>NICE-TO-HAVE</strong>, and <strong>DISMISS</strong> — judging against the artifact's contract, not subjective quality.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">What is the Assessor?</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#verdicts">The Three Verdicts</a></li>
+        <li><a href="#the-cycle">The Review Cycle</a></li>
+        <li><a href="#when-it-runs">When It Runs</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">What is the Artifact Review Assessor?</h2>
+      <p>The <strong>artifact-review-assessor</strong> skill triages reviewer findings into <span class="verdict verdict-must">MUST-FIX</span>, <span class="verdict verdict-nice">NICE-TO-HAVE</span>, or <span class="verdict verdict-dismiss">DISMISS</span>. It runs inside catalog atoms <code>AF-REVIEW</code> and <code>AF-REVIEW-TRIAGE</code> — the governance layer that prevents over-zealous reviews from blocking delivery without evidence.</p>
+      <p>The assessor does not re-review the artifact. It reads the reviewer's findings and judges each one against the artifact's contract — the specific requirements and quality dimensions that the reviewer is authorised to enforce for that artifact type. Subjective quality preferences that fall outside the contract are dismissed.</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>No self-review loop.</strong> The assessor is always a separate invocation from the reviewer. A reviewer produces findings; the assessor triages them. The author cannot serve as their own assessor — triage happens after review, not during it.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="how-it-works">How It Works</h2>
+      <p>The assessor receives three inputs:</p>
+      <ol>
+        <li><strong>The artifact</strong> — the document being reviewed (e.g. SPEC.md, ROADMAP.md, REVIEW.md)</li>
+        <li><strong>The reviewer's findings</strong> — the list of issues and observations produced by the reviewer skill</li>
+        <li><strong>The artifact contract</strong> — the quality dimensions and requirements that the reviewer is authorised to enforce for this artifact type</li>
+      </ol>
+
+      <p>For each finding, the assessor asks: <em>Is this finding a violation of the artifact's contract?</em></p>
+      <ul>
+        <li>If yes, and it blocks the artifact's purpose → <span class="verdict verdict-must">MUST-FIX</span></li>
+        <li>If yes, but it is a quality improvement that does not block → <span class="verdict verdict-nice">NICE-TO-HAVE</span></li>
+        <li>If no, or it is outside the contract's scope → <span class="verdict verdict-dismiss">DISMISS</span></li>
+      </ul>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Contract-only judgment.</strong> The assessor does not enforce stylistic preferences, opinionated restructuring suggestions, or quality improvements that are not part of the artifact's contract. These findings are dismissed regardless of how the reviewer framed them. This prevents review fatigue and scope creep.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="verdicts">The Three Verdicts</h2>
+
+      <table class="finding-table">
+        <thead>
+          <tr><th>Verdict</th><th>Meaning</th><th>Action required</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="verdict verdict-must">MUST-FIX</span></td>
+            <td>Finding is a contract violation that blocks the artifact from being approved. The artifact cannot advance until this is resolved.</td>
+            <td>Fix before next review round. Resets the 2-consecutive-clean-pass counter.</td>
+          </tr>
+          <tr>
+            <td><span class="verdict verdict-nice">NICE-TO-HAVE</span></td>
+            <td>Finding is a genuine quality improvement that is within the contract's scope, but does not block approval. The artifact can advance without fixing it.</td>
+            <td>Fix if time permits. Does NOT reset the pass counter.</td>
+          </tr>
+          <tr>
+            <td><span class="verdict verdict-dismiss">DISMISS</span></td>
+            <td>Finding is outside the artifact's contract scope, is a stylistic preference, or is not actionable in the context of this artifact type.</td>
+            <td>No action. The finding is noted and dropped from the review record.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="the-cycle">The Review Cycle</h2>
+      <p>The full review cycle for any artifact follows this sequence:</p>
+
+      <ol>
+        <li><strong>Reviewer produces findings</strong> — the domain-specific reviewer skill (e.g. <code>review-spec</code>, <code>review-roadmap</code>) examines the artifact and produces a findings list.</li>
+        <li><strong>Assessor triages findings</strong> — <code>artifact-review-assessor</code> reads the findings and assigns MUST-FIX / NICE-TO-HAVE / DISMISS to each.</li>
+        <li><strong>Fix MUST-FIX items</strong> — the author addresses all MUST-FIX findings. NICE-TO-HAVE items are optional. DISMISS items are ignored.</li>
+        <li><strong>Reviewer re-checks</strong> — the reviewer runs again on the updated artifact. If no MUST-FIX findings remain, this counts as one clean pass.</li>
+        <li><strong>2-pass enforcement</strong> — the cycle repeats until two consecutive clean passes are recorded. State is tracked per artifact using SHA256-keyed JSON in <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/review-state/</code>.</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Clean pass definition.</strong> A clean pass means zero MUST-FIX findings in a review round. NICE-TO-HAVE findings do not prevent a clean pass. Two consecutive clean passes — on two separate reviewer runs — constitute approval. A single clean pass is not sufficient.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="when-it-runs">When It Runs</h2>
+      <p>The artifact-review-assessor runs inside the catalog review atoms: <code>AF-REVIEW</code> and <code>AF-REVIEW-TRIAGE</code>. It also runs after planning/specification artifact reviewers in compositions that include <code>AF-SPECIFY</code> or <code>AF-PLAN</code>.</p>
+
+      <p>Specifically, the assessor is invoked after these reviewers:</p>
+      <ul>
+        <li><code>review-roadmap</code> — triages ROADMAP.md findings for bootstrap/planning evidence</li>
+        <li><code>review-requirements</code> — triages REQUIREMENTS.md findings for <code>AF-SPECIFY</code> and decision evidence</li>
+        <li><code>review-spec</code> — triages SPEC.md findings (<code>AF-SPECIFY</code>)</li>
+        <li><code>review-context</code> — triages CONTEXT.md findings (<code>AF-PLAN</code>)</li>
+        <li><code>review-research</code> — triages RESEARCH.md findings (<code>AF-DECIDE</code> / <code>AF-PLAN</code>)</li>
+        <li>Plan checker reviewer — triages PLAN.md findings (<code>AF-PLAN</code>, max 3 iterations)</li>
+        <li><code>review-uat</code> — triages UAT.md findings (<code>AF-VERIFY</code>)</li>
+        <li><code>silver:review</code> — triages code review findings (<code>AF-REVIEW</code>)</li>
+      </ul>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Cross-artifact review.</strong> At milestone completion (<code>AF-RELEASE</code>), a cross-artifact reviewer checks SPEC-to-REQUIREMENTS-to-ROADMAP-to-DESIGN alignment. The assessor triages these cross-artifact findings using the same MUST-FIX / NICE-TO-HAVE / DISMISS framework before the release proceeds.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — how <code>AF-REVIEW</code> fits into a composition</li>
+        <li><a href="./">Core Concepts</a> — artifact review system overview and 8 reviewer skills</li>
+        <li><a href="verification.html">Verification Before Completion</a> — <code>AF-VERIFY</code> and its own evidence enforcement</li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="composable-workflow.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">Composable Workflow Orchestration</span>
+        </a>
+        <a href="./">
+          <span class="pnb-label">Back to</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

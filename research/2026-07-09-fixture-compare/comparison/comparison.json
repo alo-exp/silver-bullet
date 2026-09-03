@@ -1,0 +1,46 @@
+{
+  "research_type": null,
+  "license_preference": "mixed",
+  "categories": [
+    "Core"
+  ],
+  "rows": [
+    {
+      "type": "category",
+      "name": "Core"
+    },
+    {
+      "type": "feature",
+      "name": "SSO",
+      "priority": "Critical",
+      "solutions": {
+        "backstage": "\u2714",
+        "port": "\u2714"
+      }
+    },
+    {
+      "type": "feature",
+      "name": "Plugins",
+      "priority": "Medium",
+      "solutions": {
+        "backstage": "\u2714",
+        "port": ""
+      }
+    }
+  ],
+  "rankings": [
+    {
+      "solution": "backstage",
+      "score": 7,
+      "rank": 1
+    },
+    {
+      "solution": "port",
+      "score": 5,
+      "rank": 2
+    }
+  ],
+  "winner": "backstage",
+  "runner_up": "port",
+  "caveats": []
+}

@@ -1,0 +1,324 @@
+#!/usr/bin/env bash
+set -euo pipefail
+trap 'exit 0' ERR
+
+# PostToolUse hook (matcher: Bash)
+# Fires when the host runtime writes the session mode to its state root mode file.
+# Creates docs/sessions/<date>-<timestamp>.md skeleton and records path to
+# the host runtime session-log-path so the documentation step can fill it in.
+# In autonomous mode: also launches a 10-minute background sentinel.
+
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# Source runtime path selector so the state root follows the host runtime.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+if [[ -f "$_lib_dir/tool-input.sh" ]]; then
+  # shellcheck source=lib/tool-input.sh
+  source "$_lib_dir/tool-input.sh"
+fi
+
+# Source symlink-write guard (SEC-02)
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
+# User-scoped state directory (avoids world-readable /tmp/)
+SB_DIR="${SB_RUNTIME_STATE_DIR}"
+
+# Validate test overrides (defense-in-depth: reject non-numeric sleep values)
+if [[ -n "${SENTINEL_SLEEP_OVERRIDE:-}" ]] && ! [[ "$SENTINEL_SLEEP_OVERRIDE" =~ ^[0-9]+$ ]]; then
+  SENTINEL_SLEEP_OVERRIDE=600
+fi
+
+command -v jq >/dev/null 2>&1 || exit 0
+
+input=$(cat)
+if declare -f sb_tool_name >/dev/null 2>&1; then
+  tool_name="$(sb_tool_name "$input")"
+else
+  tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""') || true
+fi
+if declare -f sb_tool_is_shell_like >/dev/null 2>&1; then
+  sb_tool_is_shell_like "$tool_name" || exit 0
+fi
+if declare -f sb_tool_command_string >/dev/null 2>&1; then
+  cmd="$(sb_tool_command_string "$input")"
+else
+  cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // ""') || true
+fi
+[[ -z "$cmd" ]] && exit 0
+
+# Only fire when command touches the session mode file
+printf '%s' "$cmd" | grep -qE '\.silver-bullet(/mode|-mode)' || exit 0
+
+# --- Locate project root (allow override for testing) ---
+project_root="${PROJECT_ROOT_OVERRIDE:-}"
+if [[ -z "$project_root" ]]; then
+  search_dir="$PWD"
+  while true; do
+    if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+      project_root="$search_dir"
+      break
+    fi
+    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then break; fi
+    search_dir=$(dirname "$search_dir")
+  done
+fi
+[[ -z "$project_root" ]] && exit 0
+
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$project_root/.silver-bullet.json" || exit 0
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$project_root/.silver-bullet.json" || exit 0
+fi
+
+# Allow sessions dir override for testing
+sessions_dir="${SESSION_LOG_TEST_DIR:-$project_root/docs/sessions}"
+mkdir -p "$sessions_dir"
+
+# --- Step 4: Sentinel cleanup (unconditional, before dedup guard) ---
+if [[ -f "$SB_DIR"/sentinel-pid && ! -L "$SB_DIR"/sentinel-pid ]]; then
+  # M3 TOCTOU fix: sentinel file may contain "pid" (legacy) or "pid:start-time".
+  # Only kill when start-time matches — PID recycling window defeats pid-only check.
+  _sent_line=$(cat "$SB_DIR"/sentinel-pid 2>/dev/null || true)
+  old_pid="${_sent_line%%:*}"
+  old_token="${_sent_line#*:}"
+  [[ "$old_token" == "$old_pid" ]] && old_token=""   # no colon → legacy format
+  if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null \
+     && ps -p "$old_pid" -o user= 2>/dev/null | grep -q "^$(whoami)$"; then
+    if [[ -n "$old_token" ]]; then
+      # UUID token file: only kill if lock file exists — proves it is the same process instance
+      _old_lock="$SB_DIR/sentinel-lock-$old_token"
+      if [[ -f "$_old_lock" && ! -L "$_old_lock" ]]; then
+        kill "$old_pid" 2>/dev/null || true
+        rm -f -- "$_old_lock"
+      fi
+    else
+      # Legacy format (lstart string) — kill based on user check only (previous behaviour)
+      kill "$old_pid" 2>/dev/null || true
+    fi
+  fi
+  rm -f -- "$SB_DIR"/sentinel-pid "$SB_DIR"/timeout \
+        "$SB_DIR"/session-start-time "$SB_DIR"/timeout-warn-count \
+        "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
+fi
+# Unconditional cleanup: remove any orphan sentinel-lock files left by sessions
+# that crashed before sentinel-pid was written (conditional block above won't catch these).
+rm -f -- "$SB_DIR"/sentinel-lock-* 2>/dev/null || true
+
+# --- Step 5: Mode detection + dedup guard (combined) ---
+today=$(date '+%Y-%m-%d')
+existing=$(find "$sessions_dir" -maxdepth 1 -name "${today}*.md" -print 2>/dev/null | head -1 || true)
+
+if [[ -n "$existing" ]]; then
+  # Extract mode from existing log; validate against allowlist (security: log file could be tampered)
+  mode=$(grep '^\*\*Mode:\*\*' "$existing" 2>/dev/null | awk '{print $NF}' | tr -d ' ') || true
+  mode="${mode:-interactive}"
+  [[ "$mode" == "autonomous" ]] || mode="interactive"
+
+  # Add missing new sections at correct skeleton positions (idempotency for pre-update logs)
+  # Helper: insert section_header + placeholder immediately before anchor line.
+  # No-ops silently when the anchor does not exist (avoids unnecessary file overwrite — WR-03).
+  _insert_before() {
+    local file="$1" anchor="$2" header="$3" placeholder="$4"
+    local tmp
+    # If anchor is absent there is nothing to insert before — skip to avoid a
+    # silent overwrite that writes identical content back.
+    grep -qF "$anchor" "$file" 2>/dev/null || return 0
+    tmp=$(mktemp)
+    if awk -v anch="$anchor" -v hdr="$header" -v ph="$placeholder" '
+      $0 == anch { printf "%s\n\n%s\n\n", hdr, ph }
+      { print }
+    ' "$file" > "$tmp"; then
+      mv "$tmp" "$file"
+    else
+      rm -f -- "$tmp"
+    fi
+  }
+  if ! grep -q "^## Pre-answers$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Task" "## Pre-answers" \
+      "(filled at Step 0 by Claude if autonomous mode)"
+  fi
+  if ! grep -q "^## Skills flagged at discovery$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skills flagged at discovery" "(filled at DISCUSS phase)"
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skill gap check (post-plan)" "(filled after plan is written)"
+  elif ! grep -q "^## Skill gap check" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Skill gap check (post-plan)" "(filled after plan is written)"
+  fi
+  if ! grep -q "^## Active Intent Ledger$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Agent Teams dispatched" \
+      "## Active Intent Ledger" "(filled during the session as active requests are intercepted)"
+  fi
+  if ! grep -q "^## Items Filed$" "$existing" 2>/dev/null; then
+    _insert_before "$existing" "## Knowledge & Learnings additions" \
+      "## Items Filed" "(none)"
+  fi
+
+  # Re-launch sentinel if autonomous (second-terminal re-trigger)
+  if [[ "$mode" == "autonomous" ]]; then
+    sb_guard_nofollow "$SB_DIR"/session-start-time
+    sb_guard_nofollow "$SB_DIR"/timeout
+    sb_guard_nofollow "$SB_DIR"/sentinel-pid
+    date +%s > "$SB_DIR"/session-start-time
+    # AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
+    # This spawns a background subshell that sleeps for at most SENTINEL_SLEEP_OVERRIDE
+    # seconds (default: 600), then writes the literal string "TIMEOUT" to
+    # <host runtime>/.silver-bullet/timeout. The process:
+    #   (1) is fully deterministic — cannot be influenced by external input;
+    #   (2) is scoped only to the user-owned host runtime state directory;
+    #   (3) auto-terminates after at most 600 seconds with no side effects beyond
+    #       writing the timeout marker.
+    # This is an intentional bounded timeout guard for autonomous session enforcement.
+    # The PID is tracked in sentinel-pid for cleanup; kill is called on lock failure.
+    (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+    sentinel_pid=$!
+    _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
+    sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
+    if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+      printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+      disown "$sentinel_pid"
+    else
+      kill "$sentinel_pid" 2>/dev/null || true
+    fi
+    # Insert note under ## Autonomous decisions (portable awk — no sed -i '' macOS dependency)
+    _note_tmp=$(mktemp)
+    if awk '/^## Autonomous decisions$/ { print; print ""; print "[Timeout sentinel restarted: session re-triggered from second terminal]"; next } { print }' \
+      "$existing" > "$_note_tmp"; then
+      mv "$_note_tmp" "$existing"
+    else
+      rm -f -- "$_note_tmp"
+    fi
+  fi
+
+  sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$existing" > "$SB_DIR"/session-log-path
+  basename "$existing" | jq -Rs '{"hookSpecificOutput":{"message":("ℹ️ Session log already exists: " + .)}}' | tr -d '\n'
+  exit 0
+fi
+
+# No existing log — read mode from mode file (ground truth)
+mode_file="${SB_DIR}/mode"
+if [[ -f "$mode_file" && ! -L "$mode_file" ]]; then
+  mode=$(cat "$mode_file" 2>/dev/null || echo "interactive")
+  # Validate against allowlist
+  case "$mode" in
+    interactive|autonomous) ;;
+    *) mode="interactive" ;;
+  esac
+else
+  mode="interactive"
+fi
+
+# --- Step 6: Create session log ---
+timestamp=$(date '+%H-%M-%S')
+log_file="$sessions_dir/${today}-${timestamp}.md"
+sb_safe_write "$log_file"
+
+cat > "$log_file" << LOGEOF
+# Session Log — ${today}
+
+**Date:** ${today}
+**Mode:** ${mode}
+**Model:** (filled at documentation step)
+**Virtual cost:** (filled at documentation step)
+
+---
+
+## Pre-answers
+
+(filled at Step 0 by Claude if autonomous mode)
+
+## Task
+
+(filled at documentation step)
+
+## Approach
+
+(filled at documentation step)
+
+## Files changed
+
+(filled at documentation step)
+
+## Skills invoked
+
+(filled at documentation step)
+
+## Skills flagged at discovery
+
+(filled at DISCUSS phase)
+
+## Skill gap check (post-plan)
+
+(filled after plan is written)
+
+## Active Intent Ledger
+
+(filled during the session as active requests are intercepted)
+
+## Agent Teams dispatched
+
+(filled at documentation step)
+
+## Autonomous decisions
+
+(none)
+
+## Needs human review
+
+(none)
+
+## Outcome
+
+(filled at documentation step)
+
+## Items Filed
+
+(none)
+
+## Knowledge & Learnings additions
+
+(filled at documentation step)
+LOGEOF
+
+# --- Step 7: Write session start timestamp ---
+sb_guard_nofollow "$SB_DIR"/session-start-time
+date +%s > "$SB_DIR"/session-start-time
+
+# --- Step 8: Launch sentinel (autonomous mode only) ---
+# AUTONOMOUS MODE TIMEOUT SENTINEL — Security note:
+# Deterministic bounded process: sleeps max 600s, writes "TIMEOUT" to user-owned
+# the host runtime timeout marker, then auto-terminates. Cannot be influenced by
+# external input. PID tracked in sentinel-pid; kill called on lock failure.
+if [[ "$mode" == "autonomous" ]]; then
+  sb_guard_nofollow "$SB_DIR"/timeout
+  sb_guard_nofollow "$SB_DIR"/sentinel-pid
+  (sleep "${SENTINEL_SLEEP_OVERRIDE:-600}" && echo "TIMEOUT" > "$SB_DIR"/timeout) </dev/null >/dev/null 2>&1 &
+  sentinel_pid=$!
+  _uuid=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || printf '%s-%s' "$$" "$(date +%s)")
+  sb_guard_nofollow "$SB_DIR/sentinel-lock-$_uuid"
+  if touch "$SB_DIR/sentinel-lock-$_uuid"; then
+    printf '%s:%s\n' "$sentinel_pid" "$_uuid" > "$SB_DIR"/sentinel-pid
+    disown "$sentinel_pid"
+  else
+    kill "$sentinel_pid" 2>/dev/null || true
+  fi
+fi
+
+sb_guard_nofollow "$SB_DIR"/session-log-path; printf '%s' "$log_file" > "$SB_DIR"/session-log-path
+basename "$log_file" | jq -Rs '{"hookSpecificOutput":{"message":("📋 Session log created: docs/sessions/" + .)}}'

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="shortcut icon" href="../favicon.ico">
+<title>Changelog — Silver Bullet</title>
+<meta name="description" content="Silver Bullet release notes from v0.48 onward — features, fixes, tests, and documentation updates.">
+<meta property="og:title" content="Silver Bullet Changelog">
+<meta property="og:description" content="Release notes from v0.48 onward for the hook-enforced agentic process orchestrator.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/changelog/">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Silver Bullet — Agentic Process Orchestrator for AI-native software engineering">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../chrome.css?v=site-chrome-11">
+<style>
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,.logo,.nav-cta,.section-label{font-family:var(--font-heading)}
+.container{max-width:800px;margin:0 auto;padding:0 24px}
+.nav-cta{padding:8px 20px;border-radius:999px;font-size:.9rem;font-weight:600;text-decoration:none;background:linear-gradient(135deg,var(--grad-1),var(--grad-2));color:#fff;box-shadow:0 4px 20px var(--accent-a30),inset 0 1px 0 rgba(255,255,255,.18)}
+.page-hero{background:var(--bg-hero);padding:120px 24px 48px}
+.page-hero h1{font-size:clamp(2rem,4vw,2.6rem);letter-spacing:-.04em;margin-bottom:12px}
+.page-hero p{color:var(--text-secondary);max-width:560px;font-size:1.05rem}
+.page-hero .source-link{margin-top:20px;font-size:.9rem}
+.page-hero .source-link a{color:var(--accent-light);text-decoration:none;font-weight:600}
+.page-hero .source-link a:hover{text-decoration:underline}
+main{padding:48px 24px 96px}
+.release{margin-bottom:56px;padding-bottom:48px;border-bottom:1px solid var(--border)}
+.release:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.release-header{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 16px;margin-bottom:12px}
+.release-header h2{font-size:1.5rem;letter-spacing:-.03em}
+.release-date{font-size:.9rem;color:var(--text-dim);font-family:var(--font-mono)}
+.release-summary{color:var(--text-secondary);margin-bottom:20px;font-size:1rem}
+.release h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-light);margin:20px 0 10px}
+.release ul{margin:0 0 8px 1.25rem;color:var(--text-secondary);font-size:.95rem}
+.release li{margin-bottom:8px}
+</style>
+</head>
+<body>
+<nav>
+ <div class="nav-inner">
+  <a href="../" class="nav-brand" aria-label="Silver Bullet home">
+   <img src="../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+   <span class="nav-wordmark">
+    <span class="logo gradient">Silver Bullet</span>
+    <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+   </span>
+  </a>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+  <ul class="nav-links">
+   <li><a href="../#problem">Problem</a></li>
+   <li><a href="../#future">What If</a></li>
+   <li><a href="../#mechanism">How It Works</a></li>
+   <li><a href="../#workflow">Workflows</a></li>
+   <li><a href="../#install">Install</a></li>
+   <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+  </ul>
+  <div class="nav-actions">
+   <a href="../help/" class="nav-help">Help Center</a>
+   <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+    <span id="icon-sun"><i data-lucide="sun"></i></span>
+    <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+   </button>
+   <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </div>
+ </div>
+</nav>
+<header class="page-hero">
+ <div class="container">
+  <p class="section-label">Release notes</p>
+  <h1>What&rsquo;s New</h1>
+  <p>Selected highlights from Silver Bullet v0.48 onward. This page is intentionally not an exhaustive release ledger; full canonical history lives in the repository <code>CHANGELOG.md</code>.</p>
+  <p class="source-link"><a href="https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">View full CHANGELOG on GitHub &rarr;</a></p>
+ </div>
+</header>
+<main>
+ <div class="container">
+  <article class="release" id="unreleased">
+   <div class="release-header">
+    <h2>Unreleased — multi-AI deep research</h2>
+    <time class="release-date" datetime="2026-07-17">2026-07-17</time>
+   </div>
+   <p class="release-summary">In progress (not yet versioned): <code>/silver:multi-ai-task</code> and <code>/silver:deep-research-multi-ai</code> — multi-ai-task-v2 spine, v4 manifests, capability spike, dual HTML reports.</p>
+   <h3>Workflows</h3>
+   <ul>
+    <li><code>feat(skills)</code>: APO catalog registers <code>WF-SILVER-MULTI-AI-TASK</code> and <code>WF-SILVER-DEEP-RESEARCH-MULTI-AI</code></li>
+    <li><code>docs(site)</code>: <a href="../help/workflows/silver-multi-ai-task.html">multi-ai-task</a> and <a href="../help/workflows/silver-deep-research-multi-ai.html">deep-research-multi-ai</a> help pages</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-52-0">
+   <div class="release-header">
+    <h2>v0.52.0</h2>
+    <time class="release-date" datetime="2026-08-08">2026-08-08</time>
+   </div>
+   <p class="release-summary">Minor release: five-tool routed compression stack, multi-AI orchestration primitive, and a batch of hook gate-integrity fixes — several gates were failing open or blocking Stop permanently.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(tools)</code>: activate five-tool routed stack — graphify, leanctx, context-mode, rtk, agentmemory</li>
+    <li><code>feat(tools)</code>: five-tool reconciler and Cursor install integration</li>
+    <li><code>feat(multi-ai)</code>: multi-AI primitive, deep-research composer, Excel matrix, and personas</li>
+    <li><code>feat(multi-ai)</code>: Codex/OpenCode host adapters for live deep-research dispatch</li>
+    <li><code>feat(clarify)</code>: per-plan CLARIFY filenames and planning path helper</li>
+   </ul>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(hooks)</code>: stop instruction-ledger self-enrollment from fenced agent reports</li>
+    <li><code>fix(hooks)</code>: stop instruction-ledger and review-fix-ladder gates failing open</li>
+    <li><code>fix(hooks)</code>: add a real claude arm to <code>sb_leanctx_hooks_present()</code></li>
+    <li><code>fix(hooks)</code>: site regression gate no longer wedges on a BSD <code>mktemp</code> template</li>
+    <li><code>fix(hooks)</code>: stop shell-hook duplication and orphan bash leaks</li>
+    <li><code>fix(hooks)</code>: site session gates skip agent-delegation false positives (#244, #245)</li>
+    <li><code>fix(leanctx)</code>: resolve the claude host MCP artifact to <code>~/.claude/settings.json</code></li>
+    <li><code>fix(leanctx)</code>: dedupe the lean-ctx MCP server entry on SB install</li>
+    <li><code>fix(doctor)</code>: report D10-routes <code>cross_tool unsupported</code> as a platform-limitation warning instead of a FAIL recommending <code>--fix=host</code></li>
+    <li><code>fix(tests)</code>: repair a BSD-first <code>stat</code> probe that wedged CI</li>
+    <li><code>fix(ci)</code>: repair the graphify artifact schema failing validation on main</li>
+    <li><code>fix(agents)</code>: implement <code>agent_delegate_append_workdir_evidence</code> for the delegate log floor</li>
+   </ul>
+   <h3>Docs</h3>
+   <ul>
+    <li>LeanCTX operating guide, public site reconcile, shared Graphify repository artifacts</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-7">
+   <div class="release-header">
+    <h2>v0.51.7</h2>
+    <time class="release-date" datetime="2026-07-12">2026-07-12</time>
+   </div>
+   <p class="release-summary">Patch release: Cursor desktop <code>/silver</code> commands fix — hyphen-safe command filenames and install identity lock.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(cursor)</code>: desktop-safe command filenames (<code>silver-&lt;route&gt;.md</code> stubs with <code>silver:</code> frontmatter) — Cursor desktop rejects colon-bearing command filenames</li>
+    <li><code>fix(cursor)</code>: install identity lock — VERSION-aligned cache/current/local/marketplace pins prevent registry drift claiming version N against installPath N-1</li>
+    <li><code>fix(tests)</code>: install-cursor and host command naming regression coverage</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-6">
+   <div class="release-header">
+    <h2>v0.51.6</h2>
+    <time class="release-date" datetime="2026-07-11">2026-07-11</time>
+   </div>
+   <p class="release-summary">Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under <code>~/.cursor/plugins/local/</code> so <code>/silver</code> commands register after public reinstall.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(cursor)</code>: materialize commands-only local plugin surface into <code>~/.cursor/plugins/local/silver-bullet</code> instead of symlinking outside <code>plugins/local</code> — Cursor desktop rejects external symlink targets and silently skips command registration</li>
+    <li><code>fix(plugin-mirror)</code>: restore <code>plugins/silver-bullet/scripts</code> symlink to repo <code>scripts/</code></li>
+    <li><code>fix(tests)</code>: install-cursor regression coverage for materialized local plugin directory and commands-only backend caches</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-5">
+   <div class="release-header">
+    <h2>v0.51.5</h2>
+    <time class="release-date" datetime="2026-07-11">2026-07-11</time>
+   </div>
+   <p class="release-summary">Patch release: permanent Cursor desktop/TUI picker fix — local plugin discovery symlink, commands-only backend caches, marketplace SHA alignment at install, D14 commands-only contract, stale custom-agent quarantine, and tagged archive/public install regression coverage.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(cursor)</code>: commands-only picker install path for desktop and TUI — symlink <code>~/.cursor/plugins/local/silver-bullet</code>, sync marketplace SHA, prune skill-source from backend caches</li>
+    <li><code>fix(cursor)</code>: align manifest SHA with install before verify — registry/primary/backend SHA narrowing, local plugin link as desktop discovery fallback</li>
+    <li><code>fix(cursor)</code>: enforce D14 commands-only cache validation; stop malformed <code>/silverui</code> and internal/subagent route drift in TUI</li>
+    <li><code>fix(cursor)</code>: stale SB custom-agent cleanup and quarantine during install</li>
+    <li><code>fix(tests)</code>: archive install regression tests for tagged public release paths</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-4">
+   <div class="release-header">
+    <h2>v0.51.4</h2>
+    <time class="release-date" datetime="2026-07-10">2026-07-10</time>
+   </div>
+   <p class="release-summary">Patch release: Cursor slash-picker deduplication and custom subagents (install, doctor D21, RFL ladder), stack double-compression recovery hardening, MultAI deep-research port (<code>/silver:compare</code>), Codex user-scope registration, and tri-host post-release verify orchestrator.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(cursor)</code>: SB custom subagents installer — <code>install-cursor.sh</code>, doctor <strong>D21</strong>, silver-init §3.2.3 tri-state consent</li>
+    <li><code>feat(cursor)</code>: RFL custom subagents — 6-rung review-fix ladder, hooks, tests, skill</li>
+    <li><code>feat(deep-research)</code>: port MultAI solution-landscape and solution-compare — need-profile interview, SCR extraction, weighted matrix SPA, <code>/silver:compare</code></li>
+    <li><code>feat(agents)</code>: <code>silver-agent-opencode</code> and <code>silver-agent-pi</code> delegation surfaces</li>
+    <li><code>feat(release)</code>: mandatory tri-host post-release verify orchestrator</li>
+   </ul>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(cursor)</code>: slash picker deduplication — prune backend plugin caches, honor <code>.cursorignore</code>, commands-only registration</li>
+    <li><code>fix(cursor)</code>: harden D21 doctor probe and host-agnostic allowlists</li>
+    <li><code>fix(stack)</code>: double-compression mutex recovery, SEC-01/SEC-02 hardening, doctor D20</li>
+    <li><code>fix(codex)</code>: register Silver Bullet plugin with user scope</li>
+    <li><code>fix(commands)</code>: align Cursor and Codex slash routes with <code>silver:</code> colon convention</li>
+    <li><code>fix(deep-research)</code>: v2 audit follow-ups and Thermos hardening</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-3">
+   <div class="release-header">
+    <h2>v0.51.3</h2>
+    <time class="release-date" datetime="2026-07-08">2026-07-08</time>
+   </div>
+   <p class="release-summary">Patch release: tri-host RC matrix green (cursor/codex/claude × fresh/upgrade), Cursor hook generator repairs, Claude home-path install alignment, Codex path-rewrite scoping, LeanCTX five-tool stack foundation, and <strong>silver-deep-research v2 engine</strong> (retroactively documented).</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(cursor)</code>: hook generation, merge dedupe, marketplace gitPath, and <code>/silver</code> slash command materialization</li>
+    <li><code>fix(hooks)</code>: restore canonical manifest; harden Claude/Codex install surfaces</li>
+    <li><code>fix(install)</code>: scope Codex path-rewrite to plugin surfaces (prevents test fixture corruption)</li>
+    <li><code>fix(rc)</code>: unblock cursor RC delegate smoke; Claude first-class RC host</li>
+    <li><code>fix(tests)</code>: install-claude/codex/doctor gate fixtures; <code>record-leanctx-usage</code> coverage</li>
+   </ul>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(leanctx)</code>: Phase 1–2 five-tool stack config, install scripts, and hook gates</li>
+    <li><code>feat(testing)</code>: five-tool pre-release gate via agent-cursor harness</li>
+    <li><code>feat(deep-research)</code>: <strong>v2 engine</strong> — <code>search_orchestrator</code> with SB-owned <code>skill_portals</code>, <code>capability_score</code> eval harness, <code>validate_report</code> language gates, adversarial/report-block references, and July 2026 landscape replay benchmark</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-2">
+   <div class="release-header">
+    <h2>v0.51.2</h2>
+    <time class="release-date" datetime="2026-07-06">2026-07-06</time>
+   </div>
+   <p class="release-summary">Patch release: semantic-compress hook test isolation, bundle mirror sync, and Stage 4a site scan completion with pre-release gate site freshness wiring.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(test)</code>: isolate <code>test-semantic-compress-hook.sh</code> from active repo <code>.planning/</code> E2E state</li>
+   </ul>
+   <h3>Chores</h3>
+   <ul>
+    <li><code>chore(sync)</code>: regenerate agent bundle mirrors after create-release skill doc sync</li>
+    <li><code>docs(site)</code>: complete Stage 4a public site scan; wire site freshness into <code>pre-release-gate.sh</code></li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-1">
+   <div class="release-header">
+    <h2>v0.51.1</h2>
+    <time class="release-date" datetime="2026-07-06">2026-07-06</time>
+   </div>
+   <p class="release-summary">Patch release: CI green gate enforcement, scheduler test isolation, completion-audit enterprise policy alignment, and CI-safe E2E harness fixtures.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(ci)</code>: scheduler test isolation and orchestrator join-gate stdout leak</li>
+    <li><code>fix(ci)</code>: completion-audit enterprise policy shadowing + <code>scripts/pre-release-gate.sh</code> CI gate</li>
+    <li><code>fix(ci)</code>: regen <code>atomic-flow-index.json</code>, agent preflight dry-run, matrix grep pipefail</li>
+    <li><code>fix(ci)</code>: CI-safe mktemp work-dir for minimal-intent/tri-criteria dry-runs</li>
+   </ul>
+   <h3>Documentation</h3>
+   <ul>
+    <li>CI policy: never tag/release on red CI (<code>docs/RELEASE.md</code>, <code>AGENTS.md</code>)</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-51-0">
+   <div class="release-header">
+    <h2>v0.51.0</h2>
+    <time class="release-date" datetime="2026-07-06">2026-07-06</time>
+   </div>
+   <p class="release-summary">Tri-criteria E2E validation harness: live/cold matrix across Cursor, Claude, and Codex; multi-workflow orchestrator scheduler (<code>composer_chain</code>); greenfield 6/6 PASS.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(tri-criteria)</code>: live/cold validation harness, tri-host live matrix, greenfield 6/6 PASS</li>
+    <li><code>feat(autonomous-enterprise)</code>: agent-claude track and orchestrator scheduler with <code>composer_chain</code> multi-WF advance</li>
+    <li><code>feat(audit)</code>: AF/FS compliance script; Audit mode for catalog compliance</li>
+    <li><code>feat(skills)</code>: <code>silver-deep-research</code> replaces <code>silver-research</code>/<code>multi-ai</code></li>
+   </ul>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(tri-criteria)</code>: E2E scorer false fails and runtime composition wiring</li>
+    <li><code>fix(agent-codex/agent-claude)</code>: graphify and agentmemory preflight before delegate</li>
+    <li><code>fix(agent-claude)</code>: folder trust seeding and plugin cache alias resolution</li>
+    <li><code>fix(catalog)</code>: remediate WF/AF audit failures to 157/157 PASS</li>
+   </ul>
+   <h3>Verification</h3>
+   <ul>
+    <li>Tri-criteria greenfield matrix — 6/6 PASS (cursor+claude+codex)</li>
+    <li>Release version alignment, template parity, render freshness — PASS</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-50-5">
+   <div class="release-header">
+    <h2>v0.50.5</h2>
+    <time class="release-date" datetime="2026-07-05">2026-07-05</time>
+   </div>
+   <p class="release-summary">Tri-host pre-release smoke gate: mandatory 12/12 isolated host smoke before tag. Agent-codex harness improvements and Cursor CLI smoke timeout fix.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(agent-codex)</code>: v0.2.0 harness dir, R9 learnings, pilot PASS</li>
+   </ul>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(agent-codex)</code>: sibling-prompt compliance gaps and unified delegate runtime env</li>
+    <li><code>fix(pre-release)</code>: HOST_API_KEY alias, operator key-file fallback, Cursor CLI smoke 300s timeout</li>
+   </ul>
+   <h3>Verification</h3>
+   <ul>
+    <li><code>run-pre-release-host-smoke.sh</code> — 12/12 PASS (tri-host isolated)</li>
+    <li><code>run-all-tests.sh</code> — 5068 passed, 0 failed</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-50-4">
+   <div class="release-header">
+    <h2>v0.50.4</h2>
+    <time class="release-date" datetime="2026-07-05">2026-07-05</time>
+   </div>
+   <p class="release-summary">Pre-release test hardening: full test suite must be green before patch release. Fixes delegation fallout and version-alignment drift from v0.50.3.</p>
+   <h3>Fixes</h3>
+   <ul>
+    <li><code>fix(tests)</code>: outcomes-check stop-coalesce teardown + jq-less Stop state-dir preservation</li>
+    <li><code>fix(hooks)</code>: SEC-04 <code>rm -f --</code> hardening in delegation and stop-coalesce libs</li>
+    <li><code>fix(validate)</code>: host-agnostic allowlist for AF-AGENT-DELEGATE surfaces</li>
+    <li><code>fix(release)</code>: config/site/sentinel version alignment; agent skill scenarios + SENTINEL audits</li>
+   </ul>
+   <h3>Verification</h3>
+   <ul>
+    <li><code>run-all-tests.sh</code> — 5349 passed, 0 failed (6/6 suites green)</li>
+    <li><code>run-apo-authoring-compliance.sh</code> — 26/26 PASS</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-9">
+   <div class="release-header">
+    <h2>v0.48.9</h2>
+    <time class="release-date" datetime="2026-06-30">2026-06-30</time>
+   </div>
+   <p class="release-summary">Official Cursor isolation for pre-release smoke and shellcheck fixes in host smoke scripts.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(release)</code>: official Cursor isolation for pre-release smoke</li>
+   </ul>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li><code>fix(release)</code>: satisfy shellcheck SC2155 in pre-release host smoke</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-8">
+   <div class="release-header">
+    <h2>v0.48.8</h2>
+    <time class="release-date" datetime="2026-06-30">2026-06-30</time>
+   </div>
+   <p class="release-summary">Enterprise E2E matrix hardening, WBS meta-supervision MVP, and orchestrator read-only parent Bash.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(wbs)</code>: cross-cutting WBS meta-supervision MVP</li>
+   </ul>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li><code>fix(e2e)</code>: matrix session isolation, E2E-011 five-tool preflight, /compact recovery, rows 21–22 gate patterns</li>
+    <li><code>fix(orchestrator)</code>: allow read-only parent Bash; block SB state mutations only</li>
+   </ul>
+   <h3>Documentation</h3>
+   <ul>
+    <li><code>docs(issues)</code>: enterprise E2E issues log with fix commit SHA traceability</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-7">
+   <div class="release-header">
+    <h2>v0.48.7</h2>
+    <time class="release-date" datetime="2026-06-29">2026-06-29</time>
+   </div>
+   <p class="release-summary">Instruction-following reduction closure, silver-doctor coverage, subagent model gates, and enterprise E2E harness hardening.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(if-reduction)</code>: complete Waves 1–4 and subagent engagement audit closure</li>
+    <li><code>feat(validation)</code>: enterprise E2E claims overlay on 22-row matrix with pre-matrix dry-run gate</li>
+   </ul>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li><code>fix(if)</code>: close remaining test, hook coverage, and documentation gaps</li>
+    <li><code>fix(ladder)</code>: enforce Composer 2.5 only for all Cursor subagent rungs</li>
+    <li><code>fix(doctor)</code>: host-aware checks — D8 orchestrator rule Cursor-only; D2/D3/D13 use active host plugin paths via <code>runtime-paths.sh</code></li>
+    <li><code>fix(e2e)</code>: fail fast when Claude token gateway credentials are missing</li>
+   </ul>
+   <h3>Documentation</h3>
+   <ul>
+    <li><code>docs(test)</code>: silver-doctor catalog, scenario, sentinel manifest coverage, and mocked-host unit tests for Claude/Codex/Cursor doctor paths</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-6">
+   <div class="release-header">
+    <h2>v0.48.6</h2>
+    <time class="release-date" datetime="2026-06-27">2026-06-27</time>
+   </div>
+   <p class="release-summary">Scoped RTK coexistence: full agent RTK when opted in; verbatim harness mode only.</p>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li><code>fix(rtk)</code>: scope <code>RTK_DISABLED</code> to harness scripts (<code>SB_RTK_COMPAT_MODE=verbatim</code>) and opted-out projects — hook bridge omits disable when <code>recommended_tools.rtk.enabled_by_user</code> is true</li>
+    <li><code>fix(rtk)</code>: unwrap <code>rtk</code> / <code>RTK_DISABLED=1</code> prefixes in <code>completion-audit.sh</code> gate regexes (<code>sb_shell_command_unwrap_rtk</code>)</li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li><code>test(rtk)</code>: opted-in / opted-out / verbatim modes in <code>test-rtk-compat.sh</code></li>
+    <li><code>test(hooks)</code>: RTK-wrapped <code>git push</code> classification in <code>test-completion-audit.sh</code></li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-5">
+   <div class="release-header">
+    <h2>v0.48.5</h2>
+    <time class="release-date" datetime="2026-06-27">2026-06-27</time>
+   </div>
+   <p class="release-summary">Enterprise E2E live test suite, <code>silver:multi-ai-task</code> model alignment, and silver-prefix skill exposure.</p>
+   <h3>Features</h3>
+   <ul>
+    <li><code>feat(e2e)</code>: opt-in <code>enterprise-e2e-live-test</code> suite (<code>SB_ENTERPRISE_E2E_LIVE=1</code>) with runbook <code>docs/ENTERPRISE-E2E-LIVE-TEST.md</code> and entrypoint <code>scripts/run-enterprise-e2e-live-test.sh</code></li>
+    <li><code>feat(skills)</code>: expose <code>silver:multi-ai-task</code> (renamed from <code>multi-ai-task</code>) with <code>scripts/multi-ai-task-models.py</code> — review-fix-ladder model set @ medium reasoning; OCG plan when OpenCode agents configured</li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li>Structural enterprise E2E live wiring validation (<code>tests/enterprise-e2e-live/test-enterprise-e2e-live-suite.sh</code>)</li>
+    <li><code>tests/scripts/test-multi-ai-task-models.sh</code> for resolver + Claude bundle prefix</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-4">
+   <div class="release-header">
+    <h2>v0.48.4</h2>
+    <time class="release-date" datetime="2026-06-27">2026-06-27</time>
+   </div>
+   <p class="release-summary">Enterprise E2E hardening patch: friction fixes #2–#13 (hooks, orchestrator Bash in Task workers, RTK compat, session-start branch scope), turn-level TUI watcher + matrix monitor, interactive 22/22 matrix harness, multi-ai-task v2.1–2.6 doc/sentinel fixes, and test isolation for semantic-compress / plugin-surface gates. <code>run-all-tests</code> <strong>4672 passed, 0 failed</strong> at release SHA.</p>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li><code>fix(hooks)</code>: resolve SB frictions #2–#13 for enterprise E2E</li>
+    <li><code>fix(hooks)</code>: allow Bash in orchestrator-spawned Task workers</li>
+    <li><code>fix(rtk)</code>: export <code>RTK_DISABLED</code> for SB shell entry points</li>
+    <li><code>fix(install-claude)</code>: rsync full hooks tree to plugin cache</li>
+    <li><code>fix(hooks)</code>: add <code>hookEventName</code> to high-frequency PostToolUse output</li>
+    <li><code>fix(matrix)</code>: monitor empty-array crash when all rows complete; retry on API 429</li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li><code>test(hooks)</code>: accept two-line branch scope file in session-start</li>
+    <li>Semantic-compress + Claude plugin-surface test isolation; orchestrator parent-guard coverage</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-3">
+   <div class="release-header">
+    <h2>v0.48.3</h2>
+    <time class="release-date" datetime="2026-06-26">2026-06-26</time>
+   </div>
+   <p class="release-summary">Recommended-tools expansion and global wiring: RTK and Context Mode opt-in gates, Alumnium opt-in, Graphify + agentmemory stack optimizer (<code>synergy_max</code>) across hosts, multi-agent global RTK/Context Mode optimizer, and Context Mode read-deny when enforced. Documentation and site workflow SDLC ordering; enterprise E2E fixture shift; CI/shellcheck and diagnostics fixes. Integrates doc-scheme Graphify exclusion test fix; restores opt-in Graphify gate behavior after mandatory-graphify branch merge.</p>
+  </article>
+  <article class="release" id="v0-48-2">
+   <div class="release-header">
+    <h2>v0.48.2</h2>
+    <time class="release-date" datetime="2026-06-25">2026-06-25</time>
+   </div>
+   <p class="release-summary">Enterprise readiness ladder run 2: FLOW-16/17 worker split (<code>DESIGN-HANDOFF.md</code> / <code>DOCUMENT.md</code>), <code>SECURITY.md</code> skill-dispatched template, catalog <code>skill_worker_templates</code> parity, depth-aware review-loop docs, core-rules hash pin enforcement, Cursor GPT-5.5 ladder slug substitutions, and review-loop safety-cap non-convergence guard.</p>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li>Split <code>silver-handoff</code> (FLOW 16) from <code>silver-ensure-docs</code> (FLOW 17) worker templates; added <code>FLOW-DOCUMENT</code> runtime queue token</li>
+    <li>Split <code>security</code> vs <code>silver-secure</code> worker templates with distinct flow-log labels</li>
+    <li>Fixed <code>RELEASE.md</code> mandatory skill, <code>ROUTER.md</code> colon invoke form, orchestrator flow-label CSV mappings</li>
+    <li>Lazy-load worker template mapper in <code>orchestrator-directive.sh</code> when sourced before <code>orchestrator-parent.sh</code></li>
+    <li>Core-rules injection requires verified hash pin; missing pin injects warning instead of unpinned content</li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li>Extended orchestrator handoff, workflow CSV, instruction-flow parity, worker-template parity, and review-fix-ladder coverage</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-1">
+   <div class="release-header">
+    <h2>v0.48.1</h2>
+    <time class="release-date" datetime="2026-06-24">2026-06-24</time>
+   </div>
+   <p class="release-summary">Post-release APO runtime alignment, orchestrator queue fixes, and help-center refresh for the v0.48 catalog model.</p>
+   <h3>Bug Fixes</h3>
+   <ul>
+    <li>Fixed <code>silver-devops</code> orchestrator post-exec queue token (<code>FLOW-QUALITY-GATE-PRESHIP</code> instead of stale <code>FLOW-DEVOPS-QUALITY-GATE-PRESHIP</code>)</li>
+    <li>Registered <code>silver-deep-research</code> and <code>silver-ensure-docs</code> as flow atoms and extended the <code>silver-deep-research</code> default queue</li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li>Added orchestrator queue-order and worker-template parity coverage for research and devops flows</li>
+    <li>Tightened APO schema test for subagent-only <code>dispatch_mode</code> and composition triple alignment gates</li>
+    <li>Added stale 18-flow phrase guard across public docs in <code>check-apo-invariants.py</code></li>
+   </ul>
+   <h3>Documentation</h3>
+   <ul>
+    <li>Refreshed README, help center, OG card, and workflow pages for the canonical <code>AF-*</code> catalog (27 atomic flows)</li>
+    <li>Added AGENTS.md rule requiring Composer 2.5 subagents for website and help-center authoring</li>
+   </ul>
+  </article>
+  <article class="release" id="v0-48-0">
+   <div class="release-header">
+    <h2>v0.48.0</h2>
+    <time class="release-date" datetime="2026-06-24">2026-06-24</time>
+   </div>
+   <p class="release-summary">Atomic-flow APO redesign.</p>
+   <h3>Features</h3>
+   <ul>
+    <li>Added <code>docs/apo-catalog.json</code> as the authoritative Agentic Process Orchestrator catalog</li>
+    <li>Replaced the legacy FLOW 1-18 mirror with 27 canonical <code>AF-*</code> atomic flows, 22 catalog-backed workflows, and 85 skill-backed flow steps with local V-loops</li>
+    <li>Added generated catalog views: <code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>, and <code>docs/generated/atomic-flow-index.json</code></li>
+   </ul>
+   <h3>Tests</h3>
+   <ul>
+    <li>Added blocking APO gates for catalog schema/SOT, atomic-flow deduplication, per-flow and per-step V-loops, composition SOT, evidence/intent models, subagent execution metadata, runtime alignment, worker parity, tool policies, router coverage, and site/doc freshness</li>
+   </ul>
+   <h3>Documentation</h3>
+   <ul>
+    <li>Updated <code>silver-bullet.md</code>, templates, README/help/reference/workflow docs, and search metadata for the APO catalog authority and migration from FLOW 1-18 aliases</li>
+   </ul>
+  </article>
+ </div>
+</main>
+<footer>
+ <div class="footer-inner">
+  <div class="footer-brand-group">
+   <span class="footer-credit"><a href="../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+  </div>
+  <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+  <div class="footer-links">
+   <a href="../help/">Help</a>
+   <a href="../terms/">Terms of Use</a>
+   <a href="../privacy/">Privacy Policy</a>
+  </div>
+ </div>
+</footer>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

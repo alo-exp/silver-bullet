@@ -1,0 +1,23 @@
+{
+  "name": "silver-bullet",
+  "displayName": "Silver Bullet",
+  "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
+  "version": "0.52.0",
+  "author": {
+    "name": "Alo Labs",
+    "email": "info@alolabs.dev"
+  },
+  "homepage": "https://github.com/alo-exp/silver-bullet",
+  "repository": "https://github.com/alo-exp/silver-bullet.git",
+  "license": "BUSL-1.1",
+  "keywords": [
+    "silver-bullet",
+    "enforcement",
+    "orchestrator",
+    "devops",
+    "quality-gates",
+    "ci-cd"
+  ],
+  "hooks": "./cursor-hooks.json",
+  "commands": "./commands"
+}

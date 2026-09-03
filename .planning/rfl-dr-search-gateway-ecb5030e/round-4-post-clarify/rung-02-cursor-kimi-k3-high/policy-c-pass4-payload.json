@@ -1,0 +1,76 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High (rung 2 review 4 Policy G pack)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {
+        "id": "R2P4-1",
+        "title": "X site:x.com in -q vs §6.3/§6.9 bare-host -d rule"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R2P4-2",
+        "title": "§2.8 X search/all omits signup_automation stamp"
+      },
+      {
+        "id": "R2P4-3",
+        "title": "frontmatter overview overclaims autonomously signs up"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R2P4-1",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Option (a): annotate locked X site:x.com-in-q exception; does not unwind X-must-search"
+    },
+    {
+      "id": "R2P4-2",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Add manual_only stamp on search/all row to match gate paragraph"
+    },
+    {
+      "id": "R2P4-3",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Qualify overview to signup_automation gates; does not unwind search-cli-only"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {
+      "id": "R2P4-1",
+      "severity": "LOW",
+      "title": "X site:x.com in -q is locked exception to bare-host -d",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P4-2",
+      "severity": "NIT",
+      "title": "§2.8 X search/all stamps signup_automation manual_only",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2P4-3",
+      "severity": "NIT",
+      "title": "frontmatter overview no longer claims autonomous signup",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ]
+}

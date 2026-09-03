@@ -1,0 +1,58 @@
+--- Code-intel preflight (Graphify / agentmemory / RTK / Context Mode) ---
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+  rtk: global wiring (opted in via /Users/shafqat/projects/silver-bullet/repo/.silver-bullet.json)
+  context-mode: /Users/shafqat/projects/silver-bullet/repo (opted in)
+ERROR: enterprise E2E code-intel preflight: Context Mode MCP not wired for host=opencode — see docs/CONTEXT-MODE.md
+    context-mode doctor OK (platform=opencode)
+  graphify: /Users/shafqat/projects/silver-bullet/repo (opted in)
+    graphify query fresh
+  agentmemory: /Users/shafqat/projects/silver-bullet/repo (opted in)
+Code-intel preflight OK.
+{"type":"prompt.submitted","model":"opencode-go/deepseek-v4-pro","work_dir":"/Users/shafqat/projects/silver-bullet/repo"}
+[agent-opencode] log: /Users/shafqat/projects/silver-bullet/repo/.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/opencode-run.log (20589 B)
+[0m
+> build · deepseek-v4-pro
+[0m
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m
+[0m✗ [0mInvalid Tool
+The arguments provided to the tool are invalid: Model tried to call unavailable tool 'ctx_shell'. Available tools: agentmemory_memory_action_create, agentmemory_memory_action_update, agentmemory_memory_audit, agentmemory_memory_checkpoint, agentmemory_memory_claude_bridge_sync, agentmemory_memory_commit_lookup, agentmemory_memory_commits, agentmemory_memory_compress_file, agentmemory_memory_consolidate, agentmemory_memory_crystallize, agentmemory_memory_diagnose, agentmemory_memory_export, agentmemory_memory_facet_query, agentmemory_memory_facet_tag, agentmemory_memory_file_history, agentmemory_memory_frontier, agentmemory_memory_governance_delete, agentmemory_memory_graph_query, agentmemory_memory_heal, agentmemory_memory_insight_list, agentmemory_memory_lease, agentmemory_memory_lesson_recall, agentmemory_memory_lesson_save, agentmemory_memory_mesh_sync, agentmemory_memory_next, agentmemory_memory_obsidian_export, agentmemory_memory_patterns, agentmemory_memory_profile, agentmemory_memory_recall, agentmemory_memory_reflect, agentmemory_memory_relations, agentmemory_memory_routine_run, agentmemory_memory_save, agentmemory_memory_sentinel_create, agentmemory_memory_sentinel_trigger, agentmemory_memory_sessions, agentmemory_memory_signal_read, agentmemory_memory_signal_send, agentmemory_memory_sketch_create, agentmemory_memory_sketch_promote, agentmemory_memory_slot_append, agentmemory_memory_slot_create, agentmemory_memory_slot_delete, agentmemory_memory_slot_get, agentmemory_memory_slot_list, agentmemory_memory_slot_replace, agentmemory_memory_smart_search, agentmemory_memory_snapshot_create, agentmemory_memory_team_feed, agentmemory_memory_team_share, agentmemory_memory_timeline, agentmemory_memory_verify, agentmemory_memory_vision_search, context-mode_ctx_batch_execute, context-mode_ctx_doctor, context-mode_ctx_execute, context-mode_ctx_execute_file, context-mode_ctx_fetch_and_index, context-mode_ctx_index, context-mode_ctx_insight, context-mode_ctx_purge, context-mode_ctx_search, context-mode_ctx_stats, context-mode_ctx_upgrade, ctx_batch_execute, ctx_doctor, ctx_execute, ctx_execute_file, ctx_fetch_and_index, ctx_index, ctx_insight, ctx_purge, ctx_search, ctx_stats, ctx_upgrade, edit, invalid, lean-ctx_ctx_call, lean-ctx_ctx_callgraph, lean-ctx_ctx_compose, lean-ctx_ctx_expand, lean-ctx_ctx_glob, lean-ctx_ctx_read, lean-ctx_ctx_search, lean-ctx_ctx_session, lean-ctx_ctx_shell, lean-ctx_ctx_tree, lean-ctx_shell, skill, task, todowrite, webfetch, write.
+[0m
+I'll start by hashing both plan copies against the freeze SHA, then follow the mandatory read order.
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+Hashes match. Now checking the planning directory structure and graphify availability.
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+Graphify query complete. Now reading required files in mandated order.
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mlean-ctx_ctx_read {"path":"/Users/shafqat/projects/silver-bullet/repo/.planning/router_subagent_surfaces_85bf9f09.plan.md","mode":"full"}
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+Plan frontmatter captured. Now verifying spot-check landings via targeted line reads.
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m
+[0m← [0mWrite .planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/review.md
+Wrote file successfully.
+[0m
+All spot-checks verified. Writing the review now.
+Review complete and written to the required path.
+
+**VERDICT: CLEAN**
+
+- Hash gate: both plan copies match freeze `9c9aa7d9…` (verified via `shasum -a 256`).
+- Graphify used before codebase exploration; overview → plan → clarify (through round-36 ACCEPT) read in order.
+- All 8 spot-checks PASS with independent line/obligation citations (L112 two-limb, L122 tri-color, L666 row 37, L669 row 40, L175 lock emitter, L511 in-plan, L633 row-4 special-file, GC superseded/`scope_complete`).
+- KEEP REJECT not reopened (all 18 items present and unamended).
+- Independent findings: **Blockers** None, **Highs** None, **Mediums** None; 3 informational Lows (tree-vs-DAG wording, Cursor `SB_PRIMARY_CHECKOUT` env risk already fail-closed, `remaining_depth` non-integer token).
+
+File: `.planning/rfl-router-subagent-surfaces-85bf9f09-20260812/deepseek-v4-pro-high-ladder4/review.md`

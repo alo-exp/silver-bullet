@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "backend-capabilities-v1.schema.json",
+  "title": "BackendCapabilitiesV1",
+  "type": "object",
+  "required": [
+    "schema_id",
+    "version",
+    "spine",
+    "probed_at",
+    "backends"
+  ],
+  "properties": {
+    "schema_id": { "const": "backend-capabilities-v1" },
+    "version": { "const": "1.0.0" },
+    "spine": { "const": "multi-ai-task-v2" },
+    "probed_at": { "type": "string", "format": "date-time" },
+    "backends": {
+      "type": "object",
+      "required": ["cursor", "ocg"],
+      "properties": {
+        "cursor": { "$ref": "#/$defs/backend_entry" },
+        "ocg": { "$ref": "#/$defs/backend_entry" }
+      }
+    }
+  },
+  "$defs": {
+    "backend_entry": {
+      "type": "object",
+      "required": ["status", "adapter_id", "adapter_version", "evidence"],
+      "properties": {
+        "status": { "enum": ["enabled", "disabled", "stub"] },
+        "adapter_id": { "type": "string" },
+        "adapter_version": { "type": "string" },
+        "evidence": {
+          "type": "object",
+          "required": ["usage_metered", "hard_ceiling_enforced", "cancellation_proven"],
+          "properties": {
+            "usage_metered": { "type": "boolean" },
+            "hard_ceiling_enforced": { "type": "boolean" },
+            "cancellation_proven": { "type": "boolean" },
+            "model_identity_hash": { "type": ["string", "null"] },
+            "config_hash": { "type": ["string", "null"] }
+          }
+        },
+        "disable_reason": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

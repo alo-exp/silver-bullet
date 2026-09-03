@@ -1,0 +1,1348 @@
+{
+  "fileUrl": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "ts": "2026-07-21T10:53:00.951Z",
+  "pass": true,
+  "must": {
+    "saas_hosts_not_core_leaders": {
+      "result": "PASS",
+      "detail": "Cursor/Claude Code/Codex/Copilot absent from SaaS MQ + leaders buckets"
+    },
+    "saas_core_mq_five": {
+      "result": "PASS",
+      "detail": "SaaS MQ: Augment Cosmos, Devin, Factory.ai, Tembo, Magic.dev"
+    },
+    "cognition_scout_saas_adjacent_not_core": {
+      "result": "PASS",
+      "detail": "Not in SaaS MQ/core; present in payload/links as non-core (adjacent framing)"
+    },
+    "conductor_not_apo_saas_adjacent": {
+      "result": "PASS",
+      "detail": "Not in APO/SaaS MQ/core buckets; not framed as primary APO candidate. mentions=2 adjacentProse=true"
+    },
+    "claude_harness_plugins_oss_not_apo": {
+      "result": "PASS",
+      "detail": {
+        "profileCount": 1,
+        "apoCandidateInProfile": false,
+        "pluginsFraming": true,
+        "snip": "Overview: Claude Harness is an SDLC-plugins methodology pack (not an APO peer) — Claude Code wrapper, process enforcement, compliance layer above host, deterministic gates.\nMajor Pros:\nWorkflow composition: Supported in startup-w"
+      }
+    },
+    "metagpt_apo_oss_mq": {
+      "result": "PASS",
+      "detail": {
+        "label": "MetaGPT",
+        "q": "Niche Players"
+      }
+    },
+    "no_claude_code_expert_product_cards": {
+      "result": "PASS",
+      "detail": "No product cards/ranking rows/titles; residual JSON audit mentions OK"
+    },
+    "agentsys_github_no_aws_aidlc": {
+      "result": "PASS",
+      "detail": {
+        "github": 23,
+        "agentsysAi": 0,
+        "awsAiDlc": 0
+      }
+    },
+    "no_hyperlink_underlines_blank_noopener": {
+      "result": "PASS",
+      "detail": {
+        "linkCount": 286,
+        "underlineCount": 0,
+        "underlineSamples": [],
+        "externalCount": 286,
+        "badRelCount": 0,
+        "badRelSamples": []
+      }
+    },
+    "file_renders_overflow375": {
+      "result": "PASS",
+      "detail": {
+        "overflow375": 0,
+        "contentLen": 16181,
+        "errors": 0
+      }
+    }
+  },
+  "defects": [],
+  "spot_checks": [
+    {
+      "slug": "agenthub",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "agentsys",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "ai-dlc",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "ateam",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "metagpt",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "silver-bullet",
+      "expected": {
+        "market": "apo",
+        "role": "core"
+      },
+      "inApo": true,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "bmad",
+      "expected": {
+        "market": "sdlc-plugins",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": true,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "claude-harness",
+      "expected": {
+        "market": "sdlc-plugins",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": true,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "gsd",
+      "expected": {
+        "market": "sdlc-plugins",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": true,
+      "inSaas": false,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "factory-ai",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": true,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "devin",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": true,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "augment-cosmos",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": true,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "tembo",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": true,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "magic-dev",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "core"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": true,
+      "inRank": true,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "slug": "conductor",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "cursor",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "claude-code",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "codex",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "cognition-scout",
+      "expected": {
+        "market": "agentic-sdlc-saas",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "axonflow",
+      "expected": {
+        "market": "apo",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "crewai",
+      "expected": {
+        "market": "apo",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    },
+    {
+      "slug": "langchain",
+      "expected": {
+        "market": "apo",
+        "role": "adjacent"
+      },
+      "inApo": false,
+      "inPlugins": false,
+      "inSaas": false,
+      "inRank": false,
+      "ok": true,
+      "note": "absent from core MQ/buckets/rankings (adjacent-only OK)"
+    }
+  ],
+  "membership": {
+    "apo": {
+      "mq": [
+        {
+          "label": "Silver Bullet",
+          "q": "Leaders"
+        },
+        {
+          "label": "cc10x",
+          "q": "Leaders"
+        },
+        {
+          "label": "AI-DLC",
+          "q": "Leaders"
+        },
+        {
+          "label": "AgentHub",
+          "q": "Leaders"
+        },
+        {
+          "label": "ATeam",
+          "q": "Leaders"
+        },
+        {
+          "label": "Cavekit v3.1",
+          "q": "Visionaries"
+        },
+        {
+          "label": "Director",
+          "q": "Visionaries"
+        },
+        {
+          "label": "AgentSys",
+          "q": "Leaders"
+        },
+        {
+          "label": "Barkain Workflow Orchestrator",
+          "q": "Visionaries"
+        },
+        {
+          "label": "Workflow Manager",
+          "q": "Visionaries"
+        },
+        {
+          "label": "Deepwork",
+          "q": "Visionaries"
+        },
+        {
+          "label": "Turboshovel",
+          "q": "Visionaries"
+        },
+        {
+          "label": "MetaGPT",
+          "q": "Niche Players"
+        }
+      ],
+      "commercial": [
+        "AgentHub",
+        "ATeam",
+        "Barkain Workflow Orchestrator",
+        "Cavekit v3.1",
+        "cc10x",
+        "Deepwork",
+        "Turboshovel",
+        "Workflow Manager"
+      ],
+      "oss": [
+        "AgentSys",
+        "AI-DLC",
+        "Director",
+        "MetaGPT",
+        "Silver Bullet"
+      ],
+      "leaders": [
+        "Silver Bullet",
+        "cc10x",
+        "AI-DLC",
+        "AgentHub",
+        "ATeam",
+        "AgentSys"
+      ],
+      "challengers": [],
+      "adjacent": [],
+      "gmq": [
+        "Silver Bullet",
+        "cc10x",
+        "AI-DLC",
+        "AgentHub",
+        "ATeam",
+        "Cavekit v3.1",
+        "Director",
+        "AgentSys",
+        "Barkain Workflow Orchestrator",
+        "Workflow Manager",
+        "Deepwork",
+        "Turboshovel",
+        "MetaGPT"
+      ],
+      "wave": [
+        "Silver Bullet",
+        "cc10x",
+        "AI-DLC",
+        "AgentHub",
+        "ATeam",
+        "Cavekit v3.1",
+        "Director",
+        "AgentSys"
+      ],
+      "vc_commercial": [
+        {
+          "label": "cc10x",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#1f3864"
+        },
+        {
+          "label": "AgentHub",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#2f5597"
+        },
+        {
+          "label": "ATeam",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#3d6fa8"
+        },
+        {
+          "label": "Cavekit v3.1",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#5b7fa6"
+        },
+        {
+          "label": "Barkain Workflow Orchestrator",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#64748b"
+        },
+        {
+          "label": "Workflow Manager",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#475569"
+        }
+      ],
+      "vc_oss": [
+        {
+          "label": "Silver Bullet",
+          "data": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#334155"
+        },
+        {
+          "label": "AI-DLC",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            3
+          ],
+          "color": "#94a3b8"
+        },
+        {
+          "label": "Director",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#1f3864"
+        },
+        {
+          "label": "AgentSys",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#2f5597"
+        }
+      ]
+    },
+    "sdlc-plugins": {
+      "mq": [
+        {
+          "label": "Oh My Pi (OMP)",
+          "q": "Leaders"
+        },
+        {
+          "label": "GSD (Get Shit Done)",
+          "q": "Leaders"
+        },
+        {
+          "label": "BMAD-METHOD",
+          "q": "Leaders"
+        },
+        {
+          "label": "Ruflo / Claude Flow",
+          "q": "Leaders"
+        },
+        {
+          "label": "Superpowers",
+          "q": "Leaders"
+        },
+        {
+          "label": "Zuvo",
+          "q": "Leaders"
+        },
+        {
+          "label": "GitHub Spec Kit",
+          "q": "Leaders"
+        },
+        {
+          "label": "SuperClaude",
+          "q": "Leaders"
+        },
+        {
+          "label": "Claude Harness",
+          "q": "Visionaries"
+        }
+      ],
+      "commercial": [],
+      "oss": [
+        "BMAD-METHOD",
+        "Claude Harness",
+        "GSD (Get Shit Done)",
+        "Oh My Pi (OMP)",
+        "Ruflo / Claude Flow",
+        "GitHub Spec Kit",
+        "SuperClaude",
+        "Superpowers",
+        "Zuvo"
+      ],
+      "leaders": [
+        "Oh My Pi (OMP)",
+        "GSD (Get Shit Done)",
+        "BMAD-METHOD",
+        "Ruflo / Claude Flow",
+        "Superpowers",
+        "Zuvo",
+        "GitHub Spec Kit",
+        "SuperClaude"
+      ],
+      "challengers": [],
+      "adjacent": [],
+      "gmq": [
+        "Oh My Pi (OMP)",
+        "GSD (Get Shit Done)",
+        "BMAD-METHOD",
+        "Ruflo / Claude Flow",
+        "Superpowers",
+        "Zuvo",
+        "GitHub Spec Kit",
+        "SuperClaude",
+        "Claude Harness"
+      ],
+      "wave": [
+        "Oh My Pi (OMP)",
+        "GSD (Get Shit Done)",
+        "BMAD-METHOD",
+        "Ruflo / Claude Flow",
+        "Superpowers",
+        "Zuvo",
+        "GitHub Spec Kit",
+        "SuperClaude"
+      ],
+      "vc_commercial": [],
+      "vc_oss": [
+        {
+          "label": "Oh My Pi (OMP)",
+          "data": [
+            5,
+            5,
+            5,
+            5,
+            5,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#1f3864"
+        },
+        {
+          "label": "GSD (Get Shit Done)",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#2f5597"
+        },
+        {
+          "label": "BMAD-METHOD",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#3d6fa8"
+        },
+        {
+          "label": "Ruflo / Claude Flow",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#5b7fa6"
+        },
+        {
+          "label": "Superpowers",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#64748b"
+        },
+        {
+          "label": "Zuvo",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#475569"
+        },
+        {
+          "label": "GitHub Spec Kit",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#334155"
+        },
+        {
+          "label": "SuperClaude",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            5,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#94a3b8"
+        },
+        {
+          "label": "Claude Harness",
+          "data": [
+            5,
+            3,
+            5,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#1f3864"
+        }
+      ]
+    },
+    "agentic-sdlc-saas": {
+      "mq": [
+        {
+          "label": "Augment Cosmos",
+          "q": "Leaders"
+        },
+        {
+          "label": "Devin",
+          "q": "Leaders"
+        },
+        {
+          "label": "Factory.ai",
+          "q": "Leaders"
+        },
+        {
+          "label": "Tembo",
+          "q": "Visionaries"
+        },
+        {
+          "label": "Magic.dev",
+          "q": "Visionaries"
+        }
+      ],
+      "commercial": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai",
+        "Magic.dev",
+        "Tembo"
+      ],
+      "oss": [],
+      "leaders": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai"
+      ],
+      "challengers": [],
+      "adjacent": [],
+      "gmq": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai",
+        "Tembo",
+        "Magic.dev"
+      ],
+      "wave": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai",
+        "Tembo",
+        "Magic.dev"
+      ],
+      "vc_commercial": [
+        {
+          "label": "Augment Cosmos",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            5,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#1f3864"
+        },
+        {
+          "label": "Devin",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            5,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#2f5597"
+        },
+        {
+          "label": "Factory.ai",
+          "data": [
+            5,
+            3,
+            5,
+            5,
+            5,
+            3,
+            3,
+            5,
+            5,
+            3
+          ],
+          "color": "#3d6fa8"
+        }
+      ],
+      "vc_oss": []
+    },
+    "rankings": [
+      "oh-my-pi",
+      "silver-bullet",
+      "gsd",
+      "bmad",
+      "augment-cosmos",
+      "devin",
+      "factory-ai",
+      "cc10x",
+      "ruflo",
+      "superpowers",
+      "zuvo",
+      "ai-dlc",
+      "spec-kit",
+      "superclaude",
+      "agenthub",
+      "ateam",
+      "cavekit-v31",
+      "director",
+      "agentsys",
+      "barkain-workflow-orchestrator",
+      "claude-harness",
+      "workflow-manager",
+      "tembo",
+      "deepwork",
+      "turboshovel",
+      "magic-dev"
+    ],
+    "vendor_urls": {
+      "Barkain Workflow Orchestrator": "https://barkain.com/",
+      "GitHub Copilot Enterprise": "https://github.com/features/copilot",
+      "Linear Agent Integrations": "https://linear.app/",
+      "GitHub Copilot Workspace": "https://githubnext.com/projects/copilot-workspace",
+      "Cursor Background Agents": "https://cursor.com/docs/background-agent",
+      "JetBrains AI Assistant": "https://www.jetbrains.com/ai/",
+      "GSD (Get Shit Done)": "https://github.com/gsd-build/get-shit-done",
+      "Ruflo / Claude Flow": "https://github.com/ruvnet/ruflo",
+      "Windsurf (Codeium)": "https://codeium.com/windsurf",
+      "Tabnine Enterprise": "https://www.tabnine.com/",
+      "Amazon Q Developer": "https://aws.amazon.com/q/developer/",
+      "LangGraph Platform": "https://www.langchain.com/langgraph",
+      "Devin (Cognition)": "https://devin.ai/",
+      "Microsoft AutoGen": "https://github.com/microsoft/autogen",
+      "Sourcegraph Cody": "https://sourcegraph.com/cody",
+      "Open Interpreter": "https://github.com/OpenInterpreter/open-interpreter",
+      "Cognition Scout": "https://cognition.ai/",
+      "GitHub Spec Kit": "https://github.com/github/spec-kit",
+      "Semantic Kernel": "https://github.com/microsoft/semantic-kernel",
+      "Claude Harness": "https://github.com/anthropics/claude-code",
+      "Silver Bullet": "https://sb.alolabs.dev/",
+      "Cavekit v3.1": "https://cavekit.ai/",
+      "Replit Agent": "https://replit.com/ai",
+      "Augment Code": "https://www.augmentcode.com/",
+      "GPT-Engineer": "https://github.com/gpt-engineer-org/gpt-engineer",
+      "Claude Code": "https://docs.anthropic.com/en/docs/claude-code/overview",
+      "BMAD-METHOD": "https://github.com/bmad-code-org/BMAD-METHOD",
+      "SuperClaude": "https://github.com/SuperClaude-Org/SuperClaude_Framework",
+      "Superpowers": "https://github.com/obra/superpowers",
+      "Factory.ai": "https://www.factory.ai/",
+      "CodeRabbit": "https://coderabbit.ai/",
+      "Superagent": "https://github.com/homanp/superagent",
+      "Magic.dev": "https://magic.dev/",
+      "Conductor": "https://conductor.build/",
+      "LangChain": "https://www.langchain.com/",
+      "OpenHands": "https://github.com/All-Hands-AI/OpenHands",
+      "SWE-agent": "https://github.com/SWE-agent/SWE-agent",
+      "PraisonAI": "https://github.com/MervinPraison/PraisonAI",
+      "AgentHub": "https://www.agenthub.ai/",
+      "AxonFlow": "https://www.axonflow.ai/",
+      "AgentSys": "https://github.com/agent-sh/agentsys",
+      "Poolside": "https://poolside.ai/",
+      "Continue": "https://github.com/continuedev/continue",
+      "AgentGPT": "https://github.com/reworkd/AgentGPT",
+      "MetaGPT": "https://github.com/FoundationAgents/MetaGPT",
+      "Cursor": "https://cursor.com/",
+      "AI-DLC": "https://github.com/awslabs/aidlc-workflows",
+      "CrewAI": "https://www.crewai.com/",
+      "Devika": "https://github.com/stitionai/devika",
+      "ATeam": "https://www.a.team/",
+      "cc10x": "https://cc10x.dev/",
+      "Tembo": "https://tembo.io/",
+      "Codex": "https://openai.com/codex/",
+      "Sweep": "https://sweep.dev/",
+      "Cline": "https://github.com/cline/cline",
+      "Aider": "https://github.com/paul-gauthier/aider",
+      "Zuvo": "https://zuvo.dev/"
+    },
+    "link_pairs": [
+      [
+        "Barkain Workflow Orchestrator",
+        "https://barkain.com/"
+      ],
+      [
+        "GitHub Copilot Enterprise",
+        "https://github.com/features/copilot"
+      ],
+      [
+        "Linear Agent Integrations",
+        "https://linear.app/"
+      ],
+      [
+        "GitHub Copilot Workspace",
+        "https://githubnext.com/projects/copilot-workspace"
+      ],
+      [
+        "Cursor Background Agents",
+        "https://cursor.com/docs/background-agent"
+      ],
+      [
+        "JetBrains AI Assistant",
+        "https://www.jetbrains.com/ai/"
+      ],
+      [
+        "GSD (Get Shit Done)",
+        "https://github.com/gsd-build/get-shit-done"
+      ],
+      [
+        "Ruflo / Claude Flow",
+        "https://github.com/ruvnet/ruflo"
+      ],
+      [
+        "Windsurf (Codeium)",
+        "https://codeium.com/windsurf"
+      ],
+      [
+        "Tabnine Enterprise",
+        "https://www.tabnine.com/"
+      ],
+      [
+        "Amazon Q Developer",
+        "https://aws.amazon.com/q/developer/"
+      ],
+      [
+        "LangGraph Platform",
+        "https://www.langchain.com/langgraph"
+      ],
+      [
+        "Devin (Cognition)",
+        "https://devin.ai/"
+      ],
+      [
+        "Microsoft AutoGen",
+        "https://github.com/microsoft/autogen"
+      ],
+      [
+        "Sourcegraph Cody",
+        "https://sourcegraph.com/cody"
+      ],
+      [
+        "Open Interpreter",
+        "https://github.com/OpenInterpreter/open-interpreter"
+      ],
+      [
+        "Cognition Scout",
+        "https://cognition.ai/"
+      ],
+      [
+        "GitHub Spec Kit",
+        "https://github.com/github/spec-kit"
+      ],
+      [
+        "Semantic Kernel",
+        "https://github.com/microsoft/semantic-kernel"
+      ],
+      [
+        "Claude Harness",
+        "https://github.com/anthropics/claude-code"
+      ],
+      [
+        "Silver Bullet",
+        "https://sb.alolabs.dev/"
+      ],
+      [
+        "Cavekit v3.1",
+        "https://cavekit.ai/"
+      ],
+      [
+        "Replit Agent",
+        "https://replit.com/ai"
+      ],
+      [
+        "Augment Code",
+        "https://www.augmentcode.com/"
+      ],
+      [
+        "GPT-Engineer",
+        "https://github.com/gpt-engineer-org/gpt-engineer"
+      ],
+      [
+        "Claude Code",
+        "https://docs.anthropic.com/en/docs/claude-code/overview"
+      ],
+      [
+        "BMAD-METHOD",
+        "https://github.com/bmad-code-org/BMAD-METHOD"
+      ],
+      [
+        "SuperClaude",
+        "https://github.com/SuperClaude-Org/SuperClaude_Framework"
+      ],
+      [
+        "Superpowers",
+        "https://github.com/obra/superpowers"
+      ],
+      [
+        "Factory.ai",
+        "https://www.factory.ai/"
+      ],
+      [
+        "CodeRabbit",
+        "https://coderabbit.ai/"
+      ],
+      [
+        "Superagent",
+        "https://github.com/homanp/superagent"
+      ],
+      [
+        "Magic.dev",
+        "https://magic.dev/"
+      ],
+      [
+        "Conductor",
+        "https://conductor.build/"
+      ],
+      [
+        "LangChain",
+        "https://www.langchain.com/"
+      ],
+      [
+        "OpenHands",
+        "https://github.com/All-Hands-AI/OpenHands"
+      ],
+      [
+        "SWE-agent",
+        "https://github.com/SWE-agent/SWE-agent"
+      ],
+      [
+        "PraisonAI",
+        "https://github.com/MervinPraison/PraisonAI"
+      ],
+      [
+        "AgentHub",
+        "https://www.agenthub.ai/"
+      ],
+      [
+        "AxonFlow",
+        "https://www.axonflow.ai/"
+      ],
+      [
+        "AgentSys",
+        "https://github.com/agent-sh/agentsys"
+      ],
+      [
+        "Poolside",
+        "https://poolside.ai/"
+      ],
+      [
+        "Continue",
+        "https://github.com/continuedev/continue"
+      ],
+      [
+        "AgentGPT",
+        "https://github.com/reworkd/AgentGPT"
+      ],
+      [
+        "MetaGPT",
+        "https://github.com/FoundationAgents/MetaGPT"
+      ],
+      [
+        "Cursor",
+        "https://cursor.com/"
+      ],
+      [
+        "AI-DLC",
+        "https://github.com/awslabs/aidlc-workflows"
+      ],
+      [
+        "CrewAI",
+        "https://www.crewai.com/"
+      ],
+      [
+        "Devika",
+        "https://github.com/stitionai/devika"
+      ],
+      [
+        "ATeam",
+        "https://www.a.team/"
+      ],
+      [
+        "cc10x",
+        "https://cc10x.dev/"
+      ],
+      [
+        "Tembo",
+        "https://tembo.io/"
+      ],
+      [
+        "Codex",
+        "https://openai.com/codex/"
+      ],
+      [
+        "Sweep",
+        "https://sweep.dev/"
+      ],
+      [
+        "Cline",
+        "https://github.com/cline/cline"
+      ],
+      [
+        "Aider",
+        "https://github.com/paul-gauthier/aider"
+      ],
+      [
+        "Zuvo",
+        "https://zuvo.dev/"
+      ]
+    ]
+  },
+  "evidence": {
+    "contentLen": 16181,
+    "markedPinned": true,
+    "hasContent": true,
+    "pageErrors": 0,
+    "cognitionScout": {
+      "scoutInSaasCore": false,
+      "scoutDom": {
+        "inText": true,
+        "adjacentNear": true,
+        "inCard": false,
+        "sectionHits": [
+          "3.3 Tertiary market: Agentic SDLC SaaS & Autonomous Delivery",
+          "3.3.1 Agentic SDLC SaaS & Autonomous Delivery — Positioning Matrix",
+          "3.3.2 Magic Quadrant — Agentic SDLC SaaS & Autonomous Delivery",
+          "3.3.3 Wave-Style Assessment — Agentic SDLC SaaS & Autonomous Delivery",
+          "3.3.4 Blue Ocean Value Curve — Agentic SDLC SaaS & Autonomous Delivery",
+          "8. Agentic SDLC SaaS & Autonomous Delivery — Top Commercial Solutions (5 core)",
+          "9. Adjacent Markets (not core peers)"
+        ]
+      }
+    },
+    "conductor": {
+      "inApoMq": false,
+      "inApoBuckets": [],
+      "inSaasMq": false,
+      "proseApoCandidate": false,
+      "proseAdjacent": true,
+      "staleApoSeedList": false,
+      "textMentions": 2
+    },
+    "harnessProfile": {
+      "profileCount": 1,
+      "apoCandidateInProfile": false,
+      "pluginsFraming": true,
+      "snip": "Overview: Claude Harness is an SDLC-plugins methodology pack (not an APO peer) — Claude Code wrapper, process enforcement, compliance layer above host, deterministic gates.\nMajor Pros:\nWorkflow composition: Supported in startup-w"
+    },
+    "cce": {
+      "cardHits": 0,
+      "inRankings": false,
+      "visibleTitles": []
+    },
+    "agentsys": {
+      "github": 23,
+      "agentsysAi": 0,
+      "awsAiDlc": 0
+    },
+    "linkAudit": {
+      "linkCount": 286,
+      "underlineCount": 0,
+      "underlineSamples": [],
+      "externalCount": 286,
+      "badRelCount": 0,
+      "badRelSamples": []
+    },
+    "overflow375": 0,
+    "navErrors": [],
+    "content375Len": 16181,
+    "hardWrongSegment": [],
+    "spotFails": []
+  },
+  "errors": []
+}

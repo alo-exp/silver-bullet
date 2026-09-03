@@ -1,0 +1,77 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "claude",
+    "effort": "high",
+    "display": "Pi Claude Opus 5 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {"id": "F-7-1", "title": "Config↔allowlist↔SKILL parity test is never required"},
+      {"id": "F-7-2", "title": "Closing --fix first-match break widens blast radius without a scope map"}
+    ],
+    "MED": [
+      {"id": "F-7-3", "title": "Locked WARNs missing a path through the D10 state mapping"},
+      {"id": "F-7-4", "title": "Non-TTY and TTY-decline give contradictory partial-write contracts"},
+      {"id": "F-7-5", "title": "Unrecognised opted-in key produces a silently green tree"},
+      {"id": "F-7-6", "title": "Registry never resolved to a single source-controlled pin file"},
+      {"id": "F-7-7", "title": "Absent keys and reconciler-state migration are undefined"},
+      {"id": "F-7-8", "title": "AC 8 conflicts with NF4 and omits plugin-command regeneration"}
+    ],
+    "LOW": [
+      {"id": "F-7-9", "title": "FAIL or WARN test-plan rows are not assertable"},
+      {"id": "F-7-10", "title": "DOCTOR_FIX_APPLIED early-return vs one-pass convergence"},
+      {"id": "F-7-11", "title": "Tests assert evidence id with no vocabulary"}
+    ],
+    "NIT": [
+      {"id": "F-7-12", "title": "Repo-root links from .planning/ and dead file targets"},
+      {"id": "F-7-13", "title": "Test-plan preamble scopes per-tool but most rows are global"}
+    ]
+  },
+  "triage": [
+    {"id": "F-7-1", "severity": "HIGH", "decision": "ACCEPT", "reason": "Session A must ship an enumeration/parity test: every recommended_tools key + derived cross_tool (+ omniroute in Phase 3) appears in RT_COMPONENT_IDS/extra-tool, registry, rt_run_component, and SKILL D10 table"},
+    {"id": "F-7-2", "severity": "HIGH", "decision": "ACCEPT", "reason": "Legacy D* mutations gated by --fix= keyword; D4/D13-D19/D21 are --fix=host; D20 export scaffold local; mutex clear host; --fix=local must not run host mutations"},
+    {"id": "F-7-3", "severity": "MED", "decision": "ACCEPT", "reason": "Generalize I-37: every locked WARN is core Health ready + named warning evidence"},
+    {"id": "F-7-4", "severity": "MED", "decision": "ACCEPT", "reason": "Confirmation unobtainable (non-TTY without SB_DOCTOR_ASSUME_YES=1 or TTY decline/EOF) means no writes for the whole --fix invocation"},
+    {"id": "F-7-5", "severity": "MED", "decision": "ACCEPT", "reason": "Opted-in unknown JSON key WARNs with key name (unknown_key); no installer; doctor exit nonzero; other components not FAIL-poisoned"},
+    {"id": "F-7-6", "severity": "MED", "decision": "ACCEPT", "reason": "hooks/lib/recommended-tools-registry.sh is the authoritative source-controlled command/version pin; never merged from project .silver-bullet.json"},
+    {"id": "F-7-7", "severity": "MED", "decision": "ACCEPT", "reason": "Absent key ≡ opted-out PASS N/A pending; do not scaffold keys; new RT_COMPONENT_IDS id with no prior state is first-run pending"},
+    {"id": "F-7-8", "severity": "MED", "decision": "ACCEPT", "reason": "AC 8 inherits NF4: generate-plugin-commands.sh when doctor-facing SKILL/command text changes; do not require run-all-tests.sh"},
+    {"id": "F-7-9", "severity": "LOW", "decision": "ACCEPT", "reason": "RTK/CM/LeanCTX min_version below pin is FAIL; Graphify skill/package skew stays WARN; Health URL without instance identity is WARN"},
+    {"id": "F-7-10", "severity": "LOW", "decision": "ACCEPT", "reason": "Convergence is one ordered pass in one invocation; DOCTOR_FIX_APPLIED set at end; no unbounded fixpoint"},
+    {"id": "F-7-11", "severity": "LOW", "decision": "ACCEPT", "reason": "Canonical evidence ids D10-<component>.<reason> including missing_cli, provider_missing, version_drift, vendor_skip, unsupported_package_manager, busy, provider_expired, unknown_key, no_five_tool_consent"},
+    {"id": "F-7-12", "severity": "NIT", "decision": "ACCEPT", "reason": "Prefix repo-root links with ../ from .planning/; do not link missing docs/TROUBLESHOOTING.md or probe-search_cli.sh as live files"},
+    {"id": "F-7-13", "severity": "NIT", "decision": "ACCEPT", "reason": "Tag test-plan rows per-tool vs global; global rows are not multiplied per tool"}
+  ],
+  "blockers": "none",
+  "highs": [
+    {"id": "F-7-1", "title": "Config↔allowlist↔SKILL parity test"},
+    {"id": "F-7-2", "title": "--fix scope eligibility map"}
+  ],
+  "mediums": [
+    {"id": "F-7-3", "title": "WARN mapping via ready + warning evidence"},
+    {"id": "F-7-4", "title": "Unified confirmation-unobtainable no-writes"},
+    {"id": "F-7-5", "title": "Unknown opted-in key WARN + nonzero"},
+    {"id": "F-7-6", "title": "Registry file is the install_commands pin"},
+    {"id": "F-7-7", "title": "Absent key ≡ pending N/A"},
+    {"id": "F-7-8", "title": "AC 8 generate-plugin-commands.sh"}
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {"id": "F-7-1", "severity": "HIGH", "title": "parity test", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-2", "severity": "HIGH", "title": "scope map", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-3", "severity": "MED", "title": "WARN mapping", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-4", "severity": "MED", "title": "confirmation unobtainable", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-5", "severity": "MED", "title": "unknown_key WARN", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-6", "severity": "MED", "title": "registry file pin", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-7", "severity": "MED", "title": "absent key pending", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-8", "severity": "MED", "title": "plugin command regen", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-9", "severity": "LOW", "title": "assertable FAIL vs WARN", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-10", "severity": "LOW", "title": "ordered-pass DOCTOR_FIX_APPLIED", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-11", "severity": "LOW", "title": "evidence-id vocabulary", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-12", "severity": "NIT", "title": ".planning/ link prefix", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-7-13", "severity": "NIT", "title": "per-tool vs global tests", "decision": "ACCEPT", "resolved": "yes"}
+  ],
+  "apply_sha": "e5cf0853236d005cb74860d95cd0c8082409f30ffe70427f6c6d55ad52b7f5ef"
+}

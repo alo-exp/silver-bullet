@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Troubleshooting — Silver Bullet Help</title>
+<meta name="description" content="Troubleshoot common Silver Bullet issues: hook failures, skill not found errors, CI gate problems, failed session recovery, configuration issues, and enforcement bypass.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-stop{background:var(--red-warn-a06);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.code-block .cmd{color:var(--green)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* ISSUE CARDS */
+.issue-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.issue-card h4{font-size:.9rem;margin-bottom:8px;color:var(--red)}
+.issue-card .ic-cause{font-size:.84rem;color:var(--text-secondary);margin-bottom:10px}
+.issue-card .ic-fix{font-size:.84rem;color:var(--text-secondary)}
+.issue-card .ic-fix strong{color:var(--green)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:200px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+/* NAV SEARCH */
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><span class="current">Troubleshooting</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/" class="active">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Troubleshooting</h1>
+    <p>Diagnose hook failures, skill discovery, CI gates, APO catalog migration issues, and session recovery for Silver Bullet v0.52.0 on Claude Code, Codex, and Cursor. If your problem is not listed, open an issue on <a href="https://github.com/alo-exp/silver-bullet/issues" style="color:var(--accent-light);text-decoration:underline">GitHub</a>.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">Common Issues</li>
+        <li><a href="#hooks">Hook Failures</a></li>
+        <li><a href="#skills">Skill Not Found</a></li>
+        <li><a href="#ci">CI Gate Issues</a></li>
+        <li class="sidebar-section">Recovery</li>
+        <li><a href="#recovery">Failed Sessions</a></li>
+        <li><a href="#config">Configuration</a></li>
+        <li><a href="#enforcement">Enforcement</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <!-- HOOK FAILURES -->
+      <h2 id="hooks">Hook Failures</h2>
+      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). As of v0.52.0, enforcement engages only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist — workspaces without <code>/silver:init</code> receive no gates. Start with <code>/silver:doctor</code> or <code>bash scripts/sb-doctor.sh</code> for host-aware install/activation checks; use <code>bash scripts/sb-diagnostics.sh</code> for capability tier and hook config status.</p>
+
+      <div class="issue-card">
+        <h4>Hooks never engage on a fresh clone</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The v0.52.0 hook activation guard requires both <code>silver-bullet.md</code> and <code>.silver-bullet.json</code>. Cloning a repo without running init leaves enforcement inactive by design.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> in the project root. Re-run <code>bash scripts/sb-diagnostics.sh</code> and confirm tier 2 (hook-enforced) on Cursor/Codex/Claude when hooks are merged.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Cursor hooks not merged</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>~/.cursor/hooks.json</code> does not include SB entries, or install used an old checkout path.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>bash scripts/install-cursor.sh --public-release</code>, then <code>bash scripts/sb-diagnostics.sh</code>. Expect tier 2 (hook-enforced) when hooks are present.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Low capability tier (guidance-only)</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Host session lacks hook delivery (tier 0) or skill markers are not recording (tier 1).</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install from the public marketplace for your host, run <code>/silver:init</code>, and use explicit <code>/silver</code> or Skill-tool invocation so <code>record-skill</code> can write state.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"jq: command not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>jq</code> JSON processor is not installed. Most hooks use <code>jq</code> to read <code>.silver-bullet.json</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install jq: <code>brew install jq</code> (macOS) or <code>apt install jq</code> (Linux).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Permission denied" on hook scripts</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Hook shell scripts lost their executable permission, often after a git clone on certain filesystems.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>chmod +x hooks/*.sh hooks/session-start</code> from the plugin cache directory (usually <code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-exp/silver-bullet/hooks/</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Hooks not firing at all</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet was not initialized in this project, or <code>.silver-bullet.json</code> is missing from the project root.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> in your project. This creates the config file and activates enforcement.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Compliance status shows wrong progress</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The state file at <code>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state</code> may be stale from a previous session.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Delete the state file: <code>rm ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state</code>. It will be recreated on the next skill invocation.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- SKILL NOT FOUND -->
+      <h2 id="skills">Skill Not Found</h2>
+      <p>When the runtime cannot find a skill, the workflow cannot proceed. Silver Bullet enforces that missing skills are reported immediately rather than silently skipped.</p>
+
+      <div class="issue-card">
+        <h4>"External review helper requested"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external review-helper request was made, or an older project still references an obsolete helper name.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use the Silver Bullet equivalent (<code>silver:review-request</code>, <code>silver:review-triage</code>, <code>silver:completion-audit</code>, <code>silver:branch-finish</code>, or <code>tdd</code>) unless you explicitly want supplemental external tooling.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Engineering plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external Engineering plugin request was made, or an older workflow still references old knowledge-work skill names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use quality gates for docs, testing, release, and DevOps readiness unless you explicitly want the external plugin as supplemental tooling.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Design plugin not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external Design plugin request was made, or an older workflow still references old design helper names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:ui-contract</code>, <code>silver:ui-review</code>, and <code>review-design</code> for UI/design checks unless you explicitly want supplemental external design review.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Legacy Product Management command requested"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external product-management request was made, or an older workflow still references old PM helper names.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:clarify</code>, <code>silver:spec</code>, and <code>silver:deep-research</code> for product framing and research synthesis unless you explicitly want supplemental external PM tooling.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"External lifecycle command not found"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> An explicit external lifecycle command was requested, or an older project still has direct references to retired helper commands.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/silver</code> or lifecycle skills. Install supplemental tooling only when the selected workflow explicitly needs it.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"Graphify is not installed"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet uses Graphify for project-memory retrieval before planning, editing, debugging, review, and shipping.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install it with <code>uv tool install graphifyy</code> or <code>python3.12 -m pip install graphifyy</code>, then rerun <code>/silver:init</code>. See <a href="../concepts/documentation.html#graphify-retrieval">Graphify Retrieval</a> for query and fallback behavior.</p>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Skill discovery:</strong> At the start of each workflow phase, Silver Bullet scans <code>${SB_RUNTIME_HOME_ROOT}/skills/</code> and <code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> to find all available skills. If a skill was recently installed, start a new session for it to be discovered.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CI GATE ISSUES -->
+      <h2 id="ci">CI Gate Issues</h2>
+      <p>The CI gate hook (<code>ci-status-check.sh</code>) blocks deployment when CI is failing. This is a hard stop by design.</p>
+
+      <div class="issue-card">
+        <h4>CI check blocks push but CI is actually green</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The hook checks GitHub Actions via <code>gh run list</code>. If <code>gh</code> is not authenticated or not installed, the check may fail.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Ensure GitHub CLI is installed (<code>brew install gh</code>) and authenticated (<code>gh auth login</code>). On macOS, use <code>/opt/homebrew/bin/gh</code> if the bare <code>gh</code> command fails.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>CI is red and Silver Bullet won't let me proceed</h4>
+        <p class="ic-cause"><strong>Cause:</strong> This is intentional. The CI gate emits a hard stop (<code>decision: "block"</code>) when CI is failing.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/silver:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>No CI workflow exists yet</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The project does not have a <code>.github/workflows/ci.yml</code> file. The CI hook gracefully skips when no CI is configured.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> which auto-generates a CI workflow based on your tech stack (Node, Python, Go, Rust, and 8 more).</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- RECOVERY -->
+      <h2 id="recovery">Recovery from Failed Sessions</h2>
+      <p>When a session crashes, times out, or is abandoned, use these steps to recover.</p>
+
+      <div class="issue-card">
+        <h4>Session timed out or was interrupted</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Context window exhaustion, network interruption, or the autonomous mode timeout sentinel fired.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Start a new session and ask <code>/silver</code> for current status or inspect <code>.planning/workflows/</code> and <code>.planning/STATE.md</code>. Then use <code>/silver:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Verification failed and I'm stuck in a loop</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:verify</code> failed and the workflow is retrying execute + verify repeatedly.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/silver:forensics</code> for session/workflow failures or <code>/silver:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design, return to <code>/silver:context</code> or <code>/silver:plan</code> rather than re-executing.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>.planning/ directory is corrupted or missing files</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Manual edits to planning files, or a merge conflict left files in a bad state.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>/silver:forensics</code> to diagnose the current state. If unrecoverable, restore or archive the bad phase-specific files and re-run the phase from <code>/silver:context</code> and <code>/silver:plan</code>.</p>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Session logs:</strong> Every session writes a log to <code>docs/sessions/YYYY-MM-DD-task-slug.md</code>. Check recent session logs to understand what happened before the failure.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- CONFIGURATION -->
+      <h2 id="config">Configuration Issues</h2>
+      <p>Most configuration problems stem from <code>.silver-bullet.json</code> being outdated or having incorrect values.</p>
+
+      <div class="issue-card">
+        <h4>Wrong files triggering enforcement</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>src_pattern</code> in <code>.silver-bullet.json</code> does not match your project structure. Default is <code>/src/</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Edit <code>.silver-bullet.json</code> and change <code>src_pattern</code> to match your source directory (e.g., <code>/app/</code>, <code>/lib/</code>, <code>/packages/</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Test files triggering enforcement</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>src_exclude_pattern</code> does not match your test file naming convention.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Edit <code>.silver-bullet.json</code> and update <code>src_exclude_pattern</code>. Default is <code>__tests__|\.test\.</code>. Add your patterns with pipe separators (e.g., <code>__tests__|\.test\.|\.spec\.</code>).</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Config is outdated (old skill names, wrong version)</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The <code>.silver-bullet.json</code> was created by an older version and has not been regenerated.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:update</code> or re-run <code>/silver:init</code> to refresh config to v0.52.0. For catalog drift, regenerate views with <code>python3 scripts/generate-apo-artifacts.py</code> in the SB repo and verify <code>docs/apo-catalog.json</code> is the source of truth — use <code>AF-*</code>/<code>WF-*</code> IDs, not legacy FLOW names, in new workflow docs.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Project instruction file conflicts with project instructions</h4>
+        <p class="ic-cause"><strong>Cause:</strong> Silver Bullet's host project instruction file may override or conflict with your existing project instructions.</p>
+        <p class="ic-fix"><strong>Fix:</strong> During <code>/silver:init</code> setup, choose <strong>Append</strong> mode for existing projects. This adds Silver Bullet rules below your existing instructions. Both sets of rules will be active.</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- ENFORCEMENT -->
+      <h2 id="enforcement">Understanding Enforcement</h2>
+      <p>Silver Bullet's enforcement is designed to be strict. Here is how to work with it, not against it.</p>
+
+      <div class="issue-card">
+        <h4>"HARD STOP — Planning incomplete"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You are editing source files before completing quality gates. The stage enforcer hook blocks this.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:quality-gates</code> for software work, or <code>/silver:blast-radius</code> plus <code>/devops-quality-gates</code> for DevOps/IaC work before editing source code.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"COMPLETION BLOCKED — Workflow incomplete"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You are trying to create a PR, deploy, or create a release before completing all required workflow steps.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing SB skill explicitly, or ask <code>/silver</code> for the next required workflow step.</p>
+        <p class="ic-fix"><strong>Note on commits vs releases:</strong> Enforcement uses two tiers. <code>git commit</code> and <code>git push</code> only require quality gates to have run. <code>gh pr create</code>, deploys, and releases require the full required skill list. If commits work but release is blocked, that's expected — you haven't completed the full workflow yet.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>"silver:branch-finish blocked on main"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:branch-finish</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> This step is automatically skipped when you're on <code>main</code> or <code>master</code>. If enforcement is still blocking, verify your branch name with <code>git branch --show-current</code>.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Compliance status shows wrong progress after switching branches</h4>
+        <p class="ic-cause"><strong>Cause:</strong> The session state file is branch-scoped and resets when you switch branches. Skills recorded on the previous branch don't carry over.</p>
+        <p class="ic-fix"><strong>Fix:</strong> This is expected behaviour — each branch tracks its own workflow progress independently. Start a new session on the new branch and run the required skills for that branch's work.</p>
+      </div>
+
+      <div class="issue-card">
+        <h4>Using the fast path for small changes</h4>
+        <p class="ic-cause"><strong>Cause:</strong> You need to make a small or bounded fix without running the full composed workflow.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as Tier 1 lightweight work, Tier 2 bounded work, or Tier 3 escalation to <code>silver:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Do not abuse the fast path.</strong> It exists for genuinely small or bounded work, not as a shortcut for skipping review. If the change becomes cross-cutting or risky, let the escalation happen.</div>
+      </div>
+
+      <!-- PAGE NAV -->
+      <div class="page-nav-bottom">
+        <a href="../reference/">
+          <span class="pnb-label">Previous</span>
+          <span class="pnb-title">Reference</span>
+        </a>
+        <a href="../getting-started/" style="text-align:right">
+          <span class="pnb-label">Start Over</span>
+          <span class="pnb-title">Getting Started</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

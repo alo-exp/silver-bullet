@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>/silver:test — Test Hardening Workflow — Silver Bullet Help</title>
+<meta name="description" content="WF-SILVER-TEST: plan test coverage gaps, execute hardening, verify — AF-PLAN → AF-EXECUTE → AF-VERIFY from the v0.52.0 APO catalog.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.4rem;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:test</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>/silver:test</h1>
+    <p>Specialized test hardening workflow — plan coverage gaps, execute new tests and fixtures, verify the suite meets acceptance criteria.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On This Page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./silver-refactor.html">/silver:refactor</a></li>
+        <li><a href="./silver-validate.html">/silver:validate</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:test</code> is the Silver Bullet orchestrator for <strong>test hardening</strong> — closing coverage gaps, adding regression tests, improving fixture quality, and raising confidence in existing code without feature changes. It maps to catalog entity <code>WF-SILVER-TEST</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p>This workflow is lean by design: plan the gap closure, execute test additions, verify the suite. It omits post-execution ship gates because test-only work typically ships through the normal PR flow without a dedicated deploy step.</p>
+      <p>Standard composition:</p>
+      <div class="code-block">AF-PLAN → AF-EXECUTE → AF-VERIFY</div>
+      <p>For feature work where tests are part of a larger delivery, use <a href="./silver-feature.html"><code>/silver:feature</code></a>. For structural code changes with full ship gates, use <a href="./silver-refactor.html"><code>/silver:refactor</code></a>.</p>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>TDD lives inside <code>AF-EXECUTE</code>.</strong> When test hardening requires red-green-refactor cycles, execution follows TDD discipline within the execute atom — the workflow does not add a separate TDD atomic flow.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to Use</h2>
+      <p>Entry trigger signals for <code>/silver:test</code>, <code>test</code>, and <code>test hardening</code>:</p>
+      <ul>
+        <li>Coverage gaps flagged by CI or quality gates</li>
+        <li>Missing regression tests after a production incident</li>
+        <li>Flaky test stabilization and fixture improvements</li>
+        <li>Test suite expansion for untested modules or edge cases</li>
+        <li>Pre-release hardening sprint focused solely on test quality</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="composition">Catalog Composition</h2>
+      <table class="ref-table">
+        <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
+        <tbody>
+          <tr><td><code>AF-PLAN</code></td><td><code>/silver:plan</code></td><td>Coverage gap analysis, test plan with prioritized cases and acceptance criteria</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td><code>/silver:execute</code></td><td>New tests, fixtures, mocks, and CI configuration changes</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Full suite pass, coverage delta evidence, flake checks</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Workflow Steps</h2>
+
+      <h3><code>AF-PLAN</code> — Map coverage gaps</h3>
+      <p>Identifies untested paths from coverage reports, incident postmortems, or spec acceptance criteria. Produces a prioritized test plan with explicit pass/fail targets.</p>
+
+      <h3><code>AF-EXECUTE</code> — Implement tests</h3>
+      <p>Writes unit, integration, or end-to-end tests. May add fixtures, test helpers, and CI pipeline steps. Follows project test conventions and TDD where applicable.</p>
+
+      <h3><code>AF-VERIFY</code> — Confirm suite health</h3>
+      <p>Runs the full test suite, confirms coverage targets met, and documents evidence. Flaky tests must be stabilized or quarantined with tracked follow-ups.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example Invocation</h2>
+      <div class="code-block">/silver:test Add integration tests for the payment webhook retry path — coverage is at 42%</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-TEST</code>. Planning maps the retry path and edge cases. Execution adds integration tests with realistic fixtures. Verification confirms suite pass and coverage above the stated threshold.</p>
+
+      <div class="page-nav-bottom">
+        <a href="./silver-canary.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:canary</span>
+        </a>
+        <a href="./silver-refactor.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:refactor</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

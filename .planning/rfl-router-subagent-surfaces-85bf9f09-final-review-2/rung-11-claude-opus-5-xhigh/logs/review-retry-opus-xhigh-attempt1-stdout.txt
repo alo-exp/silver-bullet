@@ -1,0 +1,25 @@
+Rung 11/11 complete. Freeze untouched (git shows only the untracked rung folder).
+
+## Summary
+
+**Freeze gate** — independently re-hashed all three copies with `hashlib.sha256` at review start **and** immediately before writing, plus once after:
+
+| Copy | SHA-256 | Bytes |
+|---|---|---|
+| repo working tree | `1e3c9866…6ed27b13` | 653189 |
+| `~/.cursor/plans/…` | `1e3c9866…6ed27b13` | 653189 |
+| `git show HEAD:…` | `1e3c9866…6ed27b13` | 653189 |
+
+All **MATCH** expected, no split. Blob OID `024d305b`. (Recorded, not filed: live HEAD is `2562d11c`, a memory-auto-snapshot descendant of `81560474`; it doesn't touch the freeze path.)
+
+**Output** — `./review.md`, 29160 bytes, first line exactly `# Pi claude/claude-opus-5-xhigh`, ends **NOT CLEAN**. `review-grok-substitute.md` untouched.
+
+**Verdict: NOT CLEAN — HIGH none · MED 2 · LOW 5 · NIT 4**
+
+Both MEDs are *residue the panel purge left behind* (new contradictions after rung-10, not re-files):
+- **M1** (L981) — `KR-panel-public-trio-only` lost the subject of its "Not a live command." sentence during the purge; the only remaining antecedent is `/sb:panel-start is the sitting body`, so the canonical KEEP REJECT now reads as the inverse of the trio lock it enforces.
+- **M2** (L981 → L3552/L3687/L3795/L4304) — the ship-blocking `test-panel-public-trio-only.sh` is specified as a denylist against "a pre-panel one-off public alias", a description with 0 occurrences by design, so it can't be written as stated.
+
+All **eight mandated surfaces PASS**, including the Grok 4.6 High unspecified default (not XHigh), the live panel trio + panel-end fork logic across four agreeing sites, Ladder-as-default, FAST-not-a-Job with the rung-8 H1 qualification intact, and the ship order. Structural audit: 0 broken anchors of 295, `ws0--ws0b` = 0, 1 mermaid, 35 todos all pending with Appendix B set-equal, §2.3 ≡ Appendix D byte-identical. Correctly **not** filed: rung-10 N1, GFM `--`, the F-2 HOLD, the purge itself.
+
+`graphify update .` run and the full finding set saved to agentmemory via `memory_save` (MCP). No APPLY, Policy C, verify, commit, clarify, or model remap.

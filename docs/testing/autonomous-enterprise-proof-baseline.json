@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "description": "Conservative proof-level baseline for autonomous enterprise vision claims (Phase 0). Regenerated status: .planning/enterprise-e2e/CERTIFICATION-STATUS.json",
+  "vision_doc": "docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md",
+  "status_artifact": ".planning/enterprise-e2e/CERTIFICATION-STATUS.json",
+  "proof_levels": {
+    "shipped": "Catalog, hooks, skills, and docs exist in repo",
+    "structurally_tested": "CI structural / dry-run harness passes without live TUI",
+    "live_e2e_partial": "Some live matrix rows with outcome pass; not release-grade strict-clean",
+    "live_e2e_proven": "Canonical host ledger 22/22 strict-clean + §5b product audit where required",
+    "planned": "Designed or catalog-only; runtime integration tests pending",
+    "future": "Research / not started"
+  },
+  "vision_claims": [
+    {
+      "id": "apo-catalog-authority",
+      "summary": "APO catalog as sole composition authority (22 WF, 27 AF)",
+      "proof_level": "shipped",
+      "evidence": ["docs/apo-catalog.json", "validate-apo-catalog"]
+    },
+    {
+      "id": "parent-only-orchestrator",
+      "summary": "Parent orchestrator never implements; workers execute",
+      "proof_level": "structurally_tested",
+      "evidence": ["docs/ORCHESTRATOR.md", "orchestrator-directive-guard", "OUT-ORCH-01 blocking"]
+    },
+    {
+      "id": "hook-enforced-lifecycle",
+      "summary": "Hooks block unsafe commits, PRs, releases until evidence exists",
+      "proof_level": "structurally_tested",
+      "evidence": ["hook-unit-tests", "completion-audit", "OUT-HOOK-01"]
+    },
+    {
+      "id": "autonomous-session-mode",
+      "summary": "Autonomous mode with anti-stall and locked-decision-only prompts",
+      "proof_level": "live_e2e_partial",
+      "evidence": ["OUT-AUTO-01", "OUT-NOOP-01", "OUT-CLARIFY-01 blocking"],
+      "notes": "Proven on fixture rows; not cold-start enterprise scale"
+    },
+    {
+      "id": "tri-host-parity",
+      "summary": "Claude, Codex, Cursor enterprise E2E certification parity",
+      "proof_level": "live_e2e_partial",
+      "evidence": ["host-certification-sources.json", "CERTIFICATION-STATUS.json"],
+      "notes": "Cursor + Codex have canonical strict-clean rounds; Claude R9 smoke 6/22 only"
+    },
+    {
+      "id": "parallel-dag-scheduling",
+      "summary": "Catalog describes parallel AF execution with join gates",
+      "proof_level": "planned",
+      "evidence": ["docs/apo-catalog.json", "hooks/lib/orchestrator-scheduler.sh", "tests/scripts/test-parallel-scheduling-safety.sh"],
+      "notes": "Fixture runtime: batch plan, dispatch, join gates, flow_queue defer; production host parallel Task dispatch partial"
+    },
+    {
+      "id": "durable-orchestration-replay",
+      "summary": "Retries, sagas, replay across sessions",
+      "proof_level": "future",
+      "evidence": ["SB_CONSOLIDATED_PRIOR_ART_REPORT.md §8"]
+    },
+    {
+      "id": "default-autonomous-onboarding",
+      "summary": "Autonomous enterprise onboarding as default safe path",
+      "proof_level": "planned",
+      "evidence": ["silver-bullet.md §4", "first-hour-block-pr claim backlog V-01"]
+    },
+    {
+      "id": "enterprise-trust-surface",
+      "summary": "Customer-facing certification and evidence export",
+      "proof_level": "structurally_tested",
+      "evidence": ["scripts/enterprise-e2e-certification-status.sh", "ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md"],
+      "notes": "Internal baseline generator; public help page deferred until claims clean"
+    },
+    {
+      "id": "cold-start-autonomy",
+      "summary": "Vague prompt to shipped app without operator babysitting",
+      "proof_level": "live_e2e_partial",
+      "evidence": ["ENTERPRISE-E2E-EFFECTIVENESS-PLAN.md §1"],
+      "notes": "Early rounds required heavy operator intervention; improving on Cursor/Codex tracks"
+    },
+    {
+      "id": "monitor-ledger-integrity",
+      "summary": "Monitor and ledger reconcile must agree before COMPLETE",
+      "proof_level": "structurally_tested",
+      "evidence": ["scripts/monitor-enterprise-e2e-matrix.sh", "OUT-MEASURE-01 blocking", "enterprise-e2e-ledger-reconcile.sh"]
+    },
+    {
+      "id": "agent-claude-autonomous-vision-matrix",
+      "summary": "Agent-Claude autonomous vision minimal matrix (3 rows via /silver:agent-claude)",
+      "proof_level": "live_e2e_proven",
+      "evidence": [
+        ".planning/agent-claude-autonomous/MATRIX-LEDGER.json",
+        ".planning/agent-claude-autonomous/MATRIX.json",
+        "scripts/agent-claude-autonomous-test.sh",
+        "docs/testing/host-certification-sources.json"
+      ],
+      "notes": "3/3 PASS (AUTO-C01/C02/C03) on install_fp claude@609ee0a1812c+2717f916398e; scoped track only — not 22/22 enterprise matrix; does not upgrade claude tri-host or public_autonomous_enterprise_claim_ready"
+    },
+    {
+      "id": "minimal-intent-e2e-mi01",
+      "summary": "Minimal vision paragraph → full dev lifecycle via Cursor parent orchestrator (/silver:feature)",
+      "proof_level": "live_e2e_proven",
+      "evidence": [
+        ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",
+        ".planning/minimal-intent-e2e/MATRIX.json",
+        ".planning/minimal-intent-e2e/runs/20260705T175518Z-MI-01/result.md",
+        "scripts/minimal-intent-autonomous-e2e.sh",
+        "docs/testing/host-certification-sources.json"
+      ],
+      "notes": "1/1 PASS (MI-01) on install_fp claude@e2da8f2bf9a5+2717f916398e; 6 Task workers, 0 parent inline edits, PR #26 on enterprise-grade-test-app; scoped track only — not 22/22 enterprise matrix; does not upgrade tri-host or public_autonomous_enterprise_claim_ready"
+    }
+  ]
+}

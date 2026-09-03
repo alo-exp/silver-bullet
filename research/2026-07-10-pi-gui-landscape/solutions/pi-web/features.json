@@ -1,0 +1,36 @@
+{
+  "solution_name": "PI WEB",
+  "license": "oss",
+  "categories": [
+    {
+      "name": "Pi integration",
+      "features": [
+        {"name": "pi-coding-agent peer dependency", "supported": true, "evidence_ids": ["E006"]},
+        {"name": "Pi package registry install", "supported": true, "evidence_ids": ["E006"]}
+      ]
+    },
+    {
+      "name": "GUI surface",
+      "features": [
+        {"name": "Browser web UI", "supported": true, "evidence_ids": ["E004"]},
+        {"name": "File browser and terminals in UI", "supported": true, "evidence_ids": ["E004"]}
+      ]
+    },
+    {
+      "name": "Workflow",
+      "features": [
+        {"name": "Sessions persist after browser disconnect", "supported": true, "evidence_ids": ["E004"]},
+        {"name": "Git worktrees", "supported": true, "evidence_ids": ["E004"]},
+        {"name": "Remote machine supervision", "supported": true, "evidence_ids": ["E005"]},
+        {"name": "Multi-agent orchestration", "supported": false, "evidence_ids": []}
+      ]
+    },
+    {
+      "name": "Platform",
+      "features": [
+        {"name": "Multi-device browser access", "supported": true, "evidence_ids": ["E005"]},
+        {"name": "Native desktop app", "supported": false, "evidence_ids": []}
+      ]
+    }
+  ]
+}

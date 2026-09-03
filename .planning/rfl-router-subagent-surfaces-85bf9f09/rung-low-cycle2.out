@@ -1,0 +1,15 @@
+## VERDICT
+NEEDS_FIXES
+
+## FINDINGS
+
+1. **Baseline admission still binds V-only (material contract hole)** — [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](.planning/router_subagent_surfaces_85bf9f09.plan.md) L64 requires baseline admission to bind “current non-superseded two-clean **V-loop** receipts” (+ final-validation / no unresolved defect) but does **not** bind two-clean **A-loop** receipts or “no open Advisor findings.” That contradicts:
+   - revalidation at L74 (`no open Advisor findings` + `A-loop two-clean then V-loop two-clean`)
+   - ordinary delivery SM at L174 (`i_*` → `a_*` → `v_*`, never enter V with open Advisor findings)
+   - Clarify Q10′ / universal I→A→V ([clarify brief](.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md))
+   
+   An implementer can fail-closed-admit iterate baseline on V-only evidence while every adjacent gate already requires A-before-V. Cycle-1 applied `F-iterate-completion-A` but left this baseline-admission binding incomplete.
+
+## SUMMARY
+
+Cycle-1 F-1..F-10 are present and consistent (migration I/A/V + `a_loop_not_applicable`, revalidation A-before-V, §5 I→A→V + post-verify K/L, ALP-01/KLW-01, `authorizer_contiguous_watermark`, toolstack table, APO catalog pin, dated clarify authority path, ordinary delivery SM, OpenCode deferred deny/skip receipt, byte-identical Q2 mirror `cmp` OK / SHA-256 `79d7f22d…`). One material blocker remains: iterate **baseline admission** still omits A-loop / no-open-Advisor binding that the rest of the contract already mandates.

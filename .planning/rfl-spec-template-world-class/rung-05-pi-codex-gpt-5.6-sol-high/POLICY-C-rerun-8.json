@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 8)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R5h-F01",
+        "title": "Cross-version ID non-reuse is promised but has no persisted state or retirement contract"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5h-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Named mechanism: tombstone list (id-tombstones). Persist retired IDs in SPEC YAML. QC-13/QC-12 fail reissue. Step 7 sequential next-free skips tombstones. Fixtures: retired AC-03 reissued; retired EX-nn reissued; preserve-still-present; mint after retire skips the hole."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R5h-F01",
+      "title": "Cross-version ID non-reuse is promised but has no persisted state or retirement contract"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5h-F01",
+      "severity": "MED",
+      "title": "Cross-version ID non-reuse is promised but has no persisted state or retirement contract",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "0ec9824d6c57462fe27fd8944f65ee78ad98a4fa5aca969dad971e3abcfb142f"
+}

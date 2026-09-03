@@ -1,0 +1,158 @@
+{
+  "fileUrl": "file:///Users/shafqat/.cursor/worktrees/repo/3ht3/research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.html",
+  "pass": true,
+  "checks": {
+    "hasContent": true,
+    "markedPinned": true,
+    "noAgentsysAi": true,
+    "hasAgentSysGithub": true,
+    "noAwsAiDlc": true,
+    "noDeepworkAi": true,
+    "hasMetaGPT": true,
+    "hasClaudeHarness": true,
+    "noHarnessApoCandidate": true,
+    "saasSectionMentionsFactory": true,
+    "underlines": 0,
+    "overflow375": 0,
+    "noCursorInSaasMq": true,
+    "metaGptInApoMq": true,
+    "harnessInPluginsOss": true,
+    "noClaudeCodeExpertInRankings": true,
+    "pageErrors": 0
+  },
+  "errors": [],
+  "screenshots": [
+    "AFTER-1280.png",
+    "AFTER-375.png",
+    "AFTER-dark-1280.png"
+  ],
+  "membership": {
+    "apo": {
+      "mq": [
+        "Silver Bullet:Leaders",
+        "cc10x:Leaders",
+        "AI-DLC:Leaders",
+        "AgentHub:Leaders",
+        "ATeam:Leaders",
+        "Cavekit v3.1:Visionaries",
+        "Director:Visionaries",
+        "AgentSys:Leaders",
+        "Barkain Workflow Orchestrator:Visionaries",
+        "Workflow Manager:Visionaries",
+        "Deepwork:Visionaries",
+        "Turboshovel:Visionaries",
+        "MetaGPT:Niche Players"
+      ],
+      "commercial": [
+        "AgentHub",
+        "ATeam",
+        "Barkain Workflow Orchestrator",
+        "Cavekit v3.1",
+        "cc10x",
+        "Deepwork",
+        "Turboshovel",
+        "Workflow Manager"
+      ],
+      "oss": [
+        "AgentSys",
+        "AI-DLC",
+        "Director",
+        "MetaGPT",
+        "Silver Bullet"
+      ],
+      "leaders": [
+        "Silver Bullet",
+        "cc10x",
+        "AI-DLC",
+        "AgentHub",
+        "ATeam",
+        "AgentSys"
+      ]
+    },
+    "sdlc-plugins": {
+      "mq": [
+        "Oh My Pi (OMP):Leaders",
+        "GSD (Get Shit Done):Leaders",
+        "BMAD-METHOD:Leaders",
+        "Ruflo / Claude Flow:Leaders",
+        "Superpowers:Leaders",
+        "Zuvo:Leaders",
+        "GitHub Spec Kit:Leaders",
+        "SuperClaude:Leaders",
+        "Claude Harness:Visionaries"
+      ],
+      "commercial": [],
+      "oss": [
+        "BMAD-METHOD",
+        "Claude Harness",
+        "GSD (Get Shit Done)",
+        "Oh My Pi (OMP)",
+        "Ruflo / Claude Flow",
+        "GitHub Spec Kit",
+        "SuperClaude",
+        "Superpowers",
+        "Zuvo"
+      ],
+      "leaders": [
+        "Oh My Pi (OMP)",
+        "GSD (Get Shit Done)",
+        "BMAD-METHOD",
+        "Ruflo / Claude Flow",
+        "Superpowers",
+        "Zuvo",
+        "GitHub Spec Kit",
+        "SuperClaude"
+      ]
+    },
+    "agentic-sdlc-saas": {
+      "mq": [
+        "Augment Cosmos:Leaders",
+        "Devin:Leaders",
+        "Factory.ai:Leaders",
+        "Tembo:Visionaries",
+        "Magic.dev:Visionaries"
+      ],
+      "commercial": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai",
+        "Magic.dev",
+        "Tembo"
+      ],
+      "oss": [],
+      "leaders": [
+        "Augment Cosmos",
+        "Devin",
+        "Factory.ai"
+      ]
+    },
+    "rankings": [
+      "oh-my-pi",
+      "silver-bullet",
+      "gsd",
+      "bmad",
+      "augment-cosmos",
+      "devin",
+      "factory-ai",
+      "cc10x",
+      "ruflo",
+      "superpowers",
+      "zuvo",
+      "ai-dlc",
+      "spec-kit",
+      "superclaude",
+      "agenthub",
+      "ateam",
+      "cavekit-v31",
+      "director",
+      "agentsys",
+      "barkain-workflow-orchestrator",
+      "claude-harness",
+      "workflow-manager",
+      "tembo",
+      "deepwork",
+      "turboshovel",
+      "magic-dev"
+    ]
+  }
+}

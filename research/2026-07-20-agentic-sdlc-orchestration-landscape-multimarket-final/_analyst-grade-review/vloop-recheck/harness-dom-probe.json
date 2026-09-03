@@ -1,0 +1,14 @@
+{
+  "apoCandidateExact": false,
+  "apoCandidateLoose": false,
+  "harnessSnips": [
+    "Claude Harness  Radar of Key Competitive Factors for Magic Quadrant Leaders (top-right) only.  3.3 Tertiary market: Agentic SDLC SaaS & Autonomous Delivery 3.3.1 Agentic SDLC SaaS & Autonomous Delivery — Positionin",
+    "Claude Harness G GSD O Oh My Pi R Ruflo / Claude Flow G GitHub Spec Kit S SuperClaude S Superpowers Z Zuvo 8. Agentic SDLC SaaS & Autonomous Delivery — Top Commercial Solutions (5 core) A Augment Cosmos D Devin F F"
+  ],
+  "conductorSnips": [
+    "Conductor (conductor) — pack adjacent_seed\nCrewAI (crewai) — pack adjacent_seed\nCursor (cursor) — pack adjacent_seed\nGitHub Copilot (github-copilot) — pack adjacent_seed\nLangChain (langchai",
+    "Conductor is a SaaS-adjacent coding-agent aggregator (parallel Claude Code/Codex worktrees), not an APO peer.\nCompare selected solutions\n\nSelect at least 2 solutions using the checkboxes on"
+  ],
+  "pluginsSectionHasHarness": true,
+  "apoSectionHasHarnessCard": false
+}

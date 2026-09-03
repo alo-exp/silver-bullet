@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 17)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AF1", "title": "§4.1/§5/§8.1/§8.4 clear() delete-set rosters omit future qN_*"}
+    ]
+  },
+  "triage": [
+    {"id": "AF1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; five unfiled delete-set sites omit future qN_* locked in §6.3/§6.12/L85; not a duplicate of I-10/I-36 (different sites); no product-lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AF1", "severity": "NIT", "title": "§4.1/§5/§8.1/§8.4/§8.4-L781 clear() delete-set rosters include future qN_*", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

@@ -1,0 +1,630 @@
+{
+  "config_version": "0.52.0",
+  "version": "0.50.0",
+  "sb_initiated": true,
+  "sb_enforcement_tier": 2,
+  "orchestrator_mode": "parent",
+  "project": {
+    "name": "silver-bullet",
+    "src_pattern": "/hooks/|/skills/|/templates/",
+    "src_exclude_pattern": "__tests__|\\.test\\.",
+    "active_workflow": "full-dev-cycle"
+  },
+  "skills": {
+    "required_planning": [
+      "silver-quality-gates",
+      "silver-context",
+      "silver-plan"
+    ],
+    "required_planning_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "silver-context",
+      "silver-plan"
+    ],
+    "required_deploy": [
+      "silver-quality-gates",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
+      "silver-review",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "silver-review-request",
+      "silver-review-triage",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "tdd",
+      "verify-tests"
+    ],
+    "required_release": [
+      "silver-create-release"
+    ],
+    "required_deploy_devops": [
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
+      "silver-review",
+      "security",
+      "silver-secure",
+      "silver-validate",
+      "silver-review-request",
+      "silver-review-triage",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "verify-tests"
+    ],
+    "required_release_devops": [
+      "silver-create-release"
+    ],
+    "all_tracked": [
+      "silver-quality-gates",
+      "silver-quality-gates-design",
+      "silver-quality-gates-adversarial",
+      "silver-domain-audit",
+      "silver-blast-radius",
+      "devops-quality-gates",
+      "devops-skill-router",
+      "tdd",
+      "silver-create-release",
+      "verify-tests",
+      "modularity",
+      "reusability",
+      "scalability",
+      "security",
+      "reliability",
+      "usability",
+      "testability",
+      "extensibility",
+      "silver-bugfix",
+      "silver-clarify",
+      "silver-devops",
+      "silver-deploy",
+      "silver-canary",
+      "silver-fast",
+      "silver-feature",
+      "silver-forensics",
+      "silver-handoff",
+      "silver-ingest",
+      "silver-incident",
+      "silver-migrate",
+      "silver-release",
+      "silver-deep-research",
+      "silver-retro",
+      "silver-refactor",
+      "silver-worktree",
+      "silver-test",
+      "silver-benchmark",
+      "silver-content",
+      "silver-review-stats",
+      "silver-spec",
+      "silver-ui",
+      "silver-update",
+      "silver-validate",
+      "silver-add",
+      "silver-init",
+      "silver-orchestrator",
+      "silver-ensure-docs",
+      "silver-bootstrap-project",
+      "silver-bootstrap-milestone",
+      "silver-orient",
+      "silver-context",
+      "silver-plan",
+      "silver-execute",
+      "silver-verify",
+      "silver-ship",
+      "silver-review",
+      "silver-secure",
+      "silver-ui-contract",
+      "silver-ui-review",
+      "silver-debug",
+      "silver-review-request",
+      "silver-review-triage",
+      "silver-triage",
+      "silver-branch-finish",
+      "silver-completion-audit",
+      "silver-remove",
+      "silver-rem",
+      "silver-scan",
+      "silver",
+      "silver-phase",
+      "silver-spike",
+      "silver-thread",
+      "silver-undo"
+    ],
+    "forbidden": []
+  },
+  "recommended_tools": {
+    "graphify": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "uv tool install graphifyy",
+        "pipx install graphifyy"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "graphify install --project"
+          ],
+          "post_index": [
+            "graphify claude install --project"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "graphify install --project --platform codex"
+          ],
+          "post_index": [
+            "graphify codex install --project"
+          ]
+        },
+        "cursor": {
+          "post_index": [
+            "graphify cursor install"
+          ]
+        },
+        "opencode": {
+          "pre_index": [
+            "graphify install --project --platform opencode"
+          ],
+          "post_index": []
+        },
+        "goose": {
+          "pre_index": [
+            "graphify install --project --platform pi"
+          ],
+          "post_index": []
+        },
+        "hermes": {
+          "pre_index": [
+            "graphify install --project --platform hermes"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, Goose (Pi), and Hermes agents.",
+      "graph_path": "graphify-out/graph.json",
+      "query_ttl_seconds": 1800,
+      "query_budget": 2000,
+      "query_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/graphify-query",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": "2026-08-08T07:32:26Z",
+        "last_verified_at": null,
+        "score": 115
+      }
+    },
+    "agentmemory": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "install_commands": [
+        "npm install -g @agentmemory/agentmemory"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect claude-code"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "codex plugin marketplace add rohitg00/agentmemory",
+            "codex plugin add agentmemory@agentmemory"
+          ],
+          "post_index": [
+            "agentmemory connect codex --with-hooks"
+          ]
+        },
+        "cursor": {
+          "pre_index": [],
+          "post_index": [
+            "Verify agentmemory MCP is configured in ~/.cursor/mcp.json (see docs/AGENTMEMORY.md)"
+          ]
+        },
+        "opencode": {
+          "pre_index": [],
+          "post_index": [
+            "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual — no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
+          ]
+        },
+        "goose": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect pi (manual TS extension copy per integrations/pi.md; Goose uses Pi runtime)"
+          ]
+        },
+        "hermes": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect hermes (manual YAML merge per integrations/hermes.md)"
+          ]
+        }
+      },
+      "benefits_summary": "Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.",
+      "health_url": "http://localhost:3111/agentmemory/health",
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/agentmemory-usage",
+      "export_root": ".agentmemory",
+      "optimization": {
+        "profile": "synergy_max",
+        "last_applied_at": "2026-08-08T07:32:26Z",
+        "last_verified_at": null,
+        "score": 115
+      }
+    },
+    "alumnium": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "mcp_server_name": "alumnium",
+      "install_commands": [
+        "npm install -g alumnium"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude mcp add alumnium --env OPENAI_API_KEY=$OPENAI_API_KEY -- npx -y alumnium mcp"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "Merge alumnium MCP into ~/.cursor/mcp.json per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "Merge [mcp_servers.alumnium] into ~/.codex/config.toml per docs/ALUMNIUM.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
+    },
+    "search_cli": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": false,
+      "binary": "search",
+      "install_commands": [
+        "brew tap paperfoot/tap && brew install paperfoot/tap/search-cli"
+      ],
+      "provider_classes": {
+        "web_breadth": [
+          "Brave",
+          "Serper"
+        ],
+        "semantic": [
+          "Exa"
+        ],
+        "extraction": [
+          "Jina",
+          "Firecrawl"
+        ]
+      },
+      "benefits_summary": "Optional multi-provider retrieval for silver:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
+    },
+    "rtk": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "min_version": "0.42.0",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
+      "install_commands": [
+        "brew tap rtk-ai/rtk && brew install rtk",
+        "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "rtk init -g"
+          ],
+          "post_index": []
+        },
+        "cursor": {
+          "pre_index": [
+            "rtk init -g --agent cursor"
+          ],
+          "post_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "rtk init -g --codex"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
+    },
+    "context_mode": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "read_deny_bytes": 5120,
+      "read_deny_bypass_env": "CONTEXT_MODE_READ_DENY_BYPASS=1",
+      "min_node_version": "22.5",
+      "optimize_on_init": true,
+      "optimize_script": "bash scripts/optimize-rtk-context-mode.sh --host auto",
+      "license_note": "ELv2 — not OSI-open; commercial bundling requires upstream license",
+      "install_commands": [
+        "npm install -g context-mode"
+      ],
+      "platform_install_commands": {
+        "claude": {
+          "pre_index": [
+            "claude plugin marketplace add mksglu/context-mode",
+            "claude plugin install context-mode@context-mode"
+          ],
+          "post_index": [
+            "Restart Claude Code after plugin install (hooks load on restart)"
+          ]
+        },
+        "cursor": {
+          "pre_index": [
+            "npm install -g context-mode",
+            "bash scripts/optimize-rtk-context-mode.sh --host cursor"
+          ],
+          "post_index": [
+            "Restart Cursor after MCP/hook merge"
+          ]
+        },
+        "codex": {
+          "pre_index": [
+            "Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md",
+            "Copy configs/codex/AGENTS.md routing template to ~/.codex/AGENTS.md"
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "MCP/large-file compaction and PreCompact state recovery; highest value with MCP-heavy workflows (ELv2 license — see license_note)."
+    },
+    "leanctx": {
+      "enabled_by_user": true,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": true,
+      "min_version": "3.9.9",
+      "cli_command": "lean-ctx",
+      "install_commands": [
+        "curl -fsSL https://leanctx.com/install.sh | sh"
+      ],
+      "usage_ttl_seconds": 1800,
+      "usage_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/leanctx-usage",
+      "stack_mode": "parallel_routed",
+      "optimization_profile": "five_tool_routed",
+      "primary_fts": "context_mode",
+      "mcp_server_name": "leanctx",
+      "mcp_tool_prefix": "lctx_",
+      "exclusive_surfaces": {
+        "wire_proxy": true,
+        "read_ast": true,
+        "pathjail": true,
+        "savings_ledger": true,
+        "injection_detection": true
+      },
+      "platform_install_commands": {
+        "cursor": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host cursor --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "claude": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host claude --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "codex": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host codex --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "opencode": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host opencode --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        }
+      },
+      "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
+    }
+  },
+  "hooks": {
+    "evidence_schema": {
+      "strict": true
+    },
+    "industry_tooling": {
+      "enabled": false
+    }
+  },
+  "devops_plugins": {
+    "hashicorp": false,
+    "awslabs": false,
+    "pulumi": false,
+    "devops-skills": false,
+    "wshobson": false
+  },
+  "state": {
+    "state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state",
+    "trivial_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial"
+  },
+  "issue_tracker": "github",
+  "issue_tracker_adapter": {
+    "type": "github",
+    "create_issue_command": null,
+    "dedupe_command": null,
+    "payload_schema": "silver-triage-issue-v1"
+  },
+  "release": {
+    "_comment_quality_gate_markers": "On gh release create: adversarial-review-clean, sentinel-skills-clean, quality-gate-stage-3, full-test-suite-rerun",
+    "profile": "silver-bullet-plugin",
+    "require_plugin_runtime_matrix": true,
+    "require_pre_release_quality_gate": true,
+    "require_rc_matrix": true,
+    "quality_gate_state_file": "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
+  },
+  "compactPrompt": "When compacting, preserve all rules and workflow steps from silver-bullet.md verbatim. Do not summarize skill names, ordering constraints, anti-skip rules, or enforcement layer descriptions.",
+  "semantic_compression": {
+    "enabled": true,
+    "context_budget_kb": 50,
+    "min_file_size_bytes": 3072,
+    "chunk_size_bytes": 1024,
+    "top_chunks_per_file": 3,
+    "debug": false
+  },
+  "optimization_profiles": {
+    "synergy_max": {
+      "graphify": {
+        "query_budget": 2000,
+        "query_ttl_seconds": 1800,
+        "install_git_hooks": true,
+        "reindex_after_agentmemory_export": true,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": true,
+        "auto_compress": false,
+        "obsidian_export": true,
+        "bridge_enabled": true,
+        "gitleaks_required": true,
+        "server_persistence": "launchd"
+      },
+      "synergy": {
+        "post_export_graphify_update": true,
+        "verify_graph_refs_agentmemory": true
+      }
+    },
+    "cost_minimized": {
+      "_comment": "Future profile — not applied by optimizer yet",
+      "graphify": {
+        "install_git_hooks": false,
+        "prefer_no_cluster": true
+      },
+      "agentmemory": {
+        "inject_context": false,
+        "auto_compress": false,
+        "bridge_enabled": false,
+        "server_persistence": "nohup"
+      }
+    },
+    "five_tool_routed": {
+      "extends": "synergy_max",
+      "stack_mode": "parallel_routed",
+      "primary_fts": "context_mode",
+      "routes": {
+        "sb_wire": "leanctx",
+        "sb_read": "leanctx",
+        "sb_grep": "context_mode",
+        "sb_shell": "rtk",
+        "sb_slice": "context_mode",
+        "sb_webfetch": "context_mode",
+        "sb_graph": "graphify",
+        "sb_remember": "agentmemory",
+        "sb_pathjail": "leanctx",
+        "sb_injection": "leanctx"
+      }
+    }
+  },
+  "multi_agent": {
+    "identity_tags": [
+      "claude",
+      "codex",
+      "opencode"
+    ],
+    "stale_lock_ttl_seconds": 1800,
+    "delegation_timeout_seconds": 1200
+  },
+  "cursor_sb_agents": {
+    "enabled": true,
+    "enabled_by_user": null,
+    "selected_models": [
+      "composer-2.5",
+      "grok-4.5"
+    ],
+    "effort_levels": [
+      "medium",
+      "high",
+      "xhigh"
+    ],
+    "include_fast": false,
+    "include_max": false,
+    "agent_name_prefix": "sb",
+    "catalog_source": "agent-models+docs",
+    "catalog_fetched_at": "2026-08-30T15:17:27.159683+00:00",
+    "agents_install_status": "installed",
+    "agents_install_scope": "global",
+    "enforcement_suspended": false
+  },
+  "enterprise_policy": {
+    "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",
+    "active_profile": "supervised",
+    "profiles": {
+      "supervised": {
+        "label": "Supervised default",
+        "description": "Interactive session default; parent escalates blocking decisions; non-blocking preferences may still be confirmed.",
+        "session_mode_default": "interactive",
+        "clarify_auto": false,
+        "production_deploy_requires_human": true,
+        "orchestrator_mode": "parent"
+      },
+      "autonomous_safe": {
+        "label": "Autonomous-safe",
+        "description": "Autonomous session default with bounded silver:clarify --auto; decision_class blocking outcomes still require human approval.",
+        "session_mode_default": "autonomous",
+        "clarify_auto": true,
+        "production_deploy_requires_human": true,
+        "orchestrator_mode": "parent"
+      },
+      "regulated": {
+        "label": "Regulated",
+        "description": "Maximum human gates for ship, release, and production deploy; hooks.evidence_schema.strict remains enforced.",
+        "session_mode_default": "interactive",
+        "clarify_auto": false,
+        "production_deploy_requires_human": true,
+        "evidence_schema_strict": true,
+        "orchestrator_mode": "parent"
+      },
+      "internal_dogfood": {
+        "label": "Internal dogfood",
+        "description": "SB team posture: autonomous defaults and non-production deploy autonomy; production promotion stays human-gated.",
+        "session_mode_default": "autonomous",
+        "clarify_auto": true,
+        "production_deploy_requires_human": true,
+        "non_production_deploy_autonomy": true,
+        "orchestrator_mode": "parent"
+      }
+    }
+  }
+}

@@ -1,0 +1,292 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "F-1",
+        "title": "OQ3 SB_DOCTOR_ASSUME_YES TBD but F5 confirmation + test plan need non-interactive --fix"
+      },
+      {
+        "id": "F-2",
+        "title": "OQ1/OQ2/OQ5 are phase prerequisites; no AC requires resolving OQs"
+      }
+    ],
+    "MED": [
+      {
+        "id": "F-3",
+        "title": "Unknown tool: FAIL vs PASS N/A ambiguous"
+      },
+      {
+        "id": "F-4",
+        "title": "Test plan under-covers false-green catalog + missing min_version row"
+      },
+      {
+        "id": "F-5",
+        "title": "AC 8 omits test-router-doctor-report.sh required by Phase 3"
+      },
+      {
+        "id": "F-6",
+        "title": "AC 9 is a non-regression, not a positive done signal"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F-7",
+        "title": "Phase 1 step 6 hedges --fix swallow vs L32 asserts it"
+      },
+      {
+        "id": "F-8",
+        "title": "LeanCTX duplicate keys D10 FAIL vs D22 WARN wording"
+      },
+      {
+        "id": "F-9",
+        "title": "OAuth one click vs manual"
+      },
+      {
+        "id": "F-10",
+        "title": "Coverage table uses omniroute while OQ1 deferred the key"
+      },
+      {
+        "id": "F-11",
+        "title": "OQ2 still open while Phase 1 already recommends PATH + version"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "F-12",
+        "title": "MUST NOT 3ht3 worktree is session-specific"
+      },
+      {
+        "id": "F-13",
+        "title": "HNEST-01/HINST-01 undefined"
+      },
+      {
+        "id": "F-14",
+        "title": "Freeze line citations unverifiable under charter"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "F-1",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Lock SB_DOCTOR_ASSUME_YES=1 for tests; TTY still confirms packages/network/daemon restart"
+    },
+    {
+      "id": "F-2",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Lock Session A defaults for OQ1/OQ2/OQ5 and add AC 11 requiring those defaults"
+    },
+    {
+      "id": "F-3",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Unknown component id emits PASS N/A unsupported; no installer and no --fix"
+    },
+    {
+      "id": "F-4",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Add false-green and min_version rows plus SB_DOCTOR_ASSUME_YES test row"
+    },
+    {
+      "id": "F-5",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "AC 8 requires test-router-doctor-report.sh when phase 3 is included"
+    },
+    {
+      "id": "F-6",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Reframe AC 9 as a positive fixture that fails if consent-only loop is rewired"
+    },
+    {
+      "id": "F-7",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Remove hedge; Phase 1 is not done while swallow remains"
+    },
+    {
+      "id": "F-8",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "D10 FAIL is Session A contract; D22 WARN is catalog label only"
+    },
+    {
+      "id": "F-9",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "OAuth stays fully manual; --fix is install/restart only"
+    },
+    {
+      "id": "F-10",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Lock recommended_tools.omniroute / D10-omniroute"
+    },
+    {
+      "id": "F-11",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Lock search_cli Health as PATH + version; provider-missing WARN"
+    },
+    {
+      "id": "F-12",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Remove session-specific 3ht3 MUST NOT from the PRD"
+    },
+    {
+      "id": "F-13",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Gloss HNEST-01 / HINST-01 as nested-host and host-install Doctor writes"
+    },
+    {
+      "id": "F-14",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Cite freeze headings, not line numbers"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "F-1",
+      "title": "OQ3 SB_DOCTOR_ASSUME_YES TBD but F5 confirmation + test plan need non-interactive --fix"
+    },
+    {
+      "id": "F-2",
+      "title": "OQ1/OQ2/OQ5 are phase prerequisites; no AC requires resolving OQs"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "F-3",
+      "title": "Unknown tool: FAIL vs PASS N/A ambiguous"
+    },
+    {
+      "id": "F-4",
+      "title": "Test plan under-covers false-green catalog + missing min_version row"
+    },
+    {
+      "id": "F-5",
+      "title": "AC 8 omits test-router-doctor-report.sh required by Phase 3"
+    },
+    {
+      "id": "F-6",
+      "title": "AC 9 is a non-regression, not a positive done signal"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "F-1",
+      "severity": "HIGH",
+      "title": "OQ3 SB_DOCTOR_ASSUME_YES TBD",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-2",
+      "severity": "HIGH",
+      "title": "OQ1/OQ2/OQ5 prerequisites without AC",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-3",
+      "severity": "MED",
+      "title": "Unknown tool result state",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-4",
+      "severity": "MED",
+      "title": "Test plan under-coverage",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-5",
+      "severity": "MED",
+      "title": "AC 8 omits router doctor report test",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-6",
+      "severity": "MED",
+      "title": "AC 9 non-regression phrasing",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-7",
+      "severity": "LOW",
+      "title": "--fix swallow hedge",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-8",
+      "severity": "LOW",
+      "title": "D10 FAIL vs D22 WARN",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-9",
+      "severity": "LOW",
+      "title": "OAuth one click vs manual",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-10",
+      "severity": "LOW",
+      "title": "omniroute key pre-commit",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-11",
+      "severity": "LOW",
+      "title": "OQ2 still open",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-12",
+      "severity": "NIT",
+      "title": "3ht3 MUST NOT",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-13",
+      "severity": "NIT",
+      "title": "HNEST-01/HINST-01 undefined",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F-14",
+      "severity": "NIT",
+      "title": "Freeze line citations",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "5a4c28508fad18b6c58988bb8c6f52754df514d99de450420315bf016e9b4079"
+}

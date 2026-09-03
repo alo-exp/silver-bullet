@@ -1,0 +1,29 @@
+## VERDICT
+NEEDS_FIXES
+
+## FINDINGS
+
+### C2-F1 — Material — Clarify toolstack contradicts plan (Q2 clarify-wins)
+**Where:** [`.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md`](.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md) §Toolstack (lines 49–57) vs [`.planning/router_subagent_surfaces_85bf9f09.plan.md`](.planning/router_subagent_surfaces_85bf9f09.plan.md) Locked decisions (“Toolstack (five-tool routed)”) + cycle-1 lock (“five-column toolstack + Alumnium OOS”).
+
+**Issue:** Clarify still locks a **4-column** table (Graphify / agentmemory / Context Mode / LeanCTX) with no RTK column and no Alumnium OOS. Plan claims **five-tool routed**. Q2 says clarify wins on merge conflicts, so dual SoT leaves implementers able to wire the wrong stack.
+
+**Required fix:** Update clarify Toolstack to the five-column routed table + explicit Alumnium OOS, **or** add an explicit supersession line that plan Locked decisions are sole toolstack SoT and the clarify table is historical.
+
+---
+
+### Cycle-1 recheck (no new material)
+| Cycle-1 lock | Plan status |
+|---|---|
+| `a_loop_not_applicable` migration-only / never live A-gate | Present (§7) |
+| Ordinary vs Iterate completion binding | Present (§5 ordinary SM + checklist) |
+| A-loop min boundaries | Present (§5) |
+| Six ingress states | Asserted as locked (checklist / matrix); §7 names freeze/projection/stop phases |
+| Blocker catalog + `migration_not_activated` | Present (§5) |
+| K/L fail-closed blockers | Present |
+| Advisor unavailable hard-block | Present (`blocked_advisor_state`, never live skip) |
+| `critical_policy` path | Present (`policies/sb/**/*.policy.md`) |
+| Q11 site/help in ship train | Present (Decision Addendum) |
+
+## SUMMARY
+One remaining material issue: clarify toolstack is still the pre–cycle-1 4-column table and conflicts with the plan’s five-tool + Alumnium OOS lock under Q2. Other cycle-1 items look applied in the plan body. Sync clarify (or supersede it) → re-run for CLEAN.

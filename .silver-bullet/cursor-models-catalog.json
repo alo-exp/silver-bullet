@@ -1,0 +1,127 @@
+{
+  "fetched_at": "2026-08-30T15:17:27.159683+00:00",
+  "source": "docs-only",
+  "agent_cli": null,
+  "models": [
+    {
+      "id": "composer-2-5-fast",
+      "display_name": "Composer 2.5 (Fast)",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 3.0,
+        "cache_write": null,
+        "cache_read": 0.5,
+        "output": 15.0,
+        "unit": "per_1M"
+      },
+      "effort_values": [
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "-"
+    },
+    {
+      "id": "composer-2.5",
+      "display_name": "Composer 2.5",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 0.5,
+        "cache_write": null,
+        "cache_read": 0.2,
+        "output": 2.5,
+        "unit": "per_1M"
+      },
+      "effort_values": [
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "-"
+    },
+    {
+      "id": "grok-4-5-fast",
+      "display_name": "Grok 4.5 (Fast)",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 4.0,
+        "cache_write": null,
+        "cache_read": 1.0,
+        "output": 18.0,
+        "unit": "per_1M"
+      },
+      "effort_values": [],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "Jointly trained by Cursor and SpaceXAI"
+    },
+    {
+      "id": "grok-4-6",
+      "display_name": "Grok 4.6",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 2.0,
+        "cache_write": null,
+        "cache_read": 0.5,
+        "output": 6.0,
+        "unit": "per_1M"
+      },
+      "effort_values": [],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "Jointly trained by Cursor and SpaceXAI"
+    },
+    {
+      "id": "grok-4-6-fast",
+      "display_name": "Grok 4.6 (Fast)",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 4.0,
+        "cache_write": null,
+        "cache_read": 1.0,
+        "output": 12.0,
+        "unit": "per_1M"
+      },
+      "effort_values": [],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "Jointly trained by Cursor and SpaceXAI"
+    },
+    {
+      "id": "grok-4.5",
+      "display_name": "Grok 4.5",
+      "provider": "Cursor",
+      "pool": "first-party",
+      "pricing": {
+        "input": 2.0,
+        "cache_write": null,
+        "cache_read": 0.5,
+        "output": 6.0,
+        "unit": "per_1M"
+      },
+      "effort_values": [
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "agent_ids": [],
+      "fast_available": false,
+      "max_detected": false,
+      "notes": "Jointly trained by Cursor and SpaceXAI"
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>/silver:devops — Infrastructure &amp; CI/CD Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated DevOps/IaC workflow: orientation → blast-radius → devops-skill-router → 7 IaC quality dimensions → plan → execute without TDD → review → secure → ship.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.4rem;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size: 1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-warn{background:var(--red-warn-a07);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+.blast-badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:700;margin-right:8px}
+.blast-low{background:var(--green-warn-a12);color:var(--green)}
+.blast-med{background:var(--amber-warn-a12);color:var(--amber)}
+.blast-high{background:var(--red-warn-a10);color:var(--red)}
+.blast-crit{background:var(--red-warn-a20);color:var(--red)}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:devops</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>/silver:devops</h1>
+    <p>SB-orchestrated infrastructure, CI/CD, and IaC workflow — blast-radius assessment mandatory, 7 IaC-adapted quality dimensions, TDD explicitly skipped.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On This Page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#iac-quality-dims">7 IaC quality dimensions</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#blast-radius-levels">Blast radius levels</a></li>
+        <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:devops</code> is the Silver Bullet orchestrator for infrastructure, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.</p>
+      <p><code>/silver:devops</code> maps to <code>WF-SILVER-DEVOPS</code> in the <strong>v0.52.0 APO catalog</strong>. Standard composition chain:</p>
+      <div class="code-block">WF-SILVER-DEVOPS
+  → AF-BLAST-RADIUS → AF-DEVOPS-ROUTE → AF-QUALITY-GATE → AF-SECURE
+  → AF-ORIENT → AF-PLAN → AF-VALIDATE → AF-EXECUTE
+  → WF-POST-EXEC-GATES</div>
+      <p>It does not include <code>AF-DESIGN-CONTRACT</code> or <code>AF-UI-QUALITY</code> unless runtime evidence shows the infrastructure task also has UI deliverables. See <a href="./index.html#composer-workflows">Workflow catalog</a> and <a href="../concepts/composable-workflow.html">Composable Flows</a>.</p>
+      <p><strong>Key design principles:</strong></p>
+      <ul>
+        <li><strong>Blast-radius first</strong> — <code>AF-BLAST-RADIUS</code> via <code>/silver:blast-radius</code> and <code>AF-DEVOPS-ROUTE</code> before <code>AF-PLAN</code></li>
+        <li><strong>7 IaC quality dimensions</strong> instead of the product 8 core dimensions plus conditional gates — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
+        <li><strong>TDD explicitly skipped</strong> — infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources.</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to Use</h2>
+      <p>Entry trigger signals for <code>/silver:devops</code>:</p>
+      <ul>
+        <li>"infra" / "CI/CD" / "deploy" / "pipeline"</li>
+        <li>"terraform" / "IaC" / "kubernetes" / "container"</li>
+        <li>"cloud" / "ops" / "infrastructure" / "GitHub Actions"</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="iac-quality-dims">7 IaC quality dimensions</h2>
+      <p>These replace the standard product/software quality gate for all infra work. Applied at <code>AF-QUALITY-GATE</code> pre-plan and pre-ship gates:</p>
+      <ul>
+        <li><strong>Reliability</strong> — failure modes, retry logic, health checks</li>
+        <li><strong>Security</strong> — secrets handling, IAM boundaries, network exposure</li>
+        <li><strong>Scalability</strong> — resource limits, auto-scaling, capacity planning</li>
+        <li><strong>Modularity</strong> — reusable modules, clear boundaries, minimal coupling</li>
+        <li><strong>Testability</strong> — infrastructure can be validated without production deployment</li>
+        <li><strong>Observability</strong> — logging, metrics, alerting, tracing integration</li>
+        <li><strong>Change-safety</strong> — idempotency, drift prevention, rollback plan</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Flow execution</h2>
+
+      <h3>Pre-execution chain</h3>
+      <ul>
+        <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
+        <li><strong><code>AF-ORIENT</code></strong> — <code>/silver:scan</code> / <code>/silver:context</code> for infra topology</li>
+        <li><strong><code>AF-BLAST-RADIUS</code></strong> — <code>/silver:blast-radius</code>; LOW/MEDIUM/HIGH/CRITICAL rating</li>
+        <li><strong><code>AF-DEVOPS-ROUTE</code></strong> — IaC/cloud toolchain routing</li>
+        <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>/devops-quality-gates</code> (7 IaC dimensions); security dimension mandatory before planning</li>
+        <li><strong><code>AF-VALIDATE</code></strong> — <code>/silver:validate</code> when plans exist</li>
+        <li><strong><code>AF-PLAN</code></strong> — <code>/silver:context</code>, <code>/silver:plan</code></li>
+        <li><strong><code>AF-EXECUTE</code></strong> — <code>/silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
+      </ul>
+
+      <h3>Post-Execution Chain (canonical)</h3>
+      <p><code>WF-POST-EXEC-GATES</code>: review triad → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> pre-ship → branch finish → completion audit → <code>AF-SHIP</code>. Optional <code>/silver:deploy</code> / <code>/silver:canary</code> run through ship-readiness when live rollout is in scope.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="blast-radius-levels">Blast radius levels</h2>
+      <p>The blast radius assessment produces one of four ratings. The rating informs the scope of change-safety review and approval requirements:</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Level</th><th>Description</th><th>Typical examples</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="blast-badge blast-low">LOW</span></td>
+            <td>Change is isolated, no downstream impact, easy rollback</td>
+            <td>Adding a new CI job, updating a single env var, adding a monitoring alert</td>
+          </tr>
+          <tr>
+            <td><span class="blast-badge blast-med">MEDIUM</span></td>
+            <td>Change affects 2–3 systems, rollback requires coordination</td>
+            <td>New IAM role, updating deployment pipeline, adding a new service</td>
+          </tr>
+          <tr>
+            <td><span class="blast-badge blast-high">HIGH</span></td>
+            <td>Change affects production paths or cross-cutting infra, significant blast if rolled back</td>
+            <td>Database migration, network topology change, certificate rotation</td>
+          </tr>
+          <tr>
+            <td><span class="blast-badge blast-crit">CRITICAL</span></td>
+            <td>Core infra, affects all systems, rollback may cause outage</td>
+            <td>Cloud account-level changes, DNS/CDN changes, VPC or subnet modifications</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="non-skippable-gates">Non-Skippable Gates</h2>
+      <div class="callout callout-warn">
+        <div class="callout-icon">🔒</div>
+        <div class="callout-body">
+          <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
+          <ul style="margin-top:8px">
+            <li>Security dimension inside <code>/devops-quality-gates</code> (<code>AF-QUALITY-GATE</code> pre-plan)</li>
+            <li><code>/devops-quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/silver:verify</code> (<code>AF-VERIFY</code>)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example Invocation</h2>
+      <div class="code-block">/silver:devops Add GitHub Actions CI pipeline for automated testing</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-DEVOPS</code>: <code>AF-BLAST-RADIUS</code> (likely LOW/MEDIUM) → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> (no TDD) → <code>WF-POST-EXEC-GATES</code>.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-ui.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:ui</span>
+        </a>
+        <a href="./silver-deep-research.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:deep-research</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

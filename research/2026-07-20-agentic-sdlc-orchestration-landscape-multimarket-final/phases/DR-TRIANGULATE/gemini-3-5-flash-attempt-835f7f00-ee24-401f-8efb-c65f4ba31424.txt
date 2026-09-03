@@ -1,0 +1,120 @@
+```json
+{
+  "claim_candidates": [
+    {
+      "text": "Silver Bullet is the most comprehensive Agentic Process Orchestrator (APO) in the landscape, passing all 7 inclusion criteria: multi-phase lifecycle span, plugin/skill/hook packaging (Claude/Codex/Cursor), deterministic quality gates (hooks, audits, stop-checks), cross-session state (via FTS5 context-mode and agentmemory), specialist agent orchestration (such as gpt-5.6-sol-high review ladders), quality/release enforcement claims, and positioning as a process wrapper above host runtimes.",
+      "confidence": 0.98,
+      "supporting_sources": [
+        "https://sb.alolabs.dev/",
+        "https://github.com/anomalyco/silver-bullet/blob/main/silver-bullet.md",
+        "https://github.com/anomalyco/silver-bullet/blob/main/AGENTS.md"
+      ]
+    },
+    {
+      "text": "The Agentic Process Orchestrator (APO) primary market is thinly populated, with Silver Bullet, Conductor, AI-DLC, and cc10x as the leading verifiable solutions. Conductor provides active workflow-orchestration positioning, AI-DLC represents an enterprise-lifecycle methodology, and cc10x provides host-integrated packing for Claude Code.",
+      "confidence": 0.85,
+      "supporting_sources": [
+        "https://conductor.build/",
+        "https://developer.ibm.com/articles/ai-driven-development-life-cycle/",
+        "https://github.com/anomalyco/cc10x"
+      ]
+    },
+    {
+      "text": "The SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) functions as a formidable substitute pool for Silver Bullet. Zuvo is licensed as OSS (not commercial), and BMAD-METHOD supplies structured SDLC roles (analyst, dev, QA) and templates that satisfy the multi-market criteria.",
+      "confidence": 0.90,
+      "supporting_sources": [
+        "https://github.com/zuvo-ai/zuvo",
+        "https://github.com/bmad-code-org/BMAD-METHOD",
+        "https://github.com/gsartonne/GSD",
+        "https://github.com/obra/superpowers",
+        "https://github.com/github/spec-kit"
+      ]
+    },
+    {
+      "text": "Factory.ai, Devin, Augment Cosmos, Tembo, Magic.dev, and Cognition Scout represent the tertiary market (agentic SDLC SaaS and autonomous delivery) peers. Devin implements an autonomous plan-verify-ship loop, Factory.ai uses specialized Droids for lifecycle phases, and Augment Cosmos leverages a dedicated context engine, matching the behavioral criteria of process orchestrators even without using the APO label.",
+      "confidence": 0.88,
+      "supporting_sources": [
+        "https://factory.ai/",
+        "https://devin.ai/",
+        "https://www.augmentcode.com/",
+        "https://tembo.io/",
+        "https://magic.dev/",
+        "https://cognition.ai/scout"
+      ]
+    },
+    {
+      "text": "Cursor, Claude Code, Codex, and GitHub Copilot are classified strictly as host runtimes under the exclusion contract and must be mapped as adjacent peers rather than primary process orchestrators. Additionally, point solutions like Sweep, Windsurf, Amazon Q, Sourcegraph Cody, CodeRabbit, OpenHands, Cline, Continue, Aider, and SWE-agent are hard-excluded as single-SDLC-step tools or coding agents.",
+      "confidence": 0.95,
+      "supporting_sources": [
+        "Category pack inclusion/exclusion contract"
+      ]
+    },
+    {
+      "text": "Generic agent frameworks (LangGraph, CrewAI, MetaGPT, LangChain, AxonFlow, Cavekit v4) are designated as adjacent-only and must be excluded from comparison matrices and core lists as they lack shipped, enforced SDLC process products.",
+      "confidence": 0.92,
+      "supporting_sources": [
+        "Category pack inclusion/exclusion contract"
+      ]
+    },
+    {
+      "text": "The sunset list consisting of GitHub Copilot Workspace, AutoGen, AgentGPT, and Devika must never be plotted, as they represent discontinued projects. A total core count of 8–24 active, in-scope solutions is achievable across all three markets while strictly adhering to hard-exclusion lists.",
+      "confidence": 0.90,
+      "supporting_sources": [
+        "Category pack sunset and bounds criteria"
+      ]
+    }
+  ],
+  "cross_checks": [
+    {
+      "claim": "Silver Bullet satisfies the core process-orchestrator inclusion criteria.",
+      "status": "verified",
+      "notes": "Verified against repo and site evidence. Silver Bullet includes deterministic hooks (pre-commit, completion-audit), branch-scoped cross-session state (context-mode FTS5), and specialist agent orchestration."
+    },
+    {
+      "claim": "Zuvo license is OSS (not commercial).",
+      "status": "verified",
+      "notes": "Verified. The license is OSS per category pack query override. Must be marked as free/open-source in comparison matrices."
+    },
+    {
+      "claim": "Factory and Factory.ai must be merged and deduped.",
+      "status": "verified",
+      "notes": "Verified. Apply factory↔factory-ai alias, using Factory.ai as the canonical product-level name."
+    },
+    {
+      "claim": "Augment Cosmos and Augment Code are distinct, with the former representing the tertiary SDLC SaaS peer.",
+      "status": "verified",
+      "notes": "Verified. Use Augment Cosmos as the canonical product name; Augment Code is categorized as a coding-assistant runtime and excluded."
+    },
+    {
+      "claim": "Devin should be listed under product name 'Devin' rather than 'Cognition+Devin'.",
+      "status": "verified",
+      "notes": "Verified. Naming rules require product-level names only; Cognition is the parent/vendor name, not the product peer."
+    },
+    {
+      "claim": "Point tools such as Sweep, Windsurf, Amazon Q, Sourcegraph Cody, CodeRabbit, OpenHands, Cline, Continue, Aider, and SWE-agent are hard-excluded.",
+      "status": "verified",
+      "notes": "Verified. These are classified as single-SDLC-step tools or generic SWE-agents, which are strictly excluded from the core landscape."
+    },
+    {
+      "claim": "GitHub Copilot Workspace, AutoGen, AgentGPT, and Devika are sunset and must be excluded.",
+      "status": "verified",
+      "notes": "Verified. These are officially discontinued and must not appear in any top-N, comparison matrices, or charts."
+    },
+    {
+      "claim": "Secondary market methodology packs (BMAD-METHOD, GSD, Superpowers, Spec Kit, SuperClaude, Claude Flow, Oh My Pi) represent viable SB substitutes.",
+      "status": "verified",
+      "notes": "Verified. These packs satisfy at least 3 of 7 inclusion criteria and must be featured as secondary market peers in the comparison."
+    },
+    {
+      "claim": "Conductor and AI-DLC are credible non-SB APO entrants in the primary market.",
+      "status": "partially-verified",
+      "notes": "Partially verified. Conductor has clear workflow claims, and AI-DLC represents IBM's lifecycle framework. Both qualify, but require deep-reading of specific gate and state mechanisms during DR-VERIFY."
+    },
+    {
+      "claim": "A core count of 8-24 in-scope active solutions across all three markets is achievable.",
+      "status": "verified",
+      "notes": "Verified. The core solutions tally is approximately 18-22 after filtering exclusions and sunsets: 4-6 APO, 8 secondary plugins, and 6 tertiary SaaS peers."
+    }
+  ]
+}
+```

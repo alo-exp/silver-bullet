@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Parent / Worker Orchestrator Mode — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet parent-only orchestration works: parent sessions schedule Task workers, blocking decisions, directive queues, and hook enforcement at tier 2+.">
+<meta property="og:title" content="Parent / Worker Orchestrator Mode — Silver Bullet Help">
+<meta property="og:description" content="Parent orchestrator schedules atomic-flow workers; blocking decision_class outcomes still require human approval.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/help/concepts/orchestrator-mode.html">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:620px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Orchestrator Mode</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Parent / Worker Orchestrator Mode</h1>
+    <p>Silver Bullet's default execution model: the <strong>parent</strong> session composes and schedules work; <strong>Task workers</strong> implement atomic flows. The parent never edits project source at enforcement tier&nbsp;2+.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#roles">Parent vs Worker</a></li>
+        <li><a href="#directive-loop">Directive Loop</a></li>
+        <li><a href="#blocking-decisions">Blocking Decisions</a></li>
+        <li><a href="#state-surfaces">State Surfaces</a></li>
+        <li><a href="#tier-fallback">Tier 0–1 Fallback</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">What Is Orchestrator Mode?</h2>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code> (the only supported value in <code>.silver-bullet.json</code>), Silver Bullet treats the main session as a <strong>scheduler</strong>, not an implementer. The parent reads <code>orchestrator-directive.json</code>, spawns Task workers from <code>.silver-bullet/orchestrator-workers/</code> templates, and advances the flow queue until it is empty.</p>
+      <p>This model is <strong>proven structurally</strong> — hook tests, directive guards, and parent-only tool allowlists enforce it on tier&nbsp;2+ hosts (Cursor Multitask, Claude Code with hooks). <span class="historical" data-historical>Introduced in v0.51.0,</span> the <strong>tri-criteria greenfield harness</strong> (live/cold matrix across Cursor, Claude, and Codex) records <strong>6/6 PASS</strong> for multi-workflow orchestration including <code>composer_chain</code> advance. Full 22-row enterprise matrix parity remains host-dependent — see <a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a>.</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Contract authority:</strong> <code>docs/ORCHESTRATOR.md</code> in the SB repo defines the orchestrator contract. This help page summarizes customer-facing behavior — not runtime internals.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="roles">Parent vs Worker Roles</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Role</th><th>May implement?</th><th>Typical tools (tier&nbsp;2+)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Parent</td><td><strong>No</strong> — schedules only</td><td>Task, Read, Grep, Glob; Skill: <code>silver</code> / <code>silver-orchestrator</code></td></tr>
+          <tr><td>Worker</td><td><strong>Yes</strong> — after assigned skill</td><td>Full tool surface per atomic-flow contract; must <em>invoke</em> the assigned skill so hooks record state</td></tr>
+        </tbody>
+      </table>
+      <p>Workers run with <code>SB_ORCHESTRATOR_WORKER=1</code> so directive-guard semantics apply until <code>next_skill</code> is recorded. The parent clears worker markers on SubagentStop and writes the next directive via <code>flow-advance.sh</code>.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="directive-loop">Directive Loop</h2>
+      <ol>
+        <li>User intent arrives via <code>/silver</code> or a composer workflow skill.</li>
+        <li>Composer spec seeds <code>orchestrator.json</code> and the enforcement queue.</li>
+        <li><code>orchestrator-directive.json</code> names <code>next_skill</code> + <code>next_worker_template</code>.</li>
+        <li>Parent spawns a Task worker using the matching template under <code>.silver-bullet/orchestrator-workers/</code>.</li>
+        <li>Worker invokes the skill, implements the atomic flow, and produces V-loop evidence.</li>
+        <li>Queue advances; repeat until <code>current_flow</code> is empty.</li>
+      </ol>
+
+      <h3 id="composer-chain">Multi-workflow <code>composer_chain</code> <span class="historical" data-historical>(introduced in v0.51.0)</span></h3>
+      <p>When intent spans multiple composer workflows (for example feature delivery followed by DevOps and release), the scheduler seeds <code>orchestrator.json</code> with a <code>composer_chain</code> array. After each workflow queue drains, <code>sb_orchestrator_try_advance_composer_chain</code> tailors and enqueues the next composer workflow — proven in the tri-criteria greenfield matrix (TC-01 multi-WF chain).</p>
+      <div class="code-block">{
+  "composer_chain": ["silver-devops", "silver-release"],
+  "current_flow": ["AF-QUALITY-GATE", "…"]
+}</div>
+
+      <div class="code-block">{
+  "next_skill": "silver-quality-gates",
+  "next_worker_template": "QUALITY-GATE",
+  "blocking": true,
+  "reason": "Planning floor before EXECUTE"
+}</div>
+
+      <div class="divider"></div>
+
+      <h2 id="blocking-decisions">Blocking Decisions (Human Gates)</h2>
+      <p>Autonomous mode suppresses clarifying questions for <strong>non-blocking</strong> preferences. SB still escalates outcomes tagged <code>decision_class: blocking</code> — material forks, irreversible external actions, missing credentials, or destructive ambiguity.</p>
+      <ul>
+        <li><strong>Blocking</strong> — parent must ask the user; queue pauses until resolved or audited <code>SB OVERRIDE: &lt;reason&gt;</code> is logged.</li>
+        <li><strong>Non-blocking</strong> — SB may choose a best-judgment default and log an Autonomous decision.</li>
+        <li><strong>Production deploy / release</strong> — remain human-gated unless an explicit enterprise policy profile documents a narrower exception (today: still human-gated for production).</li>
+      </ul>
+      <p><code>/silver:clarify --auto</code> frames scope without interactive back-and-forth; it does <em>not</em> remove blocking gates. See <a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a> for how teams declare posture in config.</p>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="alert-triangle"></i></span>
+        <div class="callout-body"><strong>Not overclaiming:</strong> Catalog metadata describes parallel DAG semantics; the current runtime queue is still <strong>sequential</strong>. Parallel scheduling is <strong>in progress</strong> — see status page for proof levels.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="state-surfaces">State and Audit Surfaces</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Artifact</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>orchestrator.json</code></td><td>Session flow queue, <code>current_flow</code>, workflow id</td></tr>
+          <tr><td><code>orchestrator-directive.json</code></td><td>Mandatory next skill + worker template when <code>blocking: true</code></td></tr>
+          <tr><td><code>.planning/orchestrator-composition-log.jsonl</code></td><td>Autonomous composition audit (committed)</td></tr>
+          <tr><td><code>.planning/orchestrator-override-log.jsonl</code></td><td>User <code>SB OVERRIDE:</code> audit trail (committed)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="tier-fallback">Tier 0–1 Fallback</h2>
+      <p>Hosts without Task/subagent support or without merged hooks (tier&nbsp;0–1) invoke the same skill sequence <strong>directly</strong> in a single session. Parent-only directive blocks apply only when tier&nbsp;≥&nbsp;2 and <code>orchestrator_mode</code> is <code>parent</code>. See <a href="../reference/#capability-matrix">Capability Matrix</a> and <code>docs/RUNTIME-COMPATIBILITY.md</code>.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a> — supervised, autonomous-safe, regulated, and internal-dogfood postures</li>
+        <li><a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a> — proof levels and certification gaps</li>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — APO catalog and atomic flows</li>
+        <li><a href="../workflows/silver-feature.html">/silver:feature</a> — default delivery composer</li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="composable-workflow.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">Composable Workflow</span>
+        </a>
+        <a href="enterprise-policy-profiles.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">Enterprise Policy Profiles</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

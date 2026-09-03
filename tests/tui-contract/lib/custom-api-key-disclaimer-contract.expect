@@ -1,0 +1,61 @@
+#!/usr/bin/expect -f
+# PTY contract: custom API key disclaimer detection (no live Claude API).
+
+proc strip_ansi {text} {
+  regsub -all {\x1b\[[0-9;?]*[ -/]*[@-~]} $text "" text
+  regsub -all {\x1b\][^\x07]*(\x07|\x1b\\)} $text "" text
+  regsub -all {\x1b.} $text "" text
+  return $text
+}
+
+proc custom_api_key_disclaimer_visible {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Detected} $plain]} { return 0 }
+  if {![regexp -nocase {custom} $plain]} { return 0 }
+  if {![regexp -nocase {API} $plain]} { return 0 }
+  if {![regexp -nocase {ANTHROPIC_API_KEY|Doyouwant|Do you want} $plain]} { return 0 }
+  if {![regexp -nocase {use.*this.*API.*key|use this API key} $plain]} { return 0 }
+  if {![regexp -nocase {No.*recommended|No,recommended} $plain]} { return 0 }
+  if {![regexp -nocase {1\.Yes|1\. Yes|Yes} $plain]} { return 0 }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} { return 0 }
+  return 1
+}
+
+proc custom_api_key_disclaimer_menu_ready {buffer} {
+  set plain [strip_ansi $buffer]
+  if {![regexp -nocase {Doyouwant|Do you want} $plain]} { return 0 }
+  if {![regexp -nocase {use.*this.*API.*key|use this API key} $plain]} { return 0 }
+  if {![regexp -nocase {No.*recommended|No,recommended} $plain]} { return 0 }
+  if {![regexp -nocase {1\.Yes|1\. Yes|Yes} $plain]} { return 0 }
+  if {![regexp -nocase {Entertoconfirm|Enter to confirm} $plain]} { return 0 }
+  return 1
+}
+
+set fixture [file normalize [file join [file dirname $argv0] .. fixtures custom-api-key-disclaimer.ansi]]
+if {![file exists $fixture]} {
+  puts stderr "FAIL: missing fixture $fixture"
+  exit 1
+}
+
+set fh [open $fixture r]
+fconfigure $fh -translation binary
+set bytes [read $fh]
+close $fh
+
+if {![custom_api_key_disclaimer_visible $bytes]} {
+  puts stderr "FAIL: custom_api_key_disclaimer_visible did not match fixture"
+  exit 1
+}
+if {![custom_api_key_disclaimer_menu_ready $bytes]} {
+  puts stderr "FAIL: custom_api_key_disclaimer_menu_ready did not match fixture"
+  exit 1
+}
+
+set plain [strip_ansi $bytes]
+if {![regexp -nocase {Detected} $plain] || ![regexp -nocase {custom} $plain]} {
+  puts stderr "FAIL: stripped fixture missing Detected/custom text"
+  exit 1
+}
+
+puts "PASS: custom API key disclaimer contract (fixture bytes, no live API)"
+exit 0

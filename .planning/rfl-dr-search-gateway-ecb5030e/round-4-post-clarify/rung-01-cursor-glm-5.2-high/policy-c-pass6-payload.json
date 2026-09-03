@@ -1,0 +1,30 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 6)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "U1", "title": "§2.2 probe rationale claims --cache-ttl is upstream-exposed; it is a Phase 1 fork ADD"},
+      {"id": "U2", "title": "§6.13 grants fork SB_DR_FLEET_SLOTS for admission N; admission is orchestrator-only"}
+    ]
+  },
+  "triage": [
+    {"id": "U1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; operative discriminator is correct; only the upstream-exposes rationale is inaccurate"},
+    {"id": "U2", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; §2.2 assigns admission to search_orchestrator.py; fork clear is ceiling-10"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "U1", "severity": "NIT", "title": "--cache-ttl is a Phase 1 fork ADD (not upstream-exposed)", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "U2", "severity": "NIT", "title": "SB_DR_FLEET_SLOTS is orchestrator-only; fork does not read it", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

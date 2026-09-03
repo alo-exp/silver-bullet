@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>/silver:release — Milestone Release Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated milestone release workflow: quality gates → audits → docs → cross-artifact review → fresh tests → ship → complete milestone → create release.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.4rem;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size: 1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-warn{background:var(--red-warn-a07);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:release</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>/silver:release</h1>
+    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>silver:ship</code>.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On This Page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#ship-disambiguation">Ship disambiguation</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#gap-closure">Gap-closure loop</a></li>
+        <li><a href="#four-stage-gate">4-stage pre-release gate</a></li>
+        <li><a href="#non-skippable-gates">Non-Skippable Gates</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
+      <p><strong>It never publishes directly — it orchestrates only.</strong> This workflow operates at the milestone level — it closes out a complete milestone, not a single phase.</p>
+      <p><code>silver:release</code> uses the <strong>v0.52.0 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to Use</h2>
+      <p>Entry trigger signals for <code>/silver:release</code>:</p>
+      <ul>
+        <li>"release" / "publish" / "version" / "go live"</li>
+        <li>"cut a release" / "tag v" / "ship to users" / "deploy to prod"</li>
+        <li>"changelog" / "release notes"</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="ship-disambiguation">Ship disambiguation</h2>
+      <p>Silver Bullet distinguishes between phase-level ship (<code>silver:ship</code>) and milestone-level release (<code>silver:release</code>) based on context signals:</p>
+
+      <table class="ref-table">
+        <thead><tr><th>Signal in your message</th><th>Route</th></tr></thead>
+        <tbody>
+          <tr><td>Contains version number (v2.0, 1.4.0…)</td><td><code>silver:release</code></td></tr>
+          <tr><td>Contains "changelog" or "release notes"</td><td><code>silver:release</code></td></tr>
+          <tr><td>Contains "go live", "to production", "publicly"</td><td><code>silver:release</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>silver:ship</code> (phase merge)</td></tr>
+          <tr><td>No active phase, end of milestone</td><td><code>silver:release</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Catalog execution (<code>WF-SILVER-RELEASE</code>)</h2>
+
+      <h3>Standard composition chain</h3>
+      <div class="code-block">WF-SILVER-RELEASE
+  → AF-QUALITY-GATE → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
+  → AF-VERIFY → AF-SECURE → AF-VALIDATE
+  → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP
+  → AF-RELEASE → silver:create-release (last)</div>
+
+      <h3><code>AF-RELEASE</code> sub-steps</h3>
+      <ul>
+        <li><strong>Pre-release quality gate</strong> — <code>AF-QUALITY-GATE</code> plus domain audit evidence.</li>
+        <li><strong>UAT and milestone audits</strong> — <code>AF-VERIFY</code> checks cross-phase evidence and release readiness artifacts.</li>
+        <li><strong>Gap closure</strong> — dynamic insertion of <code>AF-PLAN</code>, <code>AF-EXECUTE</code>, and <code>AF-DEBUG</code> repair atoms when the release V-gate finds missing work.</li>
+        <li><strong>Documentation and handoff</strong> — <code>AF-DOCUMENT</code> updates durable docs and release handoff evidence.</li>
+        <li><strong>Ship prep</strong> — <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code>.</li>
+        <li><strong>Create release</strong> — <code>silver:create-release</code> runs after release V-loop evidence and milestone archival are complete.</li>
+      </ul>
+
+      <h3 id="gap-closure">Gap-closure loop (max 2 iterations)</h3>
+      <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to <code>AF-QUALITY-GATE</code> pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
+
+      <h3>Delivery tail (orchestrator parent mode)</h3>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the catalog delivery tail runs automatically (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="four-stage-gate">4-Stage Pre-Release Quality Gate</h2>
+      <p>Before <code>/silver:create-release</code> or <code>gh release create</code>, the current session must complete all four stages in <code>docs/internal/pre-release-quality-gate.md</code> and record hook markers in <code>quality-gate-state</code>.</p>
+      <table class="ref-table">
+        <thead><tr><th>Stage</th><th>Requirement</th><th>Marker</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>ENHANCED adversarial review — 2× DISCOVERY clean on 1177-row manifest</td><td><code>adversarial-review-clean</code></td></tr>
+          <tr><td>2</td><td>SENTINEL per-skill — 1 clean pass per <code>skills/*/SKILL.md</code> (85 skills)</td><td><code>sentinel-skills-clean</code></td></tr>
+          <tr><td>3</td><td>Code security — <code>security</code> skill on <code>hooks/</code> and <code>scripts/</code></td><td>(in <code>required_deploy</code>)</td></tr>
+          <tr><td>4a</td><td><strong>100% public site scan</strong> — every <code>site/**</code> page reviewed for release claims; both freshness tests green</td><td><code>quality-gate-stage-3</code></td></tr>
+          <tr><td>4b</td><td>Verification bundle — <code>/verify-tests</code>, live matrix, tri-host smoke, full test rerun</td><td><code>full-test-suite-rerun</code></td></tr>
+        </tbody>
+      </table>
+      <p><strong>Stage 4a site scan (mandatory):</strong> update homepage, Help Center, changelog, reference tables, version strings, workflow catalog order, and <code>site/help/search.js</code> when pages change. Run both scripts before recording the marker:</p>
+      <div class="code-block">bash tests/scripts/test-site-content-freshness.sh
+bash tests/scripts/test-site-doc-freshness.sh</div>
+      <p><strong>CI green gate <span class="historical" data-historical>(introduced in v0.51.1)</span>:</strong> <code>bash scripts/pre-release-gate.sh</code> runs site freshness tests plus <code>bash tests/run-all-tests.sh</code> — never tag on red CI.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="non-skippable-gates">Non-Skippable Gates</h2>
+      <div class="callout callout-warn">
+        <div class="callout-icon">🔒</div>
+        <div class="callout-body">
+          <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
+          <ul style="margin-top:8px">
+            <li><code>/silver:quality-gates</code> pre-release (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/verify-tests</code> fresh release-session test run (<code>AF-VERIFY</code>)</li>
+            <li><code>security</code> (<code>AF-SECURE</code>) is mandatory for every release</li>
+            <li><code>silver:ship</code> (<code>AF-SHIP</code>) must succeed before milestone archival</li>
+            <li><code>/silver:create-release</code> runs only after <code>AF-RELEASE</code> evidence and milestone archival</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example Invocation</h2>
+      <div class="code-block">/silver:release Cut v0.52.0</div>
+      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security hard gate → docs and milestone summary → cross-artifact review → deploy readiness → fresh tests → <code>silver:ship</code> → milestone archival → <code>/silver:create-release</code> → post-release items summary.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-deep-research.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:deep-research</span>
+        </a>
+        <a href="./silver-fast.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:fast</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

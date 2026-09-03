@@ -1,0 +1,186 @@
+{
+  "version": 2,
+  "description": "Feature-level homepage and help claims verified in pre-release (overlay dry-run structural, claims-audit, matrix rows, install scripts). Not in validation overlay gates.",
+  "sources": {
+    "homepage": "site/index.html",
+    "help_center": "site/help/",
+    "catalog": "docs/apo-catalog.json",
+    "homepage_registry": "docs/testing/claims-registry.json"
+  },
+  "verification_tiers": {
+    "structural": "Repo files, install scripts, help page existence",
+    "contract": "apo-catalog invariants, claims-audit, generated view freshness",
+    "matrix_overlay": "Enterprise E2E matrix row pass criteria",
+    "tri_host_smoke": "Per-host install + sb-diagnostics + SB script invocations",
+    "five_tool_live": "Cursor /silver:agent-cursor live delegate when leanctx opted in"
+  },
+  "claims": [
+    {
+      "claim_id": "hero-apo-title",
+      "surface": "homepage",
+      "text": "Agentic Process Orchestrator for the AI Era",
+      "verification_tier": "matrix_overlay",
+      "check_id": "apo-catalog-workflow-count",
+      "test_ids": ["validate-apo-catalog", "enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "hero-tri-host",
+      "surface": "homepage",
+      "text": "Claude Code, Codex, or Cursor",
+      "verification_tier": "tri_host_smoke",
+      "proof_level": "structurally_tested",
+      "check_id": "tri-host-install-smoke",
+      "test_ids": ["tri-host-install-smoke", "install-claude", "install-codex", "install-cursor"],
+      "notes": "Install smoke only — not live_e2e_proven for all hosts; see CERTIFICATION-STATUS.json"
+    },
+    {
+      "claim_id": "help-tri-host",
+      "surface": "help_center",
+      "text": "Claude Code, Codex, and Cursor",
+      "verification_tier": "tri_host_smoke",
+      "check_id": "tri-host-install-smoke",
+      "test_ids": ["tri-host-install-smoke"]
+    },
+    {
+      "claim_id": "help-router-workflow",
+      "surface": "help_center",
+      "text": "/silver router composes workflows dynamically",
+      "verification_tier": "matrix_overlay",
+      "check_id": "help-page-exists-silver-router",
+      "test_ids": ["enterprise-e2e-row-1"]
+    },
+    {
+      "claim_id": "mechanism-catalog-counts",
+      "surface": "homepage",
+      "text": "29 atomic flows composed into 22 task-shaped workflows and 4 reusable components",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "hero-busl-no-telemetry",
+      "surface": "homepage",
+      "text": "BUSL 1.1 Source-Available",
+      "verification_tier": "contract",
+      "check_id": "license-surface-consistency",
+      "test_ids": ["claims-audit", "site-structural-consistency"],
+      "notes": "BUSL 1.1 source availability and no-plugin-telemetry wording are qualified by the homepage, Terms, Privacy Policy, and repository LICENSE."
+    },
+    {
+      "claim_id": "mechanism-twelve-hooks",
+      "surface": "homepage",
+      "text": "twelve hook layers that physically block unsafe progress",
+      "verification_tier": "structural",
+      "check_id": "hook-scripts-present",
+      "test_ids": ["hook-unit-tests", "hook-delivery-preflight"]
+    },
+    {
+      "claim_id": "mechanism-dynamic-silver",
+      "surface": "homepage",
+      "text": "Dynamic Workflow Composition",
+      "verification_tier": "matrix_overlay",
+      "proof_level": "live_e2e_partial",
+      "check_id": "help-page-exists-silver-router",
+      "test_ids": ["enterprise-e2e-row-1"],
+      "notes": "Row 1 proven on Cursor/Codex canonical tracks; tri-host parity incomplete"
+    },
+    {
+      "claim_id": "code-intel-stack",
+      "surface": "homepage",
+      "text": "Graphify + agentmemory wire",
+      "verification_tier": "matrix_overlay",
+      "check_id": "code-intel-preflight-wiring",
+      "test_ids": ["enterprise-e2e-code-intel-preflight", "graphify-gate", "agentmemory-gate"]
+    },
+    {
+      "claim_id": "five-tool-stack-cursor",
+      "surface": "homepage",
+      "text": "Five-tool parallel-routed compression stack (LeanCTX + RTK + Context Mode + Graphify + agentmemory)",
+      "verification_tier": "five_tool_live",
+      "proof_level": "live_e2e_partial",
+      "check_id": "five-tool-prerelease-cursor",
+      "test_ids": [
+        "test-five-tool-prerelease-cursor",
+        "test-live-five-tool-stack-cursor",
+        "test-five-tool-mutual-exclusion",
+        "test-optimize-five-tool-stack"
+      ],
+      "mandatory_when": "recommended_tools.leanctx.enabled_by_user == true",
+      "operator_doc": "docs/testing/FIVE-TOOL-PRERELEASE.md",
+      "notes": "Offline hook bundle always in CI; live S01/S02/S04/S06/S09 via agent-cursor-delegate.sh at pre-release when leanctx opted in"
+    },
+    {
+      "claim_id": "proof-sb-diagnostics",
+      "surface": "homepage",
+      "text": "sb-diagnostics.sh",
+      "verification_tier": "structural",
+      "check_id": "sb-diagnostics-exists",
+      "test_ids": ["sb-diagnostics-script"]
+    },
+    {
+      "claim_id": "catalog-contract-footer",
+      "surface": "homepage",
+      "text": "26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.",
+      "verification_tier": "contract",
+      "check_id": "apo-catalog-counts",
+      "test_ids": ["validate-apo-catalog"]
+    },
+    {
+      "claim_id": "help-catalog-version",
+      "surface": "help_center",
+      "text": "Help Center documents current SB version",
+      "verification_tier": "structural",
+      "check_id": "help-version-sync",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-workflow-pages",
+      "surface": "help_center",
+      "text": "All 22 public catalog workflows have dedicated Help Center workflow pages; all 4 reusable components are covered in aggregate workflow documentation",
+      "verification_tier": "structural",
+      "check_id": "help-workflow-coverage",
+      "test_ids": ["help-center-staleness"]
+    },
+    {
+      "claim_id": "help-apo-catalog-sot",
+      "surface": "help_center",
+      "text": "APO catalog (docs/apo-catalog.json)",
+      "verification_tier": "contract",
+      "check_id": "help-catalog-sot-reference",
+      "test_ids": ["help-center-staleness", "validate-apo-catalog"]
+    }
+  ],
+  "internal_workflows_without_help_page": [
+    "WF-POST-EXEC-GATES",
+    "WF-VALIDATE-SUBSTEP"
+  ],
+  "matrix_row_claim_map": {
+    "1": ["hero-apo-title", "mechanism-dynamic-silver", "help-router-workflow"]
+  },
+  "tri_host_smoke": {
+    "script": "scripts/run-tri-host-install-smoke.sh",
+    "test": "tests/scripts/test-tri-host-install-smoke.sh",
+    "operator_doc": "docs/testing/ENTERPRISE-E2E-VALIDATION-PLAN.md#pre-release-tri-host-smoke"
+  },
+  "five_tool_prerelease": {
+    "script": "tests/scripts/test-five-tool-prerelease-cursor.sh",
+    "live_harness": "tests/live/test-live-five-tool-stack-cursor.sh",
+    "delegate": "scripts/agent-cursor-delegate.sh",
+    "skill": "skills/silver-agent-cursor/SKILL.md",
+    "scenario_doc": "tests/skill-scenarios/silver-five-tool-stack.md",
+    "operator_doc": "docs/testing/FIVE-TOOL-PRERELEASE.md",
+    "pre_release_gate_stage": "4c",
+    "mandatory_when": "recommended_tools.leanctx.enabled_by_user == true"
+  },
+  "rc_validation": {
+    "script": "scripts/run-rc-validation-matrix.sh",
+    "test": "tests/scripts/test-rc-validation-matrix.sh",
+    "operator_doc": "docs/testing/RC-VALIDATION-MATRIX.md",
+    "ci_workflow": ".github/workflows/rc-validation.yml",
+    "ci_policy": "optional_non_blocking",
+    "ci_scope": "cursor live when CURSOR_API_KEY; codex/claude structural install only (SB_RC_CI_MODE=1)",
+    "operator_scope": "all six cells with host CLIs and operator API keys — required for release gate",
+    "release_gate": "release.require_rc_matrix via completion-audit deploy-tier",
+    "bypass": "SB_SKIP_RC_MATRIX=1"
+  }
+}

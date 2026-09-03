@@ -1,0 +1,1 @@
+Error: Unknown provider "opencode-go". Use --list-models to see available providers/models.

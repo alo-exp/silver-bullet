@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>/silver:spec &mdash; Spec Compiler &mdash; Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet spec compiler: reads the newest clarify brief and any ingest draft, writes SPEC.md and REQUIREMENTS.md from SPEC acceptance criteria, optional DESIGN.md, and artifact review before SB planning.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,
+.container{max-width:860px;margin:0 auto;padding:0 24px}.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:650px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.4rem;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}.doc-content h2:first-child{margin-top:0}.doc-content h3{font-size:1rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}.doc-content ul,.doc-content ol{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}.doc-content li{margin-bottom:5px;line-height:1.7}.doc-content strong{color:var(--text-primary)}.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}.callout-body strong{color:var(--text-primary)}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}.ref-table tr:last-child td{border-bottom:none}.ref-table tr:hover td{background:var(--slate-a02)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:240px}.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+</style>
+</head>
+<body class="has-help-subnav">
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:spec</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+<div class="page-hero"><div class="container"><h1>/silver:spec</h1><p>Spec compiler that produces canonical <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> from the newest clarify brief (and any ingest draft) before implementation begins.</p></div></div>
+<div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On This Page</li><li><a href="#overview">Overview</a></li><li><a href="#when-to-use">When to Use</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow Steps</a></li><li><a href="#non-skippable">Non-Skippable Gates</a></li><li><a href="#handoff">SB Handoff</a></li><li class="sidebar-section">See Also</li><li><a href="./index.html">All Workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
+<article class="doc-content">
+<h2 id="overview">Overview</h2>
+<p><code>/silver:spec</code> implements catalog atomic flow <code>AF-SPECIFY</code>. It is a compiler: it reads the newest <code>*-CLARIFY-*.md</code> brief plus any ingest SPEC draft, writes the canonical spec artifacts, and runs artifact review before downstream planning consumes the result. Interviewing lives in <code>/silver:clarify --spec</code>.</p>
+<p>It does not implement code and does not run the 9-turn interview. Its job is to compile a decision-ready brief into traceable planning inputs.</p>
+<div class="callout callout-info"><div class="callout-body"><strong>Core value:</strong> SB prevents premature implementation by requiring a spec with acceptance criteria, out-of-scope boundaries, assumptions, and source-artifact references before planning starts.</div></div>
+<div class="divider"></div>
+<h2 id="when-to-use">When to Use</h2>
+<ul>
+  <li>The feature has ambiguous scope or multiple user stories.</li>
+  <li>You need acceptance criteria before planning or implementation.</li>
+  <li>You are augmenting an existing <code>.planning/SPEC.md</code> and need a new spec version.</li>
+  <li>The work depends on assumptions that should be visible to reviewers and implementers.</li>
+</ul>
+<div class="divider"></div>
+<h2 id="outputs">Outputs</h2>
+<table class="ref-table"><thead><tr><th>Artifact</th><th>Purpose</th></tr></thead><tbody>
+<tr><td>.planning/SPEC.md</td><td>Canonical feature spec with overview, user stories, UX flows, acceptance criteria, assumptions, open questions, out-of-scope boundaries, source artifacts, and spec version.</td></tr>
+<tr><td>.planning/REQUIREMENTS.md</td><td>Derived REQ/NFR list tied back to acceptance criteria and non-functional concerns.</td></tr>
+<tr><td>.planning/DESIGN.md</td><td>Conditional output when a design artifact or Figma URL is part of the spec context.</td></tr>
+</tbody></table>
+<div class="divider"></div>
+<h2 id="steps">Workflow Steps</h2>
+<ol>
+  <li><strong>Mode detection:</strong> detect greenfield vs augment mode by checking whether <code>.planning/SPEC.md</code> already exists, and load the newest <code>*-CLARIFY-*.md</code> brief plus any ingest draft.</li>
+  <li><strong>Compile inputs:</strong> map the clarify capture schema (and ingest SPEC dump, if any) onto the SB spec scaffold. Do not re-run the 9-turn interview.</li>
+  <li><strong>Domain completeness:</strong> treat problem, scope, stories, and AC in the brief as covered. Gap-fill questions only for required SPEC sections that are still empty.</li>
+  <li><strong>Assumption consolidation:</strong> honor statuses from the brief; resolve, accept, or tag remaining assumptions before writing the spec.</li>
+  <li><strong>Artifact injection:</strong> incorporate available source artifacts and record inaccessible sources explicitly.</li>
+  <li><strong>Write and review artifacts:</strong> write SPEC.md, derive REQUIREMENTS.md from SPEC acceptance criteria, optionally write DESIGN.md, then run artifact review to two consecutive clean passes.</li>
+</ol>
+<div class="divider"></div>
+<h2 id="non-skippable">Non-Skippable Gates</h2>
+<p>The core spec contract cannot be skipped:</p>
+<ul>
+  <li>Consume newest clarify brief when present (brief-domain completeness, not a live turn-counter)</li>
+  <li>Assumption consolidation</li>
+  <li>Writing <code>.planning/SPEC.md</code></li>
+  <li>SPEC artifact review</li>
+  <li>REQUIREMENTS artifact review</li>
+  <li>DESIGN artifact review when DESIGN.md is produced</li>
+</ul>
+<div class="divider"></div>
+<h2 id="handoff">SB Handoff</h2>
+<p>After <code>/silver:spec</code> completes, use <code>/silver:validate</code> when plans already exist or proceed into the appropriate <code>/silver</code> feature path. SB planning consumes the spec and requirements as upstream constraints; SB hooks later maintain PR traceability and UAT freshness against the spec version.</p>
+<div class="code-block">/silver:spec Add scheduled report exports for admins
+/silver:validate
+/silver Build the scheduled report export feature</div>
+<div class="page-nav-bottom"><a href="silver-fast.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/silver:fast</span></a><a href="silver-ingest.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/silver:ingest</span></a></div>
+</article></div></div>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

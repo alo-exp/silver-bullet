@@ -1,0 +1,141 @@
+{
+  "registry": "npm",
+  "status": "ok",
+  "reason": null,
+  "results": [
+    {
+      "name": "pi-deep-research",
+      "description": "Deep research skill for pi — structured search, reflection, and analysis.",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-04-03T05:19:34.893Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/pi-deep-research",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"0.1.6\",\"keywords\":[\"pi-package\",\"research\",\"web-search\",\"deep-research\"]}"
+      }
+    },
+    {
+      "name": "deep-research-skill",
+      "description": "Deep research skill for Antigravity Kit - installs researcher agent, skill, and workflow",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-02-08T06:47:02.293Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/deep-research-skill",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"1.0.1\",\"keywords\":[\"antigravity\",\"ai-agent\",\"research\",\"deep-research\",\"skill\",\"mcp\"]}"
+      }
+    },
+    {
+      "name": "verified-deep-research",
+      "description": "A deep-research skill that gates every cited claim through a verifier before it enters the report — unlike tools that just cite. Installs into ~/.codex/skills for Claude Code or runs headless. BYOK.",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-06-27T05:21:21.262Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/verified-deep-research",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"0.1.0\",\"keywords\":[\"deep-research\",\"claude\",\"claude-code\",\"skill\",\"citations\",\"fact-checking\",\"verification\",\"rag\"]}"
+      }
+    },
+    {
+      "name": "@firstpick/pi-skill-deep-research",
+      "description": "Agents should invoke this skill for high-stakes or complex research needing multi-source evidence, scientific/technical fact-checking, decision traces, or rigorous verification. Runs deterministic two-phase research with schema/policy validation.",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-06-08T21:36:30.365Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/@firstpick/pi-skill-deep-research",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"0.1.6\",\"keywords\":[\"pi-package\",\"pi\",\"pi-coding-agent\",\"skill\",\"agent-skill\",\"deep-research\"]}"
+      }
+    },
+    {
+      "name": "@orchestra-research/ai-research-skills",
+      "description": "Install AI research engineering skills to your coding agents (Claude Code, OpenCode, Cursor, Gemini CLI, Hermes Agent, and more)",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-06-16T01:37:07.093Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/@orchestra-research/ai-research-skills",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"1.7.2\",\"keywords\":[\"ai\",\"research\",\"skills\",\"claude\",\"opencode\",\"cursor\",\"gemini\",\"codex\",\"openclaw\",\"windsurf\",\"hermes\",\"llm\",\"machine-learning\",\"deep-learning\",\"cli\"]}"
+      }
+    },
+    {
+      "name": "@konbakuyomu/smart-search",
+      "description": "CLI-first multi-source web research with xAI/OpenAI-compatible search, Exa, Context7, Zhipu, Tavily, Firecrawl, and Deep Research planning.",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-05-29T20:50:28.221Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/@konbakuyomu/smart-search",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"0.1.14\",\"keywords\":[]}"
+      }
+    },
+    {
+      "name": "@firstpick/pi-skill-research-orchestration",
+      "description": "Agents should invoke this skill for broad multi-claim research projects needing planning, parallel investigation, source merging, gap closure, citation audit, and final synthesis when narrower research skills are insufficient.",
+      "source_registry": "npm",
+      "install_count": null,
+      "stars": null,
+      "security_score": null,
+      "last_updated": "2026-06-08T21:37:04.027Z",
+      "content_sha": null,
+      "install_url": "https://www.npmjs.com/package/@firstpick/pi-skill-research-orchestration",
+      "raw_metadata": {
+        "_envelope": {
+          "source_registry": "npm",
+          "field": "package",
+          "wrapped_at": "2026-07-07T16:03:24.494Z"
+        },
+        "value": "{\"version\":\"0.1.4\",\"keywords\":[\"pi-package\",\"pi\",\"pi-coding-agent\",\"skill\",\"agent-skill\",\"research-orchestration\"]}"
+      }
+    }
+  ],
+  "latency_ms": 503
+}

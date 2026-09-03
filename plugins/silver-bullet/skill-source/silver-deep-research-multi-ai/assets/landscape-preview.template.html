@@ -1,0 +1,4695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var k='sb-landscape-theme',s=localStorage.getItem(k),t=s||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report Preview</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Broken fontsource@5.0.8 weight 500 removed; Roboto Condensed 300/400/500 via Google Fonts -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --sb-sidebar-w: 260px;
+    --sb-main-pad-x: 48px;
+    --sb-main-pad-top: 120px;
+    --sb-topbar-h: 82px;
+    --sb-sticky-thead-top: var(--sb-topbar-h);
+    --sb-export-bar-clearance: 88px;
+    --sb-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --sb-safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* ── Light theme — crisp navy/slate enterprise ── */
+  [data-theme="light"] {
+    --sb-ink: #1e293b;
+    --sb-ink-light: #334155;
+    --sb-muted: #64748b;
+    --sb-muted-light: #94a3b8;
+    --sb-border: #d0d7de;
+    --sb-border-soft: #e2e8f0;
+    --sb-border-muted: #e1e4e8;
+    --sb-surface: #ffffff;
+    --sb-surface-muted: #f6f8fa;
+    --sb-surface-hover: #f1f5f9;
+    --sb-page: #f8fafc;
+    --sb-sidebar-bg: #1e293b;
+    --sb-sidebar-ink: #cbd5e1;
+    --sb-sidebar-muted: #94a3b8;
+    --sb-sidebar-hover: #334155;
+    --sb-primary: #1f3864;
+    --sb-primary-mid: #2f5597;
+    --sb-primary-light: #3d6fa8;
+    --sb-accent: #2563eb;
+    --sb-accent-soft: #e8eef4;
+    --sb-accent-hover: #e2e8f0;
+    --sb-link: #2563eb;
+    --sb-link-hover: #1d4ed8;
+    --sb-link-visited: #6d28d9;
+    --sb-link-underline: rgba(37, 99, 235, 0.38);
+    --sb-sidebar-link-active: #f8fafc;
+    --sb-pros: #2f5597;
+    --sb-cons: #475569;
+    --sb-chart-grid: #e2e8f0;
+    --sb-chart-label: #64748b;
+    --sb-chart-quad-leaders: #e8f4fd;
+    --sb-chart-quad-challengers: #f0eaf8;
+    --sb-chart-quad-visionaries: #fff3e6;
+    --sb-chart-quad-niche: #f0f0f0;
+    --sb-chart-zone-leaders: rgba(90, 150, 210, 0.42);
+    --sb-chart-zone-strong: rgba(160, 205, 240, 0.38);
+    --sb-chart-zone-mid: rgba(215, 235, 250, 0.58);
+    --sb-chart-zone-contenders: rgba(235, 246, 253, 0.72);
+    --sb-chart-wave-outer: rgba(135, 193, 238, 0.30);
+    --sb-chart-wave-mid: rgba(195, 225, 248, 0.44);
+    --sb-chart-wave-inner: rgba(230, 244, 253, 0.70);
+    --sb-chart-wave-stroke: rgba(75, 145, 200, 0.38);
+    --sb-chart-wave-label: rgba(20, 85, 145, 0.62);
+    --sb-chart-label-shadow: rgba(255, 255, 255, 0.92);
+    --sb-chart-series: #1f3864, #2f5597, #3d6fa8, #5b7fa6, #64748b, #475569, #334155, #94a3b8;
+    --sb-chart-overlay: rgba(15,23,42,0.22);
+    --sb-shadow: rgba(15,23,42,0.08);
+    --sb-shadow-strong: rgba(15,23,42,0.18);
+    --sb-breadcrumb-bg: linear-gradient(180deg,rgba(248,250,252,0.98),rgba(248,250,252,0.95));
+    --sb-btn-bg: #ffffff;
+    --sb-btn-ink: #0f172a;
+    --sb-btn-hover: #f6f8fa;
+    --sb-snav-chip-bg: rgba(255,255,255,0.06);
+    --sb-snav-chip-hover: rgba(255,255,255,0.1);
+    --sb-overlay-scrim: rgba(0,0,0,0.38);
+  }
+
+  /* ── Dark theme — deep slate/navy, soft surfaces ── */
+  [data-theme="dark"] {
+    --sb-ink: #e8edf4;
+    --sb-ink-light: #d4dce8;
+    --sb-muted: #a8b4c4;
+    --sb-muted-light: #8b99ad;
+    --sb-border: #334155;
+    --sb-border-soft: #3d4f66;
+    --sb-border-muted: #2d3a4d;
+    --sb-surface: #1a2332;
+    --sb-surface-muted: #151f2e;
+    --sb-surface-hover: #243044;
+    --sb-page: #0f172a;
+    --sb-sidebar-bg: #0b1220;
+    --sb-sidebar-ink: #cbd5e1;
+    --sb-sidebar-muted: #7d8fa8;
+    --sb-sidebar-hover: #1e293b;
+    --sb-primary: #a8c4e8;
+    --sb-primary-mid: #7ba3d4;
+    --sb-primary-light: #5b8fd4;
+    --sb-accent: #6b9fd8;
+    --sb-accent-soft: #1a2840;
+    --sb-accent-hover: #243552;
+    --sb-link: #5ec8ff;
+    --sb-link-hover: #a8e4ff;
+    --sb-link-visited: #c4b5fd;
+    --sb-link-underline: rgba(94, 200, 255, 0.42);
+    --sb-sidebar-link-active: #f1f5f9;
+    --sb-pros: #8eb8e8;
+    --sb-cons: #94a3b8;
+    --sb-chart-grid: #475569;
+    --sb-chart-label: #dce4ee;
+    --sb-chart-quad-leaders: #1a2a3d;
+    --sb-chart-quad-challengers: #231a30;
+    --sb-chart-quad-visionaries: #2a2418;
+    --sb-chart-quad-niche: #1c1c1c;
+    --sb-chart-zone-leaders: rgba(60, 110, 170, 0.35);
+    --sb-chart-zone-strong: rgba(50, 90, 140, 0.42);
+    --sb-chart-zone-mid: rgba(40, 70, 110, 0.50);
+    --sb-chart-zone-contenders: rgba(25, 45, 75, 0.58);
+    --sb-chart-wave-outer: rgba(70, 120, 180, 0.28);
+    --sb-chart-wave-mid: rgba(55, 95, 145, 0.38);
+    --sb-chart-wave-inner: rgba(35, 60, 95, 0.50);
+    --sb-chart-wave-stroke: rgba(130, 180, 230, 0.35);
+    --sb-chart-wave-label: rgba(203, 213, 225, 0.78);
+    --sb-chart-label-shadow: rgba(15, 23, 42, 0.85);
+    --sb-chart-series: #6b9fd8, #7ba3d4, #5b8fd4, #4a7fb0, #94a3b8, #7d8fa8, #64748b, #a8c4e8;
+    --sb-chart-overlay: rgba(203,213,225,0.55);
+    --sb-shadow: rgba(0,0,0,0.35);
+    --sb-shadow-strong: rgba(0,0,0,0.5);
+    --sb-breadcrumb-bg: linear-gradient(180deg,rgba(15,23,42,0.98),rgba(15,23,42,0.95));
+    --sb-btn-bg: #1a2332;
+    --sb-btn-ink: #e2e8f0;
+    --sb-btn-hover: #243044;
+    --sb-snav-chip-bg: rgba(255,255,255,0.05);
+    --sb-snav-chip-hover: rgba(255,255,255,0.09);
+    --sb-overlay-scrim: rgba(0,0,0,0.55);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: clip; max-width: 100%; }
+  body {
+    overflow-x: clip;
+    max-width: 100%;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  /* Roboto Condensed loaded via Google Fonts stylesheet (300+400+500). */
+  html {
+    font-family: 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+  }
+  body {
+    font-family: inherit;
+    font-weight: 300;
+    background: var(--sb-page); color: var(--sb-ink); line-height: 1.6;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  button, input, select, textarea, optgroup,
+  #sidebar, #solutionNav, #breadcrumb, #exportBar,
+  .chart-title, .chart-subtitle, .snav-btn, .export-btn, .vfbtn,
+  .info-card-header, .tc-title, .tc-body, .vc-name, .toast {
+    font-family: inherit;
+  }
+  code, pre, kbd, samp, .monospace {
+    font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace !important;
+  }
+  #sidebar { position: fixed; top: 0; left: 0; width: var(--sb-sidebar-w); height: 100vh;
+             background: var(--sb-sidebar-bg); color: var(--sb-sidebar-ink); overflow-y: auto; padding: 16px;
+             font-size: 13px; z-index: 100; transition: transform .25s ease, width .25s ease; }
+  .sidebar-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px; min-height: 36px;
+  }
+  #sidebar h3 { color: var(--sb-sidebar-ink); margin: 0; font-size: 12px;
+                text-transform: uppercase; letter-spacing: 1px; flex: 1; min-width: 0; }
+  #sidebar ul { list-style: none; }
+  #sidebar li { margin: 4px 0; }
+  #sidebar a { color: var(--sb-sidebar-muted); text-decoration: none; display: block;
+               padding: 3px 6px; border-radius: 4px; transition: all .15s; }
+  #sidebar a:hover, #sidebar a.active { color: var(--sb-sidebar-link-active); background: var(--sb-sidebar-hover); }
+  #main {
+    margin-left: var(--sb-sidebar-w);
+    padding: var(--sb-main-pad-top) var(--sb-main-pad-x)
+             calc(40px + var(--sb-export-bar-clearance) + var(--sb-safe-bottom));
+    width: calc(100% - var(--sb-sidebar-w));
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+  #content { min-width: 0; width: 100%; max-width: 100%; font-size: 16px; overflow-x: clip; }
+  /* Strict type ladder: H1 > H2 > H3 ≈ card titles > H4 ≈ trend/info titles > body */
+  #content h1 { font-size: 1.875rem; font-weight: 500; border-bottom: 2px solid var(--sb-border-soft); padding-bottom: 12px;
+                margin: 0 0 8px; color: var(--sb-primary); line-height: 1.2; letter-spacing: -0.02em; }
+  #content h1 + p > em,
+  #content h1 + em,
+  #content .report-subtitle { font-size: 1rem; font-style: normal; font-weight: 400;
+                color: var(--sb-muted); margin: 0 0 16px; display: block; line-height: 1.45; }
+  #content h2 { font-size: 1.5rem; font-weight: 500; border-bottom: 1px solid var(--sb-border-soft); padding-bottom: 8px;
+                margin: 36px 0 14px; color: var(--sb-primary); line-height: 1.25; letter-spacing: -0.01em;
+                scroll-margin-top: calc(var(--sb-topbar-h) + 108px); }
+  #content h3 { font-size: 1.25rem; font-weight: 500; margin: 28px 0 10px; color: var(--sb-primary-mid); line-height: 1.3;
+                scroll-margin-top: calc(var(--sb-topbar-h) + 108px); }
+  #content h4 { font-size: 1.0625rem; font-weight: 500; margin: 18px 0 8px; color: var(--sb-primary-mid); line-height: 1.35; }
+  #content p { margin: 0 0 12px; font-size: 1rem; font-weight: 300; }
+  #content ul, #content ol { margin: 0 0 12px 24px; }
+  #content li { margin: 4px 0; font-weight: 300; }
+  #content th { border: none; }
+  #content td { border: none; font-weight: 300; }
+  #content code { background: var(--sb-surface-hover); padding: 2px 6px; border-radius: 4px;
+                  font-family: 'SF Mono', Consolas, monospace; font-size: 0.875em; }
+  #content pre { background: var(--sb-sidebar-bg); color: var(--sb-sidebar-ink); padding: 16px; border-radius: 8px;
+                 overflow-x: auto; margin: 12px 0; }
+  #content pre code { background: none; color: inherit; padding: 0; }
+  #content blockquote { border-left: 4px solid var(--sb-primary-mid); padding: 8px 16px;
+                        background: var(--sb-accent-soft); margin: 12px 0; color: var(--sb-ink); }
+  #content strong { font-weight: 500; }
+  #content em { font-style: italic; }
+  #content hr { border: none; border-top: 1px solid var(--sb-border-muted); margin: 32px 0; }
+  /* Info cards — Shortlist Profiles & Future Outlook */
+  .info-card { border:1px solid var(--sb-border); border-radius:10px; margin:10px 0; overflow:hidden; }
+  .info-card-header { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; background:var(--sb-surface-muted); cursor:pointer; font-weight:500; font-size:1.0625rem; color:var(--sb-ink); user-select:none; }
+  .info-card-header:hover { background:var(--sb-accent-soft); }
+  .info-card-toggle { color:var(--sb-muted-light); flex-shrink:0; padding-left:10px; line-height:1; display:inline-flex; align-items:center; }
+  .info-card-body { display:none; padding:12px 18px 16px; font-size:14px; font-weight:300; }
+  .info-card-body.open { display:block; }
+  #stats { font-size: 11px; color: var(--sb-muted); margin-top: 8px; padding-top: 8px;
+           border-top: 1px solid var(--sb-sidebar-hover); }
+  .chart-frame { background: var(--sb-surface); border: 1px solid var(--sb-border); border-radius: 10px;
+                 padding: 28px 32px; margin: 20px 0 28px; box-shadow: 0 2px 8px var(--sb-shadow);
+                 opacity:0; transform:translateY(22px); transition:opacity .55s ease, transform .55s ease;
+                 will-change: opacity, transform; min-width: 0; width: 100%; max-width: 100%; }
+  .chart-frame.in-view { opacity:1; transform:translateY(0); }
+  .chart-canvas-wrap {
+    position: relative; width: 100%; min-width: 0; max-width: 100%;
+    height: 480px; overflow: hidden;
+  }
+  .chart-canvas-wrap--vc { height: 440px; }
+  .chart-canvas-wrap canvas { display: block; width: 100% !important; max-width: 100%; }
+  .chart-title { font-size: 0.6875rem; font-weight: 500; text-transform: uppercase;
+                 letter-spacing: .8px; color: var(--sb-muted); margin-bottom: 6px; }
+  .chart-subtitle { font-size: 12px; color: var(--sb-muted-light); margin-bottom: 20px; }
+  .chart-source-table { margin-top: 20px; }
+  .chart-source-table summary { font-size: 12px; color: var(--sb-primary-mid); cursor: pointer; }
+  .chart-source-table table { margin-top: 8px; }
+  .wave-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; }
+  .wave-legend span { display: flex; align-items: center; gap: 5px; }
+  .wave-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+  .vc-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; }
+  .vc-legend span { display: flex; align-items: center; gap: 5px; }
+  .vc-legend i { display: inline-block; width: 28px; height: 3px; border-radius: 2px; }
+  .vc-legend .dashed { border-top: 2px dashed currentColor; background: transparent; height: 0; }
+
+  /* Solution Nav */
+  #solutionNav {
+    position: fixed; top: var(--sb-safe-top); left: var(--sb-sidebar-w); right: 0; z-index: 10000;
+    background: var(--sb-sidebar-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--sb-sidebar-hover);
+    padding: 6px 14px;
+    display: flex; flex-direction: column; gap: 4px;
+    min-width: 0; overflow: hidden;
+  }
+  .topbar-chrome {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; min-height: 36px; flex-shrink: 0;
+  }
+  .topbar-chrome__spacer { flex: 1; min-width: 8px; }
+  .topbar-filter-bar {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    min-width: 0; max-width: min(62vw, 720px);
+  }
+  .topbar-filter-bar .vf-label {
+    font-size: 10px; font-weight: 500; letter-spacing: 0.6px;
+    color: var(--sb-sidebar-muted); text-transform: uppercase; flex-shrink: 0;
+  }
+  /* Solution nav collapse — all viewports */
+  #solutionNav.snav-collapsed .snav-body { display: none; }
+  #solutionNav:not(.snav-collapsed) { box-shadow: 0 4px 16px var(--sb-shadow); }
+  /* Desktop sidebar collapse */
+  body.sb-sidebar-collapsed { --sb-sidebar-w: 0px; }
+  body.sb-sidebar-collapsed #sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    border: none;
+    pointer-events: none;
+  }
+  body.sb-sidebar-collapsed #sidebar #toc,
+  body.sb-sidebar-collapsed #sidebar #stats,
+  body.sb-sidebar-collapsed #sidebar .sidebar-head {
+    display: none;
+  }
+  #sidebarToggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--sb-border);
+    background: var(--sb-surface); color: var(--sb-ink); cursor: pointer;
+    box-shadow: 0 2px 8px var(--sb-shadow); flex-shrink: 0;
+    position: static;
+    z-index: 10061;
+    pointer-events: auto;
+  }
+  #sidebarToggle:hover { background: var(--sb-surface-hover); border-color: var(--sb-primary-mid); color: var(--sb-primary-mid); }
+  #snavToggle {
+    font-size: 11px; font-weight: 500; letter-spacing: .4px;
+    padding: 5px 12px; border-radius: 14px; border: 1px solid rgba(148,163,184,0.45);
+    background: var(--sb-snav-chip-bg); color: var(--sb-sidebar-ink); cursor: pointer;
+    flex-shrink: 0;
+  }
+  .snav-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .snav-row {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    overflow-x: auto; scrollbar-width: none;
+    padding: 1px 0;
+  }
+  .snav-row::-webkit-scrollbar { display: none; }
+  .snav-label {
+    font-size: 9.5px; font-weight: 500; color: var(--sb-sidebar-ink); letter-spacing: 1px;
+    min-width: 90px; flex-shrink: 0; text-transform: uppercase;
+  }
+  .snav-btn {
+    font-size: 10.5px; padding: 4px 11px; border-radius: 14px;
+    border: none; outline: none; background: var(--sb-snav-chip-bg);
+    color: var(--sb-sidebar-ink); cursor: pointer; white-space: nowrap;
+    transition: all .2s ease; flex-shrink: 0;
+  }
+  .snav-btn:hover, .snav-btn:focus, .snav-btn:focus-visible {
+    border: none; outline: none; background: var(--sb-snav-chip-hover);
+    color: var(--sb-sidebar-link-active);
+  }
+  .snav-btn.active {
+    background: var(--sb-primary-mid);
+    border: none; outline: none; color: #fff; font-weight: 500;
+  }
+
+  /* Reading Progress Bar */
+  #readProgress { position:fixed; top:var(--sb-topbar-h); left:var(--sb-sidebar-w); right:0; height:3px; width:auto; background:transparent; z-index:9999; pointer-events:none; }
+  #readProgressBar { position:absolute; top:0; left:0; height:3px; width:0%; background:var(--sb-primary-mid); transition:width .1s linear; }
+
+  /* Sticky Breadcrumb */
+  #breadcrumb { position:fixed; top:calc(var(--sb-topbar-h) + 1px); left:var(--sb-sidebar-w); right:0; height:32px; background:var(--sb-breadcrumb-bg); backdrop-filter:blur(8px); z-index:9998; display:flex; align-items:center; padding:0 28px; font-size:12px; letter-spacing:0.3px; color:var(--sb-muted); border-bottom:1px solid var(--sb-border-muted); box-shadow:0 1px 3px var(--sb-shadow); min-width:0; overflow:hidden; }
+  #bcSection, #bcSub { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #bcSection { flex: 0 1 auto; max-width: 58%; }
+  #bcSub { flex: 1 1 auto; max-width: 42%; }
+
+  /* Theme switcher — inside collapsed top bar */
+  #themeToggle {
+    position: static;
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--sb-border); background: var(--sb-surface);
+    color: var(--sb-ink); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px var(--sb-shadow); flex-shrink: 0;
+    transition: background .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  #themeToggle:hover {
+    background: var(--sb-surface-hover); border-color: var(--sb-primary-mid);
+    color: var(--sb-primary-mid); box-shadow: 0 4px 14px var(--sb-shadow-strong);
+  }
+  #themeToggle .lucide-icon { width: 18px; height: 18px; }
+  .topbar-export-cluster {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: 6px;
+  }
+  .topbar-export-cluster .export-btn,
+  .topbar-export-cluster #compareBtn {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 16px;
+  }
+  .topbar-export-cluster .export-btn .btn-icon,
+  .topbar-export-cluster #compareBtn .btn-icon { width: 13px; height: 13px; }
+
+  /* Section Colour Coding — enterprise blues/slates */
+  .sec-color-0 h2, h2.sec-color-0 { border-left:4px solid var(--sb-primary); padding-left:10px; }
+  .sec-color-1 h2, h2.sec-color-1 { border-left:4px solid var(--sb-primary-mid); padding-left:10px; }
+  .sec-color-2 h2, h2.sec-color-2 { border-left:4px solid var(--sb-primary-light); padding-left:10px; }
+  .sec-color-3 h2, h2.sec-color-3 { border-left:4px solid #5b7fa6; padding-left:10px; }
+  .sec-color-4 h2, h2.sec-color-4 { border-left:4px solid var(--sb-muted); padding-left:10px; }
+  .sec-color-5 h2, h2.sec-color-5 { border-left:4px solid var(--sb-cons); padding-left:10px; }
+  .sec-color-6 h2, h2.sec-color-6 { border-left:4px solid var(--sb-ink-light); padding-left:10px; }
+  .sec-color-7 h2, h2.sec-color-7 { border-left:4px solid var(--sb-muted-light); padding-left:10px; }
+  a.sec-color-0 { border-left:3px solid var(--sb-primary); padding-left:6px; }
+  a.sec-color-1 { border-left:3px solid var(--sb-primary-mid); padding-left:6px; }
+  a.sec-color-2 { border-left:3px solid var(--sb-primary-light); padding-left:6px; }
+  a.sec-color-3 { border-left:3px solid #5b7fa6; padding-left:6px; }
+  a.sec-color-4 { border-left:3px solid var(--sb-muted); padding-left:6px; }
+  a.sec-color-5 { border-left:3px solid var(--sb-cons); padding-left:6px; }
+  a.sec-color-6 { border-left:3px solid var(--sb-ink-light); padding-left:6px; }
+  a.sec-color-7 { border-left:3px solid var(--sb-muted-light); padding-left:6px; }
+  #content h2[class*="sec-color"] { background:linear-gradient(90deg,var(--sb-surface-muted),transparent); padding:12px 14px 8px; border-radius:0 6px 6px 0; }
+
+  /* Collapsible Sub-sections */
+  #content h3.collapsible { cursor:pointer; user-select:none; display:flex; align-items:flex-start; gap:6px; }
+  #content h3.collapsible .collapse-chevron { color:var(--sb-muted); flex-shrink:0; margin-top:2px; }
+  .collapsible-body { overflow:hidden; transition:max-height .3s ease; }
+
+  /* Inline Callout Boxes */
+  .callout { border-left:4px solid; border-radius:0 6px 6px 0; padding:10px 16px; margin:14px 0; font-size:14px; }
+  .callout strong:first-child { display:block; font-size:11px; letter-spacing:.5px; text-transform:uppercase; margin-bottom:4px; }
+  .callout-insight { background:var(--sb-accent-soft); border-color:var(--sb-primary-mid); }
+  .callout-signal  { background:var(--sb-surface-hover); border-color:var(--sb-muted); }
+  .callout-risk    { background:var(--sb-page); border-color:var(--sb-cons); }
+  .callout-stat    { background:var(--sb-accent-soft); border-color:var(--sb-primary); }
+  .callout-default { background:var(--sb-surface-muted); border-color:var(--sb-muted); }
+
+  /* Trend Cards */
+  .trend-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:8px 0 16px; }
+  .trend-card { background:var(--sb-surface-muted); border:1px solid var(--sb-border); border-radius:10px; padding:16px 14px; }
+  .trend-card:hover { border-color:var(--sb-primary-mid); background:var(--sb-accent-soft); transition:all .2s; }
+  .tc-icon { margin-bottom:8px; display:flex; align-items:center; color:var(--sb-primary-mid); }
+  .tc-icon .lucide-icon { width:22px; height:22px; }
+  .tc-title { font-size:1.0625rem; font-weight:500; color:var(--sb-ink); margin-bottom:6px; }
+  .tc-body { font-size:12px; color:var(--sb-muted); line-height:1.5; font-weight:300; }
+
+  /* Vendor Profile Cards */
+  .vendor-card { border:1px solid var(--sb-border); border-radius:10px; margin:16px 0; overflow:hidden; }
+  .vc-header { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--sb-surface-muted); cursor:pointer; }
+  .vc-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; color:#fff; flex-shrink:0; background:var(--sb-primary-mid); }
+  .vc-name { font-size:1.25rem; font-weight:500; flex:1; color:var(--sb-primary-mid); line-height:1.3; }
+  .vc-compare { display:inline-flex; align-items:center; flex-shrink:0; cursor:pointer; margin:0; padding:4px; }
+  .vc-compare input { width:16px; height:16px; accent-color:var(--sb-primary-mid); cursor:pointer; margin:0; }
+  .vendor-card.is-compare-selected { border-color:var(--sb-primary-mid); box-shadow:0 0 0 1px var(--sb-primary-mid); }
+  .vendor-card.is-compare-selected .vc-header { background:var(--sb-accent-soft); }
+  .vendor-card { scroll-margin-top: calc(var(--sb-topbar-h) + 108px); }
+  .vc-toggle { color:var(--sb-muted-light); padding:4px 10px; display:inline-flex; align-items:center; line-height:1; }
+  .vc-toggle .lucide-icon { width:18px; height:18px; }
+  .vc-tags { display:flex; gap:6px; flex-wrap:wrap; padding:8px 16px 0; }
+  .vc-tag { font-size:10px; padding:2px 8px; border-radius:12px; background:var(--sb-accent-soft); color:var(--sb-primary-mid); font-weight:500; }
+  .vc-body { padding:0 16px 16px; }
+  .vc-body.vc-collapsed { display:none; }
+  .vendor-card:hover { border-color:var(--sb-primary-mid); box-shadow:0 2px 8px var(--sb-shadow); transition:all .2s ease; }
+
+  /* Filterable Vendor View */
+  .vfbtn { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--sb-border); background: var(--sb-surface); cursor: pointer; color: var(--sb-ink); white-space: nowrap; }
+  .vfbtn.active { background: var(--sb-primary-mid); color: #fff; border-color: var(--sb-primary-mid); }
+  .vfbtn:hover:not(.active):not(:disabled) { background: var(--sb-surface-muted); }
+  .vfbtn.is-hidden { display: none !important; }
+  .vfbtn:disabled, .vfbtn.is-empty {
+    opacity: 0.45; cursor: not-allowed; text-decoration: line-through;
+  }
+  .matrix-fill-gap {
+    margin: 12px 0 18px; padding: 10px 14px; border-radius: 8px;
+    border: 1px solid var(--sb-border); background: var(--sb-surface-muted);
+    color: var(--sb-ink); font-size: 13px; line-height: 1.45;
+  }
+  .matrix-fill-gap strong { color: var(--sb-ink); }
+  .vc-name a, .vc-name-link {
+    color: var(--sb-link);
+    text-decoration: none;
+    transition: color .15s ease;
+  }
+  .vc-name a:hover, .vc-name-link:hover { color: var(--sb-link-hover); }
+  .snav-btn.is-filtered-out { display: none !important; }
+  a.snav-btn { text-decoration: none; display: inline-block; }
+  .vendor-card.is-filtered-out { display: none !important; }
+
+  /* Vendor Name Links */
+  .vname-link {
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--sb-link);
+    transition: color .15s ease;
+  }
+  .vname-link:hover {
+    color: var(--sb-link-hover);
+  }
+
+  /* Content hyperlinks — markdown, tables, compare matrix */
+  #content a:not(.snav-btn),
+  #compareResultsBody a,
+  .chart-source-table a {
+    color: var(--sb-link);
+    text-decoration: none;
+    transition: color .15s ease;
+  }
+  #content a:not(.snav-btn):hover,
+  #compareResultsBody a:hover,
+  .chart-source-table a:hover,
+  #content a:not(.snav-btn):focus-visible,
+  #compareResultsBody a:focus-visible {
+    color: var(--sb-link-hover);
+  }
+  #content a:not(.snav-btn):visited:not(:hover),
+  #compareResultsBody a:visited:not(:hover) {
+    color: var(--sb-link-visited);
+  }
+  #content a:not(.snav-btn):focus-visible,
+  #compareResultsBody a:focus-visible {
+    outline: 2px solid var(--sb-link);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Export action buttons */
+  #exportBar {
+    position: fixed;
+    bottom: calc(24px + var(--sb-safe-bottom));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    z-index: 1003;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #exportBar.export-bar--flow {
+    position: static;
+    left: auto;
+    right: auto;
+    margin: 40px auto 24px;
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    justify-content: center;
+    flex-wrap: wrap;
+    z-index: 20;
+  }
+  .export-btn {
+    color: var(--sb-btn-ink); background: var(--sb-btn-bg);
+    border: 1px solid var(--sb-border); padding: 10px 18px; border-radius: 20px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    box-shadow: 0 2px 8px var(--sb-shadow);
+    display: flex; align-items: center; gap: 6px;
+    transition: all .2s ease; white-space: nowrap;
+  }
+  .export-btn:hover { transform: translateY(-1px); background: var(--sb-btn-hover); box-shadow: 0 4px 14px var(--sb-shadow-strong); }
+  .export-btn:active { transform: translateY(0); }
+  .export-btn .btn-icon { width:15px; height:15px; }
+  .lucide-icon { width:16px; height:16px; stroke-width:2; }
+  .lucide-icon svg { width:100%; height:100%; }
+  .lucide-icon.is-spinning svg { animation: lucide-spin 1s linear infinite; }
+  @keyframes lucide-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  #sidebarToggle .lucide-icon { width:18px; height:18px; }
+  #snavToggle { display:inline-flex; align-items:center; gap:6px; }
+  #snavToggle .snav-chevron { width:14px; height:14px; }
+  .icon-btn { background:none; border:none; cursor:pointer; color:var(--sb-muted); display:inline-flex; align-items:center; padding:4px; }
+  .icon-btn .lucide-icon { width:18px; height:18px; }
+  #compareBtn { display:flex; align-items:center; gap:6px; color:var(--sb-btn-ink); background:var(--sb-btn-bg); border:1px solid var(--sb-border); padding:10px 18px; border-radius:20px; cursor:pointer; font-size:13px; font-weight:500; box-shadow:0 2px 8px var(--sb-shadow); transition:all .2s ease; white-space:nowrap; }
+  #compareBtn:hover { background:var(--sb-btn-hover); box-shadow:0 4px 14px var(--sb-shadow-strong); transform:translateY(-1px); }
+
+  /* Toast notification */
+  .toast { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--sb-ink); color:var(--sb-sidebar-ink); padding:8px 16px; border-radius:8px; font-size:13px; z-index:10001; opacity:1; transition:opacity .5s; pointer-events:none; }
+  .toast.fade { opacity:0; }
+
+  /* Vendor Comparison Drawer */
+  #compareBadge { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:var(--sb-primary); border-radius:50%; font-size:10px; margin-left:6px; color:#fff; }
+  .compare-drawer {
+    position: fixed;
+    bottom: calc(72px + var(--sb-safe-bottom));
+    right: calc(24px + env(safe-area-inset-right, 0px));
+    width: 560px; max-height: 70vh;
+    overflow-y: auto; overflow-x: hidden;
+    background: var(--sb-surface); border: 1px solid var(--sb-border);
+    border-radius: 12px; padding: 20px;
+    z-index: 1002;
+    box-shadow: 0 8px 24px var(--sb-shadow-strong);
+    display: none;
+  }
+  .compare-drawer.open { display: block; }
+  #compareTableWrap { font-size: 12px; color: var(--sb-muted); }
+  .compare-results-section {
+    margin-top: 48px; padding-top: 28px;
+    border-top: 2px solid var(--sb-border-soft);
+    scroll-margin-top: calc(var(--sb-topbar-h) + 108px);
+  }
+  .compare-results-section h2 { margin-top: 0; }
+  #compareResultsBody .table-scroll-wrap { margin: 12px 0 0; }
+  #compareResultsBody table { min-width: 480px; font-size: 12px; }
+  .compare-empty { color: var(--sb-muted); font-size: 14px; margin: 8px 0 0; }
+  .cmp-remove { cursor: pointer; color: var(--sb-muted); font-size: 12px;
+    display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; }
+  .chart-canvas-wrap canvas { cursor: pointer; }
+  .quadrant-compare-layer {
+    position: absolute; inset: 0; pointer-events: none; z-index: 4;
+  }
+  .quadrant-compare-btn-wrap {
+    position: absolute; pointer-events: auto; display: none; padding: 2px;
+  }
+  .quadrant-compare-btn-wrap.is-visible,
+  .quadrant-compare-btn-wrap:focus-within { display: block; }
+  .quadrant-compare-btn {
+    font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 10px;
+    cursor: pointer; border: 1px solid var(--sb-border); line-height: 1.2;
+    background: var(--sb-btn-bg); color: var(--sb-btn-ink);
+    box-shadow: 0 1px 5px var(--sb-shadow);
+  }
+  .quadrant-compare-btn:hover:not(:disabled) { background: var(--sb-btn-hover); }
+  .quadrant-compare-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .cmp-col-score { display: block; font-size: 10px; font-weight: 500; color: var(--sb-primary-mid); margin-top: 2px; }
+  #compareResultsBody tr.cmp-score-row td {
+    background: var(--sb-accent-soft); font-weight: 500; text-align: center;
+    border-bottom: 2px solid var(--sb-border);
+  }
+  #compareResultsBody tr.cmp-score-row td:first-child { text-align: left; }
+  .vendor-card.is-chart-target { outline: 2px solid var(--sb-accent); outline-offset: 2px; }
+  .wave-legend [data-wave-idx], .vc-legend [data-vc-idx] { cursor: pointer; }
+  .table-scroll-wrap {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    max-width: 100%; margin: 16px 0;
+  }
+  .table-scroll-wrap table {
+    display: table;
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+  }
+  #content h2.source-reliability-section + h3 {
+    margin-top: 4px;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--sb-primary-mid);
+  }
+  #content h2.source-reliability-section + h3 + .table-scroll-wrap,
+  #content h2.source-reliability-section + h3 + table {
+    margin-top: 0;
+  }
+
+  /* Pros & Cons Grid */
+  .pros-cons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 24px;
+    margin: 12px 0;
+  }
+  .pros-col strong, .cons-col strong {
+    display: block; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .pros-col strong { color: var(--sb-pros); }
+  .cons-col strong { color: var(--sb-cons); }
+  .pros-col ul, .cons-col ul {
+    margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.6;
+  }
+
+  /* Polished Table Styling */
+  #content table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--sb-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+    font-size: 13.5px;
+    display: table;
+  }
+  #content table thead th {
+    background: linear-gradient(180deg, var(--sb-surface-muted), var(--sb-border-muted));
+    color: var(--sb-ink);
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--sb-border);
+    text-align: left;
+    position: sticky;
+    top: var(--sb-sticky-thead-top);
+    z-index: 2;
+  }
+  /* Sticky thead breaks inside overflow ancestors (collapsible-body / table-scroll-wrap). */
+  #content .table-scroll-wrap table thead th,
+  #content .collapsible-body table thead th {
+    position: static;
+    top: auto;
+  }
+  #content table tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--sb-border-muted);
+    color: var(--sb-ink);
+    vertical-align: top;
+  }
+  #content table tbody tr:last-child td {
+    border-bottom: none;
+  }
+  #content table tbody tr:nth-child(even) {
+    background: var(--sb-surface-muted);
+  }
+  #content table tbody tr:hover {
+    background: var(--sb-accent-soft);
+    transition: background .15s;
+  }
+
+  /* ── Responsive — cascade last (overrides base rules above) ── */
+  @media (max-width: 1024px) {
+    :root { --sb-main-pad-x: 32px; }
+    .topbar-filter-bar { max-width: min(68vw, 560px); }
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --sb-main-pad-x: 20px;
+      --sb-export-bar-clearance: 108px;
+    }
+    #content h1 { font-size: 1.5rem; }
+    #content h2 { font-size: 1.25rem; margin-top: 28px; }
+    #content h3 { font-size: 1.125rem; }
+    .chart-frame { padding: 16px 14px; margin: 16px 0 20px; }
+    .chart-canvas-wrap { height: min(400px, 62vw); }
+    .chart-canvas-wrap--vc { height: min(360px, 58vw); }
+    .trend-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pros-cons-grid { grid-template-columns: 1fr; gap: 12px 0; }
+    .topbar-chrome { flex-wrap: wrap; row-gap: 6px; align-items: flex-start; }
+    .topbar-filter-bar {
+      flex: 1 1 100%;
+      order: 10;
+      max-width: 100%;
+      padding-top: 2px;
+    }
+    .topbar-chrome__spacer { display: none; }
+    #sidebarToggle, #themeToggle, #snavToggle {
+      min-width: 44px; min-height: 44px;
+    }
+    #snavToggle { padding: 8px 14px; }
+    .snav-btn {
+      min-height: 36px;
+      padding: 8px 12px;
+      font-size: 11px;
+    }
+    .snav-label { min-width: 64px; }
+    .vc-header { flex-wrap: wrap; gap: 8px; padding: 12px 14px; }
+    .vc-name { font-size: 1.1rem; min-width: 0; overflow-wrap: anywhere; }
+    .vc-compare {
+      min-width: 44px; min-height: 44px;
+      align-items: center; justify-content: center;
+    }
+    .vc-compare input { width: 20px; height: 20px; }
+    #exportBar {
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + var(--sb-safe-bottom));
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 8px;
+      max-width: none;
+    }
+    #exportBar::-webkit-scrollbar { display: none; }
+    .export-btn, #compareBtn {
+      min-height: 44px;
+      padding: 10px 14px;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    .compare-drawer {
+      left: 12px;
+      right: 12px;
+      width: auto;
+      bottom: calc(88px + var(--sb-safe-bottom));
+      max-height: min(70vh, calc(100vh - var(--sb-topbar-h) - 120px));
+    }
+    #content table { display: table; width: 100%; max-width: 100%; }
+    .table-scroll-wrap { margin: 12px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-scroll-wrap table { width: max-content; min-width: 100%; }
+  }
+
+  @media (max-width: 480px) {
+    :root {
+      --sb-main-pad-x: 14px;
+      --sb-main-pad-top: 52px;
+      --sb-export-bar-clearance: 108px;
+    }
+    #breadcrumb {
+      font-size: 11px;
+      padding: 0 12px;
+      height: 28px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .trend-strip { grid-template-columns: 1fr; }
+    .chart-canvas-wrap { height: min(300px, 78vw); }
+    .chart-canvas-wrap--vc { height: min(280px, 74vw); }
+    .chart-title { font-size: 0.625rem; letter-spacing: 0.6px; }
+    .chart-subtitle { font-size: 11px; margin-bottom: 12px; }
+    .wave-legend, .vc-legend { gap: 10px; font-size: 11px; }
+    .compare-drawer {
+      left: 0;
+      right: 0;
+      width: 100%;
+      bottom: 0;
+      max-height: min(82vh, calc(100vh - var(--sb-topbar-h)));
+      border-radius: 16px 16px 0 0;
+      padding: 16px 14px calc(16px + var(--sb-safe-bottom));
+    }
+    #exportBar {
+      left: 8px;
+      right: 8px;
+      bottom: calc(8px + var(--sb-safe-bottom));
+    }
+    .toast {
+      bottom: calc(96px + var(--sb-safe-bottom));
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+  }
+
+  @media (max-width: 360px) {
+    :root { --sb-main-pad-x: 12px; }
+    .export-btn, #compareBtn { padding: 10px 12px; font-size: 11px; }
+    #snavToggle span { display: none; }
+  }
+
+  /* Narrow overlay layout (phone + IDE panel) — structural chrome */
+  @media (max-width: 900px) {
+    :root {
+      --sb-sidebar-w: 0px;
+      --sb-main-pad-x: 16px;
+      --sb-main-pad-top: 52px;
+      --sb-topbar-h: 44px;
+    }
+    #sidebar {
+      width: min(280px, 88vw);
+      transform: translateX(-105%);
+      z-index: 10050;
+      box-shadow: 4px 0 24px rgba(0,0,0,.28);
+      padding-top: var(--sb-safe-top);
+    }
+    body.sb-sidebar-open #sidebar { transform: translateX(0); }
+    body.sb-sidebar-open::before {
+      content: ''; position: fixed; inset: 0; background: var(--sb-overlay-scrim); z-index: 10040;
+    }
+    body.sb-sidebar-open #sidebar { padding-top: calc(8px + var(--sb-safe-top)); }
+    #solutionNav { left: 0; right: 0; padding: 6px 12px; }
+    #solutionNav.snav-collapsed { --sb-topbar-h: 44px; }
+    #solutionNav:not(.snav-collapsed) {
+      --sb-topbar-h: min(50vh, 220px);
+    }
+    #readProgress, #breadcrumb { left: 0; }
+    #breadcrumb { padding: 0 16px; }
+    .snav-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div id="solutionNav" class="snav-collapsed">
+  <div class="topbar-chrome">
+    <button id="sidebarToggle" type="button" aria-label="Toggle table of contents" title="Contents"><i data-lucide="panel-left" class="lucide-icon" aria-hidden="true"></i></button>
+    <button id="snavToggle" type="button" aria-expanded="false" aria-controls="snavBody"><i data-lucide="layers" class="lucide-icon" aria-hidden="true"></i><span>Solutions</span><i data-lucide="chevron-down" class="lucide-icon snav-chevron" aria-hidden="true"></i></button>
+    <div id="vendorFilterBar" class="topbar-filter-bar" role="toolbar" aria-label="Vendor filter"></div>
+    <div class="topbar-chrome__spacer"></div>
+    <button id="themeToggle" type="button" aria-label="Switch theme" title="Toggle theme"></button>
+  </div>
+  <div id="snavBody" class="snav-body">
+    <div class="snav-row" id="snavCommercial"><span class="snav-label">COMMERCIAL</span></div>
+    <div class="snav-row" id="snavOSS"><span class="snav-label">OSS</span></div>
+  </div>
+</div>
+<div id="readProgress"><div id="readProgressBar"></div></div>
+<div id="breadcrumb"><span id="bcSection"></span><span id="bcSep" style="display:none"> › </span><span id="bcSub"></span></div>
+
+<div id="sidebar">
+  <div class="sidebar-head">
+    <h3>Contents</h3>
+  </div>
+  <ul id="toc"></ul>
+  <div id="stats"></div>
+</div>
+
+<div id="main">
+  <div id="content"><p style="color:var(--sb-muted);padding:40px 0;">Loading report…</p></div>
+</div>
+
+<div id="exportBar">
+  <button id="copyGdocsBtn" class="export-btn"><i data-lucide="clipboard-copy" class="btn-icon lucide-icon" aria-hidden="true"></i> Copy</button>
+  <button id="pdfExportBtn" class="export-btn"><i data-lucide="file-text" class="btn-icon lucide-icon" aria-hidden="true"></i> PDF</button>
+  <!-- Vendor Comparison Drawer toggle -->
+  <button id="compareBtn"><i data-lucide="columns-2" class="btn-icon lucide-icon" aria-hidden="true"></i> Compare <span id="compareBadge" style="display:none"></span></button>
+</div>
+<div id="compareDrawer" class="compare-drawer" role="dialog" aria-label="Compare selection">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <div>
+      <strong style="font-size:14px;">Compare selection</strong>
+      <div id="compareTableWrap" style="margin-top:6px;">Select solutions on vendor cards (max 10).</div>
+    </div>
+    <button id="compareCloseBtn" type="button" class="icon-btn" aria-label="Close selection panel"><i data-lucide="x" class="lucide-icon" aria-hidden="true"></i></button>
+  </div>
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.font.family = "'Roboto Condensed', 'Arial Narrow', Arial, sans-serif";
+Chart.defaults.font.size = 11;
+marked.setOptions({ breaks: true, gfm: true });
+
+/** Stamp http(s) anchors so they always open in a new tab. */
+function ensureExternalLinksNewTab(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  scope.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    if (/^https?:\/\//i.test(href) || href.startsWith('//')) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+}
+
+try {
+  const renderer = new marked.Renderer();
+  const priorLink = renderer.link.bind(renderer);
+  renderer.link = function (href, title, text) {
+    // marked v9+ may pass a single token object as the first arg
+    const html = (href && typeof href === 'object')
+      ? priorLink(href)
+      : priorLink(href, title, text);
+    const url = (href && typeof href === 'object')
+      ? String(href.href || '')
+      : String(href || '');
+    if (!(/^https?:\/\//i.test(url) || url.startsWith('//'))) return html;
+    let out = html.replace(/\s+target="[^"]*"/gi, '').replace(/\s+rel="[^"]*"/gi, '');
+    return out.replace(/<a\s/i, '<a target="_blank" rel="noopener noreferrer" ');
+  };
+  const priorCodespan = renderer.codespan.bind(renderer);
+  renderer.codespan = function (code) {
+    const html = (code && typeof code === 'object') ? priorCodespan(code) : priorCodespan(code);
+    const text = (code && typeof code === 'object') ? String(code.text || '') : String(code || '');
+    const raw = String(text).trim();
+    let url = raw;
+    while (url && /[.,;:!?]$/.test(url)) url = url.slice(0, -1);
+    if (!/^https?:\/\//i.test(url)) return html;
+    const safe = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    return html.replace(/^<code>([\s\S]*)<\/code>$/i, (_all, inner) => {
+      if (/<a\s/i.test(inner)) return _all;
+      return `<code><a href="${safe}" target="_blank" rel="noopener noreferrer">${inner}</a></code>`;
+    });
+  };
+  marked.use({ renderer });
+} catch (e) {
+  console.warn('marked renderer target=_blank wiring failed', e);
+}
+
+function lucideIconHtml(name, className = 'lucide-icon') {
+  return `<i data-lucide="${name}" class="${className}" aria-hidden="true"></i>`;
+}
+
+function refreshLucideIcons(root) {
+  if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+    lucide.createIcons({ attrs: { class: 'lucide-icon' }, nameAttr: 'data-lucide', root: root || document });
+  }
+}
+
+function setActionBtnState(btn, iconName, label, spin = false) {
+  if (!btn) return;
+  const spinCls = spin ? ' is-spinning' : '';
+  btn.innerHTML = `${lucideIconHtml(iconName, `btn-icon lucide-icon${spinCls}`)}${label ? ' ' + label : ''}`;
+  refreshLucideIcons(btn);
+}
+
+function setToggleChevron(el, open) {
+  if (!el) return;
+  el.innerHTML = lucideIconHtml(open ? 'chevron-up' : 'chevron-down', 'lucide-icon toggle-chevron');
+  refreshLucideIcons(el);
+}
+
+// ─── Theme system ─────────────────────────────────────────────────────────────
+const THEME_STORAGE_KEY = 'sb-landscape-theme';
+
+function sbCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function sbChartTheme() {
+  const seriesRaw = sbCssVar('--sb-chart-series');
+  const series = seriesRaw ? seriesRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+  return {
+    grid: sbCssVar('--sb-chart-grid') || '#e2e8f0',
+    label: sbCssVar('--sb-chart-label') || '#64748b',
+    ink: sbCssVar('--sb-ink') || '#1e293b',
+    labelShadow: sbCssVar('--sb-chart-label-shadow') || 'rgba(255,255,255,0.92)',
+    series: series.length ? series : getAvatarPalette(),
+    quad: {
+      leaders: sbCssVar('--sb-chart-quad-leaders') || '#e8f4fd',
+      challengers: sbCssVar('--sb-chart-quad-challengers') || '#f0eaf8',
+      visionaries: sbCssVar('--sb-chart-quad-visionaries') || '#fff3e6',
+      niche: sbCssVar('--sb-chart-quad-niche') || '#f0f0f0',
+    },
+    zones: {
+      leaders: sbCssVar('--sb-chart-zone-leaders') || 'rgba(90,150,210,0.42)',
+      strong: sbCssVar('--sb-chart-zone-strong') || 'rgba(160,205,240,0.38)',
+      mid: sbCssVar('--sb-chart-zone-mid') || 'rgba(215,235,250,0.58)',
+      contenders: sbCssVar('--sb-chart-zone-contenders') || 'rgba(235,246,253,0.72)',
+    },
+    wave: {
+      outer: sbCssVar('--sb-chart-wave-outer') || 'rgba(135,193,238,0.30)',
+      mid: sbCssVar('--sb-chart-wave-mid') || 'rgba(195,225,248,0.44)',
+      inner: sbCssVar('--sb-chart-wave-inner') || 'rgba(230,244,253,0.70)',
+      stroke: sbCssVar('--sb-chart-wave-stroke') || 'rgba(75,145,200,0.38)',
+      label: sbCssVar('--sb-chart-wave-label') || 'rgba(20,85,145,0.62)',
+    },
+    overlay: sbCssVar('--sb-chart-overlay') || 'rgba(15,23,42,0.22)',
+  };
+}
+
+function sbWaveZoneFills() {
+  // WAVE_ZONE_FILLS: durable marker for the rendered Forrester Wave zone palette.
+  const z = sbChartTheme().zones;
+  return { leaders: z.leaders, strong: z.strong, mid: z.mid, contenders: z.contenders };
+}
+
+function sbQuadrantFills() {
+  const q = sbChartTheme().quad;
+  return {
+    'Leaders': q.leaders,
+    'Challengers': q.challengers,
+    'Visionaries': q.visionaries,
+    'Niche Players': q.niche,
+  };
+}
+
+function sbWaveQuadrantFills() {
+  const z = sbWaveZoneFills();
+  return {
+    'Leaders': z.leaders,
+    'Challengers': z.strong,
+    'Visionaries': z.mid,
+    'Niche Players': z.contenders,
+  };
+}
+
+function themedSeriesPalette() {
+  const themed = sbChartTheme().series;
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (dark) return themed;
+  return (WAVE_COLORS && WAVE_COLORS.length) ? WAVE_COLORS : themed;
+}
+
+function sbQuadrantColors() {
+  const s = themedSeriesPalette();
+  return {
+    'Leaders': s[0],
+    'Challengers': s[1] || s[0],
+    'Visionaries': s[2] || s[0],
+    'Niche Players': s[s.length - 1] || s[0],
+  };
+}
+
+function chartLabelFont(sizePx = 10) {
+  return `500 ${sizePx}px "Roboto Condensed", sans-serif`;
+}
+
+function chartGridColor() {
+  return sbChartTheme().grid;
+}
+
+function getAvatarPalette() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return dark
+    ? ['#4a7fb0','#6b96c4','#5b8fd4','#64748b','#475569','#3d5a80','#2f5597','#7d8fa8']
+    : ['#1f3864','#2f5597','#3d6fa8','#5b7fa6','#64748b','#475569','#334155','#94a3b8'];
+}
+
+function applyChartScaleTheme(chart) {
+  if (!chart?.options) return;
+  const t = sbChartTheme();
+  const scales = chart.options.scales || {};
+  ['x', 'y', 'y1', 'y2'].forEach(axis => {
+    const scale = scales[axis];
+    if (!scale) return;
+    if (scale.grid) scale.grid.color = t.grid;
+    if (scale.title) scale.title.color = t.label;
+    if (scale.ticks) scale.ticks.color = t.label;
+  });
+  const rScale = scales.r;
+  if (rScale) {
+    if (rScale.grid) rScale.grid.color = t.grid;
+    if (rScale.angleLines) rScale.angleLines.color = t.grid;
+    if (rScale.ticks) rScale.ticks.color = t.label;
+    if (rScale.pointLabels) rScale.pointLabels.color = t.label;
+  }
+  chart.update('none');
+}
+
+function refreshThemeSurfaces() {
+  const palette = getAvatarPalette();
+  document.querySelectorAll('.vc-avatar').forEach((el, i) => {
+    el.style.background = palette[i % palette.length];
+  });
+}
+
+function refreshAllChartThemes() {
+  if (typeof _charts !== 'undefined') {
+    _charts.forEach(c => {
+      applyChartScaleTheme(c);
+      c.update('none');
+    });
+  }
+}
+
+function refreshChartLegendColors() {
+  const palette = themedSeriesPalette();
+  const quads = sbQuadrantColors();
+  document.querySelectorAll('.chart-frame > div[style*="flex-wrap"]').forEach(row => {
+    row.querySelectorAll('span').forEach(el => {
+      const dot = el.querySelector('span[style*="border-radius:50%"]');
+      if (!dot) return;
+      const label = el.textContent.trim();
+      const color = quads[label] || palette.find((_, i) => el.dataset.waveIdx == i);
+      if (color) dot.style.background = color;
+    });
+  });
+  document.querySelectorAll('[data-wave-idx]').forEach(el => {
+    const idx = +el.dataset.waveIdx;
+    const c = palette[idx % palette.length];
+    const dot = el.querySelector('span');
+    if (dot) {
+      dot.style.background = c;
+      dot.style.border = `2px solid ${c}88`;
+    }
+  });
+  document.querySelectorAll('[data-vc-idx] span[style*="border-radius:50%"]').forEach((dot, i) => {
+    const el = dot.closest('[data-vc-idx]');
+    const idx = el ? +el.dataset.vcIdx : i;
+    const series = [...VC_COMMERCIAL, ...VC_OSS];
+    if (series[idx] && series[idx].color) dot.style.background = series[idx].color;
+  });
+}
+
+function setTheme(theme, persist = true) {
+  document.documentElement.setAttribute('data-theme', theme);
+  if (persist) localStorage.setItem(THEME_STORAGE_KEY, theme);
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.innerHTML = lucideIconHtml(theme === 'dark' ? 'sun' : 'moon', 'lucide-icon');
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = theme === 'dark' ? 'Light mode' : 'Dark mode';
+    refreshLucideIcons(btn);
+  }
+  refreshThemeSurfaces();
+  if (typeof normalizeChartPalette === 'function') normalizeChartPalette();
+  refreshChartLegendColors();
+  refreshAllChartThemes();
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  const theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  setTheme(theme, false);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', toggleTheme);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      const fam = getComputedStyle(document.body).fontFamily || '';
+      document.documentElement.setAttribute('data-font-family', fam);
+      document.documentElement.setAttribute('data-font-ready', fam.toLowerCase().includes('roboto condensed') ? '1' : '0');
+    });
+  }
+});
+
+// ─── Chart data ─────────────────────────────────────────────────────────────
+// Populated at runtime by bootstrapFromEmbedded → applyChartData (landscape_preview_render.py).
+// No domain-specific defaults — each landscape supplies chart_data.json from synthesis.
+let CHART_TITLES = {};
+const MQ_DATA = [];
+const MQ_COLORS = {};
+const GMQ_DATA = [];
+let GMQ_COLORS = {};
+const WAVE_DATA = [];
+let WAVE_COLORS = [];
+const VC_KCFS = [];
+const VC_COMMERCIAL = [];
+const VC_OSS = [];
+
+function hexAlpha(hex, alpha) {
+  const h = String(hex || '#94a3b8').replace('#', '');
+  if (h.length < 6) return `rgba(148,163,184,${alpha})`;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function vendorChartColor(label) {
+  const palette = themedSeriesPalette();
+  const wi = WAVE_DATA.findIndex(d => d.label === label);
+  if (wi >= 0) return palette[wi % palette.length];
+  const labels = [...new Set([...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA].map(d => d.label).filter(Boolean))];
+  const i = labels.indexOf(label);
+  return palette[(i >= 0 ? i : 0) % palette.length];
+}
+
+function normalizeChartPalette() {
+  const quads = sbQuadrantColors();
+  Object.keys(quads).forEach(k => {
+    MQ_COLORS[k] = quads[k];
+    GMQ_COLORS[k] = quads[k];
+  });
+  const palette = themedSeriesPalette();
+  VC_COMMERCIAL.forEach((s, i) => { s.color = palette[i % palette.length]; });
+  VC_OSS.forEach((s, i) => {
+    s.color = palette[(i + VC_COMMERCIAL.length) % palette.length];
+  });
+}
+
+function mqQuadrantRegions(mx, my, left, right, top, bottom) {
+  const keys = Object.keys(MQ_COLORS);
+  const quadFill = sbQuadrantFills();
+  const GARTNER = {
+    'Leaders':       { x1:mx, y1:top,  x2:right, y2:my,     lx:right-8, ly:top+14,    align:'right' },
+    'Challengers':   { x1:left,y1:top, x2:mx,    y2:my,     lx:left+8,  ly:top+14,    align:'left'  },
+    'Visionaries':   { x1:mx, y1:my,   x2:right, y2:bottom, lx:right-8, ly:bottom-8, align:'right' },
+    'Niche Players': { x1:left,y1:my,  x2:mx,    y2:bottom, lx:left+8,  ly:bottom-8, align:'left'  },
+  };
+  if (keys.some(k => GARTNER[k])) {
+    return keys.filter(k => GARTNER[k]).map(k => ({
+      ...GARTNER[k], key: k, label: k.toUpperCase(), fill: quadFill[k] || (MQ_COLORS[k] || '#ccc') + '22',
+    }));
+  }
+  const positions = [
+    { x1:mx, y1:top,  x2:right, y2:my,     lx:right-8, ly:top+14,    align:'right' },
+    { x1:left,y1:top, x2:mx,    y2:my,     lx:left+8,  ly:top+14,    align:'left'  },
+    { x1:left,y1:my,  x2:mx,    y2:bottom, lx:left+8,  ly:bottom-8, align:'left'  },
+    { x1:mx, y1:my,   x2:right, y2:bottom, lx:right-8, ly:bottom-8, align:'right' },
+  ];
+  return keys.slice(0, 4).map((k, i) => ({
+    ...positions[i], key: k, label: k.toUpperCase(), fill: (MQ_COLORS[k] || '#ccc') + '22',
+  }));
+}
+
+const GMQ_QUADRANT_REGIONS = (mx, my, left, right, top, bottom) => [
+  { key: 'Leaders',       x1: mx,   y1: top,    x2: right, y2: my,     label: 'LEADERS' },
+  { key: 'Challengers',   x1: left, y1: top,    x2: mx,    y2: my,     label: 'CHALLENGERS' },
+  { key: 'Visionaries',   x1: mx,   y1: my,     x2: right, y2: bottom, label: 'VISIONARIES' },
+  { key: 'Niche Players', x1: left, y1: my,     x2: mx,    y2: bottom, label: 'NICHE PLAYERS' },
+];
+
+function _chartPointerPos(chart, nativeEvent) {
+  if (typeof Chart !== 'undefined' && Chart.helpers && Chart.helpers.getRelativePosition) {
+    return Chart.helpers.getRelativePosition(nativeEvent, chart);
+  }
+  const rect = chart.canvas.getBoundingClientRect();
+  return { x: nativeEvent.clientX - rect.left, y: nativeEvent.clientY - rect.top };
+}
+
+function _hitTestQuadrantRegions(regions, x, y) {
+  for (const r of regions) {
+    if (x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2) return r;
+  }
+  return null;
+}
+
+function _waveZoneAtPoint(chart, x, y) {
+  const ca = chart.chartArea;
+  if (!ca || !ca.width) return null;
+  const cx = ca.left;
+  const cy = ca.bottom;
+  if (x < cx || y > cy) return null;
+  const dist = Math.hypot(x - cx, y - cy);
+  const diag = Math.hypot(ca.width, ca.height);
+  const r1 = diag * 0.37;
+  const r2 = diag * 0.67;
+  let key, label;
+  if (dist <= r1) { key = 'Contenders'; label = 'CONTENDERS'; }
+  else if (dist <= r2) { key = 'Strong Performers'; label = 'STRONG PERFORMERS'; }
+  else { key = 'Leaders'; label = 'LEADERS'; }
+  const pad = 8;
+  return { key, label, x1: cx + pad, y1: cy - dist, x2: x, y2: cy - pad };
+}
+
+function _waveZoneForVendor(chart, d) {
+  if (!chart || !chart.scales || !d) return 'Leaders';
+  const px = chart.scales.x.getPixelForValue(d.strategy);
+  const py = chart.scales.y.getPixelForValue(d.offering);
+  const hit = _waveZoneAtPoint(chart, px, py);
+  return hit ? hit.key : 'Leaders';
+}
+
+// ─── Non-overlapping point labels (scatter / bubble / line endpoints) ────────
+const _LABEL_PAD = 3;
+const _POINT_LABEL_PAD = 4;
+const _LEADER_COLOR = () => sbChartTheme().overlay;
+
+function _measureLabelText(ctx, text) {
+  ctx.save();
+  ctx.font = chartLabelFont(10);
+  const m = ctx.measureText(text);
+  const h = (m.actualBoundingBoxAscent || 10) + (m.actualBoundingBoxDescent || 2);
+  ctx.restore();
+  return { w: m.width, h };
+}
+
+function _labelRectsOverlap(a, b, pad = 2) {
+  return !(a.x + a.w + pad < b.x || b.x + b.w + pad < a.x ||
+           a.y + a.h + pad < b.y || b.y + b.h + pad < a.y);
+}
+
+function _pointForbiddenRect(px, py, r, pad = _POINT_LABEL_PAD) {
+  const radius = (r || 9) + pad;
+  return { x: px - radius, y: py - radius, w: radius * 2, h: radius * 2 };
+}
+
+function _rectOverlapsPoint(rect, px, py, r, pad = _POINT_LABEL_PAD) {
+  return _labelRectsOverlap(rect, _pointForbiddenRect(px, py, r, pad), 0);
+}
+
+function _rectOverlapsAnyPoint(rect, points, pad = _POINT_LABEL_PAD) {
+  for (const pt of points) {
+    if (_rectOverlapsPoint(rect, pt.px, pt.py, pt.r, pad)) return true;
+  }
+  return false;
+}
+
+function _labelOffsetRing() {
+  if (_labelOffsetRing._c) return _labelOffsetRing._c;
+  const angles = [90, 270, 0, 180, 45, 135, 225, 315, 60, 120, 240, 300, 30, 150, 210, 330];
+  const dists = [14, 22, 32, 44, 58, 74, 92, 112, 134];
+  const out = [];
+  for (const d of dists) {
+    for (const ang of angles) {
+      const rad = ang * Math.PI / 180;
+      const dx = Math.cos(rad) * d;
+      const dy = -Math.sin(rad) * d;
+      let align = 'center', baseline = 'bottom';
+      if (Math.abs(dx) >= Math.abs(dy) * 0.75) {
+        align = dx >= 0 ? 'left' : 'right';
+        baseline = 'middle';
+      } else if (dy > 0) {
+        baseline = 'top';
+      }
+      out.push({ dx, dy, align, baseline });
+    }
+  }
+  _labelOffsetRing._c = out;
+  return out;
+}
+
+function _rectInChartArea(rect, area, pad = 1) {
+  return rect.x >= area.left + pad && rect.y >= area.top + pad &&
+         rect.x + rect.w <= area.right - pad && rect.y + rect.h <= area.bottom - pad;
+}
+
+function _clampRectToChartArea(rect, area, pad = 1) {
+  const maxW = Math.max(8, area.right - area.left - pad * 2);
+  const maxH = Math.max(8, area.bottom - area.top - pad * 2);
+  const w = Math.min(rect.w, maxW);
+  const h = Math.min(rect.h, maxH);
+  const x = Math.min(area.right - pad - w, Math.max(area.left + pad, rect.x));
+  const y = Math.min(area.bottom - pad - h, Math.max(area.top + pad, rect.y));
+  return { x, y, w, h };
+}
+
+function _labelBBox(px, py, w, h, off) {
+  let x = px + off.dx;
+  let y = py + off.dy;
+  if (off.align === 'center') x -= w / 2;
+  else if (off.align === 'right') x -= w;
+  if (off.baseline === 'middle') y -= h / 2;
+  else if (off.baseline === 'bottom') y -= h;
+  return { x, y, w, h };
+}
+
+function _collectScatterLabelItems(chart, getLabel) {
+  const items = [];
+  chart.data.datasets.forEach((ds, dsi) => {
+    const meta = chart.getDatasetMeta(dsi);
+    if (!meta.visible) return;
+    meta.data.forEach((elem, pi) => {
+      const raw = ds.data[pi];
+      if (!raw || elem.hidden) return;
+      const text = getLabel(raw, ds, dsi, pi);
+      if (!text) return;
+      const r = elem.options?.radius ?? (typeof elem.width === 'number' ? elem.width / 2 : 9);
+      items.push({
+        key: `${dsi}:${pi}`,
+        text,
+        px: elem.x,
+        py: elem.y,
+        dsi,
+        pi,
+        color: typeof ds.borderColor === 'string' ? ds.borderColor : sbChartTheme().ink,
+        r,
+      });
+    });
+  });
+  return items;
+}
+
+function _resolveLabelCollisions(chart, items, chartArea) {
+  const ctx = chart.ctx;
+  const placed = [];
+  const layout = [];
+  const sorted = [...items].sort((a, b) => a.py - b.py || a.px - b.px);
+  const pointObstacles = items.map(it => ({ px: it.px, py: it.py, r: it.r }));
+  const offsets = _labelOffsetRing();
+  const area = {
+    left: chartArea.left,
+    right: chartArea.right,
+    top: chartArea.top,
+    bottom: chartArea.bottom,
+  };
+
+  function fromRect(rect, w, h, off) {
+    let align = off.align, baseline = off.baseline;
+    let labelX, labelY;
+    if (align === 'center') labelX = rect.x + w / 2;
+    else if (align === 'right') labelX = rect.x + w;
+    else labelX = rect.x;
+    if (baseline === 'middle') labelY = rect.y + h / 2;
+    else if (baseline === 'bottom') labelY = rect.y + h;
+    else labelY = rect.y;
+    return { align, baseline, labelX, labelY };
+  }
+
+  for (const item of sorted) {
+    const { w, h } = _measureLabelText(ctx, item.text);
+    let best = null;
+    for (let i = 0; i < offsets.length; i++) {
+      const off = offsets[i];
+      const rect = _clampRectToChartArea(_labelBBox(item.px, item.py, w, h, off), area);
+      if (!_rectInChartArea(rect, area)) continue;
+      let collides = false;
+      for (const p of placed) {
+        if (_labelRectsOverlap(rect, p, _LABEL_PAD)) { collides = true; break; }
+      }
+      if (!collides && _rectOverlapsAnyPoint(rect, pointObstacles)) collides = true;
+      if (!collides) {
+        best = { rect, off, collides: false };
+        break;
+      }
+      if (!best) best = { rect, off, collides: true };
+    }
+
+    let rect = best ? best.rect : _clampRectToChartArea(
+      { x: item.px - w / 2, y: item.py - h - 8, w, h }, area
+    );
+    if (best && best.collides) {
+      const dirs = [[0,-8],[0,8],[8,0],[-8,0],[6,-6],[-6,-6],[6,6],[-6,6]];
+      outer: for (let g = 0; g < 18; g++) {
+        let hit = placed.some(p => _labelRectsOverlap(rect, p, _LABEL_PAD));
+        if (!hit && !_rectOverlapsAnyPoint(rect, pointObstacles) && _rectInChartArea(rect, area)) break;
+        for (const [dx, dy] of dirs) {
+          const nxt = _clampRectToChartArea({ x: rect.x + dx, y: rect.y + dy, w: rect.w, h: rect.h }, area);
+          const nHit = placed.some(p => _labelRectsOverlap(nxt, p, 1));
+          if (!nHit && _rectInChartArea(nxt, area)) {
+            rect = nxt;
+            if (!_rectOverlapsAnyPoint(nxt, pointObstacles)) break outer;
+          }
+        }
+        rect = _clampRectToChartArea(rect, area);
+      }
+    }
+    rect = _clampRectToChartArea(rect, area);
+    const off = best ? best.off : { dx: 0, dy: -16, align: 'center', baseline: 'bottom' };
+    const pos = fromRect(rect, w, h, off);
+    layout.push({
+      ...item,
+      w,
+      h,
+      visible: true,
+      rect,
+      labelX: pos.labelX,
+      labelY: pos.labelY,
+      align: pos.align,
+      baseline: pos.baseline,
+      leader: Math.hypot((rect.x + rect.w / 2) - item.px, (rect.y + rect.h / 2) - item.py) > 10,
+    });
+    placed.push(rect);
+  }
+  return layout;
+}
+
+function _drawResolvedLabels(chart, layout, colorFn) {
+  const { ctx, chartArea } = chart;
+  const hover = chart._hoverLabelKey;
+  ctx.save();
+  if (chartArea) {
+    ctx.beginPath();
+    ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctx.clip();
+  }
+  for (const L of layout) {
+    const show = L.visible || (hover && hover === L.key);
+    if (!show) continue;
+    const color = colorFn ? colorFn(L) : L.color;
+    if (L.leader && L.rect) {
+      ctx.strokeStyle = _LEADER_COLOR();
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(L.anchorX ?? L.px, L.anchorY ?? L.py);
+      ctx.lineTo(L.rect.x + L.rect.w / 2, L.rect.y + L.rect.h / 2);
+      ctx.stroke();
+    }
+    ctx.font = chartLabelFont(10);
+    ctx.fillStyle = color;
+    ctx.textAlign = L.align;
+    ctx.textBaseline = L.baseline;
+    ctx.shadowColor = sbChartTheme().labelShadow;
+    ctx.shadowBlur = 4;
+    ctx.fillText(L.text, L.labelX, L.labelY);
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore();
+}
+
+function vendorUrlForLabel(label) {
+  if (!label) return '';
+  if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
+  if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
+  const hit = (LINK_PAIRS || []).find(([name]) => name === label);
+  return hit ? hit[1] : '';
+}
+
+function _openVendorLabelUrl(label) {
+  const url = vendorUrlForLabel(label);
+  if (url) window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function _labelHitTest(chart, x, y) {
+  if (!chart._labelLayout) return null;
+  for (const L of chart._labelLayout) {
+    if (L.visible === false) continue;
+    const hitX = L.px ?? L.anchorX;
+    const hitY = L.py ?? L.anchorY;
+    if (Math.hypot(x - hitX, y - hitY) < (L.r || 12) + 8) return L;
+  }
+  return null;
+}
+function _trackLabelHover(chart, event) {
+  if (!chart._labelLayout) return;
+  let found = null;
+  const { x, y } = event;
+  const hit = _labelHitTest(chart, x, y);
+  if (hit) found = hit.key;
+  if (chart._hoverLabelKey !== found) {
+    chart._hoverLabelKey = found;
+    chart.draw();
+  }
+}
+
+function createCollidingPointLabelsPlugin(getLabel, colorFn) {
+  return {
+    id: 'collidingPointLabels',
+    afterDatasetsDraw(chart) {
+      const { chartArea } = chart;
+      if (!chartArea) return;
+      const items = _collectScatterLabelItems(chart, getLabel);
+      chart._labelLayout = _resolveLabelCollisions(chart, items, chartArea);
+      _drawResolvedLabels(chart, chart._labelLayout, colorFn);
+    },
+    afterEvent(chart, args) {
+      const ev = args.event;
+      if (ev.type === 'click' && args.inChartArea) {
+        const hit = _labelHitTest(chart, ev.x, ev.y);
+        if (hit && hit.text) _openVendorLabelUrl(hit.text);
+      }
+      if (args.inChartArea) _trackLabelHover(chart, ev);
+      else if (chart._hoverLabelKey) {
+        chart._hoverLabelKey = null;
+        chart.draw();
+      }
+    },
+  };
+}
+
+function _resolveVerticalLabelCollisions(chart, items, chartArea) {
+  const ctx = chart.ctx;
+  const sorted = [...items].sort((a, b) => a.py - b.py);
+  const placed = [];
+  const layout = [];
+  const pointObstacles = items.map(it => ({
+    px: it.anchorX ?? it.px,
+    py: it.anchorY ?? it.py,
+    r: it.r,
+  }));
+  for (const item of sorted) {
+    const { w, h } = _measureLabelText(ctx, item.text);
+    let y = item.py - h / 2;
+    const x = item.px;
+    const rect = () => ({ x, y, w, h });
+    let guard = 0;
+    while (guard++ < 40) {
+      let hit = false;
+      for (const p of placed) {
+        if (_labelRectsOverlap(rect(), p, _LABEL_PAD)) {
+          y = p.y + p.h + _LABEL_PAD;
+          hit = true;
+          break;
+        }
+      }
+      if (!hit && _rectOverlapsAnyPoint(rect(), pointObstacles)) {
+        y += h / 2 + _POINT_LABEL_PAD + 8;
+        hit = true;
+      }
+      if (!hit) break;
+    }
+    const r = { x, y, w, h };
+    if (y + h > chartArea.bottom + 2) y = chartArea.bottom - h;
+    if (y < chartArea.top - 2) y = chartArea.top;
+    r.y = y;
+    placed.push(r);
+    layout.push({
+      ...item,
+      w,
+      h,
+      visible: true,
+      rect: r,
+      labelX: x,
+      labelY: y + h / 2,
+      align: 'left',
+      baseline: 'middle',
+      leader: true,
+      px: item.anchorX ?? item.px,
+      py: item.anchorY ?? item.py,
+    });
+  }
+  return layout;
+}
+
+function createLineEndpointLabelsPlugin() {
+  return {
+    id: 'lineEndpointLabels',
+    afterDatasetsDraw(chart) {
+      const { chartArea } = chart;
+      if (!chartArea) return;
+      const xScale = chart.scales.x;
+      const yScale = chart.scales.y;
+      const labels = chart.data.labels || [];
+      if (!labels.length) return;
+      const lastIdx = labels.length - 1;
+      const items = [];
+      chart.data.datasets.forEach((ds, dsi) => {
+        const meta = chart.getDatasetMeta(dsi);
+        if (meta.hidden) return;
+        const val = ds.data[lastIdx];
+        if (val == null || Number.isNaN(val)) return;
+        const anchorX = xScale.getPixelForValue(lastIdx);
+        const anchorY = yScale.getPixelForValue(val);
+        items.push({
+          key: `vc:${dsi}`,
+          text: ds.label,
+          px: anchorX + 8,
+          py: anchorY,
+          anchorX,
+          anchorY,
+          dsi,
+          color: typeof ds.borderColor === 'string' ? ds.borderColor : sbChartTheme().ink,
+          r: 4,
+        });
+      });
+      const labelArea = {
+        left: chartArea.left,
+        right: chartArea.right + 96,
+        top: chartArea.top - 8,
+        bottom: chartArea.bottom + 8,
+      };
+      chart._labelLayout = _resolveLabelCollisions(chart, items, labelArea);
+      _drawResolvedLabels(chart, chart._labelLayout, L => L.color);
+    },
+    afterEvent(chart, args) {
+      const ev = args.event;
+      if (ev.type === 'click' && args.inChartArea) {
+        const hit = _labelHitTest(chart, ev.x, ev.y);
+        if (hit && hit.text) _openVendorLabelUrl(hit.text);
+      }
+      if (args.inChartArea) _trackLabelHover(chart, ev);
+      else if (chart._hoverLabelKey) {
+        chart._hoverLabelKey = null;
+        chart.draw();
+      }
+    },
+  };
+}
+
+// ─── Chart registry to destroy on reload ───────────────────────────────────
+const _charts = [];
+let _chartSeq = 0;
+function nextChartCanvasId(prefix) {
+  _chartSeq += 1;
+  return `${prefix}-${_chartSeq}`;
+}
+function destroyCharts() {
+  _charts.forEach(c => c.destroy());
+  _charts.length = 0;
+  _chartSeq = 0;
+}
+
+function resizeAllCharts() {
+  _charts.forEach(c => { try { c.resize(); } catch (_) { /* chart torn down */ } });
+}
+
+function whenChartParentReady(canvas, fn) {
+  const wrap = canvas.closest('.chart-canvas-wrap') || canvas.parentElement;
+  const attempt = () => {
+    const w = wrap ? wrap.clientWidth : 0;
+    if (w < 48) { requestAnimationFrame(attempt); return; }
+    fn();
+    requestAnimationFrame(() => resizeAllCharts());
+  };
+  requestAnimationFrame(attempt);
+}
+
+let _chartResizeObs = null;
+function setupChartResizeObserver() {
+  if (_chartResizeObs) _chartResizeObs.disconnect();
+  if (typeof ResizeObserver === 'undefined') {
+    window.addEventListener('resize', resizeAllCharts, { passive: true });
+    return;
+  }
+  _chartResizeObs = new ResizeObserver(() => resizeAllCharts());
+  document.querySelectorAll('.chart-canvas-wrap, #main').forEach(el => _chartResizeObs.observe(el));
+  window.addEventListener('resize', resizeAllCharts, { passive: true });
+}
+
+function syncExportBarClearance() {
+  const bar = document.getElementById('exportBar');
+  const main = document.getElementById('main');
+  if (!bar || !main) return;
+  requestAnimationFrame(() => {
+    const inFlow = bar.classList.contains('export-bar--flow');
+    if (inFlow) {
+      document.documentElement.style.setProperty('--sb-export-bar-clearance', '24px');
+      main.style.paddingBottom = '40px';
+      return;
+    }
+    const barH = bar.offsetHeight;
+    const barRect = bar.getBoundingClientRect();
+    const bottomGap = Math.max(0, window.innerHeight - barRect.bottom);
+    const clearance = Math.ceil(barH + bottomGap + 20);
+    document.documentElement.style.setProperty('--sb-export-bar-clearance', clearance + 'px');
+    const minPad = window.innerWidth <= 480 ? 152 : (window.innerWidth <= 768 ? 124 : 72);
+    const padBottom = Math.max(clearance + 40, minPad);
+    main.style.paddingBottom = padBottom + 'px';
+  });
+}
+
+function layoutExportBarForViewport() {
+  const bar = document.getElementById('exportBar');
+  const main = document.getElementById('main');
+  const topbar = document.querySelector('.topbar-chrome');
+  if (!bar || !main) return;
+  const narrow = window.matchMedia('(max-width: 900px)').matches;
+  if (narrow) {
+    if (bar.parentElement !== main) main.appendChild(bar);
+    bar.classList.add('export-bar--flow');
+    if (topbar && !document.getElementById('topbarExportCluster')) {
+      const cluster = document.createElement('div');
+      cluster.id = 'topbarExportCluster';
+      cluster.className = 'topbar-export-cluster';
+      ['copyGdocsBtn', 'pdfExportBtn', 'compareBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) cluster.appendChild(btn);
+      });
+      topbar.insertBefore(cluster, document.getElementById('themeToggle'));
+    }
+    bar.style.display = 'none';
+  } else {
+    if (bar.parentElement !== document.body) document.body.appendChild(bar);
+    bar.classList.remove('export-bar--flow');
+    bar.style.display = 'flex';
+    const cluster = document.getElementById('topbarExportCluster');
+    if (cluster) {
+      ['copyGdocsBtn', 'pdfExportBtn', 'compareBtn'].forEach((id) => {
+        const btn = document.getElementById(id);
+        if (btn) bar.appendChild(btn);
+      });
+      cluster.remove();
+    }
+  }
+  syncExportBarClearance();
+}
+
+function syncTopChrome() {
+  const navEl = document.getElementById('solutionNav');
+  const main = document.getElementById('main');
+  const bc = document.getElementById('breadcrumb');
+  const rp = document.getElementById('readProgress');
+  if (!navEl || !main) return;
+  requestAnimationFrame(() => {
+    const h = navEl.offsetHeight;
+    const bcH = bc ? bc.offsetHeight : 0;
+    const chromeBottom = h + bcH;
+    document.documentElement.style.setProperty('--sb-sticky-thead-top', chromeBottom + 'px');
+    if (bc) bc.style.top = h + 'px';
+    if (rp) rp.style.top = Math.max(0, h - 1) + 'px';
+    main.style.paddingTop = (h + 40) + 'px';
+    syncExportBarClearance();
+    if (typeof resizeAllCharts === 'function') resizeAllCharts();
+  });
+}
+
+function setupNarrowLayoutToggles() {
+  const mq = window.matchMedia('(max-width: 900px)');
+  const sidebarBtn = document.getElementById('sidebarToggle');
+  const snavBtn = document.getElementById('snavToggle');
+  const snav = document.getElementById('solutionNav');
+  const SIDEBAR_STORAGE_KEY = 'sb-landscape-sidebar';
+
+  const updateSidebarIcon = () => {
+    if (!sidebarBtn) return;
+    const narrow = mq.matches;
+    const open = narrow
+      ? document.body.classList.contains('sb-sidebar-open')
+      : !document.body.classList.contains('sb-sidebar-collapsed');
+    sidebarBtn.innerHTML = lucideIconHtml(open ? 'panel-left-close' : 'panel-left', 'lucide-icon');
+    sidebarBtn.setAttribute('aria-label', open ? 'Hide contents' : 'Show contents');
+    refreshLucideIcons(sidebarBtn);
+  };
+
+  const syncNarrowMode = () => {
+    const narrow = mq.matches;
+    if (narrow) {
+      document.body.classList.remove('sb-sidebar-collapsed');
+    } else {
+      document.body.classList.remove('sb-sidebar-open');
+      if (localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1') {
+        document.body.classList.add('sb-sidebar-collapsed');
+      }
+    }
+    if (snav && narrow && !snav.dataset.userToggled) {
+      snav.classList.add('snav-collapsed');
+      if (snavBtn) snavBtn.setAttribute('aria-expanded', 'false');
+    }
+    updateSidebarIcon();
+    syncTopChrome();
+  };
+  syncNarrowMode();
+  if (mq.addEventListener) mq.addEventListener('change', syncNarrowMode);
+  else mq.addListener(syncNarrowMode);
+
+  if (sidebarBtn) {
+    sidebarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const narrow = mq.matches;
+      if (narrow) {
+        document.body.classList.toggle('sb-sidebar-open');
+      } else {
+        const collapsed = document.body.classList.toggle('sb-sidebar-collapsed');
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? '1' : '0');
+      }
+      updateSidebarIcon();
+      syncTopChrome();
+    });
+  }
+  document.addEventListener('click', e => {
+    if (!mq.matches || !document.body.classList.contains('sb-sidebar-open')) return;
+    const sb = document.getElementById('sidebar');
+    if (e.target === sidebarBtn || sb?.contains(e.target)) return;
+    document.body.classList.remove('sb-sidebar-open');
+    updateSidebarIcon();
+    syncTopChrome();
+  });
+
+  if (snavBtn && snav) {
+    snavBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const collapsed = snav.classList.toggle('snav-collapsed');
+      snav.dataset.userToggled = '1';
+      snavBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      const chev = snavBtn.querySelector('.snav-chevron');
+      if (chev) {
+        chev.setAttribute('data-lucide', collapsed ? 'chevron-down' : 'chevron-up');
+        refreshLucideIcons(snavBtn);
+      }
+      syncTopChrome();
+    });
+  }
+}
+
+// ─── Hyperlinks ──────────────────────────────────────────────────────────────
+// Populated from embedded chart_data.link_pairs at runtime (no domain-specific defaults).
+let LINK_PAIRS = [];
+function linkify() {
+  const sorted = [...LINK_PAIRS].sort((a, b) => b[0].length - a[0].length);
+  const lu = new Map(sorted.map(([t, u]) => [t, u]));
+  const pat = sorted.map(([t]) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const re = new RegExp(`\\b(${pat})\\b`, 'g');
+  const content = document.getElementById('content');
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      let el = node.parentElement;
+      while (el && el !== content) {
+        if (['A','CODE','PRE','SCRIPT','STYLE','H1','H2','H3','H4'].includes(el.tagName))
+          return NodeFilter.FILTER_REJECT;
+        el = el.parentElement;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  for (const tn of nodes) {
+    const txt = tn.textContent;
+    re.lastIndex = 0;
+    if (!re.test(txt)) continue;
+    re.lastIndex = 0;
+    const html = txt.replace(re, m => {
+      const url = lu.get(m);
+      return url
+        ? `<a class="vname-link" href="${url}" target="_blank" rel="noopener noreferrer">${m}</a>`
+        : m;
+    });
+    if (html !== txt) {
+      const sp = document.createElement('span');
+      sp.innerHTML = html;
+      tn.parentNode.replaceChild(sp, tn);
+    }
+  }
+}
+
+function _trimUrlTrail(raw) {
+  let url = String(raw || '');
+  let trail = '';
+  while (url && /[.,;:!?]$/.test(url)) {
+    trail = url.slice(-1) + trail;
+    url = url.slice(0, -1);
+  }
+  while (url.endsWith(')') && (url.split('(').length - 1) < (url.split(')').length - 1)) {
+    trail = ')' + trail;
+    url = url.slice(0, -1);
+  }
+  return [url, trail];
+}
+
+/** Wrap leftover bare http(s) URLs in text nodes (including CODE). Skip existing <a>. */
+function linkifyBareHttpUrls(root) {
+  const content = root && root.querySelectorAll ? root : document.getElementById('content');
+  if (!content) return;
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      let el = node.parentElement;
+      while (el && el !== content) {
+        if (['A', 'SCRIPT', 'STYLE'].includes(el.tagName)) return NodeFilter.FILTER_REJECT;
+        el = el.parentElement;
+      }
+      return /https?:\/\//i.test(node.textContent || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  const re = /https?:\/\/[^\s<>"'`\\]+/gi;
+  for (const tn of nodes) {
+    const txt = tn.textContent || '';
+    re.lastIndex = 0;
+    if (!re.test(txt)) continue;
+    re.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let m;
+    while ((m = re.exec(txt))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+      const [url, trail] = _trimUrlTrail(m[0]);
+      if (/^https?:\/\//i.test(url)) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = url;
+        frag.appendChild(a);
+        if (trail) frag.appendChild(document.createTextNode(trail));
+      } else {
+        frag.appendChild(document.createTextNode(m[0]));
+      }
+      last = m.index + m[0].length;
+    }
+    if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+    tn.parentNode.replaceChild(frag, tn);
+  }
+}
+
+
+// ─── Chart → vendor card navigation ─────────────────────────────────────────
+let VENDOR_SLUG_MAP = {};
+
+function _chartNormLabel(name) {
+  return String(name || '').replace(/^\d+\.\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
+function _slugify(label) {
+  return String(label || '').toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/[\s_]+/g, '-');
+}
+
+/** Market-scoped DOM id: vendor-{slug}--{marketId} when market known, else vendor-{slug}. */
+function _vendorCardDomId(slug, marketId) {
+  const s = String(slug || '').trim();
+  if (!s) return '';
+  const mid = String(marketId || '').trim();
+  return mid ? ('vendor-' + s + '--' + mid) : ('vendor-' + s);
+}
+
+function _marketIdFromHeadingText(text) {
+  const t = String(text || '').toLowerCase();
+  const charts = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS : {};
+  for (const [mid, chart] of Object.entries(charts)) {
+    const dn = String((chart && chart.market_display_name) || '').toLowerCase();
+    if (dn && t.includes(dn)) return String(mid);
+    const role = String((chart && chart.market_role) || '');
+    if (role && t.includes(role + ' market')) return String(mid);
+  }
+  return '';
+}
+
+function _findPrecedingH2(el) {
+  let n = el;
+  while (n) {
+    if (n.tagName === 'H2') return n;
+    n = n.previousElementSibling;
+  }
+  return null;
+}
+
+function _resolveMarketIdFromNode(node) {
+  if (!node) return '';
+  if (node.dataset && node.dataset.market) return String(node.dataset.market);
+  if (node.tagName === 'H2' || node.tagName === 'H1') {
+    return _marketIdFromHeadingText(node.textContent);
+  }
+  // Prefer the heading's own text (3.2.1 Plugins — Positioning Matrix) over a
+  // generic parent H2 such as "3. Competitive Positioning — Analyst Frameworks".
+  const fromSelf = _marketIdFromHeadingText(node.textContent);
+  if (fromSelf) return fromSelf;
+  const h2 = _findPrecedingH2(node);
+  if (h2) {
+    const fromH2 = _marketIdFromHeadingText(h2.textContent);
+    if (fromH2) return fromH2;
+  }
+  let n = node;
+  while (n) {
+    const mid = _marketIdFromHeadingText(n.textContent);
+    if (mid) return mid;
+    n = n.previousElementSibling;
+  }
+  return '';
+}
+
+function _cloneChartRecord(d) {
+  if (!d || typeof d !== 'object') return d;
+  const out = Object.assign({}, d);
+  if (Array.isArray(d.data)) out.data = d.data.slice();
+  return out;
+}
+
+function _cloneChartRecords(arr) {
+  return (Array.isArray(arr) ? arr : []).map(_cloneChartRecord);
+}
+
+/** Snapshot per-market chart arrays at inject time. whenChartParentReady is rAF-deferred
+ *  and injectCharts restores PRIMARY (APO) globals before those callbacks run. */
+function _marketChartSource(anchor) {
+  const mid = _resolveMarketIdFromNode(anchor) || '';
+  const charts = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS : {};
+  const src = (mid && charts[mid]) ? charts[mid] : null;
+  const titles = Object.assign({}, (src && src.titles) || CHART_TITLES || {});
+  return {
+    marketId: mid,
+    titles,
+    mq_data: _cloneChartRecords((src && src.mq_data) || MQ_DATA),
+    gmq_data: _cloneChartRecords((src && src.gmq_data) || (src && src.mq_data) || GMQ_DATA),
+    wave_data: _cloneChartRecords((src && src.wave_data) || WAVE_DATA),
+    vc_kcfs: ((src && src.vc_kcfs) || VC_KCFS || []).slice(),
+    vc_commercial: _cloneChartRecords((src && src.vc_commercial) || VC_COMMERCIAL),
+    vc_oss: _cloneChartRecords((src && src.vc_oss) || VC_OSS),
+    vendor_buckets: (src && src.vendor_buckets) || VENDOR_BUCKETS || {},
+  };
+}
+
+function _seriesColorFromPayload(label, payload) {
+  const palette = themedSeriesPalette();
+  const wave = (payload && payload.wave_data) || [];
+  const wi = wave.findIndex(d => d && d.label === label);
+  if (wi >= 0) return palette[wi % palette.length];
+  const labels = [...new Set([
+    ...((payload && payload.mq_data) || []),
+    ...((payload && payload.gmq_data) || []),
+    ...wave,
+  ].map(d => d && d.label).filter(Boolean))];
+  const i = labels.indexOf(label);
+  return palette[(i >= 0 ? i : 0) % palette.length];
+}
+
+function _marketShortLabel(marketId) {
+  const mid = String(marketId || '');
+  if (mid === 'apo') return 'APO';
+  if (mid === 'sdlc-plugins') return 'Plugins';
+  if (mid === 'agentic-sdlc-saas') return 'SaaS';
+  const chart = (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) ? MARKET_CHARTS[mid] : null;
+  const dn = chart && chart.market_display_name;
+  if (dn) {
+    const paren = String(dn).match(/\(([^)]+)\)/);
+    if (paren) return paren[1];
+    return String(dn).split(/\s+/).slice(0, 2).join(' ');
+  }
+  return mid;
+}
+
+function _lookupSlugFromCharts(label) {
+  const norm = _chartNormLabel(label);
+  for (const d of [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA]) {
+    if (!d) continue;
+    const dl = _chartNormLabel(d.label);
+    if (d.label === label || dl === norm || d.slug === label) return d.slug || _slugify(dl);
+  }
+  for (const s of [...VC_COMMERCIAL, ...VC_OSS]) {
+    if (!s) continue;
+    const sl = _chartNormLabel(s.label);
+    if (s.label === label || sl === norm || s.slug === label) return s.slug || _slugify(sl);
+  }
+  // Prefer per-market chart points when global arrays were swapped.
+  if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+    for (const chart of Object.values(MARKET_CHARTS)) {
+      if (!chart) continue;
+      for (const d of [...(chart.mq_data || []), ...(chart.gmq_data || []), ...(chart.wave_data || [])]) {
+        if (!d) continue;
+        const dl = _chartNormLabel(d.label);
+        if (d.label === label || dl === norm || d.slug === label) return d.slug || _slugify(dl);
+      }
+    }
+  }
+  return _slugify(norm || label);
+}
+
+function _buildVendorSlugMap() {
+  VENDOR_SLUG_MAP = {};
+  const reg = (slug, label) => {
+    const s = slug || (label ? _slugify(label) : '');
+    if (!s) return;
+    VENDOR_SLUG_MAP[s] = s;
+    if (label) {
+      VENDOR_SLUG_MAP[label] = s;
+      VENDOR_SLUG_MAP[_chartNormLabel(label)] = s;
+    }
+  };
+  [...MQ_DATA, ...GMQ_DATA, ...WAVE_DATA].forEach(d => reg(d.slug, d.label));
+  [...VC_COMMERCIAL, ...VC_OSS].forEach(v => reg(v.slug, v.label));
+  if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+    Object.values(MARKET_CHARTS).forEach(chart => {
+      if (!chart) return;
+      [...(chart.mq_data || []), ...(chart.gmq_data || []), ...(chart.wave_data || [])]
+        .forEach(d => reg(d && d.slug, d && d.label));
+      [...(chart.vc_commercial || []), ...(chart.vc_oss || [])]
+        .forEach(v => reg(v && v.slug, v && v.label));
+    });
+  }
+  (LINK_PAIRS || []).forEach(([name]) => reg(_slugify(name), name));
+  const cmp = window.__SB_REPORT__ && window.__SB_REPORT__.comparison;
+  if (cmp && cmp.rankings) cmp.rankings.forEach(r => reg(r.solution, r.solution));
+  document.querySelectorAll('.vendor-card').forEach(card => {
+    const raw = card.dataset.vendor || '';
+    const display = _chartNormLabel(raw);
+    const slug = card.dataset.slug || _lookupSlugFromCharts(display);
+    reg(slug, display);
+    reg(slug, raw);
+  });
+}
+
+function _resolveVendorSlug(labelOrSlug) {
+  if (!labelOrSlug) return '';
+  const key = String(labelOrSlug);
+  // Allow hash-style "slug--market" or full "vendor-slug--market".
+  const bare = key.replace(/^#?vendor-/, '');
+  const m = bare.match(/^(.*?)--([a-z0-9-]+)$/i);
+  if (m && VENDOR_SLUG_MAP[m[1]]) return VENDOR_SLUG_MAP[m[1]];
+  if (m) return m[1];
+  if (VENDOR_SLUG_MAP[key]) return VENDOR_SLUG_MAP[key];
+  const norm = _chartNormLabel(key);
+  if (VENDOR_SLUG_MAP[norm]) return VENDOR_SLUG_MAP[norm];
+  return _lookupSlugFromCharts(key);
+}
+
+function _cardsForSlug(slug) {
+  if (!slug) return [];
+  return [...document.querySelectorAll('.vendor-card')].filter(c => {
+    if (c.dataset.slug === slug) return true;
+    const id = c.id || '';
+    return id === ('vendor-' + slug) || id.startsWith('vendor-' + slug + '--');
+  });
+}
+
+function _scrollToVendorCard(labelOrSlug, marketId) {
+  let mid = marketId != null ? String(marketId || '') : '';
+  let rawKey = String(labelOrSlug || '');
+  const bare = rawKey.replace(/^#?vendor-/, '');
+  const scoped = bare.match(/^(.*?)--([a-z0-9-]+)$/i);
+  if (scoped && !mid) {
+    mid = scoped[2];
+    rawKey = scoped[1];
+  }
+  const slug = _resolveVendorSlug(rawKey);
+  let card = null;
+  if (slug && mid) card = document.getElementById(_vendorCardDomId(slug, mid));
+  if (!card && slug) card = document.getElementById('vendor-' + slug);
+  if (!card && slug) {
+    const cards = _cardsForSlug(slug);
+    if (mid) card = cards.find(c => c.dataset.market === mid) || null;
+    if (!card) card = cards[0] || null;
+  }
+  if (!card) {
+    const norm = _chartNormLabel(labelOrSlug);
+    document.querySelectorAll('.vendor-card').forEach(c => {
+      const d = _chartNormLabel(c.dataset.vendor || '');
+      if (d === norm || c.dataset.vendor === labelOrSlug) {
+        if (!mid || c.dataset.market === mid) card = c;
+      }
+    });
+  }
+  if (!card) return false;
+  const body = card.querySelector('.vc-body');
+  const header = card.querySelector('.vc-header');
+  if (body && body.classList.contains('vc-collapsed')) {
+    body.classList.remove('vc-collapsed');
+    const toggle = header && header.querySelector('.vc-toggle');
+    if (toggle) {
+      setToggleChevron(toggle, true);
+      toggle.classList.remove('is-closed');
+      toggle.classList.add('is-open');
+    }
+  }
+  const navH = (document.getElementById('solutionNav') || {}).offsetHeight || 125;
+  const bcH = (document.getElementById('breadcrumb') || {}).offsetHeight || 0;
+  const top = card.getBoundingClientRect().top + window.scrollY - navH - bcH - 12;
+  window.scrollTo({ top, behavior: 'smooth' });
+  card.classList.add('is-chart-target');
+  setTimeout(() => card.classList.remove('is-chart-target'), 2000);
+  const hash = '#' + (card.id || _vendorCardDomId(slug, card.dataset.market || mid));
+  if (window.location.hash !== hash) {
+    try { history.replaceState(null, '', hash); } catch (e) {}
+  }
+  return true;
+}
+
+function attachChartVendorNav(chart, labelFn, marketId) {
+  if (!chart || !chart.options) return;
+  const pick = labelFn || ((raw, ds) => (raw && (raw.label || raw.slug)) || (ds && ds.label));
+  const mid = marketId != null ? String(marketId || '') : '';
+  chart.options.onClick = (_evt, elements) => {
+    if (!elements || !elements.length) return;
+    const el = elements[0];
+    const ds = chart.data.datasets[el.datasetIndex];
+    const raw = ds && ds.data && ds.data[el.index];
+    const label = pick(raw, ds, el);
+    if (label) _scrollToVendorCard(label, mid || (chart.canvas && chart.canvas.closest('.chart-frame') || {}).dataset?.market);
+  };
+  const prevHover = chart.options.onHover;
+  chart.options.onHover = (evt, elements) => {
+    if (evt && evt.native && evt.native.target) {
+      evt.native.target.style.cursor = elements && elements.length ? 'pointer' : 'default';
+    }
+    if (typeof prevHover === 'function') prevHover(evt, elements);
+  };
+}
+
+function _wireLegendVendorNav(el, label) {
+  if (!el || !label) return;
+  el.setAttribute('tabindex', '0');
+  el.setAttribute('role', 'button');
+  el.setAttribute('aria-label', 'View ' + label + ' solution card');
+  const mid = () => {
+    const frame = el.closest && el.closest('.chart-frame');
+    return (frame && frame.dataset.market) || '';
+  };
+  el.addEventListener('click', () => _scrollToVendorCard(label, mid()));
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _scrollToVendorCard(label, mid()); }
+  });
+}
+
+// ─── 3A: Positioning Matrix ─────────────────────────────────────────────────
+function inject2x2(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
+  const titles = payload.titles || {};
+  const mqData = payload.mq_data;
+  wrap.innerHTML = `
+    <div class="chart-title">${titles.mq || '3A · Positioning Matrix'}</div>
+    <div class="chart-subtitle">
+      ${titles.mq_x || '← Lower (x-axis)         Higher (x-axis) →'} &nbsp;|&nbsp;
+      ${titles.mq_y || '← Lower (y-axis)         Higher (y-axis) →'}
+    </div>
+    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('mqChart')}"></canvas></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;font-size:12px;">
+      ${Object.entries(sbQuadrantColors()).map(([q,c])=>`<span style="display:flex;align-items:center;gap:5px">
+        <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c}"></span>${q}</span>`).join('')}
+    </div>`;
+
+  // Insert after the existing table (hide the table)
+  const tbl = findNextTable(anchorH3);
+  if (tbl) tbl.style.display = 'none';
+  anchorH3.after(wrap);
+
+  const mqCanvas = wrap.querySelector('canvas');
+  whenChartParentReady(mqCanvas, () => {
+  const ctx = mqCanvas.getContext('2d');
+  const datasets = [{
+    label: 'Solutions',
+    data: mqData.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
+    backgroundColor: mqData.map(d => _seriesColorFromPayload(d.label, payload) + 'cc'),
+    borderColor: mqData.map(d => _seriesColorFromPayload(d.label, payload)),
+    borderWidth: 1.5,
+    pointRadius: 9,
+    pointHoverRadius: 11,
+  }];
+
+  const c = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 28, right: 28, bottom: 28, left: 28 } },
+      scales: {
+        x: {
+          min: 0, max: 10,
+          title: { display: true, text: titles.mq_x || '← Lower         Higher →',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: { display: false },
+        },
+        y: {
+          min: 0, max: 10,
+          title: { display: true, text: titles.mq_y || '← Lower         Higher →',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: { display: false },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.raw.label}  (${ctx.dataset.label})`,
+          }
+        },
+        datalabels: { display: false },
+        // Quadrant background + labels via beforeDraw
+        beforeDraw: undefined,
+      },
+    },
+    plugins: [{
+      id: 'quadrants',
+      beforeDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+        const mx = left + width  * 0.5;  // midpoint X (value 5)
+        const my = top  + height * 0.5;  // midpoint Y (value 5)
+        const regions = mqQuadrantRegions(mx, my, left, right, top, bottom);
+        regions.forEach(r => {
+          ctx.save();
+          ctx.fillStyle = r.fill;
+          ctx.fillRect(r.x1, r.y1, r.x2-r.x1, r.y2-r.y1);
+          ctx.font = chartLabelFont(10);
+          ctx.fillStyle = sbChartTheme().overlay;
+          ctx.textAlign = r.align;
+          ctx.fillText(r.label, r.lx, r.ly);
+          ctx.restore();
+        });
+        // Divider lines
+        ctx.save();
+        ctx.setLineDash([5,4]);
+        ctx.strokeStyle = sbChartTheme().grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(mx, top); ctx.lineTo(mx, bottom); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(left, my); ctx.lineTo(right, my); ctx.stroke();
+        ctx.restore();
+      }
+    },
+    createCollidingPointLabelsPlugin((v) => v.label, (L) => _seriesColorFromPayload(L.text, payload))]
+  });
+  _charts.push(c);
+  attachChartVendorNav(c, null, wrap.dataset.market || _chartMarketId);
+  window._mqChart = c;
+  const has3B = [...document.querySelectorAll('#content h3, #content h4')].some(h =>
+    /\b3B\b/.test(h.textContent) || h.textContent.includes('Magic Quadrant'));
+  if (!has3B) injectGMQ(wrap);
+  });
+}
+
+// ─── 3B: Gartner Magic Quadrant ──────────────────────────────────────────────
+function injectGMQ(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const gmqData = payload.gmq_data;
+  const legendHTML = `
+    <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;">
+      ${Object.entries(sbQuadrantColors()).map(([q,c])=>`
+        <span style="display:flex;align-items:center;gap:5px;">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${c}"></span>${q}
+        </span>`).join('')}
+    </div>`;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId
+    || (anchorH3 && anchorH3.dataset && anchorH3.dataset.market)
+    || '';
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
+  wrap.innerHTML = `
+    <div class="chart-title">${titles.gmq || '3B · Magic Quadrant'}</div>
+    <div class="chart-subtitle">
+      ${titles.gmq_x || 'X-axis: Completeness of Vision'} &nbsp;|&nbsp;
+      ${titles.gmq_y || 'Y-axis: Ability to Execute'}
+    </div>
+    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('gmqChart')}"></canvas></div>
+    ${legendHTML}`;
+
+  const tbl = findNextTable(anchorH3);
+  if (tbl) tbl.style.display = 'none';
+  anchorH3.after(wrap);
+
+  const gmqCanvas = wrap.querySelector('canvas');
+  whenChartParentReady(gmqCanvas, () => {
+  const ctx = gmqCanvas.getContext('2d');
+  const datasets = [{
+    label: 'Solutions',
+    data: gmqData.map(d => ({ x: d.x, y: d.y, label: d.label, q: d.q })),
+    backgroundColor: gmqData.map(d => _seriesColorFromPayload(d.label, payload) + 'cc'),
+    borderColor: gmqData.map(d => _seriesColorFromPayload(d.label, payload)),
+    borderWidth: 1.5,
+    pointRadius: 9,
+    pointHoverRadius: 11,
+  }];
+
+  const g = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 28, right: 28, bottom: 28, left: 28 } },
+      scales: {
+        x: {
+          min: 0, max: 10,
+          title: { display: true, text: '← Less Complete Vision         More Complete Vision →',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: { display: false },
+        },
+        y: {
+          min: 0, max: 10,
+          title: { display: true, text: '← Lower Ability to Execute         Higher Ability to Execute →',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: { display: false },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.raw.label}  (${ctx.dataset.label})`,
+          }
+        },
+        datalabels: { display: false },
+      },
+    },
+    plugins: [{
+      id: 'gmqQuadrants',
+      beforeDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+        const mx = left + width  * 0.5;
+        const my = top  + height * 0.5;
+        // Gartner MQ exact quadrant positions:
+        // Top-left=Challengers, Top-right=Leaders, Bottom-left=Niche Players, Bottom-right=Visionaries
+        const t = sbChartTheme();
+        const fills = sbQuadrantFills();
+        const regions = [
+          { x1:mx, y1:top,  x2:right, y2:my,    fill:fills['Leaders'],      label:'LEADERS',      lx:right-8, ly:top+14,   align:'right' },
+          { x1:left,y1:top, x2:mx,    y2:my,     fill:fills['Challengers'],  label:'CHALLENGERS',  lx:left+8,  ly:top+14,   align:'left'  },
+          { x1:mx, y1:my,   x2:right, y2:bottom, fill:fills['Visionaries'],  label:'VISIONARIES',  lx:right-8, ly:bottom-8, align:'right' },
+          { x1:left,y1:my,  x2:mx,    y2:bottom, fill:fills['Niche Players'],       label:'NICHE PLAYERS',lx:left+8,  ly:bottom-8, align:'left'  },
+        ];
+        regions.forEach(r => {
+          ctx.save();
+          ctx.fillStyle = r.fill;
+          ctx.fillRect(r.x1, r.y1, r.x2-r.x1, r.y2-r.y1);
+          ctx.font = chartLabelFont(10);
+          ctx.fillStyle = t.overlay;
+          ctx.textAlign = r.align;
+          ctx.fillText(r.label, r.lx, r.ly);
+          ctx.restore();
+        });
+        ctx.save();
+        ctx.setLineDash([5,4]);
+        ctx.strokeStyle = sbChartTheme().grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(mx, top); ctx.lineTo(mx, bottom); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(left, my); ctx.lineTo(right, my); ctx.stroke();
+        ctx.restore();
+      }
+    },
+    createCollidingPointLabelsPlugin((v) => v.label, (L) => _seriesColorFromPayload(L.text, payload))]
+  });
+  _charts.push(g);
+  attachChartVendorNav(g, null, wrap.dataset.market || _chartMarketId);
+  window._gmqChart = g;
+  });
+}
+
+// ─── 3B: Forrester Wave ─────────────────────────────────────────────────────
+function injectWave(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const waveData = payload.wave_data;
+  const palette = themedSeriesPalette();
+  const legendHTML = waveData.map((d, i) => `
+    <span data-wave-idx="${i}" style="display:flex;align-items:center;gap:5px;font-size:12px;
+          cursor:pointer;padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;">
+      <span style="display:inline-block;width:13px;height:13px;border-radius:50%;
+                   background:${palette[i % palette.length]};border:2px solid ${palette[i % palette.length]}88;"></span>
+      ${d.label}
+    </span>`).join('');
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
+  wrap.innerHTML = `
+    <div class="chart-title">${titles.wave || '3C · Wave-Style Assessment'}</div>
+    <div class="chart-subtitle">
+      X-axis: Strength of Strategy &nbsp;|&nbsp; Y-axis: Strength of Offering &nbsp;|&nbsp;
+      Bubble size = Market Presence &nbsp;·&nbsp; Strong=4 · Good=3 · Moderate=2
+    </div>
+    <div class="chart-canvas-wrap"><canvas id="${nextChartCanvasId('waveChart')}"></canvas></div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;">${legendHTML}</div>`;
+
+  const tbl = findNextTable(anchorH3);
+  if (tbl) tbl.style.display = 'none';
+  anchorH3.after(wrap);
+
+  const waveCanvas = wrap.querySelector('canvas');
+  whenChartParentReady(waveCanvas, () => {
+  // Forrester convention: X = Strategy, Y = Offering
+  const bubbleR = { 4: 26, 3: 18, 2: 13, 1: 8 };
+  const datasets = waveData.map((d, i) => ({
+    label: d.label,
+    data: [{ x: d.strategy, y: d.offering, r: bubbleR[d.presence] }],
+    backgroundColor: palette[i % palette.length] + '66',
+    borderColor:     palette[i % palette.length],
+    borderWidth: 2,
+  }));
+
+  const ctx = waveCanvas.getContext('2d');
+  const c = new Chart(ctx, {
+    type: 'bubble',
+    data: { datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      // Extra top padding so zone labels render above the chart area
+      layout: { padding: { top: 38, right: 20, bottom: 10, left: 10 } },
+      scales: {
+        x: {
+          min: 0.5, max: 4.9,
+          title: { display: true, text: 'Strength of Strategy  (1=Emerging → 4=Strong)',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: {
+            stepSize: 1,
+            color: sbChartTheme().label,
+            callback: v => (['','Emerging','Moderate','Good','Strong'][v] || ''),
+          },
+        },
+        y: {
+          min: 0.5, max: 4.9,
+          title: { display: true, text: 'Strength of Offering  (1=Emerging → 4=Strong)',
+                   font: { size: 11 }, color: sbChartTheme().label },
+          grid: { color: chartGridColor() },
+          ticks: {
+            stepSize: 1,
+            color: sbChartTheme().label,
+            callback: v => (['','Emerging','Moderate','Good','Strong'][v] || ''),
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label} · Strategy:${ctx.raw.x} Offering:${ctx.raw.y}`,
+          }
+        },
+        datalabels: { display: false },
+      },
+    },
+    plugins: [{
+      id: 'waveArcZones',
+      // Concentric arc zones centred at bottom-left corner, like a real Forrester Wave
+      beforeDraw(chart) {
+        const { ctx, chartArea: { left, top, bottom, width, height } } = chart;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(left, top, width, height);
+        ctx.clip();
+
+        const cx = left, cy = bottom;             // arc origin = bottom-left of plot area
+        const diag = Math.hypot(width, height);
+        const r1 = diag * 0.37;                   // Contenders / Strong Performers boundary
+        const r2 = diag * 0.67;                   // Strong Performers / Leaders boundary
+
+        const wave = sbChartTheme().wave;
+
+        // Fill entire area = Leaders (deepest blue, upper-right quadrant)
+        ctx.fillStyle = wave.outer;
+        ctx.fillRect(left, top, width, height);
+
+        // Overpaint up to r2 = Strong Performers + Contenders (medium blue)
+        ctx.fillStyle = wave.mid;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r2, -Math.PI / 2, 0);    // sweep from straight-up to straight-right
+        ctx.closePath();
+        ctx.fill();
+
+        // Overpaint up to r1 = Contenders only (near-white)
+        ctx.fillStyle = wave.inner;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r1, -Math.PI / 2, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // Arc boundary lines
+        ctx.strokeStyle = wave.stroke;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        for (const r of [r1, r2]) {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, -Math.PI / 2, 0);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+      // Zone labels rendered above the chart area (inside the top padding)
+      afterDraw(chart) {
+        const { ctx, chartArea: { left, top, width } } = chart;
+        ctx.save();
+        ctx.font = chartLabelFont(10);
+        ctx.fillStyle = sbChartTheme().wave.label;
+        ctx.textAlign = 'center';
+        ctx.fillText('CONTENDERS',        left + width * 0.14, top - 16);
+        ctx.fillText('STRONG PERFORMERS', left + width * 0.50, top - 16);
+        ctx.fillText('LEADERS',           left + width * 0.86, top - 16);
+        ctx.restore();
+      }
+    },
+    createCollidingPointLabelsPlugin(
+      (_v, ds) => ds.label,
+      (L) => palette[L.dsi] || L.color
+    )]
+  });
+  _charts.push(c);
+  attachChartVendorNav(c, (_raw, ds) => ds && ds.label, wrap.dataset.market || _chartMarketId);
+  window._waveChart = c;
+
+  // ── Wave legend hover ──────────────────────────────────────────────────────
+  let _waveHovIdx = -1;
+  function applyWaveHover(idx) {
+    if (idx === _waveHovIdx) return;
+    _waveHovIdx = idx;
+    c.data.datasets.forEach((ds, i) => {
+      const color = palette[i % palette.length];
+      if (idx === -1) {
+        ds.backgroundColor = color + '66';
+        ds.borderColor     = color;
+        ds.borderWidth     = 2;
+      } else if (i === idx) {
+        ds.backgroundColor = color + 'cc';
+        ds.borderColor     = color;
+        ds.borderWidth     = 3.5;
+      } else {
+        ds.backgroundColor = color + '18';
+        ds.borderColor     = color + '44';
+        ds.borderWidth     = 1;
+      }
+    });
+    c.update('none');
+    wrap.querySelectorAll('[data-wave-idx]').forEach(el => {
+      const i = +el.dataset.waveIdx;
+      el.style.opacity    = (idx === -1 || i === idx) ? '1' : '0.3';
+      el.style.fontWeight = (idx !== -1 && i === idx) ? '500' : '400';
+    });
+  }
+  wrap.querySelectorAll('[data-wave-idx]').forEach(el => {
+    const idx = +el.dataset.waveIdx;
+    const lbl = (waveData[idx] && waveData[idx].label) || '';
+    _wireLegendVendorNav(el, lbl);
+    el.addEventListener('mouseenter', () => applyWaveHover(idx));
+    el.addEventListener('mouseleave', () => applyWaveHover(-1));
+  });
+  });
+}
+
+// ─── 3C: Blue Ocean Value Curve ─────────────────────────────────────────────
+function injectValueCurve(anchorH3) {
+  const payload = _marketChartSource(anchorH3);
+  const titles = payload.titles || {};
+  const vcKcfs = payload.vc_kcfs;
+  const palette = themedSeriesPalette();
+  const leaderLabels = new Set(
+    ((payload.vendor_buckets && payload.vendor_buckets.leaders) || [])
+      .concat(payload.gmq_data.filter(d => d.q === 'Leaders').map(d => d.label))
+      .concat(payload.mq_data.filter(d => d.q === 'Leaders').map(d => d.label))
+      .filter(Boolean)
+  );
+  const isLeader = (label) => {
+    if (!label) return false;
+    if (leaderLabels.has(label)) return true;
+    const norm = String(label).replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (leaderLabels.has(norm)) return true;
+    for (const L of leaderLabels) {
+      const Ln = String(L).replace(/\s*\([^)]*\)\s*$/, '').trim();
+      if (Ln === norm || label.includes(Ln) || L.includes(norm)) return true;
+    }
+    return false;
+  };
+  const leaderSeries = [...payload.vc_commercial, ...payload.vc_oss].filter(s => isLeader(s.label));
+  const allSeries = (leaderSeries.length ? leaderSeries : [...payload.vc_commercial, ...payload.vc_oss].slice(0, 6))
+    .map((s, i) => Object.assign({}, s, { color: s.color || palette[i % palette.length] }));
+
+  const mkSwatch = s =>
+    `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${s.color}"></span>`;
+  const mkItem = (s, idx) =>
+    `<span data-vc-idx="${idx}" style="display:flex;align-items:center;gap:5px;font-size:11.5px;
+           cursor:pointer;padding:3px 7px;border-radius:5px;transition:opacity .15s,background .15s;">${mkSwatch(s)}${s.label}</span>`;
+  const legendHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;margin-top:4px;">
+      <span style="font-size:10px;font-weight:500;color:var(--sb-muted);letter-spacing:.6px;">MQ LEADERS</span>
+      ${allSeries.map((s, i) => mkItem(s, i)).join('') || '<span style="font-size:12px;color:var(--sb-muted);">No Leaders in Magic Quadrant</span>'}
+    </div>`;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'chart-frame';
+  const _chartMarketId = payload.marketId;
+  if (_chartMarketId) wrap.dataset.market = _chartMarketId;
+  wrap.innerHTML = `
+    <div class="chart-title">${titles.vc || '3D · Blue Ocean Value Curve (Leaders Radar)'}</div>
+    <div class="chart-subtitle">
+      Magic Quadrant Leaders only · Scale 1–5 across ${vcKcfs.length || 'N'} Key Competitive Factors
+    </div>
+    <div class="chart-canvas-wrap chart-canvas-wrap--vc"><canvas id="${nextChartCanvasId('vcChart')}"></canvas></div>
+    <div style="margin-top:14px;">${legendHTML}</div>`;
+
+  const tbl = findNextTable(anchorH3);
+  if (tbl) tbl.style.display = 'none';
+  anchorH3.after(wrap);
+
+  const vcCanvas = wrap.querySelector('canvas');
+  whenChartParentReady(vcCanvas, () => {
+  const ctx = vcCanvas.getContext('2d');
+  const datasets = allSeries.map(s => ({
+    label: s.label,
+    data: s.data,
+    borderColor: s.color,
+    backgroundColor: hexAlpha(s.color, 0.12),
+    borderWidth: 2,
+    pointRadius: 3,
+    pointHoverRadius: 5,
+    pointBackgroundColor: s.color,
+    fill: true,
+  }));
+
+  const LEVEL = ['','Weak','Fair','Good','Strong','Best'];
+  const c = new Chart(ctx, {
+    type: 'radar',
+    data: { labels: vcKcfs, datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 8, right: 8, left: 8, bottom: 8 } },
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            backdropColor: 'transparent',
+            font: { size: 10 },
+            callback: v => LEVEL[v] ?? '',
+            color: sbChartTheme().label,
+          },
+          grid: { color: chartGridColor() },
+          angleLines: { color: chartGridColor() },
+          pointLabels: {
+            font: { size: 11, family: '"Roboto Condensed", sans-serif' },
+            color: sbChartTheme().label,
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false },
+        tooltip: { enabled: false },
+      },
+      interaction: { mode: 'nearest', intersect: false },
+    },
+    plugins: [{
+      id: 'vcWaveBackground',
+      beforeDraw(chart) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea || !chartArea.width || !chartArea.height) return;
+        const { left, top, width, height } = chartArea;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(left, top, width, height);
+        ctx.clip();
+        const zones = sbWaveZoneFills();
+        ctx.fillStyle = zones.contenders;
+        ctx.fillRect(left, top, width, height);
+        const cx = left + width / 2;
+        const cy = top + height / 2;
+        const r = Math.min(width, height) * 0.48;
+        ctx.fillStyle = zones.strong;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.72, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = zones.leaders;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      },
+    }]
+  });
+  _charts.push(c);
+  attachChartVendorNav(c, (_raw, ds) => ds && ds.label, wrap.dataset.market || _chartMarketId);
+  window._vcChart = c;
+  let _hovIdx = -1;
+
+  function applyVcHover(idx) {
+    if (idx === _hovIdx) return;
+    _hovIdx = idx;
+    c.data.datasets.forEach((ds, i) => {
+      const hex = allSeries[i].color;
+      if (idx === -1) {
+        ds.borderColor = hex;
+        ds.backgroundColor = hexAlpha(hex, 0.12);
+        ds.borderWidth = 2;
+        ds.pointRadius = 3;
+      } else if (i === idx) {
+        ds.borderColor = hex;
+        ds.backgroundColor = hexAlpha(hex, 0.28);
+        ds.borderWidth = 3;
+        ds.pointRadius = 5;
+      } else {
+        ds.borderColor = hexAlpha(hex, 0.18);
+        ds.backgroundColor = hexAlpha(hex, 0.04);
+        ds.borderWidth = 1;
+        ds.pointRadius = 2;
+      }
+    });
+    c.update('none');
+    wrap.querySelectorAll('[data-vc-idx]').forEach(el => {
+      const i = +el.dataset.vcIdx;
+      el.style.opacity    = (idx === -1 || i === idx) ? '1' : '0.3';
+      el.style.fontWeight = (idx !== -1 && i === idx) ? '500' : '400';
+    });
+  }
+
+  wrap.querySelectorAll('[data-vc-idx]').forEach(el => {
+    const idx = +el.dataset.vcIdx;
+    const lbl = (allSeries[idx] && allSeries[idx].label) || '';
+    _wireLegendVendorNav(el, lbl);
+    el.addEventListener('mouseenter', () => applyVcHover(idx));
+    el.addEventListener('mouseleave', () => applyVcHover(-1));
+  });
+  });
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function findNextTable(el) {
+  let n = el.nextElementSibling;
+  while (n && n.tagName !== 'TABLE' && !['H2','H1'].includes(n.tagName)) {
+    if (n.tagName === 'TABLE') return n;
+    if (n.querySelector('table')) return n.querySelector('table');
+    n = n.nextElementSibling;
+  }
+  return n && n.tagName === 'TABLE' ? n : null;
+}
+
+function injectCharts() {
+  destroyCharts();
+  document.querySelectorAll('#content h3, #content h4').forEach(h => {
+    const t = h.textContent.trim();
+    if (/\b3D\b/.test(t) || t.includes('Value Curve') || t.includes('Blue Ocean')) {
+      applyMarketChartFromHeading(h);
+      injectValueCurve(h);
+    } else if (/\b3C\b/.test(t) || t.includes('Wave-Style') || t.includes('Wave Assessment')) {
+      applyMarketChartFromHeading(h);
+      injectWave(h);
+    } else if (/\b3B\b/.test(t) || t.includes('Magic Quadrant')) {
+      applyMarketChartFromHeading(h);
+      injectGMQ(h);
+    } else if (/\b3A\b/.test(t) || t.includes('Positioning Matrix') || t.includes('Primary 2×2') || t.includes('2x2')) {
+      applyMarketChartFromHeading(h);
+      inject2x2(h);
+    }
+  });
+  // Restore primary market as the filter/membership baseline. Chart injects snapshot
+  // per-market arrays via _marketChartSource before whenChartParentReady (rAF).
+  if (PRIMARY_CHART_DATA && Object.keys(PRIMARY_CHART_DATA).length) {
+    applyChartData(PRIMARY_CHART_DATA);
+  }
+  setupChartResizeObserver();
+  requestAnimationFrame(() => resizeAllCharts());
+}
+
+// ─── Main load ───────────────────────────────────────────────────────────────
+async function loadFile(path) {
+  destroyCharts();
+  document.getElementById('content').innerHTML = '<p style="color:var(--sb-muted);padding:40px 0;">Loading…</p>';
+  document.getElementById('toc').innerHTML = '';
+  try {
+    const r = await fetch('/' + path);
+    const md = await r.text();
+    document.getElementById('content').innerHTML = marked.parse(md);
+    ensureExternalLinksNewTab(document.getElementById('content'));
+    buildTOC();
+    document.getElementById('stats').textContent =
+      `${(md.length/1000).toFixed(1)}K chars · ${md.split('\n').length} lines`;
+    window.scrollTo(0, 0);
+    // Inject charts (consolidated report only), then linkify all files
+    if (path.includes('Consolidated Intelligence Report') || path.includes('Market Landscape Report')) {
+      setTimeout(() => {
+        injectCharts();
+        linkify();
+        linkifyBareHttpUrls(document.getElementById('content'));
+        ensureExternalLinksNewTab(document.getElementById('content'));
+        setTimeout(() => postRender(), 0);
+      }, 0);
+    } else {
+      setTimeout(() => { linkify(); linkifyBareHttpUrls(document.getElementById('content')); ensureExternalLinksNewTab(document.getElementById('content')); setTimeout(() => postRender(), 0); }, 0);
+    }
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<pre style="color:red">${e}</pre>`;
+  }
+}
+
+function buildTOC() {
+  const toc = document.getElementById('toc');
+  toc.innerHTML = '';
+  document.querySelectorAll('#content h1, #content h2, #content h3').forEach((h, i) => {
+    const id = 'h-' + i; h.id = id;
+    const li = document.createElement('li');
+    const a  = document.createElement('a');
+    a.href = '#' + id;
+    a.textContent = (h.tagName==='H1' ? '● ' : h.tagName==='H2' ? '  ○ ' : '    · ') + h.textContent;
+    a.style.fontSize = h.tagName==='H1' ? '13px' : h.tagName==='H2' ? '12px' : '11px';
+    a.onclick = () => { document.querySelectorAll('#sidebar a').forEach(x=>x.classList.remove('active')); a.classList.add('active'); };
+    li.appendChild(a); toc.appendChild(li);
+  });
+}
+
+// Embedded bootstrap (landscape_preview_render.py) calls bootstrapFromEmbedded() instead of loadFile.
+
+// ─── #6 Progress bar + scroll polling fallback ──────────────────────────────
+let _progressBar = null;
+let _lastScrollY = -1;
+function _onScrollTick() {
+  const y = document.documentElement.scrollTop;
+  if (y === _lastScrollY) return;
+  _lastScrollY = y;
+  // Update progress bar
+  if (_progressBar) {
+    const s = document.documentElement;
+    const pct = s.scrollHeight - s.clientHeight > 0
+      ? (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100 : 0;
+    _progressBar.style.width = pct + '%';
+  }
+  // Dispatch custom event for breadcrumb (so the IIFE module can listen)
+  window.dispatchEvent(new CustomEvent('scrolltick'));
+}
+// Primary: native scroll events
+window.addEventListener('scroll', _onScrollTick, { passive: true });
+// Fallback: polling at 200ms for environments where scroll events don't fire
+setInterval(_onScrollTick, 200);
+
+document.addEventListener('DOMContentLoaded', () => {
+  _progressBar = document.getElementById('readProgressBar');
+  setupNarrowLayoutToggles();
+  syncExportBarClearance();
+  layoutExportBarForViewport();
+  window.addEventListener('resize', () => { layoutExportBarForViewport(); }, { passive: true });
+  window.addEventListener('resize', syncExportBarClearance, { passive: true });
+  const exportBar = document.getElementById('exportBar');
+  if (exportBar && typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => syncExportBarClearance()).observe(exportBar);
+  }
+  const closeBtn = document.getElementById('compareCloseBtn');
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    document.getElementById('compareDrawer').classList.remove('open');
+  });
+  document.getElementById('copyGdocsBtn').addEventListener('click', copyForGoogleDocs);
+  document.getElementById('pdfExportBtn').addEventListener('click', exportToPDF);
+  refreshLucideIcons();
+});
+
+// ─── Copy for Google Docs ──────────────────────────────────────────────────
+async function copyForGoogleDocs() {
+  const btn = document.getElementById('copyGdocsBtn');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = lucideIconHtml('loader-2', 'btn-icon lucide-icon is-spinning') + ' Preparing…';
+  refreshLucideIcons(btn);
+  btn.disabled = true;
+
+  try {
+    // 1. Expand all collapsed vendor cards temporarily
+    const collapsedBodies = document.querySelectorAll('.vc-body.vc-collapsed');
+    collapsedBodies.forEach(b => b.classList.remove('vc-collapsed'));
+
+    // 2. Clone the content
+    const content = document.getElementById('content');
+    const clone = content.cloneNode(true);
+
+    // 3. Convert all canvas elements to inline images
+    const origCanvases = content.querySelectorAll('canvas');
+    const cloneCanvases = clone.querySelectorAll('canvas');
+    origCanvases.forEach((origCanvas, i) => {
+      try {
+        const dataUrl = origCanvas.toDataURL('image/png');
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.cssText = 'max-width:100%;height:auto;';
+        img.alt = 'Chart';
+        if (cloneCanvases[i]) {
+          cloneCanvases[i].parentNode.replaceChild(img, cloneCanvases[i]);
+        }
+      } catch(e) { /* canvas tainted — skip */ }
+    });
+
+    // 4. Remove UI-only elements from clone
+    clone.querySelectorAll('#vendorFilterBar, .vc-toggle, .vname-link').forEach(el => {
+      if (el.classList.contains('vname-link')) {
+        // Replace vname-link spans with plain text
+        el.replaceWith(document.createTextNode(el.textContent));
+      } else {
+        el.remove();
+      }
+    });
+
+    // 5. Make vendor cards look expanded in the copy
+    clone.querySelectorAll('.vc-body').forEach(b => {
+      b.style.display = 'block';
+      b.classList.remove('vc-collapsed');
+    });
+
+    // 6. Un-hide the original H3 inside vendor cards and style them
+    clone.querySelectorAll('.vendor-card > h3').forEach(h3 => {
+      h3.style.display = 'block';
+      h3.style.cssText = 'font-size:16pt;color:#1f3864;margin:12px 0 8px;font-weight:bold;';
+    });
+    // Remove the vc-header since h3 is now visible
+    clone.querySelectorAll('.vc-header').forEach(h => h.remove());
+    // Remove vc-tags (not needed in doc)
+    clone.querySelectorAll('.vc-tags').forEach(t => t.remove());
+
+    // 7. Apply inline styles for Google Docs compatibility
+    _inlineStylesForGDocs(clone);
+
+    // 8. Build final HTML with wrapper styles
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#1a1a1a;line-height:1.6;max-width:800px;">${clone.innerHTML}</div>`;
+
+    // 9. Copy to clipboard as rich HTML
+    const blob = new Blob([html], { type: 'text/html' });
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'text/html': blob })
+    ]);
+
+    // 10. Re-collapse the vendor cards
+    collapsedBodies.forEach(b => b.classList.add('vc-collapsed'));
+
+    setActionBtnState(btn, 'check', 'Copied!');
+    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
+
+  } catch(e) {
+    console.error('Copy failed:', e);
+    // Re-collapse
+    document.querySelectorAll('.vc-body.vc-collapsed').forEach(b => b.classList.add('vc-collapsed'));
+    setActionBtnState(btn, 'circle-x', 'Failed');
+    setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
+  }
+}
+
+// ─── Export to PDF ──────────────────────────────────────────────────────────
+// Engine writes sibling landscape-report.pdf at regen time (Playwright page.pdf).
+// Button opens that relative file in a new tab — never a blob URL, never a print dialog.
+async function exportToPDF() {
+  const btn = document.getElementById('pdfExportBtn');
+  const origHTML = btn.innerHTML;
+  const pdfHref = 'landscape-report.pdf?v=' + Date.now();
+  btn.disabled = true;
+  try {
+    const opened = window.open(pdfHref, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      const a = document.createElement('a');
+      a.href = pdfHref;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setActionBtnState(btn, 'check', 'Opened');
+  } catch (e) {
+    console.error('PDF export failed:', e);
+    setActionBtnState(btn, 'circle-x', 'PDF missing — regenerate the landscape report');
+  }
+  setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; refreshLucideIcons(btn); }, 2500);
+}
+
+function _inlineStylesForGDocs(root) {
+  // Headings
+  root.querySelectorAll('h1').forEach(el => {
+      el.style.cssText = 'font-size:22pt;color:#1f3864;font-weight:bold;border-bottom:2px solid #d0d7de;padding-bottom:8px;margin:20px 0 12px;';
+  });
+  root.querySelectorAll('h2').forEach(el => {
+      el.style.cssText = 'font-size:16pt;color:#1f3864;font-weight:bold;border-bottom:1px solid #e1e4e8;padding-bottom:6px;margin:24px 0 10px;';
+  });
+  root.querySelectorAll('h3').forEach(el => {
+      if (!el.style.cssText) el.style.cssText = 'font-size:13pt;color:#2f5597;font-weight:bold;margin:16px 0 6px;';
+  });
+  root.querySelectorAll('h4').forEach(el => {
+      el.style.cssText = 'font-size:11pt;color:#2f5597;font-weight:bold;margin:12px 0 4px;';
+  });
+
+  // Paragraphs
+  root.querySelectorAll('p').forEach(el => {
+    el.style.cssText += ';font-size:11pt;margin:0 0 8px;line-height:1.6;';
+  });
+
+  // Lists
+  root.querySelectorAll('ul,ol').forEach(el => {
+    el.style.cssText = 'margin:0 0 10px 24px;font-size:11pt;';
+  });
+  root.querySelectorAll('li').forEach(el => {
+    el.style.cssText = 'margin:3px 0;line-height:1.5;';
+  });
+
+  // Bold & italic
+  root.querySelectorAll('strong').forEach(el => { el.style.fontWeight = '500'; });
+
+  // Links — blue, no underline (a11y via color + focus outline elsewhere)
+  root.querySelectorAll('a').forEach(el => {
+      el.style.cssText = 'color:#2563eb;text-decoration:none;';
+  });
+
+  // Blockquotes / callouts
+  root.querySelectorAll('blockquote, .callout').forEach(el => {
+      el.style.cssText = 'border-left:4px solid #2f5597;padding:8px 14px;margin:12px 0;background:#e8eef4;font-size:11pt;';
+  });
+
+  // HR
+  root.querySelectorAll('hr').forEach(el => {
+    el.style.cssText = 'border:none;border-top:1px solid #d0d7de;margin:20px 0;';
+  });
+
+  // Code
+  root.querySelectorAll('code').forEach(el => {
+    el.style.cssText = 'background:#f0f3f6;padding:1px 4px;border-radius:3px;font-family:Consolas,monospace;font-size:10pt;';
+  });
+  root.querySelectorAll('pre').forEach(el => {
+    el.style.cssText = 'background:#f6f8fa;padding:12px;border-radius:6px;overflow-x:auto;margin:10px 0;font-size:10pt;font-family:Consolas,monospace;border:1px solid #d0d7de;';
+  });
+  root.querySelectorAll('pre code').forEach(el => {
+    el.style.cssText = 'background:none;padding:0;font-family:Consolas,monospace;font-size:10pt;';
+  });
+
+  // Tables — Google Docs needs inline borders on every cell
+  root.querySelectorAll('table').forEach(tbl => {
+    tbl.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;font-size:10pt;';
+    tbl.querySelectorAll('th').forEach(th => {
+      th.style.cssText = 'background:#e8eaed;color:#1a1a1a;font-weight:bold;font-size:9pt;text-transform:uppercase;letter-spacing:0.3px;padding:8px 10px;border:1px solid #d0d7de;text-align:left;';
+    });
+    tbl.querySelectorAll('td').forEach(td => {
+      td.style.cssText = 'padding:7px 10px;border:1px solid #d0d7de;vertical-align:top;font-size:10pt;';
+    });
+    // Zebra striping
+    tbl.querySelectorAll('tbody tr').forEach((tr, i) => {
+      if (i % 2 === 1) tr.style.background = '#f6f8fa';
+    });
+  });
+
+  // Pros/cons grid → convert to a simple 2-column table for GDocs (CSS grid won't work)
+  root.querySelectorAll('.pros-cons-grid').forEach(grid => {
+    const prosCol = grid.querySelector('.pros-col');
+    const consCol = grid.querySelector('.cons-col');
+    if (!prosCol || !consCol) return;
+    const tbl = document.createElement('table');
+    tbl.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0;';
+    tbl.innerHTML = `<tr>
+      <td style="vertical-align:top;width:50%;padding:8px 12px;border:1px solid #d0d7de;">${prosCol.innerHTML}</td>
+      <td style="vertical-align:top;width:50%;padding:8px 12px;border:1px solid #d0d7de;">${consCol.innerHTML}</td>
+    </tr>`;
+    grid.replaceWith(tbl);
+  });
+
+  // Chart frames — remove animation classes, keep clean
+  root.querySelectorAll('.chart-frame').forEach(el => {
+    el.style.cssText = 'border:1px solid #d0d7de;border-radius:8px;padding:16px 20px;margin:16px 0;background:#ffffff;';
+  });
+  root.querySelectorAll('.chart-title').forEach(el => {
+    el.style.cssText = 'font-size:10pt;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;color:#5f6368;margin-bottom:4px;';
+  });
+  root.querySelectorAll('.chart-subtitle').forEach(el => {
+    el.style.cssText = 'font-size:9pt;color:#80868b;margin-bottom:14px;';
+  });
+
+  // Trend cards → convert to a simple list for GDocs
+  root.querySelectorAll('.trend-strip').forEach(strip => {
+    const cards = strip.querySelectorAll('.trend-card');
+    if (cards.length === 0) return;
+    const tbl = document.createElement('table');
+    tbl.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;';
+    let rowHTML = '<tr>';
+    cards.forEach((card, i) => {
+      const icon = card.querySelector('.tc-icon')?.textContent || '';
+      const title = card.querySelector('.tc-title')?.textContent || '';
+      const body = card.querySelector('.tc-body')?.textContent || '';
+      rowHTML += `<td style="vertical-align:top;padding:10px;border:1px solid #d0d7de;width:${Math.floor(100/Math.min(cards.length,4))}%;background:#f6f8fa;">
+        <div style="font-size:16pt;margin-bottom:4px;">${icon}</div>
+        <div style="font-size:10pt;font-weight:bold;color:#1a1a1a;margin-bottom:4px;">${title}</div>
+        <div style="font-size:9pt;color:#5f6368;line-height:1.4;">${body}</div>
+      </td>`;
+      // Max 4 per row
+      if ((i + 1) % 4 === 0 && i < cards.length - 1) rowHTML += '</tr><tr>';
+    });
+    rowHTML += '</tr>';
+    tbl.innerHTML = rowHTML;
+    strip.replaceWith(tbl);
+  });
+
+  // Vendor card wrapper — clean border
+  root.querySelectorAll('.vendor-card').forEach(el => {
+    el.style.cssText = 'border:1px solid #d0d7de;border-radius:8px;padding:12px 16px;margin:14px 0;page-break-inside:avoid;';
+  });
+
+  // Remove elements that don't belong in the doc
+  root.querySelectorAll('.collapsible::before, .wave-legend i, .vc-legend i').forEach(el => el.remove());
+
+  // Collapsible indicators — remove ▾/▸ characters from H3 text
+  root.querySelectorAll('h3.collapsible').forEach(h3 => {
+    h3.textContent = h3.textContent.replace(/^[▸▾]\s*/, '');
+  });
+
+  // Section color coding — apply left border inline
+  const SEC_COLORS = ['#1f3864','#2f5597','#3d6fa8','#5b7fa6','#64748b','#475569','#334155','#94a3b8'];
+  root.querySelectorAll('h2').forEach((h2, i) => {
+    const c = SEC_COLORS[i % 8];
+    h2.style.borderLeft = '4px solid ' + c;
+    h2.style.paddingLeft = '10px';
+  });
+}
+
+// ─── POST-RENDER MODULE ───────────────────────────────────────────────────────
+(function() {
+  'use strict';
+
+  // ── Shared state ─────────────────────────────────────────────────────────────
+  let _bcSection, _bcSep, _bcSub;
+  let _breadcrumbObs = null, _chartObs = null, _snavObs = null;
+  let _compareSet = new Set();
+  const COMPARE_MAX = 10;
+
+  // ── Vendor sets (from embedded vendor_buckets + chart data) ───────────────────
+  let COMMERCIAL_LABELS = new Set();
+  let OSS_LABELS = new Set();
+  let ALL_VENDORS = new Set();
+  let LEADER_LABELS = new Set();
+  let CHALLENGER_LABELS = new Set();
+
+  const GENERIC_LINK_BLOCKED = new Set([
+    'sdlc', 'apo', 'saas', 'oss', 'ai', 'plugin', 'plugins',
+    'api', 'cli', 'ide', 'pr', 'ci', 'cd', 'devops',
+    'orchestration', 'workflow', 'workflows',
+  ]);
+
+  function _isLinkableVendorName(name) {
+    const label = String(name || '').trim();
+    if (!label) return false;
+    if (GENERIC_LINK_BLOCKED.has(label.toLowerCase())) return false;
+    if (label === label.toUpperCase() && label.length <= 4 && !['BMAD', 'GSD'].includes(label)) {
+      return false;
+    }
+    return true;
+  }
+
+  function _refreshVendorSets() {
+    // Active market chart buckets drive filters so Commercial/OSS/Leaders match
+    // the plotted membership for the market currently injected into MQ/GMQ/Wave.
+    // Fall back to PRIMARY only when the active chart has empty buckets.
+    const activeBuckets = (typeof VENDOR_BUCKETS === 'object' && VENDOR_BUCKETS)
+      ? VENDOR_BUCKETS
+      : null;
+    const primaryBuckets = (typeof PRIMARY_CHART_DATA === 'object' && PRIMARY_CHART_DATA)
+      ? PRIMARY_CHART_DATA.vendor_buckets
+      : null;
+    const activeHasLists = !!(activeBuckets && (
+      (activeBuckets.commercial && activeBuckets.commercial.length) ||
+      (activeBuckets.oss && activeBuckets.oss.length)
+    ));
+    const buckets = activeHasLists
+      ? activeBuckets
+      : ((primaryBuckets && typeof primaryBuckets === 'object') ? primaryBuckets : (activeBuckets || {}));
+    // Union commercial/oss across all markets so multi-market cores (e.g. SB in
+    // APO ∩ plugins) remain filterable when the sidebar spans the full report.
+    const unionCommercial = new Set(buckets.commercial || []);
+    const unionOss = new Set(buckets.oss || []);
+    if (typeof MARKET_CHARTS === 'object' && MARKET_CHARTS) {
+      Object.values(MARKET_CHARTS).forEach(ch => {
+        const vb = ch && ch.vendor_buckets;
+        if (!vb) return;
+        (vb.commercial || []).forEach(l => unionCommercial.add(l));
+        (vb.oss || []).forEach(l => unionOss.add(l));
+      });
+    }
+    COMMERCIAL_LABELS = unionCommercial;
+    OSS_LABELS = unionOss;
+    // Leaders/Challengers stay market-chart-specific (active MQ authority).
+    LEADER_LABELS = new Set(buckets.leaders || GMQ_DATA.filter(d => d.q === 'Leaders').map(d => d.label));
+    CHALLENGER_LABELS = new Set(buckets.challengers || GMQ_DATA.filter(d => d.q === 'Challengers').map(d => d.label));
+    ALL_VENDORS = new Set([
+      ...(LINK_PAIRS || []).map(([name]) => name),
+      ...Object.keys(VENDOR_URLS || {}),
+      ...Object.keys(typeof HOMEPAGE_VENDOR_URLS === 'object' ? HOMEPAGE_VENDOR_URLS : {}),
+      ...MQ_DATA.map(d => d.label),
+      ...GMQ_DATA.map(d => d.label),
+      ...WAVE_DATA.map(d => d.label),
+      ...VC_COMMERCIAL.map(s => s.label),
+      ...VC_OSS.map(s => s.label),
+      ...COMMERCIAL_LABELS,
+      ...OSS_LABELS,
+    ].filter(_isLinkableVendorName));
+  }
+
+  function _vendorUrl(label) {
+    if (!label) return '';
+    if (typeof HOMEPAGE_VENDOR_URLS === 'object' && HOMEPAGE_VENDOR_URLS[label]) return HOMEPAGE_VENDOR_URLS[label];
+    if (typeof VENDOR_URLS === 'object' && VENDOR_URLS[label]) return VENDOR_URLS[label];
+    const hit = (LINK_PAIRS || []).find(([name]) => name === label);
+    return hit ? hit[1] : '';
+  }
+
+  function _homepageFromHeading(h3, displayName) {
+    const anchors = [...(h3.querySelectorAll('a[href^="http"]') || [])];
+    if (!anchors.length) return '';
+    const want = String(displayName || '').trim();
+    const exact = anchors.find(a => (a.textContent || '').trim() === want);
+    if (exact) return exact.href;
+    const fuzzy = anchors.find(a => {
+      const t = (a.textContent || '').trim();
+      return t && want && (want.includes(t) || t.includes(want));
+    });
+    if (fuzzy) return fuzzy.href;
+    return anchors[anchors.length - 1].href || '';
+  }
+
+  function _escAttr(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;');
+  }
+
+  function _normalizeVendorLabel(name) {
+    return String(name || '').replace(/^\d+\.\s*/, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+  }
+
+  function _ensureCompareSection() {
+    let sec = document.getElementById('compareResultsSection');
+    if (sec) return sec;
+    sec = document.createElement('section');
+    sec.id = 'compareResultsSection';
+    sec.className = 'compare-results-section';
+    sec.setAttribute('aria-label', 'Compare selected solutions');
+    sec.innerHTML = '<h2>Compare selected solutions</h2><div id="compareResultsBody"></div>';
+    const content = document.getElementById('content');
+    if (!content) return sec;
+    const hrs = [...content.querySelectorAll('hr')];
+    const footer = hrs.length ? hrs[hrs.length - 1] : null;
+    if (footer) content.insertBefore(sec, footer);
+    else content.appendChild(sec);
+    return sec;
+  }
+
+  function _scrollToCompareSection() {
+    const sec = _ensureCompareSection();
+    if (!sec) return;
+    const navH = (document.getElementById('solutionNav') || {}).offsetHeight || 125;
+    const bcH = (document.getElementById('breadcrumb') || {}).offsetHeight || 0;
+    const top = sec.getBoundingClientRect().top + window.scrollY - navH - bcH - 12;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+
+  function _vendorMatchesFilter(label, filter) {
+    const norm = _normalizeVendorLabel(label);
+    if (!filter || filter === 'all') return true;
+    if (filter === 'commercial') return COMMERCIAL_LABELS.has(norm) || COMMERCIAL_LABELS.has(label);
+    if (filter === 'oss') return OSS_LABELS.has(norm) || OSS_LABELS.has(label);
+    if (filter === 'leader') return LEADER_LABELS.has(norm) || LEADER_LABELS.has(label);
+    if (filter === 'challenger') return CHALLENGER_LABELS.has(norm) || CHALLENGER_LABELS.has(label);
+    return true;
+  }
+
+  // ── Colour palette ────────────────────────────────────────────────────────────
+  const PALETTE      = getAvatarPalette();
+  const TREND_ICONS  = ['rocket','shuffle','bot','cloud','shield','bar-chart-3','wrench','zap','target','lightbulb'];
+
+  // ── Score colours for comparison table ───────────────────────────────────────
+  const SCORE_BG = {1:'#f1f5f9',2:'#e8eef4',3:'#f6f8fa',4:'#e2e8f0',5:'#d8e4f0'};
+
+  // ── Stored original chart colours for filter restore ─────────────────────────
+  const _origChartColors = new Map();
+
+  // ── Init ─────────────────────────────────────────────────────────────────────
+  function postRender() {
+    _progressBar = document.getElementById('readProgressBar');
+    _bcSection   = document.getElementById('bcSection');
+    _bcSep       = document.getElementById('bcSep');
+    _bcSub       = document.getElementById('bcSub');
+    _compareSet.clear();
+    _updateCompareBadge();
+    _refreshVendorSets();
+
+    removeExtraneousHRs();
+    transformCallouts();
+    buildTrendCards();
+    applySectionColors();
+    buildSolutionNav();    // must run BEFORE buildVendorCards (needs raw h3 elements)
+    buildVendorCards();
+    layoutProsCons();
+    buildInfoCards();
+    markSourceReliabilitySection();
+    setupCollapsibles();
+    insertVendorFilterBar();
+    annotateCriticalFillGaps();
+    wrapContentTables();
+    layoutExportBarForViewport();
+    wrapVendorNameLinks();
+    ensureExternalLinksNewTab(document.getElementById('content'));
+    ensureExternalLinksNewTab(document.getElementById('solutionNav'));
+    ensureExternalLinksNewTab(document.getElementById('matrixPanelBody'));
+    ensureExternalLinksNewTab(document.getElementById('compareResultsBody'));
+    _buildVendorSlugMap();
+    _ensureCompareSection();
+    _renderCompareTable();
+    setupChartObserver();
+    setupBreadcrumbObserver();
+    setupChartResizeObserver();
+    setupQuadrantCompareOverlays();
+    requestAnimationFrame(() => { resizeAllCharts(); syncExportBarClearance(); });
+    refreshLucideIcons();
+    // Honor #vendor-{slug}[--{market}] deep links after cards exist.
+    const hash = String(window.location.hash || '').replace(/^#/, '');
+    if (hash.startsWith('vendor-')) {
+      setTimeout(() => {
+        const el = document.getElementById(hash);
+        if (el) _scrollToVendorCard(hash);
+        else _scrollToVendorCard(hash.replace(/^vendor-/, ''));
+      }, 0);
+    }
+    const compareBtn = document.getElementById('compareBtn');
+    if (compareBtn && !compareBtn.dataset.compareWired) {
+      compareBtn.dataset.compareWired = '1';
+      compareBtn.addEventListener('click', () => {
+        _renderCompareTable();
+        _scrollToCompareSection();
+        const drawer = document.getElementById('compareDrawer');
+        if (drawer && _compareSet.size > 0) drawer.classList.add('open');
+      });
+    }
+  }
+  window.postRender = postRender;
+  window._scrollToVendorCard = _scrollToVendorCard;
+
+  // ── #0 removeExtraneousHRs ───────────────────────────────────────────────────
+  function removeExtraneousHRs() {
+    const hrs = [...document.querySelectorAll('#content hr')];
+    // Keep only the last <hr> in content (footer separator before "End of Report")
+    const footerHR = hrs.length > 0 ? hrs[hrs.length - 1] : null;
+    hrs.forEach(hr => {
+      if (hr !== footerHR) hr.remove();
+    });
+  }
+
+  // ── #4 transformCallouts ─────────────────────────────────────────────────────
+  function transformCallouts() {
+    document.querySelectorAll('#content blockquote').forEach(bq => {
+      const strong = bq.querySelector('strong');
+      const typeText = strong ? strong.textContent.toLowerCase().trim() : '';
+      let type = 'default';
+      if (typeText.startsWith('key insight'))    type = 'insight';
+      else if (typeText.startsWith('market signal')) type = 'signal';
+      else if (typeText.startsWith('risk'))       type = 'risk';
+      else if (typeText.startsWith('stat'))       type = 'stat';
+      const div = document.createElement('div');
+      div.className = 'callout callout-' + type;
+      div.innerHTML = bq.innerHTML;
+      bq.parentNode.replaceChild(div, bq);
+    });
+  }
+
+  // ── #5 buildTrendCards ───────────────────────────────────────────────────────
+  function buildTrendCards() {
+    const trendH2 = Array.from(document.querySelectorAll('#content h2'))
+      .find(h => /trend/i.test(h.textContent));
+    if (!trendH2) return;
+
+    const strip = document.createElement('div');
+    strip.className = 'trend-strip';
+    strip.setAttribute('role', 'list');
+
+    // Collect all nodes between this H2 and next H2 — to replace them later
+    const nodesToReplace = [];
+    let sib = trendH2.nextElementSibling;
+
+    // Strategy: collect H3 headings as trend titles + following body paragraphs
+    // Falls back to OL/UL list items if no H3s are found
+    const trendItems = [];  // { title, body }
+    let currentTitle = null, currentBodyParts = [];
+
+    while (sib && sib.tagName !== 'H2') {
+      nodesToReplace.push(sib);
+      if (sib.tagName === 'H3') {
+        // Save previous trend
+        if (currentTitle !== null) {
+          trendItems.push({ title: currentTitle, body: currentBodyParts.join(' ').trim() });
+        }
+        // Strip "Trend N: " prefix if present
+        currentTitle = sib.textContent.trim().replace(/^Trend\s+\d+:\s*/i, '');
+        currentBodyParts = [];
+      } else if (currentTitle !== null && ['P','UL','OL'].includes(sib.tagName)) {
+        currentBodyParts.push(sib.textContent.trim());
+      } else if (sib.tagName === 'LI') {
+        // Fallback: plain list
+        const strong = sib.querySelector('strong');
+        if (strong) {
+          if (currentTitle !== null) trendItems.push({ title: currentTitle, body: currentBodyParts.join(' ').trim() });
+          currentTitle = strong.textContent.trim();
+          currentBodyParts = [sib.textContent.replace(strong.textContent, '').replace(/^[:\s–—]+/, '').trim()];
+        }
+      }
+      sib = sib.nextElementSibling;
+    }
+    if (currentTitle !== null) {
+      trendItems.push({ title: currentTitle, body: currentBodyParts.join(' ').trim() });
+    }
+
+    // Fallback: try OL/UL directly after H2 if no H3-based items found
+    if (trendItems.length === 0) {
+      const list = nodesToReplace.find(n => ['OL','UL'].includes(n.tagName));
+      if (list) {
+        list.querySelectorAll(':scope > li').forEach(li => {
+          const strong = li.querySelector('strong');
+          if (strong) {
+            const clone = li.cloneNode(true);
+            clone.querySelectorAll('strong').forEach(s => s.remove());
+            trendItems.push({ title: strong.textContent.trim(), body: clone.textContent.replace(/^[:\s–—]+/, '').trim() });
+          } else {
+            const text = li.textContent.trim();
+            const ci = text.indexOf(':');
+            trendItems.push(ci > 0
+              ? { title: text.slice(0, ci).trim(), body: text.slice(ci + 1).trim() }
+              : { title: text.slice(0, 60).trim(), body: text.slice(60).trim() });
+          }
+        });
+      }
+    }
+
+    if (trendItems.length === 0) return;
+
+    trendItems.forEach(({ title, body }, idx) => {
+      const card = document.createElement('div');
+      card.className = 'trend-card';
+      card.setAttribute('role', 'listitem');
+      // Truncate body to ~120 chars for card readability
+      const shortBody = body.length > 130 ? body.slice(0, 127) + '…' : body;
+      card.innerHTML =
+        `<div class="tc-icon">${lucideIconHtml(TREND_ICONS[idx % TREND_ICONS.length], 'lucide-icon')}</div>` +
+        `<div class="tc-title">${title}</div>` +
+        `<div class="tc-body">${shortBody}</div>`;
+      strip.appendChild(card);
+    });
+
+    // Replace all collected nodes with the strip
+    const parent = trendH2.parentNode;
+    nodesToReplace.forEach(n => n.remove());
+    trendH2.after(strip);
+  }
+
+  // ── #11 buildInfoCards — Shortlist Profiles & Future Outlook ─────────────────
+  function buildInfoCards() {
+    const SECTION_PATTERNS = [
+      /Buying Guidance|Shortlist/i,
+      /Future Outlook|Emerging Disrupt/i
+    ];
+    SECTION_PATTERNS.forEach(pattern => {
+      const h2 = Array.from(document.querySelectorAll('#content h2')).find(h => pattern.test(h.textContent));
+      if (!h2) return;
+
+      // Collect H3s and their body nodes between this H2 and next H2
+      const items = [];
+      let sib = h2.nextElementSibling;
+      let currentH3 = null;
+      let currentNodes = [];
+
+      while (sib && sib.tagName !== 'H2') {
+        if (sib.tagName === 'H3') {
+          if (currentH3) items.push({ h3: currentH3, nodes: currentNodes });
+          currentH3 = sib;
+          currentNodes = [];
+        } else if (currentH3) {
+          currentNodes.push(sib);
+        }
+        sib = sib.nextElementSibling;
+      }
+      if (currentH3) items.push({ h3: currentH3, nodes: currentNodes });
+      if (items.length === 0) return;
+
+      // Build cards in a container, replace existing H3+content
+      const container = document.createDocumentFragment();
+      items.forEach(({ h3, nodes }) => {
+        // Strip leading "N. " from title
+        const title = h3.textContent.trim().replace(/^\d+\.\s*/, '');
+
+        const card = document.createElement('div');
+        card.className = 'info-card';
+
+        const hdr = document.createElement('div');
+        hdr.className = 'info-card-header';
+        hdr.innerHTML = `<span style="flex:1">${title}</span><span class="info-card-toggle">${lucideIconHtml('chevron-down', 'lucide-icon')}</span>`;
+
+        const body = document.createElement('div');
+        body.className = 'info-card-body'; // collapsed by default
+        // Remove any trailing HRs
+        const cleanNodes = nodes.filter(n => n.tagName !== 'HR');
+        cleanNodes.forEach(n => body.appendChild(n));
+
+        hdr.addEventListener('click', () => {
+          const isOpen = body.classList.toggle('open');
+          setToggleChevron(hdr.querySelector('.info-card-toggle'), isOpen);
+        });
+
+        card.appendChild(hdr);
+        card.appendChild(body);
+        container.appendChild(card);
+
+        h3.remove();
+      });
+
+      // Insert container where first H3 was (after H2)
+      h2.after(container);
+
+      // Remove any stray <hr> elements directly under this section
+      // (markdown --- separators that land between H2 and next H2)
+      let el = h2.nextElementSibling;
+      const nextH2 = h2.nextElementSibling ? (function findNext(node){
+        while (node) { if (node.tagName === 'H2') return node; node = node.nextElementSibling; }
+        return null;
+      })(h2.nextElementSibling) : null;
+      let scan = h2.nextElementSibling;
+      while (scan && scan !== nextH2) {
+        const nxt = scan.nextElementSibling;
+        if (scan.tagName === 'HR') scan.remove();
+        scan = nxt;
+      }
+    });
+  }
+
+  // ── #10 applySectionColors ───────────────────────────────────────────────────
+  function applySectionColors() {
+    document.querySelectorAll('#content h2').forEach((h2, idx) => {
+      const cls = 'sec-color-' + (idx % 8);
+      h2.classList.add(cls);
+      const h2Text = h2.textContent.trim();
+      const tocLink = Array.from(document.querySelectorAll('#toc a'))
+        .find(a => a.textContent.trim().replace(/^[●○·\s]+/, '') === h2Text);
+      if (tocLink) tocLink.classList.add(cls);
+    });
+  }
+
+  // ── #3 buildVendorCards ──────────────────────────────────────────────────────
+  const _OVERVIEW_DUMP_PATTERNS = [
+    /Startup-weighted matrix[^.]*\.\s*/gi,
+    /Prior startup-weighted[^.]*\.\s*/gi,
+    /Matrix\s*[—–-][^.]*\.\s*/gi,
+    /Startup shortlist scores:[^.]*\.\s*/gi,
+    /Live fullpool solution set[^.]*\.\s*/gi,
+    /Market segments?\s*\(startup-weighted\):[^.]*\.\s*/gi,
+    /Market subsegments? useful for matrix:[^.]*\.\s*/gi,
+    /prior dry-run[^.]*\.\s*/gi,
+    /On Critical ['"]Workflow composition['"][^.]*\.\s*/gi,
+    /Parent\/child[^.]*✔[^.]*\.\s*/gi,
+    /Prior startup-weighted live matrix rankings:[^.]*\.\s*/gi,
+    /matrix rankings:[^.]*\.\s*/gi,
+    /internal comparative evidence[^.]*\.\s*/gi,
+    /participates in the agentic[^.]*\.\s*/gi,
+    /Capability profile derived[^.]*\.\s*/gi,
+    /Coverage is based on multi-AI[^.]*\.\s*/gi,
+    /comparison matrix signals\.?/gi,
+    /Triangulate consolidated narrative[^.]*\.\s*/gi,
+    /Zero triangulate[^.]*\.\s*/gi,
+    /Landscape omits[^.]*\.\s*/gi,
+    /Missing coverage of[^.]*\.\s*/gi,
+    /Ideal for teams evaluating process layers[^.]*\.\s*/gi,
+    /live multi-AI DR envelopes[^.]*\.\s*/gi,
+  ];
+
+  function sanitizeOverviewText(text) {
+    let cleaned = String(text || '');
+    _OVERVIEW_DUMP_PATTERNS.forEach(pat => { cleaned = cleaned.replace(pat, ''); });
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+    if (!cleaned || cleaned.length < 40) return '';
+    if (/participates in the|capability profile derived|triangulat|comparison matrix signals/i.test(cleaned)) {
+      return '';
+    }
+    return cleaned;
+  }
+
+  function sanitizeOverviewInBody(body, fallbackName) {
+    const nodes = [
+      ...body.querySelectorAll('p'),
+      ...body.querySelectorAll('li'),
+    ];
+    nodes.forEach(el => {
+      const strong = el.querySelector('strong');
+      if (!strong || !/^overview$/i.test(strong.textContent.trim())) return;
+      const raw = el.textContent.replace(/^overview\s*:?\s*/i, '').trim();
+      const cleaned = sanitizeOverviewText(raw);
+      if (cleaned && cleaned !== raw) {
+        el.innerHTML = '<strong>Overview</strong>: ' + cleaned;
+      } else if (!cleaned) {
+        const name = fallbackName || 'This solution';
+        el.innerHTML = '<strong>Overview</strong>: ' + name +
+          ' is a product in the agentic SDLC orchestration landscape.';
+      }
+    });
+  }
+
+  function buildVendorCards() {
+    let vendorIdx = 0;
+    document.querySelectorAll('#content h2').forEach(h2 => {
+      if (!/Commercial|Open[\s\-]Source|OSS/i.test(h2.textContent)) return;
+
+      const vendorH3s = [];
+      let sib = h2.nextElementSibling;
+      while (sib && sib.tagName !== 'H2') {
+        if (sib.tagName === 'H3') vendorH3s.push(sib);
+        sib = sib.nextElementSibling;
+      }
+
+      vendorH3s.forEach(h3 => {
+        const rawName = h3.textContent.replace(/^[▸▾]\s*/, '').trim();
+        // Strip leading "N. " and trailing "(type info)" for display
+        const displayName = rawName.replace(/^\d+\.\s*/, '').replace(/\s*\(.*\)\s*$/, '').trim();
+        const color = getAvatarPalette()[vendorIdx % 8];
+        const initial = displayName.charAt(0).toUpperCase();
+        vendorIdx++;
+
+        const contentNodes = [];
+        let n = h3.nextSibling;
+        while (n) {
+          if (n.tagName === 'H2' || n.tagName === 'H3') break;
+          contentNodes.push(n);
+          n = n.nextSibling;
+        }
+
+        // Tags: from <strong> in FIRST <p>, max 4, max 25 chars
+        // Filter out structural labels
+        const STRUCTURAL_LABELS = new Set(['overview', 'major pros', 'major cons', 'key differentiator', 'best for', 'pricing']);
+        const firstP = contentNodes.find(nd => nd.tagName === 'P');
+        const tags = [];
+        if (firstP) {
+          firstP.querySelectorAll('strong').forEach(s => {
+            const txt = s.textContent.trim();
+            const stripped = txt.toLowerCase().replace(/[:\s]+$/, '');
+            if (txt && txt.length <= 25 && tags.length < 4 && !STRUCTURAL_LABELS.has(stripped)) tags.push(txt);
+          });
+        }
+
+        const card = document.createElement('div');
+        card.className = 'vendor-card';
+        card.dataset.vendor = rawName;
+        const cardSlug = _lookupSlugFromCharts(displayName) || _slugify(displayName);
+        card.dataset.slug = cardSlug;
+        // Resolve market before H3 is moved into the card (needs preceding H2).
+        const marketId = _resolveMarketIdFromNode(h3);
+        if (marketId) card.dataset.market = marketId;
+        card.id = _vendorCardDomId(cardSlug, marketId);
+
+        const header = document.createElement('div');
+        header.className = 'vc-header';
+        const vendorUrl = _vendorUrl(displayName) || _vendorUrl(rawName) || _homepageFromHeading(h3, displayName);
+        const nameHtml = vendorUrl
+          ? `<a class="vc-name-link" href="${_escAttr(vendorUrl)}" target="_blank" rel="noopener noreferrer">${displayName}</a>`
+          : displayName;
+        header.innerHTML =
+          `<label class="vc-compare" title="Add to Compare"><input type="checkbox" class="vc-compare-cb" data-vendor="${displayName.replace(/"/g, '&quot;')}" aria-label="Compare ${displayName.replace(/"/g, '')}"></label>` +
+          `<div class="vc-avatar" style="background:${color}">${initial}</div>` +
+          `<div class="vc-name">${nameHtml}</div>` +
+          `<span class="vc-toggle is-closed">${lucideIconHtml('chevron-down', 'lucide-icon')}</span>`;
+
+        const tagsDiv = document.createElement('div');
+        tagsDiv.className = 'vc-tags';
+        tags.forEach(t => {
+          const pill = document.createElement('span');
+          pill.className = 'vc-tag';
+          pill.textContent = t;
+          tagsDiv.appendChild(pill);
+        });
+
+        const body = document.createElement('div');
+        body.className = 'vc-body vc-collapsed';
+        contentNodes.forEach(nd => { if (nd.tagName !== 'HR') body.appendChild(nd); });
+        sanitizeOverviewInBody(body, displayName);
+
+        card.appendChild(header);
+        if (tags.length > 0) card.appendChild(tagsDiv);
+        card.appendChild(body);
+
+        const compareLabel = header.querySelector('.vc-compare');
+        const compareCb = header.querySelector('.vc-compare-cb');
+        if (compareLabel) {
+          compareLabel.addEventListener('click', (e) => e.stopPropagation());
+        }
+        if (compareCb) {
+          compareCb.addEventListener('click', (e) => e.stopPropagation());
+          compareCb.addEventListener('change', (e) => {
+            e.stopPropagation();
+            const vendor = compareCb.dataset.vendor;
+            if (compareCb.checked) {
+              if (!_compareSet.has(vendor)) _toggleCompare(vendor);
+              if (!_compareSet.has(vendor)) compareCb.checked = false;
+            } else if (_compareSet.has(vendor)) {
+              _toggleCompare(vendor);
+            }
+          });
+        }
+        header.querySelectorAll('.vc-name-link').forEach(a => {
+          a.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        header.addEventListener('click', () => {
+          const isCollapsed = body.classList.toggle('vc-collapsed');
+          const toggle = header.querySelector('.vc-toggle');
+          if (toggle) {
+            setToggleChevron(toggle, !isCollapsed);
+            toggle.classList.toggle('is-closed', isCollapsed);
+            toggle.classList.toggle('is-open', !isCollapsed);
+          }
+        });
+
+        if (h3.parentNode) {
+          h3.parentNode.insertBefore(card, h3);
+          card.insertBefore(h3, card.firstChild);
+          h3.style.display = 'none';
+        }
+      });
+    });
+  }
+
+  // ── #7b layoutProsCons ──────────────────────────────────────────────────────
+  function layoutProsCons() {
+    document.querySelectorAll('.vc-body').forEach(body => {
+      // Find "Major Pros" and "Major Cons" sections
+      const allEls = Array.from(body.children);
+      let prosLabel = null, prosList = null, consLabel = null, consList = null;
+
+      for (let i = 0; i < allEls.length; i++) {
+        const el = allEls[i];
+        const text = el.textContent || '';
+        if (/Major Pros/i.test(text)) {
+          prosLabel = el;
+          // Find the next UL
+          for (let j = i + 1; j < allEls.length; j++) {
+            if (allEls[j].tagName === 'UL') { prosList = allEls[j]; break; }
+            if (allEls[j].tagName === 'H2' || allEls[j].tagName === 'H3') break;
+          }
+        }
+        if (/Major Cons/i.test(text)) {
+          consLabel = el;
+          for (let j = i + 1; j < allEls.length; j++) {
+            if (allEls[j].tagName === 'UL') { consList = allEls[j]; break; }
+            if (allEls[j].tagName === 'H2' || allEls[j].tagName === 'H3') break;
+          }
+        }
+      }
+
+      if (prosLabel && prosList && consLabel && consList) {
+        const grid = document.createElement('div');
+        grid.className = 'pros-cons-grid';
+
+        const prosCol = document.createElement('div');
+        prosCol.className = 'pros-col';
+        prosCol.appendChild(prosLabel);
+        prosCol.appendChild(prosList);
+
+        const consCol = document.createElement('div');
+        consCol.className = 'cons-col';
+        consCol.appendChild(consLabel);
+        consCol.appendChild(consList);
+
+        grid.appendChild(prosCol);
+        grid.appendChild(consCol);
+
+        // Insert grid where prosLabel was
+        // Find a good insertion point — insert before the next remaining element after the removed ones
+        // Since we removed the elements, just append the grid in a logical spot
+        // Find the first element after where cons list was
+        const remaining = Array.from(body.children);
+        // Find position: insert after overview content, before key differentiator
+        let insertBefore = null;
+        for (const el of remaining) {
+          const t = el.textContent || '';
+          if (/Key Differentiator|Best For|Pricing/i.test(t)) { insertBefore = el; break; }
+        }
+        if (insertBefore) {
+          body.insertBefore(grid, insertBefore);
+        } else {
+          body.appendChild(grid);
+        }
+      }
+    });
+  }
+
+  // ── #9 setupCollapsibles ─────────────────────────────────────────────────────
+  function setupCollapsibles() {
+    document.querySelectorAll('#content h3').forEach(h3 => {
+      if (/(3A|3B|3C|Primary 2.2|Wave|Value Curve)/i.test(h3.textContent)) return;
+      if (h3.classList.contains('collapsible')) return; // already processed
+      if (h3.classList.contains('source-reliability-caption')) return; // table caption, not accordion
+      if (h3.closest('.vendor-card')) return; // skip H3s inside vendor cards
+
+      const bodyNodes = [];
+      let sib = h3.nextSibling;
+      while (sib) {
+        if (sib.tagName === 'H2' || sib.tagName === 'H3') break;
+        bodyNodes.push(sib);
+        sib = sib.nextSibling;
+      }
+      if (bodyNodes.length === 0) return;
+
+      const bodyDiv = document.createElement('div');
+      bodyDiv.className = 'collapsible-body';
+      if (h3.parentNode) h3.parentNode.insertBefore(bodyDiv, bodyNodes[0]);
+      bodyNodes.forEach(nd => bodyDiv.appendChild(nd));
+      bodyDiv.style.maxHeight = bodyDiv.scrollHeight + 'px';
+
+      h3.classList.add('collapsible');
+      h3.setAttribute('role', 'button');
+      h3.setAttribute('tabindex', '0');
+      h3.setAttribute('aria-expanded', 'true');
+      const chevron = document.createElement('span');
+      chevron.className = 'collapse-chevron';
+      chevron.innerHTML = lucideIconHtml('chevron-up', 'lucide-icon');
+      h3.insertBefore(chevron, h3.firstChild);
+
+      function toggleCollapsible() {
+        const isOpen = h3.getAttribute('aria-expanded') === 'true';
+        if (isOpen) {
+          bodyDiv.style.maxHeight = '0';
+          h3.classList.add('is-closed');
+          h3.setAttribute('aria-expanded', 'false');
+          setToggleChevron(chevron, false);
+        } else {
+          bodyDiv.style.maxHeight = bodyDiv.scrollHeight + 'px';
+          h3.classList.remove('is-closed');
+          h3.setAttribute('aria-expanded', 'true');
+          setToggleChevron(chevron, true);
+        }
+      }
+
+      h3.addEventListener('click', toggleCollapsible);
+      h3.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapsible(); }
+      });
+    });
+  }
+
+  // ── NEW buildSolutionNav ─────────────────────────────────────────────────────
+  function buildSolutionNav() {
+    const navEl = document.getElementById('solutionNav');
+    if (!navEl) return;
+
+    const commRow = document.getElementById('snavCommercial');
+    const ossRow  = document.getElementById('snavOSS');
+    if (!commRow || !ossRow) return;
+
+    // Remove existing buttons (keep label span)
+    commRow.querySelectorAll('.snav-btn').forEach(b => b.remove());
+    ossRow.querySelectorAll('.snav-btn').forEach(b => b.remove());
+
+    // Collect vendor occurrences from DOM sections (multi-market keeps each market).
+    function collectVendorEntries(sectionTest) {
+      const entries = [];
+      const seen = new Set();
+      for (const h2 of document.querySelectorAll('#content h2')) {
+        if (!sectionTest(h2.textContent)) continue;
+        const marketId = _resolveMarketIdFromNode(h2);
+        let sib = h2.nextElementSibling;
+        while (sib && sib.tagName !== 'H2') {
+          if (sib.tagName === 'H3') {
+            const raw = sib.textContent.replace(/^[▸▾]\s*/, '').trim();
+            const display = raw.replace(/^\d+\.\s*/, '').replace(/\s*\(.*\)\s*$/, '').trim();
+            const key = display.toLowerCase() + '::' + (marketId || '');
+            if (raw && !seen.has(key)) {
+              seen.add(key);
+              entries.push({ raw, display, marketId });
+            }
+          }
+          sib = sib.nextElementSibling;
+        }
+      }
+      return entries;
+    }
+
+    const commEntries = collectVendorEntries(t => /commercial/i.test(t));
+    const ossEntries  = collectVendorEntries(t => /open[\s\-]source|oss/i.test(t));
+
+    function addPills(row, entries) {
+      const nameCounts = {};
+      entries.forEach(e => {
+        const k = e.display.toLowerCase();
+        nameCounts[k] = (nameCounts[k] || 0) + 1;
+      });
+      entries.forEach(entry => {
+        const { raw, display, marketId } = entry;
+        const multi = nameCounts[display.toLowerCase()] > 1;
+        const slug = _lookupSlugFromCharts(display) || _slugify(display);
+        const cardId = _vendorCardDomId(slug, marketId);
+        const vendorUrl = _vendorUrl(display) || _vendorUrl(raw);
+        // Multi-market duplicates: in-page anchors so both cards are reachable via snav.
+        // Unique vendors with a homepage: keep external link behavior.
+        const useInPage = multi || !vendorUrl;
+        const el = document.createElement(useInPage || vendorUrl ? 'a' : 'button');
+        el.className = 'snav-btn';
+        el.dataset.vendor = raw;
+        if (marketId) el.dataset.market = marketId;
+        el.dataset.slug = slug;
+        el.textContent = multi && marketId
+          ? `${display} · ${_marketShortLabel(marketId)}`
+          : display;
+        if (useInPage) {
+          el.href = '#' + cardId;
+          el.title = multi && marketId
+            ? `Jump to ${display} (${_marketShortLabel(marketId)})`
+            : `Jump to ${display}`;
+          el.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof window._scrollToVendorCard === 'function') {
+              window._scrollToVendorCard(slug, marketId);
+            } else {
+              _scrollToVendorCard(slug, marketId);
+            }
+          });
+        } else {
+          el.href = vendorUrl;
+          el.target = '_blank';
+          el.rel = 'noopener noreferrer';
+          el.title = `Open ${display} website (new tab)`;
+          // Primary click opens homepage in a new tab; do not preventDefault.
+        }
+        row.appendChild(el);
+      });
+    }
+
+    addPills(commRow, commEntries);
+    addPills(ossRow, ossEntries);
+
+    // Adjust positions dynamically based on actual nav height
+    syncTopChrome();
+
+    // IntersectionObserver to track active vendor card
+    if (_snavObs) _snavObs.disconnect();
+    _snavObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const name = e.target.dataset.vendor;
+          const market = e.target.dataset.market || '';
+          document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll(`.snav-btn[data-vendor="${CSS.escape(name)}"]`).forEach(b => {
+            if (!market || (b.dataset.market || '') === market) b.classList.add('active');
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('.vendor-card').forEach(c => _snavObs.observe(c));
+  }
+
+  // ── #8 insertVendorFilterBar (top chrome — report-wide) ─────────────────────
+  function insertVendorFilterBar() {
+    const bar = document.getElementById('vendorFilterBar');
+    if (!bar) return;
+
+    const challengerCount = (typeof CHALLENGER_LABELS !== 'undefined' && CHALLENGER_LABELS)
+      ? CHALLENGER_LABELS.size : 0;
+    const challengerDisabled = !challengerCount;
+    const challengerClass = challengerDisabled ? 'vfbtn is-empty' : 'vfbtn';
+    const challengerExtra = challengerDisabled
+      ? ' disabled title="No Challengers in current market chart data"'
+      : '';
+
+    bar.innerHTML =
+      `<span class="vf-label">Filter</span>` +
+      `<button class="vfbtn active" type="button" data-filter="all">All Vendors</button>` +
+      `<button class="vfbtn" type="button" data-filter="commercial">Commercial</button>` +
+      `<button class="vfbtn" type="button" data-filter="oss">OSS</button>` +
+      `<button class="vfbtn" type="button" data-filter="leader">Leaders</button>` +
+      `<button class="${challengerClass}" type="button" data-filter="challenger"${challengerExtra}>Challengers</button>`;
+
+    bar.querySelectorAll('.vfbtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        bar.querySelectorAll('.vfbtn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _applyVendorFilter(btn.dataset.filter);
+      });
+    });
+
+    const active = bar.querySelector('.vfbtn.active');
+    _applyVendorFilter(active ? active.dataset.filter : 'all');
+    syncTopChrome();
+  }
+
+  function annotateCriticalFillGaps() {
+    const existing = document.getElementById('matrixFillGapBanner');
+    if (existing) existing.remove();
+    const report = window.__SB_REPORT__;
+    const rows = report && report.comparison && Array.isArray(report.comparison.rows)
+      ? report.comparison.rows : [];
+    const gaps = [];
+    for (const row of rows) {
+      if (!row || row.type !== 'feature' || row.priority !== 'Critical') continue;
+      const sols = row.solutions || {};
+      const keys = Object.keys(sols);
+      if (!keys.length) continue;
+      const filled = keys.filter(k => String(sols[k] || '').trim()).length;
+      if (filled === 0) {
+        gaps.push(`${row.name} (0/${keys.length})`);
+      }
+    }
+    if (!gaps.length) return;
+    const banner = document.createElement('div');
+    banner.id = 'matrixFillGapBanner';
+    banner.className = 'matrix-fill-gap';
+    banner.setAttribute('role', 'note');
+    banner.innerHTML =
+      `<strong>Critical matrix gaps (missing research evidence):</strong> ` +
+      `${gaps.join('; ')}. Empty cells render as — and must not be read as feature support.`;
+    const content = document.getElementById('content');
+    if (content && content.firstChild) {
+      content.insertBefore(banner, content.firstChild);
+    } else if (content) {
+      content.appendChild(banner);
+    }
+  }
+
+  function _setScatterPointVisibility(chart, filter) {
+    if (!chart || !chart.data || !chart.data.datasets) return;
+    chart.data.datasets.forEach((ds, dsIdx) => {
+      const meta = chart.getDatasetMeta(dsIdx);
+      const key = chart.canvas.id + '_' + dsIdx;
+      if (!_origChartColors.has(key)) {
+        _origChartColors.set(key, { bg: ds.backgroundColor, border: ds.borderColor });
+      }
+      const orig = _origChartColors.get(key);
+      const labels = ds.data.map(pt => pt.label || ds.label);
+      const matches = labels.map(l => _vendorMatchesFilter(l, filter));
+      const bgArr = Array.isArray(orig.bg) ? orig.bg : labels.map(() => orig.bg);
+      const bdArr = Array.isArray(orig.border) ? orig.border : labels.map(() => orig.border);
+      ds.backgroundColor = labels.map((l, i) => matches[i] ? bgArr[i] : (String(bgArr[i] || '#94a3b8').slice(0, 7) + '22'));
+      ds.borderColor = labels.map((l, i) => matches[i] ? bdArr[i] : (String(bdArr[i] || '#94a3b8').slice(0, 7) + '22'));
+      if (meta.data) {
+        meta.data.forEach((el, i) => { if (el) el.hidden = !matches[i]; });
+      }
+      if (chart._labelLayout) {
+        chart._labelLayout.forEach(L => {
+          if (L.text) L.visible = _vendorMatchesFilter(L.text, filter);
+        });
+      }
+    });
+    chart.update('none');
+  }
+
+  function _applyVendorFilter(filter) {
+    window._currentVendorFilter = filter;
+
+    document.querySelectorAll('.vendor-card').forEach(card => {
+      const raw = card.dataset.vendor || '';
+      const display = _normalizeVendorLabel(raw);
+      const show = _vendorMatchesFilter(display, filter) || _vendorMatchesFilter(raw, filter);
+      card.classList.toggle('is-filtered-out', !show);
+    });
+
+    document.querySelectorAll('.snav-btn').forEach(btn => {
+      const raw = btn.dataset.vendor || btn.textContent || '';
+      const display = _normalizeVendorLabel(raw);
+      const show = _vendorMatchesFilter(display, filter) || _vendorMatchesFilter(raw, filter);
+      btn.classList.toggle('is-filtered-out', !show);
+    });
+
+    _setScatterPointVisibility(window._mqChart, filter);
+    _setScatterPointVisibility(window._gmqChart, filter);
+    _setScatterPointVisibility(window._waveChart, filter);
+
+    if (window._vcChart) {
+      const chart = window._vcChart;
+      chart.data.datasets.forEach((ds, dsIdx) => {
+        const key = chart.canvas.id + '_' + dsIdx;
+        if (!_origChartColors.has(key)) {
+          _origChartColors.set(key, { bg: ds.backgroundColor, border: ds.borderColor });
+        }
+        const orig = _origChartColors.get(key);
+        const match = _vendorMatchesFilter(ds.label, filter);
+        const meta = chart.getDatasetMeta(dsIdx);
+        meta.hidden = !match;
+        if (!match) {
+          ds.borderColor = typeof orig.border === 'string' ? orig.border.slice(0, 7) + '22' : 'rgba(200,200,200,0.15)';
+        } else {
+          ds.borderColor = orig.border;
+        }
+      });
+      if (chart._labelLayout) {
+        chart._labelLayout.forEach(L => {
+          if (L.text) L.visible = _vendorMatchesFilter(L.text, filter);
+        });
+      }
+      chart.update('none');
+    }
+  }
+
+  // ── #7a wrapContentTables ───────────────────────────────────────────────────
+  function wrapContentTables() {
+    const content = document.getElementById('content');
+    if (!content) return;
+    content.querySelectorAll('table').forEach(table => {
+      if (table.closest('.table-scroll-wrap') || table.closest('#compareTableWrap')) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'table-scroll-wrap';
+      table.parentNode.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+  }
+
+  function markSourceReliabilitySection() {
+    document.querySelectorAll('#content h2').forEach(h2 => {
+      if (!/Source Reliability/i.test(h2.textContent)) return;
+      h2.classList.add('source-reliability-section');
+      const h3 = h2.nextElementSibling;
+      if (h3 && h3.tagName === 'H3') h3.classList.add('source-reliability-caption');
+    });
+  }
+
+  // ── #7 wrapVendorNameLinks + comparison drawer ────────────────────────────────
+  function wrapVendorNameLinks() {
+    const roots = [
+      document.getElementById('content'),
+      document.getElementById('matrixPanelBody'),
+      document.getElementById('solutionNav'),
+      document.getElementById('compareResultsBody'),
+    ].filter(Boolean);
+    if (!roots.length) return;
+
+    const names = [...ALL_VENDORS].sort((a, b) => b.length - a.length);
+    for (const content of roots) {
+    const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        let el = node.parentElement;
+        while (el && el !== content) {
+          if (['A','CODE','PRE','SCRIPT','STYLE','H1','H2','H3'].includes(el.tagName))
+            return NodeFilter.FILTER_REJECT;
+          if (el.classList && el.classList.contains('vname-link'))
+            return NodeFilter.FILTER_REJECT;
+          el = el.parentElement;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const nodes = [];
+    let nd;
+    while ((nd = walker.nextNode())) nodes.push(nd);
+
+    for (const tn of nodes) {
+      let result = tn.textContent;
+      let replaced = false;
+      for (const name of names) {
+        if (!_isLinkableVendorName(name)) continue;
+        const url = _vendorUrl(name);
+        if (!url) continue;
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(`\\b${escaped}\\b`, 'g');
+        if (re.test(result)) {
+          result = result.replace(
+            new RegExp(`\\b${escaped}\\b`, 'g'),
+            `<a class="vname-link" href="${url}" target="_blank" rel="noopener noreferrer">${name}</a>`
+          );
+          replaced = true;
+        }
+      }
+      if (replaced) {
+        const sp = document.createElement('span');
+        sp.innerHTML = result;
+        tn.parentNode.replaceChild(sp, tn);
+      }
+    }
+    }
+  }
+
+  function _showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => {
+      t.classList.add('fade');
+      setTimeout(() => t.remove(), 600);
+    }, 2000);
+  }
+
+  function _syncCompareUi(vendor) {
+    const selected = _compareSet.has(vendor);
+    document.querySelectorAll(`.vc-compare-cb[data-vendor="${CSS.escape(vendor)}"]`)
+      .forEach(el => { el.checked = selected; });
+    document.querySelectorAll(`.vendor-card`).forEach(card => {
+      const raw = card.dataset.vendor || '';
+      const display = _normalizeVendorLabel(raw);
+      if (display === vendor || raw === vendor) {
+        card.classList.toggle('is-compare-selected', selected);
+      }
+    });
+  }
+
+  function _toggleCompare(vendor) {
+    if (!vendor) return;
+    if (_compareSet.has(vendor)) {
+      _compareSet.delete(vendor);
+    } else {
+      if (_compareSet.size >= COMPARE_MAX) {
+        _showToast(`Max ${COMPARE_MAX} vendors for comparison`);
+        return;
+      }
+      _compareSet.add(vendor);
+    }
+    _syncCompareUi(vendor);
+    _updateCompareBadge();
+    _renderCompareTable();
+  }
+
+  function _updateCompareBadge() {
+    const badge = document.getElementById('compareBadge');
+    if (!badge) return;
+    if (_compareSet.size > 0) {
+      badge.textContent = _compareSet.size;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function _renderCompareTable() {
+    _ensureCompareSection();
+    const body = document.getElementById('compareResultsBody');
+    const drawer = document.getElementById('compareTableWrap');
+    if (!body) return;
+
+    if (_compareSet.size < 2) {
+      body.innerHTML = '<p class="compare-empty">Select at least 2 solutions using the checkboxes on vendor cards to compare them here.</p>';
+      if (drawer) {
+        drawer.textContent = _compareSet.size === 1
+          ? '1 selected — pick one more to compare.'
+          : 'Select solutions on vendor cards (max ' + COMPARE_MAX + ').';
+      }
+      return;
+    }
+
+    const vendors = [..._compareSet];
+    const slugs = vendors.map(v => _resolveVendorSlug(v));
+    const cmp = (window.__SB_REPORT__ && window.__SB_REPORT__.comparison) || {};
+    const rows = (cmp.rows || []).filter(r => r && r.type === 'feature');
+    const scoreCells = slugs.map(s => {
+      const score = _formatCompareScore(s);
+      return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;font-weight:500;background:var(--sb-accent-soft);">${score}</td>`;
+    }).join('');
+    const scoreRow = `<tr class="cmp-score-row"><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">Weighted score</td>` +
+      (rows.length ? `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;">—</td>` : '') +
+      `${scoreCells}</tr>`;
+
+    const removeLinks = vendors.map(v =>
+      `<span class="cmp-remove" data-vendor="${v.replace(/"/g, '&quot;')}">${lucideIconHtml('x', 'lucide-icon')} ${v}</span>`
+    ).join('');
+
+    let tableHtml = '';
+    if (rows.length) {
+      const headerCols = vendors.map(v => {
+        const score = _formatCompareScore(v);
+        return `<th style="padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);text-align:center;">${v}<span class="cmp-col-score">Score ${score}</span></th>`;
+      }).join('');
+      const bodyRows = rows.map(row => {
+        const cells = slugs.map(slug => {
+          const val = ((row.solutions || {})[slug] || '').trim() || '—';
+          const tick = val === '✔' || val === '✓';
+          return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;${tick ? 'font-weight:500;' : ''}">${val}</td>`;
+        }).join('');
+        return `<tr><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">${row.name || ''}</td>` +
+          `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;">${row.priority || '—'}</td>${cells}</tr>`;
+      }).join('');
+      tableHtml =
+        `<div class="table-scroll-wrap"><table style="width:100%;border-collapse:collapse;">` +
+        `<thead><tr><th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">Feature</th>` +
+        `<th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">Priority</th>${headerCols}</tr></thead>` +
+        `<tbody>${scoreRow}${bodyRows}</tbody></table></div>`;
+    } else {
+      const allVc = [...VC_COMMERCIAL, ...VC_OSS];
+      const lookup = {};
+      allVc.forEach(v => { lookup[v.label] = v.data; });
+      VC_OSS.forEach(v => { lookup[v.label.replace(' (OSS)','')] = v.data; });
+      const headerCols = vendors.map(v => {
+        const score = _formatCompareScore(v);
+        return `<th style="padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);text-align:center;">${v}<span class="cmp-col-score">Score ${score}</span></th>`;
+      }).join('');
+      const bodyRows = VC_KCFS.map((kcf, i) => {
+        const cells = vendors.map(v => {
+          const data = lookup[v];
+          const score = data ? data[i] : null;
+          const bg = score !== null ? (SCORE_BG[score] || 'var(--sb-surface-muted)') : 'var(--sb-surface-muted)';
+          return `<td style="padding:6px 8px;border:1px solid var(--sb-border);text-align:center;background:${bg};">${score !== null ? score : '—'}</td>`;
+        }).join('');
+        return `<tr><td style="padding:6px 8px;border:1px solid var(--sb-border);font-weight:500;">${kcf}</td>${cells}</tr>`;
+      }).join('');
+      tableHtml =
+        `<div class="table-scroll-wrap"><table style="width:100%;border-collapse:collapse;">` +
+        `<thead><tr><th style="text-align:left;padding:6px 8px;background:var(--sb-surface-muted);border:1px solid var(--sb-border);">KCF</th>${headerCols}</tr></thead>` +
+        `<tbody>${scoreRow}${bodyRows}</tbody></table></div>`;
+    }
+
+    body.innerHTML = `<div style="margin-bottom:10px;">${removeLinks}</div>${tableHtml}`;
+    body.querySelectorAll('.cmp-remove').forEach(el => {
+      el.addEventListener('click', () => _toggleCompare(el.dataset.vendor));
+    });
+    refreshLucideIcons(body);
+
+    if (drawer) {
+      drawer.textContent = vendors.length + ' selected — scroll to comparison below or use Compare.';
+    }
+  }
+
+  function _comparisonRankingsMap() {
+    const cmp = (window.__SB_REPORT__ && window.__SB_REPORT__.comparison) || {};
+    const map = new Map();
+    (cmp.rankings || []).forEach(r => {
+      if (!r || !r.solution) return;
+      const score = r.score != null ? r.score : (r.total_score != null ? r.total_score : null);
+      map.set(r.solution, { score, rank: r.rank, solution: r.solution });
+    });
+    return map;
+  }
+
+  function _formatCompareScore(vendorOrSlug) {
+    const slug = _resolveVendorSlug(vendorOrSlug);
+    const map = _comparisonRankingsMap();
+    const hit = map.get(slug) || map.get(vendorOrSlug);
+    if (hit && hit.score != null) return String(hit.score);
+    return '—';
+  }
+
+  function _compareQuadrantVendors(labels) {
+    const unique = [...new Set((labels || []).filter(Boolean))];
+    if (unique.length < 2) {
+      _showToast(unique.length === 0
+        ? 'No solutions in this quadrant'
+        : 'Need at least 2 solutions in this quadrant to compare');
+      return;
+    }
+    let added = 0;
+    for (const v of unique) {
+      if (_compareSet.size >= COMPARE_MAX) {
+        if (!added) _showToast(`Max ${COMPARE_MAX} vendors for comparison`);
+        break;
+      }
+      if (!_compareSet.has(v)) {
+        _compareSet.add(v);
+        _syncCompareUi(v);
+        added++;
+      }
+    }
+    _updateCompareBadge();
+    _renderCompareTable();
+    _scrollToCompareSection();
+    const drawer = document.getElementById('compareDrawer');
+    if (drawer && _compareSet.size >= 2) drawer.classList.add('open');
+  }
+
+  function _attachQuadrantCompareLayer(chart, config) {
+    if (!chart || !chart.canvas || !config) return;
+    const wrap = chart.canvas.closest('.chart-canvas-wrap');
+    if (!wrap || wrap.dataset.quadrantCompareWired) return;
+    wrap.dataset.quadrantCompareWired = '1';
+
+    const layer = document.createElement('div');
+    layer.className = 'quadrant-compare-layer';
+    layer.setAttribute('aria-hidden', 'true');
+    const btnWrap = document.createElement('div');
+    btnWrap.className = 'quadrant-compare-btn-wrap';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'quadrant-compare-btn';
+    btn.textContent = 'Compare';
+    btn.setAttribute('aria-label', 'Compare solutions in quadrant');
+    btnWrap.appendChild(btn);
+    layer.appendChild(btnWrap);
+    wrap.appendChild(layer);
+
+    let activeRegion = null;
+    let pointerOnBtn = false;
+
+    function regionsForChart() {
+      const ca = chart.chartArea;
+      if (!ca || !ca.width) return [];
+      const mx = ca.left + ca.width * 0.5;
+      const my = ca.top + ca.height * 0.5;
+      return (config.getRegions(mx, my, ca.left, ca.right, ca.top, ca.bottom) || [])
+        .map(r => ({ ...r, key: r.key || String(r.label || '').replace(/\b\w/g, c => c.toUpperCase()) }));
+    }
+
+    function vendorsForRegion(region) {
+      if (!region) return [];
+      if (typeof config.getVendors === 'function') return config.getVendors(region);
+      return (config.getChartData() || []).filter(d => d && d.q === region.key).map(d => d.label).filter(Boolean);
+    }
+
+    function positionBtn(region) {
+      const canvas = chart.canvas;
+      const pad = 6;
+      const btnW = btn.offsetWidth || 68;
+      const btnH = btn.offsetHeight || 22;
+      btnWrap.style.left = Math.max(0, canvas.offsetLeft + region.x2 - btnW - pad) + 'px';
+      btnWrap.style.top = Math.max(0, canvas.offsetTop + region.y2 - btnH - pad) + 'px';
+    }
+
+    function showRegion(region) {
+      activeRegion = region;
+      const vendors = vendorsForRegion(region);
+      btn.disabled = vendors.length < 2;
+      btn.title = vendors.length < 2
+        ? `Need 2+ solutions (${vendors.length} here)`
+        : `Compare ${vendors.length} solutions in ${region.key || region.label}`;
+      positionBtn(region);
+      btnWrap.classList.add('is-visible');
+      layer.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideRegion() {
+      if (pointerOnBtn || btnWrap.matches(':focus-within')) return;
+      activeRegion = null;
+      btnWrap.classList.remove('is-visible');
+      layer.setAttribute('aria-hidden', 'true');
+    }
+
+    function onPointerMove(nativeEvent) {
+      const pos = _chartPointerPos(chart, nativeEvent);
+      const ca = chart.chartArea;
+      if (!ca || pos.x < ca.left || pos.x > ca.right || pos.y < ca.top || pos.y > ca.bottom) {
+        hideRegion();
+        return;
+      }
+      let hit = null;
+      if (typeof config.hitTest === 'function') {
+        hit = config.hitTest(chart, pos.x, pos.y);
+      } else {
+        hit = _hitTestQuadrantRegions(regionsForChart(), pos.x, pos.y);
+      }
+      if (hit) showRegion(hit);
+      else hideRegion();
+    }
+
+    btn.addEventListener('mouseenter', () => { pointerOnBtn = true; });
+    btn.addEventListener('mouseleave', () => { pointerOnBtn = false; });
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!activeRegion || btn.disabled) {
+        _showToast('Need at least 2 solutions in this quadrant to compare');
+        return;
+      }
+      _compareQuadrantVendors(vendorsForRegion(activeRegion));
+    });
+
+    chart.canvas.addEventListener('mousemove', onPointerMove);
+    chart.canvas.addEventListener('mouseleave', hideRegion);
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(() => { if (activeRegion) positionBtn(activeRegion); }).observe(wrap);
+    }
+  }
+
+  function setupQuadrantCompareOverlays() {
+    if (window._mqChart) {
+      _attachQuadrantCompareLayer(window._mqChart, {
+        getChartData: () => MQ_DATA,
+        getRegions: mqQuadrantRegions,
+      });
+    }
+    if (window._gmqChart) {
+      _attachQuadrantCompareLayer(window._gmqChart, {
+        getChartData: () => GMQ_DATA,
+        getRegions: GMQ_QUADRANT_REGIONS,
+      });
+    }
+    if (window._waveChart) {
+      const waveChart = window._waveChart;
+      _attachQuadrantCompareLayer(waveChart, {
+        getChartData: () => WAVE_DATA,
+        hitTest: (chart, x, y) => _waveZoneAtPoint(chart, x, y),
+        getVendors: (region) => WAVE_DATA.filter(d => _waveZoneForVendor(waveChart, d) === region.key).map(d => d.label).filter(Boolean),
+        getRegions: (mx, my, left, right, top, bottom) => [
+          { key: 'Contenders', x1: left, y1: bottom - (bottom - top) * 0.35, x2: left + (right - left) * 0.35, y2: bottom, label: 'CONTENDERS' },
+          { key: 'Strong Performers', x1: left, y1: top, x2: right, y2: bottom, label: 'STRONG PERFORMERS' },
+          { key: 'Leaders', x1: left + (right - left) * 0.45, y1: top, x2: right, y2: top + (bottom - top) * 0.55, label: 'LEADERS' },
+        ],
+      });
+    }
+  }
+
+  // ── #11 setupChartObserver ───────────────────────────────────────────────────
+  function setupChartObserver() {
+    if (_chartObs) _chartObs.disconnect();
+    _chartObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in-view');
+          _chartObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -5% 0px' });
+    document.querySelectorAll('.chart-frame').forEach(el => _chartObs.observe(el));
+  }
+
+  // ── #12 setupBreadcrumbObserver (scroll-based for reliability) ──────────────
+  let _bcScrollHandler = null;
+  function setupBreadcrumbObserver() {
+    // Remove previous handler if exists
+    if (_bcScrollHandler) {
+      window.removeEventListener('scroll', _bcScrollHandler, true);
+      window.removeEventListener('scrolltick', _bcScrollHandler);
+    }
+
+    // Collect all visible H2/H3 from content
+    const headings = Array.from(document.querySelectorAll('#content h2, #content h3'))
+      .filter(h => h.offsetParent !== null); // only visible ones
+
+    _bcScrollHandler = function() {
+      const navH = document.getElementById('solutionNav')?.offsetHeight || 125;
+      const threshold = navH + 40;
+      let curH2 = '', curH3 = '';
+      for (const h of headings) {
+        const top = h.getBoundingClientRect().top;
+        if (top > threshold) break;
+        if (h.tagName === 'H2') {
+          curH2 = h.textContent.replace(/^[▸▾]\s*/, '').trim();
+          curH3 = '';
+        } else if (h.tagName === 'H3') {
+          curH3 = h.textContent.replace(/^[▸▾]\s*/, '').trim();
+        }
+      }
+      if (_bcSection) _bcSection.textContent = curH2;
+      if (_bcSub)     _bcSub.textContent = curH3;
+      if (_bcSep)     _bcSep.style.display = curH3 ? 'inline' : 'none';
+    };
+    window.addEventListener('scroll', _bcScrollHandler, { passive: true });
+    window.addEventListener('scrolltick', _bcScrollHandler); // fallback for sandboxed envs
+    // Fire once immediately
+    _bcScrollHandler();
+  }
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+opencode/big-pickle
+opencode/hy3-free
+opencode/mimo-v2.5-free
+opencode/muse-spark-1.2-contributor-free
+opencode/nemotron-3-ultra-free
+opencode/nemotron-3.5-lightning-free
+opencode/x-preview-f-free
+deepseek/deepseek-chat
+deepseek/deepseek-reasoner
+deepseek/deepseek-v4-flash
+deepseek/deepseek-v4-flash-vision-exp
+deepseek/deepseek-v4-pro

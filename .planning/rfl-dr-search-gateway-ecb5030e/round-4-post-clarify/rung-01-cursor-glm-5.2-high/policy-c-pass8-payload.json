@@ -1,0 +1,49 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 8)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {"id": "W1", "title": "Human --quota-dir default contradicts §2.2/§6.3 never-ProjectDirs"}
+    ],
+    "LOW": [
+      {"id": "W2", "title": "--allow-private position in FNV field sequence unspecified"},
+      {"id": "W3", "title": "-d canonicalization is hash-only; augment_query site: not required canonical"},
+      {"id": "W4", "title": "Reddit token refresh does not require TTL re-check under lock"},
+      {"id": "W5", "title": "No test guards command_schemas.search.options hardcoded -p values"}
+    ],
+    "NIT": [
+      {"id": "W6", "title": "Quiesce waits on reddit-oauth-token.lock but does not materialize it"},
+      {"id": "W7", "title": "No explicit brave bucket acquire test in §6.12"}
+    ]
+  },
+  "triage": [
+    {"id": "W1", "severity": "MED", "decision": "ACCEPT", "reason": "Not wrong; two normative defaults; pick §2.2/§6.3; no lock unwind"},
+    {"id": "W2", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; golden-vector needs a pinned field order"},
+    {"id": "W3", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; hash-only canonicalize can poison stored site: bodies"},
+    {"id": "W4", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; no-stampede intent needs double-check under lock"},
+    {"id": "W5", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; plan flags the list as easy to forget"},
+    {"id": "W6", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; absent-file case was unspecified"},
+    {"id": "W7", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; brave bucket is fleet-critical and untested in §6.12"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {"id": "W1", "title": "Human --quota-dir default contradicts §2.2/§6.3 never-ProjectDirs"}
+  ],
+  "resolved": [
+    {"id": "W1", "severity": "MED", "title": "Human --quota-dir default is ~/.config/silver-bullet/search-quota/", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W2", "severity": "LOW", "title": "--allow-private is last stable_hash field after lang", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W3", "severity": "LOW", "title": "-d canonicalized before augment_query", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W4", "severity": "LOW", "title": "Reddit refresh double-checks TTL under lock", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W5", "severity": "LOW", "title": "clap -p values drift-guard vs agent-info ids", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W6", "severity": "NIT", "title": "Absent reddit-oauth-token.lock is unlockable", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "W7", "severity": "NIT", "title": "Brave bucket acquire test in §6.12", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

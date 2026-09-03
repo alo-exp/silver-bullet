@@ -1,0 +1,2 @@
+[agent-pi] hard-timeout kill after 7200s (stdout_bytes=no expect_ok=False)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124

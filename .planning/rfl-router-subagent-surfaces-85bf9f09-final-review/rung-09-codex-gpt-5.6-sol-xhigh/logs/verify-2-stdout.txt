@@ -1,0 +1,13 @@
+START 2026-08-26T22:09:41Z
+PI_PROVIDER=omniroute PI_MODEL=codex/gpt-5.6-sol-xhigh
+**CLEAN — VERIFY_PASS — EXIT 0**
+
+- Model: Pi `codex/gpt-5.6-sol-xhigh` via `/silver:agent-pi`
+- SHA-256: `4c18af575adc848542c3d04faa2579a206ac0a627c80aade0d7aba3514e91de9`
+- Size: 621233 bytes per copy
+- Copies byte-identical: **YES**
+- Findings: HIGH 0 / MED 0 / LOW 0 / NIT 0
+- Leftovers: **none**
+- Report written: `./verify-2.md` (5357 bytes)
+EXIT:0
+END 2026-08-26T22:14:11Z

@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="shortcut icon" href="favicon.ico">
+<title>Silver Bullet — Agentic Process Orchestrator for AI-native Software Engineering &amp; DevOps</title>
+<meta name="description" content="Silver Bullet v0.52.0 is an Agentic Process Orchestrator (APO) for AI-native software engineering and DevOps: 29 AF-* atomic flows, 22 task-shaped workflows plus 4 reusable components, 118 flow steps, dynamic composition, hook-enforced delivery gates, and spec-to-release traceability on Claude Code, Codex, and Cursor.">
+<meta property="og:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native SDLC">
+<meta property="og:description" content="From spec to release with hook-enforced gates. /silver composes the smallest safe chain from the canonical APO catalog — 29 atomic flows, 22 task-shaped workflows plus 4 reusable components, and 118 evidence-bearing flow steps.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Silver Bullet — light-themed social preview: Agentic Process Orchestrator for AI-native software engineering with hook-enforced delivery gates">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Silver Bullet — Agentic Process Orchestrator for AI-native SDLC">
+<meta name="twitter:description" content="From spec to release with hook-enforced gates. APO catalog: Process → Workflow → Atomic Flow → Flow Step. Claude Code, Codex, and Cursor. v0.52.0.">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN-Italic.woff2') format('woff2');
+  font-weight:400;font-style:italic;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din';
+  src:url('fonts/D-DIN-Bold.woff2') format('woff2');
+  font-weight:700;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din Condensed';
+  src:url('fonts/D-DINCondensed.woff2') format('woff2');
+  font-weight:400;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'D-Din Condensed';
+  src:url('fonts/D-DINCondensed-Bold.woff2') format('woff2');
+  font-weight:700;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:'SB Plex Mono';
+  src:local('IBM Plex Mono'),local('IBMPlexMono-Regular'),
+       local('IBM Plex Mono Medium'),local('IBMPlexMono-Medium');
+  font-weight:300 700;
+  font-style:normal;
+  size-adjust:93%;
+}
+/* ───── RESET ───── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+/* ───── DESIGN TOKENS — LIGHT (default) ───── */
+:root{
+  --bg-page:#f6f4f0;
+  --bg-card:#ffffff;
+  --bg-card-hover:#f0ece6;
+  --bg-code:#ece8e0;
+  --bg-hero:linear-gradient(160deg,#eae4da 0%,#eee8de 25%,#f4f0e8 48%,#f6f2ea 62%,#f0ece4 80%,#eae6dc 100%);
+  --chrome-gradient:linear-gradient(90deg,#2a2a2a 0%,#585858 9%,#383838 18%,#282828 27%,#505050 36%,#444444 43%,#303030 51%,#484848 59%,#343434 68%,#242424 76%,#404040 86%,#1e1e1e 100%);
+  --accent:#00c834;
+  --accent-light:#009a28;
+  --accent-glow:rgba(0,200,52,.18);
+  --accent2:#006fa8;
+  --accent3:#6b21d4;
+  --green:#00c834;
+  --amber:#a86000;
+  --red:#aa1830;
+  --cyan:#006fa8;
+  --text-primary:#050f08;
+  --text-secondary:#0d3a1a;
+  --text-dim:#285c38;
+  --border:#8cc4a4;
+  --border-hover:#4a9464;
+  --radius:12px;
+  --radius-lg:20px;
+  --radius-sm:8px;
+  --font-heading:'D-Din',system-ui,sans-serif;
+  --font-body:'D-Din',system-ui,sans-serif;
+  --font-sans:var(--font-body);
+  --font-mono:'SB Plex Mono','IBM Plex Mono',monospace;
+  --mono-glyph-scale:1;
+  --shadow-lg:0 20px 60px rgba(0,0,0,.10);
+  --shadow-glow:0 0 40px rgba(0,170,46,.08);
+  --card-border-faint:rgba(0,0,0,.07);
+  --card-shadow-hover:0 6px 18px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04);
+  --nav-bg:rgba(246,244,240,.92);
+  --nav-mobile-bg:rgba(246,244,240,.99);
+  --section-alt:rgba(236,230,220,.55);
+  --table-row-hover:rgba(0,170,46,.03);
+  --skill-phase-border:rgba(184,221,200,.9);
+  --btn-gradient:linear-gradient(135deg,var(--grad-1) 0%,var(--grad-2) 50%,var(--grad-1) 100%);
+  --btn-gradient-hover:linear-gradient(135deg,var(--grad-2) 0%,var(--grad-4) 50%,var(--grad-2) 100%);
+  --accent-a04:color-mix(in srgb,var(--accent) 4%,transparent);
+  --accent-a07:color-mix(in srgb,var(--accent) 7%,transparent);
+  --accent-a08:color-mix(in srgb,var(--accent) 8%,transparent);
+  --accent-a10:color-mix(in srgb,var(--accent) 10%,transparent);
+  --accent-a12:color-mix(in srgb,var(--accent) 12%,transparent);
+  --accent-a14:color-mix(in srgb,var(--accent) 14%,transparent);
+  --accent-a15:color-mix(in srgb,var(--accent) 15%,transparent);
+  --accent-a18:color-mix(in srgb,var(--accent) 18%,transparent);
+  --accent-a25:color-mix(in srgb,var(--accent) 25%,transparent);
+  --accent-a28:color-mix(in srgb,var(--accent) 28%,transparent);
+  --accent-a30:color-mix(in srgb,var(--accent) 30%,transparent);
+  --accent-a35:color-mix(in srgb,var(--accent) 35%,transparent);
+  --accent-a40:color-mix(in srgb,var(--accent) 40%,transparent);
+  --mint-a07:rgba(160,210,180,.07);
+  --mint-a08:rgba(160,210,180,.08);
+  --mint-a10:rgba(160,210,180,.10);
+  --mint-a12:rgba(160,210,180,.12);
+  --mint-a13:rgba(160,210,180,.13);
+  --mint-a14:rgba(160,210,180,.14);
+  --mint-a18:rgba(140,196,166,.18);
+  --mint-a20:rgba(160,210,180,.20);
+  --mint-a22:rgba(160,210,180,.22);
+  --mint-a26:rgba(160,210,180,.26);
+  --mint-a28:rgba(160,210,180,.28);
+  --mint-a32:rgba(160,210,180,.32);
+  --mint-a35:rgba(160,210,180,.35);
+  --mint-a38:rgba(160,210,180,.38);
+  --mint-a45:rgba(160,210,180,.45);
+  --mint-a55:rgba(160,210,180,.55);
+  --mint-a90:rgba(160,210,180,.90);
+  --grad-1:#005818;
+  --grad-2:#008a24;
+  --grad-3:#6aaa80;
+  --grad-4:#00c034;
+  /* Semantic tint helpers */
+  --cyan-a06:rgba(0,204,255,.06);
+  --cyan-a10:rgba(0,204,255,.10);
+  --cyan-a12:rgba(0,204,255,.12);
+  --cyan-a25:rgba(0,204,255,.25);
+  --cyan-a30:rgba(0,204,255,.30);
+  --amber-a12:rgba(251,191,36,.12);
+  --amber-a15:rgba(251,191,36,.15);
+  --red-a12:rgba(180,60,80,.12);
+  --red-a15:rgba(180,70,90,.15);
+  --green-a12:rgba(52,211,153,.12);
+  --green-a15:rgba(5,150,105,.12);
+  --accent3-a12:rgba(244,114,182,.12);
+  --slate-a10:rgba(100,116,139,.10);
+  --slate-a12:rgba(100,116,139,.12);
+  --slate-text:#64748b;
+  --cyan-discuss-a12:rgba(8,145,178,.12);
+  --neutral-a12:rgba(180,194,210,.12);
+  --neutral-a10:rgba(75,85,99,.10);
+  --heading-muted:var(--text-primary);
+}
+/* ───── DARK THEME ───── */
+[data-theme="dark"]{
+  --bg-page:#080c10;
+  --bg-card:#0f1520;
+  --bg-card-hover:#162030;
+  --bg-code:#060a0e;
+  --bg-hero:linear-gradient(160deg,#040608 0%,#060c14 25%,#08101e 48%,#0a1226 62%,#070d1a 80%,#03050a 100%);
+  --chrome-gradient:linear-gradient(90deg,#a8a8a8 0%,#ffffff 9%,#c0c0c0 18%,#909090 27%,#efefef 36%,#ffffff 43%,#cccccc 51%,#909090 59%,#e8e8e8 68%,#b8b8b8 76%,#888888 86%,#a0a0a0 100%);
+  --accent:#00a82e;
+  --accent-light:#00a82e;
+  --accent-glow:rgba(0,168,46,0.13);
+  --accent2:#00ccff;
+  --accent3:#a855f7;
+  --green:#00a82e;
+  --amber:#ffaa00;
+  --red:#c44060;
+  --cyan:#00ccff;
+  --text-primary:#e2e8f0;
+  --text-secondary:#94a3b8;
+  --text-dim:#64748b;
+  --border:#112218;
+  --border-hover:#1a3824;
+  --shadow-lg:0 20px 60px rgba(255,255,255,.12);
+  --shadow-glow:0 0 40px rgba(0,255,65,.06);
+  --card-border-faint:rgba(255,255,255,.08);
+  --card-shadow-hover:inset 0 1px 0 rgba(255,255,255,.05),0 6px 18px rgba(255,255,255,.07),0 2px 6px rgba(255,255,255,.04);
+  --nav-bg:rgba(8,12,16,.92);
+  --nav-mobile-bg:rgba(8,12,16,.99);
+  --section-alt:rgba(12,20,16,.7);
+  --table-row-hover:rgba(0,255,65,.02);
+  --skill-phase-border:rgba(17,34,24,.9);
+  --btn-gradient:linear-gradient(135deg,#007a20 0%,#00a82e 50%,#007a20 100%);
+  --btn-gradient-hover:linear-gradient(135deg,#009428 0%,#00c034 50%,#009428 100%);
+  --hero-glow:rgba(0,176,42,0.04);
+  --card-top:rgba(0,176,42,0.45);
+  /* Semantic tint helpers — dark overrides */
+  --cyan-a06:rgba(0,204,255,.06);
+  --cyan-a10:rgba(0,204,255,.10);
+  --cyan-a12:rgba(0,204,255,.12);
+  --cyan-a25:rgba(0,204,255,.25);
+  --cyan-a30:rgba(0,204,255,.30);
+  --amber-a12:rgba(251,191,36,.12);
+  --amber-a15:rgba(251,191,36,.15);
+  --red-a12:rgba(180,60,80,.12);
+  --red-a15:rgba(180,70,90,.15);
+  --green-a12:rgba(52,211,153,.12);
+  --green-a15:rgba(5,150,105,.12);
+  --accent3-a12:rgba(244,114,182,.12);
+  --slate-a10:rgba(100,116,139,.10);
+  --slate-a12:rgba(100,116,139,.12);
+  --slate-text:#64748b;
+  --cyan-discuss-a12:rgba(8,145,178,.12);
+  --neutral-a12:rgba(180,194,210,.12);
+  --neutral-a10:rgba(75,85,99,.10);
+  --heading-muted:#b8c4cc;
+}
+/* ───── THEME TRANSITION ───── */
+body,nav,section,.feature-card,.skill-card,.platform-pill,.install-block,.code-block,.arch-diagram,.callout,.comparison-table td,.comparison-table th,.enforcement-block{
+  transition:background .25s,background-color .25s,border-color .25s,color .25s,box-shadow .25s;
+}
+body{
+  font-family:var(--font-sans);
+  background:var(--bg-page);
+  color:var(--text-primary);
+  line-height:1.7;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+code,kbd,pre,samp{font-family:var(--font-mono)}
+code,kbd,samp{
+  font-size:1em !important;
+  line-height:inherit;
+  vertical-align:baseline;
+}
+:where(p,li,td,th,span,strong,em,.subtitle,.section-desc,.callout-body,.step-desc,.card,.help-card,.quick-link,.update-card,.issue-card,.when-card,.benefit-card,.doc-content,.faq-item,.mech-card,.ecosystem-card) :where(code,kbd,samp){
+  font-size:1em !important;
+  padding-block:0 !important;
+  padding-inline:0.35em;
+}
+.ref-table td:first-child,
+.pref-table td:first-child,
+.feat-table td:nth-child(2),
+.cat-table td.score-cell,
+.step-card .step-output,
+.wave-item .wave-num,
+.sb-lifecycle-proof-row strong,
+.prereq-card .install-cmd,
+.hero-pill,
+.pain-num,
+.faq-item .faq-q::before,
+.faq-item .faq-a::before{
+  font-family:var(--font-mono);
+  font-size:inherit !important;
+  line-height:inherit;
+}
+/* ───── UTILITIES ───── */
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.grid{display:grid;gap:24px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.grid-3,.grid-4{grid-template-columns:repeat(2,1fr)}}
+.text-center{text-align:center}
+.mt-2{margin-top:16px}.mt-3{margin-top:24px}.mt-4{margin-top:32px}.mt-6{margin-top:48px}.mt-8{margin-top:64px}
+.mb-2{margin-bottom:16px}.mb-4{margin-bottom:32px}
+.tag{display:inline-block;padding:7px 16px;border-radius:999px;font-size:.908rem;font-weight:400;letter-spacing:.03em}
+.tag-purple{background:var(--accent-a15);color:var(--accent-light)}
+.tag-green{background:var(--green-a12);color:var(--green)}
+.tag-amber{background:var(--amber-a12);color:var(--amber)}
+.tag-pink{background:var(--accent3-a12);color:var(--accent3)}
+.tag-cyan{background:var(--cyan-a12);color:var(--cyan)}
+.tag-red{background:var(--red-a15);color:var(--red)}
+.tag-indigo{background:var(--accent-a15);color:var(--accent-light)}
+/* NAV — chrome.css */
+/* ───── HERO ───── */
+.hero{
+  background:var(--bg-hero);
+  padding:96px 24px 100px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-200px;right:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(ellipse at 55% 45%,var(--mint-a22) 0%,var(--mint-a10) 40%,transparent 72%);
+}
+.hero::after{
+  content:'';position:absolute;bottom:-150px;left:-100px;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(ellipse at 45% 55%,var(--mint-a18) 0%,var(--mint-a07) 45%,transparent 72%);
+}
+.hero .container{position:relative;z-index:1}
+.hero .version-badge,
+.hero-split .version-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--mint-a14),var(--accent-a08),var(--mint-a12));
+  border:1px solid var(--mint-a35);
+  border-radius:999px;padding:5px 12px;font-size:.85rem;
+  color:var(--accent-light);font-weight:400;
+  width:max-content;max-width:100%;align-self:flex-start;flex:0 0 auto;
+  white-space:nowrap;
+}
+@media(max-width:600px){.hero-split .version-badge{white-space:normal;max-width:100%}}
+.hero .version-badge{margin-bottom:80px}
+.hero-split-brand .version-badge{margin-top:0;margin-bottom:0}
+.hero-split-badge .version-badge{margin:0}
+.hero .version-badge .dot,
+.hero-split .version-badge .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{
+  font-size:clamp(2.2rem,5vw,4rem);
+  line-height:1.05;letter-spacing:-.04em;
+  max-width:800px;margin:0 auto 16px;
+}
+.hero-h1-inner{display:inline-flex;flex-direction:column;align-items:center;gap:20px;}
+.hero-bullet{height:75px;width:auto;margin-top:6px;filter:drop-shadow(3px 6px 10px rgba(0,0,0,.25));}
+[data-theme="dark"] .hero-bullet{filter:drop-shadow(3px 6px 10px rgba(255,255,255,.25));}
+[data-theme="dark"] .section-title{color:var(--heading-muted);}
+[data-theme="dark"] .feature-card h3,[data-theme="dark"] .layer-card h3{color:var(--heading-muted);}
+[data-theme="dark"] .hero .brooks-quote{color:var(--text-secondary);}
+[data-theme="dark"] .hero .brooks-attr{color:var(--text-secondary);}
+[data-theme="dark"] .hero .brooks-attr a{color:var(--text-secondary);}
+[data-theme="dark"] .hero .brooks-text{border-left-color:var(--accent-a35);}
+[data-theme="dark"] .hero-split::before{
+  background:radial-gradient(ellipse at 55% 45%,var(--mint-a08) 0%,var(--mint-a03) 38%,transparent 70%);
+}
+[data-theme="dark"] .hero-split::after{
+  background:radial-gradient(ellipse at 45% 55%,var(--mint-a06) 0%,var(--mint-a02) 42%,transparent 70%);
+}
+[data-theme="dark"] [data-theme="dark"] .hero .brooks-photo{
+  box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(255,255,255,.08);
+}
+[data-theme="dark"] #brooks-closing img{
+  box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(255,255,255,.08);
+}
+.hero-tagline-caps{font-size:.99rem;font-weight:700;letter-spacing:.22em;color:var(--accent-light);margin:0 auto 40px;}
+.hero h1 .gradient,.hero-split h1 .gradient{
+  background:var(--chrome-gradient);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero .brooks-block{
+  display:flex;align-items:center;gap:20px;max-width:640px;
+  margin:0 auto 40px;
+}
+.hero .brooks-photo{
+  width:96px;height:96px;border-radius:50%;object-fit:cover;object-position:center top;
+  flex-shrink:0;opacity:.85;filter:grayscale(20%);
+  border:2px solid var(--mint-a45);
+  box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(0,0,0,.15);
+}
+.hero .brooks-text{flex:1;border-left:3px solid var(--mint-a45);padding-left:16px;}
+.hero .brooks-quote{
+  font-size:.76rem;color:var(--text-dim);
+  margin:0 0 10px;line-height:1.7;font-style:normal;text-align:left;
+}
+.hero .brooks-attr{
+  font-size:.9rem;color:var(--text-dim);margin-bottom:8px;text-align:left;
+}
+.hero .brooks-attr a{color:var(--text-dim);text-decoration:underline;text-underline-offset:2px;}
+.hero .tagline{
+  font-size:1.25rem;font-weight:700;color:var(--text-primary);
+  margin:0 auto 52px;letter-spacing:-.01em;
+}
+.hero .subtitle{
+  font-size:1.1rem;color:var(--text-secondary);max-width:580px;
+  margin:0 auto 40px;line-height:1.7;
+}
+.hero .hero-pills{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+  margin-top:0;
+}
+.hero-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 18px;border-radius:999px;
+  background:linear-gradient(135deg,var(--mint-a13),var(--accent-a08),var(--mint-a10));
+  border:1px solid var(--mint-a28);
+  font-size:.9rem;font-weight:400;color:var(--accent-light);
+  letter-spacing:.02em;font-family:var(--font-mono);
+}
+a.hero-pill{text-decoration:none;transition:background .2s,border-color .2s,color .2s;}
+a.hero-pill:hover{background:linear-gradient(135deg,var(--mint-a26),var(--accent-a18),var(--mint-a20));border-color:var(--mint-a55);color:#fff;}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:14px 28px;border-radius:999px;font-size:.9rem;
+  font-weight:400;text-decoration:none;transition:all .25s;
+  border:none;cursor:pointer;
+}
+.hero-cta-row .btn,
+.hero-cta-block .btn{
+  padding:8px 20px;font-size:.9rem;min-height:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+}
+.hero-cta-row .btn-primary{
+  border:none;
+  box-shadow:0 4px 20px var(--accent-a30),inset 0 1px 0 rgba(255,255,255,.18);
+}
+.hero-cta-row .btn-outline{
+  border:none;
+  box-shadow:inset 0 0 0 1px var(--border),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.hero-cta-row .btn-primary:hover,
+.hero-cta-block .btn-primary:hover{transform:none}
+.btn-primary{
+  background:linear-gradient(135deg,var(--grad-1) 0%,var(--grad-2) 35%,#b0bec8 52%,var(--grad-2) 67%,var(--grad-1) 100%);
+  background-size:250% auto;
+  color:#fff;
+  box-shadow:0 4px 20px var(--accent-a30),inset 0 1px 0 rgba(255,255,255,.18);
+}
+.btn-primary:hover{
+  background-position:right center;
+  box-shadow:0 8px 30px var(--accent-a40),inset 0 1px 0 rgba(255,255,255,.25);
+  transform:translateY(-2px);
+}
+.btn-outline{
+  background:transparent;color:var(--text-primary);
+  border:1px solid var(--border-hover);
+}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent-light)}
+/* ───── SECTION HEADINGS ───── */
+section{padding:80px 0}
+section:nth-child(even){background:var(--section-alt)}
+.section-label{
+  text-transform:uppercase;font-size:.908rem;
+  letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px;
+}
+.section-title{
+  font-size:clamp(1.8rem,3vw,2.5rem);
+  letter-spacing:-.03em;margin-bottom:16px;line-height:1.2;
+}
+.section-desc{
+  font-size:1rem;color:var(--text-secondary);max-width:600px;
+  margin-bottom:48px;
+}
+.section-desc.centered{margin-left:auto;margin-right:auto}
+/* ───── UNIFIED CARD SURFACE (faint border, shadow on hover only) ───── */
+.pain-card,
+.cost-card,
+.cost-emotional,
+.future-card,
+.feature-card,
+.mech-card,
+.proof-card,
+.ecosystem-card,
+.devops-card,
+.layer-card,
+.compare-card,
+.sb-lifecycle-benefit,
+.sb-lifecycle-panel,
+.sb-lifecycle-mini,
+.faq-item,
+.install-block,
+.callout,
+.stakes-callout,
+.gaps-callout,
+.cost-stakes,
+.enforcement-block{
+  box-shadow:none;
+  border:1px solid var(--card-border-faint);
+  transition:border-color .3s,box-shadow .3s;
+}
+.pain-card:hover,
+.cost-card:hover,
+.cost-emotional:hover,
+.future-card:hover,
+.feature-card:hover,
+.mech-card:hover,
+.proof-card:hover,
+.ecosystem-card:hover,
+.devops-card:hover,
+.layer-card:hover,
+.compare-card:hover,
+.sb-lifecycle-benefit:hover,
+.sb-lifecycle-panel:hover,
+.sb-lifecycle-mini:hover,
+.faq-item:hover,
+.install-block:hover,
+.callout:hover,
+.stakes-callout:hover,
+.gaps-callout:hover,
+.cost-stakes:hover,
+.enforcement-block:hover{
+  border-color:var(--border-hover);
+  box-shadow:var(--card-shadow-hover);
+  transform:none;
+}
+/* ───── PROBLEM (CMF C2) — Pain cards ───── */
+.pain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.pain-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.pain-grid{grid-template-columns:repeat(2,1fr)}}
+.pain-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:28px;
+  text-align:left;position:relative;overflow:hidden;
+}
+.pain-card .pain-num{
+  display:inline-block;font-family:var(--font-mono);font-size:1.025rem;
+  color:var(--red);font-weight:700;letter-spacing:.1em;
+  background:var(--red-a12);padding:3px 10px;border-radius:999px;
+  margin-bottom:14px;
+}
+.pain-card h3{font-size:1rem;margin-bottom:8px;color:var(--text-primary)}
+.pain-card p{font-size:.968rem;color:var(--text-secondary);line-height:1.6}
+/* ───── AGITATION (CMF C3) — Cost-of-inaction stats ───── */
+.cost-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+@media(max-width:900px){.cost-grid{grid-template-columns:repeat(2,1fr)}}
+#cost .cost-card{
+  background:var(--bg-card);
+  border-radius:var(--radius);padding:28px;text-align:left;
+  position:relative;overflow:hidden;
+}
+#cost .cost-emotional{
+  background:var(--bg-card);
+  border-radius:var(--radius);padding:28px 32px;text-align:center;
+  margin-top:36px;
+}
+#cost .cost-emotional .cost-label,
+#cost .cost-emotional p{text-align:center;margin-left:auto;margin-right:auto;max-width:720px}
+.cost-card{
+  background:var(--bg-card);
+  border-radius:var(--radius);padding:28px;text-align:left;
+  position:relative;overflow:hidden;
+}
+.cost-card::before{display:none}
+.cost-stat{
+  font-family:var(--font-mono);font-size:2.2rem;font-weight:900;
+  letter-spacing:-.04em;color:var(--red);line-height:1;margin-bottom:6px;
+}
+.cost-label{
+  font-size:1.025rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text-dim);margin-bottom:10px;
+}
+.cost-desc{font-size:.902rem;color:var(--text-secondary);line-height:1.5}
+.cost-emotional{
+  margin-top:36px;padding:28px 32px;background:var(--bg-card);
+  border-radius:var(--radius);text-align:center;
+}
+.cost-emotional .cost-label{margin-bottom:8px}
+.cost-emotional p{font-size:.92rem;color:var(--text-secondary);line-height:1.65;margin:0}
+.future-micro{
+  font-size:1.05rem;color:var(--text-secondary);line-height:1.75;
+  max-width:820px;margin:0 auto;text-align:center;
+}
+.future-stack{
+  display:flex;flex-direction:column;gap:96px;margin-top:64px;align-items:center;
+  position:relative;isolation:isolate;padding-top:8px;
+}
+.future-stack .future-micro{margin:0;padding:0 12px 24px}
+.future-stack .future-card{margin:0;width:100%;max-width:840px}
+#future .text-center{margin-bottom:8px}
+.future-card .future-lead{
+  font-size:1.15rem;font-weight:700;line-height:1.55;margin:0 0 18px;
+  letter-spacing:-.01em;color:var(--text-primary);
+}
+#code-intelligence .feature-grid{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){#code-intelligence .feature-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){#code-intelligence .feature-grid{grid-template-columns:1fr}}
+/* ───── FUTURE STATE (CMF C4) — Aspirational picture ───── */
+.future-card{
+  background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04));
+  border-radius:var(--radius-lg);
+  padding:40px;max-width:840px;margin:0 auto;text-align:left;
+  position:relative;overflow:hidden;
+}
+.future-card .future-eyebrow{
+  font-size:1.025rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--accent-light);margin-bottom:12px;
+}
+.future-card h3{font-size:1.4rem;line-height:1.3;margin-bottom:18px;letter-spacing:-.02em}
+.future-card p{font-size:1rem;color:var(--text-secondary);line-height:1.7}
+.future-card p + p{margin-top:12px}
+/* ───── FEATURE CARDS (CMF C8) ───── */
+.feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+#mechanism .feature-grid{grid-template-columns:repeat(3,1fr)}
+#review-analytics .feature-grid{grid-template-columns:repeat(3,1fr)}
+#quality-gates .feature-icon,#problem .feature-icon{margin-left:0;margin-right:0}
+.feature-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:32px;
+  position:relative;overflow:hidden;
+}
+.feature-icon{
+  width:48px;height:48px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;margin:0 auto 16px;
+}
+.feature-card h3{font-size:1.1rem;margin-bottom:8px}
+.feature-card p{font-size:.9rem;color:var(--text-secondary);line-height:1.6}
+/* ───── MECHANISM (CMF C6) ───── */
+.mech-row{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:0;
+  align-items:stretch;position:relative;z-index:1;
+}
+@media(max-width:1100px){.mech-row{grid-template-columns:1fr}}
+.mech-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:28px 28px 32px;text-align:left;
+  position:relative;overflow:hidden;height:100%;min-width:0;
+  display:flex;flex-direction:column;
+}
+.catalog-ships-block{
+  margin-top:0;padding-top:64px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:48px;clear:both;position:relative;
+  isolation:isolate;z-index:1;overflow:visible;
+}
+.catalog-ships-block .catalog-ships-intro{margin:0;padding-bottom:24px}
+.mech-card .mech-tag{
+  display:inline-block;font-family:var(--font-mono);font-size:1.025rem;
+  background:var(--accent-a12);color:var(--accent-light);
+  padding:3px 10px;border-radius:6px;letter-spacing:.04em;
+  font-weight:700;margin-bottom:14px;
+}
+.mech-card h3{font-size:1rem;margin-bottom:10px;overflow-wrap:break-word}
+.mech-card p{font-size:.968rem;color:var(--text-secondary);line-height:1.6;overflow-wrap:break-word}
+.mech-card .mech-list{margin-top:14px;list-style:none;padding:0;flex:1 1 auto}
+.mech-card .mech-list li{
+  font-size:.85rem;color:var(--text-secondary);
+  display:flex;align-items:flex-start;gap:8px;line-height:1.5;margin-bottom:6px;
+  min-width:0;
+}
+.mech-card .mech-list li code{word-break:break-word;overflow-wrap:anywhere;font-size:.8rem}
+.mech-card .mech-list li::before{
+  content:'\2192';color:var(--accent-light);font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.mech-row{margin-bottom:32px}
+#mechanism > .container > .callout{margin-top:56px}
+.subsection-title{
+  font-size:1.2rem;margin:0 0 16px;letter-spacing:-.02em;
+  color:var(--text-secondary);text-align:center;
+}
+.proof-enforcement-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;
+  align-items:stretch;margin:0;position:relative;z-index:1;
+}
+.proof-enforcement-grid .enforcement-block:last-child{
+  grid-column:auto;grid-row:auto;max-width:none;width:auto;justify-self:stretch;margin-top:0;
+}
+@media(max-width:1100px){
+  .proof-enforcement-grid{grid-template-columns:1fr;gap:28px}
+  .proof-enforcement-grid .enforcement-block:last-child{grid-column:auto;grid-row:auto;max-width:none}
+}
+.proof-enforcement-grid .enforcement-block{
+  height:100%;min-width:0;overflow:hidden;align-self:stretch;
+  display:flex;flex-direction:column;
+}
+.proof-enforcement-grid .enforcement-body{
+  font-size:.8rem;line-height:1.8;padding:18px 20px;flex:1 1 auto;
+  white-space:normal;overflow-wrap:anywhere;word-break:break-word;
+}
+.proof-enforcement-grid .enforcement-body .term-line{display:block;margin-bottom:.2em}
+.proof-enforcement-block{
+  margin-top:0;padding-top:72px;padding-bottom:32px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:64px;clear:both;position:relative;
+  isolation:isolate;z-index:1;overflow:visible;
+}
+#proof .proof-enforcement-block + .callout{margin-top:56px}
+.proof-enforcement-block .subsection-title{margin:0;padding-bottom:0}
+#proof .alpha-honesty-callout{margin-bottom:72px}
+#proof .proof-enforcement-block{margin-top:16px}
+.brooks-quote-block{display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:center;max-width:920px;margin:0 auto;text-align:left}
+.brooks-quote{
+  font-size:clamp(1.36rem,1.92vw,1.6rem);font-weight:400;font-style:normal;
+  color:var(--text-secondary);line-height:1.6;margin:0 0 12px;
+  padding-left:18px;border-left:3px solid var(--mint-a45);
+}
+.proof-enforcement-grid .enforcement-body .accent{word-break:break-all;display:inline}
+#mechanism .feature-grid{margin-bottom:80px;padding-bottom:0;position:relative;z-index:0}
+#proof .proof-grid{margin-bottom:64px}
+#brooks-closing{
+  background:linear-gradient(165deg,var(--mint-a10) 0%,var(--bg-hero) 38%,var(--section-alt) 100%);
+  padding:96px 0;
+}
+[data-theme="dark"] #brooks-closing{
+  background:linear-gradient(165deg,rgba(16,32,48,.95) 0%,rgba(8,14,22,.98) 42%,var(--section-alt) 100%);
+}
+/* ───── EVIDENCE / PROOF (CMF C7) ───── */
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.proof-grid{grid-template-columns:1fr}}
+.proof-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:28px;text-align:left;
+  position:relative;overflow:hidden;
+}
+.proof-card .proof-stat{
+  font-family:var(--font-mono);font-size:2.4rem;font-weight:900;
+  letter-spacing:-.04em;line-height:1;color:var(--accent-light);margin-bottom:6px;
+}
+.proof-card .proof-label{
+  font-size:1.025rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text-dim);margin-bottom:14px;
+}
+.proof-card p{font-size:.968rem;color:var(--text-secondary);line-height:1.6}
+.proof-card .proof-source{
+  font-size:1.054rem;color:var(--text-dim);margin-top:14px;font-style:italic;
+}
+/* ───── OBJECTION FAQ (CMF C9) ───── */
+.faq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:32px}
+@media(max-width:900px){.faq-grid{grid-template-columns:1fr}}
+.faq-item{
+  background:var(--bg-card);
+  border-radius:var(--radius);padding:24px;text-align:left;
+}
+.faq-item .faq-q{
+  font-size:1rem;font-weight:700;color:var(--text-primary);
+  margin-bottom:10px;display:flex;align-items:flex-start;gap:10px;line-height:1.4;
+}
+.faq-item .faq-q::before{
+  content:'Q';font-family:var(--font-mono);font-size:1.025rem;font-weight:700;
+  background:var(--accent-a12);color:var(--accent-light);
+  padding:3px 8px;border-radius:4px;letter-spacing:.04em;flex-shrink:0;margin-top:2px;
+}
+.faq-item .faq-a{
+  font-size:.9rem;color:var(--text-secondary);line-height:1.6;
+  padding-left:34px;position:relative;
+}
+.faq-item .faq-a::before{
+  content:'A';font-family:var(--font-mono);font-size:1.025rem;font-weight:700;
+  background:var(--green-a12);color:var(--green);
+  padding:3px 8px;border-radius:4px;letter-spacing:.04em;
+  position:absolute;left:0;top:0;
+}
+/* ───── NOT FOR YOU (CMF C9b) ───── */
+.notfor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:24px}
+@media(max-width:900px){.notfor-grid{grid-template-columns:1fr}}
+.notfor-item{
+  background:var(--bg-card);border:1px dashed var(--border);
+  border-radius:var(--radius);padding:20px;text-align:left;
+}
+.notfor-item h4{font-size:.9rem;color:var(--text-dim);margin-bottom:6px}
+.notfor-item p{font-size:.935rem;color:var(--text-secondary);line-height:1.5}
+.hero-tagline-thin{font-weight:400;font-family:'D-Din',system-ui,sans-serif;letter-spacing:.26em}
+.hero-split-brand{align-items:flex-end;gap:0;margin-bottom:20px;text-align:right}
+.hero-brand-lockup{display:flex;flex-direction:column;align-items:flex-end;gap:4px;width:100%}
+.hero-brand-lockup .hero-tagline-caps{margin:0;line-height:1.35;text-align:right}
+.hero-split-brand .hero-split-title{text-align:right;width:100%}
+.hero-split-brand .hero-logo-row{display:inline-flex;align-items:center;gap:12px}
+.hero-split-body{display:flex;flex-direction:column;gap:28px}
+.hero-split-body .hero-subhead,.hero-split-body .hero-features-list,.hero-split-body .hero-intro{margin:0}
+.hero-headline-accent{color:var(--accent-light)}
+.hero-features-list{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;
+  list-style:none;margin:0;padding:0;max-width:600px;
+}
+.hero-features-list li{
+  display:flex;align-items:center;gap:10px;
+  font-size:1.03rem;font-weight:400;color:var(--text-dim);line-height:1.4;
+}
+.hero-feature-icon{
+  flex-shrink:0;width:12px;height:12px;
+  display:flex;align-items:center;justify-content:center;color:var(--accent-light);
+}
+.hero-feature-icon svg,.hero-feature-icon .lucide{width:12px;height:12px;stroke-width:2.5}
+@media(max-width:640px){.hero-features-list{grid-template-columns:1fr}}
+/* ───── ECOSYSTEM CARDS ───── */
+.ecosystem-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+@media(max-width:900px){.ecosystem-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.ecosystem-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ecosystem-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:28px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.ecosystem-card.primary-plugin{
+  border-color:var(--mint-a38);
+  background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 40%,var(--accent-a04));
+}
+.ecosystem-card .plugin-logo{
+  font-size:1.8rem;margin-bottom:12px;
+}
+.ecosystem-card .plugin-name{
+  font-size:1rem;margin-bottom:4px;letter-spacing:-.02em;
+}
+.ecosystem-card .plugin-role{
+  font-size:.908rem;font-weight:400;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--accent-light);margin-bottom:14px;
+}
+.ecosystem-card .plugin-desc{
+  font-size:1.029rem;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;
+}
+.ecosystem-card .plugin-features{
+  list-style:none;padding:0;margin:0 0 16px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.ecosystem-card .plugin-features li{font-size:.9rem;color:var(--text-secondary);position:relative;padding-left:20px;line-height:1.4;min-width:0;overflow-wrap:break-word;word-break:normal}
+.ecosystem-card .plugin-features li::before{
+  content:'→';color:var(--accent-light);font-weight:700;position:absolute;left:0;top:0;
+}
+.ecosystem-card .plugin-features code{white-space:normal;overflow-wrap:break-word;word-break:normal}
+.ecosystem-card .plugin-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.plugin-learn-more{font-size:1.054rem;font-weight:400;letter-spacing:.06em;color:var(--accent-light);text-decoration:none;border:1px solid var(--border);border-radius:20px;padding:4px 12px;transition:all .2s;}
+.plugin-learn-more:hover{color:var(--accent);border-color:var(--accent-light);background:var(--accent-glow);}
+.primary-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--accent-a12);border:1px solid var(--accent-a25);
+  border-radius:999px;padding:3px 10px;font-size:1.025rem;font-weight:700;
+  color:var(--accent-light);letter-spacing:.04em;margin-bottom:12px;
+}
+.optional-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--cyan-a10);border:1px solid var(--cyan-a25);
+  border-radius:999px;padding:3px 10px;font-size:1.025rem;font-weight:700;
+  color:var(--cyan);letter-spacing:.04em;margin-bottom:12px;
+}
+/* ───── DEVOPS GRID ───── */
+.devops-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+@media(max-width:900px){.devops-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1200px){.devops-grid{grid-template-columns:repeat(3,1fr)}}
+.devops-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:24px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.devops-card .plugin-logo{font-size:1.6rem;margin-bottom:10px}
+.devops-card .plugin-name{font-size:.95rem;margin-bottom:3px;letter-spacing:-.02em}
+.devops-card .plugin-role{
+  font-size:1.025rem;font-weight:400;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--cyan);margin-bottom:12px;
+}
+.devops-card .plugin-desc{
+  font-size:.9rem;color:var(--text-secondary);line-height:1.6;margin-bottom:14px;
+}
+.devops-card .plugin-features{
+  list-style:none;padding:0;margin:0 0 14px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.devops-card .plugin-tags{margin-top:auto}
+.devops-card .plugin-features li{
+  font-size:.908rem;color:var(--text-secondary);
+  display:flex;align-items:flex-start;gap:6px;line-height:1.4;
+}
+.devops-card .plugin-features li::before{
+  content:'\2192';color:var(--cyan);font-weight:700;flex-shrink:0;margin-top:1px;
+}
+/* ───── WORKFLOW TABS ───── */
+.workflow-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:32px}
+.workflow-tab{
+  padding:10px 24px;border-radius:999px;font-size:1.029rem;font-weight:400;
+  border:1px solid var(--border);background:var(--bg-card);
+  color:var(--text-secondary);cursor:pointer;transition:all .2s;
+}
+.workflow-tab:hover{border-color:var(--border-hover);color:var(--text-primary)}
+.workflow-tab.active{
+  background:linear-gradient(135deg,var(--grad-1) 0%,var(--grad-2) 40%,var(--grad-3) 58%,var(--grad-1) 100%);
+  color:#fff;border-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+.workflow-body{display:flex;flex-direction:column;align-items:center;width:100%}
+.workflow-panel{display:none;width:100%}
+.workflow-panel.active{display:flex;flex-direction:column;align-items:center;overflow-x:auto;width:100%}
+/* ───── DEVOPS PHASE BADGES ───── */
+.phase-incident{background:var(--red-a15);color:var(--red)}
+.phase-blast{background:var(--amber-a15);color:var(--amber)}
+.phase-promotion{background:var(--cyan-a12);color:var(--cyan)}
+/* ───── ENFORCEMENT / LAYER CARDS ───── */
+.layer-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:28px;
+  position:relative;overflow:hidden;
+  display:flex;align-items:flex-start;gap:16px;
+}
+.layer-num{
+  min-width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--btn-gradient);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 8px rgba(0,0,0,.18);
+  color:#fff;font-weight:700;font-size:1.029rem;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);margin-top:2px;
+}
+.layer-card h3{font-size:1rem;margin-bottom:6px}
+.layer-card p{font-size:.963rem;color:var(--text-secondary);line-height:1.6}
+/* ───── ENFORCEMENT BLOCKS (code) ───── */
+.enforcement-block{
+  background:var(--bg-code);
+  border-radius:var(--radius);overflow:hidden;
+}
+.enforcement-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px;border-bottom:1px solid var(--border);
+}
+.enforcement-header .block-title{
+  font-size:.908rem;font-weight:700;color:var(--text-dim);
+  text-transform:uppercase;letter-spacing:.08em;
+  font-family:var(--font-mono);
+}
+.enforcement-header .block-dots{display:flex;gap:6px}
+.enforcement-header .block-dots span{
+  width:10px;height:10px;border-radius:50%;
+}
+.enforcement-body{
+  padding:20px 24px;
+  font-family:var(--font-mono);font-size: 1rem;
+  line-height:1.9;color:var(--text-secondary);
+  overflow-x:auto;
+}
+.enforcement-body .stop{color:var(--red);font-weight:700}
+.enforcement-body .ok{color:var(--green);font-weight:700}
+.enforcement-body .warn{color:var(--amber);font-weight:700}
+.enforcement-body .dim{color:var(--text-dim)}
+.enforcement-body .prompt{color:var(--green);font-weight:600}
+.enforcement-body .accent{color:var(--accent-light)}
+.enforcement-body .cross{color:var(--red)}
+.enforcement-body .hook{color:var(--cyan);font-weight:600}
+.enforcement-body .muted{color:var(--text-dim);font-style:italic}
+[data-theme="light"] .enforcement-body .dim,[data-theme="light"] .enforcement-body .muted{color:#3a6b4c}
+.hero-visual-mocks .enforcement-body{color:#b8c6d0}
+.hero-visual-mocks .enforcement-body .dim,.hero-visual-mocks .enforcement-body .muted{color:#8fa8b6}
+[data-theme="light"] .hero-visual-mocks .enforcement-body{color:#c4d0d8}
+[data-theme="light"] .hero-visual-mocks .enforcement-body .dim,[data-theme="light"] .hero-visual-mocks .enforcement-body .muted{color:#a8b8c4}
+/* ───── INSTALL SECTION ───── */
+.install-block{
+  background:var(--bg-code);
+  border-radius:var(--radius);overflow:hidden;
+  max-width:680px;margin:0 auto;
+}
+.install-code{
+  padding:28px 32px;font-family:var(--font-mono);font-size:1rem;
+  line-height:2.2;color:var(--text-secondary);
+}
+.install-code .comment{color:var(--text-dim)}
+.install-code .cmd{color:var(--green)}
+.install-code .flag{color:var(--accent2)}
+/* ───── CODE BLOCKS ───── */
+.code-block{
+  background:var(--bg-code);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:20px 24px;
+  font-family:var(--font-mono);font-size: 1rem;
+  line-height:1.8;color:var(--text-secondary);
+  overflow-x:auto;white-space:pre-wrap;
+}
+.code-block .prompt{color:var(--green)}
+.code-block .string{color:var(--amber)}
+.code-block .flag{color:var(--accent2)}
+.code-block .comment{color:var(--text-dim)}
+/* ───── WORKFLOW TABLE ───── */
+.workflow-table{width:auto;max-width:100%;border-collapse:collapse;margin-top:8px}
+.workflow-table th{
+  text-align:left;padding:10px 16px;font-size:1.025rem;
+  text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);border-bottom:2px solid var(--border);
+}
+.workflow-table td{
+  padding:10px 16px;font-size:.9rem;
+  border-bottom:1px solid var(--skill-phase-border);
+  color:var(--text-secondary);font-family:var(--font-mono);
+  vertical-align:middle;
+}
+.workflow-table td:first-child{color:var(--text-primary);font-weight:600;font-family:var(--font-mono)}
+.workflow-table tr:hover td{background:var(--table-row-hover)}
+.phase-badge{
+  display:inline-block;padding:2px 10px;border-radius:999px;
+  font-size:1.025rem;font-weight:700;letter-spacing:.05em;
+  font-family:var(--font-sans);
+}
+.phase-init{background:var(--slate-a12);color:var(--slate-text)}
+.phase-discuss{background:var(--cyan-discuss-a12);color:var(--cyan)}
+.phase-planning{background:var(--accent-a15);color:var(--accent-light)}
+.phase-execution{background:var(--green-a12);color:var(--green)}
+.phase-verify{background:var(--amber-a12);color:var(--amber)}
+.phase-review{background:var(--amber-a12);color:var(--amber)}
+.phase-finalization{background:var(--accent3-a12);color:var(--accent3)}
+.phase-deployment{background:var(--cyan-a12);color:var(--cyan)}
+.phase-ship{background:var(--green-a15);color:var(--green)}
+.step-required{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:.953rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  background:var(--red-a12);color:var(--red);
+  font-family:var(--font-sans);margin-left:8px;
+}
+.step-sb{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:.953rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  background:var(--accent-a12);color:var(--accent-light);
+  font-family:var(--font-sans);margin-left:8px;
+}
+/* ───── COMPARISON SECTION ───── */
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.compare-grid{grid-template-columns:1fr}}
+.compare-card{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:32px;
+  position:relative;overflow:hidden;
+}
+.compare-card.winner{
+  border-color:var(--mint-a45);
+  background:linear-gradient(160deg,var(--bg-card),var(--mint-a08) 35%,var(--accent-a04));
+}
+.compare-card .compare-name{
+  font-size:1.2rem;font-weight:800;letter-spacing:-.02em;margin-bottom:4px;
+}
+.compare-card .compare-role{
+  font-size:.908rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);margin-bottom:20px;
+}
+.compare-card .compare-score{
+  display:flex;align-items:baseline;gap:6px;margin-bottom:8px;
+}
+.compare-card .score-num{
+  font-size:2.4rem;font-weight:900;letter-spacing:-.04em;font-family:var(--font-mono);
+}
+.compare-card .score-label{
+  font-size:.908rem;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+}
+.compare-bar-track{
+  height:6px;background:var(--border);border-radius:999px;margin-bottom:24px;overflow:hidden;
+}
+.compare-bar-fill{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--grad-1),#7a8ea0,#c8d8e4,#7a8ea0);
+  background-size:200% auto;
+  transition:width .8s ease-out;
+}
+.compare-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+.compare-items li{
+  font-size:1.029rem;color:var(--text-secondary);
+  display:flex;align-items:flex-start;gap:8px;line-height:1.4;
+}
+.compare-items li .ci{flex-shrink:0;margin-top:1px;font-weight:700}
+.ci-yes{color:var(--green)}
+.ci-no{color:var(--text-dim)}
+.compare-missing{font-size:.9rem;color:var(--text-dim);margin-top:16px;padding-top:16px;border-top:1px solid var(--border);line-height:1.5}
+.comparison-table{width:100%;border-collapse:collapse;margin:32px auto 0;font-size:.9rem}
+.comparison-table thead th{
+  text-align:left;padding:14px 16px;font-size:1.12rem;font-weight:800;
+  text-transform:none;letter-spacing:-.01em;color:var(--text-primary);
+  border-bottom:2px solid var(--border);vertical-align:bottom;
+}
+.comparison-table tbody th{text-align:left;padding:12px 16px;font-size:1.054rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:1px solid var(--border);vertical-align:top}
+.comparison-table td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.55;vertical-align:top}
+.comparison-table tr:last-child td{border-bottom:none}
+.comparison-table tr:hover td{background:var(--table-row-hover)}
+.comparison-table td:first-child{font-weight:600;color:var(--text-primary);white-space:nowrap}
+.platform-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:20px 0 40px}
+.platform-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg-card);font-size:.992rem;font-weight:400;color:var(--text-secondary)}
+/* ───── CORE LIFECYCLE SECTION ───── */
+.sb-lifecycle-overview{
+  display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);
+  gap:28px;align-items:stretch;
+}
+@media(max-width:900px){.sb-lifecycle-overview{grid-template-columns:1fr}}
+.sb-lifecycle-panel{
+  background:linear-gradient(160deg,var(--bg-card),var(--mint-a07) 45%,var(--accent-a04));
+  border-radius:var(--radius-lg);
+  padding:34px;position:relative;overflow:hidden;
+}
+.sb-lifecycle-panel h3{font-size:1.15rem;margin-bottom:12px}
+.sb-lifecycle-panel p{color:var(--text-secondary);font-size:.96rem;line-height:1.7}
+.sb-lifecycle-split{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;
+}
+@media(max-width:600px){.sb-lifecycle-split{grid-template-columns:1fr}}
+.sb-lifecycle-mini{
+  border-radius:var(--radius);padding:18px;
+  background:var(--bg-card);
+}
+.sb-lifecycle-mini .mini-label{
+  font-size:1.025rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);margin-bottom:8px;
+}
+.sb-lifecycle-mini strong{display:block;font-size:1rem;margin-bottom:6px;color:var(--text-primary)}
+.sb-lifecycle-mini span{font-size:.946rem;color:var(--text-secondary);line-height:1.5}
+.sb-lifecycle-benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:900px){.sb-lifecycle-benefit-grid{grid-template-columns:1fr}}
+@media(min-width:901px) and (max-width:1100px){.sb-lifecycle-benefit-grid{grid-template-columns:repeat(2,1fr)}}
+.sb-lifecycle-benefit{
+  background:var(--bg-card);
+  border-radius:var(--radius-lg);padding:26px;
+}
+.sb-lifecycle-benefit .benefit-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sb-lifecycle-benefit .benefit-icon{
+  width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  color:var(--accent-light);background:var(--accent-a12);font-size:1.25rem;flex-shrink:0;
+}
+.sb-lifecycle-benefit h3{font-size:1rem;line-height:1.25}
+.sb-lifecycle-benefit p{font-size:.968rem;color:var(--text-secondary);line-height:1.6}
+.sb-lifecycle-proof{
+  display:flex;flex-direction:column;gap:12px;
+}
+.sb-lifecycle-proof-row{
+  display:grid;grid-template-columns:136px 1fr;gap:14px;align-items:start;
+  border-bottom:1px solid var(--border);padding-bottom:12px;
+}
+.sb-lifecycle-proof-row:last-child{border-bottom:0;padding-bottom:0}
+@media(max-width:600px){.sb-lifecycle-proof-row{grid-template-columns:1fr;gap:4px}}
+.sb-lifecycle-proof-row strong{font-size:.9rem;color:var(--accent-light);font-family:var(--font-mono)}
+.sb-lifecycle-proof-row span{font-size:.9rem;color:var(--text-secondary);line-height:1.5}
+/* ───── CALLOUT ───── */
+.callout{
+  background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
+  border-color:var(--mint-a32);
+  border-radius:var(--radius-lg);padding:40px;
+  text-align:center;max-width:700px;margin:0 auto;
+}
+.callout .callout-icon{font-size:2rem;margin-bottom:12px}
+.callout-label{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-bottom:10px;font-size:.85rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent-light);font-family:var(--font-heading);
+}
+.callout-label svg{width:1.15em;height:1.15em;flex-shrink:0}
+.callout-title{font-size:1.15rem;margin:0 0 12px;color:var(--text-primary)}
+.callout p{font-size:1.05rem;color:var(--text-secondary);line-height:1.7;margin:0}
+.callout strong{color:var(--text-primary)}
+.callout-wide{max-width:860px}
+.stakes-callout{
+  margin-top:40px;padding:28px 32px;
+  background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
+  border-radius:var(--radius-lg);
+}
+.stakes-callout .stakes-transition{font-size:.95rem;color:var(--text-secondary);line-height:1.65;margin:20px 0 0;font-style:italic;text-align:center}
+.stakes-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px}
+.stakes-dim{font-size:.968rem;color:var(--text-secondary);line-height:1.55}
+.stakes-dim strong{display:block;font-size:1.054rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-light);margin-bottom:6px;font-family:var(--font-heading)}
+.stakes-item h4{font-size:1.054rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-light);margin:0 0 6px;font-family:var(--font-heading)}
+.stakes-item p{font-size:.968rem;color:var(--text-secondary);line-height:1.55;margin:0}
+@media(max-width:900px){.stakes-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.stakes-grid{grid-template-columns:1fr}}
+.cost-stakes{
+  margin-top:32px;padding:24px 28px;text-align:left;max-width:none;
+  background:linear-gradient(135deg,var(--mint-a14),var(--accent-a07) 50%,var(--neutral-a12));
+  border-radius:var(--radius-lg);
+}
+.cost-stakes p{font-size:.95rem;color:var(--text-secondary);line-height:1.65;margin:0}
+.cost-stakes strong{color:var(--text-primary)}
+.future-opener{
+  max-width:760px;margin:32px auto 0;text-align:center;
+  font-size:1.05rem;color:var(--text-secondary);line-height:1.75;
+}
+.future-opener p{margin:0 0 14px}
+.future-opener p:last-child{margin-bottom:0}
+.gaps-callout{
+  margin:48px auto 40px;padding:28px 32px;text-align:left;max-width:820px;
+  background:linear-gradient(135deg,rgba(196,64,96,.08),var(--neutral-a12) 55%,var(--mint-a10));
+  border-radius:var(--radius-lg);
+}
+.gaps-callout h3{font-size:1rem;margin:0 0 10px;color:var(--text-primary)}
+.gaps-callout p{font-size:.92rem;color:var(--text-secondary);line-height:1.65;margin:0}
+/* ───── CTA SECTION ───── */
+.cta-section{
+  background:linear-gradient(135deg,var(--accent-a14) 0%,var(--mint-a08) 40%,var(--mint-a10) 70%,var(--neutral-a10) 100%);
+  border-top:1px solid var(--mint-a20);border-bottom:1px solid var(--mint-a20);
+}
+/* FOOTER — chrome.css */
+/* ───── ALPHA BADGE ───── */
+.logo-wrapper{position:relative;display:inline-block}
+.alpha-badge{
+  display:inline-block;
+  background:var(--accent-a10);
+  border:1px solid var(--accent-a28);
+  color:var(--accent-light);
+  font-size:.976rem;font-weight:400;letter-spacing:.08em;
+  padding:3px 7px;border-radius:6px;
+  font-family:var(--font-sans);font-style:normal;line-height:1;
+  position:absolute;top:0;left:100%;margin-left:1px;transform:translateY(-55%);
+}
+/* ───── ANIMATIONS ───── */
+.fade-in{opacity:0;transition:opacity .6s ease-out}
+.fade-in.visible{opacity:1}
+/* ───── HERO VARIANT B — SPLIT ───── */
+.hero-split{padding:96px 24px 100px;background:var(--bg-hero);position:relative;overflow:hidden}
+.hero-split::before{content:'';position:absolute;top:-200px;left:-100px;width:600px;height:600px;border-radius:50%;background:radial-gradient(ellipse at 55% 45%,var(--mint-a22) 0%,var(--mint-a10) 40%,transparent 72%)}
+.hero-split::after{content:'';position:absolute;bottom:-150px;right:-100px;width:500px;height:500px;border-radius:50%;background:radial-gradient(ellipse at 45% 55%,var(--mint-a18) 0%,var(--mint-a07) 45%,transparent 72%)}
+.hero-split .container{position:relative;z-index:1}
+.hero-split-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  grid-template-rows:auto auto auto auto;
+  gap:20px 40px;align-items:start;
+}
+.hero-split-badge{grid-column:1;grid-row:1;align-self:end}
+.hero-split-brand{
+  grid-column:2;grid-row:1;align-self:start;
+  display:flex;flex-direction:column;align-items:flex-end;
+  width:100%;max-width:520px;justify-self:end;
+}
+.hero-headline{
+  grid-column:1;grid-row:2;align-self:start;margin:0;
+  font-size:clamp(1.9rem,4vw,3rem);font-weight:400;letter-spacing:-.03em;line-height:1.12;
+  text-align:left;color:var(--text-primary);
+}
+.hero-split-body{grid-column:1;grid-row:3;align-self:start}
+.hero-split-visual{
+  grid-column:2;grid-row:2 / 4;align-self:start;margin-top:0;padding-top:0;
+  display:flex;flex-direction:column;align-items:stretch;
+  width:100%;max-width:520px;justify-self:end;
+}
+.hero-cta-block{
+  grid-column:1;grid-row:4;align-self:center;
+  display:inline-flex;flex-direction:column;align-items:stretch;gap:10px;
+  width:max-content;max-width:100%;position:relative;
+}
+.hero-cta-block .hero-cta-note{margin-top:18px;position:absolute;top:100%;left:0;right:0}
+.hero-cta-block .hero-cta-note{text-align:center;width:100%}
+.hero-platform-row{
+  grid-column:2;grid-row:4;
+  display:flex;align-items:center;justify-content:center;align-self:center;
+  min-height:0;width:100%;max-width:520px;justify-self:end;
+  margin-top:0;
+}
+.hero-platform-row .platform-pill{
+  padding:8px 14px;font-size:.9rem;min-height:0;
+}
+.hero-platform-row .platform-pills{margin:0;justify-content:center;width:100%}
+.hero-split h1 .gradient{}
+.hero-split-title{font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-.04em;line-height:1.05;margin:0;text-align:inherit;}
+.hero-logo-row{display:inline-flex;align-items:center;gap:12px}
+.hero-split .hero-bullet{height:clamp(45px,8vw,60px);width:auto;margin-top:0;flex-shrink:0}
+.hero-subhead{color:var(--accent-light);font-weight:400}
+.hero-intro{font-size:.99rem;color:var(--text-secondary);line-height:1.7;max-width:600px;margin:12px 0 0}
+[data-theme="dark"] .hero-split .hero-intro{color:var(--hero-subtext,var(--text-secondary))}
+.hero-visual-mocks{display:flex;flex-direction:column;gap:14px;margin-top:0;width:100%;max-width:520px;flex:0 0 auto;margin-bottom:6px}
+.hero-visual-mocks .enforcement-block{
+  background:linear-gradient(180deg,#060c15 0%,#03070d 100%);
+  border-color:rgba(255,255,255,.08);
+}
+[data-theme="light"] .hero-visual-mocks .enforcement-block{
+  transition:border-color .3s,box-shadow .3s,filter .3s;
+}
+[data-theme="light"] .hero-visual-mocks .enforcement-block:hover{
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.18)) drop-shadow(0 4px 10px rgba(0,0,0,.10));
+}
+.hero-visual-mocks .enforcement-body{
+  font-size:.7rem;line-height:1.7;padding:14px 16px;
+  white-space:normal;overflow-wrap:anywhere;
+}
+.hero-visual-mocks .term-line{display:block;margin-bottom:.15em}
+.hero-visual-mocks .enforcement-header{padding:10px 14px}
+.hero-visual-mocks .enforcement-header .block-title{font-size:.8rem}
+.hero-cta-fit{width:max-content;max-width:100%}
+.hero-cta-stack{display:inline-flex;flex-direction:column;align-items:center;gap:10px;width:max-content;max-width:100%}
+.hero-cta-row{display:flex;gap:14px;justify-content:flex-start;align-items:center;flex-wrap:wrap}
+.hero-cta-note{font-family:var(--font-mono);font-size:.944rem;color:var(--text-dim);margin:0;text-align:center}
+@media(max-width:900px){
+  .hero-split-grid{grid-template-columns:1fr;grid-template-rows:auto;gap:24px}
+  .hero-split-badge,.hero-split-brand,.hero-headline,.hero-split-body,.hero-split-visual,.hero-cta-block,.hero-platform-row{
+    grid-column:1;grid-row:auto;align-self:auto;min-height:0;max-width:100%;justify-self:stretch;
+  }
+  .hero-split-brand{align-items:center;text-align:center}
+  .hero-brand-lockup{align-items:center}
+  .hero-brand-lockup .hero-tagline-caps{text-align:center}
+  .hero-split-brand .hero-split-title{text-align:center}
+  .hero-split-visual{display:flex}
+  .hero-visual-mocks{max-width:100%}
+  .hero-cta-block{align-items:center;width:100%}
+  .hero-platform-row{margin-top:0;align-items:center;justify-content:center}
+}
+/* ───── RESPONSIVE ───── */
+/* 900px — grid collapsing (feature-grid missing breakpoint) */
+@media(max-width:900px){
+  .feature-grid{grid-template-columns:repeat(2,1fr)}
+  /* Override the 3-col review-analytics rule so it collapses too */
+  #review-analytics .feature-grid{grid-template-columns:repeat(2,1fr)}
+}
+/* 768px — tablet / large phone */
+@media(max-width:768px){
+  section{padding:72px 0}
+  .hero{padding:110px 20px 72px}
+  .hero h1{margin-bottom:12px}
+  .hero .hero-tagline-caps{margin-bottom:60px;letter-spacing:.18em}
+  .hero-bullet{height:57px}
+  .hero .version-badge{font-size:1.054rem;padding:5px 12px}
+  .hero .tagline{font-size:1.1rem;margin-bottom:40px}
+  .hero .subtitle{font-size:.95rem;margin-bottom:36px}
+  .hero .subtitle br{display:none}
+  .hero-pills{gap:14px}
+  .callout{padding:28px 20px}
+  .comparison-table{font-size:.95rem;padding:20px 16px}
+  .workflow-tabs{flex-wrap:wrap;gap:6px}
+  .workflow-tab{padding:8px 16px;font-size:.9rem}
+  .enforcement-body{font-size:1rem;padding:16px 18px}
+  .layer-card{padding:20px}
+  .feature-card{padding:24px}
+  .compare-card{padding:24px}
+  .mt-6{margin-top:56px}
+}
+/* 600px — small phone */
+@media(max-width:600px){
+  section{padding:60px 0}
+  .hero{padding:96px 16px 64px}
+  .hero-bullet{height:45px}
+  .hero-h1-inner{gap:14px}
+  .hero .brooks-block{max-width:100%;gap:14px}
+  .hero .brooks-photo{width:56px;height:56px}
+  .hero .brooks-quote,.hero .brooks-attr{max-width:100%;padding-left:12px}
+  .btn{width:100%;max-width:300px;justify-content:center}
+  .feature-grid{grid-template-columns:1fr}
+  #review-analytics .feature-grid{grid-template-columns:1fr}
+  .install-block{max-width:100%}
+  .install-code{padding:16px;font-size:.946rem}
+  .install-code div{overflow-wrap:break-word;word-break:normal;white-space:normal}
+  .workflow-table td,.workflow-table th{padding:7px 8px;font-size:.908rem}
+  .callout{padding:24px 16px}
+  .callout p{font-size:.95rem}
+  .enforcement-body{font-size:.957rem;padding:14px 16px;line-height:1.7}
+  .section-desc{margin-bottom:40px}
+  .section-title{margin-bottom:20px}
+  .ecosystem-card,.devops-card{padding:20px}
+  .compare-card{padding:20px}
+  .layer-card{padding:16px;gap:12px}
+  .hero-pills{gap:14px;margin-bottom:40px}
+  .mt-4{margin-top:40px}
+  .mt-6{margin-top:56px}
+  .mb-4{margin-bottom:40px}
+}
+/* ───── LUCIDE ICONS ───── */
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav-toggle svg.lucide{width:1.4rem;height:1.4rem}
+/* ───── MOBILE SAFETY ───── */
+img{max-width:100%;height:auto}
+/* Workflow tables need explicit min-width so overflow-x:auto actually scrolls */
+.workflow-table{min-width:640px}
+/* Touch targets */
+.btn{min-height:44px}
+.hero-cta-row .btn,.hero-cta-block .btn{min-height:0}
+.hero-pill{min-height:40px}
+/* ≤ 375px — very small phones */
+@media(max-width:375px){
+  .container{padding:0 12px}
+  .hero{padding:88px 12px 56px}
+  .hero-pill{font-size:1.054rem;padding:6px 14px}
+  .install-code{font-size:.92rem}
+  .workflow-table td,.workflow-table th{font-size:1.025rem;padding:6px 7px}
+}
+</style>
+<link rel="stylesheet" href="neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="chrome.css?v=site-chrome-11">
+<link rel="stylesheet" href="tokens.css?v=s3-site-icon-glyph-align5">
+</head>
+<body>
+
+<!-- ────── NAV ────── -->
+<nav>
+  <div class="nav-inner">
+    <a href="" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#future">What If</a></li>
+      <li><a href="#mechanism">How It Works</a></li>
+      <li><a href="#workflow">Workflows</a></li>
+      <li><a href="#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ────── HERO — split layout ────── -->
+<section class="hero-split" id="hero-main">
+  <div class="container">
+    <div class="hero-split-grid">
+      <div class="hero-split-badge">
+        <div class="version-badge"><span class="dot"></span> Agentic Process Orchestrator for the AI Era</div>
+      </div>
+      <div class="hero-split-brand">
+        <div class="hero-brand-lockup">
+          <h1 class="hero-split-title">
+            <span class="hero-logo-row">
+              <img src="silver-bullet.png" alt="" class="hero-bullet" aria-hidden="true">
+              <span class="gradient">Silver Bullet</span>
+            </span>
+          </h1>
+          <p class="hero-tagline-caps hero-tagline-thin">THE PROCESS LAYER OF AI-DRIVEN DEV</p>
+        </div>
+      </div>
+      <h2 class="hero-headline">Maximize AI-driven<br><span class="hero-headline-accent">Dev Process Reliability</span><br>with Enforced Evidence</h2>
+      <div class="hero-split-body">
+        <h3 class="hero-subhead" style="font-size:clamp(1.1rem,2.2vw,1.5rem);letter-spacing:-.01em;line-height:1.35;text-align:left;font-weight:400">Enforce the Method Back to the AI Madness!</h3>
+        <ul class="hero-features-list" aria-label="Core capabilities">
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Engineering Best Practices</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Dynamically Tailored Workflows</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Verification &amp; Validation Loops</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Quality Gates</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Spec-to-Release Traceability</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Cost Optimization</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Intent-Aligned Results</li>
+          <li><span class="hero-feature-icon" aria-hidden="true"><i data-lucide="circle-check"></i></span> Knowledge Management</li>
+        </ul>
+        <p class="hero-intro">Silver Bullet is the orchestration layer that runs inside your Claude Code, Codex, or Cursor session. It composes the right workflow for the task, blocks unsafe commits, PRs, and releases until the evidence is real, and stays out of the way for the work that should be fast.</p>
+      </div>
+      <div class="hero-split-visual">
+        <div class="hero-visual-mocks">
+          <div class="enforcement-block">
+            <div class="enforcement-header">
+              <span class="block-title" style="color:var(--red)">Without Silver Bullet</span>
+              <div class="block-dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
+            </div>
+            <div class="enforcement-body" style="text-align:left">
+<div class="term-line"><span class="prompt">$</span> <span class="dim">claude &quot;ship rate limiter&quot;</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">wrote rate_limiter.py + middleware patch</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">pytest: 4 passed (mocked Redis)</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">git commit &rarr; PR #847 merged</span></div>
+<div class="term-line"><span class="warn">&#9888;</span> <span class="dim">skipped spec &mdash; went straight to code</span></div>
+<div class="term-line"><span class="warn">&#9888;</span> <span class="dim">deploy.yml: no canary gate</span></div>
+<div class="term-line"><span class="stop">&#9888;</span> <span class="dim">pager: 429 storm on auth header</span></div>
+<div class="term-line"><span class="muted">postmortem: no spec &middot; no UAT &middot; no trace</span></div>
+            </div>
+          </div>
+          <div class="enforcement-block">
+            <div class="enforcement-header">
+              <span class="block-title" style="color:var(--green)">With Silver Bullet</span>
+              <div class="block-dots"><span style="background:#ef4444"></span><span style="background:#f59e0b"></span><span style="background:#10b981"></span></div>
+            </div>
+            <div class="enforcement-body" style="text-align:left">
+<div class="term-line"><span class="prompt">$</span> <span class="dim">/silver feature API rate limiter</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">AF-ROUTE &rarr; WF-SILVER-FEATURE</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">SPEC &rarr; PLAN &rarr; EXECUTE + tests green</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">review triad · verify · secure clean</span></div>
+<div class="term-line"><span class="stop">&#9650;</span> <span class="accent">completion-audit DENY</span></div>
+<div class="term-line"><span class="dim">missing silver-quality-gates in state</span></div>
+<div class="term-line"><span class="prompt">$</span> <span class="dim">/silver:quality-gates</span></div>
+<div class="term-line"><span class="ok">&#10003;</span> <span class="dim">PR trace block · CI green · shipped</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-cta-block">
+        <div class="hero-cta-row">
+          <a href="#install" class="btn btn-primary">Install Silver Bullet</a>
+          <a href="#mechanism" class="btn btn-outline">See the Mechanism</a>
+          <a href="changelog/" class="btn btn-outline">What&rsquo;s New?</a>
+        </div>
+        <div class="hero-cta-note">BUSL 1.1 Source-Available &middot; Broad Production Use &middot; No Plugin Telemetry</div>
+      </div>
+      <div class="hero-platform-row">
+        <div class="platform-pills">
+          <span class="platform-pill"><i data-lucide="terminal"></i> Claude Code</span>
+          <span class="platform-pill"><i data-lucide="box"></i> Codex</span>
+          <span class="platform-pill"><i data-lucide="mouse-pointer-click"></i> Cursor</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CMF C2: PROBLEM ARTICULATION (buyer's own language)             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="problem">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">The Problem</div>
+      <h2 class="section-title">A Good Prompt Is Not a Delivery System</h2>
+      <p class="section-desc centered">You did not adopt an AI coding agent to ship inconsistent work. You adopted it to ship faster. But every team using agents at scale runs into the same walls &mdash; and those walls are not in the model. They are in the process around the model.</p>
+    </div>
+    <div class="pain-grid mt-6">
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 01</div>
+        <h3>The Agent Skips Planning and Jumps Straight to Editing Files</h3>
+        <p>You gave it a task. It started coding. No spec, no accepted assumptions, no coverage check. The path of least resistance is always to start changing code &mdash; so that is what the agent does, even when a spec would have caught the wrong assumption in 90 seconds.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 02</div>
+        <h3>Spec, Requirements, Plan, and PR Drift Apart Within Days</h3>
+        <p>The accepted criteria live in one document. The plan lives in another. The PR description was written from memory. Reviewers cannot tell which criteria were actually delivered &mdash; and the next person to touch the code has no idea what the original intent was.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 03</div>
+        <h3>&ldquo;Done&rdquo; Gets Declared Without the Evidence to Back It Up</h3>
+        <p>The agent commits and opens a PR. No fresh tests since the last source change. No code review. No UAT evidence. No docs update. No release-readiness check. The PR is open and labeled ready, but the evidence is not in the record.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 04</div>
+        <h3>Context Rot Silently Degrades Output Quality Mid-Session</h3>
+        <p>As the context window fills, the agent&rsquo;s outputs degrade. The early part of the conversation is forgotten. Instructions given two hours ago stop being followed. The best workflows in the world mean nothing if the agent is operating on a rotting context.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 05</div>
+        <h3>Infrastructure Edits Ship Without the Blast-Radius Review Leadership Requires</h3>
+        <p>Infrastructure edits are treated like any other commit. There is no map of what depends on this resource, what fails if it fails, or what the rollback plan looks like. One Terraform change becomes a four-hour outage because nobody asked the questions before the merge.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 06</div>
+        <h3>Frontier API Spend Compounds While Cheaper Models Stay Delivery-Blind</h3>
+        <p>Every session starts cold. The agent re-reads files it has already read. It re-discovers decisions already made. It re-fixes bugs already fixed. Context Mode and RTK exist for a reason &mdash; but most teams wire them in inconsistently or not at all.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 07</div>
+        <h3>Project Knowledge Evaporates When the Session Ends</h3>
+        <p>What did we agree last sprint? Why did we pick Postgres over DynamoDB? Where is the ADR for this? The answers exist somewhere in conversation history that nobody can find. The next session starts blind.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 08</div>
+        <h3>Security Reviews Happen After the Merge, Not Before</h3>
+        <p>Shell injection, markdown injection, hardcoded secrets, prompt injection in ingested artifacts &mdash; the agent does not check before it writes. Security gets bolted on in a follow-up PR that costs five times more than catching it at the source.</p>
+      </div>
+
+      <div class="pain-card fade-in">
+        <div class="pain-num">PAIN 09</div>
+        <h3>Backlog Grows Faster Than the Agent Clears It</h3>
+        <p>Deferred work gets mentioned in passing and never tracked. &ldquo;Let&rsquo;s come back to that&rdquo; means never. The agent finishes a feature and immediately starts another, leaving a graveyard of half-promised improvements scattered across the repo.</p>
+      </div>
+
+    </div>
+
+    <div class="stakes-callout fade-in">
+      <div class="stakes-grid">
+        <div class="stakes-item">
+          <h4>Financial</h4>
+          <p>Rework, incidents, and top-tier token burn compound &mdash; cheaper models without gates do not save money if they ship defects.</p>
+        </div>
+        <div class="stakes-item">
+          <h4>Time</h4>
+          <p>Engineers re-litigate requirements, re-run tests, and re-review PRs agents already declared &ldquo;done.&rdquo;</p>
+        </div>
+        <div class="stakes-item">
+          <h4>Opportunity</h4>
+          <p>Competitors orchestrate; teams on vibes accumulate security and traceability debt that compounds every sprint.</p>
+        </div>
+        <div class="stakes-item">
+          <h4>Emotional</h4>
+          <p>Review fatigue and mistrust of agent output erode the AI investment story with leadership &mdash; even when individual PRs look fine.</p>
+        </div>
+      </div>
+      <p class="stakes-transition">It does not have to be ceremony for every typo &mdash; but high-risk work needs a system that pushes back.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C3: AGITATION — Cost of inaction (stat-grounded)            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="cost" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Cost of Inaction</div>
+      <h2 class="section-title">What &ldquo;We&rsquo;ll Add Process Later&rdquo; Actually Costs You</h2>
+      <p class="section-desc centered">Process debt in an AI-driven codebase compounds differently than in a human-driven one. The agent does not ask for clarification. It does not push back on an ambiguous spec. It just produces output that looks complete.</p>
+    </div>
+    <div class="cost-grid mt-6">
+      <div class="cost-card fade-in">
+        <div class="cost-stat">Security Risk</div>
+        <div class="cost-label">AI-generated changes still require security review</div>
+        <div class="cost-desc">Silver Bullet&rsquo;s design goal is to make security and verification evidence explicit before delivery. It does not claim a universal vulnerability rate or replace your scanners.</div>
+      </div>
+      <div class="cost-card fade-in">
+        <div class="cost-stat">Outage Exposure</div>
+        <div class="cost-label">Skipped review can increase operational risk</div>
+        <div class="cost-desc">The financial impact varies by system and incident. Silver Bullet focuses on enforcing review, verification, and deployment evidence rather than asserting a universal outage cost.</div>
+      </div>
+      <div class="cost-card fade-in">
+        <div class="cost-stat">Rework Risk</div>
+        <div class="cost-label">Spec drift creates avoidable implementation churn</div>
+        <div class="cost-desc">Upfront coverage checks are intended to expose missing or conflicting requirements before implementation. The benefit depends on task scope, repository, and team practice.</div>
+      </div>
+      <div class="cost-card fade-in">
+        <div class="cost-stat">Context Tax</div>
+        <div class="cost-label">Repeated rediscovery consumes time and context</div>
+        <div class="cost-desc">Opted-in retrieval, compression, and persistent-memory tools can reduce repeated reads. Savings vary by host, repository, and session; no fixed token-reduction percentage is claimed.</div>
+      </div>
+    </div>
+    <div class="cost-emotional fade-in">
+      <div class="cost-label">Reputational</div>
+      <p>When reviewers stop trusting agent PRs &mdash; or leadership stops trusting the team&rsquo;s AI velocity numbers &mdash; the cost is not a line item. It is the story you have to rebuild before the next budget conversation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C4: ASPIRATIONAL FUTURE STATE                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="future">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">What If</div>
+      <h2 class="section-title">The Future Where Your AI Agent Ships Like Your Best Senior Engineer</h2>
+      <p class="section-desc centered">Imagine the agent you wish you had. Not a smarter model &mdash; the same model, working inside a process that actually pushes back.</p>
+    </div>
+    <div class="future-stack fade-in">
+      <p class="future-micro">You open Monday&rsquo;s PR queue and every merge request links to accepted spec criteria &mdash; not a vague agent summary. Your team routes typos through a fast path and features through spec, review, and fresh tests without you re-explaining the rules each session. Leadership sees audit trails and gate evidence, while you keep using the models and hosts you already chose &mdash; including models that cost a fraction of frontier tiers.</p>
+      <div class="future-card">
+        <div class="future-eyebrow">The transformation</div>
+        <p class="future-lead">You ask the agent for a feature. It asks you which spec it should follow. It writes the spec coverage check before it writes any code. It commits in checkpoints. It opens a PR with a traceability block that links every line back to an accepted criterion. CI fails &mdash; it fixes CI. A review round flags a finding &mdash; it triages the finding and re-issues clean. The stop hook blocks it from declaring done until the evidence is in the record. You review the PR once and merge. The release gets shipped.</p>
+        <p>That is not a dream. That is what Silver Bullet&rsquo;s two-tier discipline and twelve hook layers are designed to produce. The agent reasons. The environment decides whether unsafe actions proceed.</p>
+        <p>You get the speed of agentic execution with the rigor of an engineering organization. Small edits stay trivial. Big edits get the full chain. Every delivery boundary has evidence behind it or the boundary refuses to move.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C5: GUIDE INTRODUCTION — Silver Bullet as the trusted guide -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="guide" style="background:var(--section-alt)">
+  <div class="container text-center">
+    <div class="section-label">Silver Bullet</div>
+    <h2 class="section-title">The Layer That Makes Your Agent Trustworthy</h2>
+    <p class="section-desc centered">If you have watched an agent skip the review skill the moment context compacts &mdash; or open a PR because it can, not because the evidence is there &mdash; you already know why we built this. Execution engines and review skills exist. Agents still bypass them when pressure rises.</p>
+    <p class="section-desc centered" style="margin-top:20px">Silver Bullet is hook-enforced orchestration across Claude Code, Codex, and Cursor &mdash; dogfooded daily in this alpha source-available repo. We did not build it to be smarter than the models. We built mechanical gates plus code-intelligence retrieval, not another prompt template, because no model can be trusted with delivery on its own.</p>
+    <p class="section-desc centered" style="margin-top:20px">The catalog and plugin source are available under BUSL 1.1. Production use is broadly permitted, except offering Silver Bullet or a substantially similar orchestrator as a competing hosted, managed, or SaaS product. The plugin itself sends no usage telemetry to Alo Labs.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C6: SOLUTION INTRODUCTION + UNIQUE MECHANISM                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="mechanism">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">The Mechanism</div>
+      <h2 class="section-title">Why Silver Bullet Works When Instruction-Following Doesn&rsquo;t</h2>
+      <p class="section-desc centered">The mechanism is not a better prompt. It is a catalog of 29 atomic flows composed into 22 task-shaped workflows and 4 reusable components, executed by your agent, with twelve hook layers that physically block unsafe progress. The model can reason. Only the environment can decide.</p>
+    </div>
+
+    <div class="feature-grid mt-6 fade-in">
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="git-branch"></i></div>
+        <h3>Dynamic Workflow Composition</h3>
+        <p><code>/silver</code> classifies the task and composes the chain it needs. The catalog covers primary delivery, research, multi-AI work, supervised agent delegation, workflow authoring, fast and specialized paths, infrastructure, release, and operational learning. Each route is catalog-backed; the agent does not improvise the process.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="shield-check"></i></div>
+        <h3>Two-Tier Delivery Discipline</h3>
+        <p>Intermediate commits require only the planning floor (default: <code>silver:quality-gates</code>). Final delivery &mdash; <code>gh pr create</code>, <code>gh release create</code>, <code>deploy</code> &mdash; requires the full deploy skill list and V-loop evidence at every flow step. Agents can move fast in the middle. They cannot ship unverified at the edges.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="layers"></i></div>
+        <h3>Twelve Hook Layers</h3>
+        <p>SessionStart state reset, PreToolUse/Bash planning gate, completion audit, roadmap freshness, CI status, spec floor, planning-file guard, PostToolUse skill recording, prompt reminder, stop hook, completion audit at commit/PR, branch-finish readiness &mdash; all enforcing, none decorative.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="check-circle"></i></div>
+        <h3>V-Loop Evidence Schema</h3>
+        <p>Every flow step emits a finding row with BLOCK / WARN / INFO severity. <code>validate-evidence-findings</code> runs at PR/release. Findings that are not closed cannot ship. The schema is the contract; the validator is the gatekeeper.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="route"></i></div>
+        <h3>Spec-to-Release Traceability</h3>
+        <p>Session-start captures spec version and JIRA ID. PR descriptions append a traceability block. Roadmap freshness is checked at commit time. Deferred validation warnings surface before release. The audit trail survives long sessions and context compaction.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="brain-circuit"></i></div>
+        <h3>Memory + Context That Compound</h3>
+        <p>Graphify + agentmemory wire a knowledge graph of accepted decisions, ADRs, and durable learnings. RTK + Context Mode compress tokens and index large files. The next session starts where the last one left off &mdash; not from zero.</p>
+      </div>
+
+    </div>
+
+    <div class="catalog-ships-block">
+      <div class="text-center catalog-ships-intro">
+        <h3 class="subsection-title">What The Catalog Actually Ships</h3>
+        <p style="font-size:.9rem;color:var(--text-secondary);max-width:640px;margin:0 auto">Catalog authority: <code>docs/apo-catalog.json</code>. The catalog is the contract; the workflows and atomic flows are the implementation.</p>
+      </div>
+      <div class="mech-row">
+        <div class="mech-card fade-in">
+          <span class="mech-tag">29 ATOMIC FLOWS</span>
+          <h3>The Composable Primitives</h3>
+          <p>Every workflow is built from the same atomic flow library. Reusable, testable, contractually defined.</p>
+          <ul class="mech-list">
+            <li><code>ROUTE</code> &mdash; task classification</li>
+            <li><code>BOOTSTRAP</code> &mdash; project init</li>
+            <li><code>SPECIFY</code> &mdash; requirements + ingestion</li>
+            <li><code>PLAN</code> &mdash; phase coverage</li>
+            <li><code>EXECUTE</code> &mdash; checkpointed implementation</li>
+            <li><code>VERIFY</code> + <code>SECURE</code> + <code>REVIEW</code></li>
+            <li><code>SHIP</code> + <code>RELEASE</code> + <code>DOCUMENT</code></li>
+          </ul>
+        </div>
+        <div class="mech-card fade-in">
+          <span class="mech-tag">22 TASK WORKFLOWS + 4 COMPONENTS</span>
+          <h3>Task-Shaped Chains</h3>
+          <p>Pre-composed sequences for every common delivery shape. You pick the task. The router picks the chain.</p>
+          <ul class="mech-list">
+            <li><code>/silver:feature</code> &mdash; governed build</li>
+            <li><code>/silver:bugfix</code> &mdash; debug &rarr; ship</li>
+            <li><code>/silver:ui</code> &mdash; design + UI gates</li>
+            <li><code>/silver:devops</code> &mdash; blast radius first</li>
+            <li><code>/silver:deploy</code> &middot; <code>/silver:canary</code></li>
+            <li><code>/silver:release</code> &middot; <code>/silver:incident</code></li>
+            <li><code>/silver:retro</code> &middot; <code>/silver:fast</code></li>
+          </ul>
+        </div>
+        <div class="mech-card fade-in">
+          <span class="mech-tag">118 FLOW STEPS</span>
+          <h3>Evidence at Every Step</h3>
+          <p>Each flow step has a local V-loop with subagent dispatch and opted-in tool governance. Evidence is produced where the work is produced.</p>
+          <ul class="mech-list">
+            <li>Subagent metadata baked in</li>
+            <li>Evidence schemas per step</li>
+            <li>Tool allow/deny by step context</li>
+            <li>Checkpoint markers in state file</li>
+            <li>Resumable across context compaction</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout mt-8 fade-in" style="max-width:820px;margin-left:auto;margin-right:auto">
+      <div class="callout-label"><i data-lucide="coins"></i><span>Lower-Cost Models, Delivery-Ready</span></div>
+      <p>Host hooks block unsafe progress; workflow state records what actually ran; Graphify, agentmemory, RTK, and Context Mode keep cheaper models oriented in large repos. The thesis is not &ldquo;use a worse model.&rdquo; It is: <strong>enforced process plus retrieval</strong> so you are not paying frontier API prices for every planning pass, re-read, and gate check.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C6b: CODE INTELLIGENCE — retrieval stack for IC developers  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="code-intelligence" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Code Intelligence</div>
+      <h2 class="section-title">Keep Cheaper Models Oriented in Large Repos</h2>
+      <p class="section-desc centered">Process gates stop unsafe delivery. Code intelligence stops context rot and knowledge blindness &mdash; the daily IC pain of re-reading the same files and re-discovering decisions every session.</p>
+    </div>
+
+    <div class="feature-grid mt-6 fade-in">
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="network"></i></div>
+        <h3>Graphify</h3>
+        <p>Builds a persistent knowledge graph of your codebase &mdash; symbols, dependencies, and inferred relationships. Query before you grep: scoped subgraphs, path between symbols, and concept explainers that surface cross-file edges cheap models miss.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="database"></i></div>
+        <h3>agentmemory</h3>
+        <p>Captures accepted decisions, ADRs, and durable learnings across sessions. When the conversation compacts, the graph does not. The next agent turn starts with what the team already agreed &mdash; not a blank slate.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="minimize-2"></i></div>
+        <h3>RTK</h3>
+        <p>Token compression for files the agent has already ingested. Stops paying to re-send solved context on every turn. Wired as an opt-in recommended tool with hook reminders when compression would reclaim budget.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="file-search"></i></div>
+        <h3>Context Mode</h3>
+        <p>Indexes large files and monorepo subtrees so the agent retrieves slices instead of stuffing whole trees into the window. Pairs with Graphify retrieval for orientation without frontier-model context limits.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C7: EVIDENCE & PROOF                                         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="proof" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Proof</div>
+      <h2 class="section-title">What It Actually Does on Day One</h2>
+      <p class="section-desc centered">Silver Bullet ships with a diagnostic probe that reports what enforcement tier your host actually supports. No marketing claims. The numbers come from the hooks on your machine.</p>
+    </div>
+
+    <div class="proof-grid mt-6">
+      <div class="proof-card fade-in">
+        <div class="proof-stat">12</div>
+        <div class="proof-label">Hook Layers</div>
+        <p>SessionStart, PreToolUse (Bash, Edit, Skill, MultiEdit), PostToolUse, Stop, UserPromptSubmit. The full enforcement surface is observable and auditable.</p>
+      </div>
+      <div class="proof-card fade-in">
+        <div class="proof-stat">29</div>
+        <div class="proof-label">Atomic Flows (AF-*)</div>
+        <p>Every reusable primitive, contractually defined in <code>docs/apo-catalog.json</code> and kept in sync with generated views.</p>
+      </div>
+      <div class="proof-card fade-in">
+        <div class="proof-stat">22</div>
+        <div class="proof-label">Pre-Composed Workflows (WF-*)</div>
+        <p>Each one routes by task signal. Each one ends with explicit ship evidence. The router does not improvise.</p>
+      </div>
+      <div class="proof-card fade-in">
+        <div class="proof-stat">118</div>
+        <div class="proof-label">Flow-Step V-Loops</div>
+        <p>Local V-loops with subagent dispatch and tool governance. Evidence is produced where work is produced.</p>
+      </div>
+      <div class="proof-card fade-in">
+        <div class="proof-stat">4&ndash;5</div>
+        <div class="proof-label">Enforcement Tier (Highest)</div>
+        <p>The catalog reports capability tier per host. Claude Code, Codex, and Cursor each reach their documented ceiling &mdash; no marketing-tier claims.</p>
+      </div>
+      <div class="proof-card fade-in">
+        <div class="proof-stat">BUSL 1.1</div>
+        <div class="proof-label">Source-Available</div>
+        <p>Inspect, modify, distribute, and use in production under the license. Competing hosted, managed, or SaaS offerings are excluded from the additional production-use grant.</p>
+      </div>
+    </div>
+
+    <div class="callout alpha-honesty-callout fade-in" style="max-width:820px;margin:48px auto 72px;border-color:var(--amber-a25)">
+      <div class="callout-label"><i data-lucide="info"></i><span>Alpha Honesty</span></div>
+      <p>Silver Bullet enforces process at the agent boundary &mdash; it does not replace production observability, load testing, or continuous security scanning. Those remain documented roadmap gaps. SB is designed to reduce skipped gates and traceability drift before code leaves the session; outcome validation in production remains your responsibility.</p>
+    </div>
+
+    <div class="proof-enforcement-block">
+      <div class="text-center">
+        <h3 class="subsection-title">Real Enforcement, Not Documentation Promises</h3>
+      </div>
+      <div class="proof-enforcement-grid">
+        <div class="enforcement-block fade-in">
+          <div class="enforcement-header">
+            <span class="block-title">Planning Gate</span>
+            <div class="block-dots">
+              <span style="background:#ef4444"></span>
+              <span style="background:#f59e0b"></span>
+              <span style="background:#10b981"></span>
+            </div>
+          </div>
+          <div class="enforcement-body">
+<div class="term-line"><span class="stop">&#128683; HARD STOP</span> <span class="dim">&mdash; Planning incomplete.</span></div>
+<div class="term-line"><span class="dim">Missing required skills:</span></div>
+<div class="term-line"><span class="cross">&#10007;</span> <span class="accent">/silver:quality-gates</span></div>
+<div class="term-line"><span class="dim">Run /silver:quality-gates before editing any source file.</span></div>
+<div class="term-line"><span class="dim">Then run /silver:plan.</span></div>
+          </div>
+        </div>
+
+        <div class="enforcement-block fade-in">
+          <div class="enforcement-header">
+            <span class="block-title">Completion Audit</span>
+            <div class="block-dots">
+              <span style="background:#ef4444"></span>
+              <span style="background:#f59e0b"></span>
+              <span style="background:#10b981"></span>
+            </div>
+          </div>
+          <div class="enforcement-body">
+<div class="term-line"><span class="stop">&#129521; COMPLETION BLOCKED</span> <span class="dim">&mdash; Workflow incomplete.</span></div>
+<div class="term-line"><span class="cross">&#10007;</span> <span class="accent">/silver:review</span></div>
+<div class="term-line"><span class="cross">&#10007;</span> <span class="accent">review loop</span></div>
+<div class="term-line"><span class="cross">&#10007;</span> <span class="accent">/silver:verify</span></div>
+<div class="term-line"><span class="cross">&#10007;</span> <span class="accent">/verify-tests</span></div>
+<div class="term-line"><span class="dim">Complete ALL required steps before finalizing.</span></div>
+          </div>
+        </div>
+
+        <div class="enforcement-block fade-in">
+          <div class="enforcement-header">
+            <span class="block-title">Evidence Schema Gate</span>
+            <div class="block-dots">
+              <span style="background:#ef4444"></span>
+              <span style="background:#f59e0b"></span>
+              <span style="background:#10b981"></span>
+            </div>
+          </div>
+          <div class="enforcement-body">
+<div class="term-line"><span class="warn">&#9888; EVIDENCE SCHEMA</span> <span class="dim">&mdash; delivery warning.</span></div>
+<div class="term-line"><span class="dim">validate-evidence-findings.py found malformed rows in REVIEW.md</span></div>
+<div class="term-line"><span class="dim">Fix tables or set strict mode:</span></div>
+<div class="term-line"><span class="accent">SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1</span></div>
+<div class="term-line"><span class="dim">to hard-block PR/release.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C8: ECOSYSTEM (how Silver Bullet fits the workflow stack)   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="ecosystem">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">The Ecosystem</div>
+      <h2 class="section-title">Silver Bullet Owns the Core Lifecycle. Plugins Extend.</h2>
+      <p class="section-desc centered">Core software-engineering workflows run through Silver Bullet skills. Optional DevOps and provider plugins remain extension points for specialized domains &mdash; not replacements for the process.</p>
+    </div>
+
+    <div class="ecosystem-grid mt-6">
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="rocket"></i></div>
+        <div class="plugin-name">Lifecycle</div>
+        <div class="plugin-role">Core Workflow Engine</div>
+        <div class="plugin-desc">The planning, execution, verification, review, security, and ship path is hook-enforced and recorded in the workflow state SB tracks.</div>
+        <ul class="plugin-features">
+          <li><code>silver:context</code> and <code>silver:plan</code> for project framing</li>
+          <li><code>silver:execute</code> for checkpointed or autonomous execution</li>
+          <li><code>silver:verify</code>, <code>silver:review</code>, and <code>silver:ship</code></li>
+          <li>Hook-enforced lifecycle markers</li>
+        </ul>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="zap"></i></div>
+        <div class="plugin-name">Review Discipline</div>
+        <div class="plugin-role">Review Discipline</div>
+        <div class="plugin-desc">Review framing, review triage, TDD discipline, completion verification, and branch finishing are represented by Silver Bullet skills and markers.</div>
+        <ul class="plugin-features">
+          <li>Review request &rarr; review &rarr; triage V-loop</li>
+          <li>TDD discipline before implementation claims</li>
+          <li><code>/silver:completion-audit</code> before delivery</li>
+          <li><code>/silver:branch-finish</code> for branch readiness</li>
+        </ul>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="hammer"></i></div>
+        <div class="plugin-name">Engineering Gates</div>
+        <div class="plugin-role">Engineering Discipline</div>
+        <div class="plugin-desc">Testing strategy, documentation checks, deployment readiness, and incident learning are expressed as SB quality gates and runtime evidence workflows.</div>
+        <ul class="plugin-features">
+          <li><code>silver:test</code> for tests, E2E, repair, performance, mutation</li>
+          <li>Technical documentation (PRD, ADR, CI/CD)</li>
+          <li><code>silver:deploy</code> and <code>silver:canary</code> runtime evidence</li>
+          <li><code>silver:incident</code> and <code>silver:retro</code> learning loops</li>
+        </ul>
+        <div class="plugin-tags"><a href="#mechanism" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="scan-search"></i></div>
+        <div class="plugin-name">Domain Packs</div>
+        <div class="plugin-role">Specialized Quality</div>
+        <div class="plugin-desc">Domain-specific code, test, API, data, dependency, performance, content, runtime, and benchmark checks run through one SB evidence schema.</div>
+        <ul class="plugin-features">
+          <li><code>silver:domain-audit</code> for specialized packs</li>
+          <li><code>silver:content</code> for docs, search, migration, articles</li>
+          <li><code>silver:refactor</code> for behavior-preserving change</li>
+          <li><code>silver:benchmark</code> for repeatable agent or approach evals</li>
+        </ul>
+        <div class="plugin-tags"><a href="#mechanism" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="palette"></i></div>
+        <div class="plugin-name">Design Contract</div>
+        <div class="plugin-role">UI/UX Validation</div>
+        <div class="plugin-desc">Design-system, UX copy, accessibility, critique, and handoff expectations are captured by SB UI contract and UI review skills, with durable state in <code>.planning/interface/STATE.md</code>.</div>
+        <ul class="plugin-features">
+          <li><code>silver:ui-contract</code> stamps interface STATE on init</li>
+          <li>Design system audit: tokens, component reuse</li>
+          <li>Accessibility review (WCAG 2.1 AA)</li>
+          <li>Design critique and handoff specs</li>
+        </ul>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="ecosystem-card fade-in">
+        <div class="plugin-logo"><i data-lucide="clipboard-list"></i></div>
+        <div class="plugin-name">Product Framing</div>
+        <div class="plugin-role">Product Planning</div>
+        <div class="plugin-desc">Spec elicitation, product framing, research synthesis, stakeholder context, and release coordination now live inside SB clarify/spec/release workflows.</div>
+        <ul class="plugin-features">
+          <li>Feature specs and product briefs</li>
+          <li>Roadmap updates and sprint planning</li>
+          <li>Research synthesis and competitive analysis</li>
+          <li>Stakeholder updates and release coordination</li>
+        </ul>
+        <div class="plugin-tags"><a href="#workflow" class="plugin-learn-more">Learn More&hellip;</a></div>
+      </div>
+
+    </div>
+
+    <div class="mt-6">
+      <div class="callout fade-in">
+        <div class="callout-label"><i data-lucide="plug-zap"></i><span>Memory + Token Stack: Built In, Not Bolted On</span></div>
+        <p>Silver Bullet integrates Graphify (knowledge graphs), agentmemory (durable cross-session memory), RTK (Rust Token Killer for shell/dev commands), and Context Mode (large-file indexing + query). The same hooks that enforce process also enforce the use of these tools &mdash; so the next session picks up where the last one left off without paying the rediscovery tax.</p>
+      </div>
+    </div>
+
+    <!-- DevOps Plugins -->
+    <div class="text-center mt-8">
+      <div class="section-label">DevOps Enrichment</div>
+      <h2 class="section-title">Optional DevOps Enrichment, Routed by Context</h2>
+      <p class="section-desc centered">For the <strong>devops-cycle</strong> workflow, Silver Bullet integrates best-in-class DevOps plugins as optional contextual enrichments. A smart skill router maps your IaC toolchain and cloud provider to the best available skill &mdash; with automatic fallback chains.</p>
+    </div>
+
+    <div class="devops-grid mt-6">
+
+      <div class="devops-card fade-in">
+        <div class="plugin-logo"><i data-lucide="settings-2"></i></div>
+        <div class="plugin-name">HashiCorp</div>
+        <div class="plugin-role">hashicorp/agent-skills</div>
+        <div class="plugin-desc">Official HashiCorp skills for Terraform HCL authoring, module design, provider development, and Packer image building.</div>
+        <ul class="plugin-features">
+          <li>Terraform code generation</li>
+          <li>Module &amp; provider scaffolding</li>
+          <li>Packer builders &amp; HCP integration</li>
+        </ul>
+        <div class="plugin-tags"><a href="https://github.com/hashicorp/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="devops-card fade-in">
+        <div class="plugin-logo"><i data-lucide="cloud"></i></div>
+        <div class="plugin-name">AWS Labs</div>
+        <div class="plugin-role">awslabs/agent-plugins</div>
+        <div class="plugin-desc">AWS architecture, serverless patterns, database selection, CDK/CloudFormation, and deployment best practices.</div>
+        <ul class="plugin-features">
+          <li>Deploy-on-AWS architecture guidance</li>
+          <li>Lambda / API Gateway / Step Functions</li>
+          <li>RDS, DynamoDB, Aurora selection</li>
+        </ul>
+        <div class="plugin-tags"><a href="https://github.com/awslabs/agent-plugins" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="devops-card fade-in">
+        <div class="plugin-logo"><i data-lucide="server"></i></div>
+        <div class="plugin-name">Pulumi</div>
+        <div class="plugin-role">pulumi/agent-skills</div>
+        <div class="plugin-desc">Pulumi programs, ComponentResource patterns, Automation API, and IaC migration from Terraform, CDK, CloudFormation, and ARM.</div>
+        <ul class="plugin-features">
+          <li>Pulumi best practices &amp; components</li>
+          <li>IaC migration (TF/CDK/CF/ARM &rarr; Pulumi)</li>
+          <li>Pulumi ESC for secrets management</li>
+        </ul>
+        <div class="plugin-tags"><a href="https://github.com/pulumi/agent-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="devops-card fade-in">
+        <div class="plugin-logo"><i data-lucide="wrench"></i></div>
+        <div class="plugin-name">DevOps Skills</div>
+        <div class="plugin-role">ahmedasmar/devops-claude-skills</div>
+        <div class="plugin-desc">Comprehensive DevOps toolkit: Terraform/Terragrunt, k8s troubleshooting, CI/CD pipelines, GitOps, monitoring, and AWS cost optimization.</div>
+        <ul class="plugin-features">
+          <li>Kubernetes troubleshooter</li>
+          <li>CI/CD &amp; GitOps workflows</li>
+          <li>Monitoring, observability &amp; cost optimization</li>
+        </ul>
+        <div class="plugin-tags"><a href="https://github.com/ahmedasmar/devops-claude-skills" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
+      </div>
+
+      <div class="devops-card fade-in">
+        <div class="plugin-logo"><i data-lucide="orbit"></i></div>
+        <div class="plugin-name">wshobson/agents</div>
+        <div class="plugin-role">Kubernetes Operations</div>
+        <div class="plugin-desc">Kubernetes manifests, Helm chart authoring, GitOps security, and multi-agent orchestration for complex cluster operations.</div>
+        <ul class="plugin-features">
+          <li>Kubernetes manifests &amp; Helm charts</li>
+          <li>GitOps security &amp; RBAC</li>
+          <li>Multi-agent team orchestration</li>
+        </ul>
+        <div class="plugin-tags"><a href="https://github.com/wshobson/agents" class="plugin-learn-more" target="_blank" rel="noopener">Learn More&hellip;</a></div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C9: OBJECTION PREEMPTION + NOT FOR YOU                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="faq" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Objections, Answered</div>
+      <h2 class="section-title">Questions Teams Ask Before Installing</h2>
+      <p class="section-desc centered">If you have used other agent plugins, you have been disappointed before. Here are the honest answers to the honest questions.</p>
+    </div>
+
+    <div class="faq-grid">
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">Will this slow down my agent and turn every commit into a paperwork exercise?</div>
+        <div class="faq-a">No. Two-tier discipline is the point: intermediate commits require only the planning floor (one quality-gates pass). Full ceremony kicks in at final delivery &mdash; PR creation, deploy, release. Small edits stay on <code>silver:fast</code>. The fast path escalates to feature composition only when scope actually expands.</div>
+      </div>
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">What if my team is small and we don&rsquo;t have a separate DevOps person?</div>
+        <div class="faq-a">Silver Bullet is designed for small teams. The orchestrator runs in your existing Claude Code / Codex / Cursor session. There is no separate UI, no separate runner, no separate credentials. One developer, one project, one session &mdash; and the hooks do the enforcement that a second reviewer would otherwise do by hand.</div>
+      </div>
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">Will it lock me into a specific model or host?</div>
+        <div class="faq-a">No. Silver Bullet works with Claude Code, Codex, and Cursor today. Capability tiers are documented per host so you know exactly which enforcement layers are active. You can switch hosts without rewriting your workflow; the catalog stays the same.</div>
+      </div>
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">What if my workflow doesn&rsquo;t fit any of the 22 task-shaped routes?</div>
+        <div class="faq-a">Routes are the entry points. The 29 atomic flows are the primitives. Every composed workflow is built from atomic flows, and you can compose your own with the same primitives. <code>/silver:process-maintenance</code> is the explicit lane for phase, thread, backlog, and migration work that does not fit a delivery shape.</div>
+      </div>
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">Does it replace my existing CI/CD, security scanner, or test runner?</div>
+        <div class="faq-a">No. Silver Bullet enforces that those tools ran and produced fresh evidence before delivery. The hooks do not run your tests; they block the PR if your tests did not run, or if they ran against code that has since changed. The agent stays honest about what is actually verified.</div>
+      </div>
+
+      <div class="faq-item fade-in">
+        <div class="faq-q">Is this enterprise-grade? Can I get support?</div>
+        <div class="faq-a">Silver Bullet is alpha, source-available software under BUSL 1.1, developed and dogfooded by <strong>Alo Labs</strong>. Production use is broadly permitted except for a competing hosted, managed, or SaaS offering. The plugin itself sends no usage telemetry to Alo Labs. For prioritized support, custom plugin authoring, or audit-ready compliance reports, contact us through the Help Center.</div>
+      </div>
+
+    </div>
+
+    <div class="mt-8">
+      <div class="text-center">
+        <div class="section-label">Not For You</div>
+        <h3 style="font-size:1.1rem;color:var(--text-dim);margin-top:24px;letter-spacing:-.02em">Silver Bullet Is the Wrong Tool If</h3>
+      </div>
+      <div class="notfor-grid">
+        <div class="notfor-item">
+          <h4>You want a no-opinion hosted agent that just chats and edits.</h4>
+          <p>Silver Bullet pushes back. If you want a permissive agent with no gates, the plugin will feel like friction. That friction is the product.</p>
+        </div>
+        <div class="notfor-item">
+          <h4>You need a unified numeric quality score across all audits.</h4>
+          <p>Silver Bullet uses an evidence schema with BLOCK / WARN / INFO, not a 0&ndash;100 score. We do not collapse severity into a single number that erases meaning.</p>
+        </div>
+        <div class="notfor-item">
+          <h4>You want automatic model routing across providers.</h4>
+          <p>Model routing is host-owned. Silver Bullet orchestrates the workflow around the model your host already runs &mdash; we do not own the model decision.</p>
+        </div>
+        <div class="notfor-item">
+          <h4>You are looking for a one-off code completion plugin.</h4>
+          <p>Silver Bullet is the APO layer. It assumes you have an existing agent and want to put a process around it. If you only need inline code completion, this is overkill.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C10: COMPETITIVE DIFFERENTIATION — Why SB vs others          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="parity">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">Why Silver Bullet</div>
+      <h2 class="section-title">Breadth Plus Hook-Enforced Accountability</h2>
+      <p class="section-desc centered">Silver Bullet matches the capability families quality-layer tools advertise &mdash; domain audits, test depth, deploy/canary, backlog, session recovery &mdash; but routes them through hook-enforced workflows with artifacts and gates instead of per-concern commands or numeric grades.</p>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="comparison-table fade-in">
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th>Typical quality-layer plugins</th>
+            <th>Silver Bullet (v0.52.0)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Workflow entry</td>
+            <td>Session-start auto-routing; large skill menus</td>
+            <td>Explicit <code>/silver</code> router; 22 task-shaped workflows plus 4 reusable components behind one catalog contract</td>
+          </tr>
+          <tr>
+            <td>Enforcement</td>
+            <td>Mostly instruction-following; refusal when agents cooperate</td>
+            <td>Twelve hook layers: completion audit, stop hook, planning guards, CI/test freshness</td>
+          </tr>
+          <tr>
+            <td>Quality findings</td>
+            <td>Tiered numeric scores and grade bands</td>
+            <td>Shared <code>docs/evidence-schema.md</code> with BLOCK/WARN/INFO; delivery gate via <code>validate-evidence-findings</code></td>
+          </tr>
+          <tr>
+            <td>Domain audits</td>
+            <td>Many named audit/fix commands</td>
+            <td><code>/silver:domain-audit</code> pack matrix inside existing workflows</td>
+          </tr>
+          <tr>
+            <td>Backlog &amp; deferred work</td>
+            <td>Tech-debt lists in reviews</td>
+            <td><code>/silver:add</code> with fingerprint, dedup, and prioritization scripts</td>
+          </tr>
+          <tr>
+            <td>Hosts</td>
+            <td>Multi-host marketing with uneven enforcement proof</td>
+            <td>Claude Code, Codex, and Cursor with documented capability tiers 0&ndash;3 and <code>sb-diagnostics</code></td>
+          </tr>
+          <tr>
+            <td>Release path</td>
+            <td>Ship/deploy/canary as separate commands</td>
+            <td>Milestone audit, UAT, docs gates, <code>/silver:ship</code>, <code>/silver:create-release</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C11 + C12 + C13: OFFER + INSTALL + CTA                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="install">
+  <div class="container text-center">
+    <div class="section-label">Get Started</div>
+    <h2 class="section-title">Install the Source-Available Plugin. Enforce Every Delivery.</h2>
+    <p class="section-desc centered">Licensed under BUSL 1.1 with broad production use, except a competing hosted, managed, or SaaS offering. The plugin itself sends no usage telemetry to Alo Labs.</p>
+
+    <div class="install-block mt-4 fade-in">
+      <div class="install-code">
+        <div><span class="comment"># From a Silver Bullet source checkout only: onboarding probe</span></div>
+        <div><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
+        <div><span class="comment"># From that source checkout: capability tier report (claude | codex | cursor)</span></div>
+        <div><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Install Silver Bullet (Claude Code)</span></div>
+        <div><span class="cmd">/plugin install</span> <span class="flag">alo-exp/silver-bullet</span></div>
+        <div><span class="comment"># Or public marketplace: alo-labs/agent-plugins</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Install or refresh Silver Bullet (Codex)</span></div>
+        <div><span class="cmd">Use the public alo-labs/agent-plugins marketplace package</span></div>
+        <div><span class="comment"># Codex exposes native /silver: entries and hides internal skill-source files</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Install or refresh Silver Bullet (Cursor)</span></div>
+        <div><span class="cmd">Use the public alo-labs/agent-plugins package</span></div>
+        <div><span class="comment"># Or: bash scripts/install-cursor.sh --public-release</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Initialize your project</span></div>
+        <div><span class="cmd">/silver:init</span></div>
+        <div><span class="comment"># Guides you through dependencies, then asks: app or DevOps project?</span></div>
+        <div>&nbsp;</div>
+        <div><span class="comment"># Compose the workflow for a task (explicit entry point)</span></div>
+        <div><span class="cmd">/silver</span> <span class="flag">quality review my architecture</span></div>
+        <div><span class="comment"># Classifies complexity and composes the smallest safe chain</span></div>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <div class="callout fade-in">
+        <div class="callout-label"><i data-lucide="zap"></i><span>Enforcement Starts Immediately</span></div>
+        <p>After running <code>/silver:init</code>, hooks are active and the workflow is live. Use <code>/silver &lt;anything&gt;</code> when you want SB to classify the task and compose the right chain. For app projects, SB runs the core lifecycle directly. For DevOps projects, blast radius assessment and IaC-adapted quality gates are composed in automatically. Missing required SB gates fail closed with install-and-retry guidance.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- WORKFLOW REFERENCE (kept — core navigation target)               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="workflow" style="background:var(--section-alt)">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">The Catalog</div>
+      <h2 class="section-title">26 Catalog Workflows: 22 Task-Shaped + 4 Components. 29 Atomic Flows.</h2>
+      <p class="section-desc centered">The authoritative source of truth is <code>docs/apo-catalog.json</code>. Generated views stay in sync via CI. Every workflow is composed from the same atomic flow library.</p>
+    </div>
+
+    <div class="workflow-tabs mt-4 fade-in">
+      <button class="workflow-tab active" onclick="switchWorkflow('orch')">Catalog Workflows <span style="opacity:.6">(22 + 4 components)</span></button>
+      <button class="workflow-tab" onclick="switchWorkflow('flows')">Atomic Flows <span style="opacity:.6">(29)</span></button>
+    </div>
+
+    <div class="workflow-body">
+    <p class="section-desc centered" style="margin-top:12px;margin-bottom:16px;font-size:.9rem">29 atomic flows &middot; 22 task-shaped workflows + 4 reusable components &middot; 118 flow steps with local V-loops. The table shows each workflow&rsquo;s complete top-level catalog composition; reusable component internals appear at the end.</p>
+
+    <div id="workflow-orch" class="workflow-panel active">
+      <table class="workflow-table fade-in">
+        <thead>
+          <tr>
+            <th>Workflow</th>
+            <th>Entry signals</th>
+            <th>Top-level catalog composition</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="help/workflows/silver-router.html" style="color:var(--accent-light);text-decoration:none">/silver</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"/silver", "route"</td>
+            <td><code>ROUTE</code> &rarr; optional <code>WF-SILVER-FEATURE</code> / <code>WF-SILVER-FAST</code> <span style="font-size:.935rem;color:var(--text-dim)">(dynamic routing; top-level sequence)</span></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-deep-research.html" style="color:var(--accent-light);text-decoration:none">/silver:deep-research</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"research", "decide", "landscape"</td>
+            <td><code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-deep-research-multi-ai.html" style="color:var(--accent-light);text-decoration:none">/silver:deep-research-multi-ai</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"multi-AI research", "deep research cohort"</td>
+            <td><code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>MULTI_AI_TASK</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-new-workflow.html" style="color:var(--accent-light);text-decoration:none">/silver:new-workflow</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"new workflow", "author workflow"</td>
+            <td><code>CLARIFY</code> &rarr; <code>ORIENT</code> &rarr; <code>DECIDE</code> &rarr; <code>PLAN</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>VALIDATE</code> &rarr; <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-feature.html" style="color:var(--accent-light);text-decoration:none">/silver:feature</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"feature", "implement", "build feature"</td>
+            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; optional <code>DESIGN_CONTRACT</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-ui.html" style="color:var(--accent-light);text-decoration:none">/silver:ui</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"ui", "frontend"</td>
+            <td><code>BOOTSTRAP</code> &rarr; <code>ORIENT</code> &rarr; <code>CLARIFY</code> &rarr; <code>DECIDE</code> &rarr; <code>SPECIFY</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; <code>DESIGN_CONTRACT</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-bugfix.html" style="color:var(--accent-light);text-decoration:none">/silver:bugfix</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"bug", "fix", "debug"</td>
+            <td><code>ORIENT</code> &rarr; <code>DEBUG</code> &rarr; <code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-fast.html" style="color:var(--accent-light);text-decoration:none">/silver:fast</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"fast", "small change", "typo"</td>
+            <td><code>FAST_PATH</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>PLAN</code> &rarr; <code>VALIDATE</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-test.html" style="color:var(--accent-light);text-decoration:none">/silver:test</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"test", "test hardening", "coverage"</td>
+            <td><code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-refactor.html" style="color:var(--accent-light);text-decoration:none">/silver:refactor</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"refactor", "behavior-preserving"</td>
+            <td><code>PLAN</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-content.html" style="color:var(--accent-light);text-decoration:none">/silver:content</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"content", "docs", "article"</td>
+            <td><code>CLARIFY</code> &rarr; <code>SPECIFY</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-benchmark.html" style="color:var(--accent-light);text-decoration:none">/silver:benchmark</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"benchmark", "eval", "compare models"</td>
+            <td><code>ORIENT</code> &rarr; <code>EXECUTE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-multi-ai-task.html" style="color:var(--accent-light);text-decoration:none">/silver:multi-ai-task</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"multi-AI task", "parallel AI review"</td>
+            <td><code>MULTI_AI_TASK</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-agent-delegate.html" style="color:var(--accent-light);text-decoration:none">agent-delegate-entry</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"agent-delegate", "agent-codex", "agent-cursor", "agent-claude"</td>
+            <td><code>AGENT_DELEGATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-devops.html" style="color:var(--accent-light);text-decoration:none">/silver:devops</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"devops", "infra", "iac"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>DEVOPS_ROUTE</code> &rarr; <code>QUALITY_GATE</code> &rarr; <code>SECURE</code> &rarr; <code>ORIENT</code> &rarr; <code>PLAN</code> &rarr; <code>VALIDATE</code> &rarr; <code>EXECUTE</code> &rarr; <code>WF-POST-EXEC-GATES</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-deploy.html" style="color:var(--accent-light);text-decoration:none">/silver:deploy</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"deploy", "roll out"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-canary.html" style="color:var(--accent-light);text-decoration:none">/silver:canary</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"canary", "progressive rollout"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>VERIFY</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-release.html" style="color:var(--accent-light);text-decoration:none">/silver:release</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"release", "version", "tag"</td>
+            <td><code>QUALITY_GATE</code> &rarr; <code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>VERIFY</code> &rarr; <code>SECURE</code> &rarr; <code>VALIDATE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code> &rarr; <code>RELEASE</code></td>
+          </tr>
+          <tr style="border-top:2px solid var(--border)">
+            <td colspan="3" style="font-size:1.054rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;padding-top:18px">Reusable Workflow Components (Composed Internally)</td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-light)">post-exec-gates</td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">After EXECUTE — used by feature, ui, bugfix, refactor</td>
+            <td><code>UI_QUALITY</code> &rarr; <code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code> &rarr; <code>VERIFY</code> (<code>verify-tests</code>) &rarr; <code>SECURE</code> &rarr; <code>VALIDATE</code> as needed &rarr; <code>QUALITY_GATE</code> &rarr; <code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-light)">review-triad</td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">REVIEW phase — composed inside most delivery flows</td>
+            <td><code>REVIEW_REQUEST</code> &rarr; <code>REVIEW</code> &rarr; <code>REVIEW_TRIAGE</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-light)">ship-readiness</td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">Pre-ship branch completion</td>
+            <td><code>BRANCH_FINISH</code> &rarr; <code>COMPLETION_AUDIT</code> &rarr; <code>SHIP</code></td>
+          </tr>
+          <tr>
+            <td style="color:var(--accent-light)">validate-substep</td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">Spec-to-plan gap analysis</td>
+            <td><code>VALIDATE</code></td>
+          </tr>
+          <tr style="border-top:2px solid var(--border)">
+            <td colspan="3" style="font-size:1.054rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;padding-top:18px">Operations and Learning</td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-incident.html" style="color:var(--accent-light);text-decoration:none">/silver:incident</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"incident", "outage", "p1"</td>
+            <td><code>BLAST_RADIUS</code> &rarr; <code>DEBUG</code> &rarr; <code>SECURE</code> &rarr; <code>VERIFY</code> &rarr; <code>DOCUMENT</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-retro.html" style="color:var(--accent-light);text-decoration:none">/silver:retro</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"retro", "postmortem"</td>
+            <td><code>ORIENT</code> &rarr; <code>DOCUMENT</code> &rarr; <code>DECIDE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-forensics.html" style="color:var(--accent-light);text-decoration:none">/silver:forensics</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"forensics", "deep-dive"</td>
+            <td><code>DEBUG</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+          </tr>
+          <tr>
+            <td><a href="help/workflows/silver-process-maintenance.html" style="color:var(--accent-light);text-decoration:none">/silver:process-maintenance</a></td>
+            <td style="font-size:.9rem;color:var(--text-secondary)">"phase", "thread", "backlog", "migration"</td>
+            <td><code>PHASE_MANAGE</code> &rarr; <code>DOCUMENT</code> &rarr; <code>VALIDATE</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="workflow-flows" class="workflow-panel">
+      <table class="workflow-table fade-in">
+        <thead>
+          <tr>
+            <th>Slug</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>ROUTE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">intent classification and workflow composition</td></tr>
+          <tr><td><code>BOOTSTRAP</code></td><td style="font-size:.935rem;color:var(--text-secondary)">project bootstrap and enforcement activation</td></tr>
+          <tr><td><code>ORIENT</code></td><td style="font-size:.935rem;color:var(--text-secondary)">codebase and planning context orientation</td></tr>
+          <tr><td><code>CLARIFY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">scope clarification and assumption lock</td></tr>
+          <tr><td><code>DECIDE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">decision research and trade-off synthesis</td></tr>
+          <tr><td><code>SPECIFY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">requirements specification and ingestion</td></tr>
+          <tr><td><code>PLAN</code></td><td style="font-size:.935rem;color:var(--text-secondary)">execution planning with phase coverage</td></tr>
+          <tr><td><code>DESIGN_CONTRACT</code></td><td style="font-size:.935rem;color:var(--text-secondary)">design contract and interface expectations</td></tr>
+          <tr><td><code>VALIDATE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">spec-to-plan gap validation</td></tr>
+          <tr><td><code>QUALITY_GATE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">cross-cutting quality dimensions (pre-plan and pre-ship)</td></tr>
+          <tr><td><code>FAST_PATH</code></td><td style="font-size:.935rem;color:var(--text-secondary)">bounded fast path for low-risk edits</td></tr>
+          <tr><td><code>EXECUTE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">checkpointed implementation execution</td></tr>
+          <tr><td><code>AGENT_DELEGATE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">supervised delegation to a host-aware execution agent</td></tr>
+          <tr><td><code>MULTI_AI_TASK</code></td><td style="font-size:.935rem;color:var(--text-secondary)">parallel multi-AI task execution and synthesis</td></tr>
+          <tr><td><code>DEBUG</code></td><td style="font-size:.935rem;color:var(--text-secondary)">failure diagnosis and root-cause analysis</td></tr>
+          <tr><td><code>UI_QUALITY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">UI quality, accessibility, and design review</td></tr>
+          <tr><td><code>VERIFY</code></td><td style="font-size:.935rem;color:var(--text-secondary)">verification, testing, and evidence freshness</td></tr>
+          <tr><td><code>SECURE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">security and LLM safety review</td></tr>
+          <tr><td><code>REVIEW_REQUEST</code></td><td style="font-size:.935rem;color:var(--text-secondary)">structured review request and scope framing</td></tr>
+          <tr><td><code>REVIEW</code></td><td style="font-size:.935rem;color:var(--text-secondary)">artifact and code review with evidence</td></tr>
+          <tr><td><code>REVIEW_TRIAGE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">finding triage, fix ladder, and clean-pass tracking</td></tr>
+          <tr><td><code>BLAST_RADIUS</code></td><td style="font-size:.935rem;color:var(--text-secondary)">blast-radius assessment for infra changes</td></tr>
+          <tr><td><code>DEVOPS_ROUTE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">IaC toolchain and provider routing</td></tr>
+          <tr><td><code>BRANCH_FINISH</code></td><td style="font-size:.935rem;color:var(--text-secondary)">branch hygiene before ship</td></tr>
+          <tr><td><code>COMPLETION_AUDIT</code></td><td style="font-size:.935rem;color:var(--text-secondary)">completion evidence before delivery</td></tr>
+          <tr><td><code>SHIP</code></td><td style="font-size:.935rem;color:var(--text-secondary)">ship readiness and promotion evidence</td></tr>
+          <tr><td><code>RELEASE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">versioned release and changelog publication</td></tr>
+          <tr><td><code>DOCUMENT</code></td><td style="font-size:.935rem;color:var(--text-secondary)">durable documentation and release notes</td></tr>
+          <tr><td><code>PHASE_MANAGE</code></td><td style="font-size:.935rem;color:var(--text-secondary)">phase and workflow state management</td></tr>
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C13: PRIMARY CTA                                            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="cta-section" style="padding:80px 0">
+  <div class="container text-center">
+    <div class="section-label">The One Action</div>
+    <h2 class="section-title fade-in">Stop Hoping Your AI Agent Follows the Process. Enforce It.</h2>
+    <p class="section-desc centered fade-in">Install Silver Bullet once. The hooks activate on every commit, PR, and release. The agent keeps its autonomy where autonomy is safe. The environment decides when it is not.</p>
+    <a href="#install" class="btn btn-primary fade-in" style="font-size:1rem;padding:16px 36px">Install Silver Bullet &darr;</a>
+    <p style="margin-top:24px;font-size:.935rem;color:var(--text-secondary);font-family:var(--font-mono)">BUSL 1.1 source-available. Broad production use. No plugin telemetry to Alo Labs.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- CMF C14: POST-DECISION REINFORCEMENT — Next steps               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="next-steps">
+  <div class="container">
+    <div class="text-center">
+      <div class="section-label">After You Install</div>
+      <h2 class="section-title">What Happens in the First Hour</h2>
+      <p class="section-desc centered">A typical first-hour goal is to initialize the project, compose a workflow, and see how a missing delivery gate is surfaced. Timing and enforcement behavior depend on the host, project configuration, and task.</p>
+    </div>
+
+    <div class="grid grid-3 mt-6">
+      <div class="feature-card fade-in">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="download"></i></div>
+        <h3>Minutes 0&ndash;10: Install + Probe</h3>
+        <p>Install the plugin and run <code>/silver:init</code>. If you are working from a Silver Bullet source checkout, you can also run <code>bash scripts/sb-bootstrap.sh</code> and <code>bash scripts/sb-diagnostics.sh</code> to probe dependencies and host capability tiers.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="play"></i></div>
+        <h3>Minutes 10&ndash;30: First Composed Workflow</h3>
+        <p>Type <code>/silver build a rate limiter for the auth service</code>. SB classifies the task, composes the workflow, and starts the chain. The agent reasons; the hooks enforce.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon" style="background:var(--accent-a12);color:var(--accent-light)"><i data-lucide="shield-x"></i></div>
+        <h3>Minutes 30&ndash;60: First Blocked Delivery</h3>
+        <p>The agent tries to commit or open a PR before review. The completion audit hook refuses it and surfaces the missing required step. The team learns what the gate is &mdash; not by reading docs, by running into it.</p>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center">
+      <p class="section-desc centered">From that point forward, every delivery boundary enforces what the agent claimed. The audit trail starts. The backlog gains a tracker. The session stops losing context.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- BROOKS CLOSING — The honest case that SB is that Silver Bullet    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="brooks-closing">
+  <div class="container">
+    <div class="brooks-quote-block">
+      <div>
+        <img src="fred-brooks.jpg" alt="Fred Brooks" style="width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid var(--mint-a45);box-shadow:0 0 0 1px var(--accent-a15),0 4px 16px rgba(0,0,0,.15)">
+      </div>
+      <div>
+        <p class="brooks-quote">&ldquo;There is no single development, in either technology or management technique, which by itself promises even one order-of-magnitude improvement in productivity, in reliability, in simplicity.&rdquo;</p>
+        <p class="brooks-attribution">&mdash; <strong style="color:var(--text-secondary)">Fred Brooks</strong>, <a href="https://www.cs.unc.edu/techreports/86-020.pdf" target="_blank" rel="noopener noreferrer" style="color:var(--text-dim);text-decoration:underline;text-underline-offset:2px"><em>No Silver Bullet</em></a> (1986) &middot; <a href="https://amturing.acm.org/award_winners/brooks_1002187.cfm" target="_blank" rel="noopener noreferrer" style="color:var(--text-dim);text-decoration:underline;text-underline-offset:2px">Turing Award, 1999</a></p>
+      </div>
+    </div>
+
+    <div style="max-width:780px;margin:56px auto 0;text-align:left">
+      <h3 style="font-size:clamp(1.5rem,2.6vw,2rem);letter-spacing:-.03em;line-height:1.2;margin:0 0 24px;color:var(--text-primary)">Brooks Was Right. <span style="color:var(--accent-light)">Until Now.</span></h3>
+
+      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 18px">In 1986, Brooks argued no single development would deliver an order-of-magnitude improvement in software engineering. He was right for thirty-eight years. Models got smarter. The gap between work started and work correctly delivered did not move.</p>
+
+      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 18px">What changed is the unit of work. An AI agent is not a faster developer. It is a different operator &mdash; one that does not pause when the spec is ambiguous, does not push back when the gate is missing, does not re-read the diff. It ships whatever looks like completion.</p>
+
+      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 24px">The remedy is not a better prompt. It is the process layer &mdash; the part the model was never going to build for itself.</p>
+
+      <p style="font-size:1.15rem;color:var(--text-primary);line-height:1.5;margin:0 0 18px;font-weight:700">Silver Bullet is that process layer.</p>
+
+      <p style="font-size:1.05rem;color:var(--text-secondary);line-height:1.75;margin:0 0 0">Twelve hook layers. Twenty-nine atomic flows. Twenty-two task-shaped workflows plus four reusable components. A spec-to-release trace, blast-radius gate, and evidence schema validated at delivery boundaries. None of this makes the model smarter. It changes the boundary between &ldquo;the agent produced this&rdquo; and &ldquo;this has fresh verification evidence.&rdquo; Silver Bullet is source-available under BUSL 1.1 and ready to evaluate in your own environment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ────── FOOTER ────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="help/">Help</a>
+      <a href="terms/">Terms of Use</a>
+      <a href="privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<!-- ────── SCRIPTS ────── -->
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+// ── Scroll-triggered fade-in ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Lucide icons ──
+lucide.createIcons();
+
+// ── Close mobile nav on link click ──
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => document.querySelector('.nav-links').classList.remove('active'));
+});
+
+// ── Workflow tab switcher ──
+function switchWorkflow(mode) {
+  document.querySelectorAll('.workflow-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.workflow-panel').forEach(p => p.classList.remove('active'));
+  const tabIndex = mode === 'flows' ? 1 : 0;
+  document.querySelectorAll('.workflow-tab')[tabIndex].classList.add('active');
+  document.getElementById('workflow-' + mode).classList.add('active');
+}
+</script>
+
+<script src="chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

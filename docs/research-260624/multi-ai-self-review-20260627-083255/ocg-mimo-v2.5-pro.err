@@ -1,0 +1,29 @@
+[0m
+> build · mimo-v2.5-pro
+[0m
+[0m→ [0mRead skills/multi-ai-task/SKILL.md[90m [additionalContext=<context_guidance>
+  <tip>
+    Reading to Edit the file? Read is correct — Edit needs the exact bytes in your conversation to match against.
+    Reading to analyze, summarize, or extract from the file? Use context-mode_ctx_execute_file(path, language, code) — the bytes stay in the sandbox and only what your code prints enters your conversation.
+  </tip>
+</context_guidance>][0m
+[0m→ [0mRead skills/multi-ai-task/rules/methodology.md
+[0m→ [0mRead skills/multi-ai-task/rules/dispatch-mechanics.md
+[0m→ [0mRead skills/multi-ai-task/rules/consolidation-rules.md
+[0m→ [0mRead skills/multi-ai-task/rules/output-schema.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/research-prior-art.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/code-review.md
+[0m→ [0mRead skills/multi-ai-task/rules/examples/fact-check.md
+[0m✱ [0mGlob "docs/research-260624/**/*"[90m in . · 41 matches[0m
+[0m✱ [0mGrep "multi-ai-task"[90m in . · 13 matches[0m
+[0m✱ [0mGrep "majority-with-uncertain|lowest-of-majors|most-severe|merge-exact|concatenate-all|all-collected|union-dedup"[90m in skills/multi-ai-task · 17 matches[0m
+[0m✱ [0mGrep "opencode run"[90m in skills/multi-ai-task · 4 matches[0m
+[0m✱ [0mGrep "prefer-with-evidence-then-newer-then-strict|longest-with-quote"[90m in skills/multi-ai-task · 7 matches[0m
+[0m→ [0mRead docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md[90m [limit=50][0m
+[0m✱ [0mGrep "TODO|FIXME|HACK|placeholder|TBD|Not yet"[90m in skills/multi-ai-task · 3 matches[0m
+[0m✱ [0mGlob "tests/**/*multi-ai*"[90m in . · 1 match[0m
+[0m✱ [0mGrep "80%|Levenshtein|token-overlap|fuzzy"[90m in skills/multi-ai-task · 6 matches[0m
+[0m→ [0mRead docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md[90m [offset=50, limit=100][0m
+[0m→ [0mRead tests/skill-scenarios/multi-ai-task.md
+[0m→ [0mRead docs/research-260624/SB_CONSOLIDATED_PRIOR_ART_REPORT.md[90m [limit=100, offset=150][0m
+[0m✱ [0mGrep "majority-with-uncertain|lowest-of-majors|concatenate|all-collected|union-dedup|merge-exact|most-severe"[90m in skills/multi-ai-task · 18 matches[0m

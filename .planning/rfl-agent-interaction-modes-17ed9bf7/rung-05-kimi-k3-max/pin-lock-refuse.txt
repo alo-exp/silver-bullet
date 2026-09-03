@@ -1,0 +1,3 @@
+WARN: multi-ai-opencode-worker.sh missing; multi-ai-worker-v1 policy unavailable
+ERROR: OPENCODE_MODEL must be mimo-v2.5 (got kimi-k3)
+pin_exit=2

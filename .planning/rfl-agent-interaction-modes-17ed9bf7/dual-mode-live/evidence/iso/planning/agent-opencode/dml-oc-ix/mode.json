@@ -1,0 +1,10 @@
+{
+  "requested": "interactive",
+  "classified": null,
+  "resolved": "interactive",
+  "reason": [
+    "pin"
+  ],
+  "turns": 0,
+  "wave_started_at": "2026-08-25T01:52:30Z"
+}

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>/silver:deep-research — Research &amp; Tech Decision Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated research workflow: clarify question → evidence-based decision research → document findings → validate → hand off to feature, UI, or DevOps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.4rem;letter-spacing:-.03em;margin-bottom:14px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:14px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul{margin-bottom:14px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:5px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.divider{height:1px;background:var(--border);margin:36px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border)}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size: 1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size: 1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.callout{border-radius:var(--radius);padding:18px 22px;margin-bottom:20px;display:flex;gap:12px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-warn{background:var(--red-warn-a07);border:1px solid var(--red-warn-a20)}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:2px}
+.callout-body{font-size:.86rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:deep-research</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>/silver:deep-research</h1>
+    <p>SB-orchestrated research workflow for technology decisions, architecture spikes, and comparative analysis — clarify, decide with evidence, document findings, validate, then hand off to implementation.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">On This Page</li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#when-to-use">When to Use</a></li>
+        <li><a href="#composition">Catalog Composition</a></li>
+        <li><a href="#workflow-steps">Workflow Steps</a></li>
+        <li><a href="#research-paths">Research paths</a></li>
+        <li><a href="#research-types">Research types</a></li>
+        <li><a href="#handoff">Handoff to implementation</a></li>
+        <li><a href="#example">Example Invocation</a></li>
+        <li class="sidebar-section">See Also</li>
+        <li><a href="./index.html">All Workflows</a></li>
+        <li><a href="../reference/">Command Reference</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">Overview</h2>
+      <p><code>/silver:deep-research</code> is the Silver Bullet orchestrator for technology decisions, architecture spikes, tech comparisons, and competitive intelligence. Research always precedes implementation — findings are written to <code>research/</code> and referenced by the receiving workflow.</p>
+      <p><strong>It never treats ad hoc reasoning as the workflow.</strong> It clarifies the decision, selects a research path, runs direct evidence-based research in the current host session by default, produces a traceable artifact, and then hands off to the appropriate implementation workflow.</p>
+      <p><code>/silver:deep-research</code> maps to <code>WF-SILVER-DEEP-RESEARCH</code> in the v0.52.0 APO catalog. Standard composition:</p>
+      <div class="code-block">AF-CLARIFY → AF-DECIDE → AF-DOCUMENT → AF-VALIDATE</div>
+      <p>After validation, hand off to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver</code> reclassification. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>v2 engine <span class="historical" data-historical>(introduced in v0.51.5)</span>:</strong> SB-owned <code>search_orchestrator</code> with <code>skill_portals</code> for landscape research, <code>capability_score</code> eval harness, <code>validate_report</code> language gates, branch-correct GitHub <code>SKILL.md</code> retrieval, and <code>chain_tracker</code> citation lineage — see <a href="../../changelog/">changelog</a> for release notes.
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-icon">ℹ</div>
+        <div class="callout-body">
+          <strong>Routing precedence:</strong> <code>/silver:deep-research</code> takes precedence over any other matched workflow — research informs the implementation workflow. If an instruction matches both research and implementation, run research first, then hand off.
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="when-to-use">When to Use</h2>
+      <p>Entry trigger signals for <code>/silver:deep-research</code>:</p>
+      <ul>
+        <li>"how should we" / "which technology" / "compare X vs Y"</li>
+        <li>"spike" / "investigate" / "architecture decision"</li>
+        <li>"should we use" / "what's the best approach for"</li>
+        <li>Any request where you need information before you can plan an implementation</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="composition">Catalog Composition</h2>
+      <table class="ref-table">
+        <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
+        <tbody>
+          <tr><td><code>AF-CLARIFY</code></td><td><code>/silver:clarify</code></td><td>Decision-ready research question and scope boundaries</td></tr>
+          <tr><td><code>AF-DECIDE</code></td><td><code>/silver:deep-research</code> (decision mode)</td><td>Evidence-backed comparison, recommendation, and confidence levels</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable research artifact under <code>research/</code></td></tr>
+          <tr><td><code>AF-VALIDATE</code></td><td><code>/silver:validate</code></td><td>Gap check before implementation handoff</td></tr>
+        </tbody>
+      </table>
+      <p>If findings should become a formal spec, run <code>/silver:spec</code> (<code>AF-SPECIFY</code>) after research — it is not part of the default research composition.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-steps">Atomic Flow Execution</h2>
+
+      <h3><code>AF-CLARIFY</code> — Frame the research question</h3>
+      <p>Invoke <code>/silver:clarify</code>. Socratic clarification defines the research question, success criteria, and constraints before evidence gathering begins.</p>
+
+      <h3><code>AF-DECIDE</code> — Choose research path and gather evidence</h3>
+      <p>SB classifies the question type, selects a depth mode (<code>quick</code>, <code>standard</code>, <code>deep</code>, <code>ultradeep</code>) from <code>phases.yaml</code>, sets <code>research_type</code> (<code>default</code>, <code>solution-landscape</code>, or <code>solution-compare</code>), and runs evidence-based research using repository context, local artifacts, official docs, primary sources, and optional <code>search-cli</code> retrieval with host fallback:</p>
+      <ul>
+        <li><strong>A. Market/landscape</strong> — <code>research_type: solution-landscape</code> — "What tools/solutions exist for X?", market survey → top-5 shortlist → SCR per candidate</li>
+        <li><strong>B. Tech selection</strong> — "Should we use X or Y?", weighted criteria, concrete recommendation</li>
+        <li><strong>C. Competitive/product intelligence</strong> — "How do competitors solve X?", "What can we learn from product Y?"</li>
+      </ul>
+      <p>For <strong>solution-landscape</strong> and <strong>solution-compare</strong> types, a mandatory <strong>need-profile interview</strong> runs before retrieval (<code>need_profile.json</code>, <code>reference/need-profile-interview.md</code>). <code>phase_gate.py</code> blocks <code>DR-RETRIEVE</code> until <code>interview_complete: true</code>. Named comparisons use <a href="./silver-compare.html"><code>/silver:compare</code></a> (<code>research_type=solution-compare</code>).</p>
+
+      <div class="divider"></div>
+
+      <h2 id="research-paths">Research paths</h2>
+
+      <h3>Path A — Solution landscape (<code>solution-landscape</code>)</h3>
+      <p>Market survey for tool/category decisions under <code>AF-DECIDE</code>. <code>shortlist_candidates.py</code> produces exactly five candidates; each gets a <strong>Solution Capability Report (SCR)</strong> under <code>solutions/&lt;slug&gt;/scr.md</code>. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/</code> with <code>landscape/landscape-report.md</code>, <code>shortlist/shortlist.json</code>, weighted <code>comparison/comparison-matrix.md</code>, and serverless <code>report.html</code>.</p>
+
+      <h3>Path B — Tech selection</h3>
+      <p>Comparative evaluation against weighted criteria with a concrete recommendation. For <strong>named solutions you already know</strong>, use <a href="./silver-compare.html"><code>/silver:compare</code></a> instead. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/comparison-report.md</code> (or full solution-compare artifact tree with SCRs and <code>report.html</code>).</p>
+
+      <h3>Path C — Competitive/product intelligence</h3>
+      <p>How other products solve the problem, gaps, and adaptable patterns. Output: <code>research/&lt;date&gt;-&lt;topic&gt;/competitive-intelligence-report.md</code>.</p>
+
+      <h2 id="research-types">Research types and SPA report</h2>
+      <table class="ref-table">
+        <thead><tr><th><code>research_type</code></th><th>Trigger</th><th>Deep dive</th></tr></thead>
+        <tbody>
+          <tr><td><code>default</code></td><td>General research questions</td><td>Standard DR artifacts (<code>research_report.md</code>, <code>decision-record.md</code>)</td></tr>
+          <tr><td><code>solution-landscape</code></td><td>AF-DECIDE tool/category decision</td><td>Market survey → top-5 SCR → weighted matrix → <code>report.html</code></td></tr>
+          <tr><td><code>solution-compare</code></td><td><a href="./silver-compare.html"><code>/silver:compare</code></a> A B …</td><td>SCR × N named solutions → weighted matrix → <code>report.html</code></td></tr>
+        </tbody>
+      </table>
+      <p>Solution types package via <code>compare_solutions.py</code> → <code>generate_report_spa.py</code> → serverless <code>report.html</code> (open in Cursor browser + <code>open report.html</code> — <strong>no</strong> HTTP server). Default mode for solution types is <code>deep</code>.</p>
+
+      <h3><code>AF-DOCUMENT</code> — Persist findings</h3>
+      <p>Research artifacts are written under <code>research/&lt;date&gt;-&lt;slug&gt;/</code> with citations, confidence levels, and actionable recommendations. Lineage is preserved for downstream planning.</p>
+
+      <h3><code>AF-VALIDATE</code> — Pre-implementation gap check</h3>
+      <p>Invoke <code>/silver:validate</code> when plans or specs already exist, or run a lightweight validation pass on the research artifact before handoff.</p>
+
+      <h3>Synthesis handoff</h3>
+      <p>Optionally re-run <code>/silver:clarify</code> with the research artifact as primary context to produce a decision-ready brief for implementation.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="handoff">Handoff to implementation</h2>
+      <p>After research completes, SB asks which workflow should receive the findings:</p>
+      <ul>
+        <li><strong><code>/silver:feature</code></strong> — build a new feature based on research findings</li>
+        <li><strong><code>/silver:ui</code></strong> — product or interface work based on research findings</li>
+        <li><strong><code>/silver:devops</code></strong> — infrastructure/deployment change based on research findings</li>
+        <li><strong><code>/silver:plan</code></strong> — convert findings into an implementation plan</li>
+        <li><strong>Done</strong> — research-only engagement, no implementation needed</li>
+      </ul>
+      <p>If the research continues into implementation, the artifact path (<code>research/&lt;date&gt;-&lt;slug&gt;/</code>) is passed as context so downstream SB context, planning, and verification can reference it. Research lineage is always preserved.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="example">Example Invocation</h2>
+      <div class="code-block">/silver:deep-research What internal developer portal should we adopt for service catalog and scorecards?</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-DEEP-RESEARCH</code>. <code>/silver:clarify</code> runs the need-profile interview. Path A (<code>solution-landscape</code>) runs under <code>AF-DECIDE</code>: market survey, top-5 shortlist, SCR per candidate, weighted matrix, and serverless <code>report.html</code> under <code>research/</code>. Validated and synthesized into a decision-ready handoff. Route to <code>/silver:feature</code>, <code>/silver:ui</code>, <code>/silver:devops</code>, or <code>/silver:plan</code> as needed. For named solutions already chosen, use <code>/silver:compare Backstage Port Cortex</code> instead.</p>
+
+      <!-- PAGE NAV BOTTOM -->
+      <div class="page-nav-bottom">
+        <a href="./silver-devops.html">
+          <span class="pnb-label">← Previous</span>
+          <span class="pnb-title">/silver:devops</span>
+        </a>
+        <a href="./silver-compare.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">/silver:compare</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

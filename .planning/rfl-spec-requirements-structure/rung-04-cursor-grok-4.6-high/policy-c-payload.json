@@ -1,0 +1,83 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "grok",
+    "effort": "high",
+    "display": "Cursor Grok 4.6 High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R4-F01",
+        "title": "Wave 2 does not retarget review-requirements QC-4 for the new Functional AC column"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R4-F02",
+        "title": "Wave 3 verify omits the Requirements negative assert the work item itself requires"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R4-F03",
+        "title": "## Invariants is not a subsection of Overview"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R4-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 2 must retarget QC-4 so Functional AC column is AC-nn IDs; compiler Step 8a needs two clean review-requirements passes"
+    },
+    {
+      "id": "R4-F02",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Wave 3 verify must also assert the dropped Requirements heading, not only Users and goals"
+    },
+    {
+      "id": "R4-F03",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Pin Invariants as ### Invariants under Overview, not a second ##"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R4-F01",
+      "title": "Wave 2 does not retarget review-requirements QC-4 for the new Functional AC column"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R4-F01",
+      "severity": "MED",
+      "title": "Wave 2 does not retarget review-requirements QC-4 for the new Functional AC column",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R4-F02",
+      "severity": "LOW",
+      "title": "Wave 3 verify omits the Requirements negative assert the work item itself requires",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R4-F03",
+      "severity": "NIT",
+      "title": "## Invariants is not a subsection of Overview",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "5d387487c1888fc260d50ffc57a4440459df9514fc0b9128c2c61e2ced0a61af"
+}

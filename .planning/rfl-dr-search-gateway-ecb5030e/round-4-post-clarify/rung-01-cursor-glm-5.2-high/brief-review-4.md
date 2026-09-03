@@ -1,0 +1,1 @@
+REVIEW-ONLY Policy F re-review (streak 1/2). Plan only. SHA `ddc71a73810355206f57fd4267358478cea6e33622b7ae7c0617444a90f8b2a9`. Residual-only vs I-1–I-15 (all ACCEPT+applied). Write review-pass-4.md. CLEAN only if nothing valid remains. File all residuals all severities including NIT. No keep-the-locks. Graphify CLI. No nested subagents. Reviewer does not ACCEPT/REJECT.

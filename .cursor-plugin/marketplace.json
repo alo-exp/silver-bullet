@@ -1,0 +1,69 @@
+{
+  "name": "alo-labs-cursor",
+  "owner": {
+    "name": "Ālo Labs",
+    "email": "hello@alolabs.io"
+  },
+  "metadata": {
+    "description": "Ālo Labs plugins for Cursor — Sidekick delegation workflows and Silver Bullet orchestration",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "silver-bullet",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/silver-bullet",
+        "ref": "v0.51.7",
+        "sha": "d7825a5c43be86a7661891460cfdbf155e5bc32b",
+        "path": "plugins/silver-bullet"
+      },
+      "description": "Agentic Process Orchestrator for AI-native Software Engineering & DevOps. Provides SB-owned lifecycle workflows, optional extension-plugin boundaries, and layered technical compliance.",
+      "version": "0.52.0",
+      "author": {
+        "name": "Alo Labs",
+        "email": "info@alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/silver-bullet",
+      "repository": "https://github.com/alo-exp/silver-bullet",
+      "license": "BUSL-1.1",
+      "keywords": [
+        "silver-bullet",
+        "enforcement",
+        "orchestrator",
+        "devops",
+        "quality-gates",
+        "ci-cd"
+      ],
+      "category": "development"
+    },
+    {
+      "name": "sidekick",
+      "source": {
+        "source": "github",
+        "repo": "alo-exp/sidekick",
+        "ref": "main",
+        "sha": "8496d3f171665e8b5aefe9c2b4c56fd420654d72"
+      },
+      "description": "Sidekick — AI coding-agent delegation workflows for Cursor. Kay installs through Sidekick, Codex delegates to the local OpenAI Codex CLI, and Cursor stays in the orchestrator role.",
+      "version": "0.8.4",
+      "author": {
+        "name": "Ālo Labs",
+        "url": "https://alolabs.dev"
+      },
+      "homepage": "https://github.com/alo-exp/sidekick",
+      "repository": "https://github.com/alo-exp/sidekick",
+      "license": "MIT",
+      "keywords": [
+        "sidekick",
+        "cursor",
+        "codex",
+        "kay",
+        "terminal-agent",
+        "coding-agent",
+        "orchestration"
+      ],
+      "category": "development"
+    }
+  ]
+}

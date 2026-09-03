@@ -1,0 +1,275 @@
+{
+  "status": "active",
+  "updated_at": "2026-08-29T19:50:00Z",
+  "current_rung": "rung-05-pi-codex-gpt-5.6-sol-high",
+  "current_phase": "rung_5_review",
+  "consecutive_clean_reviews": 0,
+  "consecutive_clean_rung": "rung-07-pi-claude-opus-5-high",
+  "policy_f_retro": {
+    "note": "Prior run did one review per model then APPLY then next model. Policy F requires two consecutive CLEAN reviews per rung. Retro starts at GLM. Rung 04 Grok paused. Original review.md files are pass-1 history. GLM re-run pass 1 ACCEPT-apply R1b-F01\u2013F03; next is GLM re-review pass 2 (not Kimi).",
+    "freeze_sha256": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10",
+    "see": "RETRO-2-CONSECUTIVE-CLEAN.md"
+  },
+  "supersedes": ".planning/rfl-spec-requirements-structure",
+  "freeze": {
+    "file": ".planning/spec_template_world_class.plan.md",
+    "sha256": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10",
+    "byte_identical_to": ".planning/spec-template-world-class/phases/01-world-class-spec/PLAN.md",
+    "context": ".planning/spec-template-world-class/CONTEXT.md",
+    "apply_sha": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10"
+  },
+  "rung_05_rerun_6": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 1,
+    "applied": true,
+    "apply_sha": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10",
+    "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-6.md",
+    "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-6.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "rung_5_review",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "pi_gpt_high_pass_7"
+  },
+  "rung_05_rerun_5": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 1,
+    "applied": true,
+    "apply_sha": "0844eb0fbf945aa64fa40a5f6dfe2369cc6c812701dbda92e472a58e097d68cc",
+    "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-5.md",
+    "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-5.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "rung_5_review",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "pi_gpt_high_pass_6"
+  },
+  "rung_03": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 5,
+    "applied": true,
+    "apply_sha": "edf2c256dcf987016c887555bb0a60fadd0c45b636fd101faf309f3729b54b96",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "pass-1-history",
+    "policy_c": true,
+    "consecutive_clean_reviews": 0
+  },
+  "rung_02": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 6,
+    "applied": true,
+    "apply_sha": "d05755cb838f7143f5f922d8d2e8823e2ef215b56522801902d5179a66188989",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "pass-1-history",
+    "policy_c": true,
+    "consecutive_clean_reviews": 0
+  },
+  "rung_01": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 10,
+    "applied": true,
+    "apply_sha": "0b9a17713c7ca349b27678c1ec05d4878eac1de91ab7e7b02677a673d4b1af8d",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "policy-f-retro",
+    "policy_c": true,
+    "consecutive_clean_reviews": 0
+  },
+  "rung_05_rerun_3": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 3,
+    "applied": true,
+    "apply_sha": "506eca57afb3ea2dad0c8c69b486a2c0f7c632ad33bbff40b1f0e82665272d1a",
+    "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-3.md",
+    "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-3.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "rung_5_review",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "pi_gpt_high_pass_4"
+  },
+  "rung_05_rerun_2": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 3,
+    "applied": true,
+    "apply_sha": "4a99ea1e75bfb3a0d364d365f61d2286ce1f82df1bd8070e12f599c1f1aa5374",
+    "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-2.md",
+    "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-2.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "rung_5_review",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "pi_gpt_high_pass_3"
+  },
+  "rung_05_rerun_1": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 3,
+    "applied": true,
+    "apply_sha": "acaae5f796c963ded0e8a8f74ca09e9d16156c59bfc2b126ddd3e31ed9f79a5b",
+    "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-1.md",
+    "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-1.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "rung_5_review",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "pi_gpt_high_pass_2"
+  },
+  "rung_01_rerun_1": {
+    "verdict": "NOT CLEAN",
+    "disposition": "ACCEPT-apply",
+    "findings": 3,
+    "applied": true,
+    "apply_sha": "bb06eb8cf9448899e73ed072079cf4c8a0365c2e9a6144ea93f219b215cbfaf8",
+    "apply": "rung-01-cursor-glm-5.2-high/APPLY-rerun-1.md",
+    "policy_c": "rung-01-cursor-glm-5.2-high/POLICY-C-rerun-1.json",
+    "verify_1": "PASS",
+    "verify_2": "PASS",
+    "phase": "policy-f-retro-rerun-1",
+    "policy_c_ok": true,
+    "consecutive_clean_reviews": 0,
+    "next_action": "glm_re_review_pass_2"
+  },
+  "rungs": [
+    {
+      "id": "rung-01-cursor-glm-5.2-high",
+      "model": "glm-5.2-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "NOT CLEAN",
+      "brief": "rung-01-cursor-glm-5.2-high/brief-review.md",
+      "review": "rung-01-cursor-glm-5.2-high/review.md",
+      "policy_c": "rung-01-cursor-glm-5.2-high/POLICY-C.json",
+      "apply": "rung-01-cursor-glm-5.2-high/APPLY.md",
+      "apply_rerun_1": "rung-01-cursor-glm-5.2-high/APPLY-rerun-1.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "0b9a17713c7ca349b27678c1ec05d4878eac1de91ab7e7b02677a673d4b1af8d",
+      "apply_sha_rerun_1": "bb06eb8cf9448899e73ed072079cf4c8a0365c2e9a6144ea93f219b215cbfaf8",
+      "consecutive_clean_reviews": 2,
+      "note": "pass-1 history plus re-run pass 1 ACCEPT-apply R1b-F01\u2013F03; next is GLM re-review pass 2 (not Kimi)"
+    },
+    {
+      "id": "rung-02-cursor-kimi-k3-high",
+      "model": "kimi-k3-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "done",
+      "verdict": "NOT CLEAN",
+      "brief": "rung-02-cursor-kimi-k3-high/brief-review.md",
+      "review": "rung-02-cursor-kimi-k3-high/review.md",
+      "policy_c": "rung-02-cursor-kimi-k3-high/POLICY-C.json",
+      "apply": "rung-02-cursor-kimi-k3-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "d05755cb838f7143f5f922d8d2e8823e2ef215b56522801902d5179a66188989",
+      "consecutive_clean_reviews": 2,
+      "note": "pass-1 history"
+    },
+    {
+      "id": "rung-03-cursor-gemini-3.7-flash-high",
+      "model": "gemini-3.7-flash-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "apply-applied",
+      "verdict": "NOT CLEAN",
+      "brief": "rung-03-cursor-gemini-3.7-flash-high/brief-review.md",
+      "review": "rung-03-cursor-gemini-3.7-flash-high/review.md",
+      "policy_c": "rung-03-cursor-gemini-3.7-flash-high/POLICY-C.json",
+      "apply": "rung-03-cursor-gemini-3.7-flash-high/APPLY.md",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "edf2c256dcf987016c887555bb0a60fadd0c45b636fd101faf309f3729b54b96",
+      "consecutive_clean_reviews": 2,
+      "note": "pass-1 history"
+    },
+    {
+      "id": "rung-04-cursor-grok-4.6-high",
+      "model": "cursor-grok-4.6-high",
+      "host": "cursor",
+      "role": "review",
+      "status": "paused",
+      "consecutive_clean_reviews": 2
+    },
+    {
+      "id": "rung-05-pi-codex-gpt-5.6-sol-high",
+      "model": "gpt-5.6-sol-high",
+      "host": "pi",
+      "role": "review",
+      "status": "apply-applied",
+      "verdict": "NOT CLEAN",
+      "apply": "rung-05-pi-codex-gpt-5.6-sol-high/APPLY-rerun-6.md",
+      "policy_c": "rung-05-pi-codex-gpt-5.6-sol-high/POLICY-C-rerun-6.json",
+      "verify_1": "PASS",
+      "verify_2": "PASS",
+      "apply_sha": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10",
+      "consecutive_clean_reviews": 2,
+      "note": "re-run pass 6 ACCEPT-apply R5f-F01; next is Pi GPT High pass 7 (not Extra High)"
+    },
+    {
+      "id": "rung-06-pi-codex-gpt-5.6-sol-xhigh",
+      "model": "gpt-5.6-sol-xhigh",
+      "host": "pi",
+      "role": "review",
+      "status": "pending",
+      "consecutive_clean_reviews": 2
+    },
+    {
+      "id": "rung-07-pi-claude-opus-5-high",
+      "model": "claude-opus-5-high",
+      "host": "pi",
+      "role": "review",
+      "status": "pending",
+      "consecutive_clean_reviews": 0
+    },
+    {
+      "id": "rung-08-pi-claude-opus-5-xhigh",
+      "model": "claude-opus-5-xhigh",
+      "host": "pi",
+      "role": "review",
+      "status": "pending"
+    }
+  ],
+  "verify_policy": {
+    "model": "cursor-grok-4.5-high",
+    "subagent_type": "sb-grok-4-5-high",
+    "host": "cursor-task",
+    "note": "Per-rung verify_1 then verify_2. Native Cursor Task only. Never Pi/Omni/agent-pi. Never Grok 4.6 for Verify. Cursor-family never via Pi. Claude via Pi."
+  },
+  "rung_1": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_2": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_3": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_4": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_5": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_6": {
+    "consecutive_clean_reviews": 2
+  },
+  "rung_7": {
+    "consecutive_clean_reviews": 0
+  }
+}

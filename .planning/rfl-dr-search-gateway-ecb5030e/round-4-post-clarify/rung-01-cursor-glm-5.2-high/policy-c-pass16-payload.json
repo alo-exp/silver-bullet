@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 16)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AE1", "title": "§4.1/§5/§8.1/§8.4 clear() preserve rosters omit query-cache .gitignore"}
+    ]
+  },
+  "triage": [
+    {"id": "AE1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; four unfiled sites omit .gitignore preserve locked in §2.2/§6.3/§6.12; not a duplicate of I-40 (different sites); no product-lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AE1", "severity": "NIT", "title": "§4.1/§5/§8.1/§8.4 clear() preserve rosters include query-cache .gitignore", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

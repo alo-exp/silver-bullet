@@ -1,0 +1,2 @@
+launch_pid=69813
+wait_rc=0

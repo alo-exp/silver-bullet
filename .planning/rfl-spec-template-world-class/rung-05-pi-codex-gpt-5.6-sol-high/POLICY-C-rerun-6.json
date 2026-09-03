@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 6)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R5f-F01",
+        "title": "Required `examples` pack has no catalog ID, contradicting the required-pack and global ID-addressability contracts"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5f-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Catalog pack-local ID for required examples pack: EX-nn exact two-digit. Pack table + ID scheme + QC-12/QC-13. Mint in Step 7. Fixtures for missing/malformed EX-nn."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R5f-F01",
+      "title": "Required `examples` pack has no catalog ID, contradicting the required-pack and global ID-addressability contracts"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5f-F01",
+      "severity": "MED",
+      "title": "Required `examples` pack has no catalog ID, contradicting the required-pack and global ID-addressability contracts",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "e056076257a4ec1e7b6f85da3500d948feb1cf0551c58c6852aacaabff26cd10"
+}

@@ -1,0 +1,7 @@
+PROBE_START=2026-08-23T21:08:26Z
+PROBE_END=2026-08-23T21:08:38Z
+PROBE_EXIT=0
+MODEL=opencode-go/glm-5.3
+VARIANT=max
+STDOUT=PONG
+NOTE=OpenCode Go 5h quota cleared; proceeding to full review.

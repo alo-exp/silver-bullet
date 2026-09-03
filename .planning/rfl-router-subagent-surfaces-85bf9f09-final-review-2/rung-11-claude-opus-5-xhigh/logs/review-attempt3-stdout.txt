@@ -1,0 +1,6 @@
+2026-08-28T00:02:42Z
+429: {"message":"[claude/claude-opus-5-xhigh] [429]: This request would exceed your account's rate limit. Please try again later. (reset after 58m 55s)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] quota-window: 429: {"message":"[claude/claude-opus-5-xhigh] [429]: This request would exceed your account's rate limit. Please try again later. (reset after 58m 55s)"}
+AGENT_PI_EXIT=1
+2026-08-28T00:03:54Z

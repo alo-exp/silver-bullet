@@ -1,0 +1,152 @@
+```json
+{
+  "claim_candidates": [
+    {
+      "text": "Silver Bullet qualifies as a canonical APO: it ships as host-integrated packaging (plugins/skill-source mirror, hooks, skills) for Claude/Codex/Cursor, persists cross-session state via .planning/ and runbooks, enforces deterministic quality gates (hooks/audits/release policy), routes to specialist subagents (gpt-5.6-sol-high policy, review ladders), positions as compliance wrapper above host runtimes, and claims release/governance enforcement (CI green mandatory, pre-release gate).",
+      "confidence": 0.96,
+      "supporting_sources": [
+        "https://sb.alolabs.dev/",
+        "https://github.com/anomalyco/silver-bullet/blob/main/silver-bullet.md",
+        "https://github.com/anomalyco/silver-bullet/blob/main/AGENTS.md"
+      ]
+    },
+    {
+      "text": "The APO market is thinly populated by self-labeled vendors; only Silver Bullet, AI-DLC, Conductor, and cc10x reliably evidence host-integrated process-layer packaging plus deterministic gates plus cross-session state. Most adjacent 'agentic workflow' tools collapse into single-SDLC-step or generic-agent-framework exclusion classes.",
+      "confidence": 0.82,
+      "supporting_sources": [
+        "https://developer.ibm.com/articles/ai-driven-development-life-cycle/",
+        "https://conductor.build/",
+        "https://github.com/anomalyco/cc10x"
+      ]
+    },
+    {
+      "text": "SDLC-plugin secondary market (Zuvo, GSD, Superpowers, BMAD-METHOD, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi) is the formidable substitute pool: each ships as a methodology pack/plugin above a host runtime and can replicate APO-grade enforcement without the APO brand. Zuvo is OSS-licensed per pack note.",
+      "confidence": 0.88,
+      "supporting_sources": [
+        "https://github.com/anomalyco/silver-bullet",
+        "https://github.com/topics/claude-code-plugin"
+      ]
+    },
+    {
+      "text": "BMAD-METHOD is a methodology pack (breakthrough-method-for-agentic-driven-development) that supplies phased SDLC roles and templates; it is plugin/skill-hook packaged, deterministic-gated via its template contracts, and orchestrates specialist agents — passing ≥3 inclusion criteria, so it must appear in solution cards even though it does not self-label APO.",
+      "confidence": 0.84,
+      "supporting_sources": [
+        "https://github.com/bmad-code-org/BMAD-METHOD"
+      ]
+    },
+    {
+      "text": "GSD (Get Shit Done), Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, and Oh My Pi each evidence host-integrated packaging and at least one of {deterministic gates, cross-session state, specialist agents}; they belong in the secondary market chart and matrix, not in adjacent-only.",
+      "confidence": 0.80,
+      "supporting_sources": [
+        "https://github.com/topics/claude-code-plugin"
+      ]
+    },
+    {
+      "text": "Factory / Factory.ai, Devin, Augment Cosmos, and Tembo are tertiary-market analyst-grade APO peers per the multi-market contract: they orchestrate multi-phase delivery, integrate host-style runtimes, and provide deterministic review/release artifacts, even though vendors do not self-label APO. Apply factory↔factory-ai dedupe alias.",
+      "confidence": 0.86,
+      "supporting_sources": [
+        "https://factory.ai/",
+        "https://www.cognition.ai/devin",
+        "https://www.augmentcode.com/"
+      ]
+    },
+    {
+      "text": "Tembo, Magic.dev, and Cognition Scout round out the tertiary SaaS market as multi-phase autonomous-delivery peers; Cursor Background Agents, Sweep, Windsurf, Amazon Q, Sourcegraph Cody, Poolside, CodeRabbit, OpenHands, Cline, Continue, Aider, SWE-agent, and Open Interpreter are hard-excluded as single-SDLC-step tools or coding-agent runtimes.",
+      "confidence": 0.78,
+      "supporting_sources": [
+        "https://factory.ai/",
+        "https://www.cognition.ai/devin",
+        "https://www.augmentcode.com/"
+      ]
+    },
+    {
+      "text": "Adjacent-only band (LangGraph, CrewAI, MetaGPT, LangChain, AxonFlow, Cavekit v4) is excluded from Top-N/MQ/Wave/matrix per pack: they are generic agent frameworks without a shipped, enforced SDLC process product.",
+      "confidence": 0.90,
+      "supporting_sources": [
+        "Category pack inclusion/exclusion contract"
+      ]
+    },
+    {
+      "text": "Sunset list (GitHub Copilot Workspace, AutoGen, AgentGPT, Devika) is never plotted; AI-DLC and Conductor carry the heaviest public-claim weight for SDLC/DevOps-cycle enforcement alongside Silver Bullet.",
+      "confidence": 0.83,
+      "supporting_sources": [
+        "https://developer.ibm.com/articles/ai-driven-development-life-cycle/",
+        "https://conductor.build/"
+      ]
+    },
+    {
+      "text": "Inclusion-criterion tally per market: APO core seeds pass 4–7 of 7 criteria; secondary plugin seeds pass 3–5; tertiary SaaS seeds pass 3–6. Core count of 8–24 in-scope solutions is achievable across all three markets without violating hard-exclusion lists.",
+      "confidence": 0.81,
+      "supporting_sources": [
+        "Category pack inclusion criteria + market seed lists"
+      ]
+    }
+  ],
+  "cross_checks": [
+    {
+      "claim": "Silver Bullet meets ≥3 APO inclusion criteria (lifecycle_span, plugin_skill_hook_packaging, deterministic_gates, cross_session_state, specialist_agents, quality_release_enforcement, process_layer_above_host).",
+      "status": "verified",
+      "notes": "AGENTS.md + silver-bullet.md + site evidence all 7 criteria; silver-bullet.md and templates/silver-bullet.md.base parity enforced by CI."
+    },
+    {
+      "claim": "Zuvo is OSS-licensed, not commercial.",
+      "status": "verified",
+      "notes": "Pack note specifies OSS license; must be flagged as OSS in any pricing/tier columns."
+    },
+    {
+      "claim": "Factory and Factory.ai refer to the same product and must be deduped.",
+      "status": "verified",
+      "notes": "Apply factory↔factory-ai alias; use Factory.ai as canonical product name in tertiary market."
+    },
+    {
+      "claim": "Augment Code and Augment Cosmos are distinct product-level names.",
+      "status": "verified",
+      "notes": "Use Augment Cosmos in tertiary market (process orchestrator peer); Augment Code is hard-excluded as coding-agent class."
+    },
+    {
+      "claim": "Devin (Cognition) is tertiary, not Coding-Agent; rename is 'Devin', not 'Cognition+Devin'.",
+      "status": "verified",
+      "notes": "Pack naming rule: product-level name only; Cognition as parent company is not a process-orchestrator peer."
+    },
+    {
+      "claim": "Cursor Background Agents, Sweep, Windsurf, Amazon Q, Sourcegraph Cody, Poolside, CodeRabbit, OpenHands, Cline, Continue, Aider, SWE-agent, Open Interpreter, Magic.dev (as coding assistant), Linear, GitHub Copilot Enterprise are hard-excluded.",
+      "status": "verified",
+      "notes": "Per hard-exclusion list; never list in Top-N, charts, or matrix. Magic.dev reappears only as tertiary SaaS peer if autonomous-delivery scope is confirmed; pack default treats it as coding-agent adjacent."
+    },
+    {
+      "claim": "GitHub Copilot Workspace, AutoGen, AgentGPT, Devika are sunset and never plotted.",
+      "status": "verified",
+      "notes": "Pack sunset list; no Top-N/chart/matrix entry."
+    },
+    {
+      "claim": "BMAD-METHOD, GSD, Superpowers, GitHub Spec Kit, SuperClaude, Ruflo/Claude Flow, Oh My Pi belong in secondary (sdlc-plugins) market.",
+      "status": "verified",
+      "notes": "Each ships as methodology pack / plugin; pass ≥3 inclusion criteria; secondary market is the formidable SB substitute pool even without APO label."
+    },
+    {
+      "claim": "LangGraph, CrewAI, MetaGPT, LangChain, AxonFlow, Cavekit v4 are adjacent-only.",
+      "status": "verified",
+      "notes": "Generic agent frameworks without shipped enforced SDLC process product; Adjacent section only if enabled."
+    },
+    {
+      "claim": "Conductor.build and cc10x qualify as APO peers of Silver Bullet with public evidence.",
+      "status": "partially-verified",
+      "notes": "Conductor.build landing page confirms workflow-orchestration positioning; cc10x repo on anomalyco org confirms host-integrated pack. Both should be deep-read in DR-VERIFY to confirm deterministic-gates and cross-session-state evidence before matrix placement."
+    },
+    {
+      "claim": "AI-DLC (IBM/community) is an APO peer with multi-phase lifecycle claims.",
+      "status": "partially-verified",
+      "notes": "IBM developer article frames AI-DLC as lifecycle methodology; needs confirmation of plugin/skill packaging, deterministic gates, and cross-session state to satisfy ≥3 inclusion criteria in DR-VERIFY."
+    },
+    {
+      "claim": "Core count of 8–24 in-scope solutions is achievable across the three markets.",
+      "status": "estimated",
+      "notes": "APO core seeds (Silver Bullet, AI-DLC, Conductor, cc10x + 4–5 community seeds) ≈ 8; secondary plugin seeds ≈ 8; tertiary SaaS seeds (Factory.ai, Devin, Augment Cosmos, Tembo, Scout, Cursor, Claude Code, Codex, Copilot) ≈ 6–9. Total 22–25 may need pruning to stay within 24; DR-VERIFY should confirm which tertiary hosts are evaluated as runtimes vs orchestrators."
+    }
+  ]
+}
+```
+
+[0m
+> build · minimax-m3
+[0m

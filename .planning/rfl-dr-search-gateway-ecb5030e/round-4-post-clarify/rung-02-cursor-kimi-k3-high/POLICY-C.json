@@ -1,0 +1,21 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High (rung 2 review 7 Policy G pack)"
+  },
+  "verdict": "CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": "none",
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": "none"
+}

@@ -1,0 +1,325 @@
+126:# Router Subagent Surfaces — Architecture and Design Change
+130:## How to read this document
+143:## Glossary
+172:## Table of contents
+350:## 1. Document control
+365:## 2. Product requirements (PRD)
+367:### 2.0 Product statement
+387:#### This ship overlays
+409:### 2.1 Problem and opportunity
+419:### 2.2 Goals and non-goals
+423:#### Goals
+444:#### Global Status dashboard (GST-01)
+453:#### Non-goals
+461:### 2.3 Users, jobs, and public `/sb` surfaces
+554:#### VAL/TST-RFL-621 (PRD)
+567:#### At-a-glance sections (required)
+584:### 2.4 Functional requirements
+608:### 2.5 Non-functional / quality attributes
+622:### 2.6 Success metrics / MVP vs post-MVP
+626:#### VAL/TST-RFL-601 (PRD)
+632:### 2.7 Canonical live-spec MUST catalog
+636:### LS-plan-executed-coverage
+649:### LS-ship-sequence
+662:### LS-workflow-evolution
+684:### LS-skill-extract
+705:### LS-q-loop
+717:### LS-unified-review
+729:### LS-ladder-parallel
+751:#### Job-route compose (any catalog WF/AF)
+766:### LS-retire-multi-ai
+780:### LS-post-val-kl
+795:### LS-fast-short-order
+811:### LS-deep-research
+824:### LS-agent-pin
+838:### LS-autonomous-e2e-order
+846:#### Spine (vague idea → live operational)
+882:#### Branches (replace wrapping WF at step 6; do not dump 80 skills)
+893:#### This-ship completeness
+897:## 3. Analysis
+899:### 3.1 Current system
+915:### 3.2 Gaps this freeze closes
+919:### 3.3 Options considered and KEEP REJECT
+925:### KR-catalog-generated
+929:### KR-fast-overlay
+933:### KR-evolution-not-custom
+937:### KR-projector-exclusive
+941:### KR-off-01-post-mvp
+945:### KR-l598-no-abandon
+949:### KR-coverage-plan-executed
+953:### KR-ws0-preserve-evidence
+957:### KR-contribute-fail-closed
+961:### KR-no-dual-silver
+965:### KR-row-40
+969:### KR-authorizer-not-pref
+973:### KR-kr-13
+977:### KR-cursor-mvp-first
+981:### KR-kr-15
+985:### KR-kr-16
+989:### KR-kr-17
+993:### KR-kr-18
+997:#### Named KEEP REJECT themes the freeze must not reopen: exclusive
+1002:### 3.4 Agent Plugins 1.0 feasibility
+1006:#### What Agent Plugins 1.0 is
+1019:#### Feasibility: can one AP 1.0 package replace the three SB host surfaces?
+1036:#### Recommendation
+1040:## 4. Architecture
+1042:### 4.0 Architecture at a glance
+1071:#### `blocked_primary_checkout_unbound` (architecture cases)
+1125:### 4.1 Control plane: six roles, five preference keys, Authorizer TCB
+1136:#### Orchestrator
+1147:#### Advisor
+1156:#### Executor
+1166:#### Authorizer
+1174:#### Verifier
+1182:#### Validator
+1254:### Board of Advisors
+1291:### Host built-in defaults (Codex / Claude / Cursor)
+1301:### 4.2 Process router `/sb`, catalog generation, FAST vs Job
+1304:#### Catalog generation
+1324:#### FAST vs Job
+1336:#### This ship named field changes only (existing records, not a new AF/WF)
+1363:#### As-is (today) — Canonical skill [`skills/silver-new-workflow/SKILL.md`](skills/silver-new-workflow/SKILL.md)
+1394:#### Authoring a **new reusable workflow definition** is itself a Job
+1400:#### Today vs after (emitted artifacts)
+1438:#### Same leaf, ordered effects (AM-first, mechanical — FAST thin-capture pointer)
+1457:#### Any Workflow may be composed of any number of AFs or Nested Workflows (NWs)
+1462:#### VAL/TST-RFL-615 (architecture)
+1586:#### Classified-trivial / `sb:fast`
+1598:#### `blocked_corrupt_state` (row 1)
+1622:### 4.3 WBS / projector / spawn-proxy / primary_checkout / extra worktrees
+1631:#### WBS projector exclusive writer
+1635:#### primary_checkout write root
+1642:#### Spawn-proxy
+1667:#### Extra host_native worktrees
+1731:#### Invert graphify-worktree.sh (`rt_git_main_worktree_root`)
+1752:### Shared-state layout
+1754:#### Code — may use overlap worktrees, and only for `host_native`
+1769:#### WBS, packets, spawn-proxy jsonl, and admission CAS
+1774:#### Graphify index (`graphify-out/`), agentmemory exports (`.agentmemory/`), project `.silver-bullet/`, and `.sb/`
+1779:#### Control-plane session state
+1782:#### Hook-visible primary root
+1792:#### Host Task cwd and env
+1798:#### **`/sb:agent-*`** runs with cwd = primary project root. Nested profile
+1804:#### Host SB and external-agent SB share that primary `.planning/` tree
+1813:### Global Status
+1817:### 4.4 Nested Task vs parent-proxy
+1843:### Host max nested-subagent configuration
+1853:#### Cursor
+1866:#### Codex
+1881:#### Claude Code
+1897:### Three-host SB install ensure vs instruction-only hosts (HINST-01)
+1903:#### VAL/TST-RFL-624 (architecture)
+1979:### Parent-proxy protocol
+1982:#### Remaining depth and refuse-then-proxy
+1987:#### Spawn-proxy helper and jsonl path
+1997:#### Completion receipts
+2001:#### Failure receipts
+2007:#### Proxy request record fields
+2020:#### Crash recovery (CORR-17)
+2024:#### Requester rebind failure
+2028:#### Idempotent request_id
+2032:#### Prepared vs hash-only pending
+2041:#### Two-helper consume transaction (ADM-01 / CORR-17 / WBS-01)
+2093:#### `prompt_hash` binds inner prompt bytes only
+2162:### 4.5 Quality order
+2166:### Task, planning, and quality loops
+2168:### Task and work spec
+2200:#### `blocked_launch_prompt_spec` (row 4)
+2232:### Process resolve, Advisor compose, and composition Validation-loop
+2235:#### Process resolve
+2240:#### Advisor compose
+2254:#### Composition Validation-loop
+2257:#### `blocked_corrupt_state` (row 1)
+2263:#### VAL/TST-RFL-625 (architecture)
+2287:#### Plan-time Validation-loop
+2320:#### Same leaf, ordered effects (AM-first, mechanical — composition-Val pointer)
+2347:#### Publication (PUB-01 — during composition-Val remint, before Executor I)
+2397:### Ordinary-delivery procedure
+2402:#### Unified thermos code review
+2417:#### Same leaf, ordered effects (AM-first, mechanical — ordinary-delivery FAST pointer)
+2421:#### INDEX.md fallback
+2425:#### Classified-trivial ledger terminal
+2429:#### FAST failure terminal (not ESC-02)
+2438:#### Knowledge/Learnings pre-read
+2442:#### INDEX fallback only when five-tool is not opted in for that runtime
+2450:#### Step 2 — After `comp_val_verified`, Orchestrator dispatches the composition-approved work spec / validated Work Plan
+2453:#### `blocked_validation_state`
+2460:#### Step 4 — Authorizer admits the Executor spawn
+2464:#### Step 5 — Advisor A-loop Mentor judges I-clean until two consecutive A-clean rounds
+2468:#### Step 6 — Verifier Verification-loop (Ver-loop) until two-clean / `v_verified`
+2472:#### Step 7 — If a `host_native` extra worktree exists and the slice is V-clean enough to join
+2483:#### Step 8 — Repeat sibling/ancestor joins as the WBS requires
+2486:#### Step 9 — After the top Workflow join on a Process-wrapped run (Advisor-composed root WF; AF never sits directly under Process)
+2498:#### Step 10 — Process-final Validation-loop once at Process roll-up: entire output vs original user intent
+2514:#### Step 11 — Post-verify Knowledge/Learnings write, or durable `kl_post_write_no_insights`
+2524:#### Same leaf, ordered effects (AM-first, mechanical — not hoping the agent also saved AM)
+2534:#### Fail-closed when agentmemory is opted in
+2539:#### When AM is not opted in
+2546:#### Do not dual-write
+2552:#### No direct K/L authorship
+2585:### On-demand Advisor consult
+2613:### Escalation ladder
+2634:### Process-synthesis and ancestry-preserving repair
+2669:### Levels 0–3 (post-MVP)
+2680:### Iterate Ladder (post-MVP)
+2707:#### `blocked_iterate_baseline_unproven`
+2739:### 4.6 Q-loop, unified thermos review, ladder/fusion/panel, agent pin
+2749:### 4.7 Workflow evolution (`/sb:improve`, `/sb:contribute`)
+2755:### 4.8 Agent Plugins 1.0 packaging (partial emit)
+2759:#### Source of truth vs generated
+2769:#### What stays host-specific
+2773:## 5. Design
+2775:### 5.1 Detailed behaviors, schemas, admission
+2777:### Data, hashes, trust, and CAS
+2779:### Hashes and identities
+2819:### Authorizer trust
+2860:### Iterate binding (post-MVP)
+2870:### Hosts, runtimes, five-tool, and public prefix
+2875:#### Public prefix and `/silver` cutover
+2880:#### Five-tool primary-checkout bind
+2892:#### OmniRoute and `/sb:agent-*` opt-in (absorbed, same ship)
+2913:#### Brownfield opt-in
+2922:#### Replacement-ladder probe
+2937:#### Callers — every `RT_PROJECT_ROOT` assignment under `scripts/` (including `scripts/lib/recommended-tools/`)
+2944:#### Do not ingest K/L back into each clone's agentmemory
+2967:#### Generated launch templates must include prompt-engineering scaffolding, the five-field work spec
+2979:### Failure modes and blockers
+3034:#### `blocked_callback_gap` (row 2)
+3040:#### `blocked_callback_unresolved` (row 3)
+3047:#### VAL/TST-RFL-626 (architecture)
+3058:#### `blocked_launch_uncertain` (row 5)
+3064:#### `blocked_plan_of_action_review` (row 6)
+3072:#### `blocked_replan_budget` (row 7)
+3078:#### `blocked_knowledge_preread` (row 8)
+3087:#### `blocked_knowledge_postwrite` (row 9)
+3094:#### `blocked_progress_viz` (row 10)
+3100:#### `blocked_executor_unavailable` (row 11)
+3107:#### `blocked_verification_unavailable` (row 12)
+3114:#### `blocked_validation_state` (row 13)
+3123:#### `blocked_advisor_state` (row 14)
+3130:#### `blocked_triage_unresolved` (row 15)
+3136:#### `blocked_escalation_unavailable` (row 16)
+3142:#### `blocked_unresolved` (row 17)
+3148:#### `blocked_resource_exhausted` (row 18)
+3154:#### `blocked_depth_unsupported` (row 19)
+3161:#### `blocked_unsupported_capability` (row 20)
+3168:#### `blocked_owner_unavailable` (row 21)
+3174:#### `blocked_child_unavailable` (row 22)
+3181:#### `blocked_effect_recovery` (row 23)
+3187:#### `blocked_offline_quiescence` (row 24)
+3193:#### `blocked_rollback_failed` (row 25)
+3199:#### `blocked_unknown_migration` (row 26)
+3205:#### `blocked_iterate_contract_mapping_unresolved` (row 27)
+3209:#### `blocked_iterate_baseline_unproven` (row 28)
+3215:#### `blocked_iterate_budget_exhausted` (row 29)
+3221:#### `blocked_ladder_conflict` (row 30)
+3227:#### `blocked_legacy_rfl_readmit` (row 31)
+3233:#### `blocked_user_escalation` (row 32)
+3239:#### `blocked_primary_checkout_unbound` (row 33)
+3246:#### `blocked_global_status_push` (row 34)
+3254:#### `blocked_global_status_identity` (row 35)
+3262:#### `blocked_fast_leaf` (row 36)
+3270:#### `blocked_wf_mint_unauthorized` (row 37)
+3278:#### `blocked_af_under_process` (row 38)
+3285:#### `blocked_orchestrator_wf_mint` (row 39)
+3293:#### `blocked_executor_wf_out_of_plan` (row 40)
+3302:#### `blocked_sb_host_missing` (row 41)
+3309:#### `blocked_sb_host_install` (row 42)
+3317:#### `blocked_advisor_state` (row 14)
+3329:### 5.2 Ship sequence: WS0 → WS0b → WS1–7 → WS8 → docs-release
+3335:#### Part A: quality-order core (usable runtime)
+3343:#### Part B: remaining capabilities (must invoke Part A)
+3349:#### Agent Plugins 1.0 partial emit (after docs-release)
+3361:### 5.3 Implementation workstreams
+3370:### WS0. Pre-implementation repo cleanup
+3378:### WS0b. Pre-implementation key docs
+3387:### WS1. Contract and route truth
+3396:#### Schema additionalProperties false
+3405:#### APO catalog generation
+3428:#### VAL/TST-RFL-625 (WS1)
+3445:#### Because this ship does **not** add a second AF, do **not** invent 15 `$defs.atomic_flow` fields
+3500:#### WS1 also retargets
+3522:#### WS1 also owns (live-spec MUST)
+3526:#### `/sb:new-workflow` named tests (WS1)
+3530:#### `/sb:improve` / `/sb:contribute` catalog emit (WS1)
+3536:### WS2. Public and native-subagent surfaces
+3547:#### MVP accept: one `/sb`, one selected native-subagent surface per Workflow
+3555:#### WS2 owns the `/sb:new-workflow` skill/docs stubs
+3567:#### WS2 + WS1 as needed own the ship-wide `silver`→`sb` directory-rename alias map (not public-route-only)
+3573:#### WS2 also owns (live-spec MUST, Cursor MVP)
+3579:### WS3. Authorizer, launch, ingress, effects, and trust
+3585:#### VAL/TST-RFL-626 (WS3)
+3589:#### Admission/scheduler/callback implementation
+3627:#### Graphify worktree invert
+3637:#### MVP evidence must cover same/conflicting retry, admission/spawn/ack crashes, LPS-01 envelope
+3647:### WS4. Quality loops, Knowledge/Learnings, and Iterate
+3651:#### MVP quality-loop red tests
+3661:#### Q-loop ownership
+3670:#### Post-Val K/L and key-doc hop
+3676:### WS5. Universal migration and rollback
+3684:#### VAL/TST-RFL-604 (WS5)
+3689:### WS6. Models, preferences, capability proof, and initialization
+3697:#### If WS6 touches instruction text
+3706:#### WS6 OmniRoute / agent-host opt-in (absorbed; not before WS0/WS0b)
+3745:#### Five preference keys evidence
+3756:#### Per-child worktree cwd vs primary bind
+3765:#### WS3 invert ownership
+3770:### WS7. Traceability, Doctor, documentation, and release readiness
+3781:#### VAL/TST-RFL-623 (WS7)
+3801:### WS8. Post-implementation repo cleanup
+3810:### 5.4 Named tests and coverage map
+3812:#### Coverage MUST also map YAML todos `q-loop`, `unified-code-review`, `generalized-role-boards`
+3821:#### Plan-executed coverage (cite Goals live-spec MUST)
+3832:#### `blocked_primary_checkout_unbound` (evidence cases)
+3865:#### VAL/TST-RFL-601 (coverage map)
+3869:#### VAL/TST-RFL-602
+3873:#### VAL/TST-RFL-603
+3877:#### VAL/TST-RFL-604 (coverage map)
+3881:#### VAL/TST-RFL-605
+3885:#### VAL/TST-RFL-606
+3889:#### VAL/TST-RFL-607
+3893:#### VAL/TST-RFL-608
+3897:#### VAL/TST-RFL-609
+3901:#### VAL/TST-RFL-610
+3905:#### VAL/TST-RFL-611
+3909:#### VAL/TST-RFL-612
+3913:#### VAL/TST-RFL-613
+3923:#### VAL/TST-RFL-614
+3927:#### VAL/TST-RFL-615 (coverage map)
+3934:#### VAL/TST-RFL-616
+3941:#### VAL/TST-RFL-617
+3953:#### VAL/TST-RFL-618
+3959:#### VAL/TST-RFL-619
+3963:#### VAL/TST-RFL-620
+3968:#### VAL/TST-RFL-621 (coverage map)
+3974:#### VAL/TST-RFL-622
+3979:#### VAL/TST-RFL-623 (coverage map)
+3984:#### VAL/TST-RFL-624 (coverage map)
+3990:#### VAL/TST-RFL-625 (coverage map)
+3999:#### VAL/TST-RFL-626 (coverage map)
+4013:## 6. Risks, rollout, and open decisions
+4015:### Specified risks (closed — do not reopen KEEP REJECT)
+4017:#### Shared WBS
+4032:#### Hosts that can set subprocess cwd/env may set cwd = `worktree_cwd`
+4038:#### `blocked_corrupt_state` (row 1)
+4050:#### Five-tool after opt-in
+4057:#### Per-child `SB_WORKTREE_CWD` is not required in process env; if five-tool is opted in at that primary and the gate cannot resolve process env `SB_PRIMARY_CHECKOUT` when set, else cannot resolve `rt_git_main_worktree_root`
+4064:#### ERR trap must not swallow primary-root resolution on `hooks/graphify-gate.sh`, `hooks/agentmemory-gate.sh`, `hooks/rtk-gate.sh`, `hooks/context-mode-gate.sh`, `hooks/leanctx-gate.sh`, `hooks/token-compression-tools-gate.sh`, and `hooks/stack-compression-coordinator.sh`
+4077:#### Parent-proxy is specified (for numeric remaining depth 0, Codex `host_nest_refused`)
+4095:### Migration and rollout
+4113:#### Step 1 — `freeze_intent` is deterministic, increments admission/freeze generation, forbids new source-operation admission
+4117:#### Step 2 — Before `freeze_sealed`, classify every admitted operation as exactly `committed_before_fence`
+4154:### Clarify decisions (locked)
+4160:#### Clarify Q1 — FAST / trivial / `/sb:improve` — **decided**
+4173:#### Clarify Q2 — improve/contribute workstream owner — **decided (A)**
+4179:#### Clarify Q3 — deep research — **decided** (user did not pick A/B/C)
+4187:#### Companion omni-agent opt-in — composed (no new clarify)
+4191:### Deferred post-MVP (non-blocking)
+4200:## 7. Appendix
+4204:### A. SHA lineage and round receipts
+4210:### B. YAML todo → test → WS map
+4252:### C. Named tests inventory
+4316:### D. Public `/sb` and `sb:` surface inventory
+4362:### E. Traceability
+4372:### F. Document integrity

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "track": "sb-tri-criteria-e2e",
+  "matrix_verdict": "SCAFFOLD",
+  "description": "Three orthogonal SB E2E criteria: multi-workflow chain, dynamic composition, net-new workflow",
+  "vision_doc": "docs/PRODUCT-VISION-AUTONOMOUS-ENTERPRISE.md",
+  "design_doc": ".planning/sb-tri-criteria-e2e/DESIGN.md",
+  "multiwf_criteria": ".planning/sb-tri-criteria-e2e/CURSOR-MULTIWF-CRITERIA.md",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "fixture": {
+    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "branch_prefix": "feature/tc"
+  },
+  "tracks": [
+    {
+      "id": "TC-01",
+      "dir": "TC-01-multiwf-chain",
+      "criterion": "autonomous-multi-workflow-chaining",
+      "host": "cursor",
+      "orchestrator_mode": "parent",
+      "primary_outcome": "OUT-MULTIWF-01"
+    },
+    {
+      "id": "TC-02",
+      "dir": "TC-02-dynamic-compose",
+      "criterion": "dynamic-workflow-composition",
+      "host": "cursor",
+      "orchestrator_mode": "parent",
+      "primary_outcome": "OUT-DYNAMIC-01"
+    },
+    {
+      "id": "TC-03",
+      "dir": "TC-03-net-new-workflow",
+      "criterion": "net-new-workflow-creation",
+      "host": "cursor",
+      "orchestrator_mode": "parent",
+      "primary_outcome": "OUT-NEWWF-01",
+      "alternate_host": "agent-claude"
+    }
+  ]
+}

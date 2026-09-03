@@ -1,0 +1,40 @@
+{
+  "summary": [
+    {
+      "id": "ocg-minimax-m3",
+      "critiques": 20,
+      "gaps": 10,
+      "top": 15,
+      "new_info": 10
+    },
+    {
+      "id": "ocg-qwen3.7-plus",
+      "critiques": 20,
+      "gaps": 12,
+      "top": 15,
+      "new_info": 10
+    },
+    {
+      "id": "ocg-deepseek-v4-flash",
+      "critiques": 15,
+      "gaps": 7,
+      "top": 15,
+      "new_info": 7
+    },
+    {
+      "id": "ocg-kimi-k2.6",
+      "critiques": 18,
+      "gaps": 8,
+      "top": 15,
+      "new_info": 7
+    },
+    {
+      "id": "ocg-mimo-v2.5",
+      "critiques": 0,
+      "gaps": 0,
+      "top": 0,
+      "new_info": 0
+    }
+  ],
+  "envelope_count": 5
+}

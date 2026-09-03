@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "track": "TC-03-net-new-workflow",
+  "criterion": "net-new-workflow-creation",
+  "host": "cursor",
+  "alternate_host": "agent-claude",
+  "orchestrator_mode": "parent",
+  "harness": "scripts/sb-tri-criteria-e2e.sh",
+  "fixture": {
+    "work_dir_default": "/Users/shafqat/projects/enterprise-grade-test-app",
+    "vision_template": "fixtures/TC-03-vision.md",
+    "prefs_template": "fixtures/TC-03-prefs.json"
+  },
+  "rows": [
+    {
+      "id": "TC-03",
+      "title": "Compliance snapshot — net-new workflow",
+      "intent_class": "no-catalog-fit",
+      "route_hint": "silver-new-workflow → NEW-WORKFLOW worker → custom AF chain",
+      "blocking_outcomes": [
+        "OUT-NEWWF-01",
+        "OUT-ORCH-01",
+        "OUT-AUTO-01",
+        "OUT-NOOP-01",
+        "OUT-WORLD-01"
+      ],
+      "advisory_outcomes": ["OUT-KM-01", "OUT-FLOW-01", "OUT-TRACE-01"],
+      "acceptance": [
+        "NEW-WORKFLOW in queue or event log",
+        "Net-new workflow spec artifact",
+        "Compliance JSON script + markdown report committed"
+      ],
+      "vision_template": "fixtures/TC-03-vision.md",
+      "prefs_template": "fixtures/TC-03-prefs.json"
+    }
+  ]
+}

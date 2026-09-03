@@ -1,0 +1,87 @@
+{
+  "description": "Unified alo-labs/agent-plugins catalog — Strategy A thin entries pointing at owning repos.",
+  "plugins": [
+    {
+      "name": "silver-bullet",
+      "repo": "alo-exp/silver-bullet",
+      "path": "plugins/silver-bullet",
+      "cursor": {
+        "version": "0.52.0",
+        "ref": "main",
+        "license": "BUSL-1.1"
+      },
+      "claude": {
+        "version": "0.52.0",
+        "license": "BUSL-1.1",
+        "strict": true
+      },
+      "codex": {
+        "version": "0.52.0",
+        "ref": "v0.52.0",
+        "path": "plugins/silver-bullet",
+        "license": "BUSL-1.1"
+      }
+    },
+    {
+      "name": "sidekick",
+      "repo": "alo-exp/sidekick",
+      "cursor": {
+        "version": "0.8.4",
+        "ref": "main",
+        "license": "MIT"
+      },
+      "claude": {
+        "version": "0.8.4",
+        "license": "MIT",
+        "strict": true
+      },
+      "codex": {
+        "version": "0.8.4",
+        "ref": "main",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "multai",
+      "repo": "alo-exp/multai",
+      "claude": {
+        "version": "0.3.0",
+        "license": "MIT",
+        "strict": true
+      }
+    },
+    {
+      "name": "topgun",
+      "repo": "alo-labs/topgun",
+      "claude": {
+        "version": "0.7.8",
+        "license": "MIT",
+        "strict": true
+      },
+      "codex": {
+        "version": "0.7.8",
+        "ref": "main",
+        "license": "MIT",
+        "strict": true
+      }
+    },
+    {
+      "name": "wow",
+      "repo": "alo-labs/wow",
+      "claude": {
+        "version": "0.1.2026040201",
+        "license": "MIT",
+        "strict": true
+      }
+    },
+    {
+      "name": "instadecks",
+      "repo": "alo-exp/instadecks",
+      "claude": {
+        "version": "0.2.1",
+        "license": "Apache-2.0",
+        "strict": true
+      }
+    }
+  ]
+}

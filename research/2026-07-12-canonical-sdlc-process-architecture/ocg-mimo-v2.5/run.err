@@ -1,0 +1,192 @@
+[0m
+> build · mimo-v2.5
+[0m
+[0m# [0mTodos
+[•] Create output directory structure
+[ ] Conduct web research on SDLC best practices from major tech companies
+[ ] Write research artifacts (scope, plan, sources, evidence, etc.)
+[ ] Write main research_report.md with all 10 sections
+[ ] Write run_manifest.json
+[0m
+[0m$ [0mecho "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && echo "[graphify] knowledge graph at graphify-out/. For focused questions, run `graphify query "<question>"` (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context." && mkdir -p /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[graphify] knowledge graph at graphify-out/. For focused questions, run Traversal: BFS depth=2 | Start: ['Question', 'Question'] | 16 nodes found
+
+NODE Site Release Audit — 2026-07-06 [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE DR-SCOPE — Research Scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+NODE Gap Remediation (This Pass) [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L42 community=913]
+NODE Out of scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L18 community=1233]
+NODE v0.51.1 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L31 community=913]
+NODE v0.51.0 — Honest Assessment [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L19 community=913]
+NODE Question [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L3 community=1233]
+NODE Question [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L3 community=913]
+NODE Follow-Up [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L67 community=913]
+NODE SITE-RELEASE-AUDIT-20260706.md [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L1 community=913]
+NODE Assumptions [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L24 community=1233]
+NODE In scope [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L11 community=1233]
+NODE 4-Stage Gate — What Should Have Run [src=.planning/sb-tri-criteria-e2e/SITE-RELEASE-AUDIT-20260706.md loc=L7 community=913]
+NODE Started [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L29 community=1233]
+NODE Mode [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L7 community=1233]
+NODE scope.md [src=.planning/research/2026-07-08-v2-landscape-replay/scope.md loc=L1 community=1233]
+EDGE Question --contains [EXTRACTED]--> DR-SCOPE — Research Scope
+EDGE Question --contains [EXTRACTED]--> Site Release Audit — 2026-07-06
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> scope.md
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Assumptions
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> In scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Mode
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Out of scope
+EDGE DR-SCOPE — Research Scope --contains [EXTRACTED]--> Started
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> SITE-RELEASE-AUDIT-20260706.md
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> 4-Stage Gate — What Should Have Run
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Follow-Up
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> Gap Remediation (This Pass)
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.0 — Honest Assessment
+EDGE Site Release Audit — 2026-07-06 --contains [EXTRACTED]--> v0.51.1 — Honest Assessment (scoped subgraph, usually much smaller than GRAPH_REPORT.md) instead of grepping raw files. Read GRAPH_REPORT.md only for broad architecture context.
+[0m
+[0m# [0mTodos
+[✓] Create output directory structure
+[•] Conduct web research on SDLC best practices from major tech companies
+[ ] Write research artifacts (scope, plan, sources, evidence, etc.)
+[ ] Write main research_report.md with all 10 sections
+[ ] Write run_manifest.json
+[0m
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"url":"https://dora.dev/research/","source":"DORA Research"},{"url":"https://cloud.google.com/architecture/devops/devops-culture-transform-culture","source":"Google DevOps Culture"},{"url":"https://sre.google/sre-book/introduction/","source":"Google SRE Book"},{"url":"https://learn.microsoft.com/en-us/devops/develop/what-is-devops","source":"Microsoft DevOps"},{"url":"https://www.atlassian.com/devops","source":"Atlassian DevOps"},{"url":"https://github.com/features/actions","source":"GitHub Actions"},{"url":"https://platformengineering.org/","source":"Platform Engineering"}],"concurrency":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"source":"NIST SSDF","url":"https://csrc.nist.gov/projects/ssdf"},{"source":"OWASP DevSecOps","url":"https://owasp.org/www-project-devsecops-guideline/"},{"source":"CNCF Landscape","url":"https://landscape.cncf.io/"},{"source":"OpenSSF","url":"https://openssf.org/"},{"source":"State of DevOps 2024","url":"https://dora.dev/research/2024/dora-report/"},{"source":"Spotify Engineering","url":"https://engineering.atspotify.com/"},{"source":"Netflix Tech Blog","url":"https://netflixtechblog.com/"}],"concurrency":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"requests":[{"source":"Stripe Engineering","url":"https://stripe.com/blog/engineering"},{"source":"Shopify Engineering","url":"https://shopify.engineering/"},{"source":"Cloudflare Blog","url":"https://blog.cloudflare.com/"},{"source":"Uber Engineering","url":"https://www.uber.com/blog/engineering/"},{"source":"LinkedIn Engineering","url":"https://engineering.linkedin.com/"},{"source":"Airbnb Engineering","url":"https://medium.com/airbnb-engineering"}],"concurrency":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA metrics software delivery performance","software development lifecycle stages best practices","platform engineering internal developer portal","shift left security DevSecOps practices","code review best practices large scale","CI CD pipeline best practices 2024 2025","SRE practices error budgets reliability","AI assisted software development coding tools adoption"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"Google Code Review Practices","url":"https://google.github.io/eng-practices/review/"},{"source":"DORA Capabilities","url":"https://dora.dev/capabilities/"},{"source":"DORA AI Research","url":"https://dora.dev/ai/"},{"source":"State of DevOps Report 2024","url":"https://dora.dev/research/2024/dora-report/"}]}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"NIST SSDF Details","url":"https://csrc.nist.gov/projects/ssdf/ssdf-introduction"},{"source":"OpenSSF Best Practices","url":"https://openssf.org/projects/"},{"source":"GitHub Octoverse 2024","url":"https://github.blog/news-insights/octoverse/octoverse-2024/"},{"source":"Stack Overflow Survey 2024","url":"https://survey.stackoverflow.co/2024/"}]}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["Google software development practices monorepo","Amazon two pizza teams deployment practices","Microsoft Azure DevOps practices","Meta Facebook continuous deployment trunk based development","Netflix chaos engineering practices","Spotify squad model engineering culture","Stripe developer experience API practices","Shopify developer platform practices","Cloudflare edge computing deployment","LinkedIn engineering culture practices"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"Google Engineering Practices","url":"https://google.github.io/eng-practices/"},{"source":"DORA Trunk Based Development","url":"https://dora.dev/capabilities/trunk-based-development/"},{"source":"DORA Continuous Integration","url":"https://dora.dev/capabilities/continuous-integration/"},{"source":"DORA Code Review","url":"https://dora.dev/capabilities/code-review/"}]}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"DORA Test Automation","url":"https://dora.dev/capabilities/test-automation/"},{"source":"DORA Deployment Automation","url":"https://dora.dev/capabilities/deployment-automation/"},{"source":"DORA Shift Left Security","url":"https://dora.dev/capabilities/shifting-left-on-security/"},{"source":"DORA Architecture","url":"https://dora.dev/capabilities/loosely-coupled-architecture/"}]}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["AI coding assistant adoption statistics 2024 2025","GitHub Copilot enterprise adoption","Cursor AI development tools","platform engineering internal developer platform maturity","shift left security SAST DAST scanning","feature flags progressive delivery canary deployments","microservices architecture patterns best practices","observability distributed tracing OpenTelemetry","incident response postmortem practices","technical debt management prioritization"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"DORA AI Tensions","url":"https://dora.dev/insights/balancing-ai-tensions/"},{"source":"Internal Developer Platform","url":"https://internaldeveloperplatform.org/what-is-an-internal-developer-platform/"},{"source":"GitHub Copilot Research","url":"https://github.blog/news-insights/research/research-quantifying-github-copilots-impact-in-the-enterprise-with-accenture/"},{"source":"Stack Overflow AI Tools","url":"https://survey.stackoverflow.co/2024/ai"}]}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"DORA Continuous Delivery","url":"https://dora.dev/capabilities/continuous-delivery/"},{"source":"DORA Code Maintainability","url":"https://dora.dev/capabilities/code-maintainability/"},{"source":"DORA Team Flexibility","url":"https://dora.dev/capabilities/team-flexibility/"},{"source":"DORA West Alignment","url":"https://dora.dev/capabilities/west-alignment/"}]}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA capabilities catalog all capabilities","software delivery performance metrics throughput stability","AI code generation quality security risks","platform engineering team structure responsibilities","shift left security left shift testing practices","feature management feature flags LaunchDarkly","incident managementPagerDuty OpsGenie practices","technical debt quantification management tools"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_fetch_and_index {"concurrency":5,"requests":[{"source":"DORA Gen AI Report","url":"https://dora.dev/ai/gen-ai-report/"},{"source":"DORA AI Stance","url":"https://dora.dev/capabilities/clear-and-communicated-ai-stance/"},{"source":"DORA Metrics Four Keys","url":"https://dora.dev/guides/dora-metrics-four-keys/"},{"source":"DORA Quick Check","url":"https://dora.dev/quickcheck/"}]}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA capabilities full list all 49 capabilities","software architecture patterns microservices serverless","API design best practices REST GraphQL","database management migration practices","container orchestration Kubernetes practices","GitOps ArgoCD Flux practices","feature flag management progressive rollout","canary deployment blue green deployment strategies"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA 2025 report key findings","software testing pyramid testing strategy","code quality static analysis linting practices","documentation as code docs engineering","developer onboarding experience practices","postmortem blameless culture practices","SLO SLI error budget management","change management release process practices"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA research methodology survey approach","software development lifecycle phases traditional vs modern","DevOps culture transformation organizational change","infrastructure as code Terraform Pulumi practices","cloud native architecture twelve factor app","API versioning backward compatibility practices","database schema migration versioning","container security scanning practices"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA research findings 2024 2025 key insights","software development best practices evidence-based","engineering metrics DORA four keys measurement","continuous improvement kaizen engineering culture","technical excellence software craftmanship practices","DevOps toolchain integration practices","release management deployment strategies","quality assurance testing practices modern"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA capabilities full list all capabilities","software development process areas workflow","engineering organization structure teams","code review process best practices","testing strategy test pyramid test automation","deployment pipeline continuous delivery","incident management postmortem process","technical debt management process"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA capabilities full list all capabilities","software development process areas workflow","engineering organization structure teams","code review process best practices","testing strategy test pyramid test automation","deployment pipeline continuous delivery","incident management postmortem process","technical debt management process"],"limit":5}
+[0m⚙ [0mcontext-mode_ctx_search {"queries":["DORA capabilities full list all capabilities","software development process areas workflow","engineering organization structure teams","code review process best practices","testing strategy test pyramid test automation","deployment pipeline continuous delivery","incident management postmortem process","technical debt management process"],"limit":5}
+[0m
+[0m# [0mTodos
+[✓] Create output directory structure
+[✓] Conduct web research on SDLC best practices from major tech companies
+[•] Write research artifacts (scope, plan, sources, evidence, etc.)
+[ ] Write main research_report.md with all 10 sections
+[ ] Write run_manifest.json
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/scope.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/20026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/research-plan.md
+Wrote file successfully.
+[0m
+[0m$ [0mmkdir -p /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5 && mv "/Users/shafqat/projects/silver-bullet/repo/research/20026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/research-plan.md" "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/research-plan.md" && rm -rf "/Users/shafqat/projects/silver-bullet/repo/research/20026-07-12-canonical-sdlc-process-architecture"
+(no output)
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/sources.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/evidence.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/triangulation.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/outline.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/claims.jsonl
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/critique.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/decision-record.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/handoff.md
+Wrote file successfully.
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/vloop-rollup.json
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Create output directory structure
+[✓] Conduct web research on SDLC best practices from major tech companies
+[✓] Write research artifacts (scope, plan, sources, evidence, etc.)
+[•] Write main research_report.md with all 10 sections
+[ ] Write run_manifest.json
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/research_report.md
+Wrote file successfully.
+[0m
+[0m# [0mTodos
+[✓] Create output directory structure
+[✓] Conduct web research on SDLC best practices from major tech companies
+[✓] Write research artifacts (scope, plan, sources, evidence, etc.)
+[✓] Write main research_report.md with all 10 sections
+[•] Write run_manifest.json
+[0m
+[0m← [0mWrite research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/run_manifest.json
+Wrote file successfully.
+[0m
+[0m$ [0mrtk ls -la /Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-mimo-v2.5/
+644  claims.jsonl  3.8K
+644  critique.md  2.3K
+644  decision-record.md  1.9K
+644  evidence.jsonl  8.6K
+644  handoff.md  1.9K
+644  outline.md  4.8K
+644  pid.txt  20B
+644  research-plan.md  2.6K
+644  research_report.md  51.0K
+644  run.err  20.0K
+644  run_manifest.json  1.9K
+644  scope.md  2.3K
+644  sources.jsonl  10.0K
+644  triangulation.md  5.0K
+644  vloop-rollup.json  604B
+[0m
+[0m# [0mTodos
+[✓] Create output directory structure
+[✓] Conduct web research on SDLC best practices from major tech companies
+[✓] Write research artifacts (scope, plan, sources, evidence, etc.)
+[✓] Write main research_report.md with all 10 sections
+[✓] Write run_manifest.json
+[0m

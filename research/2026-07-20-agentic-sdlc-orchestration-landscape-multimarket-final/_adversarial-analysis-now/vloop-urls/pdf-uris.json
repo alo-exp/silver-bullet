@@ -1,0 +1,20 @@
+{
+  "pdf": "research/2026-07-20-agentic-sdlc-orchestration-landscape-multimarket-final/landscape-report.pdf",
+  "pdf_bytes": 980970,
+  "uri_literals": 173,
+  "forbidden_uris": [],
+  "github_uris_for_p0": [
+    "https://github.com/romiluz13/cc10x",
+    "https://github.com/JuliusBrussee/cavekit",
+    "https://github.com/barkain/claude-code-workflow-orchestration"
+  ],
+  "bin_counts": {
+    "cc10x.dev": 0,
+    "cavekit.ai": 0,
+    "barkain.com": 0,
+    "github.com/romiluz13/cc10x": 7,
+    "github.com/JuliusBrussee/cavekit": 5,
+    "github.com/barkain/claude-code-workflow-orchestration": 7
+  },
+  "note": "pdftotext missed GitHub URLs (link annotations, not visible text). Binary /URI scan is authoritative."
+}

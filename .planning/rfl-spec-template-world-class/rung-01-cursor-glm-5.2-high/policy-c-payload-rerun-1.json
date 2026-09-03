@@ -1,0 +1,86 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (re-run pass 1)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R1b-F01",
+        "title": "QC-7 SPEC-F61 exemption is a six-kind enum; multi with ux forbidden still deadlocks vs catalog QC-1 / figma-url"
+      },
+      {
+        "id": "R1b-F02",
+        "title": "Wave 4 capture schema does not name brief fields for kind-gated packs the compiler concatenates from non-empty brief fields"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "R1b-F03",
+        "title": "Blast radius still lists Clarify optional quality prompt after R2-F01 made nfr a real turn"
+      }
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R1b-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "QC-7 SPEC-F61 exemption must tie to catalog ux-forbidden (including software-kind multi), not a closed list of six atomic kinds; figma-url must not deadlock vs kind-aware QC-1"
+    },
+    {
+      "id": "R1b-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Wave 4 capture schema must name brief fields for kind-pack turns (ux, errors, data, nfr, security, telemetry, api, cli, mobile, pipeline, ops, examples) plus decisions so concat can see non-empty fields"
+    },
+    {
+      "id": "R1b-F03",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Blast-radius Clarify row must call nfr a real/mandatory turn per R2-F01, not an optional quality prompt"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R1b-F01",
+      "title": "QC-7 SPEC-F61 exemption is a six-kind enum; multi with ux forbidden still deadlocks vs catalog QC-1 / figma-url"
+    },
+    {
+      "id": "R1b-F02",
+      "title": "Wave 4 capture schema does not name brief fields for kind-gated packs the compiler concatenates from non-empty brief fields"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R1b-F01",
+      "severity": "MED",
+      "title": "QC-7 SPEC-F61 exemption is a six-kind enum; multi with ux forbidden still deadlocks vs catalog QC-1 / figma-url",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1b-F02",
+      "severity": "MED",
+      "title": "Wave 4 capture schema does not name brief fields for kind-gated packs the compiler concatenates from non-empty brief fields",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R1b-F03",
+      "severity": "LOW",
+      "title": "Blast radius still lists Clarify optional quality prompt after R2-F01 made nfr a real turn",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "bb06eb8cf9448899e73ed072079cf4c8a0365c2e9a6144ea93f219b215cbfaf8"
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gemini",
+    "effort": "high",
+    "display": "Cursor Gemini 3.7 Flash High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "F-3-1", "title": "Phase 1 omits rt_scope_includes_component packages for search_cli"}
+    ],
+    "NIT": [
+      {"id": "F-3-2", "title": "Duplicate stale checks.sh test-plan rows"},
+      {"id": "F-3-3", "title": "Self-nested .planning freeze links from PRD"}
+    ]
+  },
+  "triage": [
+    {"id": "F-3-1", "severity": "LOW", "decision": "ACCEPT", "reason": "Phase 1 step 2 must add search_cli to rt_scope_includes_component packages (host only if MCP/hooks exist)"},
+    {"id": "F-3-2", "severity": "NIT", "decision": "ACCEPT", "reason": "Merge duplicate stale checks.sh test rows"},
+    {"id": "F-3-3", "severity": "NIT", "decision": "ACCEPT", "reason": "Use sibling router_subagent_surfaces_85bf9f09.plan.md from the PRD"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {"id": "F-3-1", "severity": "LOW", "title": "rt_scope_includes_component packages", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-3-2", "severity": "NIT", "title": "Duplicate checks.sh rows", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-3-3", "severity": "NIT", "title": "Sibling freeze links", "decision": "ACCEPT", "resolved": "yes"}
+  ],
+  "apply_sha": "21624b374d90ec93d36367bfa7008240564e8ca5cb3ce83c98fb7abf27f8ce6c"
+}

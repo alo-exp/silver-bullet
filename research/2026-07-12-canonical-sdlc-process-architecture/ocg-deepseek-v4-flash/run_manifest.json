@@ -1,0 +1,27 @@
+{
+  "agent_slug": "ocg-deepseek-v4-flash",
+  "model": "opencode-go/deepseek-v4-flash",
+  "started_at": "2026-07-11T19:53:16Z",
+  "completed_at": "2026-07-12T00:30:00Z",
+  "output_dir": "/Users/shafqat/projects/silver-bullet/repo/research/2026-07-12-canonical-sdlc-process-architecture/ocg-deepseek-v4-flash",
+  "artifacts_written": [
+    "scope.md",
+    "research-plan.md",
+    "sources.jsonl",
+    "evidence.jsonl",
+    "triangulation.md",
+    "outline.md",
+    "claims.jsonl",
+    "critique.md",
+    "decision-record.md",
+    "handoff.md",
+    "vloop-rollup.json",
+    "run_manifest.json",
+    "research_report.md"
+  ],
+  "research_mode": "ultradeep",
+  "subagents_used": [
+    "ocg-deepseek-v4-flash"
+  ],
+  "status": "complete"
+}

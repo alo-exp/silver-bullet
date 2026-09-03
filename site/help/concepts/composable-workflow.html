@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Composable Workflow Orchestration — Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet's canonical atomic-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
+<meta property="og:title" content="Composable Workflow Orchestration — Silver Bullet Help">
+<meta property="og:description" content="How Silver Bullet's canonical atomic flows work: /silver classifies context, selects catalog-backed flows, and supervises execution via the active per-instance workflow tracker.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sb.alolabs.dev/help/concepts/composable-workflow.html">
+<meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://sb.alolabs.dev/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:560px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+/* REFERENCE TABLE */
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--slate-a02)}
+/* CODE BLOCK */
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+/* PAGE NAV BOTTOM */
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+/* NAV SEARCH */
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Composable Workflow</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Composable Workflow Orchestration</h1>
+    <p>How <code>/silver</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>ROUTE</code>, selects a catalog workflow, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#atomic-flow-catalog">Atomic Flow Catalog</a></li>
+        <li><a href="#legacy-alias-map">Legacy Alias Map</a></li>
+        <li><a href="#post-execution">Post-Execution Order</a></li>
+        <li><a href="#how-composition-works">How Composition Works</a></li>
+        <li><a href="#workflow-tracking">Workflow Tracker</a></li>
+        <li><a href="#supervision-loop">Supervision Loop</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="overview">What Are Composable Flows?</h2>
+      <p>Silver Bullet v0.52.0 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
+      <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
+      <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>Why composition instead of fixed pipelines?</strong> A feature composition includes PLAN, EXECUTE, REVIEW, VERIFY, SECURE, SHIP. A debug composition inserts DEBUG before EXECUTE. A release composition includes RELEASE but not EXECUTE. Fixed pipelines cannot express this variability cleanly — composable flows can.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="atomic-flow-catalog">Atomic Flow Catalog</h2>
+      <p>The source of truth is <code>docs/apo-catalog.json</code>. Generated views such as <code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>, and <code>docs/generated/atomic-flow-index.json</code> are rendered from that catalog and checked for freshness. They are not hand-maintained workflow authorities.</p>
+      <p>v0.52.0 defines <strong>29 canonical atomic flows</strong>, <strong>26 workflows</strong> (22 task-shaped plus 4 reusable components), and <strong>118 flow-step contracts</strong>. Each flow step carries a local V-loop; evidence rolls up through atomic-flow gates to workflow intent gates. Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation.</p>
+
+      <table class="ref-table">
+        <thead>
+          <tr><th>Atomic flow</th><th>Slug</th><th>Capability class</th><th>Work product</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>AF-ROUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ROUTE</td><td style="font-family:inherit;font-size:.875rem">route intent</td><td style="font-family:inherit;font-size:.875rem">Classified user intent and selected workflow route.</td></tr>
+          <tr><td><code>AF-BOOTSTRAP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BOOTSTRAP</td><td style="font-family:inherit;font-size:.875rem">project bootstrap</td><td style="font-family:inherit;font-size:.875rem">Initialized or migrated Silver Bullet project surface.</td></tr>
+          <tr><td><code>AF-ORIENT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">ORIENT</td><td style="font-family:inherit;font-size:.875rem">context orientation</td><td style="font-family:inherit;font-size:.875rem">Current codebase, planning, git, and runtime context map.</td></tr>
+          <tr><td><code>AF-CLARIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">CLARIFY</td><td style="font-family:inherit;font-size:.875rem">scope clarification</td><td style="font-family:inherit;font-size:.875rem">Resolved scope, assumptions, boundaries, and next route.</td></tr>
+          <tr><td><code>AF-DECIDE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DECIDE</td><td style="font-family:inherit;font-size:.875rem">decision research</td><td style="font-family:inherit;font-size:.875rem">Decision record with rationale, tradeoffs, and risks.</td></tr>
+          <tr><td><code>AF-SPECIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SPECIFY</td><td style="font-family:inherit;font-size:.875rem">requirements specification</td><td style="font-family:inherit;font-size:.875rem">Specification, requirements, and ingestion evidence.</td></tr>
+          <tr><td><code>AF-PLAN</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PLAN</td><td style="font-family:inherit;font-size:.875rem">execution planning</td><td style="font-family:inherit;font-size:.875rem">Accepted implementation or operations plan.</td></tr>
+          <tr><td><code>AF-DESIGN-CONTRACT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DESIGN_CONTRACT</td><td style="font-family:inherit;font-size:.875rem">design contract</td><td style="font-family:inherit;font-size:.875rem">UI/design contract or documented non-UI rationale.</td></tr>
+          <tr><td><code>AF-VALIDATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VALIDATE</td><td style="font-family:inherit;font-size:.875rem">gap validation</td><td style="font-family:inherit;font-size:.875rem">Gap analysis with pass/fail status and repair inputs.</td></tr>
+          <tr><td><code>AF-QUALITY-GATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem">Quality dimension gate results and required repairs.</td></tr>
+          <tr><td><code>AF-FAST-PATH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem">Minimal safe workflow route for narrow low-risk work.</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem">Scoped implementation changes and local execution notes.</td></tr>
+          <tr><td><code>AF-AGENT-DELEGATE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">AGENT_DELEGATE</td><td style="font-family:inherit;font-size:.875rem">supervised external-agent delegation</td><td style="font-family:inherit;font-size:.875rem">Bounded delegated execution with checkpoints and independent verification.</td></tr>
+          <tr><td><code>AF-MULTI-AI-TASK</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">MULTI_AI_TASK</td><td style="font-family:inherit;font-size:.875rem">budgeted multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem">Parallel multi-model outputs, reconciliation, and evidence-backed synthesis.</td></tr>
+          <tr><td><code>AF-DEBUG</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem">Root-cause diagnosis and fix strategy for failing behavior.</td></tr>
+          <tr><td><code>AF-UI-QUALITY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem">UI review findings, fixes, or accepted residual risk.</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem">Fresh verification evidence for behavior, tests, and artifacts.</td></tr>
+          <tr><td><code>AF-SECURE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SECURE</td><td style="font-family:inherit;font-size:.875rem">security and llm safety</td><td style="font-family:inherit;font-size:.875rem">Security and AI-safety review evidence.</td></tr>
+          <tr><td><code>AF-REVIEW-REQUEST</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW_REQUEST</td><td style="font-family:inherit;font-size:.875rem">review request</td><td style="font-family:inherit;font-size:.875rem">Review request package with scope and evidence pointers.</td></tr>
+          <tr><td><code>AF-REVIEW</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW</td><td style="font-family:inherit;font-size:.875rem">artifact and code review</td><td style="font-family:inherit;font-size:.875rem">Review findings across code, artifacts, and domain gates.</td></tr>
+          <tr><td><code>AF-REVIEW-TRIAGE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">REVIEW_TRIAGE</td><td style="font-family:inherit;font-size:.875rem">review triage and fix</td><td style="font-family:inherit;font-size:.875rem">Triaged findings, applied fixes, and dismissed-risk rationale.</td></tr>
+          <tr><td><code>AF-BLAST-RADIUS</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BLAST_RADIUS</td><td style="font-family:inherit;font-size:.875rem">blast radius assessment</td><td style="font-family:inherit;font-size:.875rem">Change blast-radius analysis and rollback/risk controls.</td></tr>
+          <tr><td><code>AF-DEVOPS-ROUTE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DEVOPS_ROUTE</td><td style="font-family:inherit;font-size:.875rem">devops toolchain routing</td><td style="font-family:inherit;font-size:.875rem">DevOps provider/toolchain route and required gates.</td></tr>
+          <tr><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BRANCH_FINISH</td><td style="font-family:inherit;font-size:.875rem">branch hygiene</td><td style="font-family:inherit;font-size:.875rem">Branch hygiene, commit readiness, and traceability evidence.</td></tr>
+          <tr><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">COMPLETION_AUDIT</td><td style="font-family:inherit;font-size:.875rem">completion audit</td><td style="font-family:inherit;font-size:.875rem">Completion audit proving claimed outcomes are supported.</td></tr>
+          <tr><td><code>AF-SHIP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td><td style="font-family:inherit;font-size:.875rem">ship readiness</td><td style="font-family:inherit;font-size:.875rem">Branch, PR, CI, deploy, or ship-readiness outcome.</td></tr>
+          <tr><td><code>AF-RELEASE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">RELEASE</td><td style="font-family:inherit;font-size:.875rem">release management</td><td style="font-family:inherit;font-size:.875rem">Release notes, versioning decision, tag, and release artifact.</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem">Durable documentation, handoff, or knowledge-capture artifact.</td></tr>
+          <tr><td><code>AF-PHASE-MANAGE</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">PHASE_MANAGE</td><td style="font-family:inherit;font-size:.875rem">phase and state management</td><td style="font-family:inherit;font-size:.875rem">Phase, backlog, thread, or state transition record.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="legacy-alias-map">Legacy alias map (migration reference only)</h3>
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Secondary reference.</strong> The primary catalog is the table above. Use this map only when translating older docs, runtime queue tokens, or team runbooks that still say <code>FLOW N</code>. New compositions, help docs, and process packs must use atomic flow slugs from <code>docs/apo-catalog.json</code>.</div>
+      </div>
+      <p>Legacy label → canonical entity:</p>
+      <table class="ref-table">
+        <thead><tr><th>Legacy alias</th><th>Canonical catalog ID</th></tr></thead>
+        <tbody>
+          <tr><td><code>FLOW 1</code></td><td><code>AF-BOOTSTRAP</code></td></tr>
+          <tr><td><code>FLOW 2</code></td><td><code>AF-ORIENT</code></td></tr>
+          <tr><td><code>FLOW 3</code></td><td><code>AF-CLARIFY</code></td></tr>
+          <tr><td><code>FLOW 4</code></td><td><code>AF-DECIDE</code></td></tr>
+          <tr><td><code>FLOW 5</code></td><td><code>AF-SPECIFY</code></td></tr>
+          <tr><td><code>FLOW 6</code></td><td><code>AF-PLAN</code></td></tr>
+          <tr><td><code>FLOW 7</code></td><td><code>AF-DESIGN-CONTRACT</code></td></tr>
+          <tr><td><code>FLOW 8</code></td><td><code>AF-EXECUTE</code></td></tr>
+          <tr><td><code>FLOW 9</code></td><td><code>AF-UI-QUALITY</code></td></tr>
+          <tr><td><code>FLOW 10</code></td><td><code>WF-REVIEW-TRIAD</code></td></tr>
+          <tr><td><code>FLOW 11</code></td><td><code>AF-SECURE</code></td></tr>
+          <tr><td><code>FLOW 12</code></td><td><code>AF-VERIFY</code></td></tr>
+          <tr><td><code>FLOW 13</code></td><td><code>AF-QUALITY-GATE</code></td></tr>
+          <tr><td><code>FLOW 14</code></td><td><code>WF-SHIP-READINESS</code></td></tr>
+          <tr><td><code>FLOW 15</code></td><td><code>AF-DEBUG</code></td></tr>
+          <tr><td><code>FLOW 16</code> (DESIGN HANDOFF)</td><td><code>AF-DOCUMENT</code></td></tr>
+          <tr><td><code>FLOW 17</code> (DOCUMENT)</td><td><code>AF-DOCUMENT</code></td></tr>
+          <tr><td><code>FLOW 18</code></td><td><code>AF-RELEASE</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="post-execution">Post-Execution Sequencing</h2>
+      <p>Runtime order is defined by catalog workflow composition and orchestrator queues, not by legacy FLOW numbering. For delivery composers, the reusable post-execution chain after <code>EXECUTE</code> is:</p>
+      <ol>
+        <li><code>UI_QUALITY</code> when UI scope applies</li>
+        <li><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code></li>
+        <li><code>VERIFY</code> (with <code>verify-tests</code>)</li>
+        <li><code>SECURE</code> (with <code>VALIDATE</code> as needed)</li>
+        <li><code>QUALITY_GATE</code> pre-ship</li>
+        <li><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code></li>
+      </ol>
+      <p>Each child atomic flow must pass its own V-gate before the parent workflow can roll up to final user-intent validation.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="how-composition-works">How Composition Works</h2>
+      <p>When you invoke <code>/silver</code>, composition happens in five catalog-backed steps:</p>
+      <ol>
+        <li><strong>Intent classification</strong> — <code>ROUTE</code> maps the request, project state, and active artifacts to a workflow such as <code>silver-feature</code>, <code>silver-bugfix</code>, or a dynamic route.</li>
+        <li><strong>Catalog selection</strong> — the workflow contributes atomic flow slugs and reusable workflow components. No workflow tree is authored outside <code>docs/apo-catalog.json</code>.</li>
+        <li><strong>Dynamic prune/insert/substitute</strong> — runtime context may omit already-satisfied atoms, insert missing preconditions such as <code>DEBUG</code>, or substitute a smaller reusable workflow when catalog rules allow it.</li>
+        <li><strong>Subagent scheduling</strong> — each ready atomic flow becomes exactly one subagent work package; independent atoms can run in parallel, while conflicting mutation scopes serialize.</li>
+        <li><strong>V-loop rollup</strong> — flow-step V-loops roll into atomic-flow V-gates, atomic-flow V-gates roll into workflow gates, and the final gate validates material user intent.</li>
+      </ol>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon"><i data-lucide="lightbulb"></i></span>
+        <div class="callout-body"><strong>Example feature composition:</strong> <code>silver-feature</code> starts with <code>BOOTSTRAP</code> → <code>ORIENT</code> → <code>SPECIFY</code> → <code>PLAN</code> atoms, executes <code>EXECUTE</code>, then joins post-execution gates (<code>REVIEW_REQUEST</code> → … → <code>SHIP</code>). A failing test or CI run can dynamically insert <code>DEBUG</code>; a UI scope keeps <code>DESIGN_CONTRACT</code> and <code>UI_QUALITY</code>.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-tracking">Per-Instance Workflow Tracker</h2>
+      <p>The active composition tracker lives at <code>.planning/workflows/&lt;id&gt;.md</code>. It is created when a composition begins and updated after every path completes.</p>
+
+      <h3>What the workflow tracker contains</h3>
+      <ul>
+        <li><strong>Active path</strong> — which path is currently executing</li>
+        <li><strong>Completed paths</strong> — log of paths that have exited successfully, with timestamps</li>
+        <li><strong>Deferred improvements</strong> — items noted during execution that are not blocking but should be addressed later</li>
+        <li><strong>Dynamic insertions</strong> — catalog atoms inserted at runtime (e.g. <code>DEBUG</code> after a failure)</li>
+        <li><strong>Composition plan</strong> — the full ordered chain proposed at composition time</li>
+      </ul>
+
+      <h3>Why the workflow tracker matters</h3>
+      <p>The per-instance tracker gives both the user and the agent a shared, persistent view of what is happening. If a session is interrupted, <code>.planning/workflows/&lt;id&gt;.md</code> allows the next session to resume from the correct point in the chain without re-running completed paths. It also provides an audit trail for post-hoc review. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="supervision-loop">Supervision Loop</h2>
+      <p>Each atomic flow in a composition runs under a local V-loop and parent supervision loop:</p>
+
+      <ol>
+        <li><strong>Input contract check</strong> — prerequisites, dependency outputs, mutation scope, and selected flow steps are verified before dispatch.</li>
+        <li><strong>Subagent execution</strong> — the selected atomic flow runs as one subagent work package, and each owned flow step produces local evidence.</li>
+        <li><strong>V-gate verification</strong> — step V-loops roll up first; then the atomic-flow V-gate verifies and validates the work product against the input that selected it.</li>
+        <li><strong>Stall detection</strong> — If a path makes no progress for a configured timeout, a stall sentinel is surfaced to break the loop.</li>
+        <li><strong>Progress reporting</strong> — composition logs record selected atoms, dynamic deviations, subagent dispatch/join status, evidence, and final intent coverage.</li>
+      </ol>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong><code>VERIFY</code> is non-skippable for delivery.</strong> The workflow cannot complete until verification evidence is fresh and rolled up. Even if the user asks to skip it, delivery hooks block premature PR, deploy, release, or completion claims.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a path chain</li>
+        <li><a href="verification.html">Verification Before Completion</a> — <code>VERIFY</code> and dual-mode quality gates in detail</li>
+        <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how <code>REVIEW</code> and <code>REVIEW_TRIAGE</code> handle findings</li>
+        <li><a href="documentation.html">Documentation Scheme</a> — <code>DOCUMENT</code> and the per-instance workflow tracker as project artifacts</li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="./">
+          <span class="pnb-label">← Back to</span>
+          <span class="pnb-title">Core Concepts</span>
+        </a>
+        <a href="artifact-review-assessor.html">
+          <span class="pnb-label">Next →</span>
+          <span class="pnb-title">Artifact Review Assessor</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

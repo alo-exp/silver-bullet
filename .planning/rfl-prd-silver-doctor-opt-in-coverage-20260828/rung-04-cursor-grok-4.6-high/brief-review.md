@@ -1,0 +1,3 @@
+# Rung 4 review brief — Cursor Grok 4.6 High
+
+Write findings to `review.md`. **REVIEW-ONLY.** Prior rungs applied I-1…I-26. Hunt **new** gaps. IDs F-4-1…

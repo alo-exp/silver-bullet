@@ -1,0 +1,93 @@
+## VERDICT
+
+**NEEDS_FIXES**
+
+Low-rung items (migration I/A/V mapping, revalidation A-before-V, baseline A-before-V, V-order + K/L post-verify, ALP-01/KLW-01, `authorizer_contiguous_watermark`, OpenCode deferred, ordinary-delivery wording, clarify authority path, APO pin language) look incorporated in readable text. Medium-rung still finds material contradictions and SM/catalog holes that block CLEAN.
+
+Sources: [plan](.planning/router_subagent_surfaces_85bf9f09.plan.md), [clarify brief](.planning/router_subagent_surfaces_85bf9f09-CLARIFY-260717-143757.md). Did not overwrite `.planning/CLARIFY.md`.
+
+---
+
+## FINDINGS
+
+### F-1: `a_loop_not_applicable` reopens a live A-loop skip
+- **Severity:** material
+- **Location:** Locked decisions baseline admission (~L37); §7 migration (~L137); clarify Q10/Q10′ + Universal Advisor section
+- **Issue:** Clarify locks a **universal** A-loop (two-clean; I → re-A before V; V never with open Advisor findings). Plan still allows baseline admission via bound `a_loop_not_applicable` “where Advisor does not apply,” with **no eligibility rules**. Migration also invents that receipt for legacy RFL without Advisor history — fine for history — but the same token is used as a live baseline substitute, which reintroduces a skip path contradicting Q10′.
+- **Suggested fix:** Restrict `a_loop_not_applicable` to **legacy migration mapping only**. Live ordinary delivery and Iterate baseline/revalidation require real non-superseded A-loop two-clean (plus no open findings). Delete live “Advisor does not apply” language, or replace with a finite, reviewed exemption enum + receipt schema + matrix row.
+
+### F-2: Ordinary-delivery SM vs Iterate authority axis
+- **Severity:** material
+- **Location:** Checklist (~L224); §5 Authorization-axis (~L109–112); clarify canonical order
+- **Issue:** Checklist correctly says ordinary completion = I→A→V + K/L and does **not** require Iterate. The only detailed transition matrix is Iterate-centric (`awaiting_baseline_admission`, `rung_running`, `authority_status`, …). No durable ordinary Process/Workflow/AF/Step completion states, receipt IDs, or parent-return predicates outside Iterate. Implementers will either over-bind I/A/V to Iterate or leave ordinary delivery implicit.
+- **Suggested fix:** Add an ordinary-delivery completion binding (scope I/A/V two-clean + final-validation + K/L post-verify before parent return) distinct from Iterate activation/admission; state which packet fields apply and which authority-axis fields do not.
+
+### F-3: A-loop scope granularity unlocked
+- **Severity:** material
+- **Location:** §5 (~L106–108); §3 Process graph (~L77); clarify Universal Advisor
+- **Issue:** A-loop is “for the scope” and Workflow may request “advisor,” but neither artifact locks whether A-loop is required per Step, per AF, per Workflow composition, and/or Process final only. That drives advisor spawn topology, cost, and ALP-01/TST-RFL-612.
+- **Suggested fix:** Lock minimum boundaries in Locked decisions / clarify addendum (recommended default: every AF + every Workflow composition verifier + Process final validation; Steps inherit AF A-loop unless Step is the AF leaf).
+
+### F-4: Six migration ingress states never canonically listed
+- **Severity:** material
+- **Location:** Checklist (~L228); impl matrix row 5 (~L216); §7 prose (`freeze_intent`, `freeze_sealed`, `projection_only`, `seal_drain_watermark`, `producer_stopped`, …)
+- **Issue:** Plan repeatedly requires “exact six ordered ingress states” but never publishes one ordered, named list. Tests and `hooks/lib/orchestrator-migration.sh` cannot be authored without inventing order.
+- **Suggested fix:** Lock one ordered sextuple in Locked decisions or §7 (names + transitions + what is/isn’t a state vs CAS). Example shape only if product agrees: `freeze_intent → pre_seal_reconciliation_only → freeze_sealed → projection_only → seal_drain_watermark/replay-only drain → producer_stopped`.
+
+### F-5: Typed blocker catalog orphans
+- **Severity:** material
+- **Location:** §3 (~L94) `blocked_depth_unsupported`; §7 (~L137) `migration_not_activated`; §5 Typed blockers (~L125)
+- **Issue:** Canonical blocker list (~L125) omits `blocked_depth_unsupported` (emitted for unauthorized nesting when topology/validator proof is missing) and does not classify `migration_not_activated` (durable emission when provenance-unproved). Sibling migration failures are listed (`blocked_unknown_migration`, `blocked_offline_quiescence`, …). Doctor/resume/traceability cannot close without a home for these IDs.
+- **Suggested fix:** Add `blocked_depth_unsupported` to the typed catalog with resume predicate; either add `migration_not_activated` as a typed terminal/waiting receipt kind (if not a `blocked_*`) or map it to an existing blocker and delete the orphan name.
+
+### F-6: K/L “must” gates lack fail-closed typed outcomes
+- **Severity:** material
+- **Location:** Locked decisions (~L32); §5 (~L104, L108); KLW-01 (~L208); clarify Universal Advisor / toolstack
+- **Issue:** Pre-read and post-verify Knowledge/Learnings are mandatory, and KLW-01 exists, but typed blockers (~L125) have no `blocked_knowledge_*` / missing-INDEX / skipped-post-verify outcome. Clarify says Graphify-first else INDEX + month files; missing INDEX with Graphify off is undefined.
+- **Suggested fix:** Lock fail-closed outcomes (e.g. cannot start I without pre-read receipt; cannot return to parent without post-verify write receipt) and add blocker/receipt IDs covered by KLW-01/VAL-RFL-613.
+
+### F-7: Toolstack “five-tool” vs clarify four-column table
+- **Severity:** material
+- **Location:** Plan Locked decisions (~L32–33); clarify toolstack table (L49–57)
+- **Issue:** Plan claims five-tool routed with RTK owning shell “orthogonal to the quality-loop table.” Clarify’s table has only Graphify / agentmemory / Context Mode / LeanCTX (no RTK row; Alumnium unmentioned). Synergy line matches SB rules, but table/authority presentation is inconsistent and the plan-embedded table body is not independently reviewable under lean-ctx compression.
+- **Suggested fix:** Make Locked-decisions table match five-tool routing: keep RTK as shell row (or explicit “orthogonal, not a quality-loop column” footnote), state Alumnium out-of-scope for this architecture ship if deferred, and keep plan ↔ clarify ↔ mirror byte-identical.
+
+### F-8: `blocked_advisor_state` vs “strictly stronger Advisor” exhaustion
+- **Severity:** nit (becomes material if F-1 keeps exemptions)
+- **Location:** §2 (~L73); §5 (~L106, L125); clarify “Advisor strictly stronger”
+- **Issue:** Acknowledgment before V and `blocked_advisor_state` exist, but dispositions when no stronger Advisor is available (hard block vs weaker fallback vs illicit N/A) are not locked.
+- **Suggested fix:** Lock: no eligible stronger Advisor → `blocked_advisor_state` (no skip); optional durable wait for profile refresh — never `a_loop_not_applicable` on live work.
+
+### F-9: Authorizer rename / Broker leftovers
+- **Severity:** nit (unverified residual)
+- **Location:** Clarify Q9a–c; plan §4 (~L97); readable authority text
+- **Issue:** All readable authority prose uses Authorizer + runtime-home `host/org/repo`. No Broker string in readable lines; Locked-decisions preamble (~L30) still lean-ctx-omitted.
+- **Suggested fix:** Before High rung, `rg -i broker` on raw plan + mirror; if zero, close Q9a.
+
+### F-10: Q11 single coordinated release vs site/help policy
+- **Severity:** nit
+- **Location:** Clarify Q11; plan §9 (~L175, L217)
+- **Issue:** Q11 locks one coordinated release; §9 still distinguishes plugin release gates from site/help-only publish policy without saying whether the architecture ship train includes LIVE site/help catalog updates.
+- **Suggested fix:** One clarify/Locked sentence: architecture ship includes plugin tag + site/help catalog parity in one train, or explicit exception list.
+
+---
+
+## MISSING_CLARIFY_DECISIONS
+
+| Decision still open | Why it matters |
+|---|---|
+| Live eligibility of `a_loop_not_applicable` (vs migration-only) | Contradicts universal A-loop if left open |
+| A-loop minimum scope boundaries (Step / AF / Workflow / Process) | ALP-01 + spawn graph + cost model |
+| Ordinary-delivery durable states/receipts outside Iterate | Completeness of I→A→V without Iterate |
+| Canonical names + order of six migration ingress states | Migrate tests/impl cannot execute |
+| Advisor-unavailable disposition | `blocked_advisor_state` vs skip |
+| K/L pre-read failure when Graphify off and INDEX missing | KLW-01 fail-closed |
+| RTK (and Alumnium) presentation in Locked toolstack table | Five-tool contract parity |
+| `critical_policy` concrete in-repo path/filename pattern | Minting surface for Q6 |
+| Architecture-ship inclusion of site/help LIVE gate (Q11) | Release train scope |
+
+---
+
+## SUMMARY
+
+Locked clarify Q1–Q11 are largely reflected (full AF+Workflow routes, Authorizer + runtime-home keys, GLM 5.2, unlimited Process nesting, RFL hard cut, I→A→V + K/L, OpenCode deferred, `critical_policy` in-repo, ALP-01/KLW-01). Medium-rung still **NEEDS_FIXES** mainly for: live `a_loop_not_applicable` vs universal A-loop; missing ordinary-delivery SM; unlocked A-loop scope; unnamed six migration states; blocker/receipt catalog orphans (`blocked_depth_unsupported`, `migration_not_activated`); K/L fail-closed holes; toolstack five-tool table parity. Prefer fixing F-1–F-7 before High rung; verify Broker absence and mirror `cmp` on raw bytes.

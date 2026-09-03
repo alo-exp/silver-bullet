@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-08T05:19:55Z",
+  "sb_git_sha": "9f349618e720",
+  "generator": "scripts/enterprise-e2e-certification-status.sh",
+  "sources_registry": "docs/testing/host-certification-sources.json",
+  "proof_baseline": "docs/testing/autonomous-enterprise-proof-baseline.json",
+  "policy_doc": "docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md",
+  "hosts": [
+    {
+      "host": "cursor",
+      "proof_level": "live_e2e_proven",
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md",
+      "canonical_gates": null,
+      "product_audit": null,
+      "methodology_appendix": "Appendix D",
+      "ledger_reconcile": "NARRATIVE_MATRIX_ONLY",
+      "ledger_pass": "22/22",
+      "strict_clean_eligible": true,
+      "gates_verdict": "n/a",
+      "product_audit_status": "n/a",
+      "registry_best_install_fp": "cursor@d572f53f3928+ff940b08e724",
+      "registry_best_row_count": 6,
+      "registry_best_passed_at": "2026-07-01T17:38:40Z",
+      "evidence_gaps": [
+        "ledger_reconcile_NARRATIVE_MATRIX_ONLY",
+        "strict_clean_narrative_only",
+        "ledger_format_legacy"
+      ]
+    },
+    {
+      "host": "codex",
+      "proof_level": "live_e2e_proven",
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md",
+      "canonical_gates": ".planning/enterprise-e2e/ROUND-CODEX-3-GATES.md",
+      "product_audit": ".planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md",
+      "methodology_appendix": "Appendix E",
+      "ledger_reconcile": "COMPLETE",
+      "ledger_pass": "22/22",
+      "strict_clean_eligible": true,
+      "gates_verdict": "closed_pass",
+      "product_audit_status": "pass",
+      "registry_best_install_fp": null,
+      "registry_best_row_count": 0,
+      "registry_best_passed_at": null,
+      "evidence_gaps": [
+        "strict_clean_narrative_only"
+      ]
+    },
+    {
+      "host": "claude",
+      "proof_level": "live_e2e_partial",
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-9-LEDGER.md",
+      "canonical_gates": ".planning/enterprise-e2e/ROUND-9-GATES.md",
+      "product_audit": null,
+      "methodology_appendix": "Appendix C (in progress)",
+      "ledger_reconcile": "REGISTRY_PARTIAL",
+      "ledger_pass": "6/22",
+      "strict_clean_eligible": false,
+      "gates_verdict": "in_progress",
+      "product_audit_status": "n/a",
+      "registry_best_install_fp": "claude@ba77d1b0ed19+596e99deab17",
+      "registry_best_row_count": 6,
+      "registry_best_passed_at": "2026-07-03T09:37:06Z",
+      "evidence_gaps": [
+        "ledger_reconcile_REGISTRY_PARTIAL",
+        "matrix_incomplete_6_of_22",
+        "strict_clean_check_fail"
+      ]
+    }
+  ],
+  "conservative_summary": {
+    "tri_host_live_e2e_proven": 2,
+    "tri_host_live_e2e_partial": 1,
+    "public_autonomous_enterprise_claim_ready": false
+  }
+}

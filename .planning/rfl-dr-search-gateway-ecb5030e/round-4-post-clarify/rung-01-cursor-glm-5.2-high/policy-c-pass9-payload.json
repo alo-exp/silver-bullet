@@ -1,0 +1,34 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 9)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "X1", "title": "§4.4 doctor still names pre-I-20 quota default $HOME/.cache/search"}
+    ],
+    "NIT": [
+      {"id": "X2", "title": "§6.12 has no --max-chars fingerprint-exclusion / truncation-at-emit test"},
+      {"id": "X3", "title": "§6.12 has no doctor.rs behavior test"}
+    ]
+  },
+  "triage": [
+    {"id": "X1", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; I-20 made human quota default equal fleet; §4.4 hazard was stale"},
+    {"id": "X2", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; --allow-private has a test, --max-chars does not"},
+    {"id": "X3", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; doctor.rs is on Modify lists with locked behaviors and no §6.12 guard"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "X1", "severity": "LOW", "title": "§4.4 doctor risk is shared fleet quota not $HOME/.cache/search", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "X2", "severity": "NIT", "title": "--max-chars emit/truncation test in §6.12", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "X3", "severity": "NIT", "title": "doctor.rs behavior tests in §6.12", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

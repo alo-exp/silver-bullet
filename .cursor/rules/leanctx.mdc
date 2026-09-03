@@ -1,0 +1,62 @@
+---
+description: LeanCTX routing rules for SB five-tool parallel stack
+alwaysApply: true
+---
+
+# leanctx
+
+When `recommended_tools.leanctx.enabled_by_user: true`, LeanCTX is **mandatory** for owned surfaces. The stack compression coordinator enforces mutual exclusion — do not bypass.
+
+## Routing table (`five_tool_routed`)
+
+| SB route | Owner | Agent action |
+|----------|-------|--------------|
+| `sb_wire` | LeanCTX wire proxy + savings ledger | Enable wire proxy; ledger is canonical token evidence |
+| `sb_read` | LeanCTX `lctx_read_ast` | Use `lctx_*` read tools for large files; not native Read for analysis |
+| `sb_grep` | Context Mode | `ctx_execute` / `ctx_search` — Grep is not LeanCTX-owned |
+| `sb_shell` | RTK | Shell compression via RTK only; LeanCTX shell MCP is OFF |
+| `sb_slice` | Context Mode | `ctx_execute` / `ctx_batch_execute`; LeanCTX sandbox MCP is OFF |
+| `sb_webfetch` | Context Mode | `ctx_fetch_and_index`; LeanCTX fetch MCP is OFF |
+| `sb_graph` | Graphify | `graphify query` / `path` / `explain` — **not** `lctx_graph` for code |
+| `sb_remember` | agentmemory | `memory_save` — **not** `lctx_remember` |
+| `sb_pathjail` | LeanCTX PathJail | Always on when LeanCTX enabled (physical rail) |
+| `sb_injection` | LeanCTX injection detection | Always on when LeanCTX enabled (physical rail) |
+
+## Non-negotiable rules
+
+1. **Graphify authoritative for code** — run `graphify query` before exploration; `lctx_graph` is advisory/session-scoped only and blocked for code queries by the stack coordinator.
+2. **agentmemory authoritative for memory** — save decisions via `memory_save`; coordinator blocks `lctx_remember`.
+3. **Context Mode owns ctx_*** — LeanCTX MCP tools use **`lctx_` prefix**; never register overlapping raw `ctx_*` from LeanCTX when CM is opted in.
+4. **RTK owns shell** — if Bash was RTK-rewritten, do not invoke LeanCTX shell compression (no double-wrap).
+5. **CM owns web fetch** — WebFetch is denied → `ctx_fetch_and_index`; wire proxy handles API transport separately.
+6. **Primary FTS** — `primary_fts: context_mode`; LeanCTX FTS is disabled in parallel routed mode.
+7. **After code edits** — `graphify update .` then agentmemory capture (synergy unchanged).
+8. **Codex caveat** — AST read-path may be deny-only until PreToolUse rewrite lands; wire proxy + ledger + PathJail + injection still apply.
+
+## Durable edits (Write/Edit/ApplyPatch)
+
+- **Analysis reads** may use compressed `ctx_read` / `lctx_read_ast` modes.
+- **Before any Write/Edit** to durable files (`.cursor/plans/*.plan.md`, `.planning/**`, source, docs): read the target with **native Read** or **`ctx_read(raw=true)`** only.
+- **NEVER** paste compressed tool output (`[lean-ctx: omitted N lines]`, `filename [194L]` headers, `[Archived]`) into edit payloads — lean-ctx ≥3.9.9 and SB `compression-marker-guard.sh` deny such writes.
+
+## Forbidden when five-tool active
+
+- DO NOT use `lctx_remember` — use agentmemory `memory_save`.
+- DO NOT use `lctx_graph` for codebase orientation — use Graphify.
+- DO NOT use LeanCTX `lctx_*` sandbox/fetch/shell tools when RTK or CM own those surfaces.
+- DO NOT run `lean-ctx init --agent *` — SB install uses library-mode / merge-only wiring.
+
+## Install / optimize
+
+```bash
+bash scripts/install-leanctx-sb.sh --host cursor
+bash scripts/optimize-five-tool-stack.sh --host cursor
+```
+
+When LeanCTX is opted in, use `optimize-five-tool-stack.sh` instead of `optimize-rtk-context-mode.sh` alone.
+
+## References
+
+- `.planning/PLAN-leanctx-five-tool-integration.md`
+- `docs/LEANCTX.md` (when present)
+- `.cursor/rules/recommended-tools.mdc`

@@ -1,0 +1,667 @@
+#!/usr/bin/env bash
+set -euo pipefail
+trap 'exit 0' ERR
+
+# SessionStart hook: inject Silver Bullet core rules into context and perform
+# branch-scoped state reset.
+#
+# v0.30.0 fix (#87): the hook now reads the SessionStart JSON payload from
+# stdin to extract the `source` field. Claude Code emits SessionStart on
+# four distinct events:
+#   - startup  : process launch, fresh shell
+#   - resume   : continuing a prior session
+#   - clear    : explicit /clear by the user
+#   - compact  : context compression (auto or manual) — NOT a reset
+# Previously, all four triggered destructive cleanup, wiping mid-session SB
+# progress on every compact. Now only `startup` and `clear` reset ephemeral gate
+# files; `resume` and `compact` are benign continuation events.
+#
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# Source runtime path selector so the hook follows the active host runtime.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
+# Read stdin (best-effort) to extract `source`. Fail-soft on missing jq or
+# malformed JSON: default to "startup" so behavior matches pre-fix path.
+sb_session_source="startup"
+if command -v jq >/dev/null 2>&1; then
+  # `read -t 0` non-blocking probe so a writer never seeing stdin doesn't hang.
+  _sb_stdin_payload=""
+  if [[ ! -t 0 ]]; then
+    _sb_stdin_payload=$(cat 2>/dev/null || true)
+  fi
+  if [[ -n "$_sb_stdin_payload" ]]; then
+    _sb_src=$(printf '%s' "$_sb_stdin_payload" | jq -r '.source // "startup"' 2>/dev/null || true)
+    case "$_sb_src" in
+      startup|resume|clear|compact) sb_session_source="$_sb_src" ;;
+    esac
+  fi
+fi
+# Allow tests to override via env var.
+sb_session_source="${SILVER_BULLET_SESSION_SOURCE:-$sb_session_source}"
+
+# Source symlink-write guard (SEC-02)
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -n "$_lib_dir" && -f "$_lib_dir/nofollow-guard.sh" ]]; then
+  # shellcheck source=lib/nofollow-guard.sh
+  source "$_lib_dir/nofollow-guard.sh"
+else
+  sb_guard_nofollow() { [[ -L "$1" ]] && { printf 'ERROR: refusing to write through symlink: %s\n' "$1" >&2; exit 1; }; return 0; }
+  sb_safe_write()    { [[ -L "$1" ]] && rm -f -- "$1"; return 0; }
+fi
+
+# Ensure user-scoped state directory exists
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
+mkdir -p "$SB_STATE_DIR" 2>/dev/null || true
+QUALITY_GATE_FILE="${SB_STATE_DIR}/quality-gate-state"
+
+# Fresh init / exec-mode prompt replay.
+#
+# `silver:init` can run before the scaffold files exist, so we replay the seed
+# prompt before the project-boundary guard below has a chance to exit early.
+# That lets fresh projects seed `silver-init` into shared SB state even before
+# `.silver-bullet.json` / `silver-bullet.md` exist.
+if [[ "$sb_session_source" == "startup" || "$sb_session_source" == "clear" ]]; then
+  if command -v jq >/dev/null 2>&1; then
+    _sb_prompt_seed=""
+    if [[ -n "${SILVER_BULLET_PROMPT_FILE:-}" && -f "${SILVER_BULLET_PROMPT_FILE:-}" ]]; then
+      _sb_prompt_seed="$SILVER_BULLET_PROMPT_FILE"
+    else
+      _sb_search_dir="$PWD"
+      while true; do
+        if [[ -f "$_sb_search_dir/.silver-bullet.prompt.json" ]]; then
+          _sb_prompt_seed="$_sb_search_dir/.silver-bullet.prompt.json"
+          break
+        fi
+        if [[ -d "$_sb_search_dir/.git" ]] || [[ "$_sb_search_dir" == "/" ]]; then
+          break
+        fi
+        _sb_search_dir=$(dirname "$_sb_search_dir")
+      done
+    fi
+
+    if [[ -n "$_sb_prompt_seed" ]]; then
+      _sb_recorder="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/record-requested-skill.sh"
+      if [[ -x "$_sb_recorder" ]]; then
+        _sb_prompt_json="$(jq -Rs '{hook_event_name:"UserPromptSubmit", prompt:.}' < "$_sb_prompt_seed" 2>/dev/null || true)"
+        if [[ -n "$_sb_prompt_json" ]]; then
+          printf '%s' "$_sb_prompt_json" | "$_sb_recorder" >/dev/null 2>&1 || true
+        fi
+      fi
+    fi
+  fi
+fi
+
+# SB project boundary: if the current working tree does not have both the
+# project config and the live silver-bullet.md contract, this hook must stay
+# inert. That prevents SB startup state from affecting non-SB projects.
+sb_project_root=""
+search_dir="$PWD"
+while true; do
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+    sb_project_root="$search_dir"
+    break
+  fi
+  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+    break
+  fi
+  search_dir=$(dirname "$search_dir")
+done
+if [[ -z "$sb_project_root" ]]; then
+  # Non-SB workspace: clear stale global orchestrator markers from a prior SB session.
+  rm -f -- "${SB_STATE_DIR}/orchestrator-directive.json" \
+        "${SB_STATE_DIR}/orchestrator-worker-active.json" \
+        "${SB_STATE_DIR}/project-root" 2>/dev/null || true
+  exit 0
+fi
+
+# Cache project root for CWD-independent hook resolution (#232).
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+  sb_project_root_cache_write "$sb_project_root" 2>/dev/null || true
+fi
+
+# Doc-scheme enforcement requires a session marker. Codex live/e2e runs can
+# reach doc gates without first writing the session mode file that triggers
+# session-log-init.sh, so ensure the marker exists from SessionStart itself.
+# Must run before rt_heartbeat_write so rt_current_session_id resolves sb-<epoch>
+# for ts_sb_defer_to_bridge heartbeat lookup.
+session_start_file="${SB_STATE_DIR}/session-start-time"
+session_start_file="${SILVER_BULLET_SESSION_START_FILE:-$session_start_file}"
+if ! sb_runtime_path_is_state_scoped "$session_start_file"; then
+  session_start_file="${SB_STATE_DIR}/session-start-time"
+fi
+session_start_value="$(cat "$session_start_file" 2>/dev/null || true)"
+if ! [[ "$session_start_value" =~ ^[0-9]+$ ]]; then
+  sb_guard_nofollow "$session_start_file" 2>/dev/null || true
+  date +%s >"$session_start_file" 2>/dev/null || true
+fi
+
+# SB bridge heartbeat (schema-v1) — verification-only SessionStart may write heartbeat only.
+_rt_hb_script=""
+if [[ -f "$sb_project_root/scripts/lib/recommended-tools/paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$sb_project_root/scripts/lib/recommended-tools/paths.sh"
+elif [[ -n "${CLAUDE_PLUGIN_ROOT:-}" && -f "${CLAUDE_PLUGIN_ROOT}/scripts/lib/recommended-tools/paths.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${CLAUDE_PLUGIN_ROOT}/scripts/lib/recommended-tools/paths.sh"
+fi
+if declare -f rt_resolve_lib_script >/dev/null 2>&1; then
+  _rt_hb_script="$(rt_resolve_lib_script "recommended-tools/heartbeat.sh" "$sb_project_root" 2>/dev/null || true)"
+elif [[ -f "$sb_project_root/scripts/lib/recommended-tools/heartbeat.sh" ]]; then
+  _rt_hb_script="$sb_project_root/scripts/lib/recommended-tools/heartbeat.sh"
+fi
+if [[ -n "$_rt_hb_script" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+  _sb_initiated="$(jq -r '.sb_initiated // false' "${sb_project_root}/.silver-bullet.json" 2>/dev/null || echo false)"
+  if [[ "$_sb_initiated" == "true" ]]; then
+    # Section 3: eligible SessionStart (all sources); rt_heartbeat_write enforces 60s cadence.
+    # shellcheck source=/dev/null
+    RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+      source "$_rt_hb_script" 2>/dev/null && rt_heartbeat_write "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true
+  fi
+fi
+unset _rt_hb_script _sb_initiated
+
+# Prerequisite probe (Wave 0.2): jq + plugin cache; attempt repair or block.
+if [[ -f "$_lib_dir/prerequisite-probe.sh" ]]; then
+  # shellcheck source=lib/prerequisite-probe.sh
+  source "$_lib_dir/prerequisite-probe.sh"
+  prereq_issues=""
+  if ! prereq_issues="$(sb_prereq_run_probe "$sb_project_root" 2>/dev/null)"; then
+    block_msg="$(sb_prereq_blocking_message "$prereq_issues")"
+    if command -v jq >/dev/null 2>&1; then
+      ctx=$(printf '%s' "$block_msg" | jq -Rs '.' 2>/dev/null || true)
+      if [[ -n "$ctx" ]]; then
+        printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$ctx"
+      fi
+    else
+      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"Silver Bullet prerequisites missing — run /silver:init"}}'
+    fi
+    exit 0
+  fi
+fi
+
+# ── Branch-scoped state reset ─────────────────────────────────────────────────
+# Skill recordings are scoped to a git branch. When the branch changes between
+# sessions, the full state is cleared — forcing a fresh workflow for the new branch.
+# This prevents skills recorded for Feature A from satisfying enforcement for Feature B.
+#
+# Within the same branch: skill recordings accumulate so mid-feature work across
+# sessions is preserved. SB lifecycle markers are authoritative workflow evidence
+# and must survive startup on the same branch.
+state_file="${SB_STATE_DIR}/state"
+branch_file="${SB_STATE_DIR}/branch"
+quality_gate_state_file="${QUALITY_GATE_FILE}"
+verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+
+# Env var override — allows tests to redirect state writes to a temp file
+# without touching the live session state (same pattern as completion-audit.sh)
+state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
+# Security: validate path stays within the host runtime state root
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
+
+# Env var override for branch file — allows tests to mock branch without
+# touching the live host runtime branch file.
+branch_file="${SILVER_BULLET_BRANCH_FILE:-$branch_file}"
+# Security: validate path stays within the host runtime state root
+if ! sb_runtime_path_is_state_scoped "$branch_file"; then
+  branch_file="${SB_STATE_DIR}/branch"
+fi
+
+# Env var override for the pre-release gate file.
+quality_gate_state_file="${SILVER_BULLET_QUALITY_GATE_STATE_FILE:-$quality_gate_state_file}"
+if ! sb_runtime_path_is_state_scoped "$quality_gate_state_file"; then
+  quality_gate_state_file="${QUALITY_GATE_FILE}"
+fi
+
+# Env var override for the test execution gate file.
+verify_tests_state_file="${SILVER_BULLET_VERIFY_TESTS_STATE_FILE:-$verify_tests_state_file}"
+if ! sb_runtime_path_is_state_scoped "$verify_tests_state_file"; then
+  verify_tests_state_file="${SB_STATE_DIR}/verify-tests-state"
+fi
+
+# Detect current git branch (safe: validates characters, falls back to empty)
+current_branch=""
+current_git_toplevel=""
+current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+current_git_toplevel=$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)
+if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+  current_branch=""
+fi
+
+if [[ -f "$_lib_dir/branch-scope.sh" ]]; then
+  # shellcheck source=lib/branch-scope.sh
+  source "$_lib_dir/branch-scope.sh"
+fi
+
+# Compare with stored branch (+ optional git worktree toplevel)
+stored_branch=""
+stored_git_toplevel=""
+if declare -f sb_branch_scope_read >/dev/null 2>&1; then
+  if sb_branch_scope_read "$branch_file"; then
+    stored_branch="$SB_BRANCH_SCOPE_STORED_BRANCH"
+    stored_git_toplevel="$SB_BRANCH_SCOPE_STORED_TOPLEVEL"
+  fi
+else
+  [[ -f "$branch_file" ]] && stored_branch=$(head -1 "$branch_file" 2>/dev/null | tr -d '\n' || true)
+fi
+
+# v0.30.0 fix (#87 Bug 1+3): only mutate branch/gate state on `startup` and
+# `clear` events. `resume` and `compact` are benign continuation events. Empty
+# `current_branch` is also treated as no-op (Bug 3): we cannot prove a branch
+# mismatch when the value isn't readable, and wiping on uncertainty causes data
+# loss.
+sb_should_mutate=false
+case "$sb_session_source" in
+  startup|clear) sb_should_mutate=true ;;
+esac
+
+if [[ "$sb_should_mutate" == true && -n "$current_branch" && ( ! -f "$branch_file" || -z "$stored_branch" ) ]]; then
+  # Branch file absent or empty (first run, file deleted, or corrupted) — initialize
+  # without wiping state.
+  sb_guard_nofollow "$branch_file" 2>/dev/null || true
+  if declare -f sb_branch_scope_write >/dev/null 2>&1; then
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+  else
+    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  fi
+  # v0.30.0 fix (#87 Bug 2): verify the write succeeded; fail-soft (warn-only,
+  # do not exit non-zero) so the rest of the hook still runs.
+  if [[ ! -s "$branch_file" ]]; then
+    printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
+  fi
+elif [[ "$sb_should_mutate" == true && -n "$current_branch" && -n "$stored_branch" && \
+        ( "$current_branch" != "$stored_branch" || \
+          ( -n "$stored_git_toplevel" && -n "$current_git_toplevel" && "$current_git_toplevel" != "$stored_git_toplevel" ) ) ]]; then
+  # Branch or git worktree changed — full state reset for fresh workflow.
+  # NOTE: requires BOTH current_branch AND stored_branch to be non-empty.
+  # Empty current_branch (e.g. detached HEAD with rev-parse failure) MUST NOT
+  # trigger a wipe — that was the v0.27.x mid-session state-loss path.
+  SB_BRANCH_RESET_BANNER="⚠️ SB: git scope changed (${stored_branch}@${stored_git_toplevel:-?} → ${current_branch}@${current_git_toplevel:-?}). Skill state was reset — re-run planning/quality-gates for this branch before delivery."
+  sb_safe_write "$state_file"
+  rm -f -- "$state_file" 2>/dev/null || true
+  rm -f -- "${SB_STATE_DIR}/orchestrator.json" \
+        "${SB_STATE_DIR}/orchestrator-directive.json" \
+        "${SB_STATE_DIR}/orchestrator-worker-active.json" \
+        "${SB_STATE_DIR}/stall-block" \
+        "${SB_STATE_DIR}/instruction-ledger.json" \
+        "${SB_STATE_DIR}/pending-completion-audit.json" 2>/dev/null || true
+  if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
+    # shellcheck source=lib/graphify-gate.sh
+    source "$_lib_dir/graphify-gate.sh"
+    _gf_cfg=""
+    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+      _gf_cfg="${sb_project_root}/.silver-bullet.json"
+    fi
+    if [[ -n "$_gf_cfg" ]]; then
+      sb_graphify_clear_query_state "$_gf_cfg" 2>/dev/null || true
+    else
+      rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
+    fi
+  else
+    rm -f -- "${SB_STATE_DIR}/graphify-query" 2>/dev/null || true
+  fi
+  if [[ -f "$_lib_dir/agentmemory-gate.sh" ]]; then
+    # shellcheck source=lib/agentmemory-gate.sh
+    source "$_lib_dir/agentmemory-gate.sh"
+    _am_cfg=""
+    if [[ -n "${sb_project_root:-}" && -f "${sb_project_root}/.silver-bullet.json" ]]; then
+      _am_cfg="${sb_project_root}/.silver-bullet.json"
+    fi
+    if [[ -n "$_am_cfg" ]]; then
+      sb_agentmemory_clear_usage_state "$_am_cfg" 2>/dev/null || true
+    else
+      rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
+    fi
+  else
+    rm -f -- "${SB_STATE_DIR}/agentmemory-usage" 2>/dev/null || true
+  fi
+  sb_guard_nofollow "$branch_file" 2>/dev/null || true
+  if declare -f sb_branch_scope_write >/dev/null 2>&1; then
+    sb_branch_scope_write "$current_branch" "$current_git_toplevel"
+  else
+    printf '%s\n' "$current_branch" >"$branch_file" 2>/dev/null || true
+  fi
+  if [[ ! -s "$branch_file" ]]; then
+    printf '⚠️  silver-bullet session-start: branch file write failed at %s\n' "$branch_file" >&2
+  fi
+elif [[ "$sb_should_mutate" == true && -f "$state_file" && ! -L "$state_file" ]]; then
+  # Same branch — preserve recorded skill state. SB lifecycle markers are
+  # authoritative workflow evidence and must not be discarded on session startup.
+  :
+fi
+# `compact` and `resume` fall through with no state mutation.
+
+# M-02: auto-archive stale active workflows (TTL 7 days) on session startup/clear.
+if [[ "$sb_should_mutate" == true ]]; then
+  wf_dir="$sb_project_root/.planning/workflows"
+  if [[ -d "$wf_dir" && ! -L "$wf_dir" ]]; then
+    stale_ttl=604800
+    now_epoch=$(date +%s)
+    shopt -s nullglob
+    for wf in "$wf_dir"/*.md; do
+      [[ -f "$wf" && ! -L "$wf" ]] || continue
+      wf_mtime=$(stat -f %m "$wf" 2>/dev/null || stat -c %Y "$wf" 2>/dev/null || echo 0)
+      wf_mtime="${wf_mtime:-0}"
+      [[ "$wf_mtime" =~ ^[0-9]+$ ]] || wf_mtime=0
+      age=$((now_epoch - wf_mtime))
+      if [[ "$age" -gt "$stale_ttl" ]]; then
+        mkdir -p "$wf_dir/.archive" 2>/dev/null || true
+        mv -f "$wf" "$wf_dir/.archive/$(basename "$wf")" 2>/dev/null || true
+      fi
+    done
+    shopt -u nullglob
+  fi
+fi
+
+# Clean up trivial-change bypass from previous session
+# Check config for custom trivial_file path, fall back to default
+trivial_file="${SB_STATE_DIR}/trivial"
+if command -v jq >/dev/null 2>&1; then
+  search_dir="$PWD"
+  while true; do
+    if [[ -f "$search_dir/.silver-bullet.json" ]]; then
+      cfg_trivial=$(jq -r '.state.trivial_file // ""' "$search_dir/.silver-bullet.json" 2>/dev/null || true)
+      [[ -n "$cfg_trivial" ]] && trivial_file="$cfg_trivial"
+      break
+    fi
+    if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then break; fi
+    search_dir=$(dirname "$search_dir")
+  done
+fi
+# Security (SB-002/SB-003): validate trivial_file stays within the host runtime before deletion
+# Prevents path traversal via malicious .silver-bullet.json; reject symlinks too
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
+[[ -L "$trivial_file" ]] && trivial_file="${SB_STATE_DIR}/trivial"
+rm -f -- "$trivial_file" 2>/dev/null
+rm -f -- "${SB_STATE_DIR}/release-live-matrix" 2>/dev/null
+rm -f -- "${SB_STATE_DIR}/e2e-live-matrix" 2>/dev/null
+if [[ "$sb_should_mutate" == true ]]; then
+  rm -f -- "$quality_gate_state_file" 2>/dev/null
+  rm -f -- "$verify_tests_state_file" 2>/dev/null
+  rm -f -- "${SB_STATE_DIR}/planning-edit-override" \
+        "${SB_STATE_DIR}/roadmap-edit-override" 2>/dev/null || true
+  # #275: Claude Agent workers fire SessionStart(startup) but never SubagentStart.
+  # Parent PreToolUse writes orchestrator-worker-active.json; wiping it here before
+  # classification misclassifies workers as parents. Preserve a *fresh* marker
+  # (within TTL via sb_orchestrator_is_worker_session). Stale/invalid markers still clear.
+  _sb_preserve_worker_marker=false
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    if sb_orchestrator_is_worker_session 2>/dev/null; then
+      _sb_preserve_worker_marker=true
+    fi
+  fi
+  if [[ "$_sb_preserve_worker_marker" != true ]]; then
+    rm -f -- "${SB_STATE_DIR}/orchestrator-worker-active.json" 2>/dev/null || true
+  fi
+  # #280: drop prior-session doc-scheme gap reports so obligations cannot leak.
+  rm -rf -- "${SB_STATE_DIR}/doc-scheme-gaps" 2>/dev/null || true
+fi
+
+# Warn visibly if jq is unavailable — enforcement will be disabled
+if ! command -v jq >/dev/null 2>&1; then
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"❌ Silver Bullet DISABLED — jq is required for all enforcement hooks. Install: brew install jq (macOS) / apt install jq (Linux). Without jq, quality gates, completion audit, and CI checks are inactive."}}'
+  exit 0
+fi
+
+# Locate SB core-rules.md (rules file installed alongside this hook)
+# This is the SB equivalent of the host runtime core-values file — re-injected every session
+# so enforcement rules survive context compaction.
+# Security: co-located with hooks; plugin-dir write access implies hook modification
+# access anyway. Path traversal defense: verify file resolves within plugin directory.
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || true)"
+[[ -n "$script_dir" ]] || exit 0
+core_rules_file="${script_dir}/core-rules.md"
+# Path traversal defense: reject if resolved path escapes plugin directory
+if [[ -f "$core_rules_file" ]]; then
+  _resolved_rules="$(cd "$(dirname "$core_rules_file")" && pwd)/$(basename "$core_rules_file")"
+  if [[ "$_resolved_rules" != "${script_dir}/"* && "$_resolved_rules" != "${script_dir}" ]]; then
+    core_rules_file=""
+  fi
+fi
+
+# Build combined context
+combined=""
+if [[ -n "${SB_BRANCH_RESET_BANNER:-}" ]]; then
+  combined="${SB_BRANCH_RESET_BANNER}"
+fi
+
+# Append core enforcement rules so they survive compaction (Tier 2 rule injection).
+# #263: inject a hard-budget (~2–3KB) digest so host SessionStart truncation
+# does not drop Non-Negotiable rules; full core-rules.md remains on disk for on-demand reads.
+if [[ -f "$core_rules_file" ]]; then
+  _cr_content=""
+  if [[ -f "$_lib_dir/core-rules-integrity.sh" ]]; then
+    # shellcheck source=lib/core-rules-integrity.sh
+    source "$_lib_dir/core-rules-integrity.sh"
+    _cr_content="$(sb_core_rules_read_verified_digest "$core_rules_file" "$script_dir" 2>/dev/null || true)"
+    if [[ -z "$_cr_content" ]]; then
+      _cr_content="$(sb_core_rules_integrity_warning)"
+    fi
+  else
+    _cr_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
+  fi
+  if [[ -n "$_cr_content" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${_cr_content}"
+  fi
+fi
+
+# Capability tier honesty (C-05) + enforcement tier (P1)
+if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
+  # shellcheck source=lib/capability-tier.sh
+  source "$_lib_dir/capability-tier.sh"
+  tier_line="$(sb_capability_tier_banner 2>/dev/null || true)"
+  if [[ -n "$tier_line" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${tier_line}"
+  fi
+fi
+
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck source=lib/enforcement-tier-gate.sh
+  source "$_lib_dir/enforcement-tier-gate.sh"
+  tier_num="$(sb_enforcement_tier_effective "$sb_project_root/.silver-bullet.json" 2>/dev/null || echo 0)"
+  sb_enforcement_tier_persist "$sb_project_root/.silver-bullet.json" "$tier_num" 2>/dev/null || true
+  et_banner="$(sb_enforcement_tier_session_banner "$tier_num")"
+  combined="${combined:+$combined
+
+---
+
+}${et_banner}"
+fi
+
+# Enterprise policy profile — persist marker, auto-set session mode when tier-safe, inject banner.
+if [[ -f "$_lib_dir/enterprise-policy.sh" && -n "${sb_project_root:-}" ]]; then
+  # shellcheck source=lib/enterprise-policy.sh
+  source "$_lib_dir/enterprise-policy.sh"
+  sb_enterprise_policy_persist_active_marker "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" 2>/dev/null || true
+  if [[ "$sb_should_mutate" == true ]]; then
+    sb_enterprise_policy_apply_session_mode_default \
+      "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" "$sb_session_source" 2>/dev/null || true
+  fi
+  ep_banner="$(sb_enterprise_policy_session_banner "$sb_project_root/.silver-bullet.json" "$SB_STATE_DIR" 2>/dev/null || true)"
+  if [[ -n "$ep_banner" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_banner}"
+  fi
+  ep_clarify="$(sb_enterprise_policy_clarify_hint_block "$sb_project_root/.silver-bullet.json" 2>/dev/null || true)"
+  if [[ -n "$ep_clarify" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_clarify}"
+  fi
+  ep_evidence="$(sb_enterprise_policy_evidence_strict_marker "$sb_project_root/.silver-bullet.json" 2>/dev/null || true)"
+  if [[ -n "$ep_evidence" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${ep_evidence}"
+  fi
+fi
+
+# Orchestrator directive at session start (P0)
+if [[ -f "$_lib_dir/orchestrator-directive.sh" ]]; then
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_lib_dir/orchestrator-directive.sh"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+  fi
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+    if sb_orchestrator_is_worker_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_WORKER=1
+      # Claude has no SubagentStart — inject worker banner on SessionStart (#275).
+      # Do NOT tell workers to set SB_ORCHESTRATOR_WORKER=1 themselves (dead / spoofable).
+      worker_ctx="SB WORKER SUBAGENT (mandatory)
+  1. graphify query before exploration (never skip when graphify-out/ exists).
+  2. agentmemory MCP — save decisions/defects/evidence after meaningful work.
+  3. Invoke assigned skill before substantive edits.
+  4. Write evidence artifact path (.planning/ or agentmemory export) before exit summary.
+  5. RTK + Context Mode — follow project token-compression rules when opted in."
+      combined="${combined:+$combined
+
+---
+
+}${worker_ctx}"
+    elif sb_orchestrator_is_parent_session 2>/dev/null; then
+      export SB_ORCHESTRATOR_PARENT=1
+      parent_ctx="$(sb_orchestrator_parent_context_block 2>/dev/null || true)"
+      if [[ -n "$parent_ctx" ]]; then
+        combined="${combined:+$combined
+
+---
+
+}${parent_ctx}"
+      fi
+    fi
+  fi
+  od_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+  if [[ -n "$od_ctx" ]]; then
+    combined="${combined:+$combined
+
+---
+
+}${od_ctx}"
+  fi
+fi
+
+# Cursor host note when tier < 2
+if [[ -f "$_lib_dir/capability-tier.sh" ]]; then
+  if [[ "$(sb_capability_runtime_name 2>/dev/null || echo unknown)" == "cursor" ]] \
+     && [[ "$(sb_capability_tier_number 2>/dev/null || echo 0)" -lt 2 ]]; then
+    combined="${combined:+$combined
+
+---
+
+}Task host: merge host hooks manifest via scripts/lib/install-cursor/merge-cursor-hooks.py — orchestrator directive blocks Edit/Write/Bash until expected skill is recorded via PostToolUse/Skill."
+  fi
+fi
+
+# SB update check (§0 step 5.1) — startup/clear only; fail-soft when offline
+if [[ "$sb_should_mutate" == true && "${SILVER_BULLET_UPDATE_CHECK_DISABLED:-}" != "1" ]]; then
+  if [[ -f "$_lib_dir/check-sb-update.sh" ]]; then
+    # shellcheck source=lib/check-sb-update.sh
+    source "$_lib_dir/check-sb-update.sh"
+    _upd_ctx="$(sb_check_sb_update_prompt_block 2>/dev/null || true)"
+    if [[ -n "$_upd_ctx" ]]; then
+      combined="${combined:+$combined
+
+---
+
+}${_upd_ctx}"
+    fi
+  fi
+fi
+
+# Recommended-tools consent injection (Graphify and future opt-in tooling)
+_rt_verify_ctx=""
+_rt_verify_script=""
+if declare -f rt_resolve_lib_script >/dev/null 2>&1; then
+  _rt_verify_script="$(rt_resolve_lib_script "recommended-tools/session-verify.sh" "$sb_project_root" 2>/dev/null || true)"
+elif [[ -f "$sb_project_root/scripts/lib/recommended-tools/session-verify.sh" ]]; then
+  _rt_verify_script="$sb_project_root/scripts/lib/recommended-tools/session-verify.sh"
+fi
+if [[ -n "$_rt_verify_script" ]]; then
+  # shellcheck source=/dev/null
+  RT_PROJECT_ROOT="$sb_project_root" RT_HOST="${SILVER_BULLET_RUNTIME:-cursor}" \
+    source "$_rt_verify_script" 2>/dev/null || true
+  _rt_verify_ctx="$(rt_session_verify_block "$sb_project_root" "${SILVER_BULLET_RUNTIME:-cursor}" 2>/dev/null || true)"
+fi
+if [[ -n "$_rt_verify_ctx" ]]; then
+  combined="${combined:+$combined
+
+---
+
+}${_rt_verify_ctx}"
+fi
+unset _rt_verify_ctx _rt_verify_script
+
+if [[ -f "$_lib_dir/recommended-tools.sh" && -n "${sb_project_root:-}" ]]; then
+  # shellcheck source=lib/recommended-tools.sh
+  source "$_lib_dir/recommended-tools.sh"
+  if [[ -f "$_lib_dir/graphify-gate.sh" ]]; then
+    # shellcheck source=lib/graphify-gate.sh
+    source "$_lib_dir/graphify-gate.sh"
+  fi
+  if [[ -f "$_lib_dir/agentmemory-gate.sh" ]]; then
+    # shellcheck source=lib/agentmemory-gate.sh
+    source "$_lib_dir/agentmemory-gate.sh"
+  fi
+  _rt_cfg="${sb_project_root}/.silver-bullet.json"
+  if [[ -f "$_rt_cfg" ]]; then
+    for _rt_tool in graphify agentmemory alumnium rtk context_mode leanctx; do
+      _rt_ctx="$(sb_recommended_tool_consent_prompt_block "$_rt_cfg" "$_rt_tool" 2>/dev/null || true)"
+      if [[ -n "$_rt_ctx" ]]; then
+        combined="${combined:+$combined
+
+---
+
+}${_rt_ctx}"
+      fi
+    done
+  fi
+fi
+
+# Mark session rules injected (prompt-reminder uses compact ref instead of full re-injection).
+sb_guard_nofollow "${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
+date +%s >"${SB_STATE_DIR}/session-rules-injected" 2>/dev/null || true
+
+# If nothing found, silent no-op
+[[ -z "$combined" ]] && exit 0
+
+# Escape for JSON and output (fail-soft: ERR trap must not swallow context after build)
+content=""
+content=$(printf '%s' "$combined" | jq -Rs . 2>/dev/null || true)
+if [[ -n "$content" ]]; then
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$content"
+fi
+
+

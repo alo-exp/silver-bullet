@@ -1,0 +1,228 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "claude",
+    "effort": "xhigh",
+    "display": "Claude Opus 5 Extra High",
+    "named_model": "claude/claude-opus-5-xhigh",
+    "named_model_ran": true,
+    "substitute": null,
+    "review_source": "review.md"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "M1",
+        "title": "KR-panel-public-trio-only dangling Not a live command binds to /sb:panel-start"
+      },
+      {
+        "id": "M2",
+        "title": "Named-test obligation is a denylist against an unnamable retired token"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "L1",
+        "title": "Verbatim duplicated normative sentence in WS7"
+      },
+      {
+        "id": "L2",
+        "title": "WS7 and Appendix E Doctor bullets have drifted apart"
+      },
+      {
+        "id": "L3",
+        "title": "thinking-level used for two different value spaces (tiers vs effort)"
+      },
+      {
+        "id": "L4",
+        "title": "In-flight one-off /sb:panel vs /sb:panel-end is not enumerated"
+      },
+      {
+        "id": "L5",
+        "title": "WS7/Doctor route-set assertion is absence-only; trio+panel-end presence unchecked"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "N1",
+        "title": "Retired extra one-off occupies identifier column as italic prose"
+      },
+      {
+        "id": "N2",
+        "title": "L1558 still labels the live mermaid Proposed-architecture"
+      },
+      {
+        "id": "N3",
+        "title": "KR-kr-18 says kept so pointers resolve but has zero inbound anchors"
+      },
+      {
+        "id": "N4",
+        "title": "Duplicate heading slugs beyond the F-2 HOLD (observation only)"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "M1",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Canonical KEEP REJECT after the panel-purge left Not a live command bound to /sb:panel-start. Affirm the four live routes; keep retired extra aliases not-live. New residue, not a re-file of rung-10. Not a documentation nit."
+    },
+    {
+      "id": "M2",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Ship-blocking named test cannot grep an unnamed retired token. Restate as exact-route-set allowlist (one-off /sb:panel; trio /sb:panel|/sb:panel-start|/sb:panel-end plus /sb:ladder) plus named /sb:parallel|/sb:council denylist. Do not reintroduce the retired name. Not a documentation nit."
+    },
+    {
+      "id": "L1",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Byte-identical WS7 MUST duplicated by rung-10 APPLY. Collapse to one sentence. Editing artifact, still ACCEPT."
+    },
+    {
+      "id": "L2",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Appendix E is the WS7 restatement but dropped the machine-checkable catalog/lock MUST and the AP-docs sentence. Sync E to WS7. Not a documentation nit."
+    },
+    {
+      "id": "L3",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Regular/Complex collide with effort domain. Repair thinking-levels to tiers at both sites. Does not reopen rung-8 M1 product."
+    },
+    {
+      "id": "L4",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "In-flight one-off /sb:panel has no receipt yet so falls into fail-closed limb 1 unnamed. Enumerate as blocked_panel_end row 43 and add the fixture. Not a documentation nit."
+    },
+    {
+      "id": "L5",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Absence-only Doctor would pass a regen that drops /sb:panel-end. Require presence of ladder+trio+terminator and exact one-off /sb:panel. Complements M2 allowlist."
+    },
+    {
+      "id": "N1",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Surface column otherwise holds backtick ids. Put `(retired extra one-off)` in backticks without naming the retired route. Not rejected as a documentation nit."
+    },
+    {
+      "id": "N2",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Live mermaid label still says Proposed-architecture; section is Process router. Rename the prose label. Appendix A SHA-lineage receipt out of scope."
+    },
+    {
+      "id": "N3",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "KR-kr-18 rationale is self-falsifying. Keep the heading; restate as stable catalog id with zero inbound anchors. Do not delete."
+    },
+    {
+      "id": "N4",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Observation only as filed. F-2 HOLD duplicate blocked_advisor_state (row 14) stays. No heading deletion."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "M1"
+    },
+    {
+      "id": "M2"
+    }
+  ],
+  "leftover_count": 0,
+  "rejected_as_wrong": "none",
+  "resolved": [
+    {
+      "id": "M1",
+      "severity": "MED",
+      "title": "KR-panel-public-trio-only dangling Not a live command binds to /sb:panel-start",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "M2",
+      "severity": "MED",
+      "title": "Named-test obligation is a denylist against an unnamable retired token",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L1",
+      "severity": "LOW",
+      "title": "Verbatim duplicated normative sentence in WS7",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L2",
+      "severity": "LOW",
+      "title": "WS7 and Appendix E Doctor bullets have drifted apart",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L3",
+      "severity": "LOW",
+      "title": "thinking-level used for two different value spaces (tiers vs effort)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L4",
+      "severity": "LOW",
+      "title": "In-flight one-off /sb:panel vs /sb:panel-end is not enumerated",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "L5",
+      "severity": "LOW",
+      "title": "WS7/Doctor route-set assertion is absence-only; trio+panel-end presence unchecked",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "N1",
+      "severity": "NIT",
+      "title": "Retired extra one-off occupies identifier column as italic prose",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "N2",
+      "severity": "NIT",
+      "title": "L1558 still labels the live mermaid Proposed-architecture",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "N3",
+      "severity": "NIT",
+      "title": "KR-kr-18 says kept so pointers resolve but has zero inbound anchors",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "N4",
+      "severity": "NIT",
+      "title": "Duplicate heading slugs beyond the F-2 HOLD (observation only)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "48192e7565708f58560d13f0ea415145c5fce9ac03a55c68d8cb22254b4ab543",
+  "apply_bytes": 655179
+}

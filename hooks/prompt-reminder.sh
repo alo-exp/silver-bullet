@@ -1,0 +1,548 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+emit_noop_json() {
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
+}
+
+finish_noop() {
+  emit_noop_json
+  exit 0
+}
+
+# Fail-open: on any unexpected error, return a valid no-op payload so Codex
+# keeps accepting the prompt without surfacing hook parse errors.
+trap 'finish_noop' ERR
+
+# UserPromptSubmit hook
+# Fires before every user prompt is processed.
+# Injects a compact Silver Bullet compliance reminder into additionalContext.
+#
+# Must be FAST (< 200ms) — no git operations and no blocking stdin reads.
+
+# Security: restrict file creation permissions (user-only)
+umask 0077
+
+# Source runtime path selector so the prompt reminder follows the host root.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
+if [[ -f "$_lib_dir/runtime-paths.sh" ]]; then
+  # shellcheck source=lib/runtime-paths.sh
+  source "$_lib_dir/runtime-paths.sh"
+fi
+
+resolve_silver_bullet_codex_adapter() {
+  local hook_package_root=""
+  local candidate
+
+  if [[ -n "$_lib_dir" ]]; then
+    if hook_package_root="$(cd "$_lib_dir/../.." && pwd 2>/dev/null)"; then
+      :
+    else
+      hook_package_root=""
+    fi
+  fi
+
+  for candidate in \
+    "${hook_package_root}/scripts/silver-bullet" \
+    "${SB_RUNTIME_PLUGIN_CACHE_ROOT:-}/alo-labs-codex/silver-bullet/current/scripts/silver-bullet" \
+    "${SB_RUNTIME_HOME_ROOT:-}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet" \
+    "${SB_RUNTIME_HOME_ROOT:-}/bin/silver-bullet"; do
+    [[ -n "$candidate" ]] || continue
+    if [[ -f "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+
+  printf 'silver-bullet'
+}
+
+shell_single_quote() {
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
+}
+
+# jq is required — return a no-op payload if missing.
+if [[ -f "$_lib_dir/jq-gate.sh" ]]; then
+  # shellcheck source=lib/jq-gate.sh
+  source "$_lib_dir/jq-gate.sh"
+fi
+if declare -f sb_jq_enforcement_warn >/dev/null 2>&1; then
+  sb_jq_enforcement_warn "prompt-reminder"
+fi
+
+prompt=""
+if [[ ! -t 0 ]]; then
+  input="$(cat 2>/dev/null || true)"
+  if [[ -n "$input" ]]; then
+    prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
+  fi
+fi
+
+# ── Resolve config file by walking up from $PWD ──────────────────────────────
+config_file=""
+search_dir="$PWD"
+while true; do
+  if [[ -f "$search_dir/.silver-bullet.json" ]] && [[ -f "$search_dir/silver-bullet.md" ]]; then
+    config_file="$search_dir/.silver-bullet.json"
+    break
+  fi
+  if [[ -d "$search_dir/.git" ]] || [[ "$search_dir" == "/" ]]; then
+    break
+  fi
+  search_dir=$(dirname "$search_dir")
+done
+
+if [[ -f "$_lib_dir/sb-project-gate.sh" ]]; then
+  # shellcheck source=lib/sb-project-gate.sh
+  source "$_lib_dir/sb-project-gate.sh"
+fi
+
+# No config → project not set up with Silver Bullet — return a no-op payload
+[[ -z "$config_file" ]] && finish_noop
+
+if declare -f sb_project_active >/dev/null 2>&1; then
+  sb_project_active "$config_file" || finish_noop
+elif declare -f sb_project_is_initiated >/dev/null 2>&1; then
+  sb_project_is_initiated "$config_file" || finish_noop
+fi
+
+# ── Read config values (single jq call for speed) ────────────────────────────
+SB_STATE_DIR="${SB_RUNTIME_STATE_DIR}"
+
+sb_default_state="${SB_STATE_DIR}/state"
+sb_default_trivial="${SB_STATE_DIR}/trivial"
+config_vals=$(jq -r --arg ds "$sb_default_state" --arg dt "$sb_default_trivial" '[
+  (.state.state_file // $ds),
+  (.state.trivial_file // $dt),
+  ((.skills.required_deploy // []) | join(" ")),
+  ((.skills.required_planning // []) | join(" ")),
+  (.project.active_workflow // "full-dev-cycle"),
+  ((.skills.required_planning_devops // []) | join(" "))
+] | join("\n")' "$config_file")
+
+state_file=$(printf '%s' "$config_vals" | sed -n '1p')
+state_file="${state_file/#\~/$HOME}"
+trivial_file=$(printf '%s' "$config_vals" | sed -n '2p')
+trivial_file="${trivial_file/#\~/$HOME}"
+required_deploy_cfg=$(printf '%s' "$config_vals" | sed -n '3p')
+required_planning_cfg=$(printf '%s' "$config_vals" | sed -n '4p')
+active_workflow=$(printf '%s' "$config_vals" | sed -n '5p')
+required_planning_devops_cfg=$(printf '%s' "$config_vals" | sed -n '6p')
+
+# Env var override for state file
+state_file="${SILVER_BULLET_STATE_FILE:-$state_file}"
+
+# Security: validate paths stay within the host runtime state root
+if ! sb_runtime_path_is_state_scoped "$state_file"; then
+  state_file="${SB_STATE_DIR}/state"
+fi
+if ! sb_runtime_path_is_state_scoped "$trivial_file"; then
+  trivial_file="${SB_STATE_DIR}/trivial"
+fi
+
+# ── Trivial bypass (reject symlinks) ─────────────────────────────────────────
+if [[ -f "$trivial_file" && ! -L "$trivial_file" ]]; then
+  finish_noop
+fi
+
+# ── Read state file ───────────────────────────────────────────────────────────
+state_contents=""
+[[ -f "$state_file" ]] && state_contents=$(cat "$state_file")
+
+# ── Detect current git branch (for main-branch exemptions) ───────────────────
+current_branch=""
+current_branch=$(git -C "$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+if [[ -n "$current_branch" ]] && ! printf '%s' "$current_branch" | grep -qE '^[a-zA-Z0-9/_.-]+$'; then
+  current_branch=""
+fi
+on_main=false
+if [[ "$current_branch" == "main" || "$current_branch" == "master" ]]; then
+  on_main=true
+fi
+
+# ── Build required skills list ────────────────────────────────────────────────
+# Source canonical required-skills list (single source of truth — TD-01 fix)
+# shellcheck source=lib/required-skills.sh
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
+if [[ -f "$_lib_dir/required-skills.sh" ]]; then
+  # shellcheck disable=SC1090
+  source "$_lib_dir/required-skills.sh"
+fi
+if [[ -f "$_lib_dir/prompt-classifier.sh" ]]; then
+  # shellcheck source=lib/prompt-classifier.sh
+  source "$_lib_dir/prompt-classifier.sh"
+fi
+
+# H1: two-tier display. During development show only the planning floor (the
+# gate that actually applies at Stop). Surface the full required_deploy list
+# only when delivery is imminent — either the prompt signals delivery (ship /
+# PR / release / deploy / merge) or the build is already done (silver:execute
+# recorded), so the next gate the user hits is the delivery gate.
+delivery_adjacent=false
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_delivery_adjacent >/dev/null 2>&1; then
+  if sb_prompt_is_delivery_adjacent "$prompt"; then
+    delivery_adjacent=true
+  fi
+fi
+if [[ "$delivery_adjacent" != true ]]; then
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    if sb_required_skill_is_recorded "$state_contents" "silver-execute"; then
+      delivery_adjacent=true
+    fi
+  elif printf '%s\n' "$state_contents" | grep -Fqx -- "silver-execute" 2>/dev/null; then
+    delivery_adjacent=true
+  fi
+fi
+
+if [[ "$active_workflow" == "devops-cycle" ]]; then
+  planning_default="${DEVOPS_DEFAULT_PLANNING:-silver-blast-radius devops-quality-gates silver-context silver-plan}"
+  planning_cfg="$required_planning_devops_cfg"
+else
+  planning_default="${DEFAULT_PLANNING:-silver-quality-gates silver-context silver-plan}"
+  planning_cfg="$required_planning_cfg"
+fi
+
+if [[ "$delivery_adjacent" == true ]]; then
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$required_deploy_cfg" "$DEFAULT_REQUIRED")"
+  elif [[ -n "$required_deploy_cfg" ]]; then
+    required_skills="$required_deploy_cfg"
+  else
+    required_skills="$DEFAULT_REQUIRED"
+  fi
+else
+  if declare -F sb_required_skills_normalize_configured_list >/dev/null 2>&1; then
+    required_skills="$(sb_required_skills_normalize_configured_list "$config_file" "$planning_cfg" "$planning_default")"
+  elif [[ -n "$planning_cfg" ]]; then
+    required_skills="$planning_cfg"
+  else
+    required_skills="$planning_default"
+  fi
+fi
+
+# On main/master, finishing-a-development-branch is not applicable
+if [[ "$on_main" == true ]]; then
+  required_skills=$(printf '%s' "$required_skills" | tr ' ' '\n' | grep -vE '^(finishing-a-development-branch|silver-branch-finish)$' | tr '\n' ' ' | sed 's/ $//')
+fi
+
+# ── Compute missing skills ────────────────────────────────────────────────────
+# O(N) grep calls per prompt -- acceptable for N<=20 skills; if prompt
+# latency exceeds 200ms, optimize with associative array or single awk pass.
+missing_list=""
+total=0
+completed=0
+for skill in $required_skills; do
+  total=$((total + 1))
+  if declare -F sb_required_skill_is_recorded >/dev/null 2>&1; then
+    if sb_required_skill_is_recorded "$state_contents" "$skill"; then
+      completed=$((completed + 1))
+    else
+      missing_list="${missing_list:+$missing_list, }${skill}"
+    fi
+  elif printf '%s\n' "$state_contents" | grep -Fqx -- "$skill" 2>/dev/null; then
+    completed=$((completed + 1))
+  else
+    missing_list="${missing_list:+$missing_list, }${skill}"
+  fi
+done
+
+# ── Load core enforcement rules (Tier 2 rule injection — survives compaction) ──
+# Read core-rules.md from the same directory as this script so rules are
+# re-injected before every user prompt, not just at session start.
+# Security: core-rules.md is co-located with hook scripts in the plugin directory.
+# An attacker who can write to the plugin directory can already modify the hooks
+# themselves, so external-file read does not add meaningful attack surface on
+# single-user developer systems. File must reside under the same plugin root.
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+core_rules_file="${script_dir}/core-rules.md"
+# Security: verify core-rules.md is actually within the plugin directory (path traversal defense)
+resolved_rules=""
+if [[ -f "$core_rules_file" ]]; then
+  resolved_rules="$(cd "$(dirname "$core_rules_file")" && pwd)/$(basename "$core_rules_file")"
+fi
+if [[ -n "$resolved_rules" && "$resolved_rules" != "${script_dir}/"* && "$resolved_rules" != "${script_dir}" ]]; then
+  # Path resolved outside plugin directory — reject silently
+  core_rules_file=""
+fi
+
+# ── Composed-workflow position injection (Pass 1: list active workflows) ─────
+# v0.29.x replaces the legacy single-file WORKFLOW.md with per-instance files
+# in `.planning/workflows/`. List the active workflow IDs (the file basenames).
+# Pass 2 will parse each per-workflow file for richer position info.
+workflows_dir="$PWD/.planning/workflows"
+workflow_position=""
+if [[ -d "$workflows_dir" && ! -L "$workflows_dir" ]]; then
+  active_ids=""
+  shopt -s nullglob
+  for _wf in "$workflows_dir"/*.md; do
+    [[ -f "$_wf" ]] || continue
+    _id=$(basename "$_wf" .md)
+    active_ids="${active_ids:+$active_ids,}${_id}"
+  done
+  shopt -u nullglob
+  if [[ -n "$active_ids" ]]; then
+    workflow_position="Active composed workflows: ${active_ids}"
+  fi
+fi
+
+# ── Emit additionalContext ────────────────────────────────────────────────────
+if [[ "$delivery_adjacent" == true ]]; then
+  tier_label="delivery"
+else
+  tier_label="planning floor"
+fi
+if [[ -z "$missing_list" ]]; then
+  if [[ "$delivery_adjacent" == true ]]; then
+    skill_status="Silver Bullet: all required delivery skills complete."
+  else
+    skill_status="Silver Bullet: planning floor complete (delivery gate surfaces when you ship/PR/release)."
+  fi
+else
+  skill_status="Silver Bullet [${tier_label}] -- Missing: ${missing_list} (${completed} of ${total} complete)"
+fi
+
+# Append WORKFLOW.md position if present
+if [[ -n "$workflow_position" ]]; then
+  skill_status="${skill_status}
+${workflow_position}"
+fi
+
+bare_prompt_context=""
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
+  if sb_prompt_is_bare_work_request "$prompt"; then
+    _bare_host="${SILVER_BULLET_RUNTIME:-${SB_RUNTIME_NAME:-claude}}"
+    # Parent orchestrator and Claude/Cursor prefer Skill tool; Codex uses invoke-skill adapter (#260).
+    _prefer_skill=false
+    if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+      # shellcheck source=lib/orchestrator-parent.sh
+      source "$_lib_dir/orchestrator-parent.sh"
+      if declare -f sb_orchestrator_is_parent_session >/dev/null 2>&1 \
+        && sb_orchestrator_is_parent_session 2>/dev/null; then
+        _prefer_skill=true
+      fi
+    fi
+    case "$_bare_host" in
+      codex)
+        if [[ "$_prefer_skill" == true ]]; then
+          bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action (parent mode): invoke the Skill tool with skill \"silver\" (prefer Skill over Bash invoke-skill).
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        else
+          silver_bullet_adapter="$(resolve_silver_bullet_codex_adapter)"
+          quoted_prompt="$(shell_single_quote "$prompt")"
+          bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action: invoke the Silver router through the Codex SB adapter:
+
+  \"${silver_bullet_adapter}\" invoke-skill silver ${quoted_prompt}
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        fi
+        ;;
+      *)
+        bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
+
+This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
+First action: invoke the Skill tool with skill \"silver\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
+
+Router context: ${prompt}
+
+Do not inspect, edit, run tests, or implement directly before routing. After loading the router, follow its routing decision and compose the SB workflow it selects."
+        ;;
+    esac
+  fi
+fi
+
+# Orchestrator directive injection (P0) — skip on follow-up replies; session-start owns parent mode.
+directive_ctx=""
+_od_lib="${_lib_dir}/orchestrator-directive.sh"
+_sb_skip_directive=false
+if [[ -n "$prompt" ]] && declare -F sb_prompt_is_orchestrator_followup >/dev/null 2>&1; then
+  if sb_prompt_is_orchestrator_followup "$prompt"; then
+    _sb_skip_directive=true
+  fi
+fi
+if [[ "$_sb_skip_directive" != true && -f "$_od_lib" ]]; then
+  if [[ -f "$_lib_dir/orchestrator-parent.sh" ]]; then
+    # shellcheck source=lib/orchestrator-parent.sh
+    source "$_lib_dir/orchestrator-parent.sh"
+  fi
+  # shellcheck source=lib/orchestrator-directive.sh
+  source "$_od_lib"
+  if [[ -f "$_lib_dir/orchestrator-state.sh" ]]; then
+    # shellcheck source=lib/orchestrator-state.sh
+    source "$_lib_dir/orchestrator-state.sh"
+    if ! ( declare -f sb_prompt_is_informational_query >/dev/null 2>&1 && sb_prompt_is_informational_query "$prompt" ); then
+      sb_orchestrator_sync_directive_from_state 2>/dev/null || true
+    fi
+  fi
+  if declare -f sb_orchestrator_directive_from_pending_outcome >/dev/null 2>&1; then
+    if [[ -f "${SB_STATE_DIR}/outcomes-session.json" ]]; then
+      sb_orchestrator_directive_from_pending_outcome 2>/dev/null || true
+    fi
+  fi
+  directive_ctx="$(sb_orchestrator_directive_context_block 2>/dev/null || true)"
+fi
+
+# Build message: directive first (most prominent), then bare-prompt intercept, compact rules ref, skill status
+msg="$skill_status"
+
+_sb_rules_marker="${SB_STATE_DIR}/session-rules-injected"
+if [[ -f "$core_rules_file" && -f "$_sb_rules_marker" ]]; then
+  msg="SB enforcement rules active (injected at session start — see core-rules).
+
+---
+
+${msg}"
+elif [[ -f "$core_rules_file" ]]; then
+  _cr_lib="${script_dir}/lib/core-rules-integrity.sh"
+  core_content=""
+  if [[ -f "$_cr_lib" ]]; then
+    # shellcheck source=lib/core-rules-integrity.sh
+    source "$_cr_lib"
+    core_content="$(sb_core_rules_read_verified "$core_rules_file" "$script_dir" 2>/dev/null || true)"
+    if [[ -z "$core_content" ]]; then
+      core_content="$(sb_core_rules_integrity_warning)"
+    fi
+  else
+    core_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
+  fi
+  if [[ -n "$core_content" ]]; then
+    msg="${core_content}
+
+---
+
+${msg}"
+  fi
+fi
+
+if [[ -n "$bare_prompt_context" ]]; then
+  msg="${bare_prompt_context}
+
+---
+
+${msg}"
+fi
+
+if [[ -n "$directive_ctx" ]]; then
+  msg="${directive_ctx}
+
+---
+
+${msg}"
+fi
+
+# Enforcement tier honesty (P1) — after directive so orchestrator leads the prompt
+if [[ -f "$_lib_dir/enforcement-tier-gate.sh" ]]; then
+  # shellcheck source=lib/enforcement-tier-gate.sh
+  source "$_lib_dir/enforcement-tier-gate.sh"
+  tier_eff="$(sb_enforcement_tier_effective "$config_file")"
+  tier_line="$(sb_enforcement_tier_session_banner "$tier_eff")"
+  if [[ -n "$tier_line" ]]; then
+    msg="${msg}
+
+---
+
+${tier_line}"
+  fi
+fi
+
+# Graphify opt-in status (only when enforcement gate is blocking)
+if [[ -f "$_lib_dir/graphify-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/graphify-gate.sh
+  source "$_lib_dir/graphify-gate.sh"
+  if sb_graphify_required "$config_file" 2>/dev/null; then
+    graphify_line="$(sb_graphify_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+    if [[ -n "$graphify_line" ]]; then
+      msg="${msg}
+
+---
+
+${graphify_line}"
+    fi
+  fi
+fi
+
+# agentmemory opt-in status (only when enforcement gate is blocking)
+if [[ -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/agentmemory-gate.sh
+  source "$_lib_dir/agentmemory-gate.sh"
+  if sb_agentmemory_required "$config_file" 2>/dev/null; then
+    agentmemory_line="$(sb_agentmemory_prompt_reminder_line "$config_file" 2>/dev/null || true)"
+    if [[ -n "$agentmemory_line" ]]; then
+      msg="${msg}
+
+---
+
+${agentmemory_line}"
+    fi
+  fi
+fi
+
+# Token-compression tools (rtk, context_mode) — only when usage gate is active
+if [[ -f "$_lib_dir/token-compression-tools-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/token-compression-tools-gate.sh
+  source "$_lib_dir/token-compression-tools-gate.sh"
+  for _tc_tool in rtk context_mode; do
+    if declare -f sb_token_tool_enforced >/dev/null 2>&1 && sb_token_tool_enforced "$config_file" "$_tc_tool" 2>/dev/null; then
+      if declare -f sb_token_tool_usage_is_fresh >/dev/null 2>&1 \
+        && sb_token_tool_usage_is_fresh "$config_file" "$_tc_tool" 2>/dev/null; then
+        continue
+      fi
+      _tc_line="$(sb_token_tool_prompt_reminder_line "$config_file" "$_tc_tool" 2>/dev/null || true)"
+      if [[ -n "$_tc_line" ]]; then
+        msg="${msg}
+
+---
+
+${_tc_line}"
+      fi
+    fi
+  done
+fi
+
+# Code intelligence synergy (only on first prompt after session start — avoid per-turn bloat)
+if [[ ! -f "${SB_STATE_DIR}/session-rules-injected" ]] \
+  && [[ -f "$_lib_dir/recommended-tools.sh" && -f "$_lib_dir/graphify-gate.sh" && -f "$_lib_dir/agentmemory-gate.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/recommended-tools.sh
+  source "$_lib_dir/recommended-tools.sh"
+  if [[ "$(sb_recommended_tool_consent "$config_file" graphify)" == "enabled" && "$(sb_recommended_tool_consent "$config_file" agentmemory)" == "enabled" ]]; then
+    msg="${msg}
+
+---
+
+CODE INTELLIGENCE: save via agentmemory, retrieve via Graphify — every session, every substantive turn. Run graphify query before exploration; capture decisions/defects in agentmemory; never substitute raw grep/read when Graphify is fresh."
+  fi
+fi
+
+# Stack optimization status when score below threshold
+if [[ -f "$_lib_dir/stack-optimizer.sh" && -n "${config_file:-}" && -f "$config_file" ]]; then
+  # shellcheck source=lib/stack-optimizer.sh
+  source "$_lib_dir/stack-optimizer.sh"
+  stack_opt_line="$(sb_stack_optimization_prompt_line "$PWD" "$config_file" 2>/dev/null || true)"
+  if [[ -n "$stack_opt_line" ]]; then
+    msg="${msg}
+
+---
+
+${stack_opt_line}"
+  fi
+fi
+
+if [[ -f "$_lib_dir/ups-coalesce.sh" ]]; then
+  # shellcheck source=lib/ups-coalesce.sh
+  source "$_lib_dir/ups-coalesce.sh"
+  sb_ups_emit_additional_context "$msg" "UserPromptSubmit"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":%s}}' "$(printf '%s' "$msg" | jq -Rs '.')"
+fi
+
+exit 0

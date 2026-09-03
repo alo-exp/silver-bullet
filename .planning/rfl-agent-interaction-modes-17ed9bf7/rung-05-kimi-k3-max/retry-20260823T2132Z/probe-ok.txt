@@ -1,0 +1,7 @@
+PROBE_START=2026-08-23T21:37:09Z
+PROBE_END=2026-08-23T21:37:24Z
+PROBE_EXIT=0
+MODEL=opencode-go/kimi-k3
+VARIANT=max
+STDOUT=PONG
+NOTE=OpenCode Go quota cleared; proceeding to full review.

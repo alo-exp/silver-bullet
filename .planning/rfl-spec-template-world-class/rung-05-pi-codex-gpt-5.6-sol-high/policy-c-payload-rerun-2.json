@@ -1,0 +1,91 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 2)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R5b-F01",
+        "title": "Kind-aware QC-1 checks required pack headings, but not required pack bodies or pack-local IDs"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R5b-F02",
+        "title": "software-kinds QC accepts lists that violate the catalog Two+ distinct atomic kinds contract"
+      },
+      {
+        "id": "R5b-F03",
+        "title": "NFR Source join validates NFR→SPEC provenance but not SPEC→NFR reverse coverage"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5b-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Kind-aware QC-1 must require pack bodies and pack-local IDs for required packs; _TBD — Clarify skipped illegally_ must not satisfy a required pack; required packs need EP-nn / CTRL-nn / SLO-nn as the catalog requires, not an empty stub"
+    },
+    {
+      "id": "R5b-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "QC-6b software-kinds must be two+ distinct atomic catalog kinds, not [cli], not [multi, web-ui], not [cli, cli], not unknown members"
+    },
+    {
+      "id": "R5b-F03",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Dropped QA-nn / SLO-nn / CTRL-nn in SPEC must be visible even if remaining NFR rows have valid Source; keep NFR Source and add reverse coverage"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R5b-F01",
+      "title": "Kind-aware QC-1 checks required pack headings, but not required pack bodies or pack-local IDs"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R5b-F02",
+      "title": "software-kinds QC accepts lists that violate the catalog Two+ distinct atomic kinds contract"
+    },
+    {
+      "id": "R5b-F03",
+      "title": "NFR Source join validates NFR→SPEC provenance but not SPEC→NFR reverse coverage"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5b-F01",
+      "severity": "HIGH",
+      "title": "Kind-aware QC-1 checks required pack headings, but not required pack bodies or pack-local IDs",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5b-F02",
+      "severity": "MED",
+      "title": "software-kinds QC accepts lists that violate the catalog Two+ distinct atomic kinds contract",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5b-F03",
+      "severity": "MED",
+      "title": "NFR Source join validates NFR→SPEC provenance but not SPEC→NFR reverse coverage",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "4a99ea1e75bfb3a0d364d365f61d2286ce1f82df1bd8070e12f599c1f1aa5374"
+}

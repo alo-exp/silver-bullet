@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "track": "agent-claude-autonomous",
+  "row_id": "AUTO-C01",
+  "install_fp": "claude@609ee0a1812c+2717f916398e",
+  "sb_git_sha": "609ee0a1812c",
+  "status": "running",
+  "started_at": "2026-07-05T17:12:28Z",
+  "mechanism": "/silver:agent-claude",
+  "harness": "scripts/agent-claude-autonomous-test.sh",
+  "verdict": null,
+  "blocking_outcomes": {},
+  "evidence_gaps": [
+    "fresh_track_not_matrix_certified"
+  ],
+  "delegate_pid": 56564
+}

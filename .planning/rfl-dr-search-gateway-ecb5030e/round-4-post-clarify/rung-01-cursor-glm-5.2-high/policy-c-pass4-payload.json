@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 4)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {"id": "S1", "title": "--allow-private omitted from cache fingerprint leaks human-writer private-network results into fleet q3_ hits"}
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {"id": "S1", "severity": "LOW", "decision": "ACCEPT", "reason": "Not wrong; M-4 fleet-never-passes-it only covers fleet-as-writer; human-as-writer to fleet-as-reader is a distinct q3_ leak from I-6 last.json clobber"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "S1", "severity": "LOW", "title": "--allow-private is a stable_hash boolean (human writer must not poison fleet q3_ hits)", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

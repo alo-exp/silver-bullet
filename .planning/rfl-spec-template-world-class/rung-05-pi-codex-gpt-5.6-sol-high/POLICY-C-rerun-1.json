@@ -1,0 +1,91 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "high",
+    "display": "Pi Codex GPT-5.6 Sol High (re-run pass 1)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R5-F01",
+        "title": "Augment preservation can keep forbidden pack headings so compiler emits SPEC that must fail SPEC-F08"
+      }
+    ],
+    "MED": [
+      {
+        "id": "R5-F02",
+        "title": "Frontmatter lists more required keys than QC-6 / compiler Step 7 / Wave 1 tests enforce"
+      },
+      {
+        "id": "R5-F03",
+        "title": "REQUIREMENTS NFR rows have no source-ID join to pack-local QA-nn / SLO-nn / CTRL-nn"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R5-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Wave 3 Step 7 and Wave 6 augment preserve-body can keep forbidden pack headings after minting software-kind (e.g. ## UX Flows after cli); compiler must not emit a SPEC that must fail SPEC-F08"
+    },
+    {
+      "id": "R5-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Align frontmatter QC-required set with QC-6 / Step 7 / Wave 1: only feature-slug + software-kind (plus software-kinds iff multi); do not QC-6-require clarify-brief or derived-requirements"
+    },
+    {
+      "id": "R5-F03",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "REQUIREMENTS NFR rows need a Source column joining QA-nn / SLO-nn / CTRL-nn (or SCAN:); Functional AC join stays as already scoped"
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R5-F01",
+      "title": "Augment preservation can keep forbidden pack headings so compiler emits SPEC that must fail SPEC-F08"
+    }
+  ],
+  "mediums": [
+    {
+      "id": "R5-F02",
+      "title": "Frontmatter lists more required keys than QC-6 / compiler Step 7 / Wave 1 tests enforce"
+    },
+    {
+      "id": "R5-F03",
+      "title": "REQUIREMENTS NFR rows have no source-ID join to pack-local QA-nn / SLO-nn / CTRL-nn"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R5-F01",
+      "severity": "HIGH",
+      "title": "Augment preservation can keep forbidden pack headings so compiler emits SPEC that must fail SPEC-F08",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5-F02",
+      "severity": "MED",
+      "title": "Frontmatter lists more required keys than QC-6 / compiler Step 7 / Wave 1 tests enforce",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R5-F03",
+      "severity": "MED",
+      "title": "REQUIREMENTS NFR rows have no source-ID join to pack-local QA-nn / SLO-nn / CTRL-nn",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "acaae5f796c963ded0e8a8f74ca09e9d16156c59bfc2b126ddd3e31ed9f79a5b"
+}

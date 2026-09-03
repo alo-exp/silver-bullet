@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "track": "agent-claude-autonomous",
+  "row_id": "AUTO-C03",
+  "install_fp": "claude@9fb620b0cdc9+2717f916398e",
+  "sb_git_sha": "9fb620b0cdc9",
+  "status": "completed",
+  "started_at": "2026-07-05T17:38:25Z",
+  "mechanism": "composite-score",
+  "harness": "scripts/agent-claude-autonomous-test.sh",
+  "verdict": "PASS",
+  "blocking_outcomes": {
+    "OUT-WORLD-01": "pass"
+  },
+  "evidence_gaps": [
+    "fresh_track_not_matrix_certified"
+  ],
+  "composite_runs": [
+    "20260705T171753Z-AUTO-C01",
+    "20260705T173019Z-AUTO-C02"
+  ],
+  "completed_at": "2026-07-05T17:38:25Z",
+  "log_bytes": 440036,
+  "scored_at": "2026-07-05T17:39:15Z"
+}

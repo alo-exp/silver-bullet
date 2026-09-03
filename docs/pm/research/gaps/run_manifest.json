@@ -1,0 +1,26 @@
+{
+  "query": "Top 50 problems engineering teams face with AI agents for software engineering and DevOps — ranked by severity, frequency, business impact",
+  "mode": "ultradeep",
+  "started_at": "2026-06-27T12:00:00Z",
+  "completed_at": "2026-06-27T12:45:00Z",
+  "output_root": "docs/pm/research/gaps/",
+  "assumptions": [
+    "Audience: engineering leaders and IC developers at teams adopting agentic coding (2025–2026)",
+    "Scope: software engineering + DevOps agent workflows, not general enterprise AI",
+    "Ranking weights: severity 40%, frequency 35%, business impact 25%",
+    "SB mapping is honest — gaps from docs/internal/sdlc-gap-analysis.md included"
+  ],
+  "clusters": [
+    "process_bypass",
+    "traceability_drift",
+    "context_degradation",
+    "knowledge_blindness",
+    "quality_theater",
+    "delivery_risk",
+    "devops_hazards",
+    "cost_model_risk"
+  ],
+  "source_count": 18,
+  "claim_count": 52,
+  "evidence_count": 47
+}

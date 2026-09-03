@@ -1,0 +1,59 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {"id": "F-6-1", "title": "Phase 3 omits Omni reconciler registration/dispatch"}
+    ],
+    "MED": [
+      {"id": "F-6-2", "title": "--fix=all does not prove composed multi-failure convergence"},
+      {"id": "F-6-3", "title": "Vendor-doctor skip has no deterministic final D10 state"},
+      {"id": "F-6-4", "title": "/sb:doctor alias is documented, not proven executable"},
+      {"id": "F-6-7", "title": "Omni busy/provider-expired lack status and repair mappings"},
+      {"id": "F-6-8", "title": "search_cli docs_pin can drift from brew-resolved version"}
+    ],
+    "LOW": [
+      {"id": "F-6-5", "title": "TTY confirmation omits decline/EOF/partial-apply semantics"},
+      {"id": "F-6-6", "title": "search_cli host support ignores OS/package-manager"}
+    ],
+    "NIT": "none"
+  },
+  "triage": [
+    {"id": "F-6-1", "severity": "HIGH", "decision": "ACCEPT", "reason": "Phase 3 requires registry, RT_COMPONENT_IDS/extra-tool, rt_run_component, scopes, SKILL, N/A-vs-FAIL — not an inert JSON key"},
+    {"id": "F-6-2", "severity": "MED", "decision": "ACCEPT", "reason": "--fix=all is one invocation that converges all eligible failures; close live first-match break; two-failure fixture"},
+    {"id": "F-6-3", "severity": "MED", "decision": "ACCEPT", "reason": "Vendor skip is not Health evidence; remaining class checks decide; skip never PASSes the component alone"},
+    {"id": "F-6-4", "severity": "MED", "decision": "ACCEPT", "reason": "Phase 2 test: /sb:doctor and /silver:doctor resolve to the same runner and forward --fix/--dry-run"},
+    {"id": "F-6-5", "severity": "LOW", "decision": "ACCEPT", "reason": "TTY decline/EOF: confirm guarded scopes before any writes; no writes; nonzero; receipt not-applied"},
+    {"id": "F-6-6", "severity": "LOW", "decision": "ACCEPT", "reason": "Agent-host Cursor/Claude/Codex stays; brew repair is macOS Homebrew only; missing brew skips packages with Diagnosis"},
+    {"id": "F-6-7", "severity": "MED", "decision": "ACCEPT", "reason": "Busy → WARN no restart; provider expired → WARN, OAuth manual; restart only a dead daemon"},
+    {"id": "F-6-8", "severity": "MED", "decision": "ACCEPT", "reason": "Versioned formula pin in docs_pin; installed version drift is WARN"}
+  ],
+  "blockers": "none",
+  "highs": [
+    {"id": "F-6-1", "title": "Phase 3 Omni registration/dispatch"}
+  ],
+  "mediums": [
+    {"id": "F-6-2", "title": "--fix=all composition"},
+    {"id": "F-6-3", "title": "Vendor-doctor skip final state"},
+    {"id": "F-6-4", "title": "/sb:doctor executable alias"},
+    {"id": "F-6-7", "title": "Omni busy/expired mappings"},
+    {"id": "F-6-8", "title": "search_cli version pin vs docs_pin"}
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {"id": "F-6-1", "severity": "HIGH", "title": "Omni reconciler registration", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-2", "severity": "MED", "title": "--fix=all composition", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-3", "severity": "MED", "title": "vendor-doctor skip state", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-4", "severity": "MED", "title": "/sb:doctor executable alias", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-5", "severity": "LOW", "title": "TTY decline/EOF", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-6", "severity": "LOW", "title": "search_cli package platform", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-7", "severity": "MED", "title": "Omni busy/expired", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "F-6-8", "severity": "MED", "title": "search_cli versioned docs_pin", "decision": "ACCEPT", "resolved": "yes"}
+  ],
+  "apply_sha": "67b7fb32d64e6defc6db4b18d41d6ff2e6df9085562c472c352275a783fa73d8"
+}

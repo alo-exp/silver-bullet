@@ -1,0 +1,45 @@
+name: E2E Live (optional)
+
+# Non-blocking live agent matrix — manual / pre-release only.
+# Merge gate remains `.github/workflows/ci.yml` (unit + integration + harness sanity).
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtimes:
+        description: 'Comma-separated runtimes (e.g. codex,kay)'
+        required: false
+        default: 'codex'
+
+jobs:
+  e2e-live:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seed Silver Bullet runtime env
+        run: |
+          export SILVER_BULLET_RUNTIME=codex
+          source hooks/lib/runtime-paths.sh
+          {
+            echo "SILVER_BULLET_RUNTIME=$SILVER_BULLET_RUNTIME"
+            echo "SB_RUNTIME_NAME=$SB_RUNTIME_NAME"
+            echo "SB_RUNTIME_HOME_ROOT=$SB_RUNTIME_HOME_ROOT"
+            echo "SB_RUNTIME_STATE_DIR=$SB_RUNTIME_STATE_DIR"
+          } >> "$GITHUB_ENV"
+
+      - name: Install jq
+        run: sudo apt-get install -y jq git
+
+      - name: Run live E2E suite
+        run: |
+          export SB_E2E_LIVE_RUNTIMES="${{ github.event.inputs.runtimes }}"
+          bash tests/e2e-live/run-e2e-live-tests.sh
+        continue-on-error: true
+
+      - name: Run release live matrix
+        run: bash scripts/run-release-live-matrix.sh
+        continue-on-error: true

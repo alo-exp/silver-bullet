@@ -1,0 +1,78 @@
+{
+  "hosts": {
+    "claude": {
+      "status": "supported",
+      "rtk": {
+        "command": "rtk init -g",
+        "artifacts": ["~/.codex/settings.json", "~/.codex/RTK.md"]
+      },
+      "context_mode": {
+        "command": "claude plugin install context-mode@context-mode",
+        "artifacts": ["~/.codex/plugins/context-mode"]
+      },
+      "doctor_platform": "claude"
+    },
+    "codex": {
+      "status": "supported",
+      "rtk": {
+        "command": "rtk init -g --codex",
+        "artifacts": ["~/.codex/AGENTS.md", "~/.codex/RTK.md"],
+        "note": "PreToolUse lacks updatedInput — RTK savings are primarily via AGENTS.md awareness"
+      },
+      "context_mode": {
+        "command": "npm install -g context-mode",
+        "artifacts": ["~/.codex/config.toml", "~/.codex/hooks.json"]
+      },
+      "doctor_platform": "codex"
+    },
+    "cursor": {
+      "status": "supported",
+      "rtk": {
+        "command": "rtk init -g --agent cursor",
+        "artifacts": ["~/.cursor/hooks.json", "~/.cursor/cli-config.json"]
+      },
+      "context_mode": {
+        "command": "npm install -g context-mode",
+        "artifacts": ["~/.cursor/mcp.json", "~/.cursor/hooks.json", "~/.cursor/rules/context-mode.mdc"]
+      },
+      "doctor_platform": "cursor"
+    },
+    "opencode": {
+      "status": "supported",
+      "rtk": {
+        "command": "rtk init -g --opencode",
+        "artifacts": ["~/.config/opencode/plugins/rtk.ts", "~/.config/opencode/opencode.json"]
+      },
+      "context_mode": {
+        "command": "npm install -g context-mode",
+        "artifacts": ["~/.config/opencode/opencode.json", "~/.config/opencode/AGENTS.md"]
+      },
+      "doctor_platform": "opencode"
+    },
+    "hermes": {
+      "status": "partial",
+      "rtk": {
+        "command": "rtk init --agent hermes",
+        "artifacts": ["~/.hermes/plugins/rtk-rewrite", "~/.hermes/config.yaml"]
+      },
+      "context_mode": {
+        "command": "npm install -g context-mode",
+        "artifacts": ["~/.hermes/config.yaml"],
+        "note": "No official context-mode Hermes adapter — MCP merge only; no hook doctor platform"
+      },
+      "doctor_platform": null
+    },
+    "goose": {
+      "status": "unsupported",
+      "rtk": {
+        "command": null,
+        "note": "RTK hooks index has no goose/ directory (2026-06)"
+      },
+      "context_mode": {
+        "command": null,
+        "note": "Context Mode README lists no Goose integration"
+      },
+      "doctor_platform": null
+    }
+  }
+}

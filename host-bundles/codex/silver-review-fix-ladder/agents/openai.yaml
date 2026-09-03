@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Fix Ladder"
+  short_description: "Escalate scoped review/fix loops by model level"
+  default_prompt: "Use $silver-review-fix-ladder to progressively review and fix scoped work against context-derived goals, escalating through the host-aware model ladder until two consecutive clean passes per rung."

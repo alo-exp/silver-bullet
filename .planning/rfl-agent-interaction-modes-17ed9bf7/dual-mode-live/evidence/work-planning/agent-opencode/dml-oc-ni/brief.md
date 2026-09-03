@@ -1,0 +1,1 @@
+Reply with exactly the word pong and nothing else. Do not use tools.

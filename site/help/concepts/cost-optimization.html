@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-neutral-variant="s3">
+<head>
+<script>(function(){try{var t=localStorage.getItem('silver-bullet-theme')||localStorage.getItem('sb-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="../../favicon.png">
+<link rel="shortcut icon" href="../../favicon.ico">
+<title>Operational Efficiency &mdash; Silver Bullet Help</title>
+<meta name="description" content="How Silver Bullet keeps process proportional by composing the smallest safe workflow for the task while preserving spec, review, test, and release gates where they matter.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../tokens.css?v=s3-site-icon-glyph-align5">
+<link rel="stylesheet" href="../../neutral-variants.css?v=s3-home-icons">
+<link rel="stylesheet" href="../../chrome.css?v=site-chrome-11">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-sans);background:var(--bg-page);color:var(--text-primary);line-height:1.7;overflow-x:hidden}
+h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-cta,.hero-tagline-caps,.version-badge,.step-card-title,.phase-header,.plugin-name,.plugin-role,.install-label{font-family:var(--font-heading)}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container-wide{max-width:1100px;margin:0 auto;padding:0 24px}
+.page-hero{background:var(--bg-hero);padding-bottom:64px;padding-left:24px;padding-right:24px;position:relative;overflow:hidden}
+.page-hero::before{content:'';position:absolute;top:-200px;right:-200px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--slate-a08) 0%,transparent 70%)}
+.page-hero .container{position:relative;z-index:1}
+.page-hero h1{font-size:clamp(1.8rem,3.5vw,2.8rem);letter-spacing:-.04em;margin-bottom:16px;line-height:1.1}
+.page-hero p{font-size:1rem;color:var(--text-secondary);max-width:620px;line-height:1.7}
+.doc-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:64px 0}
+@media(max-width:768px){.doc-layout{grid-template-columns:1fr}}
+.doc-content h2{font-size:1.5rem;letter-spacing:-.03em;margin-bottom:16px;margin-top:48px;padding-top:16px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:1.05rem;margin-bottom:10px;margin-top:28px;color:var(--text-primary)}
+.doc-content p{margin-bottom:16px;color:var(--text-secondary);line-height:1.8}
+.doc-content ul,.doc-content ol{margin-bottom:16px;padding-left:20px;color:var(--text-secondary)}
+.doc-content li{margin-bottom:6px;line-height:1.7}
+.doc-content strong{color:var(--text-primary)}
+.doc-content code{font-family:var(--font-mono);font-size:1em;background:var(--bg-code);padding:2px 6px;border-radius:4px;color:var(--accent-light)}
+.callout{border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start}
+.callout-info{background:var(--slate-a08);border:1px solid var(--slate-a20)}
+.callout-tip{background:var(--green-warn-a06);border:1px solid var(--green-warn-a20)}
+.callout-warn{background:var(--amber-warn-a06);border:1px solid var(--amber-warn-a20)}
+.callout-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+.callout-body{font-size:.875rem;color:var(--text-secondary);line-height:1.7}
+.callout-body strong{color:var(--text-primary)}
+.divider{height:1px;background:var(--border);margin:40px 0}
+.ref-table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:.875rem}
+.ref-table th{text-align:left;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);border-bottom:2px solid var(--border);white-space:nowrap}
+.ref-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);line-height:1.5;vertical-align:top}
+.ref-table td:first-child{font-family:var(--font-mono);font-size:1rem;color:var(--accent-light);white-space:nowrap;font-weight:600}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:var(--table-row-hover)}
+.code-block{background:var(--bg-code);border:1px solid var(--border);border-radius:var(--radius-sm);padding:20px 24px;font-family:var(--font-mono);font-size:1rem;line-height:1.9;color:var(--text-secondary);overflow-x:auto;white-space:pre-wrap;margin-bottom:20px}
+.code-block .comment{color:var(--text-dim)}
+.page-nav-bottom{display:flex;justify-content:space-between;margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.page-nav-bottom a{display:flex;flex-direction:column;gap:4px;text-decoration:none;max-width:220px}
+.pnb-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--text-dim)}
+.pnb-title{font-size:.95rem;font-weight:700;color:var(--accent-light)}
+.nsr-item{display:flex;flex-direction:column;gap:3px;padding:12px 16px;text-decoration:none;border-bottom:1px solid var(--border);transition:background .15s;color:inherit}
+.nsr-item:last-child{border-bottom:none}
+.nsr-item:hover,.nsr-item.nsr-active{background:var(--bg-code)}
+.nsr-page{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--accent-light)}
+.nsr-title{font-size:.88rem;font-weight:600;color:var(--text-primary)}
+.nsr-excerpt{font-size:.87rem;color:var(--text-dim);line-height:1.4}
+svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;stroke-width:1.5;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body class="has-help-subnav">
+
+<nav>
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand" aria-label="Silver Bullet home">
+      <img src="../../silver-bullet.png" alt="" class="nav-bullet" aria-hidden="true">
+      <span class="nav-wordmark">
+        <span class="logo gradient">Silver Bullet</span>
+        <span class="nav-alpha" title="Pre-release software &mdash; APIs may change">ALPHA</span>
+      </span>
+    </a>
+    <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('active')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+    <ul class="nav-links">
+      <li><a href="../../#problem">Problem</a></li>
+      <li><a href="../../#future">What If</a></li>
+      <li><a href="../../#mechanism">How It Works</a></li>
+      <li><a href="../../#workflow">Workflows</a></li>
+      <li><a href="../../#install">Install</a></li>
+      <li class="mobile-only"><a href="https://github.com/alo-exp/silver-bullet" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="../../help/" class="nav-help">Help Center</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle light/dark mode">
+        <span id="icon-sun"><i data-lucide="sun"></i></span>
+        <span id="icon-moon" style="display:none"><i data-lucide="moon"></i></span>
+      </button>
+      <a href="https://github.com/alo-exp/silver-bullet" class="nav-cta" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="help-subnav" id="help-subnav">
+  <div class="help-subnav-inner">
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Concepts</a><span class="sep">/</span><span class="current">Cost Optimization</span></nav>
+    <div class="help-subnav-extra">
+      <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/" class="active">Concepts</a><a href="../workflows/">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
+      <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-hero">
+  <div class="container">
+    <h1>Operational Efficiency</h1>
+    <p>Silver Bullet saves effort by composing the smallest safe process for the task. It does not claim a universal model-routing layer; model choice remains the responsibility of the active host and project configuration.</p>
+  </div>
+</div>
+
+<div class="container-wide">
+  <div class="doc-layout">
+
+    <aside class="doc-sidebar">
+      <ul class="sidebar-nav">
+        <li class="sidebar-section">Overview</li>
+        <li><a href="#what-it-means">What It Means</a></li>
+        <li><a href="#workflow-fit">Workflow Fit</a></li>
+        <li class="sidebar-section">Efficiency Controls</li>
+        <li><a href="#fast-path">Fast Path</a></li>
+        <li><a href="#dependency-handling">Dependency Handling</a></li>
+        <li><a href="#config">Project Configuration</a></li>
+        <li class="sidebar-section">Boundaries</li>
+        <li><a href="#not-claimed">What Is Not Claimed</a></li>
+        <li><a href="#see-also">See Also</a></li>
+      </ul>
+    </aside>
+
+    <article class="doc-content">
+
+      <h2 id="what-it-means">What Efficiency Means in v0.52.0</h2>
+      <p>Silver Bullet is an APO — an orchestration and enforcement engine with catalog-backed lifecycle workflows. Efficiency comes from routing work to the smallest safe <code>WF-*</code> composition, keeping state in <code>.planning/workflows/&lt;id&gt;.md</code>, and applying only the <code>AF-*</code> gates the task actually needs.</p>
+      <p>That matters because the expensive failure mode in agentic development is not only token cost. It is doing the wrong amount of process: under-reviewing a risky change, over-processing a typo, losing traceability between spec and PR, or discovering after implementation that the plan never covered an acceptance criterion.</p>
+
+      <div class="callout callout-info">
+        <span class="callout-icon"><i data-lucide="info"></i></span>
+        <div class="callout-body"><strong>The current principle:</strong> choose the smallest safe workflow, then enforce it. A trivial change gets a fast path; a fuzzy feature gets clarification and spec work; infrastructure gets blast-radius and IaC gates; release work gets finalization checks.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="workflow-fit">Workflow Fit Table</h2>
+      <p><code>/silver</code> composes from lifecycle workflows and optional extension plugins instead of forcing every request through one fixed pipeline.</p>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Work Type</th><th>Likely Route</th><th>Efficiency Gain</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Typo, copy, config, rename</td>
+            <td><code>/silver:fast</code> Tier 1</td>
+            <td>Avoids full planning while still confirming that scope is genuinely trivial.</td>
+          </tr>
+          <tr>
+            <td>Bounded small change</td>
+            <td><code>/silver:fast</code> Tier 2 with SB flags</td>
+            <td>Uses lightweight discussion, research, or validation only when signals require it, then escalates if scope grows.</td>
+          </tr>
+          <tr>
+            <td>Clear feature</td>
+            <td><code>/silver:feature</code> with SB context, plan, execute, verify</td>
+            <td>Keeps execution inside SB while applying pre-plan gates, artifact review, traceability, and pre-ship checks.</td>
+          </tr>
+          <tr>
+            <td>Fuzzy feature or new product idea</td>
+            <td><code>/silver:clarify</code> or <code>/silver:spec</code> before planning</td>
+            <td>Prevents premature implementation by producing explicit scope, assumptions, and acceptance criteria first.</td>
+          </tr>
+          <tr>
+            <td>External PRD, ticket, Figma, or Google Doc</td>
+            <td><code>/silver:ingest</code> &rarr; spec artifacts &rarr; artifact review</td>
+            <td>Preserves source context and marks missing connector data instead of silently inventing requirements.</td>
+          </tr>
+          <tr>
+            <td>Plan/spec mismatch risk</td>
+            <td><code>/silver:validate</code></td>
+            <td>Finds uncovered acceptance criteria, open assumptions, and orphan plan tasks before implementation begins.</td>
+          </tr>
+          <tr>
+            <td>Bugfix</td>
+            <td><code>/silver:bugfix</code> with debug and regression verification</td>
+            <td>Spends process on root cause and regression prevention instead of broad feature planning.</td>
+          </tr>
+          <tr>
+            <td>UI/frontend work</td>
+            <td><code>/silver:ui</code> with UI design contract and UI review</td>
+            <td>Adds interface-specific design and visual checks that generic execution would miss.</td>
+          </tr>
+          <tr>
+            <td>Infrastructure, CI/CD, deployment</td>
+            <td><code>/silver:devops</code> with blast-radius and IaC quality gates</td>
+            <td>Uses risk and environment-promotion controls instead of application-only gates.</td>
+          </tr>
+          <tr>
+            <td>Release preparation</td>
+            <td><code>/silver:release</code></td>
+            <td>Concentrates finalization, docs, CI, artifact alignment, and ship checks at the point they matter.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="fast-path">Fast Path Without Silent Scope Creep</h2>
+      <p><code>/silver:fast</code> exists for low-risk and bounded work, but it is not a blanket bypass. Tier 1 runs the SB fast path; Tier 2 runs bounded SB quick handling with the right checks. If scope expands beyond the fast-path limits, the workflow escalates to <code>silver:feature</code>.</p>
+      <ul>
+        <li>Good fits: typo fixes, small copy updates, simple config values, one-line renames.</li>
+        <li>Medium fits: small logic updates, dependency bumps, or 4–10-file changes where the impact is local and clear.</li>
+        <li>Bad fits: schema changes, auth, infrastructure, cross-module behavior, new capabilities, or anything that grows past the original scope.</li>
+        <li>The legacy trivial marker is guarded by <code>trivial-file-guard.sh</code>; current Codex-oriented flows should use <code>/silver:fast</code> instead.</li>
+      </ul>
+
+      <div class="divider"></div>
+
+      <h2 id="dependency-handling">Dependency Handling</h2>
+      <p>Silver Bullet distinguishes optional enrichment from required execution dependencies. Optional tools can degrade gracefully when unavailable. Required dependencies fail closed so a workflow does not pretend a gate ran when the underlying skill or connector is missing.</p>
+      <p>The <code>dependency-skill-check.sh</code> hook enforces dependency-skill availability before dependent chains proceed. The ingestion workflow follows the same principle for external connectors: unavailable sources are recorded as explicit missing-artifact blocks rather than converted into hallucinated content.</p>
+
+      <div class="divider"></div>
+
+      <h2 id="config">Project Configuration</h2>
+      <p>Project-level knobs live in <code>.silver-bullet.json</code> and SB planning configuration. They let the workflow match the project instead of forcing one universal setup.</p>
+      <table class="ref-table">
+        <thead><tr><th>Config Surface</th><th>What It Controls</th></tr></thead>
+        <tbody>
+          <tr><td><code>.silver-bullet.json</code></td><td>Project defaults such as verification commands, source file patterns, required planning behavior, deployment checks, and semantic compression settings.</td></tr>
+          <tr><td><code>.planning/config.json</code></td><td>SB workflow settings, review depth, project preferences, and other planning/runtime options owned by the active SB project.</td></tr>
+          <tr><td><code>silver-bullet.md</code> &sect;10</td><td>User workflow preferences: routing preferences, step-skip decisions, lightweight alternatives, and mode preferences recorded after explicit approval.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="divider"></div>
+
+      <h2 id="not-claimed">What Is Not Claimed</h2>
+      <p>Silver Bullet v0.52.0 does <strong>not</strong> provide a generic automatic model-routing advantage over host-native model controls. The historical <code>ensure-model-routing.sh</code> hook is disabled and exits as a no-op. Optional external plugins may expose model profiles or model overrides in their own configuration, but that is not a core Silver Bullet benefit.</p>
+      <p>When you need different model behavior, configure it in the active host or in an explicitly selected optional plugin. Silver Bullet's job is to select, enforce, and trace the workflow path around that execution.</p>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
+        <div class="callout-body"><strong>Important boundary:</strong> older documentation may refer to automatic host model-tier routing. Treat that as legacy language. The current product positioning is workflow composition and enforcement, not universal model-tier optimization.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 id="see-also">See Also</h2>
+      <ul>
+        <li><a href="composable-workflow.html">Composable Workflow Orchestration</a></li>
+        <li><a href="routing-logic.html">Routing Logic</a></li>
+        <li><a href="../workflows/silver-fast.html">/silver:fast</a></li>
+        <li><a href="../workflows/silver-spec.html">/silver:spec</a></li>
+        <li><a href="../workflows/silver-validate.html">/silver:validate</a></li>
+      </ul>
+
+      <div class="page-nav-bottom">
+        <a href="routing-logic.html">
+          <span class="pnb-label">&larr; Previous</span>
+          <span class="pnb-title">Routing Logic</span>
+        </a>
+        <a href="session-startup.html" style="text-align:right">
+          <span class="pnb-label">Next &rarr;</span>
+          <span class="pnb-title">Session Startup</span>
+        </a>
+      </div>
+
+    </article>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand-group">
+      <span class="footer-credit"><a href="../../" class="footer-brand-link">Silver Bullet</a> &middot; Innovated at <a href="https://alolabs.dev" target="_blank" rel="noopener noreferrer" style="font-weight:700;text-decoration:none;color:inherit">&#256;lo Labs</a></span>
+    </div>
+    <div class="footer-copyright">&copy; 2026 Alo Labs. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="../../help/">Help</a>
+      <a href="../../terms/">Terms of Use</a>
+      <a href="../../privacy/">Privacy Policy</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="../search.js"></script>
+<script src="../common.js?v=s3-site-common-themefix1"></script>
+<script src="../../chrome.js?v=site-chrome-11"></script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "F1",
+        "title": "X union cascade: dedup contract/location underspecified"
+      },
+      {
+        "id": "F2",
+        "title": "site: rows transitively require Serper consent"
+      },
+      {
+        "id": "F3",
+        "title": "xweb ban-risk warning missing from silver:init"
+      },
+      {
+        "id": "F4",
+        "title": "Non-Cursor host key acquisition path underspecified"
+      },
+      {
+        "id": "F5",
+        "title": "X catalog provider/bucket singular vs two-leg union"
+      }
+    ],
+    "LOW": [
+      {
+        "id": "F6",
+        "title": "last.json clobber when human reuses fleet cache dir"
+      },
+      {
+        "id": "F7",
+        "title": "Fork repo/tag unavailability: no binary fallback"
+      },
+      {
+        "id": "F8",
+        "title": "search serve not evaluated as later steady-state option"
+      },
+      {
+        "id": "F9",
+        "title": "Key rotation alerts omit non-YouTube/non-Serper keys"
+      },
+      {
+        "id": "F10",
+        "title": "cache clear prefix filter not future-proof for q4_"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "F11",
+        "title": "Flat-file cache vs SQLite/sled trade-off not acknowledged"
+      },
+      {
+        "id": "F12",
+        "title": "IDN / non-ASCII Discourse host known limit undocumented"
+      },
+      {
+        "id": "F13",
+        "title": "Observability beyond search usage --json"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "F1",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Cites check; SB orchestrator must own dedup"
+    },
+    {
+      "id": "F2",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "site: rows cannot fire without Serper/Brave consent"
+    },
+    {
+      "id": "F3",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Informed-consent copy; does not unwind xweb lock"
+    },
+    {
+      "id": "F4",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Phase 3 needs a non-Cursor init contract"
+    },
+    {
+      "id": "F5",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Lock one X row with list-valued provider/bucket"
+    },
+    {
+      "id": "F6",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Document last.json clobber edge"
+    },
+    {
+      "id": "F7",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Document no binary fallback"
+    },
+    {
+      "id": "F8",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Note Phase 2+ optional evaluate; not Phase 1 daemon"
+    },
+    {
+      "id": "F9",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Ops alerts for expiring PATs/secrets"
+    },
+    {
+      "id": "F10",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Clear must also match future qN_ prefixes"
+    },
+    {
+      "id": "F11",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Acknowledge flat-file vs SQLite trade-off"
+    },
+    {
+      "id": "F12",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Document IDN Discourse as known limit"
+    },
+    {
+      "id": "F13",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Note metrics beyond usage --json"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "F1",
+      "title": "X union cascade: dedup contract/location underspecified"
+    },
+    {
+      "id": "F2",
+      "title": "site: rows transitively require Serper consent"
+    },
+    {
+      "id": "F3",
+      "title": "xweb ban-risk warning missing from silver:init"
+    },
+    {
+      "id": "F4",
+      "title": "Non-Cursor host key acquisition path underspecified"
+    },
+    {
+      "id": "F5",
+      "title": "X catalog provider/bucket singular vs two-leg union"
+    }
+  ],
+  "resolved": [
+    {
+      "id": "F1",
+      "severity": "MED",
+      "title": "X union dedup",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F2",
+      "severity": "MED",
+      "title": "site: Serper consent",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F3",
+      "severity": "MED",
+      "title": "xweb ban-risk copy",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F4",
+      "severity": "MED",
+      "title": "non-Cursor init",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F5",
+      "severity": "MED",
+      "title": "X list provider/bucket",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F6",
+      "severity": "LOW",
+      "title": "last.json clobber",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F7",
+      "severity": "LOW",
+      "title": "no binary fallback",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F8",
+      "severity": "LOW",
+      "title": "search serve Phase 2+",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F9",
+      "severity": "LOW",
+      "title": "PAT/secret alerts",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F10",
+      "severity": "LOW",
+      "title": "qN_ cache clear",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F11",
+      "severity": "NIT",
+      "title": "flat-file vs SQLite",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F12",
+      "severity": "NIT",
+      "title": "IDN Discourse limit",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "F13",
+      "severity": "NIT",
+      "title": "usage+manifest metrics",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ]
+}

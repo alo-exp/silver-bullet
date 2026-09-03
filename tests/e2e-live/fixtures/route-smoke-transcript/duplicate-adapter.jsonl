@@ -1,0 +1,3 @@
+{"type": "prompt.submitted", "prompt": "Run exactly this command as your first and only non-hook command: `silver-bullet invoke-skill silver:feature`."}
+{"id":"1","event_seq":1,"msg":{"type":"exec_command_begin","call_id":"call-1","command":["silver-bullet","invoke-skill","silver:feature"]}}
+{"id":"2","event_seq":2,"msg":{"type":"exec_command_begin","call_id":"call-2","command":["bash","-lc","silver-bullet invoke-skill silver:feature"]}}

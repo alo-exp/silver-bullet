@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "description": "Canonical tri-host evidence pointers. Proof status is derived by scripts/enterprise-e2e-certification-status.sh — do not hand-maintain host verdicts in this file.",
+  "policy_doc": "docs/testing/ENTERPRISE-E2E-HOST-CERTIFICATION-METHODOLOGY.md",
+  "generated_status_artifact": ".planning/enterprise-e2e/CERTIFICATION-STATUS.json",
+  "hosts": {
+    "cursor": {
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-CURSOR-3-REAL-LEDGER.md",
+      "void_ledgers": [
+        ".planning/enterprise-e2e/ROUND-CURSOR-1-LEDGER.md",
+        ".planning/enterprise-e2e/ROUND-CURSOR-2-LEDGER.md"
+      ],
+      "void_gates": [
+        ".planning/enterprise-e2e/ROUND-CURSOR-1-GATES.md",
+        ".planning/enterprise-e2e/ROUND-CURSOR-2-GATES.md"
+      ],
+      "methodology_appendix": "Appendix D",
+      "minimal_intent_e2e_matrix": {
+        "runbook": ".planning/minimal-intent-e2e/RUNBOOK.md",
+        "criteria": ".planning/minimal-intent-e2e/CRITERIA.md",
+        "matrix": ".planning/minimal-intent-e2e/MATRIX.json",
+        "matrix_ledger": ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",
+        "harness": "scripts/minimal-intent-autonomous-e2e.sh",
+        "status": "matrix_pass_1_of_1",
+        "matrix_verdict": "PASS",
+        "install_fp": "claude@e2da8f2bf9a5+2717f916398e",
+        "sb_git_sha_at_pass": "e2da8f2bf9a5",
+        "rows_passed": ["MI-01"],
+        "canonical_runs": {
+          "MI-01": "20260705T175518Z-MI-01"
+        },
+        "product_delta": {
+          "fixture_repo": "alo-exp/enterprise-grade-test-app",
+          "pr": "https://github.com/alo-exp/enterprise-grade-test-app/pull/26"
+        },
+        "notes": "Fresh 1-row minimal-intent track via /silver:feature — 1/1 PASS on current install_fp; does not supersede ROUND-CURSOR-3 ledger or 22/22 tri-host claims"
+      }
+    },
+    "codex": {
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-CODEX-3-LEDGER.md",
+      "canonical_gates": ".planning/enterprise-e2e/ROUND-CODEX-3-GATES.md",
+      "product_audit": ".planning/enterprise-e2e/CODEX-3-TEST-APP-PRODUCT-AUDIT.md",
+      "void_ledgers": [
+        ".planning/enterprise-e2e/ROUND-CODEX-1-LEDGER.md",
+        ".planning/enterprise-e2e/ROUND-CODEX-2-LEDGER.md"
+      ],
+      "void_gates": [
+        ".planning/enterprise-e2e/ROUND-CODEX-1-GATES.md",
+        ".planning/enterprise-e2e/ROUND-CODEX-2-GATES.md"
+      ],
+      "methodology_appendix": "Appendix E"
+    },
+    "claude": {
+      "canonical_ledger": ".planning/enterprise-e2e/ROUND-9-LEDGER.md",
+      "canonical_gates": ".planning/enterprise-e2e/ROUND-9-GATES.md",
+      "void_ledgers": [
+        ".planning/enterprise-e2e/ROUND-8-LEDGER.md"
+      ],
+      "methodology_appendix": "Appendix C (in progress)",
+      "agent_claude_autonomous_matrix": {
+        "runbook": ".planning/agent-claude-autonomous/RUNBOOK.md",
+        "criteria": ".planning/agent-claude-autonomous/CRITERIA.md",
+        "matrix": ".planning/agent-claude-autonomous/MATRIX.json",
+        "matrix_ledger": ".planning/agent-claude-autonomous/MATRIX-LEDGER.json",
+        "initial_evidence": ".planning/agent-claude-autonomous/INITIAL-EVIDENCE.md",
+        "harness": "scripts/agent-claude-autonomous-test.sh",
+        "status": "matrix_pass_3_of_3",
+        "matrix_verdict": "PASS",
+        "install_fp": "claude@609ee0a1812c+2717f916398e",
+        "sb_git_sha_at_pass": "609ee0a1812c",
+        "rows_passed": ["AUTO-C01", "AUTO-C02", "AUTO-C03"],
+        "canonical_runs": {
+          "AUTO-C01": "20260705T171753Z-AUTO-C01",
+          "AUTO-C02": "20260705T173019Z-AUTO-C02",
+          "AUTO-C03": "20260705T173750Z-AUTO-C03"
+        },
+        "notes": "Fresh 3-row autonomous vision track via /silver:agent-claude — 3/3 PASS on current install_fp; does not supersede ROUND-9 ledger, claude host 6/22, or tri-host 22/22 claims"
+      }
+    }
+  }
+}

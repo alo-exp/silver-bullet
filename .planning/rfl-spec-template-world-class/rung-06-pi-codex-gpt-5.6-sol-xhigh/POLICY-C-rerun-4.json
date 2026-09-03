@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High (re-run pass 4)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R6d-F01",
+        "title": "Wave 3 Step 8a/final install gate: fixes can mutate the staged pair after its cross-artifact validation without a mandatory final fixed-point revalidation"
+      }
+    ],
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R6d-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "After any successful 8a (or 7a) mutation of staged bytes, re-run Step 8 / 7a/8a / review-cross-artifact (as applicable) on the exact staged pair that will be installed (named fixed-point). Install allowed only when the last review/QC PASS was on those bytes with no further mutation. If 8a mutates after a PASS, prior PASS is stale; fail-before-install until revalidated. Fixture: 8a mutates REQUIREMENTS after a pair PASS → install FAIL unless a subsequent full PASS on the new bytes. Extends R6b/R6c; do not weaken tombstones, Wave 6 1b, R5k exclusive NFR, R6b staged pair, or R6c snapshot-restore. Distinct from R6c snapshot-restore."
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R6d-F01",
+      "title": "Wave 3 Step 8a/final install gate: fixes can mutate the staged pair after its cross-artifact validation without a mandatory final fixed-point revalidation"
+    }
+  ],
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R6d-F01",
+      "severity": "HIGH",
+      "title": "Wave 3 Step 8a/final install gate: fixes can mutate the staged pair after its cross-artifact validation without a mandatory final fixed-point revalidation",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "1f11eacc50529cb8bab062a37bc80b4b6c988d855b17833332159b32a46d53fa"
+}

@@ -1,0 +1,28 @@
+{
+  "vloop_id": "vl-20260712-ocg-deepseek-v4-flash",
+  "agent_slug": "ocg-deepseek-v4-flash",
+  "model": "opencode-go/deepseek-v4-flash",
+  "started_at": "2026-07-11T19:53:16Z",
+  "completed_at": "2026-07-12T00:30:00Z",
+  "artifacts": {
+    "scope.md": "Research scope document",
+    "research-plan.md": "Research methodology and plan",
+    "sources.jsonl": "25 sources with credibility ratings",
+    "evidence.jsonl": "19 evidence items linking claims to sources",
+    "triangulation.md": "Cross-source verification of major claims",
+    "outline.md": "Report structure outline",
+    "claims.jsonl": "20 extracted claims with confidence scores",
+    "critique.md": "Limitations and blind spots",
+    "decision-record.md": "Key research methodology decisions",
+    "handoff.md": "Open items and follow-on guidance",
+    "vloop-rollup.json": "Execution metadata",
+    "run_manifest.json": "Agent run manifest",
+    "research_report.md": "Primary deliverable — complete SDLC process architecture"
+  },
+  "research_depth": "ultradeep",
+  "process_areas_covered": 18,
+  "workflows_documented": 36,
+  "sources_fetched": 15,
+  "subagents_dispatched": 3,
+  "status": "complete"
+}

@@ -1,0 +1,18 @@
+[0m
+> build · deepseek-v4-pro
+[0m
+[0m⚙ [0mctx_search Search Indexed Content
+[0m⚙ [0mlean-ctx_ctx_shell {"command":"wc -l .cursor/plans/agent_interaction_modes_17ed9bf7.plan.md .planning/rfl-agent-interaction-modes-17ed9bf7/rung-01-minimax-m3-high/review.md; ls .planning/rfl-agent-interaction-modes-17ed9bf7/"}
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m→ [0mSkill "graphify"
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
+[0m⚙ [0mctx_execute Run code in a sandbox (executes the supplied code)
