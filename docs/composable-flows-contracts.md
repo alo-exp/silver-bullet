@@ -502,8 +502,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_AGENT_CLAUDE` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CLAUDE` |
 | `FS-SILVER_AGENT_CODEX` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CODEX` |
 | `FS-SILVER_AGENT_CURSOR` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CURSOR` |
-| `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` |  | `EV-FS-SILVER_AGENT_OPENCODE` |
-| `FS-SILVER_AGENT_PI` | `silver-agent-pi` |  | `EV-FS-SILVER_AGENT_PI` |
+| `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_OPENCODE` |
+| `FS-SILVER_AGENT_PI` | `silver-agent-pi` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_PI` |
 | `FS-SILVER_BENCHMARK` | `silver-benchmark` | `AF-FAST-PATH` | `EV-FS-SILVER_BENCHMARK` |
 | `FS-SILVER_BLAST_RADIUS` | `silver-blast-radius` | `AF-BLAST-RADIUS` | `EV-FS-SILVER_BLAST_RADIUS` |
 | `FS-SILVER_BOOTSTRAP_MILESTONE` | `silver-bootstrap-milestone` | `AF-BOOTSTRAP` | `EV-FS-SILVER_BOOTSTRAP_MILESTONE` |

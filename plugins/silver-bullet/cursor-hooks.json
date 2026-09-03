@@ -210,11 +210,6 @@
         "matcher": "Skill"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/rfl-policy-c-gate.sh",
-        "timeout": 10,
-        "matcher": "Skill"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/site-regression-gate.sh",
         "timeout": 120,
         "matcher": "Shell"

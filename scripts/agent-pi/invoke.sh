@@ -19,6 +19,7 @@ BRIEF_FILE=""
 PROMPT_TEXT=""
 PROMPT_FILE=""
 FILTERED=()
+captured=""
 args=("$@")
 i=0
 while [[ "$i" -lt "${#args[@]}" ]]; do
@@ -81,19 +82,23 @@ if [[ -n "$EXPECT_FILE" ]]; then
   export SB_AGENT_EXPECT_FILE="$EXPECT_FILE"
   export PI_EXPECT_FILE="$EXPECT_FILE"
 fi
-cap=""
-if [[ -n "$EXPECT_FILE" ]]; then
-  cap="$(mktemp "${TMPDIR:-/tmp}/agent-pi-invoke-XXXXXX")"
-fi
+cap="$(mktemp "${TMPDIR:-/tmp}/agent-pi-invoke-XXXXXX")"
 set +e
-if [[ -n "$cap" ]]; then
-  bash "$DELEGATE" "${FILTERED[@]}" 2>&1 | tee "$cap"
-  rc=${PIPESTATUS[0]}
-else
-  bash "$DELEGATE" "${FILTERED[@]}"
-  rc=$?
-fi
+bash "$DELEGATE" "${FILTERED[@]}" 2>&1 | tee "$cap"
+rc=${PIPESTATUS[0]}
 set -e
+
+captured="$(cat "$cap" 2>/dev/null || true)"
+rm -f "$cap"
+
+# Classify and persist Claude/Anthropic quota windows from every delegate run,
+# including runs without --expect-file. EXIT 124 remains a hang, never quota.
+# shellcheck source=scripts/lib/agent-host-exec.sh
+source "${REPO_ROOT}/scripts/lib/agent-host-exec.sh"
+# shellcheck source=scripts/lib/agent-pi-quota-retry.sh
+source "${REPO_ROOT}/scripts/lib/agent-pi-quota-retry.sh"
+agent_host_pi_maybe_schedule_quota_retry \
+  "$rc" "$captured" "${SB_RFL_QUOTA_HOST:-}" "${SB_RFL_MODEL:-${PI_MODEL:-}}" || true
 
 if [[ -n "$EXPECT_FILE" ]]; then
   if [[ "$EXPECT_FILE" != /* ]]; then
@@ -104,11 +109,6 @@ if [[ -n "$EXPECT_FILE" ]]; then
     fi
   fi
   export SB_AGENT_EXPECT_FILE="$EXPECT_FILE"
-  # shellcheck source=scripts/lib/agent-host-exec.sh
-  source "${REPO_ROOT}/scripts/lib/agent-host-exec.sh"
-  captured=""
-  [[ -n "$cap" && -f "$cap" ]] && captured="$(cat "$cap")"
-  rm -f "$cap"
   if ! agent_host_pi_file_ok "$EXPECT_FILE"; then
     if ! agent_host_pi_should_continue "$rc" "$captured"; then
       printf '[agent-pi] fail-fast: skipping --continue after first-run EXIT %s\n' "$rc" >&2
