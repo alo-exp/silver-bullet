@@ -58,7 +58,7 @@ ATOMIC_SPECS = [
     ("AF-PHASE-MANAGE", "PHASE_MANAGE", "phase_and_state_management", "templates/orchestrator-workers/PHASE.md", "Phase, backlog, thread, or state transition record."),
     ("AF-FAST-PATH", "FAST_PATH", "bounded_fast_path", "templates/orchestrator-workers/FAST.md", "Minimal safe workflow route for narrow low-risk work."),
     ("AF-AGENT-DELEGATE", "AGENT_DELEGATE", "external_agent_delegation", "templates/orchestrator-workers/AGENT-DELEGATE.md", "Audited delegation result with evidence-backed success claim."),
-    ("AF-MULTI-AI-TASK", "MULTI_AI_TASK", "multi_model_orchestration", "skills/silver-multi-ai-task/SKILL.md", "Parallel multi-model task dispatch with manifests, ledger, and result index."),
+    ("AF-MULTI-AI-TASK", "MULTI_AI_TASK", "multi_model_orchestration", "templates/orchestrator-workers/MULTI-AI-TASK.md", "Parallel multi-model task dispatch with manifests, ledger, and result index."),
 ]
 
 SKILL_WORKER_TEMPLATES: dict[str, dict[str, str]] = {

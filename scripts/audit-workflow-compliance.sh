@@ -228,9 +228,10 @@ parse_skill_pre_exec() {
   local composer="$1"
   local skill_file="${REPO_ROOT}/skills/${composer}/SKILL.md"
   local -a tokens=()
-  local line t
+  local line t spec_absent=1
 
   [[ -f "$skill_file" ]] || return 1
+  [[ -f "${REPO_ROOT}/.planning/SPEC.md" ]] && spec_absent=0
 
   if grep -q '^\*\*Pre-execution' "$skill_file"; then
     line="$(awk '/^\*\*Pre-execution/ {
@@ -244,8 +245,17 @@ parse_skill_pre_exec() {
     }' "$skill_file")"
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
-      [[ "$t" == "silver:spec" || "$t" == "spec" ]] && continue
-      tokens+=("$t")
+      case "$t" in
+        "silver:clarify --spec")
+          [[ "$spec_absent" -eq 1 ]] && tokens+=("silver-clarify")
+          ;;
+        "silver:spec"|"spec")
+          [[ "$spec_absent" -eq 1 ]] && tokens+=("silver-spec")
+          ;;
+        *)
+          tokens+=("$t")
+          ;;
+      esac
     done < <(printf '%s' "$line" | grep -oE '`[^`]+`' | tr -d '`')
   elif grep -q '^## Enforcement queue' "$skill_file"; then
     line="$(awk '/^## Enforcement queue/{found=1;next} found && /^## /{exit} found && /`[^`]+`/{print; exit}' "$skill_file")"
