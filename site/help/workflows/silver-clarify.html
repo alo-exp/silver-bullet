@@ -108,6 +108,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#when-to-use">When to Use</a></li>
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#modes">Modes</a></li>
+        <li><a href="#next-spec">next=spec</a></li>
         <li><a href="#output">Output</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
@@ -118,8 +119,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <article class="doc-content">
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:clarify</code> implements catalog atomic flow <code>AF-CLARIFY</code>. It merges product framing, option generation, and convergence into a single workflow — the front end of planning before <code>AF-ORIENT</code>, <code>AF-PLAN</code>, or composed workflows like <code>/silver:feature</code> continue.</p>
-      <p>It does not implement work or write phase plans. It helps compare options, pressure-test assumptions, and lock a recommendation. If the topic is visual or diagram-heavy, it can offer the browser-based visual companion before the deeper questions begin.</p>
+      <p><code>/silver:clarify</code> implements catalog atomic flow <code>AF-CLARIFY</code>. Default mode is light FLOW 3: product framing, option generation, and a decision-ready brief before <code>AF-ORIENT</code>, <code>AF-PLAN</code>, or composed workflows continue.</p>
+      <p>When composition is heading to <code>AF-SPECIFY</code>, ingest just ran, or the user asked for a spec, <code>--spec</code> / <code>--next spec</code> owns the full spec interview (context + Turns 1–9 + assumption protocol) and writes only a timestamped clarify brief. It does not write <code>SPEC.md</code> or <code>REQUIREMENTS.md</code> — <code>/silver:spec</code> compiles those.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -167,13 +168,21 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><strong>Interactive</strong> - asks follow-up questions when the input is still fuzzy.</li>
         <li><strong>Autonomous</strong> - applies sensible defaults, logs decisions, and keeps moving until the brief is decision-ready.</li>
         <li><strong>Analyze</strong> - leans harder on context synthesis before asking questions.</li>
-        <li><strong>Chain</strong> - continues directly into <code>/silver:context</code> and <code>/silver:plan</code> when the handoff is ready.</li>
+        <li><strong>Chain</strong> - continues directly into <code>/silver:context</code> and <code>/silver:plan</code> when the handoff is ready. In <code>next=spec</code> mode, chain continues into <code>/silver:spec</code>.</li>
+        <li><strong>Spec (<code>--spec</code> / <code>--next spec</code>)</strong> - full document-authoring interview. Auto-detected when <code>.planning/INGESTION_MANIFEST.md</code> exists or composition is heading to AF-SPECIFY.</li>
       </ul>
 
       <div class="divider"></div>
 
+
+      <div class="divider"></div>
+
+      <h2 id="next-spec">next=spec</h2>
+      <p>Clarify owns all spec interviewing. The brief must include Overview (who + problem), at least one <code>As a…</code> user story, at least one testable acceptance criterion, assumptions with <code>Status:</code>, out of scope, edges, errors, data, and open questions. Light FLOW 3 (research, content, new-workflow, decide/compare) does <strong>not</strong> attach the 9 spec turns. Need-profile interview stays on AF-DECIDE paths only.</p>
+      <div class="code-block">/silver:clarify --spec Add scheduled report exports for admins
+/silver:clarify --next spec</div>
       <h2 id="output">Output</h2>
-      <p>The main artifact is a plan-scoped clarify brief: <code>.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code>. It should contain the problem framing, options considered, recommendation, and any follow-up questions that still need SB planning.</p>
+      <p>The main artifact is a plan-scoped clarify brief: <code>.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code>. Light mode: problem framing, options, recommendation, follow-ups. <code>next=spec</code> mode: capture schema that <code>/silver:spec</code> can compile into review-spec-passing SPEC.md. This skill never writes SPEC.md or REQUIREMENTS.md.</p>
 
       <div class="divider"></div>
 

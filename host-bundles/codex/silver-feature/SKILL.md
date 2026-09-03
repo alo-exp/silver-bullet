@@ -37,10 +37,10 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 |--------|----------------|
 | `.planning/` missing | Include FLOW 1 (BOOTSTRAP) |
 | Brownfield / unfamiliar codebase | FLOW 2 deeper `silver:scan` |
-| Fuzzy intent or empty `$ARGUMENTS` | FLOW 3 (CLARIFY) |
+| Fuzzy intent or empty `$ARGUMENTS` | FLOW 3 light (not `--spec`) |
 | Architecture/stack/API choice | FLOW 4 (DECIDE) via `silver:deep-research` |
-| No `.planning/SPEC.md` | FLOW 5 (SPECIFY) — enforced by `workflow-chain-guard` |
-| Existing SPEC.md | Skip FLOW 5 |
+| No `.planning/SPEC.md` | **FLOW 3 = `silver:clarify --spec` is mandatory**, then FLOW 5 compiler. Not fuzzy-only. Enforced by `workflow-chain-guard` + `orchestrator-state.sh`. |
+| Existing SPEC.md | Skip FLOW 3 `--spec` and FLOW 5 |
 | Existing phase PLAN.md | Skip FLOW 6 for that phase |
 | UI files in scope | FLOW 7 + FLOW 9 |
 | Execution/CI/test failure | FLOW 15 (DEBUG) |
@@ -54,7 +54,7 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 **Pre-execution** (blocks implementation edits until recorded):
 
 `silver:quality-gates` → `silver:context` → `silver:plan` → `silver:validate`
-(plus conditional `silver:spec` when SPEC.md absent)
+(plus mandatory `silver:clarify --spec` then `silver:spec` when SPEC.md absent)
 
 **Post-execution** (completion / deploy gates):
 
@@ -86,7 +86,7 @@ Inspect nodes before choosing skip/include flags. Hooks block implementation edi
 
 | Artifact | Action |
 |----------|--------|
-| `.planning/SPEC.md` | Skip FLOW 5 when present |
+| `.planning/SPEC.md` | When present: skip FLOW 3 `--spec` and FLOW 5. When absent: FLOW 3 `--spec` then FLOW 5 are required. |
 | Phase `PLAN.md` files | Skip FLOW 6 when planning done |
 | UI files in scope | Include FLOW 7 + FLOW 9 |
 | `STATE.md` / `ROADMAP.md` | Set per-phase loop bounds |

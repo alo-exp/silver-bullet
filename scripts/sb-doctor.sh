@@ -17,6 +17,8 @@ DOCTOR_FIX_SCOPE="${SB_DOCTOR_FIX_SCOPE:-}"
 DOCTOR_DEEP="${SB_DOCTOR_DEEP:-0}"
 DOCTOR_DRY_RUN="${SB_DOCTOR_DRY_RUN:-0}"
 DOCTOR_FIX_APPLIED=0
+DOCTOR_FIX_DENIED=0
+DOCTOR_UNKNOWN_KEY=0
 RECONCILER_JSON=""
 PROJ_ROOT="${PWD}"
 FORMAT="${SB_DOCTOR_FORMAT:-text}"
@@ -120,6 +122,19 @@ plugin_cache_root() {
   esac
 }
 
+# Return only supported foreign-host plugin path fragments for a runtime.
+# D13 must not mistake the active host's own plugin path for contamination.
+foreign_host_plugin_path_pattern() {
+  local current_host="${1:-}" host
+  local patterns=()
+  for host in claude codex cursor; do
+    [[ "$host" == "$current_host" ]] && continue
+    patterns+=("\\.${host}/plugins")
+  done
+  local IFS='|'
+  printf '%s' "${patterns[*]}"
+}
+
 # Claude v2 registry stores plugin entries as arrays; Cursor/Codex may use objects.
 resolve_registry_plugin_field() {
   local reg="$1" plugin_id="$2" field="$3"
@@ -189,7 +204,7 @@ doctor_reconciler_scope() {
 
 doctor_run_reconciler() {
   local mode="$1"
-  local reconciler="${REPO_ROOT}/scripts/reconcile-recommended-tools.sh"
+  local reconciler="${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}"
   [[ -f "$reconciler" ]] || return 1
   local host="${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-cursor}}"
   local scope="all"
@@ -200,11 +215,54 @@ doctor_run_reconciler() {
   if [[ "$mode" == "apply" ]]; then
     args+=(--entry-point doctor-fix)
   fi
-  RECONCILER_JSON="$(bash "$reconciler" "${args[@]}" 2>/dev/null || true)"
-  [[ -n "$RECONCILER_JSON" ]] || return 1
-  return 0
+  local errf rc=0
+  errf="$(mktemp)"
+  set +e
+  RECONCILER_JSON="$(bash "$reconciler" "${args[@]}" 2>"$errf")"
+  rc=$?
+  set -e
+  if [[ -s "$errf" ]]; then
+    cat "$errf" >&2
+  fi
+  rm -f "$errf"
+  if [[ -z "$RECONCILER_JSON" ]] || ! printf '%s' "$RECONCILER_JSON" | jq -e . >/dev/null 2>&1; then
+    RECONCILER_JSON=""
+    return 1
+  fi
+  return "$rc"
 }
 
+doctor_fix_needs_confirm() {
+  case "${DOCTOR_FIX_SCOPE:-all}" in
+    packages|all) ;;
+    *) return 1 ;;
+  esac
+  [[ -n "${RECONCILER_JSON:-}" ]] || return 0
+  if printf '%s' "$RECONCILER_JSON" | jq -e '
+      .components[]? | select(.repairable == true and (.consent == "enabled") and
+        (.component == "search_cli" or .component == "graphify" or .component == "agentmemory"
+         or .component == "rtk" or .component == "context_mode" or .component == "leanctx" or .component == "alumnium"))
+    ' >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+doctor_confirm_fix_if_needed() {
+  doctor_fix_needs_confirm || return 0
+  [[ "${SB_DOCTOR_ASSUME_YES:-0}" == "1" ]] && return 0
+  if [[ ! -t 0 ]]; then
+    printf 'sb-doctor: confirmation required for --fix=%s (set SB_DOCTOR_ASSUME_YES=1)\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
+    return 1
+  fi
+  printf 'sb-doctor: apply --fix=%s? [y/N] ' "${DOCTOR_FIX_SCOPE:-all}" >&2
+  local reply=""
+  read -r reply || return 1
+  case "$reply" in
+    y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 doctor_record_reconciler_d10() {
   local reconciler="${REPO_ROOT}/scripts/reconcile-recommended-tools.sh"
   [[ -f "$reconciler" ]] || {
@@ -229,7 +287,15 @@ doctor_record_reconciler_d10() {
     [[ "$tool" == "cross_tool" ]] && continue
     consent="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .consent' 2>/dev/null || true)"
     case "$state" in
-      ready) record pass "D10-${tool}" "${tool} ready (activation=${activation})" ;;
+      ready)
+        local ev
+        ev="$(printf '%s' "$RECONCILER_JSON" | jq -r --arg t "$tool" '.components[]? | select(.component==$t) | .evidence[]?' 2>/dev/null || true)"
+        if printf '%s\n' "$ev" | grep -qxE 'provider_missing|version_drift|unsupported_package_manager|vendor_skip|skill_package_skew|health_identity_unproven'; then
+          record warn "D10-${tool}" "${tool} ready with advisory ($(printf '%s' "$ev" | paste -sd ',' -)) (activation=${activation})"
+        else
+          record pass "D10-${tool}" "${tool} ready (activation=${activation})"
+        fi
+        ;;
       disabled|pending|unsupported) record pass "D10-${tool}" "${tool} ${state} (consent=${consent:-n/a})" ;;
       suspended) record warn "D10-${tool}" "${tool} suspended — retry /silver:init or /silver:update" ;;
       reload_required) record warn "D10-${tool}" "${tool} reload_required (activation=${activation})" ;;
@@ -263,6 +329,12 @@ doctor_record_reconciler_d10() {
   else
     record warn D10-routes "cross_tool component missing from reconciler output — run reconcile or /silver:doctor --fix=host"
   fi
+  local unknown_keys
+  unknown_keys="$(printf '%s' "$RECONCILER_JSON" | jq -r '.unknown_keys[]? // empty' 2>/dev/null || true)"
+  if [[ -n "$unknown_keys" ]]; then
+    DOCTOR_UNKNOWN_KEY=1
+    record warn D10 "unknown_key ($(printf '%s' "$unknown_keys" | paste -sd ',' -)); other components not FAIL-poisoned"
+  fi
   if [[ "$DOCTOR_DEEP" -eq 1 ]]; then
     # Context Mode vendor doctor runs on the default D10 probe path (FAIL when
     # opted in). --deep keeps the Graphify MCP stdio handshake as WARN only.
@@ -276,20 +348,49 @@ doctor_record_reconciler_d10() {
 }
 
 doctor_apply_fixes() {
-  local runtime="$1" check_id install_script fixed=0
+  local runtime="$1" check_id install_script fixed=0 recon_rc=0
   [[ "$DOCTOR_FIX" -eq 1 ]] || return 0
   [[ "$DOCTOR_DRY_RUN" -eq 1 ]] && return 0
-  [[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && return 0
-  if [[ -f "${REPO_ROOT}/scripts/reconcile-recommended-tools.sh" ]]; then
-    printf 'sb-doctor: --fix=%s running reconciler doctor-fix apply
-' "${DOCTOR_FIX_SCOPE:-all}" >&2
-    doctor_run_reconciler apply || true
+  if ! doctor_confirm_fix_if_needed; then
+    DOCTOR_FIX_APPLIED=0
+    DOCTOR_FIX_DENIED=1
+    record fail D10 "confirmation unobtainable; --fix not applied"
+    return 0
+  fi
+  if [[ -f "${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}" ]]; then
+    printf 'sb-doctor: --fix=%s running reconciler doctor-fix apply\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
+    doctor_run_reconciler apply || recon_rc=$?
+    if [[ -z "${RECONCILER_JSON:-}" ]] || ! printf '%s' "$RECONCILER_JSON" | jq -e . >/dev/null 2>&1; then
+      DOCTOR_FIX_APPLIED=0
+      record fail D10 "reconciler apply returned empty or malformed JSON"
+      return 0
+    fi
+    if [[ "$recon_rc" -ne 0 ]] || printf '%s' "$RECONCILER_JSON" | jq -e '.ok == false' >/dev/null 2>&1; then
+      DOCTOR_FIX_APPLIED=0
+      record fail D10 "reconciler apply failed (receipt not success)"
+      return 0
+    fi
     DOCTOR_FIX_APPLIED=1
     fixed=1
   fi
   [[ "$FAIL" -eq 0 && "$fixed" -eq 1 ]] && return 0
   [[ "$FAIL" -eq 0 ]] && return 0
   for check_id in "${FAILED_CHECK_IDS[@]}"; do
+    if [[ "${DOCTOR_FIX_SCOPE:-all}" == "local" ]]; then
+      case "$check_id" in
+        D4|D13|D14|D16|D18|D19|D21) continue ;;
+      esac
+    fi
+    if [[ -n "${SB_DOCTOR_STUB_HOST_INSTALL:-}" ]]; then
+      case "$check_id" in
+        D4|D13|D14|D16|D18|D19|D21)
+          printf '%s
+' "$check_id" >> "${SB_DOCTOR_STUB_HOST_INSTALL}"
+          fixed=1
+          continue
+          ;;
+      esac
+    fi
     case "$check_id" in
       D13|D14|D16|D18|D19)
         install_script="$(doctor_host_install_script "$runtime" || true)"
@@ -348,7 +449,6 @@ doctor_apply_fixes() {
         fixed=1
         ;;
     esac
-    [[ "$fixed" -eq 1 ]] && break
   done
   [[ "$fixed" -eq 1 ]] && DOCTOR_FIX_APPLIED=1
 }
@@ -549,23 +649,24 @@ run_doctor_checks() {
   fi
 
   # D13 — cross-host plugin path contamination (host-scoped manifest paths)
-  local skill_root hooks_manifest_path agent_cache_dir install_surface_script
+  local skill_root hooks_manifest_path agent_cache_dir install_surface_script foreign_plugin_pattern
   install_surface_script="${REPO_ROOT}/scripts/validate-host-install-surface.sh"
   skill_root="$(readlink -f "${cache_root}/current" 2>/dev/null || true)"
+  foreign_plugin_pattern="$(foreign_host_plugin_path_pattern "$runtime")"
   case "$runtime" in
     cursor)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/hooks.json"
       agent_cache_dir="$(sb_agent_cache_rel cursor)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -q '\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
-        record fail D13 "${hooks_manifest_path} contains .codex/plugins paths"
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
+        record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
-        record pass D13 "no .codex/plugins contamination in Cursor hooks"
+        record pass D13 "no foreign host plugin paths in Cursor hooks"
       fi
       ;;
     claude)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/settings.json"
       agent_cache_dir="$(sb_agent_cache_rel claude)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
         record pass D13 "no cross-host plugin paths in Claude settings"
@@ -574,7 +675,7 @@ run_doctor_checks() {
     codex)
       hooks_manifest_path="${SB_RUNTIME_HOME_ROOT}/config.toml"
       agent_cache_dir="$(sb_agent_cache_rel codex)"
-      if [[ -f "$hooks_manifest_path" ]] && grep -qE '\.cursor/plugins|\.codex/plugins' "$hooks_manifest_path" 2>/dev/null; then
+      if [[ -f "$hooks_manifest_path" ]] && grep -qE "$foreign_plugin_pattern" "$hooks_manifest_path" 2>/dev/null; then
         record fail D13 "${hooks_manifest_path} contains foreign host plugin paths"
       else
         record pass D13 "no cross-host plugin paths in Codex config"
@@ -755,8 +856,9 @@ doctor_print_summary() {
       --argjson dry_run "$([[ "$DOCTOR_DRY_RUN" -eq 1 ]] && echo true || echo false)" \
       --arg fix_scope "${DOCTOR_FIX_SCOPE:-}" \
       --argjson reconciler "$recon" \
+      --argjson fix_applied "$([[ "$DOCTOR_FIX_APPLIED" -eq 1 ]] && echo true || echo false)" \
       --arg lines "$(printf '%s\n' "${REPORT_LINES[@]}")" \
-      '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
+      '{schema:$schema,pass:$pass,fail:$fail,warn:$warn,deep:$deep,dry_run:$dry_run,fix_applied:$fix_applied,fix_scope:(if $fix_scope=="" then null else $fix_scope end),reconciler:$reconciler,lines:($lines|split("\n"))}'
   else
     echo
     echo "Silver Bullet doctor: ${PASS} PASS, ${WARN} WARN, ${FAIL} FAIL"
@@ -775,9 +877,16 @@ main() {
     [[ "$FORMAT" != "json" ]] && echo && echo "sb-doctor: re-running checks after --fix"
     PASS=0; FAIL=0; WARN=0; REPORT_LINES=(); FAILED_CHECK_IDS=()
     RECONCILER_JSON=""
+    DOCTOR_UNKNOWN_KEY=0
     run_doctor_checks
   fi
   doctor_print_summary
+  if [[ "${DOCTOR_FIX_DENIED:-0}" -eq 1 ]]; then
+    return 1
+  fi
+  if [[ "${DOCTOR_UNKNOWN_KEY:-0}" -eq 1 ]]; then
+    return 1
+  fi
   [[ "$FAIL" -eq 0 ]]
 }
 

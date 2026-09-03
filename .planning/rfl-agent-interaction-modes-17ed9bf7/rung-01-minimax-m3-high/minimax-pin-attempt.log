@@ -1,5 +1,0 @@
-=== attempt 1: invoke.sh MiniMax M3 High env ===
-date=2026-08-23T16:04:17Z
-WARN: multi-ai-opencode-worker.sh missing; multi-ai-worker-v1 policy unavailable
-ERROR: OPENCODE_MODEL must be mimo-v2.5 (got minimax-m3)
-invoke_exit=2

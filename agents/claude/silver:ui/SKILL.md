@@ -17,8 +17,8 @@ Task workers per flow — does not implement UI inline.
 ## Standard composition chain
 
 ```
-FLOW 1 (BOOTSTRAP) [skip if .planning/] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY)
-→ FLOW 4 (DECIDE) [if design tradeoff] → FLOW 5 (SPECIFY) [if no SPEC.md]
+FLOW 1 (BOOTSTRAP) [skip if .planning/] → FLOW 2 (ORIENT) → FLOW 3 (CLARIFY) [--spec if no SPEC.md]
+→ FLOW 4 (DECIDE) [if design tradeoff] → FLOW 5 (SPECIFY) [compiler if no SPEC.md]
 → FLOW 13 (QUALITY GATE, pre-plan) → FLOW 6 (PLAN) → FLOW 7 (DESIGN CONTRACT)
 → FLOW 8 (EXECUTE) → FLOW 9 (UI QUALITY) → FLOW 10 (REVIEW) → FLOW 12 (VERIFY)
 → FLOW 11 (SECURE) → FLOW 13 (QUALITY GATE, pre-ship) → FLOW 14 (SHIP)
@@ -34,8 +34,9 @@ QUALITY GATE (pre-ship) → SHIP**.
 | Signal | Insert / skip |
 |--------|----------------|
 | `.planning/` exists | Skip FLOW 1 |
-| No `.planning/SPEC.md` | FLOW 5 — enforced by `workflow-chain-guard` |
-| Fuzzy UI intent | FLOW 3 (CLARIFY) |
+| No `.planning/SPEC.md` | **FLOW 3 = `silver:clarify --spec` is mandatory**, then FLOW 5 compiler. Not fuzzy-only. Enforced by `workflow-chain-guard` + `orchestrator-state.sh`. |
+| Existing SPEC.md | Skip FLOW 3 `--spec` and FLOW 5 |
+| Fuzzy UI intent | FLOW 3 light (not `--spec`) |
 | Major UI system / user requests MultAI | Optional multi-AI UX perspectives — not bundled |
 | Execution failure | FLOW 15 (DEBUG) |
 | Last milestone phase | FLOW 18 via `silver:release` when user confirms |
@@ -44,7 +45,7 @@ QUALITY GATE (pre-ship) → SHIP**.
 ## Enforcement queue
 
 **Pre-execution:** `silver:quality-gates` → `silver:context` → `silver:plan`
-→ `silver:ui-contract` → `silver:validate` (conditional `silver:spec` when SPEC absent)
+→ `silver:ui-contract` → `silver:validate` (plus mandatory `silver:clarify --spec` then `silver:spec` when SPEC.md absent)
 
 **Post-execution:** `silver:execute` → `silver:ui-review` → review triad → `silver:verify`
 → `security` → `silver:secure` → `silver:validate` → `silver:quality-gates` (pre-ship)

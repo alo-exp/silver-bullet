@@ -203,17 +203,20 @@ out=$(run_hook_edit "$TMPDIR_TEST/infra.tf")
 assert_passes "silver:devops passes after full pre-execution chain (no SPEC — plan-only validate)" "$out"
 teardown
 
-# Feature without SPEC.md requires silver-spec marker.
+# Feature without SPEC.md requires silver-clarify then silver-spec markers.
 setup
 touch "$TMPDIR_TEST/src/app.js"
 rm -f "$TMPDIR_TEST/.planning/SPEC.md"
 start_workflow "/silver:feature" "feature no spec" "plan,execute"
 write_state_markers silver-quality-gates silver-context silver-plan silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:feature without SPEC.md blocks until silver-spec recorded" "$out"
+assert_blocks "silver:feature without SPEC.md blocks until clarify+spec recorded" "$out"
 write_state_markers silver-quality-gates silver-context silver-plan silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:feature without SPEC.md passes after silver-spec marker" "$out"
+assert_blocks "silver:feature without SPEC.md still blocks with spec but no clarify" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan silver-clarify silver-spec silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:feature without SPEC.md passes after clarify+spec markers" "$out"
 teardown
 
 # Feature with existing SPEC.md skips silver-spec requirement.
@@ -225,17 +228,20 @@ out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
 assert_passes "silver:feature with SPEC.md skips silver-spec marker" "$out"
 teardown
 
-# UI without SPEC.md requires silver-spec marker (same conditional as feature).
+# UI without SPEC.md requires silver-clarify then silver-spec (same as feature).
 setup
 touch "$TMPDIR_TEST/src/app.js"
 rm -f "$TMPDIR_TEST/.planning/SPEC.md"
 start_workflow "/silver:ui" "ui no spec" "plan,design,execute"
 write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_blocks "silver:ui without SPEC.md blocks until silver-spec recorded" "$out"
+assert_blocks "silver:ui without SPEC.md blocks until clarify+spec recorded" "$out"
 write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-spec silver-validate
 out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
-assert_passes "silver:ui without SPEC.md passes after silver-spec marker" "$out"
+assert_blocks "silver:ui without SPEC.md still blocks with spec but no clarify" "$out"
+write_state_markers silver-quality-gates silver-context silver-plan silver-ui-contract silver-clarify silver-spec silver-validate
+out=$(run_hook_edit "$TMPDIR_TEST/src/app.js")
+assert_passes "silver:ui without SPEC.md passes after clarify+spec markers" "$out"
 teardown
 
 # Bugfix workflow: diagnosis-first pre-execution chain is DEBUG → PLAN (B1).

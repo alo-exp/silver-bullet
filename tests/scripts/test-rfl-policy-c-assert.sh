@@ -28,7 +28,7 @@ WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/rfl-policy-c.XXXXXX")"
 trap 'rm -rf "$WORKDIR" /tmp/rfl-policy-c-out.$$ /tmp/rfl-policy-c-err.$$' EXIT
 
 HELP_OUT="$(python3 "$RESOLVER" --help 2>&1 || true)"
-for flag in --assert-policy-c --write-policy-c --assert-rfl-advance; do
+for flag in --assert-policy-c --write-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome; do
   if printf '%s' "$HELP_OUT" | grep -q -- "$flag"; then
     pass "review-fix-ladder.py --help lists $flag"
   else
@@ -179,6 +179,84 @@ assert_exit "next rung without SKIPPED.md fails" 2 \
 printf '# SKIPPED\n' >"$SKIP_DIR/SKIPPED.md"
 assert_exit "next rung with SKIPPED.md allowed" 0 \
   python3 "$RESOLVER" --assert-rfl-advance --run-dir "$RUN" --rung-dir "$SKIP_DIR" --next-action next_rung_review
+
+# --- Policy F: two consecutive CLEAN reviews ---
+CC="$WORKDIR/.planning/rfl-consecutive"
+CC_RUNG="$CC/rung-01-cursor-glm-5.2-high"
+mkdir -p "$CC_RUNG"
+cat >"$WORKDIR/cc-clean.json" <<'EOF'
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {"family": "glm", "effort": "high", "display": "GLM 5.2 High"},
+  "verdict": "CLEAN",
+  "issues": {"HIGH": "none", "MED": "none", "LOW": "none", "NIT": "none"},
+  "triage": "none",
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "REJECT-as-wrong",
+  "resolved": "none"
+}
+EOF
+python3 "$RESOLVER" --write-policy-c --rung-dir "$CC_RUNG" --table-json-file "$WORKDIR/cc-clean.json" >/dev/null
+printf '# review\n' >"$CC_RUNG/review.md"
+printf '# v1\n' >"$CC_RUNG/verify-1.md"
+printf '# v2\n' >"$CC_RUNG/verify_2.md"
+printf '%s\n' '{"status":"active","current_rung":"rung-01-cursor-glm-5.2-high","current_phase":"rung_01_review","consecutive_clean_reviews":0,"consecutive_clean_rung":"rung-01-cursor-glm-5.2-high"}' >"$CC/LADDER-STATUS.json"
+assert_exit "advance after zero CLEAN reviews fails" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
+assert_exit "record first CLEAN increments streak" 0 \
+  python3 "$RESOLVER" --record-rung-review-outcome clean --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+assert_exit "advance after a single CLEAN fails" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
+assert_exit "assert-consecutive-clean after a single CLEAN fails" 2 \
+  python3 "$RESOLVER" --assert-consecutive-clean --run-dir "$CC" --rung-dir "$CC_RUNG"
+assert_exit "record second CLEAN increments streak to 2" 0 \
+  python3 "$RESOLVER" --record-rung-review-outcome clean --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+assert_exit "advance after two consecutive CLEANs allowed" 0 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
+
+# --- Canonical verify overlay: verify_2 required on CLEAN, skipped on NOT CLEAN ---
+rm -f "$CC_RUNG/verify_2.md" "$CC_RUNG/verify-2.md"
+assert_exit "CLEAN advance without verify-2.md fails" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
+printf '# v2\n' >"$CC_RUNG/verify_2.md"
+assert_exit "CLEAN advance with verify-2.md allowed" 0 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
+
+NC="$WORKDIR/.planning/rfl-not-clean-overlay"
+NC_RUNG="$NC/rung-01-cursor-glm-5.2-high"
+mkdir -p "$NC_RUNG"
+cat >"$WORKDIR/nc-reject.json" <<'EOF'
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {"family": "glm", "effort": "high", "display": "GLM 5.2 High"},
+  "verdict": "NOT CLEAN",
+  "issues": {"HIGH": "none", "MED": [{"id": "X1", "title": "false cite"}], "LOW": "none", "NIT": "none"},
+  "triage": [{"id": "X1", "severity": "MED", "decision": "REJECT-as-wrong", "reason": "false cite"}],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "REJECT-as-wrong",
+  "resolved": "none"
+}
+EOF
+python3 "$RESOLVER" --write-policy-c --rung-dir "$NC_RUNG" --table-json-file "$WORKDIR/nc-reject.json" >/dev/null
+printf '# review\n' >"$NC_RUNG/review.md"
+printf '# v1\n' >"$NC_RUNG/verify-1.md"
+printf '%s\n' '{"status":"active","current_rung":"rung-01-cursor-glm-5.2-high","current_phase":"rung_01_review","consecutive_clean_reviews":2,"consecutive_clean_rung":"rung-01-cursor-glm-5.2-high"}' >"$NC/LADDER-STATUS.json"
+assert_exit "NOT CLEAN advance without verify-2.md allowed (overlay skip)" 0 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$NC" --rung-dir "$NC_RUNG" --next-action next_rung_review
+rm -f "$NC_RUNG/verify-1.md"
+assert_exit "NOT CLEAN advance without verify-1.md fails" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$NC" --rung-dir "$NC_RUNG" --next-action next_rung_review
+
+assert_exit "ACCEPT-apply resets consecutive CLEAN streak" 0 \
+  python3 "$RESOLVER" --record-rung-review-outcome accept-apply --run-dir "$CC" --rung-id rung-01-cursor-glm-5.2-high
+python3 "$RESOLVER" --write-policy-c --rung-dir "$CC_RUNG" --table-json-file "$WORKDIR/clean-nit.json" >/dev/null
+printf '# apply\n' >"$CC_RUNG/APPLY.md"
+assert_exit "advance after APPLY without two CLEANs fails" 2 \
+  python3 "$RESOLVER" --assert-rfl-advance --run-dir "$CC" --rung-dir "$CC_RUNG" --next-action next_rung_review
 
 # --- STOP.md ---
 printf '%s\n' '{"status":"active","current_rung":"rung-02-cursor-grok-4.6-high","current_phase":"stop","compliance_stop":true}' >"$RUN/LADDER-STATUS.json"

@@ -134,7 +134,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="code-block">/silver:init (when .planning/ missing) → Orient → Clarify → Decide → Specify
 → Quality gate (pre-plan) → Plan → Design contract → Execute
 → WF-POST-EXEC-GATES</div>
-      <p>Conditional atoms prune when context does not require them — for example Bootstrap when <code>.planning/</code> already exists, Clarify when intent is already decision-ready, or Specify when <code>SPEC.md</code> is current. <code>AF-DESIGN-CONTRACT</code> is <strong>not</strong> optional in this workflow.</p>
+      <p>Conditional atoms prune when context does not require them — for example Bootstrap when <code>.planning/</code> already exists. When <code>SPEC.md</code> is absent, <code>AF-CLARIFY</code> (<code>--spec</code>) then <code>AF-SPECIFY</code> (compiler) are required; both skip when <code>SPEC.md</code> is current. Light Clarify still applies to fuzzy UI intent. <code>AF-DESIGN-CONTRACT</code> is <strong>not</strong> optional in this workflow.</p>
 
       <div class="divider"></div>
 
@@ -183,8 +183,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p><code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code> are <strong>always</strong> included in this composer — they are what distinguish <code>/silver:ui</code> from <code>/silver:feature</code>.</p>
 
       <h3>Standard composition chain</h3>
-      <div class="code-block">AF-BOOTSTRAP [skip if .planning/] → AF-ORIENT → AF-CLARIFY [if fuzzy]
-→ AF-DECIDE [if design tradeoff] → AF-SPECIFY [if no SPEC.md]
+      <div class="code-block">AF-BOOTSTRAP [skip if .planning/] → AF-ORIENT → AF-CLARIFY [--spec if no SPEC.md]
+→ AF-DECIDE [if design tradeoff] → AF-SPECIFY [compiler if no SPEC.md]
 → AF-QUALITY-GATE (pre-plan) → AF-PLAN → AF-DESIGN-CONTRACT
 → AF-EXECUTE → WF-POST-EXEC-GATES</div>
 
@@ -217,7 +217,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h2 id="example">Example Invocation</h2>
       <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation and <code>AF-CLARIFY</code> when needed, <code>/silver:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/silver:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
+      <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation, when <code>SPEC.md</code> is absent run <code>AF-CLARIFY</code> (<code>--spec</code>) then <code>AF-SPECIFY</code> (compiler). Then <code>/silver:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/silver:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">

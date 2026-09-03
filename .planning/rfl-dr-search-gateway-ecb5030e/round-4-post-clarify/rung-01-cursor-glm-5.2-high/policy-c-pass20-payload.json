@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 20 Policy G pack)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AH1", "title": "§1.2 L85 rollup cites §3 for X-union dedup test; test is in §4.3"}
+    ]
+  },
+  "triage": [
+    {"id": "AH1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; L85 says §3 X-union dedup test but the test lives in §4.3 L339; §3 Architecture has no dedup test; distinct from I-33 (add the test); no product-lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AH1", "severity": "NIT", "title": "§1.2 L85 rollup cites §4.3 X-union dedup test", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

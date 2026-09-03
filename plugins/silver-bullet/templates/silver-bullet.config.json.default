@@ -434,6 +434,31 @@
         }
       },
       "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."
+    },
+    "search_cli": {
+      "enabled_by_user": null,
+      "enforcement_suspended": false,
+      "install_status": null,
+      "install_failure_reason": null,
+      "required_when_enabled": false,
+      "binary": "search",
+      "install_commands": [
+        "brew tap paperfoot/tap && brew install paperfoot/tap/search-cli"
+      ],
+      "provider_classes": {
+        "web_breadth": [
+          "Brave",
+          "Serper"
+        ],
+        "semantic": [
+          "Exa"
+        ],
+        "extraction": [
+          "Jina",
+          "Firecrawl"
+        ]
+      },
+      "benefits_summary": "Optional multi-provider retrieval for silver:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
     }
   },
   "hooks": {

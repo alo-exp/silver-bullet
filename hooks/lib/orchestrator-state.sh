@@ -112,7 +112,7 @@ sb_orchestrator_default_queue_for_composer() {
   esac
 }
 
-# Resolve composer queue with runtime conditionals (e.g. silver-spec when SPEC.md absent).
+# Resolve composer queue with runtime conditionals (silver-clarify --spec then silver-spec when SPEC.md absent).
 sb_orchestrator_queue_for_composer() {
   local composer="$1"
   local repo_root="${2:-}"
@@ -121,7 +121,7 @@ sb_orchestrator_queue_for_composer() {
   case "$composer" in
     silver-feature|silver-ui)
       if [[ -n "$repo_root" && ! -f "$repo_root/.planning/SPEC.md" ]]; then
-        queue="${queue//silver-context/silver-spec,silver-context}"
+        queue="${queue//silver-context/silver-clarify,silver-spec,silver-context}"
       fi
       ;;
   esac
@@ -197,7 +197,7 @@ sb_orchestrator_detect_full_software_intent() {
 }
 
 sb_orchestrator_full_software_queue() {
-  printf '%s' 'silver-spec,silver-feature,silver-ship,silver-release'
+  printf '%s' 'silver-clarify,silver-spec,silver-feature,silver-ship,silver-release'
 }
 
 sb_orchestrator_read() {

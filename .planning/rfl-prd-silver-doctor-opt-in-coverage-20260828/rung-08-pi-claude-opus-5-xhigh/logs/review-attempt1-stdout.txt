@@ -1,0 +1,24 @@
+Rung 8 review complete.
+
+**Written:** `.planning/rfl-prd-silver-doctor-opt-in-coverage-20260828/rung-08-pi-claude-opus-5-xhigh/review.md`
+
+**Verdict: NOT CLEAN** — 12 new findings (`F-8-1`…`F-8-12`): **1 HIGH, 5 MED, 4 LOW, 2 NIT**. No overlap with I-1…I-64.
+
+| ID | Sev | Summary |
+|----|-----|---------|
+| F-8-1 | HIGH | No severity→exit-code contract. Only 3 cases specify `nonzero`; **FAIL's exit code is never stated**. L217's "so CI notices" implies WARN is normally zero, contradicting the general reading — and the L484/L492/L497 `nonzero` assertions can't be written until it's resolved |
+| F-8-2 | MED | Graphify skew WARN is permanently true in this repo (0.9.35 vs 0.9.48), has no `--fix` action for F4's required column, and contradicts "default tree is green" (L82) + AC 8 green tests |
+| F-8-3 | MED | `required_when_enabled: false` vs hard D10 FAIL — doctor is stricter than the hook layer that deliberately skips it; rationale unstated |
+| F-8-4 | MED | `version_drift` is defined symmetrically, so it fires on drift-*upward*; whether `--fix=packages` downgrades is undefined, and either answer breaks converge-to-`ready` or idempotency |
+| F-8-5 | MED | `duplicate_key` and `no_five_tool_consent` are canonical evidence ids with **no test rows** — including the exact D22-WARN-vs-D10-FAIL trap the PRD itself predicts implementers will hit |
+| F-8-6 | MED | Confirmation gate trigger undefined: scope-requested vs plan-triggered for `--fix=all` on non-TTY (I-55 locked the *outcome*, not the *trigger*) |
+| F-8-7 | LOW | `D13–D19` range sweeps in D15 (print-only — contradicts L336) and D17 (**zero occurrences in the PRD**); enumeration is D13/D14/D16/D18/D19 |
+| F-8-8 | LOW | Stale "five host CLIs" at L82/L405 contradicts the locked current-host-only rule |
+| F-8-9 | LOW | `unsupported_package_manager` skip has no defined `DOCTOR_FIX_APPLIED` / exit / receipt outcome |
+| F-8-10 | LOW | Users table promises an Omni PASS N/A row that cannot exist when Phase 3 is deferred |
+| F-8-11 | NIT | Bare-UUID links resolve to a nonexistent `.planning/` path (L9, L526, L683) |
+| F-8-12 | NIT | `Status: draft` after 8 rungs and a locked SHA |
+
+The HIGH and four of the MEDs share one root cause the ladder hadn't reached: the PRD specifies severities exhaustively but never says what severities *do* — to the exit code, to "green," or to convergence after apply.
+
+**Compliance:** PRD SHA verified unchanged (`e5cf0853…`) before and after; only `review.md` written; freeze file never opened; no subagents, no triage, no PASS claim, no Fast. Graphify queried first; findings saved to agentmemory.

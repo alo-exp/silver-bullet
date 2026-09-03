@@ -1,0 +1,68 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High (re-run pass 10)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": [
+      {
+        "id": "R6j-F01",
+        "title": "Functional AC-cell cardinality is not carried into the compiler and cross-artifact consumer contract"
+      },
+      {
+        "id": "R6j-F02",
+        "title": "`nfr-source-cell-list` is not bound to Step 8 or `review-cross-artifact` despite both performing reverse/exclusive coverage"
+      }
+    ],
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R6j-F01",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Bind R6i one-AC-nn-per-cell to Wave 3 Step 8, review-cross-artifact, and compiler/migration tests. AC-01, AC-02 must FAIL at mint/serialize/XART, not only Wave 1 template tests."
+    },
+    {
+      "id": "R6j-F02",
+      "severity": "MED",
+      "decision": "ACCEPT",
+      "reason": "Bind named nfr-source-cell-list (comma + exactly one space) to Step 8 and review-cross-artifact reverse-coverage / exclusivity / overlap. QA-01,SLO-01 (no space) must FAIL the same parser as Wave 1. Do not weaken R5k exclusivity."
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": [
+    {
+      "id": "R6j-F01",
+      "title": "Functional AC-cell cardinality is not carried into the compiler and cross-artifact consumer contract"
+    },
+    {
+      "id": "R6j-F02",
+      "title": "`nfr-source-cell-list` is not bound to Step 8 or `review-cross-artifact` despite both performing reverse/exclusive coverage"
+    }
+  ],
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R6j-F01",
+      "severity": "MED",
+      "title": "Functional AC-cell cardinality is not carried into the compiler and cross-artifact consumer contract",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R6j-F02",
+      "severity": "MED",
+      "title": "`nfr-source-cell-list` is not bound to Step 8 or `review-cross-artifact` despite both performing reverse/exclusive coverage",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "1b681ea74e5b606c52481e10d81377fbedffb5206074c860d0989c9e4cbe1fe3"
+}

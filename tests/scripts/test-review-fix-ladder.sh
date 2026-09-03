@@ -231,6 +231,53 @@ if grep -qF 'The fix step is launcher APPLY ACCEPT, not a fixer rung' "$SKILL"; 
 else
   fail "SKILL fix step is launcher APPLY ACCEPT"
 fi
+if grep -qF '### Policy F — two consecutive CLEAN reviews per rung (HARD)' "$SKILL" \
+  && grep -qF 'two consecutive review passes' "$SKILL" \
+  && grep -qF 'consecutive_clean_reviews == 2' "$SKILL" \
+  && grep -qF -- '--assert-consecutive-clean' "$SKILL" \
+  && grep -qF -- '--record-rung-review-outcome' "$SKILL" \
+  && grep -qF 'Parent MUST NOT launch the next ladder model' "$SKILL"; then
+  pass "SKILL Policy F: two consecutive CLEAN reviews per rung"
+else
+  fail "SKILL Policy F: two consecutive CLEAN reviews per rung"
+fi
+if grep -qF '### Policy G — hop review (pack-ledger) (HARD)' "$SKILL" \
+  && grep -qF 'do not re-report ledger rows' "$SKILL" \
+  && grep -qF 'file only one new ID' "$SKILL" \
+  && grep -qF 'all severities' "$SKILL" \
+  && grep -qF 'Valid nits must be filed' "$SKILL" \
+  && grep -qF -- '--issue-ledger' "$SKILL" \
+  && grep -qF -- '--write-review-brief' "$SKILL" \
+  && grep -qF '{issue_ledger}' "$SKILL" \
+  && grep -qF 'as a pack' "$SKILL" \
+  && grep -qF 'only legal review brief' "$SKILL"; then
+  pass "SKILL Policy G: pack-ledger hop review, all severities"
+else
+  fail "SKILL Policy G: pack-ledger hop review, all severities"
+fi
+if grep -qF 'Policy map (A–G)' "$SKILL" \
+  && grep -qF 'Canonical verify overlay (HARD)' "$SKILL" \
+  && grep -qF 'verify_2 is skipped on already-triaged' "$SKILL" \
+  && grep -qF '`verify_1` is **required** on already-triaged **NOT CLEAN**' "$SKILL"; then
+  pass "SKILL A–G map + canonical verify overlay"
+else
+  fail "SKILL A–G map + canonical verify overlay"
+fi
+if grep -qF '### Policy E — rung-prompt user-approval (HARD)' "$SKILL" \
+  && grep -qF 'concise bullet list of only the key tasks and instructions' "$SKILL" \
+  && grep -qF 'Do **not** dump the entire prompt' "$SKILL" \
+  && grep -qF 'Until approved:' "$SKILL" \
+  && grep -qF 'do not spawn reviewer Tasks / Pi invoke' "$SKILL" \
+  && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SKILL" \
+  && grep -qF 'approved: pending|yes' "$SKILL" \
+  && grep -qF '5–12 bullets' "$SKILL" \
+  && grep -qF 'materially change' "$SKILL" \
+  && grep -qF 'out of scope for the reviewer' "$SKILL" \
+  && grep -qF 'KEEP REJECT' "$SKILL"; then
+  pass "SKILL Policy E: rung-prompt user-approval gate"
+else
+  fail "SKILL Policy E: rung-prompt user-approval gate"
+fi
 
 WORKER="${REPO_ROOT}/templates/orchestrator-workers/REVIEW-TRIAGE.md"
 assert_file_exists "$WORKER" "REVIEW-TRIAGE worker template exists"
@@ -257,6 +304,16 @@ if grep -qF 'Policy C — launcher reports after every rung' "$WORKER" \
 else
   fail "REVIEW-TRIAGE worker encodes Policy C per-rung reporting"
 fi
+if grep -qF 'rung-prompt user-approval' "$WORKER" \
+  && grep -qF 'concise bullet list of only the key tasks and instructions' "$WORKER" \
+  && grep -qF 'Do not dump the entire prompt' "$WORKER" \
+  && grep -qF 'Until approved: do not spawn reviewer Tasks / Pi invoke' "$WORKER" \
+  && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$WORKER" \
+  && grep -qF 'approved: pending|yes' "$WORKER"; then
+  pass "REVIEW-TRIAGE worker encodes Policy E rung-prompt user-approval"
+else
+  fail "REVIEW-TRIAGE worker encodes Policy E rung-prompt user-approval"
+fi
 
 SCENARIO="${REPO_ROOT}/tests/skill-scenarios/silver-review-fix-ladder.md"
 assert_file_exists "$SCENARIO" "review-fix-ladder skill scenario exists"
@@ -267,6 +324,16 @@ if grep -qF 'APPLY ACCEPT completeness (HARD)' "$SCENARIO" \
 else
   fail "Skill scenario encodes APPLY ACCEPT lands all non-wrong nits"
 fi
+if grep -qF 'Hop review / pack-ledger (Policy G)' "$SCENARIO" \
+  && grep -qF 'do not re-report ledger rows' "$SCENARIO" \
+  && grep -qF 'all severities' "$SCENARIO" \
+  && grep -qF -- '--issue-ledger' "$SCENARIO" \
+  && grep -qF 'as a pack' "$SCENARIO" \
+  && grep -qF 'only legal review brief' "$SCENARIO"; then
+  pass "Skill scenario encodes Policy G pack-ledger hop review"
+else
+  fail "Skill scenario encodes Policy G pack-ledger hop review"
+fi
 if grep -qF 'Per-Rung Launcher Reporting (Policy C)' "$SCENARIO" \
   && grep -qF 'Do this after every rung, not only at family or ladder end' "$SCENARIO" \
   && grep -qF 'Do not dump raw review.md' "$SCENARIO" \
@@ -275,6 +342,17 @@ if grep -qF 'Per-Rung Launcher Reporting (Policy C)' "$SCENARIO" \
   pass "Skill scenario encodes Policy C per-rung reporting"
 else
   fail "Skill scenario encodes Policy C per-rung reporting"
+fi
+if grep -qF 'Rung-prompt user-approval (Policy E)' "$SCENARIO" \
+  && grep -qF 'concise bullet list of only the key tasks and instructions' "$SCENARIO" \
+  && grep -qF 'Do not dump the entire prompt' "$SCENARIO" \
+  && grep -qF 'Until approved: do not spawn reviewer Tasks / Pi invoke' "$SCENARIO" \
+  && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SCENARIO" \
+  && grep -qF 'approved: pending|yes' "$SCENARIO" \
+  && grep -qF 'materially change' "$SCENARIO"; then
+  pass "Skill scenario encodes Policy E rung-prompt user-approval"
+else
+  fail "Skill scenario encodes Policy E rung-prompt user-approval"
 fi
 
 if grep -qF 'Anti-stall (Policy B leftover loop — HARD)' "$SKILL" \

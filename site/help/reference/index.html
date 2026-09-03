@@ -275,7 +275,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation. Runs <code>/silver:doctor</code> automatically and surfaces every FAIL for inline fix.</td></tr>
           <tr><td>/silver:doctor</td><td>Diagnostics</td><td>Host-aware install and project activation audit via <code>scripts/sb-doctor.sh</code> (checks D1&ndash;D13). Run after <code>/silver:update</code>, when hooks seem inactive, or before relying on enforcement. D8 orchestrator rule applies on Cursor only; D2/D3/D13 use the active host plugin paths.</td></tr>
           <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
-          <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung.</td></tr>
+          <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung. Before launching rungs, the parent presents a concise bullet list of only the key tasks and instructions and gets user approval (do not dump the entire prompt).</td></tr>
         </tbody>
       </table></div>
 

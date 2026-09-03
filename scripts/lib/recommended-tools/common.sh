@@ -5,7 +5,7 @@
 RT_RECONCILER_VERSION="1.0.0"
 RT_RESULT_SCHEMA_VERSION="1.0.0"
 
-RT_COMPONENT_IDS=(graphify agentmemory rtk context_mode leanctx alumnium cross_tool)
+RT_COMPONENT_IDS=(graphify agentmemory rtk context_mode leanctx alumnium search_cli cross_tool)
 RT_FIVE_TOOL_ROUTES=(
   sb_wire:leanctx sb_read:leanctx sb_grep:context_mode sb_shell:rtk
   sb_slice:context_mode sb_webfetch:context_mode sb_graph:graphify
@@ -263,7 +263,7 @@ rt_scope_includes_component() {
       ;;
     packages)
       case "$component" in
-        graphify|agentmemory|rtk|context_mode|leanctx|alumnium) return 0 ;;
+        graphify|agentmemory|rtk|context_mode|leanctx|alumnium|search_cli) return 0 ;;
         *) return 1 ;;
       esac
       ;;

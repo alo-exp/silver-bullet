@@ -48,7 +48,7 @@ rt_probe_context_mode() {
       pending|"") fp=1 ;;
       enabled)
         if rt_is_suspended "$tool_id"; then fs=1
-        elif ! sb_context_mode_node_ok "$cfg" 2>/dev/null; then ff=1; evidence+=("node_version"); frp=1; repairable=1
+        elif ! sb_context_mode_node_ok "$cfg" 2>/dev/null; then ff=1; evidence+=("node_version"); evidence+=("min_version"); frp=1; repairable=1
         elif ! sb_context_mode_cli_available 2>/dev/null; then frp=1; repairable=1; evidence+=("cli_missing")
         elif ! rt_probe_context_mode_mcp; then frp=1; repairable=1; activation="partial"; evidence+=("mcp_not_configured")
         elif ! sb_context_mode_instruction_fragment_present "${RT_PROJECT_ROOT:-}" 2>/dev/null; then frp=1; repairable=1; evidence+=("instruction_fragment_missing")
@@ -60,6 +60,7 @@ rt_probe_context_mode() {
           set -e
           case "$vd_rc" in
             1) frp=1; repairable=1; evidence+=("vendor_doctor_failed") ;;
+            2) evidence+=("vendor_skip"); activation="full"; fr=1 ;;
             *) activation="full"; fr=1 ;;
           esac
         fi

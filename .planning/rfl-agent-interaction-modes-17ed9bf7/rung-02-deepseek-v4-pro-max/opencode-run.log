@@ -1,6 +1,0 @@
-Reading the plan and rung-1 review in full (needed in-context for adversarial citation), plus the prior attempt's draft.
-Plan read. Now the rung-1 review in full:
-Now the prior attempt's full draft review (truncated earlier) and graphify state:
-Corpus and both reviews digested. Now complying with the graphify-first constraint and verifying file-existence claims at HEAD (B1 triage check) via graphify CLI + git:
-Files exist on `main`; current detached HEAD lacks them → B1 confirmed checkout artifact (triage REJECT stands). Running graphify CLI queries per constraint:
-One more targeted graphify check (I-11 context — live `--delegation-mode`), then write the review:

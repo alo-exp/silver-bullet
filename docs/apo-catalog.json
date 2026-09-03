@@ -152,7 +152,8 @@
         {
           "kind": "atomic_flow",
           "ref": "AF-CLARIFY",
-          "optional": true
+          "optional": true,
+          "condition": "SPEC.md absent (required as --spec before AF-SPECIFY)"
         },
         {
           "kind": "atomic_flow",
@@ -162,7 +163,8 @@
         {
           "kind": "atomic_flow",
           "ref": "AF-SPECIFY",
-          "optional": true
+          "optional": true,
+          "condition": "SPEC.md absent (required compiler after AF-CLARIFY --spec)"
         },
         {
           "kind": "atomic_flow",
@@ -377,7 +379,8 @@
         {
           "kind": "atomic_flow",
           "ref": "AF-CLARIFY",
-          "optional": true
+          "optional": true,
+          "condition": "SPEC.md absent (required as --spec before AF-SPECIFY)"
         },
         {
           "kind": "atomic_flow",
@@ -387,7 +390,8 @@
         {
           "kind": "atomic_flow",
           "ref": "AF-SPECIFY",
-          "optional": true
+          "optional": true,
+          "condition": "SPEC.md absent (required compiler after AF-CLARIFY --spec)"
         },
         {
           "kind": "atomic_flow",
@@ -4008,7 +4012,7 @@
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
         "dispatch_mode": "subagent",
-        "worker_template": "templates/orchestrator-workers/MULTI-AI-TASK.md",
+        "worker_template": "skills/silver-multi-ai-task/SKILL.md",
         "parallelizable": true,
         "dependencies": [
           "catalog-selected upstream refs"
@@ -6566,7 +6570,7 @@
           "EV-FS-SILVER_AGENT_OPENCODE"
         ]
       },
-        "reusable_by_flows": ["AF-AGENT-DELEGATE"],
+      "reusable_by_flows": [],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {
@@ -6615,7 +6619,7 @@
           "EV-FS-SILVER_AGENT_PI"
         ]
       },
-      "reusable_by_flows": ["AF-AGENT-DELEGATE"],
+      "reusable_by_flows": [],
       "canonical_catalog_entity": "AF-AGENT-DELEGATE"
     },
     {

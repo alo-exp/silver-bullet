@@ -89,6 +89,26 @@ rt_probe_leanctx_vendor_doctor() {
   fi
 }
 
+
+rt_leanctx_version_int() {
+  local v="${1%%-*}" maj min patch
+  IFS='.' read -r maj min patch <<<"$v"
+  maj="${maj:-0}"; min="${min:-0}"; patch="${patch:-0}"
+  printf '%d' $((10#$maj * 1000000 + 10#$min * 1000 + 10#$patch))
+}
+
+rt_probe_leanctx_version_ok() {
+  local cfg="${1:-}" min_ver raw ver
+  min_ver="3.9.9"
+  if [[ -n "$cfg" && -f "$cfg" ]]; then
+    min_ver="$(jq -r '.recommended_tools.leanctx.min_version // "3.9.9"' "$cfg" 2>/dev/null || echo "3.9.9")"
+  fi
+  raw="$(command -v lean-ctx >/dev/null 2>&1 && lean-ctx --version </dev/null 2>/dev/null || true)"
+  ver="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)"
+  [[ -n "$ver" ]] || return 1
+  [[ "$(rt_leanctx_version_int "$ver")" -ge "$(rt_leanctx_version_int "$min_ver")" ]]
+}
+
 rt_probe_leanctx() {
   local tool_id="leanctx" consent activation="none" canonical repairable=0
   local cfg="${RT_CONFIG_FILE:-$(rt_project_config)}"
@@ -107,7 +127,8 @@ rt_probe_leanctx() {
         elif ! sb_leanctx_cli_available "$cfg" 2>/dev/null; then ff=1; evidence+=("cli_missing"); frp=1; repairable=1
         elif rt_probe_leanctx_duplicate_mcp; then
           # Config FAIL (also surfaced as D22 WARN). D10 fails when opted in.
-          ff=1; frp=1; repairable=1; evidence+=("duplicate_mcp_keys")
+          ff=1; frp=1; repairable=1; evidence+=("duplicate_mcp_keys"); evidence+=("duplicate_key")
+        elif ! rt_probe_leanctx_version_ok "$cfg"; then frp=1; repairable=1; evidence+=("min_version")
         elif ! rt_probe_leanctx_mcp; then frp=1; repairable=1; activation="partial"; evidence+=("mcp_not_configured")
         elif ! rt_probe_leanctx_lctx_prefix; then frp=1; repairable=1; evidence+=("lctx_prefix_missing")
         elif ! rt_probe_leanctx_overlaps_disabled; then frp=1; repairable=1; evidence+=("overlap_surfaces_enabled")
@@ -118,6 +139,7 @@ rt_probe_leanctx() {
           set -e
           case "$vd_rc" in
             1) frp=1; repairable=1; evidence+=("vendor_doctor_failed") ;;
+            2) evidence+=("vendor_skip"); activation="full"; fr=1 ;;
             *) activation="full"; fr=1 ;;
           esac
         fi

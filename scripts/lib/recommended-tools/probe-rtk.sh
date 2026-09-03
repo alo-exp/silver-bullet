@@ -82,7 +82,7 @@ rt_probe_rtk() {
       enabled)
         if rt_is_suspended "$tool_id"; then fs=1
         elif ! sb_rtk_cli_available 2>/dev/null; then ff=1; evidence+=("cli_missing"); frp=1; repairable=1
-        elif ! sb_rtk_version_ok "$cfg" 2>/dev/null; then frp=1; repairable=1; evidence+=("version_mismatch")
+        elif ! sb_rtk_version_ok "$cfg" 2>/dev/null; then frp=1; repairable=1; evidence+=("version_mismatch"); evidence+=("min_version")
         elif ! rt_probe_rtk_shell_owner; then frp=1; repairable=1; evidence+=("shell_hook_missing")
         elif ! rt_probe_rtk_leanctx_rewrite_absent; then frp=1; repairable=1; evidence+=("leanctx_rewrite_present")
         elif ! rt_probe_rtk_before_cm; then frp=1; repairable=1; evidence+=("hook_order_wrong")
@@ -93,6 +93,7 @@ rt_probe_rtk() {
           set -e
           case "$vd_rc" in
             1) frp=1; repairable=1; evidence+=("vendor_doctor_failed") ;;
+            2) evidence+=("vendor_skip"); activation="full"; fr=1 ;;
             *) activation="full"; fr=1 ;;
           esac
         fi

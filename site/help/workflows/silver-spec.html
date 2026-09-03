@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:spec &mdash; Spec Elicitation Workflow &mdash; Silver Bullet Help</title>
-<meta name="description" content="Silver Bullet spec elicitation workflow: Socratic discovery, assumptions, SPEC.md, REQUIREMENTS.md, optional DESIGN.md, and artifact review before SB planning.">
+<title>/silver:spec &mdash; Spec Compiler &mdash; Silver Bullet Help</title>
+<meta name="description" content="Silver Bullet spec compiler: reads the newest clarify brief and any ingest draft, writes SPEC.md and REQUIREMENTS.md from SPEC acceptance criteria, optional DESIGN.md, and artifact review before SB planning.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -69,12 +69,12 @@ h1,h2,h3,h4,
     </div>
   </div>
 </div>
-<div class="page-hero"><div class="container"><h1>/silver:spec</h1><p>Socratic spec elicitation workflow that produces canonical <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> before implementation begins.</p></div></div>
+<div class="page-hero"><div class="container"><h1>/silver:spec</h1><p>Spec compiler that produces canonical <code>.planning/SPEC.md</code> and <code>.planning/REQUIREMENTS.md</code> from the newest clarify brief (and any ingest draft) before implementation begins.</p></div></div>
 <div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On This Page</li><li><a href="#overview">Overview</a></li><li><a href="#when-to-use">When to Use</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow Steps</a></li><li><a href="#non-skippable">Non-Skippable Gates</a></li><li><a href="#handoff">SB Handoff</a></li><li class="sidebar-section">See Also</li><li><a href="./index.html">All Workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
 <article class="doc-content">
 <h2 id="overview">Overview</h2>
-<p><code>/silver:spec</code> implements catalog atomic flow <code>AF-SPECIFY</code>. It guides a product-style elicitation session, records assumptions, writes the canonical spec artifacts, and runs artifact review before downstream planning consumes the result.</p>
-<p>It does not implement code. Its job is to turn a fuzzy or formal product request into traceable planning inputs.</p>
+<p><code>/silver:spec</code> implements catalog atomic flow <code>AF-SPECIFY</code>. It is a compiler: it reads the newest <code>*-CLARIFY-*.md</code> brief plus any ingest SPEC draft, writes the canonical spec artifacts, and runs artifact review before downstream planning consumes the result. Interviewing lives in <code>/silver:clarify --spec</code>.</p>
+<p>It does not implement code and does not run the 9-turn interview. Its job is to compile a decision-ready brief into traceable planning inputs.</p>
 <div class="callout callout-info"><div class="callout-body"><strong>Core value:</strong> SB prevents premature implementation by requiring a spec with acceptance criteria, out-of-scope boundaries, assumptions, and source-artifact references before planning starts.</div></div>
 <div class="divider"></div>
 <h2 id="when-to-use">When to Use</h2>
@@ -94,19 +94,18 @@ h1,h2,h3,h4,
 <div class="divider"></div>
 <h2 id="steps">Workflow Steps</h2>
 <ol>
-  <li><strong>Mode detection:</strong> detect greenfield vs augment mode by checking whether <code>.planning/SPEC.md</code> already exists.</li>
-  <li><strong>Context gathering:</strong> collect feature name, description, and optional JIRA, Figma, Google Doc, or presentation links.</li>
-  <li><strong>Spec scaffold:</strong> use the SB spec scaffold to establish a formal product spec structure.</li>
-  <li><strong>Socratic elicitation:</strong> ask structured questions across problem, user goal, scope boundary, user stories, acceptance criteria, edge cases, error states, data model, and open questions.</li>
-  <li><strong>Assumption consolidation:</strong> resolve, accept, or tag every assumption before writing the spec.</li>
+  <li><strong>Mode detection:</strong> detect greenfield vs augment mode by checking whether <code>.planning/SPEC.md</code> already exists, and load the newest <code>*-CLARIFY-*.md</code> brief plus any ingest draft.</li>
+  <li><strong>Compile inputs:</strong> map the clarify capture schema (and ingest SPEC dump, if any) onto the SB spec scaffold. Do not re-run the 9-turn interview.</li>
+  <li><strong>Domain completeness:</strong> treat problem, scope, stories, and AC in the brief as covered. Gap-fill questions only for required SPEC sections that are still empty.</li>
+  <li><strong>Assumption consolidation:</strong> honor statuses from the brief; resolve, accept, or tag remaining assumptions before writing the spec.</li>
   <li><strong>Artifact injection:</strong> incorporate available source artifacts and record inaccessible sources explicitly.</li>
-  <li><strong>Write and review artifacts:</strong> write SPEC.md, derive REQUIREMENTS.md, optionally write DESIGN.md, then run artifact review to two consecutive clean passes.</li>
+  <li><strong>Write and review artifacts:</strong> write SPEC.md, derive REQUIREMENTS.md from SPEC acceptance criteria, optionally write DESIGN.md, then run artifact review to two consecutive clean passes.</li>
 </ol>
 <div class="divider"></div>
 <h2 id="non-skippable">Non-Skippable Gates</h2>
 <p>The core spec contract cannot be skipped:</p>
 <ul>
-  <li>Socratic elicitation minimum coverage</li>
+  <li>Consume newest clarify brief when present (brief-domain completeness, not a live turn-counter)</li>
   <li>Assumption consolidation</li>
   <li>Writing <code>.planning/SPEC.md</code></li>
   <li>SPEC artifact review</li>

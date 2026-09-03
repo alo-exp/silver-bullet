@@ -1,0 +1,27 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 19 Policy G pack)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AG1", "title": "§6.3/§6.4 markdown sub-bullets run-on into preceding bullet"}
+    ]
+  },
+  "triage": [
+    {"id": "AG1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; L460 Phase 1 CachedEntry and L470 malformed {id}.json were mid-line after lock./0.0). so they rendered inline; not a ledger re-report of I-1–I-42; no product-lock unwind"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AG1", "severity": "NIT", "title": "§6.3/§6.4 markdown sub-bullets (Phase 1 CachedEntry; malformed {id}.json) start on their own lines", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

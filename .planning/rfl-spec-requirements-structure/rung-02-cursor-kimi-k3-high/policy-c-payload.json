@@ -1,0 +1,94 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "kimi",
+    "effort": "high",
+    "display": "Cursor Kimi K3 High"
+  },
+  "verdict": "CLEAN",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": [
+      {
+        "id": "R2-F01",
+        "title": "Wave 6 legacy-lock decision tree is non-total (spec-version without stories/slug)"
+      },
+      {
+        "id": "R2-F02",
+        "title": "ISSUE-new / INFO-legacy split pinned for QC-9 only"
+      },
+      {
+        "id": "R2-F03",
+        "title": "Wave 2 names two files for the same QC-string test"
+      }
+    ],
+    "NIT": [
+      {
+        "id": "R2-F04",
+        "title": "Stray second H1 at freeze line 38"
+      }
+    ]
+  },
+  "triage": [
+    {
+      "id": "R2-F01",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Wave 6 tree must be total; spec-version present + no User Stories + no feature-slug is augment (step 4b), not lock or overwrite"
+    },
+    {
+      "id": "R2-F02",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "ISSUE-new / INFO-legacy split must cover QC-8, QC-9, QC-10, and the QC-6 feature-slug extension"
+    },
+    {
+      "id": "R2-F03",
+      "severity": "LOW",
+      "decision": "ACCEPT",
+      "reason": "Canonical test file is test-review-spec-req-xart-qc-strings.sh; drop the stale qc-strings alternate"
+    },
+    {
+      "id": "R2-F04",
+      "severity": "NIT",
+      "decision": "ACCEPT",
+      "reason": "Demote freeze line 38 from H1 to a WARNING blockquote; keep a single GFM H1"
+    }
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R2-F01",
+      "severity": "LOW",
+      "title": "Wave 6 legacy-lock decision tree is non-total (spec-version without stories/slug)",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F02",
+      "severity": "LOW",
+      "title": "ISSUE-new / INFO-legacy split pinned for QC-9 only",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F03",
+      "severity": "LOW",
+      "title": "Wave 2 names two files for the same QC-string test",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    },
+    {
+      "id": "R2-F04",
+      "severity": "NIT",
+      "title": "Stray second H1 at freeze line 38",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "2b2f7d7672534c8895ac821fe49d34b634833cc1eb16770d6f2f5d9d3f2d1ffe"
+}

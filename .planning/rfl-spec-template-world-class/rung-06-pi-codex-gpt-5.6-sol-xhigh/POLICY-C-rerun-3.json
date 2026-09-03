@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High (re-run pass 3)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R6c-F01",
+        "title": "Wave 3 Steps 7a/8a and final pair installation: staged candidates are not carried through the review gates or committed with a recoverable two-file protocol"
+      }
+    ],
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R6c-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "7a/8a and review/QC gates between mint and install operate on staged SPEC/REQUIREMENTS candidates, not only on-disk canonical paths. Named recoverable pair-install (snapshot-restore): snapshot prior bytes of both before mutating either; if the second replace fails after the first, restore prior bytes of both. Fixtures: 7a/8a FAIL on staged candidate must not install; commit-boundary (second write fails after first) leaves both canonical files at prior bytes. Extends R6b; do not weaken R5h/R5i, Wave 6 1b, R5k exclusive NFR, or R6b staged-until-Step-8-succeeds."
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R6c-F01",
+      "title": "Wave 3 Steps 7a/8a and final pair installation: staged candidates are not carried through the review gates or committed with a recoverable two-file protocol"
+    }
+  ],
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R6c-F01",
+      "severity": "HIGH",
+      "title": "Wave 3 Steps 7a/8a and final pair installation: staged candidates are not carried through the review gates or committed with a recoverable two-file protocol",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "7a6bfc5d66e9acdbf782f15bbe724c51b586e39d1c9cac95e8c547017e6bdc91"
+}

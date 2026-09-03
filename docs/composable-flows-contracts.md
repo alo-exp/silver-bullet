@@ -81,7 +81,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-clear-stack-state`, `silver-doctor`, `silver-migrate` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
 | `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-claude` |
-| `AF-MULTI-AI-TASK` | multi_model_orchestration | `templates/orchestrator-workers/MULTI-AI-TASK.md` | `silver-multi-ai-task` |
+| `AF-MULTI-AI-TASK` | multi_model_orchestration | `skills/silver-multi-ai-task/SKILL.md` | `silver-multi-ai-task` |
 
 ## Skill-Dispatched Worker Templates
 
@@ -114,9 +114,9 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 
 - atomic_flow: `AF-BOOTSTRAP` optional
 - atomic_flow: `AF-ORIENT` optional
-- atomic_flow: `AF-CLARIFY` optional
+- atomic_flow: `AF-CLARIFY` optional when SPEC.md absent (required as --spec before AF-SPECIFY)
 - atomic_flow: `AF-DECIDE` optional
-- atomic_flow: `AF-SPECIFY` optional
+- atomic_flow: `AF-SPECIFY` optional when SPEC.md absent (required compiler after AF-CLARIFY --spec)
 - atomic_flow: `AF-QUALITY-GATE` (pre-plan)
 - atomic_flow: `AF-PLAN`
 - atomic_flow: `AF-DESIGN-CONTRACT` optional when ui_scope
@@ -177,9 +177,9 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 
 - atomic_flow: `AF-BOOTSTRAP` optional
 - atomic_flow: `AF-ORIENT` optional
-- atomic_flow: `AF-CLARIFY` optional
+- atomic_flow: `AF-CLARIFY` optional when SPEC.md absent (required as --spec before AF-SPECIFY)
 - atomic_flow: `AF-DECIDE` optional
-- atomic_flow: `AF-SPECIFY` optional
+- atomic_flow: `AF-SPECIFY` optional when SPEC.md absent (required compiler after AF-CLARIFY --spec)
 - atomic_flow: `AF-QUALITY-GATE` (pre-plan)
 - atomic_flow: `AF-PLAN`
 - atomic_flow: `AF-DESIGN-CONTRACT`
@@ -502,8 +502,8 @@ Runtime resolution: `hooks/lib/orchestrator-parent.sh` → project copy under `.
 | `FS-SILVER_AGENT_CLAUDE` | `silver-agent-claude` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CLAUDE` |
 | `FS-SILVER_AGENT_CODEX` | `silver-agent-codex` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CODEX` |
 | `FS-SILVER_AGENT_CURSOR` | `silver-agent-cursor` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_CURSOR` |
-| `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_OPENCODE` |
-| `FS-SILVER_AGENT_PI` | `silver-agent-pi` | `AF-AGENT-DELEGATE` | `EV-FS-SILVER_AGENT_PI` |
+| `FS-SILVER_AGENT_OPENCODE` | `silver-agent-opencode` |  | `EV-FS-SILVER_AGENT_OPENCODE` |
+| `FS-SILVER_AGENT_PI` | `silver-agent-pi` |  | `EV-FS-SILVER_AGENT_PI` |
 | `FS-SILVER_BENCHMARK` | `silver-benchmark` | `AF-FAST-PATH` | `EV-FS-SILVER_BENCHMARK` |
 | `FS-SILVER_BLAST_RADIUS` | `silver-blast-radius` | `AF-BLAST-RADIUS` | `EV-FS-SILVER_BLAST_RADIUS` |
 | `FS-SILVER_BOOTSTRAP_MILESTONE` | `silver-bootstrap-milestone` | `AF-BOOTSTRAP` | `EV-FS-SILVER_BOOTSTRAP_MILESTONE` |

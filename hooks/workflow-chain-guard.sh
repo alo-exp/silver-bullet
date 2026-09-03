@@ -208,9 +208,10 @@ case "$composer_slug" in
     ;;
 esac
 
-# Conditional silver-spec when SPEC.md is absent (greenfield feature/ui work).
+# Conditional interview + compiler when SPEC.md is absent (greenfield feature/ui).
 if [[ "$composer_slug" == "silver-feature" || "$composer_slug" == "silver-ui" ]]; then
   if [[ ! -f "$repo_root/.planning/SPEC.md" ]]; then
+    required_markers+=("silver-clarify")
     required_markers+=("silver-spec")
   fi
 fi

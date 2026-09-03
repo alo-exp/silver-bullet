@@ -120,6 +120,8 @@ source "${RT_LIB}/probe-context-mode.sh"
 source "${RT_LIB}/probe-leanctx.sh"
 # shellcheck source=lib/recommended-tools/probe-alumnium.sh
 source "${RT_LIB}/probe-alumnium.sh"
+# shellcheck source=lib/recommended-tools/probe-search_cli.sh
+source "${RT_LIB}/probe-search_cli.sh"
 # shellcheck source=lib/recommended-tools/probe-cross-tool.sh
 source "${RT_LIB}/probe-cross-tool.sh"
 # shellcheck source=lib/recommended-tools/heartbeat.sh
@@ -238,6 +240,7 @@ rt_run_component rtk
 rt_run_component context_mode
 rt_run_component leanctx
 rt_run_component alumnium
+rt_run_component search_cli
 rt_run_component cross_tool
 
 if [[ "$RT_MODE" == "apply" ]]; then
@@ -272,6 +275,15 @@ if [[ "$receipt_has" == "true" && "$receipt_canonical" == "reload_required" ]]; 
   RT_COMPONENT_RESULTS=("${updated_components[@]}")
 fi
 
+
+unknown_keys_json='[]'
+_rt_cfg="${RT_PROJECT_ROOT}/.silver-bullet.json"
+if [[ -f "$_rt_cfg" ]]; then
+  unknown_keys_json="$(jq -c --argjson allow "$(printf '%s\n' "${RT_COMPONENT_IDS[@]}" | jq -R -s 'split("\n")|map(select(length>0))')" '
+    (.recommended_tools // {}) | keys | map(select(. as $k | ($allow | index($k) | not)))
+  ' "$_rt_cfg" 2>/dev/null || echo '[]')"
+fi
+
 components_json="$(printf '%s\n' "${RT_COMPONENT_RESULTS[@]}" | jq -s '.')"
 ok=true
 if printf '%s' "$components_json" | jq -e '[.[] | select(.canonical_state == "failed" or .canonical_state == "repairable" or .canonical_state == "reload_required")] | length > 0' >/dev/null; then
@@ -293,6 +305,7 @@ result_json="$(jq -n \
   --argjson restart_required "$([[ "$RT_RESTART_REQUIRED" == true ]] && echo true || echo false)" \
   --argjson failures "$(printf '%s\n' "${RT_ALL_FAILURES[@]:-}" | jq -R -s 'split("\n")|map(select(length>0))')" \
   --argjson receipt "$receipt_eval" \
+  --argjson unknown_keys "$unknown_keys_json" \
   '{
     schema: $schema,
     ok: $ok,
@@ -304,7 +317,8 @@ result_json="$(jq -n \
     components: $components,
     failures: $failures,
     restart_required: $restart_required,
-    receipt: $receipt
+    receipt: $receipt,
+    unknown_keys: $unknown_keys
   }')"
 
 if [[ "$RT_FORMAT" == "json" ]]; then

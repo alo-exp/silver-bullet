@@ -88,7 +88,7 @@ assert_jq_true "OpenCode skip-artifact after retry records Grok substitute" \
 # --- mandatory launcher tables ---
 steps="$(python3 "$RESOLVER" --launcher-steps)"
 assert_jq_true "launcher mandatory steps include issue/triage/resolved/matrix" \
-  '.steps == ["policy_c_artifact","issue_table","launcher_triage","triage_table","launcher_fix","resolved_table","ladder_complete_matrix"]' \
+  '.steps == ["policy_c_artifact","issue_table","launcher_triage","triage_table","launcher_fix","resolved_table","issue_ledger_brief","ladder_complete_matrix"]' \
   "$steps"
 
 issues_json='[{"id":"H1","severity":"HIGH","title":"broken lock"},{"id":"M1","severity":"MED","title":"missing table"},{"id":"L1","severity":"LOW","title":"typo"},{"id":"N1","severity":"NIT","title":"nitpick"}]'
@@ -157,6 +157,35 @@ if grep -qF 'These launcher steps are **mandatory**' "$SKILL" \
   pass "SKILL encodes mandatory launcher tables + complete matrix"
 else
   fail "SKILL encodes mandatory launcher tables + complete matrix"
+fi
+if grep -qF '### Policy F — two consecutive CLEAN reviews per rung (HARD)' "$SKILL" \
+  && grep -qF 'consecutive_clean_reviews == 2' "$SKILL" \
+  && grep -qF -- '--assert-consecutive-clean' "$SKILL"; then
+  pass "SKILL encodes Policy F two consecutive CLEAN reviews"
+else
+  fail "SKILL encodes Policy F two consecutive CLEAN reviews"
+fi
+if grep -qF '### Policy G — hop review (pack-ledger) (HARD)' "$SKILL" \
+  && grep -qF 'do not re-report ledger rows' "$SKILL" \
+  && grep -qF 'all severities' "$SKILL" \
+  && grep -qF -- '--issue-ledger' "$SKILL" \
+  && grep -qF -- '--write-review-brief' "$SKILL" \
+  && grep -qF 'as a pack' "$SKILL" \
+  && grep -qF 'only legal review brief' "$SKILL"; then
+  pass "SKILL encodes Policy G pack-ledger hop review"
+else
+  fail "SKILL encodes Policy G pack-ledger hop review"
+fi
+if grep -qF '### Policy E — rung-prompt user-approval (HARD)' "$SKILL" \
+  && grep -qF 'concise bullet list of only the key tasks and instructions' "$SKILL" \
+  && grep -qF 'Do **not** dump the entire prompt' "$SKILL" \
+  && grep -qF 'Until approved:' "$SKILL" \
+  && grep -qF 'do not spawn reviewer Tasks / Pi invoke' "$SKILL" \
+  && grep -qF 'RUNG-PROMPT-APPROVAL.md' "$SKILL" \
+  && grep -qF 'approved: pending|yes' "$SKILL"; then
+  pass "SKILL encodes Policy E rung-prompt user-approval gate"
+else
+  fail "SKILL encodes Policy E rung-prompt user-approval gate"
 fi
 
 # --- default host routing matrix (user override wins) ---

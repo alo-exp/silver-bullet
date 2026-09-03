@@ -379,7 +379,7 @@ var IDX = [
     "url": "/help/workflows/silver-spec.html",
     "anchor": "overview",
     "title": "/silver:spec",
-    "text": "Spec workflow creates a canonical SPEC.md with requirements, acceptance criteria, assumptions, source links, and artifact review before SB planning."
+    "text": "Spec compiler reads the newest clarify brief and writes canonical SPEC.md and REQUIREMENTS.md from SPEC acceptance criteria, with artifact review before SB planning."
   },
   {
     "page": "Workflows",

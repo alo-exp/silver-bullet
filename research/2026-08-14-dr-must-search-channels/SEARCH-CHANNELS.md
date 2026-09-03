@@ -2,7 +2,7 @@
 title: DR must-search channels — 10-agent concurrent architecture
 date: 2026-08-14
 status: active
-fetched: 2026-08-14
+fetched: 2026-08-14; cost addendum 2026-08-15
 scope: Non-locale must-search sources; search-cli augmentation; SB DR wiring (proposal only)
 ---
 
@@ -19,19 +19,19 @@ Three method classes cover almost every source (plus paid official APIs when the
 | Method | Role | Covers |
 |---|---|---|
 | **A. Official / public JSON APIs** | High precision, cheap, ToS-clean | Stack Exchange, GitHub code/issues/discussions, **GitLab.com Search API** (PAT), **YouTube Data API v3 `search.list`**, HN Algolia, Discourse `/search.json` (Cursor forum, OpenAI community, vendor `discuss.*`), npm / PyPI / crates.io / deps.dev / ecosyste.ms, Dev.to (Forem), Codeberg (Forgejo) |
-| **B. search-cli aggregators + `site:`** | Recall when APIs are paid, hostile, or missing | Brave Search API (primary web) + Serper (Google SERP, free 2,500 trial). Use `site:` for Lobsters, Product Hunt HTML, InfoQ/talks, SourceHut, Hashnode, Indie Hackers, Capterra/TrustRadius listings, Anthropic help, **LinkedIn**, **X/Twitter** (until X credits), GitLab/YouTube fallback |
+| **B. search-cli aggregators + `site:`** | Recall when APIs are paid, hostile, or missing | **Default: one aggregator** — Serper-only `site:` (`-p serper`). Brave is optional on $5 credits/mo (~1k q), not every query. Dual-index is optional quality. Use `site:` for Lobsters, Product Hunt HTML, InfoQ/talks, SourceHut, Hashnode, Indie Hackers, Capterra/TrustRadius listings, Anthropic help, **LinkedIn**, **X/Twitter** (until X credits), GitLab/YouTube fallback |
 | **B+. Paid official APIs** | Same gateway; expense is in-scope | **X API v2** `search/recent` + `search/all` (pay-per-usage credits). **LinkedIn** Marketing / Community Management **partner** (page-admin scoped — not global post search). Do not skip a platform because it is expensive. |
 | **C. Sample-only / human** | Never crawl | Discord, Slack, G2 (ToS scrape ban), Gartner Peer Insights (login), full buyer-review dumps, **Facebook** (exclude from must-search; optional `site:facebook.com` sample) |
 
 **Social + GitLab detail** (best method / fallback / limits / ToS / 10-agent): [SOCIAL-AND-GITLAB.md](SOCIAL-AND-GITLAB.md).
 
-**Key pooling:** one Brave key + one Serper key + one GitHub PAT + one Stack Apps key + **one GitLab PAT** + **one YouTube Data API key**, held by the gateway. Not 10 copies. Optional second key only for GitHub (search 30 req/min is the bottleneck). Optional later: one X developer app (credits) + one LinkedIn partner token. No Facebook app in the default ring.
+**Key pooling:** one **Serper** key (Method B default) + optional Brave key ($5 credits, not every query) + one GitHub PAT + one Stack Apps key + **one GitLab PAT** + **one YouTube Data API key**, held by the gateway. Not 10 copies. Optional second key only for GitHub (search 30 req/min is the bottleneck). Optional later: one X developer app (credits) + one LinkedIn partner token. No Facebook app in the default ring.
 
 **Where code lives:**
 
-- **Inside search-cli (upstream PR to [paperfoot/search-cli](https://github.com/paperfoot/search-cli)):** shared on-disk cache already exists (`src/cache.rs`); **provider allowlist already exists** as `-p brave,serper` (README). Remaining PR: `--cache-dir` for a fleet-shared path; native providers for Stack Exchange, HN Algolia, Discourse JSON, GitHub GraphQL discussions. Do **not** put G2/Discord/Nitter/LinkedIn scrapers in search-cli. Gateway policy is: always pass `-p`, never default `general`. GitLab Search API + YouTube Data API belong in **SB adapters first** (not a search-cli provider in MVP). Existing modes `-m social` (xAI/Grok for X chatter) and `-m people` (Exa for person/LinkedIn-shaped lookups) are legal aggregator extras — **not** the 10-agent default.
+- **Inside search-cli (upstream PR to [paperfoot/search-cli](https://github.com/paperfoot/search-cli)):** shared on-disk cache already exists (`src/cache.rs`); **provider allowlist already exists** as `-p` (README; fleet default **`-p serper`**). Remaining PR: `--cache-dir` for a fleet-shared path; native providers for Stack Exchange, HN Algolia, Discourse JSON, GitHub GraphQL discussions. Do **not** put G2/Discord/Nitter/LinkedIn scrapers in search-cli. Gateway policy is: always pass **one** `-p`, never default `general`. GitLab Search API + YouTube Data API belong in **SB adapters first** (not a search-cli provider in MVP). Existing modes `-m social` (xAI/Grok for X chatter) and `-m people` (Exa for person/LinkedIn-shaped lookups) are legal aggregator extras — **not** the 10-agent default.
 - **SB-native adapters** (`skills/silver-deep-research/`): package registries, GitHub REST search (issues/code), **GitLab.com `/api/v4/search`**, **YouTube `search.list`**, portal catalog expansion, the gateway itself, per-host token buckets. Full/paid: X API v2 search, LinkedIn CM/Marketing after partner approval.
-- **`site:` fallback:** everything else, via search-cli Brave/Serper only (one aggregator per query after cache hit-miss). Templates: `site:gitlab.com`, `site:youtube.com`, `site:linkedin.com/posts`, `site:x.com OR site:twitter.com`. Facebook is sample-only, not must-search.
+- **`site:` fallback:** everything else, via search-cli **one** `-p` after cache miss. **Default `-p serper`.** Brave optional (`-p brave`) on monthly credits. Do not invent `--providers` / `--no-fanout`. Templates: `site:gitlab.com`, `site:youtube.com`, `site:linkedin.com/posts`, `site:x.com OR site:twitter.com`. Facebook is sample-only, not must-search.
 
 ```mermaid
 flowchart TB
@@ -73,9 +73,9 @@ flowchart TB
   end
 
   subgraph agg [Method B — search-cli]
-    CLI[search-cli -p brave,serper]
-    Brave[Brave site:]
-    Serper[Serper site:]
+    CLI[search-cli -p serper]
+    Serper[Serper site: default]
+    Brave[Brave site: optional]
   end
 
   subgraph paid [Method B+ — paid official]
@@ -99,8 +99,8 @@ flowchart TB
   buckets --> official
   buckets --> CLI
   buckets --> paid
-  CLI --> Brave
   CLI --> Serper
+  CLI -.-> Brave
   GW -.->|never auto-crawl| human
 ```
 
@@ -160,14 +160,50 @@ Fetch date for all evidence: **2026-08-14**. “Unknown” means the official pa
 
 | Aggregator | Role in SB | Free / published limit (2026-08-14) | 10-agent note | Evidence |
 |---|---|---|---|---|
-| **Brave Search API** | Primary web + `site:` | **$5 free credits / month**; Search plan **$5 per 1,000 requests**. QPS for Lite **not stated** on the marketing page as indexed (search-cli README historically implies 1 QPS — **do not treat that as Brave-official**). | One key. Gateway must **disable search-cli fan-out** so Brave is not hit 8×. | [brave.com/search/api](https://brave.com/search/api/) |
-| **Serper** | Google SERP + `site:` | **“Get 2,500 free queries”** / “Try 2,500 queries for free” (no card). **300 QPS is the Ultimate paid plan** ($3750 / 12.5M credits), not the free trial. The $1250 plan lists **200 QPS**. Free-trial QPS **not stated**. Live Google (no cache). | One key. Use for Google-quality `site:` when Brave misses. | [serper.dev](https://serper.dev/) |
+| **Brave Search API** | Optional `site:` (credits) | **$5 free credits / month**; Search plan **$5 per 1,000 requests**. QPS for Lite **not stated** on the marketing page as indexed (search-cli README historically implies 1 QPS — **do not treat that as Brave-official**). | Optional. Do **not** hit Brave on every query — credits ≈ 1k q/mo. Gateway pins **one** `-p`. | [brave.com/search/api](https://brave.com/search/api/) |
+| **Serper** | **Method B default** Google SERP + `site:` | **“Get 2,500 free queries”** / “Try 2,500 queries for free” (no card). **300 QPS is the Ultimate paid plan** ($3750 / 12.5M credits), not the free trial. The $1250 plan lists **200 QPS**. Free-trial QPS **not stated**. Live Google (no cache). Published packs (2026-08-15): **$1/1k**, **$50/50k**. | One key. Pin `-p serper` for `site:` recall. Dual-index with Brave is optional quality, not required. | [serper.dev](https://serper.dev/) |
 | **Exa** | Semantic / related | **/search 10 QPS**, /contents 100 QPS, /answer 10 QPS. Pricing is per 1k requests (Search **$7/1k** with up to 10 results). **Free request quota not listed** on pricing page. | Optional. Academic/related only. Do not put on the default `general` path for 10 agents. | [docs.exa.ai rate limits](https://docs.exa.ai/reference/rate-limits), [exa.ai/pricing](https://exa.ai/pricing) |
 | **Tavily** | Optional extract/search | **1,000 free credits/month**, no card. Basic search **1 credit**, advanced **2**. | Optional. Already in search-cli; keep off default fan-out. | [docs.tavily.com api-credits](https://docs.tavily.com/documentation/api-credits) |
 | **Parallel / You.com** | Optional breadth | Parallel docs exist ([docs.parallel.ai](https://docs.parallel.ai/)). You.com markets Search APIs ([you.com](https://you.com/)). **Free-tier numbers not extracted** this pass. | search-cli already lists Parallel on `general`. **Turn off for fleet mode.** | Parallel + You.com homepages |
 | **Jina** | Extract | search-cli README claims **500 RPM free** (cite as search-cli, not Jina-official this pass). | Extract-on-demand after a hit, not every search. | [paperfoot/search-cli README](https://raw.githubusercontent.com/199-biotechnologies/search-cli/master/README.md) |
 
 **Dedicated vs generic web:** GitHub, **GitLab.com Search API**, Stack Exchange, HN Algolia, Discourse JSON, package registries, and **YouTube `search.list`** beat `site:` on precision and quota. Reddit OAuth beats `site:reddit.com` when a client exists. **X** beats `site:x.com` when credits are budgeted. **LinkedIn** has no self-serve global post API — `site:` is the honest fleet default until a partner token exists. **Facebook is excluded from must-search.** Everything buyer-review / Intercom / Hashnode-free / PwC-dead should stay on aggregators or Method C.
+
+---
+
+## Cost at DR volume
+
+Fetch / synthesis: **2026-08-14** (quota lines in this file) and **2026-08-15** (volume arithmetic). Unit prices from [brave.com/search/api](https://brave.com/search/api/) and [serper.dev](https://serper.dev/). Do **not** invent X $/hit or YouTube extra-quota invoices. The 2026-08-14 fetch of `serper.dev/pricing` 404'd; pack prices below are from the serper.dev homepage on the 2026-08-15 cost pass.
+
+**Volume:** 3–4 full gateway DR runs/day × 20 days/month = **60–80 runs/mo**. Typical web budget in the dual-index sketch was **125 Brave + 50 Serper per run**.
+
+### Brave vs Serper
+
+**Paying both is not unavoidable.** Official JSON (Method A) covers precision. Aggregators are for `site:` recall only. Dual-index is optional quality. The gateway should pin **one** `-p` (existing search-cli flag). Do **not** invent `--providers` / `--no-fanout`.
+
+**Most cost-effective default: Serper-only `site:`** — about **$10/mo** at 10k web queries, **~$13/mo** at 13k (published **$1/1k**; **$50/50k** pack). The Brave+Serper split was **~$36–$49/mo** (about **3–4×** Serper-only). Keep Brave **optional** on **$5 credits/mo** (~1k queries), not on every query.
+
+**60–80 runs published $ (gateway path):**
+
+| Channel | Published $ at 60–80 runs/mo | Notes |
+|---|---|---|
+| **Brave** (if still on Brave volume) | **$32.50–$45** after $5 credits | $5/1k Search plan; credits ≈ 1k q/mo. [brave.com/search/api](https://brave.com/search/api/) |
+| **Serper** | **$3–4** unit, or **$50** pack | Dual-index 50 q/run; Serper-only web is the $10–13 line above. $1/1k, $50/50k. [serper.dev](https://serper.dev/) |
+| **YouTube Data API** | **$0** published | Default **100 `search.list`/day** (this file §2). 3–4 runs/day need **165–220 `search.list`** → **quota increase form required day 1**. Do not invent extra-quota invoice $. |
+| **X API v2 search** | **$/hit unknown** | Pay-per-usage confirmed; public-search dollar-per-hit **not extracted**. Do not invent. |
+| **LinkedIn** | Cannot buy global search | No self-serve global post API. Partner is page-admin scoped. |
+| **SE / GH / GitLab / HN / Reddit / Discourse / registries** | **$0** | GitLab.com Search API is a **10 req/min** clock, not a bill. |
+
+**10× search-cli `general` fan-out:** about **$1.6k–$2.1k+/mo** on known aggregators. **Do not do this.** Ten agents × default `general` (Parallel + Brave + Serper + Exa + Jina + Linkup + Tavily + Perplexity) is the lockout *and* the cost bomb.
+
+**What aggregators cannot replace:**
+
+- YouTube Data API **quota extension form** (default 100 `search.list`/day is below 165–220).
+- X official search — unpublished **$/hit**.
+- LinkedIn — **no self-serve** global post search.
+- **G2** — ToS §9 bans automated access/scraping/extraction.
+
+Method B default in the architecture is **one aggregator** (`-p serper`). Brave stays on the token-bucket diagram as optional.
 
 ---
 
@@ -184,26 +220,28 @@ Fetch date for all evidence: **2026-08-14**. “Unknown” means the official pa
 | `src/config.rs` | `search config set keys.brave` |
 | `src/doctor.rs` | `search doctor --json` (each check **bills** a minimal request) |
 | Modes | `general` (wide fan-out), `news`, `academic`, `scholar`, `deep`, `extract`/`scrape`, … |
-| `-p` / `-m` | **Already ships:** `search search -q "…" -p brave,serper` (README). Do not invent `--providers`. |
+| `-p` / `-m` | **Already ships:** `search search -q "…" -p serper` (README `-p`). Pin **one** provider. Do not invent `--providers`. |
 | `search "q" --json -c 10` | SB SKILL already documents this |
 | `search usage --json` | Credits for SerpApi, Firecrawl, Tavily, Linkup, xAI, Brave headers |
 
 **Gaps for a 10-agent fleet:**
 
-1. **Fan-out is the default** if you omit `-p`. `general` is a multi-provider web search (README diagram: Brave + Serper + Exa in parallel; binary lists 13 providers). Fleet mode must **require `-p brave,serper`** (already exists). A `--no-fanout` alias is optional sugar, not a missing primitive.
+1. **Fan-out is the default** if you omit `-p`. `general` is a multi-provider web search (README diagram: Brave + Serper + Exa in parallel; binary lists 13 providers). Fleet mode must **require one `-p`** (default **`-p serper`**; optional `-p brave`). A `--no-fanout` alias is optional sugar, not a missing primitive. Do not invent `--providers` / `--no-fanout`.
 2. **Cache is not fleet-shared.** Point `--cache-dir` at `.planning/research/_search-cache/` (or a socket to the gateway). This flag is the real upstream add.
 3. **No first-class `site:` helper** in SB docs (operators can pass `site:` in the query string today).
 4. **No native Stack Exchange / HN Algolia / Discourse / GitHub Discussions providers** — those belong either as search-cli providers **or** SB adapters (prefer SB adapters first; PR upstream once stable). **Same for GitLab Search API and YouTube Data API** — SB gateway first, not a search-cli flag in this pass.
 5. `search doctor` must **not** run per-agent (10× billed probes).
-6. search-cli **already** has `-m social` (xAI) and `-m people` (Exa). Useful extras; **not** fleet default (`-p brave,serper` still required). Do not invent `--providers` / `--no-fanout`.
+6. search-cli **already** has `-m social` (xAI) and `-m people` (Exa). Useful extras; **not** fleet default (`-p serper` still required). Do not invent `--providers` / `--no-fanout`.
 
 **Proposed upstream flags / providers (PR to paperfoot/search-cli):**
 
 ```text
 # README-confirmed form (JSON is auto when piped; `usage --json` / `doctor --json` exist):
-search search -q 'site:lobste.rs <topic>' -p brave,serper
+search search -q 'site:lobste.rs <topic>' -p serper
+# optional second index, not default:
+search search -q 'site:lobste.rs <topic>' -p brave
 # -p already exists; --cache-dir is the proposed add (not in README this pass)
-search search -q '…' -p brave,serper --cache-dir "$SB_SEARCH_CACHE"
+search search -q '…' -p serper --cache-dir "$SB_SEARCH_CACHE"
 # invented-proposed only (do not treat as shipping): --provider is not a live flag
 search --provider stackexchange --site stackoverflow --json
 ```
@@ -220,7 +258,7 @@ Keep search-cli as **opt-in web breadth**. Add a **channel router** in SB so lan
 
 | Artifact | Change |
 |---|---|
-| [search-orchestration.md](../../skills/silver-deep-research/reference/search-orchestration.md) | Insert gateway: classify → **cache** → official adapter **or** `search -p brave,serper` → relevance_gate. Portals stay landscape-only. |
+| [search-orchestration.md](../../skills/silver-deep-research/reference/search-orchestration.md) | Insert gateway: classify → **cache** → official adapter **or** `search -p serper` → relevance_gate. Portals stay landscape-only. |
 | [search_orchestrator.py](../../skills/silver-deep-research/scripts/search_orchestrator.py) | Today only `probe_search_cli()`. Add: invoke gateway CLI, record `channels_attempted`, never spawn 10 search-cli processes. |
 | New `reference/catalogs/must_search_channels.json` | One descriptor per row in §2 (`method: official_api \| search_cli_site \| sample_only`, `host`, `bucket_rps`, `fallback`). |
 | [source_channels.json](../../skills/silver-deep-research/reference/catalogs/source_channels.json) | Add `stackoverflow`, `hn`, `discourse`, `registries`, `reddit`, `github_discussions`, **`gitlab`**, **`youtube`**. LinkedIn/X as `search_cli_site` / paid. Facebook `sample_only` / `must_search: false`. |
@@ -239,7 +277,7 @@ Keep search-cli as **opt-in web breadth**. Add a **channel router** in SB so lan
 ### MVP (covers most evidence with least lockout risk)
 
 1. **Shared gateway + query cache** (even a directory of JSON files + flock).
-2. **search-cli** with **Brave + Serper only** via existing `-p brave,serper`, `site:` templates.
+2. **search-cli** with **Serper-only `site:`** via existing `-p serper`. Keep Brave optional (`-p brave`) on monthly credits — not dual-index every query.
 3. **Stack Exchange API** (free 10k/day key).
 4. **GitHub PAT:** REST issues/code + GraphQL discussions.
 5. **HN Algolia** (no key).
@@ -299,7 +337,7 @@ This MVP already beats generic-web-only DR on SO, GH, **GitLab**, HN, vendor for
 
 ---
 
-## 7. Sources fetched 2026-08-14
+## 7. Sources fetched 2026-08-14 / 2026-08-15
 
 Official / primary:
 
@@ -360,6 +398,6 @@ Official / primary:
 - https://transparency.meta.com/researchtools/meta-content-library
 - https://github.com/zedeus/nitter
 
-Addendum: [SOCIAL-AND-GITLAB.md](SOCIAL-AND-GITLAB.md).
+Addendum: [SOCIAL-AND-GITLAB.md](SOCIAL-AND-GITLAB.md). Cost addendum (2026-08-15): volume arithmetic from this file’s quota lines + [brave.com/search/api](https://brave.com/search/api/) + [serper.dev](https://serper.dev/). Do not invent X $/hit or YouTube extra-quota invoices.
 
 Failed / incomplete fetches (do not invent from them): Product Hunt OAuth apps HTML, Serper `/pricing` 404, Brave `/search/api/pricing/` 404, Pullpush 403, Reddit `/dev/api/` 403, Hashnode apidocs DNS fail, SourceHut API markdown 404, crates.io data-access 404, Indie Hackers robots 403, Discourse docs SPA empty, GitHub GraphQL queries SPA thin, Graph API `/search` 404, CrowdTangle DNS ENOTFOUND, LinkedIn Posts API / SNAP auth-walled, X public-search dollar-per-hit unknown, Meta Content Library body empty SPA.

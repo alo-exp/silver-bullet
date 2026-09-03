@@ -393,7 +393,7 @@ Draft SPEC.md written (v{version}).
   {N} sections populated
   {M} artifact(s) missing — see [ARTIFACT MISSING] blocks
 
-Next step: run /silver:spec to refine this draft through Socratic elicitation.
+Next step: run /silver:clarify --spec (or --next spec) to interview, then /silver:spec to compile.
 ```
 
 ## Step 7: Write INGESTION_MANIFEST.md
@@ -461,7 +461,7 @@ Artifacts:    {N} attempted, {S} succeeded, {F} failed
 Spec version: {spec-version or "n/a" for cross-repo mode}
 DESIGN.md:    {created | updated | skipped}
 
-Next step: run /silver:spec to refine the draft spec through elicitation.
+Next step: run /silver:clarify --spec (or --next spec) then /silver:spec.
 ```
 
 If any artifacts failed, append:

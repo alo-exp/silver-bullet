@@ -25,6 +25,14 @@ rt_probe_graphify_base_only() {
   command -v graphify >/dev/null 2>&1 && ! rt_probe_graphify_mcp_binary
 }
 
+
+rt_probe_graphify_skill_package_skew() {
+  command -v graphify >/dev/null 2>&1 || return 1
+  local out
+  out="$(graphify --version </dev/null 2>&1 || true)"
+  printf '%s' "$out" | grep -qiE 'skill is from graphify|skill.*package'
+}
+
 rt_probe_graphify() {
   local tool_id="graphify"
   local consent activation="none" canonical repairable=0
@@ -64,6 +72,9 @@ rt_probe_graphify() {
         frp=1; repairable=1; evidence+=("platform_artifact_missing")
       else
         activation="full"; fr=1
+        if rt_probe_graphify_skill_package_skew; then
+          evidence+=("skill_package_skew")
+        fi
       fi
       ;;
   esac

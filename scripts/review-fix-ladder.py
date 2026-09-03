@@ -2,7 +2,9 @@
 """Resolve host-aware model/reasoning rungs for silver:review-fix-ladder.
 
 Public Policy C / failure-management flags (also listed on --help):
-  --write-policy-c --assert-policy-c --assert-rfl-advance
+  --write-policy-c --assert-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome
+  --issue-ledger --write-review-brief
+  --write-review-brief is the only legal review brief (hand-written one-ID briefs are non-compliant).
 """
 
 from __future__ import annotations

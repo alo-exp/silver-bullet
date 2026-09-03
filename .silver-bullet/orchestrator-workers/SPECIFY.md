@@ -20,7 +20,11 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 Invoke **`silver:spec`** through the active runtime's SB-recognized skill invocation channel before implementation edits.
 
-When external artifacts exist, run **`silver:ingest`** first per the skill contract, then **`silver:spec`**.
+**Spec is a compiler**, not a 9-turn interviewer. It must consume the newest `.planning/*-CLARIFY-*.md` and any ingest SPEC draft, then write `.planning/SPEC.md` and derive `.planning/REQUIREMENTS.md` from SPEC acceptance criteria.
+
+When a `next=spec` clarify brief is missing and composition is heading to AF-SPECIFY, run **`silver:clarify --spec`** (or `--next spec`) **first** so interviewing happens in Clarify, then **`silver:spec`**.
+
+When external artifacts exist, run **`silver:ingest`** first per the skill contract, then **`silver:clarify --spec`**, then **`silver:spec`**. Do not fold ingest into spec. Do not run Turns 1–9 inside spec.
 
 ## Acceptance criteria
 

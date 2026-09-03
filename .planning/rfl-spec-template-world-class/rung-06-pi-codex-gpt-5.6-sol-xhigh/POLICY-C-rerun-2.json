@@ -1,0 +1,47 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "gpt",
+    "effort": "xhigh",
+    "display": "Pi Codex GPT-5.6 Sol Extra High (re-run pass 2)"
+  },
+  "verdict": "NOT CLEAN",
+  "issues": {
+    "HIGH": [
+      {
+        "id": "R6b-F01",
+        "title": "Wave 3 Steps 7–8 / Wave 6 writing branches: cross-artifact failure can commit only the new SPEC"
+      }
+    ],
+    "MED": "none",
+    "LOW": "none",
+    "NIT": "none"
+  },
+  "triage": [
+    {
+      "id": "R6b-F01",
+      "severity": "HIGH",
+      "decision": "ACCEPT",
+      "reason": "Pair-wide no-partial-output on greenfield and augment 2/3/4b as well as 1b. Named mechanism: staged pair commit — Step 7 must not durable-commit SPEC until Step 8 succeeds; both files commit together; Step 8 FAIL leaves prior SPEC bytes unchanged (or both unwritten). Fixture: Step 8 FAIL after a would-be Step 7 SPEC bump. Do not weaken R5h/R5i, Wave 6 1b preserve-or-fail-closed, or R5k exclusive NFR Source vs dispositions."
+    }
+  ],
+  "blockers": "none",
+  "highs": [
+    {
+      "id": "R6b-F01",
+      "title": "Wave 3 Steps 7–8 / Wave 6 writing branches: cross-artifact failure can commit only the new SPEC"
+    }
+  ],
+  "mediums": "none",
+  "disposition": "ACCEPT-apply",
+  "resolved": [
+    {
+      "id": "R6b-F01",
+      "severity": "HIGH",
+      "title": "Wave 3 Steps 7–8 / Wave 6 writing branches: cross-artifact failure can commit only the new SPEC",
+      "decision": "ACCEPT",
+      "resolved": "yes"
+    }
+  ],
+  "apply_sha": "878301866ecbc51c2ee144d566fdfaa36fcb34b37d8fd88166723b32d92879f5"
+}

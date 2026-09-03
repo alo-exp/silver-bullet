@@ -97,9 +97,10 @@
 <p>That behavior keeps downstream SB planning honest: implementers can see which requirements came from source material and which areas still need human follow-up.</p>
 <div class="divider"></div>
 <h2 id="handoff">Spec Handoff</h2>
-<p>After ingestion, run <code>/silver:spec</code> if the imported material needs additional elicitation, or <code>/silver:validate</code> if plans already exist and need coverage analysis.</p>
+<p>After ingestion, run <code>/silver:clarify --spec</code> (or <code>--next spec</code>) to interview, then <code>/silver:spec</code> to compile, or <code>/silver:validate</code> if plans already exist and need coverage analysis.</p>
 <div class="code-block">/silver:ingest PROJ-123
-/silver:spec Augment the checkout recovery spec from ingested artifacts
+/silver:clarify --spec Interview remaining spec domains from ingested artifacts
+/silver:spec Compile SPEC.md and REQUIREMENTS.md
 /silver:validate</div>
 <div class="page-nav-bottom"><a href="silver-spec.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/silver:spec</span></a><a href="silver-validate.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/silver:validate</span></a></div>
 </article></div></div>

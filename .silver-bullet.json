@@ -309,7 +309,7 @@
       "required_when_enabled": false,
       "binary": "search",
       "install_commands": [
-        "brew tap 199-biotechnologies/tap && brew install search-cli"
+        "brew tap paperfoot/tap && brew install paperfoot/tap/search-cli"
       ],
       "provider_classes": {
         "web_breadth": [
@@ -571,14 +571,7 @@
     "enabled_by_user": null,
     "selected_models": [
       "composer-2.5",
-      "grok-4.5",
-      "grok-4.6",
-      "gpt-5.6-sol",
-      "opus-5",
-      "glm-5.2",
-      "kimi-k3",
-      "gemini-3.6-flash",
-      "gemini-3.7-flash"
+      "grok-4.5"
     ],
     "effort_levels": [
       "medium",
@@ -589,59 +582,10 @@
     "include_max": false,
     "agent_name_prefix": "sb",
     "catalog_source": "agent-models+docs",
-    "catalog_fetched_at": "2026-08-08T12:52:52.191707+00:00",
+    "catalog_fetched_at": "2026-08-30T15:17:27.159683+00:00",
     "agents_install_status": "installed",
     "agents_install_scope": "global",
-    "enforcement_suspended": false,
-    "rfl_effort_maps": {
-      "composer-2.5": {
-        "low": "composer-2.5",
-        "medium": "composer-2.5",
-        "high": "composer-2.5",
-        "xhigh": "composer-2.5"
-      },
-      "grok-4.5": {
-        "low": "cursor-grok-4.5-low",
-        "medium": "cursor-grok-4.5-medium",
-        "high": "cursor-grok-4.5-high",
-        "xhigh": "grok-4.5-xhigh"
-      },
-      "grok-4.6": {
-        "medium": "cursor-grok-4.6-medium",
-        "high": "cursor-grok-4.6-high",
-        "xhigh": "cursor-grok-4.6-xhigh"
-      },
-      "gpt-5.6-sol": {
-        "low": "gpt-5.6-sol-low",
-        "medium": "gpt-5.6-sol-medium",
-        "high": "gpt-5.6-sol-high",
-        "xhigh": "gpt-5.6-sol-xhigh",
-        "max": "gpt-5.6-sol-max"
-      },
-      "opus-5": {
-        "medium": "claude-opus-5-thinking-medium",
-        "high": "claude-opus-5-thinking-high",
-        "xhigh": "claude-opus-5-thinking-xhigh",
-        "max": "claude-opus-5-thinking-max"
-      },
-      "glm-5.2": {
-        "high": "glm-5.2-high",
-        "xhigh": "glm-5.2-max",
-        "max": "glm-5.2-max"
-      },
-      "kimi-k3": {
-        "high": "kimi-k3-high",
-        "xhigh": "kimi-k3-max",
-        "max": "kimi-k3-max"
-      },
-      "gemini-3.6-flash": {
-        "high": "gemini-3.6-flash-high"
-      },
-      "gemini-3.7-flash": {
-        "medium": "gemini-3.7-flash-medium",
-        "high": "gemini-3.7-flash-high"
-      }
-    }
+    "enforcement_suspended": false
   },
   "enterprise_policy": {
     "_comment": "Advisory profile scaffolding — session-start injects recommended session_mode_default; clarify_auto/deploy/evidence gates are runtime handoff TODO (site/help/concepts/enterprise-policy-profiles.html).",

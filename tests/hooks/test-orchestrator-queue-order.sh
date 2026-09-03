@@ -142,11 +142,11 @@ tmp_no_spec=$(mktemp -d)
 mkdir -p "$tmp_no_spec/.planning"
 feature_no_spec="$(sb_orchestrator_queue_for_composer silver-feature "$tmp_no_spec")"
 rm -rf "$tmp_no_spec"
-if printf '%s' "$feature_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-spec,silver-context'; then
-  echo "PASS: silver-feature queue inserts silver-spec when SPEC.md absent"
+if printf '%s' "$feature_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context'; then
+  echo "PASS: silver-feature queue inserts silver-clarify then silver-spec when SPEC.md absent"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: silver-feature missing conditional silver-spec (got: $feature_no_spec)"
+  echo "FAIL: silver-feature missing clarify-then-spec when SPEC.md absent (got: $feature_no_spec)"
   FAIL=$((FAIL + 1))
 fi
 
@@ -154,11 +154,11 @@ tmp_no_spec_ui=$(mktemp -d)
 mkdir -p "$tmp_no_spec_ui/.planning"
 ui_no_spec="$(sb_orchestrator_queue_for_composer silver-ui "$tmp_no_spec_ui")"
 rm -rf "$tmp_no_spec_ui"
-if printf '%s' "$ui_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-spec,silver-context'; then
-  echo "PASS: silver-ui queue inserts silver-spec when SPEC.md absent"
+if printf '%s' "$ui_no_spec" | grep -q 'FLOW-QUALITY-GATE,silver-clarify,silver-spec,silver-context'; then
+  echo "PASS: silver-ui queue inserts silver-clarify then silver-spec when SPEC.md absent"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: silver-ui missing conditional silver-spec (got: $ui_no_spec)"
+  echo "FAIL: silver-ui missing clarify-then-spec when SPEC.md absent (got: $ui_no_spec)"
   FAIL=$((FAIL + 1))
 fi
 

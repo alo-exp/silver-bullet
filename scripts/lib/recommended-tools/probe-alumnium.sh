@@ -75,6 +75,7 @@ rt_probe_alumnium() {
           set -e
           case "$vd_rc" in
             1) frp=1; repairable=1; evidence+=("vendor_doctor_failed") ;;
+            2) evidence+=("vendor_skip"); activation="full"; fr=1 ;;
             *) activation="full"; fr=1 ;;
           esac
         fi

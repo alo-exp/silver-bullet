@@ -1,0 +1,33 @@
+{
+  "schema": "rfl.policy_c.v1",
+  "rung_identity": {
+    "family": "glm",
+    "effort": "high",
+    "display": "Cursor GLM 5.2 High (review pass 14)"
+  },
+  "verdict": "NOT CLEAN",
+  "disposition": "ACCEPT-apply",
+  "issues": {
+    "HIGH": "none",
+    "MED": "none",
+    "LOW": "none",
+    "NIT": [
+      {"id": "AC1", "title": "§6.12 clear() test omits orphaned last.json.tmp.* removal"},
+      {"id": "AC2", "title": "§6.12 cache_clear_busy omits reddit-oauth-token.lock held/absent"},
+      {"id": "AC3", "title": "§6.12 reddit OAuth test omits token-endpoint bucket isolation"}
+    ]
+  },
+  "triage": [
+    {"id": "AC1", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; §6.3/§8 lock last.json.tmp.* but §6.12 fixture omitted it"},
+    {"id": "AC2", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; I-25 barrier half untested"},
+    {"id": "AC3", "severity": "NIT", "decision": "ACCEPT", "reason": "Not wrong; §6.11 bucket isolation untested"}
+  ],
+  "blockers": "none",
+  "highs": "none",
+  "mediums": "none",
+  "resolved": [
+    {"id": "AC1", "severity": "NIT", "title": "clear() removes orphaned last.json.tmp.*", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AC2", "severity": "NIT", "title": "Held reddit lock drives cache_clear_busy; absent unlockable", "decision": "ACCEPT", "resolved": "yes"},
+    {"id": "AC3", "severity": "NIT", "title": "Token-endpoint does not consume reddit search bucket", "decision": "ACCEPT", "resolved": "yes"}
+  ]
+}

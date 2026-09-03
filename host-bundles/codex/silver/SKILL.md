@@ -136,7 +136,7 @@ First strong match wins after complexity triage and conflict resolution.
 | "content", "SEO", "GEO", "AI search", "article", "blog", "site content", "metadata", "link health" | `silver:content` | Public content/search workflow; **not** SB project upgrade (use `silver:migrate`) |
 | "site/", "help center", "help-center", "homepage", "sb.alolabs.dev", "github pages", "site/help", "chrome.css", "help page", "OG card", "publish site", "site publish" | `silver:content --mode fix` | **Default route** for public site/help work — use site batch protocol (Composer 2.5 workers) |
 | "I want to build", "I have an idea", "here's my concept", multi-sentence idea with no SPEC.md | `silver:clarify` | Shape before implementation; merged PM framing and structured brainstorming |
-| "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build" | `silver:spec` | Requirements/spec elicitation |
+| "spec", "requirements", "elicit", "write a spec", "create spec", "define requirements", "what should we build", no SPEC.md | `silver:clarify --spec` then `silver:spec` | Interview then compile; not elicitation-in-spec |
 | "how should we", "which technology", "compare", "spike", "investigate", "architecture decision", "should we use", "best approach", "deep research", "state of the art" | `silver:deep-research` | Rigorous research/decision artifact, then handoff |
 | "create workflow", "new workflow", "add workflow", "workflow authoring", "convert skill to workflow", "promote workflow", path to `skills/*/SKILL.md` for SB conversion | `silver:new-workflow` | Meta workflow authoring — create or convert workflows/AFs into catalog |
 | "audit workflow", "validate workflow compliance", "workflow compliance audit", `/silver:new-workflow --audit`, `WF-SILVER-*` with audit intent | `silver:new-workflow --audit <target>` | Read-only compliance audit of existing catalog-backed workflow |
@@ -193,7 +193,7 @@ First strong match wins after complexity triage and conflict resolution.
 |----------|--------|-----------|
 | `silver:bugfix` + any other | `silver:bugfix` | Broken things block everything |
 | `silver:deep-research` + implementation | `silver:deep-research` first | Research informs implementation |
-| `silver:spec` + `silver:feature` | `silver:spec` first | Spec before implementation |
+| `silver:spec` + `silver:feature` | `silver:clarify --spec` then `silver:spec` first | Interview then compile before implementation |
 | `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
 | `silver:devops` + `silver:feature` | Ask user | App vs infra boundary is material |
 | `silver:fast` + domain workflow | Prefer higher rigor if logic/schema/API/public behavior is involved | Avoid under-scoping |

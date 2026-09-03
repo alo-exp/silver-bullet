@@ -1,8 +1,0 @@
-2026-07-05 validate matrix artifact
-PASS: feature-coverage-matrix.md exists
-PASS: 88 feature rows (>= 80 minimum)
-PASS: 16 H3 sections
-PASS: 5 columns in fixed order
-PASS: evidence.jsonl has 27 spans
-PASS: claims.jsonl has 10 claims
-PASS: sources.jsonl has 18 sources

@@ -1,0 +1,6 @@
+2026-08-28T02:28:50Z
+PI_PROVIDER=omniroute PI_MODEL=claude/claude-opus-5-xhigh PI_RUN_TIMEOUT=7200 PI_NI_ZERO_BYTE_IDLE_NON_QWEN_SEC=2400 PI_EXPECT_FILE_MIN_BYTES=2500 PI_NI_ZERO_BYTE_IDLE_SEC=<unset> no --continue
+[agent-pi] hard-timeout kill after 7200s (stdout_bytes=no expect_ok=True)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124
+AGENT_PI_EXIT=124
+2026-08-28T04:28:51Z

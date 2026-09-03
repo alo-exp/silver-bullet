@@ -1,0 +1,8 @@
+START 2026-08-27T14:23:41Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/deepseek-v4-pro-max
+401: {"message":"[opencode-go/deepseek-v4-pro-max] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 24h)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] first-hop billing: 401: {"message":"[opencode-go/deepseek-v4-pro-max] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 24h)"}
+[agent-pi] quota-window: 401: {"message":"[opencode-go/deepseek-v4-pro-max] [401]: Insufficient balance. Manage your billing here: https://opencode.ai/workspace/wrk_01KS4QW3V1S4F7Q545S66WNAXV/billing (reset after 24h)"}
+EXIT:1
+END 2026-08-27T14:23:49Z

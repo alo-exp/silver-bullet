@@ -508,7 +508,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 
 Silver Bullet anchors every implementation to a verified spec. The spec lifecycle flows:
 
-**Create:** `/silver:spec` (Socratic elicitation) or `/silver:ingest` (external artifact ingestion from JIRA/Figma/Google Docs)
+**Create:** `/silver:clarify --spec` (interview) then `/silver:spec` (compile canonical artifacts), or `/silver:ingest` (external artifact ingestion from JIRA/Figma/Google Docs) then clarify `next=spec` then spec
 
 **Artifacts:**
 - `.planning/SPEC.md` — canonical spec with YAML frontmatter (`spec-version:`, `jira-id:`, `status:`)
@@ -612,7 +612,7 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 | Execution | Code changes + SUMMARY.md | /silver:review | YES | /silver:execute |
 | Verification | VERIFICATION.md | /silver:verify | YES | /silver:verify |
 | Security check | Security findings | /security | YES | /security |
-| Spec elicitation | SPEC.md | /artifact-reviewer --reviewer review-spec | YES | /silver:spec Step 7 |
+| Spec compile | SPEC.md | /artifact-reviewer --reviewer review-spec | YES | /silver:spec Step 7 |
 | Design capture | DESIGN.md | /artifact-reviewer --reviewer review-design | YES | /silver:spec Step 9 |
 | Requirements derivation | REQUIREMENTS.md | /artifact-reviewer --reviewer review-requirements | YES | /silver:spec Step 8, /silver:release or milestone setup |
 | Roadmap creation | ROADMAP.md | /artifact-reviewer --reviewer review-roadmap | YES | SB milestone setup |
@@ -648,6 +648,8 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 **EXRV-03 (verifier):** After /silver:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
 **EXRV-04 (security-auditor):** After /security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
+
+**EXRV-05 (review-fix-ladder):** Two orthogonal contracts. **Policy F (ladder completion):** 2 consecutive CLEAN on unchanged SHA; `accept-apply` resets that rung’s streak; `--assert-rfl-advance` requires streak 2 + canonical verify filenames. **Policy G (pack-ledger / hop review):** residual-only means **do not re-report issue-ledger rows**, not “file only one new ID.” Encoder `--write-review-brief` is the **only legal review brief** (hand-written one-ID briefs are non-compliant). Each hop files **all** valid residuals at the current SHA, **all severities** including nits. CLEAN only if nothing valid remains. ACCEPT → pack APPLY. Invalid REJECT (product KEEP REJECT stays a product lock, not a sixth policy letter). **Canonical verify overlay:** `verify_2` required on CLEAN (and APPLY-landed check); `verify_2` is skipped on already-triaged NOT CLEAN; `verify_1` still required on NOT CLEAN and APPLY.
 
 ### 3a-i. Post-Skill Review Gates
 

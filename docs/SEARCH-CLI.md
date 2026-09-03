@@ -11,9 +11,15 @@ before falling back to host search/fetch tools.
 
 ## Install
 
+Pin (Homebrew formula 0.9.0 — not a floating `brew install search-cli`):
+
 ```bash
-brew tap 199-biotechnologies/tap && brew install search-cli
+brew tap paperfoot/tap && brew install paperfoot/tap/search-cli
 ```
+
+`docs_pin`: [search-cli README v0.9.0](https://github.com/paperfoot/search-cli/blob/v0.9.0/README.md@v0.9.0).
+Formula: [paperfoot/homebrew-tap Formula/search-cli.rb@0.9.0](https://github.com/paperfoot/homebrew-tap/blob/main/Formula/search-cli.rb).
+Doctor Health requires `search` on PATH **and** `search --version` (not `command -v` alone).
 
 Configure at least one provider key:
 

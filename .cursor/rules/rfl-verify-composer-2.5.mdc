@@ -1,0 +1,36 @@
+---
+description: RFL verify_1/verify_2 always use native Cursor Composer 2.5 Task — never Pi/Omni or Fast
+alwaysApply: true
+---
+
+# RFL Verify steps — Composer 2.5 (native Cursor Task)
+
+Canonical policy: this file. Restated at `~/.cursor/rules/rfl-verify-composer-2.5.mdc` so workspace agents cannot miss it.
+
+**Scope:** review-fix-ladder **verify_1** and **verify_2** only. Not the Reviewer rung. Not the unspecified default for other Tasks.
+
+## Verify worker
+
+- Human: **Composer 2.5**
+- Cursor Task `model`: `composer-2.5`
+- Silver Bullet `subagent_type`: `sb-composer-2-5-high`
+- Launch as **native Cursor Task/subagent only**
+
+**Never** Pi, OmniRoute, `/silver:agent-pi`, or `scripts/agent-pi/invoke.sh`. Cursor-family models are not working through Omni — do not send Composer 2.5 (or other Cursor models) via Pi until Omni tool-call translation is fixed.
+
+## Forbidden for Verify
+
+- Fast (`*-fast*`, including `composer-2.5-fast`)
+- Grok 4.5 High / Grok 4.6 High (legacy verify slugs)
+- Pi-hosted verify even when the **reviewer** rung was Pi (Codex/Claude). Reviewer may stay Pi; **Verify is always Cursor Composer 2.5**.
+
+## Unchanged
+
+- Non-Verify Tasks also default to **Composer 2.5** (`subagent-composer-2.5.mdc`).
+- User-named Reviewer families still win (RFL GPT/Claude/OpenCode, visual Gemini, GLM/Kimi, etc.).
+- Do not silently remap Verify to Grok or Fast.
+
+```
+❌ BAD — verify_1 Task: cursor-grok-4.5-high, composer-2.5-fast, or Pi / agent-pi / OmniRoute
+✅ GOOD — verify_1 Task: model composer-2.5, subagent_type sb-composer-2-5-high
+```

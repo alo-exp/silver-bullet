@@ -69,9 +69,19 @@
 2. After the review is in (CLEAN or NOT CLEAN), the launcher (the agent that started the RFL) messages the user with a severity-grouped Policy C update: rung identity (family + High / Extra High / Max), verdict, HIGH/MED/LOW/NIT issue table, triage table (accepted vs rejected + reason), Blockers / Highs / Mediums (one line each finding, or none), and whether findings are being ACCEPT-applied before the next rung or REJECT-as-wrong (with why). After ACCEPT fixes, re-present the table with a Resolved column. Do this after every rung, not only at family or ladder end. Do not dump raw review.md. CLEAN with no findings still gets the three none lines
 3. Launcher/parent triages in-session: incorporate every finding that is not wrong; REJECT only if wrong or mistaken
 4. Forbidden reject reasons: advisory, doc-only, documentation nit, non-gating, nice-to-have, not a contract hole, CLEAN so ignore mediums, CLEAN for ladder purposes, non-blocking nit
-5. Launcher/parent applies ACCEPT fixes with Edit/Write (RFL exception to parent-orchestrator-never-implements). APPLY ACCEPT completeness (HARD): land every finding that is not wrong, including Low, deferred, nitpicks, and minor items that are still applicable. Skip only KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items no longer true on the current freeze. Do not treat CLEAN for ladder purposes or non-blocking nit as a reason to skip a still-valid nit. Do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung. Do not ask the same rung to patch after NOT CLEAN
+5. Launcher/parent applies ACCEPT fixes with Edit/Write (RFL exception to parent-orchestrator-never-implements). APPLY ACCEPT completeness (HARD): land every finding that is not wrong, including Low, deferred, nitpicks, and minor items that are still applicable. APPLY all ACCEPTed items as a pack that pass (order-dependent findings together), not one residual per round. Skip only KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items no longer true on the current freeze. Do not treat CLEAN for ladder purposes or non-blocking nit as a reason to skip a still-valid nit. Do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung. Do not ask the same rung to patch after NOT CLEAN
 6. If the rung returns CLEAN with findings that are not wrong, the launcher still applies them before the next rung
 7. Next rung waits until ACCEPTs are applied (or REJECT-as-wrong recorded). Do not skip Extra High/Max when those slugs exist
+
+### Scenario: Hop review / pack-ledger (Policy G)
+
+**Trigger:** Any review hop after findings have already been identified (including Policy F re-reviews on the same model)
+
+**Workflow:**
+1. Launcher emits the only legal review brief via `python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-<id>/` (and `--issue-ledger`). Hand-written one-ID briefs are non-compliant. The hop receives ID, severity, ACCEPT/REJECT, resolved y/n, SHA, one-line
+2. Residual-only means do not re-report ledger rows, not "file only one new ID." The reviewer files all valid residuals at the current SHA, all severities (HIGH / MED / LOW / nit). Valid nits must be filed. CLEAN only if nothing valid remains
+3. Triage still REJECTS invalid items (already encoded, false cite, KEEP REJECT collision). All ACCEPTed items including nits are APPLY'd as a pack that pass
+4. Orthogonal to Policy F (ladder completion). Canonical verify overlay: verify_2 required on CLEAN; verify_2 is skipped on already-triaged NOT CLEAN; verify_1 still required on NOT CLEAN and APPLY
 
 ### Scenario: Per-Rung Launcher Reporting (Policy C)
 
@@ -82,6 +92,17 @@
 2. Include rung identity (family + High / Extra High / Max), verdict, HIGH/MED/LOW/NIT issue table, triage table (accepted vs rejected + reason), Blockers / Highs / Mediums (one line each finding, or none), and ACCEPT-apply vs REJECT-as-wrong (with why). After fixes, present the table with a Resolved column
 3. Do this after every rung, not only at family or ladder end. Do not dump raw review.md
 4. CLEAN with no findings still gets the three none lines
+
+### Scenario: Rung-prompt user-approval (Policy E)
+
+**Trigger:** Before the first rung of a ladder, or when the rung brief's key tasks materially change
+
+**Workflow:**
+1. The parent/launcher MUST present a concise bullet list of only the key tasks and instructions that will go into the rung prompt(s), and get user approval. Do not dump the entire prompt
+2. 5–12 bullets: artifact under review, KEEP REJECT, findings format, verify/APPLY out of scope for the reviewer, model/access constraints that matter to the review (e.g. plan vs template). No full Template A paste, no SHA dump of the whole freeze, no 200-line brief
+3. Persist `.planning/rfl-<id>/RUNG-PROMPT-APPROVAL.md` with the bullets plus `approved: pending|yes` and a timestamp. Write pending before asking; set yes only after the user approves
+4. Until approved: do not spawn reviewer Tasks / Pi invoke
+5. Re-run the gate if key tasks materially change (e.g. user retargets "review the plan" → "review SPEC template + kinds")
 
 ### Scenario: Anti-Stall leftover loop (Policy B)
 

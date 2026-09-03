@@ -1,12 +1,12 @@
 ---
 name: silver:review-fix-ladder
-description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder, requiring two consecutive clean passes at each rung before advancing. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
+description: Progressively review and fix scoped artifacts or user-confirmed repo-wide work by escalating through every rung of a host-aware model/reasoning ladder. Policy F: two consecutive CLEAN reviews (zero ACCEPT findings) at each rung before the next model. Policy G / pack-ledger: encoder --write-review-brief is the only legal hop brief. Canonical verify overlay: verify_2 required on CLEAN, skipped on already-triaged NOT CLEAN. Use for pre-ship confidence, launch-critical artifacts, and repo alignment checks against context-derived goals.
 user-invocable: false
 ---
 
 # /silver:review-fix-ladder — Progressive Review / Fix Ladder
 
-Escalate review and fix work through a host-aware model/reasoning ladder. Each rung audits against a context-derived review charter — not generic “find issues” heuristics. The launcher applies ACCEPT fixes; the rung model does not implement. The launcher reports findings after every rung.
+Escalate review and fix work through a host-aware model/reasoning ladder. Each rung audits against a context-derived review charter — not generic “find issues” heuristics. The launcher applies ACCEPT fixes; the rung model does not implement. The launcher reports findings after every rung. Before launching rungs, the parent/launcher MUST present a concise bullet list of only the key tasks and instructions and get user approval — do not dump the entire prompt.
 
 **Orchestrator role:** The parent agent (you) MUST personally orchestrate every rung. Subagents execute one phase at a time. You MUST NOT delegate the ladder loop itself to a single subagent.
 
@@ -15,6 +15,18 @@ Escalate review and fix work through a host-aware model/reasoning ladder. Each r
 ## Triage and Fix Owner (HARD)
 
 Applies to **both ladders, all rungs**.
+
+**Policy map (A–G).** **F** (ladder completion) and **G** (hop review / pack-ledger) are orthogonal — do not smash F into G. A–E remain distinct launcher/process locks. KEEP REJECT is a **product lock**, not a sixth policy letter.
+
+| Letter | Contract |
+|--------|----------|
+| **A** | Triage: wrong vs not wrong (not severity) |
+| **B** | Who applies: launcher APPLY ACCEPT; leftover loop |
+| **C** | Per-rung report artifacts (`POLICY-C.json` / `.md`) |
+| **D** | Ladder-complete matrix |
+| **E** | Rung-prompt user-approval (launch gate) |
+| **F** | Ladder completion: 2 consecutive CLEAN on unchanged SHA; `accept-apply` resets that rung's streak; `--assert-rfl-advance` requires streak 2 + canonical verify filenames |
+| **G** | Hop review / **pack-ledger**: `--write-review-brief` is the only legal review brief; do not re-report ledger rows; file all valid residuals at this SHA, all severities including nits; CLEAN only if none remain; ACCEPT → pack APPLY; invalid REJECT |
 
 ### Policy A — triage
 
@@ -48,12 +60,12 @@ After each rung's review, the agent that launched the RFL applies ACCEPT fixes. 
 - Do not ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch the plan after NOT CLEAN.
 - Next rung waits until the launcher has applied ACCEPTs (or recorded REJECT-as-wrong). Do not skip Extra High/Max when those slugs exist.
 
-**APPLY ACCEPT completeness (HARD):** After review, APPLY ACCEPT / fix MUST land **every finding that is not wrong**, including **Low, deferred, nitpicks, and minor** items that are still applicable. Skip only: KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items that are no longer true on the current freeze. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit. Anti-churn for historical changelog / KEEP REJECT aliases still applies — do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung.
+**APPLY ACCEPT completeness (HARD):** After review, APPLY ACCEPT / fix MUST land **every finding that is not wrong**, including **Low, deferred, nitpicks, and minor** items that are still applicable. Pack APPLY (all ACCEPTs including nits, ordered if dependent) is **Policy G / pack-ledger** — this section is **who** applies. Skip only: KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items that are no longer true on the current freeze. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit. Anti-churn for historical changelog / KEEP REJECT aliases still applies — do not reopen KEEP REJECT. The fix step is launcher APPLY ACCEPT, not a fixer rung.
 
-**Anti-stall (Policy B leftover loop — HARD):** Do not idle waiting for the user between required state-machine steps. Policy C reports still happen; they do not pause the loop.
+**Anti-stall (Policy B leftover loop — HARD):** Do not idle waiting for the user between required state-machine steps. Policy C reports still happen; they do not pause the loop. **Exception:** Policy E rung-prompt user-approval is a **launch gate** — wait for approval before the first reviewer Task / Pi invoke (and again if the brief's key tasks materially change). After `approved: yes`, anti-stall still applies.
 
 - After each verify **FAIL**, Policy B the leftovers in the **same** follow-up turn (launcher Edit/Write; still one subagent `Task` per turn), then launch re-verify as the next Task. Do not wait for the user.
-- After **CLEAN** `verify_1` and clean orchestrator grep, immediately launch `verify_2`. After two **CLEAN** verifies + greps, immediately start the next rung.
+- After **CLEAN** `verify_1` and clean orchestrator grep, immediately launch `verify_2`. On already-triaged **NOT CLEAN**, skip `verify_2` (`verify_1` still required). After required CLEAN verifies + greps, immediately start the next rung or same-model re-review.
 - **Corpus sweep, not one-line cycles:** If the same defect class fails verify more than **twice**, the next Policy B pass MUST scan **all** in-scope plan/spec artifacts for that class and patch every live hit in one pass.
 - **Cap residual loops:** After **5** leftover cycles on the same rung verify, STOP and escalate to the user with the remaining `file:line` list. Do not start a sixth one-line patch.
 - **Launch/timeout retry then skip (HARD):** If a rung’s subagent **cannot be launched** or **times out** (timeout, empty/"Let" after re-spawn, OpenCode `Endpoint is unavailable`, OmniRoute/OpenCode `401` `Missing API key` / `invalid_api_key`, hung invoke with no `review.md`), retry **once immediately**. If that second attempt also fails to produce a verdict **and the failed host is OpenCode or Pi** (including Pi `PI_PROVIDER=omniroute` / `opencode-go/*` slugs): **do not skip** — substitute Cursor **Grok 4.6 High** (`cursor-grok-4.6-high` / `sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host opencode|pi --attempts 2 --outcome cannot_launch` → `substitute_grok`. For other hosts, **skip** the rung and continue the ladder. After the **entire ladder** finishes, **retry skipped rungs once more**. Record skip/retry in the rung dir (`SKIPPED.md` plus launcher skip/retry JSON: reason, attempt count, timestamps, next rung, `post_ladder_retry_pending`). Encoder: `python3 scripts/review-fix-ladder.py --launch-policy` / `--skip-artifact`. Do **not** skip because of a CLEAN/NOT CLEAN review — only when the rung **failed to produce a verdict**. Mixed-host: skip does not change the next rung’s required model. Skipping a rung is **not** permission to use Fast or a different family as a silent substitute **on that skipped rung**. **Never Fast.**
@@ -82,7 +94,10 @@ python3 scripts/review-fix-ladder.py --write-policy-c --rung-dir .planning/rfl-<
 python3 scripts/review-fix-ladder.py --assert-policy-c --rung-dir .planning/rfl-<id>/rung-NN-*/
 python3 scripts/review-fix-ladder.py --assert-rfl-advance --run-dir .planning/rfl-<id>/
 python3 scripts/review-fix-ladder.py --issue-table|--triage-table|--resolved-table|--launcher-steps
+python3 scripts/review-fix-ladder.py --issue-ledger|--write-review-brief --run-dir .planning/rfl-<id>/
 ```
+
+`--write-review-brief` is **mandatory** for every review hop (the only legal review brief). Hand-written one-ID briefs are non-compliant.
 
 CLEAN with no findings still gets the three **none** lines. FORBIDDEN: short verdict-only chat. FORBIDDEN: waiting until family/ladder end. FORBIDDEN: dumping raw review.md. Physical gate: `hooks/rfl-policy-c-gate.sh` + stop-check deny when `--assert-policy-c` / `--assert-rfl-advance` fail for an active `LADDER-STATUS.json`. New ladders MUST `--mark-ladder-status active` at start or the live run is invisible to the gate.
 
@@ -95,7 +110,9 @@ Sibling asserts (same encoder / gate; reuse `LADDER-STATUS.json` + `rfl_quota_re
 | Skip after retry-once | `SKIPPED.md` | before starting N+1 |
 | STOP / compliance | `STOP.md` with which check failed | block advance |
 | ACCEPT apply | `APPLY.md` or resolved table complete | before `rung_{N+1}_review` |
-| Two verifies | `verify-1.md` + `verify-2.md` (or BLOCKED/SKIPPED) | before N+1 |
+| Two verifies | `verify-1.md` required on NOT CLEAN and APPLY; `verify-2.md` required on CLEAN (APPLY-landed check); `verify_2` is skipped on already-triaged NOT CLEAN | before N+1 |
+| Two consecutive CLEAN reviews | `LADDER-STATUS.json` `consecutive_clean_reviews` ≥ 2 | before `rung_{N+1}_review` (Policy F; SKIPPED.md path exempt) |
+| Rung-prompt approval | `RUNG-PROMPT-APPROVAL.md` (`approved: yes`) | before first reviewer Task / Pi invoke; re-gate on material brief change |
 
 
 ### Policy D — ladder-complete matrix (HARD)
@@ -111,6 +128,79 @@ Severity columns = reported counts; **Accepted** = after launcher triage (reject
 Encoder: `python3 scripts/review-fix-ladder.py --ladder-matrix`.
 At ladder start (before rung 1 review), persist durable status so the Policy C gate can see the run: `python3 scripts/review-fix-ladder.py --mark-ladder-status active --run-dir .planning/rfl-<id>/ --rung-id <rung-dir-or-N> --current-phase <phase>`. New ladders MUST do this — a missing `LADDER-STATUS.json` makes an in-flight ladder invisible to `--assert-rfl-advance` auto-discovery.
 When the ladder finishes or aborts, persist durable status so a later quota retry can detect “already over”: `python3 scripts/review-fix-ladder.py --mark-ladder-status completed --run-dir .planning/rfl-<id>/` (or `aborted`). Quota-retry activation uses `LADDER-STATUS.json` plus Policy D artifacts.
+
+### Policy E — rung-prompt user-approval (HARD)
+
+Before launching rungs, the **parent/launcher** MUST present a **concise bullet list of only the key tasks and instructions** that will go into the rung prompt(s), and **get user approval**. Do **not** dump the entire prompt.
+
+**When:** Before the first rung of a ladder, and again if the rung brief's key tasks **materially change** (e.g. user retargets "review the plan" → "review SPEC template + kinds").
+
+**What:** 5–12 bullets covering only what matters to the review:
+
+- Artifact under review (path/kind — plan vs SPEC template; not a SHA dump of the freeze)
+- KEEP REJECT / user-locked rejects (do not reopen)
+- Findings format (raw findings, line refs, severity hints — no triage)
+- Verify and APPLY ACCEPT are **out of scope for the reviewer**
+- Model/access constraints that matter to this review (e.g. plan vs template; Cursor vs Pi)
+- Scope lock and charter goals/non-goals in one line each when they affect the brief
+
+**FORBIDDEN:** full Template A paste; SHA dump of the whole freeze; a 200-line brief; dumping the entire prompt.
+
+**Until approved:** do not spawn reviewer Tasks / Pi invoke.
+
+Persist a short record: `.planning/rfl-<id>/RUNG-PROMPT-APPROVAL.md` with the bullets plus `approved: pending|yes` and a timestamp. Write `approved: pending` before asking; set `approved: yes` only after the user approves. This wait is a **launch gate**, not a Policy B anti-stall violation — after approval, do not idle between required state-machine steps.
+
+### Policy F — two consecutive CLEAN reviews per rung (HARD)
+
+Per rung (**same model/effort**): the parent/launcher MUST keep launching that reviewer until **two consecutive review passes** produce **zero valid (ACCEPT-worthy) findings**. Do **not** launch the next ladder model until `consecutive_clean_reviews == 2`.
+
+- **Valid** = would be ACCEPT (real template/kind/QC defects). Valid findings break the streak.
+- **Wrong / REJECT / REJECT-as-wrong** findings do **not** break the streak (they are not valid feedback). A CLEAN pass with 0 findings, or a review whose triage is only REJECT, increments the streak.
+- Any **ACCEPT** finding → APPLY after `verify_1` (and `verify_2` when CLEAN per overlay) → consecutive counter **resets to 0**. Then re-run **the same** model as review-only (not as a fixer). **FORBIDDEN** to ask that model to patch; the launcher applies ACCEPT.
+- **CLEAN** with 0 findings counts as a streak increment. Two CLEANs in a row (or CLEAN + review with only REJECT) completes the rung for Policy F.
+- **SKIPPED.md** after launch/timeout retry-once-then-skip is **not** a CLEAN streak; it is the existing skip path.
+- Policy E key-task approval is unchanged: do not spawn reviewer Tasks / Pi invoke until `RUNG-PROMPT-APPROVAL.md` has `approved: yes`. Re-approval is only required when key tasks materially change — re-running the same rung for Policy F does not by itself require a new Policy E cycle.
+
+Encoder (MUST run; parent MUST NOT launch next model while the gate fails):
+
+```bash
+python3 scripts/review-fix-ladder.py --record-rung-review-outcome clean --run-dir .planning/rfl-<id>/ --rung-id <rung-dir>
+python3 scripts/review-fix-ladder.py --record-rung-review-outcome accept-apply --run-dir .planning/rfl-<id>/ --rung-id <rung-dir>
+python3 scripts/review-fix-ladder.py --assert-rfl-advance --run-dir .planning/rfl-<id>/ --rung-dir <rung> --next-action next_rung_review
+python3 scripts/review-fix-ladder.py --assert-consecutive-clean --run-dir .planning/rfl-<id>/ --rung-dir <rung>
+```
+
+`--assert-rfl-advance --next-action next_rung_review` and `--assert-consecutive-clean` **fail** when `LADDER-STATUS.json` `consecutive_clean_reviews` < 2 (unless SKIPPED.md). Track the counter per rung on `LADDER-STATUS.json` (`consecutive_clean_reviews` + `consecutive_clean_rung`). `--assert-rfl-advance` also requires **canonical verify filenames**: `verify-1.md` (or `verify_1.md`); `verify-2.md` (or `verify_2.md`) when the hop is CLEAN.
+
+This is distinct from the **canonical verify overlay** below. Policy F is ladder completion (when the next **model** may start). Policy G is hop review / pack-ledger. Do not smash F into G.
+
+### Canonical verify overlay (HARD)
+
+Bake-in (not Extra High session-only):
+
+- `verify_1` is **required** on already-triaged **NOT CLEAN** and after **APPLY**.
+- `verify_2` is **required** on **CLEAN** (and the APPLY-landed check when ACCEPT was applied).
+- `verify_2` is skipped on already-triaged **NOT CLEAN**.
+
+### Policy G — hop review (pack-ledger) (HARD)
+
+Stop **one-residual-per-round**. Each review hop MUST:
+
+1. Use encoder `--write-review-brief` as the **only legal review brief**. Hand-written one-ID briefs are non-compliant. Receive an **issue ledger** of already identified findings: ID, severity, ACCEPT/REJECT, resolved y/n, SHA, one-line. **Residual-only** means **do not re-report ledger rows**, not “file only one new ID.”
+2. File **all valid residuals at the current SHA**, **all severities** (HIGH / MED / LOW / nit). Valid nits must be filed. CLEAN only if nothing valid remains.
+3. Triage still REJECTS invalid items (already encoded, false cite, KEEP REJECT collision). All **ACCEPT**ed items — including nits — are **APPLY’d as a pack** that pass (order-dependent findings together).
+4. Orthogonal to Policy F (ladder completion). Do not restate F here.
+
+Encoder (MUST run so launchers do not hand-maintain the ledger):
+
+```bash
+python3 scripts/review-fix-ladder.py --issue-ledger --run-dir .planning/rfl-<id>/
+python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-<id>/
+```
+
+Paste the encoder stdout **Issue ledger** table into Template A / the rung brief. The encoder reads `ISSUE-LEDGER.md`, `POLICY-C*.json`, and freeze SHA from `LADDER-STATUS.json`. Canonical brief template: `templates/rfl-review-brief.md`.
+
+FORBIDDEN: instructing the reviewer to file only one new ID, MED-only, or skip valid nits. FORBIDDEN: treating residual-only as a one-finding cap. FORBIDDEN: a hand-written one-ID brief in place of `--write-review-brief`.
 
 ## When to Use
 
@@ -175,6 +265,8 @@ Add `--host <runtime> (from `SILVER_BULLET_RUNTIME`) when the host is known.
 
 Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`) before executing.
 
+Then run **Policy E**: present the 5–12 key-task bullets, persist `.planning/rfl-<id>/RUNG-PROMPT-APPROVAL.md`, and **get user approval** before executing. Do **not** dump the entire prompt. **Until approved:** do not spawn reviewer Tasks / Pi invoke.
+
 ## Step 3: Execute Ladder — State Machine (HARD)
 
 ### Compliance Gate (MUST run before every rung advance)
@@ -183,7 +275,7 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 
 | Check | Pass criterion |
 |-------|----------------|
-| Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → `verify_2` → orchestrator grep — **or** the previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded |
+| Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → (`verify_2` → orchestrator grep on **CLEAN**; `verify_2` is skipped on already-triaged **NOT CLEAN**) — **or** the previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded |
 | Review/triage separation | Review subagent did **not** triage or fix; launcher/parent triaged with Policy A (wrong vs not wrong), not the rung model |
 | Per-rung user report | After review returned, `POLICY-C.json` + `POLICY-C.md` exist and `python3 scripts/review-fix-ladder.py --assert-policy-c --rung-dir <rung>` exits 0; launcher pasted encoder stdout (not a short verdict). Gate: `hooks/rfl-policy-c-gate.sh` |
 | PM filing evidence | When PM tracking is in use, ACCEPT findings filed or deduped via `/silver:add`; triage table lists PM ids. Does not delay launcher ACCEPT application |
@@ -193,15 +285,17 @@ Print the resolved `host`, `source`, and ordered `rungs` (`model` + `reasoning`)
 | Scope | No reads, edits, or commands touched paths outside locked scope |
 | Readonly verify | Both verify subagents used `readonly: true` (Task-capable hosts) or explicit verify-only directive |
 | No parallel rungs | No other rung's audit-fix or verify was launched while this rung was incomplete |
-| Advance gate | Advanced to next rung **only** after orchestrator confirmed **two consecutive clean** verify passes **and** ACCEPTs applied (or REJECT-as-wrong recorded) — **or** after launch/timeout retry-once-then-skip with `SKIPPED.md` (incomplete rung; not a CLEAN advance). After the whole ladder, skipped rungs are retried once more. |
+| Advance gate | Advanced to next **model** **only** after Policy F (`consecutive_clean_reviews` ≥ 2: two consecutive reviews with zero ACCEPT findings; REJECT does not break the streak; ACCEPT-apply resets to 0) **and** canonical verify overlay (`verify_1` always; `verify_2` on CLEAN; `verify_2` is skipped on already-triaged NOT CLEAN) **and** ACCEPTs applied (or REJECT-as-wrong recorded) — **or** after launch/timeout retry-once-then-skip with `SKIPPED.md` (incomplete rung; not a CLEAN advance). After the whole ladder, skipped rungs are retried once more. Parent MUST NOT launch rung N+1 while `--assert-rfl-advance --next-action next_rung_review` or `--assert-consecutive-clean` fails. |
+| Rung-prompt approval | Before the first reviewer Task / Pi invoke, `RUNG-PROMPT-APPROVAL.md` exists with the current 5–12 key-task bullets and `approved: yes`. Re-gated if those bullets materially changed. Did **not** dump the entire prompt. |
 
 **On failure:** STOP. Report the violation. Fix the process, skill, or orchestrator prompt. Resume **only** after the fix is in place — re-run the failed phase on the **same** rung, not the next rung.
 
 ### Full-Ladder Requirement
 
 - **Default:** Execute **every resolved rung** in order. A clean rung is not a completion condition; it is the gate that permits advancement to the next rung. **Timeout skip:** cannot-launch or timeout → retry once immediately → skip (`SKIPPED.md`) and continue; after the whole ladder, retry skipped rungs once more. This is not a CLEAN advance and not a Fast/family substitute.
-- **Two consecutive clean rounds per rung:** For each rung, `verify_1` and `verify_2` must both be clean, and the orchestrator verification signals after each pass must also be clean.
-- **Advance after clean rung:** After two consecutive clean rounds, clean orchestrator signals, and launcher ACCEPT application (or REJECT-as-wrong), the orchestrator MUST advance to rung N+1 unless N is the final resolved rung.
+- **Two consecutive CLEAN reviews per rung (Policy F):** Keep launching the **same** model/effort until two consecutive review passes have **zero valid (ACCEPT) findings**. REJECT does not break the streak. ACCEPT → APPLY (after verify overlay) → streak resets to 0 → re-review the same model. Parent MUST NOT launch the next ladder model until `consecutive_clean_reviews == 2`.
+- **Canonical verify overlay:** `verify_1` required on NOT CLEAN and APPLY. `verify_2` required on CLEAN (and APPLY-landed check). `verify_2` is skipped on already-triaged NOT CLEAN.
+- **Advance after clean rung:** After Policy F (two consecutive CLEAN reviews), the verify overlay, clean orchestrator signals, and launcher ACCEPT application (or REJECT-as-wrong), the orchestrator MUST advance to rung N+1 unless N is the final resolved rung.
 - **CLEAN with leftover findings:** If a rung returns CLEAN with findings that are not wrong, the launcher still applies them before the next rung.
 - **Stop after first compliance failure** — never "push through" remaining rungs while the process is broken.
 - A smoke demonstration may be run only when the user explicitly asks for a smoke test; otherwise the ladder must continue through the final resolved rung.
@@ -217,11 +311,12 @@ STOP and do **not** advance when any of the following is true:
 5. **Scope violation** — any command or edit outside locked paths
 6. **Parallel rungs** — multiple rung phases launched in one turn or overlapping
 7. **Verify subagent edited files** — verify pass was not readonly
-8. **Final rung complete** — the last resolved rung completed `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator signals → `verify_2` → orchestrator signals with no gaps
+8. **Final rung complete** — the last resolved rung completed `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator signals → (`verify_2` → orchestrator signals on CLEAN; `verify_2` is skipped on already-triaged NOT CLEAN) with no gaps
 9. **User stop** — user directs halt or scope change
 10. **Unapplied ACCEPTs** — next rung started before the launcher applied ACCEPTs (or recorded REJECT-as-wrong)
 11. **Skipped Policy C report** — review returned without `POLICY-C.json` / `POLICY-C.md`, or `--assert-policy-c` fails; write `STOP.md` with `check: policy_c` and do not advance
 12. **Leftover-cycle cap** — five leftover Policy B cycles on the same rung verify without CLEAN; escalate the remaining `file:line` list instead of a sixth one-line patch
+13. **Skipped Policy E approval** — reviewer Task / Pi invoke spawned before `RUNG-PROMPT-APPROVAL.md` shows `approved: yes` for the current key-task bullets, or the brief's key tasks materially changed without re-approval; write `STOP.md` with `check: rung_prompt_approval` and do not launch
 
 ### Recovery Procedure (before resuming)
 
@@ -239,7 +334,7 @@ When STOP triggers for compliance (items 1–7):
 For rung N, the orchestrator MUST traverse these states in order:
 
 ```
-rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_parallel → rung_N_verify_1 → [orchestrator grep] → rung_N_verify_2 → [orchestrator grep] → rung_N+1_review
+rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_parallel → rung_N_verify_1 → [orchestrator grep] → [rung_N_verify_2 → orchestrator grep on CLEAN; verify_2 is skipped on already-triaged NOT CLEAN] → rung_N+1_review
 ```
 
 **STOP** if tempted to skip any state, combine verify passes, stop early because the charter is satisfied, or advance without orchestrator evidence.
@@ -253,11 +348,12 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
    - (b) launcher/parent posts Policy C user update (rung identity, verdict, HIGH/MED/LOW/NIT issue table, triage table, ACCEPT-apply vs REJECT-as-wrong; resolved table after fixes), then triages with Policy A (ACCEPT vs REJECT-as-wrong) — **not** the rung model
    - (c) orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use (or confirms dedupe links)
    - (d) launcher/parent applies ACCEPT fixes with Edit/Write — **not** the rung model; **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch after NOT CLEAN
-   - (e) verify-only subagent pass 1 — if clean, proceed; if fail, return to (d) on **same** rung
-   - (f) verify-only subagent pass 2 — only if pass 1 was clean
-   - Advance to rung N+1 **only** if **both** verify passes are clean **and** ACCEPTs are applied (or REJECT-as-wrong recorded); after they are clean, advancement is mandatory unless N is the final resolved rung.
+   - (e) verify-only subagent pass 1 — required on NOT CLEAN and APPLY; if fail, return to (d) on **same** rung
+   - (f) verify-only subagent pass 2 — required on CLEAN after pass 1 was clean; `verify_2` is skipped on already-triaged NOT CLEAN
+   - Advance to rung N+1 **only** if Policy F is met (**two consecutive** reviews with zero ACCEPT findings; `--assert-consecutive-clean` / `--assert-rfl-advance --next-action next_rung_review` exit 0) **and** the verify overlay is met **and** ACCEPTs are applied (or REJECT-as-wrong recorded); after they are clean, advancement is mandatory unless N is the final resolved rung. After ACCEPT-apply, streak resets to 0 — re-launch the **same** model as review-only until Policy F is met. **FORBIDDEN** to ask that model to patch.
    - **FORBIDDEN** to combine passes into one subagent prompt (e.g. "do 2 passes" in a single Task).
-   - **FORBIDDEN** to advance after only one clean verify pass.
+   - **FORBIDDEN** to advance after only one clean verify pass when the hop is CLEAN (`verify_2` is skipped on already-triaged NOT CLEAN).
+   - **FORBIDDEN** to advance to the next ladder model after only one CLEAN review (streak < 2).
    - **FORBIDDEN** for review subagent to triage or fix its own findings.
    - **FORBIDDEN** to reject a finding as "advisory", "doc-only", "documentation nit", "non-gating", "nice-to-have", "not a contract hole", "CLEAN so ignore mediums", "CLEAN for ladder purposes", or "non-blocking nit".
    - **FORBIDDEN** to skip the per-rung Policy C artifact (`--write-policy-c` / `--assert-policy-c`), to wait until family or ladder end, or to dump raw review.md / a short verdict in place of encoder stdout. The harness denies the next Task/Stop when the assert fails.
@@ -276,9 +372,13 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 
 9. **Launcher triage and apply** — Triage and ACCEPT application are done by the ladder launcher/parent, **not** the rung `model` + `reasoning` from resolver JSON. Only the **review** (and verify) subagent uses the rung model pair. Inside an RFL session this is an explicit exception to parent-orchestrator-never-implements.
 
+10. **Rung-prompt user-approval** — **FORBIDDEN** to spawn reviewer Tasks / Pi invoke until Policy E is approved (`RUNG-PROMPT-APPROVAL.md` with `approved: yes`). **FORBIDDEN** to dump the entire prompt, paste full Template A, or SHA-dump the freeze in place of 5–12 key-task bullets. Re-run the gate if the brief's key tasks **materially change**. This launch-gate wait is **not** a Policy B anti-stall violation.
+
 ### Per-Rung Workflow (Orchestrator Checklist)
 
 For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
+
+**Policy E (HARD):** Do not start step 1 until `.planning/rfl-<id>/RUNG-PROMPT-APPROVAL.md` has `approved: yes` for the current key-task bullets. Re-run the gate if those bullets **materially change**. **FORBIDDEN** to spawn reviewer Tasks / Pi invoke until approved. Do **not** dump the entire prompt.
 
 | Step | State | Action |
 |------|-------|--------|
@@ -288,9 +388,9 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 | 4 | `rung_N_fix_parallel` | Launcher/parent applies ACCEPT fixes (Edit/Write), including every finding that is not wrong (**Low, deferred, nitpicks, and minor** if still applicable). **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch; **FORBIDDEN** to skip a still-valid nit because the rung was CLEAN or the item is a "non-blocking nit" |
 | 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
 | 6 | — | Orchestrator runs each charter verification signal; log pass/fail |
-| 7 | `rung_N_verify_2` | If step 6 clean: launch **one** verify-only subagent pass 2 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
-| 8 | — | Orchestrator runs charter signals again; log pass/fail |
-| 9 | advance | If steps 6 **and** 8 are clean **and** ACCEPTs are applied (or REJECT-as-wrong recorded), advance to rung N+1 unless N is the final resolved rung; else return to step 4 |
+| 7 | `rung_N_verify_2` | On **CLEAN** (step 6 clean): launch **one** verify-only subagent pass 2 at rung model. On already-triaged **NOT CLEAN**, skip `verify_2`. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
+| 8 | — | If `verify_2` ran: orchestrator runs charter signals again; log pass/fail |
+| 9 | advance | If Policy F streak is 2 **and** the verify overlay is met **and** ACCEPTs are applied (or REJECT-as-wrong recorded), advance to rung N+1 unless N is the final resolved rung. If this review had ACCEPT findings: APPLY, reset streak to 0, return to step 1 on the **same** model. If this review was CLEAN (or only REJECT) and streak < 2: `--record-rung-review-outcome clean`, return to step 1 on the **same** model. Else return to step 4 |
 
 ### Repo-wide mode (only after user confirms)
 
@@ -410,14 +510,24 @@ Review charter:
 - Non-goals: {non_goals}
 - Verification signals: {verification_signals}
 
+Issue ledger (already identified — do not re-report these rows):
+{issue_ledger}
+
+Residual-only means do not re-report ledger rows, not "file only one new ID."
+File ALL valid residuals at the current SHA, ALL severities (HIGH / MED / LOW / nit).
+Valid nits must be filed. CLEAN only if nothing valid remains.
+The launcher MUST emit this brief via `--write-review-brief` (the only legal review brief). Hand-written one-ID briefs are non-compliant.
+
 Tasks:
 1. Audit scoped work against the charter goals.
-2. Report raw findings with line references and severity hints.
-3. Do NOT classify, triage, file issues, or apply fixes.
+2. Report every valid residual finding with ID, line references, and severity (HIGH|MED|LOW|NIT).
+3. Do NOT classify ACCEPT/REJECT, PM-file issues, or apply fixes (launcher/parent does that).
 
 FORBIDDEN behaviors:
 - Do NOT triage findings (launcher/parent triages with Policy A after you return).
 - Do NOT fix gaps — report only.
+- Do NOT re-report ledger rows unless a residual defect remains in this freeze.
+- Do NOT stop after one new ID; file the full pack of valid residuals.
 - Do NOT edit plans, specs, tests, or docs — no "while I'm here" fixes.
 - Do NOT read/edit/run commands outside locked scope.
 - Do NOT claim PASS or recommend advancing — orchestrator verifies.
@@ -457,7 +567,7 @@ Scope: {scope}
 Triage table: {triage_summary}
 
 Tasks:
-1. Apply every ACCEPT finding that is not wrong within scope (spec, and tests/docs if the finding is about those), including **Low, deferred, nitpicks, and minor** items that are still applicable.
+1. Apply every ACCEPT finding that is not wrong within scope (spec, and tests/docs if the finding is about those), including **Low, deferred, nitpicks, and minor** items that are still applicable. APPLY them as a **pack that pass** (order-dependent findings together), not one residual per round.
 2. Skip only KEEP REJECT / user-locked rejects, factually wrong findings, superseded/stale claims, and items that are no longer true on the current freeze. Do not reopen KEEP REJECT. Anti-churn for historical changelog / KEEP REJECT aliases still applies.
 3. Do **not** treat “CLEAN for ladder purposes” or “non-blocking nit” as a reason to skip a still-valid nit.
 4. Record REJECT-as-wrong with why-wrong evidence.
@@ -506,4 +616,4 @@ After each verify-only subagent returns, the orchestrator MUST:
 3. Only proceed to the next verify pass if signals are clean; after `verify_2`, proceed to the next rung if signals are clean, ACCEPTs are applied (or REJECT-as-wrong recorded), and another resolved rung remains.
 4. **IGNORE** subagent VERIFY_PASS if orchestrator signals fail.
 5. If verify returns CLEAN with findings that are not wrong, apply those ACCEPTs before the next rung.
-6. **Do not idle:** verify FAIL → Policy B leftovers then re-verify; CLEAN `verify_1` → grep then `verify_2`; two CLEAN verifies + greps → next rung. Same defect class failing verify more than twice → corpus sweep on the next Policy B. After 5 leftover cycles on this rung verify, escalate `file:line` leftovers instead of a sixth one-line patch. Launch/timeout: retry once immediately, then skip (`SKIPPED.md`) and start the next rung; after the whole ladder, retry skipped rungs once more.
+6. **Do not idle:** verify FAIL → Policy B leftovers then re-verify; CLEAN `verify_1` → grep then `verify_2`; already-triaged NOT CLEAN → `verify_1` only (`verify_2` is skipped); overlay-complete verifies + greps → next rung or same-model re-review. Same defect class failing verify more than twice → corpus sweep on the next Policy B. After 5 leftover cycles on this rung verify, escalate `file:line` leftovers instead of a sixth one-line patch. Launch/timeout: retry once immediately, then skip (`SKIPPED.md`) and start the next rung; after the whole ladder, retry skipped rungs once more.

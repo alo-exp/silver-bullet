@@ -26,6 +26,8 @@ NONE_TOKENS = frozenset({"none", "n/a", "na"})
 NEXT_ACTIONS = frozenset(
     {"task", "verify_1", "verify_2", "next_rung_review", "mark_completed", "stop"}
 )
+CONSECUTIVE_CLEAN_REQUIRED = 2
+RECORD_REVIEW_OUTCOMES = frozenset({"clean", "accept-apply", "accept_apply", "reset"})
 QUOTA_HINT_RE = re.compile(
     r"(429|401|quota|usage[_\s-]?limit|rate[_\s-]?limit|insufficient)",
     re.IGNORECASE,
@@ -89,6 +91,172 @@ def ladder_status_path(run_dir: Path) -> Path:
 
 def load_ladder_status(run_dir: Path) -> dict[str, Any]:
     return _read_json(ladder_status_path(run_dir))
+
+def write_ladder_status(run_dir: Path, payload: dict[str, Any]) -> Path:
+    path = ladder_status_path(run_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _rung_bucket_key(rung_id: str | None) -> str:
+    match = re.match(r"^rung-(\d+)", str(rung_id or "").strip(), re.IGNORECASE)
+    if match:
+        return f"rung_{int(match.group(1))}"
+    return ""
+
+
+def _triage_accept_count(payload: dict[str, Any] | None) -> int:
+    if not payload:
+        return 0
+    rows = _as_rows(payload.get("triage")) or []
+    return sum(
+        1
+        for row in rows
+        if _normalize_decision(str(row.get("decision") or "")) == "ACCEPT"
+    )
+
+
+def review_pass_is_clean(payload: dict[str, Any] | None) -> bool:
+    """True when this review has zero ACCEPT-worthy (valid) findings."""
+    if not payload:
+        return False
+    verdict = str(payload.get("verdict") or "").strip().upper().replace("_", " ")
+    if verdict in {"BLOCKED", "SKIPPED"}:
+        return False
+    return _triage_accept_count(payload) == 0
+
+
+def _stored_streak_for_rung(status: dict[str, Any], rung_id: str) -> int:
+    rid = str(rung_id or "").strip()
+    current_field = status.get("consecutive_clean_reviews")
+    current_rung = str(
+        status.get("consecutive_clean_rung") or status.get("current_rung") or ""
+    ).strip()
+    if rid and current_rung == rid and current_field is not None:
+        try:
+            return max(0, int(current_field))
+        except (TypeError, ValueError):
+            return 0
+    bucket = _rung_bucket_key(rid)
+    block = status.get(bucket)
+    if bucket and isinstance(block, dict):
+        try:
+            return max(0, int(block.get("consecutive_clean_reviews") or 0))
+        except (TypeError, ValueError):
+            pass
+    rungs = status.get("rungs")
+    if isinstance(rungs, list):
+        for item in rungs:
+            if isinstance(item, dict) and str(item.get("id") or "").strip() == rid:
+                try:
+                    return max(0, int(item.get("consecutive_clean_reviews") or 0))
+                except (TypeError, ValueError):
+                    return 0
+    return 0
+
+
+def get_consecutive_clean_reviews(
+    status: dict[str, Any], rung_id: str | None = None
+) -> int:
+    rid = str(rung_id or status.get("current_rung") or "").strip()
+    if not rid:
+        try:
+            return max(0, int(status.get("consecutive_clean_reviews") or 0))
+        except (TypeError, ValueError):
+            return 0
+    return _stored_streak_for_rung(status, rid)
+
+
+def _mirror_streak(status: dict[str, Any], rung_id: str, streak: int) -> None:
+    rid = str(rung_id or "").strip()
+    status["consecutive_clean_reviews"] = streak
+    if rid:
+        status["consecutive_clean_rung"] = rid
+    bucket = _rung_bucket_key(rid)
+    if bucket:
+        block = status.get(bucket)
+        if not isinstance(block, dict):
+            block = {}
+            status[bucket] = block
+        block["consecutive_clean_reviews"] = streak
+    rungs = status.get("rungs")
+    if isinstance(rungs, list):
+        for item in rungs:
+            if isinstance(item, dict) and str(item.get("id") or "").strip() == rid:
+                item["consecutive_clean_reviews"] = streak
+                break
+
+
+def record_rung_review_outcome(
+    run_dir: Path,
+    outcome: str,
+    *,
+    rung_id: str | None = None,
+) -> dict[str, Any]:
+    raw = (outcome or "").strip().lower().replace("_", "-")
+    if raw not in {"clean", "accept-apply", "reset"}:
+        raise ValueError(f"unsupported review outcome {outcome!r}")
+    normalized = "clean" if raw == "clean" else "accept-apply"
+    root = Path(run_dir)
+    status = load_ladder_status(root)
+    rid = str(rung_id or status.get("current_rung") or "").strip()
+    current = get_consecutive_clean_reviews(status, rid)
+    streak = current + 1 if normalized == "clean" else 0
+    _mirror_streak(status, rid, streak)
+    path = write_ladder_status(root, status)
+    return {
+        "ok": True,
+        "path": str(path),
+        "outcome": normalized,
+        "rung_id": rid,
+        "consecutive_clean_reviews": streak,
+        "required": CONSECUTIVE_CLEAN_REQUIRED,
+    }
+
+
+def _skipped_allows_advance(rung_dir: Path, payload: dict[str, Any]) -> bool:
+    verdict = str(payload.get("verdict") or "").strip().upper().replace("_", " ")
+    disposition = str(payload.get("disposition") or "").strip()
+    if verdict == "SKIPPED" or disposition == "SKIP":
+        return _file_nonempty(Path(rung_dir) / "SKIPPED.md")
+    return False
+
+
+def _assert_consecutive_clean_reviews(
+    run_dir: Path,
+    status: dict[str, Any],
+    *,
+    action: str,
+    rung_dir: Path | str | None,
+) -> list[str]:
+    if action not in {"next_rung_review", "mark_completed"}:
+        return []
+    target = resolve_rung_dir(run_dir, rung_dir)
+    if target is None and status.get("current_rung"):
+        target = resolve_rung_dir(run_dir, status.get("current_rung"))
+    if target is None:
+        return []
+    payload = load_policy_c(target) or {}
+    if _skipped_allows_advance(target, payload):
+        return []
+    if action == "mark_completed" and not review_returned(target) and not policy_c_json_path(target).is_file():
+        return []
+    rid = str(status.get("current_rung") or target.name)
+    n = get_consecutive_clean_reviews(status, rid)
+    if n < CONSECUTIVE_CLEAN_REQUIRED:
+        return [
+            (
+                f"consecutive_clean_reviews={n} < {CONSECUTIVE_CLEAN_REQUIRED}; "
+                "do not start the next ladder model until two consecutive reviews "
+                "have zero ACCEPT findings (REJECT does not break the streak; "
+                "ACCEPT-apply resets to 0). Re-run the same rung reviewer. "
+                "Encoder: --record-rung-review-outcome clean|accept-apply"
+            )
+        ]
+    return []
+
+
 
 
 def discover_active_rfl_runs(project_root: Path) -> list[Path]:
@@ -539,7 +707,8 @@ def _assert_rung_failure_artifacts(
     if advancing and verdict not in {"SKIPPED", "BLOCKED"}:
         if _first_existing(rung_dir, VERIFY_1_NAMES) is None:
             errors.append("missing verify-1.md")
-        if _first_existing(rung_dir, VERIFY_2_NAMES) is None:
+        # Canonical overlay: verify_2 required on CLEAN; skipped on already-triaged NOT CLEAN.
+        if verdict == "CLEAN" and _first_existing(rung_dir, VERIFY_2_NAMES) is None:
             errors.append("missing verify-2.md")
 
     return errors
@@ -588,6 +757,14 @@ def assert_rfl_advance(
             maybe = resolve_rung_dir(active, rung_dir)
             if maybe is not None and review_returned(maybe) and policy_c_json_path(maybe).is_file():
                 action = "next_rung_review"
+        errors.extend(
+            _assert_consecutive_clean_reviews(
+                active,
+                status,
+                action=action,
+                rung_dir=rung_dir,
+            )
+        )
         if current_rung is not None and not isinstance(current_rung, str):
             errors.append("LADDER-STATUS.json current_rung must be a single string")
         if status.get("current_phase") is not None and not isinstance(status.get("current_phase"), str):

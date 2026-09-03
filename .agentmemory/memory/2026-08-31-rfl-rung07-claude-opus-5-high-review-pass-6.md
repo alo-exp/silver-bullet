@@ -1,0 +1,11 @@
+RFL rung-07 Pi Claude Opus 5 High review pass 6 on .planning/spec_template_world_class.plan.md
+Freeze SHA f5fda2aed2eeb32bd00c5ff2a30ce12c81db58067f63588403080ca8f6e5976d (both twins verified, unchanged after pass).
+Verdict: NOT CLEAN. 14 residuals R7f-F01..R7f-F14 (1 HIGH, 4 MED, 5 LOW, 4 nit). Written to review-rerun-6.md.
+HIGH R7f-F01: Change History summary provenance branch (2) deterministic structural delta is not total; R7c-F05 malformed-spec-version brief-less augment seeds (not bumps) and mints nothing -> empty delta set -> ASK -> fail-before-write, contradicting pinned PASS install.
+MED R7f-F02: Wave 2 review-requirements L427 SCAN resolution still says <line-or-id> is a live ID; R7e-F02 section-anchored ordinal bNN missing there and on review-cross-artifact L428 -> SCAN:invariants#b03 fails REQ-F71.
+MED R7f-F03: two exhaustion predicates coexist; "all 00-99 live or tombstoned" shorthand survives at 10 sites (L422,427,482,484,582,583,584,590,647 + L217) and is unreachable now that -00 is never minted.
+MED R7f-F04: ordinal SCAN targets silently repoint across augment (R7d-F04 superseding write); no re-anchor/revalidation despite stable-ID prohibition.
+MED R7f-F05: malformed-prior spec-version seed mandates "exactly one Change History row" -> silent deletion of prior operator history, no migrate-or-ASK unlike R7d-F04/R7-F08.
+LOW: R7f-F06 DEC-nn ID-match-with-divergent-text unresolved + decision-row-identity names no column; R7f-F07 change-summary missing from Wave 4 brief-field assert list L535 and Clarify blast row L314; R7f-F08 Wave 2 rg alternation L434 omits change-summary + ordinal token; R7f-F09 no ordinal-SCAN PASS fixture in L437 and no Wave 3 contains bullet for QC-10 provenance; R7f-F10 ordinal section list names table-only Change History, Overview/Invariants nesting + Assumptions shape unresolved.
+nit: R7f-F11 nfr Notes emphasis malformed at L198 (tag closes before kind list, unlike 11 R7e-F09 rows); R7f-F12 invariant-count clause omits branch (3) ASK and reads as source not resulting live count; R7f-F13 b[0-9]{2} admits unreachable b00, no >99 behavior; R7f-F14 world-class-min asserts count-key presence but not R7e-F10 equality.
+R7e-F01..F10 confirmed landed. R7b-F17 REJECT not reopened. KEEP REJECT honored (two files, no third canonical doc, no new interview turn). Review-only: no triage/APPLY/commit/verify.

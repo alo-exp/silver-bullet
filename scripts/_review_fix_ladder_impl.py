@@ -635,7 +635,18 @@ def main() -> int:
     parser.add_argument(
         "--assert-rfl-advance",
         action="store_true",
-        help="Exit non-zero if the active RFL run is missing Policy C or sibling failure artifacts",
+        help="Exit non-zero if consecutive_clean_reviews < 2 or canonical verify filenames are missing before next_rung_review (verify-2.md required on CLEAN; skipped on already-triaged NOT CLEAN)",
+    )
+    parser.add_argument(
+        "--assert-consecutive-clean",
+        action="store_true",
+        help="Exit non-zero if LADDER-STATUS.json consecutive_clean_reviews < 2 when starting the next rung/model",
+    )
+    parser.add_argument(
+        "--record-rung-review-outcome",
+        default=None,
+        metavar="OUTCOME",
+        help="Record clean (increment streak) or accept-apply (reset streak) on --run-dir/LADDER-STATUS.json",
     )
     parser.add_argument("--rung-dir", type=Path, help="Rung directory for Policy C / skip artifacts")
     parser.add_argument(

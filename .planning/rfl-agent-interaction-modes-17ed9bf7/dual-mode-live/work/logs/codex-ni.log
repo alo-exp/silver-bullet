@@ -1,7 +1,0 @@
-=== agent-codex-delegate 2026-08-25T01:46:06Z ===
-work_dir=.planning/rfl-agent-interaction-modes-17ed9bf7/dual-mode-live/work
-sb_root=/Users/shafqat/projects/silver-bullet/repo
-attempt=1
-
-Error: No such file or directory (os error 2)
-=== agent-codex-delegate complete exit=1 attempt=1 ===

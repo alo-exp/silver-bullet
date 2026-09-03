@@ -1,0 +1,3 @@
+[agent-pi] zero-byte-idle kill after 600s (stdout_bytes=no expect_ok=False expect_bytes=0)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 124
+INVOKE_EXIT:124

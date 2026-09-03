@@ -1,0 +1,7 @@
+START 2026-08-27T14:25:11Z
+PI_PROVIDER=omniroute PI_MODEL=opencode-go/deepseek-v4-pro-max retry=once
+429: {"message":"[opencode-go/deepseek-v4-pro-max] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage  (reset after 23h 57m 34s)"}
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] quota-window: 429: {"message":"[opencode-go/deepseek-v4-pro-max] [429]: Weekly usage limit reached. Resets in 3 days. To continue using this model now, enable usage  (reset after 23h 57m 34s)"}
+EXIT:1
+END 2026-08-27T14:26:15Z

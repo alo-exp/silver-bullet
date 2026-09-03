@@ -1,0 +1,22 @@
+Done — rung 07 pass 1 complete.
+
+## Rung 07 (Pi Claude Opus 5 High) — review pass 1: **NOT CLEAN**
+
+**Output:** `.planning/rfl-spec-template-world-class/rung-07-pi-claude-opus-5-high/review.md` (35 KB)
+
+**Freeze integrity:** both twins hashed at start and after write — still `397020ce6adc1bdd713105100ec29412a440eabb99d898ea9269c2f92c4dfc69`. Untracked/unmodified; no edits, no commits, no branch ops.
+
+**Method:** graphify query first, then a full independent three-pass read of the 711-line freeze. Extra High `review*.md` were not opened. R6b–R6n encodings were spot-verified as actually landed (R6n appears at all five required sites) and are *not* re-filed.
+
+**13 residuals filed — R7-F01…R7-F13** (2 HIGH / 6 MED / 3 LOW / 2 NIT):
+
+- **R7-F01 HIGH** — `### Invariants` is universally core-required with a QC-11 "≥1 MUST bullet" body check, but no Clarify turn, brief field, Step 1 mapping, or Step 7 rule ever sources it. Every new compile must either fail QC-11 fail-closed or fabricate invariants. Same shape as ACCEPTed R2-F01, but universal across all kinds.
+- **R7-F02 HIGH** — a zero-AC SPEC with an empty Functional table satisfies QC-8, R6l set equality, R6k edge equality and XART-F02 *vacuously* and installs. US/Change History/QC-11/QC-12 all carry `≥1`; Acceptance Criteria does not. R6l closed *invented* AC members; nobody closed the *empty* namespace.
+- **MED** — undefined "eligible" quantifier driving all NFR reverse-coverage branches (R7-F03); `SCAN:` atoms have grammar but no resolution closure (R7-F04); `OOS-nn`/`OQ-nn` snapshots have no closure vs SPEC (R7-F05); `decision-log` conditional-required has no enforcement point (R7-F06); `spec-version` has no value grammar/comparator despite two gates comparing it (R7-F07); the "migration record/backup" is an unnamed artifact against the no-third-doc KEEP (R7-F08).
+- **LOW/NIT** — Wave 2 `rg` token gaps, Wave 1 assert asymmetry, min-fixture kind validity, an unbalanced paren in the Step 8 precondition list, and three non-enum kind names in pack-table Notes.
+
+The review also records what I considered and deliberately did **not** file (stale CONTEXT SHA, OQ-07, pack-table/catalog audit, the R6* encodings), so triage can see the boundary.
+
+**Mandatory tools:** `graphify query` run first; `graphify update .` run after the write (43,461 nodes); memory saved and verified present in the durable agentmemory export (`mem_mtfx8ovx…`). One duplicate save occurred while probing the REST surface — harmless, same content.
+
+No triage, no APPLY, no verify launch, no `--record-rung-review-outcome`, no ladder advance. Next hop per session policy: Composer 2.5 triage, then Grok 4.6 High for any ACCEPTed pack.

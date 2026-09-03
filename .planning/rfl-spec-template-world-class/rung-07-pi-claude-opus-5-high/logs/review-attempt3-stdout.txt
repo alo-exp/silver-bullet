@@ -1,0 +1,3 @@
+[claude/claude-opus-5-high] [502]: fetch failed (cause: ENOTFOUND: getaddrinfo ENOTFOUND api.anthropic.com) (reset after 5s)
+[agent-pi] fail-fast: skipping --continue after first-run EXIT 1
+[agent-pi] quota-window: [claude/claude-opus-5-high] [502]: fetch failed (cause: ENOTFOUND: getaddrinfo ENOTFOUND api.anthropic.com) (reset after 5s)

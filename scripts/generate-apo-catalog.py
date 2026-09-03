@@ -429,8 +429,10 @@ def build_workflows() -> list[dict]:
     ], reusable=True, triggers=["after_execute"], ops=["insert", "parallelize", "loop"])
     core_prefix = [
         n("AF-BOOTSTRAP", optional=True), n("AF-ORIENT", optional=True),
-        n("AF-CLARIFY", optional=True), n("AF-DECIDE", optional=True),
-        n("AF-SPECIFY", optional=True), n("AF-QUALITY-GATE", label="pre-plan"),
+        n("AF-CLARIFY", optional=True, condition="SPEC.md absent (required as --spec before AF-SPECIFY)"),
+        n("AF-DECIDE", optional=True),
+        n("AF-SPECIFY", optional=True, condition="SPEC.md absent (required compiler after AF-CLARIFY --spec)"),
+        n("AF-QUALITY-GATE", label="pre-plan"),
         n("AF-PLAN"),
     ]
     workflows = [

@@ -1,16 +1,18 @@
 ---
 name: silver:spec
 description: >
-  This skill should be used for AI-guided Socratic spec elicitation: interactive dialogue producing SPEC.md + REQUIREMENTS.md from scratch or augmenting an existing draft
+  Compile a canonical .planning/SPEC.md and .planning/REQUIREMENTS.md from the newest clarify brief (next=spec) plus any ingest SPEC draft. Gap-fill only empty required sections — does not run the 9-turn interview.
 argument-hint: "<feature name or description>"
-version: 0.1.0
+version: 0.2.0
 ---
 
-# /silver:spec -- Spec Elicitation Workflow
+# /silver:spec -- Spec Compiler
 
-SB orchestrator for requirements elicitation. Guides PM/BA through structured Socratic dialogue to produce canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` artifacts.
+SB orchestrator for compiling canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` from the newest `*-CLARIFY-*.md` brief and any ingest SPEC draft.
 
-Never implements features directly -- orchestrates dialogue and writes spec artifacts only.
+**This skill does not run the 9-turn Socratic interview.** Interviewing lives in `/silver:clarify --spec` (`next=spec`). Spec is a compiler: read the brief (+ ingest draft), write artifacts, review them.
+
+Never implements features directly -- compiles and writes spec artifacts only.
 
 ## Pre-flight: Load Preferences
 
@@ -23,10 +25,11 @@ grep -A 50 "^## [0-9]\+\. User Workflow Preferences" silver-bullet.md | head -60
 Display banner:
 
 ```
-SILVER BULLET ► SPEC ELICITATION
+SILVER BULLET ► SPEC COMPILER
 
 Feature: {$ARGUMENTS or "(not specified)"}
 Mode:    {greenfield | augment — detected in Step 0}
+Brief:   {newest *-CLARIFY-*.md or "(none)"}
 ```
 
 ## Step-Skip Protocol
@@ -36,44 +39,66 @@ When the user requests skipping any step:
 2. Offer: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. If user chooses A permanently: record in silver-bullet.md §10b and templates/silver-bullet.md.base §9b, then commit both files.
 
-**Non-skippable gates:** `Step 3: Socratic Elicitation`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
+**Non-skippable gates:** `Step 0: consume newest clarify brief when present`, `Step 5: Assumption Consolidation`, `Step 7: Write SPEC.md`, `Step 7a: Review SPEC.md`, `Step 8a: Review REQUIREMENTS.md`, `Step 9a: Review DESIGN.md`. Refuse skip requests for these regardless of §10.
 
-## Step 0: Mode Detection
+## Step 0: Mode Detection + Input Discovery
 
-Check whether `.planning/SPEC.md` already exists:
+**Augment vs greenfield:**
 
 ```bash
 test -f .planning/SPEC.md && echo "augment" || echo "greenfield"
 ```
 
 - **If `.planning/SPEC.md` exists:** augment mode. Read the existing spec, show the current `spec-version` and a one-line summary of each section present.
-- **If `.planning/SPEC.md` does not exist:** greenfield mode. Proceed directly to Step 1.
+- **If `.planning/SPEC.md` does not exist:** greenfield mode.
 
-Update the Mode field in the banner to reflect the detected mode before continuing.
+Update the Mode field in the banner before continuing.
 
-## Step 1: Context Gathering
+**Newest clarify brief (MUST consume when present):**
 
-Ask the PM/BA for the following in a single prompt. Mark required items clearly; optional items are lettered:
+```bash
+NEWEST_CLARIFY="$(ls -1t .planning/*-CLARIFY-*.md 2>/dev/null | head -1 || true)"
+```
 
-> **Let's start with context for this spec.**
->
-> 1. Feature name *(required)*
-> 2. Feature description — 1-2 sentences on what it does and for whom *(required)*
->
-> Optional — provide any that apply:
->
-> A. JIRA ticket ID
-> B. Figma URL
-> C. Google Doc or PPT URL
+Read `$NEWEST_CLARIFY` in full when it exists. This is the primary interview record.
 
-If any URL is provided in A, B, or C, note it internally for artifact injection in Step 4.
+**Ingest SPEC draft:** if `.planning/INGESTION_MANIFEST.md` exists, treat current `.planning/SPEC.md` (if any) as an ingest dump to merge — not as a finished spec.
+
+**If no clarify brief AND no ingest draft (no SPEC.md and no INGESTION_MANIFEST.md):**
+
+Stop. Do **not** run Turns 1–9 here. Instruct:
+
+> Spec compiles from a clarify brief. Run `/silver:clarify --spec` (or `/silver:clarify --next spec`) first, then re-run `/silver:spec`.
+
+**If ingest draft exists without a clarify brief:** compile from the ingest SPEC, then gap-fill only empty required sections (Step 3). Recommend `/silver:clarify --spec` when domains are thin, but do not block a compile+gap-fill path.
+
+## Step 1: Load Inputs (no live interview)
+
+Collect, in order of authority for compiled content:
+
+1. Newest `*-CLARIFY-*.md` (`next=spec` capture schema)
+2. Ingest SPEC draft (MCP dump) when present
+3. Existing SPEC.md in augment mode (preserve structure; bump version)
+
+Do **not** re-ask context gathering or the 9 spec turns when the brief already covers those domains.
+
+Map brief sections onto the spec scaffold:
+
+| Brief / ingest | SPEC.md section |
+|----------------|-----------------|
+| Overview (who + problem) | `## Overview` |
+| User Stories (`As a…`) | `## User Stories` |
+| UX Flows / main path | `## UX Flows` |
+| Acceptance Criteria | `## Acceptance Criteria` |
+| Assumptions + Status | `## Assumptions` |
+| Out of Scope | `## Out of Scope` |
+| Edges / Errors / Data | UX Flows, AC, and/or Open Questions as appropriate |
+| Open Questions | `## Open Questions` |
+| Source artifacts / JIRA / Figma | frontmatter |
 
 ## Step 2: Build SB Spec Scaffold
 
-Build the formal spec scaffold directly in SB. This step absorbs the useful
-Product Management `write-spec` behavior SB previously depended on: problem
-framing, audience/value capture, acceptance criteria structure, assumptions, and
-requirements traceability.
+Build the formal spec scaffold directly in SB.
 
 Read `templates/specs/SPEC.md.template` if present and use it as the canonical
 shape. If the template is missing, continue with this minimum scaffold in working
@@ -91,62 +116,47 @@ notes so Step 7 can write the file:
 - Source artifacts
 
 This is not a fallback path. Do not install or invoke Product Management plugins
-for core SB spec elicitation.
+for core SB spec compilation.
 
-## Step 3: Socratic Elicitation Dialogue
+## Step 3: Domain Completeness + Gap-Fill Only
 
-**NON-SKIPPABLE GATE.**
+**NOT a 9-turn tour. NOT a live turn-counter.**
 
-Run 9 questioning turns in sequence. Each turn addresses one requirements domain.
+The former min-4 live turn-counter is **retired**. Coverage is **brief-domain completeness**, not live Q&A count.
 
-**After EACH answer from the PM/BA:**
-1. State any implicit assumption you made interpreting the answer: "I'm assuming [X] — is that right?"
-2. If the PM/BA says "I don't know yet", cannot resolve, or gives a vague answer: emit an assumption block immediately:
-   `[ASSUMPTION: {what SB is assuming} | Status: Follow-up-required | Owner: TBD]`
-3. Ask: "Anything else on this topic, or shall we move to the next?"
+**Covered domains** (count as done when present in the newest clarify brief or ingest draft):
 
-Collect all answers and assumption blocks for Steps 5-8.
+- **problem** — Overview names who + what the problem is
+- **scope** — Out of Scope is non-empty
+- **stories** — ≥1 `As a… I want to… so that…`
+- **AC** — ≥1 testable acceptance criterion
 
-**Turn sequence:**
+When those four are covered, do **not** interview. Proceed to Steps 4–7.
 
-| Turn | Domain | Question |
-|------|--------|----------|
-| 1 | Problem | "What problem does this solve? For whom?" |
-| 2 | User goal | "When a user reaches this feature, what do they want to accomplish?" |
-| 3 | Scope boundary | "What is explicitly OUT of scope for this feature?" |
-| 4 | User stories | "Walk me through the main thing a user does with this feature, step by step" |
-| 5 | Acceptance criteria | "How do we know this works correctly? List one criterion at a time" |
-| 6 | Edge cases | "What happens when [common failure scenario]?" |
-| 7 | Error states | "What should the user see when something goes wrong?" |
-| 8 | Data model | "What data does this feature create, read, update, or delete?" |
-| 9 | Open questions | "What do you not know yet that would affect the spec?" |
+**Gap-fill (only):** If a **required SPEC section** would still be empty after compile, ask questions **only for those empty sections** — not a second 9-turn tour.
 
-**Assumption trigger patterns (include in phrasing):**
-- Turn 1: "I'm assuming the primary user is [X] — is that right?"
-- Turn 2: "I'm assuming success means [X] for the user"
-- Turn 3: "I'm assuming [related capability] is not included in this release"
-- Turn 4: After each step the user describes: "I'm assuming [step detail] — confirm?"
-- Turn 5: "I'm noting [criterion] as testable — does it have a measurable threshold?"
-- Turn 6: "I'm assuming [edge case] is handled by [default behavior]"
-- Turn 7: "I'm assuming error messages follow [language/tone]"
-- Turn 8: "I'm assuming [data entity] already exists in the system"
+Required SPEC sections (review-spec QC-1):
 
-**Minimum turn enforcement:**
+- `## Overview`
+- `## User Stories`
+- `## UX Flows`
+- `## Acceptance Criteria`
+- `## Assumptions`
+- `## Open Questions`
+- `## Out of Scope`
+- `## Implementations` (header + template placeholder is enough)
 
-Maintain an internal turn counter starting at 0. Increment after each completed turn.
-Do NOT proceed to Step 7 (Write SPEC.md) until the turn counter reaches at least 4.
-If the user requests to skip remaining turns before turn 4, respond:
+If gap-fill answers create implicit assumptions, emit:
 
-> "Spec elicitation requires a minimum of 4 turns to ensure adequate coverage. We've completed {N} so far. Let's continue with Turn {N+1}."
+`[ASSUMPTION: {what SB is assuming} | Status: Follow-up-required | Owner: TBD]`
 
-After turn 4, remaining turns may be condensed if the user explicitly requests it and all
-critical domains (Turns 1-4: problem, scope, user stories, acceptance criteria) are covered.
+**Zero Socratic** unless a required section is still empty after compile.
 
-**Warning signs:** A completed elicitation with zero `[ASSUMPTION]` blocks is suspicious for any non-trivial feature. Surface at least one assumption check per domain.
+If the user asks to skip remaining gap-fill while a required section is empty, refuse: that section must be filled or explicitly assumed with Status.
 
-## Step 4: Artifact Injection (conditional -- only if URL provided in Step 1)
+## Step 4: Artifact Injection (conditional -- only if URL provided in brief or ingest)
 
-If no URL was provided in Step 1, skip this step entirely.
+If no URL is present in the brief, ingest draft, or `$ARGUMENTS`, skip this step entirely.
 
 For each URL provided:
 
@@ -162,9 +172,9 @@ If user selects A: incorporate the relevant content into the appropriate section
 
 **NON-SKIPPABLE GATE.**
 
-Collect all `[ASSUMPTION: ...]` blocks surfaced during Steps 3 and 4. Present them as a numbered list.
+Collect all `[ASSUMPTION: ...]` blocks from the clarify brief, ingest draft, and any Step 3 gap-fill. Present them as a numbered list.
 
-For each assumption, ask:
+For each assumption still `Follow-up-required` without a recorded choice in the brief, ask:
 
 > A. Resolve now (provide the answer)
 > B. Accept as assumption (keep as-is in spec)
@@ -175,11 +185,13 @@ Update the `Status:` field of each assumption block accordingly:
 - B → `Status: Accepted`
 - C → `Status: Follow-up-required`
 
+If the brief already recorded A/B/C, honor it — do not re-interview.
+
 If no assumptions were surfaced, note this and ask: "Before we write the spec, are there any open questions or unknowns you want to flag?"
 
 ## Step 6: SB Design Context Check (conditional)
 
-Only if a design artifact (Figma URL or design-related Google Doc) was provided in Step 1 or referenced during elicitation:
+Only if a design artifact (Figma URL or design-related Google Doc) was provided in the brief, ingest, or `$ARGUMENTS`:
 
 Perform the design context check directly in SB. This absorbs the design critique
 behavior SB requires for spec quality without requiring the external Design
@@ -202,21 +214,21 @@ Add any design-affecting assumptions to the assumption list before Step 7.
 2. **Determine spec-version:**
    - Greenfield mode: `spec-version: 1`
    - Augment mode: read existing `spec-version:` from `.planning/SPEC.md` frontmatter, increment by 1
-3. Populate all sections from the elicitation answers collected in Steps 1-6:
-   - `## Overview` — from Turn 1 (problem) and feature description
-   - `## User Stories` — from Turn 4 (user stories)
-   - `## UX Flows` — from Turn 4 (step-by-step flow)
-   - `## Acceptance Criteria` — from Turn 5
+3. Populate all sections from the **compiled** brief + ingest draft + gap-fill (Steps 1–6) — **not** by re-running clarify turns:
+   - `## Overview` — from brief Overview / problem domain
+   - `## User Stories` — from brief User Stories
+   - `## UX Flows` — from brief UX Flows / edges / errors / data as mapped
+   - `## Acceptance Criteria` — from brief AC (compiler source of truth for Step 8)
    - `## Assumptions` — all `[ASSUMPTION: ...]` blocks with final Status values from Step 5
-   - `## Open Questions` — from Turn 9 and any Follow-up-required assumptions
-   - `## Out of Scope` — from Turn 3
+   - `## Open Questions` — from brief Open Questions and Follow-up-required assumptions
+   - `## Out of Scope` — from brief Out of Scope
    - `## Implementations` — write the section header with the placeholder comment from the template (`<!-- Populated automatically by pr-traceability.sh hook post-merge. -->`). Leave the body empty; the `pr-traceability.sh` hook appends merged-PR rows here post-merge. The section header MUST be present so the traceability hook has an anchor to append to.
 4. Set frontmatter fields:
    - `spec-version:` — as calculated above
    - `status: Draft`
-   - `jira-id:` — from Step 1 if provided, else empty string
-   - `figma-url:` — from Step 1 if provided, else empty string
-   - `source-artifacts:` — list of all URLs provided in Step 1 (empty list if none)
+   - `jira-id:` — from brief / ingest if provided, else empty string
+   - `figma-url:` — from brief / ingest if provided, else empty string
+   - `source-artifacts:` — list of URLs from brief / ingest (empty list if none)
    - `created:` — today's date (greenfield) OR preserve existing value (augment)
    - `last-updated:` — today's date
 5. Write to `.planning/SPEC.md` using the active runtime file-writing mechanism.
@@ -233,9 +245,11 @@ Do NOT proceed to Step 8 until /artifact-reviewer reports 2 consecutive clean pa
 
 ## Step 8: Write .planning/REQUIREMENTS.md
 
+Derive from **SPEC.md acceptance criteria**, not from the clarify brief.
+
 1. Read `templates/specs/REQUIREMENTS.md.template` to get the canonical structure.
-2. Derive `REQ-XX` IDs from the acceptance criteria collected in Turn 5. Assign sequential IDs starting at REQ-01.
-3. Derive `NFR-XX` IDs from any non-functional concerns raised during elicitation (performance, security, accessibility, reliability). Assign sequential IDs starting at NFR-01.
+2. Derive `REQ-XX` IDs from the acceptance criteria in `.planning/SPEC.md` `## Acceptance Criteria`. Assign sequential IDs starting at REQ-01.
+3. Derive `NFR-XX` IDs from any non-functional concerns in SPEC.md (performance, security, accessibility, reliability). Assign sequential IDs starting at NFR-01.
 4. Mirror the Out of Scope section from SPEC.md.
 5. Mirror the Open Questions section from SPEC.md.
 6. Write to `.planning/REQUIREMENTS.md` using the active runtime file-writing mechanism.
@@ -275,17 +289,18 @@ git add .planning/DESIGN.md 2>/dev/null || true
 git commit -m "spec: [feature-slug] v{spec-version} draft"
 ```
 
-Replace `[feature-slug]` with a kebab-case version of the feature name from Step 1. Replace `{spec-version}` with the actual version number written in Step 7.
+Replace `[feature-slug]` with a kebab-case version of the feature name from the brief or `$ARGUMENTS`. Replace `{spec-version}` with the actual version number written in Step 7.
 
 ## Step 11: Summary
 
 Display a closing banner:
 
 ```
-SPEC ELICITATION COMPLETE
+SPEC COMPILE COMPLETE
 
 Feature:         {feature name}
 Spec version:    {spec-version}
+Brief:           {newest *-CLARIFY-*.md or "(none — ingest/gap-fill)"}
 Sections:        {count of ## sections in SPEC.md}
 Assumptions:     {count of [ASSUMPTION] blocks}
 Open questions:  {count of open question items}

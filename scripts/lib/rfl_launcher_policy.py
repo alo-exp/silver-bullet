@@ -22,6 +22,7 @@ LAUNCHER_MANDATORY_STEPS = (
     "triage_table",
     "launcher_fix",
     "resolved_table",
+    "issue_ledger_brief",
     "ladder_complete_matrix",
 )
 
@@ -534,6 +535,16 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--triage-table", action="store_true", help="Render accepted vs rejected triage table from JSON")
     parser.add_argument("--resolved-table", action="store_true", help="Render issue table with Resolved column from JSON")
     parser.add_argument("--ladder-matrix", action="store_true", help="Render ladder-complete summary matrix from JSON")
+    parser.add_argument(
+        "--issue-ledger",
+        action="store_true",
+        help="Emit canonical issue-ledger markdown from --run-dir ISSUE-LEDGER.md / POLICY-C*.json (or --table-json)",
+    )
+    parser.add_argument(
+        "--write-review-brief",
+        action="store_true",
+        help="Emit the only legal Policy G pack-ledger review brief from --run-dir or --table-json (hand-written one-ID briefs are non-compliant)",
+    )
     parser.add_argument("--launcher-steps", action="store_true", help="Emit mandatory launcher steps JSON")
     parser.add_argument(
         "--write-policy-c",
@@ -548,7 +559,18 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--assert-rfl-advance",
         action="store_true",
-        help="Exit non-zero if the active RFL run is missing Policy C or sibling failure artifacts",
+        help="Exit non-zero if consecutive_clean_reviews < 2 or canonical verify filenames are missing before next_rung_review (verify-2.md required on CLEAN; skipped on already-triaged NOT CLEAN)",
+    )
+    parser.add_argument(
+        "--assert-consecutive-clean",
+        action="store_true",
+        help="Exit non-zero if LADDER-STATUS.json consecutive_clean_reviews < 2 when starting the next rung/model",
+    )
+    parser.add_argument(
+        "--record-rung-review-outcome",
+        default=None,
+        metavar="OUTCOME",
+        help="Record clean (increment streak) or accept-apply (reset streak) on --run-dir/LADDER-STATUS.json",
     )
     parser.add_argument("--rung-dir", type=Path, default=None, help="Rung directory for Policy C / skip artifacts")
     parser.add_argument("--run-dir", type=Path, default=None, help="RFL run directory (.planning/rfl-<id>/)")
@@ -575,10 +597,14 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
             args.triage_table,
             args.resolved_table,
             args.ladder_matrix,
+            getattr(args, "issue_ledger", False),
+            getattr(args, "write_review_brief", False),
             args.launcher_steps,
             getattr(args, "write_policy_c", False),
             getattr(args, "assert_policy_c", False),
             getattr(args, "assert_rfl_advance", False),
+            getattr(args, "assert_consecutive_clean", False),
+            getattr(args, "record_rung_review_outcome", None),
         )
     )
     if not policy_requested:
@@ -586,6 +612,34 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
 
     if args.launcher_steps:
         print(json.dumps({"steps": launcher_mandatory_steps()}, indent=2))
+        return 0
+
+    if getattr(args, "issue_ledger", False) or getattr(args, "write_review_brief", False):
+        from rfl_issue_ledger import collect_issue_ledger, render_issue_ledger, render_review_brief
+
+        inline_rows = None
+        if args.table_json or args.table_json_file:
+            try:
+                loaded = _load_json_arg(args.table_json, args.table_json_file)
+            except ValueError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                return 2
+            if isinstance(loaded, dict) and isinstance(loaded.get("rows"), list):
+                inline_rows = loaded["rows"]
+            elif isinstance(loaded, list):
+                inline_rows = loaded
+            else:
+                print("ERROR: issue-ledger JSON must be an array or {\"rows\": [...]}", file=sys.stderr)
+                return 2
+        run_dir = getattr(args, "run_dir", None)
+        if inline_rows is None and run_dir is None:
+            print("ERROR: --issue-ledger/--write-review-brief requires --run-dir or --table-json", file=sys.stderr)
+            return 2
+        rows = collect_issue_ledger(run_dir=run_dir, rows=inline_rows)
+        if getattr(args, "write_review_brief", False):
+            print(render_review_brief(rows), end="")
+        else:
+            print(render_issue_ledger(rows), end="")
         return 0
 
     if args.default_host_route:
@@ -682,14 +736,35 @@ def dispatch_policy_cli(args: argparse.Namespace) -> int | None:
         print(json.dumps({"ok": result["ok"], "errors": result["errors"], "rung_dir": result["rung_dir"]}, indent=2))
         return 0 if result["ok"] else 2
 
-    if getattr(args, "assert_rfl_advance", False):
+    if getattr(args, "record_rung_review_outcome", None):
+        from rfl_policy_c import record_rung_review_outcome
+
+        if getattr(args, "run_dir", None) is None:
+            print("ERROR: --record-rung-review-outcome requires --run-dir", file=sys.stderr)
+            return 2
+        try:
+            result = record_rung_review_outcome(
+                args.run_dir,
+                args.record_rung_review_outcome,
+                rung_id=getattr(args, "rung_id", None),
+            )
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(result, indent=2))
+        return 0
+
+    if getattr(args, "assert_rfl_advance", False) or getattr(args, "assert_consecutive_clean", False):
         from rfl_policy_c import assert_rfl_advance
 
+        action = getattr(args, "next_action", "task") or "task"
+        if getattr(args, "assert_consecutive_clean", False) and action == "task":
+            action = "next_rung_review"
         result = assert_rfl_advance(
             getattr(args, "run_dir", None),
             rung_dir=getattr(args, "rung_dir", None),
             project_root=getattr(args, "project_root", None),
-            next_action=getattr(args, "next_action", "task") or "task",
+            next_action=action,
             current_phase=getattr(args, "current_phase", None),
             prompt=getattr(args, "prompt", "") or "",
         )
@@ -726,7 +801,7 @@ def main() -> int:
     args = parser.parse_args()
     code = dispatch_policy_cli(args)
     if code is None:
-        parser.error("one of --default-host-route/--launch-policy/--skip-artifact/--write-policy-c/--assert-policy-c/--assert-rfl-advance/--issue-table/--triage-table/--resolved-table/--ladder-matrix/--launcher-steps is required")
+        parser.error("one of --default-host-route/--launch-policy/--skip-artifact/--write-policy-c/--assert-policy-c/--assert-rfl-advance/--assert-consecutive-clean/--record-rung-review-outcome/--issue-table/--triage-table/--resolved-table/--ladder-matrix/--issue-ledger/--write-review-brief/--launcher-steps is required")
     return code
 
 
