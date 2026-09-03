@@ -447,7 +447,7 @@
     "AF-DOCUMENT": "templates/orchestrator-workers/DOCUMENT.md",
     "AF-EXECUTE": "templates/orchestrator-workers/EXECUTE.md",
     "AF-FAST-PATH": "templates/orchestrator-workers/FAST.md",
-    "AF-MULTI-AI-TASK": "skills/silver-multi-ai-task/SKILL.md",
+    "AF-MULTI-AI-TASK": "templates/orchestrator-workers/MULTI-AI-TASK.md",
     "AF-ORIENT": "templates/orchestrator-workers/ORIENT.md",
     "AF-PHASE-MANAGE": "templates/orchestrator-workers/PHASE.md",
     "AF-PLAN": "templates/orchestrator-workers/PLAN.md",

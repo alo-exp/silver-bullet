@@ -4012,7 +4012,7 @@
       "exit_condition": "all owned flow-step V-loops pass, the flow V-gate passes, and evidence is recorded for workflow rollup",
       "execution": {
         "dispatch_mode": "subagent",
-        "worker_template": "skills/silver-multi-ai-task/SKILL.md",
+        "worker_template": "templates/orchestrator-workers/MULTI-AI-TASK.md",
         "parallelizable": true,
         "dependencies": [
           "catalog-selected upstream refs"

@@ -81,7 +81,7 @@ Flow numbers are stable identifiers — not always runtime order. For `silver:fe
 | `AF-PHASE-MANAGE` | phase_and_state_management | `templates/orchestrator-workers/PHASE.md` | `silver-add`, `silver-clear-stack-state`, `silver-doctor`, `silver-migrate` |
 | `AF-FAST-PATH` | bounded_fast_path | `templates/orchestrator-workers/FAST.md` | `silver-benchmark`, `silver-fast`, `silver-feature`, `silver-incident` |
 | `AF-AGENT-DELEGATE` | external_agent_delegation | `templates/orchestrator-workers/AGENT-DELEGATE.md` | `silver-agent-codex`, `silver-agent-cursor`, `silver-agent-claude` |
-| `AF-MULTI-AI-TASK` | multi_model_orchestration | `skills/silver-multi-ai-task/SKILL.md` | `silver-multi-ai-task` |
+| `AF-MULTI-AI-TASK` | multi_model_orchestration | `templates/orchestrator-workers/MULTI-AI-TASK.md` | `silver-multi-ai-task` |
 
 ## Skill-Dispatched Worker Templates
 

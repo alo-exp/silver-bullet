@@ -6,7 +6,15 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ASSESS="${REPO_ROOT}/scripts/lib/enterprise-e2e-outcome-assessment.sh"
 RUN_TC01="${REPO_ROOT}/.planning/sb-tri-criteria-e2e/runs/20260705T220228Z-TC-01"
 RUN_TC02="${REPO_ROOT}/.planning/sb-tri-criteria-e2e/runs/20260705T220511Z-TC-02"
-WORK_DIR="${SB_TRI_CRITERIA_WORK_DIR:-/Users/shafqat/projects/enterprise-grade-test-app}"
+if [[ -n "${SB_TRI_CRITERIA_WORK_DIR:-}" ]]; then
+  WORK_DIR="$SB_TRI_CRITERIA_WORK_DIR"
+elif [[ -e "/Users/shafqat/projects/enterprise-grade-test-app/.git" ]]; then
+  WORK_DIR="/Users/shafqat/projects/enterprise-grade-test-app"
+else
+  # The committed run evidence is sufficient for this scorer; CI does not
+  # have the developer's external enterprise fixture checkout.
+  WORK_DIR="$REPO_ROOT"
+fi
 PASS=0
 FAIL=0
 
