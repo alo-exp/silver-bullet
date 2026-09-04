@@ -36,7 +36,10 @@ five_tool_cursor_agent_authenticated() {
   if ! "$cli" --version >/dev/null 2>&1; then
     return 1
   fi
-  if [[ -n "${CURSOR_API_KEY:-}" ]]; then
+  # The current Cursor CLI also supports a logged-in session token through
+  # CURSOR_AUTH_TOKEN. This is especially useful for isolated live fixtures
+  # whose CURSOR_CONFIG_DIR does not share the user's Keychain-backed status.
+  if [[ -n "${CURSOR_API_KEY:-}" || -n "${CURSOR_AUTH_TOKEN:-}" ]]; then
     return 0
   fi
   local status_out=""
@@ -114,4 +117,3 @@ five_tool_prerelease_run_offline_bundle() {
   done < <(five_tool_prerelease_offline_tests "$root")
   return "$failures"
 }
-

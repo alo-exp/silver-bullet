@@ -166,8 +166,27 @@ leanctx_supports_library_mode() {
 }
 
 context_mode_configured() {
-  local mcp="${HOME}/.cursor/mcp.json"
-  [[ -f "$mcp" ]] && grep -q '"context-mode"' "$mcp" 2>/dev/null
+  case "$HOST" in
+    cursor)
+      local mcp="${HOME}/.cursor/mcp.json"
+      [[ -f "$mcp" ]] && grep -q '"context-mode"' "$mcp" 2>/dev/null
+      ;;
+    claude)
+      local claude_plugin_root="${HOME}/.claude/plugins"
+      [[ -d "${claude_plugin_root}/context-mode" ]] \
+        || compgen -G "${claude_plugin_root}/cache/*/context-mode" >/dev/null 2>&1 \
+        || [[ -d "${HOME}/.codex/plugins/context-mode" ]] \
+        || {
+          local mcp="${HOME}/.claude.json"
+          [[ -f "$mcp" ]] && grep -q '"context-mode"' "$mcp" 2>/dev/null
+        }
+      ;;
+    codex)
+      local mcp="${CODEX_HOME:-${HOME}/.codex}/config.toml"
+      [[ -f "$mcp" ]] && grep -q '^\[mcp_servers\.context-mode\]$' "$mcp" 2>/dev/null
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 install_leanctx_binary() {
@@ -352,5 +371,3 @@ fi
 log "=== LeanCTX SB install complete ==="
 log "Routing: sb_wire/sb_read/sb_pathjail/sb_injection → LeanCTX; sb_shell→RTK; sb_slice/sb_grep/sb_webfetch→CM; sb_graph→Graphify; sb_remember→agentmemory"
 log "See .cursor/rules/leanctx.mdc and docs/LEANCTX.md (when present)"
-
-

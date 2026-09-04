@@ -7,8 +7,9 @@
         "artifacts": ["~/.codex/settings.json", "~/.codex/RTK.md"]
       },
       "context_mode": {
-        "command": "claude plugin install context-mode@context-mode",
-        "artifacts": ["~/.codex/plugins/context-mode"]
+        "command": "npm install -g context-mode",
+        "artifacts": ["~/.silver-bullet/five-tool-stack/instances.json", "~/.claude.json"],
+        "note": "Disable the optional Claude Context Mode plugin so Claude uses the shared MCP executable"
       },
       "doctor_platform": "claude"
     },

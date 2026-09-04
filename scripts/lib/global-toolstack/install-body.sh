@@ -103,7 +103,7 @@ for f in common.sh shell-compression.sh graphify-gate.sh agentmemory-gate.sh \
   fi
 done
 
-for py in patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
+for py in five_tool_instances.py patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
   [[ -f "${SRC_DIR}/${py}" ]] && cp -f "${SRC_DIR}/${py}" "${TS_DIR}/${py}" 2>/dev/null || true
 done
 chmod +x "${TS_DIR}/parity-verify.sh" "${TS_DIR}/verify.sh" 2>/dev/null || true
@@ -157,4 +157,3 @@ fi
 printf '\n== Global toolstack install complete ==\n'
 printf 'Backups: hooks.json.bak.%s mcp.json.bak.%s\n' "$TS" "$TS"
 printf 'Run: bash %s/parity-verify.sh && bash %s/verify.sh\n' "$TS_DIR" "$TS_DIR"
-

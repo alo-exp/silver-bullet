@@ -32,7 +32,7 @@ RTK, Context Mode, LeanCTX, Alumnium (opt-in), and cross-tool convergence.
 
 Options:
   --project-root <path>     Canonical SB project root (required for project scope)
-  --host <cursor|...>       Target host (default: cursor; Phase A implements cursor)
+  --host <cursor|...>       Target host (default: cursor; five-tool hosts: claude|codex|cursor)
   --mode verify|plan|apply  verify/plan are read-only; apply mutates (default: verify)
   --scope project|host|packages|all
   --format text|json

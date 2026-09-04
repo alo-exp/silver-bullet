@@ -4,13 +4,37 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
+import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from five_tool_instances import ensure_global_instances, tool_command  # noqa: E402
+
 TS = Path.home() / ".cursor" / "hooks" / "toolstack"
 HOOKS = Path.home() / ".cursor" / "hooks.json"
 SB_BRIDGE = "cursor-hook-bridge.sh"
+LEGACY_ROUTING_HOOK_MARKERS = (
+    "lean-ctx hook deny",
+    "lean-ctx hook redirect",
+    "lean-ctx hook rewrite",
+    "toolstack/shell-compression.sh",
+)
+GLOBAL_GATE_NAMES = (
+    "stack-compression-coordinator.sh",
+    "graphify-gate.sh",
+    "agentmemory-gate.sh",
+    "leanctx-gate.sh",
+    "rtk-gate.sh",
+    "context-mode-gate.sh",
+    "token-compression-tools-gate.sh",
+    "record-graphify-query.sh",
+    "record-agentmemory-usage.sh",
+)
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -46,8 +70,54 @@ def hook_cmd(h: dict) -> str:
     return str(h.get("command", ""))
 
 
+def is_legacy_routing_hook(command: str) -> bool:
+    """Identify old plugin-owned routing hooks superseded by the global stack."""
+    normalized = command.replace("\\\\", "")
+    if any(marker in normalized for marker in LEGACY_ROUTING_HOOK_MARKERS):
+        return True
+    return SB_BRIDGE in normalized and any(name in normalized for name in GLOBAL_GATE_NAMES)
+
+
 def has_cmd(hooks: list, needle: str) -> bool:
     return any(needle in hook_cmd(h) for h in hooks)
+
+
+def context_mode_hook_phase(command: str) -> str | None:
+    """Extract a Context Mode Cursor hook phase from bare or absolute argv."""
+    try:
+        parts = shlex.split(command)
+    except ValueError:
+        parts = command.split()
+    for index in range(len(parts) - 2):
+        if parts[index : index + 2] != ["hook", "cursor"]:
+            continue
+        if not any("context-mode" in part for part in parts[:index]):
+            continue
+        phase = parts[index + 2]
+        if phase in {"pretooluse", "posttooluse", "afteragentresponse", "sessionstart", "stop"}:
+            return phase
+    return None
+
+
+def context_mode_hook_argv(manifest: dict, phase: str) -> list[str]:
+    spec = manifest["tools"]["context_mode"]
+    command = str(spec["command"])
+    argv = [command, *list(spec.get("args", []))]
+    if Path(command).suffix in {".js", ".mjs", ".cjs"}:
+        node_candidates = []
+        node = shutil.which("node")
+        if node:
+            node_candidates.append(Path(node).resolve())
+        for parent in Path(command).resolve().parents:
+            node_candidates.append(parent / "bin" / "node")
+        node_path = next((candidate for candidate in node_candidates if candidate.is_file() and os.access(candidate, os.X_OK)), None)
+        if node_path:
+            argv = [str(node_path), *argv]
+    return [*argv, "hook", "cursor", phase]
+
+
+def canonical_context_mode_hook(manifest: dict, phase: str) -> str:
+    return shlex.join(context_mode_hook_argv(manifest, phase))
 
 
 def toolstack_script_exists(script_name: str) -> bool:
@@ -62,6 +132,56 @@ def hook_entry_for_script(script_name: str, matcher: str | None = None, timeout:
 
 def has_toolstack_hook(hooks: list, script_name: str) -> bool:
     return any(f"toolstack/{script_name}" in hook_cmd(h) for h in hooks)
+
+
+def _merge_matchers(entries: list[dict]) -> str | None:
+    """Return the union of Cursor matchers, or None for an unrestricted hook."""
+    alternatives: list[str] = []
+    for item in entries:
+        matcher = item.get("matcher")
+        if not matcher or matcher == ".*":
+            return None
+        for part in str(matcher).split("|"):
+            part = part.strip()
+            if part and part not in alternatives:
+                alternatives.append(part)
+    return "|".join(alternatives) or None
+
+
+def deduplicate_hook_entries(entries: list) -> tuple[list, int]:
+    """Collapse repeated commands while preserving the union of their matchers."""
+    result: list = []
+    indexes: dict[str, int] = {}
+    grouped: dict[str, list[dict]] = {}
+    for item in entries:
+        if not isinstance(item, dict) or not hook_cmd(item):
+            result.append(item)
+            continue
+        command = hook_cmd(item)
+        if command not in indexes:
+            indexes[command] = len(result)
+            grouped[command] = []
+            result.append(item)
+        grouped[command].append(item)
+
+    for command, items in grouped.items():
+        if len(items) == 1:
+            continue
+        merged = result[indexes[command]]
+        matcher = _merge_matchers(items)
+        if matcher is None:
+            merged.pop("matcher", None)
+        else:
+            merged["matcher"] = matcher
+        timeouts = [
+            item.get("timeout")
+            for item in items
+            if isinstance(item.get("timeout"), (int, float))
+        ]
+        if timeouts:
+            merged["timeout"] = max(timeouts)
+
+    return result, len(entries) - len(result)
 
 
 def insert_before_bridge(hooks: list, new_entries: list) -> int:
@@ -80,24 +200,30 @@ def insert_before_bridge(hooks: list, new_entries: list) -> int:
     return added
 
 
-def ensure_rtk_before_cm(pretool: list, *, patch_rtk: bool, patch_cm: bool) -> bool:
+def ensure_rtk_before_cm(
+    pretool: list, *, patch_rtk: bool, patch_cm: bool, rtk_hook_command: str
+) -> bool:
     rtk_idx = cm_idx = None
+    changed = False
     for i, h in enumerate(pretool):
         cmd = hook_cmd(h)
-        if cmd == "rtk hook cursor":
+        if cmd.endswith("rtk hook cursor"):
             rtk_idx = i
-        elif "context-mode hook cursor pretooluse" in cmd:
+        elif context_mode_hook_phase(cmd) == "pretooluse":
             cm_idx = i
     if not patch_rtk:
         return False
+    if rtk_idx is not None and hook_cmd(pretool[rtk_idx]) != rtk_hook_command:
+        pretool[rtk_idx]["command"] = rtk_hook_command
+        changed = True
     if rtk_idx is not None and cm_idx is not None and rtk_idx > cm_idx:
         entry_rtk = pretool.pop(rtk_idx)
         pretool.insert(cm_idx, entry_rtk)
-        return True
+        changed = True
     if rtk_idx is None and cm_idx is not None:
-        pretool.insert(cm_idx, {"command": "rtk hook cursor", "matcher": "Shell"})
-        return True
-    return False
+        pretool.insert(cm_idx, {"command": rtk_hook_command, "matcher": "Shell"})
+        changed = True
+    return changed
 
 
 def hook_list(hooks: dict[str, Any], key: str) -> tuple[list, bool]:
@@ -148,10 +274,49 @@ def main() -> int:
         print("OK: hooks.json unchanged (no consented patch targets)")
         return 0
 
+    manifest = ensure_global_instances()
+    rtk_hook_command = f"{tool_command(manifest, 'rtk')} hook cursor"
+
     original = load_json(HOOKS)
     data = json.loads(json.dumps(original))
     hooks = data.setdefault("hooks", {})
     changed = 0
+
+    for event, event_hooks in list(hooks.items()):
+        if not isinstance(event_hooks, list):
+            continue
+        kept = []
+        removed = 0
+        for item in event_hooks:
+            if isinstance(item, dict) and is_legacy_routing_hook(hook_cmd(item)):
+                removed += 1
+            else:
+                kept.append(item)
+        if removed:
+            hooks[event] = kept
+            changed += removed
+
+    for event, event_hooks in list(hooks.items()):
+        if not isinstance(event_hooks, list):
+            continue
+        for item in event_hooks:
+            if not isinstance(item, dict):
+                continue
+            phase = context_mode_hook_phase(hook_cmd(item))
+            if phase is None:
+                continue
+            canonical = canonical_context_mode_hook(manifest, phase)
+            if hook_cmd(item) != canonical:
+                item["command"] = canonical
+                changed += 1
+
+    for event, event_hooks in list(hooks.items()):
+        if not isinstance(event_hooks, list):
+            continue
+        cleaned, removed = deduplicate_hook_entries(event_hooks)
+        if removed:
+            hooks[event] = cleaned
+            changed += removed
 
     if patch_graphify:
         ss, ss_attached = hook_list(hooks, "sessionStart")
@@ -168,31 +333,16 @@ def main() -> int:
             changed += 1
 
     pt, pt_attached = hook_list(hooks, "preToolUse")
-    if patch_rtk:
-        before_len = len(pt)
-        pt[:] = [
-            h for h in pt
-            if "lean-ctx hook rewrite" not in hook_cmd(h).replace("\\", "")
-        ]
-        removed = before_len - len(pt)
-        if removed:
-            if not pt_attached:
-                attach_hook_list(hooks, "preToolUse", pt)
-                pt_attached = True
-            changed += removed
-        shell_entry = hook_entry_for_script("shell-compression.sh", "Shell")
-        if shell_entry and not has_toolstack_hook(pt, "shell-compression.sh"):
-            insert_at = 0
-            for i, h in enumerate(pt):
-                if "sidekick" in hook_cmd(h):
-                    insert_at = i + 1
-                    break
-            pt.insert(insert_at, shell_entry)
-            if not pt_attached:
-                attach_hook_list(hooks, "preToolUse", pt)
-                pt_attached = True
-            changed += 1
-    if ensure_rtk_before_cm(pt, patch_rtk=patch_rtk, patch_cm=patch_cm):
+    # The manifest-backed RTK hook below is the single global shell rewrite
+    # owner. The older shell-compression wrapper could invoke RTK a second
+    # time (or fall back to LeanCTX rewrite), so it remains deployable for
+    # compatibility but must not be wired into Cursor hooks.
+    if ensure_rtk_before_cm(
+        pt,
+        patch_rtk=patch_rtk,
+        patch_cm=patch_cm,
+        rtk_hook_command=rtk_hook_command,
+    ):
         if not pt_attached:
             attach_hook_list(hooks, "preToolUse", pt)
             pt_attached = True
@@ -274,4 +424,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

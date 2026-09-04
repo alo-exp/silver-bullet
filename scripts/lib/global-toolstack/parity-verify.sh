@@ -78,8 +78,11 @@ else
 fi
 
 if [[ -f "$HOOKS_JSON" ]]; then
-  grep -q 'toolstack/shell-compression' "$HOOKS_JSON" && _check pass hooks:shell_compression wired || _check fail hooks:shell_compression missing
-  grep -q 'rtk hook cursor' "$HOOKS_JSON" && _check pass hooks:rtk_primary wired || _check fail hooks:rtk_primary missing
+  # The manifest-backed RTK hook is the single global shell rewrite owner.
+  # The legacy shell-compression wrapper must stay unwired to prevent a second
+  # RTK/LeanCTX rewrite of the same shell command.
+  grep -q 'rtk hook cursor' "$HOOKS_JSON" && _check pass hooks:shell_compression wired || _check fail hooks:shell_compression missing
+  ! grep -q 'toolstack/shell-compression' "$HOOKS_JSON" && _check pass hooks:legacy_shell_wrapper removed || _check fail hooks:legacy_shell_wrapper "still wired"
   ! grep -q 'lean-ctx hook rewrite' "$HOOKS_JSON" && _check pass hooks:no_leanctx_rewrite removed || _check fail hooks:no_leanctx_rewrite "still present"
   grep -q 'toolstack/graphify-gate' "$HOOKS_JSON" && _check pass hooks:graphify_gate wired || _check fail hooks:graphify_gate missing
   grep -q 'toolstack/agentmemory-gate' "$HOOKS_JSON" && _check pass hooks:agentmemory_gate wired || _check fail hooks:agentmemory_gate missing
@@ -90,7 +93,7 @@ if [[ -f "$HOOKS_JSON" ]]; then
   grep -q 'toolstack/session-bootstrap' "$HOOKS_JSON" && _check pass hooks:session_bootstrap wired || _check fail hooks:session_bootstrap missing
   # rtk before context-mode
   rtk_line=$(grep -n 'rtk hook cursor' "$HOOKS_JSON" | head -1 | cut -d: -f1)
-  cm_line=$(grep -n 'context-mode hook cursor pretooluse' "$HOOKS_JSON" | head -1 | cut -d: -f1)
+  cm_line=$(grep -nE 'context-mode.*hook cursor pretooluse|hook cursor pretooluse.*context-mode' "$HOOKS_JSON" | head -1 | cut -d: -f1)
   if [[ -n "$rtk_line" && -n "$cm_line" && "$rtk_line" -lt "$cm_line" ]]; then
     _check pass hooks:rtk_before_cm order
   else

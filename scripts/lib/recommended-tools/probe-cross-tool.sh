@@ -38,7 +38,7 @@ rt_probe_cross_tool() {
   local evidence=()
   local fu=0 fd=0 fp=0 fs=0 ff=0 frr=0 frp=0 fr=0
 
-  if ! rt_host_supported "${RT_HOST:-cursor}"; then fu=1
+  if ! rt_five_tool_host_supported "${RT_HOST:-cursor}"; then fu=1
   elif ! rt_any_five_tool_consented; then
     fr=1
     activation="none"

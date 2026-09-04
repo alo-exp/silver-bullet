@@ -353,8 +353,6 @@ prune_cursor_gitpath_picker_skills() {
 
 prune_cursor_gitpath_extra_picker_surfaces() {
   local gitpath_root="$1"
-  local nested_manifest="${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json"
-  local tmp=""
 
   # host-bundles/cursor mirrors agents/cursor — Cursor discovers both from full clone.
   rm -rf "${gitpath_root}/host-bundles" 2>/dev/null || true
@@ -362,21 +360,18 @@ prune_cursor_gitpath_extra_picker_surfaces() {
   # agents/cursor auto-registers / picker subagents; skill-source is internal-only.
   rm -rf "${gitpath_root}/agents" 2>/dev/null || true
 
-  # Root materialization is canonical; nested plugin mirror duplicates commands/subagents.
+  # Root materialization is canonical; the nested plugin mirror duplicates
+  # commands, subagents, and (on older checkouts) stale global stack hooks.
   rm -rf \
     "${gitpath_root}/plugins/silver-bullet/commands" \
     "${gitpath_root}/plugins/silver-bullet/agents" \
     "${gitpath_root}/plugins/silver-bullet/skill-source" \
     "${gitpath_root}/plugins/silver-bullet/templates" \
+    "${gitpath_root}/plugins/silver-bullet/.cursor-plugin" \
+    "${gitpath_root}/plugins/silver-bullet/cursor-hooks.json" \
+    "${gitpath_root}/plugins/silver-bullet/hooks" \
     "${gitpath_root}/templates/orchestrator-workers" \
     "${gitpath_root}/templates/workflows" 2>/dev/null || true
-
-  if [[ -f "$nested_manifest" ]]; then
-    tmp="$(mktemp)"
-    jq 'del(.skills, .commands)' "$nested_manifest" > "$tmp"
-    install -m 644 "$tmp" "$nested_manifest"
-    rm -f -- "$tmp"
-  fi
 }
 
 materialize_cursor_plugin_surface_at_root() {

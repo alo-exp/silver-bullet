@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_leanctx_mcp_file() {
-  printf '%s' "${HOME}/.cursor/mcp.json"
+  rt_host_mcp_config_path "${RT_HOST:-cursor}"
 }
 
 # Duplicate leanctx + lean-ctx keys are a config FAIL when LeanCTX is opted in.
@@ -15,13 +15,18 @@ rt_probe_leanctx_duplicate_mcp() {
   local f
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" ]] || return 1
-  jq -e '.mcpServers | has("leanctx") and has("lean-ctx")' "$f" >/dev/null 2>&1
+  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
+    grep -q '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+      && grep -q '^\[mcp_servers\.lean-ctx\]$' "$f" 2>/dev/null
+  else
+    jq -e '.mcpServers | has("leanctx") and has("lean-ctx")' "$f" >/dev/null 2>&1
+  fi
 }
 
 rt_probe_leanctx_mcp() {
   local host="${RT_HOST:-cursor}" f
   case "$host" in
-    cursor)
+    cursor|claude)
       f="$(rt_leanctx_mcp_file)"
       [[ -f "$f" ]] || return 1
       jq -e '.mcpServers.leanctx
@@ -29,14 +34,23 @@ rt_probe_leanctx_mcp() {
         // .mcpServers["user-leanctx"]
         // .mcpServers["user-lean-ctx"]' "$f" >/dev/null 2>&1
       ;;
+    codex)
+      rt_host_mcp_server_configured "$host" leanctx
+      ;;
     *) return 1 ;;
   esac
 }
 
 rt_leanctx_mcp_env() {
-  local f key="${1:-}"
+  local f key="${1:-}" host="${RT_HOST:-cursor}"
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" && -n "$key" ]] || return 1
+  if [[ "$host" == "codex" ]]; then
+    grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+      | grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" \
+      | sed -E 's/^[^=]+=[[:space:]]*"([^"]*)".*$/\1/'
+    return 0
+  fi
   jq -r --arg k "$key" '
     (.mcpServers.leanctx // .mcpServers["lean-ctx"] // .mcpServers["user-leanctx"] // .mcpServers["user-lean-ctx"] // {})
     | .env[$k] // ""
@@ -50,6 +64,15 @@ rt_probe_leanctx_lctx_prefix() {
 
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
+  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
+    local f="$(rt_leanctx_mcp_file)"
+    local key
+    for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
+      grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+        | grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" || return 1
+    done
+    return 0
+  fi
   [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_SHELL_MCP)" == "1" ]] \
     && [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_SANDBOX_MCP)" == "1" ]] \
     && [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_FETCH_MCP)" == "1" ]] \

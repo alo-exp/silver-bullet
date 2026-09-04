@@ -611,6 +611,15 @@ rt_apply_host_convergence_batches() {
 rt_apply_host_hooks_batch() {
   local repo="${RT_REPO_ROOT:-}" actions=() failures=() changed=0 patch_any=0
   local hooks_pre hooks_post patch_out fix_out
+  # Claude and Codex own their hook formats and lifecycle; their installers
+  # wire RTK/Context Mode directly. Never invoke the Cursor JSON patcher for a
+  # different host, because that silently creates a foreign-host config.
+  if [[ "${RT_HOST:-cursor}" != "cursor" ]]; then
+    jq -n \
+      --argjson actions '[]' --argjson failures '[]' --argjson changed false \
+      '{actions:$actions,failures:$failures,changed:$changed}'
+    return 0
+  fi
   [[ -f "${repo}/scripts/lib/global-toolstack/patch-hooks.py" ]] || {
     jq -n \
       --argjson actions '[]' --argjson failures '[]' --argjson changed false \
@@ -630,17 +639,17 @@ rt_apply_host_hooks_batch() {
   else
     export RT_PATCH_AGENTMEMORY=0
   fi
-  if rt_mutation_allowed rtk; then
-    export RT_PATCH_RTK=1
-    patch_any=1
-  else
-    export RT_PATCH_RTK=0
-  fi
   if rt_mutation_allowed context_mode; then
     export RT_PATCH_CONTEXT_MODE=1
     patch_any=1
   else
     export RT_PATCH_CONTEXT_MODE=0
+  fi
+  if rt_mutation_allowed rtk; then
+    export RT_PATCH_RTK=1
+    patch_any=1
+  else
+    export RT_PATCH_RTK=0
   fi
   if rt_mutation_allowed leanctx; then
     export RT_PATCH_LEANCTX=1
@@ -696,14 +705,21 @@ rt_apply_host_mcp_batch() {
   else
     export RT_PATCH_AGENTMEMORY=0
   fi
-  if [[ "${RT_PATCH_GRAPHIFY:-0}" == "1" || "${RT_PATCH_LEANCTX:-0}" == "1" || "${RT_PATCH_AGENTMEMORY:-0}" == "1" ]]; then
-    mcp_pre="$(rt_config_hash_file "${HOME}/.cursor/mcp.json")"
-    patch_out="$(python3 "${repo}/scripts/lib/global-toolstack/patch-mcp.py" 2>&1)" || {
+  if rt_mutation_allowed context_mode; then
+    export RT_PATCH_CONTEXT_MODE=1
+  else
+    export RT_PATCH_CONTEXT_MODE=0
+  fi
+  if [[ "${RT_PATCH_GRAPHIFY:-0}" == "1" || "${RT_PATCH_LEANCTX:-0}" == "1" || "${RT_PATCH_AGENTMEMORY:-0}" == "1" || "${RT_PATCH_CONTEXT_MODE:-0}" == "1" ]]; then
+    local mcp_path
+    mcp_path="$(rt_host_mcp_config_path "${RT_HOST:-cursor}")"
+    mcp_pre="$(rt_config_hash_file "$mcp_path")"
+    patch_out="$(RT_HOST="${RT_HOST:-cursor}" python3 "${repo}/scripts/lib/global-toolstack/patch-mcp.py" 2>&1)" || {
       failures+=("patch_mcp_failed")
       patch_out=""
     }
     if [[ -n "$patch_out" ]]; then
-      mcp_post="$(rt_config_hash_file "${HOME}/.cursor/mcp.json")"
+      mcp_post="$(rt_config_hash_file "$mcp_path")"
       if ! rt_patcher_output_unchanged "$patch_out" \
          && rt_config_hash_changed "$mcp_pre" "$mcp_post"; then
         actions+=("patch_mcp")
@@ -711,7 +727,7 @@ rt_apply_host_mcp_batch() {
       fi
     fi
   fi
-  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY
+  unset RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX RT_PATCH_AGENTMEMORY RT_PATCH_CONTEXT_MODE
   jq -n \
     --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
     --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \

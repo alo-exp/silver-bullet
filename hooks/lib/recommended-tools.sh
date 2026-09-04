@@ -198,8 +198,8 @@ sb_recommended_tool_platform_pre_index_commands() {
   elif [[ "$tool_id" == "context_mode" ]]; then
     case "$host" in
       claude)
-        printf '%s\n' 'claude plugin marketplace add mksglu/context-mode'
-        printf '%s\n' 'claude plugin install context-mode@context-mode'
+        printf '%s\n' 'npm install -g context-mode'
+        printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"'
         ;;
       cursor)
         printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
@@ -491,4 +491,3 @@ sb_stack_surface_owner() {
     *) return 1 ;;
   esac
 }
-

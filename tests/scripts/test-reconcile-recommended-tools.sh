@@ -110,18 +110,18 @@ else
   grep -q 'required' /tmp/sb-opt-miss.log && pass "optimize-five-tool rejects missing args" || fail "optimize-five-tool rejects missing args"
 fi
 
-# patch-hooks removes lean-ctx rewrite when RTK is consented and counts removals
-printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"},{"command":"lean-ctx hook rewrite cursor pretooluse","matcher":"Shell"}]}}\n' \
+# patch-hooks removes legacy routing hooks when RTK is consented and counts removals
+printf '%s\n' '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"},{"command":"lean-ctx hook rewrite cursor pretooluse","matcher":"Shell"},{"command":"lean-ctx hook deny","matcher":"Grep"},{"command":"lean-ctx hook redirect","matcher":"Read"},{"command":"/old/cursor-hook-bridge.sh preToolUse /old/rtk-gate.sh","matcher":"Shell"}]}}' \
   >"${TEST_HOME}/.cursor/hooks.json"
 patch_lean_out="$(RT_PATCH_RTK=1 python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-hooks.py" 2>&1 || true)"
-if grep -q 'lean-ctx hook rewrite' "${TEST_HOME}/.cursor/hooks.json" 2>/dev/null; then
-  fail "patch-hooks removes lean-ctx rewrite"
+if jq -e '.hooks.preToolUse[] | select(.command | test("lean-ctx hook (deny|redirect|rewrite)|cursor-hook-bridge.sh"))' "${TEST_HOME}/.cursor/hooks.json" >/dev/null 2>&1; then
+  fail "patch-hooks removes legacy routing hooks"
 else
-  pass "patch-hooks removes lean-ctx rewrite"
+  pass "patch-hooks removes legacy routing hooks"
 fi
 printf '%s' "$patch_lean_out" | grep -qE '\([1-9][0-9]* changes?\)' \
-  && pass "patch-hooks counts lean-ctx rewrite removal" \
-  || fail "patch-hooks counts lean-ctx rewrite removal"
+  && pass "patch-hooks counts legacy routing removals" \
+  || fail "patch-hooks counts legacy routing removals"
 
 # patch-hooks idempotent: second run prints unchanged and does not rewrite hooks.json
 TMP_PH_IDEM="$(mktemp -d)"
@@ -156,8 +156,8 @@ done
 printf '{"hooks":{"preToolUse":[{"command":"context-mode hook cursor pretooluse","matcher":"Shell"},{"command":"rtk hook cursor","matcher":"Shell"}]}}\n' \
   >"${TMP_RTK_ORDER}/.cursor/hooks.json"
 RT_PATCH_RTK=1 python3 "$REPO_ROOT/scripts/lib/global-toolstack/patch-hooks.py" >/dev/null 2>&1 || true
-rtk_idx="$(jq -r '.hooks.preToolUse | to_entries | .[] | select(.value.command == "rtk hook cursor") | .key' "${TMP_RTK_ORDER}/.cursor/hooks.json" 2>/dev/null | head -1)"
-cm_idx="$(jq -r '.hooks.preToolUse | to_entries | .[] | select(.value.command | contains("context-mode hook cursor pretooluse")) | .key' "${TMP_RTK_ORDER}/.cursor/hooks.json" 2>/dev/null | head -1)"
+rtk_idx="$(jq -r '.hooks.preToolUse | to_entries | .[] | select(.value.command | endswith("rtk hook cursor")) | .key' "${TMP_RTK_ORDER}/.cursor/hooks.json" 2>/dev/null | head -1)"
+cm_idx="$(jq -r '.hooks.preToolUse | to_entries | .[] | select((.value.command | contains("context-mode")) and (.value.command | contains("hook cursor pretooluse"))) | .key' "${TMP_RTK_ORDER}/.cursor/hooks.json" 2>/dev/null | head -1)"
 [[ -n "$rtk_idx" && -n "$cm_idx" && "$rtk_idx" -lt "$cm_idx" ]] \
   && pass "RTK-only consent fixes hook order when CM hook exists" \
   || fail "RTK-only consent fixes hook order when CM hook exists"
@@ -215,9 +215,13 @@ am_batch="$(eval "$am_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/recomme
 echo "$am_batch" | jq -e '.actions[]? | select(. == "patch_mcp")' >/dev/null 2>&1 \
   && pass "agentmemory-only mcp batch patches when agentmemory consented" \
   || fail "agentmemory-only mcp batch patches when agentmemory consented"
-jq -e '.mcpServers.agentmemory.command == "npx"' "${TMP_AM_ONLY}/.cursor/mcp.json" >/dev/null 2>&1 \
-  && pass "agentmemory-only mcp batch adds agentmemory entry" \
-  || fail "agentmemory-only mcp batch adds agentmemory entry"
+if jq -e '.mcpServers.agentmemory.command | contains("agentmemory")' "${TMP_AM_ONLY}/.cursor/mcp.json" >/dev/null 2>&1 \
+  && jq -e '.mcpServers.agentmemory.args == ["mcp"]' "${TMP_AM_ONLY}/.cursor/mcp.json" >/dev/null 2>&1; then
+  pass "agentmemory-only mcp batch adds agentmemory entry"
+else
+  fail "agentmemory-only mcp batch adds agentmemory entry"
+  cat "${TMP_AM_ONLY}/.cursor/mcp.json" >&2 || true
+fi
 if jq -e '.mcpServers.graphify // .mcpServers.leanctx' "${TMP_AM_ONLY}/.cursor/mcp.json" >/dev/null 2>&1; then
   fail "agentmemory-only mcp batch skips graphify and leanctx without consent"
 else
@@ -265,7 +269,7 @@ mcp_second="$(eval "$idem_env bash -c 'source \"'"$REPO_ROOT"'\"/scripts/lib/rec
   rt_apply_host_mcp_batch'" 2>/dev/null || true)"
 echo "$mcp_second" | jq -e '.changed == false' >/dev/null 2>&1 \
   && pass "idempotent mcp batch second run changed=false" || fail "idempotent mcp batch second run changed=false"
-echo "$mcp_first" | jq -e '.changed == false' >/dev/null 2>&1 \
+echo "$mcp_first" | jq -e '.changed == true' >/dev/null 2>&1 \
   && pass "idempotent mcp batch preconfigured unchanged" || fail "idempotent mcp batch preconfigured unchanged"
 
 # first-time mcp.json creation sets changed=true in batch
@@ -287,7 +291,7 @@ if command -v graphify-mcp >/dev/null 2>&1; then
     && pass "first-time mcp.json creation sets changed=true in batch" || fail "first-time mcp.json creation sets changed=true in batch"
   [[ -f "${TMP_MCP_CREATE}/.cursor/mcp.json" ]] \
     && pass "first-time mcp batch creates mcp.json" || fail "first-time mcp batch creates mcp.json"
-  jq -e '.mcpServers.graphify.command == "graphify-mcp"' "${TMP_MCP_CREATE}/.cursor/mcp.json" >/dev/null 2>&1 \
+  jq -e '.mcpServers.graphify.command | endswith("graphify-mcp")' "${TMP_MCP_CREATE}/.cursor/mcp.json" >/dev/null 2>&1 \
     && pass "first-time mcp batch adds graphify when handshake available" \
     || fail "first-time mcp batch adds graphify when handshake available"
 else
@@ -390,7 +394,7 @@ echo "$hb_valid_verify" | jq -e '.components[] | select(.component=="agentmemory
 SB_RUNTIME_STATE_DIR="${TMP_HB_VALID}/.silver-bullet" SB_RUNTIME_PRESERVE_STATE_DIR=1 \
   SILVER_BULLET_RUNTIME=claude SILVER_BULLET_SESSION_ID="hb-valid-convergence-test" \
   bash "$RECONCILE" --project-root "$TMP_HB_VALID_CANON" --host cursor --mode apply --entry-point doctor-fix --format json >/dev/null 2>&1 || true
-jq -e '.mcpServers.agentmemory.command == "npx"' "${TMP_HB_VALID}/.cursor/mcp.json" >/dev/null 2>&1 \
+jq -e '.mcpServers.agentmemory.command | endswith("agentmemory")' "${TMP_HB_VALID}/.cursor/mcp.json" >/dev/null 2>&1 \
   && pass "forced convergence merges agentmemory MCP when cross_tool ready" \
   || fail "forced convergence merges agentmemory MCP when cross_tool ready"
 export HOME="$TEST_HOME"
@@ -522,7 +526,7 @@ if [[ -f "${TEST_HOME}/.cursor/hooks/toolstack/lib/recommended-tools/common.sh" 
 else
   fail "installer deploys lib/recommended-tools layout"
 fi
-for deployed in stack-compression-coordinator.sh graphify-gate.sh patch-hooks.py; do
+for deployed in stack-compression-coordinator.sh graphify-gate.sh patch-hooks.py five_tool_instances.py; do
   if [[ -f "${TEST_HOME}/.cursor/hooks/toolstack/${deployed}" ]]; then
     pass "installer deploys toolstack ${deployed}"
   else
@@ -653,6 +657,26 @@ echo "$rtk_json" | jq -e '.evidence | index("shell_hook_missing") != null' >/dev
   && pass "D10 rtk FAILs when cursor hook missing" \
   || fail "D10 rtk FAILs when cursor hook missing (${rtk_json:-empty})"
 
+# RTK: a valid release without a vendor `doctor` subcommand is ready with an
+# advisory, not repairable.  The probe must inspect the command index before
+# invoking the generic vendor-doctor wrapper.
+printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}\n' >"${D10_HOME}/.cursor/hooks.json"
+cat >"${D10_BIN}/rtk" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  gain) exit 0 ;;
+  --version) echo "rtk 0.42.0"; exit 0 ;;
+  help) echo "Commands: hook init verify"; exit 0 ;;
+  doctor) echo "no doctor"; exit 2 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "${D10_BIN}/rtk"
+rtk_skip_json="$(d10_probe probe-rtk.sh rt_probe_rtk 2>/dev/null || true)"
+echo "$rtk_skip_json" | jq -e '.canonical_state == "ready" and (.evidence | index("vendor_skip") != null)' >/dev/null 2>&1 \
+  && pass "D10 rtk passes with vendor_skip when doctor subcommand is absent" \
+  || fail "D10 rtk vendor doctor absence should be advisory (${rtk_skip_json:-empty})"
+
 # LeanCTX: duplicate leanctx + lean-ctx MCP keys
 d10_enable leanctx
 printf '#!/usr/bin/env bash\nexit 0\n' >"${D10_BIN}/lean-ctx"
@@ -678,6 +702,37 @@ lc_json="$(d10_probe probe-leanctx.sh rt_probe_leanctx 2>/dev/null || true)"
 echo "$lc_json" | jq -e '.evidence | index("duplicate_mcp_keys") != null' >/dev/null 2>&1 \
   && pass "D10 leanctx FAILs on duplicate leanctx+lean-ctx MCP keys" \
   || fail "D10 leanctx FAILs on duplicate MCP keys (${lc_json:-empty})"
+
+# Codex: duplicate detection must inspect Codex TOML, not the unrelated
+# Cursor MCP file in the same HOME.  This fixture intentionally leaves a
+# Cursor duplicate while giving Codex one canonical LeanCTX server.
+mkdir -p "${D10_HOME}/.codex"
+cat >"${D10_HOME}/.codex/config.toml" <<'EOF'
+[mcp_servers.leanctx]
+command = "lean-ctx"
+args = ["mcp"]
+
+[mcp_servers.leanctx.env]
+LEANCTX_MCP_TOOL_PREFIX = "lctx_"
+LEANCTX_DISABLE_SHELL_MCP = "1"
+LEANCTX_DISABLE_SANDBOX_MCP = "1"
+LEANCTX_DISABLE_FETCH_MCP = "1"
+LEANCTX_DISABLE_FTS = "1"
+EOF
+cat >"${D10_BIN}/lean-ctx" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  --version) echo "lean-ctx 3.9.9"; exit 0 ;;
+  *) exit 0 ;;
+esac
+EOF
+chmod +x "${D10_BIN}/lean-ctx"
+printf '{"mcpServers":{"leanctx":{"command":"lean-ctx"},"lean-ctx":{"command":"lean-ctx"}}}\n' \
+  >"${D10_HOME}/.cursor/mcp.json"
+codex_lc_json="$(d10_probe probe-leanctx.sh rt_probe_leanctx codex 2>/dev/null || true)"
+echo "$codex_lc_json" | jq -e '.canonical_state == "ready" and (.evidence | index("duplicate_mcp_keys") == null)' >/dev/null 2>&1 \
+  && pass "D10 leanctx Codex probe ignores Cursor duplicate MCP keys" \
+  || fail "D10 leanctx Codex probe reads Codex TOML only (${codex_lc_json:-empty})"
 
 # Context Mode: vendor doctor on the default (non --deep) path
 unset RT_SKIP_VENDOR_DOCTOR

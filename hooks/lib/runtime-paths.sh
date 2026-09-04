@@ -71,6 +71,12 @@ sb_runtime_path_is_state_scoped() {
   return 1
 }
 
+# Resolve the active host's config root at the runtime boundary so shared
+# reconciliation code does not embed a vendor-specific environment variable.
+sb_runtime_codex_home() {
+  printf '%s' "${CODEX_HOME:-${HOME}/.codex}"
+}
+
 sb_runtime_skill_receipt_dirs() {
   local seen="" candidate base_home runtime extra_root
 

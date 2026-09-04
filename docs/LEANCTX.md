@@ -50,7 +50,7 @@ SB owns host config writes. Use library-mode init only — **never** full `lean-
 | Codex | `bash scripts/install-leanctx-sb.sh --host codex --project-root "$(pwd)"` |
 | OpenCode | `bash scripts/install-leanctx-sb.sh --host opencode --project-root "$(pwd)"` |
 
-> **Phase 2:** `scripts/install-leanctx-sb.sh` and `scripts/lib/merge-leanctx-mcp-config.py` are delivered by the hooks/install worker. Until then, config and registry document the contract.
+> The SB installer owns the host config writes. It also records the resolved, user-global five-tool executable paths in `~/.silver-bullet/five-tool-stack/instances.json`; host adapters differ only in JSON/TOML syntax.
 
 ## Routing Table (`optimization_profiles.five_tool_routed`)
 
@@ -68,6 +68,12 @@ When LeanCTX is enabled, SB applies the `five_tool_routed` profile (extends `syn
 | `sb_remember` | agentmemory `memory_save` | `lctx_remember` blocked |
 | `sb_pathjail` | LeanCTX PathJail (physical rail) | Always on when LeanCTX enabled |
 | `sb_injection` | LeanCTX injection detection | Always on when LeanCTX enabled |
+
+LeanCTX MCP compatibility note: `lctx_read_ast` is Silver Bullet's logical
+`sb_read` route name. Current LeanCTX releases expose the routed operation as
+`ctx_read` on the `leanctx` server (for Cursor, `leanctx-ctx_read`), so live
+scenario checks must use that server-qualified native name with a read mode;
+they must not fall back to native `Read` for analysis.
 
 **Primary FTS:** `context_mode` — LeanCTX FTS is disabled in parallel mode to avoid triple FTS5.
 
@@ -87,7 +93,11 @@ Registry helpers (Phase 1):
 
 ### Cross-tool convergence (`cross_tool`)
 
-`rt_host_supported()` and the five-tool reconciler's `cross_tool` component are **Cursor-only** today. On Claude/Codex/OpenCode, `sb-doctor` reports D10-routes as a **WARN** naming this platform limitation — it must **not** FAIL or recommend `--fix=host` (that remedy cannot clear `unsupported`). Implementing real cross-tool convergence for non-Cursor hosts is feature work, not a doctor false-green (#277).
+`cross_tool` is supported on Claude Code, Codex, and Cursor. The reconciler uses each host's native configuration contract—Claude JSON/plugin settings, Codex TOML plus prompt-layer artifacts, and Cursor MCP/hooks—while all three resolve the same user-global five-tool executable profile. Codex remains deny-only for PreToolUse rewriting, so its AST read path has a platform limitation; that limitation does not make `cross_tool` unsupported. OpenCode remains outside the supported five-tool host matrix until its native convergence contract is added.
+
+### Shared global five-tool instances
+
+The three supported hosts must not drift onto separate package runners or binaries. SB writes one local manifest at `~/.silver-bullet/five-tool-stack/instances.json` with the resolved executable and arguments for Graphify, agentmemory, Context Mode, LeanCTX, and RTK. Cursor `mcp.json`, Claude `.claude.json`, and Codex `config.toml` preserve their native syntax but reference those same manifest-selected executables. If an optional Claude `context-mode@context-mode` plugin is enabled, the optimizer disables it before registering the shared Context Mode MCP entry, so Claude cannot launch a second Context Mode runtime. agentmemory uses the one local service at `http://localhost:3111`.
 
 ### Codex Limitations
 
