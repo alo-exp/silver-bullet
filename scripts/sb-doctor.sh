@@ -122,6 +122,34 @@ plugin_cache_root() {
   esac
 }
 
+# Codex can carry SB as a skills-only mirror.  This is an intentional
+# installation mode: the skills remain available through the native picker,
+# while SB does not register a second plugin/hook stack in Codex.
+codex_skills_only_surface_present() {
+  [[ "${SB_RUNTIME_NAME:-${SILVER_BULLET_RUNTIME:-}}" == "codex" ]] || return 1
+  local codex_root="${SB_RUNTIME_HOME_ROOT:-${HOME}/.codex}"
+  [[ -f "${codex_root}/skills/silver/SKILL.md" ]] || return 1
+  [[ -f "${codex_root}/skills/silver:agent-codex/SKILL.md" ]] || return 1
+  local registry="${codex_root}/plugins/installed_plugins.json"
+  if [[ -f "$registry" ]] && jq -e '
+    (.plugins // {})
+    | keys[]?
+    | select(test("^silver-bullet@"))
+  ' "$registry" >/dev/null 2>&1; then
+    return 1
+  fi
+  local config="${codex_root}/config.toml"
+  if [[ -f "$config" ]] && grep -qE \
+    '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "$config" 2>/dev/null; then
+    return 1
+  fi
+  local hooks="${codex_root}/hooks.json"
+  if [[ -f "$hooks" ]] && grep -q 'silver-bullet' "$hooks" 2>/dev/null; then
+    return 1
+  fi
+  return 0
+}
+
 # Return only supported foreign-host plugin path fragments for a runtime.
 # D13 must not mistake the active host's own plugin path for contamination.
 foreign_host_plugin_path_pattern() {
@@ -314,14 +342,6 @@ doctor_record_reconciler_d10() {
       record pass D10-routes "cross_tool N/A until five-tool opt-in (no consent)"
     elif [[ "$cross" == "ready" ]]; then
       record pass D10-routes "cross_tool ready (activation=${cross_activation:-none})"
-    elif [[ "$cross" == "unsupported" ]]; then
-      # Platform limitation, not drift: rt_host_supported() implements
-      # cross-tool convergence for cursor only, so on every other host
-      # cross_tool is permanently "unsupported" and --fix=host provably
-      # cannot clear it. Reporting this as FAIL made granting five-tool
-      # consent strictly worsen the doctor result while naming a remedy that
-      # can never work. Warn, and do not recommend a repair.
-      record warn D10-routes "cross_tool unsupported on this host — cross-tool convergence is implemented for cursor only; no action available"
     else
       record fail D10-routes "cross_tool ${cross} (activation=${cross_activation:-none}) — run --fix=host"
       any_fail=1
@@ -489,11 +509,17 @@ run_doctor_checks() {
       else
         record pass D2 "silver-bullet@alo-labs version ${plugin_ver} (install: ${install_path:-unknown}, registry: ${reg})"
       fi
+    elif codex_skills_only_surface_present; then
+      record pass D2 "Codex skills-only Silver Bullet surface active (plugin registry intentionally absent)"
     else
       record fail D2 "no silver-bullet plugin entry in ${reg}"
     fi
   else
-    record fail D2 "plugin registry missing: ${reg}"
+    if codex_skills_only_surface_present; then
+      record pass D2 "Codex skills-only Silver Bullet surface active (plugin registry intentionally absent)"
+    else
+      record fail D2 "plugin registry missing: ${reg}"
+    fi
   fi
 
   # D3 — plugin cache
@@ -524,18 +550,24 @@ run_doctor_checks() {
       fi
       ;;
     codex)
-      if [[ -f "${HOME}/.codex/config.toml" ]] && grep -q 'silver-bullet' "${HOME}/.codex/config.toml" 2>/dev/null; then
+      if [[ -f "${HOME}/.codex/config.toml" ]] && grep -qE \
+        '^\[(plugins|hooks\.state)\."silver-bullet@alo-labs-codex' "${HOME}/.codex/config.toml" 2>/dev/null; then
         record pass D4 "Codex config.toml references silver-bullet hooks"
+      elif codex_skills_only_surface_present; then
+        record pass D4 "Codex skills-only surface active; SB hooks intentionally absent"
       else
         record fail D4 "Codex config.toml missing SB hook entries"
       fi
       ;;
-    *)
-      if [[ -f "${HOME}/.codex/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.codex/settings.json" 2>/dev/null; then
+    claude)
+      if [[ -f "${HOME}/.claude/settings.json" ]] && grep -q 'silver-bullet' "${HOME}/.claude/settings.json" 2>/dev/null; then
         record pass D4 "Claude settings.json references silver-bullet hooks"
       else
         record fail D4 "Claude settings.json missing SB hook entries"
       fi
+      ;;
+    *)
+      record fail D4 "unsupported host runtime: ${runtime}"
       ;;
   esac
 

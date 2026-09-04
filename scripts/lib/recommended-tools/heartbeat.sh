@@ -45,7 +45,14 @@ rt_heartbeat_build_json() {
     || date -u -d "+${RT_HEARTBEAT_TTL_SECONDS} seconds" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
     || date -u +%Y-%m-%dT%H:%M:%SZ)"
   local cfg sb_initiated consent_json suspended=false
-  cfg="$(rt_project_config)" || true
+  # The explicit project root is authoritative during reconciler/repair
+  # calls; relying only on RT_PROJECT_ROOT made a heartbeat written by a
+  # host wrapper lose sb_initiated=true and immediately fail validation.
+  if [[ -n "$project_root" && -f "${project_root%/}/.silver-bullet.json" ]]; then
+    cfg="${project_root%/}/.silver-bullet.json"
+  else
+    cfg="$(rt_project_config)" || true
+  fi
   if [[ -n "$cfg" ]]; then
     sb_initiated="$(jq -r '.sb_initiated // false' "$cfg" 2>/dev/null || echo false)"
     for tool in graphify agentmemory rtk context_mode leanctx; do

@@ -11,14 +11,14 @@ Operator doc: [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../../docs/testing/FIVE-T
 | # | Scenario | Acceptance | Ledger |
 |---|----------|------------|--------|
 | S01 | Opt-in all five tools in temp project | Install script exits 0; MCP JSON valid; `lctx_` prefix confirmed | pending |
-| S02 | Read large file | LeanCTX AST path used; CM read-deny not triggered incorrectly on Read routing | pending |
+| S02 | Read large file | Logical LeanCTX AST route (`lctx_read_ast`, native `leanctx-ctx_read`) used; CM Grep route is not incorrectly denied | pending |
 | S03 | Grep for analysis | CM cooperative path (`ctx_execute`/`ctx_search`); read-deny does not intercept Grep when LeanCTX active | pending |
 | S04 | Shell `git status` | RTK rewrite once; no LeanCTX second wrap | pending |
 | S05 | WebFetch attempt | CM deny fires; LeanCTX fetch MCP not invoked | pending |
 | S06 | `graphify query` + `memory_save` | Graphify/agentmemory gates pass; coordinator blocks `lctx_remember` | pending |
 | S07 | Wire proxy smoke | Ledger records session entry; wire-proxy ordering validator passes | pending |
 | S08 | PathJail + injection | Session log at `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/leanctx-session.log` contains PathJail allow + injection scan within 60s of agent turn | pending |
-| S09 | Conflict regression | Coordinator returns `permission: deny` with `sb_stack_double_compression` when RTK-rewritten Bash re-offered to LeanCTX shell; same for CM-denied WebFetch → LeanCTX fetch MCP | pending |
+| S09 | Conflict regression | Coordinator returns `permission: deny` with `sb_stack_double_compression` when RTK-rewritten Bash is re-offered to LeanCTX shell; the Bash coordinator regression test is used once | pending |
 | S10 | PreCompact lifecycle | Ordering preserved: CM PreCompact → AM snapshot → LeanCTX compact → stop-check | pending |
 
 ## Pre-release acceptance criteria

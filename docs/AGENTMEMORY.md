@@ -97,23 +97,26 @@ Add the agentmemory managed block to `.gitignore` (see `docs/AGENTMEMORY.md` git
 
 ### Step 4 — Platform MCP wiring
 
+SB uses one user-global agentmemory installation for every supported host. The host MCP files are syntax adapters only; they must reference the same `agentmemory` executable recorded in `~/.silver-bullet/five-tool-stack/instances.json` and invoke it as `agentmemory mcp`. The local API service remains shared at `http://localhost:3111`.
+
 | Host | Pre-index | Post-index (MCP connect) | Artifact |
 |------|-----------|--------------------------|----------|
 | Claude Code | *(none)* | `agentmemory connect claude-code` | `~/.claude.json` |
 | Codex | `codex plugin marketplace add rohitg00/agentmemory`; `codex plugin add agentmemory@agentmemory` | `agentmemory connect codex --with-hooks` | `~/.codex/config.toml` |
-| Cursor | *(none)* | **User-wired** via Cursor Settings → MCP (or manual `~/.cursor/mcp.json` edit) | `~/.cursor/mcp.json` |
+| Cursor | *(none)* | SB reconciles the global `agentmemory mcp` entry; Cursor Settings may be used to reload it | `~/.cursor/mcp.json` |
 | OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
 
-**Cursor:** SB does **not** auto-merge agentmemory into `~/.cursor/mcp.json` during `/silver:init` or `/silver:update`. The reconciler **probes** for an existing `agentmemory` or `user-agentmemory` MCP entry. On `reconcile-recommended-tools.sh --mode apply`, when agentmemory is consented, repair may atomically merge the block below (same as manual wiring).
+**Cursor:** The reconciler atomically converges `~/.cursor/mcp.json` when agentmemory is consented. It preserves unrelated servers and uses the global executable from `~/.silver-bullet/five-tool-stack/instances.json`.
 
 **Manual Cursor MCP block** (preserve existing servers):
 
 ```bash
-jq '.mcpServers.agentmemory = {
-  "command": "npx",
-  "args": ["-y", "@agentmemory/mcp"],
-  "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
-}' ~/.cursor/mcp.json
+jq --arg agentmemory "$(jq -r '.tools.agentmemory.command' ~/.silver-bullet/five-tool-stack/instances.json)" \
+  '.mcpServers.agentmemory = {
+    "command": $agentmemory,
+    "args": ["mcp"],
+    "env": { "AGENTMEMORY_URL": "http://localhost:3111" }
+  }' ~/.cursor/mcp.json
 ```
 
 ### Step 5 — Git-backed auto-save (optional bridge)
@@ -156,4 +159,4 @@ curl -s -X POST http://localhost:3111/agentmemory/smart-search \
 
 ## MCP reload receipts
 
-Graphify and LeanCTX MCP registration is merged atomically with other five-tool servers via `patch-mcp.py`. **agentmemory** on Cursor is normally user-wired in the IDE; the reconciler probes for it and may merge on `--mode apply` repair. After host config repair, SB does **not** claim any MCP server is live until the current session invokes expected MCP tools and passes attestation validation against the active reload receipt. Partial tool failures are accepted as liveness evidence but retain canonical `reload_required`. See `docs/STACK-OPTIMIZATION.md` and `scripts/reconcile-recommended-tools.sh --host-evidence-stdin`.
+Graphify, agentmemory, and LeanCTX MCP registration is merged atomically with the other five-tool servers via `patch-mcp.py`; each supported host points at the same manifest-selected executables. After host config repair, SB does **not** claim any MCP server is live until the current session invokes expected MCP tools and passes attestation validation against the active reload receipt. Partial tool failures are accepted as liveness evidence but retain canonical `reload_required`. See `docs/STACK-OPTIMIZATION.md` and `scripts/reconcile-recommended-tools.sh --host-evidence-stdin`.

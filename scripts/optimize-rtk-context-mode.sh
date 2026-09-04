@@ -92,12 +92,52 @@ ensure_context_mode_cli() {
   fi
 }
 
+claude_native_context_mode_enabled() {
+  local settings="${HOME}/.claude/settings.json"
+  if [[ -f "$settings" ]] && jq -e \
+    '.enabledPlugins["context-mode@context-mode"] == true' \
+    "$settings" >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v claude >/dev/null 2>&1; then
+    claude plugin list 2>/dev/null | \
+      grep -A3 -F 'context-mode@context-mode' | grep -q 'enabled' && return 0
+  fi
+  return 1
+}
+
+disable_claude_native_context_mode() {
+  claude_native_context_mode_enabled || return 0
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY-RUN: claude plugin disable context-mode@context-mode --scope user"
+    return 0
+  fi
+  command -v claude >/dev/null 2>&1 || {
+    log "ERROR: Claude Context Mode plugin is enabled but the claude CLI is unavailable; disable context-mode@context-mode or install the global context-mode MCP manually" >&2
+    return 1
+  }
+  run_cmd claude plugin disable context-mode@context-mode --scope user
+}
+
 run_merge_py() {
   local merge_host="${1:-}"
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
   [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
   run_cmd "${merge_args[@]}"
+}
+
+canonicalize_cursor_toolstack_hooks() {
+  local patch_py="${REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
+  [[ -f "$patch_py" ]] || return 0
+  # `rtk init --agent cursor` can preserve an older LeanCTX rewrite hook.  Run
+  # the shared hook reconciler after vendor initialization so the manifest-
+  # backed RTK hook is the only shell rewrite owner.
+  run_cmd env \
+    RT_PATCH_RTK=1 \
+    RT_PATCH_CONTEXT_MODE=1 \
+    RT_PATCH_LEANCTX=1 \
+    python3 "$patch_py"
 }
 
 optimize_rtk_cursor() {
@@ -172,25 +212,15 @@ optimize_rtk_goose() {
 }
 
 optimize_context_mode_claude() {
-  if command -v claude >/dev/null 2>&1; then
-    if [[ "$DRY_RUN" -eq 1 ]]; then
-      log "DRY-RUN: claude plugin marketplace add mksglu/context-mode"
-      log "DRY-RUN: claude plugin install context-mode@context-mode"
-    else
-      claude plugin marketplace add mksglu/context-mode 2>/dev/null || true
-      claude plugin install context-mode@context-mode 2>/dev/null || true
-    fi
-    log "NOTE: Restart Claude Code after plugin install"
-  else
-    log "WARN: claude CLI not found — merge npm MCP path via merge helper"
-    ensure_context_mode_cli
-    run_merge_py claude
-  fi
+  disable_claude_native_context_mode
+  ensure_context_mode_cli
+  run_merge_py claude
 }
 
 optimize_context_mode_cursor() {
   ensure_context_mode_cli
   run_merge_py cursor
+  canonicalize_cursor_toolstack_hooks
   if [[ -z "${TOOLSTACK_INSTALL_IN_PROGRESS:-}" && -z "${SB_RT_APPLY_ACTIVE:-}" ]]; then
     run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
       bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
@@ -326,5 +356,3 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 log "=== Optimization complete ==="
-
-

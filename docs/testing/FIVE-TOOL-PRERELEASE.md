@@ -87,7 +87,7 @@ Hook and script bundle in [`tests/scripts/lib/five-tool-prerelease.sh`](../scrip
 | Scenario | Validates |
 |----------|-----------|
 | S01 | Five-tool opt-in + `install-leanctx-sb.sh --dry-run` + `lctx_` MCP prefix |
-| S02 | LeanCTX AST read path (`lctx_read_ast`) |
+| S02 | Logical LeanCTX AST route (`lctx_read_ast`), currently exposed by Cursor as `leanctx-ctx_read`; CM Grep remains allowed |
 | S04 | RTK shell once, no LeanCTX double-wrap |
 | S06 | `graphify query` + `memory_save`; `lctx_remember` blocked |
 | S09 | `sb_stack_double_compression` deny on conflict regression |

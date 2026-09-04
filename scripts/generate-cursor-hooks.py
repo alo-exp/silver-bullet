@@ -58,6 +58,22 @@ SHELL_DUPLICATE_SKIP_BASENAMES = frozenset({
     "record-recommended-mcp.sh",
 })
 
+# These hooks belong to the user-global five-tool stack. Keeping them in the
+# Cursor plugin manifest makes Cursor load a second, plugin-rooted copy beside
+# the manifest-backed global hooks and can cause duplicate rewrites or gates.
+GLOBAL_STACK_HOOK_BASENAMES = frozenset({
+    "graphify-gate.sh",
+    "agentmemory-gate.sh",
+    "leanctx-gate.sh",
+    "stack-compression-coordinator.sh",
+    "context-mode-read-deny.sh",
+    "rtk-gate.sh",
+    "context-mode-gate.sh",
+    "token-compression-tools-gate.sh",
+    "record-graphify-query.sh",
+    "record-agentmemory-usage.sh",
+})
+
 
 def should_skip_shell_duplicate(basename: str) -> bool:
     if basename in SHELL_DUPLICATE_SKIP_BASENAMES:
@@ -139,6 +155,11 @@ def should_duplicate_to_shell(event: str, matcher: str, command: str) -> bool:
     return not should_skip_shell_duplicate(basename)
 
 
+def is_global_stack_hook(command: str) -> bool:
+    hook_path = normalize_hook_path(extract_hook_path(command))
+    return pathlib.Path(hook_path.strip('"')).name in GLOBAL_STACK_HOOK_BASENAMES
+
+
 def shell_cursor_event(claude_event: str) -> str:
     return "beforeShellExecution" if claude_event == "PreToolUse" else "afterShellExecution"
 
@@ -153,6 +174,8 @@ def build_cursor_hooks(src: dict) -> dict:
             matcher = group.get("matcher", ".*")
             for hook in group.get("hooks", []):
                 if hook.get("type", "command") != "command":
+                    continue
+                if is_global_stack_hook(hook.get("command", "")):
                     continue
                 entry = {"command": rewrite_command(hook.get("command", ""), cursor_event)}
                 if hook.get("timeout") is not None:
@@ -186,4 +209,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

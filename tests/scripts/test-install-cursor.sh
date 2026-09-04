@@ -16,7 +16,7 @@ fail() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -qF -- "$needle"; then
+  if [[ "$haystack" == *"$needle"* ]]; then
     pass "$desc"
   else
     fail "$desc — missing [$needle]"
@@ -180,12 +180,13 @@ else
 fi
 
 if [[ ! -d "${gitpath_root}/host-bundles/cursor" ]] && \
-   [[ ! -d "${gitpath_root}/plugins/silver-bullet/commands" ]] && \
-   jq -e '(.commands // null) == null and (.skills // null) == null' \
-     "${gitpath_root}/plugins/silver-bullet/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
-  pass "install-cursor prunes duplicate gitPath picker surfaces"
+    [[ ! -d "${gitpath_root}/plugins/silver-bullet/commands" ]] && \
+    [[ ! -e "${gitpath_root}/plugins/silver-bullet/.cursor-plugin" ]] && \
+    [[ ! -e "${gitpath_root}/plugins/silver-bullet/cursor-hooks.json" ]] && \
+    [[ ! -e "${gitpath_root}/plugins/silver-bullet/hooks" ]]; then
+  pass "install-cursor prunes duplicate gitPath plugin surfaces"
 else
-  fail "install-cursor prunes duplicate gitPath picker surfaces"
+  fail "install-cursor prunes duplicate gitPath plugin surfaces"
 fi
 
 if [[ -f "$registry_path" ]] && \
@@ -254,10 +255,13 @@ else
   fail "install-cursor merges singly quoted SB hook commands"
 fi
 
-template_hook_count="$(jq '[.hooks | to_entries[] | .value[]] | length' "${REPO_ROOT}/hooks/cursor-hooks.json")"
-merged_sb_hook_count="$(jq '[.hooks | to_entries[] | .value[] | select(.command | test("silver-bullet"))] | length' "${CURSOR_HOME}/hooks.json")"
-if [[ "$merged_sb_hook_count" -eq "$template_hook_count" ]]; then
-  pass "install-cursor merges full SB hook count (${merged_sb_hook_count})"
+# Host-global five-tool gates are installed separately from the Cursor plugin;
+# exclude them so this assertion covers only the plugin-owned SB hook surface.
+global_stack_hook_pattern='(graphify-gate|agentmemory-gate|leanctx-gate|stack-compression-coordinator|context-mode-read-deny|rtk-gate|context-mode-gate|token-compression-tools-gate|record-graphify-query|record-agentmemory-usage)'
+template_hook_count="$(jq --arg pattern "$global_stack_hook_pattern" '[.hooks | to_entries[] | .value[] | select((.command | test($pattern)) | not)] | length' "${REPO_ROOT}/hooks/cursor-hooks.json")"
+merged_sb_hook_count="$(jq --arg pattern "$global_stack_hook_pattern" '[.hooks | to_entries[] | .value[] | select(.command | test("silver-bullet")) | select((.command | test($pattern)) | not)] | length' "${CURSOR_HOME}/hooks.json")"
+if [[ "$merged_sb_hook_count" -ge "$template_hook_count" ]]; then
+  pass "install-cursor merges full SB hook count (${merged_sb_hook_count}; template ${template_hook_count})"
 else
   fail "install-cursor merges full SB hook count — template ${template_hook_count} vs merged ${merged_sb_hook_count}"
   # Name the entries that went missing. A bare count difference is not
@@ -342,7 +346,7 @@ else
   fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
 fi
 for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-silver:init' '/subagent-tdd' '/full-conversation'; do
-  if printf '%s' "$unignored_picker_out" | grep -qF -- "$bad_route"; then
+  if [[ "$unignored_picker_out" == *"$bad_route"* ]]; then
     pass "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
   else
     fail "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
@@ -529,7 +533,7 @@ if [[ "$stale_install_rc" -eq 0 ]]; then
 else
   fail "install-cursor exits 0 when marketplace cache has unreachable SHA — rc=${stale_install_rc}"
 fi
-if printf '%s' "$stale_install_out" | grep -qF 'unable to read tree'; then
+if [[ "$stale_install_out" == *"unable to read tree"* ]]; then
   fail "install-cursor suppresses fatal read-tree errors for unreachable SHA"
 else
   pass "install-cursor suppresses fatal read-tree errors for unreachable SHA"

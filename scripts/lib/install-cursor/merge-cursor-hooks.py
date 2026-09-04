@@ -86,10 +86,61 @@ else:
 settings.setdefault("version", 1)
 existing_hooks = settings.setdefault("hooks", {})
 
+
+def merge_matchers(entries: list[dict]) -> str | None:
+    """Return the union of Cursor matchers, or None for an unrestricted hook."""
+    alternatives: list[str] = []
+    for entry in entries:
+        matcher = entry.get("matcher")
+        if not matcher or matcher == ".*":
+            return None
+        for part in str(matcher).split("|"):
+            part = part.strip()
+            if part and part not in alternatives:
+                alternatives.append(part)
+    return "|".join(alternatives) or None
+
+
+def deduplicate_hook_entries(entries: list) -> list:
+    """Collapse repeated commands while preserving the union of their matchers."""
+    result: list = []
+    indexes: dict[str, int] = {}
+    grouped: dict[str, list[dict]] = {}
+    for item in entries:
+        if not isinstance(item, dict) or not item.get("command"):
+            result.append(item)
+            continue
+        command = str(item["command"])
+        if command not in indexes:
+            indexes[command] = len(result)
+            grouped[command] = []
+            result.append(item)
+        grouped[command].append(item)
+
+    for command, items in grouped.items():
+        if len(items) == 1:
+            continue
+        merged = result[indexes[command]]
+        matcher = merge_matchers(items)
+        if matcher is None:
+            merged.pop("matcher", None)
+        else:
+            merged["matcher"] = matcher
+        timeouts = [
+            item.get("timeout")
+            for item in items
+            if isinstance(item.get("timeout"), (int, float))
+        ]
+        if timeouts:
+            merged["timeout"] = max(timeouts)
+    return result
+
+
 for event, entries in list(existing_hooks.items()):
     if not isinstance(entries, list):
         continue
     cleaned = [entry for entry in entries if not is_stale_sb_hook(entry)]
+    cleaned = deduplicate_hook_entries(cleaned)
     if cleaned:
         existing_hooks[event] = cleaned
     else:

@@ -8,17 +8,33 @@ source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_probe_rtk_shell_owner() {
   local host="${RT_HOST:-cursor}"
-  [[ "$host" == "cursor" ]] || return 1
-  [[ -f "${HOME}/.cursor/hooks.json" ]] || return 1
-  grep -q 'rtk hook cursor' "${HOME}/.cursor/hooks.json" 2>/dev/null
+  case "$host" in
+    cursor)
+      [[ -f "${HOME}/.cursor/hooks.json" ]] || return 1
+      grep -q 'rtk hook cursor' "${HOME}/.cursor/hooks.json" 2>/dev/null
+      ;;
+    claude)
+      [[ -f "${HOME}/.claude/settings.json" ]] || return 1
+      grep -qE 'rtk hook claude|rtk' "${HOME}/.claude/settings.json" 2>/dev/null
+      ;;
+    codex)
+      local codex_home="${HOME}/.codex"
+      declare -f sb_runtime_codex_home >/dev/null 2>&1 && codex_home="$(sb_runtime_codex_home)"
+      [[ -f "${codex_home}/AGENTS.md" ]] || return 1
+      grep -qiE 'rtk|rust token killer' "${codex_home}/AGENTS.md" 2>/dev/null
+      ;;
+    *) return 1 ;;
+  esac
 }
 
 rt_probe_rtk_leanctx_rewrite_absent() {
+  [[ "${RT_HOST:-cursor}" == "cursor" ]] || return 0
   [[ -f "${HOME}/.cursor/hooks.json" ]] || return 0
   ! grep -q 'lean-ctx hook rewrite' "${HOME}/.cursor/hooks.json" 2>/dev/null
 }
 
 rt_probe_rtk_before_cm() {
+  [[ "${RT_HOST:-cursor}" == "cursor" ]] || return 0
   python3 - "${HOME}/.cursor/hooks.json" <<'PY'
 import json, sys
 from pathlib import Path
@@ -30,7 +46,7 @@ pt = data.get("hooks", {}).get("preToolUse", [])
 rtk = cm = None
 for i, h in enumerate(pt):
     cmd = h.get("command", "")
-    if cmd == "rtk hook cursor":
+    if cmd.endswith("rtk hook cursor"):
         rtk = i
     if "context-mode hook cursor pretooluse" in cmd:
         cm = i
@@ -52,6 +68,13 @@ rt_probe_rtk_vendor_doctor() {
     return $?
   fi
   command -v rtk >/dev/null 2>&1 || return 2
+  # RTK does not expose a vendor `doctor` command in every release.  Check
+  # the command index before asking the generic vendor wrapper to probe it;
+  # otherwise a valid RTK installation is reported as repairable merely
+  # because `rtk doctor --help` is interpreted as a proxy command.
+  local help=""
+  help="$(rtk help </dev/null 2>&1 || true)"
+  printf '%s\n' "$help" | grep -qE '^[[:space:]]+doctor([[:space:]]|$)' || return 2
   rt_vendor_doctor_subcommand_usable rtk || return 2
   if rtk doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
     extra+=(--non-interactive)
@@ -117,7 +140,7 @@ rt_repair_rtk() {
     bash "$opt" "${opt_args[@]}" >&2 \
       && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
   fi
-  if ! rt_cross_tool_batch_active; then
+  if [[ "${RT_HOST:-cursor}" == "cursor" ]] && ! rt_cross_tool_batch_active; then
     local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
     if [[ -f "$patch_py" ]]; then
       RT_PATCH_RTK=1 RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0 RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0 \

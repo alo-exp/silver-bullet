@@ -158,6 +158,7 @@ agent_invoke_cli() {
   local prompt="$2"
   local cli
   local output
+  local python_exit=0
   local timeout_seconds
   local model
 
@@ -176,6 +177,7 @@ agent_invoke_cli() {
       python3 - <<'PY'
 import json
 import os
+import selectors
 import shutil
 import signal
 import subprocess
@@ -200,12 +202,21 @@ args = [
     "--force",
     "--workspace", os.getcwd(),
 ]
+# Live SB scenarios deliberately use a temporary project as the primary
+# workspace while asking the agent to inspect the source checkout.  Expose that
+# checkout as an explicit additional root so LeanCTX can read it without the
+# model falling back to native Read/Grep or searching outside the fixture.
+sb_root = os.environ.get("SB_ROOT") or ""
+if sb_root and os.path.isdir(sb_root) and os.path.abspath(sb_root) != os.path.abspath(os.getcwd()):
+    args.extend(["--add-dir", sb_root])
 if not interactive:
     args.extend(["--print", "--output-format", output_format])
 elif resume:
     args.extend(["--resume", resume])
 if (not interactive) and (matrix_mode or delegate_stream):
     args.append("--stream-partial-output")
+if os.environ.get("SB_AGENT_CURSOR_APPROVE_MCPS") == "1":
+    args.append("--approve-mcps")
 if model:
     args.extend(["--model", model])
 if mode == "permissive":
@@ -232,6 +243,7 @@ def append_log(chunk: str) -> None:
 def emit_line(line: str) -> None:
     global text_chunks
     sys.stdout.write(line)
+    sys.stdout.flush()
     append_log(line)
     if output_format == "text":
         text_chunks.append(line)
@@ -250,23 +262,88 @@ def emit_line(line: str) -> None:
             text_chunks.append(value)
 
 
+def terminal_result_exit_code(line):
+    if output_format != "stream-json":
+        return None
+    try:
+        payload = json.loads(line.strip())
+    except json.JSONDecodeError:
+        return None
+    if payload.get("type") != "result":
+        return None
+    return 0 if payload.get("subtype") == "success" and not payload.get("is_error", False) else 1
+
+
+def terminate_process_group(process):
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            pass
+
+
 proc = subprocess.Popen(
     args,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
-    text=True,
-    bufsize=1,
+    text=False,
+    bufsize=0,
     start_new_session=True,
 )
 
-started = time.time()
+started = time.monotonic()
+selector = selectors.DefaultSelector()
+buffer = b""
+terminal_rc = None
+pipe_open = True
 try:
     assert proc.stdout is not None
-    for line in proc.stdout:
-        emit_line(line)
-        if time.time() - started >= timeout:
+    selector.register(proc.stdout, selectors.EVENT_READ)
+    while pipe_open and terminal_rc is None:
+        remaining = timeout - (time.monotonic() - started)
+        if remaining <= 0:
             raise subprocess.TimeoutExpired(args, timeout, output=None)
-    rc = proc.wait(timeout=max(1, timeout - int(time.time() - started)))
+        events = selector.select(min(remaining, 0.25))
+        if not events:
+            if proc.poll() is not None:
+                # A child may keep the pipe open after the native agent exits;
+                # EOF is not required for a completed stream or for timeout
+                # accounting.
+                continue
+            continue
+        for key, _ in events:
+            chunk = os.read(key.fd, 65536)
+            if not chunk:
+                pipe_open = False
+                break
+            buffer += chunk
+            while b"\n" in buffer:
+                raw_line, buffer = buffer.split(b"\n", 1)
+                line = raw_line.decode("utf-8", errors="replace") + "\n"
+                emit_line(line)
+                terminal_rc = terminal_result_exit_code(line)
+                if terminal_rc is not None:
+                    break
+            if terminal_rc is not None:
+                break
+
+    if terminal_rc is not None:
+        terminate_process_group(proc)
+        sys.exit(terminal_rc)
+
+    if buffer:
+        emit_line(buffer.decode("utf-8", errors="replace"))
+    rc = proc.wait(timeout=max(1, int(timeout - (time.monotonic() - started))))
     if log_path and text_chunks:
         summary = "".join(text_chunks)
         try:
@@ -277,22 +354,17 @@ try:
             append_log(summary if summary.endswith("\n") else summary + "\n")
     sys.exit(rc)
 except subprocess.TimeoutExpired:
-    try:
-        os.killpg(proc.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        proc.kill()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            proc.kill()
+    terminate_process_group(proc)
     sys.stdout.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
+    sys.stdout.flush()
     append_log(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
     sys.exit(124)
+finally:
+    selector.close()
+    if proc.stdout is not None:
+        proc.stdout.close()
 PY
-  ) || true
+  ) || python_exit=$?
 
   if [[ -n "${CLAUDE_INTERACTIVE_LOG_FILE:-}" && -n "$output" ]]; then
     if [[ ! -f "${CLAUDE_INTERACTIVE_LOG_FILE}" ]] || ! grep -qF -- "$output" "${CLAUDE_INTERACTIVE_LOG_FILE}" 2>/dev/null; then
@@ -307,6 +379,7 @@ PY
   fi
 
   printf '%s' "$output"
+  return "${python_exit:-0}"
 }
 
 agent_invoke() {

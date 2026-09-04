@@ -78,9 +78,9 @@ Do not let “inventory all keys” silently become a generic installer.
 
 | User | Job | Success looks like |
 |---|---|---|
-| Operator on Cursor (primary D10 host) | After `/silver:init` or a stack drift, run `/silver:doctor` and know which opted-in tool is mis-wired | FAIL lines name `D10-<tool>` with a scoped `--fix=local\|host\|packages\|all` |
+| Operator on Claude, Codex, or Cursor | After `/silver:init` or a stack drift, run `/silver:doctor` and know which opted-in tool is mis-wired | FAIL lines name `D10-<tool>` with a scoped `--fix=local\|host\|packages\|all` |
 | Operator who did **not** opt into Alumnium, search-cli, or Omni | Confirm the default tree is green (**green** = no FAIL, not “no WARN”; Graphify skill/package skew WARN is expected and non-blocking) | `D10-alumnium` / future `D10-search_cli` are PASS N/A (`pending`/`disabled`), never FAIL. Omni PASS N/A exists **once Phase 3 lands**; while Phase 3 is deferred there is no Omni D10 row (coverage-table footnote only) |
-| Operator on Claude or Codex | Doctor still audits host-agnostic SB core and host install surface | `cross_tool` unsupported → WARN, **must not** recommend `--fix=host`; D8/D21/D22 stay host N/A as today |
+| Operator on Claude or Codex | Doctor audits the same SB core and the native host install surface | `cross_tool` participates in normal D10 state/repair handling; Codex's prompt-layer RTK limitation is reported as capability evidence, not unsupported |
 | Implementer of a new allowlisted tool | Add one probe+repair module without teaching doctor to fetch SPA installers | Plugin-shaped contract (probe, repair, N/A, `--fix` test, docs pin) — **later phase**, still allowlisted |
 | Freeze Omni operator (WS7, when opted in) | Setup / health / diagnosis / `--fix` for daemon + providers + **current doctor host CLI only** | Separate component; OAuth click stays manual; `chat_admission_busy` diagnosed from official OmniRoute troubleshooting docs |
 

@@ -8,13 +8,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/graphify-worktree.sh"
 
 rt_probe_graphify_mcp_configured() {
   local host="${RT_HOST:-cursor}"
-  case "$host" in
-    cursor)
-      [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-      jq -e '.mcpServers.graphify' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
-      ;;
-    *) return 1 ;;
-  esac
+  rt_host_mcp_server_configured "$host" graphify
 }
 
 rt_probe_graphify_mcp_binary() {

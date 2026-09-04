@@ -10,6 +10,14 @@ import pathlib
 import shutil
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+
+from five_tool_instances import (  # noqa: E402
+    disable_claude_native_context_mode,
+    ensure_global_instances,
+    mcp_server_spec,
+)
+
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
@@ -138,6 +146,36 @@ def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, d
     return True
 
 
+def merge_shared_claude_context_mode(
+    target: pathlib.Path, server_cfg: dict, dry_run: bool
+) -> bool:
+    """Keep Claude's Context Mode server canonical and manifest-backed."""
+    data = load_json(target, {"mcpServers": {}})
+    servers = data.setdefault("mcpServers", {})
+    changed = False
+    existing = servers.get("context-mode")
+    legacy = servers.get("user-context-mode")
+    if not isinstance(existing, dict) and isinstance(legacy, dict):
+        existing = legacy
+        servers["context-mode"] = existing
+        changed = True
+    if "user-context-mode" in servers:
+        del servers["user-context-mode"]
+        changed = True
+    if not isinstance(existing, dict):
+        servers["context-mode"] = dict(server_cfg)
+        changed = True
+    else:
+        for key in ("command", "args"):
+            if existing.get(key) != server_cfg.get(key):
+                existing[key] = server_cfg[key]
+                changed = True
+        servers["context-mode"] = existing
+    if changed:
+        save_json(target, data, dry_run)
+    return changed
+
+
 def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
     data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
     data.setdefault("version", 1)
@@ -224,15 +262,21 @@ def context_mode_extended_cursor_hooks() -> dict:
 
 def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
     cm_pkg = context_mode_pkg_root()
+    manifest = ensure_global_instances(dry_run=dry_run)
     if not cm_pkg:
         return False
     snippet_path = cm_pkg / "configs" / "codex" / "config.toml"
     if not snippet_path.is_file():
         return False
-    snippet = snippet_path.read_text(encoding="utf-8")
     marker = "[mcp_servers.context-mode]"
     if target.is_file() and marker in target.read_text(encoding="utf-8"):
         return False
+    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
+    snippet = (
+        f"{marker}\n"
+        f"command = {json.dumps(spec['command'])}\n"
+        f"args = {json.dumps(spec['args'])}\n"
+    )
     if dry_run:
         print(f"DRY-RUN: would append context-mode block to {target}")
         return True
@@ -288,6 +332,7 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
     project_rules = repo_root / ".cursor" / "rules"
 
     cm_pkg = context_mode_pkg_root()
+    manifest = ensure_global_instances(dry_run=dry_run)
     fragments: list[dict] = []
     cm_hooks = context_mode_cursor_hooks_path(repo_root)
     if cm_hooks:
@@ -303,6 +348,8 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
             mcp_data = load_json(cm_mcp)
             servers = mcp_data.get("mcpServers", {})
             for name, cfg in servers.items():
+                if name in ("context-mode", "user-context-mode"):
+                    cfg = mcp_server_spec(manifest, "context_mode")
                 if merge_mcp_server(mcp_path, name, cfg, dry_run):
                     mcp_added = True
 
@@ -363,15 +410,22 @@ def optimize_codex(dry_run: bool) -> dict:
 
 
 def optimize_claude(dry_run: bool) -> dict:
-    """Merge npm-global MCP path when Claude plugin is not used."""
+    """Use the shared global Context Mode MCP entry for Claude."""
     claude_json = pathlib.Path.home() / ".claude.json"
-    mcp_added = merge_mcp_server(
+    native_plugin_disabled = disable_claude_native_context_mode(dry_run=dry_run)
+    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
+    mcp_added = merge_shared_claude_context_mode(
         claude_json,
-        "context-mode",
-        {"command": "context-mode", "args": ["mcp"]},
+        spec,
         dry_run,
     )
-    return {"host": "claude", "status": "supported", "mcp_added": mcp_added}
+    return {
+        "host": "claude",
+        "status": "supported",
+        "adapter": "manifest_mcp",
+        "mcp_added": mcp_added,
+        "native_plugin_disabled": native_plugin_disabled,
+    }
 
 
 def optimize_opencode(dry_run: bool) -> dict:
