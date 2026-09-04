@@ -2,6 +2,28 @@
 
 Mandatory pre-release validation for the parallel-routed five-tool stack (LeanCTX + RTK + Context Mode + Graphify + agentmemory) when `recommended_tools.leanctx.enabled_by_user` is `true`.
 
+## Live wrapper and model policy (mandatory)
+
+All live five-tool scenarios MUST be initiated through `/silver:agent-cursor` using
+**Composer 2.5**. The broader pre-release live-test mapping is fixed as follows:
+
+| Host | Required wrapper | Required model |
+|------|------------------|----------------|
+| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/silver:agent-claude` | **Haiku 4.5** |
+| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+
+The underlying runner may call its delegate implementation, but the operator-facing live
+entrypoint is the host-specific `/silver:agent-*` wrapper. Do not substitute a raw host CLI
+or another model and count that run as wrapper evidence.
+
+### Current-cycle Cursor hold
+
+Another session is currently fixing the Cursor five-tool stack. Do not launch or retry the
+Cursor live scenarios in this document until that session reports completion and its repair
+is available in the checkout or fixture under test. Then use a fresh isolated fixture and
+rerun the live gate; prior timeout logs remain failures and are not reusable evidence.
+
 ## When it runs
 
 | Path | Trigger | Live delegate |

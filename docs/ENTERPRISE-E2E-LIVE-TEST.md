@@ -68,6 +68,25 @@ Quiet timeouts (from Round 2):
 
 ---
 
+## Live host wrapper and model policy (pre-release)
+
+All live host tests must be initiated through the corresponding `/silver:agent-*` wrapper
+and use the fixed model mapping below:
+
+| Host | Required wrapper | Required model |
+|------|------------------|----------------|
+| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/silver:agent-claude` | **Haiku 4.5** |
+| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+
+This Claude runbook therefore uses `/silver:agent-claude` with **Haiku 4.5** for live
+Claude rows. Raw host CLI invocations or silent model substitutions do not count as live
+wrapper evidence. For the current release cycle, defer Cursor live five-tool scenarios
+until the separate Cursor five-tool repair session reports completion and its changes are
+available in the fixture under test.
+
+---
+
 ## Orchestrator / Cursor operator notes
 
 ### Subagent model policy
