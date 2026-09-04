@@ -17,6 +17,33 @@ deployment readiness) and BEFORE `/silver-create-release`.
 
 ---
 
+## Live-test wrapper and model policy (mandatory)
+
+Every live pre-release test — including tri-host smoke, RC validation cells, enterprise E2E
+rows, and five-tool live scenarios — MUST be initiated through the corresponding
+`/silver:agent-*` wrapper with this fixed model mapping:
+
+| Host | Required wrapper | Required model |
+|------|------------------|----------------|
+| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/silver:agent-claude` | **Haiku 4.5** |
+| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+
+The wrapper is the live-test acceptance boundary. Do not replace it with a raw host CLI,
+silently substitute another model, or treat a raw CLI transcript as wrapper evidence.
+Offline and structural tests are exempt; their live counterparts are not.
+
+### Current-cycle hold — Cursor five-tool repair
+
+A separate session currently owns the repair of the Cursor five-tool stack. The release
+session MUST wait for that session to report completion and make its repair available in the
+checkout or fixture under test before launching or retrying any live Cursor five-tool
+scenario. Existing timeout logs remain **FAIL** evidence and must not be reused as a pass;
+after the repair handoff, rerun from a fresh isolated fixture with the wrapper/model mapping
+above.
+
+---
+
 ## Stage 1 — Adversarial Release Gate (ENHANCED)
 
 Replaces the former Stage 1 (code review loop) and Stage 2 (big-picture consistency audit).
@@ -271,7 +298,8 @@ SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
   bash tests/scripts/test-five-tool-prerelease-cursor.sh
 ```
 
-Live scenarios S01/S02/S04/S06/S09 via `/silver:agent-cursor` (`agent-cursor-delegate.sh`, `composer-2.5` only).
+Live scenarios S01/S02/S04/S06/S09 via `/silver:agent-cursor` (`agent-cursor-delegate.sh`,
+**Composer 2.5** only), subject to the current-cycle Cursor repair hold above.
 Writes `${SB_RUNTIME_STATE_DIR}/pre-release-five-tool-stack` on success.
 See [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../testing/FIVE-TOOL-PRERELEASE.md).
 

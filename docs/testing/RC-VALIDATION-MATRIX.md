@@ -14,6 +14,26 @@ Six cells: cursor/codex/claude × fresh/upgrade. Markers: `${SB_RUNTIME_STATE_DI
 
 Codex and Claude live RC cells are **operator-local pre-release** requirements until first-party or approved proxy API keys exist in CI. Third-party key proxy is explicitly out of scope.
 
+## Live wrapper and model policy (mandatory)
+
+Every live RC cell MUST be initiated through the host-specific `/silver:agent-*` wrapper
+with this fixed model mapping:
+
+| Host | Required wrapper | Required model |
+|------|------------------|----------------|
+| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/silver:agent-claude` | **Haiku 4.5** |
+| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+
+Raw host CLI runs, unrecorded model substitutions, and transcripts without the wrapper do
+not satisfy a live RC cell.
+
+### Current-cycle Cursor hold
+
+The Cursor five-tool stack is being repaired by a separate session. Hold Cursor live RC
+cells and five-tool retries until that session reports completion and the repair is present
+in the checkout or fixture under test; then rerun from a fresh isolated fixture.
+
 ## Controls
 
 - **Gate:** `release.require_rc_matrix` (completion-audit / deploy-tier)

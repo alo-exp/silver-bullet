@@ -67,6 +67,14 @@ bash scripts/validate-sentinel-skills-manifest.sh
 
 Markers live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` and are cleared on session start.
 
+**Live-test wrapper/model policy:** Every live pre-release test must use the host-specific
+`/silver:agent-*` wrapper with the fixed mapping **Codex → GPT-5.6 Luna Low**,
+**Claude → Haiku 4.5**, and **Cursor → Composer 2.5**. Do not substitute raw host CLI
+runs or another model as release evidence. See
+[`docs/internal/pre-release-quality-gate.md`](internal/pre-release-quality-gate.md)
+for the full policy and the current-cycle hold while the separate Cursor five-tool repair
+session is active.
+
 ### 2. Version Bump
 
 Update `package.json`, then reconcile every release-identity surface before the gate:
