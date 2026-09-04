@@ -389,6 +389,25 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 - **Surface gate before matrix:** Tier A `validate-host-install-surface.sh` + tri-host smoke must pass before spending live rows.
 - **Narrow strict-clean during host bring-up:** Tier B smoke only until harness stable; defer full strict-clean claim until Tier C.
 
+### Live host wrapper and model policy (pre-release)
+
+Every live host-certification test MUST be initiated through the corresponding
+`/silver:agent-*` wrapper with this fixed model mapping:
+
+| Host | Required wrapper | Required model |
+|------|------------------|----------------|
+| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/silver:agent-claude` | **Haiku 4.5** |
+| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+
+Raw host CLI runs, silent model substitutions, or transcripts without the wrapper do not
+count as live certification evidence.
+
+**Current-cycle Cursor hold:** another session is fixing the Cursor five-tool stack. Do not
+launch or retry Cursor live five-tool scenarios until that session reports completion and
+the repair is available in the checkout or fixture under test; then rerun from a fresh
+isolated fixture.
+
 ---
 
 ## 8. Single driver / daemon
