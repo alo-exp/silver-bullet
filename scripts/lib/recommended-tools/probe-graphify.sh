@@ -12,7 +12,7 @@ rt_probe_graphify_mcp_configured() {
 }
 
 rt_probe_graphify_mcp_binary() {
-  command -v graphify-mcp >/dev/null 2>&1
+  sb_global_tool_path graphify >/dev/null 2>&1
 }
 
 rt_probe_graphify_base_only() {

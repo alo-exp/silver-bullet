@@ -42,6 +42,9 @@ rt_vendor_doctor_subcommand_usable() {
 # Run argv with timeout + stdin closed. 0=ok 1=fail 2=skip.
 rt_run_vendor_doctor() {
   [[ "${RT_SKIP_VENDOR_DOCTOR:-0}" == "1" ]] && return 2
+  # Apply-time probes run inside host mutation hooks; invoking a vendor doctor
+  # there can re-enter those hooks. The following verify pass owns health checks.
+  [[ "${RT_MODE:-verify}" == "apply" ]] && return 2
   [[ $# -ge 1 ]] || return 2
   local runner t rc=0
   t="${RT_VENDOR_DOCTOR_TIMEOUT:-20}"
@@ -55,8 +58,34 @@ rt_run_vendor_doctor() {
     "$runner" "$t" "$@" </dev/null >/dev/null 2>&1
     rc=$?
   else
-    "$@" </dev/null >/dev/null 2>&1
-    rc=$?
+    # macOS does not ship timeout(1), and Homebrew coreutils may be absent.
+    # Keep vendor probes bounded without requiring either external command.
+    if ! command -v sleep >/dev/null 2>&1; then
+      rc=1
+    else
+      local child_pid watchdog_pid
+      "$@" </dev/null >/dev/null 2>&1 &
+      child_pid=$!
+      (
+        timer_pid=0
+        cleanup_watchdog() {
+          [[ "$timer_pid" -gt 0 ]] && kill "$timer_pid" 2>/dev/null || true
+          exit 0
+        }
+        trap cleanup_watchdog TERM INT HUP
+        sleep "$t" &
+        timer_pid=$!
+        wait "$timer_pid"
+        kill -TERM "$child_pid" 2>/dev/null || exit 0
+        sleep 1
+        kill -KILL "$child_pid" 2>/dev/null || true
+      ) </dev/null >/dev/null 2>&1 &
+      watchdog_pid=$!
+      wait "$child_pid" 2>/dev/null
+      rc=$?
+      kill "$watchdog_pid" 2>/dev/null || true
+      wait "$watchdog_pid" 2>/dev/null || true
+    fi
   fi
   [[ "$had_e" -eq 1 ]] && set -e
   # timeout(1) uses 124 on expiry

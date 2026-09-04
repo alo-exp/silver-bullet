@@ -26,7 +26,9 @@ if [[ ! -f "$CANONICAL" ]]; then
 fi
 
 mkdir -p "$(dirname "$SITE_COPY")"
-cp -f "$CANONICAL" "$SITE_COPY"
+if [[ ! -e "$SITE_COPY" || ! "$CANONICAL" -ef "$SITE_COPY" ]]; then
+  cp -f "$CANONICAL" "$SITE_COPY"
+fi
 
 if command -v jq >/dev/null 2>&1; then
   jq -e '.hosts | length == 3' "$SITE_COPY" >/dev/null
@@ -34,6 +36,8 @@ if command -v jq >/dev/null 2>&1; then
   echo "    canonical: ${CANONICAL#${SB_ROOT}/}"
   echo "    site copy: ${SITE_COPY#${SB_ROOT}/}"
 else
-  cp -f "$CANONICAL" "$SITE_COPY"
+  if [[ ! -e "$SITE_COPY" || ! "$CANONICAL" -ef "$SITE_COPY" ]]; then
+    cp -f "$CANONICAL" "$SITE_COPY"
+  fi
   echo "OK: copied certification status to site/help/data/ (jq not installed — skipped validation)"
 fi

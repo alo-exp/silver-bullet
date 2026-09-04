@@ -396,9 +396,9 @@ SB recommends **LeanCTX** as a separate opt-in tool (`recommended_tools.leanctx.
 | `sb_pathjail` | LeanCTX |
 | `sb_injection` | LeanCTX |
 
-**Host-neutral global instances:** Cursor, Claude Code, and Codex use the same user-global five-tool executable profile at `~/.silver-bullet/five-tool-stack/instances.json`. Their MCP files use native JSON/TOML syntax, but SB never selects a host-specific copy of Graphify, agentmemory, Context Mode, LeanCTX, or RTK. Claude's optional native `context-mode@context-mode` plugin is disabled when the stack is optimized, and Claude uses the same manifest-selected Context Mode MCP entry as Cursor and Codex. `agentmemory` connects through the one local service at `http://localhost:3111`.
+**Host-neutral global instances:** Claude Code, Codex, Cursor, OpenCode, and Pi use the same user-global five-tool executable profile at `~/.silver-bullet/five-tool-stack/instances.json`. Their native adapters preserve each host's JSON/TOML/plugin/extension syntax, but SB never selects a host-specific copy of Graphify, agentmemory, Context Mode, LeanCTX, or RTK. Claude's optional native `context-mode@context-mode` plugin is disabled when the stack is optimized so Claude uses the shared Context Mode MCP entry; OpenCode uses its native global `context-mode` plugin as the sole Context Mode owner and removes the legacy `mcp.context-mode` duplicate. Pi's native SB extension and `pi-lean-ctx` bridge read the same manifest. `agentmemory` connects through the one local service at `http://localhost:3111`.
 
-**Native host capability:** Codex PreToolUse is deny-only and cannot perform the `updatedInput` AST rewrite; this is a host-platform limitation, not an unsupported `cross_tool` state. Codex still runs the shared wire proxy, ledger, PathJail, injection detection, Graphify, agentmemory, RTK, and Context Mode profile.
+**Native host capability:** Codex PreToolUse is deny-only and cannot perform the `updatedInput` AST rewrite; this is a host-platform limitation, not an unsupported `cross_tool` state. Codex still runs the shared wire proxy, ledger, PathJail, injection detection, Graphify, agentmemory, RTK, and Context Mode profile. OpenCode and Pi use native plugin/extension adapters for the same routes.
 
 Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/optimize-five-tool-stack.sh`.
 

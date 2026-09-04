@@ -48,7 +48,7 @@ else
   pass "lean-ctx removed after merge"
 fi
 
-if jq -e '.mcpServers.leanctx.command == "lean-ctx"' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
+if jq -e '.mcpServers.leanctx.command == "lean-ctx" or (.mcpServers.leanctx.command | endswith("/lean-ctx"))' "${TEST_HOME}/.cursor/mcp.json" >/dev/null 2>&1; then
   pass "leanctx preserved after merge"
 else
   fail "leanctx missing after merge"

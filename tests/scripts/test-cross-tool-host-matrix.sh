@@ -10,11 +10,13 @@ FAIL=0
 pass() { echo "PASS: $1"; PASS=$((PASS + 1)); }
 fail() { echo "FAIL: $1"; FAIL=$((FAIL + 1)); }
 
-for host in claude codex cursor; do
+for host in claude codex cursor opencode pi; do
   home="$(mktemp -d)"
   project="$(mktemp -d)"
   cleanup() { rm -rf "$home" "$project"; }
   trap cleanup RETURN
+  mkdir -p "$home/.codex" "$home/.config/opencode/plugins" "$home/.pi/agent/extensions/pi-lean-ctx" \
+    "$home/.pi/agent/extensions/silver-bullet-five-tool-stack"
 
   jq '.sb_initiated = true
     | .recommended_tools.graphify.enabled_by_user = true
@@ -42,7 +44,23 @@ for host in claude codex cursor; do
       printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor"}]}}\n' >"$home/.cursor/hooks.json"
       printf '{"mcpServers":{"graphify":{},"agentmemory":{},"context-mode":{},"leanctx":{}}}\n' >"$home/.cursor/mcp.json"
       ;;
+    opencode)
+      printf '{"mcp":{"graphify":{},"agentmemory":{},"context-mode":{},"leanctx":{}},"plugin":["./plugins/rtk.ts"]}\n' >"$home/.config/opencode/opencode.json"
+      printf 'export const RtkOpenCodePlugin = async () => ({}) // rtk\n' >"$home/.config/opencode/plugins/rtk.ts"
+      ;;
+    pi)
+      printf '{"schema":"v1","profile":"five_tool_routed","servers":{"graphify":{"enabled":true},"agentmemory":{"enabled":true},"context_mode":{"enabled":true},"leanctx":{"enabled":true},"rtk":{"enabled":true}}}\n' \
+        >"$home/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json"
+      printf '{"mode":"additive","routeShell":false,"enableMcp":true,"disableTools":["ctx_shell"]}\n' \
+        >"$home/.pi/agent/extensions/pi-lean-ctx/config.json"
+      ;;
   esac
+
+  if [[ "$host" == "opencode" ]]; then
+    :
+  elif [[ "$host" == "pi" ]]; then
+    printf '// rtk adapter\n' >"$home/.pi/agent/extensions/silver-bullet-five-tool-stack/index.ts"
+  fi
 
   result="$(
     HOME="$home" CODEX_HOME="$home/.codex" RT_PROJECT_ROOT="$project" \

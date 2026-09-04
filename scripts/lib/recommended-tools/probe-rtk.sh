@@ -23,17 +23,41 @@ rt_probe_rtk_shell_owner() {
       [[ -f "${codex_home}/AGENTS.md" ]] || return 1
       grep -qiE 'rtk|rust token killer' "${codex_home}/AGENTS.md" 2>/dev/null
       ;;
+    opencode|pi)
+      sb_rtk_platform_hook_present "${RT_PROJECT_ROOT:-}" "$host"
+      ;;
     *) return 1 ;;
   esac
 }
 
 rt_probe_rtk_leanctx_rewrite_absent() {
-  [[ "${RT_HOST:-cursor}" == "cursor" ]] || return 0
-  [[ -f "${HOME}/.cursor/hooks.json" ]] || return 0
-  ! grep -q 'lean-ctx hook rewrite' "${HOME}/.cursor/hooks.json" 2>/dev/null
+  case "${RT_HOST:-cursor}" in
+    cursor)
+      [[ -f "${HOME}/.cursor/hooks.json" ]] || return 0
+      ! grep -q 'lean-ctx hook rewrite' "${HOME}/.cursor/hooks.json" 2>/dev/null
+      ;;
+    opencode|pi)
+      local artifact
+      artifact="$(sb_rtk_platform_hook_artifact_path "${RT_PROJECT_ROOT:-}" "${RT_HOST:-}")"
+      [[ -f "$artifact" ]] || return 0
+      ! grep -qiE 'lean-ctx[^[:space:]]*[[:space:]]+rewrite|leanctx[^[:space:]]*[[:space:]]+rewrite' "$artifact" 2>/dev/null
+      ;;
+    *) return 0 ;;
+  esac
 }
 
 rt_probe_rtk_before_cm() {
+  if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+    sb_rtk_platform_hook_present "${RT_PROJECT_ROOT:-}" opencode
+    return $?
+  fi
+  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+    local pi_cfg="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
+    [[ -f "$pi_cfg" ]] || return 1
+    [[ "$(jq -r '.routeShell // true' "$pi_cfg" 2>/dev/null)" == "false" ]] || return 1
+    jq -e '.disableTools | index("ctx_shell") != null' "$pi_cfg" >/dev/null 2>&1
+    return $?
+  fi
   [[ "${RT_HOST:-cursor}" == "cursor" ]] || return 0
   python3 - "${HOME}/.cursor/hooks.json" <<'PY'
 import json, sys
@@ -67,25 +91,27 @@ rt_probe_rtk_vendor_doctor() {
     rt_run_vendor_doctor "${cmd[@]}"
     return $?
   fi
-  command -v rtk >/dev/null 2>&1 || return 2
+  local rtk_bin
+  rtk_bin="$(sb_rtk_cli_path 2>/dev/null || true)"
+  [[ -n "$rtk_bin" ]] || return 2
   # RTK does not expose a vendor `doctor` command in every release.  Check
   # the command index before asking the generic vendor wrapper to probe it;
   # otherwise a valid RTK installation is reported as repairable merely
   # because `rtk doctor --help` is interpreted as a proxy command.
   local help=""
-  help="$(rtk help </dev/null 2>&1 || true)"
+  help="$("$rtk_bin" help </dev/null 2>&1 || true)"
   printf '%s\n' "$help" | grep -qE '^[[:space:]]+doctor([[:space:]]|$)' || return 2
-  rt_vendor_doctor_subcommand_usable rtk || return 2
-  if rtk doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
+  rt_vendor_doctor_subcommand_usable "$rtk_bin" || return 2
+  if "$rtk_bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
     extra+=(--non-interactive)
-  elif rtk doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
+  elif "$rtk_bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--yes'; then
     extra+=(--yes)
   fi
   # Bash 3.2 + set -u: empty extra[@] is unbound and aborts the reconciler.
   if ((${#extra[@]})); then
-    rt_run_vendor_doctor rtk doctor "${extra[@]}"
+    rt_run_vendor_doctor "$rtk_bin" doctor "${extra[@]}"
   else
-    rt_run_vendor_doctor rtk doctor
+    rt_run_vendor_doctor "$rtk_bin" doctor
   fi
 }
 

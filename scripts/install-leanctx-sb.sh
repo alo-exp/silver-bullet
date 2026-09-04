@@ -19,6 +19,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PATCH_MCP_PY="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 VERIFY_PY="${SCRIPT_DIR}/lib/verify-leanctx-wire-proxy-ordering.py"
+# Shared manifest helpers keep every host on the same user-global LeanCTX
+# executable when its command is not already present on PATH.
+if [[ -f "${REPO_ROOT}/hooks/lib/recommended-tools.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${REPO_ROOT}/hooks/lib/recommended-tools.sh"
+fi
+
+leanctx_cli_path() {
+  if declare -f sb_global_tool_path >/dev/null 2>&1; then
+    sb_global_tool_path leanctx 2>/dev/null && return 0
+  fi
+  command -v lean-ctx 2>/dev/null
+}
 
 HOST=""
 DRY_RUN=0
@@ -38,7 +51,7 @@ Host-aware LeanCTX install for Silver Bullet five-tool routed stack.
 Uses library-mode when upstream supports it; otherwise SB merge-only wiring.
 
 Options:
-  --host <cursor|claude|codex|opencode>   Target host (required)
+  --host <cursor|claude|codex|opencode|pi> Target host (required)
   --project-root <path>                   Canonical SB project root (required)
   --dry-run                                     Print actions without writes
   --skip-install                                Skip binary install step
@@ -74,6 +87,10 @@ detect_host() {
     printf '%s' "opencode"
     return 0
   fi
+  if [[ -n "${PI_CODING_AGENT_DIR:-}" ]] || [[ -d "${HOME}/.pi/agent" ]]; then
+    printf '%s' "pi"
+    return 0
+  fi
   if [[ -d "${HOME}/.codex" ]]; then
     printf '%s' "claude"
     return 0
@@ -96,6 +113,9 @@ init_guard_paths() {
       ;;
     opencode)
       GUARD_PATHS+=("${HOME}/.config/opencode/AGENTS.md")
+      ;;
+    pi)
+      GUARD_PATHS+=("${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/AGENTS.md")
       ;;
     claude)
       GUARD_PATHS+=("${HOME}/.claude/CLAUDE.md")
@@ -157,12 +177,14 @@ assert_guard_unchanged() {
 }
 
 leanctx_binary_ok() {
-  command -v lean-ctx >/dev/null 2>&1 || return 1
-  lean-ctx --version >/dev/null 2>&1 || lean-ctx --help >/dev/null 2>&1
+  local bin="$(leanctx_cli_path || true)"
+  [[ -n "$bin" ]] || return 1
+  "$bin" --version >/dev/null 2>&1 || "$bin" --help >/dev/null 2>&1
 }
 
 leanctx_supports_library_mode() {
-  lean-ctx init --help 2>&1 | grep -q -- '--library-mode'
+  local bin="$(leanctx_cli_path || true)"
+  [[ -n "$bin" ]] && "$bin" init --help 2>&1 | grep -q -- '--library-mode'
 }
 
 context_mode_configured() {
@@ -184,6 +206,14 @@ context_mode_configured() {
     codex)
       local mcp="${CODEX_HOME:-${HOME}/.codex}/config.toml"
       [[ -f "$mcp" ]] && grep -q '^\[mcp_servers\.context-mode\]$' "$mcp" 2>/dev/null
+      ;;
+    opencode)
+      local mcp="${HOME}/.config/opencode/opencode.json"
+      [[ -f "$mcp" ]] && jq -e '(.plugin // [] | any(. == "context-mode")) or (.mcp["context-mode"] // .mcp["user-context-mode"] // empty)' "$mcp" >/dev/null 2>&1
+      ;;
+    pi)
+      local mcp="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/silver-bullet-five-tool-stack/config.json"
+      [[ -f "$mcp" ]] && jq -e '.servers.context_mode.enabled == true' "$mcp" >/dev/null 2>&1
       ;;
     *) return 1 ;;
   esac
@@ -215,13 +245,14 @@ install_leanctx_binary() {
 
 run_library_mode_init() {
   # Conflict #8: never `lean-ctx init --agent *`. Library mode only when verified.
+  local bin="$(leanctx_cli_path || true)"
   if ! leanctx_binary_ok; then
     warn "lean-ctx missing — skip library init"
     return 0
   fi
   if leanctx_supports_library_mode; then
     log "Running lean-ctx init --library-mode (verified upstream flag)"
-    run_cmd lean-ctx init --library-mode
+    run_cmd "$bin" init --library-mode
     return 0
   fi
   # Fallback flags documented but unverified — safest path is merge-only wiring.
@@ -262,8 +293,20 @@ merge_mcp_config() {
       log "Merging LeanCTX MCP for host=${HOST} via merge-leanctx-mcp-config.py"
       run_cmd python3 "$merge_py" --host "$HOST"
       ;;
+    pi)
+      local pi_installer="${SCRIPT_DIR}/lib/global-toolstack/install-pi.py"
+      [[ -f "$pi_installer" ]] || {
+        warn "Pi adapter installer missing: $pi_installer"
+        return 1
+      }
+      if [[ "$DRY_RUN" -eq 1 ]]; then
+        log "DRY-RUN: python3 $pi_installer --repo-root $REPO_ROOT"
+      else
+        run_cmd python3 "$pi_installer" --repo-root "$REPO_ROOT"
+      fi
+      ;;
     *)
-      log "SKIP: MCP merge (host=${HOST}; no merge target implemented — supported: cursor, claude, codex, opencode)"
+      log "SKIP: MCP merge (host=${HOST}; no merge target implemented — supported: cursor, claude, codex, opencode, pi)"
       return 0
       ;;
   esac
@@ -307,7 +350,8 @@ verify_wire_proxy_ordering() {
   fi
   log "OK: wire-proxy ordering validator self-test passed"
   if [[ "$HOST" == "codex" ]] && leanctx_binary_ok; then
-    if lean-ctx proxy --help >/dev/null 2>&1; then
+    local bin="$(leanctx_cli_path || true)"
+    if [[ -n "$bin" ]] && "$bin" proxy --help >/dev/null 2>&1; then
       log "OK: lean-ctx proxy subcommand available for Codex wire path"
     else
       warn "lean-ctx proxy subcommand not found — Codex wire path may be limited"

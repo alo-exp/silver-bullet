@@ -90,6 +90,12 @@ host="$(
   env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE     CURSOR_PLUGIN_ROOT=/x/.cursor/plugins bash -c "source '$LIB'; sb_runtime_host"
 )"
 [[ "$host" == "cursor" ]] && pass "CURSOR_PLUGIN_ROOT -> cursor" || fail "CURSOR_PLUGIN_ROOT -> cursor"
+host="$(
+  env -u SILVER_BULLET_RUNTIME -u CODEX_CI -u CODEX_THREAD_ID -u CODEX_INTERNAL_ORIGINATOR_OVERRIDE \
+    -u CURSOR_PLUGIN_ROOT -u CLAUDE_PLUGIN_ROOT OPENCODE=1 \
+    bash -c "source '$LIB'; sb_runtime_host"
+)"
+[[ "$host" == "opencode" ]] && pass "OPENCODE -> opencode" || fail "OPENCODE -> opencode"
 
 full="$(SILVER_BULLET_RUNTIME=cursor sb_recommended_tool_full_install_lines "$TMP/.silver-bullet.json" graphify)"
 printf '%s' "$full" | grep -Eq "uv tool install ['\"]?graphifyy" && pass "full install includes CLI" || fail "full install includes CLI"
