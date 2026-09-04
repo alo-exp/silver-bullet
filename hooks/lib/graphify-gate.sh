@@ -35,6 +35,19 @@ sb_graphify_query_ttl_seconds() {
 }
 
 sb_graphify_cli_path() {
+  if declare -f sb_global_tool_command >/dev/null 2>&1; then
+    local global_graphify_command=""
+    global_graphify_command="$(sb_global_tool_command graphify 2>/dev/null || true)"
+    if [[ -n "$global_graphify_command" && "$(basename "$global_graphify_command")" == "graphify" ]]; then
+      if [[ "$global_graphify_command" == */* ]]; then
+        [[ -x "$global_graphify_command" ]] || return 1
+        printf '%s' "$global_graphify_command"
+        return 0
+      fi
+      command -v "$global_graphify_command"
+      return $?
+    fi
+  fi
   if command -v graphify >/dev/null 2>&1; then
     command -v graphify
     return 0

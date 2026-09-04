@@ -16,7 +16,7 @@ Usage: bash scripts/install-recommended-tools-global.sh --host HOST [--global]
 Syncs global instruction artifacts (rules, AGENTS.md routing) for RTK + Context Mode.
 Does NOT require Silver Bullet. RTK/Codex hooks are applied by optimize-rtk-context-mode.sh.
 
-Hosts: claude | codex | cursor | opencode | hermes | goose | all
+Hosts: claude | codex | cursor | opencode | pi | hermes | goose | all
 
 Options:
   --host HOST   Target agent (required)
@@ -70,6 +70,15 @@ install_claude_hint() {
   fi
 }
 
+install_pi_global() {
+  local installer="${SCRIPT_DIR}/lib/global-toolstack/install-pi.py"
+  [[ -f "$installer" ]] || {
+    printf 'ERROR: Pi five-tool installer missing: %s\n' "$installer" >&2
+    return 1
+  }
+  python3 "$installer" --repo-root "$REPO_ROOT"
+}
+
 install_hermes_note() {
   printf 'Hermes: enable rtk-rewrite in ~/.hermes/config.yaml plugins.enabled\n'
   printf 'See docs/rtk-cm/verification/hermes-verify-rtk-cm.md\n'
@@ -84,6 +93,7 @@ install_host() {
   case "$h" in
     cursor) install_cursor_global ;;
     opencode) install_opencode_agents ;;
+    pi) install_pi_global ;;
     codex) install_codex_agents ;;
     claude) install_claude_hint ;;
     hermes) install_hermes_note ;;

@@ -11,6 +11,7 @@ INSTALL_LEANCTX="${SCRIPT_DIR}/install-leanctx-sb.sh"
 OPTIMIZE_RTCM="${SCRIPT_DIR}/optimize-rtk-context-mode.sh"
 OPTIMIZE_SYNERGY="${SCRIPT_DIR}/sb-optimize-stack.sh"
 INSTALL_CURSOR_RULES="${SCRIPT_DIR}/install-recommended-tools-cursor.sh"
+PATCH_MCP="${SCRIPT_DIR}/lib/global-toolstack/patch-mcp.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
 
 HOST=""
@@ -35,7 +36,7 @@ When leanctx.enabled_by_user is true, callers MUST use this script instead of
 optimize-rtk-context-mode.sh alone (conflict #9).
 
 Options:
-  --host <cursor|claude|codex|opencode|all>   Target host (required)
+  --host <cursor|claude|codex|opencode|pi|all> Target host (required)
   --project-root <path>                       Canonical SB project root (required)
   --dry-run                                        Print actions without writes
   --skip-rtcm                                      Skip RTK+CM optimize helper
@@ -74,6 +75,10 @@ detect_host() {
   fi
   if [[ -d "${HOME}/.config/opencode" ]]; then
     printf '%s' "opencode"
+    return 0
+  fi
+  if [[ -n "${PI_CODING_AGENT_DIR:-}" ]] || [[ -d "${HOME}/.pi/agent" ]]; then
+    printf '%s' "pi"
     return 0
   fi
   if [[ -d "${HOME}/.codex" ]]; then
@@ -169,6 +174,22 @@ optimize_host() {
   if [[ "$h" == "cursor" ]]; then
     run_cmd bash "$INSTALL_CURSOR_RULES" $([[ "$DRY_RUN" -eq 1 ]] && printf '%s' '--global' || true)
   fi
+
+  if [[ "$SKIP_SYNERGY" -eq 0 || "$SKIP_RTCM" -eq 0 ]]; then
+    local patch_args=(python3 "$PATCH_MCP")
+    local patch_env=(RT_HOST="$h" TOOLSTACK_REPO_ROOT="$REPO_ROOT")
+    if [[ "$SKIP_SYNERGY" -eq 0 ]]; then
+      patch_env+=(RT_PATCH_GRAPHIFY=1 RT_PATCH_AGENTMEMORY=1)
+    else
+      patch_env+=(RT_PATCH_GRAPHIFY=0 RT_PATCH_AGENTMEMORY=0)
+    fi
+    if [[ "$SKIP_RTCM" -eq 0 ]]; then
+      patch_env+=(RT_PATCH_CONTEXT_MODE=1 RT_PATCH_LEANCTX=1)
+    else
+      patch_env+=(RT_PATCH_CONTEXT_MODE=0 RT_PATCH_LEANCTX=0)
+    fi
+    run_cmd env "${patch_env[@]}" "${patch_args[@]}"
+  fi
 }
 
 while [[ $# -gt 0 ]]; do
@@ -211,11 +232,11 @@ apply_profile_metadata
 
 case "$HOST" in
   all)
-    for h in cursor claude codex opencode; do
+    for h in cursor claude codex opencode pi; do
       optimize_host "$h"
     done
     ;;
-  cursor|claude|codex|opencode)
+  cursor|claude|codex|opencode|pi)
     optimize_host "$HOST"
     ;;
   *)
@@ -240,4 +261,3 @@ else
 fi
 
 log "=== Five-tool optimization complete ==="
-

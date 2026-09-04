@@ -15,6 +15,10 @@ rt_probe_agentmemory_mcp_configured() {
           [[ -f "$path" ]] || return 1
           jq -e '.mcpServers["user-agentmemory"]' "$path" >/dev/null 2>&1
           ;;
+        pi)
+          [[ -f "$(rt_host_mcp_config_path "$host")" ]] || return 1
+          jq -e '.servers.agentmemory.enabled == true' "$(rt_host_mcp_config_path "$host")" >/dev/null 2>&1
+          ;;
         *) return 1 ;;
       esac
     }

@@ -12,13 +12,17 @@ if [[ -z "${SILVER_BULLET_RUNTIME:-}" ]]; then
     SILVER_BULLET_RUNTIME="codex"
   elif [[ -n "${CURSOR_PLUGIN_ROOT:-}" || "$_sb_runtime_source" == *"/.cursor/"* || ( -n "${CLAUDE_PLUGIN_ROOT:-}" && "$CLAUDE_PLUGIN_ROOT" == *"/.cursor/"* ) ]]; then
     SILVER_BULLET_RUNTIME="cursor"
+  elif [[ -n "${PI_CODING_AGENT_DIR:-}" || "$_sb_runtime_source" == *"/.pi/"* ]]; then
+    SILVER_BULLET_RUNTIME="pi"
+  elif [[ -n "${OPENCODE:-}" || -n "${OPENCODE_PID:-}" || "$_sb_runtime_source" == *"/.config/opencode/"* ]]; then
+    SILVER_BULLET_RUNTIME="opencode"
   else
     SILVER_BULLET_RUNTIME="claude"
   fi
 fi
 
 case "$SILVER_BULLET_RUNTIME" in
-  claude|codex|cursor|opencode|goose|hermes) ;;
+  claude|codex|cursor|opencode|pi|goose|hermes) ;;
   *) SILVER_BULLET_RUNTIME="claude" ;;
 esac
 
@@ -29,6 +33,7 @@ if [[ "$SB_RUNTIME_NAME" == "codex" && -n "${KAY_HOME:-}" ]]; then
 fi
 case "$SB_RUNTIME_NAME" in
   opencode) SB_RUNTIME_HOME_ROOT="${HOME}/.config/opencode" ;;
+  pi) SB_RUNTIME_HOME_ROOT="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
   goose) SB_RUNTIME_HOME_ROOT="${HOME}/.config/goose" ;;
   hermes) SB_RUNTIME_HOME_ROOT="${HOME}/.hermes" ;;
   *) SB_RUNTIME_HOME_ROOT="${_sb_runtime_base_home}/.${SB_RUNTIME_NAME}" ;;
@@ -98,6 +103,8 @@ sb_runtime_skill_receipt_dirs() {
     for runtime in codex claude cursor; do
       _sb_append_receipt_dir "${base_home}/.${runtime}/.silver-bullet"
     done
+    _sb_append_receipt_dir "${base_home}/.config/opencode/.silver-bullet"
+    _sb_append_receipt_dir "${PI_CODING_AGENT_DIR:-${base_home}/.pi/agent}/.silver-bullet"
   done
 
   if [[ -n "${SB_RUNTIME_EXTRA_STATE_ROOTS:-}" ]]; then

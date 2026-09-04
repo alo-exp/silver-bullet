@@ -56,7 +56,8 @@ Run from project root after CLI install. SB stores commands in `recommended_tool
 | Claude Code | `rtk init -g` | `~/.codex/settings.json` | Supported |
 | Cursor | `rtk init -g --agent cursor` | `~/.cursor/hooks.json` (`rtk hook cursor`) | Supported |
 | Codex | `rtk init -g --codex` | `~/.codex/AGENTS.md` (awareness layer; no live PreToolUse rewrite on Codex yet) | Supported (prompt-layer) |
-| OpenCode | `rtk init -g --opencode` | `~/.config/opencode/plugins/rtk.ts` | Supported |
+| OpenCode | `bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root "$(pwd)"` | `~/.config/opencode/plugins/rtk.ts` + `opencode.json` | Supported |
+| Pi | `bash scripts/optimize-rtk-context-mode.sh --host pi --project-root "$(pwd)"` | `~/.pi/agent/extensions/silver-bullet-five-tool-stack/` | Supported |
 | Hermes | `rtk init --agent hermes` | `~/.hermes/plugins/rtk-rewrite/` | Partial |
 | Goose | — | — | **Unsupported** upstream |
 
@@ -90,14 +91,14 @@ bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"   
 bash scripts/optimize-rtk-context-mode.sh --host all --project-root "$(pwd)"    # every host (+ goose SKIP)
 ```
 
-| Step | Claude | Cursor | Codex | OpenCode | Hermes | Goose |
-|------|--------|--------|-------|----------|--------|-------|
-| RTK hook | `rtk init -g` | `rtk init -g --agent cursor` | `rtk init -g --codex` | `rtk init -g --opencode` | `rtk init --agent hermes` | SKIP |
-| Verify binary | `rtk gain --help` | same | same | same | same | — |
-| Allow-list | N/A | `~/.cursor/cli-config.json` | N/A | N/A | N/A | — |
-| Hook rewrite test | `rtk hook claude` | `rtk hook cursor` | prompt-only | plugin `tool.execute.before` | `pre_tool_call` plugin | — |
-| CM wiring | Claude plugin | MCP+hooks+rules | MCP+hooks.toml | plugin+MCP | MCP YAML only | SKIP |
-| Doctor | `CONTEXT_MODE_PLATFORM=claude` | `=cursor` | `=codex` | `=opencode` | SKIP | SKIP |
+| Step | Claude | Cursor | Codex | OpenCode | Pi | Hermes | Goose |
+|------|--------|--------|-------|----------|----|--------|-------|
+| RTK hook | `rtk init -g` | `rtk init -g --agent cursor` | `rtk init -g --codex` | manifest-backed plugin | native `tool_call` adapter | `rtk init --agent hermes` | SKIP |
+| Verify binary | `rtk gain --help` | same | same | same | same | same | — |
+| Allow-list | N/A | `~/.cursor/cli-config.json` | N/A | N/A | N/A | N/A | — |
+| Hook rewrite test | `rtk hook claude` | `rtk hook cursor` | prompt-only | plugin `tool.execute.before` | extension `tool_call` | `pre_tool_call` plugin | — |
+| CM wiring | Claude plugin | MCP+hooks+rules | MCP+hooks.toml | plugin+MCP | extension+MCP | MCP YAML only | SKIP |
+| Doctor | `CONTEXT_MODE_PLATFORM=claude` | `=cursor` | `=codex` | `=opencode` | SKIP | SKIP | SKIP |
 
 Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at `docs/rtk-cm/verification/<host>-verify-rtk-cm.md`.
 

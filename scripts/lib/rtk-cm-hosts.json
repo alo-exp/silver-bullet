@@ -41,14 +41,27 @@
     "opencode": {
       "status": "supported",
       "rtk": {
-        "command": "rtk init -g --opencode",
+        "command": "shared manifest-backed OpenCode plugin",
         "artifacts": ["~/.config/opencode/plugins/rtk.ts", "~/.config/opencode/opencode.json"]
       },
       "context_mode": {
-        "command": "npm install -g context-mode",
-        "artifacts": ["~/.config/opencode/opencode.json", "~/.config/opencode/AGENTS.md"]
+        "command": "native context-mode plugin",
+        "artifacts": ["~/.config/opencode/opencode.json", "~/.config/opencode/AGENTS.md"],
+        "note": "Use the native plugin as the sole Context Mode owner; remove legacy mcp.context-mode entries"
       },
       "doctor_platform": "opencode"
+    },
+    "pi": {
+      "status": "supported",
+      "rtk": {
+        "command": "shared manifest-backed native Pi tool_call adapter",
+        "artifacts": ["~/.pi/agent/extensions/silver-bullet-five-tool-stack/index.ts", "~/.pi/agent/extensions/pi-lean-ctx/config.json"]
+      },
+      "context_mode": {
+        "command": "shared Context Mode MCP bridge via Pi adapter",
+        "artifacts": ["~/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json", "~/.pi/agent/extensions/pi-lean-ctx/config.json"]
+      },
+      "doctor_platform": null
     },
     "hermes": {
       "status": "partial",

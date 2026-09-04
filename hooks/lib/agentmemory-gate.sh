@@ -101,6 +101,9 @@ sb_agentmemory_scaffold_export_root() {
 }
 
 sb_agentmemory_cli_path() {
+  if declare -f sb_global_tool_path >/dev/null 2>&1; then
+    sb_global_tool_path agentmemory 2>/dev/null && return 0
+  fi
   if command -v agentmemory >/dev/null 2>&1; then
     command -v agentmemory
     return 0
@@ -114,13 +117,14 @@ sb_agentmemory_cli_available() {
 
 sb_agentmemory_server_healthy() {
   local config_file="${1:-}"
-  local url status_out
+  local url status_out am_bin
   url="$(sb_agentmemory_health_url "$config_file")"
   if command -v curl >/dev/null 2>&1 && curl -sf --max-time 3 "$url" >/dev/null 2>&1; then
     return 0
   fi
-  if command -v agentmemory >/dev/null 2>&1; then
-    status_out="$(agentmemory status 2>/dev/null || true)"
+  am_bin="$(sb_agentmemory_cli_path 2>/dev/null || true)"
+  if [[ -n "$am_bin" ]]; then
+    status_out="$("$am_bin" status 2>/dev/null || true)"
     if printf '%s\n' "$status_out" | grep -qE 'Connected|Health:[[:space:]]+healthy'; then
       return 0
     fi
@@ -141,6 +145,8 @@ sb_agentmemory_platform_artifact_path() {
     opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
     goose) printf '%s/.config/goose/config.yaml' "${HOME}" ;;
     hermes) printf '%s/.hermes/config.yaml' "${HOME}" ;;
+    pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
+      "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     # Explicit rather than correct-by-accident via the fallback.
     claude) printf '%s/.claude.json' "${HOME}" ;;
     *) printf '%s/.claude.json' "${HOME}" ;;
@@ -153,7 +159,7 @@ sb_agentmemory_platform_artifact_present() {
   host="${host:-$(sb_runtime_host)}"
   artifact="$(sb_agentmemory_platform_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
-  grep -q 'agentmemory' "$artifact" 2>/dev/null
+   grep -q 'agentmemory' "$artifact" 2>/dev/null
 }
 
 sb_agentmemory_usage_ttl_seconds() {

@@ -24,6 +24,14 @@ from five_tool_instances import (  # noqa: E402
     mcp_server_spec,
     tool_command,
 )
+from opencode import (  # noqa: E402
+    opencode_context_mode_plugin_present,
+    opencode_ensure_context_mode_plugin,
+    opencode_existing_server_present,
+    opencode_remove_context_mode_mcp,
+    opencode_server_config,
+    opencode_upsert_server,
+)
 
 GRAPHIFY_MCP_HANDSHAKE_TIMEOUT = 15
 
@@ -251,6 +259,118 @@ def atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     tmp_path.replace(path)
 
 
+def merge_opencode_mcp(
+    path: Path,
+    *,
+    patch_graphify: bool,
+    patch_leanctx: bool,
+    patch_agentmemory: bool,
+    patch_context_mode: bool,
+    manifest: dict[str, Any],
+) -> tuple[bool, str]:
+    """Project shared MCP tools while leaving Context Mode to its native plugin."""
+    original = load_json(path)
+    data = json.loads(json.dumps(original))
+    mcp = data.setdefault("mcp", {})
+    if not isinstance(mcp, dict):
+        mcp = {}
+        data["mcp"] = mcp
+
+    changed = False
+    plugins = data.get("plugin")
+    if patch_context_mode:
+        if not isinstance(plugins, list):
+            plugins = []
+            data["plugin"] = plugins
+    if isinstance(plugins, list):
+        # Canonicalize an already-enabled plugin even when this invocation is
+        # repairing another tool; never add Context Mode without its consent.
+        changed = opencode_ensure_context_mode_plugin(
+            plugins, manifest, allow_add=patch_context_mode
+        ) or changed
+    cm_plugin_active = opencode_context_mode_plugin_present(data)
+    if cm_plugin_active:
+        # OpenCode's native plugin registers CM in-process.  Keeping a legacy
+        # mcp.context-mode entry alongside it makes OpenCode suppress all
+        # ctx_* tools, so the plugin is the sole Context Mode owner.
+        changed = opencode_remove_context_mode_mcp(mcp) or changed
+    cm_active = cm_plugin_active or opencode_existing_server_present(
+        mcp, "context-mode", ("user-context-mode",)
+    )
+
+    if patch_graphify:
+        if opencode_existing_server_present(mcp, "graphify"):
+            changed = opencode_upsert_server(
+                mcp,
+                "graphify",
+                opencode_server_config(manifest, "graphify"),
+            ) or changed
+        else:
+            ok, reason = graphify_mcp_handshake(manifest)
+            if not ok:
+                if reason:
+                    print(f"WARN: graphify merge skipped: {reason}", file=sys.stderr)
+            else:
+                changed = opencode_upsert_server(
+                    mcp,
+                    "graphify",
+                    opencode_server_config(manifest, "graphify"),
+                ) or changed
+
+    if patch_agentmemory:
+        changed = opencode_upsert_server(
+            mcp,
+            "agentmemory",
+            opencode_server_config(manifest, "agentmemory"),
+            aliases=("user-agentmemory",),
+        ) or changed
+
+    if patch_context_mode and not cm_plugin_active:
+        changed = opencode_upsert_server(
+            mcp,
+            "context-mode",
+            opencode_server_config(manifest, "context_mode"),
+            aliases=("user-context-mode",),
+        ) or changed
+
+    if patch_leanctx:
+        lean_env = LEANCTX_ENV_CM_ACTIVE if cm_active else LEANCTX_ENV_BASE
+        changed = opencode_upsert_server(
+            mcp,
+            "leanctx",
+            opencode_server_config(
+                manifest,
+                "leanctx",
+                environment=lean_env,
+            ),
+            aliases=("lean-ctx", "lean-ctx-standalone", "user-leanctx", "user-lean-ctx"),
+        ) or changed
+
+    if normalize_mcp_config(data) == normalize_mcp_config(original):
+        return False, "OK: opencode.json unchanged (idempotent)"
+    atomic_write_json(path, data)
+    return True, "OK: opencode.json merged atomically"
+
+
+def install_pi_adapter(
+    repo_root: Path,
+    *,
+    dry_run: bool,
+    enabled_tools: set[str],
+) -> tuple[bool, str]:
+    """Install the native Pi adapter without importing a hyphenated filename."""
+    import importlib.util
+
+    installer_path = Path(__file__).resolve().parent / "install-pi.py"
+    spec = importlib.util.spec_from_file_location("silver_bullet_install_pi", installer_path)
+    if spec is None or spec.loader is None:
+        return False, "ERROR: unable to load Pi adapter installer"
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = module.install(repo_root, dry_run, enabled_tools)
+    return True, "OK: Pi five-tool adapter installed (" + ",".join(sorted(enabled_tools)) + ")"
+
+
 def codex_mcp_block(
     server: str, *, cm_active: bool, manifest: dict[str, Any]
 ) -> str:
@@ -436,6 +556,40 @@ def main() -> int:
             patch_context_mode=patch_context_mode,
             manifest=manifest,
         )
+        print(message)
+        return 0
+
+    if host == "opencode":
+        _, message = merge_opencode_mcp(
+            Path.home() / ".config" / "opencode" / "opencode.json",
+            patch_graphify=patch_graphify,
+            patch_leanctx=patch_leanctx,
+            patch_agentmemory=patch_agentmemory,
+            patch_context_mode=patch_context_mode,
+            manifest=manifest,
+        )
+        print(message)
+        return 0
+
+    if host == "pi":
+        enabled = {
+            tool
+            for tool, selected in (
+                ("graphify", patch_graphify),
+                ("agentmemory", patch_agentmemory),
+                ("context_mode", patch_context_mode),
+                ("leanctx", patch_leanctx),
+            )
+            if selected
+        }
+        ok, message = install_pi_adapter(
+            Path(os.environ.get("TOOLSTACK_REPO_ROOT", Path.cwd())),
+            dry_run=False,
+            enabled_tools=enabled,
+        )
+        if not ok:
+            print(message, file=sys.stderr)
+            return 2
         print(message)
         return 0
 

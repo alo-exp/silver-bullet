@@ -456,6 +456,12 @@
             "bash scripts/install-leanctx-sb.sh --host opencode --project-root \"$(pwd)\""
           ],
           "post_index": []
+        },
+        "pi": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host pi --project-root \"$(pwd)\""
+          ],
+          "post_index": []
         }
       },
       "benefits_summary": "Parallel-routed compression stack: wire proxy, AST read-path, PathJail, savings ledger, and injection detection — surface-excluded from RTK shell and Context Mode sandbox when five-tool profile active."

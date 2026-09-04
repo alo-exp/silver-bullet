@@ -15,7 +15,7 @@ GLOBAL_BIN_REAL="$(cd "$GLOBAL_BIN" && pwd -P)"
 trap 'rm -rf "$TEST_HOME" "$GLOBAL_BIN"' EXIT
 
 export HOME="$TEST_HOME"
-mkdir -p "$TEST_HOME/.cursor" "$TEST_HOME/.codex" "$TEST_HOME/.config/opencode" "$TEST_HOME/.hermes"
+mkdir -p "$TEST_HOME/.cursor" "$TEST_HOME/.codex" "$TEST_HOME/.config/opencode" "$TEST_HOME/.hermes" "$TEST_HOME/.pi/agent"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$GLOBAL_BIN/context-mode"
 chmod +x "$GLOBAL_BIN/context-mode"
 export PATH="$GLOBAL_BIN:$PATH"
@@ -143,10 +143,34 @@ fi
 
 # 9. OpenCode merge
 python3 "$REPO_ROOT/scripts/lib/merge-token-compression-config.py" --host opencode --repo-root "$REPO_ROOT" >/dev/null
-jq -e '.mcp["context-mode"]' "$TEST_HOME/.config/opencode/opencode.json" >/dev/null \
-  && pass "opencode MCP merged" || fail "opencode MCP merged"
+jq -e '(.plugin // [] | any(. == "context-mode"))' "$TEST_HOME/.config/opencode/opencode.json" >/dev/null \
+  && pass "opencode native Context Mode plugin merged" || fail "opencode native Context Mode plugin merged"
+jq -e '(.mcp["context-mode"] // .mcp["user-context-mode"]) | not' "$TEST_HOME/.config/opencode/opencode.json" >/dev/null \
+  && pass "opencode Context Mode MCP duplicate absent" || fail "opencode Context Mode MCP duplicate absent"
 jq -e '.plugin[]? | select(. == "context-mode")' "$TEST_HOME/.config/opencode/opencode.json" >/dev/null \
   && pass "opencode plugin merged" || fail "opencode plugin merged"
+jq -e '.plugin[]? | select(. == "./plugins/rtk.ts")' "$TEST_HOME/.config/opencode/opencode.json" >/dev/null \
+  && pass "opencode RTK plugin registered" || fail "opencode RTK plugin registered"
+grep -q 'RTK_COMMAND' "$TEST_HOME/.config/opencode/plugins/rtk.ts" \
+  && pass "opencode RTK plugin materialized" || fail "opencode RTK plugin materialized"
+
+# 9b. Pi's native adapter + pi-lean-ctx bridge use the same global profile.
+if PI_CODING_AGENT_DIR="$TEST_HOME/.pi/agent" bash "$REPO_ROOT/scripts/optimize-rtk-context-mode.sh" \
+  --host pi --project-root "$REPO_ROOT" --dry-run --skip-rtk-init --skip-cm-doctor >/dev/null 2>&1; then
+  pass "pi dry-run exits 0"
+else
+  fail "pi dry-run exits 0"
+fi
+if PI_CODING_AGENT_DIR="$TEST_HOME/.pi/agent" python3 "$REPO_ROOT/scripts/lib/global-toolstack/install-pi.py" \
+  --repo-root "$REPO_ROOT" >/dev/null 2>&1 \
+  && jq -e '.profile == "five_tool_routed" and .servers.graphify.enabled and .servers.context_mode.enabled and .servers.rtk.enabled' \
+    "$TEST_HOME/.pi/agent/extensions/silver-bullet-five-tool-stack/config.json" >/dev/null \
+  && jq -e '.routeShell == false and .enableMcp == true and (.disableTools | index("ctx_shell")) != null' \
+    "$TEST_HOME/.pi/agent/extensions/pi-lean-ctx/config.json" >/dev/null; then
+  pass "pi adapter and LeanCTX shell ownership configured"
+else
+  fail "pi adapter and LeanCTX shell ownership configured"
+fi
 
 # 10. Hermes partial merge
 python3 "$REPO_ROOT/scripts/lib/merge-token-compression-config.py" --host hermes --repo-root "$REPO_ROOT" >/dev/null
@@ -165,7 +189,7 @@ grep -q 'context-mode hook cursor afteragentresponse' "$TEST_HOME/.cursor/hooks.
   && pass "afterAgentResponse hook merged" || fail "afterAgentResponse hook merged"
 
 # 13. Verification docs exist
-for agent in claude codex cursor opencode goose hermes; do
+for agent in claude codex cursor opencode pi goose hermes; do
   doc="$REPO_ROOT/docs/rtk-cm/verification/${agent}-verify-rtk-cm.md"
   [[ -f "$doc" ]] && pass "verification doc ${agent}" || fail "verification doc ${agent}"
 done

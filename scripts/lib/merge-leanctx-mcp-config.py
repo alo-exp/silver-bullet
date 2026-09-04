@@ -27,6 +27,14 @@ from five_tool_instances import (  # noqa: E402
     ensure_global_instances,
     mcp_server_spec,
 )
+from opencode import (  # noqa: E402
+    opencode_context_mode_plugin_present,
+    opencode_ensure_context_mode_plugin,
+    opencode_existing_server_present,
+    opencode_remove_context_mode_mcp,
+    opencode_server_config,
+    opencode_upsert_server,
+)
 
 
 CM_OVERLAP_TOOLS = [
@@ -77,7 +85,11 @@ def context_mode_present_claude(claude_json: pathlib.Path) -> bool:
 def context_mode_present_opencode(cfg_path: pathlib.Path) -> bool:
     data = load_json(cfg_path)
     mcp = data.get("mcp", {})
-    return "context-mode" in mcp
+    return (
+        opencode_context_mode_plugin_present(data)
+        or "context-mode" in mcp
+        or "user-context-mode" in mcp
+    )
 
 
 def context_mode_present_codex(config_toml: pathlib.Path) -> bool:
@@ -185,7 +197,6 @@ def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dic
 
 
 def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
-    cm_active = context_mode_present_opencode(target)
     data = load_json(
         target,
         {
@@ -196,21 +207,43 @@ def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> d
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
     mcp = data.setdefault("mcp", {})
+    if not isinstance(mcp, dict):
+        mcp = {}
+        data["mcp"] = mcp
     changed = False
-    desired = {
-        "type": "local",
-        "command": [
-            mcp_server_spec(manifest, "leanctx")["command"],
-            *mcp_server_spec(manifest, "leanctx")["args"],
-        ],
-        "enabled": True,
-        "environment": leanctx_server_env(cm_active),
-    }
-    if mcp.get("leanctx") != desired:
-        mcp["leanctx"] = desired
-        changed = True
+    cm_plugin_active = opencode_context_mode_plugin_present(data)
+    plugins = data.get("plugin")
+    if cm_plugin_active and isinstance(plugins, list):
+        changed = opencode_ensure_context_mode_plugin(
+            plugins, manifest, allow_add=False
+        ) or changed
+    cm_active = cm_plugin_active or opencode_existing_server_present(
+        mcp, "context-mode", ("user-context-mode",)
+    )
+    if cm_plugin_active:
+        changed = opencode_remove_context_mode_mcp(mcp) or changed
+    elif cm_active:
+        changed = opencode_upsert_server(
+            mcp,
+            "context-mode",
+            opencode_server_config(manifest, "context_mode"),
+            aliases=("user-context-mode",),
+        ) or changed
+    changed = opencode_upsert_server(
+        mcp,
+        "leanctx",
+        opencode_server_config(
+            manifest,
+            "leanctx",
+            environment=leanctx_server_env(cm_active),
+        ),
+        aliases=("lean-ctx", "lean-ctx-standalone", "user-leanctx", "user-lean-ctx"),
+    ) or changed
     if changed:
-        save_json(target, data, dry_run)
+        if dry_run:
+            print(f"DRY-RUN: would write {target}")
+        else:
+            save_json(target, data, dry_run)
     return {"host": "opencode", "mcp_merged": changed, "cm_active": cm_active}
 
 

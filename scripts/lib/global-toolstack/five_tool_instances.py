@@ -57,7 +57,8 @@ GLOBAL_ENTRYPOINT_NAMES = {
     "leanctx": {"lean-ctx"},
     "rtk": {"rtk"},
 }
-HOST_SCOPED_PATH_PARTS = {".claude", ".codex", ".cursor"}
+HOST_SCOPED_PATH_PARTS = {".claude", ".codex", ".cursor", ".pi"}
+HOST_SCOPED_PATH_MARKERS = ("/.config/opencode/", "/.config/opencode")
 
 
 def global_toolstack_home() -> Path:
@@ -131,6 +132,9 @@ def _absolute_executable(value: str) -> str | None:
 def _is_global_entrypoint(tool: str, command: str) -> bool:
     path = Path(command)
     if any(part in HOST_SCOPED_PATH_PARTS for part in path.parts):
+        return False
+    normalized = path.as_posix()
+    if any(marker in normalized for marker in HOST_SCOPED_PATH_MARKERS):
         return False
     return path.name in GLOBAL_ENTRYPOINT_NAMES[tool]
 

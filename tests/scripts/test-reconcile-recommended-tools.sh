@@ -590,6 +590,22 @@ D10_PROJ="$(mktemp -d)"
 D10_BIN="$(mktemp -d)"
 mkdir -p "${D10_HOME}/.cursor"
 export HOME="$D10_HOME"
+mkdir -p "${D10_HOME}/.silver-bullet/five-tool-stack"
+cat >"${D10_HOME}/.silver-bullet/five-tool-stack/instances.json" <<EOF
+{
+  "schema": "v1",
+  "scope": "user-global",
+  "profile": "five_tool_routed",
+  "tools": {
+    "graphify": {"command": "${D10_BIN}/graphify-mcp", "args": ["--transport", "stdio"]},
+    "agentmemory": {"command": "${D10_BIN}/agentmemory", "args": ["mcp"]},
+    "context_mode": {"command": "${D10_BIN}/context-mode", "args": []},
+    "leanctx": {"command": "${D10_BIN}/lean-ctx", "args": ["mcp"]},
+    "rtk": {"command": "${D10_BIN}/rtk", "args": []}
+  }
+}
+EOF
+export SB_GLOBAL_TOOLSTACK_MANIFEST="${D10_HOME}/.silver-bullet/five-tool-stack/instances.json"
 cp "$TEMPLATE" "${D10_PROJ}/.silver-bullet.json"
 printf '# SB\n' >"${D10_PROJ}/silver-bullet.md"
 git -C "$D10_PROJ" init -q

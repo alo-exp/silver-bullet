@@ -614,6 +614,53 @@ rt_apply_host_hooks_batch() {
   # Claude and Codex own their hook formats and lifecycle; their installers
   # wire RTK/Context Mode directly. Never invoke the Cursor JSON patcher for a
   # different host, because that silently creates a foreign-host config.
+  if [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+    local merge_py="${repo}/scripts/lib/merge-token-compression-config.py"
+    if [[ -f "$merge_py" ]]; then
+      if rt_mutation_allowed rtk; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --rtk-only >/dev/null 2>&1; then
+          actions+=("opencode_rtk_plugin")
+          changed=1
+        else
+          failures+=("opencode_rtk_plugin_failed")
+        fi
+      fi
+      if rt_mutation_allowed context_mode; then
+        if python3 "$merge_py" --host opencode --repo-root "$repo" --context-mode-only >/dev/null 2>&1; then
+          actions+=("opencode_context_mode_plugin")
+          changed=1
+        else
+          failures+=("opencode_context_mode_plugin_failed")
+        fi
+      fi
+    fi
+    jq -n \
+      --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
+      --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
+      --argjson changed "$([[ $changed -eq 1 ]] && echo true || echo false)" \
+      '{actions:$actions,failures:$failures,changed:$changed}'
+    return 0
+  fi
+  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+    local pi_installer="${repo}/scripts/lib/global-toolstack/install-pi.py"
+    local -a pi_args=(python3 "$pi_installer" --repo-root "$repo")
+    if rt_mutation_allowed rtk; then pi_args+=(--enable-tool rtk); fi
+    if rt_mutation_allowed context_mode; then pi_args+=(--enable-tool context_mode); fi
+    if [[ -f "$pi_installer" ]] && (rt_mutation_allowed rtk || rt_mutation_allowed context_mode); then
+      if "${pi_args[@]}" >/dev/null 2>&1; then
+        actions+=("pi_host_adapter")
+        changed=1
+      else
+        failures+=("pi_host_adapter_failed")
+      fi
+    fi
+    jq -n \
+      --argjson actions "$(rt_json_string_array ${actions[@]+"${actions[@]}"})" \
+      --argjson failures "$(rt_json_string_array ${failures[@]+"${failures[@]}"})" \
+      --argjson changed "$([[ $changed -eq 1 ]] && echo true || echo false)" \
+      '{actions:$actions,failures:$failures,changed:$changed}'
+    return 0
+  fi
   if [[ "${RT_HOST:-cursor}" != "cursor" ]]; then
     jq -n \
       --argjson actions '[]' --argjson failures '[]' --argjson changed false \
