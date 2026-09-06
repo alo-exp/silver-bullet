@@ -45,9 +45,19 @@ for definition in TOOL_DEFINITIONS.values():
     path = bin_dir / definition["executable"]
     path.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
     path.chmod(0o755)
+context_mode_launcher = bin_dir / "cli.bundle.mjs"
+context_mode_launcher.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+context_mode_launcher.chmod(0o755)
 
 runtime_root = root / "generic-state"
-env = {"FIVE_TOOL_STACK_HOME": str(runtime_root), "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"]}
+env = {
+    "FIVE_TOOL_STACK_HOME": str(runtime_root),
+    "FIVE_TOOL_CONTEXT_MODE_COMMAND": str(context_mode_launcher),
+    "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+}
+# validate_manifest resolves required commands from the process environment;
+# mirror the fixture PATH so clean CI runners validate the fake tools too.
+os.environ["PATH"] = env["PATH"]
 manifest_path = runtime_root / "manifest.json"
 unrelated = runtime_root / "unrelated.json"
 unrelated.parent.mkdir(parents=True)
