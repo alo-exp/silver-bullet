@@ -1,8 +1,0 @@
-git_branch=main
-codex_bin=/Users/shafqat/.local/bin/codex
-codex_version=codex-cli 0.149.0-alpha.4.1
-=== login status (HOME=/Users/shafqat) ===
-Logged in using ChatGPT
-=== isolated HOME login (sandbox) ===
-WARNING: proceeding, even though we could not create PATH aliases: Refusing to create helper binaries under temporary dir "/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/" (codex_home: AbsolutePathBuf("/var/folders/d8/f43nf6b17p31q9qzj5c82_nw0000gn/T/tmp.buS70Cre29/.codex"))
-Not logged in

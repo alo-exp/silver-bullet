@@ -1,6 +1,0 @@
-attempt1_session=/Users/shafqat/.pi/agent/sessions/--Users-shafqat-projects-silver-bullet-repo-.planning-rfl-router-subagent-surfaces-85bf9f09-final-review-rung-02-opencode-go-deepseek-v4-pro-max-work--/2026-08-25T22-24-22-361Z_01a03b06-4759-7417-81d6-2cec2a3488d3.jsonl
-attempt1_exit=0 no_verify1.md
-retry_hung_killed 2026-08-25T22:59:42Z
-session=/Users/shafqat/.pi/agent/sessions/--Users-shafqat-projects-silver-bullet-repo-.planning-rfl-router-subagent-surfaces-85bf9f09-final-review-rung-02-opencode-go-deepseek-v4-pro-max-work--/2026-08-25T22-39-05-525Z_01a03b13-c134-7e2f-bb55-a4591532f9e8.jsonl
-last_session_mtime=2026-08-25T22:41:00.705Z
-pi_pid=85226 wrapper_pid=85137

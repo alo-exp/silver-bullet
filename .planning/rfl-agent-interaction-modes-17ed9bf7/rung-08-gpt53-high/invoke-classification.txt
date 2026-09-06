@@ -1,5 +1,0 @@
-classification: pin-lock (HTTP 400 invalid_request_error)
-not 401; ChatGPT account cannot use gpt-5.3 / gpt-5.3-codex
-no remap performed
-gpt-5.3_log_bytes=942
-gpt-5.3-codex_log_bytes=967
