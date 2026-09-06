@@ -169,7 +169,7 @@ for tool in graphify agentmemory context_mode leanctx rtk; do
 done
 
 jq -e '
-  .schema == "v1"
+  .schema == "five-tool-stack/v1"
   and .scope == "user-global"
   and .profile == "five_tool_routed"
   and .tools.agentmemory.args == ["mcp"]

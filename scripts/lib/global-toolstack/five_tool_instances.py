@@ -1,84 +1,88 @@
 #!/usr/bin/env python3
-"""Resolve and persist the one user-global Silver Bullet five-tool profile.
+"""Silver Bullet adapter for the independent five-tool runtime.
 
-Host adapters have different configuration syntaxes, but they must launch the
-same machine-global tool executables.  This small manifest is the source used
-by those adapters; it deliberately contains no credentials or project paths.
+The generic package owns the manifest, platform paths, and repair semantics.
+This module keeps the historical import surface used by SB host adapters and
+provides only the SB-specific Context Mode compatibility operation.
 """
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import subprocess
-import tempfile
+import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 
-MANIFEST_SCHEMA = "v1"
+_MODULE_DIR = Path(__file__).resolve().parent
+_LIB_ROOT = next(
+    (
+        candidate
+        for candidate in (_MODULE_DIR / "lib", _MODULE_DIR.parent)
+        if (candidate / "five_tool_runtime").is_dir()
+    ),
+    _MODULE_DIR.parent,
+)
+if str(_LIB_ROOT) not in sys.path:
+    sys.path.insert(0, str(_LIB_ROOT))
+
+from five_tool_runtime.runtime import (  # noqa: E402
+    TOOL_DEFINITIONS,
+    canonical_manifest_path,
+    ensure_manifest,
+    global_toolstack_home as generic_toolstack_home,
+    launch_spec,
+)
+
+
+MANIFEST_SCHEMA = "five-tool-stack/v1"
 PROFILE = "five_tool_routed"
+CLAUDE_CONTEXT_MODE_PLUGIN = "context-mode@context-mode"
 
-TOOL_DEFINITIONS: dict[str, dict[str, Any]] = {
-    "graphify": {
-        "binary": "graphify-mcp",
-        "args": ["--transport", "stdio"],
-        "env": {},
-    },
-    "agentmemory": {
-        "binary": "agentmemory",
-        "args": ["mcp"],
-        "env": {"AGENTMEMORY_URL": "http://localhost:3111"},
-    },
-    "context_mode": {
-        "binary": "context-mode",
-        "args": [],
-        "env": {},
-    },
-    "leanctx": {
-        "binary": "lean-ctx",
-        "args": ["mcp"],
-        "env": {},
-    },
-    "rtk": {
-        "binary": "rtk",
-        "args": [],
-        "env": {},
-    },
-}
 
-# A prior manifest is trusted only when it still names the expected global
-# entrypoint.  This prevents an old host-local plugin path or an `npx` shim
-# from becoming the shared executable for every host on the next reconcile.
-GLOBAL_ENTRYPOINT_NAMES = {
-    "graphify": {"graphify-mcp"},
-    "agentmemory": {"agentmemory", "cli.mjs"},
-    "context_mode": {"context-mode", "cli.bundle.mjs"},
-    "leanctx": {"lean-ctx"},
-    "rtk": {"rtk"},
-}
-HOST_SCOPED_PATH_PARTS = {".claude", ".codex", ".cursor", ".pi"}
-HOST_SCOPED_PATH_MARKERS = ("/.config/opencode/", "/.config/opencode")
+def _adapter_environment() -> Dict[str, str]:
+    """Translate the old SB override names without leaking them into runtime."""
+    environment = dict(os.environ)
+    for tool in TOOL_DEFINITIONS:
+        legacy_name = "SB_GLOBAL_{}_COMMAND".format(tool.upper())
+        generic_name = "FIVE_TOOL_{}_COMMAND".format(tool.upper())
+        if environment.get(legacy_name) and not environment.get(generic_name):
+            environment[generic_name] = environment[legacy_name]
+    return environment
+
+
+def _legacy_override_home() -> Path | None:
+    configured = os.environ.get("SB_GLOBAL_TOOLSTACK_HOME", "").strip()
+    return Path(configured).expanduser() if configured else None
 
 
 def global_toolstack_home() -> Path:
-    configured = os.environ.get("SB_GLOBAL_TOOLSTACK_HOME", "")
-    if configured:
-        return Path(configured).expanduser()
-    return Path.home() / ".silver-bullet" / "five-tool-stack"
+    """Return the explicit legacy override or the generic platform root."""
+    override = _legacy_override_home()
+    if override:
+        return override
+    return generic_toolstack_home(_adapter_environment())
 
 
 def global_instances_manifest_path() -> Path:
-    return global_toolstack_home() / "instances.json"
+    """Return the compatibility path used by old SB adapters when overridden."""
+    override = _legacy_override_home()
+    if override:
+        return override / "instances.json"
+    return canonical_manifest_path(_adapter_environment())
 
 
-CLAUDE_CONTEXT_MODE_PLUGIN = "context-mode@context-mode"
+def _legacy_manifest_path() -> Path:
+    return Path.home() / ".silver-bullet" / "five-tool-stack" / "instances.json"
 
 
 def claude_native_context_mode_enabled(home: Path | None = None) -> bool:
     """Return whether Claude's optional native Context Mode plugin is enabled."""
     settings = (home or Path.home()) / ".claude" / "settings.json"
     try:
+        import json
+
         with settings.open(encoding="utf-8") as handle:
             data = json.load(handle)
     except (OSError, ValueError, TypeError):
@@ -107,143 +111,29 @@ def disable_claude_native_context_mode(*, dry_run: bool = False) -> bool:
     )
     if result.returncode != 0:
         detail = (result.stderr or "").strip().splitlines()[-1:]
-        suffix = f": {detail[0]}" if detail else ""
-        raise RuntimeError(f"failed to disable {CLAUDE_CONTEXT_MODE_PLUGIN}{suffix}")
+        suffix = ": {}".format(detail[0]) if detail else ""
+        raise RuntimeError("failed to disable {}{}".format(CLAUDE_CONTEXT_MODE_PLUGIN, suffix))
     return True
 
 
-def _command_override(tool: str) -> str:
-    env_name = f"SB_GLOBAL_{tool.upper()}_COMMAND"
-    return os.environ.get(env_name, "").strip()
+def ensure_global_instances(*, dry_run: bool = False) -> Dict[str, Any]:
+    """Reconcile the generic manifest, preserving the historical SB API."""
+    override = _legacy_override_home()
+    return ensure_manifest(
+        manifest_path=global_instances_manifest_path(),
+        legacy_manifest_path=None if override else _legacy_manifest_path(),
+        env=_adapter_environment(),
+        dry_run=dry_run,
+    )
 
 
-def _absolute_executable(value: str) -> str | None:
-    if not value:
-        return None
-    candidate = Path(value).expanduser()
-    if candidate.is_file() and os.access(candidate, os.X_OK):
-        return str(candidate.resolve())
-    resolved = shutil.which(value)
-    if resolved:
-        return str(Path(resolved).resolve())
-    return None
+def tool_spec(manifest: Dict[str, Any], tool: str) -> Dict[str, Any]:
+    return launch_spec(manifest, tool)
 
 
-def _is_global_entrypoint(tool: str, command: str) -> bool:
-    path = Path(command)
-    if any(part in HOST_SCOPED_PATH_PARTS for part in path.parts):
-        return False
-    normalized = path.as_posix()
-    if any(marker in normalized for marker in HOST_SCOPED_PATH_MARKERS):
-        return False
-    return path.name in GLOBAL_ENTRYPOINT_NAMES[tool]
-
-
-def _load_manifest(path: Path) -> dict[str, Any]:
-    if not path.is_file():
-        return {}
-    try:
-        with path.open(encoding="utf-8") as handle:
-            value = json.load(handle)
-    except (OSError, ValueError, TypeError):
-        return {}
-    return value if isinstance(value, dict) else {}
-
-
-def _prior_command(existing: dict[str, Any], tool: str) -> str:
-    tools = existing.get("tools")
-    if not isinstance(tools, dict):
-        return ""
-    value = tools.get(tool)
-    if not isinstance(value, dict):
-        return ""
-    command = value.get("command")
-    return command if isinstance(command, str) else ""
-
-
-def _resolve_command(existing: dict[str, Any], tool: str) -> str:
-    definition = TOOL_DEFINITIONS[tool]
-    override = _command_override(tool)
-    # Preserve a previously selected executable when it is still usable.  This
-    # prevents one host's PATH from silently selecting a second installation.
-    for candidate in (override, _prior_command(existing, tool), definition["binary"]):
-        resolved = _absolute_executable(candidate)
-        if resolved and _is_global_entrypoint(tool, resolved):
-            return resolved
-    # Keep partial installs repairable: the host reports the missing binary
-    # while the manifest remains deterministic and can be completed later.
-    for candidate in (override, _prior_command(existing, tool), definition["binary"]):
-        if candidate and _is_global_entrypoint(tool, candidate):
-            return candidate
-    return definition["binary"]
-
-
-def _manifest_payload(existing: dict[str, Any]) -> dict[str, Any]:
-    tools: dict[str, Any] = {}
-    for tool, definition in TOOL_DEFINITIONS.items():
-        spec: dict[str, Any] = {
-            "command": _resolve_command(existing, tool),
-            "args": list(definition["args"]),
-        }
-        if definition["env"]:
-            spec["env"] = dict(definition["env"])
-        tools[tool] = spec
-    return {
-        "schema": MANIFEST_SCHEMA,
-        "scope": "user-global",
-        "profile": PROFILE,
-        "tools": tools,
-    }
-
-
-def _atomic_write(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        path.parent.chmod(0o700)
-    except OSError:
-        pass
-    encoded = json.dumps(payload, indent=2) + "\n"
-    with tempfile.NamedTemporaryFile(
-        mode="w",
-        encoding="utf-8",
-        dir=path.parent,
-        prefix=".instances-",
-        delete=False,
-    ) as handle:
-        handle.write(encoded)
-        temporary = Path(handle.name)
-    try:
-        temporary.chmod(0o600)
-    except OSError:
-        pass
-    temporary.replace(path)
-
-
-def ensure_global_instances(*, dry_run: bool = False) -> dict[str, Any]:
-    """Return the canonical global profile and persist it unless dry-running."""
-    path = global_instances_manifest_path()
-    existing = _load_manifest(path)
-    payload = _manifest_payload(existing)
-    if not dry_run and existing != payload:
-        _atomic_write(path, payload)
-    return payload
-
-
-def tool_spec(manifest: dict[str, Any], tool: str) -> dict[str, Any]:
-    tools = manifest.get("tools")
-    spec = tools.get(tool) if isinstance(tools, dict) else None
-    if not isinstance(spec, dict):
-        raise KeyError(f"missing global five-tool spec: {tool}")
-    return {
-        "command": str(spec["command"]),
-        "args": list(spec.get("args", [])),
-        **({"env": dict(spec["env"])} if isinstance(spec.get("env"), dict) else {}),
-    }
-
-
-def tool_command(manifest: dict[str, Any], tool: str) -> str:
+def tool_command(manifest: Dict[str, Any], tool: str) -> str:
     return tool_spec(manifest, tool)["command"]
 
 
-def mcp_server_spec(manifest: dict[str, Any], tool: str) -> dict[str, Any]:
+def mcp_server_spec(manifest: Dict[str, Any], tool: str) -> Dict[str, Any]:
     return tool_spec(manifest, tool)

@@ -21,6 +21,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | **Static — doc content grep** | Assert REQUIRED markers and skill names in workflow files | CI step | <1s |
 | **Hook unit — bash** | Each hook exercised with mocked state; verify correct output per scenario | `tests/hooks/test-*.sh` | <5s each |
 | **Script unit — bash** | Semantic compress, TF-IDF rank, extract-phase-goal | `tests/scripts/test-*.sh` | <10s each |
+| **Generic five-tool runtime** | No-SB install/validate/repair, legacy migration, one-instance coordination, five projections, and Windows launcher/path fixtures | `tests/scripts/test-generic-five-tool-runtime.sh` | <2s |
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
 | **Live enterprise E2E** | Kay hook-delivery diagnostic against the standalone sibling `enterprise-grade-test-app` repo; full workflow matrix via Claude supervised sessions | `tests/e2e-live/run-e2e-live-tests.sh` + `.planning/enterprise-e2e/` | 10-30 min (Kay) / multi-day (Claude matrix) |
@@ -43,6 +44,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | Template parity | docs/ == templates/ | ✅ CI enforced (v0.26.0) |
 | Release identity parity | package, plugin, marketplace, config, catalog, README, and security support series | **Covered** by `tests/scripts/test-release-version-alignment.sh` |
 | Documentation governance | unique live-guidance inventory, exact task-checklist coverage, historical-evidence exclusion | **Covered** by `tests/docs/test-documentation-scheme.sh` |
+| Generic five-tool runtime | manifest schema, idempotent repair, host projections, Windows fixtures | **Covered** by `tests/scripts/test-generic-five-tool-runtime.sh` |
 
 ## Silver Bullet Test Execution Gate
 

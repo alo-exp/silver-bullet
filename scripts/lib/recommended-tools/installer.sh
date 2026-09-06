@@ -16,6 +16,7 @@ rt_installer_reconciler_lib_dir() {
 rt_deploy_toolstack_scripts() {
   local repo_root="${1:-${RT_REPO_ROOT:-}}"
   local src_dir="${repo_root}/scripts/lib/global-toolstack"
+  local generic_src="${repo_root}/scripts/lib/five_tool_runtime"
   [[ -d "$src_dir" ]] || return 1
   local ts_dir ts_lib
   ts_dir="$(rt_installer_toolstack_dir)"
@@ -39,6 +40,10 @@ rt_deploy_toolstack_scripts() {
     [[ -f "${src_dir}/${f}" ]] || continue
     cp -f "${src_dir}/${f}" "${ts_dir}/${f}" 2>/dev/null || true
   done
+  if [[ -d "$generic_src" ]]; then
+    mkdir -p "${ts_lib}/five_tool_runtime" 2>/dev/null || true
+    cp -f "${generic_src}"/*.py "${ts_lib}/five_tool_runtime/" 2>/dev/null || true
+  fi
   chmod +x "${ts_dir}/parity-verify.sh" "${ts_dir}/verify.sh" 2>/dev/null || true
   return 0
 }
