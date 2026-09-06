@@ -33,11 +33,11 @@ print('\n'.join(lines))
 
 # Test 1: auth query — file_a chunk with auth terms should appear first
 result=$(printf '%s\n' "$TMP/file_a.sh" "$TMP/file_b.sh" | "$SCRIPT" "authentication login")
-first_file=$(printf '%s\n' "$result" | head -1 | cut -f2)
+first_file=$(printf '%s\n' "$result" | sed -n '1p' | cut -f2)
 assert_eq "auth query: file_a chunk scores higher" "$TMP/file_a.sh" "$first_file"
 
 # Test 2: output has exactly 5 tab-separated fields
-first_line=$(printf '%s\n' "$result" | head -1)
+first_line=$(printf '%s\n' "$result" | sed -n '1p')
 field_count=$(printf '%s\n' "$first_line" | awk -F'\t' '{print NF}')
 assert_eq "output has 5 tab fields" "5" "$field_count"
 
@@ -59,13 +59,13 @@ chunk_count=$(printf '%s\n' "$result" | grep -c . || true)
 # Test 5: chunk text containing tabs — output still has exactly 5 fields
 printf 'term1\tterm2\nmore content here\n' > "$TMP/tabfile.sh"
 result=$(printf '%s\n' "$TMP/tabfile.sh" | "$SCRIPT" "term1")
-field_count=$(printf '%s\n' "$result" | head -1 | awk -F'\t' '{print NF}')
+field_count=$(printf '%s\n' "$result" | sed -n '1p' | awk -F'\t' '{print NF}')
 assert_eq "tab in chunk text: still 5 fields" "5" "$field_count"
 
 # Test 6: mixed-case content is preserved in output (not lowercased)
 printf 'AuthManager CLASS UPPERCASE_FUNCTION validateCredentials\nmore content here\n' > "$TMP/mixed_case.sh"
 result=$(printf '%s\n' "$TMP/mixed_case.sh" | "$SCRIPT" "authmanager")
-chunk_text=$(printf '%s\n' "$result" | head -1 | cut -f5-)
+chunk_text=$(printf '%s\n' "$result" | sed -n '1p' | cut -f5-)
 if [[ "$chunk_text" == *"AuthManager"* ]]; then
   echo "PASS: mixed-case content preserved in output"; (( PASS++ )) || true
 else
