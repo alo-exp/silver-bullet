@@ -12,4 +12,4 @@
 2. For create: write `.planning/threads/<slug>.md` with context, open questions, and status `open`.
 3. For resume: surface current context and open questions; append a dated session entry; set status `in_progress`.
 4. For close: prompt for a resolution summary; mark status `resolved` and update `Last updated`.
-5. File any action items surfaced in the thread via `silver:add`.
+5. File any action items surfaced in the thread via `sb:add`.

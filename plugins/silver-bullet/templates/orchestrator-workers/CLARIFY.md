@@ -18,10 +18,10 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:clarify`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
+Invoke **`sb:clarify`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 - **Default:** light FLOW 3 (frame / explore / converge). Do not attach the 9 spec turns.
-- **Heading to AF-SPECIFY, ingest just ran, or the user asked for a spec:** invoke **`silver:clarify --spec`** (`--next spec`). Clarify owns all interviewing (context + Turns 1–9 + assumption protocol) and writes only a timestamped `.planning/{plan-basename}-CLARIFY-*.md`. Do **not** write SPEC.md / REQUIREMENTS.md from this worker.
+- **Heading to AF-SPECIFY, ingest just ran, or the user asked for a spec:** invoke **`sb:clarify --spec`** (`--next spec`). Clarify owns all interviewing (context + Turns 1–9 + assumption protocol) and writes only a timestamped `.planning/{plan-basename}-CLARIFY-*.md`. Do **not** write SPEC.md / REQUIREMENTS.md from this worker.
 
 Need-profile interview stays on AF-DECIDE paths only.
 
@@ -33,7 +33,7 @@ Need-profile interview stays on AF-DECIDE paths only.
 ## Handoff artifacts
 
 - Timestamped clarify brief under `.planning/`
-- For `next=spec`: that brief is the input to the SPECIFY worker (`silver:spec` compiler)
+- For `next=spec`: that brief is the input to the SPECIFY worker (`sb:spec` compiler)
 
 ## Exit
 

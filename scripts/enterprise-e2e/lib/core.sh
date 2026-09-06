@@ -1013,7 +1013,7 @@ enterprise_e2e_assert_session0_or_skip() {
     echo "Session 0 gate: OK (ledger Pass or fixture graphify+agentmemory opted in)"
     return 0
   fi
-  echo "ERROR: Session 0 not satisfied — run /silver:init + code-intel opt-in on fixture," >&2
+  echo "ERROR: Session 0 not satisfied — run /sb:init + code-intel opt-in on fixture," >&2
   echo "       or mark Session 0 Pass in ledger, or set SB_E2E_SESSION0_SKIP=1 with SB_E2E_SESSION0_SKIP_REASON." >&2
   return 1
 }

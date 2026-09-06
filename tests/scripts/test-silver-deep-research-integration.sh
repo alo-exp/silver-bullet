@@ -63,8 +63,8 @@ assert_not_contains "DECIDE worker does not use silver-multi-ai" "templates/orch
 assert_contains "skill requires nested V-loop rollup" "skills/silver-deep-research/SKILL.md" "vloop-rollup.json"
 assert_contains "skill records search-cli policy" "skills/silver-deep-research/SKILL.md" "search-cli"
 assert_contains "docs explain provider recommendation policy" "docs/SEARCH-CLI.md" "provider signup/setup"
-assert_contains "router uses silver:deep-research" "skills/silver/SKILL.md" "silver:deep-research"
-assert_not_contains "router does not use silver:research" "skills/silver/SKILL.md" "silver:research"
+assert_contains "router uses sb:deep-research" "skills/silver/SKILL.md" "sb:deep-research"
+assert_not_contains "router does not use sb:research" "skills/silver/SKILL.md" "sb:research"
 
 printf '\nResults: %s passed, %s failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]]

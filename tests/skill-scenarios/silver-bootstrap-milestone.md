@@ -9,4 +9,4 @@
 
 **Workflow:**
 1. Enforcement records the virtual `silver-bootstrap-milestone` marker.
-2. Route new work to `/silver:init` or active milestone workflows.
+2. Route new work to `/sb:init` or active milestone workflows.

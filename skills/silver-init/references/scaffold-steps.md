@@ -8,7 +8,7 @@ This reference expands the steps summarized in `SKILL.md` Phase 3. Follow the su
 
 If Phase 0 determined this is an update:
 
-1. Refresh the SB-owned lifecycle surface from the bundled `silver:*` skills.
+1. Refresh the SB-owned lifecycle surface from the bundled `sb:*` skills.
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` with placeholder replacements. Read `.silver-bullet.json` first for `project.name` and other values. This is safe — Silver Bullet owns this file.
    - Replace `{{PROJECT_NAME}}` with the project name from `.silver-bullet.json`
    - Replace `{{ACTIVE_WORKFLOW}}` with the active workflow name from `.silver-bullet.json` (default: `full-dev-cycle`)
@@ -119,7 +119,7 @@ mkdir -p host rules directory (install guide)
 cp "${PLUGIN_ROOT}/scripts/lib/install-<runtime>/templates/task host-rules/silver-orchestrator.mdc" host rules path (see install guide) silver-orchestrator.mdc
 ```
 
-Idempotent — safe to overwrite on `/silver:init` refresh (SB-owned file).
+Idempotent — safe to overwrite on `/sb:init` refresh (SB-owned file).
 
 ### 3.2.2 Install orchestrator worker templates
 
@@ -212,14 +212,14 @@ Copy `${PLUGIN_ROOT}/scripts/workflows.sh` → `scripts/workflows.sh` (create `s
 
 ### 3.5.5 Documentation bootstrap/reconciliation (all projects)
 
-`silver:init` no longer performs direct docs migration/scaffolding.
+`sb:init` no longer performs direct docs migration/scaffolding.
 
 Invoke through the active runtime's SB-recognized skill invocation channel:
 ```text
-silver:ensure-docs --bootstrap
+sb:ensure-docs --bootstrap
 ```
 
-`silver:ensure-docs` is responsible for:
+`sb:ensure-docs` is responsible for:
 1. Greenfield skeleton creation.
 2. Brownfield mapping/preservation vs switch decisions.
 3. Moving switched user docs into `docs/archive/<timestamp>/...` with manifest traceability.
@@ -229,14 +229,14 @@ silver:ensure-docs --bootstrap
 
 ### 3.6 Verify contract surface after ensure-docs
 
-After `silver:ensure-docs --bootstrap`, verify these files exist and are not symlinks:
+After `sb:ensure-docs --bootstrap`, verify these files exist and are not symlinks:
 1. `docs/doc-scheme.md`
 2. `docs/doc-scheme.json`
 3. `docs/task-doc-checklist.json`
 
 If any are missing, stop and rerun:
 ```text
-silver:ensure-docs --recover-scheme
+sb:ensure-docs --recover-scheme
 ```
 
 ### 3.7 Stage and commit
@@ -310,9 +310,9 @@ fi
 ```
 
 `scripts/lib/install-<runtime>/merge-hooks.py` substitutes the plugin install path, removes stale mirrored Silver Bullet hook registrations from other app roots or placeholder entries, and appends only new hook entries — never duplicates. On nonzero exit, warn but do NOT stop init:
-> ⚠️  Could not auto-register hooks in the host settings file. Run `/silver:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
+> ⚠️  Could not auto-register hooks in the host settings file. Run `/sb:init` again after installation completes, or add hooks manually from `hooks/hooks.json`.
 
-Idempotent — re-running `/silver:init` adds no duplicate entries.
+Idempotent — re-running `/sb:init` adds no duplicate entries.
 
 ### 3.8 Optional plugin activation
 

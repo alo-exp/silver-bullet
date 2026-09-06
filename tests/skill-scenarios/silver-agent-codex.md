@@ -9,6 +9,6 @@
 
 **Workflow:**
 1. Parent writes structured brief with acceptance criteria under `.planning/agent-codex/<task-id>/`
-2. Parent invokes `/silver:agent-codex` and seeds delegation directive with ownership scope
+2. Parent invokes `/sb:agent-codex` and seeds delegation directive with ownership scope
 3. Parent runs `bash scripts/agent-codex-delegate.sh` once per delegation wave
 4. Parent verifies acceptance criteria before marking outcomes complete — no direct source edits in delegated scope

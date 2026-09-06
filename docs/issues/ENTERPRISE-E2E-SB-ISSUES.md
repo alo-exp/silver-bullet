@@ -173,7 +173,7 @@ Failed to run: Plugin directorydo | row 3; tui-watch @ 2026-06-29T18:00:33Z |
 
  
 
-  ❯ /silver Add currency field t order | row 3; tui-watch @ 2026-06-29T17:59:19Z |
+  ❯ /sb Add currency field t order | row 3; tui-watch @ 2026-06-29T17:59:19Z |
 | E2E-066 | annoyance | stall | ft+tabtocycle)·←foragents     0 tokens
 
  ○low·/effort
@@ -309,7 +309,7 @@ field"hookEventName"
 
  
 
-  ❯ /silver Should we use Postgres or  | row 2; tui-watch @ 2026-06-29T17:52:57Z |
+  ❯ /sb Should we use Postgres or  | row 2; tui-watch @ 2026-06-29T17:52:57Z |
 | E2E-052 | annoyance | hook | hfileor
   directory
 PreToolUse:Bash hok error
@@ -461,11 +461,11 @@ Cross-cutting supervision: SB as user representative over decompose → execute 
 
 ## Routing philosophy — critical analysis
 
-**User intent:** Bare prompts (no active workflow) should route via `/silver`; SB fulfills 100% intent via composed/dynamic/atomic flows including Q&A; catalog enriches over time.
+**User intent:** Bare prompts (no active workflow) should route via `/sb`; SB fulfills 100% intent via composed/dynamic/atomic flows including Q&A; catalog enriches over time.
 
 ### Agree (design direction)
 
-1. **`skills/silver/SKILL.md`** explicitly biases “most non-trivial bare user intent” toward `/silver` and lists Q&A as a narrow direct-answer exception (Step 2).
+1. **`skills/silver/SKILL.md`** explicitly biases “most non-trivial bare user intent” toward `/sb` and lists Q&A as a narrow direct-answer exception (Step 2).
 2. **Parent orchestrator mode** composes queues via `silver-feature`, `silver-ui`, etc., and `flow-advance.sh` advances atomic flows — architecture supports dynamic composition.
 3. **APO catalog + composable-flows-contracts** provide entity IDs and migration aliases — catalog can grow without renaming skills.
 
@@ -473,19 +473,19 @@ Cross-cutting supervision: SB as user representative over decompose → execute 
 
 | Desired | Current behavior | Gap |
 |---------|------------------|-----|
-| 100% bare prompt → `/silver` | Q&A, status-only, trivial exceptions allow freestyle | Agents often answer “how does X work?” without `/silver` — **acceptable for pure Q&A, leaky for “how do I fix X?”** (H-05 narrowing helps but is skill-doc-only) |
-| Dynamic workflow for any intent | Composers exist for ~20 domain workflows; unknown intent → `silver:clarify` or `silver:fast` | No runtime **dynamic queue builder** for novel multi-step intents not matching a composer table row |
-| Q&A via atomic flow | No `silver:qa` or `/silver` sub-flow with evidence artifact | Q&A bypasses state recording — Stop hook may not reflect “answered question” sessions |
+| 100% bare prompt → `/sb` | Q&A, status-only, trivial exceptions allow freestyle | Agents often answer “how does X work?” without `/sb` — **acceptable for pure Q&A, leaky for “how do I fix X?”** (H-05 narrowing helps but is skill-doc-only) |
+| Dynamic workflow for any intent | Composers exist for ~20 domain workflows; unknown intent → `sb:clarify` or `sb:fast` | No runtime **dynamic queue builder** for novel multi-step intents not matching a composer table row |
+| Q&A via atomic flow | No `sb:qa` or `/sb` sub-flow with evidence artifact | Q&A bypasses state recording — Stop hook may not reflect “answered question” sessions |
 | Catalog enrichment | `docs/apo-catalog.json` generated offline | No automatic promotion from successful matrix rows into catalog — manual `generate-apo-catalog.py` |
 
 ### Recommendations
 
-1. **Hook-level H-05:** Extend `prompt-reminder.sh` or `record-requested-skill.sh` to nudge `/silver` when user message matches fix/debug/implement patterns and no workflow is active.
-2. **Atomic Q&A flow:** Add `AF-QA` / `silver:orient` lightweight queue (read-only tools + optional graphify) so Q&A still records a skill marker when SB-initiated.
+1. **Hook-level H-05:** Extend `prompt-reminder.sh` or `record-requested-skill.sh` to nudge `/sb` when user message matches fix/debug/implement patterns and no workflow is active.
+2. **Atomic Q&A flow:** Add `AF-QA` / `sb:orient` lightweight queue (read-only tools + optional graphify) so Q&A still records a skill marker when SB-initiated.
 3. **Router catalog loop:** After matrix PASS, script promotion of new `skill_to_entity` entries from workflow evidence filenames.
 4. **Do not** re-enable cooperative parent inline execution — parent/worker split is working; reduce friction via Bash scope (done) not by collapsing modes.
 
-**Headline:** Routing **documentation and composers** match the vision; **enforcement is soft** (skill-doc exceptions, no PreToolUse bare-prompt gate). Dynamic composition works for known domains; **novel intents rely on agent discipline** to invoke `/silver`.
+**Headline:** Routing **documentation and composers** match the vision; **enforcement is soft** (skill-doc exceptions, no PreToolUse bare-prompt gate). Dynamic composition works for known domains; **novel intents rely on agent discipline** to invoke `/sb`.
 
 ---
 
@@ -508,7 +508,7 @@ Cross-cutting supervision: SB as user representative over decompose → execute 
 
 ### Recommended SB adjustments
 
-1. **Document** in `docs/ORCHESTRATOR.md`: Plan mode = parent may plan via Read/Grep + Task PLAN worker; Debug mode = route to `silver:debug` / `silver:forensics` queue, not freestyle Bash.
+1. **Document** in `docs/ORCHESTRATOR.md`: Plan mode = parent may plan via Read/Grep + Task PLAN worker; Debug mode = route to `sb:debug` / `sb:forensics` queue, not freestyle Bash.
 2. **Future (non-trivial):** SessionStart or PreToolUse parses mode hint; inject `SB PLAN MODE` context block (similar to parent block).
 3. **Dynamic workflow branching:** When `SwitchMode` to plan detected, `flow-advance` could insert PLAN/DECIDE atoms before EXECUTE — requires orchestrator-state schema extension.
 
@@ -528,7 +528,7 @@ Cross-cutting supervision: SB as user representative over decompose → execute 
 
 ### Gaps (E2E-011)
 
-- ~~`silver:init` defaults `enabled_by_user: null` (pending) — enterprise operator must explicitly opt in all five during Session 0.~~ **Preflight enforces:** `enterprise_e2e_assert_all_recommended_tools_opted_in` fails fast when any of graphify/agentmemory/alumnium/rtk/context_mode is not `enabled_by_user: true` on the fixture.
+- ~~`sb:init` defaults `enabled_by_user: null` (pending) — enterprise operator must explicitly opt in all five during Session 0.~~ **Preflight enforces:** `enterprise_e2e_assert_all_recommended_tools_opted_in` fails fast when any of graphify/agentmemory/alumnium/rtk/context_mode is not `enabled_by_user: true` on the fixture.
 - ~~No single preflight asserts all five gates fired in a dry-run matrix row.~~ **Implemented:** `enterprise_e2e_code_intel_preflight` dry-run + live paths cover all five tools; live path records graphify query when stale.
 - Alumnium enforcement is softer (MCP hint vs hard deny) compared to Graphify — accepted for UI/clarify rows.
 

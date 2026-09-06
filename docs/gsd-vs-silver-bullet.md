@@ -13,8 +13,8 @@ debug, and release. The core SB lifecycle does not require GSD or Superpowers.
 Use SB by default:
 
 ```text
-/silver:init
-/silver
+/sb:init
+/sb
 ```
 
 Install external lifecycle tooling only for an explicit legacy command, migration
@@ -37,10 +37,10 @@ enforcement and continues with SB-owned lifecycle steps.
 
 ## Migration Notes
 
-1. Run `/silver:init` in the project.
+1. Run `/sb:init` in the project.
 2. Let SB detect existing planning artifacts.
-3. Continue work through `/silver`, `silver:context`, `silver:plan`,
-   `silver:execute`, `silver:verify`, and `silver:ship`.
+3. Continue work through `/sb`, `sb:context`, `sb:plan`,
+   `sb:execute`, `sb:verify`, and `sb:ship`.
 4. Keep external lifecycle plugins installed only when a specific old command or
    audit requires them.
 

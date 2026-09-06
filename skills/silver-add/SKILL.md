@@ -4,11 +4,11 @@ description: This skill should be used to classify and file any deferred or iden
 version: 0.1.0
 ---
 
-# /silver:add — Classify and File Work Items
+# /sb:add — Classify and File Work Items
 
 Use this skill any time a deferred item, skipped work, technical debt, bug, open question, or enhancement is identified and must be tracked. It classifies the item as an issue or backlog entry, routes it to the correct PM destination based on the project's `issue_tracker` setting, and returns a stable, referenceable ID.
 
-**Note on sequencing:** Do not call silver:add concurrently from parallel agent contexts. When called from auto-capture enforcement during execution, complete one filing fully (including session log append) before starting the next.
+**Note on sequencing:** Do not call sb:add concurrently from parallel agent contexts. When called from auto-capture enforcement during execution, complete one filing fully (including session log append) before starting the next.
 
 ---
 
@@ -119,14 +119,14 @@ Examples:
 Number seeds sequentially (SEED-001, SEED-002, …) by reading the highest
 existing SEED-NNN prefix in `.planning/seeds/`.
 
-Seeds are surfaced by `silver:release` (new milestone setup) and `silver:clarify`
+Seeds are surfaced by `sb:release` (new milestone setup) and `sb:clarify`
 (when the trigger condition appears to be met).
 
 ---
 
 ## Structured Audit Findings
 
-When filing from `silver:domain-audit`, `silver:review`, `silver:quality-gates`,
+When filing from `sb:domain-audit`, `sb:review`, `sb:quality-gates`,
 or other normalized finding tables, use structured intake:
 
 ### Fingerprint
@@ -221,7 +221,7 @@ gh auth status 2>&1 | grep -qiE '(Token scopes|Scopes):.*\bproject\b'
 
 If the `project` scope is absent from the scopes line, output:
 
-> "GitHub project board access requires the 'project' OAuth scope. Run: `gh auth refresh -s project` — then retry /silver:add."
+> "GitHub project board access requires the 'project' OAuth scope. Run: `gh auth refresh -s project` — then retry /sb:add."
 
 Stop. Do not proceed.
 
@@ -245,7 +245,7 @@ BODY=$(jq -rn \
   --arg type "$ITEM_TYPE" \
   --arg cat "$ITEM_LABEL" \
   --arg date "$(date +%Y-%m-%d)" \
-  '"## Description\n" + $desc + "\n\n## Classification\n**Type:** " + $type + "\n**Category:** " + $cat + "\n\n## Context\nFiled during active session.\n\n## Steps to Reproduce (if applicable)\nN/A\n\n## Expected Behavior (if applicable)\nN/A\n\n## Priority\n**Severity:** Medium\n\n---\n*Filed by Silver Bullet /silver:add — " + $date + "*"')
+  '"## Description\n" + $desc + "\n\n## Classification\n**Type:** " + $type + "\n**Category:** " + $cat + "\n\n## Context\nFiled during active session.\n\n## Steps to Reproduce (if applicable)\nN/A\n\n## Expected Behavior (if applicable)\nN/A\n\n## Priority\n**Severity:** Medium\n\n---\n*Filed by Silver Bullet /sb:add — " + $date + "*"')
 ISSUE_URL=$(gh issue create \
   --repo "$OWNER_REPO" \
   --title "$ITEM_TITLE" \
@@ -253,7 +253,7 @@ ISSUE_URL=$(gh issue create \
   --label "filed-by-silver-bullet" \
   --label "$ITEM_LABEL")
 if [[ -z "$ISSUE_URL" || "$ISSUE_URL" != https://github.com/*/issues/* ]]; then
-  echo "gh issue create did not return an issue URL. Re-run /silver:add after upgrading gh or create the issue manually." >&2
+  echo "gh issue create did not return an issue URL. Re-run /sb:add after upgrading gh or create the issue manually." >&2
   exit 1
 fi
 ISSUE_NUM=$(echo "$ISSUE_URL" | grep -o '[0-9]*$')
@@ -337,7 +337,7 @@ DEDUPE_CMD=$(jq -r '.issue_tracker_adapter.dedupe_command // empty' .silver-bull
 
 If `CREATE_CMD` is empty, null, or `REPLACE_ME`:
 
-> STOP: `issue_tracker_adapter.create_issue_command` is not configured. Run `/silver:init` Step 2.9 option C setup or edit `.silver-bullet.json` manually. Do not silently fall back to local or GitHub filing.
+> STOP: `issue_tracker_adapter.create_issue_command` is not configured. Run `/sb:init` Step 2.9 option C setup or edit `.silver-bullet.json` manually. Do not silently fall back to local or GitHub filing.
 
 ### Step 4f-2 — Build JSON payload (no shell interpolation of finding body)
 
@@ -358,7 +358,7 @@ PAYLOAD=$(jq -n \
   --arg title "$ITEM_TITLE" \
   --arg body "$DESCRIPTION" \
   --arg classification "${TRIAGE_CLASSIFICATION:-VALID-NONBLOCKER}" \
-  --arg skill "silver:triage" \
+  --arg skill "sb:triage" \
   --arg artifact "${ARTIFACT_SCOPE:-}" \
   --arg fingerprint "$FP" \
   --arg item_type "$ITEM_TYPE" \
@@ -495,7 +495,7 @@ If board placement was skipped or rate-limited: append a warning note to the out
 
 - **No `.silver-bullet.json` found**: Use `$PWD` as project root. Note "Project root not confirmed." Default `TRACKER` to `"local"`.
 
-- **gh not authenticated / missing `project` scope**: `gh auth status` returns non-zero or shows no logged-in account → output "gh CLI is not authenticated. Run: `gh auth login` — then retry /silver:add." Stop. Missing `project` scope detected in Step 4a → output instruction to run `gh auth refresh -s project`. Stop.
+- **gh not authenticated / missing `project` scope**: `gh auth status` returns non-zero or shows no logged-in account → output "gh CLI is not authenticated. Run: `gh auth login` — then retry /sb:add." Stop. Missing `project` scope detected in Step 4a → output instruction to run `gh auth refresh -s project`. Stop.
 
 - **Project board not found during discovery**: The GitHub Issue was filed (#N), board placement was skipped. Return `#N` as `FILED_ID`.
 
@@ -503,4 +503,4 @@ If board placement was skipped or rate-limited: append a warning note to the out
 
 - **Target file absent on first write / `docs/issues/` directory absent**: `mkdir -p` in Step 5a creates the directory. Step 5d creates the file with the appropriate header before appending.
 
-- **Rate limit exhausted after retries**: The GitHub Issue exists with `FILED_ID` = `"#N"`. Board placement failed after 3 retries (60s/120s/240s). Return `FILED_ID` with warning: "Board placement failed after rate limit retries. The issue is created. Retry /silver:add or add it to the project board manually."
+- **Rate limit exhausted after retries**: The GitHub Issue exists with `FILED_ID` = `"#N"`. Board placement failed after 3 retries (60s/120s/240s). Return `FILED_ID` with warning: "Board placement failed after rate limit retries. The issue is created. Retry /sb:add or add it to the project board manually."

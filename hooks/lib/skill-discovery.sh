@@ -25,33 +25,71 @@ sb_skill_discovery_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sb_skill_discovery_repo_root="$(cd "$sb_skill_discovery_script_dir/../.." && pwd)"
 
 # Emit unique skill-name variants for path/frontmatter probes (hyphen⇄colon).
-# Always includes the original name. One variant per line on stdout.
-# Example: silver-quality-gates ↔ silver:quality-gates
+# Always includes the original name. One variant per line on stdout. Public
+# host routes are sb:*; silver-* is retained only as the internal source/state
+# spelling used by the hooks.
+# Example: sb:quality-gates ↔ sb-quality-gates ↔ silver-quality-gates
 sb_skill_name_variants() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
 
-  printf '%s\n' "$skill"
+  local variants=()
+  local variant existing
+  add_variant() {
+    variant="$1"
+    [[ -n "$variant" ]] || return
+    if [[ ${#variants[@]} -gt 0 ]]; then
+      for existing in "${variants[@]}"; do
+        [[ "$existing" == "$variant" ]] && return
+      done
+    fi
+    variants+=("$variant")
+  }
+
+  add_variant "$skill"
 
   if [[ "$skill" == *:* ]]; then
-    local hyphenated="${skill//:/-}"
-    if [[ "$hyphenated" != "$skill" ]]; then
-      printf '%s\n' "$hyphenated"
-    fi
+    case "$skill" in
+      sb:*)
+        add_variant "${skill//:/-}"
+        add_variant "silver-${skill#sb:}"
+        ;;
+      *)
+        add_variant "${skill//:/-}"
+        ;;
+    esac
   fi
 
-  # First hyphen → colon so silver-quality-gates also probes silver:quality-gates.
+  # First hyphen → colon so sb-quality-gates also probes sb:quality-gates.
   if [[ "$skill" == *-* && "$skill" != *:* ]]; then
-    local colon_form="${skill%%-*}:${skill#*-}"
-    if [[ "$colon_form" != "$skill" ]]; then
-      printf '%s\n' "$colon_form"
-    fi
+    case "$skill" in
+      sb-*)
+        add_variant "sb:${skill#sb-}"
+        add_variant "silver-${skill#sb-}"
+        ;;
+      silver-*)
+        add_variant "sb:${skill#silver-}"
+        add_variant "sb-${skill#silver-}"
+        ;;
+      *)
+        add_variant "${skill%%-*}:${skill#*-}"
+        ;;
+    esac
   fi
+
+  for variant in "${variants[@]}"; do
+    printf '%s\n' "$variant"
+  done
 }
 
 sb_skill_is_installed() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
+
+  # The public namespace is sb:*; do not resolve the retired silver: form.
+  case "$skill" in
+    silver|silver:*) return 1 ;;
+  esac
 
   if declare -F sb_required_skill_is_virtual_marker >/dev/null 2>&1; then
     if sb_required_skill_is_virtual_marker "$skill"; then
@@ -147,11 +185,11 @@ sb_skill_canonical_name() {
   local skill="${1:-}"
   [[ -n "$skill" ]] || return 1
 
-  # Silver Bullet uses `silver:<route>` as a single skill family, and the
-  # compliance state uses hyphenated markers (`silver-init`, `silver-feature`,
-  # etc.). Do not strip the `silver:` prefix.
-  if [[ "$skill" == silver:* ]]; then
-    case "${skill#silver:}" in
+  # Public host routes use `sb:<route>`; compliance state and the canonical
+  # authoring tree retain silver-* markers internally.
+  if [[ "$skill" == sb:* ]]; then
+    local route="${skill#*:}"
+    case "$route" in
       security) printf 'security' ;;
       tdd) printf 'tdd' ;;
       verify-tests) printf 'verify-tests' ;;
@@ -159,15 +197,31 @@ sb_skill_canonical_name() {
       devops-skill-router) printf 'devops-skill-router' ;;
       request-review) printf 'silver-review-request' ;;
       receive-review) printf 'silver-review-triage' ;;
-      *) printf 'silver-%s' "${skill#silver:}" ;;
+      *) printf 'silver-%s' "$route" ;;
     esac
     return 0
   fi
 
+  if [[ "$skill" == "sb" ]]; then
+    printf 'silver'
+    return 0
+  fi
+
+  if [[ "$skill" == sb-* ]]; then
+    printf 'silver-%s' "${skill#sb-}"
+    return 0
+  fi
+
+  # Preserve the retired Silver Bullet namespace instead of silently treating
+  # it as an unnamespaced route. Other host namespaces may still be unwrapped.
+  local namespace="${skill%%:*}"
+  if [[ "$skill" == *:* && "$namespace" == "silver" ]]; then
+    printf '%s' "$skill"
+    return 0
+  fi
   while [[ "$skill" == *:* ]]; do
     skill="${skill#*:}"
   done
 
   printf '%s' "$skill"
 }
-

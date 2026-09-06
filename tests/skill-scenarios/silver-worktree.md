@@ -9,5 +9,5 @@ Validate SB-owned isolated git worktree create and finish workflow.
 - Writes `.planning/WORKTREE.md`.
 - Records source branch, target branch, worktree path, mode, and resume context.
 - Checks uncommitted work before create or finish.
-- Invokes `silver:branch-finish` before merge, PR, or cleanup.
+- Invokes `sb:branch-finish` before merge, PR, or cleanup.
 - Blocks destructive cleanup unless safety and user decision are recorded.

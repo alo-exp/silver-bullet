@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:clarify — Idea Clarification Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated clarification workflow: frame the problem, compare options, converge, and hand off to silver:context and silver:plan.">
+<title>/sb:clarify — Idea Clarification Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated clarification workflow: frame the problem, compare options, converge, and hand off to sb:context and sb:plan.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -83,7 +83,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:clarify</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:clarify</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -93,8 +93,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:clarify</h1>
-    <p>SB-orchestrated clarification workflow (<code>AF-CLARIFY</code>) for vague ideas, sketched requirements, or requirement docs that still need a decision-ready brief before <code>/silver:context</code> and <code>/silver:plan</code> continue.</p>
+    <h1>/sb:clarify</h1>
+    <p>SB-orchestrated clarification workflow (<code>AF-CLARIFY</code>) for vague ideas, sketched requirements, or requirement docs that still need a decision-ready brief before <code>/sb:context</code> and <code>/sb:plan</code> continue.</p>
   </div>
 </div>
 
@@ -119,8 +119,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <article class="doc-content">
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:clarify</code> implements catalog atomic flow <code>AF-CLARIFY</code>. Default mode is light FLOW 3: product framing, option generation, and a decision-ready brief before <code>AF-ORIENT</code>, <code>AF-PLAN</code>, or composed workflows continue.</p>
-      <p>When composition is heading to <code>AF-SPECIFY</code>, ingest just ran, or the user asked for a spec, <code>--spec</code> / <code>--next spec</code> owns the full spec interview (context + Turns 1–9 + assumption protocol) and writes only a timestamped clarify brief. It does not write <code>SPEC.md</code> or <code>REQUIREMENTS.md</code> — <code>/silver:spec</code> compiles those.</p>
+      <p><code>/sb:clarify</code> implements catalog atomic flow <code>AF-CLARIFY</code>. Default mode is light FLOW 3: product framing, option generation, and a decision-ready brief before <code>AF-ORIENT</code>, <code>AF-PLAN</code>, or composed workflows continue.</p>
+      <p>When composition is heading to <code>AF-SPECIFY</code>, ingest just ran, or the user asked for a spec, <code>--spec</code> / <code>--next spec</code> owns the full spec interview (context + Turns 1–9 + assumption protocol) and writes only a timestamped clarify brief. It does not write <code>SPEC.md</code> or <code>REQUIREMENTS.md</code> — <code>/sb:spec</code> compiles those.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -159,7 +159,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Pick the best path for the current constraints and capture the rationale in a concise decision brief.</p>
 
       <h3>Step 5 — Handoff</h3>
-      <p>Write a timestamped clarify brief under <code>.planning/</code> using the pattern <code>{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code> (see <code>scripts/lib/planning-clarify-path.sh</code>) and hand off to <code>/silver:context</code> and <code>/silver:plan</code> once the brief is clear enough for phase discussion.</p>
+      <p>Write a timestamped clarify brief under <code>.planning/</code> using the pattern <code>{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code> (see <code>scripts/lib/planning-clarify-path.sh</code>) and hand off to <code>/sb:context</code> and <code>/sb:plan</code> once the brief is clear enough for phase discussion.</p>
 
       <div class="divider"></div>
 
@@ -168,7 +168,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><strong>Interactive</strong> - asks follow-up questions when the input is still fuzzy.</li>
         <li><strong>Autonomous</strong> - applies sensible defaults, logs decisions, and keeps moving until the brief is decision-ready.</li>
         <li><strong>Analyze</strong> - leans harder on context synthesis before asking questions.</li>
-        <li><strong>Chain</strong> - continues directly into <code>/silver:context</code> and <code>/silver:plan</code> when the handoff is ready. In <code>next=spec</code> mode, chain continues into <code>/silver:spec</code>.</li>
+        <li><strong>Chain</strong> - continues directly into <code>/sb:context</code> and <code>/sb:plan</code> when the handoff is ready. In <code>next=spec</code> mode, chain continues into <code>/sb:spec</code>.</li>
         <li><strong>Spec (<code>--spec</code> / <code>--next spec</code>)</strong> - full document-authoring interview. Auto-detected when <code>.planning/INGESTION_MANIFEST.md</code> exists or composition is heading to AF-SPECIFY.</li>
       </ul>
 
@@ -179,25 +179,25 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h2 id="next-spec">next=spec</h2>
       <p>Clarify owns all spec interviewing. The brief must include Overview (who + problem), at least one <code>As a…</code> user story, at least one testable acceptance criterion, assumptions with <code>Status:</code>, out of scope, edges, errors, data, and open questions. Light FLOW 3 (research, content, new-workflow, decide/compare) does <strong>not</strong> attach the 9 spec turns. Need-profile interview stays on AF-DECIDE paths only.</p>
-      <div class="code-block">/silver:clarify --spec Add scheduled report exports for admins
-/silver:clarify --next spec</div>
+      <div class="code-block">/sb:clarify --spec Add scheduled report exports for admins
+/sb:clarify --next spec</div>
       <h2 id="output">Output</h2>
-      <p>The main artifact is a plan-scoped clarify brief: <code>.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code>. Light mode: problem framing, options, recommendation, follow-ups. <code>next=spec</code> mode: capture schema that <code>/silver:spec</code> can compile into review-spec-passing SPEC.md. This skill never writes SPEC.md or REQUIREMENTS.md.</p>
+      <p>The main artifact is a plan-scoped clarify brief: <code>.planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md</code>. Light mode: problem framing, options, recommendation, follow-ups. <code>next=spec</code> mode: capture schema that <code>/sb:spec</code> can compile into review-spec-passing SPEC.md. This skill never writes SPEC.md or REQUIREMENTS.md.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:clarify I have a rough idea for a todo app feature, but I'm not sure what the exact scope should be.</div>
-      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes the timestamped clarify brief under <code>.planning/</code>, and hands off to <code>/silver:context</code> and <code>/silver:plan</code>.</p>
+      <div class="code-block">/sb:clarify I have a rough idea for a todo app feature, but I'm not sure what the exact scope should be.</div>
+      <p>The workflow frames the request, compares a few possible directions, converges on a recommendation, writes the timestamped clarify brief under <code>.planning/</code>, and hands off to <code>/sb:context</code> and <code>/sb:plan</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-fast.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:fast</span>
+          <span class="pnb-title">/sb:fast</span>
         </a>
         <a href="./silver-feature.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:feature</span>
+          <span class="pnb-title">/sb:feature</span>
         </a>
       </div>
     </article>

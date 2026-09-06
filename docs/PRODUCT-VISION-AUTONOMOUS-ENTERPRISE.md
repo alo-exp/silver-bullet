@@ -171,11 +171,11 @@ flowchart TB
   subgraph intake [Intake - minimal human]
     I[User intent / rough requirements]
     M[Session mode: autonomous]
-    C[silver:clarify if fuzzy]
+    C[sb:clarify if fuzzy]
   end
 
   subgraph parent [Parent orchestrator]
-    R[/silver router]
+    R[/sb router]
     Q[Seed orchestrator.json queue]
     D[orchestrator-directive.json loop]
     T[Spawn Task workers per AF-*]
@@ -190,7 +190,7 @@ flowchart TB
   end
 
   subgraph exec [Execution]
-    E[AF-EXECUTE via silver:execute]
+    E[AF-EXECUTE via sb:execute]
   end
 
   subgraph post [WF-POST-EXEC-GATES]
@@ -205,7 +205,7 @@ flowchart TB
   end
 
   subgraph deploy [Deploy / release]
-    DP[silver:deploy / canary]
+    DP[sb:deploy / canary]
     RL[AF-RELEASE + create-release]
   end
 
@@ -224,18 +224,18 @@ flowchart TB
 | **Specify** | `AF-SPECIFY` → `.planning/SPEC.md` | Skip if SPEC exists |
 | **Plan** | `AF-QUALITY-GATE` (pre-plan) → `AF-PLAN` | None in autonomous |
 | **Design** | `AF-DESIGN-CONTRACT` if UI scope | None |
-| **Build** | `AF-EXECUTE` (internal TDD gate + `silver:execute`) | None |
+| **Build** | `AF-EXECUTE` (internal TDD gate + `sb:execute`) | None |
 | **Verify** | Review triad → `AF-VERIFY` → `AF-SECURE` | None |
 | **Gate** | `AF-QUALITY-GATE` (pre-ship) | Non-skippable |
 | **Ship** | `AF-BRANCH-FINISH` → `AF-COMPLETION-AUDIT` → `AF-SHIP` (PR, CI green) | Hooks enforce evidence |
-| **Deploy** | `silver:deploy`, `silver:canary` via `AF-SHIP` skills; devops path via `silver:devops` | Production credentials / approval per policy |
-| **Release** | `AF-RELEASE` → `silver:create-release` | User-triggered for external publish |
+| **Deploy** | `sb:deploy`, `sb:canary` via `AF-SHIP` skills; devops path via `sb:devops` | Production credentials / approval per policy |
+| **Release** | `AF-RELEASE` → `sb:create-release` | User-triggered for external publish |
 
 Standard composition chain is declared in [`skills/silver-feature/SKILL.md`](../skills/silver-feature/SKILL.md); catalog tree in [`docs/composable-flows-contracts.md`](composable-flows-contracts.md) §`WF-SILVER-FEATURE` + `WF-POST-EXEC-GATES`.
 
 ### DevOps parallel path
 
-`silver:devops` composes blast-radius → devops-skill-router → plan → execute → post-exec gates ([`silver-bullet.md`](../silver-bullet.md) §2h). Same parent/worker and hook model; **7 IaC-adapted quality dimensions** instead of product 8 ([`silver-bullet.md`](../silver-bullet.md) §2h).
+`sb:devops` composes blast-radius → devops-skill-router → plan → execute → post-exec gates ([`silver-bullet.md`](../silver-bullet.md) §2h). Same parent/worker and hook model; **7 IaC-adapted quality dimensions** instead of product 8 ([`silver-bullet.md`](../silver-bullet.md) §2h).
 
 ---
 
@@ -247,7 +247,7 @@ The **enterprise-grade-test-app** fixture exercises all catalog workflows via a 
 
 | Row class | Count | Examples |
 |-----------|-------|----------|
-| Routing | 1 | Row 1 — `/silver` router only |
+| Routing | 1 | Row 1 — `/sb` router only |
 | Standalone workflows | 19 | feature, bugfix, UI, release, forensics, incident, … |
 | Internal (parent-triggered) | 2 | Rows 21–22 (post-exec-gates, validate-substep inside rows 3–4) |
 
@@ -267,10 +267,10 @@ Per-row applicability: [`.planning/enterprise-e2e/OUTCOME-ASSESSMENT-RUBRIC.md`]
 |------|---------------|-------------|-----------------|
 | **Supervised (interactive)** | Approves phase gates; answers clarifications | Pauses at decision points ([`silver-bullet.md`](../silver-bullet.md) §4) | Legacy matrix runs; **not** the autonomy vision target |
 | **Autonomous** | Watches commentary; intervenes only on blockers | Drives queue; parent spawns workers; no babysitting ([`silver-bullet.md`](../silver-bullet.md) §2f, §4) | **OUT-AUTO-01** blocking PASS required |
-| **Supervised delegation** | Parent supervises **external** host TUI (`silver:agent-cursor`, etc.) | Single-task subagent — **not** enterprise matrix ([`agents/claude/silver:agent-cursor/SKILL.md`](../agents/claude/silver:agent-cursor/SKILL.md)) | Distinct from full SB autonomy |
+| **Supervised delegation** | Parent supervises **external** host TUI (`sb:agent-cursor`, etc.) | Single-task subagent — **not** enterprise matrix ([`agents/claude/sb:agent-cursor/SKILL.md`](../agents/claude/sb:agent-cursor/SKILL.md)) | Distinct from full SB autonomy |
 | **Enterprise E2E operator** | Historically babysat TUI sessions | Policy: "never pause for operator on blockers — diagnose, fix SB, re-run" ([`.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md`](../.planning/enterprise-e2e/OPERATIONAL-ADDENDUM.md) §C) | Converging operator role toward **harness maintainer**, not **workflow driver** |
 
-**Assist-only = FAIL** for autonomy scoring: SB must drive completion from vague prompts; `silver:clarify` when needed instead of wrong-route execution ([`.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md`](../.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) §Outcome assessment).
+**Assist-only = FAIL** for autonomy scoring: SB must drive completion from vague prompts; `sb:clarify` when needed instead of wrong-route execution ([`.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md`](../.planning/enterprise-e2e/CURSOR-ENTERPRISE-E2E-EXECUTION-PROMPT.md) §Outcome assessment).
 
 ### 6.3 Tri-host certification
 
@@ -353,8 +353,8 @@ Aligned with [`docs/research-260624/atomic-flow-redesign.plan.md`](research-2606
 **Goal:** Inverted model is the default UX.
 
 - Auto-autonomous when safe (extend bypass-permissions pattern; enterprise policy profiles)
-- `silver:clarify --auto` as default front door for vague intent
-- Session 0 fully automated (`/silver:init` TUI path validated)
+- `sb:clarify --auto` as default front door for vague intent
+- Session 0 fully automated (`/sb:init` TUI path validated)
 - Process packs for team gate overlays without forking `AF-*` ([`docs/research-260624/atomic-flow-redesign.plan.md`](research-260624/atomic-flow-redesign.plan.md) Phase 6)
 
 **Exit criteria:** New project: user provides brief → SPEC → multi-phase feature → PR without interactive prompts except `decision_class: blocking`.

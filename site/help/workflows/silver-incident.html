@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:incident — Incident Response Workflow — Silver Bullet Help</title>
+<title>/sb:incident — Incident Response Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated production incident response: blast-radius assessment → debug → secure → verify → document postmortem and corrective actions.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,7 +94,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:incident</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:incident</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -104,7 +104,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:incident</h1>
+    <h1>/sb:incident</h1>
     <p>SB-orchestrated production incident response for active runtime failures, release regressions, and customer-impacting defects — assess blast radius, diagnose, secure, verify recovery, and document the postmortem.</p>
   </div>
 </div>
@@ -122,8 +122,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#artifacts">Artifacts &amp; Exit Gate</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-forensics.html">/silver:forensics</a></li>
-        <li><a href="./silver-retro.html">/silver:retro</a></li>
+        <li><a href="./silver-forensics.html">/sb:forensics</a></li>
+        <li><a href="./silver-retro.html">/sb:retro</a></li>
         <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
@@ -131,30 +131,30 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:incident</code> is the Silver Bullet orchestrator for production incident response. It extends forensic reconstruction with impact assessment, containment decisions, security review, recovery verification, and corrective-action ownership.</p>
+      <p><code>/sb:incident</code> is the Silver Bullet orchestrator for production incident response. It extends forensic reconstruction with impact assessment, containment decisions, security review, recovery verification, and corrective-action ownership.</p>
       <p><strong>It never treats ad hoc firefighting as the workflow.</strong> Severity is established first, blast radius is assessed before deep investigation, and every mitigation step produces traceable evidence before the incident is closed.</p>
-      <p><code>/silver:incident</code> maps to <code>WF-SILVER-INCIDENT</code> in the v0.52.0 APO catalog. Standard composition:</p>
+      <p><code>/sb:incident</code> maps to <code>WF-SILVER-INCIDENT</code> in the v0.52.0 APO catalog. Standard composition:</p>
       <div class="code-block">BLAST_RADIUS → DEBUG → SECURE → VERIFY → DOCUMENT</div>
       <p>Primary artifact: <code>.planning/INCIDENT.md</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for catalog authority and V-loop rollup rules.</p>
 
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
         <div class="callout-body">
-          <strong>Live failure vs reconstruction:</strong> For an active error with a known cause, prefer <code>/silver:debug</code> (<code>AF-DEBUG</code> in isolation). Invoke <a href="./silver-forensics.html"><code>/silver:forensics</code></a> when the failure path is unclear and must be reconstructed from evidence.
+          <strong>Live failure vs reconstruction:</strong> For an active error with a known cause, prefer <code>/sb:debug</code> (<code>AF-DEBUG</code> in isolation). Invoke <a href="./silver-forensics.html"><code>/sb:forensics</code></a> when the failure path is unclear and must be reconstructed from evidence.
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:incident</code>:</p>
+      <p>Entry trigger signals for <code>/sb:incident</code>:</p>
       <ul>
         <li>Production outage, degraded service, or customer-impacting regression</li>
         <li>Release rollback or hotfix decision under time pressure</li>
         <li>Security incident requiring containment before root-cause analysis</li>
         <li>Post-incident documentation and corrective-action filing</li>
       </ul>
-      <p>Not for: routine bug fixes in development (<a href="./silver-bugfix.html"><code>/silver:bugfix</code></a>), historical session reconstruction without active impact (<a href="./silver-forensics.html"><code>/silver:forensics</code></a>), or process retrospectives after closure (<a href="./silver-retro.html"><code>/silver:retro</code></a>).</p>
+      <p>Not for: routine bug fixes in development (<a href="./silver-bugfix.html"><code>/sb:bugfix</code></a>), historical session reconstruction without active impact (<a href="./silver-forensics.html"><code>/sb:forensics</code></a>), or process retrospectives after closure (<a href="./silver-retro.html"><code>/sb:retro</code></a>).</p>
 
       <div class="divider"></div>
 
@@ -162,33 +162,33 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-BLAST-RADIUS</code></td><td><code>/silver:blast-radius</code></td><td>Impact scope, affected surfaces, rollback/containment options</td></tr>
-          <tr><td><code>AF-DEBUG</code></td><td><code>/silver:debug</code></td><td>Root-cause diagnosis from logs, deploy history, monitoring, and changed files</td></tr>
-          <tr><td><code>AF-SECURE</code></td><td><code>/silver:secure</code></td><td>Security boundary review and LLM-safety checks on incident artifacts</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Recovery verification and canary evidence after mitigation</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable incident record and timeline in <code>.planning/INCIDENT.md</code></td></tr>
+          <tr><td><code>AF-BLAST-RADIUS</code></td><td><code>/sb:blast-radius</code></td><td>Impact scope, affected surfaces, rollback/containment options</td></tr>
+          <tr><td><code>AF-DEBUG</code></td><td><code>/sb:debug</code></td><td>Root-cause diagnosis from logs, deploy history, monitoring, and changed files</td></tr>
+          <tr><td><code>AF-SECURE</code></td><td><code>/sb:secure</code></td><td>Security boundary review and LLM-safety checks on incident artifacts</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/sb:verify</code></td><td>Recovery verification and canary evidence after mitigation</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Durable incident record and timeline in <code>.planning/INCIDENT.md</code></td></tr>
         </tbody>
       </table>
-      <p>Domain audit packs (<code>incident-retro</code>, runtime/API/data/security) may be applied during <code>AF-DEBUG</code> and <code>AF-SECURE</code>. Corrective actions are filed through <code>/silver:add</code>; recurring process gaps feed <a href="./silver-retro.html"><code>/silver:retro</code></a>.</p>
+      <p>Domain audit packs (<code>incident-retro</code>, runtime/API/data/security) may be applied during <code>AF-DEBUG</code> and <code>AF-SECURE</code>. Corrective actions are filed through <code>/sb:add</code>; recurring process gaps feed <a href="./silver-retro.html"><code>/sb:retro</code></a>.</p>
 
       <div class="divider"></div>
 
       <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-BLAST-RADIUS</code> — Establish impact before investigation</h3>
-      <p>Invoke <code>/silver:blast-radius</code>. Assess severity, affected users/systems, and whether mitigation or rollback is required before investigation continues. Produces <code>ART-BLAST_RADIUS</code> with rollback/risk controls.</p>
+      <p>Invoke <code>/sb:blast-radius</code>. Assess severity, affected users/systems, and whether mitigation or rollback is required before investigation continues. Produces <code>ART-BLAST_RADIUS</code> with rollback/risk controls.</p>
 
       <h3><code>AF-DEBUG</code> — Diagnose and contain</h3>
-      <p>Invoke <code>/silver:debug</code>. Capture evidence from logs, CI/deploy history, release notes, user reports, monitoring, and changed files. When the failure path is unclear, apply <code>/silver:forensics</code> for root-cause reconstruction.</p>
+      <p>Invoke <code>/sb:debug</code>. Capture evidence from logs, CI/deploy history, release notes, user reports, monitoring, and changed files. When the failure path is unclear, apply <code>/sb:forensics</code> for root-cause reconstruction.</p>
 
       <h3><code>AF-SECURE</code> — Security review</h3>
-      <p>Invoke <code>/silver:secure</code>. Review incident artifacts and changed code for security implications. Required when the incident involves credentials, data exposure, or supply-chain risk.</p>
+      <p>Invoke <code>/sb:secure</code>. Review incident artifacts and changed code for security implications. Required when the incident involves credentials, data exposure, or supply-chain risk.</p>
 
       <h3><code>AF-VERIFY</code> — Confirm recovery</h3>
-      <p>Invoke <code>/silver:verify</code>. Produce verification and canary evidence that the user-impacting state is mitigated or explicitly accepted.</p>
+      <p>Invoke <code>/sb:verify</code>. Produce verification and canary evidence that the user-impacting state is mitigated or explicitly accepted.</p>
 
       <h3><code>AF-DOCUMENT</code> — Postmortem and corrective actions</h3>
-      <p>Invoke <code>/silver:ensure-docs</code>. Write or update <code>.planning/INCIDENT.md</code> with impact summary, timeline, root cause, contributing process gaps, and tracked corrective actions.</p>
+      <p>Invoke <code>/sb:ensure-docs</code>. Write or update <code>.planning/INCIDENT.md</code> with impact summary, timeline, root cause, contributing process gaps, and tracked corrective actions.</p>
 
       <div class="divider"></div>
 
@@ -199,7 +199,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li>Timeline with detection, mitigation, and recovery timestamps</li>
         <li>Current status and rollback/containment decision</li>
         <li>Root cause and contributing process gaps (evidence-backed)</li>
-        <li>Corrective actions filed through <code>/silver:add</code> with owner and priority</li>
+        <li>Corrective actions filed through <code>/sb:add</code> with owner and priority</li>
         <li>Verification and canary evidence after recovery</li>
       </ul>
       <p>The incident workflow is complete only when user-impacting state is mitigated or explicitly accepted, root cause is evidenced, and corrective actions are tracked.</p>
@@ -207,17 +207,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:incident Production API returning 503s after deploy v2.4.1 — assess impact and contain</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-INCIDENT</code>. <code>AF-BLAST-RADIUS</code> scopes customer impact and rollback options. <code>AF-DEBUG</code> traces the regression to a config change. <code>AF-SECURE</code> confirms no credential exposure. <code>AF-VERIFY</code> validates recovery on canary. <code>AF-DOCUMENT</code> writes <code>.planning/INCIDENT.md</code> and files follow-up work through <code>/silver:add</code>.</p>
+      <div class="code-block">/sb:incident Production API returning 503s after deploy v2.4.1 — assess impact and contain</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-INCIDENT</code>. <code>AF-BLAST-RADIUS</code> scopes customer impact and rollback options. <code>AF-DEBUG</code> traces the regression to a config change. <code>AF-SECURE</code> confirms no credential exposure. <code>AF-VERIFY</code> validates recovery on canary. <code>AF-DOCUMENT</code> writes <code>.planning/INCIDENT.md</code> and files follow-up work through <code>/sb:add</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-release.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:release</span>
+          <span class="pnb-title">/sb:release</span>
         </a>
         <a href="./silver-retro.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:retro</span>
+          <span class="pnb-title">/sb:retro</span>
         </a>
       </div>
 

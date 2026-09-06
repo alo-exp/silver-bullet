@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:feature — Feature Development Workflow — Silver Bullet Help</title>
+<title>/sb:feature — Feature Development Workflow — Silver Bullet Help</title>
 <meta name="description" content="Full SB-orchestrated feature development workflow: orientation → clarify when needed → quality gates → SB plan/execute → review → verify → secure → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,7 +92,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:feature</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:feature</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -102,7 +102,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:feature</h1>
+    <h1>/sb:feature</h1>
     <p>Full SB-orchestrated feature development workflow — from codebase orientation through quality gates, TDD where applicable, code review, verification, and ship.</p>
   </div>
 </div>
@@ -131,16 +131,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/silver</code> classifies context, selects from the canonical AF-* catalog, and proposes a composition chain tailored to the request.</p>
+      <p><code>/sb:feature</code> is the Silver Bullet orchestrator for new feature development. It operates on <strong>composable flows architecture</strong> — rather than following a fixed pipeline, <code>/sb</code> classifies context, selects from the canonical AF-* catalog, and proposes a composition chain tailored to the request.</p>
       <p><strong>It never implements features directly — it orchestrates only.</strong> Implementation runs through Silver Bullet's lifecycle skills for context, plan, execution, review, verification, and ship. Optional helper plugins are called only at explicit extension boundaries selected by the active workflow.</p>
-      <p>Invoked automatically by <code>/silver</code> when intent classification detects feature-development signals, or invoked directly as <code>/silver:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical AF-* catalog.</p>
+      <p>Invoked automatically by <code>/sb</code> when intent classification detects feature-development signals, or invoked directly as <code>/sb:feature</code>. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical AF-* catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="composition">Composable Flow Chain</h2>
 
       <h3>Composition Proposal</h3>
-      <p>When you invoke <code>/silver:feature</code>, the orchestrator classifies your context and proposes a catalog-backed workflow. The default catalog entity is <code>WF-SILVER-FEATURE</code>, which composes canonical atomic flows and the reusable <code>WF-POST-EXEC-GATES</code> tail:</p>
+      <p>When you invoke <code>/sb:feature</code>, the orchestrator classifies your context and proposes a catalog-backed workflow. The default catalog entity is <code>WF-SILVER-FEATURE</code>, which composes canonical atomic flows and the reusable <code>WF-POST-EXEC-GATES</code> tail:</p>
       <ul>
         <li><code>AF-BOOTSTRAP</code>, <code>AF-ORIENT</code>, <code>AF-CLARIFY</code>, <code>AF-DECIDE</code>, and <code>AF-SPECIFY</code> run only when their prerequisites or context signals require them.</li>
         <li><code>AF-QUALITY-GATE</code> (pre-plan), <code>AF-PLAN</code>, <code>AF-DESIGN-CONTRACT</code> (if UI), and <code>AF-EXECUTE</code> create the implementation path.</li>
@@ -165,18 +165,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Use <code>/silver:feature</code> when you want to add, build, implement, enhance, or extend any feature. Entry trigger signals:</p>
+      <p>Use <code>/sb:feature</code> when you want to add, build, implement, enhance, or extend any feature. Entry trigger signals:</p>
       <ul>
         <li>"add X" / "build X" / "implement X"</li>
         <li>"new feature" / "enhance X" / "extend X"</li>
         <li>Any description of new capability that touches business logic</li>
       </ul>
-      <p>If the request also touches UI, <code>/silver:ui</code> takes precedence — it is more specific. If something is broken, <code>/silver:bugfix</code> always takes precedence over this workflow.</p>
+      <p>If the request also touches UI, <code>/sb:ui</code> takes precedence — it is more specific. If something is broken, <code>/sb:bugfix</code> always takes precedence over this workflow.</p>
 
       <div class="divider"></div>
 
       <h2 id="complexity-triage">Complexity triage</h2>
-      <p>Before any workflow steps begin, <code>/silver:feature</code> classifies the request to prevent over-engineering trivial changes and under-engineering complex ones.</p>
+      <p>Before any workflow steps begin, <code>/sb:feature</code> classifies the request to prevent over-engineering trivial changes and under-engineering complex ones.</p>
 
       <table class="ref-table">
         <thead><tr><th>Classification</th><th>Signals</th><th>Action</th></tr></thead>
@@ -184,12 +184,12 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr>
             <td>Trivial</td>
             <td>≤3 files, typo, config, rename</td>
-            <td>STOP — route to <code>/silver:fast</code> instead (bypass workflow)</td>
+            <td>STOP — route to <code>/sb:fast</code> instead (bypass workflow)</td>
           </tr>
           <tr>
             <td>Fuzzy</td>
             <td>Vague intent, unclear scope, empty arguments</td>
-            <td>Proceed to <code>AF-CLARIFY</code> (<code>/silver:clarify</code>) first, then re-classify</td>
+            <td>Proceed to <code>AF-CLARIFY</code> (<code>/sb:clarify</code>) first, then re-classify</td>
           </tr>
           <tr>
             <td>Simple</td>
@@ -199,7 +199,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr>
             <td>Complex</td>
             <td>Multi-phase, cross-cutting, significant architecture impact</td>
-            <td>Full workflow including <code>AF-CLARIFY</code> (<code>/silver:clarify</code>)</td>
+            <td>Full workflow including <code>AF-CLARIFY</code> (<code>/sb:clarify</code>)</td>
           </tr>
         </tbody>
       </table>
@@ -215,17 +215,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3>Pre-execution (conditional)</h3>
       <ul>
         <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
-        <li><strong>Complexity triage</strong> — trivial → route to <code>/silver:fast</code>; fuzzy → <code>AF-CLARIFY</code> first</li>
-        <li><strong><code>AF-BOOTSTRAP</code></strong> — <code>/silver:init</code> when <code>.planning/</code> is missing</li>
-        <li><strong><code>AF-ORIENT</code></strong> — <code>/silver:scan</code> / <code>/silver:context</code> for brownfield orientation</li>
-        <li><strong><code>AF-SPECIFY</code></strong> — <code>/silver:spec</code> when no <code>.planning/SPEC.md</code> (enforced by workflow-chain-guard)</li>
-        <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>/silver:quality-gates</code> before planning</li>
-        <li><strong><code>AF-PLAN</code></strong> — <code>/silver:context</code>, <code>/silver:plan</code>, optional <code>/silver:validate</code></li>
-        <li><strong><code>AF-DESIGN-CONTRACT</code></strong> — <code>/silver:ui-contract</code> when UI scope detected</li>
+        <li><strong>Complexity triage</strong> — trivial → route to <code>/sb:fast</code>; fuzzy → <code>AF-CLARIFY</code> first</li>
+        <li><strong><code>AF-BOOTSTRAP</code></strong> — <code>/sb:init</code> when <code>.planning/</code> is missing</li>
+        <li><strong><code>AF-ORIENT</code></strong> — <code>/sb:scan</code> / <code>/sb:context</code> for brownfield orientation</li>
+        <li><strong><code>AF-SPECIFY</code></strong> — <code>/sb:spec</code> when no <code>.planning/SPEC.md</code> (enforced by workflow-chain-guard)</li>
+        <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>/sb:quality-gates</code> before planning</li>
+        <li><strong><code>AF-PLAN</code></strong> — <code>/sb:context</code>, <code>/sb:plan</code>, optional <code>/sb:validate</code></li>
+        <li><strong><code>AF-DESIGN-CONTRACT</code></strong> — <code>/sb:ui-contract</code> when UI scope detected</li>
       </ul>
 
       <h3><code>AF-EXECUTE</code></h3>
-      <p><code>tdd</code> gate for behavior-changing code, then <code>/silver:execute</code>. Per-phase loop: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> for each ROADMAP phase.</p>
+      <p><code>tdd</code> gate for behavior-changing code, then <code>/sb:execute</code>. Per-phase loop: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> for each ROADMAP phase.</p>
 
       <h3>Post-Execution Chain (canonical order)</h3>
       <p>After <code>AF-EXECUTE</code>: <code>WF-POST-EXEC-GATES</code> runs review, verification, security, validation, pre-ship quality, branch finish, completion audit, and ship.</p>
@@ -240,9 +240,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>/silver:secure</code> (<code>AF-SECURE</code>)</li>
-            <li><code>/silver:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
-            <li><code>/silver:verify</code> (<code>AF-VERIFY</code>)</li>
+            <li><code>/sb:secure</code> (<code>AF-SECURE</code>)</li>
+            <li><code>/sb:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/sb:verify</code> (<code>AF-VERIFY</code>)</li>
           </ul>
         </div>
       </div>
@@ -260,7 +260,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:feature Add dark mode toggle to the settings panel</div>
+      <div class="code-block">/sb:feature Add dark mode toggle to the settings panel</div>
       <p>Silver Bullet classifies this as Simple (clear scope, ≤1 phase), skips the extra clarification path, proceeds through orientation, quality gates, SB context/plan/execute, TDD where applicable, review, verify, and ship.</p>
 
       <div class="divider"></div>
@@ -276,7 +276,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         </a>
         <a href="./silver-bugfix.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:bugfix</span>
+          <span class="pnb-title">/sb:bugfix</span>
         </a>
       </div>
 

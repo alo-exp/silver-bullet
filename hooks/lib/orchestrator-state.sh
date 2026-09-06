@@ -71,7 +71,7 @@ sb_orchestrator_default_queue_for_composer() {
       printf '%s' 'FLOW-QUALITY-GATE,silver-plan,silver-validate,silver-execute,silver-verify'
       ;;
     silver-release)
-      # FLOW 18 delivery tail — audit/gap steps are parent-driven (see silver:release SKILL.md).
+      # FLOW 18 delivery tail — audit/gap steps are parent-driven (see sb:release SKILL.md).
       printf '%s' 'FLOW-QUALITY-GATE,silver-review-request,silver-review,silver-review-triage,silver-verify,security,silver-secure,silver-validate,silver-branch-finish,silver-completion-audit,silver-ship,silver-create-release'
       ;;
     silver)
@@ -306,7 +306,7 @@ sb_orchestrator_on_composer_start() {
   fi
   flows_csv="$(sb_orchestrator_flow_csv_for_workflows "$composer_skill" "$repo_root")"
   if [[ -n "$wf_bin" ]]; then
-    wf_id="$("$wf_bin" start "/silver:${composer_skill#silver-}" "${intent:-autonomous route}" "$flows_csv" 2>/dev/null || true)"
+    wf_id="$("$wf_bin" start "/sb:${composer_skill#silver-}" "${intent:-autonomous route}" "$flows_csv" 2>/dev/null || true)"
   else
     wf_id=""
   fi

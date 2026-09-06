@@ -1,10 +1,10 @@
 ---
 name: silver-migrate
-description: This skill should be used when the user runs `/silver:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults.
+description: This skill should be used when the user runs `/sb:migrate` or asks to migrate an older Silver Bullet project from retired workflow/doc conventions to current per-instance workflow tracking, Learnings documentation terminology, agent-neutral templates, runtime parity artifacts, and current `.silver-bullet.json` defaults.
 version: 0.5.0
 ---
 
-# silver:migrate
+# sb:migrate
 
 Migrates an older mid-milestone project to the current Silver Bullet contract:
 
@@ -13,7 +13,7 @@ Migrates an older mid-milestone project to the current Silver Bullet contract:
 - agent-neutral `silver-bullet.md` and project instruction files
 - current `.silver-bullet.json` defaults from `templates/silver-bullet.config.json.default`
 - orchestrator parent mode (`orchestrator_mode: parent`, worker templates, task host rule)
-- `scripts/workflows.sh` and `docs/workflows/*.md` when absent (parity with `/silver:init`)
+- `scripts/workflows.sh` and `docs/workflows/*.md` when absent (parity with `/sb:init`)
 - `.gitignore` entry for `.planning/workflows/` (local runtime state)
 - runtime parity awareness (evidence schema, diagnostics, bootstrap probes)
 - doc-scheme / task checklist alignment
@@ -32,7 +32,7 @@ Per-host install paths, hook manifests, and skill invocation channels are docume
 - `.silver-bullet.json` lacks current `config_version`, `release`, `required_release`, `hooks`, or `multi_agent` defaults.
 - `orchestrator_mode` is absent or not `parent`.
 - `scripts/workflows.sh` is missing (workflow tracker / `flow-advance` will fail).
-- The user explicitly runs `/silver:migrate` or asks to migrate workflow tracking or SB version surface.
+- The user explicitly runs `/sb:migrate` or asks to migrate workflow tracking or SB version surface.
 
 ## Prerequisites
 
@@ -131,7 +131,7 @@ If neither script is available, merge manually:
 
 ### Step 2.5: Install Project Surface Parity (Init-Equivalent)
 
-Bring mechanical bootstrap artifacts to parity with `/silver:init` without overwriting user docs.
+Bring mechanical bootstrap artifacts to parity with `/sb:init` without overwriting user docs.
 
 ```bash
 bash "${PLUGIN_ROOT}/scripts/sb-migrate-project.sh" 2>/dev/null || \
@@ -200,7 +200,7 @@ Report capability tier and any WARN/FAIL lines. Point the user to `docs/RUNTIME-
 
 #### 4.2 Host hook merge (all hosts)
 
-Re-register SB hooks in the active host settings file (same contract as `/silver:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
+Re-register SB hooks in the active host settings file (same contract as `/sb:init` update mode §3.7.5). Resolve `INSTALL_PATH` from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json` when possible; fall back to `PLUGIN_ROOT`.
 
 Per-host merge scripts live under `scripts/lib/install-<runtime>/` — see `docs/RUNTIME-COMPATIBILITY.md` (`merge-hooks.py`, `merge-cursor-hooks.py`).
 
@@ -217,7 +217,7 @@ Confirm merged entries in the host hooks manifest. If merge fails, advise the ho
 
 #### 4.2a v1 hook incompatibility check
 
-When a project-scoped host settings file exists (see `docs/RUNTIME-COMPATIBILITY.md`), scan for retired v1 hook references: `record-skill.sh`, `dev-cycle-check.sh`, `/tmp/.wyzr-workflow-state`. If found, ask the user to remove them before relying on v2 enforcement (same rule as `/silver:init` §1.7).
+When a project-scoped host settings file exists (see `docs/RUNTIME-COMPATIBILITY.md`), scan for retired v1 hook references: `record-skill.sh`, `dev-cycle-check.sh`, `/tmp/.wyzr-workflow-state`. If found, ask the user to remove them before relying on v2 enforcement (same rule as `/sb:init` §1.7).
 
 #### 4.3 Phase 056 runtime parity checklist (project docs awareness)
 
@@ -225,7 +225,7 @@ Ensure the project doc surface acknowledges parity artifacts when missing. Do no
 
 | Artifact | Purpose | Action when missing |
 |----------|---------|---------------------|
-| `docs/evidence-schema.md` | Normalized finding/evidence tables for reviews and gates | Note in migration report; invoke `silver:ensure-docs --bootstrap` if user wants full doc scaffold |
+| `docs/evidence-schema.md` | Normalized finding/evidence tables for reviews and gates | Note in migration report; invoke `sb:ensure-docs --bootstrap` if user wants full doc scaffold |
 | `scripts/sb-diagnostics.sh` (via plugin) | Capability tier probe | Covered by Step 4.1 run |
 | `scripts/sb-bootstrap.sh` (via plugin) | Onboarding orientation | Covered by Step 4.1 run |
 | `docs/RUNTIME-COMPATIBILITY.md` (plugin-dev only) | Host parity matrix | Skip in downstream projects unless copied during init |
@@ -236,14 +236,14 @@ For downstream projects, record in the migration report which parity scripts ran
 
 When `docs/doc-scheme.json` exists:
 
-1. Invoke `silver:ensure-docs` through the active runtime's SB-recognized skill invocation channel with `--bootstrap` or reconciliation mode so `doc-scheme.md`, `doc-scheme.json`, and `task-doc-checklist.json` stay synchronized.
+1. Invoke `sb:ensure-docs` through the active runtime's SB-recognized skill invocation channel with `--bootstrap` or reconciliation mode so `doc-scheme.md`, `doc-scheme.json`, and `task-doc-checklist.json` stay synchronized.
 2. Add or refresh checklist keys for:
    - `docs/learnings/` (not `docs/lessons/`)
    - `docs/evidence-schema.md` when the project uses SB review/release gates
    - `docs/RUNTIME-COMPATIBILITY.md` for plugin-dev repos only
 3. Report keys added, preserved mappings, and any BLOCK findings from ensure-docs.
 
-If `docs/doc-scheme.json` is absent, recommend `/silver:init` update mode or `silver:ensure-docs --bootstrap` rather than inventing a partial scheme.
+If `docs/doc-scheme.json` is absent, recommend `/sb:init` update mode or `sb:ensure-docs --bootstrap` rather than inventing a partial scheme.
 
 #### 4.5 UI interface state (UI projects only)
 
@@ -316,11 +316,11 @@ else
   )"
 fi
 if [[ -z "${SB_WORKFLOWS_BIN:-}" ]]; then
-  echo "Silver Bullet workflow tracker not found. Run /silver:update or reinstall Silver Bullet, then retry." >&2
+  echo "Silver Bullet workflow tracker not found. Run /sb:update or reinstall Silver Bullet, then retry." >&2
   exit 1
 fi
 
-SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:migrate "migrated legacy project state" "$SB_FLOWS")
+SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /sb:migrate "migrated legacy project state" "$SB_FLOWS")
 export SB_WORKFLOW_ID
 ```
 
@@ -344,7 +344,7 @@ Report in sections:
 6. **Pending next flow**
 7. **Manual review** — any ambiguity or conflicts deferred to the user
 
-Recommend `/silver:init` in update mode when hook registration or full doc bootstrap still needs a dedicated pass after migrate.
+Recommend `/sb:init` in update mode when hook registration or full doc bootstrap still needs a dedicated pass after migrate.
 
 ## Produces
 

@@ -1,6 +1,6 @@
 ---
 name: extensibility
-title: "Silver: Extensibility"
+title: "SB: Extensibility"
 description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "add plugin point", "make this pluggable", "add hooks for X" — enforces open-closed design, plugin architectures, stable interfaces, and versioning so systems grow without breaking existing consumers
 user-invocable: false
 version: 0.1.0
@@ -12,7 +12,7 @@ Every design, plan, and implementation MUST allow new functionality to be added 
 
 **Why this matters:** Software that requires modifying core code for every new feature becomes brittle, risky, and slow to evolve. Extensible design lets you add capabilities by writing NEW code — not editing existing, tested, working code. This is the difference between systems that scale with the team and systems that bottleneck at every change.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -135,7 +135,7 @@ The mechanism is the extensible framework. The policy is the configuration/plugi
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Extensibility Checklist**:
 
@@ -149,7 +149,7 @@ Before finalizing any design or plan, run the **Extensibility Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - When adding a new type/format/provider, use registry/strategy pattern — don't add `else if`.
@@ -158,7 +158,7 @@ As you write code:
 - When deprecating something, add a deprecation warning with a migration path.
 - Use interfaces/protocols for dependencies — not concrete implementations.
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - No `switch` or `if/else if` chains that will grow as new types are added

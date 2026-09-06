@@ -90,7 +90,7 @@ Silver Bullet uses this pattern for TDD:
 
 - `tdd` is hidden
 - `tdd` records the SB-owned `silver-tdd` discipline marker
-- `silver:execute` is the real execution trigger for implementation work
+- `sb:execute` is the real execution trigger for implementation work
 
 ## 7. Do not vendor dependency plugins into a parent bundle
 

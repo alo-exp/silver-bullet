@@ -260,6 +260,16 @@ proc = subprocess.Popen(
 )
 
 started = time.time()
+
+
+def timeout_handler(_signum, _frame):
+    # A quiet child can block the iterator below without yielding a line, so
+    # enforce the deadline with SIGALRM as well as the post-line check.
+    raise subprocess.TimeoutExpired(args, timeout, output=None)
+
+
+signal.signal(signal.SIGALRM, timeout_handler)
+signal.setitimer(signal.ITIMER_REAL, max(1, timeout))
 try:
     assert proc.stdout is not None
     for line in proc.stdout:
@@ -291,6 +301,8 @@ except subprocess.TimeoutExpired:
     sys.stdout.write(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
     append_log(f"\nERROR: timed out waiting for cursor-agent after {timeout}s\n")
     sys.exit(124)
+finally:
+    signal.setitimer(signal.ITIMER_REAL, 0)
 PY
   ) || true
 

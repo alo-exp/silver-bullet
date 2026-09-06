@@ -25,12 +25,12 @@ assert_pass() {
 
 assert_contains() {
   local haystack="$1" needle="$2"
-  printf '%s' "$haystack" | grep -qF -- "$needle"
+  grep -F -- "$needle" >/dev/null <<<"$haystack"
 }
 
 assert_not_contains() {
   local haystack="$1" needle="$2"
-  ! printf '%s' "$haystack" | grep -qF -- "$needle"
+  ! grep -F -- "$needle" >/dev/null <<<"$haystack"
 }
 
 script_body="$(<"$SCRIPT")"

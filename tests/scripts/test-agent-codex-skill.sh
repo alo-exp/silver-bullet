@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structural contract for /silver:agent-codex skill and delegate wrapper.
+# Structural contract for /sb:agent-codex skill and delegate wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -32,7 +32,7 @@ fi
 
 grep -qE '^name: silver-agent-codex$' "$SKILL" && check "frontmatter name silver-agent-codex" pass || check "frontmatter name silver-agent-codex" fail
 grep -q 'user-invocable: true' "$SKILL" && check "user-invocable" pass || check "user-invocable" fail
-grep -q '/silver:agent-codex' "$SKILL" && check "route documented" pass || check "route documented" fail
+grep -q '/sb:agent-codex' "$SKILL" && check "route documented" pass || check "route documented" fail
 grep -q 'codex-interactive-invoke.py' "$SKILL" && check "references invoke harness" pass || check "references invoke harness" fail
 grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$SKILL" && check "excludes matrix env" pass || check "excludes matrix env" fail
 grep -q 'agent-codex-delegate.sh' "$SKILL" && check "references delegate wrapper" pass || check "references delegate wrapper" fail

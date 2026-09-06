@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sb-doctor.sh — Silver Bullet install + project activation audit (silver:doctor)
+# sb-doctor.sh — Silver Bullet install + project activation audit (sb:doctor)
 # Exit 0 only when zero FAIL checks (WARN allowed).
 #
 # Usage:
@@ -297,9 +297,9 @@ doctor_record_reconciler_d10() {
         fi
         ;;
       disabled|pending|unsupported) record pass "D10-${tool}" "${tool} ${state} (consent=${consent:-n/a})" ;;
-      suspended) record warn "D10-${tool}" "${tool} suspended — retry /silver:init or /silver:update" ;;
+      suspended) record warn "D10-${tool}" "${tool} suspended — retry /sb:init or /sb:update" ;;
       reload_required) record warn "D10-${tool}" "${tool} reload_required (activation=${activation})" ;;
-      repairable) record fail "D10-${tool}" "${tool} repairable — run /silver:doctor --fix"; any_fail=1 ;;
+      repairable) record fail "D10-${tool}" "${tool} repairable — run /sb:doctor --fix"; any_fail=1 ;;
       failed) record fail "D10-${tool}" "${tool} failed"; any_fail=1 ;;
       *) record warn "D10-${tool}" "${tool} state=${state}" ;;
     esac
@@ -327,7 +327,7 @@ doctor_record_reconciler_d10() {
       any_fail=1
     fi
   else
-    record warn D10-routes "cross_tool component missing from reconciler output — run reconcile or /silver:doctor --fix=host"
+    record warn D10-routes "cross_tool component missing from reconciler output — run reconcile or /sb:doctor --fix=host"
   fi
   local unknown_keys
   unknown_keys="$(printf '%s' "$RECONCILER_JSON" | jq -r '.unknown_keys[]? // empty' 2>/dev/null || true)"
@@ -579,7 +579,7 @@ run_doctor_checks() {
     if [[ -f "${PROJ_ROOT}/.cursor/rules/silver-orchestrator.mdc" ]]; then
       record pass D8 ".cursor/rules/silver-orchestrator.mdc present"
     else
-      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run silver:migrate or silver:init on Cursor)"
+      record fail D8 ".cursor/rules/silver-orchestrator.mdc missing (run sb:migrate or sb:init on Cursor)"
     fi
   else
     record pass D8 "orchestrator rule N/A (host=${runtime})"
@@ -738,7 +738,7 @@ run_doctor_checks() {
     record warn D17 "validate-host-agnostic-core.sh not found; skipped"
   fi
 
-  # D18 — Cursor marketplace gitPath (required for /silver command discovery after restart)
+  # D18 — Cursor marketplace gitPath (required for /sb command discovery after restart)
   if [[ "$runtime" == "cursor" ]]; then
     local registry_sha backend_sha gitpath_root market_cache_link backend_cache_path resolved_current
     registry_sha="$(resolve_registry_plugin_field "$reg" "silver-bullet@alo-labs" "gitCommitSha")"
@@ -752,7 +752,7 @@ run_doctor_checks() {
       market_cache_link="${HOME}/.cursor/plugins/cache/alo-labs-cursor/silver-bullet/${backend_sha}"
       backend_cache_path="${HOME}/.cursor/plugins/cache/alo-labs-agent-plugins/silver-bullet/${backend_sha}"
       if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${backend_sha}^{commit}" >/dev/null 2>&1; then
-        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/silver.md" ]]; then
+        if [[ -d "$backend_cache_path" && -f "${backend_cache_path}/.cache-complete" && -f "${backend_cache_path}/commands/sb.md" ]]; then
           record pass D18 "Cursor backend cache + gitPath ready (${backend_sha:0:8})"
         elif [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]]; then
           record fail D18 "missing alo-labs-agent-plugins materialized cache for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
@@ -760,13 +760,13 @@ run_doctor_checks() {
           record fail D18 "missing alo-labs-cursor cache symlink for ${backend_sha:0:8} — run: bash scripts/install-cursor.sh"
         fi
       else
-        record fail D18 "missing Cursor gitPath for ${backend_sha:0:8} — /silver commands fail to load — run: bash scripts/install-cursor.sh"
+        record fail D18 "missing Cursor gitPath for ${backend_sha:0:8} — /sb commands fail to load — run: bash scripts/install-cursor.sh"
       fi
     else
       record warn D18 "no gitCommitSha in installed_plugins.json — run: bash scripts/install-cursor.sh"
     fi
-    if [[ -f "${resolved_current}/commands/silver.md" ]]; then
-      record pass D19 "composer /silver:* command stubs present in plugin cache"
+    if [[ -f "${resolved_current}/commands/sb.md" ]]; then
+      record pass D19 "composer /sb:* command stubs present in plugin cache"
     else
       record fail D19 "commands/ missing from plugin cache — slash menu will be empty"
     fi

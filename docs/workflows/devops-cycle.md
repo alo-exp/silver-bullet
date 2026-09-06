@@ -20,25 +20,25 @@ instructions.
 
 | Intent | Command |
 |---|---|
-| Let SB classify the task | `/silver <request>` |
-| Infrastructure or deployment work | `/silver:devops` |
-| Blast-radius assessment | `/silver:blast-radius` |
+| Let SB classify the task | `/sb <request>` |
+| Infrastructure or deployment work | `/sb:devops` |
+| Blast-radius assessment | `/sb:blast-radius` |
 | DevOps quality gates | `/devops-quality-gates` |
-| Release infrastructure milestone | `/silver:release` |
+| Release infrastructure milestone | `/sb:release` |
 
 If a request touches Terraform, Pulumi, Kubernetes, Helm, Docker, CI/CD,
 cloud-provider resources, environments, secrets, monitoring, rollback, or
-deployment, route through `/silver:devops`.
+deployment, route through `/sb:devops`.
 
 ## Incident Fast Path
 
 For active incidents:
 
 1. Stabilize the system and capture the incident context.
-2. Run `/silver:blast-radius` before changing infrastructure.
+2. Run `/sb:blast-radius` before changing infrastructure.
 3. Apply the smallest safe change in the lowest affected environment.
-4. Run `/silver:verify`.
-5. Capture a follow-up task with `/silver:add` for the full review or permanent
+4. Run `/sb:verify`.
+5. Capture a follow-up task with `/sb:add` for the full review or permanent
    fix when the incident is over.
 
 Emergency work does not bypass verification, rollback evidence, or post-incident
@@ -48,12 +48,12 @@ capture.
 
 ### 0. Orientation
 
-Run `silver:scan` or `/silver:context` to understand current infrastructure,
+Run `sb:scan` or `/sb:context` to understand current infrastructure,
 state backends, environments, promotion order, and operational constraints.
 
 ### 1. Blast radius
 
-Run `/silver:blast-radius`.
+Run `/sb:blast-radius`.
 
 The output must identify affected systems, dependencies, failure scenarios,
 rollback strategy, change window risk, and approval needs. HIGH and CRITICAL
@@ -76,7 +76,7 @@ scalability, modularity, testability, observability, and change-safety.
 
 ### 4. Context
 
-Run `/silver:context`.
+Run `/sb:context`.
 
 Capture target environments, IaC toolchain, state backend, locking strategy,
 naming and tagging conventions, secrets boundaries, rollback plan, monitoring
@@ -84,7 +84,7 @@ expectations, and promotion order.
 
 ### 5. Plan
 
-Run `/silver:plan`.
+Run `/sb:plan`.
 
 The plan must include dependency-ordered waves, environment-specific inputs,
 policy checks, validation commands, drift detection, rollback evidence, and
@@ -92,7 +92,7 @@ manual approval points.
 
 ### 6. Execute
 
-Run `/silver:execute`.
+Run `/sb:execute`.
 
 TDD is not required for declarative infrastructure changes. Use IaC validation,
 plan review, policy-as-code, smoke checks, drift detection, rollback testing, and
@@ -105,9 +105,9 @@ passes.
 
 Run the SB review sequence:
 
-1. `/silver:review-request`
-2. `/silver:review`
-3. `/silver:review-triage`
+1. `/sb:review-request`
+2. `/sb:review`
+3. `/sb:review-triage`
 
 For infrastructure, review must inspect least privilege, network exposure,
 encryption, backups, tags/labels, idempotency, state handling, observability, and
@@ -115,7 +115,7 @@ plan output, not just source files.
 
 ### 8. Verify
 
-Run `/silver:verify`.
+Run `/sb:verify`.
 
 DevOps verification must include health checks, no unexpected drift, monitoring
 and alerting evidence, rollback procedure evidence, runbook freshness, and
@@ -123,7 +123,7 @@ environment-specific acceptance criteria.
 
 ### 9. Secure
 
-Run `/silver:secure`.
+Run `/sb:secure`.
 
 Confirm no credentials are committed, IAM boundaries are least-privilege, network
 exposure is intentional, secret references are safe, and defaults are secure.
@@ -135,14 +135,14 @@ verified. Never skip staging for non-emergency production changes.
 
 For each promoted environment:
 
-1. Run `/silver:execute` with environment-specific inputs.
-2. Run `/silver:verify` for health, drift, monitoring, and rollback evidence.
+1. Run `/sb:execute` with environment-specific inputs.
+2. Run `/sb:verify` for health, drift, monitoring, and rollback evidence.
 
 ### 11. CI and deploy readiness
 
 - Run `/verify-tests` when the repo has runnable verification commands.
 - Confirm CI is green before deployment or PR/release operations.
-- If CI is red, run `/silver:debug`, fix, re-run tests, and re-check CI.
+- If CI is red, run `/sb:debug`, fix, re-run tests, and re-check CI.
 - Run the SB deploy readiness path before production apply or public release.
 
 Deploy readiness covers rollback plan, monitoring, on-call availability, change
@@ -150,16 +150,16 @@ window, incident communication, and post-deploy observation.
 
 ### 12. Ship
 
-Run `/silver:branch-finish` on feature branches, then `/silver:ship`.
+Run `/sb:branch-finish` on feature branches, then `/sb:ship`.
 
 The PR body should include blast radius, environments touched, verification
 evidence, rollback evidence, monitoring evidence, and known follow-ups.
 
 ### 13. Release when requested
 
-Run `/silver:release` for milestone-level publishing. The release workflow owns
+Run `/sb:release` for milestone-level publishing. The release workflow owns
 release quality gates, audits, security hard gate, docs readiness, fresh tests,
-`silver:ship`, milestone archival, `/silver:create-release`, and post-release
+`sb:ship`, milestone archival, `/sb:create-release`, and post-release
 follow-up summary.
 
 Keep operational facts in `docs/knowledge/YYYY-MM.md` and reusable operational
@@ -168,11 +168,11 @@ what future maintainers need to know.
 
 ## Non-Skippable Gates
 
-- `/silver:blast-radius`
+- `/sb:blast-radius`
 - `/devops-quality-gates` before planning and before ship/release
-- `/silver:verify`
-- `/silver:review` and `/silver:review-triage`
-- `/silver:secure`
+- `/sb:verify`
+- `/sb:review` and `/sb:review-triage`
+- `/sb:secure`
 - `/verify-tests` before PR, deploy, or release when tests exist
 - SB deploy readiness before production deployment
 

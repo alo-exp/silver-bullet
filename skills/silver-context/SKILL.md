@@ -5,7 +5,7 @@ argument-hint: "<phase or change description> [--assumptions] [--auto] [--batch]
 version: 0.2.0
 ---
 
-# /silver:context - Phase Context
+# /sb:context - Phase Context
 
 SB-owned context capture records adaptive questioning, locked decisions,
 assumptions, constraints, and planner handoff.
@@ -102,7 +102,7 @@ Standard/`--auto`/`--batch`: Context is complete only when:
 
 - blockers are either resolved or explicitly labeled Blocking;
 - assumptions are visible to the planner;
-- the handoff is specific enough for `silver:plan` to create tasks and
+- the handoff is specific enough for `sb:plan` to create tasks and
   verification criteria.
 
 `--assumptions` mode: complete when ASSUMPTIONS.md is written and presented.

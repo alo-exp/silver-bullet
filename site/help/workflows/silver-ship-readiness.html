@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:ship-readiness — Ship Readiness — Silver Bullet Help</title>
-<meta name="description" content="/silver:ship-readiness documents WF-SHIP-READINESS — reusable ship gate chain: branch finish → completion audit → ship. Final delivery gate composed inside delivery workflows.">
+<title>/sb:ship-readiness — Ship Readiness — Silver Bullet Help</title>
+<meta name="description" content="/sb:ship-readiness documents WF-SHIP-READINESS — reusable ship gate chain: branch finish → completion audit → ship. Final delivery gate composed inside delivery workflows.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:ship-readiness</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:ship-readiness</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -105,7 +105,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:ship-readiness</h1>
+    <h1>/sb:ship-readiness</h1>
     <p>Catalog-backed reusable workflow component (<code>WF-SHIP-READINESS</code>) for the final delivery gate — branch hygiene, completion audit, and ship authorization. Composed at the end of delivery workflows after quality gates pass.</p>
   </div>
 </div>
@@ -122,7 +122,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#workflow-steps">Atomic flows</a></li>
         <li><a href="#enforcement">Hook enforcement</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-review-triad.html">/silver:review-triad</a></li>
+        <li><a href="./silver-review-triad.html">/sb:review-triad</a></li>
         <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
@@ -130,15 +130,15 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:ship-readiness</code> documents <code>WF-SHIP-READINESS</code>, a <strong>reusable workflow component</strong> in the v0.52.0 APO catalog. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
+      <p><code>/sb:ship-readiness</code> documents <code>WF-SHIP-READINESS</code>, a <strong>reusable workflow component</strong> in the v0.52.0 APO catalog. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
       <p>Catalog slug: <code>ship-readiness</code>. Type: <code>reusable_component</code>. Allowed dynamic operations: <code>loop</code> (re-audit after fixes before ship authorization).</p>
       <div class="code-block">BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
-      <p>Individual atomic flows are invokable via <code>/silver:branch-finish</code>, <code>/silver:completion-audit</code>, and <code>/silver:ship</code>, but the ship-readiness chain only runs as an ordered composition inside parent workflows.</p>
+      <p>Individual atomic flows are invokable via <code>/sb:branch-finish</code>, <code>/sb:completion-audit</code>, and <code>/sb:ship</code>, but the ship-readiness chain only runs as an ordered composition inside parent workflows.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Reusable component:</strong> Unlike top-level composer workflows such as <code>/silver:feature</code>, this chain is composed automatically after pre-ship <code>QUALITY_GATE</code> passes. Individual atomic flows remain invokable directly via their own routes.
+          <strong>Reusable component:</strong> Unlike top-level composer workflows such as <code>/sb:feature</code>, this chain is composed automatically after pre-ship <code>QUALITY_GATE</code> passes. Individual atomic flows remain invokable directly via their own routes.
         </div>
       </div>
 
@@ -148,9 +148,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Slug</th><th>Command</th><th>Work product</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BRANCH_FINISH</td><td><code>/silver:branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">Branch hygiene, commit readiness, and traceability evidence</td></tr>
-          <tr><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">COMPLETION_AUDIT</td><td><code>/silver:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">Required-skill audit proving catalog composition was followed</td></tr>
-          <tr><td><code>AF-SHIP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td><td><code>/silver:ship</code></td><td style="font-family:inherit;font-size:.875rem">Ship authorization and delivery handoff evidence</td></tr>
+          <tr><td><code>AF-BRANCH-FINISH</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">BRANCH_FINISH</td><td><code>/sb:branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">Branch hygiene, commit readiness, and traceability evidence</td></tr>
+          <tr><td><code>AF-COMPLETION-AUDIT</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">COMPLETION_AUDIT</td><td><code>/sb:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">Required-skill audit proving catalog composition was followed</td></tr>
+          <tr><td><code>AF-SHIP</code></td><td style="font-family:inherit;font-weight:600;color:var(--text-primary)">SHIP</td><td><code>/sb:ship</code></td><td style="font-family:inherit;font-size:.875rem">Ship authorization and delivery handoff evidence</td></tr>
         </tbody>
       </table>
 
@@ -163,10 +163,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
   → BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
       <p>Parent workflows that include this component:</p>
       <ul>
-        <li><a href="./silver-feature.html"><code>WF-SILVER-FEATURE</code></a> (<code>/silver:feature</code>)</li>
-        <li><a href="./silver-ui.html"><code>WF-SILVER-UI</code></a> (<code>/silver:ui</code>)</li>
-        <li><a href="./silver-bugfix.html"><code>WF-SILVER-BUGFIX</code></a> (<code>/silver:bugfix</code>)</li>
-        <li><a href="./silver-devops.html"><code>WF-SILVER-DEVOPS</code></a> (<code>/silver:devops</code>)</li>
+        <li><a href="./silver-feature.html"><code>WF-SILVER-FEATURE</code></a> (<code>/sb:feature</code>)</li>
+        <li><a href="./silver-ui.html"><code>WF-SILVER-UI</code></a> (<code>/sb:ui</code>)</li>
+        <li><a href="./silver-bugfix.html"><code>WF-SILVER-BUGFIX</code></a> (<code>/sb:bugfix</code>)</li>
+        <li><a href="./silver-devops.html"><code>WF-SILVER-DEVOPS</code></a> (<code>/sb:devops</code>)</li>
         <li><a href="./silver-release.html"><code>WF-SILVER-RELEASE</code></a> — continues to <code>AF-RELEASE</code> after ship</li>
       </ul>
       <p><a href="./silver-fast.html"><code>WF-SILVER-FAST</code></a> ends at <code>VERIFY</code> and does not include ship readiness — bounded changes use the lightweight fast path.</p>
@@ -176,13 +176,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-BRANCH-FINISH</code> — Branch hygiene</h3>
-      <p>Invoke <code>/silver:branch-finish</code>. Ensure commits are atomic, messages are traceable, branch is rebased or merged cleanly, and no WIP artifacts remain. Produces <code>ART-BRANCH_FINISH</code>.</p>
+      <p>Invoke <code>/sb:branch-finish</code>. Ensure commits are atomic, messages are traceable, branch is rebased or merged cleanly, and no WIP artifacts remain. Produces <code>ART-BRANCH_FINISH</code>.</p>
 
       <h3><code>AF-COMPLETION-AUDIT</code> — Prove workflow compliance</h3>
-      <p>Invoke <code>/silver:completion-audit</code>. Audit that all required skills from <code>.silver-bullet.json</code> were invoked and recorded in session state. This is the hook-enforced gate that blocks <code>git commit</code>/<code>git push</code> (planning skills) and <code>gh pr create</code>/<code>deploy</code> (full deploy list).</p>
+      <p>Invoke <code>/sb:completion-audit</code>. Audit that all required skills from <code>.silver-bullet.json</code> were invoked and recorded in session state. This is the hook-enforced gate that blocks <code>git commit</code>/<code>git push</code> (planning skills) and <code>gh pr create</code>/<code>deploy</code> (full deploy list).</p>
 
       <h3><code>AF-SHIP</code> — Authorize delivery</h3>
-      <p>Invoke <code>/silver:ship</code>. Confirm ship readiness: PR description completeness, traceability to spec/UAT, and delivery handoff evidence. Produces <code>ART-SHIP</code> before <code>gh pr create</code> or deploy commands proceed.</p>
+      <p>Invoke <code>/sb:ship</code>. Confirm ship readiness: PR description completeness, traceability to spec/UAT, and delivery handoff evidence. Produces <code>ART-SHIP</code> before <code>gh pr create</code> or deploy commands proceed.</p>
 
       <div class="divider"></div>
 
@@ -203,7 +203,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="page-nav-bottom">
         <a href="./silver-review-triad.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:review-triad</span>
+          <span class="pnb-title">/sb:review-triad</span>
         </a>
         <a href="./index.html">
           <span class="pnb-label">Next →</span>

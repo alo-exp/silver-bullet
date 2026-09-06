@@ -86,7 +86,7 @@ Keep this short. Cloud tasks start from a cold context and a 200-line
 From `docs/RUNTIME-COMPATIBILITY.md`, unchanged for cloud:
 
 1. `sb_initiated: true` and workflow docs must already exist in the repo
-   (run `/silver:init` **on the desktop** — it is not a cloud operation).
+   (run `/sb:init` **on the desktop** — it is not a cloud operation).
 2. Route via the composer skill rather than improvising a plan.
 3. **Read each `SKILL.md` explicitly and follow it in order.** In cloud there
    is no `PostToolUse/Skill` event, so nothing records state for you — the
@@ -150,7 +150,7 @@ a task is well-specified, long, parallelizable, and its output is a diff.
 
 ### Keep on the desktop
 
-- `/silver:init`, `/silver:migrate`, `/silver:doctor` — they write host state
+- `/sb:init`, `/sb:migrate`, `/sb:doctor` — they write host state
   that an ephemeral container throws away.
 - Anything touching MCP: Figma extraction, Drive/Docs ingestion, connector-
   backed research.
@@ -172,7 +172,7 @@ a task is well-specified, long, parallelizable, and its output is a diff.
 ### The handoff loop
 
 ```
-desktop:  /silver → clarify → research → plan → spec        (hooks enforce, MCP available)
+desktop:  /sb → clarify → research → plan → spec        (hooks enforce, MCP available)
           commit .planning/ artifacts + spec  ──────────────┐
                                                             ▼
 cloud:    task prompt = "implement .planning/specs/<id>.md, follow AGENTS.md"

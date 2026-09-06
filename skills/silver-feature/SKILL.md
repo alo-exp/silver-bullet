@@ -1,12 +1,12 @@
 ---
 name: silver-feature
 description: >
-  This skill should be used for full SB-owned feature development workflow: orient → clarify/decide → silver:quality-gates → SB context/plan/execute → review → verify → secure → ship
+  This skill should be used for full SB-owned feature development workflow: orient → clarify/decide → sb:quality-gates → SB context/plan/execute → review → verify → secure → ship
 argument-hint: "<feature description>"
 version: 0.2.0
 ---
 
-# /silver:feature — Feature Composition Spec
+# /sb:feature — Feature Composition Spec
 
 SB **queue builder** for feature development. The parent orchestrator seeds
 `orchestrator.json` and spawns Task workers per atomic flow — it does not execute
@@ -34,10 +34,10 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 | Signal | Insert / skip |
 |--------|----------------|
 | `.planning/` missing | Include FLOW 1 (BOOTSTRAP) |
-| Brownfield / unfamiliar codebase | FLOW 2 deeper `silver:scan` |
+| Brownfield / unfamiliar codebase | FLOW 2 deeper `sb:scan` |
 | Fuzzy intent or empty `$ARGUMENTS` | FLOW 3 light (not `--spec`) |
-| Architecture/stack/API choice | FLOW 4 (DECIDE) via `silver:deep-research` |
-| No `.planning/SPEC.md` | **FLOW 3 = `silver:clarify --spec` is mandatory**, then FLOW 5 compiler. Not fuzzy-only. Enforced by `workflow-chain-guard` + `orchestrator-state.sh`. |
+| Architecture/stack/API choice | FLOW 4 (DECIDE) via `sb:deep-research` |
+| No `.planning/SPEC.md` | **FLOW 3 = `sb:clarify --spec` is mandatory**, then FLOW 5 compiler. Not fuzzy-only. Enforced by `workflow-chain-guard` + `orchestrator-state.sh`. |
 | Existing SPEC.md | Skip FLOW 3 `--spec` and FLOW 5 |
 | Existing phase PLAN.md | Skip FLOW 6 for that phase |
 | UI files in scope | FLOW 7 + FLOW 9 |
@@ -45,20 +45,20 @@ Post-execution order after FLOW 8: **REVIEW → VERIFY → SECURE → VALIDATE �
 | Last phase of milestone | FLOW 18 (RELEASE) after user confirms |
 | User requests second opinion | Optional external review — feeds SB artifacts only |
 | `docs/doc-scheme.md` present | FLOW 17 doc-scheme checks before FLOW 14 |
-| Trivial (≤3 files, typo, config) | **STOP** — route to `silver:fast` |
+| Trivial (≤3 files, typo, config) | **STOP** — route to `sb:fast` |
 
 ## Enforcement queue (hooks / orchestrator)
 
 **Pre-execution** (blocks implementation edits until recorded):
 
-`silver:quality-gates` → `silver:context` → `silver:plan` → `silver:validate`
-(plus mandatory `silver:clarify --spec` then `silver:spec` when SPEC.md absent)
+`sb:quality-gates` → `sb:context` → `sb:plan` → `sb:validate`
+(plus mandatory `sb:clarify --spec` then `sb:spec` when SPEC.md absent)
 
 **Post-execution** (completion / deploy gates):
 
-`silver:execute` → review triad → `silver:verify` → `security` → `silver:secure`
-→ `silver:validate` → `silver:quality-gates` (pre-ship) → `silver:branch-finish`
-→ `silver:completion-audit` → `silver:ship`
+`sb:execute` → review triad → `sb:verify` → `security` → `sb:secure`
+→ `sb:validate` → `sb:quality-gates` (pre-ship) → `sb:branch-finish`
+→ `sb:completion-audit` → `sb:ship`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-feature` composer).
 
@@ -92,7 +92,7 @@ Inspect nodes before choosing skip/include flags. Hooks block implementation edi
 ### Per-phase loop
 
 For each remaining milestone phase: FLOW 6 → FLOW 8 → post-execution chain (above).
-Tick `ROADMAP.md` via FLOW 14 (`silver:ship`) — use planning-edit override only when
+Tick `ROADMAP.md` via FLOW 14 (`sb:ship`) — use planning-edit override only when
 ship did not tick the checkbox (see `references/supervision-loop.md`).
 
 ## Step-skip protocol
@@ -100,7 +100,7 @@ ship did not tick the checkbox (see `references/supervision-loop.md`).
 On skip request: explain (one sentence) → offer A/B/C → record permanent skips in
 `silver-bullet.md` §10b + `templates/silver-bullet.md.base` §9b.
 
-**Non-skippable:** `security`, `silver:quality-gates` pre-ship, `silver:verify`.
+**Non-skippable:** `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
 ## Workflow tracking (fallback)
 
@@ -110,5 +110,5 @@ and use FLOW names from the composition chain for `complete-flow` rows. Archive 
 
 ## Deferred work
 
-File skipped/descoped items via `/silver:add` during execution and in a final post-work
+File skipped/descoped items via `/sb:add` during execution and in a final post-work
 sweep — do not accumulate silently.

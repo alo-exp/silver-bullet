@@ -116,10 +116,10 @@ if should_check("claude"):
         if data.get("agents"):
             fail("claude", ".claude-plugin must not declare agents (skills path is sufficient; Claude schema rejects agents)")
         if "commands" in data:
-            fail("claude", ".claude-plugin must not declare commands (Codex-only surface)")
+            fail("claude", ".claude-plugin must not declare commands (Cursor command surface lives in plugins/silver-bullet/commands)")
 
     if (repo_root / "commands").is_dir():
-        fail("claude", "repo-root commands/ must not exist (Codex composer stubs live under plugins/silver-bullet/commands)")
+        fail("claude", "repo-root commands/ must not exist (Cursor composer stubs live under plugins/silver-bullet/commands)")
 
     # Claude plugin auto-discovers agents/<subdir>/ as silver-bullet:<subdir>: namespaces.
     forbidden_ns = (":codex:", ":cursor:", "silver-bullet:codex", "silver-bullet:cursor")
@@ -163,6 +163,8 @@ if should_check("codex"):
             fail("codex", ".codex-plugin must not declare skills (uses skill-source mirror)")
         if data.get("agents"):
             fail("codex", ".codex-plugin must not declare agents path")
+        if "commands" in data:
+            fail("codex", ".codex-plugin must not declare commands (Cursor owns command stubs; Codex uses native skill-source mirror)")
 
     pkg = repo_root / "plugins" / "silver-bullet"
     if pkg.is_dir():
@@ -292,13 +294,15 @@ elif host == "cursor":
     skills_root = cache_root / "skills"
     if skills_root.is_dir():
         for child in skills_root.iterdir():
-            if child.is_dir() and child.name != "silver-init":
+            # silver-init is an internal script-only compatibility directory;
+            # it has no SKILL.md and is not registered in Cursor's picker.
+            if child.is_dir() and child.name not in {"sb-init", "silver-init"}:
                 failures.append(
                     f"[cursor] cache bleed: skills/{child.name} registers slash-picker skills"
                 )
-    commands_init = cache_root / "commands" / "silver.md"
+    commands_init = cache_root / "commands" / "sb.md"
     if not commands_init.is_file():
-        failures.append("[cursor] cache missing commands/silver.md (slash menu empty)")
+        failures.append("[cursor] cache missing commands/sb.md (slash menu empty)")
     manifest = cache_root / ".cursor-plugin" / "plugin.json"
     if manifest.is_file():
         try:
@@ -350,6 +354,14 @@ elif host == "codex":
             failures.append(f"[codex] cache bleed: agents/{name}")
     if not (cache_root / "skill-source").is_dir() and not (cache_root / "hooks").is_dir():
         failures.append("[codex] cache missing skill-source/ and hooks/ — not a Codex package root")
+
+    migrated_commands = cache_root / ".codex-plugin" / "migrated-command-skills"
+    if migrated_commands.exists():
+        stale = sorted(path.name for path in migrated_commands.glob("source-command-*") if path.is_dir())
+        label = ", ".join(stale[:3]) if stale else migrated_commands.name
+        failures.append(
+            f"[codex] stale command-migration surface present: {label}; remove source-command-* artifacts"
+        )
 
 else:
     print(f"validate-host-install-surface: unknown host for cache check: {host}", file=sys.stderr)

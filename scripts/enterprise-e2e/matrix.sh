@@ -102,26 +102,26 @@ source "${SB_ROOT}/hooks/lib/e2e-matrix-routing.sh"
 source "${SB_ROOT}/scripts/lib/enterprise-e2e-row-pass-registry.sh"
 
 declare -a MATRIX_ROWS=(
-  '1|silver-router|/silver|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
-  '2|silver-deep-research|/silver:deep-research|Should we use Postgres or SQLite for orders?|docs/ADR-001-runtime.md'
-  '3|silver-feature|/silver:feature|Add currency field to orders API + tests.|.planning/workflows/feature-currency.md'
-  '4|silver-bugfix|/silver:bugfix|Health endpoint returns 500 when version is missing.|.planning/workflows/bugfix-health.md'
-  '5|silver-ui|/silver:ui|Show API version in the admin UI badge.|ui/src/App.jsx'
-  '6|silver-fast|/silver:fast|Fix README install instructions only.|.planning/workflows/fast-readme.md'
-  '7|silver-test|/silver:test|Add integration test for order creation.|.planning/workflows/test-orders-integration.md'
-  '8|silver-refactor|/silver:refactor|Extract order validation into domain/orders/.|.planning/workflows/refactor-order-validation.md'
-  '9|silver-benchmark|/silver:benchmark|Benchmark health endpoint p95 latency.|docs/benchmarks/health.md'
-  '10|silver-content|/silver:content|Write public API consumer docs.|docs/API.md'
-  '11|silver-devops|/silver:devops|Add environment variable validation in Terraform.|.planning/workflows/devops-terraform-validation.md'
-  '12|silver-deploy|/silver:deploy|Document staging deploy procedure.|docs/DEPLOY.md'
-  '13|silver-canary|/silver:canary|Add canary rollout notes for API.|docs/CANARY.md'
-  '14|silver-release|/silver:release|Ship v0.2.0 with changelog.|CHANGELOG.md'
-  '15|review-triad|/silver:review-triad|Review the currency field change before merge.|.planning/reviews/triad-currency.md'
-  '16|ship-readiness|/silver:ship-readiness|Is this branch ready to merge?|.planning/ship-readiness/checklist.md'
-  '17|silver-incident|/silver:incident|CI failed on main — run incident workflow.|docs/incidents/INC-001.md'
-  '18|silver-retro|/silver:retro|Retro after v0.2.0 ship.|docs/retro/RETRO-001.md'
-  '19|silver-forensics|/silver:forensics|Investigate why verify-tests failed last session.|docs/forensics/CI-001.md'
-  '20|process-maintenance|/silver:process-maintenance|Update workflow map after SB catalog bump.|docs/WORKFLOW_E2E_MATRIX.md'
+  '1|silver-router|/sb|I need to add order validation to the API — route me.|.planning/workflows/router-session.md'
+  '2|silver-deep-research|/sb:deep-research|Should we use Postgres or SQLite for orders?|docs/ADR-001-runtime.md'
+  '3|silver-feature|/sb:feature|Add currency field to orders API + tests.|.planning/workflows/feature-currency.md'
+  '4|silver-bugfix|/sb:bugfix|Health endpoint returns 500 when version is missing.|.planning/workflows/bugfix-health.md'
+  '5|silver-ui|/sb:ui|Show API version in the admin UI badge.|ui/src/App.jsx'
+  '6|silver-fast|/sb:fast|Fix README install instructions only.|.planning/workflows/fast-readme.md'
+  '7|silver-test|/sb:test|Add integration test for order creation.|.planning/workflows/test-orders-integration.md'
+  '8|silver-refactor|/sb:refactor|Extract order validation into domain/orders/.|.planning/workflows/refactor-order-validation.md'
+  '9|silver-benchmark|/sb:benchmark|Benchmark health endpoint p95 latency.|docs/benchmarks/health.md'
+  '10|silver-content|/sb:content|Write public API consumer docs.|docs/API.md'
+  '11|silver-devops|/sb:devops|Add environment variable validation in Terraform.|.planning/workflows/devops-terraform-validation.md'
+  '12|silver-deploy|/sb:deploy|Document staging deploy procedure.|docs/DEPLOY.md'
+  '13|silver-canary|/sb:canary|Add canary rollout notes for API.|docs/CANARY.md'
+  '14|silver-release|/sb:release|Ship v0.2.0 with changelog.|CHANGELOG.md'
+  '15|review-triad|/sb:review-triad|Review the currency field change before merge.|.planning/reviews/triad-currency.md'
+  '16|ship-readiness|/sb:ship-readiness|Is this branch ready to merge?|.planning/ship-readiness/checklist.md'
+  '17|silver-incident|/sb:incident|CI failed on main — run incident workflow.|docs/incidents/INC-001.md'
+  '18|silver-retro|/sb:retro|Retro after v0.2.0 ship.|docs/retro/RETRO-001.md'
+  '19|silver-forensics|/sb:forensics|Investigate why verify-tests failed last session.|docs/forensics/CI-001.md'
+  '20|process-maintenance|/sb:process-maintenance|Update workflow map after SB catalog bump.|docs/WORKFLOW_E2E_MATRIX.md'
 )
 
 PASS_ROWS=0
@@ -198,9 +198,9 @@ build_matrix_prompt() {
   local slug="${5:-}"
   route="$(enterprise_e2e_matrix_host_route "$route")"
   if [[ "$row_num" == "1" ]]; then
-    local workflow_route="/silver"
+    local workflow_route="/sb"
     if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
-      workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+      workflow_route="$(enterprise_e2e_matrix_host_route "/sb")"
     fi
     local prompt
     prompt="$(matrix_router_workflow_prompt "silver-router" "$prompt_card" "$evidence_path" "$workflow_route")"
@@ -208,11 +208,11 @@ build_matrix_prompt() {
     printf '%s' "$prompt"
     return 0
   fi
-  # Claude TUI: /silver:* subcommands are not registered — always use /silver + slug in prose.
+  # Claude TUI: /sb:* subcommands are not registered — always use /sb + slug in prose.
   # Codex TUI: use $silver (slash→dollar); subcommand tokens are not registered.
-  local workflow_route="/silver"
+  local workflow_route="/sb"
   if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
-    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+    workflow_route="$(enterprise_e2e_matrix_host_route "/sb")"
   fi
   local prompt
   prompt="$(matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route")"

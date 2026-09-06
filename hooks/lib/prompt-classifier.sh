@@ -13,7 +13,7 @@ sb_prompt_is_informational_query() {
   [[ -n "$prompt" ]] || return 1
   lower="$(printf '%s' "$prompt" | tr '[:upper:]' '[:lower:]')"
   case "$lower" in
-    /*|silver:*|*@silver*|*'`silver:'*) return 1 ;;
+    /*|sb:*|*@silver*|*'`sb:'*) return 1 ;;
   esac
   if printf '%s' "$lower" | grep -Eq '(remaining deliverable|left to do|what are the|what is the|list the|show me the|status of|how far|where are we|what did we|recap|what.s next|outstanding|pending gate)'; then
     return 0
@@ -50,7 +50,7 @@ sb_prompt_is_bare_work_request() {
 
   # Explicit commands/skill mentions are handled by the normal route recorder.
   case "$lower" in
-    /*|silver:*|*@silver*|*'`silver:'*) return 1 ;;
+    /*|sb:*|*@silver*|*'`sb:'*) return 1 ;;
   esac
 
   # Common conversational/status questions should not be forced through SB.

@@ -22,7 +22,7 @@ cat > "$WORKDIR/.planning/phases/01/DOMAIN-AUDIT.md" <<'EOF'
 
 | domain | scope | severity | confidence | evidence | finding | required_action | owner_workflow | blocking_status |
 |--------|-------|----------|------------|----------|---------|-----------------|----------------|-----------------|
-| code-health | src/app.ts | BLOCK | HIGH | src/app.ts:42 | null deref risk | fix now | silver:bugfix | blocks ship |
+| code-health | src/app.ts | BLOCK | HIGH | src/app.ts:42 | null deref risk | fix now | sb:bugfix | blocks ship |
 EOF
 
 assert_file_exists() {

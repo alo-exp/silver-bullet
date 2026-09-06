@@ -51,10 +51,10 @@ Round 1/2 learnings:
 
 ---
 
-## Interactive TUI only — `/silver` slash prompts
+## Interactive TUI only — `/sb` slash prompts
 
 - One Claude TUI session per matrix row; **CWD must stay** the test app.
-- Prompts use **`/silver` and `/silver:*` slash commands** (not legacy markdown skill links).
+- Prompts use **`/sb` and `/sb:*` slash commands** (not legacy markdown skill links).
 - Row 1 is routing-only; rows 21–22 run inside parent sessions (rows 3 and 4).
 - **`SB_E2E_MATRIX_DRY_RUN` must be unset** for live runs (evidence-only dry-run is for CI wiring checks, not live).
 
@@ -70,16 +70,16 @@ Quiet timeouts (from Round 2):
 
 ## Live host wrapper and model policy (pre-release)
 
-All live host tests must be initiated through the corresponding `/silver:agent-*` wrapper
+All live host tests must be initiated through the corresponding `/sb:agent-*` wrapper
 and use the fixed model mapping below:
 
 | Host | Required wrapper | Required model |
 |------|------------------|----------------|
-| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
-| Claude | `/silver:agent-claude` | **Haiku 4.5** |
-| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+| Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/sb:agent-claude` | **Haiku 4.5** |
+| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
-This Claude runbook therefore uses `/silver:agent-claude` with **Haiku 4.5** for live
+This Claude runbook therefore uses `/sb:agent-claude` with **Haiku 4.5** for live
 Claude rows. Raw host CLI invocations or silent model substitutions do not count as live
 wrapper evidence. For the current release cycle, defer Cursor live five-tool scenarios
 until the separate Cursor five-tool repair session reports completion and its changes are
@@ -174,14 +174,14 @@ Agents needing verbatim output can still prefix `RTK_DISABLED=1 git diff main...
 
 ---
 
-## Session 0 — `/silver:init`
+## Session 0 — `/sb:init`
 
 ```bash
 cd /Users/shafqat/projects/enterprise-grade-test-app
 claude
 ```
 
-In TUI: run **`/silver:init`**, opt in Graphify + agentmemory, `graphify update .`, **do not commit** SB init artifacts.
+In TUI: run **`/sb:init`**, opt in Graphify + agentmemory, `graphify update .`, **do not commit** SB init artifacts.
 
 ### Session 0 gate (before matrix rows)
 
@@ -226,7 +226,7 @@ Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .
 | **429 / Token Plan** | Wait **60s**, retry same row (`SB_E2E_MATRIX_QUOTA_RETRY_INTERVAL`) |
 | **Network blip** | Wait 120–300s; monitor auto-restarts batch |
 | **Provider change / bad state** | Kill claude children; **provider restart procedure**: stop batch → `install-claude.sh` → resume incomplete rows |
-| **SB hook bug** | SB repo: `/silver:add` label `enterprise-test-app` → fix → commit → **`bash scripts/install-claude.sh`** → re-run **failed row only** |
+| **SB hook bug** | SB repo: `/sb:add` label `enterprise-test-app` → fix → commit → **`bash scripts/install-claude.sh`** → re-run **failed row only** |
 | **Branch/worktree drift** | Confirm fixture branch; reset skill state; re-run session-start from test app |
 | **Pause for P1 fix** | Stop batch; fix SB; deploy via `install-claude.sh`; resume with `--resume` |
 | **Monitor LEDGER_MISMATCH** | Matrix log says 22/22 but ledger &lt; 22 Pass — update ledger or re-run failed rows; monitor stays alive |
@@ -239,7 +239,7 @@ Classify failures from log snippets: `bash scripts/lib/matrix-failure-class.sh .
 Minimum **2 consecutive clean rounds**:
 
 1. **22/22 PASS** in ledger (graphify + agentmemory refs)
-2. **`/silver:review-fix-ladder`** — 8 rungs, 2 consecutive clean verify passes each
+2. **`/sb:review-fix-ladder`** — 8 rungs, 2 consecutive clean verify passes each
 3. **`bash tests/run-all-tests.sh`** → 0 failures
 4. **`graphify update .`** in SB repo post-fixes
 5. No open MUST-FIX issues
@@ -259,11 +259,11 @@ SB plugin: install from /Users/shafqat/projects/silver-bullet/repo via bash scri
 
 Constraints:
 - API key auth only — do NOT login or logout
-- Use /silver and /silver:* slash commands only (interactive TUI)
+- Use /sb and /sb:* slash commands only (interactive TUI)
 - Opt in Graphify + agentmemory (enabled_by_user: true) if not already
 - Run graphify update . after init when Graphify enabled
 
-If Session 0 not done: run /silver:init now, then stop.
+If Session 0 not done: run /sb:init now, then stop.
 If resuming matrix: tell me the next row number from ROUND-1-LEDGER.md and paste that row's prompt card from docs/WORKFLOW_E2E_MATRIX.md.
 
 Operator monitors in parallel:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fresh autonomous vision test driver for /silver:agent-claude on current install_fp.
+# Fresh autonomous vision test driver for /sb:agent-claude on current install_fp.
 #
 # Usage:
 #   bash scripts/agent-claude-autonomous-test.sh preflight
@@ -190,7 +190,7 @@ doc = {
     "sb_git_sha": sb_sha,
     "status": status,
     "started_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "mechanism": "/silver:agent-claude",
+    "mechanism": "/sb:agent-claude",
     "harness": "scripts/agent-claude-autonomous-test.sh",
     "verdict": None,
     "blocking_outcomes": {},

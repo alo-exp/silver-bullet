@@ -22,7 +22,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 export SB_PRE_RELEASE_REPO_ROOT="$REPO_ROOT"
 INVOKE_ADAPTER="${REPO_ROOT}/scripts/silver-bullet"
-SMOKE_SKILL="silver:verify"
+SMOKE_SKILL="sb:verify"
 SMOKE_SKILL_CANONICAL="silver-verify"
 
 # shellcheck source=scripts/lib/pre-release-host-isolation.sh

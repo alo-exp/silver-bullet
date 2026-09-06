@@ -73,7 +73,7 @@ claude plugin install context-mode@context-mode
 
 **Global setup (no SB):** `bash scripts/optimize-rtk-context-mode.sh --host <host> --project-root "$(pwd)"` — see [docs/rtk-cm/README.md](rtk-cm/README.md).
 
-SB runs `/silver:init` scaffold steps to inject the instruction fragment into `silver-bullet.md` and `CLAUDE.md` (idempotent sentinel block from `templates/context-mode-hint.md.base`).
+SB runs `/sb:init` scaffold steps to inject the instruction fragment into `silver-bullet.md` and `CLAUDE.md` (idempotent sentinel block from `templates/context-mode-hint.md.base`).
 
 ## Instruction Fragment
 
@@ -104,13 +104,13 @@ Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at 
 
 **Hook ordering:** Place context-mode `preToolUse` **after** RTK `preToolUse` for Shell — RTK rewrites first; CM routes/denies WebFetch and large Read analysis.
 
-**Read deny:** Upstream context-mode still has no global Read deny. SB adds **`hooks/context-mode-read-deny.sh`** on the plugin PreToolUse manifest (`Read|Grep`) when `context_mode` is enforced. Threshold: `read_deny_bytes` (default 5120). Global `~/.cursor/hooks.json` is unchanged — merge via `/silver:init` docs if you want the same deny outside the plugin bridge.
+**Read deny:** Upstream context-mode still has no global Read deny. SB adds **`hooks/context-mode-read-deny.sh`** on the plugin PreToolUse manifest (`Read|Grep`) when `context_mode` is enforced. Threshold: `read_deny_bytes` (default 5120). Global `~/.cursor/hooks.json` is unchanged — merge via `/sb:init` docs if you want the same deny outside the plugin bridge.
 
 **Cursor `additional_context` bug:** Hooks accept `additional_context` but Cursor does not surface it to the model ([#155689](https://forum.cursor.com/t/native-posttooluse-hooks-accept-and-log-additional-context-successfully-but-the-injected-context-is-not-surfaced-to-the-model/155689)). Routing must use `.mdc` rules and MCP tool descriptions, not hook-injected context.
 
 **Duplicate hooks:** If both plugin and manual `hooks.json` entries exist, `context-mode doctor` warns — remove one source.
 
-**Project `hooks.json` trap:** Do not add `.cursor/hooks.json` inside a repo unless you intend team-shared hooks. Cursor (and `context-mode doctor` when cwd is that repo) prefers the workspace file over `~/.cursor/hooks.json`, which breaks global RTK/CM verification. Use global `~/.cursor/hooks.json` for personal wiring; SB plugin hooks merge there via `/silver:init`.
+**Project `hooks.json` trap:** Do not add `.cursor/hooks.json` inside a repo unless you intend team-shared hooks. Cursor (and `context-mode doctor` when cwd is that repo) prefers the workspace file over `~/.cursor/hooks.json`, which breaks global RTK/CM verification. Use global `~/.cursor/hooks.json` for personal wiring; SB plugin hooks merge there via `/sb:init`.
 
 Manual (requires restarted agent):
 
@@ -138,4 +138,4 @@ See `silver-bullet.md` §2g-ii.
 
 ## MCP reload receipts
 
-Context Mode MCP tools (`ctx_execute`, `ctx_search`, …) must be registered without LeanCTX `ctx_*` overlap. After installer or `/silver:doctor --fix` host repair, expect `reload_required` until Cursor reloads MCP and a fresh attestation confirms expected tools. Read-only `verify`/`plan` consume `--host-evidence-stdin` in memory only; receipt clearing requires authorized apply with all-success evidence.
+Context Mode MCP tools (`ctx_execute`, `ctx_search`, …) must be registered without LeanCTX `ctx_*` overlap. After installer or `/sb:doctor --fix` host repair, expect `reload_required` until Cursor reloads MCP and a fresh attestation confirms expected tools. Read-only `verify`/`plan` consume `--host-evidence-stdin` in memory only; receipt clearing requires authorized apply with all-success evidence.

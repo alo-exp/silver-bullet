@@ -335,12 +335,12 @@ verify-tests/
 ---
 name: silver-deep-research
 description: >
-  This skill should be used for SB-orchestrated research workflow: clarify → direct research by default, optional MultAI augmentation only when user-requested → clarify → hand off to silver:feature or silver:devops
+  This skill should be used for SB-orchestrated research workflow: clarify → direct research by default, optional MultAI augmentation only when user-requested → clarify → hand off to sb:feature or sb:devops
 argument-hint: "<research question or technology decision>"
 version: 0.2.0
 ---
 
-# /silver:deep-research — Research Composition Spec
+# /sb:deep-research — Research Composition Spec
 
 SB **queue builder** for tech decisions and spikes. Workers produce artifacts; parent
 does not write research inline.
@@ -351,7 +351,7 @@ does not write research inline.
 
 ```
 FLOW 3 (CLARIFY) → FLOW 4 (DECIDE) → FLOW 5 (SPECIFY) [when ingesting to SPEC]
-→ handoff to silver:feature | silver:devops | done
+→ handoff to sb:feature | sb:devops | done
 [0m
 [0m$ [0mrtk cat /Users/shafqat/projects/silver-bullet/repo/skills/find-skills/SKILL.md 2>&1 | head -10
 cat: /Users/shafqat/projects/silver-bullet/repo/skills/find-skills/SKILL.md: No such file or directory

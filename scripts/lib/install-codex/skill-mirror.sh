@@ -50,15 +50,20 @@ def is_user_invocable(frontmatter: dict[str, str]) -> bool:
 
 
 def is_silver_bullet_helper_picker_skill(dirname: str, skill_name: str) -> bool:
-    helper_picker_skills = {"devops-quality-gates", "silver-review-fix-ladder", "security", "verify-tests"}
+    helper_picker_skills = {
+        "devops-quality-gates",
+        "sb-review-fix-ladder",
+        "security",
+        "verify-tests",
+    }
     return dirname in helper_picker_skills or skill_name in helper_picker_skills
 
 
 def is_silver_bullet_native_mirror_route(dirname: str, skill_name: str) -> bool:
   return (
-      dirname == "silver"
-      or dirname in {"silver-feature", "silver:feature"}
-      or skill_name in {"silver", "silver:feature"}
+      dirname in {"sb"}
+      or dirname in {"sb-feature", "sb:feature"}
+      or skill_name in {"sb", "sb:feature"}
   )
 
 
@@ -66,22 +71,22 @@ def mirror_dirname(skill_dir_name: str, skill_name: str) -> str:
     """Codex TUI derives slash routes from ~/.codex/skills/<dirname>."""
     if is_silver_bullet_helper_picker_skill(skill_dir_name, skill_name):
         return skill_dir_name
-    if skill_name == "silver":
-        return "silver"
-    if skill_name.startswith("silver:"):
+    if skill_name == "sb":
+        return "sb"
+    if skill_name.startswith("sb:"):
         return skill_name
-    if skill_name.startswith("silver-"):
-        return "silver:" + skill_name.removeprefix("silver-")
+    if skill_name.startswith("sb-"):
+        return "sb:" + skill_name.removeprefix("sb-")
     return skill_dir_name
 
 
 def is_silver_bullet_picker_skill(dirname: str, skill_name: str) -> bool:
     return (
-        dirname == "silver"
-        or dirname.startswith("silver-")
-        or dirname.startswith("silver:")
-        or skill_name == "silver"
-        or skill_name.startswith("silver:")
+        dirname in {"sb"}
+        or dirname.startswith("sb-")
+        or dirname.startswith("sb:")
+        or skill_name in {"sb"}
+        or skill_name.startswith("sb:")
         or is_silver_bullet_helper_picker_skill(dirname, skill_name)
     )
 
@@ -157,15 +162,14 @@ import re
 import sys
 
 skills_root = pathlib.Path(sys.argv[1])
-name_re = re.compile(r'^(name:\s*)silver-([A-Za-z0-9_-]+)\s*$', re.MULTILINE)
+name_re = re.compile(r'^(name:\s*)sb-([A-Za-z0-9_-]+)\s*$', re.MULTILINE)
 
 for pattern in ("SILVER_SOURCE", "SILVER_SOURCE.md", "SILVER_SKILL.md", "SKILL.md"):
   for skill_md in skills_root.rglob(pattern):
     text = skill_md.read_text()
-    updated = name_re.sub(lambda m: f"{m.group(1)}silver:{m.group(2)}", text, count=1)
+    updated = name_re.sub(lambda m: f"{m.group(1)}sb:{m.group(2)}", text, count=1)
+    updated = re.sub(r'^(name:\s*)silver\s*$', r'\1sb', updated, count=1, flags=re.MULTILINE)
     if updated != text:
         skill_md.write_text(updated)
 PY
 }
-
-

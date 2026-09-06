@@ -5,7 +5,7 @@
 
 ### Scenario: Explicit Path Scope
 
-**Trigger:** "Run silver:review-fix-ladder on `scripts/review-fix-ladder.py`"
+**Trigger:** "Run sb:review-fix-ladder on `scripts/review-fix-ladder.py`"
 
 **Workflow:**
 1. Scope locks to the named file without prompting for repo-wide review
@@ -55,10 +55,10 @@
 
 **Workflow:**
 1. Run `python3 scripts/review-fix-ladder.py --decide-launch --model {model} --reasoning {reasoning}` before every launch — not once per family
-2. GPT rungs invoke `/silver:agent-codex` (`scripts/agent-codex/invoke.sh`) first; Claude/Opus rungs invoke `/silver:agent-claude` (`scripts/agent-claude/invoke.sh`) first
+2. GPT rungs invoke `/sb:agent-codex` (`scripts/agent-codex/invoke.sh`) first; Claude/Opus rungs invoke `/sb:agent-claude` (`scripts/agent-claude/invoke.sh`) first
 3. Quota exhaustion (`429`, `rate limit`, `token plan`, `out of quota`, `quota retries exhausted`, `usage cap`/`usage limit`, `billed-quota`) → log host+signal, `--mark-quota-fallback`, then Cursor `Task`
 4. Non-quota failure (missing CLI, HASH MISMATCH, network blip, brief bug, NOT CLEAN) → **no** Cursor fallback
-5. Grok and Composer default to `/silver:agent-cursor`. Gemini defaults to Gemini CLI (if the user did not name an agent), else Pi, else OpenCode, else Cursor. Other models default to Pi or OpenCode, or the agent the user named. User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Grok, Composer, GLM, Gemini, Kimi, OpenCode rungs skip the GPT/Claude subscription-first quota gate
+5. Grok and Composer default to `/sb:agent-cursor`. Gemini defaults to Gemini CLI (if the user did not name an agent), else Pi, else OpenCode, else Cursor. Other models default to Pi or OpenCode, or the agent the user named. User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Grok, Composer, GLM, Gemini, Kimi, OpenCode rungs skip the GPT/Claude subscription-first quota gate
 
 ### Scenario: Review-Triage-Fix Separation
 

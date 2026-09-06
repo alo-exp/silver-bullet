@@ -16,7 +16,7 @@ usage() {
 Usage: bash scripts/graphify-am-global-setup.sh --host HOST [--apply|--verify] [options]
 
 Global (user/machine-level) Graphify + agentmemory setup using synergy_max profile.
-Does NOT require Silver Bullet, /silver:init, .silver-bullet.json, or SB hooks.
+Does NOT require Silver Bullet, /sb:init, .silver-bullet.json, or SB hooks.
 
 Hosts: claude | codex | opencode | goose | hermes | all
 

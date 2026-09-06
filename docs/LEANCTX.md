@@ -100,7 +100,7 @@ Codex PreToolUse is **deny-only** — no `updatedInput` rewrite. When LeanCTX is
 
 ## Deep-Research Fetch Routing
 
-For `silver:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/deep-research/SKILL.md`.
+For `sb:deep-research`, use **search_cli first** when configured. LeanCTX fetch is for **non-research flows only** — avoids overlap with search_cli breadth providers. See `skills/deep-research/SKILL.md`.
 
 ## Verification
 
@@ -128,7 +128,7 @@ When the five-tool coordinator records `sb_stack_double_compression`, PreToolUse
 
 **Manual escape hatches:**
 
-1. `/silver:clear-stack-state` — documents and runs clear + optional agentmemory scaffold
+1. `/sb:clear-stack-state` — documents and runs clear + optional agentmemory scaffold
 2. `bash scripts/sb-doctor.sh --fix` — clears mutex (check **D20**) and scaffolds `.agentmemory/memory` when agentmemory is opted in
 3. Last resort: `rm -f "${SB_RUNTIME_STATE_DIR:-$HOME/.silver-bullet}/stack-compression-mutex"` (no audit trail)
 

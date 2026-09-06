@@ -5,18 +5,18 @@ argument-hint: "<phase or ship scope>"
 version: 0.1.0
 ---
 
-# /silver:ship - Phase Ship
+# /sb:ship - Phase Ship
 
 SB-owned phase shipping handles branch/PR readiness, CI status, deployment
 readiness, docs traceability, and handoff.
 
-This is phase-level ship, not milestone release. Use `silver:release` for
+This is phase-level ship, not milestone release. Use `sb:release` for
 versioned publication.
 
-**UAT scope:** `uat-gate.sh` runs only when `silver:release` is invoked — phase
-PRs via `silver:ship` do **not** require `.planning/UAT.md` even when
-`.planning/SPEC.md` has acceptance criteria. Run `/silver:release` (or invoke
-`silver:release` explicitly) when milestone-level acceptance testing is required
+**UAT scope:** `uat-gate.sh` runs only when `sb:release` is invoked — phase
+PRs via `sb:ship` do **not** require `.planning/UAT.md` even when
+`.planning/SPEC.md` has acceptance criteria. Run `/sb:release` (or invoke
+`sb:release` explicitly) when milestone-level acceptance testing is required
 before publication.
 
 ## Output
@@ -28,18 +28,18 @@ SUMMARY/VERIFICATION, or a PR description draft.
 
 1. Display `SILVER BULLET > SHIP`.
 2. Confirm required gates have passed:
-   - `silver:verify`;
-   - `silver:review`;
-   - `silver:secure`;
-   - `silver:validate` where the workflow requires it;
-   - `silver:domain-audit` where specialized packs were selected by
-     `silver:quality-gates`, review, verification, DevOps, or release scope;
+   - `sb:verify`;
+   - `sb:review`;
+   - `sb:secure`;
+   - `sb:validate` where the workflow requires it;
+   - `sb:domain-audit` where specialized packs were selected by
+     `sb:quality-gates`, review, verification, DevOps, or release scope;
    - `verify-tests` — **mandatory before any delivery**. `verify-tests` is in the
      `required_deploy` list, so the completion-audit deploy gate blocks
      `gh pr create` / `gh release create` / `deploy` until a fresh `verify-tests`
      run is recorded. Run it here even when the suite was run earlier in the phase,
      so the recorded freshness marker reflects the shipped tree.
-3. Run `silver:branch-finish` on non-main branches.
+3. Run `sb:branch-finish` on non-main branches.
 4. Check git status and separate unrelated user changes from ship scope.
 5. Prepare PR or merge notes with:
    - problem and solution summary;

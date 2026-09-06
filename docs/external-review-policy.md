@@ -5,10 +5,10 @@ coverage but never replace SB-owned artifacts or hook-backed gates.
 
 ## Hard Rules
 
-1. **`silver:review` owns `REVIEW.md`.** Every review pass produces or updates
+1. **`sb:review` owns `REVIEW.md`.** Every review pass produces or updates
    this artifact through the active runtime's SB-recognized skill channel.
 2. **External findings are supplemental.** They must be merged into `REVIEW.md`
-   and triaged by `silver:review-triage`. No parallel review artifact replaces
+   and triaged by `sb:review-triage`. No parallel review artifact replaces
    `REVIEW.md`.
 3. **Hooks and completion audit stay SB-native.** External reviewers do not
    satisfy `required_deploy` skill markers or completion-audit evidence by
@@ -18,18 +18,18 @@ coverage but never replace SB-owned artifacts or hook-backed gates.
 
 | Trigger | Recommended enrichment | Still required |
 |---------|------------------------|----------------|
-| High blast-radius change (auth, payments, data migration) | Second-opinion reviewer or `silver:benchmark` comparison | `silver:review`, `silver:secure` when applicable |
-| Public API or contract change | External API review helper if installed | `silver:domain-audit --pack api-contract` |
-| Security-sensitive surface | Authorized `silver:secure` live/static mode | normalized SECURITY findings |
-| Release blocker disagreement | Optional adversarial reviewer | `silver:review-triage` resolution in REVIEW.md |
-| Routine feature or bugfix | None by default | `silver:review` only |
+| High blast-radius change (auth, payments, data migration) | Second-opinion reviewer or `sb:benchmark` comparison | `sb:review`, `sb:secure` when applicable |
+| Public API or contract change | External API review helper if installed | `sb:domain-audit --pack api-contract` |
+| Security-sensitive surface | Authorized `sb:secure` live/static mode | normalized SECURITY findings |
+| Release blocker disagreement | Optional adversarial reviewer | `sb:review-triage` resolution in REVIEW.md |
+| Routine feature or bugfix | None by default | `sb:review` only |
 
 ## When Not To Use External Review
 
 - Trivial or typo-only sessions (trivial bypass applies)
 - Steps already covered by artifact reviewers (`review-spec`, `review-plan`, …)
 - As a substitute for missing tests, VERIFICATION.md, or UAT evidence
-- To bypass SB gate ordering or ship without `silver:review-triage` on BLOCK items
+- To bypass SB gate ordering or ship without `sb:review-triage` on BLOCK items
 
 ## Normalization
 

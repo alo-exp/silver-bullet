@@ -1364,7 +1364,7 @@ setup
 write_cfg
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 cat > "$TMPDIR_TEST/.planning/workflows/20260428T015523Z-K4F7QA-silver-feature.md" << 'WFEOF'
-**Composer:** /silver:feature
+**Composer:** /sb:feature
 **Status:** active
 ### Flow Log
 | # | Flow | Status |
@@ -1650,8 +1650,8 @@ echo "--- WF-PASS2-N: SB adapter skill invocation is not classified as deploy de
 setup
 ID="20260428T120000Z-abc123-silver-feature"
 _make_workflow "$ID" "| 1 | bootstrap | complete | - | now |"
-out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill silver-ship 'Ship marker; user did not request push/PR/deploy.'")
-assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill silver-ship is not delivery-gated" "$out"
+out=$(run_hook "PreToolUse" "${SB_RUNTIME_HOME_ROOT}/.tmp/marketplaces/alo-labs-codex/plugins/silver-bullet/scripts/silver-bullet invoke-skill sb:ship 'Ship marker; user did not request push/PR/deploy.'")
+assert_passes "WF-PASS2-N: plain silver-bullet invoke-skill sb:ship is not delivery-gated" "$out"
 teardown
 
 

@@ -15,7 +15,7 @@
 | E3 | Repo `config_version` 0.48.6 | **PASS** | `.silver-bullet.json` `config_version` and `version` both 0.48.6 |
 | E4 | Orchestrator rule present | **PASS** | `.cursor/rules/silver-orchestrator.mdc` installed |
 | E5 | Template parity | **PASS** | `test-silver-bullet-template-parity.sh` — 2 passed, 0 failed |
-| E6 | `silver:doctor` PASS | **PASS** | `sb-doctor.sh` — 16 PASS, 0 WARN, 0 FAIL |
+| E6 | `sb:doctor` PASS | **PASS** | `sb-doctor.sh` — 16 PASS, 0 WARN, 0 FAIL |
 | E7 | Hooks visibly active / smoke tests | **PASS** | `test-outcomes-check.sh` 10/10; `test-stop-check.sh` 37/37 |
 | E8 | Friction log started | **PASS** | `~/.cursor/.silver-bullet/sb-friction-log.md` |
 
@@ -103,9 +103,9 @@ Results: 2 passed, 0 failed
 
 ---
 
-## Phase 0.2 — silver:doctor
+## Phase 0.2 — sb:doctor
 
-`silver:doctor` did not exist; implemented per plan Section B:
+`sb:doctor` did not exist; implemented per plan Section B:
 
 - [`scripts/sb-doctor.sh`](scripts/sb-doctor.sh) — D1–D13 checks, exit 0 on zero FAIL
 - [`skills/silver-doctor/SKILL.md`](skills/silver-doctor/SKILL.md)
@@ -116,7 +116,7 @@ Friction fixed inline during doctor development (hook basename resolution, Curso
 ### E6 command output
 
 ```
-=== E6: silver:doctor ===
+=== E6: sb:doctor ===
 Silver Bullet doctor: 16 PASS, 0 WARN, 0 FAIL
 OVERALL: PASS
 ```

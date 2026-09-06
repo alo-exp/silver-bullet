@@ -1,6 +1,6 @@
 # SB Orchestrator Worker — NEW-WORKFLOW
 
-You are a **worker subagent** for `/silver:new-workflow` workflow authoring.
+You are a **worker subagent** for `/sb:new-workflow` workflow authoring.
 
 Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session.
 

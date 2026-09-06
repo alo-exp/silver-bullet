@@ -162,11 +162,11 @@ assert_noop_json() {
 echo "=== record-requested-skill.sh tests ==="
 
 setup
-out="$(run_hook 'Use the [$silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:scan` and then invoke `silver:plan`.')"
+out="$(run_hook 'Use the [$silver](path/to/skill) skill as the only entrypoint. Route this request to `sb:scan` and then invoke `sb:plan`.')"
 assert_noop_json "requested-skill hook returns valid no-op JSON after recording routes" "$out"
-assert_in_requested "silver:scan request recorded as requested, not completed" "silver-scan"
-assert_in_requested "silver:plan request recorded as requested, not completed" "silver-plan"
-assert_not_in_state "silver:scan is not recorded as completed" "silver-scan"
+assert_in_requested "sb:scan request recorded as requested, not completed" "silver-scan"
+assert_in_requested "sb:plan request recorded as requested, not completed" "silver-plan"
+assert_not_in_state "sb:scan is not recorded as completed" "silver-scan"
 assert_in_session_log "session ledger records the request block" "## Active Intent Ledger"
 assert_in_session_log "session ledger records silver-scan as active" "  - [ ] silver-scan"
 assert_in_session_log "session ledger records silver-plan as active" "  - [ ] silver-plan"
@@ -175,10 +175,10 @@ teardown
 setup
 rm -f "$TMPDIR_TEST/.silver-bullet.json"
 rm -f "$TMPDIR_TEST/silver-bullet.md"
-out="$(run_hook 'Use the [$silver](path/to/skill) skill as the only entrypoint. Route this request to `silver:init` and then stop.')"
+out="$(run_hook 'Use the [$silver](path/to/skill) skill as the only entrypoint. Route this request to `sb:init` and then stop.')"
 assert_noop_json "requested-skill hook returns valid no-op JSON before scaffold exists" "$out"
-assert_in_requested "silver:init request recorded before scaffold exists" "silver-init"
-assert_not_in_state "silver:init is not recorded as completed before scaffold exists" "silver-init"
+assert_in_requested "sb:init request recorded before scaffold exists" "silver-init"
+assert_not_in_state "sb:init is not recorded as completed before scaffold exists" "silver-init"
 teardown
 
 setup

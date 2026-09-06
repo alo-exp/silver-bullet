@@ -76,7 +76,7 @@
   },
   "route_map": {
     "codex": {
-      "prefix_slash_to_dollar": "/silver"
+      "prefix_slash_to_dollar": "/sb"
     },
     "cursor": {
       "strip_silver_prefix": true

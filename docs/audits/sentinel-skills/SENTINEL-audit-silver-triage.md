@@ -20,7 +20,7 @@ Focused SENTINEL pass on the generic review-finding triage skill added to
 ## Notes
 
 - Triage separation rules forbid reviewer self-triage; filing routes through PM adapter only.
-- Skill scope is classification + routing; no elevated shell or network surface beyond `/silver:add`.
+- Skill scope is classification + routing; no elevated shell or network surface beyond `/sb:add`.
 
 ## Deployment recommendation
 

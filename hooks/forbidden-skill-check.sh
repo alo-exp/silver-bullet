@@ -57,7 +57,7 @@ _SB_RETIRED_NS_HYPHEN=$(printf '%s%s-' gs d)
 
 # Block retired GSD namespace (removed from SB runtime).
 if [[ "$raw_skill" == ${_SB_RETIRED_NS_COLON}* ]] || [[ "$raw_skill" == ${_SB_RETIRED_NS_HYPHEN}* ]]; then
-  reason="FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /silver routing and SB-owned skills (silver:context, silver:plan, silver:execute, silver:verify, silver:ship). See silver-bullet.md."
+  reason="FORBIDDEN SKILL — ${raw_skill} is blocked. GSD lifecycle skills were removed from Silver Bullet. Use /sb routing and SB-owned skills (sb:context, sb:plan, sb:execute, sb:verify, sb:ship). See silver-bullet.md."
   json_reason=$(printf '%s' "$reason" | jq -Rs '.')
   printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
   exit 0
@@ -99,7 +99,7 @@ fi
 # ── Check against hardcoded forbidden list ────────────────────────────────────
 for entry in $FORBIDDEN_HARDCODED; do
   if [[ "$skill_name" == "$entry" ]]; then
-    reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /silver:execute for execution and /silver:plan for planning. See silver-bullet.md section 6."
+    reason="FORBIDDEN SKILL — ${skill_name} is blocked by Silver Bullet. Use /sb:execute for execution and /sb:plan for planning. See silver-bullet.md section 6."
     json_reason=$(printf '%s' "$reason" | jq -Rs '.')
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}' "$json_reason"
     exit 0

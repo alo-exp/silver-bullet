@@ -8,16 +8,16 @@ argument-hint: "<refactor scope> [--plan-only|--continue|--batch <file>]"
 version: 0.1.0
 ---
 
-# /silver:refactor - Behavior-Preserving Change Workflow
+# /sb:refactor - Behavior-Preserving Change Workflow
 
 SB-owned refactoring workflow for moving, splitting, renaming, simplifying, or
 untangling code while preserving external behavior.
 
 **Pre-execution** (blocks refactor edits until recorded):
 
-`silver:plan` → `silver:validate`
+`sb:plan` → `sb:validate`
 
-**Post-execution:** same canonical chain as `silver:feature` after `silver:execute`.
+**Post-execution:** same canonical chain as `sb:feature` after `sb:execute`.
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-refactor` composer).
 
@@ -37,15 +37,15 @@ The artifact must include:
 ## Process
 
 1. Display `SILVER BULLET > REFACTOR`.
-2. Evaluate scope with `silver:scan`, code reads, and dependency/call-chain
+2. Evaluate scope with `sb:scan`, code reads, and dependency/call-chain
    evidence where available.
 3. Establish the behavior contract: public APIs, user-visible behavior, data
    shape, CLI output, screenshots, or integration points that must not change.
 4. Run or define baseline tests before editing. If no baseline exists, route to
-   `silver:test --mode write` first for the affected behavior.
-5. Plan small slices through `silver:plan`; avoid broad cosmetic rewrites.
-6. Execute each slice through `silver:execute`, preserving behavior.
-7. Invoke or apply `silver:domain-audit` with `code-health`,
+   `sb:test --mode write` first for the affected behavior.
+5. Plan small slices through `sb:plan`; avoid broad cosmetic rewrites.
+6. Execute each slice through `sb:execute`, preserving behavior.
+7. Invoke or apply `sb:domain-audit` with `code-health`,
    `structure-maintainability`, `test-health`, and affected API/data/UI packs.
 8. Re-run the baseline after every meaningful slice and record evidence.
 9. Use `--continue` only when the existing `.planning/REFACTOR.md` contract

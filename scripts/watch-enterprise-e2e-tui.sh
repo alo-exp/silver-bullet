@@ -141,7 +141,7 @@ def emit(severity, category, message, excerpt=""):
 for m in re.finditer(r'SILVER BULLET\s*[►>]\s*ROUTING[^\n]*', text, re.I):
     line = m.group(0).strip()
     emit("info", "routing", line, line)
-    if re.search(r'routing.*silver:(?!feature|bugfix|fast|orchestrator)', line, re.I):
+    if re.search(r'routing.*sb:(?!feature|bugfix|fast|orchestrator)', line, re.I):
         emit("annoyance", "routing", f"unexpected route: {line}", line)
 
 # Wrong skill / not registered
@@ -203,7 +203,7 @@ for pat, cat, sev in [
         emit(sev, cat, m.group(0), ctx)
 
 # Dual-orchestrator confusion heuristic
-if re.search(r'orchestrator', text, re.I) and re.search(r'/silver:', text):
+if re.search(r'orchestrator', text, re.I) and re.search(r'/sb:', text):
     if re.search(r'(parent|inline|spawn|Task)', text, re.I):
         emit("annoyance", "orchestrator", "dual-orchestrator / slash-skill deliberation", text[-300:].replace('\n', ' ')[:200])
 

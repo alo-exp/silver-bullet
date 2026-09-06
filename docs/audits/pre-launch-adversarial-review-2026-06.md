@@ -24,13 +24,13 @@ Independent review of Silver Bullet against stated goals: autonomous orchestrati
 - **Invocation-based enforcement is explicitly acknowledged** — hooks record that skills were *called*, not that they produced correct outcomes. Vacuous invocation can satisfy delivery gates if empty artifacts exist (`silver-bullet.md` §1, SENTINEL audit).
 - **Documentation contradicts runtime behavior on Stop hook** — `silver-bullet.md` and `templates/silver-bullet.md.base` say Stop blocks `required_deploy`; `stop-check.sh` intentionally enforces only `required_planning` (v0.30.0 #85).
 - **Enforcement is host-tier dependent** — Tier 0–1 runtimes (`docs/RUNTIME-COMPATIBILITY.md`) get guidance only; many Cursor/SDK users will see SB skills without mechanical gates.
-- **`silver:fast` and direct Q&A routing bypass the composed workflow model** — Tier 1 edits skip workflow tracking; `/silver` Step 2 exempts Q&A/status from routing.
+- **`sb:fast` and direct Q&A routing bypass the composed workflow model** — Tier 1 edits skip workflow tracking; `/sb` Step 2 exempts Q&A/status from routing.
 
 **Important but not necessarily blocking**
 
 - Review triad ordering violations are **warnings at PR time**, not blocks (`completion-audit.sh`).
 - `silver-feature` can **skip VERIFY** when stale `VERIFICATION.md` shows passed (`skills/silver-feature/SKILL.md`).
-- `silver-bugfix` default chain omits pre-plan quality gates and `silver:context`; `workflow-chain-guard.sh` does not cover `silver-bugfix`.
+- `silver-bugfix` default chain omits pre-plan quality gates and `sb:context`; `workflow-chain-guard.sh` does not cover `silver-bugfix`.
 - `required_deploy` includes `silver-create-release` for every PR — semantically wrong for phase-level ship.
 - Internal `SDLC-Coverage-Roadmap.md` still lists unimplemented milestones; public `SDLC-MAP.md` claims "Full (14/14)".
 
@@ -69,16 +69,16 @@ The orchestrator **delegates all implementation to the host agent**. SB sequence
 
 | V-model stage | SB coverage | Enforcement | Gap vs IEEE 1012 / ISO 12207 |
 |---------------|-------------|-------------|------------------------------|
-| User needs / concept | `silver:clarify`, `silver:spec` | Soft (skill-only) | No validated stakeholder sign-off gate |
-| Requirements | SPEC.md, REQUIREMENTS.md, `silver:validate`, `review-*` | Artifact reviewers optional; spec-floor on commit | Requirements not blocked before all src edits |
-| Architectural design | `silver:context`, `silver:deep-research`, `silver:domain-audit` | Pre-plan quality gates (partial) | No formal ADR gate in required_deploy |
+| User needs / concept | `sb:clarify`, `sb:spec` | Soft (skill-only) | No validated stakeholder sign-off gate |
+| Requirements | SPEC.md, REQUIREMENTS.md, `sb:validate`, `review-*` | Artifact reviewers optional; spec-floor on commit | Requirements not blocked before all src edits |
+| Architectural design | `sb:context`, `sb:deep-research`, `sb:domain-audit` | Pre-plan quality gates (partial) | No formal ADR gate in required_deploy |
 | Detailed design | PLAN.md, UI-SPEC | `dev-cycle-check` Stage A/B | PLAN existence checked; content quality not mechanical |
-| Implementation | `silver:execute`, `tdd` | TDD in required_deploy; alias `silver-tdd`→`tdd` | TDD optional per plan; not proven at hook level |
+| Implementation | `sb:execute`, `tdd` | TDD in required_deploy; alias `silver-tdd`→`tdd` | TDD optional per plan; not proven at hook level |
 | Unit test | `verify-tests`, project test runners | Freshness marker at delivery | No coverage threshold; exit code only |
-| Integration test | `silver:test` e2e mode, domain `test-health` | Optional invocation | Not in required_deploy |
-| System test | `silver:verify`, VERIFICATION.md | Artifact + skill marker | Can be skipped in feature flow if stale pass |
+| Integration test | `sb:test` e2e mode, domain `test-health` | Optional invocation | Not in required_deploy |
+| System test | `sb:verify`, VERIFICATION.md | Artifact + skill marker | Can be skipped in feature flow if stale pass |
 | Acceptance (UAT) | UAT.md, `uat-gate.sh` on release | **Release only** — not phase PR | UAT not required for `gh pr create` |
-| Operation / maintenance | `silver:canary`, `silver:incident`, `silver:retro` | Skills exist; **not in required_deploy** | Post-deploy loop optional |
+| Operation / maintenance | `sb:canary`, `sb:incident`, `sb:retro` | Skills exist; **not in required_deploy** | Post-deploy loop optional |
 | Configuration mgmt | ROADMAP freshness, workflow tracker | Commit hooks | `planning-edit-override` escape hatch |
 
 `docs/internal/vfy-01-enforcement-design.md` explicitly defers **intermediate verification enforcement** — verification debt can accumulate until final delivery.
@@ -91,8 +91,8 @@ What exists instead:
 
 | Artifact | Scope | Hook-tied verification |
 |----------|-------|------------------------|
-| PLAN.md acceptance criteria | Per phase | Manual via `silver:verify` |
-| SPEC.md AC checklist | Per project | `silver:validate` pre-build |
+| PLAN.md acceptance criteria | Per phase | Manual via `sb:verify` |
+| SPEC.md AC checklist | Per project | `sb:validate` pre-build |
 | `docs/task-doc-checklist.json` | Per task, docs only | `stop-check` doc-scheme gate |
 | `.planning/workflows/<id>.md` flow log | Per composed workflow | `completion-audit` strict gate at delivery |
 | Session log Outcome section | Per session | Not gated |
@@ -101,7 +101,7 @@ What exists instead:
 
 ### Process enforcement effectiveness
 
-**Works when:** jq installed, tier-2 hooks active, user routes through `/silver:feature` (or similar), starts `workflows.sh`, invokes skills through recorded channels, and attempts `gh pr create`.
+**Works when:** jq installed, tier-2 hooks active, user routes through `/sb:feature` (or similar), starts `workflows.sh`, invokes skills through recorded channels, and attempts `gh pr create`.
 
 **Fails open when:** jq missing (all hooks), no `.silver-bullet.json`, empty state, trivial file present, branch state mismatch, HOOK-14 clean-tree/no-remote, read-only sessions, tier 0–1 hosts.
 
@@ -129,7 +129,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **C-03** | Stop hook docs lie | `silver-bullet.md` L67 / `templates/silver-bullet.md.base` L67 vs `stop-check.sh` L462–469 | Users trust wrong gate; declare "done" with only planning floor | Sync docs to two-tier model or restore full deploy check on Stop (with HOOK-14 carve-outs documented) |
 | **C-04** | jq missing disables all enforcement | `completion-audit.sh` L98–102, `stop-check.sh` L35–40 | Silent total bypass | Hard-fail install/bootstrap; `sb-bootstrap.sh` block init without jq |
 | **C-05** | Tier 0–1 hosts get no hooks | `docs/RUNTIME-COMPATIBILITY.md` L24–39 | Large user segment sees "SB installed" but no enforcement | Capability banner at session start; block ship claims when tier &lt; 2 |
-| **C-06** | `silver:fast` bypasses workflow tracker | `skills/silver-fast/SKILL.md` L19: "does NOT…create WORKFLOW.md"; Tier 1 direct edit L62–78 | Logic bugs shipped via "trivial" misclassification | Hook-enforce tier classification signals; require `workflows.sh start` for any src edit |
+| **C-06** | `sb:fast` bypasses workflow tracker | `skills/silver-fast/SKILL.md` L19: "does NOT…create WORKFLOW.md"; Tier 1 direct edit L62–78 | Logic bugs shipped via "trivial" misclassification | Hook-enforce tier classification signals; require `workflows.sh start` for any src edit |
 
 ### HIGH
 
@@ -139,9 +139,9 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **H-02** | Bugfix chain skips quality/context | `silver-bugfix/SKILL.md` L53: ORIENT→DEBUG→PLAN… no quality-gates; `workflow-chain-guard.sh` L98–114: no `silver-bugfix` case | Hotfix path undermines "always SW process" | Add bugfix to chain-guard with reduced but mandatory gates |
 | **H-03** | Review ordering warning-only at delivery | `completion-audit.sh` L963–972: ORDERING WARNING, proceed | Review triad theater (triage before review) | Upgrade to `emit_block` for ordering violations |
 | **H-04** | `silver-create-release` in every PR deploy list | `templates/silver-bullet.config.json.default` L35–37 | Phase PRs forced to invoke release skill or hook ignores | Split `required_deploy` vs `required_release` |
-| **H-05** | Q&A bypasses `/silver` router | `skills/silver/SKILL.md` L73–79 | Implementation disguised as questions | Narrow exceptions; route "explain how to fix X" through bugfix/feature |
+| **H-05** | Q&A bypasses `/sb` router | `skills/silver/SKILL.md` L73–79 | Implementation disguised as questions | Narrow exceptions; route "explain how to fix X" through bugfix/feature |
 | **H-06** | SDLC-MAP overclaims vs internal roadmap | `docs/SDLC-MAP.md` "Full 14/14" vs `docs/internal/SDLC-Coverage-Roadmap.md` GAP 1–2 still open | Marketing/expectation mismatch | Reconcile maps; mark observability/incident as "skill available, not required" |
-| **H-07** | UAT only gated on release | `uat-gate.sh` L34–36: only `silver-release` | Phase PRs ship without acceptance testing | Optional UAT gate on `silver:ship` when SPEC has AC |
+| **H-07** | UAT only gated on release | `uat-gate.sh` L34–36: only `silver-release` | Phase PRs ship without acceptance testing | Optional UAT gate on `sb:ship` when SPEC has AC |
 | **H-08** | Intermediate verification deferred | `docs/internal/vfy-01-enforcement-design.md` — design only | Multi-plan phases accumulate undetected failures | Implement plan-boundary verify per VFY-01 |
 
 ### MEDIUM
@@ -170,7 +170,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 
 ## Flow-by-Flow Sequencing Review
 
-### `/silver` (router)
+### `/sb` (router)
 
 | | |
 |--|--|
@@ -180,7 +180,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Missing** | Mandatory outcome checklist step; host capability check |
 | **Redundant** | Routing banner + `prompt-reminder` overlap |
 
-### `silver:fast`
+### `sb:fast`
 
 | | |
 |--|--|
@@ -188,9 +188,9 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Actual** | Tier 1: direct edit; Tier 2: subset of lifecycle; Tier 3: escalate |
 | **Issues** | No workflow tracker; Tier 2 omits review/secure/quality-gates; classification is self-judged |
 | **Missing** | Hook-based tier enforcement; post-delivery audit for fast-path PRs |
-| **Redundant** | Overlaps `/silver` trivial classification |
+| **Redundant** | Overlaps `/sb` trivial classification |
 
-### `silver:feature`
+### `sb:feature`
 
 | | |
 |--|--|
@@ -200,17 +200,17 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Missing** | Hook enforcement of post-execute chain before further edits |
 | **Redundant** | Dual quality-gate (FLOW 13 ×2) — intentional |
 
-### `silver:bugfix`
+### `sb:bugfix`
 
 | | |
 |--|--|
 | **Intended** | Triage → debug → plan → execute → review → secure → verify → ship |
 | **Actual** | Skips BOOTSTRAP, CLARIFY, QUALITY GATE (pre-plan), SPECIFY, VALIDATE |
-| **Issues** | Not in `workflow-chain-guard`; no `silver:quality-gates` in default chain |
+| **Issues** | Not in `workflow-chain-guard`; no `sb:quality-gates` in default chain |
 | **Missing** | Regression TDD gate in hook layer |
 | **Redundant** | ORIENT may duplicate DEBUG context |
 
-### `silver:devops`
+### `sb:devops`
 
 | | |
 |--|--|
@@ -220,7 +220,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Missing** | Automated IaC scan integration (terraform validate, etc.) in hooks |
 | **Redundant** | — |
 
-### `silver:ui`
+### `sb:ui`
 
 | | |
 |--|--|
@@ -230,7 +230,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Missing** | Accessibility gate in required_deploy for UI projects |
 | **Redundant** | — |
 
-### `silver:release`
+### `sb:release`
 
 | | |
 |--|--|
@@ -238,19 +238,19 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Actual** | Long skill-defined sequence; `uat-gate.sh` blocks milestone completion |
 | **Issues** | Many steps skill-dependent; cross-artifact review easy to nominal-pass |
 | **Missing** | Mechanical "all ROADMAP phases complete" hook beyond freshness |
-| **Redundant** | Overlaps `silver:ship` + `silver:create-release` |
+| **Redundant** | Overlaps `sb:ship` + `sb:create-release` |
 
-### `silver:deep-research` / `silver:clarify` / `silver:spec`
+### `sb:deep-research` / `sb:clarify` / `sb:spec`
 
 | | |
 |--|--|
 | **Intended** | Front-end of lifecycle; spec before feature |
-| **Actual** | `silver:spec` before `silver:feature` per conflict rules; clarify produces brief not machine checklist |
+| **Actual** | `sb:spec` before `sb:feature` per conflict rules; clarify produces brief not machine checklist |
 | **Issues** | `silver-deep-research` chain-guard only requires `silver-clarify` — weak |
-| **Missing** | Gate: no PLAN/execute until `silver:validate` BLOCK cleared |
+| **Missing** | Gate: no PLAN/execute until `sb:validate` BLOCK cleared |
 | **Redundant** | — |
 
-### V&V skills (`silver:verify`, `silver:validate`, `silver:quality-gates`, `verify-tests`)
+### V&V skills (`sb:verify`, `sb:validate`, `sb:quality-gates`, `verify-tests`)
 
 | | |
 |--|--|
@@ -258,27 +258,27 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 | **Actual** | validate=pre-build; verify=post-build; QG=design/adversarial; verify-tests=exit code + marker |
 | **Issues** | Quality-gates mode detection can hit "invalid state" edge case (`silver-quality-gates` L60) |
 | **Missing** | Coverage thresholds, mutation testing enforcement, SAST/SCA (per SDLC roadmap) |
-| **Redundant** | `silver:completion-audit` overlaps verify claims |
+| **Redundant** | `sb:completion-audit` overlaps verify claims |
 
 ---
 
 ## Adversarial Scenarios
 
-1. **"What's wrong with this function?"** — Router Q&A exception → agent explains and patches code without `/silver`, `dev-cycle-check`, or skills.
+1. **"What's wrong with this function?"** — Router Q&A exception → agent explains and patches code without `/sb`, `dev-cycle-check`, or skills.
 
 2. **Fresh install, no `jq`** — All hooks fail-open with warning; user completes feature and opens PR believing SB enforced process.
 
 3. **Cursor without merged `hooks.json`** — Tier 0 guidance; skills read but nothing blocks stop or PR.
 
-4. **`silver:fast` Tier 1 on 3-file logic change** — Misclassified typo fix → direct edit → minimal verification → PR via manual `gh pr create` after skill theater.
+4. **`sb:fast` Tier 1 on 3-file logic change** — Misclassified typo fix → direct edit → minimal verification → PR via manual `gh pr create` after skill theater.
 
 5. **Vacuous skill marathon** — Invoke all `required_deploy` skills; touch empty `REVIEW.md`, `VERIFICATION.md` → artifact-exists checks pass (content not validated).
 
-6. **Stale `VERIFICATION.md`** — Re-run `silver:feature` on new milestone; context scan skips VERIFY; ship with outdated verification.
+6. **Stale `VERIFICATION.md`** — Re-run `sb:feature` on new milestone; context scan skips VERIFY; ship with outdated verification.
 
 7. **Review triad out of order** — `review-triage` → `review` → `review-request`; delivery gets WARNING only (`completion-audit.sh` L963).
 
-8. **Start `silver:feature`, never `workflows.sh start`** — Work proceeds until PR; strict workflow gate blocks OR user omits `SB_WORKFLOW_ID` and gets confusing block.
+8. **Start `sb:feature`, never `workflows.sh start`** — Work proceeds until PR; strict workflow gate blocks OR user omits `SB_WORKFLOW_ID` and gets confusing block.
 
 9. **Branch switch without SessionStart** — `stop-check` fail-open on branch mismatch (L457–459); stale skills from other branch.
 
@@ -286,7 +286,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 
 11. **Research task writes code** — `workflow-chain-guard` for `silver-deep-research` only needs `silver-clarify` marker → implementation edits allowed after clarify only.
 
-12. **Phase PR without UAT** — `uat-gate` only on `silver:release`; `gh pr create` allowed without `.planning/UAT.md`.
+12. **Phase PR without UAT** — `uat-gate` only on `sb:release`; `gh pr create` allowed without `.planning/UAT.md`.
 
 ---
 
@@ -294,7 +294,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 
 ### Score: **5 / 10**
 
-**Rationale:** SB is one of the most thorough agentic workflow frameworks reviewed — rich flow taxonomy, layered hooks, artifact model, and honest internal gap docs. It is **not** yet the autonomous "every prompt → outcome checklist → verified completion" orchestrator described in the mission. It is a **hook-assisted skill playbook** that works well for disciplined teams on tier-2 hosts running formal `silver:feature` / `silver:release` cycles.
+**Rationale:** SB is one of the most thorough agentic workflow frameworks reviewed — rich flow taxonomy, layered hooks, artifact model, and honest internal gap docs. It is **not** yet the autonomous "every prompt → outcome checklist → verified completion" orchestrator described in the mission. It is a **hook-assisted skill playbook** that works well for disciplined teams on tier-2 hosts running formal `sb:feature` / `sb:release` cycles.
 
 ### Must fix before wider audience
 
@@ -302,7 +302,7 @@ Historical pre-v0.48 assessment: the old 18 FLOW aliases were treated as concept
 2. **Close invocation vs outcome gap** — artifact schema validation, substantive content rules, evidence commands in `docs/evidence-schema.md` enforced at hooks.
 3. **Fix documentation drift** — Stop hook, trivial session policy, SDLC-MAP vs internal gaps (single source of truth).
 4. **Host capability honesty** — detect tier; degrade features visibly; don't imply enforcement when hooks aren't active.
-5. **Seal bypass paths** — `silver:fast` Tier 1/2, bugfix missing gates, stale VERIFY skip, review ordering at delivery.
+5. **Seal bypass paths** — `sb:fast` Tier 1/2, bugfix missing gates, stale VERIFY skip, review ordering at delivery.
 6. **Split deploy vs release required skills** — `silver-create-release` should not gate every PR.
 7. **Complete VFY-01 or document verification debt** — intermediate plan boundaries for multi-plan phases.
 
@@ -380,7 +380,7 @@ Current model inverts control: router advises, composer skills narrate steps, ag
 
 **Before:** `session-start` already exits early without `.silver-bullet.json` + `silver-bullet.md`.
 
-**After:** Insufficient — any user can run `silver:init` on any repo. Need explicit `sb_initiated` marker and refuse enforcement in manually scaffolded or imported configs.
+**After:** Insufficient — any user can run `sb:init` on any repo. Need explicit `sb_initiated` marker and refuse enforcement in manually scaffolded or imported configs.
 
 #### SessionStart prerequisites
 

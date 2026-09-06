@@ -41,7 +41,7 @@ The enterprise E2E program has delivered real value across three rounds:
 - Preflight, ladder (8/8), and `run-all-tests` (4695/0) passed **before** matrix completion.
 - Matrix stalled: row 1 blocked on API 429 + Bypass Permissions expect fragility (ANSI `[3G`, `[5G2.`).
 - Monitor reported **COMPLETE 22/22** while ledger showed **8 PASS, 4 FAIL, 10 unclear** — **ledger drift is a P0 defect in the measurement system itself**.
-- Session 0 completed programmatically (tools opted in via `.silver-bullet.json`); TUI `/silver:init` path still a manual gap for “first hour” claims.
+- Session 0 completed programmatically (tools opted in via `.silver-bullet.json`); TUI `/sb:init` path still a manual gap for “first hour” claims.
 
 ### Gap: “matrix 22/22” vs “world-class reliability”
 
@@ -75,7 +75,7 @@ The enterprise E2E program has delivered real value across three rounds:
                              │ SB_ENTERPRISE_E2E_LIVE=1
 ┌────────────────────────────▼────────────────────────────────────┐
 │  Layer 2: Review-fix-ladder (8 rungs × 2 verify)                │
-│  /silver:review-fix-ladder in SB repo                           │
+│  /sb:review-fix-ladder in SB repo                           │
 └────────────────────────────┬────────────────────────────────────┘
                              │
 ┌────────────────────────────▼────────────────────────────────────┐
@@ -105,7 +105,7 @@ The enterprise E2E program has delivered real value across three rounds:
 
 | Row class | Count | Notes |
 |-----------|-------|-------|
-| Routing | 1 | Row 1 — `/silver` only; highest harness fragility |
+| Routing | 1 | Row 1 — `/sb` only; highest harness fragility |
 | Standalone workflows | 19 | Rows 2–20 |
 | Internal (parent-triggered) | 2 | Rows 21–22 inside rows 3 and 4 |
 
@@ -133,7 +133,7 @@ The enterprise E2E program has delivered real value across three rounds:
 2. **Harness > product** — Round 3 row 1 failures were expect/ANSI/disclaimer, not router logic.
 3. **Evidence existence ≠ evidence validity** — file at path does not prove gates actually blocked/allowed correctly.
 4. **Monitor ≠ ledger** — completion signal can diverge from human-auditable truth.
-5. **Session 0 manual gap** — programmatic tool opt-in bypasses real `/silver:init` UX.
+5. **Session 0 manual gap** — programmatic tool opt-in bypasses real `/sb:init` UX.
 6. **No claims traceability** — homepage not in CI gate.
 7. **Environmental noise** — 429, proxy, provider changes consume days; misdiagnosed as SB bugs.
 8. **Single fixture** — one Node API + UI stub; DevOps blast-radius claims under-tested.
@@ -170,8 +170,8 @@ The enterprise E2E program has delivered real value across three rounds:
 | PAIN 05: Infra without blast radius | `#problem` | Row 11 devops | Fixture Terraform is stub | Expand fixture or blast-radius gate unit + devops row criteria |
 | PAIN 06: Frontier spend / cheaper models blind | `#problem` | RTK/Graphify preflight | No cost A/B | Token budget fixture runs |
 | PAIN 07: Knowledge evaporates | `#problem` | agentmemory opt-in; row 2 research ADR | No cross-session recall test | Two-session test: session 2 retrieves ADR via Graphify/agentmemory |
-| PAIN 08: Security after merge | `#problem` | `silver:secure` in ladder scope | No live security gate row | Row: `silver:secure` produces BLOCK finding on injected vuln |
-| PAIN 09: Backlog graveyard | `#problem` | `/silver:add` scripts tested | No matrix row | Add row or sub-criterion in feature row |
+| PAIN 08: Security after merge | `#problem` | `sb:secure` in ladder scope | No live security gate row | Row: `sb:secure` produces BLOCK finding on injected vuln |
+| PAIN 09: Backlog graveyard | `#problem` | `/sb:add` scripts tested | No matrix row | Add row or sub-criterion in feature row |
 
 ### Cost of inaction stats
 
@@ -189,7 +189,7 @@ The enterprise E2E program has delivered real value across three rounds:
 | 27 atomic flows, 22 workflows, 85 V-loops | `#mechanism`, `#proof`, meta description | `apo-catalog.json` contract; structural suite | Count drift possible | CI: `scripts/validate-apo-catalog.sh` vs site constants |
 | Twelve hook layers — enforcing, not decorative | `#mechanism` | Per-hook test files; hook-delivery preflight 3/3 | Not all 12 in one live session | `sb-diagnostics.sh` tier report in preflight artifact |
 | Two-tier delivery discipline | `#mechanism` | `dev-cycle-check`, `completion-audit` tests | Live fast vs feature not compared | Rows 6 vs 3: fast touches only README; feature requires full chain |
-| Dynamic `/silver` composition | `#mechanism` | Row 1 | Harness fragility | PTY contract tests for row 1 (§6 P0) |
+| Dynamic `/sb` composition | `#mechanism` | Row 1 | Harness fragility | PTY contract tests for row 1 (§6 P0) |
 | V-loop BLOCK/WARN/INFO; validate-evidence-findings | `#mechanism` | Evidence schema tests | Live validator not in matrix | Ship-readiness row asserts findings file |
 | Spec-to-release traceability | `#mechanism` | Hook tests | Weak live proof | New matrix sub-check or row 15 extension |
 | Graphify + agentmemory + RTK + Context Mode | `#code-intelligence` | Preflight when opted in | Opt-in; not validated for retrieval quality | Code-intel smoke: `graphify query` returns nodes; agentmemory health |
@@ -264,7 +264,7 @@ The enterprise E2E program has delivered real value across three rounds:
 ### 4.6 Session 0 manual gap
 
 - Round 3: programmatic `recommended_tools.*.enabled_by_user` + `graphify update .`
-- Skips real `/silver:init` TUI flow tested by “first hour” claims.
+- Skips real `/sb:init` TUI flow tested by “first hour” claims.
 - Round 1: `--print` path lacks Skill tool — init partial.
 
 ### 4.7 Graphify overwrite refused
@@ -399,7 +399,7 @@ Existing tests cover many; **live matrix should include at least one adversarial
 | P1-2 | Simulated workflow runner | E2E | 5 workflows run via `claude --print` + skill injection for gate checks |
 | P1-3 | Tri-host 5-row smoke | E2E | Codex + Cursor smoke in opt-in nightly |
 | P1-4 | Ladder model-lock enforcement | Ladder | Round fails if &gt;2 rungs substitute models without waiver |
-| P1-5 | Website claim checker skill | Agent | `/silver:claims-audit` or skill in repo |
+| P1-5 | Website claim checker skill | Agent | `/sb:claims-audit` or skill in repo |
 
 ### P2 — World-class reliability
 
@@ -420,7 +420,7 @@ Existing tests cover many; **live matrix should include at least one adversarial
 **Current gate** (from [ENTERPRISE-E2E-LIVE-TEST.md](../ENTERPRISE-E2E-LIVE-TEST.md)):
 
 1. 22/22 PASS in ledger (graphify + agentmemory refs)
-2. `/silver:review-fix-ladder` — 8 rungs, 2× clean verify each
+2. `/sb:review-fix-ladder` — 8 rungs, 2× clean verify each
 3. `bash tests/run-all-tests.sh` → 0 failures
 4. `graphify update .` in SB repo
 5. No open MUST-FIX
@@ -547,7 +547,7 @@ Add **Round confidence** footer: `RCS: 87/100`, `ledger_monitor_agree: yes/no`, 
 
 | # | Homepage promise | Test ID | Verification method |
 |---|------------------|---------|---------------------|
-| 1 | `/silver` composes smallest safe chain | `E2E-ROW-01` | Live matrix row 1: route invoked; `router-session.md`; skill state has router |
+| 1 | `/sb` composes smallest safe chain | `E2E-ROW-01` | Live matrix row 1: route invoked; `router-session.md`; skill state has router |
 | 2 | 22 workflows pre-composed | `CONTRACT-APO-022` | `apo-catalog.json` WF count = 22; site constant check |
 | 3 | Twelve hook layers enforce | `HOOK-LAYERS-012` | `run-all-tests` hook suite + `hook-delivery-preflight` 3/3 + diagnostics tier |
 | 4 | Blocks PR without evidence | `E2E-SHIP-016` | Row 16 ship-readiness; completion-audit e2e-live scenario |
@@ -574,7 +574,7 @@ Add **Round confidence** footer: `RCS: 87/100`, `ledger_monitor_agree: yes/no`, 
 | **RCS** | Release Confidence Score (proposed) |
 | **Structural suite** | Non-interactive enterprise wiring tests |
 | **failure_class** | harness \| product \| environmental |
-| **Session 0** | `/silver:init` bootstrap — not in 22 rows |
+| **Session 0** | `/sb:init` bootstrap — not in 22 rows |
 
 ---
 

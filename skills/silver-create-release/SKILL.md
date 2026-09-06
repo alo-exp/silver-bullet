@@ -4,10 +4,10 @@ description: This skill should be used to generate structured release notes from
 version: 0.1.0
 ---
 
-# /silver:create-release — Release Notes & GitHub Release
+# /sb:create-release — Release Notes & GitHub Release
 
 Use this skill after SB release readiness has completed. Phase-level shipping
-belongs to `silver:ship`; milestone archival belongs to `silver:release`; this
+belongs to `sb:ship`; milestone archival belongs to `sb:release`; this
 skill owns only the final public release artifact: release notes, optional
 CHANGELOG/README updates, tag, and GitHub Release.
 
@@ -81,7 +81,7 @@ Before determining version, verify the working tree is releasable:
 
 ## Step 2 — Determine New Version
 
-If the user provided a version argument (e.g., `/silver:create-release v0.4.0`), use it.
+If the user provided a version argument (e.g., `/sb:create-release v0.4.0`), use it.
 
 Otherwise, suggest a version based on commits:
 - If any commit message starts with `feat!:` or contains `BREAKING CHANGE` → bump major

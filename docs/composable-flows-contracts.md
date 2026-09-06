@@ -35,19 +35,19 @@ Legacy FLOW 1-18 labels are migration aliases only; canonical execution uses AF-
 | FLOW 17 | DOCUMENT | `AF-DOCUMENT` |
 | FLOW 18 | RELEASE | `AF-RELEASE` |
 
-Ship readiness composes `silver:branch-finish` before `silver:completion-audit` before `silver:ship`.
+Ship readiness composes `sb:branch-finish` before `sb:completion-audit` before `sb:ship`.
 Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and `RELEASE-MILESTONE-AUDIT` for FLOW 18 release readiness.
 
 ## Post-execution sequencing
 
-Flow numbers are stable identifiers — not always runtime order. For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the mandatory post-execute order is:
+Flow numbers are stable identifiers — not always runtime order. For `sb:feature`, `sb:ui`, `sb:devops`, and `sb:bugfix`, the mandatory post-execute order is:
 
-1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected
-2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)
-3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
-4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
+1. FLOW 9 (UI QUALITY) — always for `sb:ui`; for `sb:feature` only when UI scope is detected
+2. FLOW 10 (REVIEW triad: `sb:review-request` → `sb:review` → `sb:review-triage`)
+3. FLOW 12 (VERIFY: `sb:verify` + `verify-tests`)
+4. FLOW 11 (SECURE: `security` + `sb:secure`, with `sb:validate` as needed)
 5. FLOW 13 (QUALITY GATE, pre-ship)
-6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)
+6. FLOW 14 (SHIP: `sb:branch-finish` → `sb:completion-audit` → `sb:ship`)
 
 ## Atomic Flow Catalog
 

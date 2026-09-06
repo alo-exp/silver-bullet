@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # Enterprise E2E matrix row 1 (routing-only) — marker + Stop-hook coordination.
-# Row 1 seeds an orchestrator feature queue via /silver; the harness verifies routing
+# Row 1 seeds an orchestrator feature queue via /sb; the harness verifies routing
 # state/output, not full queue drain. The marker exempts Stop from parent-orchestrator block.
 
 sb_e2e_matrix_routing_row_marker_file() {

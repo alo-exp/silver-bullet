@@ -25,7 +25,7 @@ apt install jq     # Linux
 Then initialize your project:
 
 ```text
-/silver:init
+/sb:init
 ```
 
 No GSD, Superpowers, or Anthropic knowledge-work plugin install is required for
@@ -39,14 +39,14 @@ All current SB lifecycle skills are available without GSD:
 
 | Area | SB-owned skills |
 |------|-----------------|
-| Routing and setup | `/silver`, `/silver:init`, `/silver:context` |
-| Clarification and specs | `/silver:clarify`, `/silver:spec`, `/silver:ingest`, `/silver:validate` |
-| Planning and execution | `/silver:plan`, `/silver:execute`, `/silver:feature`, `/silver:bugfix`, `/silver:ui`, `/silver:fast` |
-| Quality and security | `/silver-quality-gates`, `/security`, `/silver:secure`, `/silver:verify`, `/verify-tests` |
-| Review discipline | `/silver:review-request`, `/silver:review`, `/silver:review-triage`, `/silver:completion-audit` |
-| Shipping and release | `/silver:branch-finish`, `/silver:ship`, `/silver:release`, `/silver:create-release` |
-| Docs and continuity | `/silver:ensure-docs`, `/silver:add`, `/silver:remove`, `/silver:rem`, `/silver:scan`, `/silver:handoff`, `/silver:forensics` |
-| DevOps governance | `/silver:blast-radius`, `/devops-quality-gates`, `/silver:devops` |
+| Routing and setup | `/sb`, `/sb:init`, `/sb:context` |
+| Clarification and specs | `/sb:clarify`, `/sb:spec`, `/sb:ingest`, `/sb:validate` |
+| Planning and execution | `/sb:plan`, `/sb:execute`, `/sb:feature`, `/sb:bugfix`, `/sb:ui`, `/sb:fast` |
+| Quality and security | `/silver-quality-gates`, `/security`, `/sb:secure`, `/sb:verify`, `/verify-tests` |
+| Review discipline | `/sb:review-request`, `/sb:review`, `/sb:review-triage`, `/sb:completion-audit` |
+| Shipping and release | `/sb:branch-finish`, `/sb:ship`, `/sb:release`, `/sb:create-release` |
+| Docs and continuity | `/sb:ensure-docs`, `/sb:add`, `/sb:remove`, `/sb:rem`, `/sb:scan`, `/sb:handoff`, `/sb:forensics` |
+| DevOps governance | `/sb:blast-radius`, `/devops-quality-gates`, `/sb:devops` |
 
 Provider/tool-specific DevOps plugins remain optional enrichments. SB owns the
 workflow and gates around them.
@@ -55,7 +55,7 @@ workflow and gates around them.
 
 ## Enforcement Hooks
 
-All enforcement hooks activate after `/silver:init`:
+All enforcement hooks activate after `/sb:init`:
 
 | Hook | What it enforces |
 |------|------------------|
@@ -83,7 +83,7 @@ state normalization. These aliases exist so older projects can be resumed safely
 they are not required dependencies for new workflows.
 
 If a user explicitly asks to run an external GSD command and GSD is installed,
-the host agent may do so as an explicit external-tool request. `/silver` routes
+the host agent may do so as an explicit external-tool request. `/sb` routes
 ordinary lifecycle requests to SB-owned skills by default.
 
 ---

@@ -4,7 +4,7 @@ description: "Progressively review and fix scoped artifacts or user-confirmed re
 user-invocable: false
 ---
 
-# /silver:review-fix-ladder — Progressive Review / Fix Ladder
+# /sb:review-fix-ladder — Progressive Review / Fix Ladder
 
 Escalate review and fix work through a host-aware model/reasoning ladder. Each rung audits against a context-derived review charter — not generic “find issues” heuristics. The launcher applies ACCEPT fixes; the rung model does not implement. The launcher reports findings after every rung. Before launching rungs, the parent/launcher MUST present a concise bullet list of only the key tasks and instructions and get user approval — do not dump the entire prompt.
 
@@ -278,7 +278,7 @@ Then run **Policy E**: present the 5–12 key-task bullets, persist `.planning/r
 | Sequential rung | Previous rung completed all states in order: `review` → `triage` → `file_valid_issues` → `fix_parallel` → `verify_1` → orchestrator grep → (`verify_2` → orchestrator grep on **CLEAN**; `verify_2` is skipped on already-triaged **NOT CLEAN**) — **or** the previous rung was skipped after launch/timeout retry-once-then-skip with `SKIPPED.md` recorded |
 | Review/triage separation | Review subagent did **not** triage or fix; launcher/parent triaged with Policy A (wrong vs not wrong), not the rung model |
 | Per-rung user report | After review returned, `POLICY-C.json` + `POLICY-C.md` exist and `python3 scripts/review-fix-ladder.py --assert-policy-c --rung-dir <rung>` exits 0; launcher pasted encoder stdout (not a short verdict). Gate: `hooks/rfl-policy-c-gate.sh` |
-| PM filing evidence | When PM tracking is in use, ACCEPT findings filed or deduped via `/silver:add`; triage table lists PM ids. Does not delay launcher ACCEPT application |
+| PM filing evidence | When PM tracking is in use, ACCEPT findings filed or deduped via `/sb:add`; triage table lists PM ids. Does not delay launcher ACCEPT application |
 | Fix owner | Launcher/parent applied ACCEPT fixes (Edit/Write); the rung model did **not** implement; did not re-ask the same rung to patch after NOT CLEAN |
 | Separate verify invocations | `verify_1` and `verify_2` were **separate** subagent `Task` calls — not one combined prompt |
 | Orchestrator grep | Orchestrator ran **every** charter verification signal between verify passes and logged command + output + pass/fail |
@@ -346,7 +346,7 @@ rung_N_review → rung_N_triage → rung_N_file_valid_issues → rung_N_fix_para
 2. **Two-pass gate** — Per rung:
    - (a) review-only subagent (raw findings, no triage/fix)
    - (b) launcher/parent posts Policy C user update (rung identity, verdict, HIGH/MED/LOW/NIT issue table, triage table, ACCEPT-apply vs REJECT-as-wrong; resolved table after fixes), then triages with Policy A (ACCEPT vs REJECT-as-wrong) — **not** the rung model
-   - (c) orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use (or confirms dedupe links)
+   - (c) orchestrator files ACCEPT items via `/sb:add` when PM tracking is in use (or confirms dedupe links)
    - (d) launcher/parent applies ACCEPT fixes with Edit/Write — **not** the rung model; **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch after NOT CLEAN
    - (e) verify-only subagent pass 1 — required on NOT CLEAN and APPLY; if fail, return to (d) on **same** rung
    - (f) verify-only subagent pass 2 — required on CLEAN after pass 1 was clean; `verify_2` is skipped on already-triaged NOT CLEAN
@@ -384,7 +384,7 @@ For rung `{n}/{total}` at `model={model}`, `reasoning={reasoning}`:
 |------|-------|--------|
 | 1 | `rung_N_review` | Launch **one** review-only subagent at rung model (raw findings only). **Cursor:** subscription-first for GPT/Claude (see Host Delegation); otherwise `Task(subagent_type=<subagent_name>)` |
 | 2 | `rung_N_triage` | **Policy C (mandatory, artifact-first):** `--write-policy-c` then `--assert-policy-c` (paste encoder stdout). Do **not** spawn the rung model to classify. Do not dump raw review.md or a short verdict. |
-| 3 | `rung_N_file_valid_issues` | Orchestrator files ACCEPT items via `/silver:add` when PM tracking is in use; record PM ids in triage table |
+| 3 | `rung_N_file_valid_issues` | Orchestrator files ACCEPT items via `/sb:add` when PM tracking is in use; record PM ids in triage table |
 | 4 | `rung_N_fix_parallel` | Launcher/parent applies ACCEPT fixes (Edit/Write), including every finding that is not wrong (**Low, deferred, nitpicks, and minor** if still applicable). **FORBIDDEN** to ask the same Composer/GLM/Kimi/Codex/Claude/OpenCode rung to patch; **FORBIDDEN** to skip a still-valid nit because the rung was CLEAN or the item is a "non-blocking nit" |
 | 5 | `rung_N_verify_1` | Launch **one** verify-only subagent pass 1 at rung model. **Cursor:** same routing as review (subscription-first for GPT/Claude; else `Task`) |
 | 6 | — | Orchestrator runs each charter verification signal; log pass/fail |
@@ -430,7 +430,7 @@ Resolve the ladder first (`python3 scripts/review-fix-ladder.py --host cursor --
 **Subscription-first (GPT / Claude) — every launch, including re-verify and Max:** Cursor GPT/Claude quota is far less subsidized than Codex/Claude subscriptions. Before every GPT or Claude/Opus **review** and **verify** launch:
 
 1. Run `python3 scripts/review-fix-ladder.py --decide-launch --model {model} --reasoning {reasoning}`.
-2. If `action` is `invoke_subscription`: invoke `/silver:agent-codex` (GPT) or `/silver:agent-claude` (Claude/Opus) via the existing `subscription_invoke` helper — do **not** invent a second spawn stack.
+2. If `action` is `invoke_subscription`: invoke `/sb:agent-codex` (GPT) or `/sb:agent-claude` (Claude/Opus) via the existing `subscription_invoke` helper — do **not** invent a second spawn stack.
 3. Re-run `--decide-launch` with `--subscription-exit` and `--subscription-output` / `--subscription-output-file` from that attempt.
 4. `accept_subscription` (success, including a NOT CLEAN review) — **do not** also launch Cursor Task for that rung.
 5. `cursor_fallback` (`reason: quota-exhaustion` only) — log host + matched signal, run `--mark-quota-fallback --quota-host <codex|claude> --quota-signal '<signal>'`, then spawn **one** `Task(subagent_type=<subagent_name>)`.
@@ -440,11 +440,11 @@ Quota exhaustion signals (narrow): `429`, `rate limit`, `token plan`, `out of qu
 
 **Not quota (no Cursor fallback):** brief bugs, HASH MISMATCH, missing CLI install, network blips, NOT CLEAN review results.
 
-Grok and Composer default to Cursor (`/silver:agent-cursor`). Gemini defaults to Gemini CLI if the user did not name an agent, else Pi, else OpenCode, else Cursor. GPT defaults to Codex (`/silver:agent-codex`). Claude defaults to Claude (`/silver:agent-claude`). Other models default to Pi or OpenCode, or any other external agent the user named. User `--user-agent` / named host always wins. Do **not** smash host `--mode` permission flags. Do **not** remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
+Grok and Composer default to Cursor (`/sb:agent-cursor`). Gemini defaults to Gemini CLI if the user did not name an agent, else Pi, else OpenCode, else Cursor. GPT defaults to Codex (`/sb:agent-codex`). Claude defaults to Claude (`/sb:agent-claude`). Other models default to Pi or OpenCode, or any other external agent the user named. User `--user-agent` / named host always wins. Do **not** smash host `--mode` permission flags. Do **not** remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.
 
 Grok, Composer, GLM, Gemini, and Kimi rungs still skip the GPT/Claude **subscription-first quota gate**. `--decide-launch` for those families does not invoke Codex/Claude. OpenCode family rungs are **not** Cursor `sb-*` Tasks — see **OpenCode Go models** below.
 
-**Routing rule:** For **review** and **verify**, follow `--decide-launch` (GPT/Claude subscription-first) and `--default-host-route` (family → `/silver:agent-*` host; user override wins). Non-GPT/Claude on Cursor: spawn `Task(subagent_type=<subagent_name>)` when the default host is Cursor. **Omit `model`** when the custom subagent encodes the rung model — **except** empty/"Let" re-spawns below. **Never Fast.**
+**Routing rule:** For **review** and **verify**, follow `--decide-launch` (GPT/Claude subscription-first) and `--default-host-route` (family → `/sb:agent-*` host; user override wins). Non-GPT/Claude on Cursor: spawn `Task(subagent_type=<subagent_name>)` when the default host is Cursor. **Omit `model`** when the custom subagent encodes the rung model — **except** empty/"Let" re-spawns below. **Never Fast.**
 
 **Empty / "Let" nested Tasks:** If a nested `Task` returns empty or dies after "Let", the parent MUST re-spawn immediately with an explicit `model` so the child does not inherit the wrong wrapper. Do not wait for the user. Mixed-host ladders: nested GLM under Grok dies after "Let"; parent re-spawns with explicit GLM model (do not nest GLM under Grok). Never Fast. Empty/"Let" after re-spawn with still no review counts as a launch/timeout failure: retry **once immediately**, then skip (`SKIPPED.md`) — after the whole ladder, retry skipped rungs once more.
 
@@ -466,7 +466,7 @@ Install or refresh agents before the ladder: `bash scripts/install-cursor-sb-age
 
 | Host | Delegation |
 |------|------------|
-| **Cursor (custom subagent)** | GPT → `/silver:agent-codex` first; Claude/Opus → `/silver:agent-claude` first; Cursor `Task` **only** on quota exhaustion. Grok/Composer default host: `/silver:agent-cursor`. Gemini: Gemini CLI, else Pi, else OpenCode, else Cursor. Other families: Pi or OpenCode (or the agent the user named). User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Verify passes: `readonly: true`. **Forbidden:** Fast, `composer-2.5-fast`. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every GPT/Claude review/verify launch (not once per family). |
+| **Cursor (custom subagent)** | GPT → `/sb:agent-codex` first; Claude/Opus → `/sb:agent-claude` first; Cursor `Task` **only** on quota exhaustion. Grok/Composer default host: `/sb:agent-cursor`. Gemini: Gemini CLI, else Pi, else OpenCode, else Cursor. Other families: Pi or OpenCode (or the agent the user named). User override wins. Do not smash host `--mode`. Do not remap GPT/Claude onto Grok High. Verify passes: `readonly: true`. **Forbidden:** Fast, `composer-2.5-fast`. Do not skip Extra High/Max when those slugs exist. Re-run the subscription gate on every GPT/Claude review/verify launch (not once per family). |
 | **the active host agent** | Subagent with model `primary-model`, `primary host-opus-4-7`, or `primary host-opus-4-8` and thinking `medium`, `high`, or `xhigh` |
 | **Secondary host agent** | `secondary host exec -m <model> -c model_reasoning_effort=<reasoning>` (native secondary host binary, not Kay shim) |
 

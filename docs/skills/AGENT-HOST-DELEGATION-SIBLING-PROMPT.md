@@ -1,6 +1,6 @@
 # Agent host delegation — sibling meta-prompt
 
-Copy-paste template for sibling host agents (Claude, Cursor, Codex, future hosts) to build their own **`/silver:agent-<host>`** on-demand delegation skills.
+Copy-paste template for sibling host agents (Claude, Cursor, Codex, future hosts) to build their own **`/sb:agent-<host>`** on-demand delegation skills.
 
 **Canonical reference implementations:**
 
@@ -35,7 +35,7 @@ Build a **per-task, on-demand subagent delegation** skill — **not** a session-
 
 | Model | Skill family | Lifetime | Parent role |
 |-------|--------------|----------|-------------|
-| **On-demand delegation** | `/silver:agent-<host>` | One bounded task → tear down | Brief, checkpoint, escalate, verify evidence |
+| **On-demand delegation** | `/sb:agent-<host>` | One bounded task → tear down | Brief, checkpoint, escalate, verify evidence |
 | **Session advisor** | Sidekick (separate skill) | Cross-session gates, mentor memory | Quality gates across turns |
 | **Enterprise E2E matrix** | Matrix harness + adapters | 22-row certification ledger | Operator protocol — **out of scope** |
 
@@ -63,7 +63,7 @@ Do **not** write session markers to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/stat
 3. **Arbitrary real work** — not the E2E matrix row catalog.
 4. **Review ladder before ship** — thermo-nuclear code-quality + thermo-nuclear review + security-review + Sentinel re-audit on SB-repo harness changes.
 5. **Real-life pilot** — isolated test-app branch/worktree with committed product delta.
-6. **Name pattern** — `/silver:agent-<host>` everywhere (router, skill frontmatter, delegate script comments).
+6. **Name pattern** — `/sb:agent-<host>` everywhere (router, skill frontmatter, delegate script comments).
 
 ---
 
@@ -71,45 +71,45 @@ Do **not** write session markers to `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/stat
 
 Replace `<host>`, `<HOST>`, and placeholders below.
 
-### `/silver:agent-codex` — **reference (shipped)**
+### `/sb:agent-codex` — **reference (shipped)**
 
 | Item | Value |
 |------|-------|
 | Skill dir | `skills/silver-agent-codex/` |
-| Route | `/silver:agent-codex` |
+| Route | `/sb:agent-codex` |
 | Wrapper | `scripts/agent-codex-delegate.sh` |
 | Live adapter | `tests/live/agents/codex/agent.sh` |
 | Invoke | Codex TUI via `codex-interactive-invoke.py`; headless fallback `--use-exec` |
 | Work dir env | `CODEX_WORK_DIR` |
-| Route syntax in child prompts | `$silver:*` (Codex picker) |
+| Route syntax in child prompts | `$sb:*` (Codex picker) |
 | Planning logs | `.planning/agent-codex/` (gitignored) |
 
-### `/silver:agent-claude` — **to build**
+### `/sb:agent-claude` — **to build**
 
 | Item | Placeholder |
 |------|-------------|
 | Skill dir | `skills/silver-agent-claude/` |
-| Route | `/silver:agent-claude` |
+| Route | `/sb:agent-claude` |
 | Wrapper | `scripts/agent-claude-delegate.sh` |
 | Live adapter | Reuse [`tests/live/agents/claude/agent.sh`](../../tests/live/agents/claude/agent.sh) |
 | Invoke | Claude TUI via `scripts/claude-interactive-invoke.expect` (expect); print fallback when non-interactive |
 | Work dir env | `CLAUDE_WORK_DIR` |
-| Route syntax in child prompts | `/silver:*` or `[$silver]` per Claude picker |
+| Route syntax in child prompts | `/sb:*` or `[$silver]` per Claude picker |
 | Planning logs | `.planning/agent-claude/` (add to `.gitignore`) |
 | Auth | OAuth / Keychain via `scripts/lib/claude-matrix-auth.sh` — **no** mid-delegation key rotation |
 | State isolation | Fresh `${SB_RUNTIME_STATE_DIR}` per delegation wave when matrix parity needed (E2E-105) |
 
-### `/silver:agent-cursor` — **reference (shipped)**
+### `/sb:agent-cursor` — **reference (shipped)**
 
 | Item | Value |
 |------|-------|
 | Skill dir | `skills/silver-agent-cursor/` |
-| Route | `/silver:agent-cursor` |
+| Route | `/sb:agent-cursor` |
 | Wrapper | `scripts/agent-cursor-delegate.sh` |
 | Live adapter | [`tests/live/agents/cursor/agent.sh`](../../tests/live/agents/cursor/agent.sh) |
 | Invoke | `cursor-agent` headless CLI (`SB_LIVE_CURSOR_FORCE_HEADLESS=1`); IDE in-session only for explicit bridge tests |
 | Work dir env | `CURSOR_WORK_DIR` |
-| Route syntax in child prompts | `/silver:*` (Cursor picker) |
+| Route syntax in child prompts | `/sb:*` (Cursor picker) |
 | Planning logs | `.planning/agent-cursor/` (gitignored) |
 | Model policy | **`composer-2.5` only** — never `composer-2.5-fast` |
 | Auth | Keychain via `cursor-agent login` — **unset** `CURSOR_API_KEY` in delegate wrapper |
@@ -121,7 +121,7 @@ Replace `<host>`, `<HOST>`, and placeholders below.
 | Item | Placeholder |
 |------|-------------|
 | Skill dir | `skills/silver-agent-<host4>/` |
-| Route | `/silver:agent-<host4>` |
+| Route | `/sb:agent-<host4>` |
 | Wrapper | `scripts/agent-<host4>-delegate.sh` |
 | Live adapter | `tests/live/agents/<host4>/agent.sh` (create if missing) |
 | E2E adapter | `scripts/enterprise-e2e/lib/adapters/<host4>.sh` (matrix only — do not wire into delegate) |
@@ -138,7 +138,7 @@ Before authoring a new `silver-agent-<host>` sibling:
 |--------------|-------|
 | Live adapter exists | `tests/live/agents/<host>/agent.sh` with `agent_preflight` + `agent_invoke` |
 | Host CLI on PATH | `cursor-agent`, native Codex CLI, etc. |
-| Router entry | [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table row for `silver:agent-<host>` |
+| Router entry | [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table row for `sb:agent-<host>` |
 | Orchestrator allowlist | [`hooks/lib/orchestrator-parent.sh`](../../hooks/lib/orchestrator-parent.sh) → `sb_orchestrator_parent_skill_allowed` includes `silver-agent-<host>` |
 | Parent Bash bridge | Same file → `sb_orchestrator_parent_bash_allowed` allows `agent-<host>-delegate.sh` |
 | Integration alias | [`tests/integration/test-skill-execution-paths.sh`](../../tests/integration/test-skill-execution-paths.sh) `resolve_silver_alias` case |
@@ -166,7 +166,7 @@ version: 0.1.0
 
 ### Required sections (in order)
 
-1. **Title** — `# /silver:agent-<host> — <Host> Subagent Delegation`
+1. **Title** — `# /sb:agent-<host> — <Host> Subagent Delegation`
 2. **Contrast with Sidekick** — per-task vs session-persistent
 3. **Contrast with E2E matrix** — reuses live adapter; excludes matrix env/ledger
 4. **When to use** — table: delegate vs inline/Task/orchestrator queue
@@ -226,7 +226,7 @@ Never load matrix ledger, row outcome writers, or fixture branch locks for norma
 
 ## Mandatory parity checklist (derive from agent-codex)
 
-Complete **every** item before merging a new `/silver:agent-<host>` skill.
+Complete **every** item before merging a new `/sb:agent-<host>` skill.
 
 ### 1. SKILL.md structure
 
@@ -234,7 +234,7 @@ Complete **every** item before merging a new `/silver:agent-<host>` skill.
   - `name: silver-agent-<host>`
   - `description:` mentions on-demand, parent-supervised, **not** enterprise E2E matrix
   - `argument-hint:`, `user-invocable: true`, `version: 0.1.0`
-- [ ] H1: `# /silver:agent-<host> — <Host> Subagent Delegation`
+- [ ] H1: `# /sb:agent-<host> — <Host> Subagent Delegation`
 - [ ] **Contrast with Sidekick** — session-persistent vs per-task tear-down
 - [ ] **Contrast with enterprise E2E matrix** — reuses live adapter; omits ledger / §5b product gates / fixture locks
 - [ ] Sections: When to use (table) → Roles → Activation → Parent orchestrator rules → Brief → Environment → Invoke → Supervision (checkpoints + escalation ladder) → Completion criteria → Capture → When not to delegate → References
@@ -244,8 +244,8 @@ Complete **every** item before merging a new `/silver:agent-<host>` skill.
 
 ### 2. Router registration
 
-- [ ] Add routing row to [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table (natural-language triggers → `silver:agent-<host>`)
-- [ ] Add case to [`tests/integration/test-skill-execution-paths.sh`](../../tests/integration/test-skill-execution-paths.sh) (`silver:agent-<host>` → `silver-agent-<host>`)
+- [ ] Add routing row to [`skills/silver/SKILL.md`](../../skills/silver/SKILL.md) intent table (natural-language triggers → `sb:agent-<host>`)
+- [ ] Add case to [`tests/integration/test-skill-execution-paths.sh`](../../tests/integration/test-skill-execution-paths.sh) (`sb:agent-<host>` → `silver-agent-<host>`)
 - [ ] Allow parent orchestrator invoke in [`hooks/lib/orchestrator-parent.sh`](../../hooks/lib/orchestrator-parent.sh):
   - `sb_orchestrator_parent_bash_allowed`: `agent-<host>-delegate.sh`
   - `sb_orchestrator_parent_skill_allowed`: `silver-agent-<host>`
@@ -353,7 +353,7 @@ graphify update .
 | **Harness script** | `codex-interactive-invoke.py` | `claude-interactive-invoke.expect` | inline in `agent.sh` + stream-json | TBD |
 | **Work dir env** | `CODEX_WORK_DIR` | `CLAUDE_WORK_DIR` | `CURSOR_WORK_DIR` | `<HOST>_WORK_DIR` |
 | **SB_ROOT** | SB checkout with full `tests/live/` | same | same | same |
-| **Child route syntax** | `$silver:*` | `/silver:*` or `[$silver]` | `/silver:*` | host picker |
+| **Child route syntax** | `$sb:*` | `/sb:*` or `[$silver]` | `/sb:*` | host picker |
 | **CWD policy** | `cd "$CODEX_WORK_DIR"` in harness | `cd "$CLAUDE_WORK_DIR"` | `cd "$CURSOR_WORK_DIR"` | `cd "$WORK_DIR"` |
 | **Auth** | Codex login / API in `CODEX_HOME` | OAuth; `claude-matrix-auth.sh` | Keychain `cursor-agent login`; no `CURSOR_API_KEY` | TBD |
 | **Lightweight hook** | Ephemeral `CODEX_HOME`, MCP strip | Fresh runtime state dir optional | `SB_LIVE_CURSOR_FORCE_HEADLESS=1`, stream-json | TBD |
@@ -411,7 +411,7 @@ Adapt matrix certification lessons for **production delegation** — do not copy
 | Setting `SB_E2E_ENTERPRISE_MATRIX=1` in delegate wrapper | Turns on ledger, row writers, matrix timeouts — not single-task delegation |
 | Loading `SB_E2E_LEDGER_FILE`, batch PID files, matrix quiesce | Operator certification artifacts |
 | Copying §5b product gates verbatim into SKILL.md | Adapt completion criteria for production delegation; cite §5b as methodology reference only |
-| Session-persisting delegation state like Sidekick | Each `/silver:agent-<host>` invocation must tear down |
+| Session-persisting delegation state like Sidekick | Each `/sb:agent-<host>` invocation must tear down |
 | Parent implementing delegated edits in parallel | Violates orchestrator parent contract |
 | `pkill` / removing another host's lock files | §9 cross-agent isolation |
 | Committing `.planning/agent-<host>/*.log` | May contain secrets — gitignore only |
@@ -498,7 +498,7 @@ bash scripts/agent-cursor-delegate.sh \
 | Headless flag | `SB_LIVE_CURSOR_FORCE_HEADLESS=1` | `--use-exec` fallback |
 | Model policy | `composer-2.5` mandatory | `CODEX_MODEL` optional |
 | Auth | Keychain; unset `CURSOR_API_KEY` | Hook trust + native CLI |
-| Route syntax | `/silver:*` | `$silver:*` |
+| Route syntax | `/sb:*` | `$sb:*` |
 | stream-json | `SB_AGENT_CURSOR_STREAM_JSON=1` | N/A |
 
 ---
@@ -506,7 +506,7 @@ bash scripts/agent-cursor-delegate.sh \
 ## Prompt for Claude agent
 
 ```markdown
-You are building `/silver:agent-claude` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
+You are building `/sb:agent-claude` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
 
 **Mission:** On-demand, single-task delegation from a parent host (Cursor, Codex, or Claude parent) to **Claude TUI** as executor — parent supervises (brief → checkpoint → escalate); Claude implements in `CLAUDE_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
 
@@ -518,7 +518,7 @@ You are building `/silver:agent-claude` in the Silver Bullet repo (`/Users/shafq
 - `docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md` — full checklist
 
 **Deliverables:**
-1. `skills/silver-agent-claude/SKILL.md` — mirror codex structure; Claude-specific env (`CLAUDE_WORK_DIR`, expect invoke, `/silver:*` routes, OAuth auth policy)
+1. `skills/silver-agent-claude/SKILL.md` — mirror codex structure; Claude-specific env (`CLAUDE_WORK_DIR`, expect invoke, `/sb:*` routes, OAuth auth policy)
 2. `scripts/agent-claude-delegate.sh` — sources `tests/live/agents/claude/agent.sh`; lightweight defaults (`SB_ORCHESTRATOR_WORKER=1`, `RTK_DISABLED=1`, quota retry); no matrix env; absolute log/brief paths
 3. Router: `skills/silver/SKILL.md` row, `hooks/lib/orchestrator-parent.sh` allowlist, `tests/integration/test-skill-execution-paths.sh` case
 4. `tests/scripts/test-agent-claude-skill.sh` — structural contract
@@ -538,7 +538,7 @@ Return: changed file list + smoke commit SHA + structural test output.
 ## Prompt for Cursor agent
 
 ```markdown
-You are extending or verifying `/silver:agent-cursor` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
+You are extending or verifying `/sb:agent-cursor` in the Silver Bullet repo (`/Users/shafqat/projects/silver-bullet/repo`).
 
 **Mission:** On-demand, single-task delegation from a parent host (Claude, Codex, or Cursor parent) to **cursor-agent** headless CLI as executor — parent supervises (brief → checkpoint → escalate); Cursor implements in `CURSOR_WORK_DIR`. NOT Sidekick session mode. NOT enterprise E2E matrix.
 
@@ -569,7 +569,7 @@ Return: changed file list + smoke evidence + structural test output.
 ## Prompt for fourth host agent (`<HOST4>`)
 
 ```markdown
-You are building `/silver:agent-<HOST4>` in the Silver Bullet repo.
+You are building `/sb:agent-<HOST4>` in the Silver Bullet repo.
 
 Follow `docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md` end-to-end. Use `skills/silver-agent-codex/SKILL.md` + `scripts/agent-codex-delegate.sh` as the template.
 

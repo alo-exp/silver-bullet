@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:forensics — Post-mortem Forensics Workflow — Silver Bullet Help</title>
+<title>/sb:forensics — Post-mortem Forensics Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated session and post-mortem forensics: reconstruct failure from evidence → document findings → validate conclusions before handoff.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,7 +94,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:forensics</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:forensics</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -104,7 +104,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:forensics</h1>
+    <h1>/sb:forensics</h1>
     <p>SB-orchestrated post-mortem forensics for reconstructing unknown failure paths — classify from evidence, document findings, and validate conclusions before handoff to debug or incident workflows.</p>
   </div>
 </div>
@@ -122,8 +122,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#security">Security boundary</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-incident.html">/silver:incident</a></li>
-        <li><a href="./silver-bugfix.html">/silver:bugfix</a></li>
+        <li><a href="./silver-incident.html">/sb:incident</a></li>
+        <li><a href="./silver-bugfix.html">/sb:bugfix</a></li>
         <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
@@ -131,11 +131,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:forensics</code> is the Silver Bullet orchestrator for root-cause reconstruction when the failure path is <strong>unknown</strong>. It covers completed sessions that left things broken, abandoned or timed-out sessions, verification failures, and mid-session stalls.</p>
-      <p><strong>It never treats live debugging as the workflow.</strong> Forensics reconstructs from evidence; active errors with a known cause belong in <code>/silver:debug</code>.</p>
-      <p><code>/silver:forensics</code> maps to <code>WF-SILVER-FORENSICS</code> in the v0.52.0 APO catalog. Standard composition:</p>
+      <p><code>/sb:forensics</code> is the Silver Bullet orchestrator for root-cause reconstruction when the failure path is <strong>unknown</strong>. It covers completed sessions that left things broken, abandoned or timed-out sessions, verification failures, and mid-session stalls.</p>
+      <p><strong>It never treats live debugging as the workflow.</strong> Forensics reconstructs from evidence; active errors with a known cause belong in <code>/sb:debug</code>.</p>
+      <p><code>/sb:forensics</code> maps to <code>WF-SILVER-FORENSICS</code> in the v0.52.0 APO catalog. Standard composition:</p>
       <div class="code-block">DEBUG → DOCUMENT → VALIDATE</div>
-      <p>Reports are written to <code>docs/silver:forensics/</code>. SB owns workflow-level analysis of <code>.planning/</code> artifacts and execution patterns — no external lifecycle delegation.</p>
+      <p>Reports are written to <code>docs/sb:forensics/</code>. SB owns workflow-level analysis of <code>.planning/</code> artifacts and execution patterns — no external lifecycle delegation.</p>
 
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
@@ -147,14 +147,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:forensics</code>:</p>
+      <p>Entry trigger signals for <code>/sb:forensics</code>:</p>
       <ul>
         <li>Session completed but deliverables are broken or incomplete</li>
         <li>Agent session abandoned, timed out, or stalled mid-workflow</li>
         <li>Verification gate failed and the cause is unclear</li>
         <li>Plan drift, missing artifacts, scope drift, or execution anomaly in <code>.planning/</code></li>
       </ul>
-      <p>Not for: active production outages with known symptoms (<a href="./silver-incident.html"><code>/silver:incident</code></a>), routine bug fixes with reproducible errors (<a href="./silver-bugfix.html"><code>/silver:bugfix</code></a>), or process improvement retrospectives (<a href="./silver-retro.html"><code>/silver:retro</code></a>).</p>
+      <p>Not for: active production outages with known symptoms (<a href="./silver-incident.html"><code>/sb:incident</code></a>), routine bug fixes with reproducible errors (<a href="./silver-bugfix.html"><code>/sb:bugfix</code></a>), or process improvement retrospectives (<a href="./silver-retro.html"><code>/sb:retro</code></a>).</p>
 
       <div class="divider"></div>
 
@@ -162,9 +162,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-DEBUG</code></td><td><code>/silver:forensics</code>, <code>/silver:debug</code></td><td>Evidence-based failure classification and investigation path</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Post-mortem report under <code>docs/silver:forensics/</code></td></tr>
-          <tr><td><code>AF-VALIDATE</code></td><td><code>/silver:validate</code></td><td>Gap check on conclusions and recommended next steps</td></tr>
+          <tr><td><code>AF-DEBUG</code></td><td><code>/sb:forensics</code>, <code>/sb:debug</code></td><td>Evidence-based failure classification and investigation path</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Post-mortem report under <code>docs/sb:forensics/</code></td></tr>
+          <tr><td><code>AF-VALIDATE</code></td><td><code>/sb:validate</code></td><td>Gap check on conclusions and recommended next steps</td></tr>
         </tbody>
       </table>
       <p>Investigation paths include SB workflow forensics (plan/execution artifacts), session forensics (timeout/enforcement failures), and general task forensics (implementation drift from recent commits).</p>
@@ -174,13 +174,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-DEBUG</code> — Classify and reconstruct</h3>
-      <p>Invoke <code>/silver:forensics</code>. Locate project root via <code>.silver-bullet.json</code>. Route by evidence: workflow artifact anomalies, session integrity failures, or general task drift. Allowed shell commands are restricted to <code>git log</code>, <code>git show</code>, <code>git status</code>, <code>git diff</code>, test runners, and report directory creation.</p>
+      <p>Invoke <code>/sb:forensics</code>. Locate project root via <code>.silver-bullet.json</code>. Route by evidence: workflow artifact anomalies, session integrity failures, or general task drift. Allowed shell commands are restricted to <code>git log</code>, <code>git show</code>, <code>git status</code>, <code>git diff</code>, test runners, and report directory creation.</p>
 
       <h3><code>AF-DOCUMENT</code> — Write the post-mortem report</h3>
-      <p>Invoke <code>/silver:ensure-docs</code>. Produce a structured report with evidence gathered, classification, root-cause analysis, and recommended next steps. Apply redaction rules: relative paths only, no credentials in excerpts, truncate large diffs to 50 lines.</p>
+      <p>Invoke <code>/sb:ensure-docs</code>. Produce a structured report with evidence gathered, classification, root-cause analysis, and recommended next steps. Apply redaction rules: relative paths only, no credentials in excerpts, truncate large diffs to 50 lines.</p>
 
       <h3><code>AF-VALIDATE</code> — Validate conclusions</h3>
-      <p>Invoke <code>/silver:validate</code>. Confirm the report addresses the original failure scope, evidence supports conclusions, and handoff recommendations are actionable (e.g., route to <code>/silver:bugfix</code> or <code>/silver:incident</code>).</p>
+      <p>Invoke <code>/sb:validate</code>. Confirm the report addresses the original failure scope, evidence supports conclusions, and handoff recommendations are actionable (e.g., route to <code>/sb:bugfix</code> or <code>/sb:incident</code>).</p>
 
       <div class="divider"></div>
 
@@ -196,17 +196,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:forensics Last session timed out during phase 3 execution — reconstruct what failed and why verification never ran</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-FORENSICS</code>. <code>AF-DEBUG</code> classifies as session forensics, gathers session logs and <code>.planning/phases/</code> artifacts. <code>AF-DOCUMENT</code> writes the report to <code>docs/silver:forensics/</code>. <code>AF-VALIDATE</code> confirms gaps are addressed and recommends resuming via <code>/silver:execute</code> or filing work through <code>/silver:add</code>.</p>
+      <div class="code-block">/sb:forensics Last session timed out during phase 3 execution — reconstruct what failed and why verification never ran</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-FORENSICS</code>. <code>AF-DEBUG</code> classifies as session forensics, gathers session logs and <code>.planning/phases/</code> artifacts. <code>AF-DOCUMENT</code> writes the report to <code>docs/sb:forensics/</code>. <code>AF-VALIDATE</code> confirms gaps are addressed and recommends resuming via <code>/sb:execute</code> or filing work through <code>/sb:add</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-retro.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:retro</span>
+          <span class="pnb-title">/sb:retro</span>
         </a>
         <a href="./silver-process-maintenance.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:process-maintenance</span>
+          <span class="pnb-title">/sb:process-maintenance</span>
         </a>
       </div>
 

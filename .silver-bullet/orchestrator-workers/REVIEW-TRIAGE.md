@@ -18,13 +18,13 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:review-triage`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
+Invoke **`sb:review-triage`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 ## Acceptance criteria
 
 - REVIEW.md findings are triaged — ACCEPT applied, or REJECT-as-wrong with evidence that the finding is wrong
 
-## Review-fix ladder (when assigned skill is `silver:review-fix-ladder`)
+## Review-fix ladder (when assigned skill is `sb:review-fix-ladder`)
 
 Triage bar (both ladders, all rungs): incorporate every finding that is not wrong. Reject only if the finding is wrong or mistaken. Forbidden reject reasons: advisory, doc-only, documentation nit, non-gating, nice-to-have, not a contract hole, CLEAN so ignore mediums.
 
@@ -34,7 +34,7 @@ Policy C — launcher reports after every rung: After each rung's review is in (
 
 ## Handoff artifacts
 
-- Updated REVIEW.md and deferred items filed via `silver:add` when required
+- Updated REVIEW.md and deferred items filed via `sb:add` when required
 
 ## Exit
 

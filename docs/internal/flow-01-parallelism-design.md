@@ -1,4 +1,4 @@
-# FLOW-01 — FLOW Layer Parallelism in /silver Composer: Design Note
+# FLOW-01 — FLOW Layer Parallelism in /sb Composer: Design Note
 
 **Status:** Design only (implementation deferred)
 **Phase:** 64 — Verification & Init Improvements
@@ -11,7 +11,7 @@
 
 ## Current State
 
-The `/silver` composer (`skills/silver/SKILL.md`) routes user intent to a single workflow skill and invokes it sequentially. Each `silver-*` workflow (`silver-feature`, `silver-ui`, `silver-bugfix`, `silver-release`, etc.) is itself a sequential FLOW composition:
+The `/sb` composer (`skills/silver/SKILL.md`) routes user intent to a single workflow skill and invokes it sequentially. Each `silver-*` workflow (`silver-feature`, `silver-ui`, `silver-bugfix`, `silver-release`, etc.) is itself a sequential FLOW composition:
 
 ```
 DISCUSS → QUALITY GATES → PLAN → EXECUTE → VERIFY → REVIEW → FINALIZE → SHIP
@@ -25,7 +25,7 @@ There is no parallelism at the FLOW layer today. The composer dispatches one ski
 
 A "FLOW" in Silver Bullet terminology is one composable path through the workflow (e.g., FLOW 2 = ORIENT, FLOW 6 = PLAN, FLOW 8 = EXECUTE, etc.). FLOW layer parallelism means running two or more FLOWs simultaneously within a single composer invocation, or running the same FLOW across multiple independent work items concurrently.
 
-Two forms of parallelism are relevant to the `/silver` composer:
+Two forms of parallelism are relevant to the `/sb` composer:
 
 ### Form 1: Multi-feature Parallelism
 
@@ -40,7 +40,7 @@ Two independent `silver-*` workflows running concurrently. Example: `silver-feat
 **Example input** → parallel routing:
 > "Fix the login bug and also add the new dashboard widget in parallel"
 
-Composer response: route `silver:bugfix` for the login bug AND `silver:feature` for the dashboard widget, each in a separate AI agent context.
+Composer response: route `sb:bugfix` for the login bug AND `sb:feature` for the dashboard widget, each in a separate AI agent context.
 
 ### Form 2: Intra-workflow FLOW Parallelism
 
@@ -78,9 +78,9 @@ For FLOW layer parallelism to be safe, a dependency model defines which FLOWs ca
 
 ## Signal Design for the Composer
 
-When `/silver` receives input, it should detect parallelism signals before routing. The detection happens in Step 2 (classify intent and complexity) of the current routing logic:
+When `/sb` receives input, it should detect parallelism signals before routing. The detection happens in Step 2 (classify intent and complexity) of the current routing logic:
 
-**Parallel signal detection rules (proposed addition to `/silver` routing table):**
+**Parallel signal detection rules (proposed addition to `/sb` routing table):**
 
 ```
 Input: contains "and also" / "simultaneously" / "in parallel" / "at the same time"

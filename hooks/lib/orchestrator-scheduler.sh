@@ -304,7 +304,7 @@ sb_scheduler_record_composition_operation() {
 
 # Map composer skill slug to catalog workflow id (WF-SILVER-*).
 sb_scheduler_composer_catalog_workflow_id() {
-  local composer="${1#silver:}"
+  local composer="${1#sb:}"
   composer="${composer//:/-}"
   case "$composer" in
     silver-feature) printf 'WF-SILVER-FEATURE' ;;
@@ -778,7 +778,7 @@ sb_scheduler_mark_handoff_dispatched() {
         | if (
             ($atom != "" and .atomic_flow_id == $atom)
             or ($skill != "" and .next_skill == $skill)
-            or ($skill != "" and ((.next_skill // "") | gsub("^silver:"; "silver-")) == ($skill | gsub("^silver:"; "silver-")))
+            or ($skill != "" and ((.next_skill // "") | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
           )
           then . + {dispatch_status: "dispatched", dispatched_at: $now}
           else .
@@ -825,7 +825,7 @@ sb_scheduler_mark_handoff_joined() {
         | if (
             ($atom != "" and .atomic_flow_id == $atom)
             or ($skill != "" and .next_skill == $skill)
-            or ($skill != "" and ((.next_skill // "") | gsub("^silver:"; "silver-")) == ($skill | gsub("^silver:"; "silver-")))
+            or ($skill != "" and ((.next_skill // "") | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
           )
           then . + {dispatch_status: "joined", join_status: "joined", joined_at: $now}
           else .

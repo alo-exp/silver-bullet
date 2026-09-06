@@ -139,7 +139,7 @@ For teams shipping software to users — not just merging PRs — this gap is im
 **Severity:** High
 **SDLC Phase:** 10 (Incident Response)
 
-The Engineering plugin includes `/incident-response` but it is not woven into either workflow. The devops-cycle fast path invokes `/silver:blast-radius` and fixes the immediate issue — but:
+The Engineering plugin includes `/incident-response` but it is not woven into either workflow. The devops-cycle fast path invokes `/sb:blast-radius` and fixes the immediate issue — but:
 
 - `/incident-response` is never invoked
 - No post-incident review (PIR/postmortem) skill is required after a fast-path fix

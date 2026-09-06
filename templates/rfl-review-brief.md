@@ -1,6 +1,6 @@
 # RFL review brief — residual-only pack + issue ledger
 
-Reusable Template A paste for `/silver:review-fix-ladder` hops (including future Extra High re-reviews). Fill `{placeholders}`. Emit the ledger with:
+Reusable Template A paste for `/sb:review-fix-ladder` hops (including future Extra High re-reviews). Fill `{placeholders}`. Emit the ledger with:
 
 ```bash
 python3 scripts/review-fix-ladder.py --write-review-brief --run-dir .planning/rfl-<id>/

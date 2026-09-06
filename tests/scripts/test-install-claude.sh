@@ -156,9 +156,9 @@ assert_not_contains "Placeholder Silver Bullet hook path removed from Claude set
 
 assert_file_exists "Silver Bullet stable alias exposes hook cache" "$STABLE_SB_CACHE_DIR/hooks/session-start"
 
-assert_file_exists "Silver Bullet Claude agent bundle rendered in repo" "$REPO_ROOT/agents/claude/silver:init/SKILL.md"
-assert_file_exists "Silver Bullet Claude agent bundle materialized in cache" "$CURRENT_SB_CACHE_DIR/agents/claude/silver:init/SKILL.md"
-assert_file_exists "Silver Bullet skills alias remains available in cache" "$CURRENT_SB_CACHE_DIR/skills/silver:init/SKILL.md"
+assert_file_exists "Silver Bullet Claude agent bundle rendered in repo" "$REPO_ROOT/agents/claude/sb:init/SKILL.md"
+assert_file_exists "Silver Bullet Claude agent bundle materialized in cache" "$CURRENT_SB_CACHE_DIR/agents/claude/sb:init/SKILL.md"
+assert_file_exists "Silver Bullet skills alias remains available in cache" "$CURRENT_SB_CACHE_DIR/skills/sb:init/SKILL.md"
 
 assert_file_absent "Silver Bullet Claude cache does not ship duplicate commands surface" "$CURRENT_SB_CACHE_DIR/commands"
 
@@ -179,9 +179,9 @@ else
 fi
 
 if [[ -n "$CURRENT_SB_CACHE_DIR" ]] \
-  && grep -qF 'name: silver:init' "$CURRENT_SB_CACHE_DIR/agents/claude/silver:init/SKILL.md" \
-  && grep -qF 'name: silver:feature' "$CURRENT_SB_CACHE_DIR/agents/claude/silver:feature/SKILL.md" \
-  && grep -qF 'name: silver' "$CURRENT_SB_CACHE_DIR/agents/claude/silver/SKILL.md"; then
+  && grep -qF 'name: sb:init' "$CURRENT_SB_CACHE_DIR/agents/claude/sb:init/SKILL.md" \
+  && grep -qF 'name: sb:feature' "$CURRENT_SB_CACHE_DIR/agents/claude/sb:feature/SKILL.md" \
+   && grep -qF 'name: sb' "$CURRENT_SB_CACHE_DIR/agents/claude/sb/SKILL.md"; then
   echo "PASS: Silver Bullet skill names rewritten for Claude picker"
   (( PASS++ )) || true
 else

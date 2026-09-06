@@ -210,7 +210,7 @@ sb_doc_scheme_gate_enforce() {
 
   if [[ -n "$gate_issues" ]]; then
     sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "docs/task-doc-checklist.json" "docs/doc-scheme.json" "$gate_issues"
-    remediation_cmd="/silver:ensure-docs --recover-scheme"
+    remediation_cmd="/sb:ensure-docs --recover-scheme"
     message=$(cat <<EOF
 🛑 DOC-SCHEME GATE — ${mode_label} blocked.
 
@@ -238,7 +238,7 @@ EOF
 
 Fix these items:
 ${gate_issues}Guided recovery:
-\`/silver:ensure-docs --recover-scheme\`
+\`/sb:ensure-docs --recover-scheme\`
 
 Latest gap report:
 \`${SB_DOC_SCHEME_GAP_REPORT_PATH}\`
@@ -386,7 +386,7 @@ EOF
 
   if [[ -n "$gate_issues" ]]; then
     sb_doc_scheme__write_gap_report "$mode" "$repo_root" "$state_dir" "$task_id" "$task_granularity_raw" "${checklist#"$repo_root"/}" "docs/doc-scheme.json" "$gate_issues"
-    remediation_cmd="/silver:ensure-docs --from-hook --task ${task_id:-unknown-task} --gaps ${SB_DOC_SCHEME_GAP_REPORT_PATH}"
+    remediation_cmd="/sb:ensure-docs --from-hook --task ${task_id:-unknown-task} --gaps ${SB_DOC_SCHEME_GAP_REPORT_PATH}"
     message=$(cat <<EOF
 🛑 DOC-SCHEME GATE — ${mode_label} blocked.
 
@@ -397,7 +397,7 @@ ${gate_issues}Run:
 \`${remediation_cmd}\`
 
 If scheme files are missing/corrupt, recover first:
-\`/silver:ensure-docs --recover-scheme\`
+\`/sb:ensure-docs --recover-scheme\`
 EOF
 )
     "$emit_fn" "$message"

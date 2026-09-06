@@ -58,16 +58,16 @@ sb_recommended_tool_enforced "$TMP/.silver-bullet.json" graphify && fail "suspen
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":true,\"enforcement_suspended\":true,\"install_status\":\"failed\",\"install_failure_reason\":\"uv install failed\"}}}"
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
-printf '%s' "$block" | grep -q 'enforcement suspended' && pass "suspended prompt block" || fail "suspended prompt block"
-printf '%s' "$block" | grep -q 'uv install failed' && pass "suspended prompt includes reason" || fail "suspended prompt includes reason"
+printf '%s' "$block" | grep 'enforcement suspended' >/dev/null && pass "suspended prompt block" || fail "suspended prompt block"
+printf '%s' "$block" | grep 'uv install failed' >/dev/null && pass "suspended prompt includes reason" || fail "suspended prompt includes reason"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":null}}}"
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
-printf '%s' "$block" | grep -q 'CONSENT PENDING' && pass "pending prompt block" || fail "pending prompt block"
+printf '%s' "$block" | grep 'CONSENT PENDING' >/dev/null && pass "pending prompt block" || fail "pending prompt block"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":false}}}"
 block="$(sb_recommended_tool_consent_prompt_block "$TMP/.silver-bullet.json" graphify 2>/dev/null || true)"
-printf '%s' "$block" | grep -q 'opted out' && pass "disabled prompt block" || fail "disabled prompt block"
+printf '%s' "$block" | grep 'opted out' >/dev/null && pass "disabled prompt block" || fail "disabled prompt block"
 
 write_cfg "{\"config_version\":\"${CURRENT_CONFIG_VERSION}\",\"recommended_tools\":{\"graphify\":{\"enabled_by_user\":false}}}"
 benefits="$(sb_recommended_tool_benefits "$TMP/.silver-bullet.json" graphify)"

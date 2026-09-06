@@ -158,11 +158,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <thead><tr><th>Column</th><th>What it means</th></tr></thead>
         <tbody>
           <tr><td>Work type</td><td>The category of request (e.g., "all UI tasks", "backend API work")</td></tr>
-          <tr><td>Override route</td><td>Which workflow to always use (e.g., <code>silver:feature</code>, <code>silver:ui</code>)</td></tr>
+          <tr><td>Override route</td><td>Which workflow to always use (e.g., <code>sb:feature</code>, <code>sb:ui</code>)</td></tr>
           <tr><td>Since</td><td>Date the preference was recorded</td></tr>
         </tbody>
       </table>
-      <p>Example: if you always want UI changes to go through <code>silver:ui</code> even when your description sounds like a feature, you can record that preference once and Silver Bullet will route accordingly from then on.</p>
+      <p>Example: if you always want UI changes to go through <code>sb:ui</code> even when your description sounds like a feature, you can record that preference once and Silver Bullet will route accordingly from then on.</p>
 
       <h2 id="step-skip">§10b — Step-Skip Preferences</h2>
       <p>When you ask to skip a workflow step, Silver Bullet does not skip silently. It follows the step-skip protocol every time:</p>
@@ -195,8 +195,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="pref-table">
         <thead><tr><th>Column</th><th>What it means</th></tr></thead>
         <tbody>
-          <tr><td>Workflow</td><td>Which workflow the skip applies to (e.g., <code>silver:fast</code>, all workflows)</td></tr>
-          <tr><td>Step skipped</td><td>The step name or skill (e.g., <code>silver:clarify</code>)</td></tr>
+          <tr><td>Workflow</td><td>Which workflow the skip applies to (e.g., <code>sb:fast</code>, all workflows)</td></tr>
+          <tr><td>Step skipped</td><td>The step name or skill (e.g., <code>sb:clarify</code>)</td></tr>
           <tr><td>Condition</td><td>When the skip applies (e.g., "always", "when no UI changes")</td></tr>
           <tr><td>Since</td><td>Date recorded</td></tr>
         </tbody>
@@ -217,10 +217,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>Since</td><td>Date recorded</td></tr>
         </tbody>
       </table>
-      <p>Example: you may prefer <code>/silver:deep-research</code> over ad-hoc research spikes for technology decisions. Recording this preference means Silver Bullet routes all research decision points to <code>silver:deep-research</code> automatically.</p>
+      <p>Example: you may prefer <code>/sb:deep-research</code> over ad-hoc research spikes for technology decisions. Recording this preference means Silver Bullet routes all research decision points to <code>sb:deep-research</code> automatically.</p>
 
       <h2 id="research-review-tools">§10d — Research/Review Tool Preferences</h2>
-      <p>Some workflows can call optional research or review providers, including multi-AI tools when installed. §10d records when those tools should be offered, auto-run, or skipped for a given trigger. <code>silver:deep-research</code> is stricter: it uses direct research by default and only uses MultAI when the current user request explicitly asks for multi-AI, second-opinion, or cross-model perspectives.</p>
+      <p>Some workflows can call optional research or review providers, including multi-AI tools when installed. §10d records when those tools should be offered, auto-run, or skipped for a given trigger. <code>sb:deep-research</code> is stricter: it uses direct research by default and only uses MultAI when the current user request explicitly asks for multi-AI, second-opinion, or cross-model perspectives.</p>
       <table class="pref-table">
         <thead><tr><th>Column</th><th>What it means</th></tr></thead>
         <tbody>
@@ -241,7 +241,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <tr><td>TDD enforcement</td><td><code>per-plan-type</code> | <code>always</code> | <code>never</code></td><td><code>per-plan-type</code></td></tr>
         </tbody>
       </table>
-      <p><strong>Default session mode</strong> is set during <code>/silver:init</code> and can be updated at any time. <strong>PR branch</strong> is captured the first time you create a PR — you can record your preferred prefix (e.g., <code>feat/</code>) so Silver Bullet never has to ask again. <strong>TDD enforcement</strong> controls whether test-driven development applies: the default is per-plan-type, meaning TDD runs for implementation plans but not config, infra, or doc plans.</p>
+      <p><strong>Default session mode</strong> is set during <code>/sb:init</code> and can be updated at any time. <strong>PR branch</strong> is captured the first time you create a PR — you can record your preferred prefix (e.g., <code>feat/</code>) so Silver Bullet never has to ask again. <strong>TDD enforcement</strong> controls whether test-driven development applies: the default is per-plan-type, meaning TDD runs for implementation plans but not config, infra, or doc plans.</p>
 
       <h2 id="recording">Recording a Preference</h2>
       <p>Before any preference is written to §10, Silver Bullet must show you exactly what will change and receive your explicit confirmation. The display shows a diff of both files that will be updated:</p>
@@ -269,20 +269,20 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
             <h4>Security checks <span class="tag tag-no-skip">Cannot skip</span></h4>
-            <p>Security review is mandatory for every non-trivial change through <code>silver:secure</code> and the Security dimension inside <code>/silver:quality-gates</code>. It cannot be skipped, deferred, or treated as implicitly covered.</p>
+            <p>Security review is mandatory for every non-trivial change through <code>sb:secure</code> and the Security dimension inside <code>/sb:quality-gates</code>. It cannot be skipped, deferred, or treated as implicitly covered.</p>
           </div>
         </div>
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>/silver:quality-gates</code> pre-ship <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <h4><code>/sb:quality-gates</code> pre-ship <span class="tag tag-no-skip">Cannot skip</span></h4>
             <p>Quality gates must pass before shipping. The pre-ship quality gate run is separate from the pre-planning run and cannot be bypassed.</p>
           </div>
         </div>
         <div class="step-item">
           <div class="step-num" style="background:linear-gradient(135deg,#dc2626,#b91c1c)">!</div>
           <div>
-            <h4><code>silver:verify</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
+            <h4><code>sb:verify</code> <span class="tag tag-no-skip">Cannot skip</span></h4>
             <p>Work verification is required before completion can be declared. The completion audit hook blocks if this step is missing.</p>
           </div>
         </div>

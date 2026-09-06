@@ -32,25 +32,25 @@ assert_fails() {
 }
 
 assert_passes "direct argv adapter invocation accepted" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/direct-adapter.jsonl" "silver:ingest"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/direct-adapter.jsonl" "sb:ingest"
 
 assert_passes "bash -lc wrapped adapter invocation accepted" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/bash-lc-adapter.jsonl" "silver:ingest"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/bash-lc-adapter.jsonl" "sb:ingest"
 
 assert_passes "route-smoke completion echo wrappers around adapter accepted" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/echo-adapter-echo.jsonl" "silver:forensics"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/echo-adapter-echo.jsonl" "sb:forensics"
 
 assert_passes "duplicate identical adapter invocations accepted" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/duplicate-adapter.jsonl" "silver:feature"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/duplicate-adapter.jsonl" "sb:feature"
 
 assert_fails "exploratory command before adapter rejected" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/extra-command.jsonl" "silver:ingest"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/extra-command.jsonl" "sb:ingest"
 
 assert_fails "stale transcript prompt rejected" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/stale-prompt.jsonl" "silver:ingest"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/stale-prompt.jsonl" "sb:ingest"
 
 assert_fails "hook bridge only transcript rejected" \
-  python3 "$SCRIPT" "${FIXTURE_DIR}/hook-bridge-only.jsonl" "silver:ingest"
+  python3 "$SCRIPT" "${FIXTURE_DIR}/hook-bridge-only.jsonl" "sb:ingest"
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

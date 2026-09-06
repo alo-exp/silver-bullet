@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# On-demand Pi delegation wrapper for /silver:agent-pi (not enterprise E2E matrix).
+# On-demand Pi delegation wrapper for /sb:agent-pi (not enterprise E2E matrix).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

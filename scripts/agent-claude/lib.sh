@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for /silver:agent-claude harness scripts.
+# Shared helpers for /sb:agent-claude harness scripts.
 # shellcheck shell=bash
 
 agent_claude_script_dir() {

@@ -1,21 +1,21 @@
 ---
 name: silver-doctor
-description: "This skill should be used when the user runs `/silver:doctor` or `/sb:doctor` (alias) or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/silver:init` update, after `/silver:update`, and during CI diagnostics."
+description: "This skill should be used when the user runs `/sb:doctor` or `/sb:doctor` (alias) or asks to audit whether the local Silver Bullet installation and project activation are correct for the active host — run before `/sb:init` update, after `/sb:update`, and during CI diagnostics."
 aliases: ["sb:doctor"]
 version: 0.2.0
 ---
 
-# /silver:doctor — Install and Activation Audit
+# /sb:doctor — Install and Activation Audit
 
-`/sb:doctor` is an alias of `/silver:doctor`. Both resolve to `scripts/sb-doctor.sh` and forward `--fix` / `--dry-run`. Do not implement a second doctor.
+`/sb:doctor` is an alias of `/sb:doctor`. Both resolve to `scripts/sb-doctor.sh` and forward `--fix` / `--dry-run`. Do not implement a second doctor.
 
 Audits whether local SB installation is correct for the active host and whether the current project is on the current enforcement surface. **Default and `--deep` are read-only.** Repair requires `--fix=SCOPE`.
 
 ## When to Use
 
-- Before Wave 1+ implementation work or after `/silver:update`
+- Before Wave 1+ implementation work or after `/sb:update`
 - When hooks appear inactive or plugin version is stale
-- After migrating a project with `/silver:migrate` + `/silver:init` update mode
+- After migrating a project with `/sb:migrate` + `/sb:init` update mode
 - When five-tool stack reports drift, missing Graphify index, or MCP reload pending
 
 ## Process
@@ -83,9 +83,9 @@ bash scripts/sb-doctor.sh --fix=all      # bounded dependency-ordered convergenc
 
 | Check | Typical fix |
 |-------|-------------|
-| D2/D3 plugin stale | `/silver:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
-| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/silver:init` update §3.7.5 |
-| D6 config stale | `bash scripts/sb-migrate-config.sh` or `/silver:migrate` |
+| D2/D3 plugin stale | `/sb:update` or `bash scripts/install-${SILVER_BULLET_RUNTIME}.sh` |
+| D4 hooks missing | `bash scripts/install-cursor.sh --merge-hooks-only` or `/sb:init` update §3.7.5 |
+| D6 config stale | `bash scripts/sb-migrate-config.sh` or `/sb:migrate` |
 | D10-* five-tool | `bash scripts/sb-doctor.sh --fix=local|host|packages|all` |
 | D10-routes drift | `--fix=host` or `bash scripts/optimize-five-tool-stack.sh --host cursor --project-root "$(pwd)"` |
 | D13 manifest paths | Host install script for active runtime |

@@ -15,7 +15,8 @@ enterprise_e2e_sb_root_is_valid() {
   local dir="$1"
   [[ -n "$dir" && -d "$dir" ]] || return 1
   [[ -f "${dir}/scripts/run-enterprise-e2e-live-test.sh" ]] || return 1
-  [[ -d "${dir}/.git" ]] || return 1
+  # Worktrees use a .git file; normal clones use a .git directory.
+  [[ -d "${dir}/.git" || -f "${dir}/.git" ]] || return 1
   return 0
 }
 

@@ -5,16 +5,16 @@ argument-hint: "[--since YYYY-MM-DD] [--type artifact-type]"
 version: 0.1.0
 ---
 
-# silver:review-stats
+# sb:review-stats
 
 Produces summary reports from review analytics data. Reads `.planning/review-analytics.jsonl` (and archived files in `.planning/archive/review-analytics-*.jsonl` if `--since` spans archived data) and aggregates metrics by artifact type.
 
 ## Usage
 
 ```
-/silver:review-stats
-/silver:review-stats --since 2026-04-01
-/silver:review-stats --type SPEC.md
+/sb:review-stats
+/sb:review-stats --since 2026-04-01
+/sb:review-stats --type SPEC.md
 ```
 
 ## Orchestration Steps

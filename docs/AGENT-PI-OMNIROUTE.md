@@ -1,6 +1,6 @@
 # Pi → OmniRoute → Claude (non-interactive)
 
-Silver Bullet's RFL and `/silver:agent-pi` NI path is:
+Silver Bullet's RFL and `/sb:agent-pi` NI path is:
 
 ```text
 scripts/agent-pi/invoke.sh

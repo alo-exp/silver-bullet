@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:benchmark — Performance Benchmark Workflow — Silver Bullet Help</title>
+<title>/sb:benchmark — Performance Benchmark Workflow — Silver Bullet Help</title>
 <meta name="description" content="WF-SILVER-BENCHMARK: orient on baseline, execute benchmarks, verify results, document findings — AF-ORIENT → AF-EXECUTE → AF-VERIFY → AF-DOCUMENT from v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:benchmark</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:benchmark</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:benchmark</h1>
+    <h1>/sb:benchmark</h1>
     <p>Specialized performance benchmarking workflow — establish baseline context, execute benchmarks, verify reproducibility, document findings for engineering decisions.</p>
   </div>
 </div>
@@ -114,19 +114,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-deep-research.html">/silver:deep-research</a></li>
-        <li><a href="./silver-feature.html">/silver:feature</a></li>
+        <li><a href="./silver-deep-research.html">/sb:deep-research</a></li>
+        <li><a href="./silver-feature.html">/sb:feature</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:benchmark</code> is the Silver Bullet orchestrator for <strong>performance measurement and comparison</strong> — latency profiling, throughput tests, memory analysis, and before/after optimization validation. It maps to catalog entity <code>WF-SILVER-BENCHMARK</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p><code>/sb:benchmark</code> is the Silver Bullet orchestrator for <strong>performance measurement and comparison</strong> — latency profiling, throughput tests, memory analysis, and before/after optimization validation. It maps to catalog entity <code>WF-SILVER-BENCHMARK</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
       <p>Benchmarking is evidence-gathering, not feature delivery. The workflow orients on the system under test, executes controlled benchmarks, verifies result reproducibility, and documents findings for downstream planning or optimization work.</p>
       <p>Standard composition:</p>
       <div class="code-block">AF-ORIENT → AF-EXECUTE → AF-VERIFY → AF-DOCUMENT</div>
-      <p>For technology selection decisions based on benchmark evidence, hand off to <a href="./silver-deep-research.html"><code>/silver:deep-research</code></a>. For implementing optimizations, route to <a href="./silver-feature.html"><code>/silver:feature</code></a>.</p>
+      <p>For technology selection decisions based on benchmark evidence, hand off to <a href="./silver-deep-research.html"><code>/sb:deep-research</code></a>. For implementing optimizations, route to <a href="./silver-feature.html"><code>/sb:feature</code></a>.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -138,7 +138,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:benchmark</code> and <code>benchmark</code>:</p>
+      <p>Entry trigger signals for <code>/sb:benchmark</code> and <code>benchmark</code>:</p>
       <ul>
         <li>Latency or throughput regression investigation</li>
         <li>Before/after comparison for an optimization proposal</li>
@@ -153,10 +153,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-ORIENT</code></td><td><code>/silver:scan</code>, <code>/silver:context</code></td><td>System topology, hot paths, existing benchmarks, environment constraints</td></tr>
-          <tr><td><code>AF-EXECUTE</code></td><td><code>/silver:execute</code></td><td>Benchmark scripts, load tests, profiling runs, dataset preparation</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Reproducibility checks, statistical validity, outlier analysis</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable benchmark report with methodology, results, and recommendations</td></tr>
+          <tr><td><code>AF-ORIENT</code></td><td><code>/sb:scan</code>, <code>/sb:context</code></td><td>System topology, hot paths, existing benchmarks, environment constraints</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td><code>/sb:execute</code></td><td>Benchmark scripts, load tests, profiling runs, dataset preparation</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/sb:verify</code></td><td>Reproducibility checks, statistical validity, outlier analysis</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Durable benchmark report with methodology, results, and recommendations</td></tr>
         </tbody>
       </table>
 
@@ -179,17 +179,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:benchmark Compare p99 latency of the search API before and after the Redis cache layer</div>
+      <div class="code-block">/sb:benchmark Compare p99 latency of the search API before and after the Redis cache layer</div>
       <p>Silver Bullet routes to <code>WF-SILVER-BENCHMARK</code>. Orientation maps the search hot path and baseline metrics. Execution runs controlled load tests against both configurations. Verification confirms reproducible p99 delta. Documentation captures the comparison report for the optimization PR.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-refactor.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:refactor</span>
+          <span class="pnb-title">/sb:refactor</span>
         </a>
         <a href="./silver-content.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:content</span>
+          <span class="pnb-title">/sb:content</span>
         </a>
       </div>
 

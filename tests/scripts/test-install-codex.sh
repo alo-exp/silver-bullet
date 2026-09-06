@@ -540,7 +540,7 @@ HOME_DIR="$TMP/home"
 BIN_DIR="$TMP/bin"
 mkdir -p \
   "$HOME_DIR/.codex" \
-  "$HOME_DIR/.codex/skills/silver:feature" \
+  "$HOME_DIR/.codex/skills/sb:feature" \
   "$HOME_DIR/.codex/skills/silver-review-fix-ladder" \
   "$HOME_DIR/.codex/skills/unrelated-native" \
   "$HOME_DIR/.codex/skills/writing-plans" \
@@ -560,9 +560,9 @@ name: unrelated-native
 ---
 EOF
 
-cat > "$HOME_DIR/.codex/skills/silver:feature/SKILL.md" <<'EOF'
+cat > "$HOME_DIR/.codex/skills/sb:feature/SKILL.md" <<'EOF'
 ---
-name: "silver:feature"
+name: "sb:feature"
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
@@ -767,7 +767,7 @@ title: "Silver Bullet: Silver: Feature"
 EOF
 cat > "$FAKE_OLD_CACHE_ROOT/skills/silver-feature/SKILL.md" <<'EOF'
 ---
-name: silver:feature
+name: sb:feature
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
@@ -779,7 +779,7 @@ title: "Silver Bullet: Silver: Feature"
 EOF
 cat > "$FAKE_LEGACY_BACKUP_GENERATED_SKILL" <<'EOF'
 ---
-name: silver:feature
+name: sb:feature
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
@@ -797,19 +797,19 @@ title: "Silver Bullet: Silver: Feature"
 EOF
 cat > "$FAKE_TMP_MARKETPLACE_BACKUP_AGENT_SKILL" <<'EOF'
 ---
-name: "silver:feature"
+name: "sb:feature"
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
 cat > "$FAKE_TMP_SB_LIVE_COMMAND_SKILL" <<'EOF'
 ---
-name: "silver:feature"
+name: "sb:feature"
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
 cat > "$FAKE_TMP_SB_LIVE_COMMAND_AGENT_SKILL" <<'EOF'
 ---
-name: "silver:feature"
+name: "sb:feature"
 title: "Silver Bullet: Silver: Feature"
 ---
 EOF
@@ -986,7 +986,7 @@ for registry_path in [home / ".codex/plugins/installed_plugins.json", home / ".c
 PY
 
 cat > "$FAKE_MARKETPLACE_ROOT/CHANGELOG.md" <<'EOF'
-- Renamed /using-silver-bullet skill to /silver:init
+- Renamed /using-silver-bullet skill to /sb:init
 - Kept other release notes intact
 EOF
 
@@ -1022,29 +1022,29 @@ fi
 assert_not_contains "Silver Bullet plugin manifest does not advertise duplicate plugin skill listings" '"skills": "./skills/"' "$FAKE_SB_INSTALL_ALIAS/.codex-plugin/plugin.json"
 assert_command_succeeds "Silver Bullet cache alias created" test -L "$FAKE_SB_INSTALL_ALIAS"
 assert_file_absent "Silver Bullet cache alias does not expose plugin picker skills surface" "$FAKE_SB_INSTALL_ALIAS/skills"
-assert_file_exists "Silver Bullet cache alias exposes internal skill source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" silver-feature)"
+assert_file_exists "Silver Bullet cache alias exposes internal skill source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" sb-feature)"
 assert_file_exists "Silver Bullet cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" modularity)"
 assert_file_exists "Silver Bullet cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" testability)"
 assert_no_packaged_skill_md "Silver Bullet cache alias exposes no picker-discoverable SKILL.md files" "$FAKE_SB_INSTALL_ALIAS"
-assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
-assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/silver/SKILL.md"
-assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/silver:feature/.silver-bullet-managed"
-assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
-assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
-assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
-assert_contains "Codex native SB mirror preserves Silver route name" "name: \"silver:feature\"" "$HOME_DIR/.codex/skills/silver:feature/SKILL.md"
-assert_file_exists "Codex native SB mirror exposes review fix ladder helper" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
-assert_file_exists "Codex native SB mirror marks review fix ladder as managed" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/.silver-bullet-managed"
-assert_contains "Codex native review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$HOME_DIR/.codex/skills/silver-review-fix-ladder/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes Silver Bullet feature skill" "$HOME_DIR/.codex/skills/sb:feature/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes Silver Bullet router skill" "$HOME_DIR/.codex/skills/sb/SKILL.md"
+assert_file_exists "Codex native SB mirror marks Silver Bullet feature as managed" "$HOME_DIR/.codex/skills/sb:feature/.silver-bullet-managed"
+assert_contains "Codex native SB mirror uses bare silver namespace title" "title: \"Feature\"" "$HOME_DIR/.codex/skills/sb:feature/SKILL.md"
+assert_not_contains "Codex native SB mirror avoids duplicate Silver title prefix" "title: \"Silver: Feature\"" "$HOME_DIR/.codex/skills/sb:feature/SKILL.md"
+assert_not_contains "Codex native SB mirror removes legacy plugin title prefix" "Silver Bullet:" "$HOME_DIR/.codex/skills/sb:feature/SKILL.md"
+assert_contains "Codex native SB mirror preserves Silver route name" "name: \"sb:feature\"" "$HOME_DIR/.codex/skills/sb:feature/SKILL.md"
+assert_file_exists "Codex native SB mirror exposes review fix ladder helper" "$HOME_DIR/.codex/skills/sb-review-fix-ladder/SKILL.md"
+assert_file_exists "Codex native SB mirror marks review fix ladder as managed" "$HOME_DIR/.codex/skills/sb-review-fix-ladder/.silver-bullet-managed"
+assert_contains "Codex native review fix ladder uses SB picker prefix" "title: \"Review Fix Ladder\"" "$HOME_DIR/.codex/skills/sb-review-fix-ladder/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes verify-tests gate" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
 assert_file_exists "Codex native SB mirror marks verify-tests gate as managed" "$HOME_DIR/.codex/skills/verify-tests/.silver-bullet-managed"
-assert_contains "Codex native verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
+assert_contains "Codex native verify-tests gate uses SB picker prefix" "title: \"SB: Verify Tests\"" "$HOME_DIR/.codex/skills/verify-tests/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes security gate" "$HOME_DIR/.codex/skills/security/SKILL.md"
 assert_file_exists "Codex native SB mirror marks security gate as managed" "$HOME_DIR/.codex/skills/security/.silver-bullet-managed"
-assert_contains "Codex native security gate keeps Silver picker prefix" "title: \"Silver: Security\"" "$HOME_DIR/.codex/skills/security/SKILL.md"
+assert_contains "Codex native security gate uses SB picker prefix" "title: \"SB: Security\"" "$HOME_DIR/.codex/skills/security/SKILL.md"
 assert_file_exists "Codex native SB mirror exposes DevOps quality gate" "$HOME_DIR/.codex/skills/devops-quality-gates/SKILL.md"
 assert_file_exists "Codex native SB mirror marks DevOps quality gate as managed" "$HOME_DIR/.codex/skills/devops-quality-gates/.silver-bullet-managed"
-assert_contains "Codex native DevOps quality gate keeps Silver picker prefix" "title: \"Silver: DevOps Quality Gates\"" "$HOME_DIR/.codex/skills/devops-quality-gates/SKILL.md"
+assert_contains "Codex native DevOps quality gate uses SB picker prefix" "title: \"SB: DevOps Quality Gates\"" "$HOME_DIR/.codex/skills/devops-quality-gates/SKILL.md"
 assert_file_absent "Codex native SB mirror excludes hidden TDD support skill" "$HOME_DIR/.codex/skills/tdd/SKILL.md"
 assert_file_absent "Codex native SB mirror excludes hidden modularity dimension helper" "$HOME_DIR/.codex/skills/modularity/SKILL.md"
 assert_file_absent "Codex native SB mirror excludes hidden testability dimension helper" "$HOME_DIR/.codex/skills/testability/SKILL.md"
@@ -1166,25 +1166,25 @@ assert_file_exists "Current cache workflow-chain guard synced" "$FAKE_CACHE_ROOT
 assert_file_exists "SB instruction-file guard hook synced into source bundle" "$REPO_ROOT/hooks/instruction-file-guard.sh"
 assert_file_exists "Installed SB instruction-file guard hook synced into package" "$FAKE_SB_PACKAGE_ROOT/hooks/instruction-file-guard.sh"
 assert_file_exists "Current cache instruction-file guard synced" "$FAKE_CACHE_ROOT/hooks/instruction-file-guard.sh"
-assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROOT/agents/claude/silver:scan/SKILL.md"
-assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/host-bundles/codex/silver-scan/SKILL.md"
+assert_file_exists "SB Claude agent bundle synced into source bundle" "$REPO_ROOT/agents/claude/sb:scan/SKILL.md"
+assert_file_exists "SB Codex agent bundle synced into source bundle" "$REPO_ROOT/host-bundles/codex/sb-scan/SKILL.md"
 assert_file_absent "Installed SB package does not expose Claude agent SKILL.md bundle" "$FAKE_SB_PACKAGE_ROOT/agents/claude"
 assert_file_absent "Installed SB package does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_SB_PACKAGE_ROOT/agents/codex"
-assert_file_exists "Installed SB package exposes silver slash command stub" "$FAKE_SB_PACKAGE_ROOT/commands/silver.md"
+assert_file_exists "Installed SB package exposes sb slash command stub" "$FAKE_SB_PACKAGE_ROOT/commands/sb.md"
 assert_file_absent "Installed SB package does not ship agents/cursor subagent mirror" "$FAKE_SB_PACKAGE_ROOT/agents/cursor"
-assert_file_exists "Source workspace cursor bundle exposes non-command subagent skill" "$REPO_ROOT/host-bundles/cursor/silver:plan/SKILL.md"
+assert_file_exists "Source workspace cursor bundle exposes non-command subagent skill" "$REPO_ROOT/host-bundles/cursor/sb:plan/SKILL.md"
 assert_file_absent "Current cache does not expose Claude agent SKILL.md bundle" "$FAKE_CACHE_ROOT/agents/claude"
 assert_file_absent "Current cache does not expose Codex agent SKILL.md bundle under agents/" "$FAKE_CACHE_ROOT/agents/codex"
 assert_file_absent "SB source bundle does not expose plugin picker skills directory" "$REPO_ROOT/plugins/silver-bullet/skills"
-assert_file_exists "SB init skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_file_exists "SB ensure-docs skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
-assert_file_exists "SB feature skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-feature)"
-assert_file_exists "SB router skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver)"
-assert_file_exists "SB handoff skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-handoff)"
-assert_file_exists "Review fix ladder skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
-assert_file_exists "Installed review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-review-fix-ladder)"
-assert_file_exists "Current cache review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_CACHE_ROOT" silver-review-fix-ladder)"
-assert_file_exists "Current alias review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" silver-review-fix-ladder)"
+assert_file_exists "SB init skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
+assert_file_exists "SB ensure-docs skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-ensure-docs)"
+assert_file_exists "SB feature skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-feature)"
+assert_file_exists "SB router skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb)"
+assert_file_exists "SB handoff skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-handoff)"
+assert_file_exists "Review fix ladder skill source synced into source bundle" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-review-fix-ladder)"
+assert_file_exists "Installed review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-review-fix-ladder)"
+assert_file_exists "Current cache review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_CACHE_ROOT" sb-review-fix-ladder)"
+assert_file_exists "Current alias review fix ladder skill source synced" "$(sb_internal_skill "$FAKE_SB_INSTALL_ALIAS" sb-review-fix-ladder)"
 assert_not_symlink "SB skill-source surface is materialized in the source bundle" "$REPO_ROOT/plugins/silver-bullet/skill-source"
 assert_not_symlink "SB skill-source surface is materialized in the marketplace snapshot" "$FAKE_MARKETPLACE_ROOT/plugins/silver-bullet/skill-source"
 assert_not_symlink "Installed SB skill-source surface is materialized in the package root" "$FAKE_SB_PACKAGE_ROOT/skill-source"
@@ -1220,38 +1220,38 @@ assert_hook_command_matchers "Current cache pretool ci-status-check covers Bash 
 assert_hook_command_matchers "Current cache posttool completion-audit covers Bash and exec_command" "$FAKE_CACHE_ROOT/hooks/hooks.json" "PostToolUse" "completion-audit.sh" "Bash" "exec_command"
 assert_contains "SB package hooks use the canonical marketplace path" "$FAKE_SB_PACKAGE_ROOT/hooks/session-start" "$FAKE_SB_PACKAGE_ROOT/hooks/hooks.json"
 assert_contains "Current cache hooks use the canonical marketplace path" "$FAKE_SB_PACKAGE_ROOT/hooks/session-start" "$FAKE_CACHE_ROOT/hooks/hooks.json"
-assert_contains "SB init skill uses silver prefix" "name: \"silver:init\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_contains "SB ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
-assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
+assert_contains "SB init skill uses sb route" "name: \"sb:init\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
+assert_contains "SB ensure-docs skill uses sb route" "name: \"sb:ensure-docs\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-ensure-docs)"
+assert_contains "SB init skill is runtime-aware for Codex" "project instruction file and avoid runtime-specific model-routing jargon" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
 # shellcheck disable=SC2088 # literal tilde is part of the documented Codex cache glob
-assert_contains "SB init skill treats legacy plugins as optional" "no longer probes or reports" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_contains "SB init skill does not fail on flaky legacy GSD" "do not fail bootstrap" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-init)"
-assert_contains "SB ensure-docs skill runs semantic audits" "semantic freshness audits against the current project state" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
-assert_contains "SB ensure-docs skill avoids placeholder doc keys" "using real governed doc keys only" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-ensure-docs)"
-assert_contains "SB feature skill uses silver prefix" "name: \"silver:feature\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-feature)"
-assert_contains "SB router skill uses silver name" "name: silver" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver)"
-assert_contains "SB handoff skill uses silver prefix" "name: \"silver:handoff\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-handoff)"
-assert_contains "Review fix ladder keeps canonical skill name in source bundle" "name: \"silver:review-fix-ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
-assert_contains "Review fix ladder picker title uses Silver prefix in source bundle" "title: \"Review Fix Ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" silver-review-fix-ladder)"
+assert_contains "SB init skill treats legacy plugins as optional" "no longer probes or reports" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
+assert_contains "SB init skill recognizes WordPress-style roots" "first-class source roots instead of guessing \`/src/\`" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
+assert_contains "SB init skill does not fail on flaky legacy GSD" "do not fail bootstrap" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-init)"
+assert_contains "SB ensure-docs skill runs semantic audits" "semantic freshness audits against the current project state" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-ensure-docs)"
+assert_contains "SB ensure-docs skill avoids placeholder doc keys" "using real governed doc keys only" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-ensure-docs)"
+assert_contains "SB feature skill uses sb route" "name: \"sb:feature\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-feature)"
+assert_contains "SB router skill uses sb name" "name: sb" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb)"
+assert_contains "SB handoff skill uses sb route" "name: \"sb:handoff\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-handoff)"
+assert_contains "Review fix ladder keeps canonical skill name in source bundle" "name: \"sb:review-fix-ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-review-fix-ladder)"
+assert_contains "Review fix ladder picker title uses SB prefix in source bundle" "title: \"Review Fix Ladder\"" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" sb-review-fix-ladder)"
 assert_contains "TDD skill hidden from picker in source bundle" "user-invocable: false" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
 assert_contains "TDD skill is SB-owned in source bundle" "SB owns this TDD" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
 assert_not_contains "TDD skill does not delegate to Superpowers in source bundle" "superpowers:test-driven-development" "$(sb_internal_skill "$REPO_ROOT/plugins/silver-bullet" tdd)"
-assert_contains "SB scan Codex agent bundle uses silver prefix" "name: \"silver:scan\"" "$REPO_ROOT/host-bundles/codex/silver-scan/SKILL.md"
+assert_contains "SB scan Codex agent bundle uses silver prefix" "name: \"sb:scan\"" "$REPO_ROOT/host-bundles/codex/sb-scan/SKILL.md"
 assert_file_absent "SB generated skill package directory absent from source bundle" "$REPO_ROOT/plugins/silver-bullet/.generated-skills"
-assert_contains "Installed SB init skill uses silver prefix" "name: \"silver:init\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-init)"
-assert_contains "Installed SB ensure-docs skill uses silver prefix" "name: \"silver:ensure-docs\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-ensure-docs)"
-assert_contains "Installed SB feature skill uses silver prefix" "name: \"silver:feature\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
-assert_contains "Installed SB router skill uses silver name" "name: silver" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver)"
+assert_contains "Installed SB init skill uses sb route" "name: \"sb:init\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-init)"
+assert_contains "Installed SB ensure-docs skill uses sb route" "name: \"sb:ensure-docs\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-ensure-docs)"
+assert_contains "Installed SB feature skill uses sb route" "name: \"sb:feature\"" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-feature)"
+assert_contains "Installed SB router skill uses sb name" "name: sb" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb)"
 assert_file_absent "Installed SB generated skill package directory absent" "$FAKE_CACHE_ROOT/.generated-skills"
 assert_file_absent "Installed SB Claude agent bundle absent from cache" "$FAKE_CACHE_ROOT/agents/claude"
 assert_file_absent "Installed SB Codex agent bundle absent from cache under agents/" "$FAKE_CACHE_ROOT/agents/codex"
-assert_contains "Installed SB feature skill documents FLOW 8 execute boundary" "FLOW 8 (EXECUTE)" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
-assert_contains "Installed SB feature skill is atomic queue builder" "queue builder" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-feature)"
-assert_contains "Installed SB UI skill wires TDD into execute boundary" "silver:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-ui)"
-assert_contains "Installed SB bugfix skill documents internal TDD gate" "Internal \`tdd\` gate" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
-assert_contains "Installed SB bugfix skill executes through SB execute" "silver:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
-assert_contains "Installed SB bugfix skill documents workflow tracking fallback" "scripts/workflows.sh" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" silver-bugfix)"
+assert_contains "Installed SB feature skill documents FLOW 8 execute boundary" "FLOW 8 (EXECUTE)" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-feature)"
+assert_contains "Installed SB feature skill is atomic queue builder" "queue builder" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-feature)"
+assert_contains "Installed SB UI skill wires TDD into execute boundary" "sb:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-ui)"
+assert_contains "Installed SB bugfix skill documents internal TDD gate" "Internal \`tdd\` gate" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-bugfix)"
+assert_contains "Installed SB bugfix skill executes through SB execute" "sb:execute" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-bugfix)"
+assert_contains "Installed SB bugfix skill documents workflow tracking fallback" "scripts/workflows.sh" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" sb-bugfix)"
 assert_contains "TDD skill hidden from picker in installed package" "user-invocable: false" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 assert_contains "TDD skill is SB-owned in installed package" "SB owns this TDD" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
 assert_not_contains "TDD skill does not delegate to Superpowers in installed package" "superpowers:test-driven-development" "$(sb_internal_skill "$FAKE_SB_PACKAGE_ROOT" tdd)"
@@ -1324,10 +1324,13 @@ assert_contains "legacy hook preserved in Codex user config" 'legacy-check-updat
 assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
+# These shared helpers deliberately contain explicit Claude branches for the
+# other supported hosts.  They are host-dispatch code, not Codex runtime paths;
+# keep the audit focused on accidental Claude-only paths in the Codex surface.
 {
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
-  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
+  rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
 } > "$RUNTIME_CLAUDE_REPORT"
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
@@ -1464,24 +1467,24 @@ git -C "$PUBLIC_STALE_MARKETPLACE" push -q -u origin HEAD:main
 PUBLIC_STALE_CACHE="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/$package_v"
 PUBLIC_STALE_ALIAS="$PUBLIC_STALE_HOME/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
 assert_file_absent "public-release cache removes plugin picker skills directory" "$PUBLIC_STALE_CACHE/skills"
-assert_file_exists "public-release cache keeps Silver Bullet feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_CACHE" silver-feature)"
+assert_file_exists "public-release cache keeps Silver Bullet feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_CACHE" sb-feature)"
 assert_no_packaged_skill_md "public-release cache contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_CACHE"
 assert_command_succeeds "public-release cache alias created" test -L "$PUBLIC_STALE_ALIAS"
 assert_file_absent "public-release cache alias does not expose plugin picker skills surface" "$PUBLIC_STALE_ALIAS/skills"
-assert_file_exists "public-release cache alias exposes internal feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" silver-feature)"
-assert_file_exists "public-release cache alias exposes internal review fix ladder skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" silver-review-fix-ladder)"
+assert_file_exists "public-release cache alias exposes internal feature skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" sb-feature)"
+assert_file_exists "public-release cache alias exposes internal review fix ladder skill source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" sb-review-fix-ladder)"
 assert_file_exists "public-release cache alias exposes hidden modularity dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" modularity)"
 assert_file_exists "public-release cache alias exposes hidden testability dimension source" "$(sb_internal_skill "$PUBLIC_STALE_ALIAS" testability)"
 assert_no_packaged_skill_md "public-release cache alias contains no picker-discoverable SKILL.md files" "$PUBLIC_STALE_ALIAS"
-assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/silver:feature/SKILL.md"
-assert_file_exists "public-release native SB mirror exposes review fix ladder helper" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
-assert_contains "public-release review fix ladder uses Silver picker prefix" "title: \"Review Fix Ladder\"" "$PUBLIC_STALE_HOME/.codex/skills/silver-review-fix-ladder/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes Silver Bullet feature skill" "$PUBLIC_STALE_HOME/.codex/skills/sb:feature/SKILL.md"
+assert_file_exists "public-release native SB mirror exposes review fix ladder helper" "$PUBLIC_STALE_HOME/.codex/skills/sb-review-fix-ladder/SKILL.md"
+assert_contains "public-release review fix ladder uses SB picker prefix" "title: \"Review Fix Ladder\"" "$PUBLIC_STALE_HOME/.codex/skills/sb-review-fix-ladder/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes verify-tests gate" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
-assert_contains "public-release verify-tests gate keeps Silver picker prefix" "title: \"Silver: Verify Tests\"" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
+assert_contains "public-release verify-tests gate uses SB picker prefix" "title: \"SB: Verify Tests\"" "$PUBLIC_STALE_HOME/.codex/skills/verify-tests/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes security gate" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"
-assert_contains "public-release security gate keeps Silver picker prefix" "title: \"Silver: Security\"" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"
+assert_contains "public-release security gate uses SB picker prefix" "title: \"SB: Security\"" "$PUBLIC_STALE_HOME/.codex/skills/security/SKILL.md"
 assert_file_exists "public-release native SB mirror exposes DevOps quality gate" "$PUBLIC_STALE_HOME/.codex/skills/devops-quality-gates/SKILL.md"
-assert_contains "public-release DevOps quality gate keeps Silver picker prefix" "title: \"Silver: DevOps Quality Gates\"" "$PUBLIC_STALE_HOME/.codex/skills/devops-quality-gates/SKILL.md"
+assert_contains "public-release DevOps quality gate uses SB picker prefix" "title: \"SB: DevOps Quality Gates\"" "$PUBLIC_STALE_HOME/.codex/skills/devops-quality-gates/SKILL.md"
 assert_file_absent "public-release native SB mirror excludes hidden modularity dimension helper" "$PUBLIC_STALE_HOME/.codex/skills/modularity/SKILL.md"
 assert_file_absent "public-release native SB mirror excludes hidden testability dimension helper" "$PUBLIC_STALE_HOME/.codex/skills/testability/SKILL.md"
 assert_file_absent "public-release native SB mirror excludes stale delegate skill" "$PUBLIC_STALE_HOME/.codex/skills/stale-delegate"
@@ -1511,7 +1514,7 @@ cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/.codex-plugin/plugin.json"
   "commands": "./commands/"
 }
 EOF
-cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands/silver:init.md" <<'EOF'
+cat > "$BROKEN_PUBLIC_SB_SOURCE/plugins/silver-bullet/commands/sb:init.md" <<'EOF'
 # init
 EOF
 git -C "$BROKEN_PUBLIC_SB_SOURCE" init -q

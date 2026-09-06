@@ -5,8 +5,8 @@ scope: interface-design-state
 
 # Interface Design State
 
-Persistent UI contract continuity artifact. Updated by `silver:ui-contract` at
-design time and `silver:ui-review` after implementation establishes reusable
+Persistent UI contract continuity artifact. Updated by `sb:ui-contract` at
+design time and `sb:ui-review` after implementation establishes reusable
 patterns.
 
 ## Design Tokens

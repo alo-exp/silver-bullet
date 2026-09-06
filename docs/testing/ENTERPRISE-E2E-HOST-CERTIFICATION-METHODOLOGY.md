@@ -392,13 +392,13 @@ When a live driver (e.g. PID **47290** on `claude@30558b37…`) is mid-batch:
 ### Live host wrapper and model policy (pre-release)
 
 Every live host-certification test MUST be initiated through the corresponding
-`/silver:agent-*` wrapper with this fixed model mapping:
+`/sb:agent-*` wrapper with this fixed model mapping:
 
 | Host | Required wrapper | Required model |
 |------|------------------|----------------|
-| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
-| Claude | `/silver:agent-claude` | **Haiku 4.5** |
-| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+| Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/sb:agent-claude` | **Haiku 4.5** |
+| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 Raw host CLI runs, silent model substitutions, or transcripts without the wrapper do not
 count as live certification evidence.

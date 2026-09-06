@@ -1,4 +1,4 @@
-# `/silver:new-workflow` — Workflow Authoring Runbook
+# `/sb:new-workflow` — Workflow Authoring Runbook
 
 Create, convert, or audit Silver Bullet workflows with full catalog compliance.
 
@@ -7,23 +7,23 @@ Create, convert, or audit Silver Bullet workflows with full catalog compliance.
 ### Create
 
 ```
-/silver:new-workflow <intent>
+/sb:new-workflow <intent>
 ```
 
 ### Convert
 
 ```
-/silver:new-workflow skills/my-legacy-skill/SKILL.md
+/sb:new-workflow skills/my-legacy-skill/SKILL.md
 ```
 
 ### Audit (read-only)
 
 ```
-/silver:new-workflow --audit WF-SILVER-FEATURE
-/silver:new-workflow --audit silver-feature
-/silver:new-workflow --audit feature
-/silver:new-workflow --validate skills/silver-new-workflow/SKILL.md
-/silver:new-workflow audit WF-SILVER-NEW-WORKFLOW
+/sb:new-workflow --audit WF-SILVER-FEATURE
+/sb:new-workflow --audit silver-feature
+/sb:new-workflow --audit feature
+/sb:new-workflow --validate skills/silver-new-workflow/SKILL.md
+/sb:new-workflow audit WF-SILVER-NEW-WORKFLOW
 ```
 
 Audit mode resolves the target workflow, runs `scripts/audit-workflow-compliance.sh`, and writes a compliance report under `.planning/`. No catalog edits, plan, RFL, or implement steps.

@@ -7,7 +7,7 @@ argument-hint: "[--last N] [--phase NN] [--plan NN-MM] [--dry-run]"
 version: 0.1.0
 ---
 
-# /silver:undo — Safe Phase and Plan Revert
+# /sb:undo — Safe Phase and Plan Revert
 
 SB-owned undo workflow. Use when you need to roll back committed phase or plan
 work while keeping `.planning/` artifacts consistent with the codebase.
@@ -33,7 +33,7 @@ SILVER BULLET > UNDO
 Reverted: <scope description>
 Commits reverted: <count>
 Artifacts updated: STATE.md, <plan slugs>
-Next: Phase <N> is now pending — re-run silver:execute when ready
+Next: Phase <N> is now pending — re-run sb:execute when ready
 ```
 
 ## Modes

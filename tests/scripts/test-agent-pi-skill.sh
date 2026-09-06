@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structural contract for /silver:agent-pi skill and delegate wrapper.
+# Structural contract for /sb:agent-pi skill and delegate wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -32,7 +32,7 @@ fi
 
 grep -qE '^name: silver-agent-pi$' "$SKILL" && check "frontmatter name silver-agent-pi" pass || check "frontmatter name silver-agent-pi" fail
 grep -q 'user-invocable: true' "$SKILL" && check "user-invocable" pass || check "user-invocable" fail
-grep -q '/silver:agent-pi' "$SKILL" && check "route documented" pass || check "route documented" fail
+grep -q '/sb:agent-pi' "$SKILL" && check "route documented" pass || check "route documented" fail
 grep -q 'pi -p' "$SKILL" && check "references pi -p harness" pass || check "references pi -p harness" fail
 grep -q 'mimo-v2.5' "$SKILL" && check "documents mimo-v2.5 model policy" pass || check "documents mimo-v2.5 model policy" fail
 grep -q 'opencode-go' "$SKILL" && check "documents opencode-go provider" pass || check "documents opencode-go provider" fail
@@ -567,10 +567,10 @@ if (
   export PATH="${HOSTBIN}:$PATH" PI_BIN="${HOSTBIN}/pi" PI_PROVIDER=omniroute PI_MODEL="opencode-go/qwen3.8-max"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi non-interactive "${TMP_PI}/work" "write review.md" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--thinking' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- 'off' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--no-context-files' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--no-skills'
+  grep -x -- '--thinking' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- 'off' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- '--no-context-files' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- '--no-skills' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "qwen3.8-max NI argv has thinking-off rails" pass
 else
@@ -580,8 +580,8 @@ if (
   export PATH="${HOSTBIN}:$PATH" PI_BIN="${HOSTBIN}/pi" PI_PROVIDER=omniroute PI_MODEL="cursor/grok-4.6-high"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi non-interactive "${TMP_PI}/work" "write review.md" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--thinking' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- 'off'
+  grep -x -- '--thinking' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- 'off' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "grok NI argv still has thinking-off rails" pass
 else
@@ -591,11 +591,11 @@ if (
   export PATH="${HOSTBIN}:$PATH" PI_BIN="${HOSTBIN}/pi" PI_PROVIDER=omniroute PI_MODEL="claude/claude-opus-5-high"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi non-interactive "${TMP_PI}/work" "write review.md" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--thinking' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- 'off' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--no-context-files' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--no-skills' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -Fq -- 'read,bash,edit,write'
+  grep -x -- '--thinking' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- 'off' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- '--no-context-files' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -x -- '--no-skills' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")" \
+    && grep -F -- 'read,bash,edit,write' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "claude/claude-opus-5-high NI argv has thinking-off rails" pass
 else
@@ -605,7 +605,7 @@ if (
   export PATH="${HOSTBIN}:$PATH" PI_BIN="${HOSTBIN}/pi" PI_PROVIDER=opencode-go PI_MODEL="mimo-v2.5"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi non-interactive "${TMP_PI}/work" "write review.md" permissive
-  ! printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--thinking'
+  ! grep -x -- '--thinking' >/dev/null <<<"$(printf '%s\n' "${AGENT_HOST_ARGV[@]}")"
 ); then
   check "mimo-v2.5 NI argv has no thinking-off rails" pass
 else

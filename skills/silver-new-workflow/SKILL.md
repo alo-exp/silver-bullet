@@ -6,7 +6,7 @@ argument-hint: "<workflow intent | --audit <target> | path to existing skill/wor
 version: 0.2.0
 ---
 
-# /silver:new-workflow — Workflow Authoring Meta Workflow
+# /sb:new-workflow — Workflow Authoring Meta Workflow
 
 SB **queue builder** for workflow and atomic-flow authoring. Parent orchestrator
 spawns workers per atomic flow; do not implement catalog changes inline in parent
@@ -120,11 +120,11 @@ Write reuse memo: `.planning/new-workflow-reuse-analysis.md`.
 
 ## Step 2 — Plan
 
-Create `.planning/NEW-WORKFLOW-<slug>-PLAN.md` with slug, composition tree, enforcement queue, files checklist, test plan. Invoke **`silver:plan`** when the target repo uses SB planning.
+Create `.planning/NEW-WORKFLOW-<slug>-PLAN.md` with slug, composition tree, enforcement queue, files checklist, test plan. Invoke **`sb:plan`** when the target repo uses SB planning.
 
 ## Step 3 — Review-fix ladder on plan (HARD)
 
-Run **`silver:review-fix-ladder`** on plan artifact(s). Two consecutive clean verify passes per rung. Do not implement until plan RFL passes.
+Run **`sb:review-fix-ladder`** on plan artifact(s). Two consecutive clean verify passes per rung. Do not implement until plan RFL passes.
 
 ## Step 4 — Implement
 
@@ -154,15 +154,15 @@ FLOW 3 (CLARIFY) → FLOW 2 (ORIENT) → FLOW 4 (DECIDE) → FLOW 6 (PLAN)
 
 ## Enforcement queue
 
-Full chain: `silver:clarify` → `silver:scan` → `silver:deep-research` → `silver:plan`
-→ `silver:review-fix-ladder` → `silver:execute` → `silver:verify`
-→ `silver:validate` → `silver:ensure-docs`
+Full chain: `sb:clarify` → `sb:scan` → `sb:deep-research` → `sb:plan`
+→ `sb:review-fix-ladder` → `sb:execute` → `sb:verify`
+→ `sb:validate` → `sb:ensure-docs`
 
 **Pre-execution** (blocks implementation execute atom until recorded):
 
-`silver:clarify` → `silver:scan` → `silver:plan` → `silver:validate`
+`sb:clarify` → `sb:scan` → `sb:plan` → `sb:validate`
 
-**Post-execution:** `silver:verify`, `silver:ensure-docs`
+**Post-execution:** `sb:verify`, `sb:ensure-docs`
 
 **Audit mode** does not use the enforcement queue — read-only checks only.
 

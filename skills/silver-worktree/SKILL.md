@@ -7,7 +7,7 @@ argument-hint: "create|finish <branch or scope>"
 version: 0.1.0
 ---
 
-# /silver:worktree - Isolated Branch Workspace
+# /sb:worktree - Isolated Branch Workspace
 
 SB-owned worktree workflow for branch-safe development and structured finish.
 
@@ -38,7 +38,7 @@ The artifact must include:
    target base is known.
 3. Record resume commands and active workflow context in `.planning/WORKTREE.md`.
 4. For `finish`, run status, diff, tests, and SB review/verify evidence checks.
-5. Invoke `silver:branch-finish` before merge, PR, or cleanup decisions.
+5. Invoke `sb:branch-finish` before merge, PR, or cleanup decisions.
 6. Do not delete a worktree unless it is clean, merged or intentionally
    abandoned, and the user decision is recorded.
 

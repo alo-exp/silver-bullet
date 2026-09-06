@@ -47,11 +47,11 @@ rt_session_verify_block() {
       case "$state" in
         ready|disabled|pending|unsupported) ;;
         suspended)
-          lines+=("TOOLSTACK ${tool}: suspended (consent preserved) — retry via /silver:update or /silver:init")
+          lines+=("TOOLSTACK ${tool}: suspended (consent preserved) — retry via /sb:update or /sb:init")
           needs_action=1
           ;;
         failed|repairable|reload_required)
-          lines+=("TOOLSTACK ${tool}: ${state} (activation=${activation}) — run /silver:doctor --fix or /silver:init")
+          lines+=("TOOLSTACK ${tool}: ${state} (activation=${activation}) — run /sb:doctor --fix or /sb:init")
           needs_action=1
           ;;
       esac
@@ -63,7 +63,7 @@ rt_session_verify_block() {
       cross_hb_invalid=1
     fi
     if [[ -n "$cross_state" ]] && { [[ "$cross_state" != "ready" ]] || [[ "$cross_activation" != "full" ]] || [[ "$cross_hb_invalid" -eq 1 ]]; }; then
-      lines+=("TOOLSTACK routes: ${cross_state} (activation=${cross_activation:-none}) — run bash scripts/install-cursor.sh or /silver:doctor --fix=host")
+      lines+=("TOOLSTACK routes: ${cross_state} (activation=${cross_activation:-none}) — run bash scripts/install-cursor.sh or /sb:doctor --fix=host")
       needs_action=1
     fi
     if printf '%s' "$out" | jq -e '.restart_required == true' >/dev/null 2>&1; then
@@ -76,7 +76,7 @@ rt_session_verify_block() {
   {
     echo "**Recommended tools — verification only (SessionStart does not repair)**"
     printf '%s\n' "${lines[@]}"
-    echo "Fix paths: /silver:init · /silver:update · bash scripts/install-cursor.sh · /silver:doctor --dry-run · /silver:doctor --fix"
+    echo "Fix paths: /sb:init · /sb:update · bash scripts/install-cursor.sh · /sb:doctor --dry-run · /sb:doctor --fix"
     echo "Liveness: CONFIGURED ≠ LIVE until this session successfully invokes expected MCP tools."
   }
 }

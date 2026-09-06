@@ -22,7 +22,7 @@
 
 ## Wave 2 closure (site-session profile)
 
-`silver:content` site batch protocol defines five child V-loops:
+`sb:content` site batch protocol defines five child V-loops:
 
 1. **preflight** — freshness/regression marker
 2. **implement** — `site/**` touch
@@ -34,4 +34,4 @@
 
 ## Remaining gap
 
-Full catalog rollup for composed workflows (`silver:feature`, etc.) still requires Phase 103+ intent-ledger integration with per-step evidence refs from `docs/apo-catalog.json`. Site-session profile is the first runtime consumer; general workflow rollup is tracked in [atomic-flow-redesign.plan.md](../research-260624/atomic-flow-redesign.plan.md).
+Full catalog rollup for composed workflows (`sb:feature`, etc.) still requires Phase 103+ intent-ledger integration with per-step evidence refs from `docs/apo-catalog.json`. Site-session profile is the first runtime consumer; general workflow rollup is tracked in [atomic-flow-redesign.plan.md](../research-260624/atomic-flow-redesign.plan.md).

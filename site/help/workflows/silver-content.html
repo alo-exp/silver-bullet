@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:content — Docs &amp; Copy Workflow — Silver Bullet Help</title>
+<title>/sb:content — Docs &amp; Copy Workflow — Silver Bullet Help</title>
 <meta name="description" content="WF-SILVER-CONTENT: clarify scope, specify content requirements, execute docs/copy, verify quality, document — AF-CLARIFY → AF-SPECIFY → AF-EXECUTE → AF-VERIFY → AF-DOCUMENT from v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:content</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:content</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:content</h1>
+    <h1>/sb:content</h1>
     <p>Specialized documentation and copy workflow — clarify audience and scope, specify content requirements, execute writing, verify quality, document deliverables.</p>
   </div>
 </div>
@@ -114,19 +114,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-spec.html">/silver:spec</a></li>
-        <li><a href="./silver-clarify.html">/silver:clarify</a></li>
+        <li><a href="./silver-spec.html">/sb:spec</a></li>
+        <li><a href="./silver-clarify.html">/sb:clarify</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:content</code> is the Silver Bullet orchestrator for <strong>documentation, copy, and content deliverables</strong> — help pages, API docs, README updates, marketing copy, changelogs, and technical writing. It maps to catalog entity <code>WF-SILVER-CONTENT</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p><code>/sb:content</code> is the Silver Bullet orchestrator for <strong>documentation, copy, and content deliverables</strong> — help pages, API docs, README updates, marketing copy, changelogs, and technical writing. It maps to catalog entity <code>WF-SILVER-CONTENT</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
       <p>Content work needs specification discipline without full feature lifecycle overhead. The workflow clarifies audience and tone, specifies structure and acceptance criteria, executes the writing, verifies accuracy and completeness, then documents the deliverable lineage.</p>
       <p>Standard composition:</p>
       <div class="code-block">AF-CLARIFY → AF-SPECIFY → AF-EXECUTE → AF-VERIFY → AF-DOCUMENT</div>
-      <p>For product feature specs (not content deliverables), use <a href="./silver-spec.html"><code>/silver:spec</code></a>. For research-backed content decisions, start with <a href="./silver-deep-research.html"><code>/silver:deep-research</code></a>.</p>
+      <p>For product feature specs (not content deliverables), use <a href="./silver-spec.html"><code>/sb:spec</code></a>. For research-backed content decisions, start with <a href="./silver-deep-research.html"><code>/sb:deep-research</code></a>.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -138,7 +138,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:content</code>, <code>content</code>, and <code>docs</code>:</p>
+      <p>Entry trigger signals for <code>/sb:content</code>, <code>content</code>, and <code>docs</code>:</p>
       <ul>
         <li>Help center pages, API reference, or developer documentation</li>
         <li>README, changelog, or release notes authoring</li>
@@ -153,11 +153,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-CLARIFY</code></td><td><code>/silver:clarify</code></td><td>Audience, tone, scope boundaries, and success criteria</td></tr>
-          <tr><td><code>AF-SPECIFY</code></td><td><code>/silver:spec</code></td><td>Content outline, section structure, acceptance criteria per section</td></tr>
-          <tr><td><code>AF-EXECUTE</code></td><td><code>/silver:execute</code></td><td>Draft content — prose, code examples, diagrams, metadata</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Accuracy check against source, link validation, example execution</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Deliverable packaging, lineage, and publication readiness</td></tr>
+          <tr><td><code>AF-CLARIFY</code></td><td><code>/sb:clarify</code></td><td>Audience, tone, scope boundaries, and success criteria</td></tr>
+          <tr><td><code>AF-SPECIFY</code></td><td><code>/sb:spec</code></td><td>Content outline, section structure, acceptance criteria per section</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td><code>/sb:execute</code></td><td>Draft content — prose, code examples, diagrams, metadata</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/sb:verify</code></td><td>Accuracy check against source, link validation, example execution</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Deliverable packaging, lineage, and publication readiness</td></tr>
         </tbody>
       </table>
 
@@ -183,17 +183,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:content Write help pages for the new WF-SILVER-DEPLOY and WF-SILVER-CANARY workflows in site/help/workflows/</div>
+      <div class="code-block">/sb:content Write help pages for the new WF-SILVER-DEPLOY and WF-SILVER-CANARY workflows in site/help/workflows/</div>
       <p>Silver Bullet routes to <code>WF-SILVER-CONTENT</code>. Clarify defines CTO/dev audience and APO catalog alignment. Specify outlines seven pages with composition chains and acceptance criteria. Execute authors HTML from existing templates. Verify checks catalog slug accuracy and link integrity. Document records the deliverable set for publication.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-benchmark.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:benchmark</span>
+          <span class="pnb-title">/sb:benchmark</span>
         </a>
         <a href="./silver-fast.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:fast</span>
+          <span class="pnb-title">/sb:fast</span>
         </a>
       </div>
 

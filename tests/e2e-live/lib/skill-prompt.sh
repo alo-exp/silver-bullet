@@ -13,8 +13,8 @@ matrix_route_prompt() {
     "$route" "$prompt_card" "$matrix_context" "$evidence_path"
 }
 
-# Rows 2-20: Claude TUI registers /silver from agents/claude/silver (skills manifest).
-# Codex-only commands/silver.md is not copied into the Claude plugin cache.
+# Rows 2-20: Claude TUI registers /sb from agents/claude/sb (skills manifest).
+# Cursor command-only commands/sb.md is not copied into the Claude plugin cache.
 # The expect harness must wait for the ❯ prompt before submitting slash routes.
 matrix_product_commit_clause() {
   [[ "${SB_E2E_PRODUCT_WORK_GATE:-}" == "1" ]] || return 0
@@ -34,7 +34,7 @@ matrix_row3_product_commit_clause() {
 matrix_row1_evidence_clause() {
   local branch="${SB_E2E_TEST_APP_BRANCH:-enterprise-e2e/round-9-codex}"
   local state_hint="${SB_RUNTIME_STATE_DIR:-${CLAUDE_CONFIG_DIR:-}/.silver-bullet}"
-  printf '§5b row 1 gate: routing-only — invoke /silver silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.codex/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.' "$branch" "$state_hint"
+  printf '§5b row 1 gate: routing-only — invoke /sb silver-router via parent orchestrator (spawn workers; no inline api/ edits). Create .planning/workflows/router-session.md documenting composed workflow + routing decisions; git-commit on fixture branch %s. Silver Bullet routing state must update under isolated config (%s/state), not ~/.codex/.silver-bullet. Missing router-session.md or zero fixture commits FAIL OUT-WORLD-01 OUT-CLARIFY-01.' "$branch" "$state_hint"
 }
 
 # Row 6 fast path — README product fix + workflow evidence.
@@ -103,7 +103,7 @@ matrix_router_workflow_prompt() {
   local prompt_card="$2"
   local evidence_path="$3"
 
-  printf '/silver %s Enterprise E2E matrix validation. Route this through the %s workflow via the Silver Bullet orchestrator; parent must not implement product code inline. Matrix autonomous mode: apply autonomous_default for decision_class blocking clarify — issue SB OVERRIDE when planning-file-guard blocks evidence writes; do not present interactive disposition menus. Create workflow evidence at %s. Stop when the workflow is complete.' \
+  printf '/sb %s Enterprise E2E matrix validation. Route this through the %s workflow via the Silver Bullet orchestrator; parent must not implement product code inline. Matrix autonomous mode: apply autonomous_default for decision_class blocking clarify — issue SB OVERRIDE when planning-file-guard blocks evidence writes; do not present interactive disposition menus. Create workflow evidence at %s. Stop when the workflow is complete.' \
     "$prompt_card" "$slug" "$evidence_path"
 }
 

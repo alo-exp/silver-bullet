@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:deploy — Live Rollout Workflow — Silver Bullet Help</title>
+<title>/sb:deploy — Live Rollout Workflow — Silver Bullet Help</title>
 <meta name="description" content="WF-SILVER-DEPLOY: blast-radius-first DevOps live rollout — AF-BLAST-RADIUS → AF-VERIFY → AF-SECURE → AF-SHIP from the v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:deploy</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:deploy</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:deploy</h1>
+    <h1>/sb:deploy</h1>
     <p>Specialized DevOps live rollout workflow — blast-radius assessment mandatory before any production promotion, then verify, secure, and ship gates.</p>
   </div>
 </div>
@@ -114,31 +114,31 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-devops.html">/silver:devops</a></li>
-        <li><a href="./silver-canary.html">/silver:canary</a></li>
+        <li><a href="./silver-devops.html">/sb:devops</a></li>
+        <li><a href="./silver-canary.html">/sb:canary</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:deploy</code> is the Silver Bullet orchestrator for <strong>live production rollouts</strong> — promoting already-built artifacts to production or equivalent live environments. It maps to catalog entity <code>WF-SILVER-DEPLOY</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
-      <p>Unlike <code>/silver:devops</code>, which covers the full IaC change lifecycle (plan, execute, post-exec gates), deploy assumes implementation is complete and focuses on promotion safety. <strong>Blast-radius assessment is always first</strong> — no ship gate passes without documented downstream impact and rollback posture.</p>
+      <p><code>/sb:deploy</code> is the Silver Bullet orchestrator for <strong>live production rollouts</strong> — promoting already-built artifacts to production or equivalent live environments. It maps to catalog entity <code>WF-SILVER-DEPLOY</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p>Unlike <code>/sb:devops</code>, which covers the full IaC change lifecycle (plan, execute, post-exec gates), deploy assumes implementation is complete and focuses on promotion safety. <strong>Blast-radius assessment is always first</strong> — no ship gate passes without documented downstream impact and rollback posture.</p>
       <p>Standard composition:</p>
       <div class="code-block">AF-BLAST-RADIUS → AF-VERIFY → AF-SECURE → AF-SHIP</div>
-      <p>For infrastructure <em>changes</em> (Terraform, pipelines, new resources), use <a href="./silver-devops.html"><code>/silver:devops</code></a>. For partial traffic rollouts, use <a href="./silver-canary.html"><code>/silver:canary</code></a>.</p>
+      <p>For infrastructure <em>changes</em> (Terraform, pipelines, new resources), use <a href="./silver-devops.html"><code>/sb:devops</code></a>. For partial traffic rollouts, use <a href="./silver-canary.html"><code>/sb:canary</code></a>.</p>
 
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
         <div class="callout-body">
-          <strong>Not a planning workflow.</strong> <code>WF-SILVER-DEPLOY</code> deliberately omits <code>AF-PLAN</code> and <code>AF-EXECUTE</code>. If the artifact is not built, tested, and reviewed, route to <code>/silver:devops</code> or <code>/silver:feature</code> first.
+          <strong>Not a planning workflow.</strong> <code>WF-SILVER-DEPLOY</code> deliberately omits <code>AF-PLAN</code> and <code>AF-EXECUTE</code>. If the artifact is not built, tested, and reviewed, route to <code>/sb:devops</code> or <code>/sb:feature</code> first.
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:deploy</code> and <code>deploy</code>:</p>
+      <p>Entry trigger signals for <code>/sb:deploy</code> and <code>deploy</code>:</p>
       <ul>
         <li>Production or live-environment promotion of a reviewed artifact</li>
         <li>"ship to prod" / "roll out" / "go live" with existing build artifacts</li>
@@ -152,10 +152,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-BLAST-RADIUS</code></td><td><code>/silver:blast-radius</code></td><td>Impact map, failure scenarios, rollback plan, change-window risk</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Pre-promotion verification — smoke tests, health checks, deployment dry-run evidence</td></tr>
-          <tr><td><code>AF-SECURE</code></td><td><code>/silver:secure</code></td><td>Security and LLM-safety gate before live exposure</td></tr>
-          <tr><td><code>AF-SHIP</code></td><td><code>/silver:ship</code></td><td>Ship readiness — branch hygiene, completion audit, promotion execution</td></tr>
+          <tr><td><code>AF-BLAST-RADIUS</code></td><td><code>/sb:blast-radius</code></td><td>Impact map, failure scenarios, rollback plan, change-window risk</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/sb:verify</code></td><td>Pre-promotion verification — smoke tests, health checks, deployment dry-run evidence</td></tr>
+          <tr><td><code>AF-SECURE</code></td><td><code>/sb:secure</code></td><td>Security and LLM-safety gate before live exposure</td></tr>
+          <tr><td><code>AF-SHIP</code></td><td><code>/sb:ship</code></td><td>Ship readiness — branch hygiene, completion audit, promotion execution</td></tr>
         </tbody>
       </table>
 
@@ -178,17 +178,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:deploy Promote v2.4.1 API container to production after staging sign-off</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-DEPLOY</code>. <code>/silver:blast-radius</code> documents multi-service impact. Verification confirms staging parity. Security gate passes. <code>/silver:ship</code> executes the production promotion with rollback evidence on record.</p>
+      <div class="code-block">/sb:deploy Promote v2.4.1 API container to production after staging sign-off</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-DEPLOY</code>. <code>/sb:blast-radius</code> documents multi-service impact. Verification confirms staging parity. Security gate passes. <code>/sb:ship</code> executes the production promotion with rollback evidence on record.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-router.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver</span>
+          <span class="pnb-title">/sb</span>
         </a>
         <a href="./silver-canary.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:canary</span>
+          <span class="pnb-title">/sb:canary</span>
         </a>
       </div>
 

@@ -91,10 +91,10 @@ def is_cursorignored(root: Path, path: Path, patterns: list[str]) -> bool:
 def logical_route(name: str) -> str | None:
     if name == "silver":
         return "silver"
-    if name.startswith("silver:"):
+    if name.startswith("sb:"):
         return name
     if name.startswith("silver-"):
-        return "silver:" + name.removeprefix("silver-")
+        return "sb:" + name.removeprefix("silver-")
     return None
 
 

@@ -3,7 +3,7 @@ set -euo pipefail
 trap 'printf "{\"hookSpecificOutput\":{\"message\":\"⚠️ uat-gate: hook error — check jq/input format\"}}" ; exit 0' ERR
 
 # PreToolUse hook (matcher: Skill)
-# UAT GATE — blocks silver:release / milestone completion when UAT.md is missing,
+# UAT GATE — blocks sb:release / milestone completion when UAT.md is missing,
 # has FAIL results, or was run against a stale spec version.
 
 # Security: restrict file creation permissions (user-only)
@@ -56,15 +56,15 @@ fi
 UAT=".planning/UAT.md"
 SPEC=".planning/SPEC.md"
 
-# Gate milestone release only — phase-level ship (silver:ship) does not require UAT.md.
-# UAT is generated at milestone completion (silver:feature Step 17) before silver:release.
+# Gate milestone release only — phase-level ship (sb:ship) does not require UAT.md.
+# UAT is generated at milestone completion (sb:feature Step 17) before sb:release.
 if ! printf '%s' "$skill" | grep -qE 'silver-release'; then
   exit 0
 fi
 
 # Check 1: UAT.md must exist (UATG-01)
 if [[ ! -f "$UAT" ]]; then
-  emit_block "UAT GATE: .planning/UAT.md not found. Generate UAT checklist from SPEC.md acceptance criteria before completing milestone. Run /silver:release."
+  emit_block "UAT GATE: .planning/UAT.md not found. Generate UAT checklist from SPEC.md acceptance criteria before completing milestone. Run /sb:release."
   exit 0
 fi
 

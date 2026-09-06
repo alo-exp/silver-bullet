@@ -6,7 +6,7 @@ FAIL=0
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -qF "$needle"; then
+  if grep -F "$needle" >/dev/null <<<"$haystack"; then
     echo "PASS: $desc"
     (( PASS++ )) || true
   else
@@ -17,7 +17,7 @@ assert_contains() {
 
 assert_not_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -qF "$needle"; then
+  if grep -F "$needle" >/dev/null <<<"$haystack"; then
     echo "FAIL: $desc — unexpectedly found [$needle]"
     (( FAIL++ )) || true
   else

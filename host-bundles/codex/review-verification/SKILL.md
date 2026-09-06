@@ -1,6 +1,6 @@
 ---
 name: review-verification
-title: "Silver: Review Verification"
+title: "SB: Review Verification"
 description: This skill should be used for VERIFICATION.md artifact review -- validates that verification evidence is fresh, substantive, traceable, and sufficient for SB completion claims.
 argument-hint: "<verification-path> [--source-inputs <plan/spec/requirements paths>]"
 user-invocable: false

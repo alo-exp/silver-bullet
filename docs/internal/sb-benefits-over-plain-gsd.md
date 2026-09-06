@@ -39,7 +39,7 @@ The strongest SB-over-GSD benefits are:
 
 ### Plain GSD
 
-In this report, **plain GSD** means using GSD by itself, without Silver Bullet's hooks, `/silver` router, composed workflow tracker, SB-owned quality gates, SB docs governance, and SB release gates.
+In this report, **plain GSD** means using GSD by itself, without Silver Bullet's hooks, `/sb` router, composed workflow tracker, SB-owned quality gates, SB docs governance, and SB release gates.
 
 Plain GSD includes:
 
@@ -59,7 +59,7 @@ Silver Bullet is the layer that sits above GSD. It reads and respects GSD state,
 SB owns:
 
 - host hook enforcement
-- `/silver` classification and flow composition
+- `/sb` classification and flow composition
 - composed workflow tracking
 - quality gates
 - release gates
@@ -99,7 +99,7 @@ This report counts only the behaviors SB adds or enforces beyond plain GSD.
 | Dimension | Plain GSD | Silver Bullet + GSD |
 |---|---|---|
 | Primary role | Planning and execution engine | Orchestration and enforcement layer around GSD |
-| User entry point | `gsd:*` commands and `gsd:do` freeform delegation | `/silver` classifies intent and composes the appropriate SB/GSD workflow chain |
+| User entry point | `gsd:*` commands and `gsd:do` freeform delegation | `/sb` classifies intent and composes the appropriate SB/GSD workflow chain |
 | Process discipline | Instructional and artifact-driven | Hook-enforced and state-tracked |
 | Workflow shape | GSD lifecycle commands | Dynamic composition from the canonical APO catalog (27 AF-* atomic flows plus reusable workflows) |
 | Spec and acceptance lifecycle | Requirements and phase plans live in GSD artifacts | SB adds `SPEC.md`, ingestion manifests, pre-build validation findings, UAT gates, and PR traceability |
@@ -169,7 +169,7 @@ A feature, UI change, bugfix, DevOps task, research task, and release are not id
 
 ### Silver Bullet addition
 
-SB provides `/silver`, which classifies the task and composes a workflow from the canonical AF-* catalog in `docs/apo-catalog.json`. The catalog is the source of truth for atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings; generated docs render that model for humans.
+SB provides `/sb`, which classifies the task and composes a workflow from the canonical AF-* catalog in `docs/apo-catalog.json`. The catalog is the source of truth for atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings; generated docs render that model for humans.
 
 SB then chooses the relevant chain for the current task:
 
@@ -546,7 +546,7 @@ GSD has quick/fast capabilities, but choosing when to use them is still a matter
 
 ### Silver Bullet addition
 
-SB routes trivial work through `silver:fast`, which classifies the request and dispatches to `gsd-fast` instead of letting agents use legacy bypass markers.
+SB routes trivial work through `sb:fast`, which classifies the request and dispatches to `gsd-fast` instead of letting agents use legacy bypass markers.
 
 SB also treats DevOps files such as `.yml`, `.yaml`, `.json`, and `.toml` as infrastructure code in the DevOps workflow, so they are not casually exempted just because they are declarative.
 
@@ -591,7 +591,7 @@ SB adds:
 - `docs/doc-scheme.md`
 - `docs/doc-scheme.json`
 - `docs/task-doc-checklist.json`
-- `/silver:ensure-docs`
+- `/sb:ensure-docs`
 - brownfield doc reconciliation
 - archive-move policy
 - mandatory doc update semantics for medium and large tasks
@@ -675,7 +675,7 @@ The follow-up codebase pass found several SB capabilities that the earlier repor
 | Benefit | Plain GSD limitation | SB addition | Operational value |
 |---|---|---|---|
 | Enforcement hooks | Relies more on agent/operator discipline | Blocks unsafe edits and delivery actions | Fewer skipped steps |
-| Dynamic workflow composition | `gsd:do` handles GSD freeform delegation, but not full multi-plugin flow selection | `/silver` classifies intent and composes a task-specific flow chain | Right-sized process for each task |
+| Dynamic workflow composition | `gsd:do` handles GSD freeform delegation, but not full multi-plugin flow selection | `/sb` classifies intent and composes a task-specific flow chain | Right-sized process for each task |
 | Cross-plugin orchestration | GSD does not own other plugins | Sequences SB gates and selected helper plugins around GSD | Full SDLC coverage |
 | Spec, ingestion, validation, UAT | GSD can execute plans but does not own SB's spec-first traceability layer | `SPEC.md`, `REQUIREMENTS.md`, `INGESTION_MANIFEST.md`, `VALIDATION.md`, and `UAT.md` gates | Better requirements-to-implementation coverage |
 | Quality gates | Not SB-style cross-cutting gates | 9 product dimensions, 7 IaC dimensions | Better design before code |
@@ -689,7 +689,7 @@ The follow-up codebase pass found several SB capabilities that the earlier repor
 | Session forensics | GSD focuses on workflow artifacts | SB handles stalls, hooks, timeouts, wrong output | Better failure analysis |
 | Prompt and stall reinforcement | Long sessions can drift or loop | Missing-skill reminders, semantic compression, session logs, anti-stall warnings | Better process recall and fewer abandoned sessions |
 | Compliance visibility | Need to inspect state | Progress on every tool use | Clear next action |
-| Safe fast path | Fast work can become bypass work | `silver:fast` route to `gsd-fast` | Lightweight but governed |
+| Safe fast path | Fast work can become bypass work | `sb:fast` route to `gsd-fast` | Lightweight but governed |
 | Multi-runtime coordination | No SB phase-lock model | Phase locks and runtime identities | Safer parallel host use |
 | Docs governance | `.planning/` is not durable docs policy | doc scheme, checklist, ensure-docs | Docs stay current |
 | Explicit non-skippable gates | Waivers can blur critical boundaries | Hard policy gates for security, quality, validation, review, UAT, and release | Clear stop points |
@@ -850,7 +850,7 @@ Supporting source:
 
 Codebase surfaces consulted in the gap pass:
 
-- [commands/silver.md](../commands/silver.md)
+- [commands/sb.md](../commands/sb.md)
 - [commands/feature.md](../commands/feature.md)
 - [commands/quality-gates.md](../commands/quality-gates.md)
 - [hooks/dev-cycle-check.sh](../hooks/dev-cycle-check.sh)

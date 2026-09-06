@@ -205,19 +205,25 @@ See CLAUDE.md §8 for details."
   # --- Silver Bullet hook self-protection ─────────────────────────────────────
   # Block edits to SB's own enforcement hooks when running from an installed plugin copy.
   _sb_hooks_script="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]]; then
-    sb_plugin_root="${SB_PLUGIN_ROOT:-$(cd "${_sb_hooks_script}/.." && pwd)}"
+  sb_plugin_root="${SB_PLUGIN_ROOT:-$(cd "${_sb_hooks_script}/.." && pwd)}"
+  # A source checkout can live inside a host runtime worktree, so runtime-root
+  # ancestry alone is not proof that
+  # this is an installed plugin copy.  A direct .git marker identifies the
+  # source checkout while preserving protection for packaged installations.
+  sb_source_checkout=false
+  [[ -e "${sb_plugin_root}/.git" ]] && sb_source_checkout=true
+  if [[ "$_sb_hooks_script" == "${SB_RUNTIME_HOME_ROOT}"* ]] && [[ "$sb_source_checkout" != true ]]; then
     sb_hooks_dir="${sb_plugin_root}/hooks"
     if [[ -n "$file_path" ]]; then
       if [[ "$file_path" == "${sb_hooks_dir}/"* ]] || [[ "$file_path" == "${sb_plugin_root}/hooks.json" ]]; then
-        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
         exit 0
       fi
     elif [[ -n "$command_str" ]]; then
       if shell_writes_under_prefix "$sb_hooks_dir" || shell_writes_to_exact_path "${sb_plugin_root}/hooks.json" || \
          { printf '%s' "$command_str" | grep -qE "(${sb_hooks_dir}/|${sb_plugin_root}/hooks\.json)" && \
            printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; then
-        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+        emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
         exit 0
       fi
     fi
@@ -228,17 +234,17 @@ See CLAUDE.md §8 for details."
   # plugin location). Do NOT use a repo-name pattern — that would also match the silver-
   # bullet source repo's own hooks/ directory and prevent legitimate source edits.
   # Check both file_path (Edit/Write) and command_str (Bash) for hooks path pattern
-  if [[ -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
-    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+  if [[ "$sb_source_checkout" != true && -n "$file_path" ]] && [[ "$file_path" == "${SB_RUNTIME_HOME_ROOT}/"* ]] &&        printf '%s' "$file_path" | grep -qE '/hooks/'; then
+    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
     exit 0
   fi
-  if [[ -n "$command_str" ]] && { \
+  if [[ "$sb_source_checkout" != true && -n "$command_str" ]] && { \
     { shell_writes_under_prefix "${SB_RUNTIME_HOME_ROOT}" && \
       printf '%s\n%s' "$command_str" "$shell_script_body" | grep -qE '/hooks/'; } || \
     { printf '%s' "$command_str" | grep -qE "${SB_RUNTIME_HOME_ROOT}/[^ ]*/hooks/" && \
       printf '%s' "$command_str" | grep -qE '(>>|\s>[^>&=]|\btee\b|\bcp\b|\bmv\b|\brm\b|\bchmod\b|\bsed\b[^$]*-i|\bperl\b[^$]*-i|\binstall\b)'; }; \
   }; then
-    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /silver:init."
+    emit_block "Silver Bullet NEVER modifies its own enforcement hooks. This would disable process compliance. If you need to reconfigure, use /sb:init."
     exit 0
   fi
 
@@ -711,7 +717,7 @@ PY
             for _wf in "${active_workflows[@]}"; do
               active_names+="  • $(basename "$_wf" .md)"$'\n'
             done
-            emit_block "$(printf '🛑 WORKFLOW ADMISSION — active composed workflow(s) exist, but SB_WORKFLOW_ID is unset.\n\nActive composed workflow(s):\n%s\nUse /silver to resume the matching composed workflow before making source edits.' "$active_names")"
+            emit_block "$(printf '🛑 WORKFLOW ADMISSION — active composed workflow(s) exist, but SB_WORKFLOW_ID is unset.\n\nActive composed workflow(s):\n%s\nUse /sb to resume the matching composed workflow before making source edits.' "$active_names")"
             exit 0
           fi
 
@@ -722,13 +728,13 @@ PY
 
           active_file="$wf_dir/$active_id.md"
           if [[ ! -f "$active_file" || -L "$active_file" ]]; then
-            emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /silver to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
+            emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /sb to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
             exit 0
           fi
         fi
       fi
 
-      # F-06: no composed workflow — block logic src edits that bypass /silver routing
+      # F-06: no composed workflow — block logic src edits that bypass /sb routing
       if [[ ${#active_workflows[@]} -eq 0 ]]; then
         if [[ -n "$config_file" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1; then
           if sb_project_is_initiated "$config_file"; then
@@ -742,7 +748,7 @@ PY
               logic_edit=true
             fi
             if [[ "$logic_edit" == true ]]; then
-              emit_advisory '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /silver:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.'
+              emit_advisory '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /sb:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.'
             fi
           fi
         fi

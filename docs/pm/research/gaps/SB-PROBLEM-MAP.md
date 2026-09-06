@@ -18,10 +18,10 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 
 | Problem | SB mechanism | Hook / artifact | Coverage |
 |---------|--------------|-----------------|----------|
-| #1 Skip planning | Workflow admission + spec floor | `spec-floor-check.sh`, `silver:spec`, `silver:plan` | ✅ |
+| #1 Skip planning | Workflow admission + spec floor | `spec-floor-check.sh`, `sb:spec`, `sb:plan` | ✅ |
 | #19 Compaction erases rules | Prompt re-injection | `prompt-reminder.sh`, `session-start` | ✅ |
-| #43 Fast-path abuse | Governed fast path | `silver:fast`, `forbidden-skill-check.sh` | ✅ |
-| #23 Discovery unverifiable | Spec elicitation only | `silver:spec`, `silver:clarify` | ⚠️ no customer-discovery enforcement |
+| #43 Fast-path abuse | Governed fast path | `sb:fast`, `forbidden-skill-check.sh` | ✅ |
+| #23 Discovery unverifiable | Spec elicitation only | `sb:spec`, `sb:clarify` | ⚠️ no customer-discovery enforcement |
 | #50 Product validation gap | — | — | ❌ phases 1–2 absent [S10] |
 
 ---
@@ -55,7 +55,7 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 | #8 No session memory | agentmemory | MCP capture, `.agentmemory/memory/` | ⚠️ opt-in [S11] |
 | #18 Large codebase nav | Graphify | `graphify query`, `graphify-out/graph.json` | ⚠️ opt-in |
 | #41 Memory not indexed | Graphify + agentmemory synergy | `graphify update .` indexes exports | ⚠️ requires both opted in |
-| #32 Wrong patterns | Quality gates + review | `silver:quality-gates` | ⚠️ does not fix training bias |
+| #32 Wrong patterns | Quality gates + review | `sb:quality-gates` | ⚠️ does not fix training bias |
 | #46 Essential complexity | Brooks positioning | — | ❌ not solvable by tooling |
 
 ---
@@ -64,7 +64,7 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 
 | Problem | SB mechanism | Hook / artifact | Coverage |
 |---------|--------------|-----------------|----------|
-| #3 Insecure AI code | Security dimension + SENTINEL | `silver:quality-gates`, `silver:secure` | ⚠️ design-time gate, not continuous scan [S10] |
+| #3 Insecure AI code | Security dimension + SENTINEL | `sb:quality-gates`, `sb:secure` | ⚠️ design-time gate, not continuous scan [S10] |
 | #14 Review theater | Assessor triage | `artifact-review-assessor`, triage skill | ✅ |
 | #17 Compliance ≠ outcomes | — | workflow state vs prod metrics | ❌ stated SB gap [S10] |
 | #39 Stylistic blockers | Assessor DISMISS class | review-assessor rules | ✅ |
@@ -79,7 +79,7 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 | #30 Stale tests | Test freshness invalidation | `/verify-tests`, post-edit invalidation | ✅ |
 | #9 Benchmark gap | Process compensation thesis | hooks + cheaper models | ⚠️ not a benchmark fix |
 | #12 Post-ship observability | — | — | ❌ production phases 9–12 [S10] |
-| #35 PR ≠ release | Release workflow | `silver:release`, `silver:ship` | ⚠️ release checklist, not prod monitoring |
+| #35 PR ≠ release | Release workflow | `sb:release`, `sb:ship` | ⚠️ release checklist, not prod monitoring |
 | #44 Load testing | — | — | ❌ no enforced perf gate |
 
 ---
@@ -90,9 +90,9 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 |---------|--------------|-----------------|----------|
 | #2 Prompt injection | Partial — untrusted content awareness | docs, `ai-llm-safety` skill | ⚠️ SB does not sandbox host agent |
 | #11 Trust prompt lies | Plugin boundary guard | `dev-cycle-check.sh` blocks cache edits | ⚠️ host CLI security is vendor scope |
-| #34 Blast radius | DevOps workflow | `silver:blast-radius`, CAB stops | ✅ for IaC workflow |
+| #34 Blast radius | DevOps workflow | `sb:blast-radius`, CAB stops | ✅ for IaC workflow |
 | #28 Agent IAM | — | — | ❌ org IAM outside SB |
-| #20 Continuous security | One-time secure gate | `silver:secure` in quality gates | ⚠️ episodic [S10] |
+| #20 Continuous security | One-time secure gate | `sb:secure` in quality gates | ⚠️ episodic [S10] |
 
 ---
 
@@ -101,7 +101,7 @@ Maps each homepage cluster and top problems to Silver Bullet mechanisms, hooks, 
 | Problem | SB mechanism | Hook / artifact | Coverage |
 |---------|--------------|-----------------|----------|
 | #7 API cost / limits | Low-cost model + process thesis | RTK, Context Mode, graphify reduce tokens | ⚠️ no billing integration |
-| #10 Multi-agent token burn | Workflow routing | `silver` router, `silver:fast` | ✅ reduces unnecessary ceremony |
+| #10 Multi-agent token burn | Workflow routing | `silver` router, `sb:fast` | ✅ reduces unnecessary ceremony |
 | #27 Small model reliability | 16-layer enforcement | full hook stack | ✅ core value prop |
 | #42 Context Mode ELv2 | License disclosure at consent | `recommended_tools.context_mode` | ⚠️ enterprise bundling constraint |
 

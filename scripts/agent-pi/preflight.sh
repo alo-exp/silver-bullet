@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preflight for /silver:agent-pi — CLI, MiMo model pin, auth surface.
+# Preflight for /sb:agent-pi — CLI, MiMo model pin, auth surface.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

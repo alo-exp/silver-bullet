@@ -9,9 +9,9 @@
 
 **Workflow:**
 1. Host receives raw findings from a prior review (not self-triaged).
-2. Launch triage subagent at **host model** with `/silver:triage`.
+2. Launch triage subagent at **host model** with `/sb:triage`.
 3. Classify each finding: VALID-BLOCKER, VALID-NONBLOCKER, DUPLICATE, ALREADY-FIXED, FALSE-POSITIVE, or NEEDS-USER-DECISION.
-4. File VALID-* items via `/silver:add`; link duplicates to existing PM ids.
+4. File VALID-* items via `/sb:add`; link duplicates to existing PM ids.
 5. Emit triage table in `.planning/REVIEW.md` and `silver-triage-v1` JSON.
 
 ### Scenario: Artifact Contract Input
@@ -44,10 +44,10 @@
 
 ### Scenario: Review-Fix Ladder Integration
 
-**Trigger:** Orchestrator on `rung_N_triage` inside `silver:review-fix-ladder`
+**Trigger:** Orchestrator on `rung_N_triage` inside `sb:review-fix-ladder`
 
 **Workflow:**
 1. Review subagent (rung model) produced raw findings only.
-2. Triage subagent (host model) runs `/silver:triage` — not the review agent.
+2. Triage subagent (host model) runs `/sb:triage` — not the review agent.
 3. Orchestrator files valid issues before `rung_N_fix_parallel`.
 4. Fix agents use host model; parallel only per triage grouping.

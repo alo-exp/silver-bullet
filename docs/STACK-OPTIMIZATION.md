@@ -4,7 +4,7 @@ Default profile: **`synergy_max`**.
 
 ## Global setup (SB-independent — primary for Claude, Codex, OpenCode, Goose, Hermes)
 
-Machine-level wiring does **not** require Silver Bullet, `/silver:init`, `.silver-bullet.json`, or SB hooks:
+Machine-level wiring does **not** require Silver Bullet, `/sb:init`, `.silver-bullet.json`, or SB hooks:
 
 ```bash
 bash scripts/graphify-am-global-setup.sh --host claude --apply
@@ -22,14 +22,14 @@ bash scripts/graphify-am-global-setup.sh --host claude --apply --repo /path/to/p
 
 Without `--repo`, `AGENTMEMORY_EXPORT_ROOT` defaults to `~/.agentmemory/default-export`. Pass `--repo` for per-project export, bridge launchd, and optional `graphify update`.
 
-Silver Bullet **may delegate** to global setup during `/silver:init` Step 3f, then run project-level `sb-optimize-stack.sh` when the user has opted in.
+Silver Bullet **may delegate** to global setup during `/sb:init` Step 3f, then run project-level `sb-optimize-stack.sh` when the user has opted in.
 
 ## When SB optimization runs
 
 | Trigger | Command |
 |---------|---------|
-| `/silver:init` §1.1a/§1.1b Step 3f | `bash scripts/sb-optimize-stack.sh --apply` |
-| `/silver:update` Step 8d | same (idempotent re-apply) |
+| `/sb:init` §1.1a/§1.1b Step 3f | `bash scripts/sb-optimize-stack.sh --apply` |
+| `/sb:update` Step 8d | same (idempotent re-apply) |
 | Manual | `bash scripts/sb-optimize-stack.sh --apply` |
 | Verify only | `bash scripts/sb-optimize-stack.sh --verify` |
 | Report | `bash scripts/sb-optimize-stack.sh --report` |
@@ -126,7 +126,7 @@ Both scripts require explicit `--host` and `--project-root` (canonical SB projec
 
 ## Five-tool reconciliation and reload receipts
 
-`/silver:init`, `/silver:update`, installer reconciliation, and `/silver:doctor --fix` delegate to `scripts/reconcile-recommended-tools.sh`. Host MCP/hook writes batch into one reload receipt per worktree (or linked host-global receipt for pure host scope). SessionStart is verification-only: it may verify receipts but never creates, clears, or supersedes them.
+`/sb:init`, `/sb:update`, installer reconciliation, and `/sb:doctor --fix` delegate to `scripts/reconcile-recommended-tools.sh`. Host MCP/hook writes batch into one reload receipt per worktree (or linked host-global receipt for pure host scope). SessionStart is verification-only: it may verify receipts but never creates, clears, or supersedes them.
 
 Regenerate runtime plugin mirrors after script/hook changes:
 

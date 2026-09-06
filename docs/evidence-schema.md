@@ -16,10 +16,10 @@ instead of numeric theater.
 | `confidence` | Yes | `HIGH`, `MEDIUM`, or `LOW` based on direct evidence quality |
 | `evidence` | Yes | File path with line, command output, screenshot, trace, log, or artifact pointer |
 | `finding` | Yes | One-sentence description of the defect, risk, or gap |
-| `required_action` | Yes | Fix now, file via `silver:add`, accept risk, or not applicable |
-| `owner_workflow` | Yes | Owning SB route (`silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:release`, utility route) |
+| `required_action` | Yes | Fix now, file via `sb:add`, accept risk, or not applicable |
+| `owner_workflow` | Yes | Owning SB route (`sb:feature`, `sb:bugfix`, `sb:ui`, `sb:devops`, `sb:release`, utility route) |
 | `blocking_status` | Yes | `blocks ship`, `blocks release`, `does not block`, or `needs user decision` |
-| `backlog_decision` | When deferred | `fixed now`, `filed via silver:add`, `accepted risk`, or `not applicable` |
+| `backlog_decision` | When deferred | `fixed now`, `filed via sb:add`, `accepted risk`, or `not applicable` |
 
 Do not accept generic claims such as "looks good" or "tests pass" without the
 specific evidence pointer that made the claim true.
@@ -28,28 +28,28 @@ specific evidence pointer that made the claim true.
 
 | Workflow | Primary artifact | Finding table location |
 |----------|------------------|------------------------|
-| `silver:domain-audit` | `DOMAIN-AUDIT.md` | `## Findings` |
-| `silver:quality-gates` | dimension notes in phase or release context | per-dimension finding rows |
-| `silver:review` | `REVIEW.md` | findings section |
-| `silver:test` | `TEST-ENGINEERING.md` | quality / anti-pattern findings |
-| `silver:ui-review` | `UI-REVIEW.md` | findings section |
-| `silver:secure` | `SECURITY.md` | threat / mitigation findings |
-| `silver:verify` | `VERIFICATION.md` | gap findings with evidence |
+| `sb:domain-audit` | `DOMAIN-AUDIT.md` | `## Findings` |
+| `sb:quality-gates` | dimension notes in phase or release context | per-dimension finding rows |
+| `sb:review` | `REVIEW.md` | findings section |
+| `sb:test` | `TEST-ENGINEERING.md` | quality / anti-pattern findings |
+| `sb:ui-review` | `UI-REVIEW.md` | findings section |
+| `sb:secure` | `SECURITY.md` | threat / mitigation findings |
+| `sb:verify` | `VERIFICATION.md` | gap findings with evidence |
 
 ## Severity And Blocking Rules
 
 - `BLOCK` with `HIGH` or `MEDIUM` confidence on a critical gate blocks ship
   unless the user explicitly accepts the risk and the acceptance is recorded.
-- `WARN` findings route to `silver:review-triage` or `silver:add` when not
+- `WARN` findings route to `sb:review-triage` or `sb:add` when not
   fixed in the current pass.
 - `INFO` findings are advisory unless tied to a release or security invariant.
 
 ## Backlog Handoff
 
-When `backlog_decision` is `filed via silver:add`, pass a structured finding to
-`silver:add` with domain, scope, severity, evidence pointer, and fingerprint.
+When `backlog_decision` is `filed via sb:add`, pass a structured finding to
+`sb:add` with domain, scope, severity, evidence pointer, and fingerprint.
 See `docs/external-review-policy.md` for review enrichment and
-`silver:add` for fingerprinting and prioritization.
+`sb:add` for fingerprinting and prioritization.
 
 ## Owning Skills
 

@@ -42,8 +42,8 @@ for release work.
 
 When hooks are absent or tier &lt; 2, Silver Bullet still applies the **same skill order** but without mechanical PreToolUse/Stop enforcement:
 
-1. Run `/silver:init` or `/silver:migrate` so `sb_initiated: true` and workflow docs are present.
-2. Route via `/silver` → composer (`silver:feature`, `silver:fast`, etc.).
+1. Run `/sb:init` or `/sb:migrate` so `sb_initiated: true` and workflow docs are present.
+2. Route via `/sb` → composer (`sb:feature`, `sb:fast`, etc.).
 3. **Invoke each required skill explicitly** through the host skill channel — reading `SKILL.md` does not record state.
 4. Follow composer post-execute order: **REVIEW → VERIFY → SECURE → VALIDATE → pre-ship QUALITY GATE → SHIP**.
 5. Run `verify-tests` before `gh pr create` / release even without hook blocks.
@@ -75,7 +75,7 @@ state root, inferred runtime name (`claude`, `codex`, or `cursor`), and capabili
 
 Host detection follows `hooks/lib/runtime-paths.sh` (`SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, `CLAUDE_PLUGIN_ROOT`, Codex env markers). Doctor and diagnostics **do not** infer Cursor from unrelated hosts' config files on the same machine.
 
-### silver:doctor host-scoped checks
+### sb:doctor host-scoped checks
 
 | Check | Cursor | Claude | Codex |
 |-------|--------|--------|-------|
@@ -106,7 +106,7 @@ Cursor release smoke (no live agent required): `bash scripts/release-live-matrix
 
 | Host | Typical filename | Notes |
 |------|------------------|-------|
-| Claude Code | `CLAUDE.md` | Optional; reconciled in place by `silver:init` |
+| Claude Code | `CLAUDE.md` | Optional; reconciled in place by `sb:init` |
 | Codex | `AGENTS.md` | Optional; not created by default on fresh Codex init |
 | Cursor | `AGENTS.md` | Optional; same reconciliation rules as Codex |
 
@@ -120,7 +120,7 @@ Template content is host-neutral: `templates/CLAUDE.md.base` (project instructio
 | Codex | Plugin-delivered hooks (optional user merge) | `merge-hooks.py` when user hooks surface is used |
 | Cursor | `${SB_RUNTIME_HOME_ROOT}/hooks.json` | `skills/silver-init/scripts/merge-cursor-hooks.py` |
 
-Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `.codex/settings.json`; `silver:init` removes incompatible v1 entries when found.
+Project-scoped legacy v1 hook entries may appear in `.claude/settings.json` or `.codex/settings.json`; `sb:init` removes incompatible v1 entries when found.
 
 ### Skill invocation channels
 

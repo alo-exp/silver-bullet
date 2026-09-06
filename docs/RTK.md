@@ -83,7 +83,7 @@ bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)" 
 
 ## Optimization checklist (research-backed)
 
-Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** global wiring. Run after `/silver:init` or standalone:
+Silver Bullet ships `scripts/optimize-rtk-context-mode.sh` for the **most optimized** global wiring. Run after `/sb:init` or standalone:
 
 ```bash
 bash scripts/optimize-rtk-context-mode.sh --host auto --project-root "$(pwd)"   # detect from ~/.cursor, ~/.codex, etc.

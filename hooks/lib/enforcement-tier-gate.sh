@@ -71,7 +71,7 @@ sb_enforcement_tier_block_message() {
 🛑 Silver Bullet enforcement inactive — tier ${tier} (< 2 hook-enforced).
 
 Mechanical gates (completion audit, stop-check, orchestrator directive) are not active in this host runtime.
-Install and merge host hooks per docs/RUNTIME-COMPATIBILITY.md, then re-run /silver:init.
+Install and merge host hooks per docs/RUNTIME-COMPATIBILITY.md, then re-run /sb:init.
 
 Do not claim SB hook-gated delivery until tier ≥ 2. Run: bash scripts/sb-diagnostics.sh
 EOF

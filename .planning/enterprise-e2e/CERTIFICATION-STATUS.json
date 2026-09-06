@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-08-08T05:19:55Z",
-  "sb_git_sha": "9f349618e720",
+  "generated_at": "2026-09-04T15:11:46Z",
+  "sb_git_sha": "56b392b82e99",
   "generator": "scripts/enterprise-e2e-certification-status.sh",
   "sources_registry": "docs/testing/host-certification-sources.json",
   "proof_baseline": "docs/testing/autonomous-enterprise-proof-baseline.json",

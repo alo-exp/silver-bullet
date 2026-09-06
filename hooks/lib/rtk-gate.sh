@@ -219,7 +219,7 @@ sb_rtk_prompt_reminder_line() {
       ;;
     enabled)
       if sb_recommended_tool_enforcement_suspended "$config_file" "rtk"; then
-        printf '%s' "RTK: opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+        printf '%s' "RTK: opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
       elif ! sb_rtk_cli_available; then
         printf '%s' "RTK: CLI missing or wrong binary — install rtk-ai/rtk; hooks block substantive work until wired."
       elif ! sb_rtk_version_ok "$config_file"; then

@@ -1031,7 +1031,7 @@ echo "--- WF-PASS1-B: workflows/ dir does not bypass legacy gate ---"
 setup
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 cat > "$TMPDIR_TEST/.planning/workflows/20260428T015523Z-K4F7QA-silver-feature.md" << 'WFEOF'
-**Composer:** /silver:feature
+**Composer:** /sb:feature
 **Status:** active
 ### Flow Log
 | # | Flow | Status |
@@ -1179,7 +1179,7 @@ spec-version: 1.0
 # admission test spec
 EOF
 orch_flows="$(sb_orchestrator_flow_csv_for_workflows silver-feature)"
-workflow_id=$(cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/silver:feature" "orchestrator-seeded flows" "$orch_flows")
+workflow_id=$(cd "$TMPDIR_TEST" && bash "$WORKFLOWS_SCRIPT" start "/sb:feature" "orchestrator-seeded flows" "$orch_flows")
 wf_body="$(cat "$TMPDIR_TEST/.planning/workflows/${workflow_id}.md")"
 assert_contains "WF-PASS2-K: workflow uses QUALITY GATE label" "$wf_body" "QUALITY GATE"
 assert_contains "WF-PASS2-K: workflow uses EXECUTE label" "$wf_body" "EXECUTE"

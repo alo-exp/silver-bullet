@@ -66,5 +66,5 @@ The native worker verifies evidence before V-loop pass. Do not tell the user the
 
 | Host | Route prefix |
 |------|--------------|
-| Codex | `$silver:*` |
-| Cursor | `/silver:*` |
+| Codex | `$sb:*` |
+| Cursor | `/sb:*` |

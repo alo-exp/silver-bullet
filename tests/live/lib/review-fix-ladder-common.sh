@@ -134,7 +134,7 @@ EOF
       cat <<EOF
 Review-fix ladder smoke rung ${rung_index}/${rung_total}: model=${model}, reasoning=${reasoning}.
 
-Run exactly this command first: \`silver-bullet invoke-skill silver-review-fix-ladder smoke-target.py\`.
+Run exactly this command first: \`silver-bullet invoke-skill sb:review-fix-ladder smoke-target.py\`.
 Then read only smoke-target.py and CHARTER.md in this workspace.
 
 Pass ${clean_pass}: audit divide() against the charter. Reply with a line starting "LADDER_PASS:" and one sentence naming the zero-check defect. Review/verify only — do not edit files or patch smoke-target.py. The launcher applies ACCEPT fixes.

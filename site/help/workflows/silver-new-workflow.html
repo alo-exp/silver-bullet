@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:new-workflow — Workflow Authoring — Silver Bullet Help</title>
+<title>/sb:new-workflow — Workflow Authoring — Silver Bullet Help</title>
 <meta name="description" content="Meta workflow for creating, converting, or auditing Silver Bullet catalog-backed workflows: composer skills, APO catalog registration, hooks alignment, and read-only compliance audits.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:new-workflow</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:new-workflow</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:new-workflow</h1>
+    <h1>/sb:new-workflow</h1>
     <p>Meta workflow for authoring Silver Bullet catalog-backed workflows — <strong>Create</strong> new composers, <strong>Convert</strong> legacy skills, or run a read-only <strong>Audit</strong> against existing <code>WF-SILVER-*</code> registrations.</p>
   </div>
 </div>
@@ -122,7 +122,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
     <article class="doc-content">
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:new-workflow</code> is the SB queue builder for workflow and atomic-flow authoring. Catalog id: <code>WF-SILVER-NEW-WORKFLOW</code>. In <strong>Create</strong> and <strong>Convert</strong> modes the parent orchestrator spawns workers per atomic flow — do not implement catalog changes inline in parent mode.</p>
+      <p><code>/sb:new-workflow</code> is the SB queue builder for workflow and atomic-flow authoring. Catalog id: <code>WF-SILVER-NEW-WORKFLOW</code>. In <strong>Create</strong> and <strong>Convert</strong> modes the parent orchestrator spawns workers per atomic flow — do not implement catalog changes inline in parent mode.</p>
       <p><strong>Audit</strong> mode is different: it runs inline, read-only, with no orchestrator queue, plan, review-fix ladder, or implementation steps.</p>
       <p>Canonical contracts: <code>docs/apo-catalog.json</code>, <code>docs/composable-flows-contracts.md</code>, <code>docs/APO-AUTHORING-COMPLIANCE.md</code>. Full runbook: <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/NEW-WORKFLOW.md"><code>docs/NEW-WORKFLOW.md</code></a>.</p>
 
@@ -149,14 +149,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h2 id="create">Create mode</h2>
       <p>Start with a natural-language workflow intent. SB orients against the APO catalog, plans composition and enforcement surfaces, runs review-fix ladder on the plan, implements skill + catalog + hooks, then validates.</p>
-      <div class="code-block">/silver:new-workflow Add a workflow for onboarding new contributors</div>
+      <div class="code-block">/sb:new-workflow Add a workflow for onboarding new contributors</div>
       <p>Default target repo is the current workspace unless the user names another path (recorded in <code>.planning/new-workflow-session.json</code>).</p>
 
       <div class="divider"></div>
 
       <h2 id="convert">Convert mode</h2>
       <p>Pass a path to an existing skill or workflow definition. SB produces a gap matrix, maps steps to catalog atomic flows, then follows the same plan → RFL → implement → validate path as Create.</p>
-      <div class="code-block">/silver:new-workflow skills/my-legacy-skill/SKILL.md</div>
+      <div class="code-block">/sb:new-workflow skills/my-legacy-skill/SKILL.md</div>
 
       <div class="divider"></div>
 
@@ -191,15 +191,15 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="invocation">Invocation examples</h2>
-      <div class="code-block">/silver:new-workflow --audit WF-SILVER-FEATURE
-/silver:new-workflow --audit silver-feature
-/silver:new-workflow --audit feature
-/silver:new-workflow --validate skills/silver-new-workflow/SKILL.md
-/silver:new-workflow audit WF-SILVER-NEW-WORKFLOW
+      <div class="code-block">/sb:new-workflow --audit WF-SILVER-FEATURE
+/sb:new-workflow --audit silver-feature
+/sb:new-workflow --audit feature
+/sb:new-workflow --validate skills/silver-new-workflow/SKILL.md
+/sb:new-workflow audit WF-SILVER-NEW-WORKFLOW
 
-/silver:new-workflow Add catalog workflow for API contract checks
-/silver:new-workflow skills/my-legacy-skill/SKILL.md</div>
-      <p>The router also recognizes audit intent: <code>/silver</code> routes phrases like “audit workflow” or “validate workflow compliance” to <code>silver:new-workflow --audit &lt;target&gt;</code>.</p>
+/sb:new-workflow Add catalog workflow for API contract checks
+/sb:new-workflow skills/my-legacy-skill/SKILL.md</div>
+      <p>The router also recognizes audit intent: <code>/sb</code> routes phrases like “audit workflow” or “validate workflow compliance” to <code>sb:new-workflow --audit &lt;target&gt;</code>.</p>
 
       <div class="divider"></div>
 
@@ -212,8 +212,8 @@ bash tests/scripts/test-silver-new-workflow-audit.sh</div>
       <p>Broader authoring suite: <code>bash scripts/run-apo-authoring-compliance.sh</code>. See <a href="https://github.com/alo-exp/silver-bullet/blob/main/docs/NEW-WORKFLOW.md"><code>docs/NEW-WORKFLOW.md</code></a> for the full regenerate and validate checklist.</p>
 
       <div class="page-nav-bottom">
-        <a href="silver-validate.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/silver:validate</span></a>
-        <a href="silver-feature.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/silver:feature</span></a>
+        <a href="silver-validate.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/sb:validate</span></a>
+        <a href="silver-feature.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/sb:feature</span></a>
       </div>
     </article>
   </div>

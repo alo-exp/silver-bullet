@@ -216,7 +216,7 @@ enterprise_e2e_matrix_host_route() {
   host="$(enterprise_e2e_matrix_host)"
   case "$host" in
     codex)
-      if [[ "$route" == /silver* ]]; then
+      if [[ "$route" == /sb* ]]; then
         printf '$%s\n' "${route:1}"
       else
         printf '%s\n' "$route"
@@ -224,8 +224,8 @@ enterprise_e2e_matrix_host_route() {
       ;;
     cursor)
       case "$route" in
-        /silver) printf '/silver\n' ;;
-        /silver:*) printf '%s\n' "${route#/silver:}" ;;
+        /sb) printf '/sb\n' ;;
+        /sb:*) printf '%s\n' "${route#/sb:}" ;;
         *) printf '%s\n' "$route" ;;
       esac
       ;;

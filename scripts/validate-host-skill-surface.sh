@@ -2,10 +2,10 @@
 # Validate host-target skill surfaces (Claude, Codex, Cursor).
 #
 # Fails when a host exposes:
-#   - user-invocable skills without silver: prefix (except lone silver)
+#   - user-invocable skills without sb: prefix (except lone sb)
 #   - duplicate logical routes under different raw names
-#   - Claude/Cursor silver-* hyphen directories alongside silver: routes
-#   - Cursor/Codex user-invocable skills that duplicate plugin command stubs
+#   - Claude/Cursor sb-* hyphen directories alongside sb: routes
+#   - Cursor user-invocable skills that duplicate plugin command stubs
 #
 # Usage:
 #   scripts/validate-host-skill-surface.sh [--repo-root PATH]
@@ -67,19 +67,19 @@ def is_user_invocable(meta: dict[str, str]) -> bool:
 
 
 def logical_route(name: str) -> str | None:
-    if name == "silver":
-        return "silver"
-    if name.startswith("silver:"):
+    if name == "sb":
+        return "sb"
+    if name.startswith("sb:"):
         return name
-    if name.startswith("silver-"):
-        return "silver:" + name[len("silver-") :]
+    if name.startswith("sb-"):
+        return "sb:" + name[len("sb-") :]
     return None
 
 
 def expected_claude_dir(name: str) -> str | None:
-    if name == "silver":
-        return "silver"
-    if name.startswith("silver:"):
+    if name == "sb":
+        return "sb"
+    if name.startswith("sb:"):
         return name
     return None
 
@@ -90,11 +90,10 @@ HOST_SURFACES: dict[str, list[tuple[str, str]]] = {
     ],
     "codex": [
         ("host-bundles/codex", "skill"),
-        ("plugins/silver-bullet/commands", "command"),
     ],
     "cursor": [
-        ("host-bundles/cursor", "skill"),
         ("plugins/silver-bullet/commands", "command"),
+        ("host-bundles/cursor", "skill"),
     ],
 }
 
@@ -143,7 +142,7 @@ for host, surfaces in HOST_SURFACES.items():
                     host,
                     f"{path.relative_to(repo_root)}: command name {name!r} must be kebab-case",
                 )
-            command_routes.add(name)
+            command_routes.add(logical_route(name) or name)
 
     for rel_root, kind in surfaces:
         if kind != "skill":
@@ -160,7 +159,8 @@ for host, surfaces in HOST_SURFACES.items():
                 fail(host, f"{path.relative_to(repo_root)}: missing name in frontmatter")
                 continue
 
-            if host in {"cursor", "codex"} and name in command_routes and is_user_invocable(meta):
+            logical_name = logical_route(name) or name
+            if host in {"cursor", "codex"} and logical_name in command_routes and is_user_invocable(meta):
                 rel = path.relative_to(repo_root)
                 fail(
                     host,
@@ -169,7 +169,7 @@ for host, surfaces in HOST_SURFACES.items():
                 )
                 continue
 
-            if host == "cursor" and name in command_routes:
+            if host == "cursor" and logical_name in command_routes:
                 rel = path.relative_to(repo_root)
                 fail(
                     host,
@@ -182,11 +182,11 @@ for host, surfaces in HOST_SURFACES.items():
                 continue
 
             rel = path.relative_to(repo_root)
-            if name != "silver" and not name.startswith("silver:"):
+            if name != "sb" and not name.startswith("sb:"):
                 fail(
                     host,
-                    f"{rel}: user-invocable skill {name!r} lacks silver: prefix "
-                    f"(only bare silver is allowed)",
+                    f"{rel}: user-invocable skill {name!r} lacks sb: prefix "
+                    f"(only bare sb is allowed)",
                 )
                 continue
 
@@ -222,10 +222,10 @@ for host, surfaces in HOST_SURFACES.items():
             hyphen_dirs = sorted(
                 child.name
                 for child in bundle_root.iterdir()
-                if child.is_dir() and child.name.startswith("silver-")
+                if child.is_dir() and child.name.startswith("sb-")
             )
             for dirname in hyphen_dirs:
-                colon_name = "silver:" + dirname.removeprefix("silver-")
+                colon_name = "sb:" + dirname.removeprefix("sb-")
                 fail(
                     host_name,
                     f"redundant hyphen directory {rel_bundle}/{dirname} "

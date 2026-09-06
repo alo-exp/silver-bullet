@@ -35,14 +35,14 @@ root_rules="$REPO_ROOT/silver-bullet.md"
 
 assert_contains "router handles non-trivial bare intent" "most non-trivial bare user" "$router"
 assert_contains "router states SB lifecycle authority" "SB is the lifecycle and quality orchestration engine" "$router"
-assert_contains "router lists SB context/plan/execute/verify/ship" "silver:context.*silver:plan.*silver:execute.*silver:verify.*silver:ship" "$router"
+assert_contains "router lists SB context/plan/execute/verify/ship" "sb:context.*sb:plan.*sb:execute.*sb:verify.*sb:ship" "$router"
 assert_contains "router protects semver through SB workflows" "Do not edit version, ROADMAP, STATE, MILESTONES" "$router"
 
 assert_contains "contracts define atomic flow catalog" "Atomic Flow Catalog" "$contracts"
 assert_contains "contracts canonical FLOW 3 CLARIFY" "FLOW 3[[:space:]]*\\| CLARIFY" "$contracts"
 assert_contains "contracts canonical FLOW 4 DECIDE" "FLOW 4[[:space:]]*\\| DECIDE" "$contracts"
 assert_contains "contracts keep SB lifecycle ownership" "Silver Bullet owns the default software-engineering lifecycle" "$contracts"
-assert_contains "contracts make ship use SB branch finish before SB ship" "silver:branch-finish.*silver:ship" "$contracts"
+assert_contains "contracts make ship use SB branch finish before SB ship" "sb:branch-finish.*sb:ship" "$contracts"
 
 for file in \
   "$REPO_ROOT/skills/silver-feature/SKILL.md" \
@@ -51,7 +51,7 @@ for file in \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
   "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
-  assert_not_contains "no stale silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
+  assert_not_contains "no stale sb:intel in ${file#$REPO_ROOT/}" "sb:intel" "$file"
   assert_not_contains "no stale INTEL/BRAINSTORM flow labels in ${file#$REPO_ROOT/}" "FLOW 2 \\(INTEL\\)|FLOW 3 \\(BRAINSTORM\\)" "$file"
   assert_not_contains "no stale EXPLORE/IDEATE flow labels in ${file#$REPO_ROOT/}" "EXPLORE|IDEATE" "$file"
   assert_not_contains "no stale PATH wording in ${file#$REPO_ROOT/}" "Build Path Chain|propose which PATH" "$file"
@@ -86,7 +86,7 @@ for file in \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
   "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
-  assert_not_contains "no Invoke silver: bloat in ${file#$REPO_ROOT/}" "[Ii]nvoke \`silver:" "$file"
+  assert_not_contains "no Invoke sb: bloat in ${file#$REPO_ROOT/}" "[Ii]nvoke \`sb:" "$file"
 done
 
 assert_contains "release uses FLOW 18 vocabulary" "FLOW 18" "$REPO_ROOT/skills/silver-release/SKILL.md"
@@ -101,16 +101,16 @@ assert_contains "release milestone audit maps to FLOW 18" "Milestone audit.*18.*
 assert_contains "contracts document runtime queue tokens" "Runtime Queue Tokens" "$contracts"
 
 for file in "$REPO_ROOT/skills/silver-migrate/SKILL.md"; do
-  assert_not_contains "no stale silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
+  assert_not_contains "no stale sb:intel in ${file#$REPO_ROOT/}" "sb:intel" "$file"
   assert_not_contains "no stale INTEL/BRAINSTORM flow labels in ${file#$REPO_ROOT/}" "FLOW 2 \\(INTEL\\)|FLOW 3 \\(BRAINSTORM\\)" "$file"
   assert_not_contains "no stale PATH wording in ${file#$REPO_ROOT/}" "Build Path Chain|propose which PATH" "$file"
 done
 
 for file in "$template" "$root_rules"; do
   assert_contains "template states SB lifecycle authority in ${file#$REPO_ROOT/}" "Silver Bullet owns the default lifecycle through SB-owned skills" "$file"
-  assert_contains "template uses silver:scan in ${file#$REPO_ROOT/}" "silver:scan" "$file"
+  assert_contains "template uses sb:scan in ${file#$REPO_ROOT/}" "sb:scan" "$file"
   assert_contains "template names search-cli for deep research in ${file#$REPO_ROOT/}" "search-cli" "$file"
-  assert_not_contains "template has no silver:intel in ${file#$REPO_ROOT/}" "silver:intel" "$file"
+  assert_not_contains "template has no sb:intel in ${file#$REPO_ROOT/}" "sb:intel" "$file"
 done
 
 assert_contains "deep research skill records nested V-loop discipline" "Nested SB Flow Discipline" "$REPO_ROOT/skills/silver-deep-research/SKILL.md"
@@ -124,7 +124,7 @@ for file in \
   "$REPO_ROOT/skills/silver-bugfix/SKILL.md" \
   "$REPO_ROOT/skills/silver-deep-research/SKILL.md" \
   "$REPO_ROOT/skills/silver-release/SKILL.md"; do
-  assert_not_contains "workflow does not route to missing SB-local MultAI skill in ${file#$REPO_ROOT/}" "silver:multai" "$file"
+  assert_not_contains "workflow does not route to missing SB-local MultAI skill in ${file#$REPO_ROOT/}" "sb:multai" "$file"
 done
 
 assert_contains "local backlog item SB-B-1 resolved" "SB-B-1.*reconcile FLOW table" "$REPO_ROOT/docs/issues/BACKLOG.md"

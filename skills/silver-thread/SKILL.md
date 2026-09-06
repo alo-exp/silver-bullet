@@ -8,15 +8,15 @@ argument-hint: "<thread name or description> [list] [status <name>] [close <name
 version: 0.1.0
 ---
 
-# /silver:thread — Cross-Session Context Threads
+# /sb:thread — Cross-Session Context Threads
 
 SB-owned lightweight thread store. Use when you need to track a specific
 topic — an open question, a recurring concern, a cross-cutting decision, or
 a blocking dependency — across sessions without the overhead of a full
-`silver:handoff`.
+`sb:handoff`.
 
-A thread is NOT a task (use `silver:add`), NOT a full project handoff (use
-`silver:handoff`), and NOT a phase plan (use `silver:plan`). A thread is a
+A thread is NOT a task (use `sb:add`), NOT a full project handoff (use
+`sb:handoff`), and NOT a phase plan (use `sb:plan`). A thread is a
 persistent, resumable context anchor for a named concern.
 
 ## Output
@@ -59,7 +59,7 @@ Last updated: YYYY-MM-DD
 Providing a description creates a new thread.
 
 ```
-/silver:thread "Investigate TCP timeout in the API gateway"
+/sb:thread "Investigate TCP timeout in the API gateway"
 ```
 
 ### List
@@ -67,9 +67,9 @@ Providing a description creates a new thread.
 Show all threads with their status and last-updated date.
 
 ```
-/silver:thread list
-/silver:thread list --open
-/silver:thread list --resolved
+/sb:thread list
+/sb:thread list --open
+/sb:thread list --resolved
 ```
 
 ### Status
@@ -77,7 +77,7 @@ Show all threads with their status and last-updated date.
 Show the full content of a specific thread.
 
 ```
-/silver:thread status api-gateway-timeout
+/sb:thread status api-gateway-timeout
 ```
 
 ### Resume
@@ -85,7 +85,7 @@ Show the full content of a specific thread.
 Resume work on an existing thread (updates the Sessions log for today).
 
 ```
-/silver:thread api-gateway-timeout
+/sb:thread api-gateway-timeout
 ```
 
 When resuming, the skill:
@@ -99,7 +99,7 @@ When resuming, the skill:
 Mark a thread as resolved.
 
 ```
-/silver:thread close api-gateway-timeout
+/sb:thread close api-gateway-timeout
 ```
 
 Prompts for a one-sentence resolution summary before marking resolved.
@@ -119,14 +119,14 @@ Prompts for a one-sentence resolution summary before marking resolved.
    entry, update after work.
 5. For **close**: prompt for resolution text; mark status `resolved`; update
    `Last updated`.
-6. **At session start** (via `silver:handoff` or `silver` router): if any
+6. **At session start** (via `sb:handoff` or `silver` router): if any
    threads with status `open` or `in_progress` exist, surface them briefly:
    > "Active threads: api-gateway-timeout (open, 3d), auth-token-refresh
-   >  (in_progress, 1d). Resume a thread with `/silver:thread <name>`."
+   >  (in_progress, 1d). Resume a thread with `/sb:thread <name>`."
 
-## Integration with `silver:handoff`
+## Integration with `sb:handoff`
 
-`silver:handoff` includes the active thread list in the generated handoff
+`sb:handoff` includes the active thread list in the generated handoff
 prompt so threads survive project-level context transitions. When a new
 session resumes from a handoff, `silver` router checks `.planning/threads/`
 and surfaces open threads before routing the first user message.
@@ -137,7 +137,7 @@ and surfaces open threads before routing the first user message.
 - A thread becomes `in_progress` when a session appends an entry.
 - A thread becomes `resolved` when explicitly closed with a resolution.
 - Threads are never deleted; they are archived by setting status `resolved`.
-- File any action items surfaced in a thread via `silver:add`.
+- File any action items surfaced in a thread via `sb:add`.
 
 ## Exit Gate
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Verify silver:migrate skill documents the full upgrade path to current SB.
+# Verify sb:migrate skill documents the full upgrade path to current SB.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -64,7 +64,7 @@ assert_contains "documents merge-cursor-hooks for Cursor" "merge-cursor-hooks" "
 assert_contains "documents sb-diagnostics probe" "sb-diagnostics" "$SKILL"
 assert_contains "documents sb-bootstrap probe" "sb-bootstrap" "$SKILL"
 assert_contains "documents evidence-schema awareness" "evidence-schema" "$SKILL"
-assert_contains "documents doc-scheme refresh via ensure-docs" "silver:ensure-docs" "$SKILL"
+assert_contains "documents doc-scheme refresh via ensure-docs" "sb:ensure-docs" "$SKILL"
 assert_contains "documents interface STATE for UI projects" "interface/STATE\\.md" "$SKILL"
 assert_contains "documents stamp-interface-state script" "stamp-interface-state" "$SKILL"
 

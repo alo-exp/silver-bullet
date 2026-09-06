@@ -5,7 +5,7 @@ argument-hint: "<UI scope>"
 version: 0.1.0
 ---
 
-# /silver:ui-review - UI Quality Review
+# /sb:ui-review - UI Quality Review
 
 SB-owned UI quality review audits implemented UI for visual quality,
 accessibility, responsiveness, interaction quality, and performance.
@@ -40,12 +40,12 @@ Write or update `.planning/UI-REVIEW.md`.
      `browser_click` / `browser_type` / `browser_scroll`, then re-snapshot.
      task host: `host browser MCP` tools. Attach evidence to UI-REVIEW.md.
    - **Otherwise:** Playwright output and static screenshots when available.
-5. Invoke or apply `silver:domain-audit` with `ui-system`, `accessibility`, and
+5. Invoke or apply `sb:domain-audit` with `ui-system`, `accessibility`, and
    `performance-resource` packs for reusable or public UI changes.
 6. Update `.planning/interface/STATE.md` when the implementation establishes a
    reusable token, component, pattern, or design constraint.
 7. Classify findings as BLOCK/WARN/INFO and route fixes back to
-   `silver:execute`.
+   `sb:execute`.
 
 ## Exit Gate
 

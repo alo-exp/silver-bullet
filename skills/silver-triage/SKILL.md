@@ -5,21 +5,21 @@ argument-hint: "<review findings> [--artifact PATH] [--charter PATH]"
 version: 0.1.0
 ---
 
-# /silver:triage — Generic Review Finding Triage
+# /sb:triage — Generic Review Finding Triage
 
-SB-owned triage for **any** review output: code review, artifact review, ladder review, domain audit, or external feedback. Classifies each finding, files valid non-duplicates through `/silver:add`, and produces a fix plan — **without** the review subagent triaging its own findings.
+SB-owned triage for **any** review output: code review, artifact review, ladder review, domain audit, or external feedback. Classifies each finding, files valid non-duplicates through `/sb:add`, and produces a fix plan — **without** the review subagent triaging its own findings.
 
 ## When to Use
 
 - After any review subagent returns raw findings (ladder, triad, audit, PR review)
 - Standalone: user asks to triage review feedback on a scoped artifact
-- Inside `silver:review-fix-ladder` between `rung_N_review` and `rung_N_fix_parallel`
+- Inside `sb:review-fix-ladder` between `rung_N_review` and `rung_N_fix_parallel`
 
 ## Separation Rules (HARD)
 
 1. **Review subagent does not triage** — it reports raw findings only.
 2. **Triage runs as a separate subagent** launched by the host orchestrator using the **host's current model**, not the rung review model.
-3. **Filing runs after triage** — only `VALID-BLOCKER` and `VALID-NONBLOCKER` findings are filed via `/silver:add` (or PM adapter).
+3. **Filing runs after triage** — only `VALID-BLOCKER` and `VALID-NONBLOCKER` findings are filed via `/sb:add` (or PM adapter).
 4. **Fix agents launch after filing** — host model, parallel only when triage grouping says safe.
 
 ## Inputs
@@ -54,10 +54,10 @@ Use `artifact-review-assessor` criteria when an artifact contract exists; otherw
    bash scripts/silver-add.sh fingerprint --domain "<scope>" --scope "<path>" --finding "<one-line>"
    bash scripts/silver-add.sh dedup --fingerprint "<fp>"
    ```
-   For `issue_tracker=custom`, also run adapter dedupe when configured (see `/silver:add`).
-5. File valid findings through `/silver:add` — never file `FALSE-POSITIVE`, `DUPLICATE`, or `ALREADY-FIXED`.
+   For `issue_tracker=custom`, also run adapter dedupe when configured (see `/sb:add`).
+5. File valid findings through `/sb:add` — never file `FALSE-POSITIVE`, `DUPLICATE`, or `ALREADY-FIXED`.
 6. Group independent fixes into parallelization groups (same file or conflicting edits → same group).
-7. Recommend fix workflow per blocker: `/silver:bugfix`, `/silver:refactor`, `/silver:devops`, or composed workflow.
+7. Recommend fix workflow per blocker: `/sb:bugfix`, `/sb:refactor`, `/sb:devops`, or composed workflow.
 
 ## Output — Triage Table (required)
 
@@ -68,7 +68,7 @@ Write or update `.planning/REVIEW.md` (or append to the active review artifact) 
 
 | ID | Finding (summary) | Classification | Evidence | PM id/url | Fix workflow | Parallel group |
 |----|-------------------|----------------|----------|-----------|--------------|----------------|
-| T-001 | ... | VALID-BLOCKER | line 42 violates charter goal X | SB-I-12 | /silver:bugfix | G1 |
+| T-001 | ... | VALID-BLOCKER | line 42 violates charter goal X | SB-I-12 | /sb:bugfix | G1 |
 | T-002 | ... | FALSE-POSITIVE | already covered by SPEC §3 | — | — | — |
 ```
 

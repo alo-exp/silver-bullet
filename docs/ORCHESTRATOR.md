@@ -8,7 +8,7 @@ Silver Bullet's orchestrator sequences lifecycle work through **directives**, **
 
 | Role | Session | May implement? | Tools |
 |------|---------|----------------|-------|
-| **Parent** | Main agent / `/silver` | **No** | Task, Read, Grep, Glob; Skill: `silver` / `silver-orchestrator` only |
+| **Parent** | Main agent / `/sb` | **No** | Task, Read, Grep, Glob; Skill: `silver` / `silver-orchestrator` only |
 | **Worker** | Task subagent per atomic flow | **Yes** (after assigned skill) | Full tool surface per flow contract; **invoke** (not merely read) the assigned skill |
 
 On tier-2 hosts the parent **spawns Task workers**; workers **invoke** flow-atom skills so hooks record state.
@@ -29,7 +29,7 @@ Config: `"orchestrator_mode": "parent"` (only allowed value; default in template
 | `${SB_RUNTIME_STATE_DIR}/orchestrator-saga.json` | Session | Active ship/deploy saga ledger + rollback hints |
 | `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` | Session | Human sign-off marker when enterprise policy blocks production delivery |
 | `.scheduler.batch_dispatch` (in `orchestrator.json`) | Session | Active parallel/sequential batch handoffs + join status |
-| `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `silver:init`) |
+| `.silver-bullet/orchestrator-workers/*.md` | Project | Worker prompt templates (stamped by `sb:init`) |
 | `.planning/orchestrator-composition-log.jsonl` | Committed | Autonomous composition audit |
 | `.planning/orchestrator-override-log.jsonl` | Committed | User `SB OVERRIDE:` audit trail |
 
@@ -77,7 +77,7 @@ Hosts without multitask/subagent support (`SB_ORCHESTRATOR_PARALLEL_DISPATCH=0` 
 ## Parent loop
 
 ```
-User intent → /silver or silver-orchestrator
+User intent → /sb or silver-orchestrator
   → composer spec seeds orchestrator.json + workflows.sh
   → directive: next_skill + next_worker_template
   → parent **must spawn Task** with `.silver-bullet/orchestrator-workers/<TEMPLATE>.md` (hooks cannot spawn)
@@ -103,7 +103,7 @@ When `enterprise_policy.active_profile` is set in `.silver-bullet.json`:
 
 | Field | Runtime consumer |
 |-------|------------------|
-| `clarify_auto` | `session-start` injects `/silver:clarify --auto` hint |
+| `clarify_auto` | `session-start` injects `/sb:clarify --auto` hint |
 | `evidence_schema_strict` | `completion-audit` delivery gate strictness (with `hooks.evidence_schema.strict`) |
 | `production_deploy_requires_human` | Blocks `gh pr create`, `gh release create`, `deploy` unless `${SB_RUNTIME_STATE_DIR}/enterprise-human-deploy-approved` exists |
 | `non_production_deploy_autonomy` | Allows staging/non-prod deploy commands when profile permits (e.g. `internal_dogfood`) |
@@ -138,7 +138,7 @@ Silver Bullet hooks do **not** read host mode from stdin today. Operators and ag
 |-----------|------------|----------------|
 | **Agent (default)** | Spawn Task workers; read-only Bash in parent | Full PreToolUse/Stop stack |
 | **Plan** (`SwitchMode` → plan) | Read/Grep/Glob + Task PLAN worker; **no** direct Edit/Write in parent | `orchestrator-directive-guard` still blocks parent writes; route planning via workers |
-| **Debug** | Route to `silver:debug` / `silver:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
+| **Debug** | Route to `sb:debug` / `sb:forensics` queue — not freestyle Bash | Stop/PreToolUse still fire; use `SB OVERRIDE:` only for audited bypass |
 | **Ask** | Read-only tools | Aligns with parent read-only subset |
 
 **Enterprise E2E:** Matrix rows run in autonomous Agent mode. Do not switch to Plan/Debug mid-row — outcome scorers expect worker completion markers.

@@ -5,7 +5,7 @@ Silver Bullet uses Graphify as the **mandatory** local retrieval layer before pl
 ## Opt-In Policy
 
 Graphify is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit
-permission at `/silver:init` and session start. Consent is stored in `.silver-bullet.json`:
+permission at `/sb:init` and session start. Consent is stored in `.silver-bullet.json`:
 
 ```json
 "recommended_tools": {
@@ -28,8 +28,8 @@ permission at `/silver:init` and session start. Consent is stored in `.silver-bu
 **Install failure after opt-in:** when the user opts in but CLI install or index build fails,
 SB sets `enforcement_suspended: true` and `install_status: "failed"` (with `install_failure_reason`).
 Init/update is not blocked. Hooks treat suspended Graphify like opted-out while preserving
-`enabled_by_user: true`. Session-start notes the suspension. On the next `/silver:init` (update
-mode) or `/silver:update`, SB retries install; success clears suspension and re-enables mandatory
+`enabled_by_user: true`. Session-start notes the suspension. On the next `/sb:init` (update
+mode) or `/sb:update`, SB retries install; success clears suspension and re-enables mandatory
 enforcement.
 
 The same `recommended_tools` pattern applies to future SB-suggested tooling (see `hooks/lib/recommended-tools.sh`).
@@ -77,7 +77,7 @@ Run from the project root after the CLI is on PATH. SB stores these in
 Codex also needs `multi_agent = true` under `[features]` in `~/.codex/config.toml` for parallel extraction (upstream note).
 
 SB detects the active host via `SILVER_BULLET_RUNTIME`, `CURSOR_PLUGIN_ROOT`, or Codex env vars
-(same logic as `hooks/lib/runtime-paths.sh`). `/silver:init` and `/silver:update` run pre-index
+(same logic as `hooks/lib/runtime-paths.sh`). `/sb:init` and `/sb:update` run pre-index
 commands, build the index, then run post-index commands when the user opts in.
 
 ### Step 3 — Index
@@ -180,4 +180,4 @@ SB writes Cursor MCP config only after a successful `graphify-mcp` stdio handsha
 | `LIVE: no` | Receipt active or activation not `full` |
 | `ACTION` | Tools & MCP → graphify off/on, then new chat; fallback Developer: Reload Window |
 
-Verify read-only: `bash scripts/reconcile-recommended-tools.sh --mode verify --host-evidence-stdin`. Clear requires authorized apply (`/silver:init`, `/silver:update`, installer, or `/silver:doctor --fix`) with a fresh all-success attestation.
+Verify read-only: `bash scripts/reconcile-recommended-tools.sh --mode verify --host-evidence-stdin`. Clear requires authorized apply (`/sb:init`, `/sb:update`, installer, or `/sb:doctor --fix`) with a fresh all-success attestation.

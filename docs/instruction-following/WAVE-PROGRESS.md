@@ -15,7 +15,7 @@
 | 2 | `site-regression-gate.sh` | **done** | Stop + PreToolUse `git push` |
 | 3 | `live-publish-evidence-gate.sh` | **done** | push-to-main / publish Stop |
 | 4 | §3c subagent Stop enforcement | **done** | `subagent-stop-enforcement.sh` |
-| 5 | `silver:update` Step 9 | **done** | migrate + init update mode |
+| 5 | `sb:update` Step 9 | **done** | migrate + init update mode |
 | 6 | AGENTS.md → template parity | **done** | §8.2 in templates |
 | 7 | `silver-content` site batch + router | **done** | V-loop table in skill |
 | 8 | Hook registration | **done** | `hooks/hooks.json`, `cursor-hooks.json` |

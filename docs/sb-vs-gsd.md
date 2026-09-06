@@ -11,14 +11,14 @@ layer around GSD. That old model is no longer the default operating model.
 
 | Concern | Current SB owner | Compatibility behavior |
 |---------|------------------|------------------------|
-| Workflow routing | `/silver` and `silver:*` skills | Legacy route names may be normalized when found in old state files. |
-| Planning | `silver:context`, `silver:plan`, `silver:validate` | Existing `.planning/` artifacts are read and preserved. |
-| Execution | `silver:execute`, `tdd` when selected | Historical execution markers can satisfy migrated state checks. |
-| Review | `silver:review-request`, `silver:review`, `silver:review-triage` | Historical review markers are aliases only. |
-| Verification | `silver:verify`, `verify-tests`, `silver:completion-audit` | Old verification markers are accepted during migration. |
-| Security | `security`, `silver:secure`, `silver:validate` | Existing SECURITY artifacts remain valid evidence when current. |
-| Shipping | `silver:branch-finish`, `silver:ship` | Branch/ship aliases are accepted for legacy projects. |
-| Release | `silver:release`, `silver:create-release` | Release gates use SB-owned audit and completion markers. |
+| Workflow routing | `/sb` and `sb:*` skills | Legacy route names may be normalized when found in old state files. |
+| Planning | `sb:context`, `sb:plan`, `sb:validate` | Existing `.planning/` artifacts are read and preserved. |
+| Execution | `sb:execute`, `tdd` when selected | Historical execution markers can satisfy migrated state checks. |
+| Review | `sb:review-request`, `sb:review`, `sb:review-triage` | Historical review markers are aliases only. |
+| Verification | `sb:verify`, `verify-tests`, `sb:completion-audit` | Old verification markers are accepted during migration. |
+| Security | `security`, `sb:secure`, `sb:validate` | Existing SECURITY artifacts remain valid evidence when current. |
+| Shipping | `sb:branch-finish`, `sb:ship` | Branch/ship aliases are accepted for legacy projects. |
+| Release | `sb:release`, `sb:create-release` | Release gates use SB-owned audit and completion markers. |
 | Enforcement | SB hook suite | Hooks record SB markers first and normalize known historical aliases. |
 
 ## What Changed
@@ -37,11 +37,11 @@ layer around GSD. That old model is no longer the default operating model.
 ## When To Install External Lifecycle Plugins
 
 Install an external lifecycle plugin only when you have an explicit legacy task
-or migration need that calls for that tool directly. Ordinary `/silver` feature,
+or migration need that calls for that tool directly. Ordinary `/sb` feature,
 bugfix, UI, DevOps, research, fast-path, and release workflows route through
 SB-owned skills.
 
-If a repository already contains old planning artifacts, `/silver:init` preserves
+If a repository already contains old planning artifacts, `/sb:init` preserves
 them. New work can continue from those artifacts through SB-owned context,
 planning, execution, and verification skills.
 

@@ -13,7 +13,7 @@ while [[ $# -gt 0 ]]; do
 Usage: bash scripts/enable-rtk-context-mode.sh [--tool rtk|context_mode|all]
 
 Verifies RTK and/or Context Mode CLI, host wiring, and instruction fragment.
-Exit non-zero on hard failures — used by /silver:init and sb-diagnostics.sh.
+Exit non-zero on hard failures — used by /sb:init and sb-diagnostics.sh.
 EOF
       exit 0
       ;;
@@ -90,7 +90,7 @@ check_context_mode() {
   if sb_context_mode_instruction_fragment_present "$REPO_ROOT" 2>/dev/null; then
     ok "instruction fragment in project docs"
   else
-    hint "instruction fragment missing" "run /silver:init scaffold or append templates/context-mode-hint.md.base"
+    hint "instruction fragment missing" "run /sb:init scaffold or append templates/context-mode-hint.md.base"
   fi
   echo ""
 }

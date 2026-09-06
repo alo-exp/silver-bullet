@@ -8,7 +8,7 @@
 
 ## Summary
 
-Greenfield SENTINEL pass on parent-supervised Cursor subagent delegation skill (`/silver:agent-cursor`).
+Greenfield SENTINEL pass on parent-supervised Cursor subagent delegation skill (`/sb:agent-cursor`).
 No CRITICAL, HIGH, or MEDIUM findings after self-challenge (Step 8).
 
 ## Findings

@@ -204,7 +204,7 @@ sb_enterprise_policy_clarify_hint_block() {
   local config_file="$1"
   sb_enterprise_policy_clarify_auto_enabled "$config_file" || return 0
   cat <<'EOF'
-Enterprise policy: clarify_auto enabled — prefer /silver:clarify --auto for vague intent before composer routing. decision_class:blocking outcomes still require human approval.
+Enterprise policy: clarify_auto enabled — prefer /sb:clarify --auto for vague intent before composer routing. decision_class:blocking outcomes still require human approval.
 EOF
 }
 

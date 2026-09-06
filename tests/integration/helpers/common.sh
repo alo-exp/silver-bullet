@@ -238,7 +238,7 @@ write_workflow_md_complete() {
   cat > "$planning_dir/WORKFLOW.md" << 'WFEOF'
 # Composition
 
-**Workflow:** silver:feature
+**Workflow:** sb:feature
 **Mode:** autonomous
 
 ## Flow Log
@@ -271,7 +271,7 @@ write_workflow_md_partial() {
   cat > "$planning_dir/WORKFLOW.md" << 'WFEOF'
 # Composition
 
-**Workflow:** silver:feature
+**Workflow:** sb:feature
 **Mode:** interactive
 
 ## Flow Log
@@ -303,7 +303,7 @@ write_workflow_md_no_path4() {
   cat > "$planning_dir/WORKFLOW.md" << 'WFEOF'
 # Composition
 
-**Workflow:** silver:feature
+**Workflow:** sb:feature
 **Mode:** interactive
 
 ## Flow Log

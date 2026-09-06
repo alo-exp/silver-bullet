@@ -37,7 +37,7 @@ sb_prereq_run_probe() {
   sb_prereq_check_plugin_cache || issues+=("Silver Bullet plugin cache not found")
 
   if [[ ! -f "$repo_root/.silver-bullet.json" || ! -f "$repo_root/silver-bullet.md" ]]; then
-    issues+=("SB project files incomplete — run /silver:init")
+    issues+=("SB project files incomplete — run /sb:init")
   fi
 
   # L-02: core-rules integrity pin in plugin hooks directory
@@ -67,7 +67,7 @@ sb_prereq_run_probe() {
     sb_prereq_check_jq || issues+=("jq missing")
     sb_prereq_check_plugin_cache || issues+=("Silver Bullet plugin cache not found")
     if [[ ! -f "$repo_root/.silver-bullet.json" || ! -f "$repo_root/silver-bullet.md" ]]; then
-      issues+=("SB project files incomplete — run /silver:init")
+      issues+=("SB project files incomplete — run /sb:init")
     fi
     if [[ ${#issues[@]} -eq 0 ]]; then
       return 0
@@ -83,7 +83,7 @@ sb_prereq_blocking_message() {
   cat <<EOF
 🛑 Silver Bullet prerequisites missing: ${issues_text}
 
-Run /silver:init to repair the installation, or install jq:
+Run /sb:init to repair the installation, or install jq:
   macOS: brew install jq
   Linux: sudo apt install jq
 EOF

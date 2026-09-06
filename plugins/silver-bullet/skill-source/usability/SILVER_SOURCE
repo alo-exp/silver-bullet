@@ -1,6 +1,6 @@
 ---
 name: usability
-title: "Silver: Usability"
+title: "SB: Usability"
 description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "improve error messages", "better UX for X", "make this more usable" — enforces intuitive APIs, clear error messages, progressive disclosure, and developer/user experience so the system is a joy to use
 user-invocable: false
 version: 0.1.0
@@ -12,7 +12,7 @@ Every design, plan, and implementation MUST be intuitive, forgiving, and self-do
 
 **Why this matters:** Systems that are hard to use don't get used — or they get used wrong. Poor usability causes support tickets, workarounds, data entry errors, and abandonment. The most technically correct system is worthless if nobody can figure out how to use it.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to user interfaces, APIs, CLIs, configuration files, error messages, and documentation.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to user interfaces, APIs, CLIs, configuration files, error messages, and documentation.
 
 ---
 
@@ -117,7 +117,7 @@ The entire system MUST use consistent patterns:
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Usability Checklist**:
 
@@ -131,7 +131,7 @@ Before finalizing any design or plan, run the **Usability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - Write the error message BEFORE writing the happy path. If the error cannot be explained clearly, don't understand the requirement.
@@ -140,7 +140,7 @@ As you write code:
 - Use semantic HTML (button for buttons, a for links, input for inputs).
 - Follow the existing naming patterns in the codebase.
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - Error messages are human-readable and actionable

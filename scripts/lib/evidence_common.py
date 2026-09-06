@@ -19,7 +19,7 @@ def sha256_text(text: str) -> str:
 
 
 def audit_fingerprint(domain: str, scope: str, finding: str) -> str:
-    """Stable fingerprint for structured audit findings (silver:add dedup)."""
+    """Stable fingerprint for structured audit findings (sb:add dedup)."""
     payload = (
         f"{normalize_text(domain)}\n"
         f"{normalize_text(scope)}\n"

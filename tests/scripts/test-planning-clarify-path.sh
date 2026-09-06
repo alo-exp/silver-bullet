@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for /silver:clarify output path naming (plan-scoped + timestamped).
+# Tests for /sb:clarify output path naming (plan-scoped + timestamped).
 set -euo pipefail
 
 PASS=0

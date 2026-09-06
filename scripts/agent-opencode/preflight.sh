@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preflight for /silver:agent-opencode — CLI, MiMo model pin, SB install surface.
+# Preflight for /sb:agent-opencode — CLI, MiMo model pin, SB install surface.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

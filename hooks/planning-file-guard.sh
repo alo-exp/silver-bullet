@@ -176,7 +176,7 @@ if [[ -f "$_override" && ! -L "$_override" ]]; then
   esac
 fi
 
-# ── Bypass: roadmap phase CRUD (silver:phase / silver:undo) ─────────────────
+# ── Bypass: roadmap phase CRUD (sb:phase / sb:undo) ─────────────────
 _roadmap_override="${SB_RUNTIME_STATE_DIR}/roadmap-edit-override"
 if [[ -f "$_roadmap_override" && ! -L "$_roadmap_override" ]]; then
   case "$basename_path" in
@@ -212,40 +212,40 @@ fi
 skill_hint=""
 case "$basename_path" in
   ROADMAP.md)
-    skill_hint="Use /silver:phase for phase CRUD, /silver:plan, /silver:add, /silver:release, or the owning roadmap workflow instead."
+    skill_hint="Use /sb:phase for phase CRUD, /sb:plan, /sb:add, /sb:release, or the owning roadmap workflow instead."
     ;;
   STATE.md)
-    skill_hint="Use /silver:execute, /silver:release, or the owning resume/pause workflow instead."
+    skill_hint="Use /sb:execute, /sb:release, or the owning resume/pause workflow instead."
     ;;
   PROJECT.md)
-    skill_hint="Use /silver:init instead."
+    skill_hint="Use /sb:init instead."
     ;;
   RELEASE.md)
-    skill_hint="Use /silver:release or /silver:create-release instead."
+    skill_hint="Use /sb:release or /sb:create-release instead."
     ;;
   REQUIREMENTS.md)
-    skill_hint="Use /silver:spec, /silver:ingest, /silver:init, or /silver:plan instead. SB requirements should be updated through SB-owned spec and planning workflows."
+    skill_hint="Use /sb:spec, /sb:ingest, /sb:init, or /sb:plan instead. SB requirements should be updated through SB-owned spec and planning workflows."
     ;;
   UAT.md)
-    skill_hint="Use /silver:verify or /silver:validate instead."
+    skill_hint="Use /sb:verify or /sb:validate instead."
     ;;
   v*-MILESTONE-*.md)
-    skill_hint="Use /silver:release instead."
+    skill_hint="Use /sb:release instead."
     ;;
   *-PLAN.md|PLAN.md)
-    skill_hint="Use /silver:plan instead."
+    skill_hint="Use /sb:plan instead."
     ;;
   *-SUMMARY.md|SUMMARY.md)
-    skill_hint="Use /silver:execute, /silver:release, or the relevant SB phase completion workflow instead."
+    skill_hint="Use /sb:execute, /sb:release, or the relevant SB phase completion workflow instead."
     ;;
   *-REVIEW.md|REVIEW.md)
-    skill_hint="Use /silver:review instead."
+    skill_hint="Use /sb:review instead."
     ;;
   *-SECURITY.md|SECURITY.md)
-    skill_hint="Use /silver:secure instead."
+    skill_hint="Use /sb:secure instead."
     ;;
   *-VERIFICATION.md|VERIFICATION.md)
-    skill_hint="Use /silver:verify or /silver:validate instead."
+    skill_hint="Use /sb:verify or /sb:validate instead."
     ;;
 esac
 

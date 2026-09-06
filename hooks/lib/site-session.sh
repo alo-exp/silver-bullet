@@ -156,7 +156,7 @@ sb_site_session_subagent_input_is_site_related() {
     return 1
   fi
   printf '%s' "$tool_input" | grep -qiE \
-    'silver:content|site/[[:alnum:]_./-]+|site/\*\*|help[[:space:]-]center|sb\.alolabs\.dev|github[[:space:]]+pages|publish.*site|site.*publish|homepage'
+    'sb:content|site/[[:alnum:]_./-]+|site/\*\*|help[[:space:]-]center|sb\.alolabs\.dev|github[[:space:]]+pages|publish.*site|site.*publish|homepage'
 }
 
 sb_site_session_clear_all() {

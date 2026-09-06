@@ -7,7 +7,7 @@ Validate SB-owned content, migration, search-readiness, optimization, and articl
 ## Expected Behavior
 
 - Writes `.planning/CONTENT.md`.
-- Applies `silver:domain-audit --pack content-search`.
+- Applies `sb:domain-audit --pack content-search`.
 - Classifies edits into safe, moderate, and high-risk tiers.
 - Runs available build, link, metadata, or browser checks.
-- Routes governed docs changes through `silver:ensure-docs`.
+- Routes governed docs changes through `sb:ensure-docs`.

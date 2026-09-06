@@ -204,7 +204,7 @@ source "$ORCH_LIB"
 
 normalize_token() {
   local t="$1"
-  t="${t#silver:}"
+  t="${t#sb:}"
   t="${t#silver-}"
   case "$t" in
     FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP) t="quality-gates" ;;
@@ -246,10 +246,10 @@ parse_skill_pre_exec() {
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
       case "$t" in
-        "silver:clarify --spec")
+        "sb:clarify --spec")
           [[ "$spec_absent" -eq 1 ]] && tokens+=("silver-clarify")
           ;;
-        "silver:spec"|"spec")
+        "sb:spec"|"spec")
           [[ "$spec_absent" -eq 1 ]] && tokens+=("silver-spec")
           ;;
         *)

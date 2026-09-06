@@ -6,7 +6,7 @@ Thank you for your interest in contributing! Silver Bullet is an AI-native proce
 
 1. Fork and clone the repo
 2. Install prerequisites: Claude Code or Codex, plus `jq`
-3. Run `/silver:init` in the cloned repo to activate enforcement
+3. Run `/sb:init` in the cloned repo to activate enforcement
 
 ## Project Structure
 

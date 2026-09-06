@@ -281,7 +281,7 @@ fi
 # --- Tracked skills list ---
 # SB lifecycle phases (tracked as current silver-* markers)
 # Prefer the canonical tracked list from the packaged config template so
-# bootstrap skills like silver:init are still recorded before a project-level
+# bootstrap skills like sb:init are still recorded before a project-level
 # .silver-bullet.json exists. Fall back to a small hardcoded list only if the
 # template cannot be read for some reason.
 DEFAULT_TRACKED=""

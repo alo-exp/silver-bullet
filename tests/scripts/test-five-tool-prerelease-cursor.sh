@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Five-tool stack pre-release gate — offline bundle + optional live /silver:agent-cursor validation.
+# Five-tool stack pre-release gate — offline bundle + optional live /sb:agent-cursor validation.
 #
 # Invoked automatically from scripts/pre-release-gate.sh (SB_FIVE_TOOL_PRERELEASE=1).
 # Also runs in tests/run-all-tests.sh Script Unit Tests (offline wiring + bundle only).
@@ -60,7 +60,7 @@ else
   fail "pre-release-gate.sh invokes five-tool prerelease script"
 fi
 
-grep -q '/silver:agent-cursor' "${REPO_ROOT}/skills/silver-agent-cursor/SKILL.md" \
+grep -q '/sb:agent-cursor' "${REPO_ROOT}/skills/silver-agent-cursor/SKILL.md" \
   && pass "agent-cursor route documented" || fail "agent-cursor route documented"
 
 grep -q 'composer-2.5' "${REPO_ROOT}/scripts/agent-cursor-delegate.sh" \
@@ -77,7 +77,7 @@ else
   fail "offline five-tool bundle (${offline_failures} failing tests)"
 fi
 
-# --- Live delegate via /silver:agent-cursor ---
+# --- Live delegate via /sb:agent-cursor ---
 echo ""
 echo "--- Live five-tool delegate (agent-cursor) ---"
 
@@ -116,7 +116,16 @@ else
   live_log="${live_log_base}.log"
   mv "$live_log_base" "$live_log"
   live_exit=0
-  if bash "${REPO_ROOT}/tests/live/test-live-five-tool-stack-cursor.sh" >"$live_log" 2>&1; then
+  bash "${REPO_ROOT}/tests/live/test-live-five-tool-stack-cursor.sh" >"$live_log" 2>&1 &
+  live_pid=$!
+  # Keep the prerelease supervisor observable while the live runner captures
+  # delegate output in its per-run log.  This matters on hosts whose command
+  # runner terminates silent long-lived children before their scenario timeout.
+  while kill -0 "$live_pid" 2>/dev/null; do
+    printf '  live prerelease heartbeat %s\n' "$(date +%H:%M:%S)"
+    sleep 30
+  done
+  if wait "$live_pid"; then
     pass "live five-tool prerelease scenarios green"
     five_tool_prerelease_write_marker "live-prerelease"
   else
@@ -136,4 +145,3 @@ fi
 echo ""
 echo "Five-tool pre-release: ${PASS} passed, ${FAIL} failed, ${SKIP} skipped"
 [[ "$FAIL" -eq 0 ]]
-

@@ -1,22 +1,22 @@
 ---
 name: silver-fast
 description: >
-  This skill should be used for 3-tier complexity triage: trivial → direct SB edit, medium → SB context/plan/execute/verify, complex → silver:feature escalation.
+  This skill should be used for 3-tier complexity triage: trivial → direct SB edit, medium → SB context/plan/execute/verify, complex → sb:feature escalation.
 argument-hint: "<description of change>"
 version: 0.1.0
 ---
 
-# /silver:fast — Complexity Triage (composition spec)
+# /sb:fast — Complexity Triage (composition spec)
 
 SB triage spec for parent orchestrator. **Tier 1** still routes to a FAST worker (not parent edits). Tier 2+ escalates to fuller composer queues.
 
 | Tier | Criteria | Routes to |
 |------|----------|-----------|
 | **Tier 1 (Trivial)** | ≤3 files AND no logic changes AND no `src/`/app code paths | parent spawns FAST worker |
-| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `silver:quality-gates` (pre-plan), `silver:plan`, `silver:validate`, `silver:execute`, `silver:verify`; optional `silver:context` / `silver:deep-research` when signals match |
-| **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | silver:feature |
+| **Tier 2 (Medium)** | 4-10 files OR logic change in ≤3 files OR dependency update | `sb:quality-gates` (pre-plan), `sb:plan`, `sb:validate`, `sb:execute`, `sb:verify`; optional `sb:context` / `sb:deep-research` when signals match |
+| **Tier 3 (Complex)** | >10 files OR cross-cutting OR schema change OR new capability | sb:feature |
 
-> **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /silver:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
+> **Note:** Tier 2+ fast-path work starts a lightweight workflow tracker (`scripts/workflows.sh start /sb:fast ...`) so `workflow-chain-guard` and delivery gates can observe the path. Tier 1 remains direct edit with verification only.
 
 ## Pre-flight: Banner
 
@@ -57,7 +57,7 @@ Display classification:
 
 ```
 Classification: Tier {N} ({Trivial|Medium|Complex})
-  Routing to: {direct SB edit|SB lifecycle slice|silver:feature}
+  Routing to: {direct SB edit|SB lifecycle slice|sb:feature}
 ```
 
 ## Step 1: Tier 1 — Execute Directly
@@ -68,9 +68,9 @@ Make the small edit directly in the current session. Keep the change to the clas
 
 After the trivial edit and verification complete, run scope expansion check (Step 4).
 
-**Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `silver:feature`.
+**Tier 1 discipline:** Do not misclassify logic changes as trivial to bypass workflow tracking. The `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker only applies to genuine typo/config-only sessions; any src logic change requires Tier 2+ or `sb:feature`.
 
-**Trivial bypass mid-session:** SessionStart clears any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker; the first Write/Edit removes it if recreated (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /silver:fast` before further implementation edits.
+**Trivial bypass mid-session:** SessionStart clears any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker; the first Write/Edit removes it if recreated (`PostToolUse` hook). If you start Tier 1 then expand scope into logic changes, workflow-chain-guard and delivery gates apply normally. Re-classify as Tier 2+ and start `scripts/workflows.sh start /sb:fast` before further implementation edits.
 
 If scope remained ≤3 files, display completion banner:
 
@@ -92,15 +92,15 @@ Before invoking SB lifecycle skills, detect which gates to apply by scanning $AR
 
 | Gate | Signal words in $ARGUMENTS |
 |------|---------------------------|
-| `silver:context` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
-| `silver:deep-research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
+| `sb:context` | "not sure", "unclear", "multiple approaches", "options", "decide", "which", "should we", "trade-off", "either...or" |
+| `sb:deep-research` | "new library", "unfamiliar", "investigate", "evaluate", "compare", "never used", "first time", "unknown", "explore options" |
 
 **Gate composition rules:**
 - Any combination is valid.
-- Always invoke `silver:plan`, `silver:validate`, `silver:execute`, and `silver:verify` for Tier 2.
-- Invoke `silver:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
-- When `.planning/SPEC.md` is absent, `silver:validate` runs in **plan-only mode** (PLAN.md completeness — see `skills/silver-validate/SKILL.md` Step 0). Do not run `/silver:spec` unless product requirements need a formal SPEC.
-- Invoke `silver:context` or `silver:deep-research` only when triggered by the signal table above.
+- Always invoke `sb:plan`, `sb:validate`, `sb:execute`, and `sb:verify` for Tier 2.
+- Invoke `sb:quality-gates` (pre-plan design-time) before planning when starting the Tier 2 tracker — `workflow-chain-guard` enforces this marker.
+- When `.planning/SPEC.md` is absent, `sb:validate` runs in **plan-only mode** (PLAN.md completeness — see `skills/silver-validate/SKILL.md` Step 0). Do not run `/sb:spec` unless product requirements need a formal SPEC.
+- Invoke `sb:context` or `sb:deep-research` only when triggered by the signal table above.
 - `workflow-chain-guard` for Tier 2 requires `silver-quality-gates` (design marker), `silver-plan`, and `silver-validate` before implementation edits — not `silver-context`.
 
 Display detected signals:
@@ -109,7 +109,7 @@ Display detected signals:
 Detected signals:
   Ambiguity: {yes/no} {reason if yes}
   Novel domain: {yes/no} {reason if yes}
-Gates: {silver:context silver:deep-research | (none)} + silver:plan silver:validate silver:execute silver:verify (always)
+Gates: {sb:context sb:deep-research | (none)} + sb:plan sb:validate sb:execute sb:verify (always)
 ```
 
 Invoke the selected SB lifecycle slice with $ARGUMENTS.
@@ -132,7 +132,7 @@ else
   )"
 fi
 if [[ -n "${SB_WORKFLOWS_BIN:-}" ]]; then
-  SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /silver:fast "$ARGUMENTS" "QUALITY GATE,plan,validate,execute,verify")
+  SB_WORKFLOW_ID=$("$SB_WORKFLOWS_BIN" start /sb:fast "$ARGUMENTS" "QUALITY GATE,plan,validate,execute,verify")
   export SB_WORKFLOW_ID
 fi
 ```
@@ -145,13 +145,13 @@ After the SB lifecycle slice completes, run scope expansion check (Step 4).
 
 The Tier 2 slice (`quality-gates → plan → validate → execute → verify`) intentionally stops at
 verification. It does **not** record the post-execution deploy chain
-(`silver:review-request`, `silver:review`, `silver:review-triage`, `silver:secure`,
-`silver:validate`, `silver:branch-finish`, `silver:ship`).
+(`sb:review-request`, `sb:review`, `sb:review-triage`, `sb:secure`,
+`sb:validate`, `sb:branch-finish`, `sb:ship`).
 
 Consequences and routing:
 
 - **Local / no-delivery work:** if the Tier 2 change is not being pushed to a PR,
-  release, or deploy, stop at `silver:verify` — the Stop gate only requires the
+  release, or deploy, stop at `sb:verify` — the Stop gate only requires the
   planning floor, so this completes cleanly.
 - **Delivery required (PR / release / deploy):** the completion-audit deploy gate
   enforces the full `required_deploy` list. A bare Tier 2 slice will be **blocked**
@@ -159,37 +159,37 @@ Consequences and routing:
   validate, branch-finish, and ship markers are missing. Before raising a PR you
   MUST either:
   - **(a)** complete the remaining deploy chain in order (canonical post-execution
-    sequence — same as `silver:feature`) —
-    `silver:review-request → silver:review → silver:review-triage → silver:verify →
-    security → silver:secure → silver:validate → silver:quality-gates →
-    silver:branch-finish → silver:completion-audit → silver:ship` — then deliver, or
-  - **(b)** escalate to `silver:feature` (Step 3), which owns the full lifecycle and
+    sequence — same as `sb:feature`) —
+    `sb:review-request → sb:review → sb:review-triage → sb:verify →
+    security → sb:secure → sb:validate → sb:quality-gates →
+    sb:branch-finish → sb:completion-audit → sb:ship` — then deliver, or
+  - **(b)** escalate to `sb:feature` (Step 3), which owns the full lifecycle and
     deploy chain end-to-end.
 
 Do not attempt to bypass the deploy gate by editing state files or skipping skills.
 
 ### Deferred-Item Capture (Tier 2 only)
 
-After Tier 2 execution, any item scoped out during execution MUST be filed via `/silver:add`:
+After Tier 2 execution, any item scoped out during execution MUST be filed via `/sb:add`:
 
 ```
-Skill(skill="silver:add", args="<description of deferred item>")
+Skill(skill="sb:add", args="<description of deferred item>")
 ```
 
-**Note:** Tier 1 (trivial changes) → no capture needed. Tier 3 → escalates to `/silver:feature`, which handles its own deferred-item capture.
+**Note:** Tier 1 (trivial changes) → no capture needed. Tier 3 → escalates to `/sb:feature`, which handles its own deferred-item capture.
 
-## Step 3: Tier 3 — Escalate to silver:feature
+## Step 3: Tier 3 — Escalate to sb:feature
 
 **Only reached when Step 0 classifies as Tier 3 (Complex).**
 
 Display:
 
 ```
-Change exceeds fast-path complexity. Routing to silver:feature.
+Change exceeds fast-path complexity. Routing to sb:feature.
 Reason: {specific reason — e.g., "touches >10 files", "cross-cutting concern", "schema change", "new capability"}
 ```
 
-Invoke `silver:feature` through the active runtime's SB-recognized skill invocation channel with $ARGUMENTS. Exit silver:fast.
+Invoke `sb:feature` through the active runtime's SB-recognized skill invocation channel with $ARGUMENTS. Exit sb:fast.
 
 ## Step 4: Scope Expansion Check
 
@@ -197,10 +197,10 @@ After Tier 1 or Tier 2 execution completes, check if scope expanded beyond the c
 
 **During Tier 1:** If files modified > 3:
 - If 4-10 files → escalate to Tier 2 (SB lifecycle slice, Step 2)
-- If > 10 files → escalate to Tier 3 (silver:feature, Step 3)
+- If > 10 files → escalate to Tier 3 (sb:feature, Step 3)
 
 **During Tier 2:** If files modified > 10:
-- Escalate to Tier 3 (silver:feature, Step 3)
+- Escalate to Tier 3 (sb:feature, Step 3)
 
 Escalation is **autonomous** — no interactive user prompt needed. Display escalation banner:
 
@@ -209,7 +209,7 @@ FAST PATH ESCALATION
 
 Reason: Scope expanded from {original tier} to {new tier}
 Files affected: {count}
-Routing to: {SB lifecycle slice|silver:feature}
+Routing to: {SB lifecycle slice|sb:feature}
 ```
 
-Then invoke the target workflow. On escalation to silver:feature, pass the updated scope description so /silver can classify appropriately.
+Then invoke the target workflow. On escalation to sb:feature, pass the updated scope description so /sb can classify appropriately.

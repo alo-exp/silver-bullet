@@ -11,7 +11,7 @@ version: 0.2.0
 **Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
 
 
-# /silver:agent-codex — Codex TUI Subagent Delegation
+# /sb:agent-codex — Codex TUI Subagent Delegation
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Codex TUI** executes in the target project working directory.
 
@@ -23,11 +23,11 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 ## When to use
 
-| Use `/silver:agent-codex` | Delegate inline or via host Task instead |
+| Use `/sb:agent-codex` | Delegate inline or via host Task instead |
 |---------------------------|------------------------------------------|
 | Host is Cursor/Claude and Codex is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs Codex-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
-| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`silver:feature`, orchestrator workers) |
+| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in Codex while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
 
 ---
@@ -46,7 +46,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 ## Activation (on-demand)
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
-2. Parent invokes **`/silver:agent-codex`** with a structured brief (below).
+2. Parent invokes **`/sb:agent-codex`** with a structured brief (below).
 3. Parent runs `bash scripts/agent-codex/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
@@ -60,7 +60,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 1. Parent **may** invoke this skill directly (host→Codex bridge; hook allows `agent-codex/invoke.sh` with degraded fallback or `agent-codex-delegate.sh`).
 2. Parent **must not** Edit/Write project source for work delegated to Codex — supervise only.
-3. Alternative: `silver-bullet invoke-skill silver-agent-codex` then run delegate.sh.
+3. Alternative: `silver-bullet invoke-skill sb:agent-codex` then run delegate.sh.
 4. For SB-repo harness fixes blocking delegation, spawn a worker or use `SB OVERRIDE:` with audit reason.
 5. After Codex completes, parent verifies acceptance criteria before claiming done.
 
@@ -99,7 +99,7 @@ Produce a delegation brief before invoke:
 ## Constraints
 - Branch: <name or create>
 - Do not: <scope limits>
-- SB routes (if any): $silver:plan → $silver:execute (Codex picker syntax)
+- SB routes (if any): $sb:plan → $sb:execute (Codex picker syntax)
 
 ## Evidence required
 - Commit SHA or explicit "no commit" rationale
@@ -202,7 +202,7 @@ Parent should prefer interactive TUI for supervision; use `--use-exec` only afte
 
 Direct `scripts/agent-codex-delegate.sh` remains for worker/orchestrator paths; production parents should use `invoke.sh`.
 
-Codex route prefix in prompts: use `$silver:*` (Codex picker), not `/silver:*`.
+Codex route prefix in prompts: use `$sb:*` (Codex picker), not `/sb:*`.
 
 ---
 
@@ -238,7 +238,7 @@ Escalate to user when: auth required, two stuck retries fail, or acceptance crit
 
 | Learning | Delegation application |
 |----------|------------------------|
-| **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `$silver:*` route submit — harness sends wake then paste; parent verifies `prompt submitted` in log before checkpoint 2 |
+| **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `$sb:*` route submit — harness sends wake then paste; parent verifies `prompt submitted` in log before checkpoint 2 |
 | **Stale locks** | Do not reuse `.e2e-live-test*.lock` from matrix; delegation clears matrix env; use per-task log under `.planning/agent-codex/` only |
 | **SB-only plugins** | `preflight.sh` validates Codex install surface; child uses SB marketplace package — no third-party skill pollution in ephemeral `CODEX_HOME` |
 | **Hook preflight** | `install-codex.sh --hook-trust-seed-only` before invoke; `CODEX_BYPASS_HOOK_TRUST=1` when pre-seeded |
@@ -297,7 +297,7 @@ Run `security` / SENTINEL lens on harness changes under `scripts/agent-codex/` b
 
 ## References
 
-- Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/silver:agent-<host>` on other hosts
+- Sibling hosts: [`docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md`](../../docs/skills/AGENT-HOST-DELEGATION-SIBLING-PROMPT.md) — meta-prompt to build `/sb:agent-<host>` on other hosts
 - Harness: `scripts/agent-codex/` (`invoke.sh`, `preflight.sh`, `monitor.sh`, `env.sh`), `scripts/codex-interactive-invoke.py`, `scripts/agent-codex-delegate.sh`
 - Live adapter: `tests/live/agents/codex/agent.sh`
 - E2E adapter (matrix only): `scripts/enterprise-e2e/lib/adapters/codex.sh`

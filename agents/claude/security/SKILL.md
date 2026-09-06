@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST treat security as a first-class cons
 
 **Why this matters:** A single security vulnerability can compromise user data, destroy trust, and cost millions in breach response. Security cannot be "added later" — it must be designed in from the start. Every line of code is an attack surface.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to ALL code — there are no exceptions for "internal" or "low-risk" systems.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to ALL code — there are no exceptions for "internal" or "low-risk" systems.
 
 ---
 
@@ -117,7 +117,7 @@ Every configuration, feature flag, and permission MUST default to the secure opt
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Security Checklist**:
 
@@ -131,7 +131,7 @@ Before finalizing any design or plan, run the **Security Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - Use parameterized queries for ALL database access. No exceptions.
@@ -141,7 +141,7 @@ As you write code:
 - Use crypto libraries, never hand-rolled encryption.
 - Add rate limiting to authentication endpoints.
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - No hardcoded secrets or credentials
@@ -207,6 +207,6 @@ If existing code violates these rules:
 
 ## Backlog Capture (mandatory)
 
-After completing the security review, any low-priority or suggested findings that are not blocking must be captured through SB-owned tracking: use `/silver:add` when issue/backlog integration is configured, otherwise append them to `.planning/ROADMAP.md` or `.planning/SECURITY.md` with owner and rationale. Do NOT silently drop security suggestions — they must be captured or implemented.
+After completing the security review, any low-priority or suggested findings that are not blocking must be captured through SB-owned tracking: use `/sb:add` when issue/backlog integration is configured, otherwise append them to `.planning/ROADMAP.md` or `.planning/SECURITY.md` with owner and rationale. Do NOT silently drop security suggestions — they must be captured or implemented.
 
 If no items were deferred, output: "No backlog items from this security review."

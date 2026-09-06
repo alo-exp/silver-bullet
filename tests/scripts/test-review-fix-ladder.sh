@@ -136,8 +136,8 @@ assert_jq_true "Phase routing custom-subagent" '.delegation == "custom-subagent"
 assert_jq_true "Phase subagent_name rung2" '.subagent_name == "sb-composer-2-5-high"' "$phase_json"
 
 cursor_text="$(SB_CURSOR_SB_AGENTS_SKIP_PROBE=1 python3 "$RESOLVER" --host cursor --project-root "$REPO_ROOT")"
-printf '%s' "$cursor_text" | grep -q 'custom-subagent' && pass "Cursor text custom-subagent" || fail "Cursor text custom-subagent"
-printf '%s' "$cursor_text" | grep -q 'agent-cursor' && fail "Cursor text no agent-cursor" || pass "Cursor text no agent-cursor"
+printf '%s' "$cursor_text" | grep 'custom-subagent' >/dev/null && pass "Cursor text custom-subagent" || fail "Cursor text custom-subagent"
+printf '%s' "$cursor_text" | grep 'agent-cursor' >/dev/null && fail "Cursor text no agent-cursor" || pass "Cursor text no agent-cursor"
 
 override_json="$(python3 "$RESOLVER" --host cursor --json)"
 assert_jq_true "Host override without env selects cursor" '.host == "cursor"' "$override_json"
@@ -445,10 +445,10 @@ if grep -qF 'Low, deferred, nitpicks, and minor' "$LIVE_TRIAGE" \
 else
   fail "live harness APPLY ACCEPT lands all non-wrong nits"
 fi
-if grep -q '/silver:triage' "$LIVE_COMMON"; then
-  fail "live rung harness must not invoke /silver:triage as the rung"
+if grep -q '/sb:triage' "$LIVE_COMMON"; then
+  fail "live rung harness must not invoke /sb:triage as the rung"
 else
-  pass "live rung harness must not invoke /silver:triage as the rung"
+  pass "live rung harness must not invoke /sb:triage as the rung"
 fi
 
 # --- Subscription-first GPT/Claude gate ---
@@ -555,7 +555,7 @@ assert_jq_true "Grok decide-launch skips gate" \
   "$grok_plan"
 
 assert_jq_true "Grok decide-launch default host is Cursor" \
-  '.default_agent_route == "/silver:agent-cursor" and .preserves_host_mode == true' \
+  '.default_agent_route == "/sb:agent-cursor" and .preserves_host_mode == true' \
   "$grok_plan"
 assert_jq_true "GPT decide-launch default host is Codex" \
   '.default_agent_host == "codex"' \
@@ -571,7 +571,7 @@ else
   fail "SKILL documents subscription-first GPT/Claude routing"
 fi
 if grep -qF 'Subscription-First GPT and Claude Launch' "$SCENARIO" \
-  && grep -qF '/silver:agent-codex' "$SCENARIO" \
+  && grep -qF '/sb:agent-codex' "$SCENARIO" \
   && grep -qF '**no** Cursor fallback' "$SCENARIO"; then
   pass "Skill scenario encodes subscription-first GPT/Claude launch"
 else

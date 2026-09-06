@@ -18,7 +18,7 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:ui-review`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
+Invoke **`sb:ui-review`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 ## Acceptance criteria
 

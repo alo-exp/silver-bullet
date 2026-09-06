@@ -62,7 +62,7 @@ QUALITY_GATE_FILE="${SB_STATE_DIR}/quality-gate-state"
 
 # Fresh init / exec-mode prompt replay.
 #
-# `silver:init` can run before the scaffold files exist, so we replay the seed
+# `sb:init` can run before the scaffold files exist, so we replay the seed
 # prompt before the project-boundary guard below has a chance to exit early.
 # That lets fresh projects seed `silver-init` into shared SB state even before
 # `.silver-bullet.json` / `silver-bullet.md` exist.
@@ -181,7 +181,7 @@ if [[ -f "$_lib_dir/prerequisite-probe.sh" ]]; then
         printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":%s}}' "$ctx"
       fi
     else
-      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"Silver Bullet prerequisites missing — run /silver:init"}}'
+      printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","message":"Silver Bullet prerequisites missing — run /sb:init"}}'
     fi
     exit 0
   fi
@@ -451,7 +451,7 @@ if [[ -f "$core_rules_file" ]]; then
       _cr_content="$(sb_core_rules_integrity_warning)"
     fi
   else
-    _cr_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
+    _cr_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /sb:init or reinstall the Silver Bullet plugin."
   fi
   if [[ -n "$_cr_content" ]]; then
     combined="${combined:+$combined

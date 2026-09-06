@@ -9,4 +9,4 @@
 
 **Workflow:**
 1. Enforcement records the virtual `silver-bootstrap-project` marker.
-2. Route new work to `/silver:init` for project bootstrap.
+2. Route new work to `/sb:init` for project bootstrap.

@@ -51,12 +51,12 @@ ca_run_planning_tier_gate() {
   # VFY-01 plan-boundary: block plan-seal commits without completion-audit since last plan work
   if printf '%s' "$cmd" | grep -qE 'docs\([0-9]+-[0-9]+\): complete'; then
     if ! has_skill "silver-completion-audit"; then
-      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /silver:completion-audit has not been recorded this session.\n\nRun /silver:completion-audit to verify completion claims, then retry the plan-seal commit.')"
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Plan completion commit detected but /sb:completion-audit has not been recorded this session.\n\nRun /sb:completion-audit to verify completion claims, then retry the plan-seal commit.')"
       exit 0
     fi
     # VFY-01 extension (P3): require silver-verify + non-stale VERIFICATION.md
     if ! has_skill "silver-verify"; then
-      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /silver:verify recorded this session.\n\nRun /silver:verify and refresh VERIFICATION.md before plan-seal commit.')"
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — Phase completion requires /sb:verify recorded this session.\n\nRun /sb:verify and refresh VERIFICATION.md before plan-seal commit.')"
       exit 0
     fi
     _pr="$(dirname "$config_file")"
@@ -68,7 +68,7 @@ ca_run_planning_tier_gate() {
       break
     done
     if [[ -z "$vfile" ]]; then
-      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — No VERIFICATION.md found under .planning/. Run /silver:verify before plan-seal commit.')"
+      emit_block "$(printf '🛑 PLAN SEAL BLOCKED — No VERIFICATION.md found under .planning/. Run /sb:verify before plan-seal commit.')"
       exit 0
     fi
   fi

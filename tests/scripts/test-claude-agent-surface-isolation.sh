@@ -61,18 +61,18 @@ echo "--- Claude agent surface isolation (bleed fixture) ---"
 bleed_root="$(mktemp -d)"
 trap 'rm -rf "$bleed_root"' EXIT
 mkdir -p "${bleed_root}/.claude-plugin" \
-  "${bleed_root}/agents/claude/silver" \
+  "${bleed_root}/agents/claude/sb" \
   "${bleed_root}/agents/codex/silver" \
-  "${bleed_root}/host-bundles/codex/silver" \
-  "${bleed_root}/host-bundles/cursor/silver" \
+  "${bleed_root}/host-bundles/codex/sb" \
+  "${bleed_root}/host-bundles/cursor/sb" \
   "${bleed_root}/plugins/silver-bullet/.codex-plugin" \
-  "${bleed_root}/plugins/silver-bullet/skill-source/silver" \
+  "${bleed_root}/plugins/silver-bullet/skill-source/sb" \
   "${bleed_root}/plugins/silver-bullet/commands" \
   "${bleed_root}/.cursor-plugin"
 printf '{"name":"silver-bullet","skills":"./agents/claude","agents":"./agents/claude"}\n' >"${bleed_root}/.claude-plugin/plugin.json"
 printf '{"name":"silver-bullet","commands":"./commands/","hooks":"./hooks/hooks.json"}\n' >"${bleed_root}/plugins/silver-bullet/.codex-plugin/plugin.json"
 printf '{"name":"silver-bullet","skills":"./agents/cursor"}\n' >"${bleed_root}/.cursor-plugin/plugin.json"
-for d in agents/claude/silver host-bundles/codex/silver host-bundles/cursor/silver; do
+for d in agents/claude/sb host-bundles/codex/sb host-bundles/cursor/sb; do
   cat >"${bleed_root}/${d}/SKILL.md" <<'EOF'
 ---
 name: silver

@@ -16,7 +16,7 @@ fail() {
 
 assert_contains() {
   local desc="$1" needle="$2" haystack="$3"
-  if printf '%s' "$haystack" | grep -qF -- "$needle"; then
+  if grep -F -- "$needle" >/dev/null <<<"$haystack"; then
     pass "$desc"
   else
     fail "$desc — missing [$needle]"
@@ -29,19 +29,29 @@ trap 'rm -rf "$TMP_HOME"' EXIT
 
 export HOME="$TMP_HOME"
 export CURSOR_HOME="${TMP_HOME}/.cursor"
+# The installer exercises the reconciler, but this fake-home test must not
+# launch a live vendor doctor.  macOS hosts may not provide timeout(1), and a
+# real Cursor probe can block while the fixture is validating install output.
+export RT_SKIP_VENDOR_DOCTOR=1
 # The installer runs install-cursor-sb-agents.sh, which writes a project
 # .silver-bullet.json. Point it at the sandbox so the run does not rewrite the
 # checkout's own config.
 export CSBA_REPO_ROOT="${TMP_HOME}/project"
 mkdir -p "$CSBA_REPO_ROOT"
 export CURSOR_MARKETPLACE_ROOT="${CURSOR_HOME}/plugins/marketplaces/alo-labs-cursor"
+# Keep this fake-home test hermetic: the installer normally defaults to the
+# public marketplace and GitHub reachability probes, neither of which belongs
+# in a local release gate.
+export CURSOR_UNIFIED_MARKETPLACE_SOURCE="$REPO_ROOT"
+export CURSOR_AGENT_PLUGINS_REPO_URL="$REPO_ROOT"
+export CURSOR_GITHUB_REPO_URL="$REPO_ROOT"
 
 mkdir -p \
-  "${CURSOR_HOME}/agents/subagent-silver:init" \
+  "${CURSOR_HOME}/agents/subagent-sb:init" \
   "${CURSOR_HOME}/agents/full-conversation" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui" \
   "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd"
-printf '%s\n' '---' 'name: subagent-silver:init' '---' > "${CURSOR_HOME}/agents/subagent-silver:init/SKILL.md"
+printf '%s\n' '---' 'name: subagent-sb:init' '---' > "${CURSOR_HOME}/agents/subagent-sb:init/SKILL.md"
 printf '%s\n' '---' 'name: full-conversation' '---' > "${CURSOR_HOME}/agents/full-conversation/SKILL.md"
 printf '%s\n' '---' 'name: silver-ui' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/skills/silver-ui/SKILL.md"
 printf '%s\n' '---' 'name: subagent-tdd' '---' > "${CURSOR_HOME}/plugins/cache/alo-labs-agent-plugins/silver-bullet/1111111111111111111111111111111111111111/host-bundles/cursor/subagent-tdd/SKILL.md"
@@ -55,7 +65,7 @@ else
   fail "install-cursor creates current symlink"
 fi
 
-if [[ ! -e "${CURSOR_HOME}/agents/subagent-silver:init" ]] && [[ ! -e "${CURSOR_HOME}/agents/full-conversation" ]] && \
+if [[ ! -e "${CURSOR_HOME}/agents/subagent-sb:init" ]] && [[ ! -e "${CURSOR_HOME}/agents/full-conversation" ]] && \
    compgen -G "${CURSOR_HOME}/.silver-bullet-quarantine/cursor-agents/*/user/*" >/dev/null; then
   pass "install-cursor quarantines stale SB custom agents"
 else
@@ -142,11 +152,12 @@ else
   fail "install-cursor keeps registry/cache/current/local versions aligned"
 fi
 
-if [[ -f "${resolved_current}/commands/silver.md" ]] && \
-   grep -q '^name: "silver"$' "${resolved_current}/commands/silver.md" && \
-   [[ -f "${resolved_current}/commands/silver-init.md" ]] && \
-   grep -q '^name: "silver-init"$' "${resolved_current}/commands/silver-init.md" && \
-   [[ ! -e "${resolved_current}/commands/silver:init.md" ]]; then
+if [[ -f "${resolved_current}/commands/sb.md" ]] && \
+   grep -q '^name: "sb"$' "${resolved_current}/commands/sb.md" && \
+   [[ -f "${resolved_current}/commands/sb-init.md" ]] && \
+   grep -q '^name: "sb-init"$' "${resolved_current}/commands/sb-init.md" && \
+   [[ ! -e "${resolved_current}/commands/silver.md" ]] && \
+   [[ ! -e "${resolved_current}/commands/sb:init.md" ]]; then
   pass "install-cursor uses kebab-case command metadata with safe filenames"
 else
   fail "install-cursor uses kebab-case command metadata with safe filenames"
@@ -160,14 +171,14 @@ else
   fail "install-cursor seeds github.com marketplace gitPath checkout"
 fi
 
-if [[ -f "${gitpath_root}/commands/silver.md" ]] && \
+if [[ -f "${gitpath_root}/commands/sb.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands in marketplace gitPath checkout"
 else
   fail "install-cursor materializes commands in marketplace gitPath checkout"
 fi
 
-if [[ ! -f "${gitpath_root}/agents/cursor/silver:plan/SKILL.md" ]]; then
+if [[ ! -f "${gitpath_root}/agents/cursor/sb:plan/SKILL.md" ]]; then
   pass "install-cursor omits agents/cursor from marketplace gitPath (commands-only / picker)"
 else
   fail "install-cursor omits agents/cursor from marketplace gitPath (commands-only / picker)"
@@ -217,13 +228,13 @@ else
   fail "install-cursor seeds alo-labs-cursor marketplace cache symlink"
 fi
 
-if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/silver.md" ]]; then
+if [[ -d "$backend_cache_link" ]] && [[ -f "${backend_cache_link}/.cache-complete" ]] && [[ -f "${backend_cache_link}/commands/sb.md" ]]; then
   pass "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 else
   fail "install-cursor materializes alo-labs-agent-plugins backend cache directory"
 fi
 
-if [[ -f "${gitpath_root}/commands/silver.md" ]] && \
+if [[ -f "${gitpath_root}/commands/sb.md" ]] && \
    jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
   pass "install-cursor materializes commands at gitPath repo root for empty backend path"
 else
@@ -297,7 +308,7 @@ else
   fail "install-cursor preserves orchestrator-directive-guard matcher variants — missing ${odg_missing}"
 fi
 
-if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/silver.md" ]]; then
+if [[ -d "${resolved_current}/commands" ]] && [[ -f "${resolved_current}/commands/sb.md" ]]; then
   pass "install-cursor syncs composer command stubs to cache"
 else
   fail "install-cursor syncs composer command stubs to cache"
@@ -322,15 +333,15 @@ else
 fi
 
 workspace_fixture="${TMP_HOME}/workspace-auto-discovery"
-mkdir -p   "${workspace_fixture}/skills/silver-feature"   "${workspace_fixture}/skills/silver-ui"   "${workspace_fixture}/skills/silver-add"   "${workspace_fixture}/skills/silver-plan"   "${workspace_fixture}/host-bundles/cursor/silver:plan"   "${workspace_fixture}/host-bundles/cursor/subagent-tdd"   "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review"   "${workspace_fixture}/plugins/silver-bullet/agents/subagent-silver:init"   "${workspace_fixture}/.cursor/agents/full-conversation"
+mkdir -p   "${workspace_fixture}/skills/silver-feature"   "${workspace_fixture}/skills/silver-ui"   "${workspace_fixture}/skills/silver-add"   "${workspace_fixture}/skills/silver-plan"   "${workspace_fixture}/host-bundles/cursor/sb:plan"   "${workspace_fixture}/host-bundles/cursor/subagent-tdd"   "${workspace_fixture}/plugins/silver-bullet/skill-source/sb-review"   "${workspace_fixture}/plugins/silver-bullet/agents/subagent-sb:init"   "${workspace_fixture}/.cursor/agents/full-conversation"
 printf '%s\n' '---' 'name: silver-feature' '---' > "${workspace_fixture}/skills/silver-feature/SKILL.md"
 printf '%s\n' '---' 'name: silver-ui' '---' > "${workspace_fixture}/skills/silver-ui/SKILL.md"
 printf '%s\n' '---' 'name: silver-add' '---' > "${workspace_fixture}/skills/silver-add/SKILL.md"
 printf '%s\n' '---' 'name: silver-plan' '---' > "${workspace_fixture}/skills/silver-plan/SKILL.md"
-printf '%s\n' '---' 'name: silver:plan' '---' > "${workspace_fixture}/host-bundles/cursor/silver:plan/SKILL.md"
+printf '%s\n' '---' 'name: sb:plan' '---' > "${workspace_fixture}/host-bundles/cursor/sb:plan/SKILL.md"
 printf '%s\n' '---' 'name: subagent-tdd' '---' > "${workspace_fixture}/host-bundles/cursor/subagent-tdd/SKILL.md"
-printf '%s\n' '---' 'name: silver-review' '---' > "${workspace_fixture}/plugins/silver-bullet/skill-source/silver-review/SKILL.md"
-printf '%s\n' '---' 'name: subagent-silver:init' '---' > "${workspace_fixture}/plugins/silver-bullet/agents/subagent-silver:init/SKILL.md"
+printf '%s\n' '---' 'name: silver-review' '---' > "${workspace_fixture}/plugins/silver-bullet/skill-source/sb-review/SKILL.md"
+printf '%s\n' '---' 'name: subagent-sb:init' '---' > "${workspace_fixture}/plugins/silver-bullet/agents/subagent-sb:init/SKILL.md"
 printf '%s\n' '---' 'name: full-conversation' '---' > "${workspace_fixture}/.cursor/agents/full-conversation/SKILL.md"
 set +e
 unignored_picker_out="$(bash "${REPO_ROOT}/scripts/enumerate-cursor-slash-picker.sh" --cursor-home "$CURSOR_HOME" --workspace "$workspace_fixture" 2>&1)"
@@ -341,8 +352,8 @@ if [[ "$unignored_picker_rc" -ne 0 ]]; then
 else
   fail "enumerate-cursor-slash-picker detects unignored workspace skill surfaces"
 fi
-for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-silver:init' '/subagent-tdd' '/full-conversation'; do
-  if printf '%s' "$unignored_picker_out" | grep -qF -- "$bad_route"; then
+for bad_route in '/silver-ui' '/silver-add' '/silver-plan' '/subagent-sb:init' '/subagent-tdd' '/full-conversation'; do
+  if grep -F -- "$bad_route" >/dev/null <<<"$unignored_picker_out"; then
     pass "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
   else
     fail "enumerate-cursor-slash-picker reports screenshot bad route ${bad_route}"
@@ -429,7 +440,7 @@ fi
 
 local_plugin_dir="${CURSOR_HOME}/plugins/local/silver-bullet"
 if [[ -d "$local_plugin_dir" ]] && [[ ! -L "$local_plugin_dir" ]] && \
-   [[ -f "${local_plugin_dir}/commands/silver.md" ]] && \
+   [[ -f "${local_plugin_dir}/commands/sb.md" ]] && \
    [[ "$(jq -r '.version // empty' "${local_plugin_dir}/.cursor-plugin/plugin.json")" == \
       "$(jq -r '.version // empty' "${resolved_current}/.cursor-plugin/plugin.json")" ]]; then
   pass "install-cursor materializes ~/.cursor/plugins/local/silver-bullet for desktop discovery"

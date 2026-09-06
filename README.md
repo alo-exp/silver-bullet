@@ -25,7 +25,7 @@ A good prompt is not a delivery system. Agents skip planning, spec and PR drift 
 | Capability | What you get |
 |------------|--------------|
 | Engineering best practices | Spec-to-release traceability, not prompt-only discipline |
-| Dynamically tailored workflows | `/silver` composes the smallest safe chain per task |
+| Dynamically tailored workflows | `/sb` composes the smallest safe chain per task |
 | Verification and validation loops | 85 flow-step V-loops with BLOCK / WARN / INFO evidence |
 | Quality gates | Two-tier delivery discipline — fast in the middle, strict at the edges |
 | Cost optimization | Enforced process + Graphify, agentmemory, RTK, Context Mode for cheaper models |
@@ -44,17 +44,17 @@ The catalog authority is [docs/apo-catalog.json](docs/apo-catalog.json):
 | Layer | Count | Role |
 |-------|-------|------|
 | Atomic flows (`AF-*`) | 27 | Composable primitives (ROUTE, SPECIFY, PLAN, EXECUTE, VERIFY, SHIP, …) |
-| Workflows (`WF-*`) | 22 | Task-shaped chains (`silver:feature`, `silver:bugfix`, `silver:devops`, …) |
+| Workflows (`WF-*`) | 22 | Task-shaped chains (`sb:feature`, `sb:bugfix`, `sb:devops`, …) |
 | Flow-step V-loops | 85 | Evidence at every step; resumable across context compaction |
 
 Generated views: [docs/composable-flows-contracts.md](docs/composable-flows-contracts.md), [docs/workflow-composition-matrix.md](docs/workflow-composition-matrix.md).
 
 ### Two-Tier Delivery Discipline
 
-- **Planning floor** — source edits and intermediate commits require the selected SB pre-execution chain (default: `silver:quality-gates`, `silver:context`, `silver:plan`).
+- **Planning floor** — source edits and intermediate commits require the selected SB pre-execution chain (default: `sb:quality-gates`, `sb:context`, `sb:plan`).
 - **Final delivery floor** — PR creation, deploy, release, and completion claims require review, security, validation, test freshness, and ship markers.
 
-Small edits stay on `silver:fast`. High-risk work gets the full chain.
+Small edits stay on `sb:fast`. High-risk work gets the full chain.
 
 ### Twelve Hook Layers
 
@@ -63,7 +63,7 @@ Hooks observe real tool usage and state transitions — not decorative instructi
 | Layer | Hook or surface | Purpose |
 |-------|-----------------|---------|
 | 1 | `record-skill.sh` | Records completed SB skill invocations |
-| 2 | `record-requested-skill.sh` | Records requested `/silver` routes |
+| 2 | `record-requested-skill.sh` | Records requested `/sb` routes |
 | 3 | `prompt-reminder.sh` | Re-injects missing steps before each prompt |
 | 4 | `dev-cycle-check.sh` | Blocks source edits before planning floor |
 | 5 | `workflow-chain-guard.sh` | Blocks composed workflows with missing downstream markers |
@@ -82,7 +82,7 @@ Capability tiers per host are documented in [docs/RUNTIME-COMPATIBILITY.md](docs
 | Runtime | Status | Install surface |
 |---------|--------|-----------------|
 | Claude Code | Primary plugin runtime | `/plugin install alo-exp/silver-bullet` or `alo-labs/agent-plugins` marketplace (`alo-labs` catalog) |
-| Codex | Supported package runtime | Public `alo-labs/agent-plugins` marketplace (`alo-labs-codex`); native `/silver:` namespace |
+| Codex | Supported package runtime | Public `alo-labs/agent-plugins` marketplace (`alo-labs-codex`); native `/sb:` namespace |
 | Cursor | Supported plugin runtime | Public `alo-labs/agent-plugins` (`alo-labs-cursor`) or `bash scripts/install-cursor.sh --public-release` |
 
 Hook-backed enforcement requires a runtime that supports the relevant hook events. In less capable runtimes, Silver Bullet still provides workflow guidance, but hard blocks depend on host support.
@@ -120,7 +120,7 @@ Optional code-intelligence tooling:
 
 ### Codex
 
-For normal use, install or refresh from the public `alo-labs/agent-plugins` marketplace (`alo-labs-codex` catalog). The package exposes native `/silver:` entries and hides internal `skill-source/` duplicates.
+For normal use, install or refresh from the public `alo-labs/agent-plugins` marketplace (`alo-labs-codex` catalog). The package exposes native `/sb:` entries and hides internal `skill-source/` duplicates.
 
 For local development from this checkout:
 
@@ -143,18 +143,18 @@ bash scripts/install-cursor.sh --public-release
 Run once per project:
 
 ```text
-/silver:init
+/sb:init
 ```
 
 Then start normal work:
 
 ```text
-/silver improve the account settings page and ship it safely
-/silver:feature API rate limiter
-/silver:quality-gates
+/sb improve the account settings page and ship it safely
+/sb:feature API rate limiter
+/sb:quality-gates
 ```
 
-`/silver:init` detects stack and workflow type, scaffolds `.silver-bullet.json`, `silver-bullet.md`, workflow docs, doc scheme, and enforcement state under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
+`/sb:init` detects stack and workflow type, scaffolds `.silver-bullet.json`, `silver-bullet.md`, workflow docs, doc scheme, and enforcement state under `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/`.
 
 ## Built-In Skills And Routes
 
@@ -162,32 +162,32 @@ Silver Bullet ships **85 canonical skills** under `skills/`. The plugin exposes 
 
 | Route or skill | Purpose |
 |----------------|---------|
-| `/silver` | Main natural-language router and APO entry point |
-| `/silver:init` | Project setup, config, workflow docs, doc scheme |
-| `/silver:feature` | Feature workflow through SB-owned lifecycle |
-| `/silver:bugfix` | Debug/TDD-oriented bugfix workflow |
-| `/silver:ui` | UI workflow with design contract and UI quality gates |
-| `/silver:devops` | Infrastructure workflow with blast radius and IaC gates |
-| `/silver:deploy` | Deployment with platform detection, health checks, rollback evidence |
-| `/silver:canary` | Post-deploy runtime watch |
-| `/silver:deep-research` | Research and decision workflow |
-| `/silver:spec` | Spec and requirements elicitation |
-| `/silver:release` | Release preparation workflow |
-| `/silver:fast` | Small, low-risk work through a routed fast path |
-| `/silver:test` | Test writing, E2E discovery, repair, audit, performance |
-| `/silver:refactor` | Behavior-preserving refactor with baseline proof |
-| `/silver:quality-gates` | Product/software quality assessment |
-| `/silver:domain-audit` | Domain quality contract packs |
-| `/silver:ship` | Branch/PR readiness and delivery gates |
-| `/silver:create-release` | Release artifact creation after readiness |
-| `/silver:handoff` | Project-level handoff prompt |
-| `/silver:forensics` | Reconstruct failed, stalled, or abandoned sessions |
+| `/sb` | Main natural-language router and APO entry point |
+| `/sb:init` | Project setup, config, workflow docs, doc scheme |
+| `/sb:feature` | Feature workflow through SB-owned lifecycle |
+| `/sb:bugfix` | Debug/TDD-oriented bugfix workflow |
+| `/sb:ui` | UI workflow with design contract and UI quality gates |
+| `/sb:devops` | Infrastructure workflow with blast radius and IaC gates |
+| `/sb:deploy` | Deployment with platform detection, health checks, rollback evidence |
+| `/sb:canary` | Post-deploy runtime watch |
+| `/sb:deep-research` | Research and decision workflow |
+| `/sb:spec` | Spec and requirements elicitation |
+| `/sb:release` | Release preparation workflow |
+| `/sb:fast` | Small, low-risk work through a routed fast path |
+| `/sb:test` | Test writing, E2E discovery, repair, audit, performance |
+| `/sb:refactor` | Behavior-preserving refactor with baseline proof |
+| `/sb:quality-gates` | Product/software quality assessment |
+| `/sb:domain-audit` | Domain quality contract packs |
+| `/sb:ship` | Branch/PR readiness and delivery gates |
+| `/sb:create-release` | Release artifact creation after readiness |
+| `/sb:handoff` | Project-level handoff prompt |
+| `/sb:forensics` | Reconstruct failed, stalled, or abandoned sessions |
 
 Full catalog: [docs/apo-catalog.json](docs/apo-catalog.json).
 
 ### Optional DevOps Plugins
 
-The `devops-cycle` works without optional DevOps plugins. When installed, SB detects them during `/silver:init`:
+The `devops-cycle` works without optional DevOps plugins. When installed, SB detects them during `/sb:init`:
 
 ```text
 /plugin marketplace add hashicorp/agent-skills
@@ -270,10 +270,10 @@ tests/                            Unit, integration, live, and E2E harnesses
 | Symptom | Fix |
 |---------|-----|
 | `jq not found` | Install `jq` with Homebrew or apt |
-| `/silver` not available | Install the plugin and restart the session |
+| `/sb` not available | Install the plugin and restart the session |
 | Hooks not firing | Confirm `.silver-bullet.json` and `silver-bullet.md` exist in project root |
 | CI is red and you need to push a fix | Commit normally; for push use `touch ${SB_RUNTIME_HOME_ROOT}/.silver-bullet/ci-red-override` only when fixing CI |
-| Want to refresh templates | Re-run `/silver:init` |
+| Want to refresh templates | Re-run `/sb:init` |
 
 Run `bash scripts/sb-diagnostics.sh` for host-specific install and hook wiring checks.
 

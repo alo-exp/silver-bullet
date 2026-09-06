@@ -8,6 +8,6 @@ Validate SB-owned post-deploy runtime watch.
 
 - Writes `.planning/CANARY.md`.
 - Selects HTTP, browser, logs, metrics, and rollback checks from available evidence.
-- Applies `silver:domain-audit --pack runtime-release`.
+- Applies `sb:domain-audit --pack runtime-release`.
 - Blocks repeated runtime failures, critical console errors, broken core flows, or missing rollback evidence.
-- Hands confirmed production-impacting failures to `silver:incident`.
+- Hands confirmed production-impacting failures to `sb:incident`.

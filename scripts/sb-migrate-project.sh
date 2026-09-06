@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Mechanical project-surface migration for legacy SB-initiated projects.
-# Complements silver:migrate Steps 1–4 (config, orchestrator, workflows helper, gitignore).
+# Complements sb:migrate Steps 1–4 (config, orchestrator, workflows helper, gitignore).
 set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

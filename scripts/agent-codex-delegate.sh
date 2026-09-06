@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# On-demand Codex TUI delegation wrapper for /silver:agent-codex (not enterprise E2E matrix).
+# On-demand Codex TUI delegation wrapper for /sb:agent-codex (not enterprise E2E matrix).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,7 +18,7 @@ Usage: agent-codex-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PAT
        [--sb-root PATH] [--use-exec] [--attach] [--no-escalate] [--allow-mode-fallback]
 
 Delegates a single task to Codex via tests/live/agents/codex/agent.sh (TUI or --use-exec).
-Requires full SB checkout (agent adapter). Parent supervisors: see /silver:agent-codex.
+Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-codex.
 EOF
 }
 

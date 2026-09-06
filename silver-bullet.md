@@ -1,5 +1,5 @@
 <!-- This file is managed by Silver Bullet. Do not edit manually. -->
-<!-- To update: run /silver:init in your project. -->
+<!-- To update: run /sb:init in your project. -->
 
 # Silver Bullet — Enforcement Instructions for silver-bullet
 
@@ -26,7 +26,7 @@ At the very start of any new session, perform these steps automatically:
    Compare as semver. If installed < latest, ask the user directly:
    - Question: "Silver Bullet v{installed} is outdated (latest: v{latest}). Update now?"
    - Options: "A. Yes, update now" / "B. Skip"
-   If A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel, then continue.
+   If A: invoke `/sb:update` through the active runtime's SB-recognized skill invocation channel, then continue.
    If B or check fails (offline/unknown): output "Skipping SB update." and continue.
 
    **5.2 Legacy lifecycle plugins (informational)**
@@ -40,7 +40,7 @@ At the very start of any new session, perform these steps automatically:
    ```bash
    command -v search >/dev/null && search --version || true
    ```
-   `silver:deep-research` works without search-cli, but uses it first when configured for broader multi-provider retrieval. For deep/ultradeep research, recommend configuring the relevant provider class only when available fallback sources cannot satisfy the evidence threshold.
+   `sb:deep-research` works without search-cli, but uses it first when configured for broader multi-provider retrieval. For deep/ultradeep research, recommend configuring the relevant provider class only when available fallback sources cannot satisfy the evidence threshold.
 
    **5.5 Alumnium (optional visual/browser companion)**
    Alumnium is optional. SB routes to it for visual-heavy clarify sessions and browser-backed UI verification when the user has configured the [Alumnium](https://alumnium.ai/) MCP server. See §8.1 for hook points, fallback hierarchy, and install reference.
@@ -90,13 +90,13 @@ queue token mappings, and process-pack overrides. Generated views such as
 and `docs/generated/atomic-flow-index.json` must match the catalog; do not
 hand-author workflow composition outside the APO catalog.
 
-**SB lifecycle visibility**: SB lifecycle skills (`/silver:context`, etc.)
+**SB lifecycle visibility**: SB lifecycle skills (`/sb:context`, etc.)
 are tracked via supported runtime-native invocations and recorded as SB-owned
 markers in the state file. The compliance status shows lifecycle progress.
 However, recording only proves invocation — it does not verify phases completed
 successfully.
 
-**Trivial changes** (typos, copy fixes, config tweaks): Route through `/silver:fast`
+**Trivial changes** (typos, copy fixes, config tweaks): Route through `/sb:fast`
 for classification — do not rely on a manual trivial bypass file. SessionStart clears
 any stale `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` marker; hooks do not
 auto-create it. The trivial file is a legacy compatibility escape hatch only.
@@ -127,7 +127,7 @@ degraded path.
 
 > **Design documents**: For architectural notes on future workflow enhancements, see:
 > - [`docs/internal/vfy-01-enforcement-design.md`](docs/internal/vfy-01-enforcement-design.md) — intermediate verification enforcement boundary design (VFY-01)
-> - [`docs/internal/flow-01-parallelism-design.md`](docs/internal/flow-01-parallelism-design.md) — FLOW layer parallelism design for the /silver composer (FLOW-01)
+> - [`docs/internal/flow-01-parallelism-design.md`](docs/internal/flow-01-parallelism-design.md) — FLOW layer parallelism design for the /sb composer (FLOW-01)
 
 ### Hand-Holding at Transitions
 
@@ -168,33 +168,33 @@ without consulting external lifecycle plugin files.
 
 | Command | What it does | Produces |
 |---------|-------------|----------|
-| `/silver:init` | Project bootstrap, requirements scoping, roadmap generation, and SB config setup | PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md |
-| `/silver:release` | Milestone audit, gap planning, changelog, tag, and release publication | UAT.md, release notes, milestone completion record |
-| `/silver:context` | Conversational requirements gathering for current phase -- asks questions, captures decisions | CONTEXT.md with locked decisions (D-01, D-02...) |
-| `/silver:plan` | Decomposes phase into parallel-optimized plans with 2-3 tasks each, dependency graphs, verification criteria | PLAN.md files with wave structure |
-| `/silver:execute` | Wave-based execution -- spawns subagents per plan, atomic commits per task, auto-resumes incomplete plans | Committed code + SUMMARY.md per plan |
-| `/silver:verify` | Checks must-haves, runs automated tests, validates artifacts exist and connect correctly | VERIFICATION.md with pass/fail per truth |
-| `/silver:review-request` | Frames review scope and blocker criteria | REVIEW.md request section |
-| `/silver:review` | Performs code review and fix-loop evidence | REVIEW.md findings and outcomes |
-| `/silver:review-triage` | Review-triad wrapper — delegates to `/silver:triage` | REVIEW.md triage section |
-| `/silver:triage` | Generic review-finding triage, PM filing, and fix routing | Triage table + PM ids |
-| `/silver:secure` | Verifies threat mitigation and security findings | SECURITY.md or phase security section |
-| `/silver:ship` | Runs deployment checklist, pushes to remote, confirms CI green, creates PR with auto-generated body | Deployed, CI-green codebase + pull request |
+| `/sb:init` | Project bootstrap, requirements scoping, roadmap generation, and SB config setup | PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md |
+| `/sb:release` | Milestone audit, gap planning, changelog, tag, and release publication | UAT.md, release notes, milestone completion record |
+| `/sb:context` | Conversational requirements gathering for current phase -- asks questions, captures decisions | CONTEXT.md with locked decisions (D-01, D-02...) |
+| `/sb:plan` | Decomposes phase into parallel-optimized plans with 2-3 tasks each, dependency graphs, verification criteria | PLAN.md files with wave structure |
+| `/sb:execute` | Wave-based execution -- spawns subagents per plan, atomic commits per task, auto-resumes incomplete plans | Committed code + SUMMARY.md per plan |
+| `/sb:verify` | Checks must-haves, runs automated tests, validates artifacts exist and connect correctly | VERIFICATION.md with pass/fail per truth |
+| `/sb:review-request` | Frames review scope and blocker criteria | REVIEW.md request section |
+| `/sb:review` | Performs code review and fix-loop evidence | REVIEW.md findings and outcomes |
+| `/sb:review-triage` | Review-triad wrapper — delegates to `/sb:triage` | REVIEW.md triage section |
+| `/sb:triage` | Generic review-finding triage, PM filing, and fix routing | Triage table + PM ids |
+| `/sb:secure` | Verifies threat mitigation and security findings | SECURITY.md or phase security section |
+| `/sb:ship` | Runs deployment checklist, pushes to remote, confirms CI green, creates PR with auto-generated body | Deployed, CI-green codebase + pull request |
 
 **Project Lifecycle Commands:**
 
 | Command | What it does | When to use |
 |---------|-------------|-------------|
-| `/silver:scan` | Analyzes existing codebase, docs, tests, and architecture | Brownfield orientation before planning |
-| `/silver:fast` | Handles trivial and medium work with the right SB rigor | Small scoped work outside the main phase cycle |
-| `/silver:handoff` | Creates a reusable project-level handoff prompt | Stopping mid-work or resuming in another session |
-| `/silver:debug` | Systematic debugging with reproduction, hypotheses, evidence, and regression guard | Execution, test, CI, or verification failure |
-| `/silver:completion-audit` | Independently verifies completion claims | Before accepting task/phase/review/release completion |
-| `/silver:branch-finish` | Branch cleanup, PR/merge readiness, and remaining-work decision | Before phase-level ship on feature branches |
-| `/silver:spike` | Run 2–5 executable feasibility experiments before committing to an approach | Uncertain technical direction; "can we do this?" |
-| `/silver:phase` | Add, insert, remove, or edit phases in ROADMAP.md | Any roadmap structure change; planning-file-guard blocks direct edits |
-| `/silver:undo` | Safe git revert for phase or plan commits with dependency checks | Rolling back executed phase work |
-| `/silver:thread` | Create and manage lightweight cross-session context threads for topic-specific tracking | Ongoing concern or decision chain that spans multiple sessions |
+| `/sb:scan` | Analyzes existing codebase, docs, tests, and architecture | Brownfield orientation before planning |
+| `/sb:fast` | Handles trivial and medium work with the right SB rigor | Small scoped work outside the main phase cycle |
+| `/sb:handoff` | Creates a reusable project-level handoff prompt | Stopping mid-work or resuming in another session |
+| `/sb:debug` | Systematic debugging with reproduction, hypotheses, evidence, and regression guard | Execution, test, CI, or verification failure |
+| `/sb:completion-audit` | Independently verifies completion claims | Before accepting task/phase/review/release completion |
+| `/sb:branch-finish` | Branch cleanup, PR/merge readiness, and remaining-work decision | Before phase-level ship on feature branches |
+| `/sb:spike` | Run 2–5 executable feasibility experiments before committing to an approach | Uncertain technical direction; "can we do this?" |
+| `/sb:phase` | Add, insert, remove, or edit phases in ROADMAP.md | Any roadmap structure change; planning-file-guard blocks direct edits |
+| `/sb:undo` | Safe git revert for phase or plan commits with dependency checks | Rolling back executed phase work |
+| `/sb:thread` | Create and manage lightweight cross-session context threads for topic-specific tracking | Ongoing concern or decision chain that spans multiple sessions |
 
 ### 2c. Utility Command Awareness
 
@@ -202,14 +202,14 @@ Suggest these commands based on context -- do not wait for the user to ask.
 
 | Context trigger | Suggest | Why |
 |----------------|---------|-----|
-| Execution fails, tests break, unexpected error | `/silver:debug` | Diagnose root cause before retrying |
-| User mentions a small change outside the current phase | `/silver:fast` | Handles ad-hoc work with the right SB rigor |
-| Change is truly trivial (typo, config value, 3 files max) | `/silver:fast` | Inline execution with focused verification |
-| New session on existing project | `/silver:handoff` or `/silver` | Restores full context from STATE.md and handoff artifacts |
-| User wants to stop mid-work | `/silver:handoff` | Creates handoff files for clean session resume |
+| Execution fails, tests break, unexpected error | `/sb:debug` | Diagnose root cause before retrying |
+| User mentions a small change outside the current phase | `/sb:fast` | Handles ad-hoc work with the right SB rigor |
+| Change is truly trivial (typo, config value, 3 files max) | `/sb:fast` | Inline execution with focused verification |
+| New session on existing project | `/sb:handoff` or `/sb` | Restores full context from STATE.md and handoff artifacts |
+| User wants to stop mid-work | `/sb:handoff` | Creates handoff files for clean session resume |
 | User wants to end now and continue later with a reusable project-level prompt | `/silver-handoff` | Generates a concise project-level handoff prompt for the next session |
-| User asks "where are we?" or "what's left?" | `/silver` status/progress routing | Reads SB planning state and workflow trackers |
-| User seems unsure what step is next | `/silver` | Routes to the next SB lifecycle action |
+| User asks "where are we?" or "what's left?" | `/sb` status/progress routing | Reads SB planning state and workflow trackers |
+| User seems unsure what step is next | `/sb` | Routes to the next SB lifecycle action |
 
 ### 2d. Position Awareness (SB State)
 
@@ -278,8 +278,8 @@ so the user can follow along without being asked to act.
 ### 2g. Bare Instruction Interception
 
 When the user sends a **bare instruction** — a message that is not a slash command and is
-non-trivial in nature — SB MUST intercept it and invoke `/silver` through the active runtime's SB-recognized skill invocation channel before
-doing anything else. `/silver` routes the instruction to the correct SB workflow,
+non-trivial in nature — SB MUST intercept it and invoke `/sb` through the active runtime's SB-recognized skill invocation channel before
+doing anything else. `/sb` routes the instruction to the correct SB workflow,
 SB utility, or optional external enrichment skill.
 
 **SB-first skill authority:** In an SB-activated project, the active agent MUST wait for
@@ -300,15 +300,15 @@ next step until the user goal is achieved or user feedback is required.
 - Replies/continuations while an active skill is already running, unless they introduce new action intent or SDLC-relevant context
 - Single-word or trivial acknowledgements ("ok", "thanks", "got it")
 
-If a reply or attached/pasted artifact introduces new action intent while a workflow is already running, SB must intercept it and re-route through `/silver` instead of treating it as a passive continuation.
+If a reply or attached/pasted artifact introduces new action intent while a workflow is already running, SB must intercept it and re-route through `/sb` instead of treating it as a passive continuation.
 
 **Process:**
 1. Receive bare instruction
 2. Classify: is it non-trivial work? If yes → intercept
-3. Invoke `/silver` through the active runtime's SB-recognized skill invocation channel, passing the original instruction as arguments
-4. `/silver` handles routing — SB does not do the work directly
+3. Invoke `/sb` through the active runtime's SB-recognized skill invocation channel, passing the original instruction as arguments
+4. `/sb` handles routing — SB does not do the work directly
 
-> **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/silver`. The /silver orchestrator exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
+> **Anti-Skip:** You are violating this rule if you read a non-trivial bare instruction and begin responding or executing work without first invoking `/sb`. The /sb orchestrator exists precisely to ensure every task reaches the right skill — bypassing it defeats SB's enforcement design.
 
 ### 2g-i. Knowledge and Learnings Retrieval
 
@@ -363,7 +363,7 @@ See `docs/AGENTMEMORY.md`.
 (hooks, `.env`, bridge persistence, post-export re-index). Verify with
 `bash scripts/sb-optimize-stack.sh --verify` or `bash scripts/sb-diagnostics.sh`. See `docs/STACK-OPTIMIZATION.md`.
 
-**Alumnium (opt-in, separate consent):** SB recommends [Alumnium](https://alumnium.ai/) for browser and visual testing (`recommended_tools.alumnium.enabled_by_user`). When opted in and not suspended, hooks verify the npm package and MCP wiring. Prefer Alumnium `do` / `check` / `get` / `wait` for `silver:clarify`, `silver:ui-review`, and `silver:verify`; fallback hierarchy in §8.1. See `docs/ALUMNIUM.md`.
+**Alumnium (opt-in, separate consent):** SB recommends [Alumnium](https://alumnium.ai/) for browser and visual testing (`recommended_tools.alumnium.enabled_by_user`). When opted in and not suspended, hooks verify the npm package and MCP wiring. Prefer Alumnium `do` / `check` / `get` / `wait` for `sb:clarify`, `sb:ui-review`, and `sb:verify`; fallback hierarchy in §8.1. See `docs/ALUMNIUM.md`.
 
 ### 2g-ii. Token Compression (Opt-In)
 
@@ -400,7 +400,7 @@ SB recommends **LeanCTX** as a separate opt-in tool (`recommended_tools.leanctx.
 
 Install and wiring: `docs/LEANCTX.md`. Stack optimizer (Phase 2): `bash scripts/optimize-five-tool-stack.sh`.
 
-**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/silver:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
+**Recovery when wedged (`sb_stack_double_compression`):** The stack compression mutex is global (`${SB_RUNTIME_STATE_DIR}/stack-compression-mutex`) — subagents share it and cannot bypass a dirty mutex. When wedged, prior tool self-reports from the host model may be unreliable; verify with fresh tool calls after recovery. Escape hatches: complete one compliant routed-owner tool call (e.g. `ctx_search`, `lctx_read_ast`, RTK Bash without LeanCTX shell rewrite), run `/sb:clear-stack-state`, or `bash scripts/sb-doctor.sh --fix` (check **D20**). See `docs/LEANCTX.md` Recovery section.
 
 **Operating guide:** Read [`docs/LEANCTX-OPERATING-GUIDE.md`](docs/LEANCTX-OPERATING-GUIDE.md) for practical routing, timeout, allowlist, output, and edit-safety guidance before using LeanCTX.
 
@@ -422,9 +422,9 @@ For everything else, use your normal tools. RTK handles shell command output aut
 
 ### 2h. SB Orchestrated Workflows
 
-Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.json`: canonical `AF-*` atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings. Legacy FLOW 1-18 labels are migration aliases only. The `/silver` orchestrator classifies context and composes an ordered chain of catalog-backed atoms tailored to the task.
+Silver Bullet workflows are composed from the APO catalog in `docs/apo-catalog.json`: canonical `AF-*` atomic flows, reusable workflow components, flow-step V-loops, evidence records, and runtime token mappings. Legacy FLOW 1-18 labels are migration aliases only. The `/sb` orchestrator classifies context and composes an ordered chain of catalog-backed atoms tailored to the task.
 
-**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`silver:feature`, `silver:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
+**Parent orchestrator mode (default, only mode):** The parent session NEVER implements directly. It reads `orchestrator-directive.json`, spawns **Task workers** using `.silver-bullet/orchestrator-workers/<TEMPLATE>.md`, and advances the queue via hooks. Composer skills (`sb:feature`, `sb:ui`, …) are queue builders — not inline execution instructions. See `docs/ORCHESTRATOR.md`.
 
 **SB OVERRIDE (audited escape hatch):** When a blocking orchestrator directive or PreToolUse gate cannot be satisfied, include in your next user message: `SB OVERRIDE: <reason>`. The hook logs the override to `.planning/orchestrator-override-log.jsonl` and clears the pending directive. Use sparingly — overrides are audited, not silent bypasses.
 
@@ -436,27 +436,27 @@ SB is the lifecycle authority. Semver, milestones, phases, planning, execution, 
 
 | Workflow | Entry triggers | Standard composition chain |
 |----------|---------------|---------------------------|
-| `silver:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | FLOW 3 (CLARIFY) → handoff to `silver:feature` / `silver:devops` / `silver:deep-research` |
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | FLOW 1–5 (conditional) → FLOW 13 (pre-plan) → FLOW 6 → [FLOW 7 if UI] → FLOW 8 → post-execution chain |
-| `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | FLOW 15 (DEBUG) → FLOW 6 → FLOW 8 → post-execution chain |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | FLOW 1–6 (conditional) → FLOW 7 → FLOW 8 → FLOW 9 → post-execution chain |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | FLOW 2 → [3–4] → blast-radius → devops-skill-router → FLOW 13 → FLOW 6 → FLOW 8 → post-execution chain |
-| `silver:deep-research` | "how should we", "which technology", "compare X vs Y", "spike", "state of the art" | FLOW 3 → FLOW 4 → FLOW 16 → FLOW 13/VALIDATE → handoff to `silver:feature` / `silver:devops` |
-| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | FLOW 13 → FLOW 12 (UAT audit) → FLOW 18 (milestone audit + gap closure) → FLOW 16–17 → delivery tail → `silver:create-release` |
-| `silver:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
+| `sb:clarify` | "I want to build", "I have an idea", "here's my concept", sketched requirement, rough brief, multi-sentence idea description with no SPEC.md | FLOW 3 (CLARIFY) → handoff to `sb:feature` / `sb:devops` / `sb:deep-research` |
+| `sb:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | FLOW 1–5 (conditional) → FLOW 13 (pre-plan) → FLOW 6 → [FLOW 7 if UI] → FLOW 8 → post-execution chain |
+| `sb:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | FLOW 15 (DEBUG) → FLOW 6 → FLOW 8 → post-execution chain |
+| `sb:ui` | "UI", "frontend", "component", "screen", "design", "interface" | FLOW 1–6 (conditional) → FLOW 7 → FLOW 8 → FLOW 9 → post-execution chain |
+| `sb:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | FLOW 2 → [3–4] → blast-radius → devops-skill-router → FLOW 13 → FLOW 6 → FLOW 8 → post-execution chain |
+| `sb:deep-research` | "how should we", "which technology", "compare X vs Y", "spike", "state of the art" | FLOW 3 → FLOW 4 → FLOW 16 → FLOW 13/VALIDATE → handoff to `sb:feature` / `sb:devops` |
+| `sb:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | FLOW 13 → FLOW 12 (UAT audit) → FLOW 18 (milestone audit + gap closure) → FLOW 16–17 → delivery tail → `sb:create-release` |
+| `sb:fast` | "trivial", "quick fix", "typo", "one-liner", "config value" | Parent spawns FAST worker (Tier 1); Tier 2+ escalates to fuller queues |
 
 Per-flow steps, produces, and exit conditions live in `docs/composable-flows-contracts.md`. Composer `SKILL.md` files declare **standard composition chains** only — not inline step lists.
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning and pre-ship. Product work uses 8 core dimensions, with AI/LLM safety included only when applicable.
 - `security` is always mandatory — cannot be skipped via §9
-- `silver:devops` uses 7 IaC-adapted dimensions (`devops-quality-gates`) instead of the product sweep: reliability, security, scalability, modularity, testability, observability, and change-safety
-- TDD enforcement is hidden: implementation plans pass through the internal `tdd` gate before `silver:execute`; config/infra/doc plans skip TDD
-- Test strategy is captured inside `silver:plan`. `verify-tests` runs before final delivery so the test gate is fresh
-- Code review uses SB review artifacts plus `silver:review-request` before and `silver:review-triage` or `silver:triage` after
+- `sb:devops` uses 7 IaC-adapted dimensions (`devops-quality-gates`) instead of the product sweep: reliability, security, scalability, modularity, testability, observability, and change-safety
+- TDD enforcement is hidden: implementation plans pass through the internal `tdd` gate before `sb:execute`; config/infra/doc plans skip TDD
+- Test strategy is captured inside `sb:plan`. `verify-tests` runs before final delivery so the test gate is fresh
+- Code review uses SB review artifacts plus `sb:review-request` before and `sb:review-triage` or `sb:triage` after
 - External second-opinion review is optional and feeds into SB artifacts; it never replaces SB review
-- `silver:ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
-- When user selects Autonomous mode at session start, `silver:execute` drives all remaining phases
+- `sb:ship` inside any workflow = phase-level merge (push → PR). `sb:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
+- When user selects Autonomous mode at session start, `sb:execute` drives all remaining phases
 
 **Step-skip protocol:**
 When the user requests skipping a workflow step, SB:
@@ -464,16 +464,16 @@ When the user requests skipping a workflow step, SB:
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. Records the decision in §9 if user chooses A permanently — **before committing, display the exact text being written to §9 and require explicit user confirmation** (showing what will change in both silver-bullet.md and templates/silver-bullet.md.base)
 
-Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `silver:verify`.
+Non-skippable gates: `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
-**Post-execution sequencing (after FLOW 8):** Flow numbers are stable identifiers — not always runtime order. For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, the mandatory post-execute order is:
+**Post-execution sequencing (after FLOW 8):** Flow numbers are stable identifiers — not always runtime order. For `sb:feature`, `sb:ui`, `sb:devops`, and `sb:bugfix`, the mandatory post-execute order is:
 
-1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected
-2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:triage` via `silver:review-triage` wrapper)
-3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)
-4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)
+1. FLOW 9 (UI QUALITY) — always for `sb:ui`; for `sb:feature` only when UI scope is detected
+2. FLOW 10 (REVIEW triad: `sb:review-request` → `sb:review` → `sb:triage` via `sb:review-triage` wrapper)
+3. FLOW 12 (VERIFY: `sb:verify` + `verify-tests`)
+4. FLOW 11 (SECURE: `security` + `sb:secure`, with `sb:validate` as needed)
 5. FLOW 13 (QUALITY GATE, pre-ship)
-6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)
+6. FLOW 14 (SHIP: `sb:branch-finish` → `sb:completion-audit` → `sb:ship`)
 
 **Composition vs enforcement:** Composer skills declare full FLOW 1–18 composition chains (including conditional FLOW 1–5 orientation/clarify/decide atoms). The orchestrator enforcement queue (`hooks/lib/orchestrator-state.sh`) omits optional pre-execution atoms by default — hooks block edits on mandatory pre-execution markers only. Parent orchestrators insert skipped flows when context scan flags require them. See `docs/composable-flows-contracts.md` § Runtime Queue Tokens.
 
@@ -483,24 +483,24 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 
 | Flow | Name | Purpose |
 |------|------|---------|
-| FLOW 1 | BOOTSTRAP | Project setup — `silver:init`, workflow initialization |
-| FLOW 2 | ORIENT | Codebase intelligence — `silver:scan`, `silver:context`, optional `silver:review-stats` |
-| FLOW 3 | CLARIFY | Discovery and framing — `silver:clarify` |
-| FLOW 4 | DECIDE | Option synthesis — `silver:deep-research`, optional spike, or external research connector |
-| FLOW 5 | SPECIFY | Spec creation — `silver:ingest`, `silver:spec`, `silver:validate` |
-| FLOW 6 | PLAN | Phase planning — `silver:context`, `silver:plan`, optional `silver:validate` |
-| FLOW 7 | DESIGN CONTRACT | UI/UX design — `silver:ui-contract` plus optional design lenses |
-| FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `silver:execute` |
-| FLOW 9 | UI QUALITY | UI review — `silver:ui-review` plus optional design/accessibility lenses |
-| FLOW 10 | REVIEW | Code review — `silver:review-request` → `silver:review` → `silver:triage` |
-| FLOW 11 | SECURE | Security — `security`, `silver:secure`, `silver:validate`, optional `silver:ai-llm-safety` |
-| FLOW 12 | VERIFY | Verification — `silver:verify`, `verify-tests`, `silver:completion-audit` |
-| FLOW 13 | QUALITY GATE | `silver:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
-| FLOW 14 | SHIP | Phase shipping — `silver:branch-finish` → `silver:ship`, PR/CI |
-| FLOW 15 | DEBUG | Debugging — `silver:debug`, optional `silver:forensics` (dynamic insertion on failure) |
+| FLOW 1 | BOOTSTRAP | Project setup — `sb:init`, workflow initialization |
+| FLOW 2 | ORIENT | Codebase intelligence — `sb:scan`, `sb:context`, optional `sb:review-stats` |
+| FLOW 3 | CLARIFY | Discovery and framing — `sb:clarify` |
+| FLOW 4 | DECIDE | Option synthesis — `sb:deep-research`, optional spike, or external research connector |
+| FLOW 5 | SPECIFY | Spec creation — `sb:ingest`, `sb:spec`, `sb:validate` |
+| FLOW 6 | PLAN | Phase planning — `sb:context`, `sb:plan`, optional `sb:validate` |
+| FLOW 7 | DESIGN CONTRACT | UI/UX design — `sb:ui-contract` plus optional design lenses |
+| FLOW 8 | EXECUTE | Implementation — internal `tdd` gate + `sb:execute` |
+| FLOW 9 | UI QUALITY | UI review — `sb:ui-review` plus optional design/accessibility lenses |
+| FLOW 10 | REVIEW | Code review — `sb:review-request` → `sb:review` → `sb:triage` |
+| FLOW 11 | SECURE | Security — `security`, `sb:secure`, `sb:validate`, optional `sb:ai-llm-safety` |
+| FLOW 12 | VERIFY | Verification — `sb:verify`, `verify-tests`, `sb:completion-audit` |
+| FLOW 13 | QUALITY GATE | `sb:quality-gates` or `devops-quality-gates` — dual-mode (pre-plan + pre-ship) |
+| FLOW 14 | SHIP | Phase shipping — `sb:branch-finish` → `sb:ship`, PR/CI |
+| FLOW 15 | DEBUG | Debugging — `sb:debug`, optional `sb:forensics` (dynamic insertion on failure) |
 | FLOW 16 | DESIGN HANDOFF | Design-to-dev handoff — runs inside FLOW 18 when UI phases exist |
-| FLOW 17 | DOCUMENT | Documentation — `silver:ensure-docs`, `silver:handoff`, docs gates |
-| FLOW 18 | RELEASE | Milestone release — `silver:release` → [FLOW 16–17] → `silver:create-release` (last) |
+| FLOW 17 | DOCUMENT | Documentation — `sb:ensure-docs`, `sb:handoff`, docs gates |
+| FLOW 18 | RELEASE | Milestone release — `sb:release` → [FLOW 16–17] → `sb:create-release` (last) |
 
 ---
 
@@ -508,7 +508,7 @@ Each workflow composes from these 18 flows. See `docs/composable-flows-contracts
 
 Silver Bullet anchors every implementation to a verified spec. The spec lifecycle flows:
 
-**Create:** `/silver:clarify --spec` (interview) then `/silver:spec` (compile canonical artifacts), or `/silver:ingest` (external artifact ingestion from JIRA/Figma/Google Docs) then clarify `next=spec` then spec
+**Create:** `/sb:clarify --spec` (interview) then `/sb:spec` (compile canonical artifacts), or `/sb:ingest` (external artifact ingestion from JIRA/Figma/Google Docs) then clarify `next=spec` then spec
 
 **Artifacts:**
 - `.planning/SPEC.md` — canonical spec with YAML frontmatter (`spec-version:`, `jira-id:`, `status:`)
@@ -516,25 +516,25 @@ Silver Bullet anchors every implementation to a verified spec. The spec lifecycl
 - `.planning/REQUIREMENTS.md` — derived requirement IDs (REQ-XX, NFR-XX)
 - `.planning/SPEC.main.md` — read-only cache of remote spec (cross-repo mode only)
 
-**Validate:** `/silver:validate` performs gap analysis between SPEC.md and PLAN.md before implementation. Findings use severity levels:
+**Validate:** `/sb:validate` performs gap analysis between SPEC.md and PLAN.md before implementation. Findings use severity levels:
 - **BLOCK** — missing acceptance criteria coverage or unresolved assumptions. Stops workflow.
 - **WARN** — partial coverage, deferred items. Surfaced in PR description.
 - **INFO** — awareness items (accepted assumptions).
 
-**Trace:** After `silver:ship` creates a PR, `pr-traceability.sh` auto-appends spec reference, requirement IDs, and deferred items to the PR description. SPEC.md `## Implementations` section is updated with PR URL post-creation.
+**Trace:** After `sb:ship` creates a PR, `pr-traceability.sh` auto-appends spec reference, requirement IDs, and deferred items to the PR description. SPEC.md `## Implementations` section is updated with PR URL post-creation.
 
-**UAT Gate:** Before `silver:release` completes a milestone, UAT.md must exist with all criteria PASS. `uat-gate.sh` blocks if UAT is missing, any criterion is FAIL, or UAT was run against a stale spec version.
+**UAT Gate:** Before `sb:release` completes a milestone, UAT.md must exist with all criteria PASS. `uat-gate.sh` blocks if UAT is missing, any criterion is FAIL, or UAT was run against a stale spec version.
 
-**Cross-Artifact Gate:** Before `silver:release` completes a milestone, cross-artifact consistency is validated. `/artifact-reviewer --reviewer review-cross-artifact` checks SPEC, REQUIREMENTS, ROADMAP, and DESIGN alignment. Milestone completion is blocked if any ISSUE-level inconsistencies are found (unmapped ACs, orphaned requirements, missing design coverage).
+**Cross-Artifact Gate:** Before `sb:release` completes a milestone, cross-artifact consistency is validated. `/artifact-reviewer --reviewer review-cross-artifact` checks SPEC, REQUIREMENTS, ROADMAP, and DESIGN alignment. Milestone completion is blocked if any ISSUE-level inconsistencies are found (unmapped ACs, orphaned requirements, missing design coverage).
 
-**Scalability Enforcement:** On `silver:release` milestone completion, the following cleanup runs to prevent unbounded artifact growth:
+**Scalability Enforcement:** On `sb:release` milestone completion, the following cleanup runs to prevent unbounded artifact growth:
 1. **STATE.md** — Quick Tasks table capped at 20 rows. Excess rows archived to `milestones/v{N}-STATE.md` before reset. Decisions section trimmed to current milestone only.
 2. **ROADMAP.md** — Completed milestone phases collapsed to one-line summaries: `- [x] v{N} — {title} (see milestones/v{N}-ROADMAP.md)`. Only current milestone phases shown in detail.
 3. **PROJECT.md** — Validated requirements older than 2 milestones collapsed to count: `- v{N}: {count} requirements validated (see milestones/)`. Only current + previous milestone inline.
 4. **REVIEW-ROUNDS.md** — Archived to `.planning/archive/{milestone-slug}/REVIEW-ROUNDS.md` and reset to empty.
 5. **quick/ directories** — Directories from prior milestones deleted (summaries preserved in archived STATE.md).
 
-**MCP Prerequisites (for /silver:ingest):**
+**MCP Prerequisites (for /sb:ingest):**
 - Atlassian MCP — JIRA ticket + Confluence page ingestion (use `/v1/mcp` streamable HTTP endpoint)
 - Figma MCP (beta) — design context and token extraction
 - Google Drive MCP — document text extraction (community connector or WebFetch fallback)
@@ -566,10 +566,10 @@ You MUST NOT:
 - Combine or implicitly cover steps ("I did code review while writing")
 - Claim a step is "not applicable" without explicit user approval
 - Proceed to the next phase before completing the current phase
-- Claim work is complete without running `/silver:verify`
-- Accept a completion claim from any plugin, skill, or subagent without invoking `/silver:completion-audit` with that claim
-- Execute or respond to a non-trivial bare instruction without first routing it through `/silver`
-- Override a non-skippable gate (security, silver:quality-gates pre-ship, silver:verify) via §9 preferences — these gates are permanent
+- Claim work is complete without running `/sb:verify`
+- Accept a completion claim from any plugin, skill, or subagent without invoking `/sb:completion-audit` with that claim
+- Execute or respond to a non-trivial bare instruction without first routing it through `/sb`
+- Override a non-skippable gate (security, sb:quality-gates pre-ship, sb:verify) via §9 preferences — these gates are permanent
 - Write runtime preference updates to §9 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 - Execute an SB lifecycle phase (context, plan, execute, verify, review, ship) without producing the phase's required artifacts — manually driving execution that bypasses skill-based workflows is a §3 violation
 - Advance to the next SB phase if the current phase is missing its required output artifacts (see §3d Post-Execution Artifact Requirements)
@@ -588,16 +588,16 @@ SB lifecycle steps MUST be invoked through the active runtime's SB-recognized sk
 
 **Rules**:
 - Do NOT stop until the final outcome is achieved
-- Always use `/silver:debug` for ANY bug encountered during execution
-- Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/silver:debug` instead.
-- CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/silver:debug` to investigate. Do NOT proceed to any other step until CI is green.
-- `README.md` MUST be updated to reflect current version, features, and changes before release (docs generation in `/silver:release` Steps 3a/3b). The version badge is updated automatically by `/silver-create-release` Step 5b — do not update it manually.
+- Always use `/sb:debug` for ANY bug encountered during execution
+- Always use `/silver-forensics` for root-cause investigation when the cause is **unknown** and must be reconstructed from evidence (completed sessions, abandoned sessions, unexplained verification failures). If the cause IS known (e.g., specific test failure, clear error message), use `/sb:debug` instead.
+- CI must be green before deployment. When the CI status hook reports failure after a push, STOP all other work immediately and invoke `/sb:debug` to investigate. Do NOT proceed to any other step until CI is green.
+- `README.md` MUST be updated to reflect current version, features, and changes before release (docs generation in `/sb:release` Steps 3a/3b). The version badge is updated automatically by `/silver-create-release` Step 5b — do not update it manually.
 - Always strictly adhere to this file 100%
 
 > **Anti-Skip:** You are violating this rule if:
 > - You produce source code without a skill invocation recorded in the state file (dev-cycle-check.sh will block you)
 > - You claim "I already covered X" instead of invoking the skill (record-skill.sh tracks invocations, not claims)
-> - You skip /silver:verify at the end (completion-audit.sh will block your commit/push)
+> - You skip /sb:verify at the end (completion-audit.sh will block your commit/push)
 > - You proceed past a review loop with fewer than 2 consecutive approvals
 
 ## 3a. Review Loop Enforcement
@@ -608,19 +608,19 @@ This rule applies to ALL artifact-producing review steps. Any step that produces
 
 | Step | Artifact | Reviewer | Two-Pass Required | Producing Workflow |
 |------|----------|----------|-------------------|--------------------|
-| Plan creation | {phase}-NN-PLAN.md | /artifact-reviewer --reviewer review-plan | YES | /silver:plan |
-| Execution | Code changes + SUMMARY.md | /silver:review | YES | /silver:execute |
-| Verification | VERIFICATION.md | /silver:verify | YES | /silver:verify |
+| Plan creation | {phase}-NN-PLAN.md | /artifact-reviewer --reviewer review-plan | YES | /sb:plan |
+| Execution | Code changes + SUMMARY.md | /sb:review | YES | /sb:execute |
+| Verification | VERIFICATION.md | /sb:verify | YES | /sb:verify |
 | Security check | Security findings | /security | YES | /security |
-| Spec compile | SPEC.md | /artifact-reviewer --reviewer review-spec | YES | /silver:spec Step 7 |
-| Design capture | DESIGN.md | /artifact-reviewer --reviewer review-design | YES | /silver:spec Step 9 |
-| Requirements derivation | REQUIREMENTS.md | /artifact-reviewer --reviewer review-requirements | YES | /silver:spec Step 8, /silver:release or milestone setup |
+| Spec compile | SPEC.md | /artifact-reviewer --reviewer review-spec | YES | /sb:spec Step 7 |
+| Design capture | DESIGN.md | /artifact-reviewer --reviewer review-design | YES | /sb:spec Step 9 |
+| Requirements derivation | REQUIREMENTS.md | /artifact-reviewer --reviewer review-requirements | YES | /sb:spec Step 8, /sb:release or milestone setup |
 | Roadmap creation | ROADMAP.md | /artifact-reviewer --reviewer review-roadmap | YES | SB milestone setup |
-| Context capture | CONTEXT.md | /artifact-reviewer --reviewer review-context | YES | /silver:context |
-| Research | RESEARCH.md | /artifact-reviewer --reviewer review-research | YES | /silver:plan (researcher) |
-| Ingestion | INGESTION_MANIFEST.md | /artifact-reviewer --reviewer review-ingestion-manifest | YES | /silver:ingest Step 7 |
-| UAT generation | UAT.md | /artifact-reviewer --reviewer review-uat | YES | /silver:feature Step 17.0 |
-| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /silver:feature Step 17.0b, /silver:release Step 6 |
+| Context capture | CONTEXT.md | /artifact-reviewer --reviewer review-context | YES | /sb:context |
+| Research | RESEARCH.md | /artifact-reviewer --reviewer review-research | YES | /sb:plan (researcher) |
+| Ingestion | INGESTION_MANIFEST.md | /artifact-reviewer --reviewer review-ingestion-manifest | YES | /sb:ingest Step 7 |
+| UAT generation | UAT.md | /artifact-reviewer --reviewer review-uat | YES | /sb:feature Step 17.0 |
+| Cross-artifact set | SPEC.md, REQUIREMENTS.md, ROADMAP.md, DESIGN.md | /artifact-reviewer --reviewer review-cross-artifact | YES | /sb:feature Step 17.0b, /sb:release Step 6 |
 
 If ANY of these steps produces findings on the first pass, you MUST fix the findings and re-run the review. The step is complete ONLY after two consecutive clean passes.
 
@@ -641,11 +641,11 @@ The two-consecutive-approvals rule is enforced by process: the reviewer skill mu
 
 ### Per-Reviewer 2-Pass Requirements
 
-**EXRV-01 (plan review):** After /silver:plan creates a PLAN.md, invoke the SB plan review path iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
+**EXRV-01 (plan review):** After /sb:plan creates a PLAN.md, invoke the SB plan review path iteratively. If issues are found, fix and re-run. The plan is NOT approved until 2 consecutive clean passes. Do not commit the plan until the second consecutive clean pass completes.
 
-**EXRV-02 (code review):** After /silver:execute completes code changes, invoke /silver:review iteratively. If ISSUE findings are returned, apply fixes via /silver:review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
+**EXRV-02 (code review):** After /sb:execute completes code changes, invoke /sb:review iteratively. If ISSUE findings are returned, apply fixes via /sb:review-fix and re-run the review. Code is NOT considered reviewed until 2 consecutive clean passes. Do not proceed to verification until the second consecutive clean pass completes.
 
-**EXRV-03 (verifier):** After /silver:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
+**EXRV-03 (verifier):** After /sb:verify produces VERIFICATION.md, run verification a second consecutive time to confirm results. If the second pass surfaces new issues (e.g., flaky tests that passed first time), fix and restart the 2-pass count. Verification is NOT complete until 2 consecutive clean passes.
 
 **EXRV-04 (security-auditor):** After /security produces security findings, run the audit a second consecutive time to validate mitigations applied during the first pass. If the second pass finds new or unresolved issues, fix and restart. Security review is NOT complete until 2 consecutive clean passes.
 
@@ -663,11 +663,11 @@ SB skills that produce reviewable artifacts MUST be followed by a review round. 
 
 Run these reviews in sequence (ROADMAP first, then REQUIREMENTS) since requirements reference the roadmap.
 
-**After /silver:context completes:**
+**After /sb:context completes:**
 
 3. **CONTEXT.md review (WFIN-06):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-CONTEXT.md --reviewer review-context` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the context until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to CONTEXT.md and re-review automatically.
 
-**After /silver:plan researcher step completes (before planning begins):**
+**After /sb:plan researcher step completes (before planning begins):**
 
 4. **RESEARCH.md review (WFIN-07):** Invoke `/artifact-reviewer .planning/phases/{phase}/{phase}-RESEARCH.md --reviewer review-research` through the active runtime's SB-recognized skill invocation channel. Do NOT commit the research until /artifact-reviewer reports 2 consecutive clean passes. If issues are found, apply fixes to RESEARCH.md and re-review automatically.
 
@@ -684,15 +684,15 @@ canonical marker automatically:
 
 | Skill invocation | Recorded marker |
 |---|---|
-| `/silver:context` | `silver:context` |
-| `/silver:plan` | `silver:plan` |
-| `/silver:execute` | `silver:execute` |
-| `/silver:verify` | `silver:verify` |
-| `/silver:ship` | `silver:ship` |
+| `/sb:context` | `sb:context` |
+| `/sb:plan` | `sb:plan` |
+| `/sb:execute` | `sb:execute` |
+| `/sb:verify` | `sb:verify` |
+| `/sb:ship` | `sb:ship` |
 
 These markers allow `compliance-status.sh` to display lifecycle progress.
 
-They also feed the workflow-chain guard: when a composed `silver:feature`, `silver:ui`, or `silver:deep-research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
+They also feed the workflow-chain guard: when a composed `sb:feature`, `sb:ui`, or `sb:deep-research` workflow is active, implementation edits stay blocked until the downstream markers are actually present in the workflow state.
 
 > **Anti-Skip:** You are violating this rule if you invoke an SB lifecycle skill outside the active runtime's SB-recognized skill invocation channel. Markers are recorded only by supported invocation events or receipts, and manual state writes are blocked.
 
@@ -731,7 +731,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 
 ## 3c. Completion Claim Verification
 
-**Rule:** Whenever any plugin, skill, or subagent declares a task, plan, phase, or step complete, SB MUST invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
+**Rule:** Whenever any plugin, skill, or subagent declares a task, plan, phase, or step complete, SB MUST invoke `/sb:completion-audit` through the active runtime's SB-recognized skill invocation channel before accepting that claim and moving on.
 
 **Trigger:** Any of these signals from a plugin/skill/subagent constitutes a completion claim:
 - `## PLANNING COMPLETE`, `## EXECUTION COMPLETE`, `## VERIFICATION COMPLETE`
@@ -742,7 +742,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 
 **What to do:**
 1. Identify the specific claim being made (e.g. "Plan 09-01 executed — 2 tasks complete, SUMMARY.md written")
-2. Invoke `/silver:completion-audit` through the active runtime's SB-recognized skill invocation channel, passing the claim as context
+2. Invoke `/sb:completion-audit` through the active runtime's SB-recognized skill invocation channel, passing the claim as context
 3. Run the verification checks that skill prescribes against the actual artifacts
 4. Only after fresh evidence confirms the claim: accept it and advance to the next step
 
@@ -751,7 +751,7 @@ Skill(skill="silver-rem", args="<insight or learning text>")
 - Error messages or explicit failure signals
 - Confirmation prompts asking the user to proceed
 
-> **Anti-Skip:** You are violating this rule if you read a "COMPLETE" or "PASS" signal from any agent and advance to the next step without running `/silver:completion-audit`. Trusting agent self-reports without independent verification is the primary source of false completions.
+> **Anti-Skip:** You are violating this rule if you read a "COMPLETE" or "PASS" signal from any agent and advance to the next step without running `/sb:completion-audit`. Trusting agent self-reports without independent verification is the primary source of false completions.
 
 ## 3d. Post-Execution Artifact Requirements
 
@@ -761,11 +761,11 @@ without these artifacts is a §3 violation regardless of how the phase was execu
 
 | SB Phase | Required Artifacts | Where |
 |-----------|-------------------|-------|
-| /silver:context | {phase}-CONTEXT.md | .planning/phases/{phase}/ |
-| /silver:plan | {phase}-NN-PLAN.md (1+) | .planning/phases/{phase}/ |
-| /silver:execute | {phase}-NN-SUMMARY.md per plan | .planning/phases/{phase}/ |
-| /silver:verify | VERIFICATION.md | .planning/phases/{phase}/ or project root |
-| /silver:review | REVIEW.md | .planning/phases/{phase}/ or project root |
+| /sb:context | {phase}-CONTEXT.md | .planning/phases/{phase}/ |
+| /sb:plan | {phase}-NN-PLAN.md (1+) | .planning/phases/{phase}/ |
+| /sb:execute | {phase}-NN-SUMMARY.md per plan | .planning/phases/{phase}/ |
+| /sb:verify | VERIFICATION.md | .planning/phases/{phase}/ or project root |
+| /sb:review | REVIEW.md | .planning/phases/{phase}/ or project root |
 
 **Pre-advance check:** Before invoking the NEXT SB lifecycle skill, verify the
 PREVIOUS phase's artifacts exist. If they do not exist, STOP and either:
@@ -777,8 +777,8 @@ existence checks at commit/PR/deploy time. But artifact checks at phase boundari
 are instruction-enforced because hooks cannot intercept every nested skill invocation
 at the workflow level.
 
-> **Anti-Skip:** You are violating this rule if you invoke /silver:execute
-> without a PLAN.md existing, or invoke /silver:verify without SUMMARY.md
+> **Anti-Skip:** You are violating this rule if you invoke /sb:execute
+> without a PLAN.md existing, or invoke /sb:verify without SUMMARY.md
 > files from execution, or create a PR without VERIFICATION.md and REVIEW.md.
 
 ---
@@ -880,21 +880,21 @@ workflow instructions must use SB-owned skills.
 
 **Hard rules — no exceptions:**
 
-- **Execution**: Always use `/silver:execute` (wave-based). Do not route project work
+- **Execution**: Always use `/sb:execute` (wave-based). Do not route project work
   through external lifecycle/execution-plan plugins. "Project work" means implementation
   and planning. Code review, design review, and security audit are NOT execution.
-- **Planning**: Always use `/silver:context` and `/silver:plan` for SB phase planning.
+- **Planning**: Always use `/sb:context` and `/sb:plan` for SB phase planning.
   The useful plan-writing discipline formerly provided by external plugins is absorbed
-  into `silver:plan`.
+  into `sb:plan`.
 - **Requirements**: `.planning/REQUIREMENTS.md` is the single source of truth (owned by SB).
   Optional external plugins must NOT create or maintain a competing requirements list.
 - **Design specs**: Save to `docs/specs/YYYY-MM-DD-<topic>-design.md`.
   External plugin default paths are not authoritative.
-- **Code review**: SB owns the authoritative `REVIEW.md` artifact through `/silver:review`.
-  `/silver:review-request`, `/silver:review-triage`, and `/silver:triage` are SB-owned review subflows.
+- **Code review**: SB owns the authoritative `REVIEW.md` artifact through `/sb:review`.
+  `/sb:review-request`, `/sb:review-triage`, and `/sb:triage` are SB-owned review subflows.
   Optional external reviewers may add findings only by feeding REVIEW.md.
 
-> **Anti-Skip:** You are violating this rule if you use external execution plugins for project execution instead of `/silver:execute`.
+> **Anti-Skip:** You are violating this rule if you use external execution plugins for project execution instead of `/sb:execute`.
 
 ---
 
@@ -943,14 +943,14 @@ SB composes optional third-party tools; they never own lifecycle routing, planni
 
 | Extension | Site / repository | SB hook points | Status |
 |-----------|-------------------|----------------|--------|
-| **Alumnium** | [alumnium.ai](https://alumnium.ai/) · [alumnium-hq/alumnium](https://github.com/alumnium-hq/alumnium) | Visual companion in `silver:clarify`; browser evidence in `silver:ui-review` and `silver:verify` | **Incorporate now** |
+| **Alumnium** | [alumnium.ai](https://alumnium.ai/) · [alumnium-hq/alumnium](https://github.com/alumnium-hq/alumnium) | Visual companion in `sb:clarify`; browser evidence in `sb:ui-review` and `sb:verify` | **Incorporate now** |
 | **Sidekick** | [alo-exp/sidekick](https://github.com/alo-exp/sidekick) | Cross-AI plan review / replan loop (`--reviews`, plan convergence) | **Deferred** |
 | **InstaDecks** | [alo-exp/instadecks](https://github.com/alo-exp/instadecks) | Presentation generation (`zuvo:presentation` parity) | **Deferred** |
-| **search-cli** | [199-biotechnologies/search-cli](https://github.com/199-biotechnologies/search-cli) | Optional multi-provider retrieval for `silver:deep-research` | Optional |
+| **search-cli** | [199-biotechnologies/search-cli](https://github.com/199-biotechnologies/search-cli) | Optional multi-provider retrieval for `sb:deep-research` | Optional |
 
 **Alumnium integration contract:** When Alumnium MCP is configured, SB may invoke it for natural-language browser actions (`do`), assertions (`check`), data extraction (`get`), and waits (`wait`) against a running app or mockup URL. Alumnium wraps Playwright, Selenium, or Appium via accessibility trees and optional screenshots — it augments SB skills; it does not replace them. Install: `host mcp add (see install guide) alumnium --env OPENAI_API_KEY=... -- npx alumnium mcp` (or `uvx alumnium mcp`; provider keys per [Alumnium docs](https://alumnium.ai/docs)). Do not block core workflows when Alumnium is absent.
 
-**Browser evidence fallback hierarchy** (visual companion, `silver:ui-review`, `silver:verify` UAT):
+**Browser evidence fallback hierarchy** (visual companion, `sb:ui-review`, `sb:verify` UAT):
 
 1. **Alumnium MCP (preferred)** — when configured, use structured `start` → `do` / `check` / `get` / `wait` → `stop`. Natural-language actions and assertions compress browser noise; prefer this over ad-hoc navigation when both are available.
 2. **Host browser MCP** — when Alumnium is absent but the host exposes built-in browser tools, use them for the same use cases. Typical flow: navigate to URL → snapshot (accessibility/DOM structure) → screenshot (visual evidence) → click/type/scroll for interaction → re-snapshot after state changes. Use the host's documented browser MCP tools (see `docs/RUNTIME-COMPATIBILITY.md` for per-runtime tool names). Attach screenshots and snapshot notes to the clarify brief (see `scripts/lib/planning-clarify-path.sh`), `UI-REVIEW.md`, or `VERIFICATION.md`.
@@ -966,7 +966,7 @@ These rules apply to `site/**`, Help Center pages, homepage copy, `site/help/sea
 
 **Authoring model**
 - Website and help-center edits MUST be authored and reviewed via **Composer 2.5 subagents** (`Task` with `model=composer-2.5`), not by the parent agent alone or other models.
-- Route site intents through `/silver` → `silver:content` (site batch protocol in `skills/silver-content/SKILL.md`).
+- Route site intents through `/sb` → `sb:content` (site batch protocol in `skills/silver-content/SKILL.md`).
 
 **Workflow catalog presentation order**
 - Homepage (`site/index.html` tabs) and Help Center workflow listings MUST follow typical SDLC order: entry/router → discovery/planning → primary delivery → fast/specialized → infrastructure → ship/release → post-delivery gates → operations/learning.
@@ -1081,7 +1081,7 @@ This is the same root cause for the previously open issues #48 and #50. The repo
 
 The host Agent SDK does implement the same hook events SB relies on — `PreToolUse`, `PostToolUse`, `SessionStart`, `Stop`, `SubagentStop`, and others — they are first-class on `HookEvent` in `query()` options. The reason they "do not fire today" in the bullet above is that the SDK does not load the host hook settings unless asked, and does not register programmatic hooks unless passed. Two paths re-enable enforcement inside an SDK session:
 
-1. **Load the user-scoped hook settings block** (where `silver:init` writes SB's hook config) by passing `settingSources: ['user']` on `query()` options. An SDK session then picks up the same hook config as the CLI.
+1. **Load the user-scoped hook settings block** (where `sb:init` writes SB's hook config) by passing `settingSources: ['user']` on `query()` options. An SDK session then picks up the same hook config as the CLI.
 2. **Pass hooks programmatically** on `query()` options:
 
    ```ts
@@ -1101,4 +1101,4 @@ Reference: the host Agent SDK CHANGELOG documents `settingSources` (initial intr
 
 ### Detection (advisory)
 
-`silver:init` can probe runtime capability by checking for the presence of the host hook config. If absent, it emits an informational warning that enforcement gates will not fire.
+`sb:init` can probe runtime capability by checking for the presence of the host hook config. If absent, it emits an informational warning that enforcement gates will not fire.

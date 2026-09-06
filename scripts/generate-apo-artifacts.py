@@ -39,12 +39,12 @@ LEGACY_FLOW_CAPABILITIES = {
 
 # Human-readable post-exec lines derived from WF-POST-EXEC-GATES (must match silver-bullet.md).
 POST_EXEC_SEQUENCING_LINES = [
-    "1. FLOW 9 (UI QUALITY) — always for `silver:ui`; for `silver:feature` only when UI scope is detected",
-    "2. FLOW 10 (REVIEW triad: `silver:review-request` → `silver:review` → `silver:review-triage`)",
-    "3. FLOW 12 (VERIFY: `silver:verify` + `verify-tests`)",
-    "4. FLOW 11 (SECURE: `security` + `silver:secure`, with `silver:validate` as needed)",
+    "1. FLOW 9 (UI QUALITY) — always for `sb:ui`; for `sb:feature` only when UI scope is detected",
+    "2. FLOW 10 (REVIEW triad: `sb:review-request` → `sb:review` → `sb:review-triage`)",
+    "3. FLOW 12 (VERIFY: `sb:verify` + `verify-tests`)",
+    "4. FLOW 11 (SECURE: `security` + `sb:secure`, with `sb:validate` as needed)",
     "5. FLOW 13 (QUALITY GATE, pre-ship)",
-    "6. FLOW 14 (SHIP: `silver:branch-finish` → `silver:completion-audit` → `silver:ship`)",
+    "6. FLOW 14 (SHIP: `sb:branch-finish` → `sb:completion-audit` → `sb:ship`)",
 ]
 
 
@@ -86,7 +86,7 @@ def render_post_exec_sequencing() -> list[str]:
         "## Post-execution sequencing",
         "",
         "Flow numbers are stable identifiers — not always runtime order. "
-        "For `silver:feature`, `silver:ui`, `silver:devops`, and `silver:bugfix`, "
+        "For `sb:feature`, `sb:ui`, `sb:devops`, and `sb:bugfix`, "
         "the mandatory post-execute order is:",
         "",
         *POST_EXEC_SEQUENCING_LINES,
@@ -116,7 +116,7 @@ def render_contracts(catalog: dict) -> str:
         "",
         *render_legacy_flow_table(catalog),
         "",
-        "Ship readiness composes `silver:branch-finish` before `silver:completion-audit` before `silver:ship`.",
+        "Ship readiness composes `sb:branch-finish` before `sb:completion-audit` before `sb:ship`.",
         "Release audit artifacts remain `RELEASE-UAT-AUDIT` for FLOW 12 verification and `RELEASE-MILESTONE-AUDIT` for FLOW 18 release readiness.",
         "",
         *render_post_exec_sequencing(),

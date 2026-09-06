@@ -38,6 +38,9 @@ export SB_RUNTIME_STATE_DIR="${TEST_HOME}/.silver-bullet"
 export SB_RUNTIME_PRESERVE_STATE_DIR=1
 export SILVER_BULLET_RUNTIME=cursor
 export SILVER_BULLET_SESSION_ID="test-session-$$"
+# Receipt lifecycle assertions do not exercise vendor binaries; skip the
+# optional doctor probe so a temporary HOME cannot recurse through a host shim.
+export RT_SKIP_VENDOR_DOCTOR=1
 mkdir -p "${TEST_HOME}/.cursor" "$SB_RUNTIME_STATE_DIR"
 printf '{"mcpServers":{}}\n' >"${TEST_HOME}/.cursor/mcp.json"
 printf '{"hooks":{"preToolUse":[{"command":"rtk hook cursor","matcher":"Shell"}]}}\n' >"${TEST_HOME}/.cursor/hooks.json"

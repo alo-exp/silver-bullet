@@ -10,7 +10,7 @@
 
 This round was run as a *fresh* audit, not a re-read of Round 1. Each check below was re-executed against the current working tree:
 
-- **Bird's-eye:** Re-walked every composed flow skill (`silver:feature`, `silver:ui`, `silver:devops`, `silver:bugfix`, `silver:fast`, `silver:release`) and confirmed the documented flow chain, per-step prose, and enforcement markers agree with each other and with the two-tier hook model.
+- **Bird's-eye:** Re-walked every composed flow skill (`sb:feature`, `sb:ui`, `sb:devops`, `sb:bugfix`, `sb:fast`, `sb:release`) and confirmed the documented flow chain, per-step prose, and enforcement markers agree with each other and with the two-tier hook model.
 - **Ant's-eye:** Re-inspected the changed hooks/skills/templates/tests for residual contradiction, broken fences, stale references, glob/path correctness, and marker/alias consistency.
 - **Evidence:** Two consecutive full-suite runs (`tests/run-all-tests.sh`) plus targeted structural assertions.
 
@@ -25,7 +25,7 @@ This round was run as a *fresh* audit, not a re-read of Round 1. Each check belo
 | B1 | `workflow-chain-guard.sh` L117 `required_markers=(silver-debug silver-plan)` for `silver-bugfix`; skill steps DEBUG → PLAN → TDD | PASS |
 | B2 | `core-rules.md` two-tier wording present; `shasum -a 256 hooks/core-rules.md` == stored `core-rules.sha256` (`f612c281…41cda`) | PASS |
 | B3 | `silver-feature` has no pre-plan validate; Step 6b validate after plan phase | PASS |
-| B4 | `silver-feature` Step 1d `silver:spec` (FLOW 5) present + in mandatory dependency chain | PASS |
+| B4 | `silver-feature` Step 1d `sb:spec` (FLOW 5) present + in mandatory dependency chain | PASS |
 | B5 | `silver-init` Graphify advisory (no hard gate) | PASS |
 | B6 | Fence balance even across all flow skills (bugfix 18, devops 18, feature 30, ui 16, fast 16) | PASS |
 

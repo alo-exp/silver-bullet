@@ -4,7 +4,7 @@ description: This skill should be used to assess the blast radius of a proposed 
 version: 0.1.0
 ---
 
-# /silver:blast-radius — Blast Radius Assessment
+# /sb:blast-radius — Blast Radius Assessment
 
 Performs a structured pre-change risk analysis before any infrastructure or
 DevOps change proceeds to quality gates or planning. Every field must be filled.

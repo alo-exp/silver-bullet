@@ -8,7 +8,7 @@
 
 ## Summary
 
-Greenfield SENTINEL pass on parent-supervised Codex TUI delegation skill (`/silver:agent-codex`).
+Greenfield SENTINEL pass on parent-supervised Codex TUI delegation skill (`/sb:agent-codex`).
 No CRITICAL, HIGH, or MEDIUM findings after self-challenge (Step 8).
 
 ## Findings

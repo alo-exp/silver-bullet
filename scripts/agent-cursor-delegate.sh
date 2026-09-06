@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# On-demand Cursor agent delegation wrapper for /silver:agent-cursor (not enterprise E2E matrix).
+# On-demand Cursor agent delegation wrapper for /sb:agent-cursor (not enterprise E2E matrix).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,7 @@ Usage: agent-cursor-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PA
 
 Delegates a single task to cursor-agent via tests/live/agents/cursor/agent.sh.
 NI: print/stream-json. Interactive: session-id follow-up (new process, same conversation id).
-Requires full SB checkout (agent adapter). Parent supervisors: see /silver:agent-cursor.
+Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-cursor.
 EOF
 }
 

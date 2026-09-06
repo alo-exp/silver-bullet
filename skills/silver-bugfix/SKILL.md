@@ -6,7 +6,7 @@ argument-hint: "<description of the bug or failure>"
 version: 0.2.0
 ---
 
-# /silver:bugfix — Bugfix Composition Spec
+# /sb:bugfix — Bugfix Composition Spec
 
 SB **queue builder** for bugs and regressions. Parent orchestrator spawns workers — does
 not fix inline.
@@ -37,9 +37,9 @@ graphify query "<bug symptom, files, tests, stack traces>" --graph graphify-out/
 
 | User selection | Route |
 |----------------|-------|
-| A — known symptom, unknown fix | `silver:debug` → plan → TDD → execute |
-| B — unknown cause | `silver:forensics` → hand off to path A |
-| C — failed SB lifecycle | `silver:forensics` (post-mortem) → path A |
+| A — known symptom, unknown fix | `sb:debug` → plan → TDD → execute |
+| B — unknown cause | `sb:forensics` → hand off to path A |
+| C — failed SB lifecycle | `sb:forensics` (post-mortem) → path A |
 
 Internal `tdd` gate: failing regression test before fix code (RED → GREEN).
 
@@ -52,9 +52,9 @@ Internal `tdd` gate: failing regression test before fix code (RED → GREEN).
 
 ## Enforcement queue
 
-**Pre-execution:** `silver:debug` → `silver:plan` (no quality-gates/context)
+**Pre-execution:** `sb:debug` → `sb:plan` (no quality-gates/context)
 
-**Post-execution:** same canonical chain as `silver:feature` after `silver:execute`.
+**Post-execution:** same canonical chain as `sb:feature` after `sb:execute`.
 
 ## Routing and pre-flight
 
@@ -65,12 +65,12 @@ Internal `tdd` gate: failing regression test before fix code (RED → GREEN).
 
 ## Step-skip protocol
 
-**Non-skippable:** `security`, `silver:quality-gates` pre-ship, `silver:verify`.
+**Non-skippable:** `security`, `sb:quality-gates` pre-ship, `sb:verify`.
 
 ## Workflow tracking (fallback)
 
-Same `scripts/workflows.sh` pattern with `/silver:bugfix`.
+Same `scripts/workflows.sh` pattern with `/sb:bugfix`.
 
 ## Deferred work
 
-File deferred items via `/silver:add` during and after execution.
+File deferred items via `/sb:add` during and after execution.

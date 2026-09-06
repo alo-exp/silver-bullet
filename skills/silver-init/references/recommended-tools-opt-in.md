@@ -1,7 +1,7 @@
-# Recommended tools opt-in (silver:init Phase 1.1)
+# Recommended tools opt-in (sb:init Phase 1.1)
 
 Host-specific install matrices live in `scripts/lib/host-install-guides/<runtime>.md`.
-Load this reference when executing Phase 1.1a–§1.1g during `/silver:init` or update-mode retry.
+Load this reference when executing Phase 1.1a–§1.1g during `/sb:init` or update-mode retry.
 
 ### 1.1a Graphify (recommended tool — opt-in)
 
@@ -19,7 +19,7 @@ or pre-opt-out from org defaults or template overrides — the user must explici
 fresh init.
 
 **Update mode re-prompt:** when `.silver-bullet.json` already exists (update mode) or after
-`/silver:update`, if `enabled_by_user` is still `null`, run the same consent prompt as fresh init.
+`/sb:update`, if `enabled_by_user` is still `null`, run the same consent prompt as fresh init.
 
 #### Step 1 — Read existing consent
 
@@ -60,7 +60,7 @@ Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (
 
 Run when `graphify_consent` is `true` AND either:
 - this is a fresh opt-in (user just chose Yes), OR
-- `graphify_suspended` is `true` (update mode / post-`/silver:update` retry)
+- `graphify_suspended` is `true` (update mode / post-`/sb:update` retry)
 
 **Detect host** (same logic as `hooks/lib/runtime-paths.sh`):
 ```bash
@@ -129,7 +129,7 @@ jq --arg reason "<brief failure reason>" '
 ' .silver-bullet.json
 ```
 
-Output: "Graphify opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+Output: "Graphify opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
 
 Hooks treat suspended Graphify like opted-out (no graphify-gate blocks) while remembering `enabled_by_user: true`.
 
@@ -247,7 +247,7 @@ bash scripts/sb-optimize-stack.sh --verify
 
 - Default profile: `synergy_max` (see `optimization_profiles` in config template)
 - On success: records `optimization.last_applied_at` and `optimization.score` in `.silver-bullet.json`
-- On partial failure: do **not** block init — surface score and warnings; user can retry via `/silver:update`
+- On partial failure: do **not** block init — surface score and warnings; user can retry via `/sb:update`
 - See `docs/STACK-OPTIMIZATION.md` and `docs/research/graphify-agentmemory-optimization.md`
 
 ### 1.1e RTK (recommended tool — opt-in)

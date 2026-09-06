@@ -73,20 +73,20 @@ cat >"$TMP/run/rung-01/POLICY-C.json" <<'EOF'
 EOF
 
 ledger="$(python3 "$RESOLVER" --issue-ledger --run-dir "$TMP/run")"
-echo "$ledger" | grep -q '| R1-F01 | HIGH | ACCEPT |' && pass "ledger includes ISSUE-LEDGER.md HIGH row" || fail "ledger includes ISSUE-LEDGER.md HIGH row"
-echo "$ledger" | grep -q '| R1-F02 | NIT | REJECT |' && pass "ledger includes REJECT nit" || fail "ledger includes REJECT nit"
-echo "$ledger" | grep -q '| R2-F01 | MED | ACCEPT | yes |' && pass "ledger merges POLICY-C ACCEPT MED" || fail "ledger merges POLICY-C ACCEPT MED"
-echo "$ledger" | grep -q '| R2-F02 | NIT | ACCEPT | yes |' && pass "ledger merges POLICY-C valid nit" || fail "ledger merges POLICY-C valid nit"
-echo "$ledger" | grep -q 'Issue ledger (already identified)' && pass "ledger has canonical heading" || fail "ledger has canonical heading"
+grep -q '| R1-F01 | HIGH | ACCEPT |' <<<"$ledger" && pass "ledger includes ISSUE-LEDGER.md HIGH row" || fail "ledger includes ISSUE-LEDGER.md HIGH row"
+grep -q '| R1-F02 | NIT | REJECT |' <<<"$ledger" && pass "ledger includes REJECT nit" || fail "ledger includes REJECT nit"
+grep -q '| R2-F01 | MED | ACCEPT | yes |' <<<"$ledger" && pass "ledger merges POLICY-C ACCEPT MED" || fail "ledger merges POLICY-C ACCEPT MED"
+grep -q '| R2-F02 | NIT | ACCEPT | yes |' <<<"$ledger" && pass "ledger merges POLICY-C valid nit" || fail "ledger merges POLICY-C valid nit"
+grep -q 'Issue ledger (already identified)' <<<"$ledger" && pass "ledger has canonical heading" || fail "ledger has canonical heading"
 
 brief="$(python3 "$RESOLVER" --write-review-brief --run-dir "$TMP/run")"
-echo "$brief" | grep -q 'do not re-report ledger rows' && pass "brief residual-only definition" || fail "brief residual-only definition"
-echo "$brief" | grep -q 'file only one new ID' && pass "brief negates one-ID cap" || fail "brief negates one-ID cap"
-echo "$brief" | grep -q 'all severities' && pass "brief all severities" || fail "brief all severities"
-echo "$brief" | grep -q "APPLY'd as a pack" && pass "brief pack APPLY" || fail "brief pack APPLY"
-echo "$brief" | grep -q 'Orthogonal to Policy F' && pass "brief orthogonal to Policy F" || fail "brief orthogonal to Policy F"
-echo "$brief" | grep -q '| R2-F02 | NIT | ACCEPT |' && pass "brief includes nit pack row" || fail "brief includes nit pack row"
-if echo "$brief" | grep -q 'verify_2 is skipped'; then
+grep -q 'do not re-report ledger rows' <<<"$brief" && pass "brief residual-only definition" || fail "brief residual-only definition"
+grep -q 'file only one new ID' <<<"$brief" && pass "brief negates one-ID cap" || fail "brief negates one-ID cap"
+grep -q 'all severities' <<<"$brief" && pass "brief all severities" || fail "brief all severities"
+grep -q "APPLY'd as a pack" <<<"$brief" && pass "brief pack APPLY" || fail "brief pack APPLY"
+grep -q 'Orthogonal to Policy F' <<<"$brief" && pass "brief orthogonal to Policy F" || fail "brief orthogonal to Policy F"
+grep -q '| R2-F02 | NIT | ACCEPT |' <<<"$brief" && pass "brief includes nit pack row" || fail "brief includes nit pack row"
+if grep -q 'verify_2 is skipped' <<<"$brief"; then
   fail "brief must not bake skip-verify_2"
 else
   pass "brief must not bake skip-verify_2"
@@ -94,7 +94,7 @@ fi
 
 inline='[{"id":"X-F01","severity":"LOW","decision":"ACCEPT","resolved":"no","sha":"ddd","summary":"inline only"}]'
 inline_out="$(python3 "$RESOLVER" --issue-ledger --table-json "$inline")"
-echo "$inline_out" | grep -q '| X-F01 | LOW | ACCEPT | no | ddd | inline only |' && pass "ledger accepts inline table-json" || fail "ledger accepts inline table-json"
+grep -q '| X-F01 | LOW | ACCEPT | no | ddd | inline only |' <<<"$inline_out" && pass "ledger accepts inline table-json" || fail "ledger accepts inline table-json"
 
 if python3 "$RESOLVER" --issue-ledger >/tmp/rfl-issue-ledger-err.txt 2>&1; then
   fail "issue-ledger without run-dir/json exits non-zero"

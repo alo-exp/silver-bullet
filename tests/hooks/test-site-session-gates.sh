@@ -181,7 +181,7 @@ teardown
 
 echo "--- subagent-start ---"
 setup
-out=$(run_hook "$SUBAGENT_START_HOOK" SubagentStart "$(jq -n '{hook_event_name:"SubagentStart",subagent_type:"generalPurpose",prompt:"invoke silver:execute"}')")
+out=$(run_hook "$SUBAGENT_START_HOOK" SubagentStart "$(jq -n '{hook_event_name:"SubagentStart",subagent_type:"generalPurpose",prompt:"invoke sb:execute"}')")
 if printf '%s' "$out" | grep -qiE 'graphify|agentmemory|evidence'; then
   echo "  ok: subagentStart injects worker tooling banner"
   PASS=$((PASS + 1))

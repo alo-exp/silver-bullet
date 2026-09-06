@@ -436,7 +436,7 @@ def build_workflows() -> list[dict]:
         n("AF-PLAN"),
     ]
     workflows = [
-        workflow("WF-SILVER-ROUTER", "silver", "dynamic_route", [n("AF-ROUTE"), n("WF-SILVER-FEATURE", "workflow", optional=True), n("WF-SILVER-FAST", "workflow", optional=True)], owner="silver", triggers=["/silver", "route"], queue=["silver-context"]),
+        workflow("WF-SILVER-ROUTER", "silver", "dynamic_route", [n("AF-ROUTE"), n("WF-SILVER-FEATURE", "workflow", optional=True), n("WF-SILVER-FAST", "workflow", optional=True)], owner="silver", triggers=["/sb", "route"], queue=["silver-context"]),
         workflow("WF-SILVER-FEATURE", "silver-feature", "precomposed", core_prefix + [n("AF-DESIGN-CONTRACT", optional=True, condition="ui_scope"), n("AF-EXECUTE"), n("WF-POST-EXEC-GATES", "workflow")], owner="silver-feature", triggers=["feature", "implement", "build feature"], queue=feature_queue),
         post_exec,
         workflow("WF-VALIDATE-SUBSTEP", "validate-substep", "reusable_component", [n("AF-VALIDATE")], reusable=True, triggers=["gap_analysis"], ops=["loop"]),

@@ -11,7 +11,7 @@ version: 0.1.0
 **Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
 
 
-# /silver:agent-cursor — Cursor Agent TUI Subagent Delegation
+# /sb:agent-cursor — Cursor Agent TUI Subagent Delegation
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **cursor-agent** executes in the target project working directory.
 
@@ -23,11 +23,11 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 ## When to use
 
-| Use `/silver:agent-cursor` | Delegate inline or via host Task instead |
+| Use `/sb:agent-cursor` | Delegate inline or via host Task instead |
 |----------------------------|------------------------------------------|
 | Host is Claude/Codex and Cursor is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs Cursor-native SB hooks/skills/MCP in **real** project CWD | Pure SB-repo work on the host checkout |
-| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`silver:feature`, orchestrator workers) |
+| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in Cursor while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
 
 ---
@@ -46,7 +46,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 ## Activation (on-demand)
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
-2. Parent invokes **`/silver:agent-cursor`** with a structured brief (below).
+2. Parent invokes **`/sb:agent-cursor`** with a structured brief (below).
 3. Parent runs `bash scripts/agent-cursor-delegate.sh` (or equivalent env setup) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
@@ -60,7 +60,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 1. Parent **may** invoke this skill directly (host→Cursor bridge; hook allows `agent-cursor-delegate.sh`).
 2. Parent **must not** Edit/Write project source for work delegated to Cursor — supervise only.
-3. Alternative: `silver-bullet invoke-skill silver-agent-cursor` then run delegate.sh.
+3. Alternative: `silver-bullet invoke-skill sb:agent-cursor` then run delegate.sh.
 4. For SB-repo harness fixes blocking delegation, spawn a worker or use `SB OVERRIDE:` with audit reason.
 5. After Cursor completes, parent verifies acceptance criteria before claiming done.
 
@@ -99,7 +99,7 @@ Produce a delegation brief before invoke:
 ## Constraints
 - Branch: <name or create>
 - Do not: <scope limits>
-- SB routes (if any): /silver:plan → /silver:execute (Cursor picker syntax)
+- SB routes (if any): /sb:plan → /sb:execute (Cursor picker syntax)
 
 ## Evidence required
 - Commit SHA or explicit "no commit" rationale
@@ -188,7 +188,7 @@ bash scripts/agent-cursor-delegate.sh \
 
 Use **absolute paths** for `--log` and `--brief-file` when invoking from a different CWD than SB_ROOT.
 
-Cursor route prefix in prompts: use `/silver:*` (Cursor picker syntax).
+Cursor route prefix in prompts: use `/sb:*` (Cursor picker syntax).
 
 Parent supervises by tailing the log file; stream-json lines decode to text deltas in the log.
 

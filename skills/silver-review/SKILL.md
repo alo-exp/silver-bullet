@@ -5,7 +5,7 @@ argument-hint: "<review scope>"
 version: 0.1.0
 ---
 
-# /silver:review - Code Review
+# /sb:review - Code Review
 
 SB-owned code review records findings and drives the fix loop while preserving
 SB's strict artifact and evidence requirements.
@@ -22,7 +22,7 @@ Write or update `.planning/REVIEW.md`.
    maintainability risks, and release blockers.
 4. When the review scope touches API, data, dependency, performance, structure,
    CI, environment, accessibility, content/search, UI, architecture, runtime,
-   incident, retro, or benchmark surfaces, invoke or apply `silver:domain-audit`
+   incident, retro, or benchmark surfaces, invoke or apply `sb:domain-audit`
    for the affected packs and merge the normalized findings into REVIEW.md.
 5. Report findings first, ordered by severity, with file and line references.
 6. For each finding, classify severity as BLOCK, WARN, or INFO.
@@ -59,7 +59,7 @@ Recommended deploy steps:
 
 The deployment risk tier is informational — it does not block ship on its own.
 However, CRITICAL tier requires the user to explicitly acknowledge the risk
-before `silver:ship` proceeds.
+before `sb:ship` proceeds.
 
 ## Optional Review Enrichment
 

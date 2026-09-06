@@ -1,6 +1,6 @@
 ---
 name: artifact-reviewer
-title: "Silver: Artifact Reviewer"
+title: "SB: Artifact Reviewer"
 description: This skill should be used for framework for artifact review — defines the standard interface, depth-aware review loop, state tracking, and audit trail that all SB artifact reviewers implement
 argument-hint: "<artifact-path> [--reviewer <reviewer-skill-name>]"
 user-invocable: false
@@ -99,7 +99,7 @@ Every review round emits a structured metric to `.planning/review-analytics.json
 
 When the analytics file exceeds 1000 lines, it is archived to `.planning/archive/review-analytics-{date}.jsonl` and a fresh file is started.
 
-Run `silver:review-stats` to produce summary reports from the analytics data.
+Run `sb:review-stats` to produce summary reports from the analytics data.
 
 ## Loading Rules
 

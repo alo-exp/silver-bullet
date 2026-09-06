@@ -35,21 +35,21 @@ Legacy aliases remain recognized for migration, but new default tracked and requ
 blocks delivery when current SB gates are skipped.
 
 ### SB-R3: Domain Quality Contract Packs *(Complete — Phase 3)*
-SB provides a single specialized audit surface, `silver:domain-audit`, for
+SB provides a single specialized audit surface, `sb:domain-audit`, for
 quality checks that are too domain-specific for the core 8-dimension sweep:
 code health, test health, API contracts, data contracts, dependency and
 supply-chain posture, performance, structure, CI, environment/secrets,
 accessibility, content/search readiness, UI systems, architecture decisions,
 runtime release evidence, incident/retro follow-up, and benchmark/eval evidence.
-The route emits normalized findings that feed back into `silver:quality-gates`,
-`silver:review`, `silver:verify`, `silver:devops`, and `silver:release`.
+The route emits normalized findings that feed back into `sb:quality-gates`,
+`sb:review`, `sb:verify`, `sb:devops`, and `sb:release`.
 
 ### SB-R4: Specialized Superset Routes *(Complete — Phase 4)*
 SB exposes SB-owned routes for specialized capabilities that users expect from
 modern AI software-engineering quality layers while preserving one lifecycle
-authority: `silver:test`, `silver:refactor`, `silver:worktree`,
-`silver:deploy`, `silver:canary`, `silver:incident`, `silver:retro`,
-`silver:benchmark`, and `silver:content`. Each route writes an SB artifact and
+authority: `sb:test`, `sb:refactor`, `sb:worktree`,
+`sb:deploy`, `sb:canary`, `sb:incident`, `sb:retro`,
+`sb:benchmark`, and `sb:content`. Each route writes an SB artifact and
 feeds findings into the same review, verification, release, and backlog gates.
 
 ## Out of Scope

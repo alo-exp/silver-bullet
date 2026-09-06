@@ -169,7 +169,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- THREE-HOST INSTALL -->
       <h2 id="runtime-install">Three-Host Runtime Install (v0.52.0)</h2>
-      <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/silver:init</code> after the host has the plugin. When working from a repository checkout, <code>bash scripts/sb-bootstrap.sh</code> provides first-time orientation and <code>bash scripts/sb-diagnostics.sh</code> reports capability tier 0&ndash;3. Marketplace users should use the installed <code>/silver:doctor</code> route for host-aware diagnostics.</p>
+      <p>Silver Bullet ships the same APO workflow contract on Claude Code, Codex, and Cursor. Install surfaces differ; project adoption is always <code>/sb:init</code> after the host has the plugin. When working from a repository checkout, <code>bash scripts/sb-bootstrap.sh</code> provides first-time orientation and <code>bash scripts/sb-diagnostics.sh</code> reports capability tier 0&ndash;3. Marketplace users should use the installed <code>/sb:doctor</code> route for host-aware diagnostics.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Host</th><th>Public marketplace</th><th>Checkout installer</th><th>State root</th></tr></thead>
@@ -194,15 +194,15 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Capability family</th><th>SB route</th><th>Key evidence</th></tr></thead>
         <tbody>
-          <tr><td>Domain audits (code, API, data, CI, a11y, content&hellip;)</td><td><code>/silver:domain-audit</code></td><td>DOMAIN-AUDIT with validated finding tables</td></tr>
-          <tr><td>Test engineering (write, E2E, repair, performance, mutation)</td><td><code>/silver:test</code></td><td>TEST-ENGINEERING, verify-tests marker</td></tr>
-          <tr><td>Deploy + post-deploy watch</td><td><code>/silver:deploy</code>, <code>/silver:canary</code></td><td>DEPLOYMENT.md, CANARY.md</td></tr>
-          <tr><td>Backlog / deferred work</td><td><code>/silver:add</code>, <code>/silver:remove</code></td><td>GitHub issue ID or <code>docs/issues/</code>; fingerprint via <code>silver-add.sh</code></td></tr>
-          <tr><td>Session recovery</td><td><code>/silver:handoff</code>, <code>/silver:forensics</code>, <code>/silver:scan</code></td><td>Handoff prompt, workflow tracker, session logs</td></tr>
-          <tr><td>UI / design continuity</td><td><code>/silver:ui-contract</code>, <code>/silver:ui-review</code></td><td>UI-SPEC, UI-REVIEW, <code>.planning/interface/STATE.md</code></td></tr>
-          <tr><td>Content / search readiness</td><td><code>/silver:content</code></td><td>CONTENT.md, content-search pack</td></tr>
-          <tr><td>Incident + retro</td><td><code>/silver:incident</code>, <code>/silver:retro</code></td><td>INCIDENT.md, RETRO.md</td></tr>
-          <tr><td>Benchmark / eval</td><td><code>/silver:benchmark</code></td><td>BENCHMARK.md</td></tr>
+          <tr><td>Domain audits (code, API, data, CI, a11y, content&hellip;)</td><td><code>/sb:domain-audit</code></td><td>DOMAIN-AUDIT with validated finding tables</td></tr>
+          <tr><td>Test engineering (write, E2E, repair, performance, mutation)</td><td><code>/sb:test</code></td><td>TEST-ENGINEERING, verify-tests marker</td></tr>
+          <tr><td>Deploy + post-deploy watch</td><td><code>/sb:deploy</code>, <code>/sb:canary</code></td><td>DEPLOYMENT.md, CANARY.md</td></tr>
+          <tr><td>Backlog / deferred work</td><td><code>/sb:add</code>, <code>/sb:remove</code></td><td>GitHub issue ID or <code>docs/issues/</code>; fingerprint via <code>silver-add.sh</code></td></tr>
+          <tr><td>Session recovery</td><td><code>/sb:handoff</code>, <code>/sb:forensics</code>, <code>/sb:scan</code></td><td>Handoff prompt, workflow tracker, session logs</td></tr>
+          <tr><td>UI / design continuity</td><td><code>/sb:ui-contract</code>, <code>/sb:ui-review</code></td><td>UI-SPEC, UI-REVIEW, <code>.planning/interface/STATE.md</code></td></tr>
+          <tr><td>Content / search readiness</td><td><code>/sb:content</code></td><td>CONTENT.md, content-search pack</td></tr>
+          <tr><td>Incident + retro</td><td><code>/sb:incident</code>, <code>/sb:retro</code></td><td>INCIDENT.md, RETRO.md</td></tr>
+          <tr><td>Benchmark / eval</td><td><code>/sb:benchmark</code></td><td>BENCHMARK.md</td></tr>
           <tr><td>External review enrichment</td><td>Optional; SB review authoritative</td><td><code>docs/external-review-policy.md</code></td></tr>
         </tbody>
       </table></div>
@@ -216,24 +216,24 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Command</th><th>Phase</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>/silver:init</td><td>Init</td><td>Initializes SB project state, config, docs, CI where absent, and host instruction references.</td></tr>
-          <tr><td>/silver</td><td>Any</td><td>Natural-language workflow composer and router.</td></tr>
-          <tr><td>/silver:context</td><td>Context</td><td>Captures phase context, assumptions, decisions, and research inputs.</td></tr>
-          <tr><td>/silver:plan</td><td>Plan</td><td>Creates task-level implementation plans with dependencies, waves, acceptance criteria, and verification strategy.</td></tr>
-          <tr><td>/silver:execute</td><td>Execute</td><td>Executes the active plan through SB checkpointed or autonomous execution.</td></tr>
-          <tr><td>/silver:verify</td><td>Verify</td><td>Goal-backward verification against requirements, plan, tests, UAT, and user-visible behavior.</td></tr>
-          <tr><td>/silver:review-request</td><td>Review</td><td>Frames review scope, files, risks, and ship blockers.</td></tr>
-          <tr><td>/silver:review</td><td>Review</td><td>Produces the authoritative SB review artifact.</td></tr>
-          <tr><td>/silver:review-triage</td><td>Review</td><td>Accepts, rejects, or defers review findings with rationale.</td></tr>
-          <tr><td>/silver:secure</td><td>Secure</td><td>Runs the SB security/threat review gate for the active change.</td></tr>
-          <tr><td>/silver:ship</td><td>Ship</td><td>Handles phase-level branch, PR, CI, deployment-readiness, and traceability duties.</td></tr>
-          <tr><td>/silver:deploy</td><td>Deploy</td><td>Handles platform detection, deploy command safety, health checks, rollback evidence, and runtime handoff.</td></tr>
-          <tr><td>/silver:canary</td><td>Canary</td><td>Runs post-deploy runtime watch checks across HTTP, browser, logs, metrics, and rollback readiness.</td></tr>
-          <tr><td>/silver:release</td><td>Release</td><td>Owns milestone audits, gap closure, docs, ship readiness, archive, and final release creation.</td></tr>
-          <tr><td>/silver:debug</td><td>Debug</td><td>Systematic debugging for active, reproducible bugs.</td></tr>
-          <tr><td>/silver:forensics</td><td>Forensics</td><td>Post-mortem investigation for failed, abandoned, stalled, or unclear sessions.</td></tr>
-          <tr><td>/silver:incident</td><td>Incident</td><td>Coordinates incident response, postmortem, recovery verification, and corrective-action tracking.</td></tr>
-          <tr><td>/silver:retro</td><td>Retro</td><td>Builds engineering retrospectives from release, CI, git, issue, review, and session evidence.</td></tr>
+          <tr><td>/sb:init</td><td>Init</td><td>Initializes SB project state, config, docs, CI where absent, and host instruction references.</td></tr>
+          <tr><td>/sb</td><td>Any</td><td>Natural-language workflow composer and router.</td></tr>
+          <tr><td>/sb:context</td><td>Context</td><td>Captures phase context, assumptions, decisions, and research inputs.</td></tr>
+          <tr><td>/sb:plan</td><td>Plan</td><td>Creates task-level implementation plans with dependencies, waves, acceptance criteria, and verification strategy.</td></tr>
+          <tr><td>/sb:execute</td><td>Execute</td><td>Executes the active plan through SB checkpointed or autonomous execution.</td></tr>
+          <tr><td>/sb:verify</td><td>Verify</td><td>Goal-backward verification against requirements, plan, tests, UAT, and user-visible behavior.</td></tr>
+          <tr><td>/sb:review-request</td><td>Review</td><td>Frames review scope, files, risks, and ship blockers.</td></tr>
+          <tr><td>/sb:review</td><td>Review</td><td>Produces the authoritative SB review artifact.</td></tr>
+          <tr><td>/sb:review-triage</td><td>Review</td><td>Accepts, rejects, or defers review findings with rationale.</td></tr>
+          <tr><td>/sb:secure</td><td>Secure</td><td>Runs the SB security/threat review gate for the active change.</td></tr>
+          <tr><td>/sb:ship</td><td>Ship</td><td>Handles phase-level branch, PR, CI, deployment-readiness, and traceability duties.</td></tr>
+          <tr><td>/sb:deploy</td><td>Deploy</td><td>Handles platform detection, deploy command safety, health checks, rollback evidence, and runtime handoff.</td></tr>
+          <tr><td>/sb:canary</td><td>Canary</td><td>Runs post-deploy runtime watch checks across HTTP, browser, logs, metrics, and rollback readiness.</td></tr>
+          <tr><td>/sb:release</td><td>Release</td><td>Owns milestone audits, gap closure, docs, ship readiness, archive, and final release creation.</td></tr>
+          <tr><td>/sb:debug</td><td>Debug</td><td>Systematic debugging for active, reproducible bugs.</td></tr>
+          <tr><td>/sb:forensics</td><td>Forensics</td><td>Post-mortem investigation for failed, abandoned, stalled, or unclear sessions.</td></tr>
+          <tr><td>/sb:incident</td><td>Incident</td><td>Coordinates incident response, postmortem, recovery verification, and corrective-action tracking.</td></tr>
+          <tr><td>/sb:retro</td><td>Retro</td><td>Builds engineering retrospectives from release, CI, git, issue, review, and session evidence.</td></tr>
         </tbody>
       </table></div>
 
@@ -241,41 +241,41 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- SILVER BULLET SKILLS -->
       <h2 id="sb-skills">Silver Bullet Skills</h2>
-      <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/silver</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
-      <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code lists SB skills under the <code>/silver:</code> prefix only (no duplicate hyphen stubs); Codex exposes the native <code>/silver:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
+      <p>Silver Bullet is the Agentic Process Orchestrator and lifecycle engine. <code>/sb</code> accepts freeform intent, classifies task complexity, composes the right SB workflow path, and then enforces that the selected path actually runs. Optional plugins enrich specialized domains but do not own the core lifecycle.</p>
+      <p><strong>Command naming note:</strong> public docs use logical slash-command names mapped to catalog flow steps. Claude Code lists SB skills under the <code>/sb:</code> prefix only (no duplicate hyphen stubs); Codex exposes the native <code>/sb:</code> picker and keeps packaged <code>skill-source/</code> files out of duplicate listings; Cursor uses the Skill tool with merged hooks.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>/silver</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or SB lifecycle work.</td></tr>
-          <tr><td>/silver:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
-          <tr><td>/silver:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
-          <tr><td>/silver:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety and domain packs are added only when the phase scope requires them. Failing dimensions become hard requirements.</td></tr>
-          <tr><td>/silver:domain-audit</td><td>Specialized quality</td><td>Runs domain contract packs for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident/retro, and benchmark evidence.</td></tr>
-          <tr><td>/silver:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
+          <tr><td>/sb</td><td>Anytime</td><td>Dynamic workflow composer. Routes natural-language work requests to the smallest safe workflow: fast path, clarify, spec, feature, bugfix, UI, DevOps, research, release, docs, quality gates, tests, or SB lifecycle work.</td></tr>
+          <tr><td>/sb:init</td><td>Setup</td><td>Initializes or reactivates SB for a project. Creates <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, workflow docs, documentation scaffold, CI where absent, and reconciles <code>CLAUDE.md</code>/<code>AGENTS.md</code> without overwriting user instructions.</td></tr>
+          <tr><td>/sb:ensure-docs</td><td>Docs</td><td>Bootstraps, reconciles, and audits the bounded documentation scheme: <code>docs/ARCHITECTURE.md</code>, <code>docs/TESTING.md</code>, <code>docs/doc-scheme.md</code>, monthly knowledge/learnings files, task checklist, and related docs.</td></tr>
+          <tr><td>/sb:quality-gates<span class="badge-small badge-req">Required</span></td><td>Before plan / before ship</td><td>8 core product/software dimensions: modularity, reusability, scalability, security, reliability, usability, testability, and extensibility. AI/LLM safety and domain packs are added only when the phase scope requires them. Failing dimensions become hard requirements.</td></tr>
+          <tr><td>/sb:domain-audit</td><td>Specialized quality</td><td>Runs domain contract packs for code, tests, API, data, dependencies, performance, structure, CI, environment, accessibility, content/search, UI, architecture, runtime release, incident/retro, and benchmark evidence.</td></tr>
+          <tr><td>/sb:blast-radius<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>Before DevOps plan</td><td>Maps scope, dependencies, failure scenarios, rollback plan, change window, and escalation path. Produces LOW/MEDIUM/HIGH/CRITICAL risk classification.</td></tr>
           <tr><td>/devops-quality-gates<span class="badge-small badge-do">DevOps</span><span class="badge-small badge-req">Required</span></td><td>DevOps pre-plan / pre-ship</td><td>7 IaC-adapted dimensions: reliability, security, scalability, modularity, testability, observability, and change-safety. Focuses on idempotency, drift prevention, least-privilege IAM, rollback safety, and operational reliability.</td></tr>
           <tr><td>/devops-skill-router<span class="badge-small badge-do">DevOps</span></td><td>DevOps enrichment</td><td>Routes to optional IaC/cloud provider skills when installed. It is contextual enrichment, not a substitute for SB planning or SB gates.</td></tr>
-          <tr><td>/silver:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, stalled, or unclear SB sessions and workflow artifacts.</td></tr>
-          <tr><td>/silver:test</td><td>Testing</td><td>Test engineering for test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge workflows.</td></tr>
-          <tr><td>/silver:refactor</td><td>Refactor</td><td>Behavior-preserving refactor workflow with baseline tests, structure/code-health packs, and proof of no regression.</td></tr>
-          <tr><td>/silver:worktree</td><td>Git isolation</td><td>Creates or finishes isolated git worktrees with branch state, verification, merge/PR, and cleanup safety.</td></tr>
-          <tr><td>/silver:content</td><td>Content/search</td><td>Public content, docs, migration, SEO/AI-search, optimization, article, metadata, link, and render workflow.</td></tr>
-          <tr><td>/silver:benchmark</td><td>Evaluation</td><td>Repeatable benchmark workflow for agents, models, providers, prompts, or implementation approaches.</td></tr>
-          <tr><td>/silver:create-release<span class="badge-small badge-req">Required</span></td><td>Milestone release</td><td>Generates structured release notes, updates release surfaces, creates the final version tag, and publishes the GitHub Release. Runs last inside <code>/silver:release</code>, after ship and milestone archival.</td></tr>
+          <tr><td>/sb:forensics</td><td>On failure</td><td>Root-cause investigation for failed, abandoned, stalled, or unclear SB sessions and workflow artifacts.</td></tr>
+          <tr><td>/sb:test</td><td>Testing</td><td>Test engineering for test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge workflows.</td></tr>
+          <tr><td>/sb:refactor</td><td>Refactor</td><td>Behavior-preserving refactor workflow with baseline tests, structure/code-health packs, and proof of no regression.</td></tr>
+          <tr><td>/sb:worktree</td><td>Git isolation</td><td>Creates or finishes isolated git worktrees with branch state, verification, merge/PR, and cleanup safety.</td></tr>
+          <tr><td>/sb:content</td><td>Content/search</td><td>Public content, docs, migration, SEO/AI-search, optimization, article, metadata, link, and render workflow.</td></tr>
+          <tr><td>/sb:benchmark</td><td>Evaluation</td><td>Repeatable benchmark workflow for agents, models, providers, prompts, or implementation approaches.</td></tr>
+          <tr><td>/sb:create-release<span class="badge-small badge-req">Required</span></td><td>Milestone release</td><td>Generates structured release notes, updates release surfaces, creates the final version tag, and publishes the GitHub Release. Runs last inside <code>/sb:release</code>, after ship and milestone archival.</td></tr>
           <tr><td>/verify-tests<span class="badge-small badge-req">Required</span></td><td>Final delivery</td><td>Runs configured verify commands or stack defaults and writes the freshness marker consumed by SB hooks. Required before final delivery/release gates.</td></tr>
-          <tr><td>/silver:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
-          <tr><td>/silver:remove</td><td>Deferred work</td><td>Removes or retires a tracked work item by ID.</td></tr>
-          <tr><td>/silver:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable learnings into monthly files under <code>docs/knowledge/</code> and <code>docs/learnings/</code>.</td></tr>
-          <tr><td>/silver:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/learning candidates.</td></tr>
-          <tr><td>/silver:spike</td><td>Feasibility</td><td>Runs 2–5 executable experiments with Given/When/Then structure and VALIDATED/INVALIDATED/PARTIAL verdicts before committing to an implementation approach.</td></tr>
-          <tr><td>/silver:phase</td><td>Roadmap management</td><td>CRUD management for phases in <code>.planning/ROADMAP.md</code> — add, insert, remove, or edit phases. The sanctioned path to mutate the phase list without triggering the planning-file-guard.</td></tr>
-          <tr><td>/silver:undo</td><td>Safe revert</td><td>Safe git revert for phase or plan commits with dependency checks and artifact cleanup. Keeps STATE.md and SUMMARY.md consistent with reverted code.</td></tr>
-          <tr><td>/silver:thread</td><td>Cross-session tracking</td><td>Creates and manages lightweight cross-session context threads for tracking a specific topic, decision chain, or concern across multiple sessions.</td></tr>
-          <tr><td>/silver:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
-          <tr><td>/silver:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation. Runs <code>/silver:doctor</code> automatically and surfaces every FAIL for inline fix.</td></tr>
-          <tr><td>/silver:doctor</td><td>Diagnostics</td><td>Host-aware install and project activation audit via <code>scripts/sb-doctor.sh</code> (checks D1&ndash;D13). Run after <code>/silver:update</code>, when hooks seem inactive, or before relying on enforcement. D8 orchestrator rule applies on Cursor only; D2/D3/D13 use the active host plugin paths.</td></tr>
-          <tr><td>/silver:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
-          <tr><td>/silver:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung. Before launching rungs, the parent presents a concise bullet list of only the key tasks and instructions and gets user approval (do not dump the entire prompt).</td></tr>
+          <tr><td>/sb:add</td><td>Deferred work</td><td>Classifies and files bugs, backlog items, tech debt, and follow-ups to GitHub Issues/project board or local <code>docs/issues/</code> depending on project config.</td></tr>
+          <tr><td>/sb:remove</td><td>Deferred work</td><td>Removes or retires a tracked work item by ID.</td></tr>
+          <tr><td>/sb:rem</td><td>Knowledge capture</td><td>Captures project knowledge or portable learnings into monthly files under <code>docs/knowledge/</code> and <code>docs/learnings/</code>.</td></tr>
+          <tr><td>/sb:scan</td><td>Retrospective</td><td>Retrospective session scanning for unaddressed deferred items and knowledge/learning candidates.</td></tr>
+          <tr><td>/sb:spike</td><td>Feasibility</td><td>Runs 2–5 executable experiments with Given/When/Then structure and VALIDATED/INVALIDATED/PARTIAL verdicts before committing to an implementation approach.</td></tr>
+          <tr><td>/sb:phase</td><td>Roadmap management</td><td>CRUD management for phases in <code>.planning/ROADMAP.md</code> — add, insert, remove, or edit phases. The sanctioned path to mutate the phase list without triggering the planning-file-guard.</td></tr>
+          <tr><td>/sb:undo</td><td>Safe revert</td><td>Safe git revert for phase or plan commits with dependency checks and artifact cleanup. Keeps STATE.md and SUMMARY.md consistent with reverted code.</td></tr>
+          <tr><td>/sb:thread</td><td>Cross-session tracking</td><td>Creates and manages lightweight cross-session context threads for tracking a specific topic, decision chain, or concern across multiple sessions.</td></tr>
+          <tr><td>/sb:handoff</td><td>Session end</td><td>Generates a reusable project-level handoff prompt with project state, milestone context, constraints, verification/release status, and open follow-ups.</td></tr>
+          <tr><td>/sb:update</td><td>Maintenance</td><td>Checks latest SB release, shows the target version/SHA/changelog, and updates after explicit confirmation. Runs <code>/sb:doctor</code> automatically and surfaces every FAIL for inline fix.</td></tr>
+          <tr><td>/sb:doctor</td><td>Diagnostics</td><td>Host-aware install and project activation audit via <code>scripts/sb-doctor.sh</code> (checks D1&ndash;D13). Run after <code>/sb:update</code>, when hooks seem inactive, or before relying on enforcement. D8 orchestrator rule applies on Cursor only; D2/D3/D13 use the active host plugin paths.</td></tr>
+          <tr><td>/sb:migrate</td><td>Upgrade support</td><td>Migrates older SB project state into the current composable-workflow structure and per-instance workflow tracker.</td></tr>
+          <tr><td>/sb:review-fix-ladder</td><td>High-confidence review</td><td>Progressively reviews and fixes scoped or user-confirmed repo-wide work by escalating through a host-aware model ladder until two consecutive clean passes per rung. Before launching rungs, the parent presents a concise bullet list of only the key tasks and instructions and gets user approval (do not dump the entire prompt).</td></tr>
         </tbody>
       </table></div>
 
@@ -289,22 +289,22 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <thead><tr><th>Skill</th><th>When</th><th>Description</th></tr></thead>
         <tbody>
           <tr>
-            <td>/silver:spec</td>
+            <td>/sb:spec</td>
             <td>Before planning (spec-first projects)</td>
             <td>AI-driven spec elicitation. Produces a canonical <code>SPEC.md</code> with structured requirements, acceptance criteria, assumption tracking, and source input cross-references. Use when a formal spec is required before SB planning.</td>
           </tr>
           <tr>
-            <td>/silver:ingest</td>
+            <td>/sb:ingest</td>
             <td>Before spec creation (external sources)</td>
             <td>Ingests artifacts from JIRA, Figma, and Google Docs via MCP connectors. No custom API code — all external data access delegated to MCP. Produces a structured <code>INGESTION_MANIFEST.md</code> that maps external inputs to spec sections.</td>
           </tr>
           <tr>
-            <td>/silver:validate</td>
+            <td>/sb:validate</td>
             <td>After spec creation, before planning</td>
             <td>Read-only pre-build gap analysis. Reads <code>.planning/SPEC.md</code> and PLAN.md files, maps acceptance criteria to planned work, surfaces assumptions and open questions, emits BLOCK/WARN/INFO findings, and writes <code>.planning/VALIDATION.md</code>. BLOCK findings must be resolved before implementation.</td>
           </tr>
           <tr>
-            <td>/silver:review-stats</td>
+            <td>/sb:review-stats</td>
             <td>Anytime (review health reporting)</td>
             <td>Generates three summary tables from accumulated review metrics (JSON Lines): pass rates by artifact type, rounds to clean pass, and finding categories by artifact type. Use to track review health over time.</td>
           </tr>
@@ -315,7 +315,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- QUALITY AND REVIEW SKILLS -->
       <h2 id="quality-review-skills">Quality &amp; Review Skills</h2>
-      <p>These quality gates and domain audit skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/silver:quality-gates</code>, release readiness, and spec/review workflows. They are included in the skill inventory.</p>
+      <p>These quality gates and domain audit skills provide the one-by-one quality dimensions, domain contract packs, and artifact review roles used by <code>/sb:quality-gates</code>, release readiness, and spec/review workflows. They are included in the skill inventory.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>Role</th><th>Description</th></tr></thead>
@@ -348,66 +348,66 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- ORCHESTRATION WORKFLOWS -->
       <h2 id="orchestration-workflows">Orchestration Workflows</h2>
-      <p>Catalog-backed <code>WF-*</code> workflows that <code>/silver</code> composes after intent classification. Each workflow is a composition tree of canonical atomic-flow slugs from <code>docs/apo-catalog.json</code>; optional atoms are marked with <code>?</code>. Extension skills enrich domains only at explicit catalog boundaries.</p>
+      <p>Catalog-backed <code>WF-*</code> workflows that <code>/sb</code> composes after intent classification. Each workflow is a composition tree of canonical atomic-flow slugs from <code>docs/apo-catalog.json</code>; optional atoms are marked with <code>?</code>. Extension skills enrich domains only at explicit catalog boundaries.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Skill</th><th>Entry trigger keywords</th><th>Typical composed path</th></tr></thead>
         <tbody>
-          <tr><td><a href="../workflows/silver-router.html">/silver</a></td><td>freeform intent, route, classify</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td></tr>
-          <tr><td><a href="../workflows/silver-deep-research.html">/silver:deep-research</a></td><td>how should we, spike, architecture decision, solution landscape</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
-          <tr><td><a href="../workflows/silver-deep-research-multi-ai.html">/silver:deep-research-multi-ai</a></td><td>explicit multi-model research, parallel evidence gathering</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>MULTI_AI_TASK</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
-          <tr><td><a href="../workflows/silver-multi-ai-task.html">/silver:multi-ai-task</a></td><td>bounded multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>MULTI_AI_TASK</code></td></tr>
-          <tr><td><a href="../workflows/silver-compare.html">/silver:compare</a></td><td>compare named solutions, weighted matrix, N solutions</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> (need-profile) → <code>DECIDE</code> (solution-compare) → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
-          <tr><td><a href="../workflows/silver-clarify.html">/silver:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → context/plan handoff</td></tr>
-          <tr><td><a href="../workflows/silver-spec.html">/silver:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code></td></tr>
-          <tr><td><a href="../workflows/silver-ingest.html">/silver:ingest</a></td><td>JIRA, Figma, Google Docs, Confluence, external artifact</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code> (ingest sub-step)</td></tr>
-          <tr><td><a href="../workflows/silver-validate.html">/silver:validate</a></td><td>validate spec, validate plan, gap analysis, assumption awareness</td><td style="font-family:inherit;font-size:.875rem"><code>VALIDATE</code></td></tr>
-          <tr><td><a href="../workflows/silver-new-workflow.html">/silver:new-workflow</a></td><td>create workflow, convert skill, audit workflow compliance</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>ORIENT</code> → <code>DECIDE</code> → <code>PLAN</code> → <code>REVIEW_TRIAGE</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>VALIDATE</code> → <code>DOCUMENT</code></td></tr>
-          <tr><td><a href="../workflows/silver-feature.html">/silver:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT?</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
-          <tr><td><a href="../workflows/silver-bugfix.html">/silver:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
-          <tr><td><a href="../workflows/silver-ui.html">/silver:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
-          <tr><td><a href="../workflows/silver-fast.html">/silver:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td style="font-family:inherit;font-size:.875rem"><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code> (escalates to <code>/silver:feature</code> when scope exceeds bounds)</td></tr>
-          <tr><td><a href="../workflows/silver-test.html">/silver:test</a></td><td>write tests, E2E, Playwright, fix tests, test audit, mutation, slow tests</td><td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
-          <tr><td><a href="../workflows/silver-refactor.html">/silver:refactor</a></td><td>refactor, rename, split, extract, move files, simplify</td><td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → post-exec gates</td></tr>
-          <tr><td><a href="../workflows/silver-benchmark.html">/silver:benchmark</a></td><td>benchmark, compare agents, compare models, provider comparison</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
-          <tr><td><a href="../workflows/silver-content.html">/silver:content</a></td><td>content, SEO, AI search, article, blog, migration, metadata, links</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
+          <tr><td><a href="../workflows/silver-router.html">/sb</a></td><td>freeform intent, route, classify</td><td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td></tr>
+          <tr><td><a href="../workflows/silver-deep-research.html">/sb:deep-research</a></td><td>how should we, spike, architecture decision, solution landscape</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-deep-research-multi-ai.html">/sb:deep-research-multi-ai</a></td><td>explicit multi-model research, parallel evidence gathering</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>DECIDE</code> → <code>MULTI_AI_TASK</code> → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-multi-ai-task.html">/sb:multi-ai-task</a></td><td>bounded multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>MULTI_AI_TASK</code></td></tr>
+          <tr><td><a href="../workflows/silver-compare.html">/sb:compare</a></td><td>compare named solutions, weighted matrix, N solutions</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> (need-profile) → <code>DECIDE</code> (solution-compare) → <code>DOCUMENT</code> → <code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-clarify.html">/sb:clarify</a></td><td>idea, concept, fuzzy requirement, no SPEC.md</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → context/plan handoff</td></tr>
+          <tr><td><a href="../workflows/silver-spec.html">/sb:spec</a></td><td>formal spec, acceptance criteria, user stories, write a spec</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code></td></tr>
+          <tr><td><a href="../workflows/silver-ingest.html">/sb:ingest</a></td><td>JIRA, Figma, Google Docs, Confluence, external artifact</td><td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code> (ingest sub-step)</td></tr>
+          <tr><td><a href="../workflows/silver-validate.html">/sb:validate</a></td><td>validate spec, validate plan, gap analysis, assumption awareness</td><td style="font-family:inherit;font-size:.875rem"><code>VALIDATE</code></td></tr>
+          <tr><td><a href="../workflows/silver-new-workflow.html">/sb:new-workflow</a></td><td>create workflow, convert skill, audit workflow compliance</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>ORIENT</code> → <code>DECIDE</code> → <code>PLAN</code> → <code>REVIEW_TRIAGE</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>VALIDATE</code> → <code>DOCUMENT</code></td></tr>
+          <tr><td><a href="../workflows/silver-feature.html">/sb:feature</a></td><td>add, build, implement, new feature, enhance, extend</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT?</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
+          <tr><td><a href="../workflows/silver-bugfix.html">/sb:bugfix</a></td><td>bug, broken, crash, error, regression, failing test</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DEBUG</code> → <code>PLAN</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
+          <tr><td><a href="../workflows/silver-ui.html">/sb:ui</a></td><td>UI, frontend, component, screen, design, layout, responsive</td><td style="font-family:inherit;font-size:.875rem"><code>BOOTSTRAP?</code> → <code>ORIENT?</code> → <code>CLARIFY?</code> → <code>DECIDE?</code> → <code>SPECIFY?</code> → <code>QUALITY_GATE</code> (pre-plan) → <code>PLAN</code> → <code>DESIGN_CONTRACT</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
+          <tr><td><a href="../workflows/silver-fast.html">/sb:fast</a></td><td>trivial, quick fix, typo, one-liner, config value, bounded small change</td><td style="font-family:inherit;font-size:.875rem"><code>FAST_PATH</code> → <code>QUALITY_GATE</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → <code>VERIFY</code> (escalates to <code>/sb:feature</code> when scope exceeds bounds)</td></tr>
+          <tr><td><a href="../workflows/silver-test.html">/sb:test</a></td><td>write tests, E2E, Playwright, fix tests, test audit, mutation, slow tests</td><td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code></td></tr>
+          <tr><td><a href="../workflows/silver-refactor.html">/sb:refactor</a></td><td>refactor, rename, split, extract, move files, simplify</td><td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → post-exec gates</td></tr>
+          <tr><td><a href="../workflows/silver-benchmark.html">/sb:benchmark</a></td><td>benchmark, compare agents, compare models, provider comparison</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
+          <tr><td><a href="../workflows/silver-content.html">/sb:content</a></td><td>content, SEO, AI search, article, blog, migration, metadata, links</td><td style="font-family:inherit;font-size:.875rem"><code>CLARIFY</code> → <code>SPECIFY</code> → <code>EXECUTE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
           <tr><td><a href="../workflows/silver-agent-delegate.html">Agent delegation</a></td><td>agent-claude, agent-codex, agent-cursor</td><td style="font-family:inherit;font-size:.875rem"><code>AGENT_DELEGATE</code> (<code>WF-AGENT-DELEGATE-ENTRY</code>)</td></tr>
-          <tr><td>/silver:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td style="font-family:inherit;font-size:.875rem"><code>EXECUTE</code> (worktree isolation mode)</td></tr>
-          <tr><td><a href="../workflows/silver-devops.html">/silver:devops</a></td><td>infra, CI/CD, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
-          <tr><td><a href="../workflows/silver-deploy.html">/silver:deploy</a></td><td>deploy, deployment, production deploy, staging deploy, rollout</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td></tr>
-          <tr><td><a href="../workflows/silver-canary.html">/silver:canary</a></td><td>canary, post-deploy, production watch, runtime watch, health watch</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td></tr>
-          <tr><td><a href="../workflows/silver-release.html">/silver:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td style="font-family:inherit;font-size:.875rem"><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td></tr>
-          <tr><td><a href="../workflows/silver-review-triad.html">/silver:review-triad</a></td><td>review_request, review, triage</td><td style="font-family:inherit;font-size:.875rem"><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> (<code>WF-REVIEW-TRIAD</code>)</td></tr>
-          <tr><td><a href="../workflows/silver-ship-readiness.html">/silver:ship-readiness</a></td><td>branch_finish, completion_audit, ship</td><td style="font-family:inherit;font-size:.875rem"><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> (<code>WF-SHIP-READINESS</code>)</td></tr>
-          <tr><td><a href="../workflows/silver-incident.html">/silver:incident</a></td><td>incident, outage, production regression, postmortem</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEBUG</code> → <code>SECURE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
-          <tr><td><a href="../workflows/silver-retro.html">/silver:retro</a></td><td>retro, retrospective, release metrics, process review</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DOCUMENT</code> → <code>DECIDE</code></td></tr>
-          <tr><td><a href="../workflows/silver-forensics.html">/silver:forensics</a></td><td>forensics, session failure, post-mortem reconstruction</td><td style="font-family:inherit;font-size:.875rem"><code>DEBUG</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-SILVER-FORENSICS</code>)</td></tr>
-          <tr><td><a href="../workflows/silver-process-maintenance.html">/silver:process-maintenance</a></td><td>phase, thread, backlog, migration</td><td style="font-family:inherit;font-size:.875rem"><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-PROCESS-MAINTENANCE</code>)</td></tr>
+          <tr><td>/sb:worktree</td><td>worktree, isolated branch, branch workspace, finish worktree</td><td style="font-family:inherit;font-size:.875rem"><code>EXECUTE</code> (worktree isolation mode)</td></tr>
+          <tr><td><a href="../workflows/silver-devops.html">/sb:devops</a></td><td>infra, CI/CD, pipeline, terraform, IaC, kubernetes, cloud, ops</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEVOPS_ROUTE</code> → <code>QUALITY_GATE</code> → <code>SECURE</code> → <code>ORIENT</code> → <code>PLAN</code> → <code>VALIDATE</code> → <code>EXECUTE</code> → post-exec gates</td></tr>
+          <tr><td><a href="../workflows/silver-deploy.html">/sb:deploy</a></td><td>deploy, deployment, production deploy, staging deploy, rollout</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td></tr>
+          <tr><td><a href="../workflows/silver-canary.html">/sb:canary</a></td><td>canary, post-deploy, production watch, runtime watch, health watch</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SHIP</code></td></tr>
+          <tr><td><a href="../workflows/silver-release.html">/sb:release</a></td><td>release, publish, version, go live, tag v, ship to users</td><td style="font-family:inherit;font-size:.875rem"><code>QUALITY_GATE</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE</code> → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> → <code>RELEASE</code></td></tr>
+          <tr><td><a href="../workflows/silver-review-triad.html">/sb:review-triad</a></td><td>review_request, review, triage</td><td style="font-family:inherit;font-size:.875rem"><code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> (<code>WF-REVIEW-TRIAD</code>)</td></tr>
+          <tr><td><a href="../workflows/silver-ship-readiness.html">/sb:ship-readiness</a></td><td>branch_finish, completion_audit, ship</td><td style="font-family:inherit;font-size:.875rem"><code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code> (<code>WF-SHIP-READINESS</code>)</td></tr>
+          <tr><td><a href="../workflows/silver-incident.html">/sb:incident</a></td><td>incident, outage, production regression, postmortem</td><td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>DEBUG</code> → <code>SECURE</code> → <code>VERIFY</code> → <code>DOCUMENT</code></td></tr>
+          <tr><td><a href="../workflows/silver-retro.html">/sb:retro</a></td><td>retro, retrospective, release metrics, process review</td><td style="font-family:inherit;font-size:.875rem"><code>ORIENT</code> → <code>DOCUMENT</code> → <code>DECIDE</code></td></tr>
+          <tr><td><a href="../workflows/silver-forensics.html">/sb:forensics</a></td><td>forensics, session failure, post-mortem reconstruction</td><td style="font-family:inherit;font-size:.875rem"><code>DEBUG</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-SILVER-FORENSICS</code>)</td></tr>
+          <tr><td><a href="../workflows/silver-process-maintenance.html">/sb:process-maintenance</a></td><td>phase, thread, backlog, migration</td><td style="font-family:inherit;font-size:.875rem"><code>PHASE_MANAGE</code> → <code>DOCUMENT</code> → <code>VALIDATE</code> (<code>WF-PROCESS-MAINTENANCE</code>)</td></tr>
         </tbody>
       </table></div>
       <p><strong>Post-exec gates</strong> (<code>WF-POST-EXEC-GATES</code>): <code>UI_QUALITY?</code> → <code>REVIEW_REQUEST</code> → <code>REVIEW</code> → <code>REVIEW_TRIAGE</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>VALIDATE?</code> → <code>QUALITY_GATE</code> (pre-ship) → <code>BRANCH_FINISH</code> → <code>COMPLETION_AUDIT</code> → <code>SHIP</code>.</p>
 
       <h3 id="complexity-triage">Complexity Triage</h3>
-      <p><code>/silver</code> classifies every request before routing. This prevents over-engineering trivial changes and under-engineering risky ones.</p>
+      <p><code>/sb</code> classifies every request before routing. This prevents over-engineering trivial changes and under-engineering risky ones.</p>
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Classification</th><th>Signals</th><th>Action</th></tr></thead>
         <tbody>
-          <tr><td>Trivial</td><td>Typo, rename, small config/copy change, usually ≤3 files</td><td>Route to <code>/silver:fast</code> Tier 1</td></tr>
-          <tr><td>Bounded medium</td><td>Small logic/dependency change, usually 4–10 files, no cross-cutting impact</td><td>Route to <code>/silver:fast</code> Tier 2</td></tr>
+          <tr><td>Trivial</td><td>Typo, rename, small config/copy change, usually ≤3 files</td><td>Route to <code>/sb:fast</code> Tier 1</td></tr>
+          <tr><td>Bounded medium</td><td>Small logic/dependency change, usually 4–10 files, no cross-cutting impact</td><td>Route to <code>/sb:fast</code> Tier 2</td></tr>
           <tr><td>Simple</td><td>Clear scope, single phase, known implementation path</td><td>Route to the matching workflow and skip extra clarification when safe</td></tr>
           <tr><td>Complex</td><td>Cross-cutting, multi-phase, architecture or data-model impact</td><td>Full workflow with clarify/research/spec gates as needed</td></tr>
-          <tr><td>Fuzzy</td><td>Vague intent, unclear success criteria, missing scope</td><td>Run <code>/silver:clarify</code>, then re-classify</td></tr>
+          <tr><td>Fuzzy</td><td>Vague intent, unclear success criteria, missing scope</td><td>Run <code>/sb:clarify</code>, then re-classify</td></tr>
         </tbody>
       </table></div>
 
       <h3 id="ship-disambiguation">Ship Disambiguation</h3>
-      <p><code>/silver</code> distinguishes phase-level ship from milestone-level release.</p>
+      <p><code>/sb</code> distinguishes phase-level ship from milestone-level release.</p>
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Signal</th><th>Route</th></tr></thead>
         <tbody>
-          <tr><td>Version number, changelog, release notes, public publish, go live</td><td><code>/silver:release</code></td></tr>
-          <tr><td>Active phase in progress, no version signal</td><td><code>silver:ship</code></td></tr>
-          <tr><td>No active phase and milestone complete</td><td><code>/silver:release</code></td></tr>
+          <tr><td>Version number, changelog, release notes, public publish, go live</td><td><code>/sb:release</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>sb:ship</code></td></tr>
+          <tr><td>No active phase and milestone complete</td><td><code>/sb:release</code></td></tr>
         </tbody>
       </table></div>
 
@@ -418,15 +418,15 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>Silver Bullet commands and markers cover the core software-engineering lifecycle from problem framing through final delivery.</p>
 
       <div class="table-wrap"><table class="ref-table">
-        <thead><tr><th>Lifecycle concern</th><th><code>/silver:</code> command</th><th>Description</th></tr></thead>
+        <thead><tr><th>Lifecycle concern</th><th><code>/sb:</code> command</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>Problem framing / scope clarification</td><td><code>silver:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
-          <tr><td>Spec writing</td><td><code>silver:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>
-          <tr><td>Plan writing / phase discussion</td><td><code>silver:context</code>, <code>silver:plan</code></td><td>Context packets, assumptions, task plans, dependency analysis, and verification strategy.</td></tr>
+          <tr><td>Problem framing / scope clarification</td><td><code>sb:clarify</code></td><td>Problem framing, option generation, convergence, and handoff.</td></tr>
+          <tr><td>Spec writing</td><td><code>sb:spec</code></td><td>Canonical SPEC and REQUIREMENTS artifacts.</td></tr>
+          <tr><td>Plan writing / phase discussion</td><td><code>sb:context</code>, <code>sb:plan</code></td><td>Context packets, assumptions, task plans, dependency analysis, and verification strategy.</td></tr>
           <tr><td>TDD discipline</td><td><code>tdd</code> / <code>silver-tdd</code></td><td>Red/green/refactor policy for behavior-changing software work.</td></tr>
-          <tr><td>Review request / triage</td><td><code>silver:review-request</code>, <code>silver:review-triage</code></td><td>Review framing, finding triage, and fix-loop control.</td></tr>
-          <tr><td>Completion verification</td><td><code>silver:completion-audit</code>, <code>silver:verify</code></td><td>Fresh evidence before completion claims.</td></tr>
-          <tr><td>Branch finishing / ship</td><td><code>silver:branch-finish</code>, <code>silver:ship</code></td><td>Branch hygiene, PR readiness, CI, and traceability.</td></tr>
+          <tr><td>Review request / triage</td><td><code>sb:review-request</code>, <code>sb:review-triage</code></td><td>Review framing, finding triage, and fix-loop control.</td></tr>
+          <tr><td>Completion verification</td><td><code>sb:completion-audit</code>, <code>sb:verify</code></td><td>Fresh evidence before completion claims.</td></tr>
+          <tr><td>Branch finishing / ship</td><td><code>sb:branch-finish</code>, <code>sb:ship</code></td><td>Branch hygiene, PR readiness, CI, and traceability.</td></tr>
         </tbody>
       </table></div>
 
@@ -441,11 +441,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <tbody>
           <tr><td><code>scripts/validate-evidence-findings.py</code></td><td>Validates finding tables in DOMAIN-AUDIT, REVIEW, QUALITY-GATES, SECURITY, VERIFICATION, UI-REVIEW, and TEST-ENGINEERING artifacts.</td></tr>
           <tr><td><code>hooks/lib/evidence-schema-gate.sh</code></td><td>Warn-first delivery gate on PR/release; set <code>SILVER_BULLET_EVIDENCE_SCHEMA_STRICT=1</code> to hard-block.</td></tr>
-          <tr><td><code>scripts/silver-add.sh fingerprint|dedup|prioritize</code></td><td>Stable backlog fingerprints shared with <code>silver:scan</code>; dedup against <code>docs/issues/</code> and scan state.</td></tr>
-          <tr><td><code>scripts/stamp-interface-state.sh</code></td><td>Stamps <code>.planning/interface/STATE.md</code> from template during <code>/silver:init</code> for UI projects.</td></tr>
+          <tr><td><code>scripts/silver-add.sh fingerprint|dedup|prioritize</code></td><td>Stable backlog fingerprints shared with <code>sb:scan</code>; dedup against <code>docs/issues/</code> and scan state.</td></tr>
+          <tr><td><code>scripts/stamp-interface-state.sh</code></td><td>Stamps <code>.planning/interface/STATE.md</code> from template during <code>/sb:init</code> for UI projects.</td></tr>
           <tr><td><code>scripts/sb-bootstrap.sh</code></td><td>Repository-checkout onboarding probe: checks <code>jq</code>, runs diagnostics, and prints init/plugin next steps.</td></tr>
           <tr><td><code>scripts/sb-diagnostics.sh</code></td><td>Repository-checkout install/runtime diagnostics for development, migration, and support.</td></tr>
-          <tr><td><code>scripts/sb-doctor.sh</code></td><td>Host-aware install + activation audit (<code>/silver:doctor</code>). Checks plugin cache, hooks manifest, config freshness, orchestrator rule (Cursor only), and cross-host contamination.</td></tr>
+          <tr><td><code>scripts/sb-doctor.sh</code></td><td>Host-aware install + activation audit (<code>/sb:doctor</code>). Checks plugin cache, hooks manifest, config freshness, orchestrator rule (Cursor only), and cross-host contamination.</td></tr>
         </tbody>
       </table></div>
 
@@ -490,9 +490,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h3 id="migration-notes"><span class="historical" data-historical>v0.51.5 migration notes</span></h3>
       <ul>
-        <li>Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation. New docs, workflows, and tests should use atomic-flow slugs, <code>WF-*</code> workflow IDs, or public <code>/silver:*</code> routes.</li>
+        <li>Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation. New docs, workflows, and tests should use atomic-flow slugs, <code>WF-*</code> workflow IDs, or public <code>/sb:*</code> routes.</li>
         <li>Older <code>WORKFLOW.md</code> state is legacy; active composition state lives in <code>.planning/workflows/&lt;id&gt;.md</code>.</li>
-        <li>Run <code>/silver:update</code> or rerun <code>/silver:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with the installed release. <span class="historical" data-historical>This migration instruction was introduced in v0.51.5.</span></li>
+        <li>Run <code>/sb:update</code> or rerun <code>/sb:init</code> after upgrading a project so config, instructions, recommended-tool opt-ins, and workflow trackers align with the installed release. <span class="historical" data-historical>This migration instruction was introduced in v0.51.5.</span></li>
         <li>If stale generated docs are detected, run <code>python3 scripts/generate-apo-artifacts.py</code> and the APO freshness tests before release.</li>
       </ul>
 
@@ -501,35 +501,35 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>Slug</th><th>Capability class</th><th>Public route</th><th>Legacy alias</th></tr></thead>
         <tbody>
-          <tr><td>ROUTE</td><td style="font-family:inherit;font-size:.875rem">route intent</td><td style="font-family:inherit;font-size:.875rem"><code>/silver</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>BOOTSTRAP</td><td style="font-family:inherit;font-size:.875rem">project bootstrap</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:init</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 1</td></tr>
-          <tr><td>ORIENT</td><td style="font-family:inherit;font-size:.875rem">context orientation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:scan</code>, <code>/silver:context</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 2</td></tr>
-          <tr><td>CLARIFY</td><td style="font-family:inherit;font-size:.875rem">scope clarification</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:clarify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 3</td></tr>
-          <tr><td>DECIDE</td><td style="font-family:inherit;font-size:.875rem">decision research</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:deep-research</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 4</td></tr>
-          <tr><td>SPECIFY</td><td style="font-family:inherit;font-size:.875rem">requirements specification</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:spec</code>, <code>/silver:ingest</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 5</td></tr>
-          <tr><td>PLAN</td><td style="font-family:inherit;font-size:.875rem">execution planning</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:plan</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 6</td></tr>
-          <tr><td>DESIGN_CONTRACT</td><td style="font-family:inherit;font-size:.875rem">design contract</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ui-contract</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 7</td></tr>
-          <tr><td>VALIDATE</td><td style="font-family:inherit;font-size:.875rem">gap validation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:validate</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:quality-gates</code>, <code>/devops-quality-gates</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 13</td></tr>
-          <tr><td>FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:fast</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:execute</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 8</td></tr>
-          <tr><td>AGENT_DELEGATE</td><td style="font-family:inherit;font-size:.875rem">supervised external-agent delegation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:agent-claude</code>, <code>/silver:agent-codex</code>, <code>/silver:agent-cursor</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>MULTI_AI_TASK</td><td style="font-family:inherit;font-size:.875rem">budgeted multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:multi-ai-task</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:debug</code>, <code>/silver:forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
-          <tr><td>UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ui-review</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 9</td></tr>
-          <tr><td>VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:verify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 12</td></tr>
-          <tr><td>SECURE</td><td style="font-family:inherit;font-size:.875rem">security and llm safety</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:secure</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 11</td></tr>
-          <tr><td>REVIEW_REQUEST</td><td style="font-family:inherit;font-size:.875rem">review request</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:review-request</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>REVIEW</td><td style="font-family:inherit;font-size:.875rem">artifact and code review</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:review</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>REVIEW_TRIAGE</td><td style="font-family:inherit;font-size:.875rem">review triage and fix</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:review-triage</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>BLAST_RADIUS</td><td style="font-family:inherit;font-size:.875rem">blast radius assessment</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:blast-radius</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>DEVOPS_ROUTE</td><td style="font-family:inherit;font-size:.875rem">devops toolchain routing</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:devops</code> (IaC routing step)</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>BRANCH_FINISH</td><td style="font-family:inherit;font-size:.875rem">branch hygiene</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>COMPLETION_AUDIT</td><td style="font-family:inherit;font-size:.875rem">completion audit</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>SHIP</td><td style="font-family:inherit;font-size:.875rem">ship readiness</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ship</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
-          <tr><td>RELEASE</td><td style="font-family:inherit;font-size:.875rem">release management</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:release</code>, <code>/silver:create-release</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 18</td></tr>
-          <tr><td>DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:ensure-docs</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 17 (+ FLOW 16 design handoff in release)</td></tr>
-          <tr><td>PHASE_MANAGE</td><td style="font-family:inherit;font-size:.875rem">phase and state management</td><td style="font-family:inherit;font-size:.875rem"><code>/silver:phase</code>, <code>/silver:add</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>ROUTE</td><td style="font-family:inherit;font-size:.875rem">route intent</td><td style="font-family:inherit;font-size:.875rem"><code>/sb</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>BOOTSTRAP</td><td style="font-family:inherit;font-size:.875rem">project bootstrap</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:init</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 1</td></tr>
+          <tr><td>ORIENT</td><td style="font-family:inherit;font-size:.875rem">context orientation</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:scan</code>, <code>/sb:context</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 2</td></tr>
+          <tr><td>CLARIFY</td><td style="font-family:inherit;font-size:.875rem">scope clarification</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:clarify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 3</td></tr>
+          <tr><td>DECIDE</td><td style="font-family:inherit;font-size:.875rem">decision research</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:deep-research</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 4</td></tr>
+          <tr><td>SPECIFY</td><td style="font-family:inherit;font-size:.875rem">requirements specification</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:spec</code>, <code>/sb:ingest</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 5</td></tr>
+          <tr><td>PLAN</td><td style="font-family:inherit;font-size:.875rem">execution planning</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:plan</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 6</td></tr>
+          <tr><td>DESIGN_CONTRACT</td><td style="font-family:inherit;font-size:.875rem">design contract</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:ui-contract</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 7</td></tr>
+          <tr><td>VALIDATE</td><td style="font-family:inherit;font-size:.875rem">gap validation</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:validate</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>QUALITY_GATE</td><td style="font-family:inherit;font-size:.875rem">cross cutting quality gate</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:quality-gates</code>, <code>/devops-quality-gates</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 13</td></tr>
+          <tr><td>FAST_PATH</td><td style="font-family:inherit;font-size:.875rem">bounded fast path</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:fast</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>EXECUTE</td><td style="font-family:inherit;font-size:.875rem">implementation execution</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:execute</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 8</td></tr>
+          <tr><td>AGENT_DELEGATE</td><td style="font-family:inherit;font-size:.875rem">supervised external-agent delegation</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:agent-claude</code>, <code>/sb:agent-codex</code>, <code>/sb:agent-cursor</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>MULTI_AI_TASK</td><td style="font-family:inherit;font-size:.875rem">budgeted multi-model work dispatch</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:multi-ai-task</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>DEBUG</td><td style="font-family:inherit;font-size:.875rem">failure diagnosis</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:debug</code>, <code>/sb:forensics</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 15</td></tr>
+          <tr><td>UI_QUALITY</td><td style="font-family:inherit;font-size:.875rem">ui quality review</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:ui-review</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 9</td></tr>
+          <tr><td>VERIFY</td><td style="font-family:inherit;font-size:.875rem">verification and testing</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:verify</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 12</td></tr>
+          <tr><td>SECURE</td><td style="font-family:inherit;font-size:.875rem">security and llm safety</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:secure</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 11</td></tr>
+          <tr><td>REVIEW_REQUEST</td><td style="font-family:inherit;font-size:.875rem">review request</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:review-request</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>REVIEW</td><td style="font-family:inherit;font-size:.875rem">artifact and code review</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:review</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>REVIEW_TRIAGE</td><td style="font-family:inherit;font-size:.875rem">review triage and fix</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:review-triage</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>BLAST_RADIUS</td><td style="font-family:inherit;font-size:.875rem">blast radius assessment</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:blast-radius</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>DEVOPS_ROUTE</td><td style="font-family:inherit;font-size:.875rem">devops toolchain routing</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:devops</code> (IaC routing step)</td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>BRANCH_FINISH</td><td style="font-family:inherit;font-size:.875rem">branch hygiene</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:branch-finish</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>COMPLETION_AUDIT</td><td style="font-family:inherit;font-size:.875rem">completion audit</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:completion-audit</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>SHIP</td><td style="font-family:inherit;font-size:.875rem">ship readiness</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:ship</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
+          <tr><td>RELEASE</td><td style="font-family:inherit;font-size:.875rem">release management</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:release</code>, <code>/sb:create-release</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 18</td></tr>
+          <tr><td>DOCUMENT</td><td style="font-family:inherit;font-size:.875rem">durable documentation</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:ensure-docs</code></td><td style="font-family:inherit;font-size:.875rem">FLOW 17 (+ FLOW 16 design handoff in release)</td></tr>
+          <tr><td>PHASE_MANAGE</td><td style="font-family:inherit;font-size:.875rem">phase and state management</td><td style="font-family:inherit;font-size:.875rem"><code>/sb:phase</code>, <code>/sb:add</code></td><td style="font-family:inherit;font-size:.875rem">new in APO</td></tr>
         </tbody>
       </table></div>
 
@@ -540,7 +540,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <!-- CONFIG -->
       <h2 id="config">.silver-bullet.json Configuration</h2>
-      <p>Project-level configuration file in the repo root. Created by <code>/silver:init</code> and refreshed idempotently on re-run.</p>
+      <p>Project-level configuration file in the repo root. Created by <code>/sb:init</code> and refreshed idempotently on re-run.</p>
 
       <div class="code-block">{
   <span class="key">"config_version"</span>: <span class="str">"0.52.0"</span>,
@@ -654,12 +654,12 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 
       <!-- PROJECT ROOT FILES -->
       <h2 id="file-structure">Project Root Files</h2>
-      <p>These files live in the project root and are created by <code>/silver:init</code>.</p>
+      <p>These files live in the project root and are created by <code>/sb:init</code>.</p>
 
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Owner</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-10). Managed by plugin — do not edit manually. Updated by <code>/silver:init</code>.</td></tr>
+          <tr><td>silver-bullet.md</td><td>Silver Bullet</td><td>Silver Bullet enforcement instructions (sections 0-10). Managed by plugin — do not edit manually. Updated by <code>/sb:init</code>.</td></tr>
           <tr><td>CLAUDE.md</td><td>User</td><td>Project-specific instructions. <code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex. References <code>silver-bullet.md</code> for enforcement rules. User-owned — Silver Bullet only adds a reference line.</td></tr>
           <tr><td>.silver-bullet.json</td><td>Silver Bullet</td><td>Project-level configuration: project name, source pattern, semantic compression, verify commands, workflow paths.</td></tr>
         </tbody>
@@ -674,16 +674,16 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
       <div class="table-wrap"><table class="ref-table">
         <thead><tr><th>File</th><th>Created by</th><th>Description</th></tr></thead>
         <tbody>
-          <tr><td>.planning/PROJECT.md</td><td>/silver:init / SB bootstrap</td><td>Project goals, scope, metadata, and team context.</td></tr>
-          <tr><td>.planning/REQUIREMENTS.md</td><td>/silver:spec / SB planning</td><td>Authoritative requirements list. Single source of truth.</td></tr>
-          <tr><td>.planning/ROADMAP.md</td><td>/silver:init / SB planning</td><td>Phase breakdown with goals and acceptance criteria per phase.</td></tr>
-          <tr><td>.planning/interface/STATE.md</td><td><code>/silver:init</code>, <code>/silver:ui-contract</code></td><td>Durable UI/design tokens and component state for frontend projects. Stamped from template via <code>scripts/stamp-interface-state.sh</code>.</td></tr>
-          <tr><td>.planning/{phase}-CONTEXT.md</td><td>/silver:context</td><td>Decisions and clarifications captured for this phase.</td></tr>
-          <tr><td>.planning/{phase}-RESEARCH.md</td><td>/silver:deep-research / /silver:plan</td><td>Implementation research results — how to build the phase.</td></tr>
-          <tr><td>.planning/{phase}-{N}-PLAN.md</td><td>/silver:plan</td><td>Task-level execution plan. N is the iteration number.</td></tr>
-          <tr><td>.planning/{phase}-{N}-SUMMARY.md</td><td>/silver:execute</td><td>Execution summary: what was built, commits made, deviations.</td></tr>
-          <tr><td>.planning/{phase}-VERIFICATION.md</td><td>/silver:verify</td><td>Goal-backward verification results.</td></tr>
-          <tr><td>.planning/{phase}-UAT.md</td><td>/silver:verify</td><td>User acceptance test results (app workflow only).</td></tr>
+          <tr><td>.planning/PROJECT.md</td><td>/sb:init / SB bootstrap</td><td>Project goals, scope, metadata, and team context.</td></tr>
+          <tr><td>.planning/REQUIREMENTS.md</td><td>/sb:spec / SB planning</td><td>Authoritative requirements list. Single source of truth.</td></tr>
+          <tr><td>.planning/ROADMAP.md</td><td>/sb:init / SB planning</td><td>Phase breakdown with goals and acceptance criteria per phase.</td></tr>
+          <tr><td>.planning/interface/STATE.md</td><td><code>/sb:init</code>, <code>/sb:ui-contract</code></td><td>Durable UI/design tokens and component state for frontend projects. Stamped from template via <code>scripts/stamp-interface-state.sh</code>.</td></tr>
+          <tr><td>.planning/{phase}-CONTEXT.md</td><td>/sb:context</td><td>Decisions and clarifications captured for this phase.</td></tr>
+          <tr><td>.planning/{phase}-RESEARCH.md</td><td>/sb:deep-research / /sb:plan</td><td>Implementation research results — how to build the phase.</td></tr>
+          <tr><td>.planning/{phase}-{N}-PLAN.md</td><td>/sb:plan</td><td>Task-level execution plan. N is the iteration number.</td></tr>
+          <tr><td>.planning/{phase}-{N}-SUMMARY.md</td><td>/sb:execute</td><td>Execution summary: what was built, commits made, deviations.</td></tr>
+          <tr><td>.planning/{phase}-VERIFICATION.md</td><td>/sb:verify</td><td>Goal-backward verification results.</td></tr>
+          <tr><td>.planning/{phase}-UAT.md</td><td>/sb:verify</td><td>User acceptance test results (app workflow only).</td></tr>
           <tr><td>.planning/.context-cache/</td><td>semantic-compress.sh</td><td>Cached semantic context chunks. Auto-invalidated on file change.</td></tr>
         </tbody>
       </table></div>
@@ -725,7 +725,7 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
         <tbody>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/mode</td><td>Contains <code>interactive</code> or <code>autonomous</code>. Read by hooks throughout the session. Defaults to interactive if missing.</td></tr>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-log-path</td><td>Path to the current session log file in <code>docs/sessions/</code>. Used by hooks to write events.</td></tr>
-          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial</td><td>Legacy compatibility marker. Codex agents should route trivial work through <code>/silver:fast</code> instead.</td></tr>
+          <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial</td><td>Legacy compatibility marker. Codex agents should route trivial work through <code>/sb:fast</code> instead.</td></tr>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/session-init</td><td>Sentinel file marking that the session init phase (loading context, compacting) has already run.</td></tr>
           <tr><td>${SB_RUNTIME_HOME_ROOT}/.silver-bullet/timeout</td><td>Timeout sentinel for autonomous mode session duration tracking.</td></tr>
         </tbody>
@@ -738,28 +738,28 @@ updated docs/knowledge/YYYY-MM.md or docs/learnings/YYYY-MM.md | no changes
 
       <h3>Common Command Sequences</h3>
       <div class="code-block"><span class="comment"># Let SB compose the right workflow</span>
-/silver Add audit logging to account settings
+/sb Add audit logging to account settings
 
 <span class="comment"># Start a new feature phase explicitly</span>
-/silver:feature Add audit logging to account settings
+/sb:feature Add audit logging to account settings
 
 <span class="comment"># Continue where you left off</span>
-/silver current status and next step
+/sb current status and next step
 
 <span class="comment"># Something broke during execution</span>
-/silver:debug
+/sb:debug
 
 <span class="comment"># Review, verify, and prepare final delivery</span>
-/silver:review-request -> /silver:review -> /silver:review-triage -> /silver:verify -> /verify-tests
+/sb:review-request -> /sb:review -> /sb:review-triage -> /sb:verify -> /verify-tests
 
 <span class="comment"># Route trivial changes through the supported fast path</span>
-/silver:fast
+/sb:fast
 
 <span class="comment"># DevOps task with risk controls</span>
-/silver:devops Update staging Terraform module
+/sb:devops Update staging Terraform module
 
 <span class="comment"># Milestone release</span>
-/silver:release v0.52.0</div>
+/sb:release v0.52.0</div>
 
       <h3>Runtime and Model Boundaries</h3>
       <p>Silver Bullet does not provide a generic automatic model-routing layer. Configure model behavior in the active host, then let Silver Bullet compose and enforce the workflow around that execution.</p>

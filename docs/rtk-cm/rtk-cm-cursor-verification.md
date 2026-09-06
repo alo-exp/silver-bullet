@@ -319,7 +319,7 @@ ls -la .cursor/rules/ 2>/dev/null | grep -E "context-mode|token-compression"
 
 **Fail modes:**
 - Missing global rules → install with `bash scripts/install-recommended-tools-cursor.sh --global` (idempotent) or `bash scripts/optimize-rtk-context-mode.sh --host cursor` (also merges allow-list + hooks).
-- Missing project rules → copy `templates/context-mode.mdc` to `.cursor/rules/` in the project, or use SB's `/silver:init` to scaffold.
+- Missing project rules → copy `templates/context-mode.mdc` to `.cursor/rules/` in the project, or use SB's `/sb:init` to scaffold.
 - Rules present but stale (mtime > 30 days) → re-run the installer; upstream Context Mode may have updated the rule content.
 - **Doctor loads project `.cursor/hooks.json` instead of `~/.cursor/hooks.json`** → remove the workspace copy. Global `~/.cursor/hooks.json` is authoritative for personal Cursor; a repo-local `.cursor/hooks.json` overrides it and causes doctor drift. SB plugin hooks merge into global via `merge-cursor-hooks.py`, not project hooks.
 

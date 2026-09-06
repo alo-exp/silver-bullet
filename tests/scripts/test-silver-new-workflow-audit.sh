@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for /silver:new-workflow Audit mode — compliance script + skill contract.
+# Tests for /sb:new-workflow Audit mode — compliance script + skill contract.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

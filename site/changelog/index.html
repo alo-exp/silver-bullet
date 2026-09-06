@@ -90,7 +90,7 @@ main{padding:48px 24px 96px}
     <h2>Unreleased — multi-AI deep research</h2>
     <time class="release-date" datetime="2026-07-17">2026-07-17</time>
    </div>
-   <p class="release-summary">In progress (not yet versioned): <code>/silver:multi-ai-task</code> and <code>/silver:deep-research-multi-ai</code> — multi-ai-task-v2 spine, v4 manifests, capability spike, dual HTML reports.</p>
+   <p class="release-summary">In progress (not yet versioned): <code>/sb:multi-ai-task</code> and <code>/sb:deep-research-multi-ai</code> — multi-ai-task-v2 spine, v4 manifests, capability spike, dual HTML reports.</p>
    <h3>Workflows</h3>
    <ul>
     <li><code>feat(skills)</code>: APO catalog registers <code>WF-SILVER-MULTI-AI-TASK</code> and <code>WF-SILVER-DEEP-RESEARCH-MULTI-AI</code></li>
@@ -136,10 +136,10 @@ main{padding:48px 24px 96px}
     <h2>v0.51.7</h2>
     <time class="release-date" datetime="2026-07-12">2026-07-12</time>
    </div>
-   <p class="release-summary">Patch release: Cursor desktop <code>/silver</code> commands fix — hyphen-safe command filenames and install identity lock.</p>
+   <p class="release-summary">Patch release: Cursor desktop <code>/sb</code> commands fix — hyphen-safe command filenames and install identity lock.</p>
    <h3>Fixes</h3>
    <ul>
-    <li><code>fix(cursor)</code>: desktop-safe command filenames (<code>silver-&lt;route&gt;.md</code> stubs with <code>silver:</code> frontmatter) — Cursor desktop rejects colon-bearing command filenames</li>
+    <li><code>fix(cursor)</code>: desktop-safe command filenames (<code>silver-&lt;route&gt;.md</code> stubs with <code>sb:</code> frontmatter) — Cursor desktop rejects colon-bearing command filenames</li>
     <li><code>fix(cursor)</code>: install identity lock — VERSION-aligned cache/current/local/marketplace pins prevent registry drift claiming version N against installPath N-1</li>
     <li><code>fix(tests)</code>: install-cursor and host command naming regression coverage</li>
    </ul>
@@ -149,7 +149,7 @@ main{padding:48px 24px 96px}
     <h2>v0.51.6</h2>
     <time class="release-date" datetime="2026-07-11">2026-07-11</time>
    </div>
-   <p class="release-summary">Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under <code>~/.cursor/plugins/local/</code> so <code>/silver</code> commands register after public reinstall.</p>
+   <p class="release-summary">Patch release: Cursor desktop local-plugin materialization — fixes external-symlink security rejection under <code>~/.cursor/plugins/local/</code> so <code>/sb</code> commands register after public reinstall.</p>
    <h3>Fixes</h3>
    <ul>
     <li><code>fix(cursor)</code>: materialize commands-only local plugin surface into <code>~/.cursor/plugins/local/silver-bullet</code> instead of symlinking outside <code>plugins/local</code> — Cursor desktop rejects external symlink targets and silently skips command registration</li>
@@ -177,12 +177,12 @@ main{padding:48px 24px 96px}
     <h2>v0.51.4</h2>
     <time class="release-date" datetime="2026-07-10">2026-07-10</time>
    </div>
-   <p class="release-summary">Patch release: Cursor slash-picker deduplication and custom subagents (install, doctor D21, RFL ladder), stack double-compression recovery hardening, MultAI deep-research port (<code>/silver:compare</code>), Codex user-scope registration, and tri-host post-release verify orchestrator.</p>
+   <p class="release-summary">Patch release: Cursor slash-picker deduplication and custom subagents (install, doctor D21, RFL ladder), stack double-compression recovery hardening, MultAI deep-research port (<code>/sb:compare</code>), Codex user-scope registration, and tri-host post-release verify orchestrator.</p>
    <h3>Features</h3>
    <ul>
     <li><code>feat(cursor)</code>: SB custom subagents installer — <code>install-cursor.sh</code>, doctor <strong>D21</strong>, silver-init §3.2.3 tri-state consent</li>
     <li><code>feat(cursor)</code>: RFL custom subagents — 6-rung review-fix ladder, hooks, tests, skill</li>
-    <li><code>feat(deep-research)</code>: port MultAI solution-landscape and solution-compare — need-profile interview, SCR extraction, weighted matrix SPA, <code>/silver:compare</code></li>
+    <li><code>feat(deep-research)</code>: port MultAI solution-landscape and solution-compare — need-profile interview, SCR extraction, weighted matrix SPA, <code>/sb:compare</code></li>
     <li><code>feat(agents)</code>: <code>silver-agent-opencode</code> and <code>silver-agent-pi</code> delegation surfaces</li>
     <li><code>feat(release)</code>: mandatory tri-host post-release verify orchestrator</li>
    </ul>
@@ -192,7 +192,7 @@ main{padding:48px 24px 96px}
     <li><code>fix(cursor)</code>: harden D21 doctor probe and host-agnostic allowlists</li>
     <li><code>fix(stack)</code>: double-compression mutex recovery, SEC-01/SEC-02 hardening, doctor D20</li>
     <li><code>fix(codex)</code>: register Silver Bullet plugin with user scope</li>
-    <li><code>fix(commands)</code>: align Cursor and Codex slash routes with <code>silver:</code> colon convention</li>
+    <li><code>fix(commands)</code>: align Cursor and Codex slash routes with <code>sb:</code> colon convention</li>
     <li><code>fix(deep-research)</code>: v2 audit follow-ups and Thermos hardening</li>
    </ul>
   </article>
@@ -204,7 +204,7 @@ main{padding:48px 24px 96px}
    <p class="release-summary">Patch release: tri-host RC matrix green (cursor/codex/claude × fresh/upgrade), Cursor hook generator repairs, Claude home-path install alignment, Codex path-rewrite scoping, LeanCTX five-tool stack foundation, and <strong>silver-deep-research v2 engine</strong> (retroactively documented).</p>
    <h3>Fixes</h3>
    <ul>
-    <li><code>fix(cursor)</code>: hook generation, merge dedupe, marketplace gitPath, and <code>/silver</code> slash command materialization</li>
+    <li><code>fix(cursor)</code>: hook generation, merge dedupe, marketplace gitPath, and <code>/sb</code> slash command materialization</li>
     <li><code>fix(hooks)</code>: restore canonical manifest; harden Claude/Codex install surfaces</li>
     <li><code>fix(install)</code>: scope Codex path-rewrite to plugin surfaces (prevents test fixture corruption)</li>
     <li><code>fix(rc)</code>: unblock cursor RC delegate smoke; Claude first-class RC host</li>
@@ -397,11 +397,11 @@ main{padding:48px 24px 96px}
     <h2>v0.48.5</h2>
     <time class="release-date" datetime="2026-06-27">2026-06-27</time>
    </div>
-   <p class="release-summary">Enterprise E2E live test suite, <code>silver:multi-ai-task</code> model alignment, and silver-prefix skill exposure.</p>
+   <p class="release-summary">Enterprise E2E live test suite, <code>sb:multi-ai-task</code> model alignment, and silver-prefix skill exposure.</p>
    <h3>Features</h3>
    <ul>
     <li><code>feat(e2e)</code>: opt-in <code>enterprise-e2e-live-test</code> suite (<code>SB_ENTERPRISE_E2E_LIVE=1</code>) with runbook <code>docs/ENTERPRISE-E2E-LIVE-TEST.md</code> and entrypoint <code>scripts/run-enterprise-e2e-live-test.sh</code></li>
-    <li><code>feat(skills)</code>: expose <code>silver:multi-ai-task</code> (renamed from <code>multi-ai-task</code>) with <code>scripts/multi-ai-task-models.py</code> — review-fix-ladder model set @ medium reasoning; OCG plan when OpenCode agents configured</li>
+    <li><code>feat(skills)</code>: expose <code>sb:multi-ai-task</code> (renamed from <code>multi-ai-task</code>) with <code>scripts/multi-ai-task-models.py</code> — review-fix-ladder model set @ medium reasoning; OCG plan when OpenCode agents configured</li>
    </ul>
    <h3>Tests</h3>
    <ul>

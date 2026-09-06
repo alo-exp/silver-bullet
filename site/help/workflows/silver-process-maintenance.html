@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:process-maintenance — Process Maintenance Workflow — Silver Bullet Help</title>
+<title>/sb:process-maintenance — Process Maintenance Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated phase, thread, backlog, and migration maintenance: phase management → document state → validate planning integrity.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,7 +94,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:process-maintenance</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:process-maintenance</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -104,7 +104,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:process-maintenance</h1>
+    <h1>/sb:process-maintenance</h1>
     <p>SB-orchestrated planning-state maintenance for phases, threads, backlog items, and migrations — mutate roadmap structure through sanctioned skills, document transitions, and validate planning integrity.</p>
   </div>
 </div>
@@ -122,7 +122,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#skills">Supporting skills</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-validate.html">/silver:validate</a></li>
+        <li><a href="./silver-validate.html">/sb:validate</a></li>
         <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
@@ -130,16 +130,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:process-maintenance</code> is the Silver Bullet specialized workflow for mutating planning state without triggering implementation. It covers phase CRUD, thread management, backlog filing, and migration of planning artifacts — the operational layer that keeps <code>.planning/</code> authoritative between delivery cycles.</p>
+      <p><code>/sb:process-maintenance</code> is the Silver Bullet specialized workflow for mutating planning state without triggering implementation. It covers phase CRUD, thread management, backlog filing, and migration of planning artifacts — the operational layer that keeps <code>.planning/</code> authoritative between delivery cycles.</p>
       <p><strong>It never treats direct edits to guarded planning files as the workflow.</strong> ROADMAP.md and other SB-managed artifacts are mutated only through catalog-backed skills; the planning-file-guard blocks bypass attempts.</p>
       <p>Maps to <code>WF-PROCESS-MAINTENANCE</code> in the v0.52.0 APO catalog. Standard composition:</p>
       <div class="code-block">PHASE_MANAGE → DOCUMENT → VALIDATE</div>
-      <p>Catalog triggers: <code>phase</code>, <code>thread</code>, <code>backlog</code>, <code>migration</code>. Routed by <code>/silver</code> intent classification when maintenance signals match.</p>
+      <p>Catalog triggers: <code>phase</code>, <code>thread</code>, <code>backlog</code>, <code>migration</code>. Routed by <code>/sb</code> intent classification when maintenance signals match.</p>
 
       <div class="callout callout-warn">
         <div class="callout-icon">⚠</div>
         <div class="callout-body">
-          <strong>Structure vs execution:</strong> <code>AF-PHASE-MANAGE</code> manages roadmap structure only. Adding execution work or changing acceptance criteria belongs in <code>/silver:context</code> (<code>AF-ORIENT</code>), not phase maintenance.
+          <strong>Structure vs execution:</strong> <code>AF-PHASE-MANAGE</code> manages roadmap structure only. Adding execution work or changing acceptance criteria belongs in <code>/sb:context</code> (<code>AF-ORIENT</code>), not phase maintenance.
         </div>
       </div>
 
@@ -153,7 +153,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li>Thread or archive workflow state in <code>.planning/workflows/</code></li>
         <li>Migrate planning artifacts between SB versions or project structures</li>
       </ul>
-      <p>Not for: feature implementation (<a href="./silver-feature.html"><code>/silver:feature</code></a>), spec authoring (<a href="./silver-spec.html"><code>/silver:spec</code></a>), or gap analysis on existing specs (<a href="./silver-validate.html"><code>/silver:validate</code></a> alone).</p>
+      <p>Not for: feature implementation (<a href="./silver-feature.html"><code>/sb:feature</code></a>), spec authoring (<a href="./silver-spec.html"><code>/sb:spec</code></a>), or gap analysis on existing specs (<a href="./silver-validate.html"><code>/sb:validate</code></a> alone).</p>
 
       <div class="divider"></div>
 
@@ -161,9 +161,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-PHASE-MANAGE</code></td><td><code>/silver:phase</code>, <code>/silver:add</code></td><td>Phase, backlog, thread, or state transition record (<code>ART-PHASE_MANAGE</code>)</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Updated <code>.planning/ROADMAP.md</code>, <code>STATE.md</code>, and workflow archives</td></tr>
-          <tr><td><code>AF-VALIDATE</code></td><td><code>/silver:validate</code></td><td>Planning integrity check after mutations</td></tr>
+          <tr><td><code>AF-PHASE-MANAGE</code></td><td><code>/sb:phase</code>, <code>/sb:add</code></td><td>Phase, backlog, thread, or state transition record (<code>ART-PHASE_MANAGE</code>)</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Updated <code>.planning/ROADMAP.md</code>, <code>STATE.md</code>, and workflow archives</td></tr>
+          <tr><td><code>AF-VALIDATE</code></td><td><code>/sb:validate</code></td><td>Planning integrity check after mutations</td></tr>
         </tbody>
       </table>
 
@@ -174,16 +174,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3><code>AF-PHASE-MANAGE</code> — Apply structural mutations</h3>
       <p>Use sanctioned skills under <code>AF-PHASE-MANAGE</code>:</p>
       <ul>
-        <li><code>/silver:phase --add</code>, <code>--insert</code>, <code>--remove</code>, <code>--edit</code>, <code>--list</code> — ROADMAP phase CRUD</li>
-        <li><code>/silver:add</code> — classify and file work items to GitHub Issues or <code>docs/issues/</code></li>
-        <li><code>/silver:remove</code>, <code>/silver:update</code> — additional phase/state mutations as catalog flow steps</li>
+        <li><code>/sb:phase --add</code>, <code>--insert</code>, <code>--remove</code>, <code>--edit</code>, <code>--list</code> — ROADMAP phase CRUD</li>
+        <li><code>/sb:add</code> — classify and file work items to GitHub Issues or <code>docs/issues/</code></li>
+        <li><code>/sb:remove</code>, <code>/sb:update</code> — additional phase/state mutations as catalog flow steps</li>
       </ul>
 
       <h3><code>AF-DOCUMENT</code> — Persist state transitions</h3>
-      <p>Invoke <code>/silver:ensure-docs</code>. Record what changed, why, and the resulting roadmap/workflow state. Updates propagate to <code>.planning/STATE.md</code> when phases are removed or reordered.</p>
+      <p>Invoke <code>/sb:ensure-docs</code>. Record what changed, why, and the resulting roadmap/workflow state. Updates propagate to <code>.planning/STATE.md</code> when phases are removed or reordered.</p>
 
       <h3><code>AF-VALIDATE</code> — Confirm planning integrity</h3>
-      <p>Invoke <code>/silver:validate</code>. Verify ROADMAP structure is consistent, no orphaned phase references exist, and filed backlog items have stable IDs.</p>
+      <p>Invoke <code>/sb:validate</code>. Verify ROADMAP structure is consistent, no orphaned phase references exist, and filed backlog items have stable IDs.</p>
 
       <div class="divider"></div>
 
@@ -191,26 +191,26 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Skill</th><th>Role in maintenance</th></tr></thead>
         <tbody>
-          <tr><td><code>/silver:phase</code></td><td style="font-family:inherit;font-size:.875rem">Sanctioned ROADMAP.md phase list mutations (blocked by planning-file-guard otherwise)</td></tr>
-          <tr><td><code>/silver:add</code></td><td style="font-family:inherit;font-size:.875rem">File deferred items, tech debt, bugs, and open questions with stable reference IDs</td></tr>
-          <tr><td><code>/silver:context</code></td><td style="font-family:inherit;font-size:.875rem">Phase execution context — use for AC changes, not structure changes</td></tr>
+          <tr><td><code>/sb:phase</code></td><td style="font-family:inherit;font-size:.875rem">Sanctioned ROADMAP.md phase list mutations (blocked by planning-file-guard otherwise)</td></tr>
+          <tr><td><code>/sb:add</code></td><td style="font-family:inherit;font-size:.875rem">File deferred items, tech debt, bugs, and open questions with stable reference IDs</td></tr>
+          <tr><td><code>/sb:context</code></td><td style="font-family:inherit;font-size:.875rem">Phase execution context — use for AC changes, not structure changes</td></tr>
         </tbody>
       </table>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:process-maintenance Insert phase 4 for observability dashboard between current phases 3 and 5</div>
-      <p>Silver Bullet routes to <code>WF-PROCESS-MAINTENANCE</code>. <code>AF-PHASE-MANAGE</code> runs <code>/silver:phase --insert 4</code> with goal confirmation. <code>AF-DOCUMENT</code> records the transition. <code>AF-VALIDATE</code> confirms ROADMAP consistency and phase numbering integrity.</p>
+      <div class="code-block">/sb:process-maintenance Insert phase 4 for observability dashboard between current phases 3 and 5</div>
+      <p>Silver Bullet routes to <code>WF-PROCESS-MAINTENANCE</code>. <code>AF-PHASE-MANAGE</code> runs <code>/sb:phase --insert 4</code> with goal confirmation. <code>AF-DOCUMENT</code> records the transition. <code>AF-VALIDATE</code> confirms ROADMAP consistency and phase numbering integrity.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-forensics.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:forensics</span>
+          <span class="pnb-title">/sb:forensics</span>
         </a>
         <a href="./silver-review-triad.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:review-triad</span>
+          <span class="pnb-title">/sb:review-triad</span>
         </a>
       </div>
 

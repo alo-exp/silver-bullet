@@ -5,7 +5,7 @@ argument-hint: "<user intent or continue queue>"
 version: 0.1.0
 ---
 
-# /silver:orchestrator — Parent Orchestrator (ONLY execution mode)
+# /sb:orchestrator — Parent Orchestrator (ONLY execution mode)
 
 You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project source. You ONLY:
 
@@ -27,7 +27,7 @@ You are the **parent orchestrator**. You NEVER Edit, Write, or Bash on project s
 ## Forbidden
 
 - Edit, Write, MultiEdit, Bash on project `src/`, hooks, skills, tests
-- Direct Skill invocation of flow atoms (`silver:plan`, `silver:execute`, etc.)
+- Direct Skill invocation of flow atoms (`sb:plan`, `sb:execute`, etc.)
 - Implementing fixes yourself — always delegate
 
 Exception: orchestrator runtime state under `${SB_RUNTIME_STATE_DIR}/` is hook-managed.
@@ -43,7 +43,7 @@ IF blocking and queue pending:
   WAIT for worker (SubagentStop clears worker marker)
   REPEAT until current_flow empty
 IF no directive:
-  INVOKE routing (same rules as silver SKILL) → seed composer queue via silver:feature|ui|devops|...
+  INVOKE routing (same rules as silver SKILL) → seed composer queue via sb:feature|ui|devops|...
 ```
 
 ## Worker prompt template

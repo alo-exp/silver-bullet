@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:refactor — Refactoring Workflow — Silver Bullet Help</title>
+<title>/sb:refactor — Refactoring Workflow — Silver Bullet Help</title>
 <meta name="description" content="WF-SILVER-REFACTOR: plan structural changes, execute, verify, then review/verify/secure/ship gates — AF-PLAN → AF-EXECUTE → AF-VERIFY plus post-execution gates from v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:refactor</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:refactor</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:refactor</h1>
+    <h1>/sb:refactor</h1>
     <p>Specialized structural refactoring workflow — plan the change, execute without behavior drift, verify parity, then run the full review, verify, secure, and ship gate sequence.</p>
   </div>
 </div>
@@ -114,15 +114,15 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#post-exec-gates">Post-Execution Gates</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-test.html">/silver:test</a></li>
-        <li><a href="./silver-feature.html">/silver:feature</a></li>
+        <li><a href="./silver-test.html">/sb:test</a></li>
+        <li><a href="./silver-feature.html">/sb:feature</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:refactor</code> is the Silver Bullet orchestrator for <strong>structural code changes that preserve behavior</strong> — module extraction, dependency inversion, naming cleanup, dead-code removal, and architecture realignment without new features. It maps to catalog entity <code>WF-SILVER-REFACTOR</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p><code>/sb:refactor</code> is the Silver Bullet orchestrator for <strong>structural code changes that preserve behavior</strong> — module extraction, dependency inversion, naming cleanup, dead-code removal, and architecture realignment without new features. It maps to catalog entity <code>WF-SILVER-REFACTOR</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
       <p>Refactor skips upfront clarify/specify atoms because behavior is frozen — the risk is in blast radius of structural moves, not requirements ambiguity. After execution, it runs the same post-execution gate sequence as feature work.</p>
       <p>Standard composition:</p>
       <div class="code-block">AF-PLAN → AF-EXECUTE → AF-VERIFY
@@ -134,14 +134,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Behavior must not change.</strong> If the request adds features, changes APIs, or alters user-visible behavior, route to <code>/silver:feature</code> instead. Refactor assumes existing tests are the parity contract.
+          <strong>Behavior must not change.</strong> If the request adds features, changes APIs, or alters user-visible behavior, route to <code>/sb:feature</code> instead. Refactor assumes existing tests are the parity contract.
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:refactor</code> and <code>refactor</code>:</p>
+      <p>Entry trigger signals for <code>/sb:refactor</code> and <code>refactor</code>:</p>
       <ul>
         <li>Module extraction, package reorganization, or layer boundary cleanup</li>
         <li>Rename sweeps, dead-code removal, or dependency graph simplification</li>
@@ -164,7 +164,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="post-exec-gates">Post-Execution Gates</h2>
-      <p>After <code>AF-EXECUTE</code> completes, the refactor workflow expands into the canonical post-execution gate chain shared with <code>/silver:feature</code> and <code>/silver:bugfix</code>:</p>
+      <p>After <code>AF-EXECUTE</code> completes, the refactor workflow expands into the canonical post-execution gate chain shared with <code>/sb:feature</code> and <code>/sb:bugfix</code>:</p>
       <ul>
         <li><strong>Review gates</strong> — <code>AF-REVIEW-REQUEST</code>, <code>AF-REVIEW</code>, <code>AF-REVIEW-TRIAGE</code> for structural change review</li>
         <li><strong>Verify gate</strong> — <code>AF-VERIFY</code> confirms full test suite and no behavior regression</li>
@@ -176,17 +176,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:refactor Extract the billing module from monolith core into packages/billing with no API changes</div>
+      <div class="code-block">/sb:refactor Extract the billing module from monolith core into packages/billing with no API changes</div>
       <p>Silver Bullet routes to <code>WF-SILVER-REFACTOR</code>. Planning documents module boundaries and migration steps. Execution moves code with import updates. Initial verify confirms test parity. Review gates examine structural diff. Ship gates pass and the refactor merges.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-test.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:test</span>
+          <span class="pnb-title">/sb:test</span>
         </a>
         <a href="./silver-benchmark.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:benchmark</span>
+          <span class="pnb-title">/sb:benchmark</span>
         </a>
       </div>
 

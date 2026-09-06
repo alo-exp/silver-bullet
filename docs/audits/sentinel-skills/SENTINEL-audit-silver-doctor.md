@@ -8,7 +8,7 @@
 
 ## Summary
 
-Greenfield SENTINEL pass on the install and activation audit skill (`/silver:doctor`).
+Greenfield SENTINEL pass on the install and activation audit skill (`/sb:doctor`).
 No CRITICAL, HIGH, or MEDIUM findings after self-challenge (Step 8).
 
 ## Findings

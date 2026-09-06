@@ -134,7 +134,7 @@ Document in operator prompt: run tri-host smoke after pre-release overlay dry-ru
 | `hero-tri-host` | Works in Claude, Codex, Cursor | `run-tri-host-install-smoke.sh` |
 | `mechanism-catalog-counts` | 27 AF, 22 WF | `apo-catalog-counts` |
 | `mechanism-twelve-hooks` | Hooks physically block progress | `hook-scripts-present` |
-| `help-router-workflow` | Router doc matches `/silver` behavior | help page + E2E row 1 |
+| `help-router-workflow` | Router doc matches `/sb` behavior | help page + E2E row 1 |
 | `help-catalog-version` | Docs match shipped version | `help-version-sync` |
 
 Full machine-readable map: [`validation-claims-registry.json`](./validation-claims-registry.json).

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver — Dynamic Workflow Router — Silver Bullet Help</title>
+<title>/sb — Dynamic Workflow Router — Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet dynamic router (WF-SILVER-ROUTER): AF-ROUTE classifies intent and composes the feature or fast workflow chain from the v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:router</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:router</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver</h1>
+    <h1>/sb</h1>
     <p>Dynamic workflow composer — classifies intent via <code>AF-ROUTE</code> and routes to the smallest safe catalog-backed chain: full feature development or bounded fast-path execution.</p>
   </div>
 </div>
@@ -122,8 +122,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> is Silver Bullet's default entry point when you know the outcome but not the exact workflow. It is the runtime face of catalog entity <code>WF-SILVER-ROUTER</code> (<code>dynamic_route</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
-      <p>SB never improvises a one-off process. <code>AF-ROUTE</code> classifies complexity, intent signals, and risk, then composes either the full <code>WF-SILVER-FEATURE</code> chain or the lean <code>WF-SILVER-FAST</code> chain. Specialized workflows (<code>/silver:bugfix</code>, <code>/silver:devops</code>, <code>/silver:deep-research</code>, and others) remain directly invocable when you already know the route.</p>
+      <p><code>/sb</code> is Silver Bullet's default entry point when you know the outcome but not the exact workflow. It is the runtime face of catalog entity <code>WF-SILVER-ROUTER</code> (<code>dynamic_route</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p>SB never improvises a one-off process. <code>AF-ROUTE</code> classifies complexity, intent signals, and risk, then composes either the full <code>WF-SILVER-FEATURE</code> chain or the lean <code>WF-SILVER-FAST</code> chain. Specialized workflows (<code>/sb:bugfix</code>, <code>/sb:devops</code>, <code>/sb:deep-research</code>, and others) remain directly invocable when you already know the route.</p>
       <p>Standard router composition:</p>
       <div class="code-block">AF-ROUTE → WF-SILVER-FEATURE   (feature chain)
          → WF-SILVER-FAST      (fast chain)</div>
@@ -132,19 +132,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Direct routes beat reclassification:</strong> When your request clearly matches a specialized workflow (research, bugfix, deploy, refactor), invoke that command directly. <code>/silver</code> is for mixed or ambiguous intent — not a mandatory prefix.
+          <strong>Direct routes beat reclassification:</strong> When your request clearly matches a specialized workflow (research, bugfix, deploy, refactor), invoke that command directly. <code>/sb</code> is for mixed or ambiguous intent — not a mandatory prefix.
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver</code> and <code>route</code>:</p>
+      <p>Entry trigger signals for <code>/sb</code> and <code>route</code>:</p>
       <ul>
         <li>Freeform natural-language requests without a known workflow</li>
         <li>Mixed work spanning planning, implementation, and verification</li>
         <li>Unclear complexity — you want SB to triage before committing to a full feature cycle</li>
-        <li>Reclassification after scope expansion from <code>/silver:fast</code></li>
+        <li>Reclassification after scope expansion from <code>/sb:fast</code></li>
       </ul>
 
       <div class="divider"></div>
@@ -172,12 +172,12 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3>Fast chain (<code>WF-SILVER-FAST</code>)</h3>
       <p>Selected for bounded, low-risk changes. Tier 1 trivial work may skip most of this chain; Tier 2 runs the full fast composition.</p>
       <div class="code-block">AF-FAST-PATH → AF-QUALITY-GATE → AF-PLAN → AF-VALIDATE → AF-EXECUTE → AF-VERIFY</div>
-      <p>If scope expands during fast execution, <code>AF-ROUTE</code> reclassifies to the feature chain. See <a href="./silver-fast.html">/silver:fast</a>.</p>
+      <p>If scope expands during fast execution, <code>AF-ROUTE</code> reclassifies to the feature chain. See <a href="./silver-fast.html">/sb:fast</a>.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver Add rate limiting to the public API with Redis backing</div>
+      <div class="code-block">/sb Add rate limiting to the public API with Redis backing</div>
       <p>Silver Bullet routes to <code>WF-SILVER-ROUTER</code>. <code>AF-ROUTE</code> classifies this as multi-file feature work with infrastructure touchpoints, composes <code>WF-SILVER-FEATURE</code>, and runs the full catalog-backed lifecycle through ship gates.</p>
 
       <div class="page-nav-bottom">
@@ -187,7 +187,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         </a>
         <a href="./silver-deploy.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:deploy</span>
+          <span class="pnb-title">/sb:deploy</span>
         </a>
       </div>
 

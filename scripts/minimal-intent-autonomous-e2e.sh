@@ -250,7 +250,7 @@ LIVE SESSION CHECKLIST (operator):
   1. Open Cursor parent orchestrator session in: $work_dir
   2. Seed intent from: ${run_dir}/INTENT-SEED.txt  (→ orchestrator-intent.txt)
   3. Apply prefs from: ${run_dir}/prefs.json if needed
-  4. Start with /silver or /silver:feature — autonomous mode
+  4. Start with /sb or /sb:feature — autonomous mode
   5. Do NOT micro-manage workers; blocking decisions only
   6. Save parent session transcript to: ${run_dir}/parent-session.log
   7. Score: bash scripts/minimal-intent-autonomous-e2e.sh score --run $run_id

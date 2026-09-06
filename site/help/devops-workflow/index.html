@@ -174,7 +174,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/silver &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB workflow and optional extension path.</div>
+        <div class="callout-body"><strong>New to Silver Bullet?</strong> Use <code>/sb &lt;anything&gt;</code> as your workflow composer — it reads your intent, classifies the task, and routes to the right SB workflow and optional extension path.</div>
       </div>
 
       <h2 id="overview">How the DevOps Workflow Differs From Dev</h2>
@@ -221,7 +221,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ol>
         <li><strong>Create or update the incident response runbook</strong> — Establish severity classification, timeline, communication protocol, and rollback trigger criteria before any changes.</li>
         <li><strong>Document the incident</strong> — What is broken, what the proposed change is, expected outcome.</li>
-        <li><strong>Run <code>/silver:blast-radius</code></strong> — Required even in incidents. A rushed unreviewed change can make incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.</li>
+        <li><strong>Run <code>/sb:blast-radius</code></strong> — Required even in incidents. A rushed unreviewed change can make incidents worse. If CRITICAL blast radius, escalate to CAB before proceeding.</li>
         <li><strong>Apply the minimal change</strong> in the lowest affected environment first, verify, then promote.</li>
         <li><strong>Create a post-incident review task</strong> — Full cycle review of the emergency change after the incident resolves, including <code>/devops-quality-gates</code> retroactively.</li>
         <li><strong>Commit with <code>[HOTFIX]</code> prefix</strong> and reference the incident ticket.</li>
@@ -244,7 +244,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">2</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:init</span><span class="badge badge-sb">SB</span></div>
+          <div class="step-meta"><span class="step-title">/sb:init</span><span class="badge badge-sb">SB</span></div>
           <p class="step-desc">For DevOps projects, the roadmap phases typically map to infrastructure layers. SB will ask about target environments, IaC toolchain, state backend, naming conventions, and tagging strategy.</p>
           <div class="step-output">→ Typical phase order: networking → storage → compute → monitoring → CI/CD</div>
         </div>
@@ -254,7 +254,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- PER-PHASE LOOP -->
       <h2>Per-Phase Loop</h2>
-      <p>Repeat Steps 3–13 for each phase. Use <code>/silver</code> or the current planning state to confirm which phase is current.</p>
+      <p>Repeat Steps 3–13 for each phase. Use <code>/sb</code> or the current planning state to confirm which phase is current.</p>
 
       <!-- DISCUSS -->
       <div class="phase-header" style="background:var(--slate-a08);color:var(--accent-light)" id="discuss">
@@ -264,7 +264,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">3</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:context</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:context</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Captures implementation decisions for this infra phase. DevOps-specific topics to cover:</p>
           <ul style="margin-top:8px;margin-bottom:0;font-size:.84rem;color:var(--text-secondary)">
             <li>Target environments (dev / staging / prod) and promotion strategy</li>
@@ -286,7 +286,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">4</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:blast-radius</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:blast-radius</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Maps change scope, downstream dependencies, failure scenarios, rollback plan, and change window risk. Produces a rating that gates whether the phase can proceed.</p>
           <div class="step-output" style="margin-top:8px">→ Produces: blast radius rating + rollback plan</div>
         </div>
@@ -324,7 +324,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--red),#b91c1c)">5</div>
         <div>
           <div class="step-meta"><span class="step-title">/devops-quality-gates</span><span class="badge badge-devops">DevOps</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Applies 7 IaC-adapted quality dimensions against the infrastructure design, excluding usability and AI/LLM safety when they do not apply. Same base framework as <code>/silver:quality-gates</code>, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention, and infra reliability. All 7 dimensions must pass. <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
+          <p class="step-desc">Applies 7 IaC-adapted quality dimensions against the infrastructure design, excluding usability and AI/LLM safety when they do not apply. Same base framework as <code>/sb:quality-gates</code>, adapted for infrastructure: idempotency, least-privilege IAM, drift prevention, and infra reliability. All 7 dimensions must pass. <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i> is a hard stop.</p>
         </div>
       </div>
 
@@ -336,7 +336,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">6</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Both the blast radius report and the quality gate report feed into the plan as hard requirements. For IaC phases, the wave order follows dependency direction:</p>
           <ul class="wave-list" style="margin-top:12px">
             <li class="wave-item"><span class="wave-num">Wave 1</span><span class="wave-desc">Networking and IAM — no dependencies on other new resources</span></li>
@@ -358,7 +358,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">7</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Wave-based parallel execution. Each wave applies to the <strong>lowest environment only</strong> (dev or equivalent). Higher environments (staging, production) are promoted in the Environment Promotion section (steps 14–15) after all phases complete. <strong>TDD is explicitly skipped for IaC execution. Use plan output, policy checks, validation commands, secrets/IAM review, drift detection, and rollback verification instead of red-green-refactor.</strong> Commit atomically per task.</p>
           <div class="step-output">→ Produces: atomic git commits (one per task), .planning/{phase}-{N}-SUMMARY.md</div>
         </div>
@@ -372,7 +372,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">8</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:verify</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Infrastructure verification — not UAT. For DevOps phases, verify:</p>
           <ul style="margin-top:8px;margin-bottom:0;font-size:.84rem;color:var(--text-secondary)">
             <li>Health checks passing on all new/modified resources</li>
@@ -382,7 +382,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
             <li>Runbook updated to reflect actual applied state</li>
           </ul>
           <div class="step-output" style="margin-top:8px">→ Produces: .planning/{phase}-VERIFICATION.md</div>
-          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>If step 8 fails:</strong> invoke <code>/silver:forensics</code> before retrying. If root cause is implementation: re-run steps 7–8 only. If root cause is design/plan: return to step 3 (discuss).</p>
+          <p style="margin-top:8px;font-size:.84rem;color:var(--text-secondary)"><strong>If step 8 fails:</strong> invoke <code>/sb:forensics</code> before retrying. If root cause is implementation: re-run steps 7–8 only. If root cause is design/plan: return to step 3 (discuss).</p>
         </div>
       </div>
 
@@ -394,7 +394,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">9</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:review-request</span><span class="badge badge-sp">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:review-request</span><span class="badge badge-sp">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Frames IaC review scope before the SB review pass. This step names the review evidence and failure modes the reviewer must inspect.</p>
         </div>
       </div>
@@ -402,7 +402,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">10</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:review</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:review</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Produces the authoritative <code>REVIEW.md</code>. For IaC: hardcoded values that should be variables, missing tags/labels, overly permissive security groups, resources missing encryption, backups, or monitoring. Plan output is reviewed, not just source files.</p>
         </div>
       </div>
@@ -410,7 +410,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#b45309)">11</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:review-triage</span><span class="badge badge-sp">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:review-triage</span><span class="badge badge-sp">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Triage all feedback. Accepted items become the input for post-review execution (Steps 12–13).</p>
         </div>
       </div>
@@ -418,7 +418,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--accent),var(--accent2))">12</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/sb:plan</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Plan to address accepted review items. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
@@ -426,7 +426,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">13</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
+          <div class="step-meta"><span class="step-title">/sb:execute</span><span class="badge badge-sb">SB</span><span class="badge badge-cond">Conditional</span></div>
           <p class="step-desc">Implement the review-driven plan with atomic commits. Only runs if items were accepted in Step 11.</p>
         </div>
       </div>
@@ -446,7 +446,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">14</div>
         <div>
           <div class="step-meta"><span class="step-title">Promote to next environment</span></div>
-          <p class="step-desc">Re-run <code>/silver:execute</code> targeting the next environment using environment-specific tfvars or values files. Never rewrite infrastructure definitions — only the inputs change between environments.</p>
+          <p class="step-desc">Re-run <code>/sb:execute</code> targeting the next environment using environment-specific tfvars or values files. Never rewrite infrastructure definitions — only the inputs change between environments.</p>
         </div>
       </div>
 
@@ -454,7 +454,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <div class="step-num" style="background:linear-gradient(135deg,var(--cyan),#0e7490)">15</div>
         <div>
           <div class="step-meta"><span class="step-title">Verify promoted environment</span></div>
-          <p class="step-desc">Re-run <code>/silver:verify</code> for the promoted environment. Health checks, drift detection, and monitoring verification are mandatory before promoting to production.</p>
+          <p class="step-desc">Re-run <code>/sb:verify</code> for the promoted environment. Health checks, drift detection, and monitoring verification are mandatory before promoting to production.</p>
         </div>
       </div>
 
@@ -491,7 +491,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">19</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:branch-finish</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:branch-finish</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Branch rebase, cleanup, and merge preparation. Same as the app workflow Step 16.</p>
         </div>
       </div>
@@ -545,7 +545,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,var(--green),#047857)">23</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:ship</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
+          <div class="step-meta"><span class="step-title">/sb:ship</span><span class="badge badge-sb">SB</span><span class="badge badge-required">Required</span></div>
           <p class="step-desc">Creates the pull request. For DevOps work, the PR body includes phase summaries, blast radius ratings, requirement coverage, and post-apply drift detection results.</p>
           <div class="step-output">→ Produces: pull request with blast radius ratings and infra coverage</div>
         </div>
@@ -554,8 +554,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="step-card required">
         <div class="step-num" style="background:linear-gradient(135deg,#374151,#6b7280)">24</div>
         <div>
-          <div class="step-meta"><span class="step-title">/silver:release</span><span class="badge badge-required">Required</span></div>
-          <p class="step-desc">Runs the milestone-level release workflow for publishable infrastructure work: release quality gates, audits, security hard gate, documentation, fresh tests, <code>silver:ship</code>, milestone archival, <code>/silver:create-release</code>, then the post-release items summary.</p>
+          <div class="step-meta"><span class="step-title">/sb:release</span><span class="badge badge-required">Required</span></div>
+          <p class="step-desc">Runs the milestone-level release workflow for publishable infrastructure work: release quality gates, audits, security hard gate, documentation, fresh tests, <code>sb:ship</code>, milestone archival, <code>/sb:create-release</code>, then the post-release items summary.</p>
           <div class="step-output">→ Produces: completed milestone, git tag, GitHub Release, structured release notes</div>
         </div>
       </div>

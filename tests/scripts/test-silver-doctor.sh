@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-silver-doctor.sh — silver:doctor skill + sb-doctor.sh contract
+# test-silver-doctor.sh — sb:doctor skill + sb-doctor.sh contract
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -94,7 +94,7 @@ cp "$REPO_ROOT/scripts/workflows.sh" "$FIXTURE/scripts/workflows.sh"
 chmod +x "$FIXTURE/scripts/workflows.sh"
 
 out="$(bash "$DOCTOR" "$FIXTURE" 2>&1 || true)"
-if printf '%s' "$out" | grep -q 'FAIL: D5'; then
+if grep -q 'FAIL: D5' <<<"$out"; then
   echo "PASS: doctor FAILs D5 when sb_initiated false"
   PASS=$((PASS + 1))
 else
@@ -124,7 +124,7 @@ jq -n --arg v "0.48.7" --arg p "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-
 printf '{"hooks":{}}\n' >"$MOCK_HOME/.codex/settings.json"
 
 claude_out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
-if printf '%s' "$claude_out" | grep -q 'D8.*N/A.*claude'; then
+if grep -q 'D8.*N/A.*claude' <<<"$claude_out"; then
   echo "PASS: D8 N/A on Claude host"
   PASS=$((PASS + 1))
 else
@@ -132,21 +132,21 @@ else
   printf '%s\n' "$claude_out" | grep D8 || true
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$claude_out" | grep -q 'FAIL: D8'; then
+if grep -q 'FAIL: D8' <<<"$claude_out"; then
   echo "FAIL: D8 must not FAIL on Claude host"
   FAIL=$((FAIL + 1))
 else
   echo "PASS: D8 does not FAIL on Claude host"
   PASS=$((PASS + 1))
 fi
-if printf '%s' "$claude_out" | grep -q '\.claude/plugins'; then
+if grep -q '\.claude/plugins' <<<"$claude_out"; then
   echo "PASS: Claude doctor uses .claude plugin paths"
   PASS=$((PASS + 1))
 else
   echo "FAIL: Claude doctor should reference .claude plugin paths in D2/D3"
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$claude_out" | grep -q '\.cursor/plugins'; then
+if grep -q '\.cursor/plugins' <<<"$claude_out"; then
   echo "FAIL: Claude doctor must not reference .cursor plugin paths"
   FAIL=$((FAIL + 1))
 else
@@ -194,10 +194,10 @@ run_d13_host_path_case() {
   d13_out="$(env HOME="$d13_home" SILVER_BULLET_RUNTIME="$current_host" \
     RT_SKIP_VENDOR_DOCTOR=1 bash "$DOCTOR" "$d13_proj" 2>&1 || true)"
   first_d13="$(printf '%s\n' "$d13_out" | grep -m1 'D13' || true)"
-  if [[ "$expected" == "pass" ]] && printf '%s' "$first_d13" | grep -q 'PASS: D13'; then
+  if [[ "$expected" == "pass" ]] && grep -q 'PASS: D13' <<<"$first_d13"; then
     echo "PASS: D13 ignores ${current_host} plugin path"
     PASS=$((PASS + 1))
-  elif [[ "$expected" == "fail" ]] && printf '%s' "$first_d13" | grep -q 'FAIL: D13'; then
+  elif [[ "$expected" == "fail" ]] && grep -q 'FAIL: D13' <<<"$first_d13"; then
     echo "PASS: D13 flags ${path_host} plugin path on ${current_host}"
     PASS=$((PASS + 1))
   else
@@ -251,7 +251,7 @@ source "$REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"
 source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
 sb_stack_record_double_compression "$RED4_FIXTURE/.silver-bullet.json" "sb_shell" "leanctx" "rtk"
 doc_before="$(bash "$DOCTOR" "$RED4_FIXTURE" 2>&1 || true)"
-if printf '%s' "$doc_before" | grep -q 'FAIL: D20'; then
+if grep -q 'FAIL: D20' <<<"$doc_before"; then
   echo "PASS: RED-4 doctor detects dirty mutex (D20 FAIL)"
   PASS=$((PASS + 1))
 else
@@ -311,7 +311,7 @@ jq -n --arg v "0.48.7" --arg p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-
   >"$D21_HOME/.cursor/plugins/installed_plugins.json"
 
 d21_missing="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if printf '%s' "$d21_missing" | grep -q 'FAIL: D21'; then
+if grep -q 'FAIL: D21' <<<"$d21_missing"; then
   echo "PASS: D21 FAIL when enabled agents missing"
   PASS=$((PASS + 1))
 else
@@ -327,7 +327,7 @@ if env HOME="$D21_HOME" \
   REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   --global --non-interactive >/dev/null 2>&1; then
   d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-  if printf '%s' "$d21_ok" | grep -q 'PASS: D21'; then
+  if grep -q 'PASS: D21' <<<"$d21_ok"; then
     echo "PASS: D21 PASS after install-cursor-sb-agents"
     PASS=$((PASS + 1))
   else
@@ -340,7 +340,7 @@ else
 fi
 
 d21_claude="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if printf '%s' "$d21_claude" | grep -q 'D21.*N/A'; then
+if grep -q 'D21.*N/A' <<<"$d21_claude"; then
   echo "PASS: D21 N/A on Claude host"
   PASS=$((PASS + 1))
 else
@@ -426,7 +426,7 @@ alu_run_doctor() {
 }
 
 alu_na_out="$(alu_run_doctor)"
-if printf '%s' "$alu_na_out" | grep -qE 'PASS: D10-alumnium — alumnium (pending|disabled)'; then
+if grep -qE 'PASS: D10-alumnium — alumnium (pending|disabled)' <<<"$alu_na_out"; then
   echo "PASS: live D10-alumnium PASS N/A when not opted in"
   PASS=$((PASS + 1))
 else
@@ -434,7 +434,7 @@ else
   printf '%s\n' "$alu_na_out" | grep 'D10-alumnium' || true
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$alu_na_out" | grep -qE 'FAIL: D10-alumnium'; then
+if grep -qE 'FAIL: D10-alumnium' <<<"$alu_na_out"; then
   echo "FAIL: live D10-alumnium must not FAIL the default/not-opted-in tree"
   FAIL=$((FAIL + 1))
 else
@@ -446,7 +446,7 @@ jq '.recommended_tools.alumnium.enabled_by_user = true' \
   "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
 mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
 alu_cli_out="$(alu_run_doctor)"
-if printf '%s' "$alu_cli_out" | grep -qE 'FAIL: D10-alumnium'; then
+if grep -qE 'FAIL: D10-alumnium' <<<"$alu_cli_out"; then
   echo "PASS: live D10-alumnium FAILs when opted in and CLI missing"
   PASS=$((PASS + 1))
 else
@@ -458,7 +458,7 @@ fi
 printf '#!/usr/bin/env bash\nexit 0\n' >"${ALU_BIN}/alumnium"
 chmod +x "${ALU_BIN}/alumnium"
 alu_mcp_out="$(alu_run_doctor)"
-if printf '%s' "$alu_mcp_out" | grep -qE 'FAIL: D10-alumnium'; then
+if grep -qE 'FAIL: D10-alumnium' <<<"$alu_mcp_out"; then
   echo "PASS: live D10-alumnium FAILs when MCP server missing"
   PASS=$((PASS + 1))
 else
@@ -498,7 +498,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'record warn D10-routes'; then
+if grep -q 'record warn D10-routes' <<<"$UNSUPPORTED_CODE"; then
   echo "PASS: cross_tool unsupported records warn (not fail)"
   PASS=$((PASS + 1))
 else
@@ -506,7 +506,7 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'record fail'; then
+if grep -q 'record fail' <<<"$UNSUPPORTED_CODE"; then
   echo "FAIL: cross_tool unsupported arm still records fail"
   FAIL=$((FAIL + 1))
 else
@@ -522,7 +522,7 @@ else
   PASS=$((PASS + 1))
 fi
 
-if printf '%s' "$UNSUPPORTED_CODE" | grep -q 'cursor'; then
+if grep -q 'cursor' <<<"$UNSUPPORTED_CODE"; then
   echo "PASS: cross_tool unsupported message names the cursor-only limitation"
   PASS=$((PASS + 1))
 else
@@ -637,8 +637,8 @@ fi
 # Swallow anti-pattern: apply must not discard stderr then mark applied
 if grep -n 'doctor_run_reconciler apply' "$DOCTOR" | grep -q .; then
   apply_ctx="$(awk '/doctor_apply_fixes\(\)/,/^run_doctor_checks/{print}' "$DOCTOR")"
-  if printf '%s' "$apply_ctx" | grep -q '2>/dev/null || true' \
-    && printf '%s' "$apply_ctx" | grep -q 'DOCTOR_FIX_APPLIED=1'; then
+  if grep -q '2>/dev/null || true' <<<"$apply_ctx" \
+    && grep -q 'DOCTOR_FIX_APPLIED=1' <<<"$apply_ctx"; then
     echo "FAIL: doctor_apply_fixes must not swallow reconciler JSON then mark applied"
     FAIL=$((FAIL + 1))
   else
@@ -680,7 +680,7 @@ sc_run_doctor() {
 }
 
 sc_na_out="$(sc_run_doctor)"
-if printf '%s' "$sc_na_out" | grep -qE 'PASS: D10-search_cli — search_cli (pending|disabled)'; then
+if grep -qE 'PASS: D10-search_cli — search_cli (pending|disabled)' <<<"$sc_na_out"; then
   echo "PASS: live D10-search_cli PASS N/A when not opted in"
   PASS=$((PASS + 1))
 else
@@ -688,7 +688,7 @@ else
   printf '%s\n' "$sc_na_out" | grep 'D10-search_cli' || true
   FAIL=$((FAIL + 1))
 fi
-if printf '%s' "$sc_na_out" | grep -qE 'FAIL: D10-search_cli'; then
+if grep -qE 'FAIL: D10-search_cli' <<<"$sc_na_out"; then
   echo "FAIL: live D10-search_cli must not FAIL the default/not-opted-in tree"
   FAIL=$((FAIL + 1))
 else
@@ -706,7 +706,7 @@ for sc_rt in cursor claude codex; do
       PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
       bash "$DOCTOR" "$SC_PROJ" 2>&1 || true
   )"
-  if printf '%s' "$sc_cli_out" | grep -qE 'FAIL: D10-search_cli'; then
+  if grep -qE 'FAIL: D10-search_cli' <<<"$sc_cli_out"; then
     echo "PASS: live D10-search_cli FAILs when opted in and CLI missing (${sc_rt})"
     PASS=$((PASS + 1))
   else
@@ -767,7 +767,7 @@ sc_empty_out="$(
 )"
 sc_empty_err="$(cat /tmp/sb-doctor-sc-empty-err-$$.txt 2>/dev/null || true)"
 if printf '%s' "$sc_empty_out" | jq -e '.fix_applied == false' >/dev/null 2>&1 \
-  && printf '%s' "$sc_empty_err" | grep -q 'reconciler-stderr-kept'; then
+  && grep -q 'reconciler-stderr-kept' <<<"$sc_empty_err"; then
   echo "PASS: empty/failed apply JSON does not mark DOCTOR_FIX_APPLIED"
   PASS=$((PASS + 1))
 else
@@ -848,7 +848,7 @@ else
 fi
 
 # Secrets must not appear in stdout/stderr/JSON
-if printf '%s\n%s\n' "$sc_json_out" "$sc_na_out" | grep -qiE 'sk-live|api[_-]?key|BRAVE_API'; then
+if grep -qiE 'sk-live|api[_-]?key|BRAVE_API' >/dev/null <<<"$(printf '%s\n%s\n' "$sc_json_out" "$sc_na_out")"; then
   echo "FAIL: doctor output must not contain secrets"
   FAIL=$((FAIL + 1))
 else
@@ -891,11 +891,11 @@ fi
 
 # /sb:doctor alias
 SB_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
-SILVER_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/silver-doctor.md"
+SILVER_DOC_CMD="${REPO_ROOT}/plugins/silver-bullet/commands/sb-doctor.md"
 assert_file_exists "sb-doctor command stub exists" "$SB_DOC_CMD"
 assert_file_exists "silver-doctor command stub exists" "$SILVER_DOC_CMD"
 assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
-assert_contains "SKILL documents /silver:doctor" "/silver:doctor" "$SKILL"
+assert_contains "SKILL documents /sb:doctor" "/sb:doctor" "$SKILL"
 assert_contains "sb-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SB_DOC_CMD"
 assert_contains "silver-doctor stub forwards to sb-doctor.sh" "sb-doctor\\.sh" "$SILVER_DOC_CMD"
 assert_contains "sb-doctor stub documents --fix" "--fix" "$SB_DOC_CMD"
@@ -988,8 +988,8 @@ canary_out="$(
     PATH="/usr/bin:/bin" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$CANARY_PROJ" 2>&1 || true
 )"
-if printf '%s' "$canary_out" | grep -qE 'FAIL: D10-graphify' \
-  && ! printf '%s' "$canary_out" | grep -qE 'PASS: D10-graphify — graphify enabled \(enforcement active\)'; then
+if grep -qE 'FAIL: D10-graphify' <<<"$canary_out" \
+  && ! grep -qE 'PASS: D10-graphify — graphify enabled \(enforcement active\)' <<<"$canary_out"; then
   echo "PASS: stale-loop canary (opted-in missing CLI) stays non-green"
   PASS=$((PASS + 1))
 else

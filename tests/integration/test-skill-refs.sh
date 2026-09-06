@@ -75,7 +75,7 @@ resolve_ref() {
   is_builtin "$bare" && return 0
   in_local_catalog "$bare" && return 0
   in_external "$bare" && return 0
-  if [[ "$prefix" == "silver" ]]; then
+  if [[ "$prefix" == "silver" || "$prefix" == "sb" ]]; then
     in_local_catalog "silver-$bare" && return 0
   fi
   return 1

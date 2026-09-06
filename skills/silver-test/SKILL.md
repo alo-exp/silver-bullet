@@ -8,17 +8,17 @@ argument-hint: "<scope> [--mode write|e2e|repair|audit|performance|mutation]"
 version: 0.1.0
 ---
 
-# /silver:test - Test Engineering Workflow
+# /sb:test - Test Engineering Workflow
 
 SB-owned test engineering for creating, repairing, auditing, and proving tests.
-It complements `tdd`, `testability`, `verify-tests`, and `silver:verify`; it
+It complements `tdd`, `testability`, `verify-tests`, and `sb:verify`; it
 does not replace the final verification gate.
 
 **Pre-execution** (blocks test edits until recorded):
 
-`silver:plan` → `silver:validate`
+`sb:plan` → `sb:validate`
 
-**Post-execution:** `silver:execute` → `silver:verify`
+**Post-execution:** `sb:execute` → `sb:verify`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-test` composer).
 
@@ -38,7 +38,7 @@ The report must include:
 - test strategy and generated/changed test files;
 - quality findings using `test-health` rows from `docs/evidence-schema.md`;
 - commands run and timing where relevant;
-- unresolved gaps filed through `silver:add`.
+- unresolved gaps filed through `sb:add`.
 
 ## Modes
 
@@ -59,7 +59,7 @@ The report must include:
 3. Read production code, existing tests, configured runners, and relevant
    PLAN/SPEC artifacts.
 4. Invoke or apply `testability` before designing new tests.
-5. Invoke or apply `silver:domain-audit --pack test-health` and include
+5. Invoke or apply `sb:domain-audit --pack test-health` and include
    `api-contract`, `data-contract`, `ui-system`, or `performance-resource`
    where the tests exercise those surfaces.
 6. For `write` and `repair`, require failing-test-first evidence unless the
@@ -71,7 +71,7 @@ The report must include:
    checks, null/error paths, async ordering, security bypasses, and state
    transitions.
 10. Run `verify-tests` or the targeted runner after changes.
-11. File deferred non-blocking gaps through `silver:add`.
+11. File deferred non-blocking gaps through `sb:add`.
 
 ## Exit Gate
 

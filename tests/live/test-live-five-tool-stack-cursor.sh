@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live five-tool stack validation via /silver:agent-cursor (Cursor mandatory).
+# Live five-tool stack validation via /sb:agent-cursor (Cursor mandatory).
 #
 # Modes (SB_FIVE_TOOL_MODE):
 #   skeleton  — structural checks only (default when SB_FIVE_TOOL_LIVE_EXECUTE unset)
@@ -112,8 +112,25 @@ run_scenario() {
   local id="$1" prompt="$2"
   local work_dir="${WORK_ROOT}/${id}"
   local log="${work_dir}/delegate.log"
+  local delegate_pid deadline_epoch grace_deadline now
   mkdir -p "$work_dir"
   echo "--- Scenario ${id} (timeout ${SCENARIO_TIMEOUT}s) ---"
+
+  kill_descendants() {
+    local parent="$1" child
+    for child in $(pgrep -P "$parent" 2>/dev/null || true); do
+      kill_descendants "$child"
+      kill -TERM "$child" 2>/dev/null || true
+    done
+  }
+
+  cleanup_scenario_processes() {
+    # agent.sh starts cursor-agent in a separate session and kills that process
+    # group on timeout.  Restrict fallback cleanup to the known delegate PID;
+    # a pgrep -f work-directory scan can match the harness or its supervisors
+    # while they are still carrying the scenario path in their command line.
+    [[ -n "${delegate_pid:-}" ]] && kill_descendants "$delegate_pid"
+  }
 
   local delegate_exit=0
   local inner_timeout="$SCENARIO_TIMEOUT"
@@ -129,12 +146,37 @@ run_scenario() {
       CURSOR_AGENT_MODEL="${CURSOR_AGENT_MODEL:-composer-2.5}" \
       CURSOR_MODEL="${CURSOR_MODEL:-composer-2.5}" \
       bash "$DELEGATE" --work-dir "$work_dir" --prompt "$prompt" --log "$log" --sb-root "$SB_ROOT" \
-      >/dev/null 2>&1 || delegate_exit=$?
+      >/dev/null 2>&1 &
+    delegate_pid=$!
+    deadline_epoch=$(( $(date +%s) + SCENARIO_TIMEOUT ))
+    while kill -0 "$delegate_pid" 2>/dev/null; do
+      now="$(date +%s)"
+      if (( now >= deadline_epoch )); then
+        # macOS does not ship the GNU timeout utility. Keep the documented
+        # per-scenario deadline portable and clean up the process group.
+        kill -TERM "$delegate_pid" 2>/dev/null || true
+        grace_deadline=$(( now + 20 ))
+        while kill -0 "$delegate_pid" 2>/dev/null; do
+          (( $(date +%s) >= grace_deadline )) && break
+          sleep 1
+        done
+        kill -KILL "$delegate_pid" 2>/dev/null || true
+        wait "$delegate_pid" 2>/dev/null || true
+        delegate_exit=124
+        break
+      fi
+      sleep 1
+    done
+    if [[ "$delegate_exit" -eq 0 ]]; then
+      wait "$delegate_pid" || delegate_exit=$?
+    fi
   fi
 
-  # Best-effort cleanup of orphaned cursor-agent children for this work_dir
+  # Best-effort cleanup of orphaned cursor-agent children for this work_dir.
+  # Use the unique scenario path with explicit ancestor exclusions; a broad
+  # pkill can accidentally terminate the prerelease supervisor itself.
   if [[ "$delegate_exit" -ne 0 ]]; then
-    pkill -f "$work_dir" 2>/dev/null || true
+    cleanup_scenario_processes
   fi
 
   case "$delegate_exit" in
@@ -157,7 +199,7 @@ run_scenario() {
 }
 
 # Shared brief prefix — composer-2.5 only, report PASS/FAIL one line at end.
-BRIEF_PREFIX='You are running a Silver Bullet five-tool stack live scenario via /silver:agent-cursor. Use composer-2.5 only. End your final message with exactly one line: SCENARIO_RESULT: PASS or SCENARIO_RESULT: FAIL.'
+BRIEF_PREFIX='You are running a Silver Bullet five-tool stack live scenario via /sb:agent-cursor. Use composer-2.5 only. End your final message with exactly one line: SCENARIO_RESULT: PASS or SCENARIO_RESULT: FAIL.'
 
 run_prerelease_scenarios() {
   run_scenario "S01-opt-in" \

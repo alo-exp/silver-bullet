@@ -11,7 +11,7 @@ Every design, plan, and implementation MUST handle failure gracefully. Things WI
 
 **Why this matters:** Unreliable systems erode user trust faster than any other quality issue. A system that crashes on bad input, hangs when a dependency is slow, or loses data on failure is not production-ready — no matter how many features it has.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -126,7 +126,7 @@ Data MUST survive failures:
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Reliability Checklist**:
 
@@ -140,7 +140,7 @@ Before finalizing any design or plan, run the **Reliability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - Set explicit timeouts on every HTTP client, DB connection, and external call.
@@ -149,7 +149,7 @@ As you write code:
 - Return meaningful error responses — status code, error code, human message.
 - Never swallow errors silently. Log, metric, or propagate.
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - Every external call has timeout and error handling

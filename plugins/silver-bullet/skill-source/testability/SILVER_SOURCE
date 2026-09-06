@@ -1,6 +1,6 @@
 ---
 name: testability
-title: "Silver: Testability"
+title: "SB: Testability"
 description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "make this testable", "add dependency injection", "mock X" — enforces dependency injection, pure functions, observable state, and seam-based design so every component can be tested in isolation
 user-invocable: false
 version: 0.1.0
@@ -12,7 +12,7 @@ Every design, plan, and implementation MUST produce code that is easy to test in
 
 **Why this matters:** Untestable code is unverifiable code. When a simple test cannot be written for a component, it's because the component has too many hidden dependencies, side effects, or tightly coupled concerns. Testability is a direct measure of design quality.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -123,7 +123,7 @@ Every test MUST run independently:
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Testability Checklist**:
 
@@ -137,7 +137,7 @@ Before finalizing any design or plan, run the **Testability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - Write the test FIRST (TDD). If the test is hard to write, redesign the interface.
@@ -146,7 +146,7 @@ As you write code:
 - Return results from functions instead of mutating external state.
 - Use factory functions to create test fixtures (not copy-pasted object literals).
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - Dependencies are injected, not hard-coded

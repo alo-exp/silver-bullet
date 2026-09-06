@@ -44,25 +44,25 @@ build_matrix_prompt() {
   matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path"
 }
 
-row1_prompt="$(build_matrix_prompt '/silver' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1' 'silver-router')"
-row2_prompt="$(build_matrix_prompt '/silver:deep-research' 'Should we use Postgres or SQLite for orders?' 'docs/ADR-001-runtime.md' '2' 'silver-deep-research')"
-row5_prompt="$(build_matrix_prompt '/silver:ui' 'Show API version in the admin UI badge.' 'ui/src/App.jsx' '5' 'silver-ui')"
+row1_prompt="$(build_matrix_prompt '/sb' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1' 'silver-router')"
+row2_prompt="$(build_matrix_prompt '/sb:deep-research' 'Should we use Postgres or SQLite for orders?' 'docs/ADR-001-runtime.md' '2' 'silver-deep-research')"
+row5_prompt="$(build_matrix_prompt '/sb:ui' 'Show API version in the admin UI badge.' 'ui/src/App.jsx' '5' 'silver-ui')"
 
-assert_contains "row 1 prompt starts with /silver slash command" "$row1_prompt" '/silver I need to add order validation'
+assert_contains "row 1 prompt starts with /sb slash command" "$row1_prompt" '/sb I need to add order validation'
 assert_contains "row 1 prompt is routing-only" "$row1_prompt" 'routing validation only'
 assert_not_contains "row 1 prompt avoids evidence boilerplate" "$row1_prompt" 'Create workflow evidence'
 
-assert_contains "row 2 prompt starts with /silver router slash command" "$row2_prompt" '/silver Should we use Postgres'
+assert_contains "row 2 prompt starts with /sb router slash command" "$row2_prompt" '/sb Should we use Postgres'
 assert_contains "row 2 prompt names workflow slug" "$row2_prompt" 'silver-deep-research workflow'
 assert_contains "row 2 prompt names evidence path" "$row2_prompt" 'docs/ADR-001-runtime.md'
 assert_contains "row 2 prompt includes matrix autonomous clarify policy" "$row2_prompt" 'Matrix autonomous mode'
-assert_not_contains "row 2 prompt avoids native /silver:deep-research subcommand" "$row2_prompt" '/silver:deep-research'
+assert_not_contains "row 2 prompt avoids native /sb:deep-research subcommand" "$row2_prompt" '/sb:deep-research'
 assert_not_contains "row 2 prompt avoids legacy skill markdown link form" "$row2_prompt" 'Use the ['
 
-assert_contains "row 5 prompt starts with /silver router slash command" "$row5_prompt" '/silver Show API version'
+assert_contains "row 5 prompt starts with /sb router slash command" "$row5_prompt" '/sb Show API version'
 assert_contains "row 5 prompt names silver-ui workflow" "$row5_prompt" 'silver-ui workflow'
 assert_contains "row 5 prompt names ui artifact evidence path" "$row5_prompt" 'ui/src/App.jsx'
-assert_not_contains "row 5 prompt avoids native /silver:ui subcommand" "$row5_prompt" '/silver:ui'
+assert_not_contains "row 5 prompt avoids native /sb:ui subcommand" "$row5_prompt" '/sb:ui'
 assert_not_contains "row 5 prompt avoids stale workflow md evidence" "$row5_prompt" 'ui-version-badge.md'
 
 MATRIX_SCRIPT="${REPO_ROOT}/scripts/enterprise-e2e/matrix.sh"

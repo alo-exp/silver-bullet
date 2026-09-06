@@ -47,7 +47,7 @@ The `SENTINEL_BOUNDARY` string is defined on line 217, then prepended to `$full_
 
 ### P-2 — FC-3-A: CAUTION warning and isolation confirmation for bypassPermissions
 
-**Expected:** Explicit CAUTION warning in `silver-bullet.md` before the `bypassPermissions` JSON block, and an isolation confirmation requirement in `skills/silver:init/SKILL.md` Phase 2.6.
+**Expected:** Explicit CAUTION warning in `silver-bullet.md` before the `bypassPermissions` JSON block, and an isolation confirmation requirement in `skills/sb:init/SKILL.md` Phase 2.6.
 
 **Evidence found — silver-bullet.md** (lines 149–158):
 
@@ -65,7 +65,7 @@ This is a Claude Code platform setting, not a Silver Bullet setting.
 
 The CAUTION block uses bold markdown and explicit isolation requirements before the JSON snippet.
 
-**Evidence found — skills/silver:init/SKILL.md** (Phase 2.6, lines 297–309):
+**Evidence found — skills/sb:init/SKILL.md** (Phase 2.6, lines 297–309):
 
 ```
 If user chooses `bypassPermissions`:

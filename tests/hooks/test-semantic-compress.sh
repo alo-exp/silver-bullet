@@ -68,7 +68,7 @@ printf 'auth_validate() {\n  check_token "$1"\n}\n' > "$TMP/src/auth.sh"
 printf '# Auth Docs\nDescribes authentication flow.\n' > "$TMP/docs/auth.md"
 
 # Test 1: produces valid JSON with additionalContext
-output=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"silver:execute"}}' | "$HOOK")
+output=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"sb:execute"}}' | "$HOOK")
 assert_json_key "output is valid JSON" '.hookSpecificOutput.additionalContext' "$output"
 
 # Test 2: context contains src file and phase goal
@@ -81,7 +81,7 @@ output2=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"superpow
 assert_eq "non-phase skill: no output" "" "$output2"
 
 # Test 4: cache hit — same input returns identical output
-output3=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"silver:execute"}}' | "$HOOK")
+output3=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"sb:execute"}}' | "$HOOK")
 assert_eq "cache hit: identical output on second call" "$output" "$output3"
 
 # Test 5: cache invalidation — modify file, output changes
@@ -89,7 +89,7 @@ printf 'new_function_completely_different() { true; }\n' >> "$TMP/src/auth.sh"
 # Advance mtime by +2 s via python3 (portable: works on macOS BSD and Linux).
 # touch -d '+N seconds' is GNU-only; sleep 1 after a write doesn't change mtime.
 python3 -c "import os,time; p='$TMP/src/auth.sh'; t=time.time()+2; os.utime(p,(t,t))"
-output4=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"silver:execute"}}' | "$HOOK")
+output4=$(cd "$TMP" && REPO_ROOT="$TMP" printf '{"tool_input":{"skill":"sb:execute"}}' | "$HOOK")
 context4=$(printf '%s' "$output4" | jq -r '.hookSpecificOutput.additionalContext')
 context1=$(printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext')
 assert_neq "cache invalidated after file change" "$context1" "$context4"

@@ -111,12 +111,12 @@ model = "gpt-5.5"
 EOF
 cat > "$ORIGINAL_HOME/.codex/skills/silver-context/SKILL.md" <<'EOF'
 ---
-name: "silver:context"
+name: "sb:context"
 ---
 EOF
 cat > "$ORIGINAL_HOME/.agents/skills/silver-plan/SKILL.md" <<'EOF'
 ---
-name: "silver:plan"
+name: "sb:plan"
 ---
 EOF
 cat > "$ORIGINAL_HOME/.codex/hooks/sb-check-update.js" <<'EOF'

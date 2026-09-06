@@ -9,6 +9,18 @@ RT_VENDOR_DOCTOR_SH=1
 
 RT_VENDOR_DOCTOR_TIMEOUT="${RT_VENDOR_DOCTOR_TIMEOUT:-20}"
 
+# Reuse the repository-wide portable timeout implementation when the
+# reconciler is running from a checkout.  This keeps macOS installs bounded
+# even when neither timeout(1) nor gtimeout(1) is present.
+if ! declare -F sb_run_with_timeout >/dev/null 2>&1; then
+  _rt_command_timeout="${RT_REPO_ROOT:-}/scripts/lib/command-timeout.sh"
+  if [[ -f "$_rt_command_timeout" ]]; then
+    # shellcheck source=/dev/null
+    source "$_rt_command_timeout"
+  fi
+  unset _rt_command_timeout
+fi
+
 rt_vendor_doctor_runner() {
   if command -v timeout >/dev/null 2>&1; then
     printf '%s' "timeout"
@@ -51,7 +63,10 @@ rt_run_vendor_doctor() {
   local had_e=0
   [[ $- == *e* ]] && had_e=1
   set +e
-  if [[ -n "$runner" ]]; then
+  if declare -F sb_run_with_timeout >/dev/null 2>&1; then
+    sb_run_with_timeout "$t" "vendor doctor" -- "$@" </dev/null >/dev/null 2>&1
+    rc=$?
+  elif [[ -n "$runner" ]]; then
     "$runner" "$t" "$@" </dev/null >/dev/null 2>&1
     rc=$?
   else

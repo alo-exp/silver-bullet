@@ -32,12 +32,12 @@ You are conducting **prior-art and adjacent-landscape research** — not buildin
 
 7. **Team process packs** — Teams customize processes (add/remove/reorder workflows, mandate gates) **without forking** atomic flow definitions.
 
-8. **SE + DevOps unified catalog** — Same APO model covers feature delivery (`silver:feature`), UI (`silver:ui`), bugfix, research, release, incident, deploy, canary, blast-radius, DevOps routing, etc.
+8. **SE + DevOps unified catalog** — Same APO model covers feature delivery (`sb:feature`), UI (`sb:ui`), bugfix, research, release, incident, deploy, canary, blast-radius, DevOps routing, etc.
 
 ### Execution architecture
 
 - **Parent orchestrator** (`silver-orchestrator`): reads `orchestrator-directive.json`, spawns **Task workers** from per-flow templates (`.silver-bullet/orchestrator-workers/<TEMPLATE>.md`), advances queue via hooks. Parent **never implements inline**.
-- **Composer skills** (`silver:feature`, `silver:devops`, …): queue builders referencing catalog `workflow.composition_tree` — not inline procedure.
+- **Composer skills** (`sb:feature`, `sb:devops`, …): queue builders referencing catalog `workflow.composition_tree` — not inline procedure.
 - **Composition patterns supported:** sequence, conditional branch, parallel join, repair loop, compensation/rollback, workflow-as-component reuse, dynamic prune/insert/substitute.
 
 ### What SB explicitly is NOT looking to duplicate

@@ -13,7 +13,7 @@ AS1 is positioned as a broad, auto-routing quality layer for AI coding agents. I
 
 SB is positioned as an agentic process orchestrator. Its strongest differentiator is enforceability: hook-backed workflow gates, spec-to-release artifact governance, completion audits, CI and UAT blocking, release discipline, documentation scheme enforcement, and package-boundary controls.
 
-The most valuable direction for SB is not to clone AS1's many individual command surfaces. SB should remain the orchestrator and become a superset by adding explicit, SB-owned domain quality contracts that can be selected by `/silver` and enforced inside existing SB flows. This gives SB AS1-style breadth while preserving SB's stronger lifecycle, evidence, artifact, and release governance.
+The most valuable direction for SB is not to clone AS1's many individual command surfaces. SB should remain the orchestrator and become a superset by adding explicit, SB-owned domain quality contracts that can be selected by `/sb` and enforced inside existing SB flows. This gives SB AS1-style breadth while preserving SB's stronger lifecycle, evidence, artifact, and release governance.
 
 ## Superset Parity Ledger
 
@@ -21,53 +21,53 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
 
 | AS1 capability family | SB-owned route or contract | Evidence artifact | Parity status |
 |---|---|---|---|
-| Brainstorm/problem exploration | `silver:clarify`, `silver:deep-research`, `silver:scan` | `.planning/CLARIFY.md`, research/context artifacts | Superset: SB adds lifecycle handoff and traceability |
-| Plan/TDD task decomposition | `silver:context`, `silver:plan`, `tdd`, `testability` | PLAN, context, TDD evidence | Superset: SB gates plan before execution |
-| Execute with review gates | `silver:execute`, `silver:review`, `silver:review-triage`, `silver:verify` | SUMMARY, REVIEW, VERIFICATION | Superset: SB adds completion-audit and hook-backed markers |
-| Worktree isolation and finish | `silver:worktree`, `silver:branch-finish`, `silver:ship` | `.planning/WORKTREE.md`, branch-finish/ship evidence | Covered by new SB route |
-| Review feedback response | `silver:review-triage` | REVIEW triage notes | Superset: SB rejects weak findings and requires evidence |
-| Scoped small feature build | `silver:fast`, `silver:feature` | fast/feature workflow artifacts | Covered |
-| Refactoring with baseline proof | `silver:refactor`, `silver:test`, `silver:verify` | `.planning/REFACTOR.md`, test evidence | Covered by new SB route |
-| Debug/root cause | `silver:debug`, `silver:bugfix`, `silver:forensics` | DEBUG/forensics/bugfix artifacts | Superset: SB includes session-level forensics |
-| Test writing | `silver:test --mode write` | `.planning/TEST-ENGINEERING.md` | Covered by new SB route |
-| E2E route discovery | `silver:test --mode e2e`, `silver:ui-review` | route inventory, Playwright/browser evidence | Covered by new SB route |
-| Test repair | `silver:test --mode repair`, `silver:verify` | anti-pattern triage and verification | Covered by new SB route |
-| Test audit | `silver:test --mode audit`, `silver:domain-audit --pack test-health` | DOMAIN-AUDIT / TEST-ENGINEERING | Superset: normalized SB findings feed ship gates |
-| Test performance | `silver:test --mode performance`, `performance-resource` pack | timing baseline and compare evidence | Covered by new SB route |
-| Mutation-style test challenge | `silver:test --mode mutation` | mutation plan/result/follow-up | Covered by new SB route |
-| Application security audit | `silver:secure`, `security`, domain packs | `.planning/SECURITY.md`, DOMAIN-AUDIT | Superset: process and release security gates included |
-| Penetration-test-style checks | `silver:secure` authorized live/static mode | SECURITY with exact command/evidence | Covered inside security contract |
-| Accessibility audit | `silver:ui-review`, `silver:domain-audit --pack accessibility` | UI-REVIEW / DOMAIN-AUDIT | Covered |
-| Code audit | `silver:domain-audit --pack code-health`, `silver:review` | DOMAIN-AUDIT / REVIEW | Superset: findings route to owning workflow |
-| API audit | `silver:domain-audit --pack api-contract` | DOMAIN-AUDIT | Covered |
-| Database/data audit | `silver:domain-audit --pack data-contract` | DOMAIN-AUDIT | Covered |
-| Dependency audit | `silver:domain-audit --pack dependency-supply`, `silver:secure` | DOMAIN-AUDIT / SECURITY | Covered |
-| Performance audit | `silver:domain-audit --pack performance-resource` | DOMAIN-AUDIT | Covered |
-| Structure audit | `silver:domain-audit --pack structure-maintainability` | DOMAIN-AUDIT | Covered |
-| CI audit | `silver:domain-audit --pack ci-workflow`, `devops-quality-gates` | DOMAIN-AUDIT / DevOps gate artifact | Superset for DevOps scope |
-| Environment/secrets audit | `silver:domain-audit --pack environment-secrets`, `silver:secure` | DOMAIN-AUDIT / SECURITY | Covered |
-| SEO/GEO/search audit and fixes | `silver:content`, `content-search` pack | `.planning/CONTENT.md`, DOMAIN-AUDIT | Covered by new SB route |
-| Content audit/fix/migration/optimization | `silver:content` | CONTENT, docs/build/link evidence | Covered by new SB route |
-| Article/help content writing | `silver:content --mode write` | CONTENT with sources/frontmatter/review | Covered by new SB route |
-| Design and design review | `silver:ui`, `silver:ui-contract`, `silver:ui-review` | UI-SPEC, UI-REVIEW | Superset through UI lifecycle gates |
-| Durable design/interface state | `silver:ui-contract`, `silver:ui-review` | `.planning/interface/STATE.md` | Covered by updated SB UI contract |
-| Architecture review/ADR | `silver:deep-research`, `silver:domain-audit --pack architecture-adr` | decision artifact / DOMAIN-AUDIT | Covered |
-| Ship/pre-merge release path | `silver:ship`, `silver:release`, `silver:create-release` | ship/release artifacts and GitHub Release | Superset: stronger release governance |
-| Platform-aware deployment | `silver:deploy`, `silver:devops` | `.planning/DEPLOYMENT.md` | Covered by new SB route |
-| Post-deploy canary | `silver:canary` | `.planning/CANARY.md` | Covered by new SB route |
-| Release documentation sync | `silver:ensure-docs`, `silver:release` | docs checklist, changelog, release summary | Superset: governed doc scheme |
-| Engineering retrospective | `silver:retro` | `.planning/RETRO.md` | Covered by new SB route |
-| Docs utility | `silver:ensure-docs`, `silver:content` | governed docs/content artifacts | Superset for project docs |
-| Backlog/deferred work | `silver:add`, `silver:remove`, domain-audit backlog decisions | GitHub/local issue ID | Superset when configured with GitHub project |
-| Incident workflow | `silver:incident`, `silver:forensics`, `silver:canary` | `.planning/INCIDENT.md` | Covered by new SB route |
-| Provider/task benchmark | `silver:benchmark` | `.planning/BENCHMARK.md` | Covered by new SB route |
-| Agent self-quality benchmark | `silver:benchmark`, `silver:review-fix-ladder` | BENCHMARK / review loop evidence | Covered |
+| Brainstorm/problem exploration | `sb:clarify`, `sb:deep-research`, `sb:scan` | `.planning/CLARIFY.md`, research/context artifacts | Superset: SB adds lifecycle handoff and traceability |
+| Plan/TDD task decomposition | `sb:context`, `sb:plan`, `tdd`, `testability` | PLAN, context, TDD evidence | Superset: SB gates plan before execution |
+| Execute with review gates | `sb:execute`, `sb:review`, `sb:review-triage`, `sb:verify` | SUMMARY, REVIEW, VERIFICATION | Superset: SB adds completion-audit and hook-backed markers |
+| Worktree isolation and finish | `sb:worktree`, `sb:branch-finish`, `sb:ship` | `.planning/WORKTREE.md`, branch-finish/ship evidence | Covered by new SB route |
+| Review feedback response | `sb:review-triage` | REVIEW triage notes | Superset: SB rejects weak findings and requires evidence |
+| Scoped small feature build | `sb:fast`, `sb:feature` | fast/feature workflow artifacts | Covered |
+| Refactoring with baseline proof | `sb:refactor`, `sb:test`, `sb:verify` | `.planning/REFACTOR.md`, test evidence | Covered by new SB route |
+| Debug/root cause | `sb:debug`, `sb:bugfix`, `sb:forensics` | DEBUG/forensics/bugfix artifacts | Superset: SB includes session-level forensics |
+| Test writing | `sb:test --mode write` | `.planning/TEST-ENGINEERING.md` | Covered by new SB route |
+| E2E route discovery | `sb:test --mode e2e`, `sb:ui-review` | route inventory, Playwright/browser evidence | Covered by new SB route |
+| Test repair | `sb:test --mode repair`, `sb:verify` | anti-pattern triage and verification | Covered by new SB route |
+| Test audit | `sb:test --mode audit`, `sb:domain-audit --pack test-health` | DOMAIN-AUDIT / TEST-ENGINEERING | Superset: normalized SB findings feed ship gates |
+| Test performance | `sb:test --mode performance`, `performance-resource` pack | timing baseline and compare evidence | Covered by new SB route |
+| Mutation-style test challenge | `sb:test --mode mutation` | mutation plan/result/follow-up | Covered by new SB route |
+| Application security audit | `sb:secure`, `security`, domain packs | `.planning/SECURITY.md`, DOMAIN-AUDIT | Superset: process and release security gates included |
+| Penetration-test-style checks | `sb:secure` authorized live/static mode | SECURITY with exact command/evidence | Covered inside security contract |
+| Accessibility audit | `sb:ui-review`, `sb:domain-audit --pack accessibility` | UI-REVIEW / DOMAIN-AUDIT | Covered |
+| Code audit | `sb:domain-audit --pack code-health`, `sb:review` | DOMAIN-AUDIT / REVIEW | Superset: findings route to owning workflow |
+| API audit | `sb:domain-audit --pack api-contract` | DOMAIN-AUDIT | Covered |
+| Database/data audit | `sb:domain-audit --pack data-contract` | DOMAIN-AUDIT | Covered |
+| Dependency audit | `sb:domain-audit --pack dependency-supply`, `sb:secure` | DOMAIN-AUDIT / SECURITY | Covered |
+| Performance audit | `sb:domain-audit --pack performance-resource` | DOMAIN-AUDIT | Covered |
+| Structure audit | `sb:domain-audit --pack structure-maintainability` | DOMAIN-AUDIT | Covered |
+| CI audit | `sb:domain-audit --pack ci-workflow`, `devops-quality-gates` | DOMAIN-AUDIT / DevOps gate artifact | Superset for DevOps scope |
+| Environment/secrets audit | `sb:domain-audit --pack environment-secrets`, `sb:secure` | DOMAIN-AUDIT / SECURITY | Covered |
+| SEO/GEO/search audit and fixes | `sb:content`, `content-search` pack | `.planning/CONTENT.md`, DOMAIN-AUDIT | Covered by new SB route |
+| Content audit/fix/migration/optimization | `sb:content` | CONTENT, docs/build/link evidence | Covered by new SB route |
+| Article/help content writing | `sb:content --mode write` | CONTENT with sources/frontmatter/review | Covered by new SB route |
+| Design and design review | `sb:ui`, `sb:ui-contract`, `sb:ui-review` | UI-SPEC, UI-REVIEW | Superset through UI lifecycle gates |
+| Durable design/interface state | `sb:ui-contract`, `sb:ui-review` | `.planning/interface/STATE.md` | Covered by updated SB UI contract |
+| Architecture review/ADR | `sb:deep-research`, `sb:domain-audit --pack architecture-adr` | decision artifact / DOMAIN-AUDIT | Covered |
+| Ship/pre-merge release path | `sb:ship`, `sb:release`, `sb:create-release` | ship/release artifacts and GitHub Release | Superset: stronger release governance |
+| Platform-aware deployment | `sb:deploy`, `sb:devops` | `.planning/DEPLOYMENT.md` | Covered by new SB route |
+| Post-deploy canary | `sb:canary` | `.planning/CANARY.md` | Covered by new SB route |
+| Release documentation sync | `sb:ensure-docs`, `sb:release` | docs checklist, changelog, release summary | Superset: governed doc scheme |
+| Engineering retrospective | `sb:retro` | `.planning/RETRO.md` | Covered by new SB route |
+| Docs utility | `sb:ensure-docs`, `sb:content` | governed docs/content artifacts | Superset for project docs |
+| Backlog/deferred work | `sb:add`, `sb:remove`, domain-audit backlog decisions | GitHub/local issue ID | Superset when configured with GitHub project |
+| Incident workflow | `sb:incident`, `sb:forensics`, `sb:canary` | `.planning/INCIDENT.md` | Covered by new SB route |
+| Provider/task benchmark | `sb:benchmark` | `.planning/BENCHMARK.md` | Covered by new SB route |
+| Agent self-quality benchmark | `sb:benchmark`, `sb:review-fix-ladder` | BENCHMARK / review loop evidence | Covered |
 | Knowledge store/project memory | docs/knowledge, docs/learnings, Graphify retrieval, session logs | monthly knowledge/learnings and graph evidence | Superset: SB separates project knowledge from portable learnings |
-| Session recovery | `silver:handoff`, workflow tracker, session logs, `silver:forensics` | handoff and `.planning/workflows/` state | Superset: recovery tied to workflow evidence |
-| Cross-provider adversarial review | `silver:review`, optional external enrichment, `silver:benchmark` | REVIEW / BENCHMARK | Superset when optional providers are installed; SB review remains authoritative |
-| Code intelligence | `silver:scan`, Graphify retrieval, direct shell/file evidence | scan/context artifacts | Covered with explicit fallback tiers |
-| Auto-routing benefit | `/silver` router plus prompt reminders and skill tracking | route banner, requested skill markers | Covered with more auditable activation discipline |
-| Stack-aware rules | `silver:domain-audit`, `devops-quality-gates`, `verify-tests` | selected pack and command evidence | Covered |
+| Session recovery | `sb:handoff`, workflow tracker, session logs, `sb:forensics` | handoff and `.planning/workflows/` state | Superset: recovery tied to workflow evidence |
+| Cross-provider adversarial review | `sb:review`, optional external enrichment, `sb:benchmark` | REVIEW / BENCHMARK | Superset when optional providers are installed; SB review remains authoritative |
+| Code intelligence | `sb:scan`, Graphify retrieval, direct shell/file evidence | scan/context artifacts | Covered with explicit fallback tiers |
+| Auto-routing benefit | `/sb` router plus prompt reminders and skill tracking | route banner, requested skill markers | Covered with more auditable activation discipline |
+| Stack-aware rules | `sb:domain-audit`, `devops-quality-gates`, `verify-tests` | selected pack and command evidence | Covered |
 | Evidence requirements | all SB workflows, completion audit, domain evidence schema | artifacts, command output, markers | Superset: completion remains unproven until audited |
 
 ## High-Level Strengths: AS1 Compared To SB
@@ -88,10 +88,10 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
    AS1 markets a three-phase pipeline with named agent roles for exploration, planning, and execution. SB has richer flow composition, but the mental model is more complex.
 
 6. **Fast-path feature build command is explicit.**
-   AS1 distinguishes small scoped build work from its full pipeline. SB has `silver:fast` and workflow composition, but the small-feature path is less visibly defined as "scoped build with bounded audits."
+   AS1 distinguishes small scoped build work from its full pipeline. SB has `sb:fast` and workflow composition, but the small-feature path is less visibly defined as "scoped build with bounded audits."
 
 7. **Backlog persistence is first-class.**
-   AS1 advertises a tech-debt backlog used by audit and review skills. SB has `silver:add`, issue/backlog capture, ROADMAP integration, and docs/issues, but the audit-to-backlog loop is less productized.
+   AS1 advertises a tech-debt backlog used by audit and review skills. SB has `sb:add`, issue/backlog capture, ROADMAP integration, and docs/issues, but the audit-to-backlog loop is less productized.
 
 8. **Session recovery is a named product feature.**
    AS1 advertises persisted context and resume behavior. SB has session logs, handoff, workflow tracker files, anti-stall hooks, and forensics, but recovery is described as part of process governance rather than a user-facing feature.
@@ -115,7 +115,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
     AS1 has a dedicated design-system state directory and design review team. SB has UI contract, UI review, design-system audit expectations, and handoff, but no explicit persisted interface-design state artifact.
 
 15. **Auto-routing is marketed as always-on.**
-    AS1 positions routing as session-start behavior. SB routes through `/silver` and commands; hooks remind and enforce, but always-on natural language auto-activation is intentionally more conservative.
+    AS1 positions routing as session-start behavior. SB routes through `/sb` and commands; hooks remind and enforce, but always-on natural language auto-activation is intentionally more conservative.
 
 16. **Install story is very short.**
     AS1 markets a one-script install and marketplace install path. SB's install is more precise and safer, but the explanation includes more moving parts: jq, Graphify, marketplace/package modes, project init, optional DevOps plugins, and live-test tooling.
@@ -150,7 +150,7 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
    AS1 emphasizes application security audits. SB adds process security: forbidden-skill checks, dependency-skill checks, instruction-file guards, planning-file guards, CI blockers, and completion-audit enforcement.
 
 6. **Always-on routing may over-activate.**
-   A session-start router that auto-selects skills can be convenient, but it can also intervene on trivial or exploratory requests. SB's explicit `/silver` entry point is more predictable and easier to audit.
+   A session-start router that auto-selects skills can be convenient, but it can also intervene on trivial or exploratory requests. SB's explicit `/sb` entry point is more predictable and easier to audit.
 
 7. **Model/provider complexity can become operational burden.**
    Cross-provider review improves coverage but increases installation, authentication, cost, and failure modes. SB treats external providers as optional enrichment rather than default lifecycle dependency.
@@ -248,23 +248,23 @@ The stricter goal is that an AS1 user should not lose a feature, capability, or 
     Verification checks artifacts and outputs rather than trusting the agent's own summary.
 
 20. **SB's smaller public command set is easier to teach.**
-    `/silver` plus task-specific SB commands is less intimidating than a very large skill menu.
+    `/sb` plus task-specific SB commands is less intimidating than a very large skill menu.
 
 ## High-Level Weaknesses: SB Compared To AS1
 
 Historical gaps from the 2026-06-12 analysis and their current SB posture:
 
-1. **Specialized audit breadth is under-exposed.** Addressed — `silver:domain-audit` pack matrix and site capability matrix.
-2. **File-level quality rule vocabulary is less concrete.** Addressed — domain critical gate catalog in `silver:domain-audit`.
-3. **Test ecosystem coverage is thinner.** Addressed — `silver:test` modes (write, e2e, repair, audit, performance, mutation).
-4. **Post-deploy monitoring is partial.** Addressed — `silver:canary` and `runtime-release` pack.
-5. **Backlog persistence is not as productized.** Addressed — `silver:add` structured audit intake with fingerprint, dedup, and prioritization score (`skills/silver-add/SKILL.md`).
-6. **Session recovery is less visibly packaged.** Addressed — `silver:handoff`, workflow tracker, `silver:scan`, `silver:forensics`; public help surfaces document recovery.
+1. **Specialized audit breadth is under-exposed.** Addressed — `sb:domain-audit` pack matrix and site capability matrix.
+2. **File-level quality rule vocabulary is less concrete.** Addressed — domain critical gate catalog in `sb:domain-audit`.
+3. **Test ecosystem coverage is thinner.** Addressed — `sb:test` modes (write, e2e, repair, audit, performance, mutation).
+4. **Post-deploy monitoring is partial.** Addressed — `sb:canary` and `runtime-release` pack.
+5. **Backlog persistence is not as productized.** Addressed — `sb:add` structured audit intake with fingerprint, dedup, and prioritization score (`skills/silver-add/SKILL.md`).
+6. **Session recovery is less visibly packaged.** Addressed — `sb:handoff`, workflow tracker, `sb:scan`, `sb:forensics`; public help surfaces document recovery.
 7. **Cross-provider adversarial review is optional and under-documented.** Addressed — `docs/external-review-policy.md`; SB review remains authoritative.
-8. **Design-state persistence is weaker.** Addressed — `.planning/interface/STATE.md` via `silver:ui-contract` / `silver:ui-review` and `templates/interface/STATE.md.base`.
-9. **Content/search readiness is narrower.** Addressed — `silver:content` and `content-search` pack.
+8. **Design-state persistence is weaker.** Addressed — `.planning/interface/STATE.md` via `sb:ui-contract` / `sb:ui-review` and `templates/interface/STATE.md.base`.
+9. **Content/search readiness is narrower.** Addressed — `sb:content` and `content-search` pack.
 10. **Architecture review is not a first-class public skill.** Addressed — `architecture-adr` pack and research/plan integration.
-11. **Provider/runtime benchmarking is not a user-facing capability.** Addressed — `silver:benchmark` and `benchmark-eval` pack.
+11. **Provider/runtime benchmarking is not a user-facing capability.** Addressed — `sb:benchmark` and `benchmark-eval` pack.
 12. **Stack-aware defaults are less explicit.** Partially addressed — domain packs, `verify-tests`, and DevOps gates; stack rules remain host/project specific.
 13. **Install story is heavier.** Addressed for diagnostics — `scripts/sb-diagnostics.sh` and runtime tier docs in `docs/RUNTIME-COMPATIBILITY.md`; install remains intentionally explicit for safety.
 14. **Public docs still carry historical dependency language outside the cleaned website/help surfaces.** Ongoing hygiene — website/help are clean; repo docs may still mention legacy plugins in historical specs.
@@ -276,9 +276,9 @@ Historical gaps from the 2026-06-12 analysis and their current SB posture:
 |---|---|
 | Cross-domain evidence schema | `docs/evidence-schema.md`; `scripts/validate-evidence-findings.{py,sh}`; `hooks/lib/evidence-schema-gate.sh` + `completion-audit.sh` delivery gate; `tests/scripts/test-validate-evidence-findings.sh`; `tests/hooks/test-completion-audit.sh` (tests 24–25) |
 | Backlog fingerprinting and prioritization | `scripts/lib/evidence_common.py`; `scripts/silver-add.sh` (`fingerprint`, `dedup`, `prioritize`); `scripts/silver-scan.py` shared `scan_fingerprint`; `tests/scripts/test-silver-add-fingerprint.sh` |
-| Durable interface/design state | `templates/interface/STATE.md.base`; `scripts/stamp-interface-state.sh`; `silver:init` step 3.2.1; `tests/scripts/test-stamp-interface-state.sh` |
-| External-review policy | `docs/external-review-policy.md`; `silver:review`, `silver-bullet.md` §6 |
-| Code-intelligence contract | `docs/code-intelligence-contract.md`; `silver:scan`, Graphify docs |
+| Durable interface/design state | `templates/interface/STATE.md.base`; `scripts/stamp-interface-state.sh`; `sb:init` step 3.2.1; `tests/scripts/test-stamp-interface-state.sh` |
+| External-review policy | `docs/external-review-policy.md`; `sb:review`, `silver-bullet.md` §6 |
+| Code-intelligence contract | `docs/code-intelligence-contract.md`; `sb:scan`, Graphify docs |
 | Install/update diagnostics and runtime tiers | `scripts/sb-diagnostics.sh`, `scripts/sb-bootstrap.sh`; `tests/scripts/test-sb-diagnostics.sh`, `tests/scripts/test-sb-bootstrap.sh`; `docs/RUNTIME-COMPATIBILITY.md` |
 
 ## Mutual Gaps And Opportunities (Historical Analysis)
@@ -289,7 +289,7 @@ capability families.
 
 ### 1. Domain Quality Contracts — **Closed**
 
-SB exposes `silver:domain-audit` with sixteen packs inside existing workflows.
+SB exposes `sb:domain-audit` with sixteen packs inside existing workflows.
 
 ### 2. Evidence Schema — **Closed**
 
@@ -297,23 +297,23 @@ SB exposes `silver:domain-audit` with sixteen packs inside existing workflows.
 
 ### 3. Critical-Gate Semantics — **Closed**
 
-`silver:domain-audit` critical gate catalog uses BLOCK/WARN/INFO plus confidence.
+`sb:domain-audit` critical gate catalog uses BLOCK/WARN/INFO plus confidence.
 
 ### 4. Test Quality Depth — **Closed**
 
-`silver:test` modes cover audit, E2E discovery, repair, performance, mutation.
+`sb:test` modes cover audit, E2E discovery, repair, performance, mutation.
 
 ### 5. Backlog And Deferred Work — **Closed**
 
-`silver:add` structured audit intake: fingerprint, dedup, prioritization score.
+`sb:add` structured audit intake: fingerprint, dedup, prioritization score.
 
 ### 6. Post-Deploy Confidence — **Closed**
 
-`silver:canary` and `runtime-release` pack.
+`sb:canary` and `runtime-release` pack.
 
 ### 7. Incident And Retro Loops — **Closed**
 
-`silver:incident`, `silver:retro`, `incident-retro` pack.
+`sb:incident`, `sb:retro`, `incident-retro` pack.
 
 ### 8. Cross-Provider Review — **Closed**
 
@@ -329,7 +329,7 @@ SB exposes `silver:domain-audit` with sixteen packs inside existing workflows.
 
 ### 11. Content And Search Readiness — **Closed**
 
-`silver:content` and `content-search` pack.
+`sb:content` and `content-search` pack.
 
 ### 12. Installation And Update UX — **Closed**
 
@@ -341,11 +341,11 @@ SB exposes `silver:domain-audit` with sixteen packs inside existing workflows.
 
 ### 14. Skill Catalog Discoverability — **Closed**
 
-Site/help capability matrix; `/silver` entry point.
+Site/help capability matrix; `/sb` entry point.
 
 ### 15. Auto-Activation Discipline — **By design**
 
-SB keeps explicit `/silver` routing with session reminders rather than silent hijack.
+SB keeps explicit `/sb` routing with session reminders rather than silent hijack.
 
 ## SB Gap Closure Requirements
 

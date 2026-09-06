@@ -126,8 +126,8 @@ teardown
 
 # Test 6: Non-dependency skill passes through
 setup
-out=$(run_hook "silver:fast")
-assert_passes "silver:fast passes" "$out"
+out=$(run_hook "sb:fast")
+assert_passes "sb:fast passes" "$out"
 teardown
 
 echo ""
