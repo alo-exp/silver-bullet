@@ -26,8 +26,8 @@ if grep -q 'command-timeout.sh' "$LIVE_HARNESS" \
    && grep -q 'approve-mcps' "$ADAPTER" \
    && grep -q 'add-dir' "$ADAPTER" \
    && grep -q 'cursor_home=' "$LIVE_HARNESS" \
-   && grep -q 'HOME=${cursor_home}' "$LIVE_HARNESS" \
-   && grep -q 'auth.json' "$LIVE_HARNESS" \
+   && grep -q 'host_home=' "$LIVE_HARNESS" \
+   && grep -q 'HOME=${host_home}' "$LIVE_HARNESS" \
    && grep -q 'config_name}" "${cursor_home}/.cursor/${config_name}' "$LIVE_HARNESS" \
    && grep -q 'LOG_ROOT=' "$LIVE_HARNESS" \
    && grep -q 'LOG_ROOT}/' "$LIVE_HARNESS" \

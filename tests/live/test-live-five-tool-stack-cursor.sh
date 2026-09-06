@@ -231,6 +231,7 @@ run_scenario() {
   local cursor_home="${work_dir}/cursor-home"
   local cursor_config_dir="${work_dir}/cursor-config"
   local cursor_data_dir="${work_dir}/cursor-data"
+  local host_home="$HOME"
   local five_tool_enabled="true"
   [[ "$id" == "S01-opt-in" ]] && five_tool_enabled="false"
   mkdir -p "$work_dir"
@@ -252,14 +253,10 @@ JSON
   # seeded from the already-verified shared SB config. This prevents a stale
   # plugin-cache hook (for example `npx -y context-mode`) from being loaded in
   # addition to the manifest-backed five-tool wiring under test.
-  # HOME is isolated too: Cursor's plugin cache is rooted below HOME and can
-  # otherwise inject a host-installed plugin even when CURSOR_CONFIG_DIR is
-  # temporary. Seed only the credential file needed by cursor-agent status.
+  # Keep HOME pointed at the invoking user's home because cursor-agent stores
+  # its login in the host keychain; isolate the config/data roots below so the
+  # fixture does not load the host's plugin hooks or MCP configuration.
   mkdir -p "$cursor_home/.cursor" "$cursor_config_dir" "$cursor_data_dir"
-  if [[ -f "${HOME}/.cursor/auth.json" ]]; then
-    cp "${HOME}/.cursor/auth.json" "$cursor_home/.cursor/auth.json"
-    chmod 600 "$cursor_home/.cursor/auth.json"
-  fi
   # Cursor can rehydrate enabled marketplace plugins from the account even when
   # its filesystem roots are isolated. Disable plugin-owned five-tool surfaces
   # in this test-only profile so each scenario exercises the single global
@@ -349,7 +346,7 @@ JSON
   local scoped_prompt="${BRIEF_PREFIX} Scenario root: ${work_dir}. Source checkout: ${SB_ROOT}. Use only those two paths; do not search /Users, /tmp, or parent fixture directories, and do not read any delegate transcript. Use the configured five-tool MCP names directly. ${scenario_context} ${prompt}"
   local timed_command=(
     env
-    "HOME=${cursor_home}"
+    "HOME=${host_home}"
     "CURSOR_AGENT_TIMEOUT=${inner_timeout}"
     "CURSOR_AGENT_MODEL=${CURSOR_AGENT_MODEL:-composer-2.5}"
     "CURSOR_MODEL=${CURSOR_MODEL:-composer-2.5}"
