@@ -44,7 +44,7 @@ for rel in \
   check_file "$rel"
 done
 
-THINNED_COMPOSERS=(silver-feature silver-ui silver-devops silver-bugfix silver-deep-research silver-release)
+THINNED_COMPOSERS=(sb-feature sb-ui sb-devops sb-bugfix sb-deep-research sb-release)
 for composer in "${THINNED_COMPOSERS[@]}"; do
   src="$(sb_agent_bundle_root "$REPO_ROOT" codex)/${composer}/SKILL.md"
   dst="${REPO_ROOT}/plugins/silver-bullet/skill-source/${composer}/SILVER_SOURCE"
