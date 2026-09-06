@@ -76,9 +76,9 @@ assert_output_contains "diagnostics emits Results line" "Results:" bash "$SCRIPT
 assert_output_contains "diagnostics checks jq" "jq" bash "$SCRIPT"
 assert_output_contains "diagnostics reports capability tier" "runtime-capability-tier" bash "$SCRIPT"
 diag_out="$(bash "$SCRIPT" 2>&1 || true)"
-if printf '%s' "$diag_out" | grep -q 'graphify-cli'; then
+if grep 'graphify-cli' >/dev/null <<<"$diag_out"; then
   pass "diagnostics checks graphify CLI"
-elif printf '%s' "$diag_out" | grep -Eq 'graphify-cli|graphify[[:space:]]'; then
+elif grep -Eq 'graphify-cli|graphify[[:space:]]' >/dev/null <<<"$diag_out"; then
   pass "diagnostics reports graphify status when CLI absent"
 else
   fail "diagnostics checks graphify CLI — output missing graphify status"

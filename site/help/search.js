@@ -15,14 +15,14 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "install",
     "title": "Installing Silver Bullet",
-    "text": "Install by host runtime: Claude Code plugin install or alo-labs/agent-plugins marketplace (alo-labs catalog), the public alo-labs/agent-plugins Codex marketplace package (alo-labs-codex catalog), or the public alo-labs/agent-plugins Cursor marketplace package (alo-labs-cursor catalog). Marketplace users run /silver:doctor for host-aware activation checks. Repository checkout developers can run bash scripts/sb-bootstrap.sh, bash scripts/sb-diagnostics.sh, or the checkout installers for development refresh. Initialize projects with /silver:init."
+    "text": "Install by host runtime: Claude Code plugin install or alo-labs/agent-plugins marketplace (alo-labs catalog), the public alo-labs/agent-plugins Codex marketplace package (alo-labs-codex catalog), or the public alo-labs/agent-plugins Cursor marketplace package (alo-labs-cursor catalog). Marketplace users run /sb:doctor for host-aware activation checks. Repository checkout developers can run bash scripts/sb-bootstrap.sh, bash scripts/sb-diagnostics.sh, or the checkout installers for development refresh. Initialize projects with /sb:init."
   },
   {
     "page": "Getting Started",
     "url": "/help/getting-started/",
     "anchor": "first-run",
     "title": "First workflow run",
-    "text": "Start with /silver and a natural-language request. SB classifies intent via AF-ROUTE, composes the smallest safe WF-* workflow from the APO catalog, then runs orient, planning, execution, verification, review, and ship gates with V-loop evidence."
+    "text": "Start with /sb and a natural-language request. SB classifies intent via AF-ROUTE, composes the smallest safe WF-* workflow from the APO catalog, then runs orient, planning, execution, verification, review, and ship gates with V-loop evidence."
   },
   {
     "page": "Help Center",
@@ -42,8 +42,8 @@ var IDX = [
     "page": "Core Concepts",
     "url": "/help/concepts/",
     "anchor": "skills",
-    "title": "Skills and /silver router",
-    "text": "Skills are markdown process guides invoked through the active host's supported channel. Codex uses the native /silver: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB uses host-native invocation receipts where available and /silver is the APO router that classifies complexity and composes lifecycle flows plus optional extension-plugin paths."
+    "title": "Skills and /sb router",
+    "text": "Skills are markdown process guides invoked through the active host's supported channel. Codex uses the native /sb: picker plus the silver-bullet invoke-skill adapter when SB needs a recorded invocation. SB uses host-native invocation receipts where available and /sb is the APO router that classifies complexity and composes lifecycle flows plus optional extension-plugin paths."
   },
   {
     "page": "Core Concepts",
@@ -64,7 +64,7 @@ var IDX = [
     "url": "/help/concepts/",
     "anchor": "quality-gates",
     "title": "Quality gates",
-    "text": "/silver:quality-gates evaluates product/software work across modularity reusability scalability security reliability usability testability extensibility and AI/LLM safety where applicable. /silver:domain-audit adds specialized domain contract packs. /devops-quality-gates applies 7 IaC-adapted dimensions."
+    "text": "/sb:quality-gates evaluates product/software work across modularity reusability scalability security reliability usability testability extensibility and AI/LLM safety where applicable. /sb:domain-audit adds specialized domain contract packs. /devops-quality-gates applies 7 IaC-adapted dimensions."
   },
   {
     "page": "Core Concepts",
@@ -78,14 +78,14 @@ var IDX = [
     "url": "/help/concepts/routing-logic.html",
     "anchor": "overview",
     "title": "Routing logic",
-    "text": "/silver routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the SB flow catalog. Not always-on session hijack."
+    "text": "/sb routes natural-language work requests through explicit or host-supported routing, performs complexity triage, then composes from the SB flow catalog. Not always-on session hijack."
   },
   {
     "page": "Core Concepts",
     "url": "/help/concepts/routing-logic.html",
     "anchor": "complexity-triage",
     "title": "Complexity triage",
-    "text": "Trivial and bounded medium work routes to /silver:fast, fuzzy work routes through /silver:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify frames scope and hands off to SB planning."
+    "text": "Trivial and bounded medium work routes to /sb:fast, fuzzy work routes through /sb:clarify, simple work routes to the matched workflow, and complex work gets the full composed path with clarify research spec gates as needed. Clarify frames scope and hands off to SB planning."
   },
   {
     "page": "Core Concepts",
@@ -127,7 +127,7 @@ var IDX = [
     "url": "/help/concepts/composable-workflow.html",
     "anchor": "overview",
     "title": "Composable workflow orchestration",
-    "text": "Silver Bullet replaces fixed pipelines with the APO catalog composable architecture. /silver classifies the request, selects WF-* workflow chains from docs/apo-catalog.json, supervises each AF-* atomic flow as a subagent work package, updates .planning/workflows/<id>.md after every completion, and enforces delivery through lifecycle hooks and V-loop evidence rollups."
+    "text": "Silver Bullet replaces fixed pipelines with the APO catalog composable architecture. /sb classifies the request, selects WF-* workflow chains from docs/apo-catalog.json, supervises each AF-* atomic flow as a subagent work package, updates .planning/workflows/<id>.md after every completion, and enforces delivery through lifecycle hooks and V-loop evidence rollups."
   },
   {
     "page": "Core Concepts",
@@ -141,7 +141,7 @@ var IDX = [
     "url": "/help/concepts/orchestrator-mode.html",
     "anchor": "blocking-decisions",
     "title": "Blocking decisions human gates",
-    "text": "Autonomous mode suppresses non-blocking clarify questions. decision_class blocking outcomes pause the queue until the user resolves them or logs SB OVERRIDE reason. Production deploy and release remain human-gated. silver:clarify --auto frames scope without removing blocking gates."
+    "text": "Autonomous mode suppresses non-blocking clarify questions. decision_class blocking outcomes pause the queue until the user resolves them or logs SB OVERRIDE reason. Production deploy and release remain human-gated. sb:clarify --auto frames scope without removing blocking gates."
   },
   {
     "page": "Core Concepts",
@@ -155,7 +155,7 @@ var IDX = [
     "url": "/help/concepts/enterprise-policy-profiles.html",
     "anchor": "onboarding",
     "title": "Autonomous safe onboarding",
-    "text": "Safe enterprise onboarding: install on tier 2+ host, run silver:init, start with supervised profile, complete one silver:feature cycle with evidence, then switch to autonomous_safe when ready. Policy profiles document posture; they are not proof of enterprise autonomy."
+    "text": "Safe enterprise onboarding: install on tier 2+ host, run sb:init, start with supervised profile, complete one sb:feature cycle with evidence, then switch to autonomous_safe when ready. Policy profiles document posture; they are not proof of enterprise autonomy."
   },
   {
     "page": "Core Concepts",
@@ -197,14 +197,14 @@ var IDX = [
     "url": "/help/concepts/verification.html",
     "anchor": "overview",
     "title": "Verification before completion",
-    "text": "/silver:verify is goal-backward verification. /verify-tests runs fresh test commands and writes the freshness marker consumed by hooks. Completion claims must be backed by verified behavior."
+    "text": "/sb:verify is goal-backward verification. /verify-tests runs fresh test commands and writes the freshness marker consumed by hooks. Completion claims must be backed by verified behavior."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/",
     "anchor": "overview",
     "title": "Orchestration workflows",
-    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 118 flow steps, V-loop contracts, composer routes /silver:feature /silver:bugfix /silver:ui /silver:devops /silver:deep-research /silver:release /silver:fast plus /silver:spec /silver:ingest /silver:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
+    "text": "Workflow catalog from docs/apo-catalog.json: 29 AF-* atomic flows, 26 WF-* workflows (22 task-shaped plus 4 reusable components), 118 flow steps, V-loop contracts, composer routes /sb:feature /sb:bugfix /sb:ui /sb:devops /sb:deep-research /sb:release /sb:fast plus /sb:spec /sb:ingest /sb:validate. WF-POST-EXEC-GATES chains AF-REVIEW AF-VERIFY AF-SECURE AF-VALIDATE AF-QUALITY-GATE AF-BRANCH-FINISH AF-COMPLETION-AUDIT AF-SHIP."
   },
   {
     "page": "Workflows",
@@ -218,133 +218,133 @@ var IDX = [
     "url": "/help/getting-started/",
     "anchor": "hook-activation",
     "title": "Hook activation guard v0.52.0",
-    "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /silver:init runs. Recommended tools Graphify, agentmemory, RTK, and Context Mode are opt-in via recommended_tools in config."
+    "text": "Hooks engage only when .silver-bullet.json and silver-bullet.md exist. Non-initiated workspaces receive no enforcement until /sb:init runs. Recommended tools Graphify, agentmemory, RTK, and Context Mode are opt-in via recommended_tools in config."
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "sb-skills",
-    "title": "/silver:doctor host-aware audit",
-    "text": "/silver:doctor v0.52.0 host-aware install and project activation audit via scripts/sb-doctor.sh checks D1-D13. Run after /silver:update when hooks seem inactive or before relying on enforcement. D8 orchestrator rule Cursor-only; D2 D3 D13 use active host plugin paths via runtime-paths.sh not Cursor deps on Claude Codex."
+    "title": "/sb:doctor host-aware audit",
+    "text": "/sb:doctor v0.52.0 host-aware install and project activation audit via scripts/sb-doctor.sh checks D1-D13. Run after /sb:update when hooks seem inactive or before relying on enforcement. D8 orchestrator rule Cursor-only; D2 D3 D13 use active host plugin paths via runtime-paths.sh not Cursor deps on Claude Codex."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-clarify.html",
     "anchor": "overview",
-    "title": "/silver:clarify",
-    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes a timestamped .planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md brief, and hands off to silver:context when the brief is decision-ready."
+    "title": "/sb:clarify",
+    "text": "Clarify workflow handles vague ideas, sketched requirements, and broad requirement documents before planning. It frames the problem, compares options, tests assumptions, writes a timestamped .planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md brief, and hands off to sb:context when the brief is decision-ready."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-feature.html",
     "anchor": "overview",
-    "title": "/silver:feature",
+    "title": "/sb:feature",
     "text": "Feature workflow orients in the codebase, clarifies or researches when needed, runs quality gates, performs SB context plan execute, reviews, verifies, secures the work, then ships."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-bugfix.html",
     "anchor": "overview",
-    "title": "/silver:bugfix",
+    "title": "/sb:bugfix",
     "text": "Bugfix workflow is triage-first. It chooses SB debugging or SB forensics depending on the failure type, then adds regression coverage, fixes, reviews, and verifies."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-ui.html",
     "anchor": "overview",
-    "title": "/silver:ui",
+    "title": "/sb:ui",
     "text": "UI workflow adds SB UI design contract and SB UI quality review around the feature skeleton, including accessibility and visual quality checks."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-devops.html",
     "anchor": "overview",
-    "title": "/silver:devops",
-    "text": "DevOps workflow uses silver:scan, /silver:blast-radius, optional DevOps skill routing, /devops-quality-gates, SB plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
+    "title": "/sb:devops",
+    "text": "DevOps workflow uses sb:scan, /sb:blast-radius, optional DevOps skill routing, /devops-quality-gates, SB plan and execute, IaC review, security checks, drift/rollback verification, environment promotion, and ship. TDD is explicitly skipped for infra plans."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:deploy",
-    "text": "Deployment workflow detects platforms, checks deploy command safety, records artifact identity, health checks, rollback readiness, monitoring evidence, and hands live runtime watches to /silver:canary."
+    "title": "/sb:deploy",
+    "text": "Deployment workflow detects platforms, checks deploy command safety, records artifact identity, health checks, rollback readiness, monitoring evidence, and hands live runtime watches to /sb:canary."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:canary",
+    "title": "/sb:canary",
     "text": "Canary workflow watches post-deploy runtime behavior through HTTP, browser, logs, metrics, and rollback checks. It records .planning/CANARY.md and blocks repeated runtime failures."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:test",
+    "title": "/sb:test",
     "text": "Test workflow covers test writing, E2E route discovery, test repair, test audit, test performance, and mutation-style challenge work with test-health evidence and verify-tests."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:refactor",
+    "title": "/sb:refactor",
     "text": "Refactor workflow preserves behavior by establishing baseline tests, planning small slices, applying code-health and structure-maintainability packs, and proving no regression."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:worktree",
+    "title": "/sb:worktree",
     "text": "Worktree workflow creates or finishes isolated git worktrees with uncommitted-change checks, branch state, verification, merge or PR decision, and cleanup safety."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:content",
+    "title": "/sb:content",
     "text": "Content workflow covers public content, documentation, search-readiness, migration, optimization, article drafting, metadata, links, and render/build verification."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:benchmark",
+    "title": "/sb:benchmark",
     "text": "Benchmark workflow evaluates agents, models, providers, prompts, or implementation approaches using a repeatable fixture, rubric, cost, latency, evidence quality, and benchmark-eval pack."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:incident",
-    "text": "Incident workflow records impact, timeline, mitigation, root cause, recovery verification, and corrective actions filed through silver:add."
+    "title": "/sb:incident",
+    "text": "Incident workflow records impact, timeline, mitigation, root cause, recovery verification, and corrective actions filed through sb:add."
   },
   {
     "page": "Workflows",
     "url": "/help/reference/index.html",
     "anchor": "orchestration-workflows",
-    "title": "/silver:retro",
+    "title": "/sb:retro",
     "text": "Retro workflow builds engineering retrospectives from release, git, CI, issue, review, domain-audit, and session evidence, then files actionable improvements."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-deep-research.html",
     "anchor": "overview",
-    "title": "/silver:deep-research",
-    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, supports solution-landscape and solution-compare modes with need-profile interview, SCR, weighted matrix, and serverless report.html under research/, and hands off to /silver:feature, /silver:ui, /silver:devops, silver:plan, or stops as research-only."
+    "title": "/sb:deep-research",
+    "text": "Research workflow clarifies the question, runs direct evidence-based research by default, supports solution-landscape and solution-compare modes with need-profile interview, SCR, weighted matrix, and serverless report.html under research/, and hands off to /sb:feature, /sb:ui, /sb:devops, sb:plan, or stops as research-only."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-multi-ai-task.html",
     "anchor": "overview",
-    "title": "/silver:multi-ai-task",
+    "title": "/sb:multi-ai-task",
     "text": "Reusable multi-model orchestration primitive (multi-ai-task-v2 spine). Pool resolution, dispatch ledger, work-item manifests, cost caps, Cursor host adapter stub, and OCG multi-ai-worker-v1 delegation."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-deep-research-multi-ai.html",
     "anchor": "overview",
-    "title": "/silver:deep-research-multi-ai",
-    "text": "Opt-in deep research composer: parallel DR-RETRIEVE, DR-TRIANGULATE, DR-CRITIQUE via /silver:multi-ai-task, run_manifest v4, deterministic consolidation, report.html and landscape-report.html."
+    "title": "/sb:deep-research-multi-ai",
+    "text": "Opt-in deep research composer: parallel DR-RETRIEVE, DR-TRIANGULATE, DR-CRITIQUE via /sb:multi-ai-task, run_manifest v4, deterministic consolidation, report.html and landscape-report.html."
   },
   {
     "page": "Workflows",
@@ -357,141 +357,141 @@ var IDX = [
     "page": "Workflows",
     "url": "/help/workflows/silver-compare.html",
     "anchor": "overview",
-    "title": "/silver:compare",
+    "title": "/sb:compare",
     "text": "Named solution comparison via deep-research engine (research_type=solution-compare). Requires N>=2 named solutions, mandatory need-profile interview, SCR per solution, weighted comparison matrix, validate_compare.py and validate_spa_report.py gates, serverless report.html under research/<date>-<slug>/."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-release.html",
     "anchor": "overview",
-    "title": "/silver:release",
-    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs the 4-stage pre-release quality gate (adversarial, SENTINEL, security, 100% site scan + verification bundle), UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, silver:ship, milestone archival, /silver:create-release, then a post-release items summary. scripts/pre-release-gate.sh enforces CI green before tag."
+    "title": "/sb:release",
+    "text": "Release workflow is milestone-level publishing, not phase-level ship. It runs the 4-stage pre-release quality gate (adversarial, SENTINEL, security, 100% site scan + verification bundle), UAT and milestone audits, security hard gate, docs checks, cross-artifact review, /verify-tests, sb:ship, milestone archival, /sb:create-release, then a post-release items summary. scripts/pre-release-gate.sh enforces CI green before tag."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-fast.html",
     "anchor": "overview",
-    "title": "/silver:fast",
-    "text": "Fast path handles Tier 1 trivial work and Tier 2 bounded medium work through SB fast-path handling, with Tier 3 escalation to silver:feature. It avoids legacy marker-file bypasses."
+    "title": "/sb:fast",
+    "text": "Fast path handles Tier 1 trivial work and Tier 2 bounded medium work through SB fast-path handling, with Tier 3 escalation to sb:feature. It avoids legacy marker-file bypasses."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-spec.html",
     "anchor": "overview",
-    "title": "/silver:spec",
+    "title": "/sb:spec",
     "text": "Spec compiler reads the newest clarify brief and writes canonical SPEC.md and REQUIREMENTS.md from SPEC acceptance criteria, with artifact review before SB planning."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-ingest.html",
     "anchor": "overview",
-    "title": "/silver:ingest",
+    "title": "/sb:ingest",
     "text": "Ingest workflow pulls external artifacts through MCP connectors such as JIRA, Figma, Google Docs, and Confluence, then writes ingestion manifest and spec/design artifacts."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-validate.html",
     "anchor": "overview",
-    "title": "/silver:validate",
+    "title": "/sb:validate",
     "text": "Validate workflow performs read-only gap analysis across SPEC and PLAN artifacts, emits BLOCK/WARN/INFO findings, and writes VALIDATION.md."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-new-workflow.html",
     "anchor": "overview",
-    "title": "/silver:new-workflow",
-    "text": "/silver:new-workflow WF-SILVER-NEW-WORKFLOW meta workflow authoring. Create Convert Audit modes. --audit WF-SILVER-FEATURE silver-feature slug SKILL.md path. Read-only compliance audit-workflow-compliance.sh validate-workflow-authoring structural migration_map catalog triple_alignment orchestrator flow_steps. docs/NEW-WORKFLOW.md."
+    "title": "/sb:new-workflow",
+    "text": "/sb:new-workflow WF-SILVER-NEW-WORKFLOW meta workflow authoring. Create Convert Audit modes. --audit WF-SILVER-FEATURE silver-feature slug SKILL.md path. Read-only compliance audit-workflow-compliance.sh validate-workflow-authoring structural migration_map catalog triple_alignment orchestrator flow_steps. docs/NEW-WORKFLOW.md."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-router.html",
     "anchor": "overview",
-    "title": "/silver",
-    "text": "/silver dynamic router WF-SILVER-ROUTER v0.52.0 APO catalog. AF-ROUTE classifies intent and composes WF-SILVER-FEATURE or WF-SILVER-FAST. Entry point for mixed or ambiguous work when the specialized route is unclear."
+    "title": "/sb",
+    "text": "/sb dynamic router WF-SILVER-ROUTER v0.52.0 APO catalog. AF-ROUTE classifies intent and composes WF-SILVER-FEATURE or WF-SILVER-FAST. Entry point for mixed or ambiguous work when the specialized route is unclear."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-deploy.html",
     "anchor": "overview",
-    "title": "/silver:deploy",
-    "text": "/silver:deploy WF-SILVER-DEPLOY v0.52.0 APO catalog. Blast-radius-first live rollout: AF-BLAST-RADIUS AF-VERIFY AF-SECURE AF-SHIP. Platform detection, deploy safety, artifact identity, health checks, rollback readiness, hands runtime watches to /silver:canary."
+    "title": "/sb:deploy",
+    "text": "/sb:deploy WF-SILVER-DEPLOY v0.52.0 APO catalog. Blast-radius-first live rollout: AF-BLAST-RADIUS AF-VERIFY AF-SECURE AF-SHIP. Platform detection, deploy safety, artifact identity, health checks, rollback readiness, hands runtime watches to /sb:canary."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-canary.html",
     "anchor": "overview",
-    "title": "/silver:canary",
-    "text": "/silver:canary WF-SILVER-CANARY v0.52.0 APO catalog. Post-deploy partial rollout watch: AF-BLAST-RADIUS AF-VERIFY AF-SHIP. HTTP browser logs metrics rollback checks, .planning/CANARY.md evidence, blocks repeated runtime failures."
+    "title": "/sb:canary",
+    "text": "/sb:canary WF-SILVER-CANARY v0.52.0 APO catalog. Post-deploy partial rollout watch: AF-BLAST-RADIUS AF-VERIFY AF-SHIP. HTTP browser logs metrics rollback checks, .planning/CANARY.md evidence, blocks repeated runtime failures."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-test.html",
     "anchor": "overview",
-    "title": "/silver:test",
-    "text": "/silver:test WF-SILVER-TEST v0.52.0 APO catalog. Test hardening composition AF-PLAN AF-EXECUTE AF-VERIFY. Test writing E2E route discovery repair audit performance mutation challenge with verify-tests freshness evidence."
+    "title": "/sb:test",
+    "text": "/sb:test WF-SILVER-TEST v0.52.0 APO catalog. Test hardening composition AF-PLAN AF-EXECUTE AF-VERIFY. Test writing E2E route discovery repair audit performance mutation challenge with verify-tests freshness evidence."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-refactor.html",
     "anchor": "overview",
-    "title": "/silver:refactor",
-    "text": "/silver:refactor WF-SILVER-REFACTOR v0.52.0 APO catalog. Behavior-preserving structural changes AF-PLAN AF-EXECUTE AF-VERIFY plus WF-POST-EXEC-GATES review verify secure validate quality gate ship readiness."
+    "title": "/sb:refactor",
+    "text": "/sb:refactor WF-SILVER-REFACTOR v0.52.0 APO catalog. Behavior-preserving structural changes AF-PLAN AF-EXECUTE AF-VERIFY plus WF-POST-EXEC-GATES review verify secure validate quality gate ship readiness."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-benchmark.html",
     "anchor": "overview",
-    "title": "/silver:benchmark",
-    "text": "/silver:benchmark WF-SILVER-BENCHMARK v0.52.0 APO catalog. Agent model provider prompt benchmark: AF-ORIENT AF-EXECUTE AF-VERIFY AF-DOCUMENT. Repeatable fixture rubric cost latency evidence quality benchmark-eval pack."
+    "title": "/sb:benchmark",
+    "text": "/sb:benchmark WF-SILVER-BENCHMARK v0.52.0 APO catalog. Agent model provider prompt benchmark: AF-ORIENT AF-EXECUTE AF-VERIFY AF-DOCUMENT. Repeatable fixture rubric cost latency evidence quality benchmark-eval pack."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-content.html",
     "anchor": "overview",
-    "title": "/silver:content",
-    "text": "/silver:content WF-SILVER-CONTENT v0.52.0 APO catalog. Docs copy public content workflow AF-CLARIFY AF-SPECIFY AF-EXECUTE AF-VERIFY AF-DOCUMENT. Search-readiness migration optimization metadata links render build verification."
+    "title": "/sb:content",
+    "text": "/sb:content WF-SILVER-CONTENT v0.52.0 APO catalog. Docs copy public content workflow AF-CLARIFY AF-SPECIFY AF-EXECUTE AF-VERIFY AF-DOCUMENT. Search-readiness migration optimization metadata links render build verification."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-incident.html",
     "anchor": "overview",
-    "title": "/silver:incident",
-    "text": "/silver:incident WF-SILVER-INCIDENT v0.52.0 APO catalog. Production incident response AF-BLAST-RADIUS AF-DEBUG AF-SECURE AF-VERIFY AF-DOCUMENT. Impact timeline mitigation root cause recovery verification corrective actions via /silver:add."
+    "title": "/sb:incident",
+    "text": "/sb:incident WF-SILVER-INCIDENT v0.52.0 APO catalog. Production incident response AF-BLAST-RADIUS AF-DEBUG AF-SECURE AF-VERIFY AF-DOCUMENT. Impact timeline mitigation root cause recovery verification corrective actions via /sb:add."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-retro.html",
     "anchor": "overview",
-    "title": "/silver:retro",
-    "text": "/silver:retro WF-SILVER-RETRO v0.52.0 APO catalog. Engineering retrospective AF-ORIENT AF-DOCUMENT AF-DECIDE. Release git CI issue review domain-audit session evidence, .planning/RETRO.md, actionable improvements via /silver:add."
+    "title": "/sb:retro",
+    "text": "/sb:retro WF-SILVER-RETRO v0.52.0 APO catalog. Engineering retrospective AF-ORIENT AF-DOCUMENT AF-DECIDE. Release git CI issue review domain-audit session evidence, .planning/RETRO.md, actionable improvements via /sb:add."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-forensics.html",
     "anchor": "overview",
-    "title": "/silver:forensics",
-    "text": "/silver:forensics WF-SILVER-FORENSICS v0.52.0 APO catalog. Session and post-mortem reconstruction AF-DEBUG AF-DOCUMENT AF-VALIDATE. Failure classification investigation path docs/silver:forensics report, distinct from live AF-DEBUG and WF-SILVER-INCIDENT."
+    "title": "/sb:forensics",
+    "text": "/sb:forensics WF-SILVER-FORENSICS v0.52.0 APO catalog. Session and post-mortem reconstruction AF-DEBUG AF-DOCUMENT AF-VALIDATE. Failure classification investigation path docs/sb:forensics report, distinct from live AF-DEBUG and WF-SILVER-INCIDENT."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-process-maintenance.html",
     "anchor": "overview",
-    "title": "/silver:process-maintenance",
-    "text": "/silver:process-maintenance WF-PROCESS-MAINTENANCE v0.52.0 APO catalog. Phase thread backlog migration maintenance AF-PHASE-MANAGE AF-DOCUMENT AF-VALIDATE. /silver:phase /silver:add ROADMAP STATE.md workflow archives planning integrity."
+    "title": "/sb:process-maintenance",
+    "text": "/sb:process-maintenance WF-PROCESS-MAINTENANCE v0.52.0 APO catalog. Phase thread backlog migration maintenance AF-PHASE-MANAGE AF-DOCUMENT AF-VALIDATE. /sb:phase /sb:add ROADMAP STATE.md workflow archives planning integrity."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-review-triad.html",
     "anchor": "overview",
-    "title": "/silver:review-triad",
-    "text": "/silver:review-triad WF-REVIEW-TRIAD reusable workflow component v0.52.0 APO catalog. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /silver:review-request /silver:review /silver:review-triage /silver:triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
+    "title": "/sb:review-triad",
+    "text": "/sb:review-triad WF-REVIEW-TRIAD reusable workflow component v0.52.0 APO catalog. REVIEW_REQUEST REVIEW REVIEW_TRIAGE atomic flows /sb:review-request /sb:review /sb:review-triage /sb:triage. Composed after EXECUTE inside WF-POST-EXEC-GATES delivery workflows."
   },
   {
     "page": "Workflows",
     "url": "/help/workflows/silver-ship-readiness.html",
     "anchor": "overview",
-    "title": "/silver:ship-readiness",
-    "text": "/silver:ship-readiness WF-SHIP-READINESS reusable workflow component v0.52.0 APO catalog. BRANCH_FINISH COMPLETION_AUDIT SHIP atomic flows /silver:branch-finish /silver:completion-audit /silver:ship. Final delivery gate after pre-ship QUALITY_GATE in WF-POST-EXEC-GATES."
+    "title": "/sb:ship-readiness",
+    "text": "/sb:ship-readiness WF-SHIP-READINESS reusable workflow component v0.52.0 APO catalog. BRANCH_FINISH COMPLETION_AUDIT SHIP atomic flows /sb:branch-finish /sb:completion-audit /sb:ship. Final delivery gate after pre-ship QUALITY_GATE in WF-POST-EXEC-GATES."
   },
   {
     "page": "Dev Workflow",
@@ -519,14 +519,14 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "capability-matrix",
     "title": "Capability matrix parity",
-    "text": "domain-audit silver:test deploy canary silver:add fingerprint backlog handoff forensics interface STATE.md silver:content incident retro benchmark external-review-policy evidence-schema BLOCK WARN INFO no numeric scoring"
+    "text": "domain-audit sb:test deploy canary sb:add fingerprint backlog handoff forensics interface STATE.md sb:content incident retro benchmark external-review-policy evidence-schema BLOCK WARN INFO no numeric scoring"
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "Silver Bullet command reference",
-    "text": "Reference for /silver, /silver:init, /silver:ensure-docs, /silver:quality-gates, /silver:domain-audit, /silver:test, /silver:refactor, /silver:worktree, /silver:deploy, /silver:canary, /silver:incident, /silver:retro, /silver:benchmark, /silver:content, /silver:blast-radius, /devops-quality-gates, /devops-skill-router, /silver:forensics, /silver:create-release, /verify-tests, /silver:add, /silver:remove, /silver:rem, /silver:scan, /silver:migrate, /silver:spike, /silver:phase, /silver:undo, /silver:thread, /silver:review-fix-ladder, and more."
+    "text": "Reference for /sb, /sb:init, /sb:ensure-docs, /sb:quality-gates, /sb:domain-audit, /sb:test, /sb:refactor, /sb:worktree, /sb:deploy, /sb:canary, /sb:incident, /sb:retro, /sb:benchmark, /sb:content, /sb:blast-radius, /devops-quality-gates, /devops-skill-router, /sb:forensics, /sb:create-release, /verify-tests, /sb:add, /sb:remove, /sb:rem, /sb:scan, /sb:migrate, /sb:spike, /sb:phase, /sb:undo, /sb:thread, /sb:review-fix-ladder, and more."
   },
   {
     "page": "Reference",
@@ -540,14 +540,14 @@ var IDX = [
     "url": "/help/reference/",
     "anchor": "sb-skills",
     "title": "SB lifecycle commands",
-    "text": "SB lifecycle commands include /silver, /silver:context, /silver:plan, /silver:execute, /silver:verify, /silver:review-request, /silver:review, /silver:review-triage, /silver:triage, /silver:secure, /silver:ship, /silver:deploy, /silver:canary, /silver:release, /silver:debug, /silver:incident, and /silver:retro."
+    "text": "SB lifecycle commands include /sb, /sb:context, /sb:plan, /sb:execute, /sb:verify, /sb:review-request, /sb:review, /sb:review-triage, /sb:triage, /sb:secure, /sb:ship, /sb:deploy, /sb:canary, /sb:release, /sb:debug, /sb:incident, and /sb:retro."
   },
   {
     "page": "Reference",
     "url": "/help/reference/",
     "anchor": "runtime-parity",
     "title": "Runtime parity scripts v0.52.0",
-    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh sb-doctor.sh silver:doctor host-aware audit interface STATE.md delivery hook structural parity runtime enforcement"
+    "text": "validate-evidence-findings.py evidence schema gate silver-add.sh fingerprint dedup prioritize stamp-interface-state.sh sb-bootstrap.sh sb-diagnostics.sh sb-doctor.sh sb:doctor host-aware audit interface STATE.md delivery hook structural parity runtime enforcement"
   },
   {
     "page": "Reference",
@@ -568,7 +568,7 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "hooks",
     "title": "Hook failures",
-    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.52.0 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, sb-doctor.sh silver:doctor host-aware install activation audit, stale compliance state, and /silver:init initialization issues."
+    "text": "Troubleshoot jq missing, hook permission denied, hooks not firing, v0.52.0 hook activation guard silver-bullet.md and .silver-bullet.json required, Cursor hooks.json merge, sb-diagnostics capability tier, sb-doctor.sh sb:doctor host-aware install activation audit, stale compliance state, and /sb:init initialization issues."
   },
   {
     "page": "Troubleshooting",
@@ -589,14 +589,14 @@ var IDX = [
     "url": "/help/troubleshooting/",
     "anchor": "recovery",
     "title": "Failed session recovery",
-    "text": "Use /silver to resume persisted planning state. Use /silver:forensics for session or workflow reconstruction and /silver:debug for active reproducible bugs."
+    "text": "Use /sb to resume persisted planning state. Use /sb:forensics for session or workflow reconstruction and /sb:debug for active reproducible bugs."
   },
   {
     "page": "Troubleshooting",
     "url": "/help/troubleshooting/",
     "anchor": "enforcement",
     "title": "Understanding enforcement",
-    "text": "If planning is incomplete, run /silver:quality-gates for software work or /silver:blast-radius plus /devops-quality-gates for IaC work. Use /silver:fast only for genuinely small or bounded changes."
+    "text": "If planning is incomplete, run /sb:quality-gates for software work or /sb:blast-radius plus /devops-quality-gates for IaC work. Use /sb:fast only for genuinely small or bounded changes."
   }
 ];
 

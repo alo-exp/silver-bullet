@@ -42,14 +42,14 @@
 | **Outcomes checklist** | enforced on Stop | skipped on SubagentStop (worker) | **No** |
 | **§3c completion-audit** | per Task return + Stop | worker banner + evidence artifact in template | **No** |
 | **graphify / agentmemory** | rules + gates | worker template + `subagent-start` banner | **No** |
-| **Ad-hoc Multitask** | spawn log + pending audit for all parents | tooling banner on start | **Mitigated** — route via `silver:content` still recommended |
+| **Ad-hoc Multitask** | spawn log + pending audit for all parents | tooling banner on start | **Mitigated** — route via `sb:content` still recommended |
 
 ---
 
 ## Recommendations (operational)
 
 - Route site/multi-bullet work through `silver` → `silver-content` or orchestrator queue.
-- After every Task return: `/silver:completion-audit` before user-facing "done" (now hook-enforced).
+- After every Task return: `/sb:completion-audit` before user-facing "done" (now hook-enforced).
 - Reload Cursor after plugin sync so `subagentStart` registers.
 
 ---

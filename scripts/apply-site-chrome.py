@@ -117,7 +117,7 @@ def render(fragment: str, root: str, **extra: str) -> str:
 def slug_title(slug: str) -> str:
     base = slug.removesuffix(".html")
     if base.startswith("silver-"):
-        return f"/silver:{base.removeprefix('silver-')}"
+        return f"/sb:{base.removeprefix('silver-')}"
     return SECTION_TITLES.get(base, base.replace("-", " ").title())
 
 

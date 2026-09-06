@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/workflows.sh — Composed-workflow lifecycle helper (Pass 2).
 #
-# Tracks active composed workflows (one per `silver:*` composition) as
+# Tracks active composed workflows (one per `sb:*` composition) as
 # per-instance markdown files under `.planning/workflows/<id>.md`. Each file
 # is created on `start`, mutated on `complete-flow`, and deleted on `complete`.
 #

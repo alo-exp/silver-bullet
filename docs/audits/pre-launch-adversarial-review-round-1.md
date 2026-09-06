@@ -8,7 +8,7 @@
 
 ## Method
 
-- **Bird's-eye:** Walk every composed flow skill (`silver:feature`, `silver:ui`, `silver:devops`, `silver:bugfix`, `silver:fast`, `silver:release`) end-to-end and confirm the documented flow chain, the per-step prose, and the enforcement markers agree with each other and with the two-tier hook model.
+- **Bird's-eye:** Walk every composed flow skill (`sb:feature`, `sb:ui`, `sb:devops`, `sb:bugfix`, `sb:fast`, `sb:release`) end-to-end and confirm the documented flow chain, the per-step prose, and the enforcement markers agree with each other and with the two-tier hook model.
 - **Ant's-eye:** Inspect each changed hook/skill/template/test for residual contradiction, broken fences, stale references, glob/path correctness, and marker/alias consistency.
 - **Evidence:** Automated test suite (`tests/run-all-tests.sh`) plus targeted hook/integration suites and per-runtime smoke harnesses.
 
@@ -23,7 +23,7 @@
 | B1 | `silver-bugfix` pre-chain vs `workflow-chain-guard` mismatch | Guard markers narrowed to `(silver-debug silver-plan)`; bugfix steps reordered to DEBUG → PLAN → TDD so markers are recorded before the first fix/test edit | `test-workflow-chain-guard.sh` 12/0; `test-skill-execution-paths.sh` "plan step before TDD step" PASS |
 | B2 | `hooks/core-rules.md` said Stop enforces `required_deploy` (contradicts two-tier) | Rewrote the MUST-NOT rule + Stop-hook description to the two-tier model (planning floor at Stop, `required_deploy` at delivery); regenerated `core-rules.sha256` | SHA256 matches stored hash; hook suite (incl. core-rules-integrity) 703/0; parity with `silver-bullet.md` L67 |
 | B3 | `silver-feature` ran pre-build validate before PLAN existed | Removed early Step 2.7; added Step 6b pre-build validate **after** plan phase | `silver-feature` ordering checks PASS |
-| B4 | Greenfield feature had no explicit SPEC step (FLOW 5) | Added Step 1d (`silver:spec` when `.planning/SPEC.md` absent) + listed in mandatory dependency chain | `test-skill-execution-paths.sh` resolves `silver:spec` → `silver-spec` PASS |
+| B4 | Greenfield feature had no explicit SPEC step (FLOW 5) | Added Step 1d (`sb:spec` when `.planning/SPEC.md` absent) + listed in mandatory dependency chain | `test-skill-execution-paths.sh` resolves `sb:spec` → `silver-spec` PASS |
 | B5 | `silver-init` Graphify hard gate contradicted fallback narrative | Softened to advisory with documented direct-docs fallback | Manual: `silver-init/SKILL.md` Graphify section advisory |
 | B6 | Corrupted markdown fences in `silver-bugfix` / `silver-devops` composition sections | Repaired fences + duplicate headings | Fence balance even in all flow skills (18/18/30/16/8) |
 
@@ -45,7 +45,7 @@
 
 - `docs/internal/stop-hook-audit.md` overview rewritten to two-tier (planning floor) + cross-ref to ENFORCEMENT.md.
 - `silver-update` install command corrected to `/plugin install alo-exp/silver-bullet` (replacing the prior MCP-style `claude mcp`-`install` command, which was wrong because Silver Bullet ships as a plugin, not an MCP server).
-- `silver-quality-gates` issue-tracker reference updated (`local` canonical, `gsd` legacy → local, route via `/silver:add` → `docs/issues/BACKLOG.md`).
+- `silver-quality-gates` issue-tracker reference updated (`local` canonical, `gsd` legacy → local, route via `/sb:add` → `docs/issues/BACKLOG.md`).
 - `docs/internal/CICD.md` corrected: `required_deploy` additions tighten the **delivery** gate, not routine commits (two-tier).
 - `silver-release` gap-closure nested-workflow collision documented (preserve parent release `SB_WORKFLOW_ID`; gap-closure runs as a sub-flow, no nested `start`).
 

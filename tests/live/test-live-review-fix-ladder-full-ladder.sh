@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full model-ladder live smoke for silver:review-fix-ladder.
+# Full model-ladder live smoke for sb:review-fix-ladder.
 #
 # Exercises every resolver rung for the selected host with real agent turns.
 # Opt-in: SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1

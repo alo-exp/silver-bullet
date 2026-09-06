@@ -7,9 +7,9 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Composable Workflow Orchestration — Silver Bullet Help</title>
-<meta name="description" content="How Silver Bullet's canonical atomic-flow composable architecture works: /silver classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
+<meta name="description" content="How Silver Bullet's canonical atomic-flow composable architecture works: /sb classifies context, composes a chain of flows dynamically, and supervises execution via the active per-instance workflow tracker.">
 <meta property="og:title" content="Composable Workflow Orchestration — Silver Bullet Help">
-<meta property="og:description" content="How Silver Bullet's canonical atomic flows work: /silver classifies context, selects catalog-backed flows, and supervises execution via the active per-instance workflow tracker.">
+<meta property="og:description" content="How Silver Bullet's canonical atomic flows work: /sb classifies context, selects catalog-backed flows, and supervises execution via the active per-instance workflow tracker.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/concepts/composable-workflow.html">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -122,7 +122,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Composable Workflow Orchestration</h1>
-    <p>How <code>/silver</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>ROUTE</code>, selects a catalog workflow, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
+    <p>How <code>/sb</code> composes catalog-backed work: Process → Workflow → Atomic Flow → Flow Step. Classifies intent via <code>ROUTE</code>, selects a catalog workflow, and supervises subagent execution through the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code>.</p>
   </div>
 </div>
 
@@ -145,7 +145,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What Are Composable Flows?</h2>
-      <p>Silver Bullet v0.52.0 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/silver</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
+      <p>Silver Bullet v0.52.0 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/sb</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
       <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
       <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
 
@@ -244,7 +244,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="how-composition-works">How Composition Works</h2>
-      <p>When you invoke <code>/silver</code>, composition happens in five catalog-backed steps:</p>
+      <p>When you invoke <code>/sb</code>, composition happens in five catalog-backed steps:</p>
       <ol>
         <li><strong>Intent classification</strong> — <code>ROUTE</code> maps the request, project state, and active artifacts to a workflow such as <code>silver-feature</code>, <code>silver-bugfix</code>, or a dynamic route.</li>
         <li><strong>Catalog selection</strong> — the workflow contributes atomic flow slugs and reusable workflow components. No workflow tree is authored outside <code>docs/apo-catalog.json</code>.</li>
@@ -297,7 +297,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="see-also">See Also</h2>
       <ul>
-        <li><a href="routing-logic.html">Routing Logic</a> — how <code>/silver</code> classifies intent before composing a path chain</li>
+        <li><a href="routing-logic.html">Routing Logic</a> — how <code>/sb</code> classifies intent before composing a path chain</li>
         <li><a href="verification.html">Verification Before Completion</a> — <code>VERIFY</code> and dual-mode quality gates in detail</li>
         <li><a href="artifact-review-assessor.html">Artifact Review Assessor</a> — how <code>REVIEW</code> and <code>REVIEW_TRIAGE</code> handle findings</li>
         <li><a href="documentation.html">Documentation Scheme</a> — <code>DOCUMENT</code> and the per-instance workflow tracker as project artifacts</li>

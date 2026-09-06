@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Triage scenario for silver:review-fix-ladder — review → triage → file → launcher APPLY ACCEPT → verify.
+# Triage scenario for sb:review-fix-ladder — review → triage → file → launcher APPLY ACCEPT → verify.
 #
 # Automated (default): resolver, skill contract, mock PM adapter, phase prompt shapes.
 # Live (opt-in): one rung phase sequence with cursor in-session driver.
@@ -52,18 +52,18 @@ run_automated_triage_scenario() {
   ladder_json="$(review_fix_ladder_ladder_json "$host" "$work_dir")"
   assert_output_contains "resolver returns host ${host}" "$ladder_json" "\"host\": \"${host}\""
 
-  invoke_out="$(cd "$work_dir" && bash "$INVOKE_ADAPTER" invoke-skill silver-review-fix-ladder smoke-target.py 2>&1)"
+  invoke_out="$(cd "$work_dir" && bash "$INVOKE_ADAPTER" invoke-skill sb:review-fix-ladder smoke-target.py 2>&1)"
   assert_output_contains "skill documents triage state machine" "$invoke_out" "rung_N_triage"
   assert_output_contains "skill documents file_valid_issues state" "$invoke_out" "file_valid_issues"
   assert_output_contains "skill forbids reviewer self-triage" "$invoke_out" "review subagent did.*not.*triage|Review subagent did.*not.*triage|FORBIDDEN.*review subagent to triage"
 
-  triage_skill="$(cd "$SB_ROOT" && bash "$INVOKE_ADAPTER" invoke-skill silver-triage smoke-target.py 2>&1)"
-  assert_output_contains "silver:triage skill loads" "$triage_skill" "BEGIN SKILL silver-triage|silver-triage"
+  triage_skill="$(cd "$SB_ROOT" && bash "$INVOKE_ADAPTER" invoke-skill sb:triage smoke-target.py 2>&1)"
+  assert_output_contains "sb:triage skill loads" "$triage_skill" "BEGIN SKILL silver-triage|silver-triage"
   assert_output_contains "triage skill documents VALID-BLOCKER" "$triage_skill" "VALID-BLOCKER"
 
   for phase in review triage verify; do
     prompt="$(review_fix_ladder_phase_prompt "$phase" 1 8 "composer-2.5" "low")"
-    assert_output_contains "phase prompt mentions ${phase}" "$prompt" "${phase}|rung_1_${phase}|/silver:triage|verify-only|REVIEW_RAW"
+    assert_output_contains "phase prompt mentions ${phase}" "$prompt" "${phase}|rung_1_${phase}|/sb:triage|verify-only|REVIEW_RAW"
   done
   apply_prompt="$(review_fix_ladder_phase_prompt "fix" 1 8 "composer-2.5" "low")"
   assert_output_contains "launcher APPLY ACCEPT prompt is not a rung fix" "$apply_prompt" "APPLY ACCEPT"

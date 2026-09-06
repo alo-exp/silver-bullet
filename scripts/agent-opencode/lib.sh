@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for /silver:agent-opencode harness scripts.
+# Shared helpers for /sb:agent-opencode harness scripts.
 # shellcheck shell=bash
 
 agent_opencode_script_dir() {

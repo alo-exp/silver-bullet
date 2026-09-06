@@ -9,4 +9,4 @@
 
 **Workflow:**
 1. Enforcement records the virtual `silver-orient` marker.
-2. Route orientation to `/silver:scan` or phase context to `/silver:context`.
+2. Route orientation to `/sb:scan` or phase context to `/sb:context`.

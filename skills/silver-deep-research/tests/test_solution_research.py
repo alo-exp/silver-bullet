@@ -608,7 +608,6 @@ class TestPhaseGateShortlist(unittest.TestCase):
 
 
 class TestMatrixOpenpyxl(unittest.TestCase):
-    @staticmethod
     def _has_openpyxl() -> bool:
         try:
             import openpyxl  # noqa: F401

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for /silver:deep-research-multi-ai composer."""
+"""CLI for /sb:deep-research-multi-ai composer."""
 
 from __future__ import annotations
 

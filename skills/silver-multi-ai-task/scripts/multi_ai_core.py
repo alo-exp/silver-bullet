@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Core library for /silver:multi-ai-task (multi-ai-task-v2 spine)."""
+"""Core library for /sb:multi-ai-task (multi-ai-task-v2 spine)."""
 
 from __future__ import annotations
 

@@ -189,7 +189,7 @@ When sans and mono text are mixed inline, their visual size must be the same. In
 
 Do not use title case for slash-command or skill references. Skill names should remain command-like and small-caps/code-like where appropriate:
 
-- Correct: `/silver:init`
+- Correct: `/sb:init`
 - Incorrect: `/Silver: Init`
 
 Heading letter spacing may be tight on the homepage hero and large headings, but ordinary compact panels, Help callouts, cards, and tables should use restrained text sizes. The site should read as a professional technical product, not as an editorial poster.
@@ -332,7 +332,7 @@ Only the top nav breadcrumb is used on Help pages. Do not add a second breadcrum
 - Align left-side icons to the top of painted text glyphs, not to DOM bounding boxes.
 - Use Lucide icons for interface symbols where available.
 - Keep Help Center pages on the common skeleton.
-- Use exact command casing such as `/silver:init`.
+- Use exact command casing such as `/sb:init`.
 - Keep TOC scrolling above the target heading.
 - Align the first Help content heading optically with the first TOC item; the shared CSS uses a 2px first-heading top padding to match painted glyph tops.
 

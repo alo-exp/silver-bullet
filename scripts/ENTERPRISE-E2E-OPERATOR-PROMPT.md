@@ -37,7 +37,7 @@ Enterprise E2E live test — Silver Bullet validation on `enterprise-grade-test-
 - The TUI may show **"Not logged in · Please run /login"** when using a custom API gateway (e.g. MiniMax M3 via `ANTHROPIC_BASE_URL` in `~/.codex/settings.json`). That banner is **cosmetic** — token-based access is valid; the harness ignores it and never instructs `/login`.
 - **`SB_E2E_MATRIX_SKIP_SETTINGS_EXPORT=0`** (default) — export `~/.codex/settings.json` env (`ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, etc.) into interactive TUI before spawn. Set `=1` only for direct claude.ai OAuth without settings env.
 - **`CLAUDE_INTERACTIVE_CUSTOM_API_KEY_STRATEGY=keys`** (default when export on) — accept custom API key disclaimer via keyboard `1` + Enter.
-- **Interactive TUI only** — use `/silver` and `/silver:*` slash commands (not legacy markdown skill links).
+- **Interactive TUI only** — use `/sb` and `/sb:*` slash commands (not legacy markdown skill links).
 - **Orchestrator parent** must not implement product code inline unless the workflow requires it.
 - **SB fixes** in SB repo only; **product code** in test app only.
 - **Do not commit** SB init artifacts from the test app to GitHub.
@@ -111,14 +111,14 @@ Registry: `docs/testing/pre-release-claims-registry.json`
 1. **graphify update .** in SB repo (enterprise E2E scope).
 2. **Preflight:** `bash scripts/run-enterprise-e2e-live-test.sh --preflight-only` (or hook-delivery + install-claude + test-app `npm test`).
 3. **Validation overlay dry-run** — automatic pre-matrix gate on live launch (or manual command above).
-4. **Review-fix-ladder** — 8 rungs, **2 consecutive clean verify passes** each (`/silver:review-fix-ladder` in SB repo).
+4. **Review-fix-ladder** — 8 rungs, **2 consecutive clean verify passes** each (`/sb:review-fix-ladder` in SB repo).
 5. **Full test suite:** `bash tests/run-all-tests.sh` → 0 failures.
 6. **install-claude.sh** after every SB fix commit before re-running failed matrix rows.
-7. **Session 0** — `/silver:init` in test app TUI; opt in tools; `graphify update .` in test app; stop after init.
+7. **Session 0** — `/sb:init` in test app TUI; opt in tools; `graphify update .` in test app; stop after init.
 8. **Matrix rows 1–22** — one TUI session per row (rows 21–22 inside parent rows 3 and 4).
 9. **Dual-role monitoring** — drive matrix in shell A; `monitor-enterprise-e2e-matrix.sh` + `watch-enterprise-e2e-tui.sh` in parallel.
 10. Update round ledger with Pass/Fail, `failure_class` (on Fail: `harness` | `product` | `environmental`), `graphify_query_ref`, `agentmemory_export_ref`.
-11. On SB hook bug: `/silver:add` label `enterprise-test-app` → fix → commit → `install-claude.sh` → re-run **failed row only**.
+11. On SB hook bug: `/sb:add` label `enterprise-test-app` → fix → commit → `install-claude.sh` → re-run **failed row only**.
 
 ### Failure classification (`failure_class`)
 
@@ -165,12 +165,12 @@ SB plugin: install from /Users/shafqat/projects/silver-bullet/repo via bash scri
 
 Constraints:
 - API key auth only — do NOT login or logout
-- Use /silver and /silver:* slash commands only (interactive TUI)
+- Use /sb and /sb:* slash commands only (interactive TUI)
 - Opt in Graphify + agentmemory + RTK + context_mode (enabled_by_user: true) if not already
 - Run graphify update . after init when Graphify enabled
 - Do not copy SB dogfood config from the plugin repo
 
-If Session 0 not done: run /silver:init now, then stop.
+If Session 0 not done: run /sb:init now, then stop.
 If resuming matrix: read next row from ROUND-N-LEDGER.md and prompt card from docs/WORKFLOW_E2E_MATRIX.md.
 
 Operator monitors in parallel (SB repo):

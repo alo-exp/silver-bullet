@@ -243,7 +243,7 @@ sb_context_mode_block_message_no_fragment() {
   cat <<EOF
 🚫 CONTEXT MODE INSTRUCTION FRAGMENT MISSING — scaffold routing hints in project docs.
 
-Run /silver:init or /silver:update to inject the context-mode hint block into silver-bullet.md and CLAUDE.md (sentinel-wrapped).
+Run /sb:init or /sb:update to inject the context-mode hint block into silver-bullet.md and CLAUDE.md (sentinel-wrapped).
 
 Without the fragment, the model may bypass ctx_* tools and savings drop to zero.
 See docs/CONTEXT-MODE.md and templates/context-mode-hint.md.base.
@@ -265,7 +265,7 @@ sb_context_mode_prompt_reminder_line() {
       ;;
     enabled)
       if sb_recommended_tool_enforcement_suspended "$config_file" "context_mode"; then
-        printf '%s' "Context Mode: opted in but install failed — enforcement suspended; retry on /silver:update."
+        printf '%s' "Context Mode: opted in but install failed — enforcement suspended; retry on /sb:update."
       elif ! sb_context_mode_node_ok "$config_file"; then
         printf '%s' "Context Mode: Node too old — upgrade to >= 22.5 before install."
       elif ! sb_context_mode_cli_available; then

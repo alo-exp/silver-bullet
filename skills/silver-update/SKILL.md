@@ -1,10 +1,10 @@
 ---
 name: silver-update
-description: This skill should be used when the user runs `/silver:update` or asks to update Silver Bullet — checks GitHub for the latest release, shows the changelog since the installed version, and installs the update after confirmation.
+description: This skill should be used when the user runs `/sb:update` or asks to update Silver Bullet — checks GitHub for the latest release, shows the changelog since the installed version, and installs the update after confirmation.
 version: 0.1.0
 ---
 
-# /silver:update — Update Silver Bullet
+# /sb:update — Update Silver Bullet
 
 Check GitHub for the latest Silver Bullet release, display what changed since your installed version, and install the update.
 
@@ -190,7 +190,7 @@ Installed via the active host's package manager / marketplace (silver-bullet@alo
 ### Step 8: Recommended-tools consent and install retry (project-level)
 
 After the plugin update succeeds, check the **project's** `.silver-bullet.json` (if present)
-for Graphify consent and suspension state. This mirrors Phase 1.1a of `/silver:init`.
+for Graphify consent and suspension state. This mirrors Phase 1.1a of `/sb:init`.
 
 ```bash
 test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enabled_by_user // "null"' .silver-bullet.json
@@ -201,7 +201,7 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.graphify.enforcement_su
 as fresh init — present benefits, ask Yes/No, write choice to `.silver-bullet.json`.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry Graphify install
-without re-asking. Detect host the same way as `/silver:init` Phase 1.1a Step 3 (`SB_HOST` =
+without re-asking. Detect host the same way as `/sb:init` Phase 1.1a Step 3 (`SB_HOST` =
 `primary host`, `secondary host`, or `task host` via `SILVER_BULLET_RUNTIME`, `SB_PLUGIN_ROOT`, or host env vars).
 
 1. `uv tool install graphifyy` or `pipx install graphifyy`
@@ -237,7 +237,7 @@ test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enabled_by_
 test -f .silver-bullet.json && jq -r '.recommended_tools.agentmemory.enforcement_suspended // false' .silver-bullet.json
 ```
 
-**If `enabled_by_user` is `null`:** run the same AskQuestion consent flow as `/silver:init` §1.1b.
+**If `enabled_by_user` is `null`:** run the same AskQuestion consent flow as `/sb:init` §1.1b.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry install without re-asking:
 
@@ -264,7 +264,7 @@ jq -r '.recommended_tools.rtk.enabled_by_user // "null"' .silver-bullet.json
 jq -r '.recommended_tools.rtk.enforcement_suspended // false' .silver-bullet.json
 ```
 
-**If `enabled_by_user` is `null`:** run the same consent flow as `/silver:init` §1.1e.
+**If `enabled_by_user` is `null`:** run the same consent flow as `/sb:init` §1.1e.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry install:
 
@@ -297,7 +297,7 @@ jq -r '.recommended_tools.context_mode.enabled_by_user // "null"' .silver-bullet
 jq -r '.recommended_tools.context_mode.enforcement_suspended // false' .silver-bullet.json
 ```
 
-**If `enabled_by_user` is `null`:** run consent flow from `/silver:init` §1.1f (include ELv2 disclosure).
+**If `enabled_by_user` is `null`:** run consent flow from `/sb:init` §1.1f (include ELv2 disclosure).
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry:
 
@@ -322,7 +322,7 @@ jq -r '.recommended_tools.leanctx.enabled_by_user // "null"' .silver-bullet.json
 jq -r '.recommended_tools.leanctx.enforcement_suspended // false' .silver-bullet.json
 ```
 
-**If `enabled_by_user` is `null`:** run consent flow from `/silver:init` §1.1g / `references/recommended-tools-opt-in.md`.
+**If `enabled_by_user` is `null`:** run consent flow from `/sb:init` §1.1g / `references/recommended-tools-opt-in.md`.
 
 **If `enabled_by_user` is `true` AND `enforcement_suspended` is `true`:** retry via reconciler (no re-ask):
 
@@ -365,11 +365,11 @@ Ask the user:
 - **B) Skip (plugin only)** — warn that dogfood may stay on stale enforcement
 
 **On A:**
-1. Invoke **`/silver:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge, task host rule scaffold.
-2. Invoke **`/silver:init`** in **update mode** — refresh `silver-bullet.md` from template, re-register host hooks, conflict detection.
+1. Invoke **`/sb:migrate`** — workflow tracker, orchestrator parent mode, config defaults merge, task host rule scaffold.
+2. Invoke **`/sb:init`** in **update mode** — refresh `silver-bullet.md` from template, re-register host hooks, conflict detection.
 3. Bump `config_version` in `.silver-bullet.json` (preserve user customizations).
-4. Run **`/silver:doctor`** automatically; surface every FAIL for inline fix.
+4. Run **`/sb:doctor`** automatically; surface every FAIL for inline fix.
 
 **On B:** Warn that hooks, template parity, and orchestrator rules may not match the installed plugin until migration runs.
 
-**Note:** Step 9 is the only path that touches project files during `/silver:update`. Steps 1–8 still update only the host plugin cache/registry.
+**Note:** Step 9 is the only path that touches project files during `/sb:update`. Steps 1–8 still update only the host plugin cache/registry.

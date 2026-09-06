@@ -11,13 +11,13 @@ version: 0.1.0
 **Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
 
 
-# /silver:agent-claude — Claude TUI Subagent Delegation
+# /sb:agent-claude — Claude TUI Subagent Delegation
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **Claude TUI** executes in the target project working directory.
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/silver:agent-codex` and `/silver:agent-cursor`:** Tri-host on-demand delegation siblings. Use **agent-claude** when Claude Code TUI is the intended executor; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
+**Contrast with `/sb:agent-codex` and `/sb:agent-cursor`:** Tri-host on-demand delegation siblings. Use **agent-claude** when Claude Code TUI is the intended executor; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
 
 **Contrast with enterprise E2E matrix:** Reuses proven Claude invoke harness (`claude-interactive-invoke.expect`, OAuth auth, idle/quiet timeouts, 429 retry, isolated `CLAUDE_CONFIG_DIR`). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
@@ -25,11 +25,11 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 ## When to use
 
-| Use `/silver:agent-claude` | Delegate inline or via host Task instead |
+| Use `/sb:agent-claude` | Delegate inline or via host Task instead |
 |----------------------------|------------------------------------------|
 | Host is Cursor/Codex and Claude is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs Claude-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
-| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`silver:feature`, orchestrator workers) |
+| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in Claude while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
 
 ---
@@ -48,7 +48,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 ## Activation (on-demand)
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
-2. Parent invokes **`/silver:agent-claude`** with a structured brief (below).
+2. Parent invokes **`/sb:agent-claude`** with a structured brief (below).
 3. Parent runs `bash scripts/agent-claude/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
@@ -62,7 +62,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 1. Parent **may** invoke this skill directly (host→Claude bridge; hook allows `agent-claude/invoke.sh` with degraded fallback or `agent-claude-delegate.sh`).
 2. Parent **must not** Edit/Write project source for work delegated to Claude — supervise only.
-3. Alternative: `silver-bullet invoke-skill silver-agent-claude` then run delegate.sh.
+3. Alternative: `silver-bullet invoke-skill sb:agent-claude` then run delegate.sh.
 4. For SB-repo harness fixes blocking delegation, spawn a worker or use `SB OVERRIDE:` with audit reason.
 5. After Claude completes, parent verifies acceptance criteria before claiming done.
 
@@ -101,7 +101,7 @@ Produce a delegation brief before invoke:
 ## Constraints
 - Branch: <name or create>
 - Do not: <scope limits>
-- SB routes (if any): /silver:plan → /silver:execute (Claude picker syntax)
+- SB routes (if any): /sb:plan → /sb:execute (Claude picker syntax)
 
 ## Evidence required
 - Commit SHA or explicit "no commit" rationale
@@ -208,7 +208,7 @@ Parent should prefer interactive TUI for supervision; use `--use-print` only aft
 
 Direct `scripts/agent-claude-delegate.sh` remains for worker/orchestrator paths; production parents should use `invoke.sh`.
 
-Claude route prefix in prompts: use `/silver:*` or `[$silver]` (Claude picker), not `$silver:*` (Codex).
+Claude route prefix in prompts: use `/sb:*` or `[$silver]` (Claude picker), not `$sb:*` (Codex).
 
 ---
 
@@ -243,7 +243,7 @@ Escalate to user when: auth required, two stuck retries fail, or acceptance crit
 
 | Learning | Delegation application |
 |----------|------------------------|
-| **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `/silver:*` route submit — parent verifies `prompt submitted` in log before checkpoint 2 |
+| **E2E-081 submit order** | Enter-wake for 0-token banner must not starve `/sb:*` route submit — parent verifies `prompt submitted` in log before checkpoint 2 |
 | **E2E-105** | Fresh `CLAUDE_CONFIG_DIR` + `${SB_RUNTIME_STATE_DIR}` per delegation wave in lightweight mode |
 | **E2E-110** | No inherit-keys shortcuts — OAuth auth policy documented; brief secret scan enforced |
 | **Stale locks** | Do not reuse `.e2e-live-test*.lock` from matrix; delegation clears matrix env |

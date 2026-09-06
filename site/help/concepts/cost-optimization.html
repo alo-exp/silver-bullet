@@ -145,7 +145,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="workflow-fit">Workflow Fit Table</h2>
-      <p><code>/silver</code> composes from lifecycle workflows and optional extension plugins instead of forcing every request through one fixed pipeline.</p>
+      <p><code>/sb</code> composes from lifecycle workflows and optional extension plugins instead of forcing every request through one fixed pipeline.</p>
       <table class="ref-table">
         <thead>
           <tr><th>Work Type</th><th>Likely Route</th><th>Efficiency Gain</th></tr>
@@ -153,52 +153,52 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <tbody>
           <tr>
             <td>Typo, copy, config, rename</td>
-            <td><code>/silver:fast</code> Tier 1</td>
+            <td><code>/sb:fast</code> Tier 1</td>
             <td>Avoids full planning while still confirming that scope is genuinely trivial.</td>
           </tr>
           <tr>
             <td>Bounded small change</td>
-            <td><code>/silver:fast</code> Tier 2 with SB flags</td>
+            <td><code>/sb:fast</code> Tier 2 with SB flags</td>
             <td>Uses lightweight discussion, research, or validation only when signals require it, then escalates if scope grows.</td>
           </tr>
           <tr>
             <td>Clear feature</td>
-            <td><code>/silver:feature</code> with SB context, plan, execute, verify</td>
+            <td><code>/sb:feature</code> with SB context, plan, execute, verify</td>
             <td>Keeps execution inside SB while applying pre-plan gates, artifact review, traceability, and pre-ship checks.</td>
           </tr>
           <tr>
             <td>Fuzzy feature or new product idea</td>
-            <td><code>/silver:clarify</code> or <code>/silver:spec</code> before planning</td>
+            <td><code>/sb:clarify</code> or <code>/sb:spec</code> before planning</td>
             <td>Prevents premature implementation by producing explicit scope, assumptions, and acceptance criteria first.</td>
           </tr>
           <tr>
             <td>External PRD, ticket, Figma, or Google Doc</td>
-            <td><code>/silver:ingest</code> &rarr; spec artifacts &rarr; artifact review</td>
+            <td><code>/sb:ingest</code> &rarr; spec artifacts &rarr; artifact review</td>
             <td>Preserves source context and marks missing connector data instead of silently inventing requirements.</td>
           </tr>
           <tr>
             <td>Plan/spec mismatch risk</td>
-            <td><code>/silver:validate</code></td>
+            <td><code>/sb:validate</code></td>
             <td>Finds uncovered acceptance criteria, open assumptions, and orphan plan tasks before implementation begins.</td>
           </tr>
           <tr>
             <td>Bugfix</td>
-            <td><code>/silver:bugfix</code> with debug and regression verification</td>
+            <td><code>/sb:bugfix</code> with debug and regression verification</td>
             <td>Spends process on root cause and regression prevention instead of broad feature planning.</td>
           </tr>
           <tr>
             <td>UI/frontend work</td>
-            <td><code>/silver:ui</code> with UI design contract and UI review</td>
+            <td><code>/sb:ui</code> with UI design contract and UI review</td>
             <td>Adds interface-specific design and visual checks that generic execution would miss.</td>
           </tr>
           <tr>
             <td>Infrastructure, CI/CD, deployment</td>
-            <td><code>/silver:devops</code> with blast-radius and IaC quality gates</td>
+            <td><code>/sb:devops</code> with blast-radius and IaC quality gates</td>
             <td>Uses risk and environment-promotion controls instead of application-only gates.</td>
           </tr>
           <tr>
             <td>Release preparation</td>
-            <td><code>/silver:release</code></td>
+            <td><code>/sb:release</code></td>
             <td>Concentrates finalization, docs, CI, artifact alignment, and ship checks at the point they matter.</td>
           </tr>
         </tbody>
@@ -207,12 +207,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="fast-path">Fast Path Without Silent Scope Creep</h2>
-      <p><code>/silver:fast</code> exists for low-risk and bounded work, but it is not a blanket bypass. Tier 1 runs the SB fast path; Tier 2 runs bounded SB quick handling with the right checks. If scope expands beyond the fast-path limits, the workflow escalates to <code>silver:feature</code>.</p>
+      <p><code>/sb:fast</code> exists for low-risk and bounded work, but it is not a blanket bypass. Tier 1 runs the SB fast path; Tier 2 runs bounded SB quick handling with the right checks. If scope expands beyond the fast-path limits, the workflow escalates to <code>sb:feature</code>.</p>
       <ul>
         <li>Good fits: typo fixes, small copy updates, simple config values, one-line renames.</li>
         <li>Medium fits: small logic updates, dependency bumps, or 4–10-file changes where the impact is local and clear.</li>
         <li>Bad fits: schema changes, auth, infrastructure, cross-module behavior, new capabilities, or anything that grows past the original scope.</li>
-        <li>The legacy trivial marker is guarded by <code>trivial-file-guard.sh</code>; current Codex-oriented flows should use <code>/silver:fast</code> instead.</li>
+        <li>The legacy trivial marker is guarded by <code>trivial-file-guard.sh</code>; current Codex-oriented flows should use <code>/sb:fast</code> instead.</li>
       </ul>
 
       <div class="divider"></div>
@@ -251,9 +251,9 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <ul>
         <li><a href="composable-workflow.html">Composable Workflow Orchestration</a></li>
         <li><a href="routing-logic.html">Routing Logic</a></li>
-        <li><a href="../workflows/silver-fast.html">/silver:fast</a></li>
-        <li><a href="../workflows/silver-spec.html">/silver:spec</a></li>
-        <li><a href="../workflows/silver-validate.html">/silver:validate</a></li>
+        <li><a href="../workflows/silver-fast.html">/sb:fast</a></li>
+        <li><a href="../workflows/silver-spec.html">/sb:spec</a></li>
+        <li><a href="../workflows/silver-validate.html">/sb:validate</a></li>
       </ul>
 
       <div class="page-nav-bottom">

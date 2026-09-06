@@ -1,4 +1,4 @@
-"""Tiny fixture for silver:review-fix-ladder live smoke."""
+"""Tiny fixture for sb:review-fix-ladder live smoke."""
 
 
 def greet(name: str) -> str:

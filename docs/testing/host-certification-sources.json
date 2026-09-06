@@ -33,7 +33,7 @@
           "fixture_repo": "alo-exp/enterprise-grade-test-app",
           "pr": "https://github.com/alo-exp/enterprise-grade-test-app/pull/26"
         },
-        "notes": "Fresh 1-row minimal-intent track via /silver:feature — 1/1 PASS on current install_fp; does not supersede ROUND-CURSOR-3 ledger or 22/22 tri-host claims"
+        "notes": "Fresh 1-row minimal-intent track via /sb:feature — 1/1 PASS on current install_fp; does not supersede ROUND-CURSOR-3 ledger or 22/22 tri-host claims"
       }
     },
     "codex": {
@@ -74,7 +74,7 @@
           "AUTO-C02": "20260705T173019Z-AUTO-C02",
           "AUTO-C03": "20260705T173750Z-AUTO-C03"
         },
-        "notes": "Fresh 3-row autonomous vision track via /silver:agent-claude — 3/3 PASS on current install_fp; does not supersede ROUND-9 ledger, claude host 6/22, or tri-host 22/22 claims"
+        "notes": "Fresh 3-row autonomous vision track via /sb:agent-claude — 3/3 PASS on current install_fp; does not supersede ROUND-9 ledger, claude host 6/22, or tri-host 22/22 claims"
       }
     }
   }

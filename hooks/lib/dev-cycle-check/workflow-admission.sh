@@ -29,7 +29,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
           for _wf in "${active_workflows[@]}"; do
             active_names+="  • $(basename "$_wf" .md)"$'\n'
           done
-          emit_block "$(printf '🛑 WORKFLOW ADMISSION — active composed workflow(s) exist, but SB_WORKFLOW_ID is unset.\n\nActive composed workflow(s):\n%s\nUse /silver to resume the matching composed workflow before making source edits.' "$active_names")"
+          emit_block "$(printf '🛑 WORKFLOW ADMISSION — active composed workflow(s) exist, but SB_WORKFLOW_ID is unset.\n\nActive composed workflow(s):\n%s\nUse /sb to resume the matching composed workflow before making source edits.' "$active_names")"
           exit 0
         fi
 
@@ -40,13 +40,13 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
 
         active_file="$wf_dir/$active_id.md"
         if [[ ! -f "$active_file" || -L "$active_file" ]]; then
-          emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /silver to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
+          emit_block "$(printf '🛑 WORKFLOW ADMISSION — no active workflow file matches SB_WORKFLOW_ID=%s.\n\nUse /sb to resume the active composed workflow, or start a new composed workflow before editing source code.' "$active_id")"
           exit 0
         fi
       fi
     fi
 
-    # F-06: no composed workflow — block logic src edits that bypass /silver routing
+    # F-06: no composed workflow — block logic src edits that bypass /sb routing
     if [[ ${#active_workflows[@]} -eq 0 ]]; then
       if [[ -n "$config_file" ]] && declare -f sb_project_is_initiated >/dev/null 2>&1; then
         if sb_project_is_initiated "$config_file"; then
@@ -60,7 +60,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
             logic_edit=true
           fi
           if [[ "$logic_edit" == true ]]; then
-            jq -n --arg m '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /silver:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.' \
+            jq -n --arg m '🛑 WORKFLOW ADVISORY — logic source edit with no active composed workflow. Start /sb:fast (Tier 2+) or a composer workflow before application code changes. Tier 1 applies only to docs/config typo fixes.' \
               '{"hookSpecificOutput":{"message":$m}}'
           fi
         fi

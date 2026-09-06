@@ -19,16 +19,16 @@ instructions.
 
 | Intent | Command |
 |---|---|
-| Let SB classify the task | `/silver <request>` |
-| Clarify vague work | `/silver:clarify` |
-| Produce or augment specs | `/silver:spec` or `/silver:ingest` |
-| Build feature work | `/silver:feature` |
-| Fix a bug | `/silver:bugfix` |
-| Build UI work | `/silver:ui` |
-| Run bounded fast-path work | `/silver:fast` |
-| Publish a milestone release | `/silver:release` |
+| Let SB classify the task | `/sb <request>` |
+| Clarify vague work | `/sb:clarify` |
+| Produce or augment specs | `/sb:spec` or `/sb:ingest` |
+| Build feature work | `/sb:feature` |
+| Fix a bug | `/sb:bugfix` |
+| Build UI work | `/sb:ui` |
+| Run bounded fast-path work | `/sb:fast` |
+| Publish a milestone release | `/sb:release` |
 
-If unsure, invoke `/silver` with the user request. SB routes to the correct
+If unsure, invoke `/sb` with the user request. SB routes to the correct
 workflow and composes only the required paths.
 
 ## Required Lifecycle
@@ -42,15 +42,15 @@ workflow and composes only the required paths.
 
 ### 1. Spec and clarification
 
-- Use `/silver:clarify` when scope, tradeoffs, or user intent are unclear.
-- Use `/silver:spec` when requirements need a canonical `SPEC.md` and
+- Use `/sb:clarify` when scope, tradeoffs, or user intent are unclear.
+- Use `/sb:spec` when requirements need a canonical `SPEC.md` and
   `REQUIREMENTS.md` before implementation.
-- Use `/silver:ingest` when source artifacts need to be pulled into the spec.
-- Resolve `silver:validate` BLOCK findings before implementation proceeds.
+- Use `/sb:ingest` when source artifacts need to be pulled into the spec.
+- Resolve `sb:validate` BLOCK findings before implementation proceeds.
 
 ### 2. Context
 
-Run `/silver:context`.
+Run `/sb:context`.
 
 Context captures locked decisions, assumptions, constraints, available source
 artifacts, and implementation boundaries. It produces the context the planner
@@ -58,25 +58,25 @@ uses; do not edit protected `.planning/` lifecycle artifacts directly.
 
 ### 3. Pre-plan quality gates
 
-Run `/silver:quality-gates` before planning. All applicable dimensions must pass:
+Run `/sb:quality-gates` before planning. All applicable dimensions must pass:
 modularity, reusability, scalability, security, reliability, usability,
 testability, extensibility, and conditional AI/LLM safety.
 
 ### 4. Plan
 
-Run `/silver:plan`.
+Run `/sb:plan`.
 
 The plan must include task waves, acceptance criteria, test strategy, dependency
 ordering, rollback considerations, review expectations, and verification steps.
-If the plan exposes unresolved assumptions, return to `/silver:context`.
+If the plan exposes unresolved assumptions, return to `/sb:context`.
 
 ### 5. Execute
 
-Run `/silver:execute`.
+Run `/sb:execute`.
 
 For behavior-changing code, the SB TDD gate runs before implementation. Use
-`silver:execute --tdd` when the plan requires red/green/refactor discipline.
-Use ordinary `silver:execute` for docs-only, config-only, or pure layout tasks
+`sb:execute --tdd` when the plan requires red/green/refactor discipline.
+Use ordinary `sb:execute` for docs-only, config-only, or pure layout tasks
 where TDD does not apply.
 
 Execution must produce atomic commits or clearly grouped changes and update the
@@ -86,17 +86,17 @@ relevant summary artifacts.
 
 Run the SB review sequence:
 
-1. `/silver:review-request`
-2. `/silver:review`
-3. `/silver:review-triage`
+1. `/sb:review-request`
+2. `/sb:review`
+3. `/sb:review-triage`
 
 Review loops must continue until two consecutive clean passes or an explicit
-deferred item is captured with `/silver:add`. Do not silently drop accepted
+deferred item is captured with `/sb:add`. Do not silently drop accepted
 findings.
 
 ### 7. Verify
 
-Run `/silver:verify`.
+Run `/sb:verify`.
 
 Verification is non-skippable. It checks tests, acceptance criteria, artifacts,
 UAT evidence, and regression risk. Run `/verify-tests` after the last source
@@ -109,18 +109,18 @@ SB test-gap path and re-run verification.
 
 - Run `security` for an independent security review when the change has security
   surface, auth surface, data handling, dependency, or deployment impact.
-- Run `/silver:secure` for threat mitigation verification.
-- Run `/silver:validate` when spec/plan/UAT coverage needs another consistency
+- Run `/sb:secure` for threat mitigation verification.
+- Run `/sb:validate` when spec/plan/UAT coverage needs another consistency
   pass.
 
 ### 9. Pre-ship quality gates
 
-Run `/silver:quality-gates` again after execution, verification, review, and
+Run `/sb:quality-gates` again after execution, verification, review, and
 security-sensitive checks. This pass is non-skippable for non-trivial work.
 
 ### 10. Documentation
 
-Run `/silver:ensure-docs` when code, behavior, operations, public docs, or
+Run `/sb:ensure-docs` when code, behavior, operations, public docs, or
 release surfaces changed.
 
 At minimum, keep the changelog, durable docs, monthly knowledge/learnings files,
@@ -130,38 +130,38 @@ in `docs/learnings/YYYY-MM.md`.
 
 ### 11. Branch finish
 
-Run `/silver:branch-finish` on feature branches. This step is skipped on
+Run `/sb:branch-finish` on feature branches. This step is skipped on
 `main`/`master` because there is no feature branch to finish.
 
 ### 11b. Completion audit
 
-Run `/silver:completion-audit` before ship. This gate independently verifies
+Run `/sb:completion-audit` before ship. This gate independently verifies
 required skills, artifact substance, and delivery readiness markers.
 
 ### 12. CI and ship
 
 - Run `/verify-tests`.
-- Check CI. If CI is red, run `/silver:debug`, fix, re-run tests, and re-check CI.
-- Run `/silver:ship` for phase-level PR/merge preparation.
+- Check CI. If CI is red, run `/sb:debug`, fix, re-run tests, and re-check CI.
+- Run `/sb:ship` for phase-level PR/merge preparation.
 
-`silver:ship` is a phase-level action. It is not a milestone release.
+`sb:ship` is a phase-level action. It is not a milestone release.
 
 ### 13. Release when requested
 
-Run `/silver:release` only for milestone-level publish/release intent. The
+Run `/sb:release` only for milestone-level publish/release intent. The
 release workflow owns UAT audit, milestone audit, security hard gate, docs
-readiness, fresh tests, `silver:ship`, milestone archival, and
-`/silver:create-release`.
+readiness, fresh tests, `sb:ship`, milestone archival, and
+`/sb:create-release`.
 
 ## Non-Skippable Gates
 
-- `/silver:completion-audit` immediately before ship
-- `/silver:quality-gates` before planning and before ship
-- `/silver:verify`
+- `/sb:completion-audit` immediately before ship
+- `/sb:quality-gates` before planning and before ship
+- `/sb:verify`
 - `/verify-tests` before PR, deploy, or release
-- `/silver:review` and `/silver:review-triage`
-- `/silver:secure` when security-sensitive behavior exists
-- `/silver:release` gates before milestone publication
+- `/sb:review` and `/sb:review-triage`
+- `/sb:secure` when security-sensitive behavior exists
+- `/sb:release` gates before milestone publication
 
 ## Optional Extension Plugins
 

@@ -93,8 +93,8 @@ export SILVER_BULLET_UPDATE_CHECK_LATEST
 sb_check_sb_update
 [[ "${SB_UPDATE_CHECK_RESULT:-}" == "update_available" ]] && pass "detects update_available" || fail "detects update_available (got ${SB_UPDATE_CHECK_RESULT:-})"
 block="$(sb_check_sb_update_prompt_block)"
-printf '%s' "$block" | grep -q 'ASK THE USER NOW' && pass "prompt block asks user" || fail "prompt block asks user"
-printf '%s' "$block" | grep -q '/silver:update' && pass "prompt references silver:update" || fail "prompt references silver:update"
+printf '%s' "$block" | grep 'ASK THE USER NOW' >/dev/null && pass "prompt block asks user" || fail "prompt block asks user"
+printf '%s' "$block" | grep '/sb:update' >/dev/null && pass "prompt references sb:update" || fail "prompt references sb:update"
 
 echo "--- Lib: up to date ---"
 write_registry "1.2.3"
@@ -141,9 +141,9 @@ SILVER_BULLET_UPDATE_CHECK_DISABLED=""
 export SILVER_BULLET_UPDATE_CHECK_DISABLED
 out="$(run_session startup)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
-printf '%s' "$ctx" | grep -q 'SB UPDATE AVAILABLE' && pass "startup injects update prompt" || fail "startup injects update prompt"
-printf '%s' "$ctx" | grep -q 'v0.10.0' && pass "startup shows installed version" || fail "startup shows installed version"
-printf '%s' "$ctx" | grep -q 'v0.11.0' && pass "startup shows latest version" || fail "startup shows latest version"
+printf '%s' "$ctx" | grep 'SB UPDATE AVAILABLE' >/dev/null && pass "startup injects update prompt" || fail "startup injects update prompt"
+printf '%s' "$ctx" | grep 'v0.10.0' >/dev/null && pass "startup shows installed version" || fail "startup shows installed version"
+printf '%s' "$ctx" | grep 'v0.11.0' >/dev/null && pass "startup shows latest version" || fail "startup shows latest version"
 
 echo "--- Session: no prompt when up to date ---"
 write_registry "0.11.0"
@@ -151,7 +151,7 @@ SILVER_BULLET_UPDATE_CHECK_LATEST="0.11.0"
 export SILVER_BULLET_UPDATE_CHECK_LATEST
 out="$(run_session startup)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
-printf '%s' "$ctx" | grep -q 'SB UPDATE AVAILABLE' && fail "up to date should not inject update prompt" || pass "up to date should not inject update prompt"
+printf '%s' "$ctx" | grep 'SB UPDATE AVAILABLE' >/dev/null && fail "up to date should not inject update prompt" || pass "up to date should not inject update prompt"
 
 echo "--- Session: compact skips update prompt ---"
 write_registry "0.10.0"
@@ -159,7 +159,7 @@ SILVER_BULLET_UPDATE_CHECK_LATEST="0.99.0"
 export SILVER_BULLET_UPDATE_CHECK_LATEST
 out="$(run_session compact)"
 ctx="$(printf '%s' "$out" | extract_ctx)"
-printf '%s' "$ctx" | grep -q 'SB UPDATE AVAILABLE' && fail "compact should not inject update prompt" || pass "compact should not inject update prompt"
+printf '%s' "$ctx" | grep 'SB UPDATE AVAILABLE' >/dev/null && fail "compact should not inject update prompt" || pass "compact should not inject update prompt"
 
 echo "--- Session: offline check fails gracefully ---"
 write_registry "0.10.0"
@@ -185,7 +185,7 @@ else
   [[ -z "$out" ]] && pass "offline session-start silent no-op acceptable" || fail "offline session-start still returns hook JSON"
 fi
 ctx="$(printf '%s' "$out" | extract_ctx)"
-printf '%s' "$ctx" | grep -q 'SB UPDATE AVAILABLE' && fail "offline should not inject update prompt" || pass "offline should not inject update prompt"
+printf '%s' "$ctx" | grep 'SB UPDATE AVAILABLE' >/dev/null && fail "offline should not inject update prompt" || pass "offline should not inject update prompt"
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

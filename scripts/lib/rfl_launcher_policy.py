@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RFL launcher policy: launch retry/skip, issue tables, default /silver:agent-* routing."""
+"""RFL launcher policy: launch retry/skip, issue tables, default /sb:agent-* routing."""
 
 from __future__ import annotations
 
@@ -30,31 +30,31 @@ AGENT_HOST_CATALOG: dict[str, dict[str, str]] = {
     "cursor": {
         "host": "cursor",
         "skill": "silver-agent-cursor",
-        "route": "/silver:agent-cursor",
+        "route": "/sb:agent-cursor",
         "invoke": "scripts/agent-cursor-delegate.sh",
     },
     "codex": {
         "host": "codex",
         "skill": "silver-agent-codex",
-        "route": "/silver:agent-codex",
+        "route": "/sb:agent-codex",
         "invoke": "scripts/agent-codex/invoke.sh",
     },
     "claude": {
         "host": "claude",
         "skill": "silver-agent-claude",
-        "route": "/silver:agent-claude",
+        "route": "/sb:agent-claude",
         "invoke": "scripts/agent-claude/invoke.sh",
     },
     "pi": {
         "host": "pi",
         "skill": "silver-agent-pi",
-        "route": "/silver:agent-pi",
+        "route": "/sb:agent-pi",
         "invoke": "scripts/agent-pi-delegate.sh",
     },
     "opencode": {
         "host": "opencode",
         "skill": "silver-agent-opencode",
-        "route": "/silver:agent-opencode",
+        "route": "/sb:agent-opencode",
         "invoke": "scripts/agent-opencode-delegate.sh",
     },
     "gemini-cli": {
@@ -69,23 +69,23 @@ USER_AGENT_ALIASES: dict[str, str] = {
     "cursor": "cursor",
     "agent-cursor": "cursor",
     "silver-agent-cursor": "cursor",
-    "/silver:agent-cursor": "cursor",
+    "/sb:agent-cursor": "cursor",
     "codex": "codex",
     "agent-codex": "codex",
     "silver-agent-codex": "codex",
-    "/silver:agent-codex": "codex",
+    "/sb:agent-codex": "codex",
     "claude": "claude",
     "agent-claude": "claude",
     "silver-agent-claude": "claude",
-    "/silver:agent-claude": "claude",
+    "/sb:agent-claude": "claude",
     "pi": "pi",
     "agent-pi": "pi",
     "silver-agent-pi": "pi",
-    "/silver:agent-pi": "pi",
+    "/sb:agent-pi": "pi",
     "opencode": "opencode",
     "agent-opencode": "opencode",
     "silver-agent-opencode": "opencode",
-    "/silver:agent-opencode": "opencode",
+    "/sb:agent-opencode": "opencode",
     "gemini": "gemini-cli",
     "gemini-cli": "gemini-cli",
 }
@@ -162,7 +162,7 @@ def default_agent_host_route(
     user_agent: str | None = None,
     available_hosts: Iterable[str] | None = None,
 ) -> dict[str, Any]:
-    """Map a model family onto a /silver:agent-* host.
+    """Map a model family onto a /sb:agent-* host.
 
     User override always wins. GPT/Claude stay on Codex/Claude unless the user
     named a different agent. Do not smash host ``--mode`` permission flags.
@@ -493,7 +493,7 @@ def add_policy_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--default-host-route",
         action="store_true",
-        help="Emit default /silver:agent-* host for a model family (user --user-agent wins)",
+        help="Emit default /sb:agent-* host for a model family (user --user-agent wins)",
     )
     parser.add_argument(
         "--user-agent",

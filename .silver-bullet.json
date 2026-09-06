@@ -299,7 +299,7 @@
           "post_index": []
         }
       },
-      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for silver:clarify, silver:ui-review, silver:verify. See alumnium.ai."
+      "benefits_summary": "AI-native browser/visual testing via MCP (do/check/get/wait); preferred for sb:clarify, sb:ui-review, sb:verify. See alumnium.ai."
     },
     "search_cli": {
       "enabled_by_user": null,
@@ -324,7 +324,7 @@
           "Firecrawl"
         ]
       },
-      "benefits_summary": "Optional multi-provider retrieval for silver:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
+      "benefits_summary": "Optional multi-provider retrieval for sb:deep-research. Used first when configured; host search/fetch tools remain fallback unless deep or ultradeep evidence thresholds cannot be satisfied."
     },
     "rtk": {
       "enabled_by_user": true,
@@ -582,7 +582,7 @@
     "include_max": false,
     "agent_name_prefix": "sb",
     "catalog_source": "agent-models+docs",
-    "catalog_fetched_at": "2026-08-30T15:17:27.159683+00:00",
+    "catalog_fetched_at": "2026-09-04T20:52:15.459990+00:00",
     "agents_install_status": "installed",
     "agents_install_scope": "global",
     "enforcement_suspended": false
@@ -601,7 +601,7 @@
       },
       "autonomous_safe": {
         "label": "Autonomous-safe",
-        "description": "Autonomous session default with bounded silver:clarify --auto; decision_class blocking outcomes still require human approval.",
+        "description": "Autonomous session default with bounded sb:clarify --auto; decision_class blocking outcomes still require human approval.",
         "session_mode_default": "autonomous",
         "clarify_auto": true,
         "production_deploy_requires_human": true,

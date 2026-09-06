@@ -22,7 +22,7 @@ assert_pass() {
 
 assert_contains() {
   local haystack="$1" needle="$2"
-  printf '%s' "$haystack" | grep -qF -- "$needle"
+  grep -F -- "$needle" >/dev/null <<<"$haystack"
 }
 
 assert_pass "rc matrix script exists" test -f "$MATRIX"
@@ -58,7 +58,7 @@ assert_pass "workflow is optional non-blocking" assert_contains "$workflow_body"
 assert_pass "workflow sets SB_RC_CI_MODE" assert_contains "$workflow_body" 'SB_RC_CI_MODE=1'
 assert_not_contains() {
   local haystack="$1" needle="$2"
-  ! printf '%s' "$haystack" | grep -qF -- "$needle"
+  ! grep -F -- "$needle" >/dev/null <<<"$haystack"
 }
 
 assert_pass "workflow excludes ANTHROPIC_API_KEY" assert_not_contains "$workflow_body" 'ANTHROPIC_API_KEY'

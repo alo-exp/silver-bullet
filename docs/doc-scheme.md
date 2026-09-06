@@ -1,6 +1,6 @@
 # Documentation Scheme
 
-> How Silver Bullet organizes your project's documentation. This file is scaffolded once during `/silver:init` and is yours to keep — edit freely.
+> How Silver Bullet organizes your project's documentation. This file is scaffolded once during `/sb:init` and is yours to keep — edit freely.
 
 ---
 
@@ -69,7 +69,7 @@ Use this map when adding or reorganizing docs.
 
 ## `docs/` — Your Project Documentation
 
-### Core files (scaffolded by `/silver:init`)
+### Core files (scaffolded by `/sb:init`)
 
 | File | Purpose |
 |------|---------|
@@ -117,17 +117,17 @@ Managed by SB workflows. You rarely edit these directly — they're created and 
 
 | Artifact | Created by | Purpose |
 |----------|-----------|---------|
-| `PROJECT.md` | `silver:init` / `silver:plan` | Vision, core value, requirements |
-| `ROADMAP.md` | `silver:plan` | Phase structure, status |
-| `STATE.md` | `silver:context` / `silver:plan` | Current progress, decisions, quick tasks |
-| `REQUIREMENTS.md` | `silver:spec` / `silver:plan` | Scoped requirements with acceptance criteria |
-| Phase dirs (`phases/`) | `silver:plan` / `silver:execute` | Per-phase context, research, plans, reviews |
-| `workflows/<id>.md` | `/silver` composer | Active composed-workflow state per workflow instance |
-| `WORKFLOW.md` (retired legacy) | Older `/silver` flows | Retired single-file composition log |
+| `PROJECT.md` | `sb:init` / `sb:plan` | Vision, core value, requirements |
+| `ROADMAP.md` | `sb:plan` | Phase structure, status |
+| `STATE.md` | `sb:context` / `sb:plan` | Current progress, decisions, quick tasks |
+| `REQUIREMENTS.md` | `sb:spec` / `sb:plan` | Scoped requirements with acceptance criteria |
+| Phase dirs (`phases/`) | `sb:plan` / `sb:execute` | Per-phase context, research, plans, reviews |
+| `workflows/<id>.md` | `/sb` composer | Active composed-workflow state per workflow instance |
+| `WORKFLOW.md` (retired legacy) | Older `/sb` flows | Retired single-file composition log |
 | `VALIDATION.md` | `silver-validate` | Pre-build validation results |
-| `UI-SPEC.md` | `silver:ui-contract` | UI specification — layout, components, interactions |
-| `UI-REVIEW.md` | `silver:ui-review` | UI review findings — 6-pillar assessment |
-| `SECURITY.md` | `silver:secure` | Security audit findings — threat mitigations |
+| `UI-SPEC.md` | `sb:ui-contract` | UI specification — layout, components, interactions |
+| `UI-REVIEW.md` | `sb:ui-review` | UI review findings — 6-pillar assessment |
+| `SECURITY.md` | `sb:secure` | Security audit findings — threat mitigations |
 
 All planning artifacts are archived on milestone completion — nothing grows unbounded.
 
@@ -192,8 +192,8 @@ Mandatory `updated` keys are read from `doc-scheme.json` (`mandatory_updated_doc
 
 Rule:
 1. Any key marked `updated` must correspond to a file modified in the current session.
-2. If the scheme files are missing/invalid, run `/silver:ensure-docs --recover-scheme`.
-3. If hook gaps are emitted, run `/silver:ensure-docs --from-hook --task <id> --gaps <path>`.
+2. If the scheme files are missing/invalid, run `/sb:ensure-docs --recover-scheme`.
+3. If hook gaps are emitted, run `/sb:ensure-docs --from-hook --task <id> --gaps <path>`.
 
 ## Brownfield Archival Policy
 

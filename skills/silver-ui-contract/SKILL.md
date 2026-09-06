@@ -5,7 +5,7 @@ argument-hint: "<UI scope>"
 version: 0.1.0
 ---
 
-# /silver:ui-contract - UI Design Contract
+# /sb:ui-contract - UI Design Contract
 
 SB-owned UI contract defines layout, states, accessibility, copy, tokens, and
 acceptance criteria before UI implementation.
@@ -33,9 +33,9 @@ as the starting shape when the file does not yet exist.
    - interface-state updates: design tokens, components, interaction patterns,
      accessibility decisions, screenshots, and open design debt;
    - screenshot or Playwright verification needs.
-4. Add acceptance criteria that `silver:execute`, `silver:ui-review`, and
-   `silver:verify` can check.
-5. Invoke or apply `silver:domain-audit --pack ui-system` and `accessibility`
+4. Add acceptance criteria that `sb:execute`, `sb:ui-review`, and
+   `sb:verify` can check.
+5. Invoke or apply `sb:domain-audit --pack ui-system` and `accessibility`
    for public or reusable UI surfaces.
 
 ## Exit Gate

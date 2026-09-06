@@ -360,7 +360,7 @@ EOF
         local fail_reason
         fail_reason="$(sb_recommended_tool_install_failure_reason "$config_file" "$tool_id")"
         cat <<EOF
-${tool_id} opted in but install failed — enforcement suspended until upgrade; retry on /silver:update.
+${tool_id} opted in but install failed — enforcement suspended until upgrade; retry on /sb:update.
 User consent preserved (enabled_by_user=true). Hooks treat ${tool_id} as advisory until install succeeds.
 ${fail_reason:+Failure reason: ${fail_reason}}
 EOF

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for /silver:agent-pi harness scripts.
+# Shared helpers for /sb:agent-pi harness scripts.
 # shellcheck shell=bash
 
 agent_pi_script_dir() {

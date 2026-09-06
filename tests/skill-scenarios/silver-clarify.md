@@ -11,4 +11,4 @@
 1. Frame → what problem are we solving and who is it for
 2. Explore → merged PM framing plus Superpowers-style candidate approaches and tradeoffs
 3. Converge → recommended path, rationale, and gray-area cleanup
-4. Handoff → decision-ready brief for `silver:context` or `silver:plan`
+4. Handoff → decision-ready brief for `sb:context` or `sb:plan`

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests for hooks/uat-gate.sh
-# Tests UAT gate enforcement for silver:release and legacy milestone completion.
+# Tests UAT gate enforcement for sb:release and legacy milestone completion.
 
 set -euo pipefail
 
@@ -108,16 +108,16 @@ out=$(run_hook "code-review")
 assert_passes "code-review skill passes silently" "$out"
 teardown
 
-# Test 2: silver:release blocked when UAT.md missing
+# Test 2: sb:release blocked when UAT.md missing
 echo "--- Group 2: UAT.md existence check ---"
 setup
-out=$(run_hook "silver:release")
-assert_blocks "silver:release blocked when UAT.md missing" "$out"
+out=$(run_hook "sb:release")
+assert_blocks "sb:release blocked when UAT.md missing" "$out"
 assert_contains "block message contains UAT GATE" "$out" "UAT GATE"
 assert_contains "block uses permissionDecision deny" "$out" "permissionDecision"
 teardown
 
-# Test 3: silver:release blocked when UAT.md has FAIL results
+# Test 3: sb:release blocked when UAT.md has FAIL results
 echo "--- Group 3: FAIL results check ---"
 setup
 cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
@@ -129,12 +129,12 @@ spec-version: 1.0
 | 1  | Login works | PASS |
 | 2  | Logout works | FAIL |
 EOF
-out=$(run_hook "silver:release")
-assert_blocks "silver:release blocked with FAIL results" "$out"
+out=$(run_hook "sb:release")
+assert_blocks "sb:release blocked with FAIL results" "$out"
 assert_contains "block message mentions FAIL" "$out" "FAIL"
 teardown
 
-# Test 4: silver:release passes when UAT.md has only PASS results
+# Test 4: sb:release passes when UAT.md has only PASS results
 echo "--- Group 4: All PASS ---"
 setup
 cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
@@ -146,11 +146,11 @@ spec-version: 1.0
 | 1  | Login works | PASS |
 | 2  | Logout works | PASS |
 EOF
-out=$(run_hook "silver:release")
-assert_passes "silver:release passes with all PASS results" "$out"
+out=$(run_hook "sb:release")
+assert_passes "sb:release passes with all PASS results" "$out"
 teardown
 
-# Test 5: silver:release blocked when NOT-RUN present
+# Test 5: sb:release blocked when NOT-RUN present
 echo "--- Group 5: NOT-RUN blocking ---"
 setup
 cat > "$TMPDIR_TEST/.planning/UAT.md" << 'EOF'
@@ -162,8 +162,8 @@ spec-version: 1.0
 | 1  | Login works | PASS |
 | 2  | Optional feature | NOT-RUN |
 EOF
-out=$(run_hook "silver:release")
-assert_blocks "silver:release blocked with NOT-RUN results" "$out"
+out=$(run_hook "sb:release")
+assert_blocks "sb:release blocked with NOT-RUN results" "$out"
 assert_contains "block message mentions NOT-RUN" "$out" "NOT-RUN"
 teardown
 
@@ -182,12 +182,12 @@ cat > "$TMPDIR_TEST/.planning/SPEC.md" << 'EOF'
 spec-version: 2.0
 # Spec
 EOF
-out=$(run_hook "silver:release")
-assert_blocks "silver:release blocked when spec version mismatches" "$out"
+out=$(run_hook "sb:release")
+assert_blocks "sb:release blocked when spec version mismatches" "$out"
 assert_contains "block mentions version mismatch" "$out" "v1.0"
 teardown
 
-# Test 6b: silver:ship passes without UAT when SPEC exists (release-only UAT gate)
+# Test 6b: sb:ship passes without UAT when SPEC exists (release-only UAT gate)
 setup
 cat > "$TMPDIR_TEST/.planning/SPEC.md" << 'EOF'
 spec-version: 1.0
@@ -197,7 +197,7 @@ spec-version: 1.0
 - AC-1: Works
 EOF
 out=$(run_hook "silver-ship")
-assert_passes "silver:ship not blocked when SPEC exists but UAT absent (phase ship)" "$out"
+assert_passes "sb:ship not blocked when SPEC exists but UAT absent (phase ship)" "$out"
 teardown
 
 # Test 8: Summary table with FAIL column header — must NOT block
@@ -212,7 +212,7 @@ spec-version: 1.0
 | 1  | Login     | 3    | 0    | 0       | 3     |
 | 2  | Logout    | 2    | 0    | 1       | 3     |
 EOF
-out=$(run_hook "silver:release")
+out=$(run_hook "sb:release")
 assert_passes "HOOK-01: FAIL in header row only — must NOT block" "$out"
 teardown
 
@@ -231,7 +231,7 @@ spec-version: 1.0
 | 1  | Login works | PASS |
 | 2  | Logout works | FAIL |
 EOF
-out=$(run_hook "silver:release")
+out=$(run_hook "sb:release")
 assert_blocks "HOOK-01: FAIL header + FAIL data row — must block" "$out"
 teardown
 
@@ -245,7 +245,7 @@ spec-version: 1.0
 |--------|--------|------|------|
 | Done   | OK     | 5    | 0    |
 EOF
-out=$(run_hook "silver:release")
+out=$(run_hook "sb:release")
 assert_passes "HOOK-01: header row with Status/Result + FAIL — must NOT block" "$out"
 teardown
 

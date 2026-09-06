@@ -26,11 +26,11 @@ Code intelligence tier: 1 (Graphify retrieval) with tier-0 shell fallback for fi
 
 | User intent | SB route | Typical tiers |
 |-------------|----------|---------------|
-| Deferred work / session recovery scan | `silver:scan` | 0, optional 1 |
-| Phase or release context | `silver:context`, `silver:handoff` | 0–1 |
-| Domain or code health audit | `silver:domain-audit`, `silver:review` | 0–2 |
-| UI / E2E verification | `silver:test --mode e2e`, `silver:ui-review` | 0, 3 |
-| Post-deploy confidence | `silver:canary`, `silver:deploy` | 0, 3 |
+| Deferred work / session recovery scan | `sb:scan` | 0, optional 1 |
+| Phase or release context | `sb:context`, `sb:handoff` | 0–1 |
+| Domain or code health audit | `sb:domain-audit`, `sb:review` | 0–2 |
+| UI / E2E verification | `sb:test --mode e2e`, `sb:ui-review` | 0, 3 |
+| Post-deploy confidence | `sb:canary`, `sb:deploy` | 0, 3 |
 
 ## Degradation Rules
 

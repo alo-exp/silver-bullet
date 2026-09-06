@@ -354,7 +354,7 @@ No scope escalation issues found.
 
 **Patch plan**:
 ```
-File: skills/silver:init/SKILL.md
+File: skills/sb:init/SKILL.md
 Add a Security Boundary section at the top (after the frontmatter):
   ## Security Boundary
   This skill reads project configuration files and git remote URLs.
@@ -391,7 +391,7 @@ The template instructs: "Switch to Opus 4.6 (1M context) if not already selected
 | SB-010 | Pass | No hardcoded secrets in templates | -- |
 | SB-011 | Pass | User-scoped default paths | -- |
 | SB-012 | Pass | Hook matcher scope appropriate | -- |
-| SB-013 | Mixed | SKILL.md prompt injection resistance | Patch plan for silver:init |
+| SB-013 | Mixed | SKILL.md prompt injection resistance | Patch plan for sb:init |
 | SB-014 | Info | Model switching instruction | By design |
 
 ---
@@ -420,7 +420,7 @@ The primary risk vectors are:
 1. **SB-002 + SB-003** (path validation): Implement path validation for state_file and trivial_file in all hooks. This is the highest-impact fix.
 2. **SB-001** (array-based args): Quick fix, eliminates a shellcheck suppression.
 3. **SB-006** (backtick wrapping): Strengthen commit sanitization instruction.
-4. **SB-013** (Security Boundary in silver:init): Add untrusted-data section.
+4. **SB-013** (Security Boundary in sb:init): Add untrusted-data section.
 5. **SB-008** (audit logging): Add bypass logging for deploy gate.
 6. Remaining Low/Info findings at discretion.
 

@@ -56,7 +56,7 @@ review_fix_ladder_phase_from_prompt() {
   local prompt="$1"
   if printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_review|review-only|raw findings only'; then
     printf 'review\n'
-  elif printf '%s' "$prompt" | grep -qiE '/silver:triage|silver:triage|rung_[0-9]+_triage|triage subagent'; then
+  elif printf '%s' "$prompt" | grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage subagent'; then
     printf 'triage\n'
   elif printf '%s' "$prompt" | grep -qiE 'rung_[0-9]+_fix|fix subagent|APPLY ACCEPT|launcher apply accept'; then
     printf 'fix\n'
@@ -92,7 +92,7 @@ EOF
       cat <<EOF
 Review-fix ladder triage scenario rung ${rung_index}/${rung_total}: state=rung_${rung_index}_triage.
 
-Invoke /silver:triage on the review findings for smoke-target.py. Classify the divide() defect.
+Invoke /sb:triage on the review findings for smoke-target.py. Classify the divide() defect.
 
 Reply with one line starting TRIAGE_PASS: and include VALID-NONBLOCKER for the zero-check finding. Do not fix files.
 EOF
@@ -131,7 +131,7 @@ review_fix_ladder_cursor_phase_response() {
       printf '%s\n' 'REVIEW_RAW: divide() lacks a zero-divisor guard and will raise ZeroDivisionError when b is 0.'
       ;;
     triage)
-      printf '%s\n' 'TRIAGE_PASS: VALID-NONBLOCKER — divide() must reject zero divisors per charter; filed via /silver:triage.'
+      printf '%s\n' 'TRIAGE_PASS: VALID-NONBLOCKER — divide() must reject zero divisors per charter; filed via /sb:triage.'
       ;;
     fix)
       printf '%s\n' 'FIX_PASS: added zero check in divide() returning ValueError for b == 0.'
@@ -153,7 +153,7 @@ review_fix_ladder_assert_phase_response() {
       printf '%s' "$response" | grep -qiE 'REVIEW_RAW:|ZeroDivisionError|zero check|BUG: no zero'
       ;;
     triage)
-      printf '%s' "$response" | grep -qiE 'TRIAGE_PASS:|VALID-NONBLOCKER|/silver:triage|silver:triage'
+      printf '%s' "$response" | grep -qiE 'TRIAGE_PASS:|VALID-NONBLOCKER|/sb:triage|sb:triage'
       ;;
     fix)
       printf '%s' "$response" | grep -qiE 'FIX_PASS:|b == 0|!= 0|ValueError|ZeroDivisionError'

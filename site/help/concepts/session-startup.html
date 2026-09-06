@@ -136,7 +136,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#step3">Step 3 — Initialize session state</a></li>
         <li><a href="#step4">Step 4 — Check workflow state</a></li>
         <li><a href="#step5">Step 5 — Update Checks</a></li>
-        <li><a href="#silver-update">silver:update flow</a></li>
+        <li><a href="#silver-update">sb:update flow</a></li>
         <li><a href="#anti-skip">Anti-Skip Enforcement</a></li>
       </ul>
     </aside>
@@ -186,7 +186,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <span class="update-opt opt-a">A. Yes, update now</span>
           <span class="update-opt">B. Skip</span>
         </div>
-        <p style="margin-top:10px">If A: runs <code>/silver:update</code> through the active host's supported skill channel, then continues. If B or check fails (offline, unknown version): outputs "Skipping SB update." and continues.</p>
+        <p style="margin-top:10px">If A: runs <code>/sb:update</code> through the active host's supported skill channel, then continues. If B or check fails (offline, unknown version): outputs "Skipping SB update." and continues.</p>
       </div>
 
       <div class="update-card">
@@ -210,7 +210,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <p>Update those plugins through the active host's plugin manager or the shared Codex marketplace, depending on runtime.</p>
       </div>
 
-      <h2 id="silver-update">The <code>/silver:update</code> flow</h2>
+      <h2 id="silver-update">The <code>/sb:update</code> flow</h2>
       <p>When you select "A. Yes, update now" for Silver Bullet, the update skill runs a multi-step flow with two explicit confirmation gates before any files are changed:</p>
 
       <div class="step-list">

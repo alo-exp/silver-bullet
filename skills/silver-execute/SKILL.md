@@ -5,7 +5,7 @@ argument-hint: "<plan path or execution scope>"
 version: 0.1.0
 ---
 
-# /silver:execute - Plan Execution
+# /sb:execute - Plan Execution
 
 SB-owned execution loop keeps implementation inside the current coding agent and
 SB artifacts while enforcing wave discipline, evidence capture, and deferred-item
@@ -20,7 +20,7 @@ Update the current phase with:
 - changed source/test/doc files;
 - `.planning/phases/<phase>/SUMMARY.md`;
 - task status updates in PLAN.md when the local format supports it;
-- deferred items filed through `silver:add`.
+- deferred items filed through `sb:add`.
 
 ## Process
 
@@ -34,9 +34,9 @@ Update the current phase with:
 5. After each wave:
    - run the smallest relevant verification;
    - record evidence and changed files;
-   - file skipped or deferred work immediately through `silver:add`.
-6. If execution fails, stop the phase and route to `silver:debug` or
-   `silver:bugfix`; do not mark the phase complete.
+   - file skipped or deferred work immediately through `sb:add`.
+6. If execution fails, stop the phase and route to `sb:debug` or
+   `sb:bugfix`; do not mark the phase complete.
 7. Write SUMMARY.md with tasks completed, files changed, tests run, known gaps,
    and follow-up items.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# On-demand Claude TUI delegation wrapper for /silver:agent-claude (not enterprise E2E matrix).
+# On-demand Claude TUI delegation wrapper for /sb:agent-claude (not enterprise E2E matrix).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,7 +18,7 @@ Usage: agent-claude-delegate.sh --work-dir PATH (--prompt TEXT | --brief-file PA
        [--sb-root PATH] [--use-print] [--attach] [--no-escalate] [--allow-mode-fallback]
 
 Delegates a single task to Claude via tests/live/agents/claude/agent.sh (NI: claude --print; interactive: expect PTY).
-Requires full SB checkout (agent adapter). Parent supervisors: see /silver:agent-claude.
+Requires full SB checkout (agent adapter). Parent supervisors: see /sb:agent-claude.
 EOF
 }
 

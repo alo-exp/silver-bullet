@@ -111,11 +111,11 @@ out_spawn=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"m
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_empty "parent allows Codex spawn_agent" "$out_spawn"
 
-out_invoke=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash /path/to/silver-bullet invoke-skill silver '\''$silver ship readiness'\''"}}' | \
+out_invoke=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"bash /path/to/silver-bullet invoke-skill sb '\''$silver ship readiness'\''"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
-assert_empty "parent allows Codex invoke-skill silver adapter" "$out_invoke"
+assert_empty "parent allows Codex invoke-skill sb adapter" "$out_invoke"
 
-out_invoke_flow=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"silver-bullet invoke-skill silver-plan"}}' | \
+out_invoke_flow=$(cd "$WORK" && printf '{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"silver-bullet invoke-skill sb:plan"}}' | \
   SB_ORCHESTRATOR_PARENT=1 SILVER_BULLET_RUNTIME=codex SILVER_BULLET_STATE_FILE="$TMPSTATE" SB_RUNTIME_STATE_DIR="$SB_TEST_DIR" bash "$GUARD" 2>/dev/null || true)
 assert_contains "parent blocks invoke-skill flow skill" "$out_invoke_flow" "ORCHESTRATOR PARENT"
 
@@ -270,4 +270,3 @@ unset SB_AGENT_DELEGATE_V2 SB_AGENT_DELEGATE_DIRECT_FALLBACK
 
 echo "Results: $PASS passed, $FAIL failed"
 [[ "$FAIL" -eq 0 ]]
-

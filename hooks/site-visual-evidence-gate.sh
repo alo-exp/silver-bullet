@@ -52,7 +52,7 @@ sb_site_session_visual_evidence_valid && exit 0
 reason="Site visual evidence gate — active site session requires 1280px light+dark screenshots before Stop.
 
 Capture via Alumnium or host browser MCP (browser_take_screenshot), then record paths in site-visual-evidence.json.
-See silver:content site batch protocol step 4 (Visual)."
+See sb:content site batch protocol step 4 (Visual)."
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 printf '{"decision":"block","reason":%s}' "$json_reason"
 exit 0

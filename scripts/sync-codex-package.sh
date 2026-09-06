@@ -41,6 +41,9 @@ log() {
 }
 
 mkdir -p "$DEST_DIR/.codex-plugin"
+# Never carry Codex's legacy command-to-skill migration artifacts into the
+# generated package; those source-command-* directories are not SB skills.
+rm -rf -- "$DEST_DIR/.codex-plugin/migrated-command-skills"
 
 if [[ ! -f "$DEST_DIR/.codex-plugin/plugin.json" ]]; then
   printf 'ERROR: missing Codex manifest at %s\n' "$DEST_DIR/.codex-plugin/plugin.json" >&2
@@ -157,5 +160,4 @@ else
 fi
 
 log "Codex package synchronized"
-
 

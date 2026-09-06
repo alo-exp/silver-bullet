@@ -188,24 +188,24 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="skills">Skills</h2>
-      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet includes orchestration workflow skills (<code>silver:feature</code>, <code>silver:bugfix</code>, <code>silver:ui</code>, <code>silver:devops</code>, <code>silver:deep-research</code>, <code>silver:release</code>, <code>silver:fast</code>), spec-pipeline skills (<code>silver:spec</code>, <code>silver:ingest</code>, <code>silver:validate</code>), artifact reviewer skills, and supporting skills for quality gates, enforcement, analytics, and project management.</p>
+      <p>A <strong>skill</strong> is a markdown file that contains a detailed prompt and instructions for the active runtime to follow when performing a specific task. When you invoke a skill, the runtime reads the file and executes its instructions as if it were a step-by-step process guide. Silver Bullet includes orchestration workflow skills (<code>sb:feature</code>, <code>sb:bugfix</code>, <code>sb:ui</code>, <code>sb:devops</code>, <code>sb:deep-research</code>, <code>sb:release</code>, <code>sb:fast</code>), spec-pipeline skills (<code>sb:spec</code>, <code>sb:ingest</code>, <code>sb:validate</code>), artifact reviewer skills, and supporting skills for quality gates, enforcement, analytics, and project management.</p>
 
       <h3>How Skills Are Stored</h3>
       <p>Skills live in host-specific locations:</p>
       <ul>
-        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — native host skill mirror. In Codex, SB mirrors internal <code>skill-source/</code> files here so the picker shows a single <code>/silver:</code> namespace.</li>
+        <li><code>${SB_RUNTIME_HOME_ROOT}/skills/</code> — native host skill mirror. In Codex, SB mirrors internal <code>skill-source/</code> files here so the picker shows a single <code>/sb:</code> namespace.</li>
         <li><code>${SB_RUNTIME_HOME_ROOT}/plugins/cache/</code> — plugin cache. Claude plugin skills can live under plugin <code>skills/</code>; the Codex SB package deliberately keeps internal skill sources under <code>skill-source/</code> to avoid duplicate plugin-prefixed picker entries.</li>
       </ul>
 
       <h3>How Skills Are Invoked</h3>
-      <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/silver:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
-      <div class="code-block"><span class="cmd">/silver:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
-<span class="cmd">/silver:context</span>        <span class="comment"># captures phase context and assumptions</span>
-<span class="cmd">/silver:review-request</span> <span class="comment"># frames review scope and blockers</span>
-<span class="cmd">/silver</span> quality review   <span class="comment"># classifies intent and composes the workflow chain</span></div>
+      <p>Inside the host coding agent, skills are invoked through the active host's supported channel. Claude exposes skill-tool/slash events. Codex exposes the native <code>/sb:</code> picker and the <code>silver-bullet invoke-skill &lt;name&gt;</code> adapter when SB needs a recorded invocation receipt:</p>
+      <div class="code-block"><span class="cmd">/sb:quality-gates</span>          <span class="comment"># invokes the quality-gates skill</span>
+<span class="cmd">/sb:context</span>        <span class="comment"># captures phase context and assumptions</span>
+<span class="cmd">/sb:review-request</span> <span class="comment"># frames review scope and blockers</span>
+<span class="cmd">/sb</span> quality review   <span class="comment"># classifies intent and composes the workflow chain</span></div>
 
-      <h3>The /silver Router</h3>
-      <p><code>/silver</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB workflow path for the work at hand. Optional external plugins are used only when they add specialized capability and the active workflow selects them.</p>
+      <h3>The /sb Router</h3>
+      <p><code>/sb</code> is Silver Bullet's smart dispatcher. It accepts freeform natural language, classifies task complexity and intent, then composes the right SB workflow path for the work at hand. Optional external plugins are used only when they add specialized capability and the active workflow selects them.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="route"></i></span>
@@ -241,7 +241,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3 id="trivial-changes">Trivial Changes</h3>
-      <p>Not every edit needs a full workflow. For trivial edits and bounded medium changes, use <code>/silver:fast</code>. It keeps Tier 1 and Tier 2 work lightweight, then escalates anything larger into the full Silver Bullet workflow instead of relying on legacy marker files.</p>
+      <p>Not every edit needs a full workflow. For trivial edits and bounded medium changes, use <code>/sb:fast</code>. It keeps Tier 1 and Tier 2 work lightweight, then escalates anything larger into the full Silver Bullet workflow instead of relying on legacy marker files.</p>
 
       <div class="divider"></div>
 
@@ -260,23 +260,23 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h3>SB Lifecycle Commands</h3>
       <p>Lifecycle commands are invoked through the host's supported skill or command channel:</p>
-      <div class="code-block"><span class="cmd">/silver:context</span>       <span class="comment"># Capture phase context and assumptions</span>
-<span class="cmd">/silver:plan</span>          <span class="comment"># Create task-level plan</span>
-<span class="cmd">/silver:execute</span>       <span class="comment"># Execute the active plan</span>
-<span class="cmd">/silver:verify</span>        <span class="comment"># Goal-backward verification</span>
-<span class="cmd">/silver:review</span>        <span class="comment"># Authoritative SB review artifact</span>
-<span class="cmd">/silver:ship</span>          <span class="comment"># Phase-level ship readiness</span>
-<span class="cmd">/silver:debug</span>         <span class="comment"># Systematic debugging for active bugs</span></div>
+      <div class="code-block"><span class="cmd">/sb:context</span>       <span class="comment"># Capture phase context and assumptions</span>
+<span class="cmd">/sb:plan</span>          <span class="comment"># Create task-level plan</span>
+<span class="cmd">/sb:execute</span>       <span class="comment"># Execute the active plan</span>
+<span class="cmd">/sb:verify</span>        <span class="comment"># Goal-backward verification</span>
+<span class="cmd">/sb:review</span>        <span class="comment"># Authoritative SB review artifact</span>
+<span class="cmd">/sb:ship</span>          <span class="comment"># Phase-level ship readiness</span>
+<span class="cmd">/sb:debug</span>         <span class="comment"># Systematic debugging for active bugs</span></div>
 
       <p>Ordinary lifecycle requests route to Silver Bullet skills by default. Optional plugins are used only when the selected workflow needs a specialized extension.</p>
 
       <h3>Review And Completion Discipline</h3>
       <ul>
         <li><strong><code>tdd</code> / <code>silver-tdd</code></strong> — red/green/refactor policy before behavior-changing implementation</li>
-        <li><strong><code>/silver:review-request</code></strong> — Frames review scope, files, risks, and blockers</li>
-        <li><strong><code>/silver:review-triage</code></strong> — Triage all feedback with accept/reject rationale before fixing</li>
-        <li><strong><code>/silver:completion-audit</code></strong> — Completion-claim verification gate</li>
-        <li><strong><code>/silver:branch-finish</code></strong> — Branch/PR finishing helper used only at the selected ship boundary</li>
+        <li><strong><code>/sb:review-request</code></strong> — Frames review scope, files, risks, and blockers</li>
+        <li><strong><code>/sb:review-triage</code></strong> — Triage all feedback with accept/reject rationale before fixing</li>
+        <li><strong><code>/sb:completion-audit</code></strong> — Completion-claim verification gate</li>
+        <li><strong><code>/sb:branch-finish</code></strong> — Branch/PR finishing helper used only at the selected ship boundary</li>
       </ul>
 
       <div class="divider"></div>
@@ -290,10 +290,10 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         </thead>
         <tbody>
           <tr><td>Requirements</td><td><span class="owner-sb">SB</span></td><td><code>.planning/REQUIREMENTS.md</code> is the single source of truth.</td></tr>
-          <tr><td>Planning</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:context</code> and <code>/silver:plan</code> for lifecycle planning.</td></tr>
-          <tr><td>Execution</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:execute</code> or the active SB workflow path for project work.</td></tr>
-          <tr><td>Design specs</td><td><span class="owner-sb">SB</span></td><td>Use <code>/silver:ui-contract</code>, <code>/silver:ui-review</code>, and design artifacts owned by the active SB workflow.</td></tr>
-          <tr><td>Code review</td><td><span class="owner-sb">SB</span></td><td><code>/silver:review</code> owns <code>REVIEW.md</code>; external reviewers are supplemental evidence only.</td></tr>
+          <tr><td>Planning</td><td><span class="owner-sb">SB</span></td><td>Use <code>/sb:context</code> and <code>/sb:plan</code> for lifecycle planning.</td></tr>
+          <tr><td>Execution</td><td><span class="owner-sb">SB</span></td><td>Use <code>/sb:execute</code> or the active SB workflow path for project work.</td></tr>
+          <tr><td>Design specs</td><td><span class="owner-sb">SB</span></td><td>Use <code>/sb:ui-contract</code>, <code>/sb:ui-review</code>, and design artifacts owned by the active SB workflow.</td></tr>
+          <tr><td>Code review</td><td><span class="owner-sb">SB</span></td><td><code>/sb:review</code> owns <code>REVIEW.md</code>; external reviewers are supplemental evidence only.</td></tr>
         </tbody>
       </table>
 
@@ -320,7 +320,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       </div>
 
       <h3>How Quality Gates Are Evaluated</h3>
-      <p>The <code>/silver:quality-gates</code> skill evaluates each relevant dimension, commonly by dispatching parallel reviewers in isolated worktrees. Results are synthesised by the active runtime. The most conservative finding wins: if one reviewer flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
+      <p>The <code>/sb:quality-gates</code> skill evaluates each relevant dimension, commonly by dispatching parallel reviewers in isolated worktrees. Results are synthesised by the active runtime. The most conservative finding wins: if one reviewer flags a dimension as <i data-lucide="x-circle" style="color:var(--red);vertical-align:middle"></i>, the whole gate fails.</p>
 
       <h3>DevOps Quality Gates</h3>
       <p>For infrastructure work, <code>/devops-quality-gates</code> applies 7 IaC-adapted dimensions, excluding usability and AI/LLM safety when they do not apply. The focus shifts to idempotency, drift prevention, least-privilege IAM, and infrastructure reliability.</p>
@@ -402,7 +402,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="file-structure">Standard File Structure</h2>
-      <p>After <code>/silver:init</code> initializes a project, you'll find this structure:</p>
+      <p>After <code>/sb:init</code> initializes a project, you'll find this structure:</p>
       <div class="code-block"><span class="comment"># Project root</span>
 CLAUDE.md / AGENTS.md        <span class="comment"># Active workflow + Silver Bullet rules</span>
 .silver-bullet.json          <span class="comment"># Project config (semantic compression, etc.)</span>
@@ -467,14 +467,14 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <h3>SPEC.md Canonical Format</h3>
       <p>The <code>SPEC.md</code> file is the authoritative spec artifact. It holds structured requirements, acceptance criteria, assumption tracking, and a cross-reference to source inputs (JIRA tickets, Figma links, PRD excerpts). All downstream artifacts — REQUIREMENTS.md, ROADMAP.md, DESIGN.md — must stay aligned with SPEC.md.</p>
 
-      <h3>silver:spec — Spec Creation</h3>
-      <p><code>/silver:spec</code> runs an AI-driven elicitation session that produces a canonical SPEC.md. It asks structured questions about user stories, acceptance criteria, assumptions, and non-goals, then writes the file in the canonical format. Use it at the start of any feature that needs a formal spec before SB planning.</p>
+      <h3>sb:spec — Spec Creation</h3>
+      <p><code>/sb:spec</code> runs an AI-driven elicitation session that produces a canonical SPEC.md. It asks structured questions about user stories, acceptance criteria, assumptions, and non-goals, then writes the file in the canonical format. Use it at the start of any feature that needs a formal spec before SB planning.</p>
 
-      <h3>silver:ingest — External Ingestion</h3>
-      <p><code>/silver:ingest</code> ingests artifacts from external sources — JIRA epics/issues, Figma files, and Google Docs — via MCP connectors. No custom API code is written; all external data access is delegated to MCP. The output is a structured INGESTION_MANIFEST that maps external inputs to spec sections.</p>
+      <h3>sb:ingest — External Ingestion</h3>
+      <p><code>/sb:ingest</code> ingests artifacts from external sources — JIRA epics/issues, Figma files, and Google Docs — via MCP connectors. No custom API code is written; all external data access is delegated to MCP. The output is a structured INGESTION_MANIFEST that maps external inputs to spec sections.</p>
 
-      <h3>silver:validate — Pre-Build Validation</h3>
-      <p><code>/silver:validate</code> performs read-only pre-build gap analysis. It reads <code>.planning/SPEC.md</code> plus any PLAN.md files, emits BLOCK/WARN/INFO findings, surfaces all assumptions, and writes <code>.planning/VALIDATION.md</code>. BLOCK findings must be resolved before implementation begins.</p>
+      <h3>sb:validate — Pre-Build Validation</h3>
+      <p><code>/sb:validate</code> performs read-only pre-build gap analysis. It reads <code>.planning/SPEC.md</code> plus any PLAN.md files, emits BLOCK/WARN/INFO findings, surfaces all assumptions, and writes <code>.planning/VALIDATION.md</code>. BLOCK findings must be resolved before implementation begins.</p>
       <p>Related hooks enforce adjacent lifecycle guarantees:</p>
       <ul>
         <li><strong>Spec floor check</strong> (<code>spec-floor-check.sh</code>) — verifies the SPEC.md meets minimum completeness requirements</li>
@@ -548,8 +548,8 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <h3>JSON Lines Metrics</h3>
       <p>Each record captures: artifact type, review depth, round number, pass/fail result, finding categories, and timestamp. The metrics file accumulates across sessions, giving you a long-running history of artifact quality.</p>
 
-      <h3>silver:review-stats Reports</h3>
-      <p>Run <code>/silver:review-stats</code> to generate three summary tables from the accumulated metrics:</p>
+      <h3>sb:review-stats Reports</h3>
+      <p>Run <code>/sb:review-stats</code> to generate three summary tables from the accumulated metrics:</p>
       <ul>
         <li><strong>Pass rates by artifact type</strong> — what percentage of review rounds pass cleanly</li>
         <li><strong>Rounds to clean pass</strong> — how many rounds artifacts typically need before approval</li>
@@ -557,7 +557,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       </ul>
 
       <h3>Verification-Before-Completion in Review Loop</h3>
-      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>silver:verify</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
+      <p>The review loop enforces that verification completes before any completion claim is recorded. This mirrors the workflow-level <code>sb:verify</code> gate but applies specifically to the artifact review cycle — an artifact cannot be declared approved without confirmed verification in the review record.</p>
 
       <div class="divider"></div>
 
@@ -578,7 +578,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet v0.52.0 is an Agentic Process Orchestrator (APO): <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. The canonical <code>AF-*</code> catalog in <code>docs/apo-catalog.json</code> replaces fixed pipelines. When you invoke <code>/silver</code>, it classifies context, selects a <code>WF-*</code> workflow, and composes catalog-backed atoms — with the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> recording V-loop evidence and composition state in real time.</p>
+      <p>Silver Bullet v0.52.0 is an Agentic Process Orchestrator (APO): <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. The canonical <code>AF-*</code> catalog in <code>docs/apo-catalog.json</code> replaces fixed pipelines. When you invoke <code>/sb</code>, it classifies context, selects a <code>WF-*</code> workflow, and composes catalog-backed atoms — with the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> recording V-loop evidence and composition state in real time.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
@@ -605,7 +605,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="routing-logic">Routing Logic</h2>
-      <p><code>/silver</code> is the dynamic composition entry point for Silver Bullet work. It classifies complexity and intent, then composes the appropriate path from SB workflows and optional supporting plugin skills. In runtimes that support prompt interception, plain work requests may be routed through this layer; explicit <code>/silver</code> invocation remains the portable path.</p>
+      <p><code>/sb</code> is the dynamic composition entry point for Silver Bullet work. It classifies complexity and intent, then composes the appropriate path from SB workflows and optional supporting plugin skills. In runtimes that support prompt interception, plain work requests may be routed through this layer; explicit <code>/sb</code> invocation remains the portable path.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="git-branch"></i></div>
@@ -615,14 +615,14 @@ raw/                         <span class="comment"># Optional fetched corpus for
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="filter"></i></div>
           <h4>Complexity Triage</h4>
-          <p>Trivial or bounded medium → silver:fast. Fuzzy → silver:clarify first. Simple → direct workflow. Complex → clarify + synthesize. Prevents both over-processing small work and under-processing risky work.</p>
+          <p>Trivial or bounded medium → sb:fast. Fuzzy → sb:clarify first. Simple → direct workflow. Complex → clarify + synthesize. Prevents both over-processing small work and under-processing risky work.</p>
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="operational-efficiency">Operational Efficiency</h2>
-      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Small and bounded work routes through <code>/silver:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
+      <p>Silver Bullet's efficiency comes from composing the smallest safe workflow for the task. Small and bounded work routes through <code>/sb:fast</code>, fuzzy work routes through clarification or spec creation, DevOps work gets blast-radius and IaC gates, and release work gets finalization checks. Model routing is delegated to the active host; the historical <code>ensure-model-routing.sh</code> hook is disabled.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="cpu"></i></div>
@@ -639,17 +639,17 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="verification">Verification Before Completion</h2>
-      <p><code>AF-VERIFY</code> (Verify) is the catalog atom behind <code>silver:verify</code> — a non-skippable gate before any delivery workflow completes. It is a section 3 rule: it cannot be waived via preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
+      <p><code>AF-VERIFY</code> (Verify) is the catalog atom behind <code>sb:verify</code> — a non-skippable gate before any delivery workflow completes. It is a section 3 rule: it cannot be waived via preferences or the step-skip protocol. "Done" means tests pass and behavior is confirmed, not just that code was written.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="check-circle-2"></i></div>
           <h4><a href="verification.html" style="color:var(--accent-light);text-decoration:none">Verification Before Completion →</a></h4>
-          <p>What silver:verify checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
+          <p>What sb:verify checks, when it fires in each workflow, what counts as verified, and what cannot be skipped.</p>
         </div>
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="shield-check"></i></div>
           <h4>Non-Skippable Gates</h4>
-          <p>Permanent gates cannot be waived through preferences: <code>silver:verify</code>, pre-ship <code>/silver:quality-gates</code>, and secure-phase/security-dimension checks for non-trivial work.</p>
+          <p>Permanent gates cannot be waived through preferences: <code>sb:verify</code>, pre-ship <code>/sb:quality-gates</code>, and secure-phase/security-dimension checks for non-trivial work.</p>
         </div>
       </div>
 

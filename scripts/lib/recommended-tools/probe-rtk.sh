@@ -114,8 +114,15 @@ rt_repair_rtk() {
   if [[ -f "$opt" ]]; then
     local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}" --skip-cm-doctor)
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
-    bash "$opt" "${opt_args[@]}" >&2 \
-      && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
+    if rt_cross_tool_batch_active; then
+      # Keep the nested global-tool installer from starting another
+      # post-install reconcile while this apply owns convergence.
+      TOOLSTACK_INSTALL_IN_PROGRESS=1 bash "$opt" "${opt_args[@]}" >&2 \
+        && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
+    else
+      bash "$opt" "${opt_args[@]}" >&2 \
+        && actions+=("optimize_rtk_context_mode") || failures+=("optimize_rtk_failed")
+    fi
   fi
   if ! rt_cross_tool_batch_active; then
     local patch_py="${RT_REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"

@@ -11,13 +11,13 @@ version: 0.1.0
 **Pinned NI fast path:** `--interaction-mode non-interactive` (or `--non-interactive` / `--use-print` / `--use-exec`) writes `mode.json` `{requested, classified:null, resolved:non-interactive, reason:[pin]}` and execs the native one-shot CLI with no classifier, D3/TUI probe, D4, recommended-tools preflight, quota-retry, or tail-idle watcher. Re-enable wrappers with `--quota-retry` / `AGENT_*_QUOTA_RETRY_MAX` and existing idle env. `auto` still runs the full resolver. Interactive is one native CLI or PTY (`pi` without `-p`; `cursor-agent` without `--print` when the CLI exists).
 
 
-# /silver:agent-opencode — OpenCode CLI Subagent Delegation
+# /sb:agent-opencode — OpenCode CLI Subagent Delegation
 
 On-demand, **single-task** supervision model: the **host parent** plans, briefs, checkpoints, and escalates; **OpenCode CLI** executes in the target project working directory via **`opencode run`** (primary non-interactive path).
 
 **Contrast with Sidekick:** Sidekick is session-persistent (quality gates, cross-session advisor). This skill activates **per task** and tears down when the task completes or escalates.
 
-**Contrast with `/silver:agent-codex`, `/silver:agent-cursor`, `/silver:agent-claude`, and `/silver:agent-pi`:** Multi-host on-demand delegation siblings. Use **agent-opencode** when OpenCode CLI (`opencode run`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-pi** for Pi CLI (`pi -p`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
+**Contrast with `/sb:agent-codex`, `/sb:agent-cursor`, `/sb:agent-claude`, and `/sb:agent-pi`:** Multi-host on-demand delegation siblings. Use **agent-opencode** when OpenCode CLI (`opencode run`) is the intended executor with MiMo V2.5 via opencode-go; use **agent-pi** for Pi CLI (`pi -p`); use **agent-claude** for Claude Code TUI; use **agent-codex** for Codex CLI; use **agent-cursor** for Cursor CLI.
 
 **Contrast with enterprise E2E matrix:** Reuses proven OpenCode live adapter (`tests/live/agents/opencode/agent.sh`, `opencode run` with tail-idle completion, quota retry, model pin). Does **not** load matrix ledger, §5b product gates, fixture branch locks, or row outcome writers.
 
@@ -25,11 +25,11 @@ On-demand, **single-task** supervision model: the **host parent** plans, briefs,
 
 ## When to use
 
-| Use `/silver:agent-opencode` | Delegate inline or via host Task instead |
+| Use `/sb:agent-opencode` | Delegate inline or via host Task instead |
 |------------------------------|------------------------------------------|
 | Host is Cursor/Codex/Claude and OpenCode is the preferred executor for the target repo | Host can edit directly with lower latency |
 | Task needs OpenCode-native SB hooks/skills in **real** project CWD | Pure SB-repo work on the host checkout |
-| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`silver:feature`, orchestrator workers) |
+| Parent wants Sidekick-like supervision (brief → checkpoint → escalate) for one bounded task | Full SB composer queue (`sb:feature`, orchestrator workers) |
 | Cross-host handoff: "run this in OpenCode while I supervise" | Enterprise E2E matrix certification (use matrix harness) |
 
 ---
@@ -48,7 +48,7 @@ Parent **must not** implement the delegated task in parallel in the same files. 
 ## Activation (on-demand)
 
 1. Parent receives a delegatable task (user request or orchestrator handoff).
-2. Parent invokes **`/silver:agent-opencode`** with a structured brief (below).
+2. Parent invokes **`/sb:agent-opencode`** with a structured brief (below).
 3. Parent runs `bash scripts/agent-opencode/invoke.sh` (preflight + env + delegate) **once per delegation wave**.
 4. On completion or escalation, parent records evidence and clears delegation state.
 
@@ -62,7 +62,7 @@ When `orchestrator_mode` is `parent` in `.silver-bullet.json`:
 
 1. Parent **may** invoke this skill directly (host→OpenCode bridge; hook allows `agent-opencode/invoke.sh` with degraded fallback or `agent-opencode-delegate.sh`).
 2. Parent **must not** Edit/Write project source for work delegated to OpenCode — supervise only.
-3. Alternative: `silver-bullet invoke-skill silver-agent-opencode` then run delegate.sh.
+3. Alternative: `silver-bullet invoke-skill sb:agent-opencode` then run delegate.sh.
 4. For SB-repo harness fixes blocking delegation, spawn a worker or use `SB OVERRIDE:` with audit reason.
 5. After OpenCode completes, parent verifies acceptance criteria before claiming done.
 
@@ -101,7 +101,7 @@ Produce a delegation brief before invoke:
 ## Constraints
 - Branch: <name or create>
 - Do not: <scope limits>
-- SB routes (if any): /silver:plan → /silver:execute
+- SB routes (if any): /sb:plan → /sb:execute
 
 ## Model pin (mandatory — no drift)
 - Provider: opencode-go

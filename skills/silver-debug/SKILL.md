@@ -5,7 +5,7 @@ argument-hint: "<bug or failure description>"
 version: 0.1.0
 ---
 
-# /silver:debug - Systematic Debugging
+# /sb:debug - Systematic Debugging
 
 SB-owned debugging structures reproduction, hypotheses, evidence, root cause,
 fix planning, and regression guards.
@@ -25,7 +25,7 @@ Write or update `.planning/DEBUG.md` or the current phase debug section.
 6. Identify root cause and blast radius.
 7. Define the fix plan and the regression guard. Invoke `tdd` before code edits
    when the failure is implementation behavior.
-8. Route implementation through `silver:execute` or the active workflow.
+8. Route implementation through `sb:execute` or the active workflow.
 
 ## Exit Gate
 

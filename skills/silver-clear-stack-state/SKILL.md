@@ -1,10 +1,10 @@
 ---
 name: silver-clear-stack-state
-description: Use when `/silver:clear-stack-state` is invoked or the five-tool stack compression mutex is dirty (sb_stack_double_compression) and tool calls are blocked — clears mutex state and optionally scaffolds agentmemory export root.
+description: Use when `/sb:clear-stack-state` is invoked or the five-tool stack compression mutex is dirty (sb_stack_double_compression) and tool calls are blocked — clears mutex state and optionally scaffolds agentmemory export root.
 version: 0.1.0
 ---
 
-# /silver:clear-stack-state — Stack compression mutex recovery
+# /sb:clear-stack-state — Stack compression mutex recovery
 
 Clears global five-tool stack compression mutex violations so PreToolUse stops denying routed surfaces after a double-compression wedge.
 

@@ -46,7 +46,7 @@ Before planning, editing, debugging, reviewing, or shipping, read the relevant p
 
 Review loop must produce two consecutive clean passes. Run the audit skill twice in sequence:
 
-1. Invoke the audit skill (e.g. `silver:quality-gates`, `silver:review`, or the applicable review skill)
+1. Invoke the audit skill (e.g. `sb:quality-gates`, `sb:review`, or the applicable review skill)
 2. If issues found: fix them, then re-run
 3. If clean pass: run the audit again immediately (second pass)
 4. If second pass is also clean: two consecutive clean passes confirmed — proceed

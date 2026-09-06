@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve host-aware model/reasoning rungs for silver:review-fix-ladder."""
+"""Resolve host-aware model/reasoning rungs for sb:review-fix-ladder."""
 
 from __future__ import annotations
 

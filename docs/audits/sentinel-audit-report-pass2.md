@@ -45,7 +45,7 @@ The pattern now covers `state`, `branch`, `trivial`, and `mode`. **Correctly imp
 
 ---
 
-### Fix 3: F7-01 / F3-01 — Commit SHA display + second confirmation in silver:update Step 5
+### Fix 3: F7-01 / F3-01 — Commit SHA display + second confirmation in sb:update Step 5
 
 **Claimed fix:** Display the cloned commit SHA to the user and require a second AskUserQuestion before proceeding to registry update.
 
@@ -88,7 +88,7 @@ The prohibition on writing to §10 without confirmation is also reinforced in th
 | F2-01 | §0 missing UNTRUSTED DATA boundary for docs/ reads | **RESOLVED** | Equivalent security note present in §0 of both silver-bullet.md and template |
 | F2-02 | silver-init Phase −1.1 missing UNTRUSTED DATA boundary | **RESOLVED** | Explicit "UNTRUSTED DATA" blockquote added to SKILL.md Phase −1.1 |
 | F6-01 | Tamper regex missing `mode` field | **RESOLVED** | `mode` added to pattern on line 131 of dev-cycle-check.sh |
-| F7-01 | silver:update installs without SHA disclosure | **RESOLVED** | SHA retrieved, displayed, and second AskUserQuestion gates registry write |
+| F7-01 | sb:update installs without SHA disclosure | **RESOLVED** | SHA retrieved, displayed, and second AskUserQuestion gates registry write |
 | F3-01 | No second confirmation before registry modification | **RESOLVED** | Second confirmation added in Step 5 (post-clone, pre-registry-write) |
 | F10-01 | §10 preferences written without diff/confirmation | **RESOLVED** | Mandatory diff display and explicit user confirmation language in both files |
 
@@ -107,13 +107,13 @@ The prohibition on writing to §10 without confirmation is also reinforced in th
 | ID | Description | Status | Notes |
 |----|-------------|--------|-------|
 | F5-02 | src_pattern whitelist regex narrow (alphanumeric only) | **RESOLVED/ACCEPTABLE** | Sanitization to `/src/` default on invalid pattern is present (line 174). |
-| F10-02 | Non-skippable gate list repeated in multiple places | **INFORMATIONAL** | `security`, `silver:quality-gates`, `gsd-verify-work` are listed consistently. No divergence found. |
+| F10-02 | Non-skippable gate list repeated in multiple places | **INFORMATIONAL** | `security`, `sb:quality-gates`, `gsd-verify-work` are listed consistently. No divergence found. |
 
 ---
 
 ## 3. Regression Check — New Issues Introduced by Fixes
 
-### 3.1 SHA Confirmation Cancel Path (silver:update Step 5)
+### 3.1 SHA Confirmation Cancel Path (sb:update Step 5)
 
 The cancel path after the second AskUserQuestion states:
 > *remove `$NEW_CACHE` and exit without modifying the registry*
@@ -132,7 +132,7 @@ The whitelist regex for quality-gate and verification markers has not changed. T
 
 ## 4. New Findings
 
-### F-NEW-01 (Low) — silver:update cancel path does not validate `$NEW_CACHE` before removal
+### F-NEW-01 (Low) — sb:update cancel path does not validate `$NEW_CACHE` before removal
 
 **Location:** skills/silver-update/SKILL.md Step 5, cancel path
 

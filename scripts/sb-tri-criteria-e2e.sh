@@ -162,11 +162,11 @@ write_ledger_stub() {
   local mechanism orchestrator_mode
   case "$host" in
     claude)
-      mechanism="/silver:agent-claude + runtime orchestrator drain"
+      mechanism="/sb:agent-claude + runtime orchestrator drain"
       orchestrator_mode="delegation"
       ;;
     codex)
-      mechanism="/silver:agent-codex + runtime orchestrator drain"
+      mechanism="/sb:agent-codex + runtime orchestrator drain"
       orchestrator_mode="delegation"
       ;;
     *)
@@ -335,7 +335,7 @@ LIVE SESSION CHECKLIST (operator):
   1. Host: $host_hint in: $work_dir
   2. Seed intent: ${run_dir}/INTENT-SEED.txt
   3. Prefs: ${run_dir}/prefs.json
-  4. Start /silver or composer per track RUNBOOK — autonomous mode
+  4. Start /sb or composer per track RUNBOOK — autonomous mode
   5. Capture composition log: ${work_dir}/.planning/orchestrator-composition-log.jsonl
   6. Capture events: \${SB_RUNTIME_STATE_DIR}/orchestrator-events.jsonl
   7. Save transcript: ${run_dir}/parent-session.log

@@ -155,7 +155,7 @@ validate_silver_bullet_skill_surface() {
 
   if [[ -d "${package_root}/skills" ]]; then
     printf 'ERROR: Silver Bullet %s exposes top-level skills/ at %s\n' "$label" "${package_root}/skills" >&2
-    printf 'Codex surfaces top-level plugin skills with the /Silver Bullet prefix; SB skills must be mirrored natively from skill-source/ instead.\n' >&2
+    printf 'Codex surfaces top-level plugin skills with the /SB prefix; SB skills must be mirrored natively from skill-source/ instead.\n' >&2
     exit 1
   fi
 
@@ -163,7 +163,7 @@ validate_silver_bullet_skill_surface() {
     fail_missing_silver_bullet_skill_surface "$label" "$skills_root"
   fi
 
-  for required_skill in silver-init silver silver-feature; do
+  for required_skill in sb-init sb sb-feature; do
     if ! silver_bullet_internal_skill_file "${skills_root}/${required_skill}" >/dev/null; then
       printf 'ERROR: Silver Bullet %s is missing required skill surface %s at %s\n' \
         "$label" \
@@ -174,4 +174,3 @@ validate_silver_bullet_skill_surface() {
     fi
   done
 }
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structural contract for /silver:agent-cursor skill and delegate wrapper.
+# Structural contract for /sb:agent-cursor skill and delegate wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -33,7 +33,7 @@ fi
 
 grep -qE '^name: silver-agent-cursor$' "$SKILL" && check "frontmatter name silver-agent-cursor" pass || check "frontmatter name silver-agent-cursor" fail
 grep -q 'user-invocable: true' "$SKILL" && check "user-invocable" pass || check "user-invocable" fail
-grep -q '/silver:agent-cursor' "$SKILL" && check "route documented" pass || check "route documented" fail
+grep -q '/sb:agent-cursor' "$SKILL" && check "route documented" pass || check "route documented" fail
 grep -q 'tests/live/agents/cursor/agent.sh' "$SKILL" && check "references live adapter" pass || check "references live adapter" fail
 grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$SKILL" && check "excludes matrix env" pass || check "excludes matrix env" fail
 grep -q 'agent-cursor-delegate.sh' "$SKILL" && check "references delegate wrapper" pass || check "references delegate wrapper" fail

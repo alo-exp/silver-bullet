@@ -16,7 +16,7 @@
 
 ### Scenario: Validate via workflow id
 
-**Trigger:** `/silver:new-workflow --audit WF-SILVER-NEW-WORKFLOW`
+**Trigger:** `/sb:new-workflow --audit WF-SILVER-NEW-WORKFLOW`
 
 **Workflow:**
 1. Resolve `WF-SILVER-NEW-WORKFLOW` → `silver-new-workflow`.
@@ -25,10 +25,10 @@
 
 ### Scenario: Convert vs Audit disambiguation
 
-**Trigger:** `/silver:new-workflow skills/silver-legacy/SKILL.md` (no audit flag)
+**Trigger:** `/sb:new-workflow skills/silver-legacy/SKILL.md` (no audit flag)
 
 **Mode:** Convert — gap review and promotion path.
 
-**Trigger:** `/silver:new-workflow --audit skills/silver-legacy/SKILL.md`
+**Trigger:** `/sb:new-workflow --audit skills/silver-legacy/SKILL.md`
 
 **Mode:** Audit — read-only compliance report only.

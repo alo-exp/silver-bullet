@@ -64,7 +64,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     },
     "FS-DELEGATE-CODEX-ROUTE": {
         "skill": "silver-agent-codex",
-        "purpose": "Inject $silver:* route syntax into external agent brief.",
+        "purpose": "Inject $sb:* route syntax into external agent brief.",
         "classification": "flow-step-skill",
     },
     "FS-DELEGATE-CURSOR-LAUNCH": {
@@ -74,7 +74,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     },
     "FS-DELEGATE-CURSOR-ROUTE": {
         "skill": "silver-agent-cursor",
-        "purpose": "Inject /silver:* route syntax into external agent brief.",
+        "purpose": "Inject /sb:* route syntax into external agent brief.",
         "classification": "flow-step-skill",
     },
     "FS-DELEGATE-CURSOR-SUBAGENT-POLICY": {
@@ -89,7 +89,7 @@ DELEGATE_STEP_DEFS: dict[str, dict[str, str]] = {
     },
     "FS-DELEGATE-CLAUDE-ROUTE": {
         "skill": "silver-agent-claude",
-        "purpose": "Inject /silver:* route syntax into external agent brief.",
+        "purpose": "Inject /sb:* route syntax into external agent brief.",
         "classification": "flow-step-skill",
     },
     "FS-DELEGATE-CHECKPOINT": {

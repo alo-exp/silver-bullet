@@ -5,7 +5,7 @@ argument-hint: "<phase or change scope>"
 version: 0.1.0
 ---
 
-# /silver:secure - Security Verification
+# /sb:secure - Security Verification
 
 SB-owned secure phase verifies security and threat-mitigation coverage. Use the
 local `security` skill as the core threat-review lens when available, but this
@@ -28,7 +28,7 @@ Write or update `.planning/SECURITY.md` or the current phase security section.
    - dependency and supply-chain risk;
    - infra exposure when relevant;
    - runtime exploitability when a live or local target is available.
-4. Invoke or apply `silver:domain-audit` with `dependency-supply`,
+4. Invoke or apply `sb:domain-audit` with `dependency-supply`,
    `environment-secrets`, `api-contract`, `data-contract`, `runtime-release`,
    or `accessibility` packs as the scope requires.
 5. For penetration-test-style requests, combine white-box source review with

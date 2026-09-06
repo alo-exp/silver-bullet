@@ -1,6 +1,6 @@
 <!-- Template: workflow.md.base
      Scaffolded to: .planning/workflows/<id>.md
-     Created by: /silver composer (Phase 25)
+     Created by: /sb composer (Phase 25)
      Phase 21 defines the spec only — no runtime creation logic (per D-06)
 
      Truncation strategy (per D-05):
@@ -10,19 +10,19 @@
      State isolation (per D-07):
      - Active workflow composition lives in `.planning/workflows/<id>.md`
      - SB lifecycle artifacts remain separate from workflow supervision state
-     - Bridge: /silver:migrate reads STATE.md to generate `.planning/workflows/<id>.md`
+     - Bridge: /sb:migrate reads STATE.md to generate `.planning/workflows/<id>.md`
 -->
 
 # Workflow Manifest
 
-> Composition state for the active composed workflow. Created by /silver composer, updated by supervision loop.
+> Composition state for the active composed workflow. Created by /sb composer, updated by supervision loop.
 > **Size cap:** 100 lines. Truncation: FIFO on completed flows — oldest completed entries collapse to summary line.
 > **State isolation:** workflow supervision lives here; lifecycle state remains in `.planning/STATE.md` and phase artifacts.
 
 ## Composition
 Intent: "{user's original request}"
 Composed: {ISO timestamp}
-Composer: /silver
+Composer: /sb
 Mode: {interactive | autonomous}
 
 ## Flow Log

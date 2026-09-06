@@ -97,7 +97,7 @@ is_denied "$out_verify_subagent" && check "allows verify with correct subagent_t
 
 sb_rfl_reset 1 composer-2.5 composer-2.5
 
-out_triage_in_review=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage classify VALID-NONBLOCKER",model:"composer-2.5"}}')")
+out_triage_in_review=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/sb:triage classify VALID-NONBLOCKER",model:"composer-2.5"}}')")
 is_denied "$out_triage_in_review" && check "blocks triage Task during review phase" pass || check "blocks triage Task during review phase" fail
 
 sb_rfl_reset 1 composer-2.5 gpt-5.5
@@ -105,7 +105,7 @@ sb_rfl_set_field phase triage
 sb_rfl_set_field rung_model composer-2.5
 sb_rfl_set_field host_model gpt-5.5
 
-out_rung_model_triage=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage on findings",model:"composer-2.5"}}')")
+out_rung_model_triage=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/sb:triage on findings",model:"composer-2.5"}}')")
 is_denied "$out_rung_model_triage" && check "blocks triage at rung model when host differs" pass || check "blocks triage at rung model when host differs" fail
 
 sb_rfl_reset 1 composer-2.5 composer-2.5
@@ -198,7 +198,7 @@ if [[ "$(id -u)" != "0" ]]; then
   chmod 0500 "$SB_RUNTIME_STATE_DIR"
   # `|| true` so a regressed hook (which exits non-zero with no output) reports
   # a clean FAIL here instead of killing this `set -e` harness.
-  out_unwritable=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/silver:triage on findings",model:"composer-2.5"}}')" || true)
+  out_unwritable=$(run_hook PreToolUse Task "$(jq -n '{hook_event_name:"PreToolUse",tool_name:"Task",tool_input:{prompt:"/sb:triage on findings",model:"composer-2.5"}}')" || true)
   chmod "$_rfl_saved_mode" "$SB_RUNTIME_STATE_DIR"
   is_denied "$out_unwritable" \
     && check "still denies when compliance-stop state write fails" pass \

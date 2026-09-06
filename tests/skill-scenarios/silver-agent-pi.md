@@ -9,6 +9,6 @@
 
 **Workflow:**
 1. Parent writes structured brief with acceptance criteria under `.planning/agent-pi/<task-id>/`
-2. Parent invokes `/silver:agent-pi` and seeds delegation directive with ownership scope
+2. Parent invokes `/sb:agent-pi` and seeds delegation directive with ownership scope
 3. Parent runs the Pi delegate script once per delegation wave
 4. Parent verifies acceptance criteria before claiming done — no direct source edits in delegated scope

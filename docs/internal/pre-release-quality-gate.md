@@ -21,13 +21,13 @@ deployment readiness) and BEFORE `/silver-create-release`.
 
 Every live pre-release test — including tri-host smoke, RC validation cells, enterprise E2E
 rows, and five-tool live scenarios — MUST be initiated through the corresponding
-`/silver:agent-*` wrapper with this fixed model mapping:
+`/sb:agent-*` wrapper with this fixed model mapping:
 
 | Host | Required wrapper | Required model |
 |------|------------------|----------------|
-| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
-| Claude | `/silver:agent-claude` | **Haiku 4.5** |
-| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+| Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/sb:agent-claude` | **Haiku 4.5** |
+| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 The wrapper is the live-test acceptance boundary. Do not replace it with a raw host CLI,
 silently substitute another model, or treat a raw CLI transcript as wrapper evidence.
@@ -196,7 +196,7 @@ pass.
 After all fixes from Stages 1–4a:
 
 1. Invoke `/verify-tests` (records freshness marker)
-2. Invoke `/silver:verify` (release scope) and `/silver:completion-audit` (release claim)
+2. Invoke `/sb:verify` (release scope) and `/sb:completion-audit` (release claim)
 3. Run pre-release feature overlay + tri-host install smoke:
    `RTK_DISABLED=1 bash scripts/run-enterprise-e2e-pre-release-overlay.sh --with-tri-host-smoke`
 4. Run mandatory tri-host skill surface + routing smoke (isolated env per host;
@@ -213,7 +213,7 @@ After all fixes from Stages 1–4a:
 echo "full-test-suite-rerun" >> "${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state"
 ```
 
-Do **not** invoke `/silver:create-release` until both `full-test-suite-rerun` and the
+Do **not** invoke `/sb:create-release` until both `full-test-suite-rerun` and the
 `/verify-tests` freshness marker are present.
 
 ---
@@ -298,7 +298,7 @@ SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
   bash tests/scripts/test-five-tool-prerelease-cursor.sh
 ```
 
-Live scenarios S01/S02/S04/S06/S09 via `/silver:agent-cursor` (`agent-cursor-delegate.sh`,
+Live scenarios S01/S02/S04/S06/S09 via `/sb:agent-cursor` (`agent-cursor-delegate.sh`,
 **Composer 2.5** only), subject to the current-cycle Cursor repair hold above.
 Writes `${SB_RUNTIME_STATE_DIR}/pre-release-five-tool-stack` on success.
 See [`docs/testing/FIVE-TOOL-PRERELEASE.md`](../testing/FIVE-TOOL-PRERELEASE.md).

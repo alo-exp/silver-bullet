@@ -2,7 +2,7 @@
 
 > **For agentic workers:** This plan is implemented via GSD quick tasks (Phase A) and a GSD phase (Phase B). Each task maps to one `/gsd-quick` invocation. Do NOT use superpowers:subagent-driven-development — GSD governs execution per SB enforcement rules.
 
-**Goal:** Implement the six named SB orchestration workflows (silver:feature/bugfix/ui/devops/research/release/fast), expand the /silver router, add §10 preference system, update silver:init, and create Phase B skill files.
+**Goal:** Implement the six named SB orchestration workflows (sb:feature/bugfix/ui/devops/research/release/fast), expand the /sb router, add §10 preference system, update sb:init, and create Phase B skill files.
 
 **Architecture:** Phase A edits existing SB enforcement docs (silver-bullet.md, templates/silver-bullet.md.base, skills/silver/SKILL.md, skills/silver-init/SKILL.md) to define all workflows as enforcement rules. Phase B creates six new named skill files that serve as thin orchestration wrappers over the Phase A definitions. Both files in the live/template pair must always be kept in sync.
 
@@ -32,29 +32,29 @@
 ### 2h. SB Orchestrated Workflows
 
 SB provides six pre-designed orchestration workflows for all common development tasks.
-When a bare instruction is intercepted (§2g) or the user invokes `/silver`, the router
+When a bare instruction is intercepted (§2g) or the user invokes `/sb`, the router
 classifies intent and dispatches to the appropriate workflow.
 
 **The six workflows:**
 
 | Workflow | Entry triggers | First step |
 |----------|---------------|------------|
-| `silver:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | silver:intel → product-brainstorming → silver:brainstorm |
-| `silver:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
-| `silver:ui` | "UI", "frontend", "component", "screen", "design", "interface" | silver:intel → product-brainstorming → silver:brainstorm → gsd-ui-phase |
-| `silver:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | silver:intel → silver:blast-radius → silver:devops-skill-router |
-| `silver:deep-research` | "how should we", "which technology", "compare X vs Y", "spike" | silver:explore → MultAI research → silver:brainstorm |
-| `silver:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | silver:quality-gates → gsd-audit-uat → gsd-audit-milestone |
+| `sb:feature` | "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | sb:intel → product-brainstorming → sb:brainstorm |
+| `sb:bugfix` | "bug", "broken", "crash", "error", "regression", "failing test" | SB triage → systematic-debugging → gsd-debug |
+| `sb:ui` | "UI", "frontend", "component", "screen", "design", "interface" | sb:intel → product-brainstorming → sb:brainstorm → gsd-ui-phase |
+| `sb:devops` | "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "cloud" | sb:intel → sb:blast-radius → sb:devops-skill-router |
+| `sb:deep-research` | "how should we", "which technology", "compare X vs Y", "spike" | sb:explore → MultAI research → sb:brainstorm |
+| `sb:release` | "release", "publish", "version", "go live", "cut a release", "tag v" | sb:quality-gates → gsd-audit-uat → gsd-audit-milestone |
 
 **Workflow enforcement rules:**
 - Quality gates run twice per workflow: pre-planning (full 9 dimensions) and pre-ship (full 9 dimensions)
 - `security` is always mandatory — cannot be skipped via §5
-- `silver:devops` uses 7 IaC-adapted dimensions (silver:devops-quality-gates) instead of the standard 9
+- `sb:devops` uses 7 IaC-adapted dimensions (sb:devops-quality-gates) instead of the standard 9
 - TDD enforcement (`tdd`) applies to implementation plans only; config/infra/doc plans skip TDD
-- `/testing-strategy` runs after spec approval and before `silver:writing-plans` so test requirements are baked into the plan
+- `/testing-strategy` runs after spec approval and before `sb:writing-plans` so test requirements are baked into the plan
 - Code review always uses the Superpowers framing pair: `requesting-code-review` before and `receiving-code-review` after
 - Cross-AI review (`gsd-review`) triggers automatically for architecturally significant changes
-- `gsd-ship` inside any workflow = phase-level merge (push → PR). `silver:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
+- `gsd-ship` inside any workflow = phase-level merge (push → PR). `sb:release` = milestone-level publish. These are different levels — SB disambiguates at routing time.
 - When user selects Autonomous mode at session start, `gsd-autonomous` drives all remaining phases
 
 **Step-skip protocol:**
@@ -63,74 +63,74 @@ When the user requests skipping a workflow step, SB:
 2. Offers lettered options: A. Accept skip  B. Lightweight alternative  C. Show me what you have
 3. Records the decision in §10 if user chooses A permanently
 
-Non-skippable gates: `security`, `silver:quality-gates` pre-ship, `gsd-verify-work`.
+Non-skippable gates: `security`, `sb:quality-gates` pre-ship, `gsd-verify-work`.
 
 **Step-by-step workflow tables (canonical — skill files implement these):**
 
-*silver:feature (canonical step order per spec §4.1):*
+*sb:feature (canonical step order per spec §4.1):*
 
-> **Step numbering note:** The plan adds two preamble steps (0=session orient, 0b=complexity triage) before the spec's step 0 (codebase intel). This shifts spec's 1a/1b/1c/1d to plan's 1a/1b/1c/1d respectively. All downstream steps map 1:1 to the spec. Step 1d (silver:multai pre-spec) is distinct from step 9c (gsd-review post-execution) — both can fire independently.
+> **Step numbering note:** The plan adds two preamble steps (0=session orient, 0b=complexity triage) before the spec's step 0 (codebase intel). This shifts spec's 1a/1b/1c/1d to plan's 1a/1b/1c/1d respectively. All downstream steps map 1:1 to the spec. Step 1d (sb:multai pre-spec) is distinct from step 9c (gsd-review post-execution) — both can fire independently.
 
 | Step | Action | Tool/Skill |
 |------|--------|-----------|
 | 0 | Session orient: load §10 prefs, check mode (plan preamble) | Read silver-bullet.md §10 |
-| 0b | Complexity triage (plan preamble) | Trivial→silver:fast; fuzzy→continue with 1b; complex→continue |
+| 0b | Complexity triage (plan preamble) | Trivial→sb:fast; fuzzy→continue with 1b; complex→continue |
 | 1a | Codebase intel (spec step 0) | gsd-intel |
 | 1b | Fuzzy scope clarification if needed (spec step 1a) | gsd-explore |
-| 1c | Brainstorm (spec steps 1b+1c) | /product-brainstorming → silver:brainstorm |
+| 1c | Brainstorm (spec steps 1b+1c) | /product-brainstorming → sb:brainstorm |
 | 1d | MultAI pre-spec review — arch-sig or auto-trigger (spec step 1d) | multai:orchestrator |
 | 2 | Testing strategy | /testing-strategy |
-| 2.5 | Writing plans | silver:writing-plans |
-| 3 | Pre-plan quality gates (9 dimensions) | silver:quality-gates |
+| 2.5 | Writing plans | sb:writing-plans |
+| 3 | Pre-plan quality gates (9 dimensions) | sb:quality-gates |
 | 4 | Discuss phase | gsd-discuss-phase |
 | 5 | Plan phase | gsd-plan-phase |
 | 6 | Execute phase | gsd-execute-phase (Interactive) or gsd-autonomous (Autonomous mode) |
-| 7 | TDD gate (impl plans only; skip for config/infra/doc) | silver:tdd |
+| 7 | TDD gate (impl plans only; skip for config/infra/doc) | sb:tdd |
 | 7a | Test gap-fill | gsd-add-tests |
 | 8 | Verify work | gsd-verify-work |
-| 9a | Request code review | silver:request-review |
+| 9a | Request code review | sb:request-review |
 | 9b | Run review | gsd-review (Superpowers reviewer) |
 | 9c | Cross-AI review (arch-sig only) | gsd-review --multi-ai |
-| 9d | Receive review | silver:receive-review |
-| 10 | Security review | silver:security |
+| 9d | Receive review | sb:receive-review |
+| 10 | Security review | sb:security |
 | 11 | Secure phase | gsd-secure-phase |
 | 12 | Validate phase | gsd-validate-phase |
-| 13 | Pre-ship quality gates (9 dimensions) | silver:quality-gates |
-| 14 | Finishing branch | silver:finishing-branch |
+| 13 | Pre-ship quality gates (9 dimensions) | sb:quality-gates |
+| 14 | Finishing branch | sb:finishing-branch |
 | 15a | PR branch (ask user) | gsd-pr-branch |
 | 15b | Ship phase | gsd-ship |
 | 16 | Episodic memory | episodic-memory |
 | 17 | Last phase? Milestone audit | gsd-audit-uat → gsd-audit-milestone → gsd-plan-milestone-gaps |
 
-*silver:bugfix (triage → 3 paths per spec §4.2):*
+*sb:bugfix (triage → 3 paths per spec §4.2):*
 | Step | Action | Tool/Skill |
 |------|--------|-----------|
 | 0 | Triage: classify symptom type | AskUserQuestion: A. Known symptom  B. Unknown cause  C. Failed GSD workflow |
 | 1A | Known symptom, unknown fix → investigation | superpowers:systematic-debugging → gsd-debug → write fix plan |
-| 1B | Unknown cause → reconstruction | silver:forensics → reconstruct session → then path 1A |
+| 1B | Unknown cause → reconstruction | sb:forensics → reconstruct session → then path 1A |
 | 1C | Failed GSD workflow → GSD-specific forensics | gsd-forensics → reconstruct → then path 1A |
-| 2 | TDD for fix (all paths) | silver:tdd |
+| 2 | TDD for fix (all paths) | sb:tdd |
 | 3 | Execute fix plan | gsd-execute-phase |
 | 4 | Verify work | gsd-verify-work |
-| 5 | Security review | silver:security |
-| 6 | Pre-ship quality gates | silver:quality-gates |
+| 5 | Security review | sb:security |
+| 6 | Pre-ship quality gates | sb:quality-gates |
 | 7 | Ship | gsd-ship |
 
-> **Canonical step definitions:** The `silver:feature` and `silver:bugfix` tables above are fully expanded because they are the primary reference templates. The remaining 5 workflows (ui/devops/research/release/fast) are summarized here as orientation — the **Phase B skill files are the canonical, executable step definitions** for those workflows. Engineers implementing Phase B tasks must read spec §4.3–§4.7 directly for full step details.
+> **Canonical step definitions:** The `sb:feature` and `sb:bugfix` tables above are fully expanded because they are the primary reference templates. The remaining 5 workflows (ui/devops/research/release/fast) are summarized here as orientation — the **Phase B skill files are the canonical, executable step definitions** for those workflows. Engineers implementing Phase B tasks must read spec §4.3–§4.7 directly for full step details.
 
-*silver:ui (15 steps — same as feature but gsd-ui-phase replaces standard execute + adds gsd-ui-review):*
-Includes: product-brainstorming → gsd-ui-phase → writing-plans (frontend-design) → execute → gsd-ui-review → silver:security → ship
+*sb:ui (15 steps — same as feature but gsd-ui-phase replaces standard execute + adds gsd-ui-review):*
+Includes: product-brainstorming → gsd-ui-phase → writing-plans (frontend-design) → execute → gsd-ui-review → sb:security → ship
 
-*silver:devops (no brainstorm — 12 steps):*
-Includes: gsd-intel → silver:blast-radius → silver:devops-skill-router → silver:devops-quality-gates (7 IaC dimensions) → gsd-discuss-phase → plan → execute (no TDD) → gsd-review → silver:security → devops-quality-gates pre-ship → ship
+*sb:devops (no brainstorm — 12 steps):*
+Includes: gsd-intel → sb:blast-radius → sb:devops-skill-router → sb:devops-quality-gates (7 IaC dimensions) → gsd-discuss-phase → plan → execute (no TDD) → gsd-review → sb:security → devops-quality-gates pre-ship → ship
 
-*silver:deep-research (5 steps):*
-Includes: gsd-explore → MultAI path (landscape/tech-selection/competitive) → artifact at .planning/research/ → silver:brainstorm → hand off to silver:feature or silver:devops
+*sb:deep-research (5 steps):*
+Includes: gsd-explore → MultAI path (landscape/tech-selection/competitive) → artifact at .planning/research/ → sb:brainstorm → hand off to sb:feature or sb:devops
 
-*silver:release (10 steps — milestone-level):*
-Includes: silver:quality-gates (9 dim) → gsd-audit-uat → gsd-audit-milestone → [gap loop max 2x: gsd-plan-milestone-gaps → silver:feature] → /documentation + gsd-docs-update → gsd-milestone-summary → silver:create-release → [ask] gsd-pr-branch → gsd-ship → gsd-complete-milestone
+*sb:release (10 steps — milestone-level):*
+Includes: sb:quality-gates (9 dim) → gsd-audit-uat → gsd-audit-milestone → [gap loop max 2x: gsd-plan-milestone-gaps → sb:feature] → /documentation + gsd-docs-update → gsd-milestone-summary → sb:create-release → [ask] gsd-pr-branch → gsd-ship → gsd-complete-milestone
 
-*silver:fast (trivial path):*
+*sb:fast (trivial path):*
 Includes: complexity triage confirms ≤3 files → gsd-fast (no workflow overhead) → verify → commit
 ```
 
@@ -232,7 +232,7 @@ Expected: both return `1`
 
 Add to the MUST NOT bullets in §3 of **both** `silver-bullet.md` and `templates/silver-bullet.md.base`:
 ```
-- Override a non-skippable gate (silver:security, silver:quality-gates pre-ship, gsd-verify-work) via §10 preferences — these gates are permanent
+- Override a non-skippable gate (sb:security, sb:quality-gates pre-ship, gsd-verify-work) via §10 preferences — these gates are permanent
 - Write runtime preference updates to §10 without updating both silver-bullet.md AND templates/silver-bullet.md.base atomically
 ```
 
@@ -251,12 +251,12 @@ git commit -m "feat: add §10 User Workflow Preferences to enforcement doc and t
 
 ---
 
-### Task A3: Expand /silver router with new classification table, disambiguation, and conflict rules
+### Task A3: Expand /sb router with new classification table, disambiguation, and conflict rules
 
 **Files:**
 - Modify: `skills/silver/SKILL.md` — replace Step 2 routing table and add disambiguation + conflict resolution sections
 
-**Current state:** `skills/silver/SKILL.md` has a 7-row SB routing table and a GSD fallback. The new design intentionally expands this to 17+ routes (adding silver:feature/bugfix/ui/devops/research/release/fast/explore/fast/progress/resume rows that didn't exist before) plus disambiguation rules + conflict resolution + complexity triage. This is additive by design — not a mistake.
+**Current state:** `skills/silver/SKILL.md` has a 7-row SB routing table and a GSD fallback. The new design intentionally expands this to 17+ routes (adding sb:feature/bugfix/ui/devops/research/release/fast/explore/fast/progress/resume rows that didn't exist before) plus disambiguation rules + conflict resolution + complexity triage. This is additive by design — not a mistake.
 
 - [ ] **Step 1: Read current routing table**
 
@@ -275,53 +275,53 @@ Replace the existing "Step 2: Match intent against routing table" section with:
 
 | Classification | Signals | Action |
 |----------------|---------|--------|
-| Trivial | Typo, config, rename, ≤3 files | Route to `silver:fast` (gsd-fast) — bypass workflow |
-| Simple | Clear scope, ≤1 phase | Route to workflow, skip silver:explore |
-| Complex | Multi-phase, cross-cutting | Full workflow including silver:explore + brainstorm |
-| Fuzzy | Vague intent, unclear scope | Route to `silver:explore` first, then re-classify |
+| Trivial | Typo, config, rename, ≤3 files | Route to `sb:fast` (gsd-fast) — bypass workflow |
+| Simple | Clear scope, ≤1 phase | Route to workflow, skip sb:explore |
+| Complex | Multi-phase, cross-cutting | Full workflow including sb:explore + brainstorm |
+| Fuzzy | Vague intent, unclear scope | Route to `sb:explore` first, then re-classify |
 
 **Full routing table (first match wins after complexity triage):**
 
 | User intent signals | Route to | Notes |
 |---------------------|----------|-------|
-| "what if", "I'm thinking about", "not sure how to", "help me think" | `silver:explore` (gsd-explore) | Fuzzy — clarify first |
-| "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | `silver:feature` | Core dev path |
-| "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `silver:bugfix` | Triage internally |
-| "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `silver:ui` | Includes mobile, web, design systems |
-| "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `silver:devops` | Includes containers, networking, monitoring |
-| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `silver:deep-research` | Tech decisions, architecture choices |
-| "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `silver:release` | Milestone-level only — see disambiguation below |
+| "what if", "I'm thinking about", "not sure how to", "help me think" | `sb:explore` (gsd-explore) | Fuzzy — clarify first |
+| "add X", "build X", "implement X", "new feature", "enhance X", "extend X" | `sb:feature` | Core dev path |
+| "bug", "broken", "crash", "error", "regression", "failing test", "not working" | `sb:bugfix` | Triage internally |
+| "UI", "frontend", "component", "screen", "design", "interface", "page", "layout", "animation", "responsive" | `sb:ui` | Includes mobile, web, design systems |
+| "infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "container", "cloud", "ops" | `sb:devops` | Includes containers, networking, monitoring |
+| "how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision", "should we use", "what's the best approach for" | `sb:deep-research` | Tech decisions, architecture choices |
+| "release", "publish", "version", "go live", "cut a release", "tag v", "ship to users", "deploy to prod" | `sb:release` | Milestone-level only — see disambiguation below |
 | "merge this", "push this PR", "ship this feature" [active phase context] | `gsd-ship` (in-workflow) | Phase-level only |
-| "trivial", "quick fix", "typo", "one-liner", "config value", ≤3 files | `silver:fast` (gsd-fast) | No planning overhead |
+| "trivial", "quick fix", "typo", "one-liner", "config value", ≤3 files | `sb:fast` (gsd-fast) | No planning overhead |
 | "where are we", "what's left", "show progress", "current status" | `gsd-progress` | Status only |
 | "pick up", "resume", "continue where" | `gsd-resume-work` | Session restore |
-| "set up", "initialize", "install Silver Bullet", "configure project" | `silver:init` | First-time setup |
-| "quality review", "ilities", "architecture review", "quality dimensions" | `silver:quality-gates` | Ad-hoc quality audit |
-| "blast radius", "change impact", "rollback plan" | `silver:blast-radius` | Ad-hoc risk assessment |
+| "set up", "initialize", "install Silver Bullet", "configure project" | `sb:init` | First-time setup |
+| "quality review", "ilities", "architecture review", "quality dimensions" | `sb:quality-gates` | Ad-hoc quality audit |
+| "blast radius", "change impact", "rollback plan" | `sb:blast-radius` | Ad-hoc risk assessment |
 | "IaC quality", "devops quality", "terraform quality" | `devops-quality-gates` | Ad-hoc DevOps quality |
-| "root cause", "session failed", "what broke", "reconstruct" | `silver:forensics` | Post-mortem investigation |
-| "release notes", "github release", "cut release", "tag release" | `silver:create-release` | Release artifact creation |
+| "root cause", "session failed", "what broke", "reconstruct" | `sb:forensics` | Post-mortem investigation |
+| "release notes", "github release", "cut release", "tag release" | `sb:create-release` | Release artifact creation |
 | "which IaC tool", "terraform vs pulumi", "which cloud skill" | `devops-skill-router` | IaC tool routing |
 
 **"Ship" disambiguation:**
 
 | Signal | Route |
 |--------|-------|
-| Contains version number (v2.0, 1.4.0…) | `silver:release` |
-| Contains "changelog" or "release notes" | `silver:release` |
-| Contains "go live", "to production", "to users", "publicly" | `silver:release` |
+| Contains version number (v2.0, 1.4.0…) | `sb:release` |
+| Contains "changelog" or "release notes" | `sb:release` |
+| Contains "go live", "to production", "to users", "publicly" | `sb:release` |
 | Active phase in progress, no version signal | `gsd-ship` (phase-merge within workflow) |
-| No active phase, end of milestone | `silver:release` |
+| No active phase, end of milestone | `sb:release` |
 
 **Multi-signal conflict resolution:**
 
 | Conflict | Winner | Rationale |
 |----------|--------|-----------|
-| `silver:bugfix` + any other | `silver:bugfix` | Broken things block everything |
-| `silver:ui` + `silver:feature` | `silver:ui` | UI is more specific |
-| `silver:devops` + `silver:feature` | Ask user (A/B) | Both equally valid |
-| `silver:deep-research` + any | `silver:deep-research` first | Research informs implementation |
-| `silver:fast` + domain workflow | Check scope: if truly ≤3 files → `silver:fast`; if domain signals strong → domain workflow; if ambiguous → ask user "A. Treat as trivial  B. Route to [domain]" |
+| `sb:bugfix` + any other | `sb:bugfix` | Broken things block everything |
+| `sb:ui` + `sb:feature` | `sb:ui` | UI is more specific |
+| `sb:devops` + `sb:feature` | Ask user (A/B) | Both equally valid |
+| `sb:deep-research` + any | `sb:deep-research` first | Research informs implementation |
+| `sb:fast` + domain workflow | Check scope: if truly ≤3 files → `sb:fast`; if domain signals strong → domain workflow; if ambiguous → ask user "A. Treat as trivial  B. Route to [domain]" |
 
 **MultAI auto-offer:** Proactively offer MultAI research before brainstorming when:
 - Choosing between 2+ architectures
@@ -339,13 +339,13 @@ If input matches two or more destinations with similar confidence, use AskUserQu
 
 > I'm not sure which workflow to use. Which of these best matches what you want to do?
 >
-> A. `silver:feature` — build or extend a feature
-> B. `silver:bugfix` — fix something that's broken
-> C. `silver:ui` — UI, frontend, or design work
-> D. `silver:devops` — infrastructure, CI/CD, or deployment
-> E. `silver:deep-research` — technology decision or spike
-> F. `silver:release` — publish a milestone release
-> G. `silver:fast` — trivial one-liner or config change
+> A. `sb:feature` — build or extend a feature
+> B. `sb:bugfix` — fix something that's broken
+> C. `sb:ui` — UI, frontend, or design work
+> D. `sb:devops` — infrastructure, CI/CD, or deployment
+> E. `sb:deep-research` — technology decision or spike
+> F. `sb:release` — publish a milestone release
+> G. `sb:fast` — trivial one-liner or config change
 > H. Something else — describe it
 >
 > (Enter the letter)
@@ -358,7 +358,7 @@ Wait for selection, then route accordingly using Step 5.
 ```markdown
 ### Routing Priority
 
-1. Complexity triage (trivial → silver:fast; fuzzy → silver:explore)
+1. Complexity triage (trivial → sb:fast; fuzzy → sb:explore)
 2. "Ship" disambiguation (phase-level vs milestone-level)
 3. Multi-signal conflict resolution table
 4. SB workflow routing table (specific domain matches)
@@ -370,7 +370,7 @@ Wait for selection, then route accordingly using Step 5.
 - [ ] **Step 5: Verify**
 
 ```bash
-grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:deep-research\|silver:release" skills/silver/SKILL.md
+grep -c "sb:feature\|sb:bugfix\|sb:ui\|sb:devops\|sb:deep-research\|sb:release" skills/silver/SKILL.md
 ```
 
 Expected: ≥6
@@ -379,12 +379,12 @@ Expected: ≥6
 
 ```bash
 git add skills/silver/SKILL.md
-git commit -m "feat: expand /silver router with 6-workflow table, disambiguation, conflict rules"
+git commit -m "feat: expand /sb router with 6-workflow table, disambiguation, conflict rules"
 ```
 
 ---
 
-### Task A4: Update silver:init — add gsd-new-project/gsd-map-codebase, MultAI dependency check, MultAI version freshness
+### Task A4: Update sb:init — add gsd-new-project/gsd-map-codebase, MultAI dependency check, MultAI version freshness
 
 **Files:**
 - Modify: `skills/silver-init/SKILL.md`
@@ -402,7 +402,7 @@ ${SB_RUNTIME_HOME_ROOT}/plugins/cache/multai/skills/orchestrator/SKILL.md
 ```
 
 If no file found, output exactly:
-> ❌ MultAI plugin not found. Required for silver:deep-research and multi-AI perspectives.
+> ❌ MultAI plugin not found. Required for sb:deep-research and multi-AI perspectives.
 > Install: `/plugin install` from the MultAI marketplace
 
 STOP. Do not proceed.
@@ -440,7 +440,7 @@ ${SB_RUNTIME_HOME_ROOT}/plugins/cache/engineering/skills/
 ```
 
 If no directory found, display:
-> ⚠️  Anthropic Engineering plugin not found. Recommended for silver:ui (/frontend-design, /testing-strategy) and silver:release (/documentation).
+> ⚠️  Anthropic Engineering plugin not found. Recommended for sb:ui (/frontend-design, /testing-strategy) and sb:release (/documentation).
 > Install via the Anthropic Engineering plugin in the marketplace. (Optional — workflows degrade gracefully.)
 
 Continue without stopping.
@@ -457,7 +457,7 @@ ${SB_RUNTIME_HOME_ROOT}/plugins/cache/product-management/skills/
 ```
 
 If no directory found, display:
-> ⚠️  Anthropic Product Management plugin not found. Recommended for silver:feature and silver:ui (/product-brainstorming).
+> ⚠️  Anthropic Product Management plugin not found. Recommended for sb:feature and sb:ui (/product-brainstorming).
 > Install via the Anthropic Product Management plugin in the marketplace. (Optional — workflows degrade gracefully.)
 
 Continue without stopping.
@@ -538,7 +538,7 @@ Expected: at least one line output
 
 ```bash
 git add skills/silver-init/SKILL.md
-git commit -m "feat: add MultAI/Engineering/PM dep checks, version freshness, gsd-autonomous note, and project-type detection to silver:init"
+git commit -m "feat: add MultAI/Engineering/PM dep checks, version freshness, gsd-autonomous note, and project-type detection to sb:init"
 ```
 
 ---
@@ -586,7 +586,7 @@ git commit -m "feat: add MultAI update check to §0 session startup"
 
 ## PHASE B — Named Orchestration Skill Files
 
-> Phase B requires Phase A to be complete and verified. Each skill file maps `skills/silver-<name>/SKILL.md` → slash command `/silver:<name>`. These are thin orchestrators — they reference the step definitions from §2h of silver-bullet.md and chain the appropriate skills.
+> Phase B requires Phase A to be complete and verified. Each skill file maps `skills/silver-<name>/SKILL.md` → slash command `/sb:<name>`. These are thin orchestrators — they reference the step definitions from §2h of silver-bullet.md and chain the appropriate skills.
 >
 > Execute Phase B as a single GSD phase (not quick tasks) due to the volume of new files.
 
@@ -610,7 +610,7 @@ description: "Full SB-orchestrated feature development workflow: intel → produ
 argument-hint: "<feature description>"
 ---
 
-# /silver:feature — Feature Development Workflow
+# /sb:feature — Feature Development Workflow
 
 [Full step orchestration per spec Section 4.1]
 ```
@@ -620,7 +620,7 @@ argument-hint: "<feature description>"
 - [ ] **Step 2: Verify file exists and covers all major step groups**
 
 ```bash
-grep -c "silver:brainstorm\|silver:writing-plans\|silver:quality-gates\|gsd-discuss-phase\|gsd-plan-phase\|gsd-execute-phase\|silver:tdd\|gsd-verify-work\|silver:request-review\|gsd-review\|silver:receive-review\|silver:security\|gsd-secure-phase\|gsd-validate-phase\|gsd-ship\|gsd-audit-milestone" skills/silver-feature/SKILL.md
+grep -c "sb:brainstorm\|sb:writing-plans\|sb:quality-gates\|gsd-discuss-phase\|gsd-plan-phase\|gsd-execute-phase\|sb:tdd\|gsd-verify-work\|sb:request-review\|gsd-review\|sb:receive-review\|sb:security\|gsd-secure-phase\|gsd-validate-phase\|gsd-ship\|gsd-audit-milestone" skills/silver-feature/SKILL.md
 ```
 
 Expected: ≥16 (each of the 16 grep terms represents a distinct step group; all must appear at least once)
@@ -629,7 +629,7 @@ Expected: ≥16 (each of the 16 grep terms represents a distinct step group; all
 
 ```bash
 git add skills/silver-feature/SKILL.md
-git commit -m "feat: add silver:feature orchestration skill"
+git commit -m "feat: add sb:feature orchestration skill"
 ```
 
 ---
@@ -646,7 +646,7 @@ Orchestrates spec Section 4.2: triage → path A/B/C → tdd → plan → execut
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -c "triage\|systematic-debugging\|gsd-debug\|silver:forensics\|gsd-forensics\|silver:tdd" skills/silver-bugfix/SKILL.md
+grep -c "triage\|systematic-debugging\|gsd-debug\|sb:forensics\|gsd-forensics\|sb:tdd" skills/silver-bugfix/SKILL.md
 ```
 
 Expected: ≥6 (triage + 3 path labels + tdd + forensics references)
@@ -655,7 +655,7 @@ Expected: ≥6 (triage + 3 path labels + tdd + forensics references)
 
 ```bash
 git add skills/silver-bugfix/SKILL.md
-git commit -m "feat: add silver:bugfix orchestration skill"
+git commit -m "feat: add sb:bugfix orchestration skill"
 ```
 
 ---
@@ -672,7 +672,7 @@ Orchestrates spec Section 4.3: intel → product-brainstorm → brainstorm → t
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -c "gsd-ui-phase\|gsd-ui-review\|silver:tdd\|silver:request-review\|silver:brainstorm" skills/silver-ui/SKILL.md
+grep -c "gsd-ui-phase\|gsd-ui-review\|sb:tdd\|sb:request-review\|sb:brainstorm" skills/silver-ui/SKILL.md
 ```
 
 Expected: ≥5 (each of the 5 grep terms should appear at least once)
@@ -681,7 +681,7 @@ Expected: ≥5 (each of the 5 grep terms should appear at least once)
 
 ```bash
 git add skills/silver-ui/SKILL.md
-git commit -m "feat: add silver:ui orchestration skill"
+git commit -m "feat: add sb:ui orchestration skill"
 ```
 
 ---
@@ -698,7 +698,7 @@ Orchestrates spec Section 4.4: intel → blast-radius → devops-skill-router �
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -c "silver:blast-radius\|silver:devops-skill-router\|silver:devops-quality-gates\|gsd-secure-phase" skills/silver-devops/SKILL.md
+grep -c "sb:blast-radius\|sb:devops-skill-router\|sb:devops-quality-gates\|gsd-secure-phase" skills/silver-devops/SKILL.md
 ```
 
 Expected: ≥4 (each of the 4 grep terms should appear at least once)
@@ -707,7 +707,7 @@ Expected: ≥4 (each of the 4 grep terms should appear at least once)
 
 ```bash
 git add skills/silver-devops/SKILL.md
-git commit -m "feat: add silver:devops orchestration skill"
+git commit -m "feat: add sb:devops orchestration skill"
 ```
 
 ---
@@ -717,7 +717,7 @@ git commit -m "feat: add silver:devops orchestration skill"
 **Files:**
 - Create: `skills/silver-deep-research/SKILL.md`
 
-Orchestrates spec Section 4.5: explore → MultAI research (3 paths: landscape / tech-selection / competitive) → brainstorm → hand off to silver:feature or silver:devops with artifacts at `.planning/research/<date>-<topic>/`.
+Orchestrates spec Section 4.5: explore → MultAI research (3 paths: landscape / tech-selection / competitive) → brainstorm → hand off to sb:feature or sb:devops with artifacts at `.planning/research/<date>-<topic>/`.
 
 - [ ] **Step 1: Write skills/silver-deep-research/SKILL.md** with three MultAI research path branches and artifact handoff protocol
 
@@ -733,7 +733,7 @@ Expected: ≥5 (each of the 5 grep terms should appear at least once)
 
 ```bash
 git add skills/silver-deep-research/SKILL.md
-git commit -m "feat: add silver:deep-research orchestration skill"
+git commit -m "feat: add sb:deep-research orchestration skill"
 ```
 
 ---
@@ -743,14 +743,14 @@ git commit -m "feat: add silver:deep-research orchestration skill"
 **Files:**
 - Create: `skills/silver-release/SKILL.md`
 
-Orchestrates spec Section 4.6: quality-gates → audit-uat → audit-milestone → [gaps: plan-milestone-gaps → silver:feature, max 2 iterations] → docs-update + /documentation → milestone-summary → create-release → [ask] pr-branch → gsd-ship → gsd-complete-milestone.
+Orchestrates spec Section 4.6: quality-gates → audit-uat → audit-milestone → [gaps: plan-milestone-gaps → sb:feature, max 2 iterations] → docs-update + /documentation → milestone-summary → create-release → [ask] pr-branch → gsd-ship → gsd-complete-milestone.
 
 - [ ] **Step 1: Write skills/silver-release/SKILL.md** with gap-closure loop (max 2 iterations, 3 user options on limit), gsd-ship before gsd-complete-milestone
 
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -c "gsd-audit-uat\|gsd-audit-milestone\|gsd-plan-milestone-gaps\|silver:create-release\|gsd-complete-milestone\|gsd-ship" skills/silver-release/SKILL.md
+grep -c "gsd-audit-uat\|gsd-audit-milestone\|gsd-plan-milestone-gaps\|sb:create-release\|gsd-complete-milestone\|gsd-ship" skills/silver-release/SKILL.md
 ```
 
 Expected: ≥6 (each of the 6 grep terms should appear at least once)
@@ -759,7 +759,7 @@ Expected: ≥6 (each of the 6 grep terms should appear at least once)
 
 ```bash
 git add skills/silver-release/SKILL.md
-git commit -m "feat: add silver:release orchestration skill"
+git commit -m "feat: add sb:release orchestration skill"
 ```
 
 ---
@@ -771,7 +771,7 @@ git commit -m "feat: add silver:release orchestration skill"
 
 Orchestrates spec Section 4.7: trivial path — complexity triage confirms ≤3 files → gsd-fast (no planning overhead) → verify → commit. No quality gates, no brainstorming, no review cycle. The router routes here only when all signals confirm trivial scope.
 
-> **Note:** `silver:fast` is not listed in spec §10 Phase B (which lists only 6 files: feature/bugfix/ui/devops/research/release), but it is required to implement spec §4.7. Added here as B7 for completeness — it is essential to the router's complexity triage path.
+> **Note:** `sb:fast` is not listed in spec §10 Phase B (which lists only 6 files: feature/bugfix/ui/devops/research/release), but it is required to implement spec §4.7. Added here as B7 for completeness — it is essential to the router's complexity triage path.
 
 ```markdown
 ---
@@ -780,7 +780,7 @@ description: "Trivial change fast-path: complexity triage → gsd-fast → verif
 argument-hint: "<description of trivial change>"
 ---
 
-# /silver:fast — Trivial Change Fast Path
+# /sb:fast — Trivial Change Fast Path
 
 [Full step orchestration per spec Section 4.7]
 ```
@@ -799,7 +799,7 @@ Expected: ≥5
 
 ```bash
 git add skills/silver-fast/SKILL.md
-git commit -m "feat: add silver:fast trivial change fast-path skill"
+git commit -m "feat: add sb:fast trivial change fast-path skill"
 ```
 
 ---
@@ -810,14 +810,14 @@ git commit -m "feat: add silver:fast trivial change fast-path skill"
 - [ ] `grep -c "2h\. SB Orchestrated Workflows" templates/silver-bullet.md.base` → 1
 - [ ] `grep -c "10\. User Workflow Preferences" silver-bullet.md` → 1
 - [ ] `grep -c "10\. User Workflow Preferences" templates/silver-bullet.md.base` → 1
-- [ ] `grep -c "silver:feature\|silver:bugfix\|silver:ui\|silver:devops\|silver:deep-research\|silver:release" skills/silver/SKILL.md` → ≥6
+- [ ] `grep -c "sb:feature\|sb:bugfix\|sb:ui\|sb:devops\|sb:deep-research\|sb:release" skills/silver/SKILL.md` → ≥6
 - [ ] `grep -c "MultAI\|gsd-new-project\|gsd-map-codebase" skills/silver-init/SKILL.md` → ≥3
 - [ ] `ls skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-deep-research skills/silver-release skills/silver-fast` → 7 directories exist
 - [ ] Each Phase B skill file contains ≥5 skill references — run:
 
 ```bash
 for f in skills/silver-feature skills/silver-bugfix skills/silver-ui skills/silver-devops skills/silver-deep-research skills/silver-release skills/silver-fast; do
-  echo "$f: $(grep -c "silver:\|gsd-\|multai:" $f/SKILL.md) skill references"
+  echo "$f: $(grep -c "sb:\|gsd-\|multai:" $f/SKILL.md) skill references"
 done
 ```
 

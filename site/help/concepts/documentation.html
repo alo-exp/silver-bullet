@@ -144,7 +144,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p>Every Silver Bullet project gets a documentation architecture scaffolded by <code>/silver:init</code>. The scheme is designed around three principles:</p>
+      <p>Every Silver Bullet project gets a documentation architecture scaffolded by <code>/sb:init</code>. The scheme is designed around three principles:</p>
       <ul>
         <li><strong>Docs are artifacts, not afterthoughts</strong> &mdash; every document is produced by a specific workflow step and reviewed by the artifact reviewer framework</li>
         <li><strong>No doc grows unbounded</strong> &mdash; every file uses one of five scalability patterns with enforced size caps</li>
@@ -204,7 +204,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="core-files">Core Files</h2>
-      <p>These files are scaffolded by <code>/silver:init</code> and form the backbone of your project documentation:</p>
+      <p>These files are scaffolded by <code>/sb:init</code> and form the backbone of your project documentation:</p>
 
       <table class="doc-table">
         <thead><tr><th>File</th><th>Purpose</th><th>Scalability</th></tr></thead>
@@ -256,7 +256,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="graphify-retrieval">Graphify Retrieval</h2>
-      <p>Graphify is Silver Bullet's preferred project-memory retrieval layer. After <code>/silver:init</code>, SB expects Graphify to be available so agents can query the local knowledge graph before work that benefits from project context: planning, editing, debugging, review, documentation, shipping, and release.</p>
+      <p>Graphify is Silver Bullet's preferred project-memory retrieval layer. After <code>/sb:init</code>, SB expects Graphify to be available so agents can query the local knowledge graph before work that benefits from project context: planning, editing, debugging, review, documentation, shipping, and release.</p>
       <p>The no-key refresh path builds a local graph from the repository without semantic LLM extraction:</p>
       <div class="code-block">graphify update . --no-cluster
 graphify query "task context plus relevant files" --graph graphify-out/graph.json --budget 2000</div>
@@ -340,7 +340,7 @@ graphify query "task context plus relevant files" --graph graphify-out/graph.jso
       <h2 id="composable-flows-context"><code>AF-DOCUMENT</code> and the workflow tracker</h2>
       <p>In Silver Bullet's <a href="composable-workflow.html">v0.52.0 APO architecture</a>, documentation maps to catalog atomic flows, durable project docs, and the per-instance workflow tracker:</p>
       <ul>
-        <li><strong><code>AF-DOCUMENT</code></strong> — runs when durable documentation, handoff, content, retro, or knowledge-capture evidence is required. Steps include <code>silver:ensure-docs</code>, technical debt capture when needed, SB milestone summary when needed, conversation memory capture when available, and SB session reporting when needed.</li>
+        <li><strong><code>AF-DOCUMENT</code></strong> — runs when durable documentation, handoff, content, retro, or knowledge-capture evidence is required. Steps include <code>sb:ensure-docs</code>, technical debt capture when needed, SB milestone summary when needed, conversation memory capture when available, and SB session reporting when needed.</li>
         <li><strong>Per-instance workflow tracker</strong> — the real-time state tracking artifact for an active composition. Created when a composition begins, updated after every path completes. Records selected catalog atoms, completed paths, deferred improvements, dynamic insertions, V-loop/evidence status, and the full composition plan. Unlike the three-layer documentation scheme (which is project-level and durable), <code>.planning/workflows/&lt;id&gt;.md</code> is composition-level and ephemeral — it exists for the duration of the current chain. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</li>
       </ul>
       <p><code>AF-DOCUMENT</code> is what populates the project-level docs described in this page. The per-instance workflow tracker gives visibility into the ongoing composition before durable docs are updated.</p>
@@ -351,7 +351,7 @@ graphify query "task context plus relevant files" --graph graphify-out/graph.jso
       <ul>
         <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> &mdash; <code>AF-DOCUMENT</code> in the canonical APO catalog and the per-instance workflow tracker</li>
         <li><a href="./">Core Concepts</a> &mdash; skills, hooks, enforcement layers, and the full mental model</li>
-        <li><a href="verification.html">Verification Before Completion</a> &mdash; how silver:verify enforces quality gates</li>
+        <li><a href="verification.html">Verification Before Completion</a> &mdash; how sb:verify enforces quality gates</li>
         <li><a href="../dev-workflow/">Dev Workflow</a> &mdash; the full development cycle, including the Documentation finalization step</li>
       </ul>
 

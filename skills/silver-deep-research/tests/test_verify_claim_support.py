@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for verify_claim_support.py CLI."""
 
+from __future__ import annotations
+
 import json
 import os
 import shutil

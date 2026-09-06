@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve host-aware model/reasoning rungs for silver:review-fix-ladder.
+"""Resolve host-aware model/reasoning rungs for sb:review-fix-ladder.
 
 Public Policy C / failure-management flags (also listed on --help):
   --write-policy-c --assert-policy-c --assert-rfl-advance --assert-consecutive-clean --record-rung-review-outcome

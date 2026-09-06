@@ -159,7 +159,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="directive-loop">Directive Loop</h2>
       <ol>
-        <li>User intent arrives via <code>/silver</code> or a composer workflow skill.</li>
+        <li>User intent arrives via <code>/sb</code> or a composer workflow skill.</li>
         <li>Composer spec seeds <code>orchestrator.json</code> and the enforcement queue.</li>
         <li><code>orchestrator-directive.json</code> names <code>next_skill</code> + <code>next_worker_template</code>.</li>
         <li>Parent spawns a Task worker using the matching template under <code>.silver-bullet/orchestrator-workers/</code>.</li>
@@ -190,7 +190,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><strong>Non-blocking</strong> — SB may choose a best-judgment default and log an Autonomous decision.</li>
         <li><strong>Production deploy / release</strong> — remain human-gated unless an explicit enterprise policy profile documents a narrower exception (today: still human-gated for production).</li>
       </ul>
-      <p><code>/silver:clarify --auto</code> frames scope without interactive back-and-forth; it does <em>not</em> remove blocking gates. See <a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a> for how teams declare posture in config.</p>
+      <p><code>/sb:clarify --auto</code> frames scope without interactive back-and-forth; it does <em>not</em> remove blocking gates. See <a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a> for how teams declare posture in config.</p>
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="alert-triangle"></i></span>
@@ -224,7 +224,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li><a href="enterprise-policy-profiles.html">Enterprise Policy Profiles</a> — supervised, autonomous-safe, regulated, and internal-dogfood postures</li>
         <li><a href="autonomous-enterprise-status.html">Autonomous Enterprise Status</a> — proof levels and certification gaps</li>
         <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — APO catalog and atomic flows</li>
-        <li><a href="../workflows/silver-feature.html">/silver:feature</a> — default delivery composer</li>
+        <li><a href="../workflows/silver-feature.html">/sb:feature</a> — default delivery composer</li>
       </ul>
 
       <div class="page-nav-bottom">

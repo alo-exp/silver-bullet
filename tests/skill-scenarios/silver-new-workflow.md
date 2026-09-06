@@ -9,6 +9,6 @@
 
 **Workflow:**
 1. Parent captures workflow intent, triggers, and owning skill scope.
-2. Parent invokes `/silver:new-workflow` to draft catalog entries and worker templates.
+2. Parent invokes `/sb:new-workflow` to draft catalog entries and worker templates.
 3. Parent runs workflow authoring validation and APO compliance checks.
 4. Parent records review evidence before merging the new workflow into the catalog.

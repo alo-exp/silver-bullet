@@ -5,7 +5,7 @@ argument-hint: "<review scope>"
 version: 0.1.0
 ---
 
-# /silver:review-request - Review Framing
+# /sb:review-request - Review Framing
 
 SB-owned review framing defines scope, risk, evidence, and blocker criteria
 before review begins.

@@ -1,4 +1,4 @@
-# Dual interaction modes for `/silver:agent-*`
+# Dual interaction modes for `/sb:agent-*`
 
 Canonical spec for plan [`agent_interaction_modes_17ed9bf7`](../../.cursor/plans/agent_interaction_modes_17ed9bf7.plan.md). Implementation library: [`scripts/lib/agent-mode.sh`](../../scripts/lib/agent-mode.sh). Interactive ctl: [`scripts/agent-mode/ctl.sh`](../../scripts/agent-mode/ctl.sh).
 
@@ -9,16 +9,16 @@ Canonical spec for plan [`agent_interaction_modes_17ed9bf7`](../../.cursor/plans
 
 Permission `--mode permissive|strict` is orthogonal. `--delegation-mode` is orthogonal. Do not smash host `--mode` with interaction values (`mode-conflict`).
 
-## Default `/silver:agent-*` host routing
+## Default `/sb:agent-*` host routing
 
 When the user env has Pi, OpenCode, Cursor, Codex, and Claude, default routing unless the user names an agent:
 
 | Model family | Default host |
 |---|---|
-| Grok, Composer | Cursor (`/silver:agent-cursor`) |
+| Grok, Composer | Cursor (`/sb:agent-cursor`) |
 | Gemini | If the user did **not** specify an agent: Gemini CLI, else Pi, else OpenCode, else Cursor |
-| GPT | Codex (`/silver:agent-codex`) |
-| Claude | Claude (`/silver:agent-claude`) |
+| GPT | Codex (`/sb:agent-codex`) |
+| Claude | Claude (`/sb:agent-claude`) |
 | Other models | Pi or OpenCode, or any other external agent the user named |
 
 User override always wins. Do not smash host `--mode` permission flags. Do not remap RFL GPT/Claude rungs onto Grok High. Encoder: `python3 scripts/review-fix-ladder.py --default-host-route --model {model}`.

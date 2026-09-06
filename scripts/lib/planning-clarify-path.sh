@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resolve /silver:clarify output paths under .planning/
+# Resolve /sb:clarify output paths under .planning/
 #
 # Canonical pattern:
 #   .planning/{plan-basename}-CLARIFY-{YYMMDD}-{timestamp}.md

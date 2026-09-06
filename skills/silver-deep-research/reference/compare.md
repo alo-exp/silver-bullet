@@ -10,8 +10,8 @@ solutions the user already chose — no market shortlist step.
 - You want a serverless `report.html` under `research/<date>-<slug>/`.
 
 For market surveys and top-5 shortlists, use `solution-landscape` via
-`/silver:deep-research` instead. For named head-to-head comparison, use
-`/silver:compare`.
+`/sb:deep-research` instead. For named head-to-head comparison, use
+`/sb:compare`.
 
 ## Artifacts
 

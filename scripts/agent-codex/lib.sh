@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Shared helpers for /silver:agent-codex harness scripts.
+# Shared helpers for /sb:agent-codex harness scripts.
 # shellcheck shell=bash
 
 agent_codex_script_dir() {

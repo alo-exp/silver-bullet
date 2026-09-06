@@ -4,7 +4,7 @@ description: This skill should be used to initialize Silver Bullet enforcement f
 version: 0.1.0
 ---
 
-# /silver:init — Project Setup
+# /sb:init — Project Setup
 
 This skill initializes Silver Bullet enforcement for a project. Follow each phase in order. Do NOT skip phases unless explicitly instructed below.
 
@@ -100,7 +100,7 @@ Then use ask the user directly:
   - "A. Yes, I've installed jq — continue"
   - "B. Stop for now"
 
-If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /silver:init.`
+If A: re-run `command -v jq`. If it still fails, repeat the prompt once more, then STOP with: `❌ jq still not found. Please install it and re-run /sb:init.`
 If B: STOP.
 
 ### 1.1a Graphify (recommended tool — opt-in)
@@ -119,7 +119,7 @@ or pre-opt-out from org defaults or template overrides — the user must explici
 fresh init.
 
 **Update mode re-prompt:** when `.silver-bullet.json` already exists (update mode) or after
-`/silver:update`, if `enabled_by_user` is still `null`, run the same consent prompt as fresh init.
+`/sb:update`, if `enabled_by_user` is still `null`, run the same consent prompt as fresh init.
 
 #### Step 1 — Read existing consent
 
@@ -160,7 +160,7 @@ Record the choice — it will be written to `.silver-bullet.json` in Phase 3.4 (
 
 Run when `graphify_consent` is `true` AND either:
 - this is a fresh opt-in (user just chose Yes), OR
-- `graphify_suspended` is `true` (update mode / post-`/silver:update` retry)
+- `graphify_suspended` is `true` (update mode / post-`/sb:update` retry)
 
 **Detect host** (same logic as `hooks/lib/runtime-paths.sh`):
 ```bash
@@ -229,7 +229,7 @@ jq --arg reason "<brief failure reason>" '
 ' .silver-bullet.json
 ```
 
-Output: "Graphify opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+Output: "Graphify opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
 
 Hooks treat suspended Graphify like opted-out (no graphify-gate blocks) while remembering `enabled_by_user: true`.
 
@@ -347,7 +347,7 @@ bash scripts/sb-optimize-stack.sh --verify
 
 - Default profile: `synergy_max` (see `optimization_profiles` in config template)
 - On success: records `optimization.last_applied_at` and `optimization.score` in `.silver-bullet.json`
-- On partial failure: do **not** block init — surface score and warnings; user can retry via `/silver:update`
+- On partial failure: do **not** block init — surface score and warnings; user can retry via `/sb:update`
 - See `docs/STACK-OPTIMIZATION.md` and `docs/research/graphify-agentmemory-optimization.md`
 
 ### 1.1e RTK (recommended tool — opt-in)
@@ -567,7 +567,7 @@ If installed < latest, use ask the user directly:
   - "A. Yes, update now"
   - "B. Skip, continue with current version"
 
-If user selects A: invoke `/silver:update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
+If user selects A: invoke `/sb:update` through the active runtime's SB-recognized skill invocation channel. After it completes, output "Silver Bullet updated. Continuing init..." and proceed.
 If user selects B: output "Skipping SB update." and proceed.
 If version check fails (curl error, missing file, or either version is "unknown"): output "Could not check SB version (offline?). Continuing..." and proceed.
 
@@ -627,7 +627,7 @@ If `NOT_GIT`, use ask the user directly:
   ```
 - If `gh` is not found, output:
   > ❌ GitHub CLI (gh) is required to create a repo. Install: `brew install gh` (macOS) / see https://cli.github.com
-  > Then re-run `/silver:init`.
+  > Then re-run `/sb:init`.
   STOP.
 - If the command fails for any other reason, show the error and STOP.
 
@@ -782,7 +782,7 @@ If the runtime already implies a mode or the user chooses `auto` / confirmed `by
 
 If already set to `auto` or `bypassPermissions` → skip silently.
 
-> **Note on Autonomous mode:** If the user selects Autonomous, SB uses the `silver:execute` autonomous path for execution steps instead of checkpointed execution. This preference is stored in §10e of `silver-bullet.md`.
+> **Note on Autonomous mode:** If the user selects Autonomous, SB uses the `sb:execute` autonomous path for execution steps instead of checkpointed execution. This preference is stored in §10e of `silver-bullet.md`.
 
 ### 2.9 Project management system
 
@@ -807,9 +807,9 @@ Record the answer in `.silver-bullet.json`:
 
 For option C, write the stub and display:
 
-> Configure `issue_tracker_adapter.create_issue_command` to a script that reads JSON from stdin and returns `{"id":"...","url":"...","status":"created|duplicate|failed"}`. See `/silver:add` and `silver-triage-issue-v1` payload schema. Do not file issues until the adapter is configured.
+> Configure `issue_tracker_adapter.create_issue_command` to a script that reads JSON from stdin and returns `{"id":"...","url":"...","status":"created|duplicate|failed"}`. See `/sb:add` and `silver-triage-issue-v1` payload schema. Do not file issues until the adapter is configured.
 
-This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`silver:feature`, `silver:bugfix`, `silver:devops`, `silver:ui`, `silver:triage`) read `issue_tracker` and `issue_tracker_adapter` and route issue creation accordingly:
+This value is written during Phase 3.4 (Write `.silver-bullet.json`). Skills that file backlog items (`sb:feature`, `sb:bugfix`, `sb:devops`, `sb:ui`, `sb:triage`) read `issue_tracker` and `issue_tracker_adapter` and route issue creation accordingly:
 - `github` → create a GitHub Issue via `gh issue create` + add to project board
 - `local` → add to `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`
 - `custom` → invoke configured adapter command with JSON payload (stdin); no shell string interpolation of finding content
@@ -836,12 +836,12 @@ Project has: `silver-bullet.md`, `.silver-bullet.json`, `docs/workflows/*.md`, p
 
 See `references/scaffold-steps.md` → "Update mode". Ordered steps:
 
-1. Refresh the SB-owned lifecycle surface from the bundled `silver:*` skills.
+1. Refresh the SB-owned lifecycle surface from the bundled `sb:*` skills.
 2. Overwrite `silver-bullet.md` from `${PLUGIN_ROOT}/templates/silver-bullet.md.base` (substitute `{{PROJECT_NAME}}`, `{{ACTIVE_WORKFLOW}}` from `.silver-bullet.json`). Safe — Silver Bullet owns this file.
 3. If the project already has a project instruction file, strip any SB-owned sections from it (pre-v0.7.0 migration) and remove the old-style reference line that does not mention `silver-bullet.md`.
 4. If the project instruction file already exists, ensure it has the reference line `> **Always adhere strictly to this file and silver-bullet.md — they override all defaults.**` at top if missing. If no project instruction file exists, skip this step.
 5. Run conflict detection using `references/scaffold-steps.md` → "§3.1c Conflict detection". (Note: this is the reference-file procedure for update mode; fresh setup uses the expanded 3.1c section-inventory procedure in SKILL.md instead.)
-6. Invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
+6. Invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel so docs bootstrap/reconciliation is centralized in `silver-ensure-docs`.
 7. Re-register/refresh SB hooks (step 3.7.5 in the reference).
 8. Output: "Silver Bullet updated. silver-bullet.md refreshed. All SB-owned lifecycle skills active."
 
@@ -903,15 +903,15 @@ bash "${PLUGIN_ROOT}/scripts/stamp-interface-state.sh" "$PWD" 2>/dev/null || \
 ```
 
 This creates `.planning/interface/STATE.md` from
-`templates/interface/STATE.md.base` when absent. `silver:ui-contract` maintains
+`templates/interface/STATE.md.base` when absent. `sb:ui-contract` maintains
 it thereafter.
 - **3.2.3 Cursor SB custom subagents (Cursor only)**: tri-state `cursor_sb_agents.enabled_by_user` (see `references/scaffold-steps.md` §3.2.3). Probe global managed agents first; **skip** project `.cursor/agents/` when `probe-global-agents.sh` passes; else `bash scripts/install-cursor-sb-agents.sh --project`.
 - **3.2.5 CI setup**: if no `.github/workflows/*.yml`, generate `ci.yml` from `references/ci-templates.md` based on the detected stack; for unknown stacks, prompt and store `verify_commands` in `.silver-bullet.json`.
 - **3.3 Write the project instruction file** only when 3.1b found an existing project instruction file that needed reconciliation; otherwise skip this step entirely. Preserve the existing project instruction filename when writing it back out.
 - **3.4 Write `.silver-bullet.json`** from `templates/silver-bullet.config.json.default`, replace `{{PROJECT_NAME}}`, set `src_pattern` to the detected value, set **`"sb_initiated": true`** (authoritative marker that SB may enforce hooks in this workspace). For `recommended_tools.graphify`, `agentmemory`, `rtk`, `context_mode`, and `leanctx`, always write `enabled_by_user` from the user's Phase 1.1a–§1.1f choices — default **`null` (pending)** on fresh init until the user explicitly chooses; never pre-opt-in or pre-opt-out from org defaults. Include suspension fields from Phase 1.1 install outcomes when applicable.
 - **3.5 Copy workflow files** (`full-dev-cycle.md`, `devops-cycle.md`) into `docs/workflows/`; back up any existing file to `.backup` first.
-- **3.5.5 Docs bootstrap/reconciliation**: invoke `silver:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `silver:init`. `silver:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
-- **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `silver:ensure-docs` bootstrap run.
+- **3.5.5 Docs bootstrap/reconciliation**: invoke `sb:ensure-docs --bootstrap` through the active runtime's SB-recognized skill invocation channel. This replaces direct doc migration and direct placeholder creation in `sb:init`. `sb:ensure-docs` handles greenfield skeletons, brownfield mapping, archive moves, semantic audits, and `doc-scheme.md` + `doc-scheme.json` sync.
+- **3.6 Verify docs contract surface**: ensure `docs/doc-scheme.md`, `docs/doc-scheme.json`, and `docs/task-doc-checklist.json` exist after the `sb:ensure-docs` bootstrap run.
 - **3.7 Stage and commit**: `git add silver-bullet.md .silver-bullet.json docs/` plus any existing project instruction file that was actually updated, then a `feat: initialize Silver Bullet enforcement` commit (co-authored by the host-appropriate co-author line). On pre-commit-hook failure: read, fix, re-stage, new commit (never `--amend`).
 - **3.7.5 Register SB hooks in the host hooks manifest**: resolve install path from `installed_plugins.json` or `${SB_RUNTIME_HOME_ROOT}/plugins/cache/alo-labs/silver-bullet/current`, then run the host-appropriate merge script from `${PLUGIN_ROOT}/skills/silver-init/scripts/` (see `docs/RUNTIME-COMPATIBILITY.md`). Pass `"$INSTALL_PATH"`. Idempotent. On nonzero exit, warn but do not stop init.
 - **3.8 Optional plugin activation**: do not activate lifecycle-overlap plugins for core SB workflows. If the user explicitly requests an optional enrichment plugin later, route through that plugin's own install/activation flow at that time.
@@ -935,7 +935,7 @@ Never use “fully enforced” unless tier ≥ 2 is confirmed.
 ### Reference Files
 
 - **`references/ci-templates.md`** — CI workflow YAML templates for all supported stacks (Node.js, Python, Rust, Go, Java, Ruby, PHP, .NET, Elixir, Swift, Dart/Flutter)
-- **`skills/silver-ensure-docs/SKILL.md`** — Canonical documentation bootstrap/reconciliation/remediation workflow used by `silver:init`
+- **`skills/silver-ensure-docs/SKILL.md`** — Canonical documentation bootstrap/reconciliation/remediation workflow used by `sb:init`
 - **`references/stack-detection.md`** — Per-ecosystem tech stack string mapping (manifest file → stack label)
 
 ### Scripts

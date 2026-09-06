@@ -20,7 +20,7 @@ lower-level runtime contract, but adds a new higher-order live journey that prov
 
 - the installed Silver Bullet surface is usable in a real session
 - the todo app can be developed forward while SB workflows are used naturally
-- dissatisfaction and defects are filed immediately through `silver:add`
+- dissatisfaction and defects are filed immediately through `sb:add`
 - coverage is explicit, not implied
 
 The new suite is intentionally **interactive**. It is not the old Codex-CLI-only
@@ -52,7 +52,7 @@ That gap is the reason for this design.
    real development instead of synthetic command playback.
 3. Cover the full SB-owned live surface that a user is meant to rely on in this
    repo.
-4. File every real dissatisfaction or defect immediately with `silver:add`, and
+4. File every real dissatisfaction or defect immediately with `sb:add`, and
    tag it for the todo-app run.
 5. Keep the todo app persistent for the duration of the run, but reset it before
    and after the run so the next run starts from a clean baseline.
@@ -118,12 +118,12 @@ The coverage registry should include at least these groups:
 
 | Group | Representative SB surfaces | How the todo-app run should exercise them |
 |------|-----------------------------|-------------------------------------------|
-| Install / bootstrap | `silver:init`, `silver:add`, `silver:remove` | Install SB into the desktop session, scaffold the todo app, file an issue when something feels off, and retire at least one temporary artifact or issue during cleanup |
-| Discovery / framing | `silver:explore`, `gsd-scan`, `silver:deep-research`, `silver:blast-radius` | Use them before the first feature and again before any larger change or risky tweak |
-| Feature delivery | `silver:feature`, `silver:ui`, `silver:fast` | Build at least one real user-visible enhancement, one UI refinement, and one trivial change that is genuinely small enough for the fast path |
-| Defect handling | `silver:bugfix`, `silver:forensics`, `tdd` | Deliberately surface or reproduce a bug, reconstruct it, write a regression test, and fix it |
-| Governance / quality | `silver:quality-gates`, `requesting-code-review`, `receiving-code-review` | Run quality checks before moving forward, then review the work and respond to findings |
-| Release readiness | `silver:create-release`, `silver:release`, `finishing-branch` | Prepare the todo-app branch for release, create release notes/tag, and clean up the branch state |
+| Install / bootstrap | `sb:init`, `sb:add`, `sb:remove` | Install SB into the desktop session, scaffold the todo app, file an issue when something feels off, and retire at least one temporary artifact or issue during cleanup |
+| Discovery / framing | `sb:explore`, `gsd-scan`, `sb:deep-research`, `sb:blast-radius` | Use them before the first feature and again before any larger change or risky tweak |
+| Feature delivery | `sb:feature`, `sb:ui`, `sb:fast` | Build at least one real user-visible enhancement, one UI refinement, and one trivial change that is genuinely small enough for the fast path |
+| Defect handling | `sb:bugfix`, `sb:forensics`, `tdd` | Deliberately surface or reproduce a bug, reconstruct it, write a regression test, and fix it |
+| Governance / quality | `sb:quality-gates`, `requesting-code-review`, `receiving-code-review` | Run quality checks before moving forward, then review the work and respond to findings |
+| Release readiness | `sb:create-release`, `sb:release`, `finishing-branch` | Prepare the todo-app branch for release, create release notes/tag, and clean up the branch state |
 | Project orchestration | `gsd-new-project`, `gsd-new-milestone`, `gsd-discuss-phase`, `gsd-plan-phase`, `gsd-execute-phase`, `gsd-verify-work`, `gsd-ship`, `gsd-code-review`, `gsd-ui-phase`, `gsd-ui-review`, `gsd-secure-phase`, `gsd-debug`, `gsd-forensics` | Use these as the structured backbone of the journey where they naturally fit the app work |
 
 The implementation must treat the current integration coverage list as the source
@@ -168,7 +168,7 @@ The todo-app run should feel like a real development arc:
 
 8. **Issue filing**
    - whenever a real end-user dissatisfaction appears, stop and file it immediately
-   - use `silver:add`
+   - use `sb:add`
    - tag the issue for the todo-app run so it is easy to find later
 
 ## 8. Issue Filing Rules
@@ -178,7 +178,7 @@ care about, we do not paper over it.
 
 Instead:
 
-1. classify it as issue or backlog item using `silver:add`
+1. classify it as issue or backlog item using `sb:add`
 2. file it in the Silver Bullet repo
 3. tag it with `todo-app`
 4. include enough context to reproduce it from the inline session
@@ -198,14 +198,14 @@ append-only for the duration of the session and should contain entries like:
 
 | Step | Surface | Evidence | Issue? |
 |------|---------|----------|--------|
-| Install | `silver:init` | scaffold files created in todo-app workspace | no |
-| Discovery | `silver:explore` | decision note in session transcript | no |
-| Feature | `silver:feature` | feature diff + tests | maybe |
-| UI | `silver:ui` | browser screenshot / DOM proof | maybe |
-| Bugfix | `silver:bugfix`, `silver:forensics`, `tdd` | failing test -> fix -> green test | yes/no |
-| Cleanup | `silver:fast`, `silver:remove` | tiny change or retired temp artifact | maybe |
-| Governance | `silver:quality-gates`, `requesting-code-review`, `receiving-code-review` | review notes / gate output | no |
-| Release | `silver:create-release`, `silver:release`, `finishing-branch` | tag / release note / branch cleanup | no |
+| Install | `sb:init` | scaffold files created in todo-app workspace | no |
+| Discovery | `sb:explore` | decision note in session transcript | no |
+| Feature | `sb:feature` | feature diff + tests | maybe |
+| UI | `sb:ui` | browser screenshot / DOM proof | maybe |
+| Bugfix | `sb:bugfix`, `sb:forensics`, `tdd` | failing test -> fix -> green test | yes/no |
+| Cleanup | `sb:fast`, `sb:remove` | tiny change or retired temp artifact | maybe |
+| Governance | `sb:quality-gates`, `requesting-code-review`, `receiving-code-review` | review notes / gate output | no |
+| Release | `sb:create-release`, `sb:release`, `finishing-branch` | tag / release note / branch cleanup | no |
 
 The ledger is the proof artifact for "100% coverage" in the live run.
 
@@ -229,7 +229,7 @@ following:
 
 - the session used the live todo-app fixture inline in the desktop environment
 - the session exercised the required SB surface through real app development
-- the session filed every real user-facing dissatisfaction through `silver:add`
+- the session filed every real user-facing dissatisfaction through `sb:add`
   with `todo-app` tagging
 - the session produced a coverage ledger that shows every required SB surface
   was actually used
@@ -248,7 +248,7 @@ following:
   a skill was used when it was not.
 
 - **Risk: Issues are noticed but not captured.**  
-  Mitigation: make `silver:add` part of the live-run contract whenever dissatisfaction
+  Mitigation: make `sb:add` part of the live-run contract whenever dissatisfaction
   is discovered.
 
 - **Risk: The run drifts away from the real end-user experience.**  

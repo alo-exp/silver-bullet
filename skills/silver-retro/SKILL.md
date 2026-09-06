@@ -7,16 +7,16 @@ argument-hint: "<range, release, or scope>"
 version: 0.1.0
 ---
 
-# /silver:retro - Engineering Retrospective
+# /sb:retro - Engineering Retrospective
 
 SB-owned retrospective workflow for turning delivery history into concrete
 process improvements.
 
 **Pre-execution** (blocks retro artifact edits until recorded):
 
-`silver:context`
+`sb:context`
 
-**Post-execution:** `silver:execute` → `silver:ensure-docs`
+**Post-execution:** `sb:execute` → `sb:ensure-docs`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-retro` composer).
 
@@ -30,8 +30,8 @@ The report must include:
 - delivery metrics available from git, CI, releases, issues, and SB artifacts;
 - quality trends from reviews, domain audits, incidents, and verification;
 - recurring blockers and process gaps;
-- action items filed through `silver:add`;
-- knowledge/learnings candidates for `silver:rem`.
+- action items filed through `sb:add`;
+- knowledge/learnings candidates for `sb:rem`.
 
 ## Process
 
@@ -40,11 +40,11 @@ The report must include:
    milestone, or workflow archive.
 3. Gather evidence from git history, release notes, CI status, issue backlog,
    `.planning/` artifacts, `review-analytics.jsonl`, and session logs.
-4. Invoke or apply `silver:domain-audit --pack incident-retro` and
+4. Invoke or apply `sb:domain-audit --pack incident-retro` and
    `benchmark-eval` when provider/tooling performance is part of the scope.
 5. Separate observed facts from inferred causes.
-6. File actionable improvements through `silver:add`; capture durable knowledge
-   or learnings through `silver:rem`.
+6. File actionable improvements through `sb:add`; capture durable knowledge
+   or learnings through `sb:rem`.
 
 ## Exit Gate
 

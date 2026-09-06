@@ -14,7 +14,7 @@ def resolve_skill_scripts(skill_name: str, marker: str = "__init__.py") -> Path:
     skill_dir = here.parent
     alt_names = [skill_name]
     if skill_name.startswith("silver-"):
-        alt_names.append("silver:" + skill_name.removeprefix("silver-"))
+        alt_names.append("sb:" + skill_name.removeprefix("silver-"))
 
     for name in alt_names:
         sibling = skill_dir.parent / name / "scripts"

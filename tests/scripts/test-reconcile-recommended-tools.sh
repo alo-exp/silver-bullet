@@ -576,6 +576,18 @@ reentry_guard="$(SB_RT_APPLY_ACTIVE=1 bash -c \
   && pass "post-install skips nested reconcile when apply active" \
   || fail "post-install skips nested reconcile when apply active"
 
+reentry_guard="$(SB_RT_POST_INSTALL_ACTIVE=1 bash -c \
+  'source "'"$REPO_ROOT"'/scripts/lib/recommended-tools/installer.sh"
+  rt_installer_post_install "'"$REPO_ROOT"'" "" 2>&1' || true)"
+[[ "$reentry_guard" == *"SKIP: installer post-install reconcile"* ]] \
+  && pass "post-install skips nested reconcile when post-install active" \
+  || fail "post-install skips nested reconcile when post-install active"
+
+grep -q 'TOOLSTACK_INSTALL_IN_PROGRESS=1 bash "\$opt"' \
+  "$REPO_ROOT/scripts/lib/recommended-tools/probe-rtk.sh" \
+  && pass "rtk repair marks nested optimizer as in-progress" \
+  || fail "rtk repair marks nested optimizer as in-progress"
+
 # --- D10 five-tool default-path coverage ---
 # Keep vendor doctor skipped for the historical cases above, then exercise it
 # explicitly in this block.

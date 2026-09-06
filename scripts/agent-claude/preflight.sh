@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preflight for /silver:agent-claude — CLI, expect, OAuth surface, SB-only plugins.
+# Preflight for /sb:agent-claude — CLI, expect, OAuth surface, SB-only plugins.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

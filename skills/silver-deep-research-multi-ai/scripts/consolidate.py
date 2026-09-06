@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic consolidation for /silver:deep-research-multi-ai."""
+"""Deterministic consolidation for /sb:deep-research-multi-ai."""
 
 from __future__ import annotations
 

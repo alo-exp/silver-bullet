@@ -40,7 +40,7 @@ subagent_type="$(printf '%s' "$input" | jq -r '.subagent_type // .subagentType /
 prompt_preview="$(printf '%s' "$input" | jq -r '.prompt // .user_message // ""' 2>/dev/null | head -c 200 || true)"
 assigned_skill=""
 if [[ -n "$prompt_preview" ]]; then
-  assigned_skill="$(printf '%s' "$prompt_preview" | grep -Eo 'silver:[a-z0-9:-]+|/silver:[a-z0-9-]+' | head -1 | tr -d '/' || true)"
+  assigned_skill="$(printf '%s' "$prompt_preview" | grep -Eo 'sb:[a-z0-9:-]+|/sb:[a-z0-9-]+' | head -1 | tr -d '/' || true)"
 fi
 
 now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"

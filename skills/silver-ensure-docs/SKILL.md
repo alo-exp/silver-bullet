@@ -5,7 +5,7 @@ argument-hint: "[--bootstrap | --reconcile-brownfield | --from-hook --task <id> 
 version: 0.1.0
 ---
 
-# /silver:ensure-docs — Documentation Authority
+# /sb:ensure-docs — Documentation Authority
 
 Single source of docs governance in Silver Bullet:
 - Human policy: `docs/doc-scheme.md`
@@ -28,7 +28,7 @@ This skill is the only doc orchestrator for:
 
 ## Semantic Audit Expectations
 
-`silver:ensure-docs` is not satisfied by structural validation alone. It must:
+`sb:ensure-docs` is not satisfied by structural validation alone. It must:
 - read every governed doc that claims to describe current project state
 - compare those claims to the current codebase, hooks, commands, workflows, and runtime behavior
 - distinguish live/reference docs from archival or historical snapshots
@@ -37,7 +37,7 @@ This skill is the only doc orchestrator for:
 
 ## Mode: `--bootstrap`
 
-Use during `/silver:init` for both greenfield and brownfield repos.
+Use during `/sb:init` for both greenfield and brownfield repos.
 
 ### Greenfield
 
@@ -118,6 +118,6 @@ Adopt:
 5. regression-halt discipline
 
 Delegation rule:
-- Default: operate as standalone `silver:ensure-docs`.
+- Default: operate as standalone `sb:ensure-docs`.
 - Delegate to a legacy docs workflow only when the session/repo is explicitly
   operating in that legacy docs mode.

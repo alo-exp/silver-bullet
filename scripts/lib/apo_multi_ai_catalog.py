@@ -47,7 +47,7 @@ MULTI_AI_STEP_DEFS: dict[str, dict[str, str]] = {
     },
     "FS-SILVER_MULTI_AI_TASK": {
         "skill": "silver-multi-ai-task",
-        "purpose": "Public /silver:multi-ai-task primitive entry — generic multi-model orchestration.",
+        "purpose": "Public /sb:multi-ai-task primitive entry — generic multi-model orchestration.",
         "classification": "flow-step-skill",
     },
 }

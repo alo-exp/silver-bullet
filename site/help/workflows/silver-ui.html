@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:ui — UI/UX Workflow — Silver Bullet Help</title>
-<meta name="description" content="SB-orchestrated UI/frontend workflow: orientation → clarify when needed → silver:ui-contract design contract → execute with TDD where applicable → silver:ui-review → ship.">
+<title>/sb:ui — UI/UX Workflow — Silver Bullet Help</title>
+<meta name="description" content="SB-orchestrated UI/frontend workflow: orientation → clarify when needed → sb:ui-contract design contract → execute with TDD where applicable → sb:ui-review → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -85,7 +85,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:ui</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:ui</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -95,8 +95,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:ui</h1>
-    <p>Full SB-orchestrated UI/frontend workflow — from orientation through design contract (silver:ui-contract), TDD for testable behavior, UI visual audit, accessibility review, and ship.</p>
+    <h1>/sb:ui</h1>
+    <p>Full SB-orchestrated UI/frontend workflow — from orientation through design contract (sb:ui-contract), TDD for testable behavior, UI visual audit, accessibility review, and ship.</p>
   </div>
 </div>
 
@@ -124,14 +124,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It maps to catalog entity <code>WF-SILVER-UI</code> and composes the same pre-execution chain as <code>/silver:feature</code>, with <code>AF-DESIGN-CONTRACT</code> always included and <code>AF-UI-QUALITY</code> in the post-execute tail.</p>
+      <p><code>/sb:ui</code> is the Silver Bullet orchestrator for UI, frontend, component, screen, design, interface, page, layout, animation, and responsive work. It maps to catalog entity <code>WF-SILVER-UI</code> and composes the same pre-execution chain as <code>/sb:feature</code>, with <code>AF-DESIGN-CONTRACT</code> always included and <code>AF-UI-QUALITY</code> in the post-execute tail.</p>
       <p><strong>It keeps UI work inside the SB lifecycle.</strong> Design contract creation, component implementation, visual audit, and accessibility review are coordinated through catalog atomic flows — not ad hoc prompts. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full canonical <code>AF-*</code> catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="composition">Catalog Composition (<code>WF-SILVER-UI</code>)</h2>
       <p>The default composition chain from <code>docs/apo-catalog.json</code>:</p>
-      <div class="code-block">/silver:init (when .planning/ missing) → Orient → Clarify → Decide → Specify
+      <div class="code-block">/sb:init (when .planning/ missing) → Orient → Clarify → Decide → Specify
 → Quality gate (pre-plan) → Plan → Design contract → Execute
 → WF-POST-EXEC-GATES</div>
       <p>Conditional atoms prune when context does not require them — for example Bootstrap when <code>.planning/</code> already exists. When <code>SPEC.md</code> is absent, <code>AF-CLARIFY</code> (<code>--spec</code>) then <code>AF-SPECIFY</code> (compiler) are required; both skip when <code>SPEC.md</code> is current. Light Clarify still applies to fuzzy UI intent. <code>AF-DESIGN-CONTRACT</code> is <strong>not</strong> optional in this workflow.</p>
@@ -142,13 +142,13 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
       <h3><code>AF-DESIGN-CONTRACT</code> — Design contract</h3>
       <p><strong>When:</strong> Always in <code>WF-SILVER-UI</code> (mandatory, not conditional).</p>
-      <p><strong>User-facing route:</strong> <code>/silver:ui-contract</code> — component tokens, user-facing copy, component API, layout rules, and accessibility requirements. Pre-plan quality gates run usability, accessibility, testability, and security checks before planning continues.</p>
+      <p><strong>User-facing route:</strong> <code>/sb:ui-contract</code> — component tokens, user-facing copy, component API, layout rules, and accessibility requirements. Pre-plan quality gates run usability, accessibility, testability, and security checks before planning continues.</p>
       <p><strong>Produces:</strong> <code>UI-SPEC.md</code>. The execution plan is built on top of this contract — implementation must match the spec.</p>
 
       <h3><code>AF-UI-QUALITY</code> — UI quality</h3>
       <p><strong>When:</strong> First step inside <code>WF-POST-EXEC-GATES</code> for UI work — after Execute, before the review triad.</p>
-      <p><strong>User-facing route:</strong> <code>/silver:ui-review</code> — six-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance). Pre-ship quality gates enforce final usability, accessibility, and testability.</p>
-      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>/silver:execute --gaps-only</code> for targeted fixes.</p>
+      <p><strong>User-facing route:</strong> <code>/sb:ui-review</code> — six-pillar visual audit (layout fidelity, accessibility, responsiveness, interaction quality, visual consistency, performance). Pre-ship quality gates enforce final usability, accessibility, and testability.</p>
+      <p><strong>Produces:</strong> <code>UI-REVIEW.md</code>. Critical findings route through <code>/sb:execute --gaps-only</code> for targeted fixes.</p>
 
       <h3>Post-execute order</h3>
       <p>After <code>AF-EXECUTE</code>, <code>WF-POST-EXEC-GATES</code> runs:</p>
@@ -162,14 +162,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
         <div class="callout-body">
-          <strong>Routing precedence:</strong> If an instruction matches both <code>silver:feature</code> and <code>silver:ui</code>, <code>silver:ui</code> wins — UI is more specific. <code>silver:bugfix</code> always takes precedence over both.
+          <strong>Routing precedence:</strong> If an instruction matches both <code>sb:feature</code> and <code>sb:ui</code>, <code>sb:ui</code> wins — UI is more specific. <code>sb:bugfix</code> always takes precedence over both.
         </div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Use <code>/silver:ui</code> for any of these entry trigger signals:</p>
+      <p>Use <code>/sb:ui</code> for any of these entry trigger signals:</p>
       <ul>
         <li>"UI" / "frontend" / "component" / "screen"</li>
         <li>"design" / "interface" / "page" / "layout"</li>
@@ -180,7 +180,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="workflow-steps">Flow execution</h2>
-      <p><code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code> are <strong>always</strong> included in this composer — they are what distinguish <code>/silver:ui</code> from <code>/silver:feature</code>.</p>
+      <p><code>AF-DESIGN-CONTRACT</code> and <code>AF-UI-QUALITY</code> are <strong>always</strong> included in this composer — they are what distinguish <code>/sb:ui</code> from <code>/sb:feature</code>.</p>
 
       <h3>Standard composition chain</h3>
       <div class="code-block">AF-BOOTSTRAP [skip if .planning/] → AF-ORIENT → AF-CLARIFY [--spec if no SPEC.md]
@@ -189,10 +189,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 → AF-EXECUTE → WF-POST-EXEC-GATES</div>
 
       <h3 id="design-contract">Design contract (<code>AF-DESIGN-CONTRACT</code>)</h3>
-      <p><code>/silver:ui-contract</code> produces <code>UI-SPEC.md</code> — component API, layout rules, interaction spec. This is the key differentiator from <code>/silver:feature</code>, where design contract is conditional on UI scope.</p>
+      <p><code>/sb:ui-contract</code> produces <code>UI-SPEC.md</code> — component API, layout rules, interaction spec. This is the key differentiator from <code>/sb:feature</code>, where design contract is conditional on UI scope.</p>
 
       <h3 id="ui-visual-audit">UI quality (<code>AF-UI-QUALITY</code>)</h3>
-      <p><code>/silver:ui-review</code> runs <strong>before</strong> the review triad (<code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code>) in post-execute order. Six-pillar audit: layout fidelity, accessibility (WCAG 2.1 AA), responsiveness, interaction quality, visual consistency, performance.</p>
+      <p><code>/sb:ui-review</code> runs <strong>before</strong> the review triad (<code>AF-REVIEW-REQUEST</code> → <code>AF-REVIEW</code> → <code>AF-REVIEW-TRIAGE</code>) in post-execute order. Six-pillar audit: layout fidelity, accessibility (WCAG 2.1 AA), responsiveness, interaction quality, visual consistency, performance.</p>
 
       <h3>Per-phase loop</h3>
       <p>For multi-phase UI work: <code>AF-PLAN</code> → <code>AF-EXECUTE</code> → <code>WF-POST-EXEC-GATES</code> (with <code>AF-UI-QUALITY</code>) repeats per ROADMAP phase until verification and review exit conditions pass.</p>
@@ -205,10 +205,10 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>/silver:secure</code> (<code>AF-SECURE</code>)</li>
-            <li><code>/silver:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
-            <li><code>/silver:verify</code> (<code>AF-VERIFY</code>)</li>
-            <li><code>/silver:ui-contract</code> (<code>AF-DESIGN-CONTRACT</code>) and <code>/silver:ui-review</code> (<code>AF-UI-QUALITY</code>)</li>
+            <li><code>/sb:secure</code> (<code>AF-SECURE</code>)</li>
+            <li><code>/sb:quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/sb:verify</code> (<code>AF-VERIFY</code>)</li>
+            <li><code>/sb:ui-contract</code> (<code>AF-DESIGN-CONTRACT</code>) and <code>/sb:ui-review</code> (<code>AF-UI-QUALITY</code>)</li>
           </ul>
         </div>
       </div>
@@ -216,18 +216,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:ui Add responsive sidebar navigation to the dashboard</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation, when <code>SPEC.md</code> is absent run <code>AF-CLARIFY</code> (<code>--spec</code>) then <code>AF-SPECIFY</code> (compiler). Then <code>/silver:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/silver:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
+      <div class="code-block">/sb:ui Add responsive sidebar navigation to the dashboard</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-UI</code>. After orientation, when <code>SPEC.md</code> is absent run <code>AF-CLARIFY</code> (<code>--spec</code>) then <code>AF-SPECIFY</code> (compiler). Then <code>/sb:ui-contract</code> creates <code>UI-SPEC.md</code> with component API and layout rules. <code>AF-EXECUTE</code> implements against the spec. <code>/sb:ui-review</code> audits layout fidelity, accessibility, and responsiveness before verify, secure, and ship readiness.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
         <a href="./silver-bugfix.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:bugfix</span>
+          <span class="pnb-title">/sb:bugfix</span>
         </a>
         <a href="./silver-devops.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:devops</span>
+          <span class="pnb-title">/sb:devops</span>
         </a>
       </div>
 

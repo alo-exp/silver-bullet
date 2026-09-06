@@ -103,7 +103,7 @@ for smoke validation) writes responses via `tests/live/lib/cursor-in-session-res
 | test-live-skill-recording.sh | S5-S6 | Skill recording to state file, compliance-status output |
 | test-live-full-scenario.sh | S7-S8 | Session initialization, abbreviated SDLC lifecycle |
 | test-live-doc-scheme.sh | Doc scheme | Doc scaffolding, monthly knowledge/learnings updates, filename conventions |
-| test-silver-init-migration.sh | Init docs bootstrap | `silver:init` Step 3.5.5 delegation to `silver:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
+| test-silver-init-migration.sh | Init docs bootstrap | `sb:init` Step 3.5.5 delegation to `sb:ensure-docs`, brownfield preserve-vs-switch, archive move/recovery paths |
 | test-live-review-fix-ladder-smoke.sh | Review fix ladder | Resolver + invoke-skill + charter fixture (automated); optional one-turn live agent with `SB_LIVE_REVIEW_FIX_LADDER_LIVE=1` |
 | test-live-review-fix-ladder-full-ladder.sh | Review fix ladder full ladder | Every resolver rung per host with `SB_LIVE_REVIEW_FIX_LADDER_FULL_LADDER=1`; Cursor in-session mode in IDE Composer; resolver-only fallback when headless and not authenticated |
 

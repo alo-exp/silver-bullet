@@ -222,7 +222,7 @@ sb_rfl_prompt_phase_hint() {
   lower="$(sb_rfl_prompt_lower "$prompt")"
   if printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_review|review-only|raw findings only|review_raw'; then
     printf 'review'
-  elif printf '%s' "$lower" | grep -qiE '/silver:triage|silver:triage|rung_[0-9]+_triage|triage_pass|classify'; then
+  elif printf '%s' "$lower" | grep -qiE '/sb:triage|sb:triage|rung_[0-9]+_triage|triage_pass|classify'; then
     printf 'triage'
   elif printf '%s' "$lower" | grep -qiE 'rung_[0-9]+_fix|fix subagent|fix_pass|apply accept'; then
     printf 'fix'
@@ -248,7 +248,7 @@ sb_rfl_prompt_has_review_triage_mix() {
   lower="$(sb_rfl_prompt_lower "$prompt")"
   local has_review=0 has_triage=0
   printf '%s' "$lower" | grep -qiE 'review-only|raw findings' && has_review=1
-  printf '%s' "$lower" | grep -qiE 'silver:triage|/silver:triage|valid-blocker|valid-nonblocker|triage_pass' && has_triage=1
+  printf '%s' "$lower" | grep -qiE 'sb:triage|/sb:triage|valid-blocker|valid-nonblocker|triage_pass' && has_triage=1
   [[ "$has_review" -eq 1 && "$has_triage" -eq 1 ]]
 }
 
@@ -282,7 +282,7 @@ sb_rfl_deny_unqualified_subscription_task() {
   local name="$1"
   [[ -n "$name" ]] || return 0
   sb_rfl_subscription_cursor_task_denied "$name" || return 0
-  printf '%s' "Review-fix-ladder: ${name} requires subscription-first (/silver:agent-codex for GPT, /silver:agent-claude for Claude/Opus). Cursor Task is allowed only after quota exhaustion. Record with: python3 scripts/review-fix-ladder.py --mark-quota-fallback --quota-host <codex|claude> --quota-signal '<matched signal>'."
+  printf '%s' "Review-fix-ladder: ${name} requires subscription-first (/sb:agent-codex for GPT, /sb:agent-claude for Claude/Opus). Cursor Task is allowed only after quota exhaustion. Record with: python3 scripts/review-fix-ladder.py --mark-quota-fallback --quota-host <codex|claude> --quota-signal '<matched signal>'."
   return 1
 }
 
@@ -335,7 +335,7 @@ sb_rfl_validate_task_spawn() {
       ;;
     triage)
       if [[ "$hint" == "review" ]]; then
-        printf '%s' "Review-fix-ladder: triage phase — do not spawn a review-only Task; invoke /silver:triage at host model."
+        printf '%s' "Review-fix-ladder: triage phase — do not spawn a review-only Task; invoke /sb:triage at host model."
         return 1
       fi
       if [[ -n "$model" && -n "$host_model" && -n "$rung_model" && "$model" == "$rung_model" && "$host_model" != "$rung_model" ]]; then
@@ -349,7 +349,7 @@ sb_rfl_validate_task_spawn() {
       ;;
     fix_parallel)
       if [[ "$pm_filed" != "true" ]]; then
-        printf '%s' "Review-fix-ladder: fix_parallel blocked — file valid issues via /silver:add before fix subagents."
+        printf '%s' "Review-fix-ladder: fix_parallel blocked — file valid issues via /sb:add before fix subagents."
         return 1
       fi
       if [[ "$hint" == "review" || "$hint" == "triage" ]]; then
@@ -454,13 +454,13 @@ sb_rfl_advance_after_task() {
 
 sb_rfl_detect_pm_filing_command() {
   local cmd="$1"
-  printf '%s' "$cmd" | grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/silver:add|silver:add'
+  printf '%s' "$cmd" | grep -qiE 'silver-add\.sh|adapter-create|gh issue create|/sb:add|sb:add'
 }
 
 sb_rfl_on_skill_invoke() {
   local skill="$1"
   case "$skill" in
-    silver-review-fix-ladder|silver:review-fix-ladder|review-fix-ladder)
+    silver-review-fix-ladder|sb:review-fix-ladder|review-fix-ladder)
       sb_rfl_activate 1 "" composer-2.5
       ;;
   esac

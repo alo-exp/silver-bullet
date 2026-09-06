@@ -194,7 +194,7 @@ assert_blocks "planning-edit-override does not allow ROADMAP.md edit" "$out"
 rm -f "$OVERRIDE_FILE"
 teardown
 
-# roadmap-edit-override allows ROADMAP.md and STATE.md for silver:phase / silver:undo
+# roadmap-edit-override allows ROADMAP.md and STATE.md for sb:phase / sb:undo
 ROADMAP_OVERRIDE_FILE="${SB_TEST_DIR}/roadmap-edit-override"
 setup
 touch "$ROADMAP_OVERRIDE_FILE"
@@ -225,7 +225,7 @@ echo "--- Group 4: Block message contains skill hint ---"
 
 setup
 out=$(run_hook_edit "${TMPDIR_TEST}/.planning/ROADMAP.md")
-if printf '%s' "$out" | grep -q "silver:phase\|silver:plan\|silver:add\|silver:release"; then
+if printf '%s' "$out" | grep -q "sb:phase\|sb:plan\|sb:add\|sb:release"; then
   echo "  ✅ ROADMAP block message mentions owning skills"
   PASS=$((PASS + 1))
 else

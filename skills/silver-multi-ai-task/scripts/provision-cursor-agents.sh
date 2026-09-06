@@ -88,7 +88,7 @@ model: ${lid}
 
 # sb-dr worker (${lid})
 
-Provisioned by \`provision-cursor-agents.sh\` for \`/silver:multi-ai-task\` v2.
+Provisioned by \`provision-cursor-agents.sh\` for \`/sb:multi-ai-task\` v2.
 Return phase-scoped contribution envelopes only; do not synthesize reports or mutate DR state.
 EOF
   created=$((created + 1))

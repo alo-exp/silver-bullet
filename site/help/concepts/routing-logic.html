@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
 <title>Routing Logic — Silver Bullet Help</title>
-<meta name="description" content="How /silver classifies intent and composes the correct Silver Bullet workflow and optional extension path. Complexity triage decision tree, full routing table, and explicit routing behavior.">
+<meta name="description" content="How /sb classifies intent and composes the correct Silver Bullet workflow and optional extension path. Complexity triage decision tree, full routing table, and explicit routing behavior.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
@@ -121,7 +121,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Routing Logic</h1>
-    <p>How <code>/silver</code> classifies instructions, performs complexity triage, and composes orchestration workflows when you invoke it explicitly (or when the host supports plain-request routing).</p>
+    <p>How <code>/sb</code> classifies instructions, performs complexity triage, and composes orchestration workflows when you invoke it explicitly (or when the host supports plain-request routing).</p>
   </div>
 </div>
 
@@ -142,34 +142,34 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver</code> is Silver Bullet's dynamic workflow composer — the runtime face of catalog atom <code>AF-ROUTE</code> and workflow <code>WF-SILVER-ROUTER</code>. It is the portable way to ask SB to classify a task and route it through the right SB lifecycle and optional extension path. You can still invoke specific orchestration workflows directly when you know the exact command.</p>
-      <p>Every request passing through <code>/silver</code> goes through two sequential steps before work begins:</p>
+      <p><code>/sb</code> is Silver Bullet's dynamic workflow composer — the runtime face of catalog atom <code>AF-ROUTE</code> and workflow <code>WF-SILVER-ROUTER</code>. It is the portable way to ask SB to classify a task and route it through the right SB lifecycle and optional extension path. You can still invoke specific orchestration workflows directly when you know the exact command.</p>
+      <p>Every request passing through <code>/sb</code> goes through two sequential steps before work begins:</p>
       <ol>
-        <li><strong>Explicit or host-supported routing</strong> — explicit <code>/silver</code> invocation is always supported; plain-request interception is host/runtime dependent.</li>
+        <li><strong>Explicit or host-supported routing</strong> — explicit <code>/sb</code> invocation is always supported; plain-request interception is host/runtime dependent.</li>
         <li><strong>Complexity triage</strong> — the router classifies the request as Trivial, Simple, Fuzzy, or Complex to determine whether an exploration step is needed and which paths to compose.</li>
       </ol>
-      <p>After triage, <code>/silver</code> performs <strong>path composition</strong> — selecting catalog-backed atomic flows from the canonical AF-* catalog and assembling an ordered chain appropriate for the classified work. This replaces fixed step-by-step pipelines: each composition is tailored to the context, not predetermined. See <a href="composable-workflow.html">Composable Workflow Orchestration</a> for the full canonical AF-* catalog.</p>
+      <p>After triage, <code>/sb</code> performs <strong>path composition</strong> — selecting catalog-backed atomic flows from the canonical AF-* catalog and assembling an ordered chain appropriate for the classified work. This replaces fixed step-by-step pipelines: each composition is tailored to the context, not predetermined. See <a href="composable-workflow.html">Composable Workflow Orchestration</a> for the full canonical AF-* catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="bare-instruction">Explicit and Host-Supported Routing</h2>
-      <p>Use <code>/silver</code> when you want Silver Bullet to classify a natural-language work request. Some host runtimes may support bare-instruction interception, but explicit invocation is the cross-host behavior to rely on.</p>
+      <p>Use <code>/sb</code> when you want Silver Bullet to classify a natural-language work request. Some host runtimes may support bare-instruction interception, but explicit invocation is the cross-host behavior to rely on.</p>
 
       <h3>Why interception exists</h3>
-      <p>Without routing through SB, it is easy to accidentally bypass orchestration. If a plain assistant starts writing code immediately, it can skip clarification, spec work, quality gates, planning, review, and verification. <code>/silver</code> makes the workflow decision explicit and traceable.</p>
+      <p>Without routing through SB, it is easy to accidentally bypass orchestration. If a plain assistant starts writing code immediately, it can skip clarification, spec work, quality gates, planning, review, and verification. <code>/sb</code> makes the workflow decision explicit and traceable.</p>
 
       <h3>How it works</h3>
       <ol>
-        <li>User invokes <code>/silver</code> with a natural-language work request, or the host routes a supported plain request into <code>/silver</code>.</li>
+        <li>User invokes <code>/sb</code> with a natural-language work request, or the host routes a supported plain request into <code>/sb</code>.</li>
         <li>Silver Bullet checks whether this is a non-trivial work request and what kind of work it is.</li>
-        <li><code>/silver</code> performs complexity triage and composes the correct workflow path.</li>
+        <li><code>/sb</code> performs complexity triage and composes the correct workflow path.</li>
         <li>The work proceeds through the full orchestrated pipeline</li>
       </ol>
 
-      <h3>What should route through /silver</h3>
+      <h3>What should route through /sb</h3>
       <table class="intercept-table">
         <thead>
-          <tr><th>Message type</th><th>Route through /silver?</th><th>Example</th></tr>
+          <tr><th>Message type</th><th>Route through /sb?</th><th>Example</th></tr>
         </thead>
         <tbody>
           <tr>
@@ -200,7 +200,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
           <tr>
             <td>Slash command</td>
             <td><span class="badge-no">No</span></td>
-            <td><code>/silver:plan</code>, <code>/silver:fast</code></td>
+            <td><code>/sb:plan</code>, <code>/sb:fast</code></td>
           </tr>
           <tr>
             <td>Pure question</td>
@@ -227,29 +227,29 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-warn">
         <span class="callout-icon"><i data-lucide="triangle-alert"></i></span>
-        <div class="callout-body"><strong>Anti-skip rule:</strong> when work is routed through <code>/silver</code>, the runtime must follow the composed workflow instead of jumping straight into code. The router exists to ensure every task reaches the right skill path; bypassing the selected path defeats the enforcement model.</div>
+        <div class="callout-body"><strong>Anti-skip rule:</strong> when work is routed through <code>/sb</code>, the runtime must follow the composed workflow instead of jumping straight into code. The router exists to ensure every task reaches the right skill path; bypassing the selected path defeats the enforcement model.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="complexity-triage">Complexity Triage Decision Tree</h2>
-      <p>Once a request reaches <code>/silver</code>, the router classifies it by scope, risk, and ambiguity. The classification determines which workflow fires and whether a scoping step runs first.</p>
+      <p>Once a request reaches <code>/sb</code>, the router classifies it by scope, risk, and ambiguity. The classification determines which workflow fires and whether a scoping step runs first.</p>
 
       <h3>The main classifications</h3>
       <p>Work through these questions in order:</p>
 
       <div class="code-block">Is the change small and bounded enough for fast-path triage?
-  YES → <strong>Trivial or bounded medium</strong> → route to silver:fast
+  YES → <strong>Trivial or bounded medium</strong> → route to sb:fast
        Tier 1 uses the SB fast path; Tier 2 uses bounded SB quick handling with flags
 
 Is the intent vague or scope unclear? Would you need to clarify before planning?
-  YES → <strong>Fuzzy</strong> → run silver:clarify first, then re-classify
+  YES → <strong>Fuzzy</strong> → run sb:clarify first, then re-classify
 
 Is the scope clear and does it fit within a single phase?
   YES → <strong>Simple</strong> → route to the correct workflow, skip clarify step
 
 Multi-phase, cross-cutting, architectural, or has significant unknowns?
-  YES → <strong>Complex</strong> → full workflow with silver:clarify + synthesis</div>
+  YES → <strong>Complex</strong> → full workflow with sb:clarify + synthesis</div>
 
       <h3>Classification summary</h3>
       <table class="ref-table">
@@ -260,13 +260,13 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td>Trivial</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">≤3 files, typos, renames, config tweaks, one-liners</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:fast</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:fast</code></td>
             <td style="font-family:inherit;font-size:.875rem">No</td>
           </tr>
           <tr>
             <td>Bounded medium</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">4–10 files, small logic change, dependency update, no cross-cutting impact</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:fast</code> Tier 2</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:fast</code> Tier 2</td>
             <td style="font-family:inherit;font-size:.875rem">Only if SB Tier 2 flags require it</td>
           </tr>
           <tr>
@@ -278,7 +278,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
           <tr>
             <td>Fuzzy</td>
             <td style="font-family:inherit;white-space:normal;font-size:.875rem">Vague intent, unclear scope, needs clarification</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:clarify</code> → re-classify</td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:clarify</code> → re-classify</td>
             <td style="font-family:inherit;font-size:.875rem">Yes — clarify first</td>
           </tr>
           <tr>
@@ -292,13 +292,13 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Fast-path work still has a boundary.</strong> <code>silver:fast</code> routes Tier 1 work through SB fast execution and bounded Tier 2 work through SB quick handling with <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, or <code>--full</code> as needed. If the work grows beyond Tier 2, Silver Bullet escalates to <code>silver:feature</code>. §10 routing preferences are not applied to <code>silver:fast</code> by design.</div>
+        <div class="callout-body"><strong>Fast-path work still has a boundary.</strong> <code>sb:fast</code> routes Tier 1 work through SB fast execution and bounded Tier 2 work through SB quick handling with <code>--discuss</code>, <code>--research</code>, <code>--validate</code>, or <code>--full</code> as needed. If the work grows beyond Tier 2, Silver Bullet escalates to <code>sb:feature</code>. §10 routing preferences are not applied to <code>sb:fast</code> by design.</div>
       </div>
 
       <div class="divider"></div>
 
       <h2 id="routing-table">Full Routing Table</h2>
-      <p>After complexity triage confirms the request is not Trivial or unresolved Fuzzy, <code>/silver</code> matches intent signals to an orchestration workflow or spec/docs utility:</p>
+      <p>After complexity triage confirms the request is not Trivial or unresolved Fuzzy, <code>/sb</code> matches intent signals to an orchestration workflow or spec/docs utility:</p>
 
       <table class="ref-table">
         <thead>
@@ -306,79 +306,79 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
         </thead>
         <tbody>
           <tr>
-            <td><a href="../workflows/silver-router.html" style="color:var(--accent-light)">/silver</a></td>
+            <td><a href="../workflows/silver-router.html" style="color:var(--accent-light)">/sb</a></td>
             <td style="font-family:inherit;font-size:.875rem">freeform intent, route, classify</td>
             <td style="font-family:inherit;font-size:.875rem"><code>ROUTE</code> → composed workflow</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-deep-research.html" style="color:var(--accent-light)">/silver:deep-research</a></td>
+            <td><a href="../workflows/silver-deep-research.html" style="color:var(--accent-light)">/sb:deep-research</a></td>
             <td style="font-family:inherit;font-size:.875rem">"how should we", "which technology", "compare X vs Y", "spike", "investigate", "architecture decision"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:clarify → direct research by default → optional multi-AI only when explicitly requested → research artifact → handoff</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:clarify → direct research by default → optional multi-AI only when explicitly requested → research artifact → handoff</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-clarify.html" style="color:var(--accent-light)">/silver:clarify</a></td>
+            <td><a href="../workflows/silver-clarify.html" style="color:var(--accent-light)">/sb:clarify</a></td>
             <td style="font-family:inherit;font-size:.875rem">"I want to build", "I'm thinking of", "here's my idea", "what if we", "concept:" — when no SPEC.md exists</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:clarify → silver:context</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:clarify → sb:context</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-spec.html" style="color:var(--accent-light)">/silver:spec</a></td>
+            <td><a href="../workflows/silver-spec.html" style="color:var(--accent-light)">/sb:spec</a></td>
             <td style="font-family:inherit;font-size:.875rem">"write a spec", "acceptance criteria", "user stories", "formal spec"</td>
             <td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code></td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-ingest.html" style="color:var(--accent-light)">/silver:ingest</a></td>
+            <td><a href="../workflows/silver-ingest.html" style="color:var(--accent-light)">/sb:ingest</a></td>
             <td style="font-family:inherit;font-size:.875rem">"JIRA", "Figma", "Google Docs", "Confluence", external artifact</td>
             <td style="font-family:inherit;font-size:.875rem"><code>SPECIFY</code> (ingest sub-step)</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-validate.html" style="color:var(--accent-light)">/silver:validate</a></td>
+            <td><a href="../workflows/silver-validate.html" style="color:var(--accent-light)">/sb:validate</a></td>
             <td style="font-family:inherit;font-size:.875rem">"validate spec", "validate plan", "gap analysis"</td>
             <td style="font-family:inherit;font-size:.875rem"><code>VALIDATE</code></td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/silver:feature</a></td>
+            <td><a href="../workflows/silver-feature.html" style="color:var(--accent-light)">/sb:feature</a></td>
             <td style="font-family:inherit;font-size:.875rem">"add X", "build X", "implement X", "new feature", "enhance X", "extend X"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:scan / silver:context → silver:clarify as needed</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:scan / sb:context → sb:clarify as needed</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-bugfix.html" style="color:var(--accent-light)">/silver:bugfix</a></td>
+            <td><a href="../workflows/silver-bugfix.html" style="color:var(--accent-light)">/sb:bugfix</a></td>
             <td style="font-family:inherit;font-size:.875rem">"bug", "broken", "crash", "error", "regression", "failing test", "not working"</td>
-            <td style="font-family:inherit;font-size:.875rem">SB triage → silver:debug</td>
+            <td style="font-family:inherit;font-size:.875rem">SB triage → sb:debug</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-ui.html" style="color:var(--accent-light)">/silver:ui</a></td>
+            <td><a href="../workflows/silver-ui.html" style="color:var(--accent-light)">/sb:ui</a></td>
             <td style="font-family:inherit;font-size:.875rem">"UI", "frontend", "component", "screen", "design", "interface", "page", "layout"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:clarify → silver:ui-contract</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:scan → sb:clarify → sb:ui-contract</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-fast.html" style="color:var(--accent-light)">/silver:fast</a></td>
+            <td><a href="../workflows/silver-fast.html" style="color:var(--accent-light)">/sb:fast</a></td>
             <td style="font-family:inherit;font-size:.875rem">"trivial", "quick fix", "typo", "one-liner", "config value", bounded dependency or small logic update</td>
-            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>silver:fast</code> or <code>silver:feature</code></td>
+            <td style="font-family:inherit;font-size:.875rem">Classify tier → <code>sb:fast</code> or <code>sb:feature</code></td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-test.html" style="color:var(--accent-light)">/silver:test</a></td>
+            <td><a href="../workflows/silver-test.html" style="color:var(--accent-light)">/sb:test</a></td>
             <td style="font-family:inherit;font-size:.875rem">"write tests", "E2E", "test hardening", "fix tests"</td>
             <td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code></td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-refactor.html" style="color:var(--accent-light)">/silver:refactor</a></td>
+            <td><a href="../workflows/silver-refactor.html" style="color:var(--accent-light)">/sb:refactor</a></td>
             <td style="font-family:inherit;font-size:.875rem">"refactor", "rename", "split", "extract", behavior-preserving change</td>
             <td style="font-family:inherit;font-size:.875rem"><code>PLAN</code> → <code>EXECUTE</code> → <code>VERIFY</code> → post-exec gates</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/silver:devops</a></td>
+            <td><a href="../workflows/silver-devops.html" style="color:var(--accent-light)">/sb:devops</a></td>
             <td style="font-family:inherit;font-size:.875rem">"infra", "CI/CD", "deploy", "pipeline", "terraform", "IaC", "kubernetes", "cloud", "ops"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:scan → silver:blast-radius → optional DevOps skill router</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:scan → sb:blast-radius → optional DevOps skill router</td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-deploy.html" style="color:var(--accent-light)">/silver:deploy</a></td>
+            <td><a href="../workflows/silver-deploy.html" style="color:var(--accent-light)">/sb:deploy</a></td>
             <td style="font-family:inherit;font-size:.875rem">"deploy", "production deploy", "staging deploy", "rollout"</td>
             <td style="font-family:inherit;font-size:.875rem"><code>BLAST_RADIUS</code> → <code>VERIFY</code> → <code>SECURE</code> → <code>SHIP</code></td>
           </tr>
           <tr>
-            <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/silver:release</a></td>
+            <td><a href="../workflows/silver-release.html" style="color:var(--accent-light)">/sb:release</a></td>
             <td style="font-family:inherit;font-size:.875rem">"release", "publish", "version", "go live", "cut a release", "tag v", "ship to users"</td>
-            <td style="font-family:inherit;font-size:.875rem">silver:quality-gates → SB UAT audit → SB milestone audit</td>
+            <td style="font-family:inherit;font-size:.875rem">sb:quality-gates → SB UAT audit → SB milestone audit</td>
           </tr>
         </tbody>
       </table>
@@ -386,7 +386,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
       <div class="divider"></div>
 
       <h2 id="ship-disambiguation">Ship Disambiguation</h2>
-      <p>The word "ship" is ambiguous in Silver Bullet. It can mean a phase-level merge (a branch PR) or a milestone-level publish (a versioned release). <code>/silver</code> disambiguates at routing time based on signal keywords:</p>
+      <p>The word "ship" is ambiguous in Silver Bullet. It can mean a phase-level merge (a branch PR) or a milestone-level publish (a versioned release). <code>/sb</code> disambiguates at routing time based on signal keywords:</p>
 
       <table class="ref-table">
         <thead>
@@ -395,27 +395,27 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
         <tbody>
           <tr>
             <td>Contains version number (v2.0, 1.4.0, etc.)</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:release</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:release</code></td>
             <td style="font-family:inherit;font-size:.875rem">Milestone publish: quality gates, audit, create GitHub Release, git tag</td>
           </tr>
           <tr>
             <td>Contains "changelog" or "release notes"</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:release</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:release</code></td>
             <td style="font-family:inherit;font-size:.875rem">Milestone publish</td>
           </tr>
           <tr>
             <td>Contains "go live", "to production", "publicly"</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:release</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:release</code></td>
             <td style="font-family:inherit;font-size:.875rem">Milestone publish</td>
           </tr>
           <tr>
             <td>Active phase in progress, no version signal</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:ship</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:ship</code></td>
             <td style="font-family:inherit;font-size:.875rem">Phase-level merge: push branch, create PR</td>
           </tr>
           <tr>
             <td>No active phase, end of milestone</td>
-            <td style="font-family:inherit;font-size:.875rem"><code>silver:release</code></td>
+            <td style="font-family:inherit;font-size:.875rem"><code>sb:release</code></td>
             <td style="font-family:inherit;font-size:.875rem">Milestone publish</td>
           </tr>
         </tbody>
@@ -423,7 +423,7 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>These are different scopes.</strong> <code>silver:ship</code> runs inside workflows as the final phase-level step (push → PR). <code>silver:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, security review, fresh tests, archival, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/silver</code> disambiguate for you.</div>
+        <div class="callout-body"><strong>These are different scopes.</strong> <code>sb:ship</code> runs inside workflows as the final phase-level step (push → PR). <code>sb:release</code> is a dedicated milestone-level workflow that runs quality gates, UAT audit, milestone audit, security review, fresh tests, archival, and then creates a versioned GitHub Release. Running the wrong one at the wrong scope is a common mistake — let <code>/sb</code> disambiguate for you.</div>
       </div>
 
       <div class="divider"></div>
@@ -431,13 +431,13 @@ Multi-phase, cross-cutting, architectural, or has significant unknowns?
       <h2 id="see-also">See Also</h2>
       <ul>
         <li><a href="composable-workflow.html">Composable Workflow Orchestration</a> — the canonical AF-* catalog that routing composes from</li>
-        <li><a href="../workflows/silver-feature.html">silver:feature workflow</a> — feature development end-to-end</li>
-        <li><a href="../workflows/silver-bugfix.html">silver:bugfix workflow</a> — triage-first bug investigation</li>
-        <li><a href="../workflows/silver-ui.html">silver:ui workflow</a> — UI/UX with accessibility review</li>
-        <li><a href="../workflows/silver-devops.html">silver:devops workflow</a> — IaC with blast radius assessment</li>
-        <li><a href="../workflows/silver-deep-research.html">silver:deep-research workflow</a> — technology decisions and spikes</li>
-        <li><a href="../workflows/silver-release.html">silver:release workflow</a> — milestone publish</li>
-        <li><a href="../workflows/silver-fast.html">silver:fast workflow</a> — trivial changes bypass</li>
+        <li><a href="../workflows/silver-feature.html">sb:feature workflow</a> — feature development end-to-end</li>
+        <li><a href="../workflows/silver-bugfix.html">sb:bugfix workflow</a> — triage-first bug investigation</li>
+        <li><a href="../workflows/silver-ui.html">sb:ui workflow</a> — UI/UX with accessibility review</li>
+        <li><a href="../workflows/silver-devops.html">sb:devops workflow</a> — IaC with blast radius assessment</li>
+        <li><a href="../workflows/silver-deep-research.html">sb:deep-research workflow</a> — technology decisions and spikes</li>
+        <li><a href="../workflows/silver-release.html">sb:release workflow</a> — milestone publish</li>
+        <li><a href="../workflows/silver-fast.html">sb:fast workflow</a> — trivial changes bypass</li>
         <li><a href="../getting-started/">Getting Started</a> — session startup and first workflow run</li>
         <li><a href="verification.html">Verification Before Completion</a> — the §3 enforcement gate at the end of every workflow</li>
       </ul>

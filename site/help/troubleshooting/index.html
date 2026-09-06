@@ -137,12 +137,12 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <!-- HOOK FAILURES -->
       <h2 id="hooks">Hook Failures</h2>
-      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). As of v0.52.0, enforcement engages only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist — workspaces without <code>/silver:init</code> receive no gates. Start with <code>/silver:doctor</code> or <code>bash scripts/sb-doctor.sh</code> for host-aware install/activation checks; use <code>bash scripts/sb-diagnostics.sh</code> for capability tier and hook config status.</p>
+      <p>Silver Bullet hooks fire on supported host events (PreToolUse, PostToolUse, Stop). As of v0.52.0, enforcement engages only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist — workspaces without <code>/sb:init</code> receive no gates. Start with <code>/sb:doctor</code> or <code>bash scripts/sb-doctor.sh</code> for host-aware install/activation checks; use <code>bash scripts/sb-diagnostics.sh</code> for capability tier and hook config status.</p>
 
       <div class="issue-card">
         <h4>Hooks never engage on a fresh clone</h4>
         <p class="ic-cause"><strong>Cause:</strong> The v0.52.0 hook activation guard requires both <code>silver-bullet.md</code> and <code>.silver-bullet.json</code>. Cloning a repo without running init leaves enforcement inactive by design.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> in the project root. Re-run <code>bash scripts/sb-diagnostics.sh</code> and confirm tier 2 (hook-enforced) on Cursor/Codex/Claude when hooks are merged.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:init</code> in the project root. Re-run <code>bash scripts/sb-diagnostics.sh</code> and confirm tier 2 (hook-enforced) on Cursor/Codex/Claude when hooks are merged.</p>
       </div>
 
       <div class="issue-card">
@@ -154,7 +154,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Low capability tier (guidance-only)</h4>
         <p class="ic-cause"><strong>Cause:</strong> Host session lacks hook delivery (tier 0) or skill markers are not recording (tier 1).</p>
-        <p class="ic-fix"><strong>Fix:</strong> Install from the public marketplace for your host, run <code>/silver:init</code>, and use explicit <code>/silver</code> or Skill-tool invocation so <code>record-skill</code> can write state.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install from the public marketplace for your host, run <code>/sb:init</code>, and use explicit <code>/sb</code> or Skill-tool invocation so <code>record-skill</code> can write state.</p>
       </div>
 
       <div class="issue-card">
@@ -172,7 +172,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Hooks not firing at all</h4>
         <p class="ic-cause"><strong>Cause:</strong> Silver Bullet was not initialized in this project, or <code>.silver-bullet.json</code> is missing from the project root.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> in your project. This creates the config file and activates enforcement.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:init</code> in your project. This creates the config file and activates enforcement.</p>
       </div>
 
       <div class="issue-card">
@@ -190,7 +190,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"External review helper requested"</h4>
         <p class="ic-cause"><strong>Cause:</strong> An explicit external review-helper request was made, or an older project still references an obsolete helper name.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Use the Silver Bullet equivalent (<code>silver:review-request</code>, <code>silver:review-triage</code>, <code>silver:completion-audit</code>, <code>silver:branch-finish</code>, or <code>tdd</code>) unless you explicitly want supplemental external tooling.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use the Silver Bullet equivalent (<code>sb:review-request</code>, <code>sb:review-triage</code>, <code>sb:completion-audit</code>, <code>sb:branch-finish</code>, or <code>tdd</code>) unless you explicitly want supplemental external tooling.</p>
       </div>
 
       <div class="issue-card">
@@ -202,25 +202,25 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"Design plugin not found"</h4>
         <p class="ic-cause"><strong>Cause:</strong> An explicit external Design plugin request was made, or an older workflow still references old design helper names.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:ui-contract</code>, <code>silver:ui-review</code>, and <code>review-design</code> for UI/design checks unless you explicitly want supplemental external design review.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>sb:ui-contract</code>, <code>sb:ui-review</code>, and <code>review-design</code> for UI/design checks unless you explicitly want supplemental external design review.</p>
       </div>
 
       <div class="issue-card">
         <h4>"Legacy Product Management command requested"</h4>
         <p class="ic-cause"><strong>Cause:</strong> An explicit external product-management request was made, or an older workflow still references old PM helper names.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Use <code>silver:clarify</code>, <code>silver:spec</code>, and <code>silver:deep-research</code> for product framing and research synthesis unless you explicitly want supplemental external PM tooling.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>sb:clarify</code>, <code>sb:spec</code>, and <code>sb:deep-research</code> for product framing and research synthesis unless you explicitly want supplemental external PM tooling.</p>
       </div>
 
       <div class="issue-card">
         <h4>"External lifecycle command not found"</h4>
         <p class="ic-cause"><strong>Cause:</strong> An explicit external lifecycle command was requested, or an older project still has direct references to retired helper commands.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/silver</code> or lifecycle skills. Install supplemental tooling only when the selected workflow explicitly needs it.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route ordinary lifecycle work through <code>/sb</code> or lifecycle skills. Install supplemental tooling only when the selected workflow explicitly needs it.</p>
       </div>
 
       <div class="issue-card">
         <h4>"Graphify is not installed"</h4>
         <p class="ic-cause"><strong>Cause:</strong> Silver Bullet uses Graphify for project-memory retrieval before planning, editing, debugging, review, and shipping.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Install it with <code>uv tool install graphifyy</code> or <code>python3.12 -m pip install graphifyy</code>, then rerun <code>/silver:init</code>. See <a href="../concepts/documentation.html#graphify-retrieval">Graphify Retrieval</a> for query and fallback behavior.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Install it with <code>uv tool install graphifyy</code> or <code>python3.12 -m pip install graphifyy</code>, then rerun <code>/sb:init</code>. See <a href="../concepts/documentation.html#graphify-retrieval">Graphify Retrieval</a> for query and fallback behavior.</p>
       </div>
 
       <div class="callout callout-tip">
@@ -243,13 +243,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>CI is red and Silver Bullet won't let me proceed</h4>
         <p class="ic-cause"><strong>Cause:</strong> This is intentional. The CI gate emits a hard stop (<code>decision: "block"</code>) when CI is failing.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/silver:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Fix the CI failure first. Use <code>/sb:debug</code> for active bugs or inspect the failing GitHub Actions job. Commits for CI fixes are allowed; PR/deploy/release gates remain blocked until CI is green.</p>
       </div>
 
       <div class="issue-card">
         <h4>No CI workflow exists yet</h4>
         <p class="ic-cause"><strong>Cause:</strong> The project does not have a <code>.github/workflows/ci.yml</code> file. The CI hook gracefully skips when no CI is configured.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:init</code> which auto-generates a CI workflow based on your tech stack (Node, Python, Go, Rust, and 8 more).</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:init</code> which auto-generates a CI workflow based on your tech stack (Node, Python, Go, Rust, and 8 more).</p>
       </div>
 
       <div class="divider"></div>
@@ -261,19 +261,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Session timed out or was interrupted</h4>
         <p class="ic-cause"><strong>Cause:</strong> Context window exhaustion, network interruption, or the autonomous mode timeout sentinel fired.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Start a new session and ask <code>/silver</code> for current status or inspect <code>.planning/workflows/</code> and <code>.planning/STATE.md</code>. Then use <code>/silver:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Start a new session and ask <code>/sb</code> for current status or inspect <code>.planning/workflows/</code> and <code>.planning/STATE.md</code>. Then use <code>/sb:forensics</code> for session/workflow reconstruction if the interruption left unclear state.</p>
       </div>
 
       <div class="issue-card">
         <h4>Verification failed and I'm stuck in a loop</h4>
-        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:verify</code> failed and the workflow is retrying execute + verify repeatedly.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/silver:forensics</code> for session/workflow failures or <code>/silver:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design, return to <code>/silver:context</code> or <code>/silver:plan</code> rather than re-executing.</p>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/sb:verify</code> failed and the workflow is retrying execute + verify repeatedly.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Invoke <code>/sb:forensics</code> for session/workflow failures or <code>/sb:debug</code> for an active reproducible bug to identify the root cause. If the root cause is in the plan or design, return to <code>/sb:context</code> or <code>/sb:plan</code> rather than re-executing.</p>
       </div>
 
       <div class="issue-card">
         <h4>.planning/ directory is corrupted or missing files</h4>
         <p class="ic-cause"><strong>Cause:</strong> Manual edits to planning files, or a merge conflict left files in a bad state.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Use <code>/silver:forensics</code> to diagnose the current state. If unrecoverable, restore or archive the bad phase-specific files and re-run the phase from <code>/silver:context</code> and <code>/silver:plan</code>.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Use <code>/sb:forensics</code> to diagnose the current state. If unrecoverable, restore or archive the bad phase-specific files and re-run the phase from <code>/sb:context</code> and <code>/sb:plan</code>.</p>
       </div>
 
       <div class="callout callout-info">
@@ -302,13 +302,13 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Config is outdated (old skill names, wrong version)</h4>
         <p class="ic-cause"><strong>Cause:</strong> The <code>.silver-bullet.json</code> was created by an older version and has not been regenerated.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:update</code> or re-run <code>/silver:init</code> to refresh config to v0.52.0. For catalog drift, regenerate views with <code>python3 scripts/generate-apo-artifacts.py</code> in the SB repo and verify <code>docs/apo-catalog.json</code> is the source of truth — use <code>AF-*</code>/<code>WF-*</code> IDs, not legacy FLOW names, in new workflow docs.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:update</code> or re-run <code>/sb:init</code> to refresh config to v0.52.0. For catalog drift, regenerate views with <code>python3 scripts/generate-apo-artifacts.py</code> in the SB repo and verify <code>docs/apo-catalog.json</code> is the source of truth — use <code>AF-*</code>/<code>WF-*</code> IDs, not legacy FLOW names, in new workflow docs.</p>
       </div>
 
       <div class="issue-card">
         <h4>Project instruction file conflicts with project instructions</h4>
         <p class="ic-cause"><strong>Cause:</strong> Silver Bullet's host project instruction file may override or conflict with your existing project instructions.</p>
-        <p class="ic-fix"><strong>Fix:</strong> During <code>/silver:init</code> setup, choose <strong>Append</strong> mode for existing projects. This adds Silver Bullet rules below your existing instructions. Both sets of rules will be active.</p>
+        <p class="ic-fix"><strong>Fix:</strong> During <code>/sb:init</code> setup, choose <strong>Append</strong> mode for existing projects. This adds Silver Bullet rules below your existing instructions. Both sets of rules will be active.</p>
       </div>
 
       <div class="divider"></div>
@@ -320,19 +320,19 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>"HARD STOP — Planning incomplete"</h4>
         <p class="ic-cause"><strong>Cause:</strong> You are editing source files before completing quality gates. The stage enforcer hook blocks this.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Run <code>/silver:quality-gates</code> for software work, or <code>/silver:blast-radius</code> plus <code>/devops-quality-gates</code> for DevOps/IaC work before editing source code.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Run <code>/sb:quality-gates</code> for software work, or <code>/sb:blast-radius</code> plus <code>/devops-quality-gates</code> for DevOps/IaC work before editing source code.</p>
       </div>
 
       <div class="issue-card">
         <h4>"COMPLETION BLOCKED — Workflow incomplete"</h4>
         <p class="ic-cause"><strong>Cause:</strong> You are trying to create a PR, deploy, or create a release before completing all required workflow steps.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing SB skill explicitly, or ask <code>/silver</code> for the next required workflow step.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Check which steps are missing from the error output. Run each missing SB skill explicitly, or ask <code>/sb</code> for the next required workflow step.</p>
         <p class="ic-fix"><strong>Note on commits vs releases:</strong> Enforcement uses two tiers. <code>git commit</code> and <code>git push</code> only require quality gates to have run. <code>gh pr create</code>, deploys, and releases require the full required skill list. If commits work but release is blocked, that's expected — you haven't completed the full workflow yet.</p>
       </div>
 
       <div class="issue-card">
-        <h4>"silver:branch-finish blocked on main"</h4>
-        <p class="ic-cause"><strong>Cause:</strong> <code>/silver:branch-finish</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
+        <h4>"sb:branch-finish blocked on main"</h4>
+        <p class="ic-cause"><strong>Cause:</strong> <code>/sb:branch-finish</code> is designed for feature branches. It has no meaningful work to do on <code>main</code>/<code>master</code>.</p>
         <p class="ic-fix"><strong>Fix:</strong> This step is automatically skipped when you're on <code>main</code> or <code>master</code>. If enforcement is still blocking, verify your branch name with <code>git branch --show-current</code>.</p>
       </div>
 
@@ -345,7 +345,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="issue-card">
         <h4>Using the fast path for small changes</h4>
         <p class="ic-cause"><strong>Cause:</strong> You need to make a small or bounded fix without running the full composed workflow.</p>
-        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/silver:fast</code> so SB can classify it as Tier 1 lightweight work, Tier 2 bounded work, or Tier 3 escalation to <code>silver:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
+        <p class="ic-fix"><strong>Fix:</strong> Route the change through <code>/sb:fast</code> so SB can classify it as Tier 1 lightweight work, Tier 2 bounded work, or Tier 3 escalation to <code>sb:feature</code>. <strong>Note:</strong> In <code>devops-cycle</code> mode, <code>.yml</code>/<code>.yaml</code>/<code>.json</code>/<code>.toml</code> files are still treated as infrastructure code and must go through the DevOps workflow.</p>
       </div>
 
       <div class="callout callout-warn">

@@ -96,7 +96,7 @@
       "slug": "silver",
       "type": "dynamic_route",
       "triggers": [
-        "/silver",
+        "/sb",
         "route"
       ],
       "composition_tree": [
@@ -4352,7 +4352,7 @@
     {
       "id": "FS-DELEGATE-CLAUDE-ROUTE",
       "skill": "silver-agent-claude",
-      "purpose": "Inject /silver:* route syntax into external agent brief.",
+      "purpose": "Inject /sb:* route syntax into external agent brief.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
       "inputs": [
@@ -4368,7 +4368,7 @@
         "id": "VL-FS-DELEGATE-CLAUDE-ROUTE",
         "rollup_target": "flow_step",
         "input_contract": "FS-DELEGATE-CLAUDE-ROUTE receives bounded delegation context from AF-AGENT-DELEGATE.",
-        "work_product": "Inject /silver:* route syntax into external agent brief.",
+        "work_product": "Inject /sb:* route syntax into external agent brief.",
         "verification": {
           "methods": [
             "inspection",
@@ -4456,7 +4456,7 @@
     {
       "id": "FS-DELEGATE-CODEX-ROUTE",
       "skill": "silver-agent-codex",
-      "purpose": "Inject $silver:* route syntax into external agent brief.",
+      "purpose": "Inject $sb:* route syntax into external agent brief.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
       "inputs": [
@@ -4472,7 +4472,7 @@
         "id": "VL-FS-DELEGATE-CODEX-ROUTE",
         "rollup_target": "flow_step",
         "input_contract": "FS-DELEGATE-CODEX-ROUTE receives bounded delegation context from AF-AGENT-DELEGATE.",
-        "work_product": "Inject $silver:* route syntax into external agent brief.",
+        "work_product": "Inject $sb:* route syntax into external agent brief.",
         "verification": {
           "methods": [
             "inspection",
@@ -4560,7 +4560,7 @@
     {
       "id": "FS-DELEGATE-CURSOR-ROUTE",
       "skill": "silver-agent-cursor",
-      "purpose": "Inject /silver:* route syntax into external agent brief.",
+      "purpose": "Inject /sb:* route syntax into external agent brief.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
       "inputs": [
@@ -4576,7 +4576,7 @@
         "id": "VL-FS-DELEGATE-CURSOR-ROUTE",
         "rollup_target": "flow_step",
         "input_contract": "FS-DELEGATE-CURSOR-ROUTE receives bounded delegation context from AF-AGENT-DELEGATE.",
-        "work_product": "Inject /silver:* route syntax into external agent brief.",
+        "work_product": "Inject /sb:* route syntax into external agent brief.",
         "verification": {
           "methods": [
             "inspection",
@@ -8222,7 +8222,7 @@
     {
       "id": "FS-SILVER_MULTI_AI_TASK",
       "skill": "silver-multi-ai-task",
-      "purpose": "Public /silver:multi-ai-task primitive entry \u2014 generic multi-model orchestration.",
+      "purpose": "Public /sb:multi-ai-task primitive entry \u2014 generic multi-model orchestration.",
       "hierarchy_level": "flow_step",
       "classification": "flow-step-skill",
       "inputs": [
@@ -8240,7 +8240,7 @@
         "id": "VL-FS-SILVER_MULTI_AI_TASK",
         "rollup_target": "flow_step",
         "input_contract": "FS-SILVER_MULTI_AI_TASK receives bounded multi-AI orchestration context from AF-MULTI-AI-TASK.",
-        "work_product": "Public /silver:multi-ai-task primitive entry \u2014 generic multi-model orchestration.",
+        "work_product": "Public /sb:multi-ai-task primitive entry \u2014 generic multi-model orchestration.",
         "verification": {
           "methods": [
             "inspection",

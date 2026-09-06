@@ -245,7 +245,7 @@ sb_graphify_prompt_reminder_line() {
       ;;
     enabled)
       if sb_recommended_tool_enforcement_suspended "$config_file" "graphify"; then
-        printf '%s' "Graphify: opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+        printf '%s' "Graphify: opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
       elif ! sb_graphify_cli_available; then
         printf '%s' "Graphify: CLI missing — install graphifyy; hooks block substantive work until installed."
       elif ! sb_graphify_index_exists "$project_root" "$config_file"; then

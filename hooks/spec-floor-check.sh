@@ -3,8 +3,8 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 # PreToolUse hook (matcher: Bash|Skill)
-# Enforces spec floor — hard-blocks silver:plan without a minimum viable SPEC.md,
-# and emits an advisory warning for silver:fast when no spec exists. silver:*
+# Enforces spec floor — hard-blocks sb:plan without a minimum viable SPEC.md,
+# and emits an advisory warning for sb:fast when no spec exists. sb:*
 # routes normalize via hooks/lib/skill-discovery.sh.
 
 # Security: restrict file creation permissions (user-only)
@@ -88,7 +88,7 @@ else
   esac
 fi
 
-# Detect command type — is this silver:plan or silver:fast?
+# Detect command type — is this sb:plan or sb:fast?
 is_plan_phase=false
 is_fast=false
 
@@ -117,14 +117,14 @@ if [[ "$is_plan_phase" == false && "$is_fast" == false ]]; then
   # first shell token itself is the route. This avoids blocking file paths
   # that contain skill names as text substrings.
   case "$cmd" in
-    /silver:plan|/silver-plan)
+    /sb:plan|/silver-plan)
       is_plan_phase=true
       ;;
-    /silver:fast|/silver-fast)
+    /sb:fast|/silver-fast)
       is_fast=true
       ;;
   esac
-  # silver:* slash routes (normalized at cmd token)
+  # sb:* slash routes (normalized at cmd token)
   if [[ "$is_plan_phase" == false && "$is_fast" == false ]] && declare -F sb_skill_canonical_name >/dev/null 2>&1; then
     _norm_cmd="$(sb_skill_canonical_name "${cmd#/}")"
     case "$_norm_cmd" in
@@ -158,12 +158,12 @@ FAST_SPEC=".planning/SPEC.fast.md"
 if [[ "$is_plan_phase" == true ]]; then
   # HARD BLOCK: SPEC.md must exist with required sections
   if [[ ! -f "$SPEC" ]]; then
-    emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing. Run /silver:spec before planning. silver:plan requires a minimum viable spec."
+    emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing. Run /sb:spec before planning. sb:plan requires a minimum viable spec."
     exit 0
   fi
   for section in "## Overview" "## Acceptance Criteria"; do
     if ! grep -qE "^${section}[[:space:]]*$" "$SPEC"; then
-      emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing required section: ${section}. Run /silver:spec to complete the spec before planning."
+      emit_block "SPEC FLOOR VIOLATION: .planning/SPEC.md is missing required section: ${section}. Run /sb:spec to complete the spec before planning."
       exit 0
     fi
   done
@@ -172,7 +172,7 @@ fi
 if [[ "$is_fast" == true ]]; then
   # WARNING ONLY: emit advisory, do not block
   if [[ ! -f "$SPEC" && ! -f "$FAST_SPEC" ]]; then
-    printf '{"hookSpecificOutput":{"message":"⚠️  SPEC FLOOR ADVISORY: No .planning/SPEC.md found. Fast path proceeding without spec floor. For tracked work, run /silver:spec first."}}'
+    printf '{"hookSpecificOutput":{"message":"⚠️  SPEC FLOOR ADVISORY: No .planning/SPEC.md found. Fast path proceeding without spec floor. For tracked work, run /sb:spec first."}}'
   fi
 fi
 

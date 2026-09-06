@@ -12,4 +12,4 @@
 2. Decompose into 2–5 independently runnable experiments with clear hypotheses.
 3. Run experiments in order of risk; record each result immediately in `.planning/spikes/<NNN>-<slug>/README.md`.
 4. Synthesize findings in `.planning/spikes/MANIFEST.md` with a recommended next step.
-5. File deferred out-of-scope items via `silver:add`; optionally wrap up via `silver:rem` with `--wrap-up`.
+5. File deferred out-of-scope items via `sb:add`; optionally wrap up via `sb:rem` with `--wrap-up`.

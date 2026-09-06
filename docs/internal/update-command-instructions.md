@@ -1,7 +1,7 @@
 # `/plugin:update` Skill Implementation Guide
 
 This document describes how to build the `/plugin:update` skill for Silver Bullet.
-It generalises `/silver:update` to work with any installed Claude Code plugin.
+It generalises `/sb:update` to work with any installed Claude Code plugin.
 Follow this guide exactly when implementing the skill.
 
 ---
@@ -315,9 +315,9 @@ New cache: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registryName>/<pluginName>/<la
 
 ---
 
-## Differences from `/silver:update`
+## Differences from `/sb:update`
 
-| Aspect | `/silver:update` | `/plugin:update` |
+| Aspect | `/sb:update` | `/plugin:update` |
 |--------|-----------------|-----------------|
 | Target | Silver Bullet only | Any installed plugin |
 | Repo URL | Hardcoded | Read from `<installPath>/package.json` |
@@ -326,11 +326,11 @@ New cache: ${SB_RUNTIME_HOME_ROOT}/plugins/cache/<registryName>/<pluginName>/<la
 | Cache path derivation | Hardcoded pattern | Derived from existing `installPath` + new version |
 
 All other logic (version comparison, changelog extraction, clone mechanics,
-registry write) is identical to `/silver:update`.
+registry write) is identical to `/sb:update`.
 
 ---
 
-## Reference: `/silver:update` source
+## Reference: `/sb:update` source
 
 The canonical reference implementation lives at:
 `skills/silver-update/SKILL.md` in the Silver Bullet repository.

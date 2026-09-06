@@ -142,7 +142,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="schema">Config Schema</h2>
-      <p>New projects receive the block from <code>templates/silver-bullet.config.json.default</code>. <code>/silver:init</code> and <code>scripts/sb-migrate-config.sh</code> merge it forward on upgrade.</p>
+      <p>New projects receive the block from <code>templates/silver-bullet.config.json.default</code>. <code>/sb:init</code> and <code>scripts/sb-migrate-config.sh</code> merge it forward on upgrade.</p>
 
       <div class="code-block">"enterprise_policy": {
   "active_profile": "supervised",
@@ -157,7 +157,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Set <code>active_profile</code> to the key your team adopts. Individual profile objects may include:</p>
       <ul>
         <li><code>session_mode_default</code> — <code>interactive</code> or <code>autonomous</code> (target onboarding default)</li>
-        <li><code>clarify_auto</code> — whether <code>/silver:clarify --auto</code> is the expected clarify path</li>
+        <li><code>clarify_auto</code> — whether <code>/sb:clarify --auto</code> is the expected clarify path</li>
         <li><code>production_deploy_requires_human</code> — production promotion stays human-gated (always <code>true</code> today)</li>
         <li><code>evidence_schema_strict</code> — aligns with <code>hooks.evidence_schema.strict</code> for regulated teams</li>
         <li><code>non_production_deploy_autonomy</code> — dogfood-only hint for staging/sandbox deploys</li>
@@ -185,8 +185,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>Recommended flow for teams moving toward enterprise autonomy <strong>without</strong> removing safeguards:</p>
       <ol>
         <li>Install SB on a tier&nbsp;2+ host (Cursor recommended for parent/worker Task support).</li>
-        <li>Run <code>/silver:init</code> — confirm <code>orchestrator_mode: parent</code> and review <code>enterprise_policy</code>.</li>
-        <li>Start with <code>active_profile: supervised</code>; complete one full <code>/silver:feature</code> cycle with evidence.</li>
+        <li>Run <code>/sb:init</code> — confirm <code>orchestrator_mode: parent</code> and review <code>enterprise_policy</code>.</li>
+        <li>Start with <code>active_profile: supervised</code>; complete one full <code>/sb:feature</code> cycle with evidence.</li>
         <li>When comfortable, switch to <code>autonomous_safe</code> on a tier&nbsp;2+ host — SessionStart writes <code>autonomous</code> to the mode file automatically (no interactive prompt).</li>
         <li>Track certification progress on the <a href="autonomous-enterprise-status.html">status page</a> — do not treat profile selection as proof of enterprise autonomy.</li>
       </ol>

@@ -1,6 +1,6 @@
 ---
 name: review-plan
-title: "Silver: Review Plan"
+title: "SB: Review Plan"
 description: This skill should be used for PLAN.md artifact review -- validates SB phase plans for scope, dependencies, acceptance criteria, verification evidence, and execution readiness.
 argument-hint: "<plan-path> [--source-inputs <context/spec/requirements paths>]"
 user-invocable: false

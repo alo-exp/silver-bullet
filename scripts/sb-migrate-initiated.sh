@@ -23,4 +23,4 @@ fi
 updated="$(jq '.sb_initiated = true' "$CONFIG")"
 printf '%s\n' "$updated" >"${CONFIG}.tmp" && mv "${CONFIG}.tmp" "$CONFIG"
 echo "Set sb_initiated: true in $CONFIG"
-echo "Re-run /silver:init if hooks or workflows.sh are missing."
+echo "Re-run /sb:init if hooks or workflows.sh are missing."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI for /silver:multi-ai-task primitive."""
+"""CLI for /sb:multi-ai-task primitive."""
 
 from __future__ import annotations
 

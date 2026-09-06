@@ -9,7 +9,7 @@
 <title>Getting Started — Silver Bullet Help</title>
 <meta name="description" content="Get started with Silver Bullet. Learn what AI-driven development is, install prerequisites, and run your first enforced workflow session.">
 <meta property="og:title" content="Getting Started — Silver Bullet Help">
-<meta property="og:description" content="Install Silver Bullet and run your first composable atomic flow session — hook-enforced /silver orchestration for Claude Code, Codex, and Cursor.">
+<meta property="og:description" content="Install Silver Bullet and run your first composable atomic flow session — hook-enforced /sb orchestration for Claude Code, Codex, and Cursor.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/getting-started/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -140,7 +140,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Getting Started</h1>
-    <p>Install Silver Bullet from a public marketplace, initialize your repo with <code>/silver:init</code>, and run your first APO-composed workflow on Claude Code, Codex, or Cursor.</p>
+    <p>Install Silver Bullet from a public marketplace, initialize your repo with <code>/sb:init</code>, and run your first APO-composed workflow on Claude Code, Codex, or Cursor.</p>
   </div>
 </div>
 
@@ -256,14 +256,14 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="install">Installing Silver Bullet</h2>
-      <p>Silver Bullet supports Claude Code, Codex, and Cursor. Install from the public marketplace for your host, then run <code>/silver:init</code> in the repo you want SB to manage. Codex keeps internal <code>skill-source/</code> files and exposes the native <code>/silver:</code> picker; Cursor merges hooks into <code>~/.cursor/hooks.json</code> with state under <code>~/.cursor/.silver-bullet/</code>.</p>
+      <p>Silver Bullet supports Claude Code, Codex, and Cursor. Install from the public marketplace for your host, then run <code>/sb:init</code> in the repo you want SB to manage. Codex keeps internal <code>skill-source/</code> files and exposes the native <code>/sb:</code> picker; Cursor merges hooks into <code>~/.cursor/hooks.json</code> with state under <code>~/.cursor/.silver-bullet/</code>.</p>
 
       <h3>Adoption path (all hosts)</h3>
       <ol>
         <li>Install the Silver Bullet package from your host marketplace (see per-host steps below).</li>
-        <li>Run <code>/silver:doctor</code> after marketplace install to confirm host activation. Repository contributors can use the checkout-only diagnostic scripts described below.</li>
-        <li>Open your project and run <code>/silver:init</code> — this stamps <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, docs scaffold, and activates enforcement.</li>
-        <li>Start work with <code>/silver &lt;your request&gt;</code> so SB classifies intent and composes the smallest safe <code>WF-*</code> workflow.</li>
+        <li>Run <code>/sb:doctor</code> after marketplace install to confirm host activation. Repository contributors can use the checkout-only diagnostic scripts described below.</li>
+        <li>Open your project and run <code>/sb:init</code> — this stamps <code>silver-bullet.md</code>, <code>.silver-bullet.json</code>, docs scaffold, and activates enforcement.</li>
+        <li>Start work with <code>/sb &lt;your request&gt;</code> so SB classifies intent and composes the smallest safe <code>WF-*</code> workflow.</li>
       </ol>
 
       <h3>First-time orientation</h3>
@@ -271,8 +271,8 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="code-block"><span class="cmd">bash scripts/sb-bootstrap.sh</span></div>
       <p>From that repository checkout, confirm hook delivery and capability tier:</p>
       <div class="code-block"><span class="cmd">bash scripts/sb-diagnostics.sh</span></div>
-      <p>After <code>/silver:update</code> or when hooks seem inactive, run the host-aware activation audit:</p>
-      <div class="code-block"><span class="cmd">/silver:doctor</span></div>
+      <p>After <code>/sb:update</code> or when hooks seem inactive, run the host-aware activation audit:</p>
+      <div class="code-block"><span class="cmd">/sb:doctor</span></div>
 
       <h3>Cursor Plugin</h3>
       <p>For normal Cursor use, add the public <code>alo-labs/agent-plugins</code> marketplace in Cursor and install <code>silver-bullet</code> from <code>alo-labs-cursor</code>. The marketplace points at the upstream <code>alo-exp/silver-bullet</code> release; hooks merge into <code>~/.cursor/hooks.json</code> and state lives under <code>~/.cursor/.silver-bullet/</code>.</p>
@@ -281,7 +281,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <p>When developing Silver Bullet from a repository checkout, sync the plugin tree locally instead:</p>
 <div class="code-label">Development checkout only</div>
 <div class="code-block"><span class="cmd">bash scripts/install-cursor.sh</span></div>
-      <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Marketplace users run <code>/silver:doctor</code> to confirm activation; repository contributors may also run checkout-only <code>bash scripts/sb-diagnostics.sh</code>.</p>
+      <p>Use the Cursor Skill tool (or <code>silver-bullet invoke-skill</code>) so <code>record-skill</code> can track workflow progress. Marketplace users run <code>/sb:doctor</code> to confirm activation; repository contributors may also run checkout-only <code>bash scripts/sb-diagnostics.sh</code>.</p>
 
       <h3>Claude Code Plugin</h3>
       <p>Install Silver Bullet from the host plugin manager or the public <code>alo-labs/agent-plugins</code> marketplace (<code>alo-labs</code> catalog).</p>
@@ -289,40 +289,40 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="code-block"><span class="cmd">/plugin install alo-exp/silver-bullet</span></div>
 
       <h3>Codex Marketplace Package</h3>
-      <p>For normal Codex use, install or refresh Silver Bullet from the public <code>alo-labs/agent-plugins</code> marketplace package (<code>alo-labs-codex</code> catalog). The Codex package is SB-only: it keeps internal <code>skill-source/</code> files out of plugin picker discovery, mirrors only the native <code>/silver:</code> picker surface, wires hooks through the package manifest, and installs supported dependencies from their official sources or thin marketplace wrappers.</p>
-      <p>When developing Silver Bullet itself from a repository checkout, use the installer script. It refreshes the curated package from the checkout, registers the shared marketplace, removes stale SB skill copies and old marketplace cache versions, and verifies that the picker exposes only the <code>/silver:</code> namespace.</p>
+      <p>For normal Codex use, install or refresh Silver Bullet from the public <code>alo-labs/agent-plugins</code> marketplace package (<code>alo-labs-codex</code> catalog). The Codex package is SB-only: it keeps internal <code>skill-source/</code> files out of plugin picker discovery, mirrors only the native <code>/sb:</code> picker surface, wires hooks through the package manifest, and installs supported dependencies from their official sources or thin marketplace wrappers.</p>
+      <p>When developing Silver Bullet itself from a repository checkout, use the installer script. It refreshes the curated package from the checkout, registers the shared marketplace, removes stale SB skill copies and old marketplace cache versions, and verifies that the picker exposes only the <code>/sb:</code> namespace.</p>
       <div class="code-label">Development checkout only</div>
       <div class="code-block"><span class="cmd">./scripts/install-codex.sh --purge-legacy-skills</span></div>
       <p>After a public SB release, refresh the local installation from the public marketplace with <code>scripts/post-release-refresh.sh</code>. That wrapper performs a clean Claude and Codex reinstall path and is the supported way to prove your local cache matches the released marketplace version.</p>
 
       <h3>Initialize a Project</h3>
       <p>Navigate to your project directory and run:</p>
-      <div class="code-block"><span class="cmd">/silver:init</span></div>
+      <div class="code-block"><span class="cmd">/sb:init</span></div>
       <p>This command will:</p>
       <ol>
         <li>Verify all dependencies are installed</li>
         <li>Detect your project name, tech stack, and repo URL</li>
         <li>Create <code>silver-bullet.md</code> with enforcement rules and reconcile any existing host project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex)</li>
         <li>Create <code>.silver-bullet.json</code> with project-level config</li>
-        <li>Invoke <code>/silver:ensure-docs --bootstrap</code> to create or reconcile the standard documentation scaffold</li>
+        <li>Invoke <code>/sb:ensure-docs --bootstrap</code> to create or reconcile the standard documentation scaffold</li>
         <li>Set up CI (GitHub Actions) if not already present</li>
         <li>Configure <code>permissions.defaultMode</code> in <code>.claude/settings.local.json</code> — eliminates repeated permission prompts across sessions</li>
         <li>Commit everything to git</li>
       </ol>
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="check-circle"></i></span>
-        <div class="callout-body"><strong>Already configured?</strong> Running <code>/silver:init</code> on a project that already has <code>.silver-bullet.json</code> just activates plugins for the session — it won't overwrite your files.</div>
+        <div class="callout-body"><strong>Already configured?</strong> Running <code>/sb:init</code> on a project that already has <code>.silver-bullet.json</code> just activates plugins for the session — it won't overwrite your files.</div>
       </div>
       <div class="callout callout-tip">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/silver &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB workflow path for the work.</div>
+        <div class="callout-body"><strong>Don't know which workflow to use?</strong> Run <code>/sb &lt;anything&gt;</code> — it reads your intent, classifies the task, and composes the right SB workflow path for the work.</div>
       </div>
 
       <h3 id="hook-activation">Hook activation (v0.52.0)</h3>
-      <p>Enforcement hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Workspaces without <code>/silver:init</code> receive no hook enforcement — this prevents accidental gates on unrelated repositories.</p>
+      <p>Enforcement hooks engage only when both <code>.silver-bullet.json</code> and <code>silver-bullet.md</code> exist in the project. Workspaces without <code>/sb:init</code> receive no hook enforcement — this prevents accidental gates on unrelated repositories.</p>
 
       <h3 id="recommended-tools">Recommended tools (opt-in)</h3>
-      <p>Graphify, agentmemory, RTK, and Context Mode are <strong>opt-in</strong> via <code>recommended_tools</code> in <code>.silver-bullet.json</code>. <code>/silver:init</code> and <code>/silver:update</code> handle consent, install probes, and enforcement-suspend retry. When both Graphify and agentmemory are enabled: <strong>save via agentmemory, retrieve via Graphify</strong>. RTK and Context Mode are separate token-compression tools — see <a href="../concepts/documentation.html#token-compression">Token Compression</a>.</p>
+      <p>Graphify, agentmemory, RTK, and Context Mode are <strong>opt-in</strong> via <code>recommended_tools</code> in <code>.silver-bullet.json</code>. <code>/sb:init</code> and <code>/sb:update</code> handle consent, install probes, and enforcement-suspend retry. When both Graphify and agentmemory are enabled: <strong>save via agentmemory, retrieve via Graphify</strong>. RTK and Context Mode are separate token-compression tools — see <a href="../concepts/documentation.html#token-compression">Token Compression</a>.</p>
 
       <div class="divider"></div>
 
@@ -331,11 +331,11 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="card">
         <h4>New Project</h4>
-        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/silver:init</code> to scaffold, then start with <code>/silver</code> so SB can route to project setup, spec creation, or SB planning as needed.</p>
+        <p>Create an empty directory with a git repo (<code>git init</code> or clone from GitHub). Run <code>/sb:init</code> to scaffold, then start with <code>/sb</code> so SB can route to project setup, spec creation, or SB planning as needed.</p>
       </div>
       <div class="card">
         <h4>Existing Codebase</h4>
-        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex) when one exists — your instructions are preserved automatically. Then start work with <code>/silver</code> or a specific <code>/silver:*</code> workflow.</p>
+        <p>Silver Bullet creates <code>silver-bullet.md</code> for its rules and adds a reference line to your existing project instruction file (<code>CLAUDE.md</code> in Claude, <code>AGENTS.md</code> in Codex) when one exists — your instructions are preserved automatically. Then start work with <code>/sb</code> or a specific <code>/sb:*</code> workflow.</p>
       </div>
 
       <div class="divider"></div>
@@ -381,7 +381,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
         <li>
           <div class="step-num">2</div>
           <div class="step-body">
-            <h4>Start with /silver</h4>
+            <h4>Start with /sb</h4>
             <p>Describe what you want to build. Silver Bullet classifies the request and composes the smallest safe <code>WF-*</code> workflow — clarify, spec, <code>WF-SILVER-FEATURE</code>, bugfix, UI, DevOps, research, release, or fast path.</p>
           </div>
         </li>
@@ -417,7 +417,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="info"></i></span>
-        <div class="callout-body"><strong>Lost track of where you are?</strong> Run <code>/silver</code> with a status/progress request or use the active workflow tracker under <code>.planning/workflows/</code> to find the next required step.</div>
+        <div class="callout-body"><strong>Lost track of where you are?</strong> Run <code>/sb</code> with a status/progress request or use the active workflow tracker under <code>.planning/workflows/</code> to find the next required step.</div>
       </div>
 
       <div class="divider"></div>
@@ -472,26 +472,26 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <div class="divider"></div>
 
-      <h2 id="bare-instruction">Dynamic Routing with /silver</h2>
-      <p>In Silver Bullet, you don't need to memorize the workflow catalog. Use <code>/silver</code> with a plain work request and SB composes the right workflow path for the task.</p>
+      <h2 id="bare-instruction">Dynamic Routing with /sb</h2>
+      <p>In Silver Bullet, you don't need to memorize the workflow catalog. Use <code>/sb</code> with a plain work request and SB composes the right workflow path for the task.</p>
 
       <h3>How it works</h3>
-      <p><code>/silver</code> classifies complexity, checks task intent, reads relevant knowledge and learnings, and routes to the right orchestration workflow. Some host runtimes may support plain-request interception, but explicit <code>/silver</code> invocation is the portable behavior across supported hosts.</p>
+      <p><code>/sb</code> classifies complexity, checks task intent, reads relevant knowledge and learnings, and routes to the right orchestration workflow. Some host runtimes may support plain-request interception, but explicit <code>/sb</code> invocation is the portable behavior across supported hosts.</p>
 
       <div class="callout callout-info">
         <span class="callout-icon"><i data-lucide="zap"></i></span>
-        <div class="callout-body"><strong>Example:</strong> <code>/silver Add a login form to the auth page</code> classifies the request, matches it to the feature/UI path as appropriate, and starts the composed workflow without requiring you to know the exact downstream commands.</div>
+        <div class="callout-body"><strong>Example:</strong> <code>/sb Add a login form to the auth page</code> classifies the request, matches it to the feature/UI path as appropriate, and starts the composed workflow without requiring you to know the exact downstream commands.</div>
       </div>
 
-      <h3>What Should Use /silver</h3>
-      <p>Use <code>/silver</code> for work requests, feature requests, bug fixes, deployment work, refactors, release prep, and fuzzy tasks where you are not sure which workflow applies. Use direct <code>/silver:*</code> commands when you already know the exact workflow step.</p>
+      <h3>What Should Use /sb</h3>
+      <p>Use <code>/sb</code> for work requests, feature requests, bug fixes, deployment work, refactors, release prep, and fuzzy tasks where you are not sure which workflow applies. Use direct <code>/sb:*</code> commands when you already know the exact workflow step.</p>
 
       <p>For the full routing behavior, direct-command exemptions, and complete routing table, see <a href="../concepts/routing-logic.html">Routing Logic</a>.</p>
 
       <div class="divider"></div>
 
       <h2 id="whats-next">What's Next</h2>
-      <p>Silver Bullet also provides three spec-pipeline commands: <code>/silver:spec</code> for AI-driven spec creation, <code>/silver:ingest</code> for ingesting external artifacts (JIRA, Figma, Google Docs via MCP), and <code>/silver:validate</code> for pre-build spec validation. These run before planning and are described fully in Core Concepts and the Command Reference.</p>
+      <p>Silver Bullet also provides three spec-pipeline commands: <code>/sb:spec</code> for AI-driven spec creation, <code>/sb:ingest</code> for ingesting external artifacts (JIRA, Figma, Google Docs via MCP), and <code>/sb:validate</code> for pre-build spec validation. These run before planning and are described fully in Core Concepts and the Command Reference.</p>
       <p>Now that you understand the basics, dig deeper into how Silver Bullet works:</p>
       <div class="prereq-grid">
         <div class="prereq-card">

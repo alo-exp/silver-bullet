@@ -82,10 +82,10 @@ if (
   export PATH="${HOSTBIN}:$PATH" PI_BIN="${HOSTBIN}/pi" PI_PROVIDER=omniroute PI_MODEL="claude/claude-opus-5-high"
   unset SB_AGENT_HOST_ARGV_FILE
   agent_host_build_argv pi non-interactive "${TMP}/work" "write review.md" permissive
-  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--thinking' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- 'off' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -qx -- '--no-extensions' \
-    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -q 'COMPLETE deliverable'
+  printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -x -- '--thinking' >/dev/null \
+    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -x -- 'off' >/dev/null \
+    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep -x -- '--no-extensions' >/dev/null \
+    && printf '%s\n' "${AGENT_HOST_ARGV[@]}" | grep 'COMPLETE deliverable' >/dev/null
 ); then
   check "claude NI argv has thinking-off, --no-extensions, complete-write prompt" pass
 else

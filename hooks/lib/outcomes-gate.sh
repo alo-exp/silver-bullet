@@ -57,7 +57,7 @@ sb_outcomes_seed_for_prompt() {
           prompt_preview: $preview,
           informational: true,
           outcomes: [
-            {id:"route", label:"Route via /silver or approved workflow composer", status:"done", evidence:"informational query — no routing required", decision_class:"autonomous_default"},
+            {id:"route", label:"Route via /sb or approved workflow composer", status:"done", evidence:"informational query — no routing required", decision_class:"autonomous_default"},
             {id:"scope", label:"Define concrete deliverables for this prompt", status:"done", evidence:"informational query", decision_class:"autonomous_default"},
             {id:"verify", label:"Run verification before claiming completion", status:"done", evidence:"informational query", decision_class:"autonomous_default"}
           ]
@@ -73,7 +73,7 @@ sb_outcomes_seed_for_prompt() {
         started_at: $at,
         prompt_preview: $preview,
         outcomes: [
-          {id:"route", label:"Route via /silver or approved workflow composer", status:"pending", evidence:"", decision_class:"autonomous_default"},
+          {id:"route", label:"Route via /sb or approved workflow composer", status:"pending", evidence:"", decision_class:"autonomous_default"},
           {id:"scope", label:"Define concrete deliverables for this prompt", status:"pending", evidence:"", decision_class:"autonomous_default"},
           {id:"verify", label:"Run verification before claiming completion", status:"pending", evidence:"", decision_class:"autonomous_default"}
         ]
@@ -97,7 +97,7 @@ sb_outcomes_auto_evaluate() {
   if printf '%s\n' "$state_contents" | grep -qE '^(silver|silver-feature|silver-ui|silver-devops|silver-bugfix|silver-fast|silver-deep-research|silver-release|silver-migrate|silver-init)$' 2>/dev/null; then
     sb_outcomes_jq_update "$outfile" \
       '(.outcomes[] | select(.id=="route") | .status) = "done"
-        | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /silver router recorded"'
+        | (.outcomes[] | select(.id=="route") | .evidence) = "workflow composer or /sb router recorded"'
   fi
 
   # verify: verify-tests marker or silver-verify recorded

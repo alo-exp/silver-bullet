@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Print or export delegation env for /silver:agent-codex (host-agnostic).
+# Print or export delegation env for /sb:agent-codex (host-agnostic).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

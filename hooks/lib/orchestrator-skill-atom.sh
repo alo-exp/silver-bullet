@@ -111,7 +111,7 @@ sb_scheduler_handoff_matches_completion() {
   jq -e --arg atom "$atom_id" --arg skill "$skill" '
     (.atomic_flow_id == $atom and $atom != "")
     or (.next_skill == $skill and $skill != "")
-    or ((.next_skill // "") | test("^silver:"))
-    and ($skill != "" and (.next_skill | gsub("^silver:"; "silver-")) == ($skill | gsub("^silver:"; "silver-")))
+    or ((.next_skill // "") | test("^sb:"))
+    and ($skill != "" and (.next_skill | gsub("^sb:"; "silver-")) == ($skill | gsub("^sb:"; "silver-")))
   ' <<<"$handoff_json" >/dev/null 2>&1
 }

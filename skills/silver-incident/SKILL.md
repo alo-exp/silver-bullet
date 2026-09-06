@@ -7,17 +7,17 @@ argument-hint: "<incident scope or symptoms>"
 version: 0.1.0
 ---
 
-# /silver:incident - Incident Response And Postmortem
+# /sb:incident - Incident Response And Postmortem
 
 SB-owned incident workflow for active runtime failures, release regressions, and
-customer-impacting defects. It extends `silver:forensics` with impact, response,
+customer-impacting defects. It extends `sb:forensics` with impact, response,
 and corrective-action ownership.
 
 **Pre-execution** (blocks incident response edits until recorded):
 
-`silver:blast-radius` → `silver:debug` → `silver:plan`
+`sb:blast-radius` → `sb:debug` → `sb:plan`
 
-**Post-execution:** `silver:execute` → `security` → `silver:secure` → `silver:verify` → `silver:ensure-docs`
+**Post-execution:** `sb:execute` → `security` → `sb:secure` → `sb:verify` → `sb:ensure-docs`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-incident` composer).
 
@@ -31,7 +31,7 @@ The artifact must include:
 - timeline with detection, mitigation, and recovery timestamps;
 - current status and rollback/containment decision;
 - root cause and contributing process gaps;
-- corrective actions filed through `silver:add`;
+- corrective actions filed through `sb:add`;
 - verification and canary evidence after recovery.
 
 ## Process
@@ -41,14 +41,14 @@ The artifact must include:
    needed before investigation continues.
 3. Capture evidence from logs, CI/deploy history, release notes, user reports,
    monitoring, and changed files.
-4. Invoke or apply `silver:forensics` for root-cause reconstruction when the
+4. Invoke or apply `sb:forensics` for root-cause reconstruction when the
    failure path is unclear.
-5. Invoke or apply `silver:domain-audit --pack incident-retro` and affected
+5. Invoke or apply `sb:domain-audit --pack incident-retro` and affected
    runtime/API/data/security packs.
 6. Record containment, fix, verification, and canary evidence.
-7. File every corrective action through `silver:add` with owner, priority, and
+7. File every corrective action through `sb:add` with owner, priority, and
    due expectation.
-8. Feed recurring process gaps into `silver:retro`.
+8. Feed recurring process gaps into `sb:retro`.
 
 ## Exit Gate
 

@@ -8,17 +8,17 @@ argument-hint: "<technical question or approach to investigate> [--quick] [--wra
 version: 0.1.0
 ---
 
-# /silver:spike — Feasibility Experiments
+# /sb:spike — Feasibility Experiments
 
 SB-owned spike workflow. Use when you need evidence before choosing an
 implementation strategy — not research notes, but running code that proves
 or disproves an approach. Each experiment is minimal, targeted, and leaves
 no production footprint.
 
-Do NOT use this skill for general research (`silver:deep-research`) or for full
-feature planning (`silver:feature`). A spike answers a specific yes/no or
+Do NOT use this skill for general research (`sb:deep-research`) or for full
+feature planning (`sb:feature`). A spike answers a specific yes/no or
 comparison question. If the question is broad enough to require a PLAN.md,
-use `silver:plan` instead.
+use `sb:plan` instead.
 
 ## Output
 
@@ -67,7 +67,7 @@ Evidence: <what you observed — output, error, timing, diff>
 |------|-----------|
 | (none) | Interactive intake — ask clarifying questions before running experiments |
 | `--quick` | Skip intake; use `$ARGUMENTS` text as the hypothesis directly |
-| `--wrap-up` | Package completed spike findings into a reusable project-local knowledge entry via `silver:rem` |
+| `--wrap-up` | Package completed spike findings into a reusable project-local knowledge entry via `sb:rem` |
 
 ## Process
 
@@ -91,7 +91,7 @@ Evidence: <what you observed — output, error, timing, diff>
 
    Bad experiments: "research approaches" with no code, multi-day
    investigations, experiments that modify production data, broad codebase
-   exploration (use `silver:scan` for that).
+   exploration (use `sb:scan` for that).
 
 4. **Run experiments in order of risk.** Start with the hypothesis most
    likely to short-circuit remaining experiments if invalidated.
@@ -106,13 +106,13 @@ Evidence: <what you observed — output, error, timing, diff>
    - What is the recommended next step?
 
 7. **File deferred items.** Any question raised that was out of scope for
-   this spike → `silver:add`.
+   this spike → `sb:add`.
 
-8. **Wrap-up (if `--wrap-up`).** Invoke `silver:rem` with the key findings
+8. **Wrap-up (if `--wrap-up`).** Invoke `sb:rem` with the key findings
    so they survive context compaction and are available in future sessions.
 
 9. **Handoff.** If the spike result feeds a planning decision, surface the
-   synthesis in `CONTEXT.md` or pass it as input to `silver:clarify`.
+   synthesis in `CONTEXT.md` or pass it as input to `sb:clarify`.
 
 ## Experiment Safety Rules
 
@@ -131,7 +131,7 @@ The spike is complete only when:
 
 - every planned experiment has a result (VALIDATED, INVALIDATED, or PARTIAL);
 - `MANIFEST.md` contains a synthesis and a recommended next step;
-- any deferred items are filed via `silver:add`.
+- any deferred items are filed via `sb:add`.
 
 A spike that ends in PARTIAL on all experiments without a recommended next
 step is not a completed spike — surface the ambiguity and ask the user how

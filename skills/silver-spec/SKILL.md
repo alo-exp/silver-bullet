@@ -6,11 +6,11 @@ argument-hint: "<feature name or description>"
 version: 0.2.0
 ---
 
-# /silver:spec -- Spec Compiler
+# /sb:spec -- Spec Compiler
 
 SB orchestrator for compiling canonical `.planning/SPEC.md` and `.planning/REQUIREMENTS.md` from the newest `*-CLARIFY-*.md` brief and any ingest SPEC draft.
 
-**This skill does not run the 9-turn Socratic interview.** Interviewing lives in `/silver:clarify --spec` (`next=spec`). Spec is a compiler: read the brief (+ ingest draft), write artifacts, review them.
+**This skill does not run the 9-turn Socratic interview.** Interviewing lives in `/sb:clarify --spec` (`next=spec`). Spec is a compiler: read the brief (+ ingest draft), write artifacts, review them.
 
 Never implements features directly -- compiles and writes spec artifacts only.
 
@@ -68,9 +68,9 @@ Read `$NEWEST_CLARIFY` in full when it exists. This is the primary interview rec
 
 Stop. Do **not** run Turns 1–9 here. Instruct:
 
-> Spec compiles from a clarify brief. Run `/silver:clarify --spec` (or `/silver:clarify --next spec`) first, then re-run `/silver:spec`.
+> Spec compiles from a clarify brief. Run `/sb:clarify --spec` (or `/sb:clarify --next spec`) first, then re-run `/sb:spec`.
 
-**If ingest draft exists without a clarify brief:** compile from the ingest SPEC, then gap-fill only empty required sections (Step 3). Recommend `/silver:clarify --spec` when domains are thin, but do not block a compile+gap-fill path.
+**If ingest draft exists without a clarify brief:** compile from the ingest SPEC, then gap-fill only empty required sections (Step 3). Recommend `/sb:clarify --spec` when domains are thin, but do not block a compile+gap-fill path.
 
 ## Step 1: Load Inputs (no live interview)
 
@@ -306,12 +306,12 @@ Assumptions:     {count of [ASSUMPTION] blocks}
 Open questions:  {count of open question items}
 Status:          Draft
 
-Next step: run /silver:feature to begin implementation planning.
+Next step: run /sb:feature to begin implementation planning.
 ```
 
 If any assumptions have `Status: Follow-up-required`, add:
 
 ```
 ⚠  {N} assumption(s) require follow-up before implementation begins.
-   Review .planning/SPEC.md §Assumptions before running /silver:feature.
+   Review .planning/SPEC.md §Assumptions before running /sb:feature.
 ```

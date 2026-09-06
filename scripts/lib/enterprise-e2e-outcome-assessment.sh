@@ -454,7 +454,7 @@ enterprise_e2e_outcome_tri_criteria_run_dir() {
 }
 
 enterprise_e2e_outcome_composer_catalog_workflow_id() {
-  local composer="${1#silver:}"
+  local composer="${1#sb:}"
   composer="${composer//:/-}"
   case "$composer" in
     silver-feature) printf 'WF-SILVER-FEATURE' ;;
@@ -705,7 +705,7 @@ enterprise_e2e_outcome_score_clarify() {
   if [[ -f "$state_file" ]] && grep -q 'silver-clarify' "$state_file" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/silver:clarify|silver:clarify|\$silver:clarify|silver-clarify' "$row_log" 2>/dev/null; then
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE '/sb:clarify|sb:clarify|\$sb:clarify|silver-clarify' "$row_log" 2>/dev/null; then
     printf 'pass\n'; return 0
   fi
   # Row 1 (silver-router) is routing-only — clarify not required when route is correct.
@@ -714,7 +714,7 @@ enterprise_e2e_outcome_score_clarify() {
       printf 'n/a\n'; return 0
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/silver.*(feature|fast)' "$row_log" 2>/dev/null; then
+       grep -qEi 'routing validation only|routing completes|composed workflow skill|SILVER BULLET.*ROUTING|/sb.*(feature|fast)' "$row_log" 2>/dev/null; then
       printf 'n/a\n'; return 0
     fi
     if [[ -f "$state_file" ]] && grep -qE 'silver-router|silver-context|silver-feature|silver-fast' "$state_file" 2>/dev/null; then
@@ -1002,7 +1002,7 @@ enterprise_e2e_outcome_score_tailor() {
       printf 'pass\n'; return 0
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qEi '/silver:fast|silver-fast|fast-readme|catalog workflow' "$row_log" 2>/dev/null; then
+       grep -qEi '/sb:fast|silver-fast|fast-readme|catalog workflow' "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
     printf 'n/a\n'; return 0
@@ -1184,7 +1184,7 @@ enterprise_e2e_outcome_score_orch() {
       printf 'pass\n'; return 0
     fi
     if enterprise_e2e_outcome_evidence_resolved "$work_dir" "$evidence" "$row_num" >/dev/null 2>&1 && \
-       enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|workflow_complete|/silver'; then
+       enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|workflow_complete|/sb'; then
       printf 'pass\n'; return 0
     fi
   fi
@@ -1193,7 +1193,7 @@ enterprise_e2e_outcome_score_orch() {
       printf 'pass\n'; return 0
     fi
     if [[ -n "$row_log" && -f "$row_log" ]] && \
-       grep -qEi 'SILVER BULLET|routing validation only|/silver|silver-feature' "$row_log" 2>/dev/null; then
+       grep -qEi 'SILVER BULLET|routing validation only|/sb|silver-feature' "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
   fi
@@ -1205,7 +1205,7 @@ enterprise_e2e_outcome_score_orch() {
     printf 'pass\n'; return 0
   fi
   if [[ -n "$evidence" && -f "${work_dir}/${evidence}" ]] && \
-     enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/silver|Booting MCP|graphify query'; then
+     enterprise_e2e_outcome_log_matches "$row_log" 'orchestrator|Silver Bullet|\$silver|/sb|Booting MCP|graphify query'; then
     printf 'pass\n'; return 0
   fi
   if [[ -n "$row_log" && -f "$row_log" ]] && grep -qEi 'Task|worker|orchestrator' "$row_log" 2>/dev/null; then
@@ -1263,11 +1263,11 @@ enterprise_e2e_outcome_score_skill() {
     printf 'partial\n'; return 0
   fi
   if [[ -n "$slug" && -n "$row_log" && -f "$row_log" ]]; then
-    if grep -qiE "${slug}|/silver:${slug#silver-}|silver:${slug#silver-}" "$row_log" 2>/dev/null; then
+    if grep -qiE "${slug}|/sb:${slug#silver-}|sb:${slug#silver-}" "$row_log" 2>/dev/null; then
       printf 'pass\n'; return 0
     fi
   fi
-  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'silver-[a-z]|/silver:' "$row_log" 2>/dev/null; then
+  if [[ -n "$row_log" && -f "$row_log" ]] && grep -qiE 'silver-[a-z]|/sb:' "$row_log" 2>/dev/null; then
     printf 'partial\n'; return 0
   fi
   printf 'fail\n'
@@ -1523,7 +1523,7 @@ def add(val):
 def composer_to_wf(composer):
     if not composer or not isinstance(composer, str):
         return
-    c = composer.strip().replace("silver:", "silver-")
+    c = composer.strip().replace("sb:", "silver-")
     mapping = {
         "silver-feature": "WF-SILVER-FEATURE",
         "silver-fast": "WF-SILVER-FAST",

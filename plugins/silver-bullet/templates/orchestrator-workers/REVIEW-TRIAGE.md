@@ -18,13 +18,13 @@ Set `SB_ORCHESTRATOR_WORKER=1` for this subagent session (parent orchestrator mo
 
 ## Mandatory skill
 
-Invoke **`silver:review-triage`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
+Invoke **`sb:review-triage`** through the active runtime's SB-recognized skill invocation channel before Edit/Write/Bash.
 
 ## Acceptance criteria
 
 - REVIEW.md findings are triaged — ACCEPT applied, or REJECT-as-wrong with evidence that the finding is wrong
 
-## Review-fix ladder (when assigned skill is `silver:review-fix-ladder`)
+## Review-fix ladder (when assigned skill is `sb:review-fix-ladder`)
 
 Policy C is artifact-first: `python3 scripts/review-fix-ladder.py --write-policy-c --rung-dir <rung> --table-json-file POLICY-C.json` then `--assert-policy-c`. `hooks/rfl-policy-c-gate.sh` denies the next Task/Stop if the assert fails. FORBIDDEN: short verdict-only chat.
 
@@ -38,7 +38,7 @@ Policy C — launcher reports after every rung: After each rung's review is in (
 
 ## Handoff artifacts
 
-- Updated REVIEW.md and deferred items filed via `silver:add` when required
+- Updated REVIEW.md and deferred items filed via `sb:add` when required
 
 ## Exit
 

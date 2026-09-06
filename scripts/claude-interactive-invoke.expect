@@ -605,7 +605,7 @@ proc maybe_submit_prompt {buffer} {
     return 0
   }
   # Slash routes need the ❯ input line; submitting on the idle "0 tokens"
-  # status bar fires before Claude registers plugin /silver commands.
+  # status bar fires before Claude registers plugin /sb commands.
   if {$slash_route_pending && ![input_prompt_ready $buffer]} {
     return 0
   }
@@ -782,7 +782,7 @@ set picker_resolve_attempts 0
 set folder_trust_accept_attempts 0
 set folder_trust_confirmed 0
 set folder_trust_respawn_count 0
-if {$command_name eq "silver-init" || $command_name eq "silver:init"} {
+if {$command_name eq "silver-init" || $command_name eq "sb:init"} {
   set require_final_marker 1
   if {$quiet_timeout < 600} {
     # Silver init is the longest-running bootstrap path in the live matrix.
@@ -1129,7 +1129,7 @@ expect {
   }
   -re {Which validation library should} {
     if {$prompt_submitted == 0} { exp_continue }
-    # silver:clarify / silver:feature interactive picker - pick first option.
+    # sb:clarify / sb:feature interactive picker - pick first option.
     send -- "1\r"
     set timeout $quiet_timeout
     exp_continue

@@ -16,7 +16,7 @@
 | E3 | Repo `config_version` 0.48.6 | **PASS** | `.silver-bullet.json` |
 | E4 | Orchestrator rule present | **PASS** | `.cursor/rules/silver-orchestrator.mdc` |
 | E5 | Template parity | **PASS** | `test-silver-bullet-template-parity.sh` 2/2 |
-| E6 | `silver:doctor` PASS | **PASS** | `sb-doctor.sh` 16/16 |
+| E6 | `sb:doctor` PASS | **PASS** | `sb-doctor.sh` 16/16 |
 | E7 | Hooks visibly active | **PASS** | `test-site-session-gates.sh` 27/27 |
 | E8 | Friction log started | **PASS** | `~/.cursor/.silver-bullet/sb-friction-log.md` |
 

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:devops — Infrastructure &amp; CI/CD Workflow — Silver Bullet Help</title>
+<title>/sb:devops — Infrastructure &amp; CI/CD Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated DevOps/IaC workflow: orientation → blast-radius → devops-skill-router → 7 IaC quality dimensions → plan → execute without TDD → review → secure → ship.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -94,7 +94,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:devops</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:devops</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -104,7 +104,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:devops</h1>
+    <h1>/sb:devops</h1>
     <p>SB-orchestrated infrastructure, CI/CD, and IaC workflow — blast-radius assessment mandatory, 7 IaC-adapted quality dimensions, TDD explicitly skipped.</p>
   </div>
 </div>
@@ -131,8 +131,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:devops</code> is the Silver Bullet orchestrator for infrastructure, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.</p>
-      <p><code>/silver:devops</code> maps to <code>WF-SILVER-DEVOPS</code> in the <strong>v0.52.0 APO catalog</strong>. Standard composition chain:</p>
+      <p><code>/sb:devops</code> is the Silver Bullet orchestrator for infrastructure, CI/CD, pipelines, Terraform, IaC, Kubernetes, containers, cloud, and ops work.</p>
+      <p><code>/sb:devops</code> maps to <code>WF-SILVER-DEVOPS</code> in the <strong>v0.52.0 APO catalog</strong>. Standard composition chain:</p>
       <div class="code-block">WF-SILVER-DEVOPS
   → AF-BLAST-RADIUS → AF-DEVOPS-ROUTE → AF-QUALITY-GATE → AF-SECURE
   → AF-ORIENT → AF-PLAN → AF-VALIDATE → AF-EXECUTE
@@ -140,7 +140,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <p>It does not include <code>AF-DESIGN-CONTRACT</code> or <code>AF-UI-QUALITY</code> unless runtime evidence shows the infrastructure task also has UI deliverables. See <a href="./index.html#composer-workflows">Workflow catalog</a> and <a href="../concepts/composable-workflow.html">Composable Flows</a>.</p>
       <p><strong>Key design principles:</strong></p>
       <ul>
-        <li><strong>Blast-radius first</strong> — <code>AF-BLAST-RADIUS</code> via <code>/silver:blast-radius</code> and <code>AF-DEVOPS-ROUTE</code> before <code>AF-PLAN</code></li>
+        <li><strong>Blast-radius first</strong> — <code>AF-BLAST-RADIUS</code> via <code>/sb:blast-radius</code> and <code>AF-DEVOPS-ROUTE</code> before <code>AF-PLAN</code></li>
         <li><strong>7 IaC quality dimensions</strong> instead of the product 8 core dimensions plus conditional gates — at both pre-plan and pre-ship gates. Usability and AI/LLM safety are excluded when they do not apply; infrastructure-specific concerns such as observability and change-safety are emphasized.</li>
         <li><strong>TDD explicitly skipped</strong> — infrastructure and configuration work is declarative; there is no red-green-refactor cycle that applies to IaC resources.</li>
       </ul>
@@ -148,7 +148,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:devops</code>:</p>
+      <p>Entry trigger signals for <code>/sb:devops</code>:</p>
       <ul>
         <li>"infra" / "CI/CD" / "deploy" / "pipeline"</li>
         <li>"terraform" / "IaC" / "kubernetes" / "container"</li>
@@ -176,17 +176,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h3>Pre-execution chain</h3>
       <ul>
         <li><strong>Pre-flight</strong> — load <code>silver-bullet.md §10</code> preferences</li>
-        <li><strong><code>AF-ORIENT</code></strong> — <code>/silver:scan</code> / <code>/silver:context</code> for infra topology</li>
-        <li><strong><code>AF-BLAST-RADIUS</code></strong> — <code>/silver:blast-radius</code>; LOW/MEDIUM/HIGH/CRITICAL rating</li>
+        <li><strong><code>AF-ORIENT</code></strong> — <code>/sb:scan</code> / <code>/sb:context</code> for infra topology</li>
+        <li><strong><code>AF-BLAST-RADIUS</code></strong> — <code>/sb:blast-radius</code>; LOW/MEDIUM/HIGH/CRITICAL rating</li>
         <li><strong><code>AF-DEVOPS-ROUTE</code></strong> — IaC/cloud toolchain routing</li>
         <li><strong><code>AF-QUALITY-GATE</code> pre-plan</strong> — <code>/devops-quality-gates</code> (7 IaC dimensions); security dimension mandatory before planning</li>
-        <li><strong><code>AF-VALIDATE</code></strong> — <code>/silver:validate</code> when plans exist</li>
-        <li><strong><code>AF-PLAN</code></strong> — <code>/silver:context</code>, <code>/silver:plan</code></li>
-        <li><strong><code>AF-EXECUTE</code></strong> — <code>/silver:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
+        <li><strong><code>AF-VALIDATE</code></strong> — <code>/sb:validate</code> when plans exist</li>
+        <li><strong><code>AF-PLAN</code></strong> — <code>/sb:context</code>, <code>/sb:plan</code></li>
+        <li><strong><code>AF-EXECUTE</code></strong> — <code>/sb:execute</code>; <strong>TDD skipped</strong> for declarative IaC</li>
       </ul>
 
       <h3>Post-Execution Chain (canonical)</h3>
-      <p><code>WF-POST-EXEC-GATES</code>: review triad → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> pre-ship → branch finish → completion audit → <code>AF-SHIP</code>. Optional <code>/silver:deploy</code> / <code>/silver:canary</code> run through ship-readiness when live rollout is in scope.</p>
+      <p><code>WF-POST-EXEC-GATES</code>: review triad → <code>AF-VERIFY</code> → <code>AF-SECURE</code> → <code>AF-VALIDATE</code> → <code>AF-QUALITY-GATE</code> pre-ship → branch finish → completion audit → <code>AF-SHIP</code>. Optional <code>/sb:deploy</code> / <code>/sb:canary</code> run through ship-readiness when live rollout is in scope.</p>
 
       <div class="divider"></div>
 
@@ -229,7 +229,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
           <ul style="margin-top:8px">
             <li>Security dimension inside <code>/devops-quality-gates</code> (<code>AF-QUALITY-GATE</code> pre-plan)</li>
             <li><code>/devops-quality-gates</code> pre-ship (<code>AF-QUALITY-GATE</code>)</li>
-            <li><code>/silver:verify</code> (<code>AF-VERIFY</code>)</li>
+            <li><code>/sb:verify</code> (<code>AF-VERIFY</code>)</li>
           </ul>
         </div>
       </div>
@@ -237,18 +237,18 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:devops Add GitHub Actions CI pipeline for automated testing</div>
+      <div class="code-block">/sb:devops Add GitHub Actions CI pipeline for automated testing</div>
       <p>Silver Bullet routes to <code>WF-SILVER-DEVOPS</code>: <code>AF-BLAST-RADIUS</code> (likely LOW/MEDIUM) → <code>AF-DEVOPS-ROUTE</code> → <code>AF-QUALITY-GATE</code> → <code>AF-PLAN</code> → <code>AF-EXECUTE</code> (no TDD) → <code>WF-POST-EXEC-GATES</code>.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
         <a href="./silver-ui.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:ui</span>
+          <span class="pnb-title">/sb:ui</span>
         </a>
         <a href="./silver-deep-research.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:deep-research</span>
+          <span class="pnb-title">/sb:deep-research</span>
         </a>
       </div>
 

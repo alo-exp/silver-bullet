@@ -5,24 +5,24 @@ argument-hint: "[--spec | --next spec] <idea, rough requirement, or requirement 
 version: 0.2.0
 ---
 
-# /silver:clarify — Clarify, Compare, and Hand Off
+# /sb:clarify — Clarify, Compare, and Hand Off
 
 SB orchestrator for the front end of planning. It merges product framing, one-question-at-a-time interviewing, brainstorming discipline, and SB lifecycle handoff into one coherent workflow. It does not implement work or write plans; it reduces uncertainty until the next step is obvious.
 
-**Document-authoring split:** interviewing that used to live in `/silver:spec` (context gathering, Turns 1–9, assumption protocol) belongs here when `next=spec`. Spec is a compiler: it reads this brief and writes `SPEC.md` / `REQUIREMENTS.md`. This skill **never** writes `.planning/SPEC.md` or `.planning/REQUIREMENTS.md`.
+**Document-authoring split:** interviewing that used to live in `/sb:spec` (context gathering, Turns 1–9, assumption protocol) belongs here when `next=spec`. Spec is a compiler: it reads this brief and writes `SPEC.md` / `REQUIREMENTS.md`. This skill **never** writes `.planning/SPEC.md` or `.planning/REQUIREMENTS.md`.
 
 ## Goal
 
 Convert ambiguous input into a concise brief.
 
-- **Default (light FLOW 3):** seed `silver:context` when discovery is next, or `silver:plan` when the phase is already ready to plan.
-- **`next=spec`:** seed `/silver:spec` with a capture schema that can satisfy review-spec content predicates after compile.
+- **Default (light FLOW 3):** seed `sb:context` when discovery is next, or `sb:plan` when the phase is already ready to plan.
+- **`next=spec`:** seed `/sb:spec` with a capture schema that can satisfy review-spec content predicates after compile.
 
 ## Modes
 
 - `--auto`: choose reasonable defaults and ask only when a crucial or unsafe decision is blocked
 - `--all`: surface every gray area before converging
-- `--chain`: after the brief is captured, continue with `silver:context` or `silver:plan` when project/phase context exists. When `next=spec`, `--chain` continues with `/silver:spec` (compile) instead of plan.
+- `--chain`: after the brief is captured, continue with `sb:context` or `sb:plan` when project/phase context exists. When `next=spec`, `--chain` continues with `/sb:spec` (compile) instead of plan.
 - `--text`: keep the session text-only; no visual companion
 - `--analyze`: read more context up front before asking
 - `--spec` **or** `--next spec` **or** `--next=spec`: document-authoring interview (see **next=spec** below)
@@ -36,7 +36,7 @@ Set `next=spec` when **any** of the following is true:
 3. Composition / orchestrator is heading to `AF-SPECIFY` (FLOW 5 / specify worker)
 4. The user asked to produce a spec, write SPEC.md, or similar
 
-**Router `/silver` fuzzy-idea with no SPEC.md:** stay on **light FLOW 3** first. Do not auto-promote to `next=spec` solely because the idea is vague. When the user later wants a spec, run a second clarify pass in `next=spec` mode.
+**Router `/sb` fuzzy-idea with no SPEC.md:** stay on **light FLOW 3** first. Do not auto-promote to `next=spec` solely because the idea is vague. When the user later wants a spec, run a second clarify pass in `next=spec` mode.
 
 **Second pass (light brief already exists):** do **not** double Frame if the problem/who/success framing already converged. Fill remaining spec domains only (stories, AC, scope, edges, errors, data, assumptions, open questions).
 
@@ -66,7 +66,7 @@ Prefer Alumnium over host browser MCP when both are available — structured `do
 - If the user supplied a full requirement doc, compress repeated or already-settled points instead of restating them.
 - If the input spans multiple independent projects, split it before continuing.
 - Be opinionated. Generate options, challenge assumptions, then converge.
-- If multiple complex remote artifacts need intake, run `silver:ingest` first; otherwise `silver:clarify` handles the intake path itself.
+- If multiple complex remote artifacts need intake, run `sb:ingest` first; otherwise `sb:clarify` handles the intake path itself.
 - If the request has product or user-value implications, include PM framing as a dedicated section in the final brief.
 - If the request is pure technical framing with no product angle, omit the PM framing section and keep the brief lean.
 - Resolve all gray areas before handing off. The goal is to leave as little ambiguity as possible for the next SB lifecycle step.
@@ -97,7 +97,7 @@ Classify the input maturity:
 - phase-ready handoff
 
 If the input clearly spans multiple independent projects, split it before continuing.
-If the next obvious step is project or milestone framing, preserve enough context for SB to hand off directly to `silver:context`.
+If the next obvious step is project or milestone framing, preserve enough context for SB to hand off directly to `sb:context`.
 
 ### 2. Frame
 
@@ -151,11 +151,11 @@ If the input is already formalized, focus on gaps and conflicts rather than gene
 Pick the strongest direction, or if no decision is appropriate yet, narrow the open questions to the ones the next SB lifecycle step must resolve.
 
 Be decisive. Name the recommendation and the reason for it.
-If the next step is project or milestone framing, say so explicitly and route the handoff to `silver:context`. Otherwise hand off to `silver:plan` when phase context already exists.
+If the next step is project or milestone framing, say so explicitly and route the handoff to `sb:context`. Otherwise hand off to `sb:plan` when phase context already exists.
 
 ### Solution decision handoff (DECIDE / landscape / compare)
 
-When the handoff target is AF-DECIDE, `solution-landscape`, or `/silver:compare`:
+When the handoff target is AF-DECIDE, `solution-landscape`, or `/sb:compare`:
 
 1. Run the question bank in `skills/silver-deep-research/reference/need-profile-interview.md`
    (one question at a time; MC preferred).
@@ -200,11 +200,11 @@ Write a concise brief to the resolved clarify output path with:
 - recommendation
 - assumptions
 - unresolved questions, after the recommendation
-- next-step notes for `silver:context` or `silver:plan`
+- next-step notes for `sb:context` or `sb:plan`
 - explicit notes about any assumptions that need later validation
 - any deferred ideas that should move into the designated project system rather than the session ledger
 
-If `--chain` is set and the project/phase context is already known, hand the brief off to `silver:context` or `silver:plan` after writing it. If not, state the exact next SB lifecycle step needed to make that handoff possible.
+If `--chain` is set and the project/phase context is already known, hand the brief off to `sb:context` or `sb:plan` after writing it. If not, state the exact next SB lifecycle step needed to make that handoff possible.
 
 ## next=spec — document-authoring interview
 
@@ -284,7 +284,7 @@ If no assumptions were surfaced, note this and ask: "Before we write the brief, 
 
 ### Capture schema (`next=spec` brief)
 
-Write the timestamped clarify brief (same **Clarify output path**) with sections that can satisfy review-spec content predicates after `/silver:spec` compiles:
+Write the timestamped clarify brief (same **Clarify output path**) with sections that can satisfy review-spec content predicates after `/sb:spec` compiles:
 
 - **Overview** — who has the problem AND what the problem is (not a template placeholder)
 - **User Stories** — ≥1 story matching `As a [persona], I want to [action] so that [outcome].`
@@ -297,19 +297,19 @@ Write the timestamped clarify brief (same **Clarify output path**) with sections
 - **Data** — from Turn 8
 - **Open Questions** — from Turn 9 and Follow-up-required assumptions
 - **Source artifacts** — JIRA / Figma / doc URLs from context gathering
-- **Next step** — `/silver:spec` (compiler)
+- **Next step** — `/sb:spec` (compiler)
 
 Do **not** write SPEC.md / REQUIREMENTS.md from this capture.
 
-If `--chain` is set in `next=spec` mode, hand off to `/silver:spec` after the brief is written.
+If `--chain` is set in `next=spec` mode, hand off to `/sb:spec` after the brief is written.
 
 ## Multi-host `--auto` ladders (Pi / OpenCode)
 
-When `/silver:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails with OmniRoute/OpenCode `401` `Missing API key` (or `cannot_launch` / timeout) after **attempt + one retry**, substitute **Grok 4.6 High** (`sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Do not skip-failed. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host pi --attempts 2 --outcome cannot_launch`.
+When `/sb:clarify --auto` launches OpenCode or Pi rungs (including `PI_PROVIDER=omniroute` + `PI_MODEL=opencode-go/*` via `scripts/agent-pi/invoke.sh`): if launch fails with OmniRoute/OpenCode `401` `Missing API key` (or `cannot_launch` / timeout) after **attempt + one retry**, substitute **Grok 4.6 High** (`sb-grok-4-6-high`). Never Fast. Never Extra High as the unspecified default. Do not skip-failed. Encoder: `python3 scripts/review-fix-ladder.py --launch-policy --host pi --attempts 2 --outcome cannot_launch`.
 
 ## Exit Condition
 
 The brief is written, the decision boundary is clear, and the next SB lifecycle step is obvious.
 
-- Light FLOW 3: typically `silver:context` or `silver:plan`
-- `next=spec`: `/silver:spec` (compile canonical artifacts from this brief)
+- Light FLOW 3: typically `sb:context` or `sb:plan`
+- `next=spec`: `/sb:spec` (compile canonical artifacts from this brief)

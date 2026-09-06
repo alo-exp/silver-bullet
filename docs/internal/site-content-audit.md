@@ -12,17 +12,17 @@
 
 ## Executive Summary
 
-The Silver Bullet website is **significantly outdated**. The plugin has undergone a massive architectural revamp, adding 7 new orchestration skills, comprehensive user preferences system (§10), expanded /silver router, security hardening, and multi-step session initialization. The site content represents v0.12.x (roughly) and is missing ~30% of current functionality and ~50% of new enforcement features.
+The Silver Bullet website is **significantly outdated**. The plugin has undergone a massive architectural revamp, adding 7 new orchestration skills, comprehensive user preferences system (§10), expanded /sb router, security hardening, and multi-step session initialization. The site content represents v0.12.x (roughly) and is missing ~30% of current functionality and ~50% of new enforcement features.
 
 **Scope of Changes:**
 - 7 new orchestration skills completely missing from site
 - §2h (SB Orchestrated Workflows) routing table and orchestration descriptions missing
 - §10 (User Workflow Preferences) system completely missing
-- /silver router complexity triage and disambiguation tables missing
+- /sb router complexity triage and disambiguation tables missing
 - §0 session startup auto-update checks missing
 - §2g bare instruction interception missing
 - SENTINEL v0.13.0 security hardening (§1, verification-before-completion) missing
-- silver:update skill not documented
+- sb:update skill not documented
 - MultAI integration references missing
 
 **Estimated Scope:** 12-15 new/updated pages required; ~4,000-5,000 words of new content.
@@ -38,13 +38,13 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 **Impact:** These are the main entry points for 80% of user workflows
 
 **Missing documentation:**
-- `/silver:feature` — Feature development workflow (product-brainstorm → silver:brainstorm → quality-gates → GSD plan/execute/verify)
-- `/silver:bugfix` — Bug investigation and fixes (SB triage → systematic-debugging → gsd:debug)
-- `/silver:ui` — UI/UX work (intel → product-brainstorm → silver:brainstorm → gsd-ui-phase)
-- `/silver:devops` — Infrastructure and DevOps (intel → blast-radius → devops-skill-router)
-- `/silver:deep-research` — Technology decisions and spikes (silver:explore → MultAI → silver:brainstorm)
-- `/silver:release` — Release preparation (quality-gates → gsd-audit-uat → gsd-audit-milestone)
-- `/silver:fast` — Quick trivial tasks (gsd-fast)
+- `/sb:feature` — Feature development workflow (product-brainstorm → sb:brainstorm → quality-gates → GSD plan/execute/verify)
+- `/sb:bugfix` — Bug investigation and fixes (SB triage → systematic-debugging → gsd:debug)
+- `/sb:ui` — UI/UX work (intel → product-brainstorm → sb:brainstorm → gsd-ui-phase)
+- `/sb:devops` — Infrastructure and DevOps (intel → blast-radius → devops-skill-router)
+- `/sb:deep-research` — Technology decisions and spikes (sb:explore → MultAI → sb:brainstorm)
+- `/sb:release` — Release preparation (quality-gates → gsd-audit-uat → gsd-audit-milestone)
+- `/sb:fast` — Quick trivial tasks (gsd-fast)
 
 **Files to create:**
 - `site/help/workflows/silver-feature.html` — 800-1000 words
@@ -56,14 +56,14 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - `site/help/workflows/silver-fast.html` — 400-500 words
 
 **Files to update:**
-- `site/help/reference/index.html` — Add table of 7 orchestration skills (currently has only 4 skills listed: /silver, /silver:init, /quality-gates, /forensics)
+- `site/help/reference/index.html` — Add table of 7 orchestration skills (currently has only 4 skills listed: /sb, /sb:init, /quality-gates, /forensics)
 
-#### 2. /silver Router (Complexity Triage + Routing Table)
+#### 2. /sb Router (Complexity Triage + Routing Table)
 **Status:** Partially documented in reference; missing complexity triage logic and disambiguation rules  
-**Impact:** Users don't understand how to classify their work or when /silver routes to which skill
+**Impact:** Users don't understand how to classify their work or when /sb routes to which skill
 
 **Currently documented in site:**
-- Basic /silver description (router exists)
+- Basic /sb description (router exists)
 
 **Missing from site:**
 - Complexity triage (trivial/simple/complex/fuzzy classification)
@@ -76,7 +76,7 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - `site/help/concepts/routing-logic.html` — 1500-2000 words with tables and decision tree
 
 **Files to update:**
-- `site/help/reference/index.html` — Expand /silver section with routing table and triage logic
+- `site/help/reference/index.html` — Expand /sb section with routing table and triage logic
 
 #### 3. §10 User Workflow Preferences System
 **Status:** Completely missing from website  
@@ -113,17 +113,17 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 
 #### 5. §2g Bare Instruction Interception
 **Status:** Completely missing from website  
-**Impact:** Users don't understand why /silver router fires automatically or how bare instructions are classified
+**Impact:** Users don't understand why /sb router fires automatically or how bare instructions are classified
 
 **Missing documentation:**
 - What is a "bare instruction" vs a slash command
 - Which bare instructions trigger interception (non-trivial work messages)
 - Which messages are exempt (yes/no confirmations, pure questions, single-word acks)
-- How /silver is auto-invoked before any other response
+- How /sb is auto-invoked before any other response
 
 **Files to update:**
 - `site/help/concepts/index.html` — Add "Bare Instruction Interception" subsection under Core Concepts
-- `site/help/getting-started/index.html` — Explain automatic /silver routing with examples
+- `site/help/getting-started/index.html` — Explain automatic /sb routing with examples
 
 #### 6. SENTINEL Security Hardening (v0.13.0)
 **Status:** Only framework mentioned; specific hardening missing  
@@ -135,7 +135,7 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - Verification-before-completion enforcement (every plugin completion claim requires fresh verification)
 - §1 enforcement layers (updated from 8 to 10 layers)
 - Mode file added to state tamper prevention
-- silver:update SHA confirmation flow
+- sb:update SHA confirmation flow
 
 **Files to update:**
 - `site/help/concepts/index.html` — Expand "Enforcement layers" subsection
@@ -159,18 +159,18 @@ The Silver Bullet website is **significantly outdated**. The plugin has undergon
 - `site/help/reference/index.html` — Add /verification-before-completion skill to reference table
 - `site/help/concepts/index.html` — Add subsection on verification in Enforcement section
 
-#### 8. silver:update Skill
+#### 8. sb:update Skill
 **Status:** Not documented anywhere on website  
 **Impact:** Users don't know how to update Silver Bullet or that auto-update checks exist
 
 **Missing documentation:**
-- When silver:update is invoked (automatically at session start if outdated)
+- When sb:update is invoked (automatically at session start if outdated)
 - What it does (fetches latest version, requires commit SHA confirmation, updates plugin registry)
-- Manual invocation (user can run /silver:update anytime)
+- Manual invocation (user can run /sb:update anytime)
 - Rollback procedures if update breaks something
 
 **Files to update:**
-- `site/help/reference/index.html` — Add /silver:update to skill reference
+- `site/help/reference/index.html` — Add /sb:update to skill reference
 - `site/help/troubleshooting/index.html` — Add "Updating Silver Bullet" subsection
 
 #### 9. MultAI Integration References
@@ -418,7 +418,7 @@ Adds 12,000-15,000 words of new documentation across 9 new pages and 5 major pag
 2. Create routing-logic page (complexity triage, routing table)
 3. Create user-preferences page
 4. Create verification page
-5. Update reference/index.html (add orchestration table, routing, /verification-before-completion, /silver:update)
+5. Update reference/index.html (add orchestration table, routing, /verification-before-completion, /sb:update)
 6. Update concepts/index.html (add routing, verification, new layers, position tracking)
 7. Update getting-started/index.html (add session startup, bare instruction interception)
 8. Update help/index.html (add Advanced section navigation)
@@ -461,7 +461,7 @@ Adds 6,000-8,000 words across 5 new pages.
 - [ ] Audit .silver-bullet.json config options in README and plugin code
 - [ ] List all new enforcement hooks and their descriptions
 - [ ] Extract SENTINEL v2.3 security changes and hardening details
-- [ ] Identify all new skill references (/silver:update, /verification-before-completion, etc.)
+- [ ] Identify all new skill references (/sb:update, /verification-before-completion, etc.)
 
 ### Content Standards
 All new pages should:

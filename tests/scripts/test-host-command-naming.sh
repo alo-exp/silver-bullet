@@ -69,9 +69,9 @@ fi
 bad_fixture="$(mktemp -d)"
 trap 'rm -rf "$bad_fixture"' EXIT
 mkdir -p "$bad_fixture/plugins/silver-bullet/commands"
-cat >"$bad_fixture/plugins/silver-bullet/commands/silver:init.md" <<'EOF'
+cat >"$bad_fixture/plugins/silver-bullet/commands/sb:init.md" <<'EOF'
 ---
-name: "silver:init"
+name: "sb:init"
 ---
 EOF
 if python3 - "$bad_fixture" <<'PY' >/dev/null 2>&1
@@ -79,9 +79,9 @@ import subprocess, sys
 raise SystemExit(subprocess.call(["bash", "scripts/validate-host-skill-surface.sh", "--repo-root", sys.argv[1]]))
 PY
 then
-  fail "colon silver:init.md filename should fail validation"
+  fail "colon sb:init.md filename should fail validation"
 else
-  pass "colon silver:init.md filename fails validation"
+  pass "colon sb:init.md filename fails validation"
 fi
 
 echo ""

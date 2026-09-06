@@ -7,7 +7,7 @@ argument-hint: "<task brief> --output-root <dir> [--ocg-pool none|lite|regular] 
 version: 1.0.0
 ---
 
-# /silver:multi-ai-task — Multi-Model Task Primitive
+# /sb:multi-ai-task — Multi-Model Task Primitive
 
 **Catalog:** workflow `WF-SILVER-MULTI-AI-TASK` · atomic flow `AF-MULTI-AI-TASK` ·
 flow step `FS-SILVER_MULTI_AI_TASK` · spine `multi-ai-task-v2`.
@@ -81,4 +81,4 @@ Precedence: CLI > project `.silver-bullet/preferences.json` > global preferences
 
 ## Composition
 
-`/silver:deep-research-multi-ai` forwards neutral options only. No DR concepts leak into this skill.
+`/sb:deep-research-multi-ai` forwards neutral options only. No DR concepts leak into this skill.

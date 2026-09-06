@@ -26,7 +26,13 @@ if [[ ! -f "$CANONICAL" ]]; then
 fi
 
 mkdir -p "$(dirname "$SITE_COPY")"
-cp -f "$CANONICAL" "$SITE_COPY"
+# On case-insensitive filesystems, test redirects can make paths that differ
+# only by case resolve to the same inode; cp treats that as an error.
+if [[ -e "$SITE_COPY" && "$CANONICAL" -ef "$SITE_COPY" ]]; then
+  :
+else
+  cp -f "$CANONICAL" "$SITE_COPY"
+fi
 
 if command -v jq >/dev/null 2>&1; then
   jq -e '.hosts | length == 3' "$SITE_COPY" >/dev/null

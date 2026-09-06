@@ -68,7 +68,7 @@ bash scripts/validate-sentinel-skills-manifest.sh
 Markers live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state` and are cleared on session start.
 
 **Live-test wrapper/model policy:** Every live pre-release test must use the host-specific
-`/silver:agent-*` wrapper with the fixed mapping **Codex → GPT-5.6 Luna Low**,
+`/sb:agent-*` wrapper with the fixed mapping **Codex → GPT-5.6 Luna Low**,
 **Claude → Haiku 4.5**, and **Cursor → Composer 2.5**. Do not substitute raw host CLI
 runs or another model as release evidence. See
 [`docs/internal/pre-release-quality-gate.md`](internal/pre-release-quality-gate.md)
@@ -105,10 +105,10 @@ bash scripts/validate-github-release-notes.sh --tag vX.Y.Z
 After `gh release create`, run `scripts/validate-github-release-notes.sh` to reject
 generic bodies such as `See CHANGELOG.md for details.` Release notes must include
 categorized sections (Features, Fixes, and so on) directly in the GitHub Release
-artifact. The `silver:create-release` skill runs this validation in Step 7b.
+artifact. The `sb:create-release` skill runs this validation in Step 7b.
 
 Before the tag is created, the release commit must already be green. The
-`silver:create-release` skill waits for `bash scripts/verify-release-commit-ci.sh`
+`sb:create-release` skill waits for `bash scripts/verify-release-commit-ci.sh`
 and only then proceeds to `git tag` / `gh release create`. `completion-audit.sh`
 blocks `gh release create` until all `required_deploy` skills, pre-release quality
 gate markers (`adversarial-review-clean`, `sentinel-skills-clean`,
@@ -139,7 +139,7 @@ Release closure is mandatory only after the following have succeeded:
   - Claude via `scripts/install-claude.sh --purge-legacy-plugins --public-release`
   - Codex via `scripts/install-codex.sh --purge-legacy-skills --public-release`
 - Verify CI remained green on the release commit before the tag was created.
-- Confirm plugin cache update works via `/silver:update`.
+- Confirm plugin cache update works via `/sb:update`.
 - Update site if needed (Stage 4 public content should have covered this).
 - Keep the unified `alo-labs/agent-plugins` marketplace manifests aligned across Claude, Codex, and Cursor
   marketplaces aligned with the SB package boundary whenever versioned wrappers
@@ -148,7 +148,7 @@ Release closure is mandatory only after the following have succeeded:
 
 ## Plugin Update Mechanism
 
-Users update via `/silver:update` which:
+Users update via `/sb:update` which:
 1. Reads installed version from `${SB_RUNTIME_HOME_ROOT}/plugins/installed_plugins.json`
 2. Resolves GitHub repo from `package.json` in the cache
 3. Fetches latest release, compares versions

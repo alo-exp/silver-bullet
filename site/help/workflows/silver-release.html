@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:release — Milestone Release Workflow — Silver Bullet Help</title>
+<title>/sb:release — Milestone Release Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated milestone release workflow: quality gates → audits → docs → cross-artifact review → fresh tests → ship → complete milestone → create release.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,7 +88,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:release</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:release</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -98,8 +98,8 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:release</h1>
-    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>silver:ship</code>.</p>
+    <h1>/sb:release</h1>
+    <p>Milestone-level publish workflow — versioned releases, changelogs, documentation, GitHub Releases, and milestone archival. Distinct from phase-level <code>sb:ship</code>.</p>
   </div>
 </div>
 
@@ -126,14 +126,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
+      <p><code>/sb:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
       <p><strong>It never publishes directly — it orchestrates only.</strong> This workflow operates at the milestone level — it closes out a complete milestone, not a single phase.</p>
-      <p><code>silver:release</code> uses the <strong>v0.52.0 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>sb:release</code> uses the <strong>v0.52.0 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:release</code>:</p>
+      <p>Entry trigger signals for <code>/sb:release</code>:</p>
       <ul>
         <li>"release" / "publish" / "version" / "go live"</li>
         <li>"cut a release" / "tag v" / "ship to users" / "deploy to prod"</li>
@@ -143,16 +143,16 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="ship-disambiguation">Ship disambiguation</h2>
-      <p>Silver Bullet distinguishes between phase-level ship (<code>silver:ship</code>) and milestone-level release (<code>silver:release</code>) based on context signals:</p>
+      <p>Silver Bullet distinguishes between phase-level ship (<code>sb:ship</code>) and milestone-level release (<code>sb:release</code>) based on context signals:</p>
 
       <table class="ref-table">
         <thead><tr><th>Signal in your message</th><th>Route</th></tr></thead>
         <tbody>
-          <tr><td>Contains version number (v2.0, 1.4.0…)</td><td><code>silver:release</code></td></tr>
-          <tr><td>Contains "changelog" or "release notes"</td><td><code>silver:release</code></td></tr>
-          <tr><td>Contains "go live", "to production", "publicly"</td><td><code>silver:release</code></td></tr>
-          <tr><td>Active phase in progress, no version signal</td><td><code>silver:ship</code> (phase merge)</td></tr>
-          <tr><td>No active phase, end of milestone</td><td><code>silver:release</code></td></tr>
+          <tr><td>Contains version number (v2.0, 1.4.0…)</td><td><code>sb:release</code></td></tr>
+          <tr><td>Contains "changelog" or "release notes"</td><td><code>sb:release</code></td></tr>
+          <tr><td>Contains "go live", "to production", "publicly"</td><td><code>sb:release</code></td></tr>
+          <tr><td>Active phase in progress, no version signal</td><td><code>sb:ship</code> (phase merge)</td></tr>
+          <tr><td>No active phase, end of milestone</td><td><code>sb:release</code></td></tr>
         </tbody>
       </table>
 
@@ -165,7 +165,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
   → AF-QUALITY-GATE → AF-REVIEW-REQUEST → AF-REVIEW → AF-REVIEW-TRIAGE
   → AF-VERIFY → AF-SECURE → AF-VALIDATE
   → AF-BRANCH-FINISH → AF-COMPLETION-AUDIT → AF-SHIP
-  → AF-RELEASE → silver:create-release (last)</div>
+  → AF-RELEASE → sb:create-release (last)</div>
 
       <h3><code>AF-RELEASE</code> sub-steps</h3>
       <ul>
@@ -174,19 +174,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><strong>Gap closure</strong> — dynamic insertion of <code>AF-PLAN</code>, <code>AF-EXECUTE</code>, and <code>AF-DEBUG</code> repair atoms when the release V-gate finds missing work.</li>
         <li><strong>Documentation and handoff</strong> — <code>AF-DOCUMENT</code> updates durable docs and release handoff evidence.</li>
         <li><strong>Ship prep</strong> — <code>AF-BRANCH-FINISH</code> → <code>AF-COMPLETION-AUDIT</code> → <code>AF-SHIP</code>.</li>
-        <li><strong>Create release</strong> — <code>silver:create-release</code> runs after release V-loop evidence and milestone archival are complete.</li>
+        <li><strong>Create release</strong> — <code>sb:create-release</code> runs after release V-loop evidence and milestone archival are complete.</li>
       </ul>
 
       <h3 id="gap-closure">Gap-closure loop (max 2 iterations)</h3>
-      <p>When milestone audit finds gaps: <code>silver:plan</code> for gap phases → nested <code>silver:feature</code> per gap → return to <code>AF-QUALITY-GATE</code> pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
+      <p>When milestone audit finds gaps: <code>sb:plan</code> for gap phases → nested <code>sb:feature</code> per gap → return to <code>AF-QUALITY-GATE</code> pre-release quality gate. After 2 iterations with remaining gaps, SB presents: release anyway / extend milestone / abort.</p>
 
       <h3>Delivery tail (orchestrator parent mode)</h3>
-      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the catalog delivery tail runs automatically (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>silver:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
+      <p>When <code>orchestrator_mode</code> is <code>parent</code>, the catalog delivery tail runs automatically (<code>AF-QUALITY-GATE</code> → review → verify → secure → ship prep → <code>sb:create-release</code>). Audit, UAT, milestone, and gap-closure steps remain parent-driven.</p>
 
       <div class="divider"></div>
 
       <h2 id="four-stage-gate">4-Stage Pre-Release Quality Gate</h2>
-      <p>Before <code>/silver:create-release</code> or <code>gh release create</code>, the current session must complete all four stages in <code>docs/internal/pre-release-quality-gate.md</code> and record hook markers in <code>quality-gate-state</code>.</p>
+      <p>Before <code>/sb:create-release</code> or <code>gh release create</code>, the current session must complete all four stages in <code>docs/internal/pre-release-quality-gate.md</code> and record hook markers in <code>quality-gate-state</code>.</p>
       <table class="ref-table">
         <thead><tr><th>Stage</th><th>Requirement</th><th>Marker</th></tr></thead>
         <tbody>
@@ -210,11 +210,11 @@ bash tests/scripts/test-site-doc-freshness.sh</div>
         <div class="callout-body">
           <strong>These steps cannot be skipped regardless of §10 preferences or user request:</strong>
           <ul style="margin-top:8px">
-            <li><code>/silver:quality-gates</code> pre-release (<code>AF-QUALITY-GATE</code>)</li>
+            <li><code>/sb:quality-gates</code> pre-release (<code>AF-QUALITY-GATE</code>)</li>
             <li><code>/verify-tests</code> fresh release-session test run (<code>AF-VERIFY</code>)</li>
             <li><code>security</code> (<code>AF-SECURE</code>) is mandatory for every release</li>
-            <li><code>silver:ship</code> (<code>AF-SHIP</code>) must succeed before milestone archival</li>
-            <li><code>/silver:create-release</code> runs only after <code>AF-RELEASE</code> evidence and milestone archival</li>
+            <li><code>sb:ship</code> (<code>AF-SHIP</code>) must succeed before milestone archival</li>
+            <li><code>/sb:create-release</code> runs only after <code>AF-RELEASE</code> evidence and milestone archival</li>
           </ul>
         </div>
       </div>
@@ -222,18 +222,18 @@ bash tests/scripts/test-site-doc-freshness.sh</div>
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:release Cut v0.52.0</div>
-      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security hard gate → docs and milestone summary → cross-artifact review → deploy readiness → fresh tests → <code>silver:ship</code> → milestone archival → <code>/silver:create-release</code> → post-release items summary.</p>
+      <div class="code-block">/sb:release Cut v0.52.0</div>
+      <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security hard gate → docs and milestone summary → cross-artifact review → deploy readiness → fresh tests → <code>sb:ship</code> → milestone archival → <code>/sb:create-release</code> → post-release items summary.</p>
 
       <!-- PAGE NAV BOTTOM -->
       <div class="page-nav-bottom">
         <a href="./silver-deep-research.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:deep-research</span>
+          <span class="pnb-title">/sb:deep-research</span>
         </a>
         <a href="./silver-fast.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:fast</span>
+          <span class="pnb-title">/sb:fast</span>
         </a>
       </div>
 

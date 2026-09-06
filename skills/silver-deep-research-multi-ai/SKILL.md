@@ -2,24 +2,24 @@
 name: silver-deep-research-multi-ai
 description: >
   Opt-in multi-model deep research. Composes canonical silver-deep-research engine,
-  new /silver:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports.
+  new /sb:multi-ai-task primitive, and Cursor/OCG backends. Dual serverless HTML reports.
 argument-hint: "<research question> [--mode deep|ultradeep] [--research-type default|solution-landscape|solution-compare] [--dry-run]"
 version: 1.0.0
 ---
 
-# /silver:deep-research-multi-ai — Multi-Model Deep Research
+# /sb:deep-research-multi-ai — Multi-Model Deep Research
 
 **Catalog:** workflow `WF-SILVER-DEEP-RESEARCH-MULTI-AI` · flow step
 `FS-SILVER_DEEP_RESEARCH_MULTI_AI` · composes `AF-MULTI-AI-TASK` per eligible phase.
 
 Opt-in sibling of [`silver-deep-research`](../silver-deep-research/SKILL.md). Does **not**
-replace single-agent `/silver:deep-research` or revive removed `FS-SILVER_MULTI_AI` MultAI surfaces.
+replace single-agent `/sb:deep-research` or revive removed `FS-SILVER_MULTI_AI` MultAI surfaces.
 
 ## Architecture (locked)
 
 ```text
 Host DR controller (silver-deep-research instructions)
-  → per eligible phase: /silver:multi-ai-task (parallel lanes)
+  → per eligible phase: /sb:multi-ai-task (parallel lanes)
   → host validation + gates
   → DR-multi-AI deterministic consolidation
   → consolidated/ intermediates + report.html (+ landscape-report.html)

@@ -26,15 +26,15 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 | Hook scripts | `hooks/*.sh` | PostToolUse/PreToolUse enforcement — fire on every tool call |
 | Skill files | `skills/*/SKILL.md` | Declarative workflow instructions loaded through the active host's supported skill channel |
 | Workflow docs | `docs/workflows/` | Full per-session step-by-step procedures (active copies) |
-| Commands | `commands/` | `/silver:*` slash-command wrappers shipped inside the SB Codex bundle |
-| Templates | `templates/` | Bootstrap files copied during `/silver:init` setup |
+| Commands | `plugins/silver-bullet/commands/` | `/sb:*` slash-command wrappers for the Cursor package surface; Codex uses the native skill-source mirror |
+| Templates | `templates/` | Bootstrap files copied during `/sb:init` setup |
 | Codex bundle | `plugins/silver-bullet/` | Curated SB-only Codex package snapshot, refreshed from the repo root |
 | Codex installer | `scripts/install-codex.sh` | Registers the shared Codex marketplace and bootstraps official dependencies |
 | Unified agent marketplace | `https://github.com/alo-labs/agent-plugins` | Thin tri-host manifests; Codex entries fetch upstream at install time |
 | Live runtime matrix | `tests/live/` | Shared Claude/Codex E2E harness with runtime adapters |
 | Config | `.silver-bullet.json` | Project-level list of tracked/required skills |
 | State file | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/state` | Flat file recording invoked skills in this session |
-| Trivial flag | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy compatibility marker. Codex agents should route trivial work through `/silver:fast` instead of using the touch-file bypass. |
+| Trivial flag | `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/trivial` | Legacy compatibility marker. Codex agents should route trivial work through `/sb:fast` instead of using the touch-file bypass. |
 
 ### Key hooks
 
@@ -54,7 +54,7 @@ No server, no database — all state lives in flat files under `${SB_RUNTIME_HOM
 
 ### Fast Path
 
-Silver Bullet routes trivial changes through `/silver:fast`, which classifies the change
+Silver Bullet routes trivial changes through `/sb:fast`, which classifies the change
 and dispatches to SB's fast path without the full workflow overhead. The legacy touch-file
 marker remains only as a compatibility detail for older sessions, not as the supported
 Codex entry point.
@@ -80,7 +80,7 @@ Codex entry point.
 - `/.planning/` and `/.codex/` are project-instance artifacts, not plugin content.
 - `silver-bullet.md` is the project copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is a curated Codex snapshot, not a mirror of the whole repository.
-- `commands/` ships inside the SB bundle so Codex sees one Silver Bullet plugin, not a split command plugin.
+- `plugins/silver-bullet/commands/` ships inside the shared package for Cursor's command surface; the Codex manifest intentionally omits `commands` so Codex does not migrate stubs into `source-command-*` skills.
 - Third-party Codex wrappers for optional extensions belong in the shared marketplace and fetch upstream content at install time.
 
 ## Technology Choices
@@ -89,7 +89,7 @@ Codex entry point.
 |----------|--------|-----------|
 | Language | Bash | Pure Bash hooks and scripts; `jq` for JSON parsing (no Node.js runtime required) |
 | Config format | JSON | Machine-readable by hooks and CI; human-readable for customization |
-| Skill format | Markdown | Loaded through the active host's skill surface; Codex mirrors SB skills into the native `/Silver:` picker and records via the SB adapter |
+| Skill format | Markdown | Loaded through the active host's skill surface; Codex mirrors SB skills into the native `/SB:` picker and records via the SB adapter |
 | State format | Line-delimited text | `grep -q` lookups; append-only; trivially auditable |
 | CI | GitHub Actions | Target audience is GitHub repos; `gh` CLI integrates release workflow |
 | Codex packaging | Thin wrapper + install-time fetch | Keeps SB bundle SB-only while supporting third-party plugins that lack native Codex packaging |

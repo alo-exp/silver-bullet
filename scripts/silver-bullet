@@ -40,8 +40,25 @@ canonical_skill_name() {
     return
   fi
 
-  if [[ "$skill" == silver:* ]]; then
-    printf 'silver-%s' "${skill#silver:}"
+  if [[ "$skill" == sb:* ]]; then
+    printf 'silver-%s' "${skill#*:}"
+    return
+  fi
+  if [[ "$skill" == sb ]]; then
+    printf 'silver'
+    return
+  fi
+  if [[ "$skill" == sb-* ]]; then
+    printf 'silver-%s' "${skill#sb-}"
+    return
+  fi
+  if [[ "$skill" == silver ]]; then
+    printf 'silver'
+    return
+  fi
+  local namespace="${skill%%:*}"
+  if [[ "$skill" == *:* && "$namespace" == "silver" ]]; then
+    printf '%s' "$skill"
     return
   fi
   while [[ "$skill" == *:* ]]; do
@@ -89,6 +106,11 @@ find_skill_file() {
   for name in "$canonical_skill" "$raw_skill" "$short_skill"; do
     [[ -n "$name" ]] && candidate_names+=("$name")
   done
+  case "$raw_skill" in
+    silver-*)
+      candidate_names+=("sb:${raw_skill#silver-}" "sb-${raw_skill#silver-}")
+      ;;
+  esac
   if declare -F sb_required_skill_aliases >/dev/null 2>&1; then
     while IFS= read -r alias; do
       [[ -n "$alias" ]] && candidate_names+=("$alias")
@@ -177,6 +199,12 @@ invoke_skill() {
     usage >&2
     return 2
   fi
+  case "$raw_skill" in
+    silver:*)
+      printf 'ERROR: the retired silver: skill namespace is not supported; use sb:<route>\n' >&2
+      return 2
+      ;;
+  esac
   shift || true
   skill_arguments="$*"
 

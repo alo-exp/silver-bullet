@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any, Callable, Dict, Optional, Union
 
 FULL_NAME_RE = re.compile(r"^([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)$")
 GITHUB_URL_RE = re.compile(
@@ -24,7 +24,7 @@ def parse_github_full_name(value: str) -> tuple[str, str]:
     return m.group(1), m.group(2)
 
 
-BranchResolver = Callable[[str, str], str] | dict[str, str] | None
+BranchResolver = Optional[Union[Callable[[str, str], str], Dict[str, str]]]
 
 
 def resolve_default_branch(

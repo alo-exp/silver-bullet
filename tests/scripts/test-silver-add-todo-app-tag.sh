@@ -27,7 +27,7 @@ export PATH="${FAKE_BIN}:$PATH"
 export GH_LOG_FILE="$LOG_FILE"
 
 if ! grep -q "enterprise-test-app" "$SKILL_FILE"; then
-  echo "FAIL: silver:add skill does not require enterprise-test-app tagging yet"
+  echo "FAIL: sb:add skill does not require enterprise-test-app tagging yet"
   exit 1
 fi
 
@@ -36,7 +36,7 @@ source "${REPO_ROOT}/tests/e2e-live/lib/turn-driver.sh"
 file_enterprise_e2e_issue "Enterprise test app issue" "Problem discovered during the enterprise-grade-test-app live E2E journey." "enhancement"
 
 if ! grep -q -- '--label enterprise-test-app' "$LOG_FILE"; then
-  echo "FAIL: silver:add enterprise filing did not include enterprise-test-app label"
+  echo "FAIL: sb:add enterprise filing did not include enterprise-test-app label"
   echo "Captured gh args:"
   cat "$LOG_FILE"
   exit 1

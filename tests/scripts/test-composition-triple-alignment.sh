@@ -14,7 +14,7 @@ source "$LIB"
 
 normalize_token() {
   local t="$1"
-  t="${t#silver:}"
+  t="${t#sb:}"
   t="${t#silver-}"
   case "$t" in
     FLOW-QUALITY-GATE|FLOW-QUALITY-GATE-PRESHIP) t="quality-gates" ;;
@@ -75,8 +75,8 @@ parse_skill_pre_exec() {
     while IFS= read -r t; do
       [[ -z "$t" ]] && continue
       # silver-spec / clarify --spec are conditional when SPEC.md is absent, not default pre-exec.
-      [[ "$t" == "silver:spec" || "$t" == "spec" ]] && continue
-      [[ "$t" == "silver:clarify --spec" || "$t" == "clarify --spec" ]] && continue
+      [[ "$t" == "sb:spec" || "$t" == "spec" ]] && continue
+      [[ "$t" == "sb:clarify --spec" || "$t" == "clarify --spec" ]] && continue
       tokens+=("$t")
     done < <(printf '%s' "$line" | grep -oE '`[^`]+`' | tr -d '`')
   elif grep -q '^## Enforcement queue' "$skill"; then

@@ -6,10 +6,10 @@ argument-hint: "<scope> [--pack <pack>] [--mode quick|full|release]"
 version: 0.1.0
 ---
 
-# /silver:domain-audit - Domain Quality Contracts
+# /sb:domain-audit - Domain Quality Contracts
 
 SB-owned domain audit layer for specialized quality checks. It complements
-`silver:quality-gates`; it does not replace the 8 core quality dimensions,
+`sb:quality-gates`; it does not replace the 8 core quality dimensions,
 DevOps gates, security, review, or verification.
 
 Use this skill when the work touches a specialized surface where generic
@@ -62,9 +62,9 @@ Every finding must be normalized to the canonical cross-domain schema in
 | `severity` | `BLOCK`, `WARN`, or `INFO` |
 | `confidence` | `HIGH`, `MEDIUM`, or `LOW` based on direct evidence quality |
 | `evidence` | File path with line, command output, screenshot, trace, log, or artifact pointer |
-| `owner_workflow` | `silver:feature`, `silver:bugfix`, `silver:ui`, `silver:devops`, `silver:release`, or utility route |
+| `owner_workflow` | `sb:feature`, `sb:bugfix`, `sb:ui`, `sb:devops`, `sb:release`, or utility route |
 | `blocking_status` | `blocks ship`, `blocks release`, `does not block`, or `needs user decision` |
-| `backlog_decision` | `fixed now`, `filed via silver:add`, `accepted risk`, or `not applicable` |
+| `backlog_decision` | `fixed now`, `filed via sb:add`, `accepted risk`, or `not applicable` |
 
 Do not accept generic claims such as "looks good" or "tests pass" without the
 specific evidence pointer that made the claim true.
@@ -110,15 +110,15 @@ into this audit schema:
 
 | Capability request | Route | Domain packs |
 |---|---|---|
-| Test writing, E2E route discovery, test repair, test audit, test runtime, mutation challenge | `silver:test` | `test-health`, plus affected API/data/UI/performance packs |
-| Behavior-preserving refactors | `silver:refactor` | `code-health`, `structure-maintainability`, `test-health`, affected contract packs |
-| Worktree create/finish safety | `silver:worktree` | `structure-maintainability`, `ci-workflow`, `runtime-release` when shipping |
-| Deployment | `silver:deploy` | `ci-workflow`, `environment-secrets`, `runtime-release` |
-| Post-deploy canary/runtime watch | `silver:canary` | `runtime-release`, affected API/UI/performance packs |
-| Incident response and postmortem | `silver:incident` | `incident-retro`, affected runtime/API/data/security packs |
-| Engineering retrospective | `silver:retro` | `incident-retro`, `benchmark-eval` when tool/provider performance matters |
-| Agent/model/provider/approach evaluation | `silver:benchmark` | `benchmark-eval` |
-| Content, SEO, AI-search, migration, optimization, article work | `silver:content` | `content-search`, plus accessibility/UI/performance where rendered |
+| Test writing, E2E route discovery, test repair, test audit, test runtime, mutation challenge | `sb:test` | `test-health`, plus affected API/data/UI/performance packs |
+| Behavior-preserving refactors | `sb:refactor` | `code-health`, `structure-maintainability`, `test-health`, affected contract packs |
+| Worktree create/finish safety | `sb:worktree` | `structure-maintainability`, `ci-workflow`, `runtime-release` when shipping |
+| Deployment | `sb:deploy` | `ci-workflow`, `environment-secrets`, `runtime-release` |
+| Post-deploy canary/runtime watch | `sb:canary` | `runtime-release`, affected API/UI/performance packs |
+| Incident response and postmortem | `sb:incident` | `incident-retro`, affected runtime/API/data/security packs |
+| Engineering retrospective | `sb:retro` | `incident-retro`, `benchmark-eval` when tool/provider performance matters |
+| Agent/model/provider/approach evaluation | `sb:benchmark` | `benchmark-eval` |
+| Content, SEO, AI-search, migration, optimization, article work | `sb:content` | `content-search`, plus accessibility/UI/performance where rendered |
 
 ## Critical Gate Catalog
 
@@ -149,7 +149,7 @@ and a tracked follow-up.
 - deploy artifact maps to the reviewed commit, tag, or build output;
 - health checks cover user-critical paths, not just process liveness;
 - rollback path is known and usable before production exposure;
-- production-impacting failures become `silver:incident`, not hidden warnings.
+- production-impacting failures become `sb:incident`, not hidden warnings.
 
 ## Process
 
@@ -168,14 +168,14 @@ and a tracked follow-up.
    - `WARN`: real risk that can ship only with conscious acceptance or tracked
      follow-up.
    - `INFO`: useful observation with no current delivery risk.
-7. File every deferred `WARN` or accepted-risk `BLOCK` through `silver:add`.
+7. File every deferred `WARN` or accepted-risk `BLOCK` through `sb:add`.
    Record the issue/backlog ID in `backlog_decision`.
 8. Feed the result back into the owning workflow:
-   - `silver:quality-gates` consumes selected domain pack results as conditional
+   - `sb:quality-gates` consumes selected domain pack results as conditional
      gate rows.
-   - `silver:review` consumes code/API/data/structure findings.
-   - `silver:verify` consumes test, runtime, and benchmark evidence.
-   - `silver:release` consumes runtime-release, content-search, incident-retro,
+   - `sb:review` consumes code/API/data/structure findings.
+   - `sb:verify` consumes test, runtime, and benchmark evidence.
+   - `sb:release` consumes runtime-release, content-search, incident-retro,
      and benchmark-eval findings.
 
 ## Pack Result Rules
@@ -189,7 +189,7 @@ and a tracked follow-up.
 ## Exit Gate
 
 The domain audit passes only when all selected packs have a result and every
-deferred item has a `silver:add` ID or an explicit "fixed now" decision.
+deferred item has a `sb:add` ID or an explicit "fixed now" decision.
 
 Do not proceed to ship or release with a `BLOCK` result unless the owning
 workflow explicitly supports a documented known-issue release decision and the

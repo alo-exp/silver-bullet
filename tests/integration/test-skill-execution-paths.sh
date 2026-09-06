@@ -59,65 +59,65 @@ is_external_skill() {
   return 1
 }
 
-# Resolve silver: alias to the real skill name (internal or external)
+# Resolve sb: alias to the real skill name (internal or external)
 resolve_silver_alias() {
   local name="$1"
   local cmd="${name%% *}"
   case "$cmd" in
-    silver:scan)                echo "silver-scan" ;;
-    silver:spec)                echo "silver-spec" ;;
-    silver:clarify)             echo "silver-clarify" ;;
-    silver:context)             echo "silver-context" ;;
-    silver:plan)                echo "silver-plan" ;;
-    silver:execute)             echo "silver-execute" ;;
-    silver:verify)              echo "silver-verify" ;;
-    silver:ship)                echo "silver-ship" ;;
-    silver:review-request)      echo "silver-review-request" ;;
-    silver:review)              echo "silver-review" ;;
-    silver:review-triage)       echo "silver-review-triage" ;;
-    silver:secure)              echo "silver-secure" ;;
-    silver:ui-contract)         echo "silver-ui-contract" ;;
-    silver:ui-review)           echo "silver-ui-review" ;;
-    silver:debug)               echo "silver-debug" ;;
-    silver:completion-audit)    echo "silver-completion-audit" ;;
-    silver:branch-finish)       echo "silver-branch-finish" ;;
-    silver:ensure-docs)         echo "silver-ensure-docs" ;;
-    silver:handoff)             echo "silver-handoff" ;;
-    silver:tdd)                 echo "tdd" ;;
-    silver:request-review)      echo "silver-review-request" ;;
-    silver:receive-review)      echo "silver-review-triage" ;;
-    silver:quality-gates)       echo "silver-quality-gates" ;;
-    silver:silver-quality-gates) echo "silver-quality-gates" ;;
-    silver:security)            echo "security" ;;
-    silver:fast)                echo "silver-fast" ;;
-    silver:feature)             echo "silver-feature" ;;
-    silver:devops)              echo "silver-devops" ;;
-    silver:bugfix)              echo "silver-bugfix" ;;
-    silver:deep-research)       echo "silver-deep-research" ;;
-    silver:release)             echo "silver-release" ;;
-    silver:test)                echo "silver-test" ;;
-    silver:deploy)              echo "silver-deploy" ;;
-    silver:canary)              echo "silver-canary" ;;
-    silver:incident)            echo "silver-incident" ;;
-    silver:retro)               echo "silver-retro" ;;
-    silver:benchmark)           echo "silver-benchmark" ;;
-    silver:content)             echo "silver-content" ;;
-    silver:refactor)            echo "silver-refactor" ;;
-    silver:worktree)            echo "silver-worktree" ;;
-    silver:forensics)           echo "silver-forensics" ;;
-    silver:silver-forensics)    echo "silver-forensics" ;;
-    silver:validate)            echo "silver-validate" ;;
-    silver:blast-radius)        echo "silver-blast-radius" ;;
-    silver:silver-blast-radius) echo "silver-blast-radius" ;;
-    silver:agent-codex)         echo "silver-agent-codex" ;;
-    silver:agent-cursor)        echo "silver-agent-cursor" ;;
-    silver:agent-claude)        echo "silver-agent-claude" ;;
-    silver:agent-opencode)      echo "silver-agent-opencode" ;;
-    silver:agent-pi)            echo "silver-agent-pi" ;;
-    silver:devops-skill-router) echo "devops-skill-router" ;;
-    silver:devops-quality-gates) echo "devops-quality-gates" ;;
-    silver:create-release)      echo "silver-create-release" ;;
-    silver:silver-create-release) echo "silver-create-release" ;;
+    sb:scan)                echo "silver-scan" ;;
+    sb:spec)                echo "silver-spec" ;;
+    sb:clarify)             echo "silver-clarify" ;;
+    sb:context)             echo "silver-context" ;;
+    sb:plan)                echo "silver-plan" ;;
+    sb:execute)             echo "silver-execute" ;;
+    sb:verify)              echo "silver-verify" ;;
+    sb:ship)                echo "silver-ship" ;;
+    sb:review-request)      echo "silver-review-request" ;;
+    sb:review)              echo "silver-review" ;;
+    sb:review-triage)       echo "silver-review-triage" ;;
+    sb:secure)              echo "silver-secure" ;;
+    sb:ui-contract)         echo "silver-ui-contract" ;;
+    sb:ui-review)           echo "silver-ui-review" ;;
+    sb:debug)               echo "silver-debug" ;;
+    sb:completion-audit)    echo "silver-completion-audit" ;;
+    sb:branch-finish)       echo "silver-branch-finish" ;;
+    sb:ensure-docs)         echo "silver-ensure-docs" ;;
+    sb:handoff)             echo "silver-handoff" ;;
+    sb:tdd)                 echo "tdd" ;;
+    sb:request-review)      echo "silver-review-request" ;;
+    sb:receive-review)      echo "silver-review-triage" ;;
+    sb:quality-gates)       echo "silver-quality-gates" ;;
+    sb:silver-quality-gates) echo "silver-quality-gates" ;;
+    sb:security)            echo "security" ;;
+    sb:fast)                echo "silver-fast" ;;
+    sb:feature)             echo "silver-feature" ;;
+    sb:devops)              echo "silver-devops" ;;
+    sb:bugfix)              echo "silver-bugfix" ;;
+    sb:deep-research)       echo "silver-deep-research" ;;
+    sb:release)             echo "silver-release" ;;
+    sb:test)                echo "silver-test" ;;
+    sb:deploy)              echo "silver-deploy" ;;
+    sb:canary)              echo "silver-canary" ;;
+    sb:incident)            echo "silver-incident" ;;
+    sb:retro)               echo "silver-retro" ;;
+    sb:benchmark)           echo "silver-benchmark" ;;
+    sb:content)             echo "silver-content" ;;
+    sb:refactor)            echo "silver-refactor" ;;
+    sb:worktree)            echo "silver-worktree" ;;
+    sb:forensics)           echo "silver-forensics" ;;
+    sb:silver-forensics)    echo "silver-forensics" ;;
+    sb:validate)            echo "silver-validate" ;;
+    sb:blast-radius)        echo "silver-blast-radius" ;;
+    sb:silver-blast-radius) echo "silver-blast-radius" ;;
+    sb:agent-codex)         echo "silver-agent-codex" ;;
+    sb:agent-cursor)        echo "silver-agent-cursor" ;;
+    sb:agent-claude)        echo "silver-agent-claude" ;;
+    sb:agent-opencode)      echo "silver-agent-opencode" ;;
+    sb:agent-pi)            echo "silver-agent-pi" ;;
+    sb:devops-skill-router) echo "devops-skill-router" ;;
+    sb:devops-quality-gates) echo "devops-quality-gates" ;;
+    sb:create-release)      echo "silver-create-release" ;;
+    sb:silver-create-release) echo "silver-create-release" ;;
     *)                          echo "$cmd" ;;
   esac
 }
@@ -192,7 +192,7 @@ for skill in "${COMPOSER_SKILLS[@]}"; do
 
   if [[ "$skill" == "silver-fast" ]]; then
     check "$skill: documents Tier 2 composition slice" \
-      "$([[ "$(grep -F 'quality-gates' "$skill_file" | grep -F 'silver:plan' | head -1)" ]] && echo pass || echo fail)"
+      "$([[ "$(grep -F 'quality-gates' "$skill_file" | grep -F 'sb:plan' | head -1)" ]] && echo pass || echo fail)"
   else
     check "$skill: declares Standard composition chain" \
       "$([[ "$(grep -F 'Standard composition chain' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
@@ -202,7 +202,7 @@ for skill in "${COMPOSER_SKILLS[@]}"; do
     check "$skill: non-skippable section mentions security" \
       "$([[ "$(grep -i 'security' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
     check "$skill: non-skippable section mentions verify" \
-      "$([[ "$(grep -iE 'silver:verify|silver-verify|verify-tests' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
+      "$([[ "$(grep -iE 'sb:verify|silver-verify|verify-tests' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
     check "$skill: non-skippable section mentions quality gates" \
       "$([[ "$(grep -iE 'quality-gates|devops-quality-gates' "$skill_file" | head -1)" ]] && echo pass || echo fail)"
   fi
@@ -222,20 +222,20 @@ for skill in "${COMPOSER_SKILLS[@]}"; do
 done
 
 SF="$SKILLS_DIR/silver-feature/SKILL.md"
-check "silver-feature: documents conditional silver:spec when SPEC.md absent" \
-  "$([[ "$(grep -F 'silver:spec' "$SF" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
+check "silver-feature: documents conditional sb:spec when SPEC.md absent" \
+  "$([[ "$(grep -F 'sb:spec' "$SF" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
 
 SUI="$SKILLS_DIR/silver-ui/SKILL.md"
-check "silver-ui: documents conditional silver:spec when SPEC absent" \
-  "$([[ "$(grep -F 'silver:spec' "$SUI" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
+check "silver-ui: documents conditional sb:spec when SPEC absent" \
+  "$([[ "$(grep -F 'sb:spec' "$SUI" | grep -iE 'SPEC\.md|SPEC absent' | head -1)" ]] && echo pass || echo fail)"
 
 SFAST="$SKILLS_DIR/silver-fast/SKILL.md"
-check "silver-fast: Tier 2 always requires silver:validate" \
-  "$([[ "$(grep -F 'silver:validate' "$SFAST" | grep -E 'Always invoke|always invoke' | head -1)" ]] && echo pass || echo fail)"
+check "silver-fast: Tier 2 always requires sb:validate" \
+  "$([[ "$(grep -F 'sb:validate' "$SFAST" | grep -E 'Always invoke|always invoke' | head -1)" ]] && echo pass || echo fail)"
 check "silver-fast: SessionStart clears trivial marker (not creates)" \
   "$([[ "$(grep -F 'SessionStart clears any stale' "$SFAST")" ]] && echo pass || echo fail)"
 check "silver-fast: Tier 2 deploy chain documents security and completion-audit" \
-  "$([[ "$(grep -F 'security → silver:secure' "$SFAST")" && "$(grep -F 'silver:completion-audit' "$SFAST")" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -F 'security → sb:secure' "$SFAST")" && "$(grep -F 'sb:completion-audit' "$SFAST")" ]] && echo pass || echo fail)"
 check "silver-fast: Tier 2 documents plan-only validate without SPEC" \
   "$([[ "$(grep -F 'plan-only mode' "$SFAST")" ]] && echo pass || echo fail)"
 
@@ -298,7 +298,7 @@ check "silver-fast: Tier 2 orchestrator queue ends at verify" \
 
 SBF="$SKILLS_DIR/silver-bugfix/SKILL.md"
 check "silver-bugfix: documents debug before plan in enforcement queue" \
-  "$([[ "$(grep -F 'silver:debug' "$SBF" | head -1)" && "$(grep -F 'silver:plan' "$SBF" | head -1)" ]] && echo pass || echo fail)"
+  "$([[ "$(grep -F 'sb:debug' "$SBF" | head -1)" && "$(grep -F 'sb:plan' "$SBF" | head -1)" ]] && echo pass || echo fail)"
 
 SCL="$SKILLS_DIR/silver-create-release/SKILL.md"
 rel_ci_gate_line=$(grep -n "verify-release-commit-ci.sh" "$SCL" | head -1 | cut -d: -f1 || echo 0)
@@ -377,36 +377,36 @@ for skill_dir in "$SKILLS_DIR"/*/; do
 done
 
 echo ""
-echo "--- silver: alias -> skill directory checks ---"
+echo "--- sb: alias -> skill directory checks ---"
 
 # Use parallel arrays to avoid associative array key issues with colons
 ALIAS_NAMES=(
-  "silver:silver-quality-gates"
-  "silver:security"
-  "silver:fast"
-  "silver:feature"
-  "silver:devops"
-  "silver:bugfix"
-  "silver:deep-research"
-  "silver:release"
-  "silver:silver-forensics"
-  "silver:validate"
-  "silver:silver-blast-radius"
-  "silver:devops-skill-router"
-  "silver:devops-quality-gates"
-  "silver:silver-create-release"
-  "silver:handoff"
-  "silver:context"
-  "silver:plan"
-  "silver:execute"
-  "silver:verify"
-  "silver:ship"
-  "silver:review-request"
-  "silver:review"
-  "silver:review-triage"
-  "silver:secure"
-  "silver:completion-audit"
-  "silver:branch-finish"
+  "sb:silver-quality-gates"
+  "sb:security"
+  "sb:fast"
+  "sb:feature"
+  "sb:devops"
+  "sb:bugfix"
+  "sb:deep-research"
+  "sb:release"
+  "sb:silver-forensics"
+  "sb:validate"
+  "sb:silver-blast-radius"
+  "sb:devops-skill-router"
+  "sb:devops-quality-gates"
+  "sb:silver-create-release"
+  "sb:handoff"
+  "sb:context"
+  "sb:plan"
+  "sb:execute"
+  "sb:verify"
+  "sb:ship"
+  "sb:review-request"
+  "sb:review"
+  "sb:review-triage"
+  "sb:secure"
+  "sb:completion-audit"
+  "sb:branch-finish"
 )
 ALIAS_TARGETS=(
   "silver-quality-gates"

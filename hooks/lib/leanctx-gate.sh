@@ -309,7 +309,7 @@ sb_leanctx_prompt_reminder_line() {
       ;;
     enabled)
       if sb_recommended_tool_enforcement_suspended "$config_file" "leanctx"; then
-        printf '%s' "LeanCTX: opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+        printf '%s' "LeanCTX: opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
       elif ! sb_leanctx_cli_available "$config_file"; then
         printf '%s' "LeanCTX: CLI missing — install lean-ctx; hooks block substantive work until wired."
       elif ! sb_leanctx_platform_artifact_present "$project_root" "$host"; then

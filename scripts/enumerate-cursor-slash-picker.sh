@@ -137,7 +137,7 @@ def enumerate_surface(root: Path) -> dict[str, object]:
     if manifest.get("commands") and commands_dir.is_dir():
         for path in sorted(commands_dir.glob("*.md")):
             name = parse_frontmatter(path).get("name", "").strip() or path.stem
-            route = f"/{name}" if name != "silver" else "/silver"
+            route = f"/{name}" if name not in {"silver", "sb"} else "/sb"
             if ":" in path.name:
                 bad_colon.append(f"{path.name}: colon-bearing command filename is not desktop-safe")
             elif name != path.stem or ":" in name:
@@ -149,7 +149,7 @@ def enumerate_surface(root: Path) -> dict[str, object]:
     if skills_root and skills_root.is_dir():
         for skill_md in sorted(skills_root.glob("*/SKILL.md")):
             name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
-            route = f"/{name}" if name != "silver" else "/silver"
+            route = f"/{name}" if name not in {"silver", "sb"} else "/sb"
             subagents.append(
                 {
                     "route": route,
@@ -192,7 +192,7 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
 
     def add_skill_entry(skill_md: Path, surface: str) -> None:
         name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
-        route = f"/{name}" if name != "silver" else "/silver"
+        route = f"/{name}" if name not in {"silver", "sb"} else "/sb"
         entry = {
             "route": route,
             "name": name,
@@ -203,7 +203,7 @@ def enumerate_workspace(root: Path) -> dict[str, object]:
             ignored.append(entry)
             return
         subagents.append(entry)
-        if name != "silver" and not name.startswith("silver:"):
+        if name not in {"silver", "sb"} and not name.startswith("sb:"):
             bad_colon.append(f"{skill_md.parent.relative_to(root)}: name={name!r}")
 
     if skills_root and skills_root.is_dir():
@@ -244,7 +244,7 @@ def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
     entries: list[dict[str, str]] = []
     for skill_md in sorted(root.glob("**/SKILL.md")):
         name = parse_frontmatter(skill_md).get("name", "").strip() or skill_md.parent.name
-        if name.startswith("silver:") or name.startswith("silver-"):
+        if name.startswith("sb:") or name.startswith("silver-"):
             entries.append({"name": name, "file": str(skill_md.relative_to(root))})
     for path in sorted(root.glob("**/*")):
         if not path.is_file() or path.name == "SKILL.md":
@@ -254,7 +254,7 @@ def enumerate_global_custom_agents(root: Path) -> list[dict[str, str]]:
         text = path.read_text(errors="ignore")
         meta = parse_frontmatter(path)
         name = meta.get("name") or meta.get("title") or path.stem
-        if name.startswith("silver:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:
+        if name.startswith("sb:") or name.startswith("silver-") or "Silver Bullet" in text[:2000]:
             entries.append({"name": name, "file": str(path.relative_to(root))})
     return entries
 

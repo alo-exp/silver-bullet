@@ -176,7 +176,7 @@ fi
 # H1: two-tier display. During development show only the planning floor (the
 # gate that actually applies at Stop). Surface the full required_deploy list
 # only when delivery is imminent — either the prompt signals delivery (ship /
-# PR / release / deploy / merge) or the build is already done (silver:execute
+# PR / release / deploy / merge) or the build is already done (sb:execute
 # recorded), so the next gate the user hits is the delivery gate.
 delivery_adjacent=false
 if [[ -n "$prompt" ]] && declare -F sb_prompt_is_delivery_adjacent >/dev/null 2>&1; then
@@ -327,7 +327,7 @@ if [[ -n "$prompt" ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>
           bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
 
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
-First action (parent mode): invoke the Skill tool with skill \"silver\" (prefer Skill over Bash invoke-skill).
+First action (parent mode): invoke the Skill tool with skill \"sb\" (prefer Skill over Bash invoke-skill).
 
 Router context: ${prompt}
 
@@ -340,7 +340,7 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
 First action: invoke the Silver router through the Codex SB adapter:
 
-  \"${silver_bullet_adapter}\" invoke-skill silver ${quoted_prompt}
+  \"${silver_bullet_adapter}\" invoke-skill sb ${quoted_prompt}
 
 Router context: ${prompt}
 
@@ -351,7 +351,7 @@ Do not inspect, edit, run tests, or implement directly before routing. After loa
         bare_prompt_context="SILVER BULLET ► BARE PROMPT INTERCEPTED
 
 This is non-trivial user work expressed as a bare prompt, not an explicit skill command.
-First action: invoke the Skill tool with skill \"silver\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
+First action: invoke the Skill tool with skill \"sb\" (Claude/Cursor). Do not use Codex invoke-skill branding on this host.
 
 Router context: ${prompt}
 
@@ -413,7 +413,7 @@ elif [[ -f "$core_rules_file" ]]; then
       core_content="$(sb_core_rules_integrity_warning)"
     fi
   else
-    core_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin."
+    core_content="⚠️ core-rules.md integrity check unavailable — enforcement rules were not injected. Run /sb:init or reinstall the Silver Bullet plugin."
   fi
   if [[ -n "$core_content" ]]; then
     msg="${core_content}

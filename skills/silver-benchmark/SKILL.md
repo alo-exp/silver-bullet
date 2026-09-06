@@ -8,7 +8,7 @@ argument-hint: "<benchmark task> [--providers <list>] [--rounds N]"
 version: 0.1.0
 ---
 
-# /silver:benchmark - Agent And Approach Evaluation
+# /sb:benchmark - Agent And Approach Evaluation
 
 SB-owned benchmark workflow for repeatable evaluation. External providers may
 enrich the run only when installed and requested; SB owns the fixture, scoring,
@@ -16,9 +16,9 @@ evidence, and final decision.
 
 **Pre-execution** (blocks benchmark runs until recorded):
 
-`silver:context` → `silver:plan`
+`sb:context` → `sb:plan`
 
-**Post-execution:** `silver:execute` → `silver:verify` → `silver:ensure-docs`
+**Post-execution:** `sb:execute` → `sb:verify` → `sb:ensure-docs`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-benchmark` composer).
 
@@ -46,8 +46,8 @@ The report must include:
    limitation.
 5. Use an adversarial review pass for top candidates when the result will
    influence architecture, release, security, or high-cost work.
-6. Invoke or apply `silver:domain-audit --pack benchmark-eval`.
-7. Normalize findings into `silver:review` or `silver:deep-research` when the
+6. Invoke or apply `sb:domain-audit --pack benchmark-eval`.
+7. Normalize findings into `sb:review` or `sb:deep-research` when the
    benchmark drives implementation.
 
 ## Exit Gate

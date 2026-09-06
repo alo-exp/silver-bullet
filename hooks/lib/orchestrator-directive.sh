@@ -333,8 +333,8 @@ sb_orchestrator_directive_from_pending_outcome() {
   local oid skill reason
   oid="$(jq -r '[.outcomes[] | select(.status != "done")][0].id // ""' "$outfile" 2>/dev/null || true)"
   case "$oid" in
-    route) skill="silver"; reason="Per-prompt outcome: route via /silver" ;;
-    scope) skill="silver-context"; reason="Per-prompt outcome: define scope via silver:context" ;;
+    route) skill="silver"; reason="Per-prompt outcome: route via /sb" ;;
+    scope) skill="silver-context"; reason="Per-prompt outcome: define scope via sb:context" ;;
     verify) skill="silver-verify"; reason="Per-prompt outcome: run verification before completion" ;;
     *) return 0 ;;
   esac

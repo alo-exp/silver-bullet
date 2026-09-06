@@ -66,9 +66,9 @@ build_matrix_prompt() {
       "$route" "$prompt_card"
     return 0
   fi
-  local workflow_route="/silver"
+  local workflow_route="/sb"
   if [[ "$(enterprise_e2e_matrix_host)" == "codex" ]]; then
-    workflow_route="$(enterprise_e2e_matrix_host_route "/silver")"
+    workflow_route="$(enterprise_e2e_matrix_host_route "/sb")"
   fi
   matrix_router_workflow_prompt "$slug" "$prompt_card" "$evidence_path" "$workflow_route"
 }
@@ -98,7 +98,7 @@ verify_row_routing_state_delta() {
   printf '%s\n' "$new_skills" | grep -qE '^(silver-feature|silver-fast|silver-clarify|silver-context|silver-quality-gates)$'
 }
 
-row1_prompt="$(build_matrix_prompt '/silver' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1')"
+row1_prompt="$(build_matrix_prompt '/sb' 'I need to add order validation to the API — route me.' '.planning/workflows/router-session.md' '1')"
 if [[ "$row1_prompt" == *"routing validation only"* && "$row1_prompt" != *"Create workflow evidence"* ]]; then
   echo "PASS: row 1 prompt is routing-only"
   ((PASS++)) || true

@@ -7,7 +7,7 @@ version: 0.1.0
 
 > **Recommended model:** Use the active host default. Quality gates are structured checklist evaluation, and Silver Bullet does not switch models automatically.
 
-# /silver:quality-gates — Consolidated Quality Review
+# /sb:quality-gates — Consolidated Quality Review
 
 Applies Silver Bullet's quality dimensions in sequence. Operates in **dual-mode**: design-time checklist when run pre-plan, or adversarial audit when run pre-ship. Mode is auto-detected from artifact state — no manual configuration required.
 
@@ -31,7 +31,7 @@ for candidate in \
 done
 ```
 
-Do not require dimension helper skills to appear in the host skill picker. They are implementation dependencies of `silver:quality-gates`, not user-facing routes.
+Do not require dimension helper skills to appear in the host skill picker. They are implementation dependencies of `sb:quality-gates`, not user-facing routes.
 
 If any required dimension source is unavailable, first repair the missing dependency from its marketplace source before any fallback:
 
@@ -62,10 +62,10 @@ Detect operating mode from artifact state before loading dimension skills.
 
 **Therefore both invocations are mandatory and non-substitutable:**
 
-- The pre-plan (design-time) run does **not** satisfy the pre-ship gate, even though the marker already exists. The orchestrating flow skill (`silver:feature` Step 13, `silver:ui` Step 13, `silver:devops` Step 10, `silver:bugfix` Step 7b) MUST run this skill **again** in adversarial mode before ship (the pre-ship quality gate) — never skip it on the grounds that "quality-gates already ran".
+- The pre-plan (design-time) run does **not** satisfy the pre-ship gate, even though the marker already exists. The orchestrating flow skill (`sb:feature` Step 13, `sb:ui` Step 13, `sb:devops` Step 10, `sb:bugfix` Step 7b) MUST run this skill **again** in adversarial mode before ship (the pre-ship quality gate) — never skip it on the grounds that "quality-gates already ran".
 - When this skill detects **adversarial mode** (PLAN.md + VERIFICATION.md passed), it is the pre-ship run; treat a clean result as the ship gate, not the planning gate.
 - `record-skill` also writes distinguishable mode markers: `silver-quality-gates-design` / `silver-quality-gates-adversarial` (product) or `devops-quality-gates-design` / `devops-quality-gates-adversarial` (devops-cycle). Delivery gates require the adversarial marker when substantive passed `VERIFICATION.md` exists.
-- The separate 4-stage **pre-release** quality sequence (`quality-gate-stage-1..4` + `full-test-suite-rerun` in the `quality_gate_state_file`) is enforced independently by `completion-audit.sh` for `silver:release`/`gh release create` and is **not** the same as this skill's pre-ship run.
+- The separate 4-stage **pre-release** quality sequence (`quality-gate-stage-1..4` + `full-test-suite-rerun` in the `quality_gate_state_file`) is enforced independently by `completion-audit.sh` for `sb:release`/`gh release create` and is **not** the same as this skill's pre-ship run.
 
 ---
 
@@ -103,7 +103,7 @@ Work through all items. For each checklist item mark it:
 ## Step 2b: Conditional Domain Packs
 
 After the 8 core dimensions, determine whether specialized domain packs apply.
-When any trigger matches, invoke or apply `silver:domain-audit` for the selected
+When any trigger matches, invoke or apply `sb:domain-audit` for the selected
 pack set and include its pack results as conditional rows in the quality report.
 
 | Trigger | Domain packs |
@@ -120,9 +120,9 @@ pack set and include its pack results as conditional rows in the quality report.
 | Release/deploy/canary/rollback/incident/retro/benchmark scope | `runtime-release`, `incident-retro`, `benchmark-eval` as applicable |
 
 Domain pack findings use the normalized schema from `docs/evidence-schema.md`
-and `silver:domain-audit`.
+and `sb:domain-audit`.
 Unresolved `BLOCK` findings are hard-stop quality-gate failures. Deferred
-`WARN` findings must be filed through `silver:add` before this gate can pass.
+`WARN` findings must be filed through `sb:add` before this gate can pass.
 
 Validate normalized finding rows when the helper is available:
 
@@ -150,7 +150,7 @@ Output a report in this format:
 | Testability   | ✅/❌  | ...   |
 | Extensibility | ✅/❌  | ...   |
 | AI/LLM Safety | ✅/❌/N/A | included only when applicable |
-| Domain Packs  | ✅/❌/N/A | selected `silver:domain-audit` packs and result |
+| Domain Packs  | ✅/❌/N/A | selected `sb:domain-audit` packs and result |
 
 ### Failures requiring redesign
 [List each ❌ item with the specific rule violated and required fix]
@@ -183,13 +183,13 @@ After gate enforcement, scan the report for any items that:
 For each such item, **immediately capture it in the configured SB backlog**
 instead of silently dropping it. Read `.silver-bullet.json`:
 
-Prefer routing through `/silver:add`, which resolves the correct destination
+Prefer routing through `/sb:add`, which resolves the correct destination
 automatically. If filing directly, honor `issue_tracker`:
 
 - `issue_tracker: "github"` -> create a GitHub Issue with `gh issue create`
   when the CLI is authenticated.
 - `issue_tracker: "local"` or missing ->
   append the item to `docs/issues/BACKLOG.md` (creating the file if needed), the
-  canonical local backlog used by `/silver:add`.
+  canonical local backlog used by `/sb:add`.
 
 If no items were deferred or suggested, output: "No backlog items to capture from this quality review."

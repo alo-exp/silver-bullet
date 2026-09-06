@@ -27,7 +27,7 @@ mode-appropriate internal steps (`DR-SCOPE`, `DR-PLAN`, `DR-RETRIEVE`,
 `DR-REFINE`, `DR-PACKAGE`) and record their local V-loop results in
 `vloop-rollup.json`.
 
-**Do NOT** invoke the `silver:deep-research` composer skill — the parent already
+**Do NOT** invoke the `sb:deep-research` composer skill — the parent already
 seeded the queue. Re-invoking it resets orchestrator state.
 
 There is no MultAI branch in AF-DECIDE.

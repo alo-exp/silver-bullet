@@ -4,11 +4,11 @@ description: This skill should be used to retrospectively scan project session s
 version: 0.1.0
 ---
 
-# /silver:scan — Retrospective Session Scanner
+# /sb:scan — Retrospective Session Scanner
 
 Use this skill when you want to review completed work and surface loose ends that were mentioned in prior sessions but never filed or recorded. This is the retrospective catch-up workflow, not a codebase-orientation workflow.
 
-Do not use `/silver:scan` for brownfield orientation or structure discovery. For that, use `/silver:context` or route through `/silver` so SB can compose the appropriate orientation flow.
+Do not use `/sb:scan` for brownfield orientation or structure discovery. For that, use `/sb:context` or route through `/sb` so SB can compose the appropriate orientation flow.
 
 ## What it does
 

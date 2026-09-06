@@ -404,7 +404,7 @@ sb_agentmemory_prompt_reminder_line() {
       ;;
     enabled)
       if sb_recommended_tool_enforcement_suspended "$config_file" "agentmemory"; then
-        printf '%s' "agentmemory: opted in but install failed — enforcement suspended until upgrade; retry on /silver:update."
+        printf '%s' "agentmemory: opted in but install failed — enforcement suspended until upgrade; retry on /sb:update."
       elif ! sb_agentmemory_cli_available; then
         printf '%s' "agentmemory: CLI missing — install @agentmemory/agentmemory; hooks block substantive work until installed."
       elif ! sb_agentmemory_server_healthy "$config_file"; then

@@ -497,7 +497,7 @@ verify_cursor_plugin_discovery_paths() {
         "$sha" "$(cursor_marketplace_plugin_cache_root)" "$sha" >&2
       failures=1
     elif ! cursor_backend_plugin_cache_ready "$dest" "$sha"; then
-      printf 'ERROR: Cursor backend marketplace cache missing for %s at %s/%s — /silver commands fail after reload\n' \
+      printf 'ERROR: Cursor backend marketplace cache missing for %s at %s/%s — /sb commands fail after reload\n' \
         "$sha" "$(cursor_backend_plugin_cache_root)" "$sha" >&2
       failures=1
     fi

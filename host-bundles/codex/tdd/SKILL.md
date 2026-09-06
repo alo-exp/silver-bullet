@@ -1,7 +1,7 @@
 ---
 name: tdd
 id: tdd
-title: "Silver: TDD — Test-Driven Development"
+title: "SB: TDD — Test-Driven Development"
 description: Internal Silver Bullet TDD enforcement policy; enforces Red-Green-Refactor for implementation work
 user-invocable: false
 trigger:

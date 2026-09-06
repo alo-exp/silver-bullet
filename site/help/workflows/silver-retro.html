@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:retro — Engineering Retrospective Workflow — Silver Bullet Help</title>
+<title>/sb:retro — Engineering Retrospective Workflow — Silver Bullet Help</title>
 <meta name="description" content="SB-orchestrated engineering retrospective: orient on delivery history → document findings → decide on process improvements and tracked action items.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,7 +93,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:retro</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:retro</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -103,7 +103,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:retro</h1>
+    <h1>/sb:retro</h1>
     <p>SB-orchestrated engineering retrospective — orient on delivery history, document evidence-backed findings, and decide on concrete process improvements with tracked action items.</p>
   </div>
 </div>
@@ -121,7 +121,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#artifacts">Artifacts &amp; Exit Gate</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-incident.html">/silver:incident</a></li>
+        <li><a href="./silver-incident.html">/sb:incident</a></li>
         <li><a href="./index.html">All Workflows</a></li>
       </ul>
     </aside>
@@ -129,11 +129,11 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:retro</code> is the Silver Bullet orchestrator for turning delivery history into concrete process improvements. It synthesizes git history, CI signals, release notes, review analytics, incidents, and SB planning artifacts into an actionable retrospective report.</p>
+      <p><code>/sb:retro</code> is the Silver Bullet orchestrator for turning delivery history into concrete process improvements. It synthesizes git history, CI signals, release notes, review analytics, incidents, and SB planning artifacts into an actionable retrospective report.</p>
       <p><strong>It never treats opinion without evidence as the workflow.</strong> Observed facts are separated from inferred causes, and every recommendation must land as a tracked work item, an accepted no-action rationale, or a documented owner outside SB.</p>
-      <p><code>/silver:retro</code> maps to <code>WF-SILVER-RETRO</code> in the v0.52.0 APO catalog. Standard composition:</p>
+      <p><code>/sb:retro</code> maps to <code>WF-SILVER-RETRO</code> in the v0.52.0 APO catalog. Standard composition:</p>
       <div class="code-block">ORIENT → DOCUMENT → DECIDE</div>
-      <p>Primary artifact: <code>.planning/RETRO.md</code>. Incident clusters often feed retros via <a href="./silver-incident.html"><code>/silver:incident</code></a>; recurring gaps filed here close the feedback loop.</p>
+      <p>Primary artifact: <code>.planning/RETRO.md</code>. Incident clusters often feed retros via <a href="./silver-incident.html"><code>/sb:incident</code></a>; recurring gaps filed here close the feedback loop.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -145,14 +145,14 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:retro</code>:</p>
+      <p>Entry trigger signals for <code>/sb:retro</code>:</p>
       <ul>
         <li>Post-release or post-milestone process review</li>
         <li>Incident cluster analysis after corrective actions are filed</li>
         <li>Quarterly or sprint-level engineering effectiveness review</li>
         <li>Recurring blockers identified across multiple delivery cycles</li>
       </ul>
-      <p>Not for: active production incidents (<a href="./silver-incident.html"><code>/silver:incident</code></a>), single-session failure reconstruction (<a href="./silver-forensics.html"><code>/silver:forensics</code></a>), or technology selection (<a href="./silver-deep-research.html"><code>/silver:deep-research</code></a>).</p>
+      <p>Not for: active production incidents (<a href="./silver-incident.html"><code>/sb:incident</code></a>), single-session failure reconstruction (<a href="./silver-forensics.html"><code>/sb:forensics</code></a>), or technology selection (<a href="./silver-deep-research.html"><code>/sb:deep-research</code></a>).</p>
 
       <div class="divider"></div>
 
@@ -160,25 +160,25 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-ORIENT</code></td><td><code>/silver:scan</code>, <code>/silver:context</code></td><td>Scope definition and evidence inventory across git, CI, releases, and SB artifacts</td></tr>
-          <tr><td><code>AF-DOCUMENT</code></td><td><code>/silver:ensure-docs</code></td><td>Durable retrospective report in <code>.planning/RETRO.md</code></td></tr>
-          <tr><td><code>AF-DECIDE</code></td><td><code>/silver:deep-research</code> (decision mode)</td><td>Prioritized recommendations with evidence-backed rationale</td></tr>
+          <tr><td><code>AF-ORIENT</code></td><td><code>/sb:scan</code>, <code>/sb:context</code></td><td>Scope definition and evidence inventory across git, CI, releases, and SB artifacts</td></tr>
+          <tr><td><code>AF-DOCUMENT</code></td><td><code>/sb:ensure-docs</code></td><td>Durable retrospective report in <code>.planning/RETRO.md</code></td></tr>
+          <tr><td><code>AF-DECIDE</code></td><td><code>/sb:deep-research</code> (decision mode)</td><td>Prioritized recommendations with evidence-backed rationale</td></tr>
         </tbody>
       </table>
-      <p>Domain audit packs (<code>incident-retro</code>, <code>benchmark-eval</code>) may augment <code>AF-ORIENT</code> when provider/tooling performance is in scope. Action items file through <code>/silver:add</code>; durable knowledge captures through <code>/silver:rem</code>.</p>
+      <p>Domain audit packs (<code>incident-retro</code>, <code>benchmark-eval</code>) may augment <code>AF-ORIENT</code> when provider/tooling performance is in scope. Action items file through <code>/sb:add</code>; durable knowledge captures through <code>/sb:rem</code>.</p>
 
       <div class="divider"></div>
 
       <h2 id="workflow-steps">Atomic Flow Execution</h2>
 
       <h3><code>AF-ORIENT</code> — Define scope and gather evidence</h3>
-      <p>Invoke <code>/silver:scan</code> or <code>/silver:context</code>. Determine retrospective scope: release tag range, date range, incident, milestone, or workflow archive. Gather evidence from git history, release notes, CI status, issue backlog, <code>.planning/</code> artifacts, <code>review-analytics.jsonl</code>, and session logs.</p>
+      <p>Invoke <code>/sb:scan</code> or <code>/sb:context</code>. Determine retrospective scope: release tag range, date range, incident, milestone, or workflow archive. Gather evidence from git history, release notes, CI status, issue backlog, <code>.planning/</code> artifacts, <code>review-analytics.jsonl</code>, and session logs.</p>
 
       <h3><code>AF-DOCUMENT</code> — Write the retrospective report</h3>
-      <p>Invoke <code>/silver:ensure-docs</code>. Produce <code>.planning/RETRO.md</code> with delivery metrics, quality trends, recurring blockers, and process gaps. Separate observed facts from inferred causes.</p>
+      <p>Invoke <code>/sb:ensure-docs</code>. Produce <code>.planning/RETRO.md</code> with delivery metrics, quality trends, recurring blockers, and process gaps. Separate observed facts from inferred causes.</p>
 
       <h3><code>AF-DECIDE</code> — Prioritize improvements</h3>
-      <p>Invoke <code>/silver:deep-research</code> in decision mode when trade-offs need structured analysis. File actionable improvements through <code>/silver:add</code>; capture durable learnings through <code>/silver:rem</code>. Every recommendation must have a tracked outcome.</p>
+      <p>Invoke <code>/sb:deep-research</code> in decision mode when trade-offs need structured analysis. File actionable improvements through <code>/sb:add</code>; capture durable learnings through <code>/sb:rem</code>. Every recommendation must have a tracked outcome.</p>
 
       <div class="divider"></div>
 
@@ -189,25 +189,25 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li>Delivery metrics from git, CI, releases, issues, and SB artifacts</li>
         <li>Quality trends from reviews, domain audits, incidents, and verification</li>
         <li>Recurring blockers and process gaps</li>
-        <li>Action items filed through <code>/silver:add</code></li>
-        <li>Knowledge/learnings candidates for <code>/silver:rem</code></li>
+        <li>Action items filed through <code>/sb:add</code></li>
+        <li>Knowledge/learnings candidates for <code>/sb:rem</code></li>
       </ul>
       <p>The retro passes only when every recommendation has either a tracked work item, an accepted no-action rationale, or a documented owner outside SB.</p>
 
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:retro Run a retrospective on v2.3.0 through v2.4.1 — focus on review turnaround and incident frequency</div>
-      <p>Silver Bullet routes to <code>WF-SILVER-RETRO</code>. <code>AF-ORIENT</code> inventories commits, releases, and incident records in range. <code>AF-DOCUMENT</code> writes <code>.planning/RETRO.md</code> with trends and blockers. <code>AF-DECIDE</code> prioritizes three process changes and files them through <code>/silver:add</code>.</p>
+      <div class="code-block">/sb:retro Run a retrospective on v2.3.0 through v2.4.1 — focus on review turnaround and incident frequency</div>
+      <p>Silver Bullet routes to <code>WF-SILVER-RETRO</code>. <code>AF-ORIENT</code> inventories commits, releases, and incident records in range. <code>AF-DOCUMENT</code> writes <code>.planning/RETRO.md</code> with trends and blockers. <code>AF-DECIDE</code> prioritizes three process changes and files them through <code>/sb:add</code>.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-incident.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:incident</span>
+          <span class="pnb-title">/sb:incident</span>
         </a>
         <a href="./silver-forensics.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:forensics</span>
+          <span class="pnb-title">/sb:forensics</span>
         </a>
       </div>
 

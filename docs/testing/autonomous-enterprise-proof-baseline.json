@@ -85,7 +85,7 @@
     },
     {
       "id": "agent-claude-autonomous-vision-matrix",
-      "summary": "Agent-Claude autonomous vision minimal matrix (3 rows via /silver:agent-claude)",
+      "summary": "Agent-Claude autonomous vision minimal matrix (3 rows via /sb:agent-claude)",
       "proof_level": "live_e2e_proven",
       "evidence": [
         ".planning/agent-claude-autonomous/MATRIX-LEDGER.json",
@@ -97,7 +97,7 @@
     },
     {
       "id": "minimal-intent-e2e-mi01",
-      "summary": "Minimal vision paragraph → full dev lifecycle via Cursor parent orchestrator (/silver:feature)",
+      "summary": "Minimal vision paragraph → full dev lifecycle via Cursor parent orchestrator (/sb:feature)",
       "proof_level": "live_e2e_proven",
       "evidence": [
         ".planning/minimal-intent-e2e/MATRIX-LEDGER.json",

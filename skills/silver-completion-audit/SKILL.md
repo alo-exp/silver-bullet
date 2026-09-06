@@ -5,7 +5,7 @@ argument-hint: "<completion claim>"
 version: 0.1.0
 ---
 
-# /silver:completion-audit - Completion Claim Audit
+# /sb:completion-audit - Completion Claim Audit
 
 SB-owned completion audit verifies completion claims against direct evidence
 before SB accepts them.

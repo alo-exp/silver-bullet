@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structural contract for /silver:agent-opencode skill and delegate wrapper.
+# Structural contract for /sb:agent-opencode skill and delegate wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -32,7 +32,7 @@ fi
 
 grep -qE '^name: silver-agent-opencode$' "$SKILL" && check "frontmatter name silver-agent-opencode" pass || check "frontmatter name silver-agent-opencode" fail
 grep -q 'user-invocable: true' "$SKILL" && check "user-invocable" pass || check "user-invocable" fail
-grep -q '/silver:agent-opencode' "$SKILL" && check "route documented" pass || check "route documented" fail
+grep -q '/sb:agent-opencode' "$SKILL" && check "route documented" pass || check "route documented" fail
 grep -q 'opencode run' "$SKILL" && check "references opencode run harness" pass || check "references opencode run harness" fail
 grep -q 'mimo-v2.5' "$SKILL" && check "documents mimo-v2.5 model policy" pass || check "documents mimo-v2.5 model policy" fail
 grep -q 'opencode-go' "$SKILL" && check "documents opencode-go provider" pass || check "documents opencode-go provider" fail

@@ -2,7 +2,7 @@
 set -euo pipefail
 trap 'exit 0' ERR
 
-# Stop — block when active site-session V-loops lack evidence (silver:content profile).
+# Stop — block when active site-session V-loops lack evidence (sb:content profile).
 umask 0077
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd 2>/dev/null)" || _lib_dir=""
@@ -48,7 +48,7 @@ sb_site_session_sync_vloops_from_state 2>/dev/null || true
 sb_site_session_vloop_pending || exit 0
 
 summary="$(sb_site_session_vloop_pending_summary)"
-reason=$(printf 'Site V-loop rollup gate — active site session has incomplete child V-loops.\n\n%s\n\nComplete silver:content batch steps (preflight → implement → regression → visual → publish).' "$summary")
+reason=$(printf 'Site V-loop rollup gate — active site session has incomplete child V-loops.\n\n%s\n\nComplete sb:content batch steps (preflight → implement → regression → visual → publish).' "$summary")
 json_reason=$(printf '%s' "$reason" | jq -Rs '.')
 printf '{"decision":"block","reason":%s}' "$json_reason"
 exit 0

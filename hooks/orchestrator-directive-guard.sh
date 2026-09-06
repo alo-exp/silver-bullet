@@ -110,7 +110,7 @@ case "$tool_name" in
     if declare -f sb_skill_canonical_name >/dev/null 2>&1; then
       skill="$(sb_skill_canonical_name "$raw_skill")"
     else
-      skill="${raw_skill#silver:}"
+      skill="${raw_skill#sb:}"
       skill="${skill//:/-}"
     fi
     if [[ "$skill" == "$expected" ]]; then
@@ -121,7 +121,7 @@ case "$tool_name" in
 esac
 
 # Parent orchestrator: allow delegation tools; block implementation tools on project source.
-# During /silver:init bootstrap the template scaffold may exist before sb_initiated is true.
+# During /sb:init bootstrap the template scaffold may exist before sb_initiated is true.
 if [[ -n "$_odg_workspace_config" ]] && declare -f sb_config_marked_initiated >/dev/null 2>&1 \
   && ! sb_config_marked_initiated "$_odg_workspace_config"; then
   exit 0
@@ -257,10 +257,10 @@ if [[ "$tool_name" == "Edit" || "$tool_name" == "Write" || "$tool_name" == "Mult
     printf '%s' "$count" >"$counter_file" 2>/dev/null || true
     threshold="${SB_ORCHESTRATOR_EDIT_WITHOUT_WORKFLOW_BLOCK:-5}"
     if [[ "$count" -ge "$threshold" ]]; then
-      emit_block "$(printf '🛑 WORKFLOW REQUIRED — %s edits without an active composed workflow (.planning/workflows/*.md).\n\nRun /silver to route work and start workflows.sh, or invoke a composer skill (silver:feature).' "$count")"
+      emit_block "$(printf '🛑 WORKFLOW REQUIRED — %s edits without an active composed workflow (.planning/workflows/*.md).\n\nRun /sb to route work and start workflows.sh, or invoke a composer skill (sb:feature).' "$count")"
       exit 0
     elif [[ "$count" -eq 1 || "$count" -eq 3 ]]; then
-      printf '{"hookSpecificOutput":{"message":"⚠️ SB: edit without active workflow (%s/%s before block). Route via /silver and start composed workflow."}}' "$count" "$threshold"
+      printf '{"hookSpecificOutput":{"message":"⚠️ SB: edit without active workflow (%s/%s before block). Route via /sb and start composed workflow."}}' "$count" "$threshold"
       exit 0
     fi
   else

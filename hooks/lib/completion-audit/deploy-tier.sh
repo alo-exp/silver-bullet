@@ -403,7 +403,7 @@ elif [[ -n "$test_freshness_warning" ]]; then
   emit_block "$msg"
   exit 0
 elif [[ -n "$ordering_issues" ]]; then
-  msg=$(printf '🛑 ORDERING BLOCKED — Code Review Triad ran out of order:\n%s\nRe-run /silver:review-request → /silver:review → /silver:review-triage before delivery.' "$ordering_issues")
+  msg=$(printf '🛑 ORDERING BLOCKED — Code Review Triad ran out of order:\n%s\nRe-run /sb:review-request → /sb:review → /sb:review-triage before delivery.' "$ordering_issues")
   if [[ -n "$ignored" ]]; then
     ignored_lines=""
     for skill in $ignored; do

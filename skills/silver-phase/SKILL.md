@@ -8,14 +8,14 @@ argument-hint: "[--add <goal>] [--insert N <goal>] [--remove N] [--edit N] [--li
 version: 0.1.0
 ---
 
-# /silver:phase — Phase CRUD Management
+# /sb:phase — Phase CRUD Management
 
 SB-owned skill for managing phases in `.planning/ROADMAP.md`. Direct edits to
 ROADMAP.md are blocked by the planning-file-guard; this skill is the sanctioned
 path for all phase list mutations.
 
 Do not use this skill to add execution work or change acceptance criteria — that
-belongs in `/silver:context`. This skill only manages the roadmap structure.
+belongs in `/sb:context`. This skill only manages the roadmap structure.
 
 ## Output
 
@@ -42,7 +42,7 @@ ROADMAP after:
 Display all phases with status, goal, and current phase pointer.
 
 ```bash
-/silver:phase --list
+/sb:phase --list
 ```
 
 ### `--add "<goal>"`
@@ -50,7 +50,7 @@ Display all phases with status, goal, and current phase pointer.
 Append a new phase at the end of the active milestone with the given goal.
 
 ```bash
-/silver:phase --add "Add real-time notifications via WebSocket"
+/sb:phase --add "Add real-time notifications via WebSocket"
 ```
 
 **Requires:** `.planning/ROADMAP.md` exists.
@@ -63,7 +63,7 @@ Insert urgent or prerequisite work as a decimal phase after phase N.
 Example: inserting after phase 3 creates phase 3.1.
 
 ```bash
-/silver:phase --insert 3 "Fix auth race condition before feature work"
+/sb:phase --insert 3 "Fix auth race condition before feature work"
 ```
 
 **Requires:** Phase N exists in ROADMAP.md.
@@ -77,7 +77,7 @@ Remove a future phase and renumber subsequent phases to preserve numeric
 continuity.
 
 ```bash
-/silver:phase --remove 7
+/sb:phase --remove 7
 ```
 
 **Requires:** Phase N must be `pending` (not started, not completed).
@@ -90,7 +90,7 @@ Edit any field of an existing phase interactively: goal, requirements
 coverage, mode annotation, or acceptance criteria reference.
 
 ```bash
-/silver:phase --edit 5
+/sb:phase --edit 5
 ```
 
 **Requires:** Phase N exists.
@@ -109,7 +109,7 @@ coverage, mode annotation, or acceptance criteria reference.
 
 1. Display `SILVER BULLET > PHASE`.
 2. Verify `.planning/ROADMAP.md` exists. If not, ask whether to run
-   `/silver:init` first.
+   `/sb:init` first.
 3. Read ROADMAP.md and STATE.md to understand current phase status.
 4. Validate the operation against the safety rules below.
 5. In interactive mode (no `--auto`), show the planned change and require

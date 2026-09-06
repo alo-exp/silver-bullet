@@ -5,7 +5,7 @@ argument-hint: "<branch or ship scope>"
 version: 0.1.0
 ---
 
-# /silver:branch-finish - Branch Finishing
+# /sb:branch-finish - Branch Finishing
 
 SB-owned branch finishing handles status, tests, docs, cleanup, and the user's
 PR/merge decision.

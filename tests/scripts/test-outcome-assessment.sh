@@ -119,7 +119,7 @@ EOF
 mkdir -p "$FIXTURE/api"
 touch "$FIXTURE/api/.gitkeep"
 SESSION_LOG_R3="$(mktemp)"
-printf 'autonomous orchestrator active\nTask worker spawned\nwbs-supervisor stub\n/silver:clarify locked decisions applied\ngraphify query silver-feature routes hooks\n' >"$SESSION_LOG_R3"
+printf 'autonomous orchestrator active\nTask worker spawned\nwbs-supervisor stub\n/sb:clarify locked decisions applied\ngraphify query silver-feature routes hooks\n' >"$SESSION_LOG_R3"
 cat >"$STATE_DIR/orchestrator-worker-active.json" <<'EOF'
 {"worker":"feature"}
 EOF

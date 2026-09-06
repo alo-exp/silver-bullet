@@ -1074,7 +1074,7 @@ def github_body(candidate: dict[str, Any], root: Path) -> str:
             f"- Filed: {local_date()}",
             "",
             "## Notes",
-            "Captured by silver:scan from untrusted session content.",
+            "Captured by sb:scan from untrusted session content.",
         ]
     )
 

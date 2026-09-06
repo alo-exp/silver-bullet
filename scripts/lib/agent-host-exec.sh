@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Native argv + exec for /silver:agent-* production launch (D7).
+# Native argv + exec for /sb:agent-* production launch (D7).
 # Live-test adapters may source this for argv; production must not require tests/live.
 # shellcheck shell=bash
 

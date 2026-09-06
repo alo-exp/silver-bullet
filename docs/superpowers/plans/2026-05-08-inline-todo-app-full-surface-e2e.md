@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the current multi-scenario todo-app live E2E suite with one inline full-surface journey that exercises the SB-owned surface, records explicit coverage, files real end-user friction with `silver:add` and a `todo-app` tag, and makes release gating depend on that proof.
+**Goal:** Replace the current multi-scenario todo-app live E2E suite with one inline full-surface journey that exercises the SB-owned surface, records explicit coverage, files real end-user friction with `sb:add` and a `todo-app` tag, and makes release gating depend on that proof.
 
 **Architecture:** Keep the existing live runtime matrix as the low-level runtime contract. Replace the current multi-scenario todo-app E2E suite with a single higher-order inline journey that drives a scripted turn sequence through the terminal TUI/runner layer, so the session can be automated turn-by-turn without pretending the desktop chat pane is scriptable. For Codex, that means adding a small terminal driver alongside the existing Claude `expect` wrapper. The journey writes a coverage ledger, files issues immediately when frustration appears, and emits a release marker that the completion audit hook can enforce.
 
@@ -32,10 +32,10 @@ Use a concrete shell assertion shape like:
 source "$(cd "$(dirname "$0")" && pwd)/lib/coverage-ledger.sh"
 LEDGER_FILE="$(mktemp)"
 init_coverage_ledger "$LEDGER_FILE"
-ledger_append "$LEDGER_FILE" "silver:init" "scaffold created" "no" "init-files.json"
-ledger_append "$LEDGER_FILE" "silver:feature" "clear-completed shipped" "no" "feature-diff"
-ledger_append "$LEDGER_FILE" "silver:quality-gates" "pre-ship sweep passed" "no" "gate-log"
-ledger_require_all "$LEDGER_FILE" "silver:init" "silver:feature" "silver:quality-gates"
+ledger_append "$LEDGER_FILE" "sb:init" "scaffold created" "no" "init-files.json"
+ledger_append "$LEDGER_FILE" "sb:feature" "clear-completed shipped" "no" "feature-diff"
+ledger_append "$LEDGER_FILE" "sb:quality-gates" "pre-ship sweep passed" "no" "gate-log"
+ledger_require_all "$LEDGER_FILE" "sb:init" "sb:feature" "sb:quality-gates"
 ```
 
 Then assert that deleting one required entry causes `ledger_require_all` to exit non-zero.
@@ -168,7 +168,7 @@ Create `tests/e2e-live/scenarios/test-e2e-live-full-surface-journey.sh` as the m
 1. prepare a clean todo-app workspace,
 2. refresh the relevant runtime install,
 3. run a scripted prompt sequence that covers install/bootstrap, discovery/framing, feature delivery, deliberate bugfix, cleanup, and release prep,
-4. call `silver:add` at the point where real dissatisfaction appears,
+4. call `sb:add` at the point where real dissatisfaction appears,
 5. append a ledger entry after each major SB surface,
 6. write the inline release marker only if the ledger is complete.
 
@@ -191,7 +191,7 @@ done
 ```
 
 The script should explicitly pause for issue capture whenever the prompt output
-or browser state shows friction, and it should call `silver:add` for any real
+or browser state shows friction, and it should call `sb:add` for any real
 user-facing dissatisfaction. The resulting issue should be created in the SB repo
 and labeled `todo-app`.
 
@@ -219,7 +219,7 @@ git rm tests/e2e-live/scenarios/test-e2e-live-install-ux.sh tests/e2e-live/scena
 git commit -m "test(e2e-live): add inline full-surface todo-app journey"
 ```
 
-### Task 3: Teach `silver:add` to carry the todo-app tag and prove it
+### Task 3: Teach `sb:add` to carry the todo-app tag and prove it
 
 **Files:**
 - Modify: `/Users/shafqat/projects/silver-bullet/repo/skills/silver-add/SKILL.md`
@@ -230,7 +230,7 @@ git commit -m "test(e2e-live): add inline full-surface todo-app journey"
 
 Create `tests/scripts/test-silver-add-todo-app-tag.sh` with a stubbed `gh`
 executable in `PATH` that records its arguments. The test should drive a synthetic
-`silver:add` filing for the todo-app run and then assert that the issue create/edit
+`sb:add` filing for the todo-app run and then assert that the issue create/edit
 flow includes a `todo-app` label in addition to the normal Silver Bullet labels.
 
 The stub should capture a command sequence like:
@@ -248,7 +248,7 @@ Run:
 bash /Users/shafqat/projects/silver-bullet/repo/tests/scripts/test-silver-add-todo-app-tag.sh
 ```
 
-Expected: fail because the `silver:add` instructions do not yet require the
+Expected: fail because the `sb:add` instructions do not yet require the
 `todo-app` tag path.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -261,7 +261,7 @@ Update `skills/silver-add/SKILL.md` so the GitHub path explicitly says:
 3. the resulting GitHub issue should include the tag in the created issue and any
    later edit path.
 
-Mirror that behavior in the live journey script by filing through `silver:add`
+Mirror that behavior in the live journey script by filing through `sb:add`
 and then verifying the returned issue URL has the `todo-app` label attached.
 
 - [ ] **Step 4: Run the test to verify it passes**
@@ -333,7 +333,7 @@ Then update the docs to explain:
 
 - the inline todo-app journey is the higher-order end-user proof
 - the existing runtime matrix remains the lower-level contract
-- `silver:add` is the required path for filing dissatisfaction during the run
+- `sb:add` is the required path for filing dissatisfaction during the run
 
 - [ ] **Step 4: Run the test to verify it passes**
 
@@ -372,7 +372,7 @@ Expected: all suites green, with the new live journey and release gate tests inc
 
 Run the new inline journey scenario with the terminal TUI or prompt driver and
 confirm it actually walks the todo-app forward, files any real friction through
-`silver:add`, and writes the inline marker.
+`sb:add`, and writes the inline marker.
 
 - [ ] **Step 3: Verify the release gate and docs**
 

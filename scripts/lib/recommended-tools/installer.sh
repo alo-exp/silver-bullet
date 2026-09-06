@@ -115,7 +115,7 @@ RELOAD REQUIRED: Host MCP/hooks changed during install.
   2. Or Developer: Reload Window
   3. Start a new chat to verify tool liveness
 
-Project-scoped work may remain pending until /silver:init or /silver:doctor --fix runs in the project.
+Project-scoped work may remain pending until /sb:init or /sb:doctor --fix runs in the project.
 EOF
 }
 
@@ -136,13 +136,18 @@ rt_installer_post_install() {
     printf 'SKIP: installer post-install reconcile (RT_SKIP_POST_INSTALL=1)\n'
     return 0
   fi
-  # Already inside a reconcile apply: that run owns convergence and will finish
-  # it after this installer returns. Calling back into it here closes the
+  # Already inside a reconcile apply, or already in this installer's
+  # post-install call: that run owns convergence and will finish it after this
+  # installer returns. Calling back into it here closes the
   # reconcile -> optimize -> install -> reconcile cycle.
-  if [[ -n "${SB_RT_APPLY_ACTIVE:-}" ]]; then
+  if [[ -n "${SB_RT_APPLY_ACTIVE:-}" || -n "${SB_RT_POST_INSTALL_ACTIVE:-}" ]]; then
     printf 'SKIP: installer post-install reconcile (already inside reconcile apply)\n'
     return 0
   fi
+  # Set the guard before spawning the reconciler so every installer and
+  # optimizer descendant inherits it, including paths that do not preserve the
+  # reconciler's apply-mode marker.
+  export SB_RT_POST_INSTALL_ACTIVE=1
   local out rc=0
   out="$(rt_installer_run_reconcile "$repo_root" "$project_root" "$scope" apply 2>&1)" || rc=$?
   printf '%s\n' "$out"
@@ -151,7 +156,7 @@ rt_installer_post_install() {
   fi
   rt_emit_reload_notice "$restart"
   if [[ -z "$project_root" ]]; then
-    printf '\nNOTE: Host infrastructure deployed. Project toolstack reconciliation pending — run /silver:init in an SB project.\n'
+    printf '\nNOTE: Host infrastructure deployed. Project toolstack reconciliation pending — run /sb:init in an SB project.\n'
   fi
   return "$rc"
 }

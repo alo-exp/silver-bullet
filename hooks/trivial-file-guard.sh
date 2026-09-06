@@ -5,7 +5,7 @@ trap 'exit 0' ERR
 # Silver Bullet legacy trivial-file guard.
 #
 # Codex agents must not arm the old touch-file bypass by writing to the
-# configured trivial marker. Use /silver:fast for trivial changes instead.
+# configured trivial marker. Use /sb:fast for trivial changes instead.
 
 # Security: restrict file creation permissions (user-only)
 umask 0077
@@ -98,7 +98,7 @@ norm_path() {
 if [[ -n "$file_path" ]]; then
   resolved_file_path="$(norm_path "$file_path")"
   if [[ "$resolved_file_path" == "$trivial_file" ]]; then
-    emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not write the trivial marker file directly. Use /silver:fast for trivial work instead."
+    emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not write the trivial marker file directly. Use /sb:fast for trivial work instead."
     exit 0
   fi
 fi
@@ -106,7 +106,7 @@ fi
 if [[ -n "$command_str" ]]; then
   if printf '%s' "$command_str" | grep -qF "$trivial_file" || printf '%s' "$command_str" | grep -qF "$trivial_file_tilde"; then
     if printf '%s' "$command_str" | grep -qE '(^|[[:space:];|&])(touch|truncate|tee|cp|mv|install|sed|perl|python|python3|node|ruby|dd)\b|[[:space:]]>>|[[:space:]]>[^>&=]'; then
-      emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not arm the trivial marker file from Bash. Use /silver:fast for trivial work instead."
+      emit_block "🚫 LEGACY TRIVIAL BYPASS BLOCKED — Codex agents must not arm the trivial marker file from Bash. Use /sb:fast for trivial work instead."
       exit 0
     fi
   fi

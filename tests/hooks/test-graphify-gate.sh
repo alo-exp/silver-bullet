@@ -63,7 +63,7 @@ assert_allow() {
 
 assert_contains() {
   local label="$1" output="$2" needle="$3"
-  if printf '%s' "$output" | grep -qF -- "$needle"; then
+  if printf '%s' "$output" | grep -F -- "$needle" >/dev/null; then
     echo "  PASS: $label"
     PASS=$((PASS + 1))
   else

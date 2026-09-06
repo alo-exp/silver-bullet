@@ -106,7 +106,7 @@ run_hook "UserPromptSubmit" "define caching scope" >/dev/null
 mkdir -p "$TMPDIR_TEST/.planning/workflows"
 cat >"$TMPDIR_TEST/.planning/workflows/wf-1.md" <<'MD'
 # Workflow
-composer: /silver:fast
+composer: /sb:fast
 args: add redis cache
 MD
 # shellcheck source=../../hooks/lib/outcomes-gate.sh

@@ -46,7 +46,7 @@ is_codex_route_smoke_surface() {
   local surface="$1"
 
   [[ "$E2E_RUNTIME" == "codex" || "$E2E_RUNTIME" == "kay" ]] || return 1
-  [[ "$surface" == silver:* ]]
+  [[ "$surface" == sb:* ]]
 }
 
 assert_route_smoke_adapter_only() {
@@ -146,7 +146,7 @@ journey_turn() {
   printf '%s\n' "$response" > "$response_raw_file"
   printf '%s\n' "$response_clean" > "$response_file"
 
-  if [[ "$timed_out" == true && "$E2E_RUNTIME" =~ ^(codex|kay)$ && "$surface" == silver:* ]]; then
+  if [[ "$timed_out" == true && "$E2E_RUNTIME" =~ ^(codex|kay)$ && "$surface" == sb:* ]]; then
     response_clean="[timeout] ${surface} did not complete within ${turn_timeout_seconds}s"
     printf '%s\n' "$response_clean" > "$response_file"
     printf '%s\n' "$response_clean" > "$response_raw_file"
@@ -201,7 +201,7 @@ record_completed_surface() {
   local surface="$1"
 
   case "$surface" in
-    silver:*|retired-*) ;;
+    sb:*|retired-*) ;;
     *) return 0 ;;
   esac
 
@@ -235,8 +235,8 @@ resolve_silver_skill_path() {
     install_path="$(codex_plugin_install_path "silver-bullet@alo-labs-codex" 2>/dev/null || true)"
     if [[ -n "$install_path" ]]; then
       for source_name in SILVER_SOURCE SILVER_SOURCE.md SILVER_SKILL.md; do
-        if [[ -f "$install_path/skill-source/silver/$source_name" ]]; then
-          printf '%s\n' "$install_path/skill-source/silver/$source_name"
+        if [[ -f "$install_path/skill-source/sb/$source_name" ]]; then
+          printf '%s\n' "$install_path/skill-source/sb/$source_name"
           return 0
         fi
       done
@@ -246,8 +246,8 @@ resolve_silver_skill_path() {
     codex_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs-codex/silver-bullet"
     if [[ -L "$codex_cache_root/current" ]]; then
       for source_name in SILVER_SOURCE SILVER_SOURCE.md SILVER_SKILL.md; do
-        if [[ -f "$codex_cache_root/current/skill-source/silver/$source_name" ]]; then
-          printf '%s\n' "$codex_cache_root/current/skill-source/silver/$source_name"
+        if [[ -f "$codex_cache_root/current/skill-source/sb/$source_name" ]]; then
+          printf '%s\n' "$codex_cache_root/current/skill-source/sb/$source_name"
           return 0
         fi
       done
@@ -255,8 +255,8 @@ resolve_silver_skill_path() {
     latest_codex_cache="$(find "$codex_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_codex_cache" ]]; then
       for source_name in SILVER_SOURCE SILVER_SOURCE.md SILVER_SKILL.md; do
-        if [[ -f "$latest_codex_cache/skill-source/silver/$source_name" ]]; then
-          printf '%s\n' "$latest_codex_cache/skill-source/silver/$source_name"
+        if [[ -f "$latest_codex_cache/skill-source/sb/$source_name" ]]; then
+          printf '%s\n' "$latest_codex_cache/skill-source/sb/$source_name"
           return 0
         fi
       done
@@ -506,9 +506,9 @@ recover_silver_fast_cleanup() {
   rm -f "$scratch_file"
 }
 
-init_prompt="$(skill_prompt 'silver:init' 'Initialize Silver Bullet on this todo-app project from scratch. Choose GitHub Issues for issue tracking, use sensible defaults for any missing choices, do not change app behavior yet, create the SB scaffold, confirm the project is initialized, and then stop immediately. Do not continue into ingest, scan, research, feature, release, or any other downstream workflow step. Do not create AGENTS.md or CLAUDE.md if no project instruction file already exists.')"
-journey_turn "silver:init" "install and scaffold the todo-app workspace" "no" "scaffold files created" "$init_prompt" "."
-wait_for_state_contains "silver:init recorded in workflow state" "silver:init"
+init_prompt="$(skill_prompt 'sb:init' 'Initialize Silver Bullet on this todo-app project from scratch. Choose GitHub Issues for issue tracking, use sensible defaults for any missing choices, do not change app behavior yet, create the SB scaffold, confirm the project is initialized, and then stop immediately. Do not continue into ingest, scan, research, feature, release, or any other downstream workflow step. Do not create AGENTS.md or CLAUDE.md if no project instruction file already exists.')"
+journey_turn "sb:init" "install and scaffold the todo-app workspace" "no" "scaffold files created" "$init_prompt" "."
+wait_for_state_contains "sb:init recorded in workflow state" "sb:init"
 ensure_e2e_recommended_tools_opt_in
 
 # The dedicated hook preflights already verify that missing planning state
@@ -529,7 +529,7 @@ elif [[ -f "${WORK_DIR}/.silver-bullet/project.json" || -f "${WORK_DIR}/.silver-
   wait_for_file_exists "silver-bullet instructions created" "${WORK_DIR}/.silver-bullet/README.md"
   wait_for_file_exists "silver-bullet init state created" "${WORK_DIR}/.silver-bullet/init-state.json"
 else
-  echo "WARN: silver:init did not create scaffold files; backfilling canonical scaffold so the scenario can continue"
+  echo "WARN: sb:init did not create scaffold files; backfilling canonical scaffold so the scenario can continue"
   cp "${SB_ROOT}/templates/silver-bullet.config.json.default" "${WORK_DIR}/.silver-bullet.json"
   jq \
     --arg project "todo-app" \
@@ -568,35 +568,35 @@ while (( SECONDS < workflow_docs_deadline )); do
 done
 
 if [[ "$workflow_docs_present" != true ]]; then
-  echo "WARN: silver:init did not create workflow docs; backfilling canonical templates so the scenario can continue"
+  echo "WARN: sb:init did not create workflow docs; backfilling canonical templates so the scenario can continue"
   mkdir -p "${WORK_DIR}/docs/workflows"
   cp "${SB_ROOT}/templates/workflows/full-dev-cycle.md" "${WORK_DIR}/docs/workflows/full-dev-cycle.md"
   cp "${SB_ROOT}/templates/workflows/devops-cycle.md" "${WORK_DIR}/docs/workflows/devops-cycle.md"
 fi
 
-journey_turn "silver:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'silver:ingest' 'Route-smoke the ingest surface for the todo-app journey. The harness owns deterministic scaffold recovery; do not explore the codebase.')"
-journey_turn "silver:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'silver:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
-wait_for_state_contains "silver:scan recorded in workflow state" "silver:scan"
-research_prompt="$(skill_prompt 'silver:deep-research' 'Route-smoke the deep research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"
-journey_turn "silver:deep-research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
+journey_turn "sb:ingest" "ingest the todo-app context into SB" "no" "ingest turn recorded" "$(skill_prompt 'sb:ingest' 'Route-smoke the ingest surface for the todo-app journey. The harness owns deterministic scaffold recovery; do not explore the codebase.')"
+journey_turn "sb:scan" "scan the repo for useful opportunities" "no" "scan turn recorded" "$(skill_prompt 'sb:scan' 'Run in autonomous mode. Scan the todo-app workspace for actionable issues, missing polish, and any likely friction that should be tracked before implementation. Do not ask for user approval; report the findings directly and continue.')"
+wait_for_state_contains "sb:scan recorded in workflow state" "sb:scan"
+research_prompt="$(skill_prompt 'sb:deep-research' 'Route-smoke the deep research surface for the todo-app clear-completed journey. Summarize the implementation path only if the runtime asks for a concise result.')"
+journey_turn "sb:deep-research" "research the next enhancement" "no" "research turn recorded" "$research_prompt"
 research_log="${TURN_LOG_DIR}/silver-deep-research.txt"
-assert_no_local_skill_source_bypass "silver:deep-research avoided local codex-plugins skill sources" "$research_log"
-if grep -Eqi 'MultAI plugin is not installed|required for silver:deep-research|missing MultAI dependency' "$research_log"; then
-  echo "FAIL: silver:deep-research did not require MultAI in the isolated runtime"
+assert_no_local_skill_source_bypass "sb:deep-research avoided local codex-plugins skill sources" "$research_log"
+if grep -Eqi 'MultAI plugin is not installed|required for sb:deep-research|missing MultAI dependency' "$research_log"; then
+  echo "FAIL: sb:deep-research did not require MultAI in the isolated runtime"
   FAIL=$((FAIL + 1))
 else
-  echo "PASS: silver:deep-research did not require MultAI in the isolated runtime"
+  echo "PASS: sb:deep-research did not require MultAI in the isolated runtime"
   PASS=$((PASS + 1))
 fi
 
-blast_radius_prompt="$(skill_prompt 'silver:blast-radius' 'Assess the blast radius of adding a Clear completed control, including API, UI, and test touch points.')"
-journey_turn "silver:blast-radius" "assess feature impact" "no" "blast-radius turn recorded" "$blast_radius_prompt"
-wait_for_state_contains "silver:blast-radius recorded in workflow state" "silver:blast-radius"
+blast_radius_prompt="$(skill_prompt 'sb:blast-radius' 'Assess the blast radius of adding a Clear completed control, including API, UI, and test touch points.')"
+journey_turn "sb:blast-radius" "assess feature impact" "no" "blast-radius turn recorded" "$blast_radius_prompt"
+wait_for_state_contains "sb:blast-radius recorded in workflow state" "sb:blast-radius"
 
-spec_prompt="$(skill_prompt 'silver:spec' 'Write docs/specs/todo-app-clear-completed.md with a concise spec for the Clear completed enhancement and the acceptance criteria.')"
-journey_turn "silver:spec" "write a small feature spec" "no" "spec turn recorded" "$spec_prompt"
+spec_prompt="$(skill_prompt 'sb:spec' 'Write docs/specs/todo-app-clear-completed.md with a concise spec for the Clear completed enhancement and the acceptance criteria.')"
+journey_turn "sb:spec" "write a small feature spec" "no" "spec turn recorded" "$spec_prompt"
 if [[ ! -f "${WORK_DIR}/.planning/SPEC.md" ]]; then
-  echo "WARN: silver:spec did not create .planning/SPEC.md; backfilling canonical live-test SPEC.md so downstream gates validate real artifacts"
+  echo "WARN: sb:spec did not create .planning/SPEC.md; backfilling canonical live-test SPEC.md so downstream gates validate real artifacts"
   mkdir -p "${WORK_DIR}/.planning"
   cat > "${WORK_DIR}/.planning/SPEC.md" <<'EOF'
 ---
@@ -677,32 +677,32 @@ EOF
 
 - Decide whether completed todos should be permanently deleted or archived.
 EOF
-  echo "PASS: silver:spec fallback scaffolded .planning/SPEC.md and .planning/REQUIREMENTS.md"
+  echo "PASS: sb:spec fallback scaffolded .planning/SPEC.md and .planning/REQUIREMENTS.md"
   PASS=$((PASS + 1))
 else
-  echo "PASS: silver:spec created .planning/SPEC.md"
+  echo "PASS: sb:spec created .planning/SPEC.md"
   PASS=$((PASS + 1))
 fi
 
 issue_search_term="clear-completed bulk action"
 silver_bullet_repo="$(repo_slug_from_origin)"
-add_prompt="$(skill_prompt 'silver:add' "File a GitHub issue in ${silver_bullet_repo} about the todo app missing a clear-completed bulk action. Label it enhancement and todo-app. Reply with the issue URL when done.")"
-issue_response="$(journey_turn "silver:add" "file the todo-app enhancement gap" "yes" "issue filed inline" "$add_prompt" "https://github.com/[^[:space:]]+/issues/[0-9]+|issue|created|filed")"
+add_prompt="$(skill_prompt 'sb:add' "File a GitHub issue in ${silver_bullet_repo} about the todo app missing a clear-completed bulk action. Label it enhancement and todo-app. Reply with the issue URL when done.")"
+issue_response="$(journey_turn "sb:add" "file the todo-app enhancement gap" "yes" "issue filed inline" "$add_prompt" "https://github.com/[^[:space:]]+/issues/[0-9]+|issue|created|filed")"
 issue_url="$(extract_issue_url "$issue_response" || true)"
 if [[ -z "${issue_url:-}" ]]; then
   issue_url="$(lookup_issue_url_by_title "$issue_search_term" || true)"
 fi
 if [[ -z "${issue_url:-}" ]]; then
-  echo "WARN: silver:add did not return a GitHub issue URL; backfilling issue filing so the scenario can continue"
+  echo "WARN: sb:add did not return a GitHub issue URL; backfilling issue filing so the scenario can continue"
   issue_url="$(file_todo_app_issue \
     "Todo app missing clear-completed bulk action" \
     "Problem discovered during the inline todo-app journey." \
     "enhancement")"
 fi
 if [[ -n "${issue_url:-}" ]]; then
-  record_completed_surface "silver:add"
+  record_completed_surface "sb:add"
 fi
-wait_for_state_contains "silver:add recorded in workflow state" "silver:add" 30 2
+wait_for_state_contains "sb:add recorded in workflow state" "sb:add" 30 2
 issue_repo_slug=""
 if [[ -n "${issue_url:-}" ]]; then
   issue_repo_slug="$(repo_slug_from_issue_url "$issue_url")"
@@ -711,41 +711,41 @@ if [[ -z "${issue_repo_slug:-}" ]]; then
   issue_repo_slug="$(repo_slug_from_origin)"
 fi
 if [[ -z "${issue_url:-}" ]]; then
-  echo "FAIL: silver:add could not be resolved to a GitHub issue URL"
+  echo "FAIL: sb:add could not be resolved to a GitHub issue URL"
   FAIL=$((FAIL + 1))
   issue_num=""
 else
   issue_num="$(printf '%s' "$issue_url" | grep -oE '[0-9]+$')"
   owner_repo="$(repo_slug_from_origin)"
   if [[ "$issue_num" == "0" ]]; then
-    echo "PASS: silver:add filed todo-app issue ${issue_num} (local fallback)"
+    echo "PASS: sb:add filed todo-app issue ${issue_num} (local fallback)"
     PASS=$((PASS + 1))
   elif gh issue view "$issue_num" --repo "$owner_repo" --json labels -q '.labels[].name' 2>/dev/null | grep -qx 'todo-app'; then
-    echo "PASS: silver:add filed todo-app issue ${issue_num}"
+    echo "PASS: sb:add filed todo-app issue ${issue_num}"
     PASS=$((PASS + 1))
   else
-    echo "FAIL: silver:add filed todo-app issue ${issue_num}"
+    echo "FAIL: sb:add filed todo-app issue ${issue_num}"
     echo "  todo-app label missing on filed issue"
     FAIL=$((FAIL + 1))
   fi
 fi
-ledger_append "$LEDGER_FILE" "silver:add" "file the todo-app enhancement gap" "yes" "issue:$issue_url"
+ledger_append "$LEDGER_FILE" "sb:add" "file the todo-app enhancement gap" "yes" "issue:$issue_url"
 
-feature_prompt="$(skill_prompt 'silver:feature' 'Route-smoke the Clear completed feature surface for the todo app. The fixture assertions separately verify the endpoint, button, filter behavior, and tests.')"
-journey_turn "silver:feature" "implement the clear-completed feature" "no" "feature turn recorded" "$feature_prompt"
+feature_prompt="$(skill_prompt 'sb:feature' 'Route-smoke the Clear completed feature surface for the todo app. The fixture assertions separately verify the endpoint, button, filter behavior, and tests.')"
+journey_turn "sb:feature" "implement the clear-completed feature" "no" "feature turn recorded" "$feature_prompt"
 feature_log="${TURN_LOG_DIR}/silver-feature.txt"
-assert_no_local_skill_source_bypass "silver:feature avoided local codex-plugins skill sources" "$feature_log"
-wait_for_state_contains "silver:feature recorded in workflow state" "silver:feature"
+assert_no_local_skill_source_bypass "sb:feature avoided local codex-plugins skill sources" "$feature_log"
+wait_for_state_contains "sb:feature recorded in workflow state" "sb:feature"
 
 wait_for_file_contains "clear completed button added" "${WORK_DIR}/src/public/index.html" "Clear completed"
 wait_for_file_contains "completed delete endpoint added" "${WORK_DIR}/src/routes/todos.js" "router\\.delete\\('/completed'|DELETE /api/todos/completed"
 wait_for_file_contains "clear completed test added" "${WORK_DIR}/tests/todos.test.js" "clear completed|completed todos"
 
-ui_prompt="$(skill_prompt 'silver:ui' 'Route-smoke the UI surface for the Clear completed control. The fixture assertions separately verify native filter-bar affordance and accessible labeling.')"
-journey_turn "silver:ui" "refine the button affordance" "no" "ui turn recorded" "$ui_prompt"
+ui_prompt="$(skill_prompt 'sb:ui' 'Route-smoke the UI surface for the Clear completed control. The fixture assertions separately verify native filter-bar affordance and accessible labeling.')"
+journey_turn "sb:ui" "refine the button affordance" "no" "ui turn recorded" "$ui_prompt"
 ui_log="${TURN_LOG_DIR}/silver-ui.txt"
-assert_no_local_skill_source_bypass "silver:ui avoided local codex-plugins skill sources" "$ui_log"
-wait_for_state_contains "silver:ui recorded in workflow state" "silver:ui"
+assert_no_local_skill_source_bypass "sb:ui avoided local codex-plugins skill sources" "$ui_log"
+wait_for_state_contains "sb:ui recorded in workflow state" "sb:ui"
 wait_for_file_contains "clear completed ui improved" "${WORK_DIR}/src/public/index.html" "aria-label|title"
 
 git -C "$WORK_DIR" add src tests package.json package-lock.json 2>/dev/null || true
@@ -755,10 +755,10 @@ fi
 
 touch "${WORK_DIR}/.silver-fast-cleanup"
 # Make the cleanup target explicit so the fast path removes the intended scratch file.
-journey_turn "silver:fast" "remove a trivial scratch artifact" "no" "fast turn recorded" "$(skill_prompt 'silver:fast' 'Delete the file `.silver-fast-cleanup` created for the inline journey and leave the app behavior unchanged.')"
+journey_turn "sb:fast" "remove a trivial scratch artifact" "no" "fast turn recorded" "$(skill_prompt 'sb:fast' 'Delete the file `.silver-fast-cleanup` created for the inline journey and leave the app behavior unchanged.')"
 if [[ -e "${WORK_DIR}/.silver-fast-cleanup" ]]; then
   if recover_silver_fast_cleanup; then
-    echo "WARN: silver:fast left the scratch artifact in place; applied deterministic live-test recovery"
+    echo "WARN: sb:fast left the scratch artifact in place; applied deterministic live-test recovery"
     echo "PASS: silver-fast scratch artifact removed"
     PASS=$((PASS + 1))
   else
@@ -805,20 +805,20 @@ else
   PASS=$((PASS + 1))
 fi
 
-journey_turn "silver:forensics" "diagnose the injected regression" "no" "forensics turn recorded" "$(skill_prompt 'silver:forensics' 'Diagnose the completed-toggle regression that was just injected into src/routes/todos.js and explain the minimal fix path.')"
-wait_for_state_contains "silver:forensics recorded in workflow state" "silver:forensics"
-journey_turn "silver:bugfix" "repair the injected regression" "no" "bugfix turn recorded" "$(skill_prompt 'silver:bugfix' 'Fix the completed-toggle regression in src/routes/todos.js, update or add tests if needed, and ensure npm test passes again.')"
+journey_turn "sb:forensics" "diagnose the injected regression" "no" "forensics turn recorded" "$(skill_prompt 'sb:forensics' 'Diagnose the completed-toggle regression that was just injected into src/routes/todos.js and explain the minimal fix path.')"
+wait_for_state_contains "sb:forensics recorded in workflow state" "sb:forensics"
+journey_turn "sb:bugfix" "repair the injected regression" "no" "bugfix turn recorded" "$(skill_prompt 'sb:bugfix' 'Fix the completed-toggle regression in src/routes/todos.js, update or add tests if needed, and ensure npm test passes again.')"
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_injected_regression; then
-  echo "WARN: silver:bugfix left the injected regression in place; applied deterministic live-test recovery"
+  echo "WARN: sb:bugfix left the injected regression in place; applied deterministic live-test recovery"
 fi
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_put_route_destructure; then
-  echo "WARN: silver:bugfix left the PUT route destructure missing; applied deterministic live-test recovery"
+  echo "WARN: sb:bugfix left the PUT route destructure missing; applied deterministic live-test recovery"
 fi
 
 if ! (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) && recover_inline_journey_app_tree; then
-  echo "WARN: silver:bugfix left the app tree broken; restored baseline src/ and tests/ after bugfix recovery"
+  echo "WARN: sb:bugfix left the app tree broken; restored baseline src/ and tests/ after bugfix recovery"
   (cd "$WORK_DIR" && npm test >/tmp/e2e-live-inline-post-regression.log 2>&1) || true
 fi
 
@@ -909,12 +909,12 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-journey_turn "silver:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'silver:validate' 'Route-smoke the validation surface after the deterministic clear-completed API and npm test assertions have passed.')"
+journey_turn "sb:validate" "validate the app end state" "no" "validate turn recorded" "$(skill_prompt 'sb:validate' 'Route-smoke the validation surface after the deterministic clear-completed API and npm test assertions have passed.')"
 
-journey_turn "silver:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'silver:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. The harness writes the release-readiness markers after the route receipt.')"
+journey_turn "sb:quality-gates" "run quality gates for release readiness" "no" "quality-gates turn recorded" "$(skill_prompt 'sb:quality-gates' 'Route-smoke the Quality Gates surface for this inline todo-app journey. The harness writes the release-readiness markers after the route receipt.')"
 printf '{"tool_name":"Skill","tool_input":{"skill":"silver-quality-gates"},"hook_event_name":"PostToolUse"}' \
   | SILVER_BULLET_STATE_FILE="$STATE_FILE" bash "${SB_ROOT}/hooks/record-skill.sh" >/dev/null 2>&1 || true
-wait_for_state_contains "silver:quality-gates recorded in workflow state" "silver:quality-gates"
+wait_for_state_contains "sb:quality-gates recorded in workflow state" "sb:quality-gates"
 
 write_quality_gate_state_marker 2>/dev/null || true
 write_e2e_live_matrix_marker 2>/dev/null || true
@@ -922,14 +922,14 @@ write_inline_e2e_matrix_marker
 
 if [[ -n "${issue_num:-}" ]]; then
   if [[ "$issue_num" == "0" ]]; then
-    record_completed_surface "silver:remove"
-    wait_for_state_contains "silver:remove recorded in workflow state" "silver:remove"
+    record_completed_surface "sb:remove"
+    wait_for_state_contains "sb:remove recorded in workflow state" "sb:remove"
     echo "PASS: todo-app issue was closed (local fallback)"
     PASS=$((PASS + 1))
   else
-    remove_prompt="$(skill_prompt 'silver:remove' "Close the GitHub issue ${issue_url} in ${issue_repo_slug} and confirm it is retired. Use the repository slug ${issue_repo_slug} when closing it.")"
-    journey_turn "silver:remove" "retire the todo-app issue" "no" "remove turn recorded" "$remove_prompt"
-    wait_for_state_contains "silver:remove recorded in workflow state" "silver:remove"
+    remove_prompt="$(skill_prompt 'sb:remove' "Close the GitHub issue ${issue_url} in ${issue_repo_slug} and confirm it is retired. Use the repository slug ${issue_repo_slug} when closing it.")"
+    journey_turn "sb:remove" "retire the todo-app issue" "no" "remove turn recorded" "$remove_prompt"
+    wait_for_state_contains "sb:remove recorded in workflow state" "sb:remove"
 
     issue_state="$(gh issue view "$issue_num" --repo "$issue_repo_slug" --json state -q '.state' 2>/dev/null || true)"
     if [[ "$issue_state" != "CLOSED" ]]; then
@@ -946,22 +946,22 @@ if [[ -n "${issue_num:-}" ]]; then
     fi
   fi
 else
-  echo "FAIL: silver:remove skipped because no issue number was resolved"
+  echo "FAIL: sb:remove skipped because no issue number was resolved"
   FAIL=$((FAIL + 1))
 fi
 
-journey_turn "silver:rem" "capture a durable learning from the run" "no" "rem turn recorded" "$(skill_prompt 'silver:rem' 'Capture one durable learning from the inline todo-app journey in the monthly knowledge or learnings docs.')"
-wait_for_state_contains "silver:rem recorded in workflow state" "silver:rem"
+journey_turn "sb:rem" "capture a durable learning from the run" "no" "rem turn recorded" "$(skill_prompt 'sb:rem' 'Capture one durable learning from the inline todo-app journey in the monthly knowledge or learnings docs.')"
+wait_for_state_contains "sb:rem recorded in workflow state" "sb:rem"
 
 month="$(date +%Y-%m)"
 learning_file="${WORK_DIR}/docs/learnings/${month}.md"
 knowledge_file="${WORK_DIR}/docs/knowledge/${month}.md"
 ensure_monthly_note_exists "$month"
 if [[ -f "$learning_file" || -f "$knowledge_file" ]]; then
-  echo "PASS: silver:rem wrote a durable monthly note"
+  echo "PASS: sb:rem wrote a durable monthly note"
   PASS=$((PASS + 1))
 else
-  echo "FAIL: silver:rem wrote a durable monthly note"
+  echo "FAIL: sb:rem wrote a durable monthly note"
   FAIL=$((FAIL + 1))
 fi
 
@@ -1073,16 +1073,16 @@ commit_release_prep_changes
 prepare_release_work_dir
 INLINE_RELEASE_WORK_DIR="$WORK_DIR"
 WORK_DIR="$RELEASE_WORK_DIR"
-journey_turn "silver:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'silver:create-release' 'Route-smoke the create-release surface after inline journey release prep.')"
-record_completed_surface "silver:create-release"
+journey_turn "sb:create-release" "prepare the todo-app release finish" "no" "create-release turn recorded" "$(skill_prompt 'sb:create-release' 'Route-smoke the create-release surface after inline journey release prep.')"
+record_completed_surface "sb:create-release"
 ensure_inline_release_changelog "$RELEASE_WORK_DIR"
 ensure_inline_release_tag_exists "$RELEASE_WORK_DIR"
 WORK_DIR="$INLINE_RELEASE_WORK_DIR"
-wait_for_state_contains "silver:create-release recorded in workflow state" "silver:create-release"
+wait_for_state_contains "sb:create-release recorded in workflow state" "sb:create-release"
 
 RELEASE_WORK_DIR="$(discover_release_work_dir)"
 if [[ -z "${RELEASE_WORK_DIR:-}" ]]; then
-  echo "FAIL: could not locate the release worktree after silver:create-release"
+  echo "FAIL: could not locate the release worktree after sb:create-release"
   exit 1
 fi
 
@@ -1091,7 +1091,7 @@ fi
 # longer runway before we declare the release prep step failed.
 wait_for_file_or_git_head_contains "changelog contains inline release version" "$RELEASE_WORK_DIR" "CHANGELOG.md" "v1.0.0-inline|1.0.0-inline" 300 2
 
-journey_turn "silver:release" "finish the release workflow" "no" "release turn recorded" "$(skill_prompt 'silver:release' 'Finish the todo-app release workflow, keep the branch clean, and stop when the release is complete.')"
+journey_turn "sb:release" "finish the release workflow" "no" "release turn recorded" "$(skill_prompt 'sb:release' 'Finish the todo-app release workflow, keep the branch clean, and stop when the release is complete.')"
 
 if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   release_artifacts_status=""
@@ -1117,7 +1117,7 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
   if [[ -n "$release_status" ]]; then
     git -C "$RELEASE_WORK_DIR" add -A >/dev/null 2>&1 || true
     if git -C "$RELEASE_WORK_DIR" commit -q -m "chore(release): finalize inline release" >/dev/null 2>&1; then
-      echo "WARN: silver:release left the release workspace dirty; committed deterministic release recovery"
+      echo "WARN: sb:release left the release workspace dirty; committed deterministic release recovery"
     fi
     git -C "$RELEASE_WORK_DIR" reset --hard HEAD >/dev/null 2>&1 || true
     git -C "$RELEASE_WORK_DIR" clean -fd >/dev/null 2>&1 || true
@@ -1167,7 +1167,7 @@ if [[ -d "$RELEASE_WORK_DIR" ]] && git -C "$RELEASE_WORK_DIR" rev-parse --is-ins
     echo "PASS: coverage ledger already clean after release"
   fi
 else
-  echo "WARN: release worktree no longer exists after silver:release; skipping local release workspace assertions"
+  echo "WARN: release worktree no longer exists after sb:release; skipping local release workspace assertions"
 fi
 
 update_bin_dir="${WORK_DIR}/.sb-update-bin"
@@ -1188,7 +1188,7 @@ esac
 exec /usr/bin/curl "$@"
 EOF
 chmod +x "${update_bin_dir}/curl"
-PATH="${update_bin_dir}:$PATH" journey_turn "silver:update" "check whether Silver Bullet is already up to date before finishing" "no" "update turn recorded" "$(skill_prompt 'silver:update' 'Check whether Silver Bullet is already up to date in this environment. If it is, report that no update is needed and stop without installing anything.')" 'already on the latest version|latest version|up to date'
+PATH="${update_bin_dir}:$PATH" journey_turn "sb:update" "check whether Silver Bullet is already up to date before finishing" "no" "update turn recorded" "$(skill_prompt 'sb:update' 'Check whether Silver Bullet is already up to date in this environment. If it is, report that no update is needed and stop without installing anything.')" 'already on the latest version|latest version|up to date'
 
 local_skill_source_hits="$(local_skill_source_bypass_hits "$TURN_LOG_DIR")"
 if [[ -n "$local_skill_source_hits" ]]; then

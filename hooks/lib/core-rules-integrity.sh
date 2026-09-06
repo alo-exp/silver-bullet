@@ -56,7 +56,7 @@ sb_core_rules_read_verified() {
 }
 
 sb_core_rules_integrity_warning() {
-  printf '%s' '⚠️ core-rules.md integrity check failed or is missing a pin — enforcement rules were not injected. Run /silver:init or reinstall the Silver Bullet plugin.'
+  printf '%s' '⚠️ core-rules.md integrity check failed or is missing a pin — enforcement rules were not injected. Run /sb:init or reinstall the Silver Bullet plugin.'
 }
 
 # Hard budget for SessionStart inline rules (#263). Hosts truncate ~10KB+ payloads

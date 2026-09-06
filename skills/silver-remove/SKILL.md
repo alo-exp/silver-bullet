@@ -4,11 +4,11 @@ description: This skill should be used to remove a tracked work item by ID — c
 version: 0.1.0
 ---
 
-# /silver:remove — Remove a Tracked Work Item
+# /sb:remove — Remove a Tracked Work Item
 
 Use this skill any time a tracked work item must be removed. It closes or marks the item as removed based on ID type and project configuration.
 
-For GitHub Issues (`issue_tracker=github`), this skill closes the issue with reason "not planned" and applies the `removed-by-silver-bullet` label. **Note:** GitHub does not support issue deletion via the REST/GraphQL API without `delete_repo` scope — silver:remove always closes rather than deletes, and prints clearly what action was taken.
+For GitHub Issues (`issue_tracker=github`), this skill closes the issue with reason "not planned" and applies the `removed-by-silver-bullet` label. **Note:** GitHub does not support issue deletion via the REST/GraphQL API without `delete_repo` scope — sb:remove always closes rather than deletes, and prints clearly what action was taken.
 
 For local SB-I-N and SB-B-N items (`issue_tracker=local` or absent), this skill marks the heading line inline with `[REMOVED YYYY-MM-DD]` in `docs/issues/ISSUES.md` or `docs/issues/BACKLOG.md`. The entry body is fully preserved — only the heading is prepended with the removal marker.
 
@@ -101,7 +101,7 @@ Execute only when `ID_TYPE` is `"github"` or `"github-raw"`.
 gh auth status
 ```
 
-If non-zero exit or no logged-in account: output "gh CLI is not authenticated. Run: `gh auth login` — then retry /silver:remove." Stop.
+If non-zero exit or no logged-in account: output "gh CLI is not authenticated. Run: `gh auth login` — then retry /sb:remove." Stop.
 
 ### Step 4b — Derive owner/repo
 
@@ -115,7 +115,7 @@ OWNER_REPO=$(echo "$REMOTE" | sed 's|https://github.com/||;s|.git$||;s|git@githu
 ```bash
 gh label create "removed-by-silver-bullet" \
   --color "#B60205" \
-  --description "Removed via Silver Bullet /silver:remove" \
+  --description "Removed via Silver Bullet /sb:remove" \
   --repo "$OWNER_REPO" \
   2>/dev/null || true
 ```
@@ -126,7 +126,7 @@ gh label create "removed-by-silver-bullet" \
 gh issue close "$ISSUE_NUM" \
   --repo "$OWNER_REPO" \
   --reason "not planned" \
-  --comment "Removed via /silver:remove."
+  --comment "Removed via /sb:remove."
 ```
 
 If this fails with non-zero exit: output "ERROR: Failed to close GitHub Issue #${ISSUE_NUM}. Check that the issue exists and you have write access." Stop.

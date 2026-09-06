@@ -303,7 +303,7 @@ echo ""
 echo "--- Round gate checklist (manual before release) ---"
 cat <<'GATES'
   [ ] 22/22 PASS in ledger with graphify + agentmemory refs
-  [ ] /silver:review-fix-ladder — 8 rungs × 2 consecutive clean verify passes
+  [ ] /sb:review-fix-ladder — 8 rungs × 2 consecutive clean verify passes
   [ ] bash tests/run-all-tests.sh → 0 failures
   [ ] graphify update . in SB repo post-fixes
   [ ] 2 consecutive clean rounds before release tag

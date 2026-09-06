@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live smoke for silver:review-fix-ladder
+# Live smoke for sb:review-fix-ladder
 #
 # Default (no API cost): resolver + invoke-skill adapter + fixture charter checks.
 # Optional live agent turn: SB_LIVE_REVIEW_FIX_LADDER_LIVE=1 SB_LIVE_RUNTIME=codex|kay|claude
@@ -140,7 +140,7 @@ assert_silver_bullet_shim_ready() {
   fi
 
   local shim_probe=""
-  shim_probe="$(bash "$shim_path" invoke-skill silver-review-fix-ladder smoke-target.py 2>&1 || true)"
+  shim_probe="$(bash "$shim_path" invoke-skill sb:review-fix-ladder smoke-target.py 2>&1 || true)"
   assert_output_contains "live codex silver-bullet shim invokes review-fix-ladder skill" "$shim_probe" "Skill: silver-review-fix-ladder|BEGIN SKILL silver-review-fix-ladder"
 }
 
@@ -255,13 +255,13 @@ run_automated_smoke() {
   esac
 
   scope_arg="smoke-target.py"
-  invoke_out="$(cd "$work_dir" && bash "$INVOKE_ADAPTER" invoke-skill silver-review-fix-ladder "$scope_arg" 2>&1)"
+  invoke_out="$(cd "$work_dir" && bash "$INVOKE_ADAPTER" invoke-skill sb:review-fix-ladder "$scope_arg" 2>&1)"
   assert_output_contains "invoke-skill loads review-fix-ladder skill" "$invoke_out" "BEGIN SKILL silver-review-fix-ladder"
   assert_output_contains "invoke-skill surfaces runtime scope argument" "$invoke_out" "smoke-target\\.py"
   assert_output_contains "skill body documents scope resolution" "$invoke_out" "Resolve Scope"
   assert_output_contains "skill body documents resolver command" "$invoke_out" "review-fix-ladder\\.py --json"
   assert_output_contains "skill body documents charter derivation" "$invoke_out" "Derive Review Charter"
-  assert_output_contains "skill body documents triage state" "$invoke_out" "rung_N_triage|/silver:triage"
+  assert_output_contains "skill body documents triage state" "$invoke_out" "rung_N_triage|/sb:triage"
   assert_output_contains "charter names divide() zero goal" "$(cat "${work_dir}/CHARTER.md")" "divide\\(\\)"
 
   printf 'Automated phase complete (host=%s, rungs=%s)\n' \
@@ -335,13 +335,13 @@ run_live_agent_smoke() {
   local prompt
   case "$runtime" in
     codex|kay)
-      prompt="Run exactly this command as your first and only non-hook command: \`silver-bullet invoke-skill silver-review-fix-ladder smoke-target.py\`. After the adapter prints the skill, read only smoke-target.py and CHARTER.md. Reply with one sentence naming the divide() defect from the charter. Do not edit files, run tests, or invoke additional commands."
+      prompt="Run exactly this command as your first and only non-hook command: \`silver-bullet invoke-skill sb:review-fix-ladder smoke-target.py\`. After the adapter prints the skill, read only smoke-target.py and CHARTER.md. Reply with one sentence naming the divide() defect from the charter. Do not edit files, run tests, or invoke additional commands."
       ;;
     cursor)
-      prompt="Use /silver:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
+      prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
       ;;
     *)
-      prompt="Use /silver:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
+      prompt="Use /sb:review-fix-ladder on smoke-target.py only. Read smoke-target.py and CHARTER.md. Derive the charter, run python3 scripts/review-fix-ladder.py --json, and reply with one sentence naming the divide() defect. Do not edit files or expand scope."
       ;;
   esac
 

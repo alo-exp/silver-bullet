@@ -56,21 +56,21 @@ run_hook() {
 result=$(run_hook '{"tool_input":{"skill":"superpowers:brainstorming"}}')
 assert_eq "non-phase skill: no output" "" "$result"
 
-# Test 2: silver:execute → hook delegates (no phase files = no output)
-result=$(run_hook '{"tool_input":{"skill":"silver:execute"}}')
-assert_eq "silver:execute without planning: no output" "" "$result"
+# Test 2: sb:execute → hook delegates (no phase files = no output)
+result=$(run_hook '{"tool_input":{"skill":"sb:execute"}}')
+assert_eq "sb:execute without planning: no output" "" "$result"
 
-# Test 3: silver:plan → same
-result=$(run_hook '{"tool_input":{"skill":"silver:plan"}}')
-assert_eq "silver:plan without planning: no output" "" "$result"
+# Test 3: sb:plan → same
+result=$(run_hook '{"tool_input":{"skill":"sb:plan"}}')
+assert_eq "sb:plan without planning: no output" "" "$result"
 
-# Test 4: silver:context → same
-result=$(run_hook '{"tool_input":{"skill":"silver:context"}}')
-assert_eq "silver:context without planning: no output" "" "$result"
+# Test 4: sb:context → same
+result=$(run_hook '{"tool_input":{"skill":"sb:context"}}')
+assert_eq "sb:context without planning: no output" "" "$result"
 
-# Test 5: silver:deep-research → same
-result=$(run_hook '{"tool_input":{"skill":"silver:deep-research"}}')
-assert_eq "silver:deep-research without planning: no output" "" "$result"
+# Test 5: sb:deep-research → same
+result=$(run_hook '{"tool_input":{"skill":"sb:deep-research"}}')
+assert_eq "sb:deep-research without planning: no output" "" "$result"
 
 # Test 6: hyphenated silver-execute → same
 result=$(run_hook '{"tool_input":{"skill":"silver-execute"}}')

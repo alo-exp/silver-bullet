@@ -2,7 +2,7 @@
 
 ## Skill: silver-five-tool-stack
 ## Context: Parallel routed 5-stack (LeanCTX + RTK + Context Mode + Graphify + agentmemory)
-## Harness: [`tests/live/test-live-five-tool-stack-cursor.sh`](../live/test-live-five-tool-stack-cursor.sh) via [`/silver:agent-cursor`](../../skills/silver-agent-cursor/SKILL.md)
+## Harness: [`tests/live/test-live-five-tool-stack-cursor.sh`](../live/test-live-five-tool-stack-cursor.sh) via [`/sb:agent-cursor`](../../skills/silver-agent-cursor/SKILL.md)
 
 Plan reference: [`.planning/PLAN-leanctx-five-tool-integration.md`](../../.planning/PLAN-leanctx-five-tool-integration.md) Phase 4.
 

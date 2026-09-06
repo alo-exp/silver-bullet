@@ -40,7 +40,7 @@ echo "✓ Site freshness tests passed."
 # Mandatory live delegate when recommended_tools.leanctx.enabled_by_user is true.
 cat <<'EOF'
 
-  Stage 4c — Five-tool stack pre-release (Cursor /silver:agent-cursor)
+  Stage 4c — Five-tool stack pre-release (Cursor /sb:agent-cursor)
   Running: tests/scripts/test-five-tool-prerelease-cursor.sh
   See: docs/testing/FIVE-TOOL-PRERELEASE.md
 EOF
@@ -70,7 +70,11 @@ cat <<'EOF'
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
 
-if ! bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
+# Stage 4c already ran the required live five-tool gate above.  Do not leak
+# its prerelease selector into the full runner, where the script-unit-test
+# discovery would execute the live matrix a second time.
+if ! env -u SB_FIVE_TOOL_PRERELEASE -u SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE \
+  bash "${REPO_ROOT}/tests/run-all-tests.sh"; then
   cat <<'EOF' >&2
 
 🛑 PRE-RELEASE GATE FAILED — fix failing tests before bump/tag/release.

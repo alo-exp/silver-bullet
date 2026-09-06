@@ -19,7 +19,7 @@
 <h2 id="overview">Overview</h2>
 <p>Agent delegation hands one bounded task to an external Claude, Codex, or Cursor agent while the parent remains responsible for scope, checkpoints, verification, and the final success claim. It is a supervised execution flow, not an unsupervised replacement for the active workflow.</p>
 <h2 id="routes">Host Routes</h2>
-<ul><li><code>/silver:agent-claude</code> — delegate to Claude Code.</li><li><code>/silver:agent-codex</code> — delegate to Codex.</li><li><code>/silver:agent-cursor</code> — delegate to Cursor.</li></ul>
+<ul><li><code>/sb:agent-claude</code> — delegate to Claude Code.</li><li><code>/sb:agent-codex</code> — delegate to Codex.</li><li><code>/sb:agent-cursor</code> — delegate to Cursor.</li></ul>
 <p>The generic catalog entry recognizes <code>agent-delegate</code>, <code>agent-claude</code>, <code>agent-codex</code>, and <code>agent-cursor</code> signals.</p>
 <h2 id="composition">Catalog Composition</h2>
 <div class="code-block">WF-AGENT-DELEGATE-ENTRY

@@ -176,7 +176,7 @@ assert_output_contains() {
   local label="$1"
   local output="$2"
   local needle="$3"
-  if printf '%s' "$output" | grep -qF "$needle"; then
+  if printf '%s' "$output" | grep -F "$needle" >/dev/null; then
     echo "  ✅ $label"
     PASS=$((PASS + 1))
   else
@@ -196,11 +196,11 @@ assert_in_state "silver-quality-gates recorded after invocation" "silver-quality
 assert_in_session_log "session log marks silver-quality-gates completed" "  - [x] silver-quality-gates"
 teardown
 
-# Test 1b: Bootstrap silver:init is recorded even before project config exists
+# Test 1b: Bootstrap sb:init is recorded even before project config exists
 setup
 rm -f "$TMPCFG"
-run_hook "silver:init" >/dev/null
-assert_in_state "silver:init recorded without project config present" "silver-init"
+run_hook "sb:init" >/dev/null
+assert_in_state "sb:init recorded without project config present" "silver-init"
 teardown
 
 # Test 2: Untracked skill is NOT recorded
@@ -211,7 +211,7 @@ teardown
 
 # Test 2b: Project all_tracked is additive to packaged defaults, not a replacement
 setup
-run_hook "silver:scan" >/dev/null
+run_hook "sb:scan" >/dev/null
 assert_in_state "default SB route remains recordable when project config has partial all_tracked" "silver-scan"
 teardown
 
@@ -314,22 +314,22 @@ teardown
 # Test 12c: SB-owned Codex invoke-skill adapter records completed skills only with receipt
 echo "--- Group 5b: Codex invoke-skill adapter ---"
 setup
-adapter_cmd_without_receipt="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+adapter_cmd_without_receipt="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill sb:quality-gates"
 run_hook_bash "$adapter_cmd_without_receipt" >/dev/null
 assert_not_in_state "invoke-skill command without adapter receipt is not trusted" "silver-quality-gates"
 teardown
 
 setup
-adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
-(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>/dev/null) || true
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill sb:quality-gates"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill sb:quality-gates >/dev/null 2>/dev/null) || true
 run_hook_bash "$adapter_cmd" >/dev/null
 assert_in_state "Codex invoke-skill adapter records completed skill after verified receipt" "silver-quality-gates"
 assert_in_session_log "Codex invoke-skill adapter marks session ledger completed" "  - [x] silver-quality-gates"
 teardown
 
 setup
-adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
-(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>/dev/null) || true
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill sb:quality-gates"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill sb:quality-gates >/dev/null 2>/dev/null) || true
 input=$(jq -n --arg c "$adapter_cmd" \
   '{hook_event_name: "PostToolUse", tool_name: "exec_command", tool_input: {cmd: $c}, tool_response: {exit_code: 0}}')
 cd "$TMPDIR_TEST" && printf '%s' "$input" | bash "$HOOK" >/dev/null
@@ -337,11 +337,11 @@ assert_in_state "Codex invoke-skill adapter records desktop exec_command cmd pay
 teardown
 
 setup
-adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver:quality-gates"
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill sb:quality-gates"
 mkdir -p "$HOME/.codex/.silver-bullet/skill-invocations"
 (
   cd "$TMPDIR_TEST"
-  SILVER_BULLET_RUNTIME=codex bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver:quality-gates >/dev/null 2>&1
+  SILVER_BULLET_RUNTIME=codex bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill sb:quality-gates >/dev/null 2>&1
 ) || true
 input=$(jq -n --arg c "$adapter_cmd" \
   '{hook_event_name: "PostToolUse", tool_name: "exec_command", tool_input: {cmd: $c}, tool_response: {exit_code: 0}}')
@@ -350,8 +350,8 @@ assert_in_state "repo hook records desktop exec_command when adapter receipt liv
 teardown
 
 setup
-adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill silver-tdd"
-(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver-tdd >/dev/null 2>/dev/null) || true
+adapter_cmd="bash \"$REPO_ROOT/scripts/silver-bullet\" invoke-skill sb:tdd"
+(cd "$TMPDIR_TEST" && bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill sb:tdd >/dev/null 2>/dev/null) || true
 run_hook_bash "$adapter_cmd" >/dev/null
 assert_in_state "Codex invoke-skill adapter canonicalizes silver-tdd to tdd marker" "tdd"
 teardown
@@ -359,7 +359,7 @@ teardown
 setup
 adapter_output="$(
   cd "$TMPDIR_TEST" && \
-    bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill silver 'Add a due date field to todos.' 2>/dev/null
+    bash "$REPO_ROOT/scripts/silver-bullet" invoke-skill sb 'Add a due date field to todos.' 2>/dev/null
 )"
 assert_output_contains "Codex invoke-skill adapter surfaces runtime arguments" "$adapter_output" "Runtime arguments for this skill"
 assert_output_contains "Codex invoke-skill adapter includes original bare prompt argument" "$adapter_output" "Add a due date field to todos."

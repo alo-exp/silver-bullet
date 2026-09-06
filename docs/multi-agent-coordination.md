@@ -54,10 +54,10 @@ Identity tags are configurable via `multi_agent.identity_tags[]` in `.silver-bul
 
 Scenario: developer has Claude-SB and Codex-SB both running in the same project folder. Claude is working on Phase 70 while Codex is working on Phase 72.
 
-1. **Claude opens its session.** `hooks/session-start` fires. Claude invokes `/silver:feature` for Phase 70.
+1. **Claude opens its session.** `hooks/session-start` fires. Claude invokes `/sb:feature` for Phase 70.
 2. **Claude claims Phase 70** via `hooks/phase-lock-claim.sh` on its first edit under `.planning/phases/070-*/`. The lock file gains `"070": {"agent_runtime": "claude", ...}`.
 3. **Codex opens its own session.** `hooks/session-start` peeks `.planning/.phase-locks.json` and prints `OTHER-RUNTIME-LOCK: phase 070 is owned by claude (...)` in the session summary — informational, not blocking.
-4. **Codex invokes `/silver:feature` for Phase 72.** The first edit under `.planning/phases/072-*/` claims the phase through `hooks/phase-lock-claim.sh`.
+4. **Codex invokes `/sb:feature` for Phase 72.** The first edit under `.planning/phases/072-*/` claims the phase through `hooks/phase-lock-claim.sh`.
 5. **Both runtimes work simultaneously on different phases.** Each runtime heartbeats its own phase via `hooks/phase-lock-heartbeat.sh`.
 6. **Claude finishes Phase 70 and ships.** `hooks/phase-lock-release.sh` releases its lock.
 7. **Codex finishes Phase 72.** Its release hook clears the Codex-owned lock at phase exit.

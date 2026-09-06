@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 HOOKS_JSON="${REPO_ROOT}/hooks/hooks.json"
 INTEGRATION_DIR="${REPO_ROOT}/tests/integration"
 UNIT_DIR="${REPO_ROOT}/tests/hooks"
+SCRIPT_TEST_DIR="${REPO_ROOT}/tests/scripts"
 
 echo "=== Hook Coverage Matrix ==="
 
@@ -38,6 +39,11 @@ for hook in $hook_scripts; do
 
   # Check unit tests
   if grep -rlqE "${hook}(\.sh)?" "$UNIT_DIR"/test-*.sh 2>/dev/null; then
+    has_coverage=true
+  fi
+
+  # Script-level tests also exercise registered hooks (for example quota retry).
+  if grep -rlqE "${hook}(\.sh)?" "$SCRIPT_TEST_DIR"/test-*.sh 2>/dev/null; then
     has_coverage=true
   fi
 

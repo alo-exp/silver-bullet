@@ -52,7 +52,7 @@ prompt="$(printf '%s' "$input" | jq -r '.prompt // ""' 2>/dev/null || true)"
 
 # ── Resolve optional project config ──────────────────────────────────────────
 #
-# Bootstrap requests such as `silver:init` happen before a project scaffold
+# Bootstrap requests such as `sb:init` happen before a project scaffold
 # exists, so we must still record route markers even when there is no local
 # `.silver-bullet.json` yet. If a project config exists, we use it to honor a
 # custom state file path; otherwise we fall back to the shared SB state file.
@@ -109,7 +109,7 @@ fi
 
 # ── Extract requested route(s) from prompt ──────────────────────────────────
 #
-# We record SB routes: `silver:init`, `silver:feature`, etc → requested marker `silver-init`, ...
+# We record SB routes: `sb:init`, `sb:feature`, etc → requested marker `silver-init`, ...
 #
 # Requested routes are intentionally stored separately from completed state so
 # prompt text cannot satisfy workflow gates.
@@ -125,13 +125,13 @@ while IFS= read -r tok; do
   tok="${tok#\`}"
   tok="${tok%\`}"
   case "$tok" in
-    silver:*) skills+=("$tok") ;;
+    sb:*) skills+=("$tok") ;;
   esac
 done < <(printf '%s' "$prompt" | grep -oE "$backtick_regex" 2>/dev/null | head -n 50 || true)
 
 if [[ ${#skills[@]} -eq 0 ]] && declare -F sb_prompt_is_bare_work_request >/dev/null 2>&1; then
   if sb_prompt_is_bare_work_request "$prompt"; then
-    skills+=("silver")
+    skills+=("sb")
   fi
 fi
 
@@ -147,9 +147,13 @@ touch -- "$REQUESTED_FILE" 2>/dev/null || true
 
 canonicalize() {
   local raw="$1"
-  # Convert silver:* -> silver-*
-  if [[ "$raw" == *:* ]]; then
-    printf '%s' "$raw" | sed 's/:/-/g'
+  # Convert sb:* -> the historical silver-* compliance marker.
+  if [[ "$raw" == sb:* ]]; then
+    printf 'silver-%s' "${raw#sb:}"
+  elif [[ "$raw" == *:* ]]; then
+    printf 'silver-%s' "${raw#*:}"
+  elif [[ "$raw" == sb ]]; then
+    printf 'silver'
   else
     printf '%s' "$raw"
   fi
@@ -183,4 +187,3 @@ fi
 
 emit_noop_json
 exit 0
-

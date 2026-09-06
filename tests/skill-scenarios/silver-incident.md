@@ -8,6 +8,6 @@ Validate SB-owned incident response and postmortem.
 
 - Writes `.planning/INCIDENT.md`.
 - Captures impact, timeline, mitigation, root cause, contributing factors, and recovery verification.
-- Uses `silver:forensics` where root cause is unclear.
+- Uses `sb:forensics` where root cause is unclear.
 - Applies incident-retro and affected domain audit packs.
-- Files corrective actions through `silver:add`.
+- Files corrective actions through `sb:add`.

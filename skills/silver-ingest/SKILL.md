@@ -6,7 +6,7 @@ argument-hint: "<JIRA ticket key, --source-url <repo-url>, or artifact URL>"
 version: 0.1.0
 ---
 
-# /silver:ingest — External Artifact Ingestion Workflow
+# /sb:ingest — External Artifact Ingestion Workflow
 
 SB orchestrator for external artifact ingestion. Pulls JIRA tickets, Figma designs, Google Docs, and Confluence pages into canonical `.planning/SPEC.md` + `.planning/DESIGN.md` format. Also handles cross-repo spec fetching for multi-repo workflows.
 
@@ -298,7 +298,7 @@ fi
 Prepend the following comment to the file immediately after writing:
 
 ```
-<!-- READ-ONLY: fetched from {source-url} on {date}. Do not edit. Refresh by re-running /silver:ingest --source-url {source-url} -->
+<!-- READ-ONLY: fetched from {source-url} on {date}. Do not edit. Refresh by re-running /sb:ingest --source-url {source-url} -->
 ```
 
 **Version extraction:**
@@ -393,7 +393,7 @@ Draft SPEC.md written (v{version}).
   {N} sections populated
   {M} artifact(s) missing — see [ARTIFACT MISSING] blocks
 
-Next step: run /silver:clarify --spec (or --next spec) to interview, then /silver:spec to compile.
+Next step: run /sb:clarify --spec (or --next spec) to interview, then /sb:spec to compile.
 ```
 
 ## Step 7: Write INGESTION_MANIFEST.md
@@ -428,7 +428,7 @@ Include ALL artifacts from this run, including:
 - Artifacts that failed (`status: failed`) with the error reason
 - Artifacts skipped from a prior run's manifest (`status: skipped`, Error: "resuming from prior run")
 
-On subsequent runs, silver:ingest reads this manifest in Step 0 and skips any `status: success` entries. `status: failed` entries are retried.
+On subsequent runs, sb:ingest reads this manifest in Step 0 and skips any `status: success` entries. `status: failed` entries are retried.
 
 ### Step 7a: Review INGESTION_MANIFEST.md
 
@@ -461,13 +461,13 @@ Artifacts:    {N} attempted, {S} succeeded, {F} failed
 Spec version: {spec-version or "n/a" for cross-repo mode}
 DESIGN.md:    {created | updated | skipped}
 
-Next step: run /silver:clarify --spec (or --next spec) then /silver:spec.
+Next step: run /sb:clarify --spec (or --next spec) then /sb:spec.
 ```
 
 If any artifacts failed, append:
 
 ```
-{F} artifact(s) failed ingestion. Re-run /silver:ingest to retry failed artifacts.
+{F} artifact(s) failed ingestion. Re-run /sb:ingest to retry failed artifacts.
 Review .planning/INGESTION_MANIFEST.md for error details.
 ```
 

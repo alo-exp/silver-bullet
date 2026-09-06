@@ -1,6 +1,6 @@
 ---
 name: scalability
-title: "Silver: Scalability"
+title: "SB: Scalability"
 description: This skill should be used when designing, planning, implementing, or reviewing any non-trivial change, or when the user asks to "handle more load", "scale this out", "optimize for throughput" — enforces stateless design, efficient resource usage, and architectural patterns that handle 10x-100x growth without redesign
 user-invocable: false
 version: 0.1.0
@@ -12,7 +12,7 @@ Every design, plan, and implementation MUST handle current load efficiently AND 
 
 **Why this matters:** Systems that aren't designed to scale hit walls — and those walls always appear at the worst time (launch day, viral moment, enterprise customer onboarding). Retrofitting scalability is 10-100x more expensive than building it in.
 
-**When to invoke:** During PLANNING (after `/silver:context`, before `/silver:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
+**When to invoke:** During PLANNING (after `/sb:context`, before `/sb:plan`) and during REVIEW (as part of code review criteria). This skill applies to both new code and modifications to existing code.
 
 ---
 
@@ -115,7 +115,7 @@ If an operation exceeds its budget, it MUST be optimized before shipping. "It wo
 
 ## Applying This Skill
 
-### During Planning (/silver:context -> /silver:plan)
+### During Planning (/sb:context -> /sb:plan)
 
 Before finalizing any design or plan, run the **Scalability Checklist**:
 
@@ -129,7 +129,7 @@ Before finalizing any design or plan, run the **Scalability Checklist**:
 
 If any item fails: **redesign before proceeding to implementation.**
 
-### During Implementation (/silver:execute)
+### During Implementation (/sb:execute)
 
 As you write code:
 - Run `EXPLAIN` on new queries. Add indexes proactively.
@@ -138,7 +138,7 @@ As you write code:
 - Add resource limits to every input (body size, array length, string length).
 - Use connection pooling for every external resource.
 
-### During Review (silver:review / silver:review-triage)
+### During Review (sb:review / sb:review-triage)
 
 Verify these as part of every code review:
 - No unbounded queries or loops

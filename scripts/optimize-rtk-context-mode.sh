@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # optimize-rtk-context-mode.sh — research-backed RTK + Context Mode global host optimization.
 # Idempotently wires hooks, MCP, cli-config allow-list, and global rules per host.
-# SB-independent: works without .silver-bullet.json or /silver:init.
+# SB-independent: works without .silver-bullet.json or /sb:init.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

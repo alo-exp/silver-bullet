@@ -7,7 +7,7 @@ argument-hint: "<solution-1> <solution-2> [...solution-N] [--mode deep|ultradeep
 version: 1.0.0
 ---
 
-# /silver:compare — Named Solution Comparison
+# /sb:compare — Named Solution Comparison
 
 Thin orchestrator route into **`silver-deep-research`** with
 `research_type=solution-compare`. Does **not** invoke MultAI or multi-AI orchestration.
@@ -15,7 +15,7 @@ Thin orchestrator route into **`silver-deep-research`** with
 ## Usage
 
 ```bash
-/silver:compare Backstage Port Cortex [--mode deep]
+/sb:compare Backstage Port Cortex [--mode deep]
 ```
 
 ## Behavior

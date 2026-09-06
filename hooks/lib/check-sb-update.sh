@@ -119,7 +119,7 @@ ASK THE USER NOW before other project work (§0 step 5.1):
 "Silver Bullet v${SB_UPDATE_INSTALLED} is outdated (latest: v${SB_UPDATE_LATEST}). Update now?"
 
 Options:
-- A. Yes, update now — invoke \`/silver:update\` through the active runtime's SB-recognized skill invocation channel, then continue session startup.
+- A. Yes, update now — invoke \`/sb:update\` through the active runtime's SB-recognized skill invocation channel, then continue session startup.
 - B. Skip — output "Skipping SB update." and continue with the current version.
 
 Do not auto-update without explicit user selection of A.

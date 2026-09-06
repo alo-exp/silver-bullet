@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Structural contract for /silver:agent-claude skill and delegate wrapper.
+# Structural contract for /sb:agent-claude skill and delegate wrapper.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -32,7 +32,7 @@ fi
 
 grep -qE '^name: silver-agent-claude$' "$SKILL" && check "frontmatter name silver-agent-claude" pass || check "frontmatter name silver-agent-claude" fail
 grep -q 'user-invocable: true' "$SKILL" && check "user-invocable" pass || check "user-invocable" fail
-grep -q '/silver:agent-claude' "$SKILL" && check "route documented" pass || check "route documented" fail
+grep -q '/sb:agent-claude' "$SKILL" && check "route documented" pass || check "route documented" fail
 grep -q 'claude-interactive-invoke.expect' "$SKILL" && check "references invoke harness" pass || check "references invoke harness" fail
 grep -q 'SB_E2E_ENTERPRISE_MATRIX' "$SKILL" && check "excludes matrix env" pass || check "excludes matrix env" fail
 grep -q 'agent-claude-delegate.sh' "$SKILL" && check "references delegate wrapper" pass || check "references delegate wrapper" fail
@@ -40,8 +40,8 @@ grep -q 'agentmemory' "$SKILL" && check "documents agentmemory capture" pass || 
 grep -q 'graphify' "$SKILL" && check "documents graphify capture" pass || check "documents graphify capture" fail
 grep -q 'AF-AGENT-DELEGATE' "$SKILL" && check "documents AF-AGENT-DELEGATE" pass || check "documents AF-AGENT-DELEGATE" fail
 grep -q 'SB_AGENT_DELEGATE_V2' "$SKILL" && check "documents V2 default-on flag" pass || check "documents V2 default-on flag" fail
-grep -q '/silver:agent-codex' "$SKILL" && check "documents codex tri-host sibling" pass || check "documents codex tri-host sibling" fail
-grep -q '/silver:agent-cursor' "$SKILL" && check "documents cursor tri-host sibling" pass || check "documents cursor tri-host sibling" fail
+grep -q '/sb:agent-codex' "$SKILL" && check "documents codex tri-host sibling" pass || check "documents codex tri-host sibling" fail
+grep -q '/sb:agent-cursor' "$SKILL" && check "documents cursor tri-host sibling" pass || check "documents cursor tri-host sibling" fail
 grep -q 'E2E-081' "$SKILL" && check "R9 E2E-081 learning" pass || check "R9 E2E-081 learning" fail
 grep -q 'E2E-110' "$SKILL" && check "E2E-110 auth policy" pass || check "E2E-110 auth policy" fail
 
@@ -65,7 +65,7 @@ grep -q 'scripts/agent-claude/' "$SKILL" && check "references agent-claude harne
 grep -q 'SB_AGENT_CLAUDE_LOG_FLOOR' "$SKILL" && check "documents log floor" pass || check "documents log floor" fail
 grep -q 'Security (delegation boundary)' "$SKILL" && check "security section" pass || check "security section" fail
 
-CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/silver:agent-claude/SKILL.md"
+CURSOR_BUNDLE="${REPO_ROOT}/host-bundles/cursor/sb:agent-claude/SKILL.md"
 if [[ -f "$CURSOR_BUNDLE" ]]; then
   grep -q 'when Claude Code TUI is the intended executor' "$CURSOR_BUNDLE" \
     && check "cursor bundle names Claude executor" pass || check "cursor bundle names Claude executor" fail

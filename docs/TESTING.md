@@ -5,7 +5,7 @@
 ```
     / Static assertions \   JSON config validation, template parity, doc content grep
    / Hook unit tests    \   Bash test scripts per hook in tests/hooks/
-  / Manual smoke tests  \   /silver:init setup on a fresh project
+  / Manual smoke tests  \   /sb:init setup on a fresh project
 ```
 
 Silver Bullet's test surface is primarily shell hooks, JSON configuration, and packaging
@@ -24,7 +24,7 @@ and unit tests, plus a shared live matrix that exercises the real Kay-backed Cod
 | **Codex package sync/install** | SB-only Codex bundle, marketplace registration, dependency bootstrap, legacy skill purge | `scripts/install-codex.sh`, `scripts/sync-codex-package.sh` | <10s each |
 | **Live AI matrix** | Shared scenario suite on the Kay agent adapter using the Codex-compatible hook surface | `tests/live/run-live-tests.sh` | 5-15 min |
 | **Live enterprise E2E** | Kay hook-delivery diagnostic against the standalone sibling `enterprise-grade-test-app` repo; full workflow matrix via Claude supervised sessions | `tests/e2e-live/run-e2e-live-tests.sh` + `.planning/enterprise-e2e/` | 10-30 min (Kay) / multi-day (Claude matrix) |
-| **Manual smoke** | Run `/silver:init` on a clean project; verify enforcement activates | Human | 5-10 min |
+| **Manual smoke** | Run `/sb:init` on a clean project; verify enforcement activates | Human | 5-10 min |
 
 ## Coverage Goals
 
@@ -102,7 +102,7 @@ Without `</dev/null`, the subshell inherits the parent agent shell's open stdin.
 1. Stage A blocks if `quality-gates` is absent from state
 2. Stage A warns and allows when the required skill is unavailable anywhere invocable
 3. Stage A and Stage B both block source edits when planning is incomplete
-4. Phase-skip detection warns when finalization skills appear before `/silver:review` while still allowing fixes
+4. Phase-skip detection warns when finalization skills appear before `/sb:review` while still allowing fixes
 5. Stage C allows edits once `silver-review` is done and finalization remains
 6. Stage D allows edits once all required skills are present
 7. Trivial file bypass never blocks, regardless of state
@@ -141,8 +141,8 @@ enterprise fixture. Release gates accept either Kay `matrix=codex-only` markers 
 this suite or Claude supervised matrix evidence recorded in round ledgers.
 
 The separate `tests/live/test-silver-init-migration.sh` scenario exercises the
-Step 3.5.5 delegation path where `silver:init` hands docs bootstrap/reconciliation
-to `silver:ensure-docs`. It validates the brownfield preserve-vs-switch behavior,
+Step 3.5.5 delegation path where `sb:init` hands docs bootstrap/reconciliation
+to `sb:ensure-docs`. It validates the brownfield preserve-vs-switch behavior,
 archive-move policy, and recovery/remediation command paths.
 
 ## Skill Scenario Coverage

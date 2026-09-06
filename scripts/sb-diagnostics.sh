@@ -181,7 +181,7 @@ main() {
     fi
   else
     if [[ "$graphify_consent" == "enabled" && "$graphify_suspended" == "true" ]]; then
-      record warn "graphify" "opted in but install failed — enforcement suspended; retry on /silver:update"
+      record warn "graphify" "opted in but install failed — enforcement suspended; retry on /sb:update"
     elif [[ "$graphify_consent" == "enabled" ]]; then
       record fail "graphify-cli" "not on PATH — user opted in; install: uv tool install graphifyy"
     else
@@ -231,7 +231,7 @@ main() {
     fi
   else
     if [[ "$agentmemory_consent" == "enabled" && "$agentmemory_suspended" == "true" ]]; then
-      record warn "agentmemory" "opted in but install failed — enforcement suspended; retry on /silver:update"
+      record warn "agentmemory" "opted in but install failed — enforcement suspended; retry on /sb:update"
     elif [[ "$agentmemory_consent" == "enabled" ]]; then
       record fail "agentmemory-cli" "not on PATH — user opted in; install: npm install -g @agentmemory/agentmemory"
     else
@@ -372,8 +372,8 @@ main() {
     expected_version="$(jq -r '.version // empty' "${REPO_ROOT}/package.json" 2>/dev/null || true)"
     if [[ -L "$cache_current" ]]; then
       resolved_current="$(cd "$cache_current" && pwd -P 2>/dev/null || true)"
-      if [[ -f "${resolved_current}/commands/silver.md" ]] && \
-         [[ "$(python3 - "${resolved_current}/commands/silver.md" <<'PY'
+      if [[ -f "${resolved_current}/commands/sb.md" ]] && \
+         [[ "$(python3 - "${resolved_current}/commands/sb.md" <<'PY'
 import re, sys
 from pathlib import Path
 p = Path(sys.argv[1])
@@ -388,7 +388,7 @@ for line in lines[1:]:
         print(m.group(1).strip().strip('"').strip("'"))
         break
 PY
-)" == "silver" ]]; then
+)" == "sb" ]]; then
         record pass "cursor-commands" "plugin cache has composer command stubs"
       else
         record fail "cursor-commands" "commands/ missing — run: bash scripts/install-cursor.sh"
@@ -438,13 +438,13 @@ PY
           fi
           if [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1 \
             && [[ -L "$market_cache_link" ]] && [[ "$(readlink -f "$market_cache_link" 2>/dev/null || true)" == "$resolved_current" ]] \
-            && [[ -f "${gitpath_root}/commands/silver.md" ]] \
+            && [[ -f "${gitpath_root}/commands/sb.md" ]] \
             && jq -e '.commands == "./commands"' "${gitpath_root}/.cursor-plugin/plugin.json" >/dev/null 2>&1; then
             record pass "cursor-gitpath" "marketplace gitPath ready with commands (${registry_sha:0:8})"
           elif [[ -d "${gitpath_root}/.git" ]] && git -C "$gitpath_root" cat-file -e "${registry_sha}^{commit}" >/dev/null 2>&1; then
             record fail "cursor-gitpath" "gitPath exists but commands surface missing for ${registry_sha:0:8} — run: bash scripts/install-cursor.sh"
           else
-            record fail "cursor-gitpath" "gitPath/cache symlink missing for ${registry_sha:0:8} — /silver commands will not load — run: bash scripts/install-cursor.sh"
+            record fail "cursor-gitpath" "gitPath/cache symlink missing for ${registry_sha:0:8} — /sb commands will not load — run: bash scripts/install-cursor.sh"
           fi
         else
           record warn "cursor-gitpath" "installed_plugins.json missing gitCommitSha"

@@ -16,7 +16,7 @@ TMP_BASE="$(mktemp -d)"
 trap 'rm -rf "$TMP_BASE"' EXIT
 
 normalize_name_line() {
-  sed -E 's/^name:[[:space:]]*"?silver:/name: silver-/; s/^name:[[:space:]]*"silver:/name: silver-/; s/"$//'
+  sed -E 's/^name:[[:space:]]*"?sb:/name: silver-/; s/^name:[[:space:]]*"sb:/name: silver-/; s/"$//'
 }
 
 strip_frontmatter() {
@@ -61,13 +61,13 @@ for agent in "${AGENTS[@]}"; do
   for comp in "${COMPOSERS[@]}"; do
     skill="silver-${comp}"
     canonical="${REPO_ROOT}/skills/${skill}/SKILL.md"
-    bundle_dir="${skill}"
+    bundle_dir="sb-${comp}"
     if [[ "$agent" == "claude" || "$agent" == "cursor" ]]; then
-      bundle_dir="silver:${comp}"
+      bundle_dir="sb:${comp}"
     fi
     # Cursor host-bundles omit command-stub-covered composers (slash commands own the route).
-    # Cursor command stubs use plain Markdown filenames (silver-feature.md).
-    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/${skill}.md" ]]; then
+    # Cursor command stubs use plain Markdown filenames (sb-feature.md).
+    if [[ "$agent" == "cursor" && -f "${REPO_ROOT}/plugins/silver-bullet/commands/sb-${comp}.md" ]]; then
       echo "PASS: ${skill} omitted from cursor bundle (command stub owns route)"
       PASS=$((PASS + 1))
       continue

@@ -30,7 +30,7 @@ chmod +x "$MOCK_PROJ/scripts/workflows.sh"
 
 cache_ver="0.51.2"
 cache_dir="$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/${cache_ver}"
-mkdir -p "$cache_dir/hooks" "$cache_dir/agents/claude/silver" "$cache_dir/agents/codex"
+mkdir -p "$cache_dir/hooks" "$cache_dir/agents/claude/sb" "$cache_dir/agents/codex"
 cp -a "$cache_dir" "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/current"
 cp "$REPO_ROOT/hooks/hooks.json" "$cache_dir/hooks/hooks.json"
 cp "$REPO_ROOT/hooks/hooks.json" "$MOCK_HOME/.claude/plugins/cache/alo-labs/silver-bullet/current/hooks/hooks.json"
@@ -40,9 +40,9 @@ jq -n --arg v "$cache_ver" --arg p "$MOCK_HOME/.claude/plugins/cache/alo-labs/si
 printf '{"hooks":{}}\n' >"$MOCK_HOME/.claude/settings.json"
 
 out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
-printf '%s' "$out" | grep -q 'FAIL: D14' && pass "D14 cache bleed" || fail "D14 cache bleed"
-printf '%s' "$out" | grep -q 'PASS: D15\|FAIL: D15' && pass "D15 token budget" || fail "D15 token budget"
-printf '%s' "$out" | grep -q 'PASS: D16\|FAIL: D16' && pass "D16 repo surface" || fail "D16 repo surface"
+grep -q 'FAIL: D14' <<<"$out" && pass "D14 cache bleed" || fail "D14 cache bleed"
+grep -q 'PASS: D15\|FAIL: D15' <<<"$out" && pass "D15 token budget" || fail "D15 token budget"
+grep -q 'PASS: D16\|FAIL: D16' <<<"$out" && pass "D16 repo surface" || fail "D16 repo surface"
 
 echo ""
 echo "Results: $PASS passed, $FAIL failed"

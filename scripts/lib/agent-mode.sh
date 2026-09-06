@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dual interaction-mode contract for /silver:agent-* (plan 17ed9bf7).
+# Dual interaction-mode contract for /sb:agent-* (plan 17ed9bf7).
 # Library-only: resolve_mode, classify_task, wait_event, flag preflight.
 # Host adapters implement native ctl start/send/key/snapshot/status/abort.
 # shellcheck shell=bash

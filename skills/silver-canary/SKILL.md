@@ -7,7 +7,7 @@ argument-hint: "<live URL or runtime scope> [--duration <time>] [--interval <tim
 version: 0.1.0
 ---
 
-# /silver:canary - Post-Deploy Runtime Watch
+# /sb:canary - Post-Deploy Runtime Watch
 
 SB-owned post-deploy confidence gate. It observes the released system after a
 deployment and records evidence instead of treating a green deploy command as
@@ -15,9 +15,9 @@ user safety.
 
 **Pre-execution** (blocks runtime watch edits until recorded):
 
-`silver:blast-radius` → `silver:plan`
+`sb:blast-radius` → `sb:plan`
 
-**Post-execution:** `silver:execute` → `silver:verify` → `silver:ship`
+**Post-execution:** `sb:execute` → `sb:verify` → `sb:ship`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-canary` composer).
 
@@ -44,11 +44,11 @@ The artifact must include:
      accessibility smoke, and visual regressions;
    - logs/metrics checks when the environment exposes them;
    - rollback readiness check for production-impacting changes.
-4. Invoke or apply `silver:domain-audit --pack runtime-release`.
+4. Invoke or apply `sb:domain-audit --pack runtime-release`.
 5. Run checks for the requested duration or a documented quick-watch window.
 6. Escalate repeated failures, critical console errors, 5xx responses, broken
    core flows, or missing rollback evidence as `BLOCK`.
-7. If a production-impacting failure is confirmed, hand off to `silver:incident`.
+7. If a production-impacting failure is confirmed, hand off to `sb:incident`.
 
 ## Exit Gate
 

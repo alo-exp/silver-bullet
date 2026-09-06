@@ -92,7 +92,7 @@ SHIM
 chmod +x "$root/.codex/bin/silver-bullet"
 cat > "$root/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
 ---
-name: "silver:feature"
+name: "sb:feature"
 title: "Silver: Feature"
 ---
 
@@ -225,7 +225,7 @@ EOF
 chmod +x "$TARGET_HOME/.codex/bin/silver-bullet"
 cat > "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" <<'SKILL'
 ---
-name: silver:feature
+name: sb:feature
 title: Silver: Feature
 ---
 
@@ -306,10 +306,10 @@ assert_file_contains "target native SB mirror synced from harvested install" \
   'harvested-valid-native-skill'
 assert_file_contains "target native SB mirror uses YAML-safe quoted Silver route name" \
   "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" \
-  'name: "silver:feature"'
+  'name: "sb:feature"'
 assert_file_not_contains "target native SB mirror does not retain stale invalid Silver route name" \
   "$TARGET_HOME/.codex/skills/silver-feature/SKILL.md" \
-  'name: silver:feature'
+  'name: sb:feature'
 assert_file_contains "target native SB mirror preserves managed marker" \
   "$TARGET_HOME/.codex/skills/silver-feature/.silver-bullet-managed" \
   'source=Silver Bullet'

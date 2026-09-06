@@ -81,7 +81,7 @@ done < <(find "$REPO_ROOT/site/help" -name '*.html' -print | sort)
 
 assert_not_contains "public site does not mention stale v0.37.16" "v?0\\.37\\.16" "$REPO_ROOT/site"
 assert_not_contains "Help Center install docs do not advertise retired runtime installer paths" "forge-sb-install|silver-init|Forge Runtime" "$REPO_ROOT/site/help"
-assert_not_contains "public workflow docs do not route to missing SB-local MultAI skill" "silver:multai" "$REPO_ROOT/site"
+assert_not_contains "public workflow docs do not route to missing SB-local MultAI skill" "sb:multai" "$REPO_ROOT/site"
 assert_not_contains "package metadata does not advertise stale fixed-step Claude-only workflow" "20-step|24-step|for Claude Code\\." "$REPO_ROOT/package.json"
 assert_contains "changelog lists v0.51.1 release article" 'id="v0-51-1"' "$REPO_ROOT/site/changelog/index.html"
 assert_contains "changelog lists v0.51.0 release article" 'id="v0-51-0"' "$REPO_ROOT/site/changelog/index.html"

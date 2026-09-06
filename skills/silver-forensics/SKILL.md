@@ -1,10 +1,10 @@
 ---
 name: silver-forensics
-description: This skill should be used for root-cause investigation for completed sessions, abandoned sessions, verification failures, or mid-session stalls — classifies failure, walks investigation path, writes report to <project-root>/docs/silver:forensics/
+description: This skill should be used for root-cause investigation for completed sessions, abandoned sessions, verification failures, or mid-session stalls — classifies failure, walks investigation path, writes report to <project-root>/docs/sb:forensics/
 version: 0.1.0
 ---
 
-# /silver:forensics — Post-mortem Investigation
+# /sb:forensics — Post-mortem Investigation
 
 Use this skill when the root cause of a failure is **unknown and must be reconstructed
 from evidence**. This covers: completed sessions that left things broken, abandoned or
@@ -12,14 +12,14 @@ timed-out sessions, step 7 verification failures, and mid-session stalls.
 
 **Pre-execution** (blocks investigation edits until recorded):
 
-`silver:debug`
+`sb:debug`
 
-**Post-execution:** `silver:execute` → `silver:ensure-docs` → `silver:validate`
+**Post-execution:** `sb:execute` → `sb:ensure-docs` → `sb:validate`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-forensics` composer).
 
-**If you have an active error with a known cause**, use `/silver:debug`
-instead. `/silver:forensics` is for reconstruction, not live debugging.
+**If you have an active error with a known cause**, use `/sb:debug`
+instead. `/sb:forensics` is for reconstruction, not live debugging.
 
 **In autonomous mode**: skip the user prompt in Step 2a of triage. Classify from evidence
 alone. If evidence is insufficient, default to Path 3 (General) and record
@@ -44,7 +44,7 @@ detected in [file]" in Evidence Gathered.
 
 Shell execution during investigation is limited to:
 - `git log`, `git show`, `git status`, `git diff` (with flags as specified in each path)
-- `mkdir -p <project-root>/docs/silver:forensics/`
+- `mkdir -p <project-root>/docs/sb:forensics/`
 - Test runners: `npm test`, `pytest`, `cargo test`, `go test ./...`
 
 Do not execute other shell commands. If additional commands seem needed, note the
@@ -55,7 +55,7 @@ requirement in the post-mortem report under "Recommended Next Steps" for human e
 ## Step 1 — Locate the project root
 
 Walk up from `$PWD` until a `.silver-bullet.json` file is found. All evidence paths
-(`docs/sessions/`, `.planning/`, `docs/silver:forensics/`) are relative to this root.
+(`docs/sessions/`, `.planning/`, `docs/sb:forensics/`) are relative to this root.
 The plugin root (where this SKILL.md lives) is irrelevant for evidence gathering.
 If `.silver-bullet.json` is not found after walking to the filesystem root (`/`),
 use `$PWD` as the project root and note "Project root not confirmed" in Evidence Gathered.
@@ -80,7 +80,7 @@ analysis of `.planning/` artifacts and execution patterns.
 
 | Evidence | Route to | Reason |
 |----------|----------|--------|
-| Active known-cause bug or error | `/silver:debug` | Debug owns live diagnosis and fix loops |
+| Active known-cause bug or error | `/sb:debug` | Debug owns live diagnosis and fix loops |
 | Plan drift, execution anomaly, missing artifacts, or scope drift | SB workflow forensics (continue to Step 2) | SB owns planning/execution artifact analysis |
 | Session timeout, stall, enforcement failure, or incomplete handoff | SB session forensics (continue to Step 2) | SB owns session integrity analysis |
 | Test failures after recent commits or wrong output | SB task forensics (continue to Step 2) | General task path reconstructs implementation drift |
@@ -210,15 +210,15 @@ ROOT CAUSE: <one sentence> — <path taken> — <confidence: high/medium/low>
 
 ## Post-mortem Report
 
-1. Run `mkdir -p <project-root>/docs/silver:forensics/` via Bash before writing.
+1. Run `mkdir -p <project-root>/docs/sb:forensics/` via Bash before writing.
 2. Determine slug:
    - If user supplied a slug argument, sanitize it: keep only letters, digits, hyphens,
      and dots; replace all other characters with hyphens; strip leading dots and hyphens;
      truncate to 80 characters.
    - If no argument, default to `<failure-type>-<YYYY-MM-DD>`.
-3. Check for collision: glob `<project-root>/docs/silver:forensics/<slug>*.md`; if a match
+3. Check for collision: glob `<project-root>/docs/sb:forensics/<slug>*.md`; if a match
    exists, append `-2`, `-3`, etc. until unique.
-4. Write to `<project-root>/docs/silver:forensics/YYYY-MM-DD-<slug>.md`:
+4. Write to `<project-root>/docs/sb:forensics/YYYY-MM-DD-<slug>.md`:
 
 ```markdown
 # Forensics Report — <slug>
@@ -263,11 +263,11 @@ Based on the root cause classification, use the appropriate follow-up:
 
 | Classification | Next action |
 |----------------|-------------|
-| Pre-answer gap / Plan ambiguity | Return to `/silver:context`, then re-plan with `/silver:plan` |
-| Implementation drift | Use `/silver:debug` on the drifted commits, then re-execute with `/silver:execute` |
+| Pre-answer gap / Plan ambiguity | Return to `/sb:context`, then re-plan with `/sb:plan` |
+| Implementation drift | Use `/sb:debug` on the drifted commits, then re-execute with `/sb:execute` |
 | Anti-stall trigger / Genuine blocker | Log under "Needs human review", then resume from `.planning/STATE.md` with the relevant SB workflow |
-| Upstream dependency | Resolve dependency, then re-run `/silver:execute` for the affected plan |
-| Verification gap | Re-run `/silver:verify` with corrected test/check criteria |
+| Upstream dependency | Resolve dependency, then re-run `/sb:execute` for the affected plan |
+| Verification gap | Re-run `/sb:verify` with corrected test/check criteria |
 | External kill / Timeout | Resume from the last checkpoint in `.planning/STATE.md` with the relevant SB workflow |
 | Unknown | Escalate to user with evidence gathered above |
 
@@ -286,5 +286,5 @@ Based on the root cause classification, use the appropriate follow-up:
 - **No session log found**: Skip session log step; proceed with git history + user
   description only. Note absence in post-mortem.
 - **No planning artifacts**: Skip `.planning/` step; note absence.
-- **`docs/silver:forensics/` directory absent**: Create it with `mkdir -p` before writing.
-- **Slug collision**: glob `<project-root>/docs/silver:forensics/<slug>*.md`; if a match exists, append `-2`, `-3`, etc. until unique. (Same logic as Post-mortem Report step 3.)
+- **`docs/sb:forensics/` directory absent**: Create it with `mkdir -p` before writing.
+- **Slug collision**: glob `<project-root>/docs/sb:forensics/<slug>*.md`; if a match exists, append `-2`, `-3`, etc. until unique. (Same logic as Post-mortem Report step 3.)

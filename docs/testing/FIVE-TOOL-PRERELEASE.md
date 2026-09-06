@@ -4,17 +4,17 @@ Mandatory pre-release validation for the parallel-routed five-tool stack (LeanCT
 
 ## Live wrapper and model policy (mandatory)
 
-All live five-tool scenarios MUST be initiated through `/silver:agent-cursor` using
+All live five-tool scenarios MUST be initiated through `/sb:agent-cursor` using
 **Composer 2.5**. The broader pre-release live-test mapping is fixed as follows:
 
 | Host | Required wrapper | Required model |
 |------|------------------|----------------|
-| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
-| Claude | `/silver:agent-claude` | **Haiku 4.5** |
-| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+| Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/sb:agent-claude` | **Haiku 4.5** |
+| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 The underlying runner may call its delegate implementation, but the operator-facing live
-entrypoint is the host-specific `/silver:agent-*` wrapper. Do not substitute a raw host CLI
+entrypoint is the host-specific `/sb:agent-*` wrapper. Do not substitute a raw host CLI
 or another model and count that run as wrapper evidence.
 
 ### Current-cycle Cursor hold
@@ -71,7 +71,7 @@ bash tests/live/test-live-five-tool-stack-cursor.sh
 
 ## Harness
 
-- Skill route: `/silver:agent-cursor` — [`skills/silver-agent-cursor/SKILL.md`](../../skills/silver-agent-cursor/SKILL.md)
+- Skill route: `/sb:agent-cursor` — [`skills/silver-agent-cursor/SKILL.md`](../../skills/silver-agent-cursor/SKILL.md)
 - Delegate wrapper: [`scripts/agent-cursor-delegate.sh`](../../scripts/agent-cursor-delegate.sh)
 - Scenario matrix: [`tests/skill-scenarios/silver-five-tool-stack.md`](../../tests/skill-scenarios/silver-five-tool-stack.md)
 - Live runner: [`tests/live/test-live-five-tool-stack-cursor.sh`](../../tests/live/test-live-five-tool-stack-cursor.sh)

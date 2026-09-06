@@ -1,12 +1,12 @@
 ---
 name: silver-deep-research
 description: >
-  SB catalog-backed AF-DECIDE flow step (FS-SILVER_DEEP_RESEARCH) and `/silver:deep-research` workflow engine: rigorous multi-source research with phase-level evidence, nested V-loops, citation tracking, claim verification, optional search-cli retrieval, and `research/` artifacts.
+  SB catalog-backed AF-DECIDE flow step (FS-SILVER_DEEP_RESEARCH) and `/sb:deep-research` workflow engine: rigorous multi-source research with phase-level evidence, nested V-loops, citation tracking, claim verification, optional search-cli retrieval, and `research/` artifacts.
 argument-hint: "<research question or technology decision> [--mode quick|standard|deep|ultradeep]"
 version: 1.0.0
 ---
 
-# /silver:deep-research — Deep Research Workflow
+# /sb:deep-research — Deep Research Workflow
 
 SB research workflow and **AF-DECIDE** flow-step implementation for decisions that
 need evidence before planning or execution. This skill absorbs the upstream
@@ -40,9 +40,9 @@ Canonical label: Standard Composition Chain.
 AF-CLARIFY -> AF-DECIDE -> AF-DOCUMENT -> AF-VALIDATE
 ```
 
-**Pre-execution**: `silver:clarify` -> `silver:deep-research`
+**Pre-execution**: `sb:clarify` -> `sb:deep-research`
 
-**Post-execution**: `silver:ensure-docs` -> `silver:validate`
+**Post-execution**: `sb:ensure-docs` -> `sb:validate`
 
 Runtime queue:
 
@@ -50,7 +50,7 @@ Runtime queue:
 silver-clarify -> silver-deep-research -> silver-ensure-docs -> silver-validate
 ```
 
-`/silver:research` is removed. `/silver:deep-research` is the only SB research
+`/sb:research` is removed. `/sb:deep-research` is the only SB research
 route.
 
 ## Research Session (HARD)
@@ -86,7 +86,7 @@ mkdir -p "$SB_RESEARCH_OUT_DIR/validation"
 |-----------------|---------|-----------|
 | `default` | General research questions | Standard DR artifacts |
 | `solution-landscape` | AF-DECIDE tool/category decision | Market survey → top-5 SCR |
-| `solution-compare` | `/silver:compare A B …` | SCR × N named solutions |
+| `solution-compare` | `/sb:compare A B …` | SCR × N named solutions |
 
 **Solution types:** run mandatory need-profile interview (`reference/need-profile-interview.md`)
 before `DR-RETRIEVE`. `phase_gate.py` blocks retrieval until `need_profile.json` has
@@ -285,6 +285,6 @@ evidence to `.planning/BLOCKERS.md` and return a blocked AF-DECIDE V-gate.
 ## What This Skill Does Not Do
 
 - It does not implement code.
-- It does not call `/silver:multi-ai`; MultAI is not part of this flow step.
+- It does not call `/sb:multi-ai`; MultAI is not part of this flow step.
 - It does not write to `~/Documents`.
 - It does not skip evidence because a topic seems familiar.

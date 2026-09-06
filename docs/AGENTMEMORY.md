@@ -4,7 +4,7 @@ Silver Bullet uses [agentmemory](https://github.com/rohitg00/agentmemory) as an 
 
 ## Opt-In Policy
 
-agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/silver:init`, `/silver:update`, and session start. Consent is stored in `.silver-bullet.json`:
+agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB asks for explicit permission at `/sb:init`, `/sb:update`, and session start. Consent is stored in `.silver-bullet.json`:
 
 ```json
 "recommended_tools": {
@@ -24,7 +24,7 @@ agentmemory is a **recommended tool**, not a hard prerequisite like `jq`. SB ask
 | `true` | Mandatory — hooks block substantive edits until CLI, server, MCP, and export root are ready |
 | `false` | Opted out — no enforcement |
 
-**Install failure after opt-in:** SB sets `enforcement_suspended: true` and preserves `enabled_by_user: true`. Hooks treat suspended agentmemory like opted-out until the next `/silver:init` or `/silver:update` retry succeeds.
+**Install failure after opt-in:** SB sets `enforcement_suspended: true` and preserves `enabled_by_user: true`. Hooks treat suspended agentmemory like opted-out until the next `/sb:init` or `/sb:update` retry succeeds.
 
 ## Local Setup
 
@@ -104,7 +104,7 @@ Add the agentmemory managed block to `.gitignore` (see `docs/AGENTMEMORY.md` git
 | Cursor | *(none)* | **User-wired** via Cursor Settings → MCP (or manual `~/.cursor/mcp.json` edit) | `~/.cursor/mcp.json` |
 | OpenCode / Goose / Hermes | *(varies)* | See `platform_install_commands` in template | host config |
 
-**Cursor:** SB does **not** auto-merge agentmemory into `~/.cursor/mcp.json` during `/silver:init` or `/silver:update`. The reconciler **probes** for an existing `agentmemory` or `user-agentmemory` MCP entry. On `reconcile-recommended-tools.sh --mode apply`, when agentmemory is consented, repair may atomically merge the block below (same as manual wiring).
+**Cursor:** SB does **not** auto-merge agentmemory into `~/.cursor/mcp.json` during `/sb:init` or `/sb:update`. The reconciler **probes** for an existing `agentmemory` or `user-agentmemory` MCP entry. On `reconcile-recommended-tools.sh --mode apply`, when agentmemory is consented, repair may atomically merge the block below (same as manual wiring).
 
 **Manual Cursor MCP block** (preserve existing servers):
 

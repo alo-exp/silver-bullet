@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Historical helper: Cursor desktop rejects colon-bearing command filenames.
 # Prefer scripts/generate-plugin-commands.sh which emits filesystem-safe
-# silver-<route>.md stubs while keeping name: "silver:<route>" in frontmatter.
+# silver-<route>.md stubs while keeping name: "sb:<route>" in frontmatter.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

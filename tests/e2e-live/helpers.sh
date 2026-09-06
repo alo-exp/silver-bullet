@@ -976,13 +976,13 @@ verify_runtime_dependency_access() {
     claude_cache_root="${KAY_HOME:-$HOME}/.codex/plugins/cache/alo-labs/silver-bullet"
     latest_claude_cache="$(find "$claude_cache_root" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort -V | tail -n 1)"
     if [[ -n "$latest_claude_cache" && -d "$latest_claude_cache" ]]; then
-      assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/silver:init/SKILL.md"
-      assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/silver:ensure-docs/SKILL.md"
-      assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/silver:feature/SKILL.md"
+      assert_file_exists "Claude Silver Bullet init skill synced" "$latest_claude_cache/skills/sb:init/SKILL.md"
+      assert_file_exists "Claude Silver Bullet ensure-docs skill synced" "$latest_claude_cache/skills/sb:ensure-docs/SKILL.md"
+      assert_file_exists "Claude Silver Bullet feature skill synced" "$latest_claude_cache/skills/sb:feature/SKILL.md"
       assert_file_exists "Claude Silver Bullet router skill synced" "$latest_claude_cache/skills/silver/SKILL.md"
-      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/silver:init/SKILL.md" 'name: silver:init' 'name: "silver:init"'
-      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/silver:ensure-docs/SKILL.md" 'name: silver:ensure-docs' 'name: "silver:ensure-docs"'
-      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/silver:feature/SKILL.md" 'name: silver:feature' 'name: "silver:feature"'
+      assert_file_contains_any "Claude Silver Bullet init skill uses supported picker name" "$latest_claude_cache/skills/sb:init/SKILL.md" 'name: sb:init' 'name: "sb:init"'
+      assert_file_contains_any "Claude Silver Bullet ensure-docs skill uses supported picker name" "$latest_claude_cache/skills/sb:ensure-docs/SKILL.md" 'name: sb:ensure-docs' 'name: "sb:ensure-docs"'
+      assert_file_contains_any "Claude Silver Bullet feature skill uses supported picker name" "$latest_claude_cache/skills/sb:feature/SKILL.md" 'name: sb:feature' 'name: "sb:feature"'
       assert_file_contains "Claude Silver Bullet router skill uses silver name" "$latest_claude_cache/skills/silver/SKILL.md" 'name: silver'
     else
       echo "FAIL: Claude Silver Bullet cache root missing: $claude_cache_root"
@@ -1034,15 +1034,15 @@ verify_runtime_dependency_access() {
     assert_not_contains "Codex split silver plugin absent" "$(cat "$config_file" 2>/dev/null)" 'silver@alo-labs-codex'
     assert_file_exists "Codex Silver Bullet package synced" "$marketplace_root/plugins/silver-bullet/.codex-plugin/plugin.json"
     assert_file_absent "Codex Silver Bullet package does not expose plugin picker skills directory" "$marketplace_root/plugins/silver-bullet/skills"
-    assert_file_exists "Codex Silver Bullet init skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE"
-    assert_file_exists "Codex Silver Bullet ensure-docs skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE"
-    assert_file_exists "Codex Silver Bullet feature skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE"
-    assert_file_exists "Codex Silver Bullet router skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE"
+    assert_file_exists "Codex Silver Bullet init skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/sb-init/SILVER_SOURCE"
+    assert_file_exists "Codex Silver Bullet ensure-docs skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/sb-ensure-docs/SILVER_SOURCE"
+    assert_file_exists "Codex Silver Bullet feature skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/sb-feature/SILVER_SOURCE"
+    assert_file_exists "Codex Silver Bullet router skill source synced" "$marketplace_root/plugins/silver-bullet/skill-source/sb/SILVER_SOURCE"
     assert_file_absent "Codex Silver Bullet package has no picker-discoverable internal skill files" "$(find "$marketplace_root/plugins/silver-bullet" -name '*SKILL.md' -print -quit 2>/dev/null)"
     assert_file_absent "Codex Silver Bullet package does not expose generated picker skills directory" "$marketplace_root/plugins/silver-bullet/.generated-skills"
     assert_file_absent "Codex Silver Bullet package does not expose agent SKILL.md bundle" "$marketplace_root/plugins/silver-bullet/agents"
-    assert_file_exists "Codex native Silver Bullet init skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/silver:init/SKILL.md"
-    assert_file_exists "Codex native Silver Bullet feature skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/silver:feature/SKILL.md"
+    assert_file_exists "Codex native Silver Bullet init skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/sb:init/SKILL.md"
+    assert_file_exists "Codex native Silver Bullet feature skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/sb:feature/SKILL.md"
     assert_file_exists "Codex native Silver Bullet router skill mirrored" "$SB_RUNTIME_HOME_ROOT/skills/silver/SKILL.md"
     assert_file_exists "Codex Silver Bullet workflow-chain guard synced" "$marketplace_root/plugins/silver-bullet/hooks/workflow-chain-guard.sh"
     assert_file_exists "Codex Silver Bullet template synced" "$marketplace_root/plugins/silver-bullet/templates/silver-bullet.md.base"
@@ -1066,10 +1066,10 @@ verify_runtime_dependency_access() {
     assert_command_succeeds "Codex hook discovery sees silver-completion-audit as invocable" sb_skill_is_installed "silver-completion-audit"
     assert_command_succeeds "Codex hook discovery sees silver-tdd marker as invocable" sb_skill_is_installed "silver-tdd"
     assert_command_succeeds "Codex hook discovery sees verify-tests as invocable" sb_skill_is_installed "verify-tests"
-    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-init/SILVER_SOURCE" 'name: "silver:init"'
-    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-ensure-docs/SILVER_SOURCE" 'name: "silver:ensure-docs"'
-    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/silver-feature/SILVER_SOURCE" 'name: "silver:feature"'
-    assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skill-source/silver/SILVER_SOURCE" 'name: silver'
+    assert_file_contains "Codex Silver Bullet init skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/sb-init/SILVER_SOURCE" 'name: "sb:init"'
+    assert_file_contains "Codex Silver Bullet ensure-docs skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/sb-ensure-docs/SILVER_SOURCE" 'name: "sb:ensure-docs"'
+    assert_file_contains "Codex Silver Bullet feature skill uses silver prefix" "$marketplace_root/plugins/silver-bullet/skill-source/sb-feature/SILVER_SOURCE" 'name: "sb:feature"'
+    assert_file_contains "Codex Silver Bullet router skill uses silver name" "$marketplace_root/plugins/silver-bullet/skill-source/sb/SILVER_SOURCE" 'name: silver'
 
     if [[ "$E2E_RUNTIME" == "kay" ]]; then
       local active_config_file
@@ -1434,8 +1434,8 @@ wait_for_state_contains() {
   local deadline=$((SECONDS + timeout_seconds))
   local alt_needle=""
 
-  if [[ "$needle" == silver:* ]]; then
-    alt_needle="silver-${needle#silver:}"
+  if [[ "$needle" == sb:* ]]; then
+    alt_needle="silver-${needle#sb:}"
   fi
 
   while (( SECONDS < deadline )); do

@@ -5,7 +5,7 @@ argument-hint: "<phase or completion claim>"
 version: 0.1.0
 ---
 
-# /silver:verify - Work Verification
+# /sb:verify - Work Verification
 
 SB-owned verification checks actual artifacts, acceptance criteria, tests, and
 evidence rather than agent confidence.
@@ -24,10 +24,10 @@ Write or update `.planning/phases/<phase>/VERIFICATION.md` or
    broader test gate.
 5. For behavior-changing, release, API, data, performance, runtime, content,
    benchmark, refactor, deployment, canary, incident, or test-engineering work,
-   invoke or apply `silver:domain-audit` with `test-health` plus the affected
+   invoke or apply `sb:domain-audit` with `test-health` plus the affected
    domain packs. Verification may reuse an existing fresh DOMAIN-AUDIT.md only
    when it covers the current diff and command evidence.
-6. When verification discovers missing tests, route to `silver:test` instead of
+6. When verification discovers missing tests, route to `sb:test` instead of
    accepting coverage as a vague follow-up. Use the relevant mode:
    `write`, `e2e`, `repair`, `audit`, `performance`, or `mutation`.
 7. If coverage gaps are found, add or request missing tests before passing the
@@ -44,7 +44,7 @@ Write or update `.planning/phases/<phase>/VERIFICATION.md` or
      VERIFICATION.md.
    - **Text-only:** document unverified browser-dependent criteria as WARN when
      neither path is available.
-9. File deferred non-blocking gaps through `silver:add`.
+9. File deferred non-blocking gaps through `sb:add`.
 
 ## Exit Gate
 

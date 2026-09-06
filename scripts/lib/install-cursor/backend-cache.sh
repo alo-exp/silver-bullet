@@ -193,7 +193,7 @@ bad_exact = {
     "artifact-reviewer",
     "devops-skill-router",
 }
-bad_prefixes = ("silver", "subagent-silver", "subagent-devops", "principle-sequence")
+bad_prefixes = ("silver", "subagent-silver", "subagent-sb", "subagent-devops", "principle-sequence")
 
 
 def parse_frontmatter(path: Path) -> dict[str, str]:
@@ -365,13 +365,13 @@ cursor_plugin_command_filename_colon_count() {
 
 cursor_plugin_commands_surface_ready() {
   local root="$1"
-  local router="${root}/commands/silver.md"
-  local init="${root}/commands/silver-init.md"
+  local router="${root}/commands/sb.md"
+  local init="${root}/commands/sb-init.md"
 
   [[ -f "$router" ]] || return 1
   [[ -f "$init" ]] || return 1
-  grep -q '^name: "silver"$' "$router" || return 1
-  grep -q '^name: "silver-init"$' "$init" || return 1
+  grep -q '^name: "sb"$' "$router" || return 1
+  grep -q '^name: "sb-init"$' "$init" || return 1
   [[ "$(cursor_plugin_command_filename_colon_count "$root")" -eq 0 ]]
 }
 

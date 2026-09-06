@@ -6,7 +6,7 @@ trap 'exit 0' ERR
 # workflows.
 #
 # The workflow tracker (.planning/workflows/<id>.md) is the admission ticket.
-# Once a silver:feature / silver:ui / silver:devops / silver:deep-research
+# Once a sb:feature / sb:ui / sb:devops / sb:deep-research
 # composition is active, this hook blocks implementation edits until the
 # pre-execution dependency chain has been recorded in the Silver Bullet state
 # file. It deliberately does not require execute, review, verify, or ship
@@ -104,6 +104,12 @@ composer_slug_from_value() {
   composer=$(printf '%s' "$composer" | tr '[:upper:]' '[:lower:]')
   composer="${composer#/}"
   composer=$(printf '%s' "$composer" | sed 's|[:/]|-|g; s|[^a-z0-9-]|-|g; s|--*|-|g; s|^-||; s|-$||')
+  # Public workflow routes use the sb namespace; keep the historical internal
+  # switch values so marker policy and compatibility aliases remain stable.
+  case "$composer" in
+    sb) composer="silver" ;;
+    sb-*) composer="silver-${composer#sb-}" ;;
+  esac
   printf '%s' "$composer"
 }
 
@@ -166,7 +172,7 @@ case "$composer_slug" in
     ;;
   silver-fast)
     # Tier 2 fast path: planning floor + plan before implementation edits.
-    # silver:context is optional per skill signal detection; not chain-guarded.
+    # sb:context is optional per skill signal detection; not chain-guarded.
     required_markers=(silver-quality-gates silver-plan)
     ;;
   silver-release)

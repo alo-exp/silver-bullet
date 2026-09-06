@@ -1,11 +1,11 @@
 # search-cli — Optional Deep Research Provider
 
 Silver Bullet can use [`search-cli`](https://github.com/199-biotechnologies/search-cli)
-as the primary retrieval tool for `/silver:deep-research`.
+as the primary retrieval tool for `/sb:deep-research`.
 
 ## Role
 
-`search-cli` is optional. `silver:deep-research` works without it, but when it is
+`search-cli` is optional. `sb:deep-research` works without it, but when it is
 configured the deep research engine uses it first for multi-provider retrieval
 before falling back to host search/fetch tools.
 

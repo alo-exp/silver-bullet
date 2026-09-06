@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:test — Test Hardening Workflow — Silver Bullet Help</title>
+<title>/sb:test — Test Hardening Workflow — Silver Bullet Help</title>
 <meta name="description" content="WF-SILVER-TEST: plan test coverage gaps, execute hardening, verify — AF-PLAN → AF-EXECUTE → AF-VERIFY from the v0.52.0 APO catalog.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,7 +87,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:test</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:test</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
@@ -97,7 +97,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
 
 <div class="page-hero">
   <div class="container">
-    <h1>/silver:test</h1>
+    <h1>/sb:test</h1>
     <p>Specialized test hardening workflow — plan coverage gaps, execute new tests and fixtures, verify the suite meets acceptance criteria.</p>
   </div>
 </div>
@@ -114,19 +114,19 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
         <li><a href="#workflow-steps">Workflow Steps</a></li>
         <li><a href="#example">Example Invocation</a></li>
         <li class="sidebar-section">See Also</li>
-        <li><a href="./silver-refactor.html">/silver:refactor</a></li>
-        <li><a href="./silver-validate.html">/silver:validate</a></li>
+        <li><a href="./silver-refactor.html">/sb:refactor</a></li>
+        <li><a href="./silver-validate.html">/sb:validate</a></li>
       </ul>
     </aside>
 
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/silver:test</code> is the Silver Bullet orchestrator for <strong>test hardening</strong> — closing coverage gaps, adding regression tests, improving fixture quality, and raising confidence in existing code without feature changes. It maps to catalog entity <code>WF-SILVER-TEST</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
+      <p><code>/sb:test</code> is the Silver Bullet orchestrator for <strong>test hardening</strong> — closing coverage gaps, adding regression tests, improving fixture quality, and raising confidence in existing code without feature changes. It maps to catalog entity <code>WF-SILVER-TEST</code> (<code>specialized</code> type) in the <strong>v0.52.0 APO catalog</strong>.</p>
       <p>This workflow is lean by design: plan the gap closure, execute test additions, verify the suite. It omits post-execution ship gates because test-only work typically ships through the normal PR flow without a dedicated deploy step.</p>
       <p>Standard composition:</p>
       <div class="code-block">AF-PLAN → AF-EXECUTE → AF-VERIFY</div>
-      <p>For feature work where tests are part of a larger delivery, use <a href="./silver-feature.html"><code>/silver:feature</code></a>. For structural code changes with full ship gates, use <a href="./silver-refactor.html"><code>/silver:refactor</code></a>.</p>
+      <p>For feature work where tests are part of a larger delivery, use <a href="./silver-feature.html"><code>/sb:feature</code></a>. For structural code changes with full ship gates, use <a href="./silver-refactor.html"><code>/sb:refactor</code></a>.</p>
 
       <div class="callout callout-info">
         <div class="callout-icon">ℹ</div>
@@ -138,7 +138,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="when-to-use">When to Use</h2>
-      <p>Entry trigger signals for <code>/silver:test</code>, <code>test</code>, and <code>test hardening</code>:</p>
+      <p>Entry trigger signals for <code>/sb:test</code>, <code>test</code>, and <code>test hardening</code>:</p>
       <ul>
         <li>Coverage gaps flagged by CI or quality gates</li>
         <li>Missing regression tests after a production incident</li>
@@ -153,9 +153,9 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <table class="ref-table">
         <thead><tr><th>Atomic flow</th><th>Command</th><th>Outcome</th></tr></thead>
         <tbody>
-          <tr><td><code>AF-PLAN</code></td><td><code>/silver:plan</code></td><td>Coverage gap analysis, test plan with prioritized cases and acceptance criteria</td></tr>
-          <tr><td><code>AF-EXECUTE</code></td><td><code>/silver:execute</code></td><td>New tests, fixtures, mocks, and CI configuration changes</td></tr>
-          <tr><td><code>AF-VERIFY</code></td><td><code>/silver:verify</code></td><td>Full suite pass, coverage delta evidence, flake checks</td></tr>
+          <tr><td><code>AF-PLAN</code></td><td><code>/sb:plan</code></td><td>Coverage gap analysis, test plan with prioritized cases and acceptance criteria</td></tr>
+          <tr><td><code>AF-EXECUTE</code></td><td><code>/sb:execute</code></td><td>New tests, fixtures, mocks, and CI configuration changes</td></tr>
+          <tr><td><code>AF-VERIFY</code></td><td><code>/sb:verify</code></td><td>Full suite pass, coverage delta evidence, flake checks</td></tr>
         </tbody>
       </table>
 
@@ -175,17 +175,17 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/silver:test Add integration tests for the payment webhook retry path — coverage is at 42%</div>
+      <div class="code-block">/sb:test Add integration tests for the payment webhook retry path — coverage is at 42%</div>
       <p>Silver Bullet routes to <code>WF-SILVER-TEST</code>. Planning maps the retry path and edge cases. Execution adds integration tests with realistic fixtures. Verification confirms suite pass and coverage above the stated threshold.</p>
 
       <div class="page-nav-bottom">
         <a href="./silver-canary.html">
           <span class="pnb-label">← Previous</span>
-          <span class="pnb-title">/silver:canary</span>
+          <span class="pnb-title">/sb:canary</span>
         </a>
         <a href="./silver-refactor.html">
           <span class="pnb-label">Next →</span>
-          <span class="pnb-title">/silver:refactor</span>
+          <span class="pnb-title">/sb:refactor</span>
         </a>
       </div>
 

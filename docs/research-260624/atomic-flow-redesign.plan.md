@@ -122,7 +122,7 @@ This refactor is complete only when all of the following are true:
 ## Design Decisions
 
 - Atomic flow granularity: **fundamental capability units** in software engineering and DevOps. Not every skill becomes a flow; not only hook-enforced tokens count.
-- Compatibility: **breaking cleanup allowed**. Existing `/silver:`* names can be renamed, removed, or demoted when the canonical model is clearer.
+- Compatibility: **breaking cleanup allowed**. Existing `/sb:`* names can be renamed, removed, or demoted when the canonical model is clearer.
 - Source of truth: `docs/apo-catalog.json` is the sole authoritative source for processes, workflows, atomic flows, flow steps, composition trees, and dynamic rules. Any composer matrix or workflow-tree markdown (`docs/composable-flows-contracts.md`, `docs/workflow-composition-matrix.md`, or companions) is **generated-only or validated as a rendered view** — never hand-maintained composition authority.
 - Composition model: **hierarchical via workflow-as-component reuse** — not a separate catalog entity for nesting. Larger SDLC workflows compose smaller workflows (reusable-as-component) and atomic flows; nesting is a property of `workflow.composition_tree`, never a distinct catalog entity type.
 - Redundancy policy: if two flows or workflows overlap, either merge them, split the shared part into a lower-level flow, or make one a named composition of the other.
@@ -404,24 +404,24 @@ Rewrite pre-composed workflow definitions in `docs/apo-catalog.json` so their `w
 
 Primary composers to rebuild:
 
-- `silver:feature`
-- `silver:ui`
-- `silver:devops`
-- `silver:bugfix`
-- `silver:deep-research`
-- `silver:release`
-- `silver:fast`
+- `sb:feature`
+- `sb:ui`
+- `sb:devops`
+- `sb:bugfix`
+- `sb:deep-research`
+- `sb:release`
+- `sb:fast`
 
 Promote, normalize, or remove specialized workflow skills where appropriate:
 
-- `silver:incident`
-- `silver:deploy`
-- `silver:canary`
-- `silver:content`
-- `silver:retro`
-- `silver:benchmark`
-- `silver:refactor`
-- `silver:test`
+- `sb:incident`
+- `sb:deploy`
+- `sb:canary`
+- `sb:content`
+- `sb:retro`
+- `sb:benchmark`
+- `sb:refactor`
+- `sb:test`
 
 Because breaking cleanup is allowed, confusing aliases such as `silver-orient` vs `silver-scan` can be resolved by keeping only the clearer public route and updating docs/tests accordingly.
 
@@ -527,7 +527,7 @@ Add or update tests so drift cannot recur. Named deliverables for hard invariant
 | User-intent coverage | `tests/scripts/test-user-intent-coverage.sh` — final gate checks every material intent claim | Phase 4 (schema), Phase 11 (runtime) |
 | Triple alignment | `tests/scripts/test-triple-alignment.sh` — composer chains ↔ orchestrator queues ↔ workflow-chain guard markers | Phase 8 |
 | Worker template parity | `tests/scripts/test-worker-template-parity.sh` — one template per `subagent` flow; plugin mirror matches | Phase 8 |
-| Router coverage | `tests/scripts/test-router-coverage.sh` — `/silver` routes map to pre-composed or dynamic catalog-backed composition | Phase 11 |
+| Router coverage | `tests/scripts/test-router-coverage.sh` — `/sb` routes map to pre-composed or dynamic catalog-backed composition | Phase 11 |
 | Site/doc freshness | `tests/scripts/test-site-doc-freshness.sh` — public docs and generated matrix match catalog | Phase 10 |
 | Derived view freshness | `tests/scripts/test-apo-derived-views.sh` | Phase 8 |
 
@@ -549,7 +549,7 @@ Assertion coverage:
 - Opted-in tool enforcement (`test-opted-in-tool-enforcement.sh`): inactive tools are optional; enabled-relevant tools produce required evidence or block/degrade per catalog failure policy; enabled-irrelevant tools record catalog-backed skip rationale; disabled tools are not invoked; failure-policy states (warn, repair, block, degrade) match catalog `tool_policy`.
 - Triple alignment: composer chains ↔ orchestrator queues ↔ workflow-chain guard markers.
 - Worker template parity: templates ↔ plugin mirror.
-- Router coverage: `/silver` maps user intents to either a pre-composed workflow or dynamic flow composition.
+- Router coverage: `/sb` maps user intents to either a pre-composed workflow or dynamic flow composition.
 - Site/doc freshness: public docs match the catalog and composer matrix.
 
 Run at minimum:

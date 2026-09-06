@@ -14,7 +14,9 @@ import shutil
 import sys
 import time
 
-NAME_RE = re.compile(r"^(name:\s*)(silver-)([A-Za-z0-9_-]+)\s*$", re.MULTILINE)
+# Canonical authoring directories retain their historical ``silver-*`` names;
+# rendered host surfaces expose the public ``sb:<route>`` namespace.
+NAME_RE = re.compile(r"^(name:\s*)silver(?:-([A-Za-z0-9_-]+))?\s*$", re.MULTILINE)
 CODEX_TITLE_WORD_OVERRIDES = {
     "ai": "AI",
     "api": "API",
@@ -135,7 +137,8 @@ CODEX_REPLACEMENTS = [
 
 def rewrite_names(text: str) -> str:
     def repl(match: re.Match[str]) -> str:
-        return f"{match.group(1)}silver:{match.group(3)}"
+        route = match.group(2)
+        return f"{match.group(1)}sb" if route is None else f"{match.group(1)}sb:{route}"
 
     return NAME_RE.sub(repl, text, count=1)
 
@@ -149,24 +152,24 @@ def humanize_codex_skill_name(name: str) -> str:
 
 
 def codex_title_for_name(name: str, current_title: str | None = None) -> str:
-    if name == "silver":
+    if name == "sb":
         title = "Router"
-    elif name.startswith("silver:"):
+    elif name.startswith("sb:"):
         route = name.split(":", 1)[1]
         title = humanize_codex_skill_name(route)
     elif current_title:
-        title = current_title.removeprefix("Silver: ").strip()
+        title = current_title.removeprefix("SB: ").removeprefix("Silver: ").strip()
     else:
         title = humanize_codex_skill_name(name)
 
-    # Codex already renders `silver:*` skills under the native `/Silver:` group.
-    # Prefixing their title too produces `/Silver: Silver: ...` in the picker.
-    if name == "silver" or name.startswith("silver:"):
+    # Codex already renders `sb:*` skills under the native `/SB:` group.
+    # Prefixing their title too produces `/SB: SB: ...` in the picker.
+    if name == "sb" or name.startswith("sb:"):
         return title
 
-    # A few SB helper skills keep non-silver canonical names for compatibility.
-    # Keep those grouped under the Silver picker title without changing their name.
-    return f"Silver: {title}"
+    # A few SB helper skills keep non-SB canonical names for compatibility.
+    # Keep those grouped under the SB picker title without changing their name.
+    return f"SB: {title}"
 
 
 def yaml_quote_scalar(value: str) -> str:
@@ -434,13 +437,13 @@ def sanitize_root(root: pathlib.Path, agent: str) -> None:
             rewrite_file(current, agent)
 
 
-def rename_colon_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
-    """Align skill folder names with silver: frontmatter routes.
+def rename_route_skill_directories(root: pathlib.Path, *, host: str) -> None:
+    """Align rendered skill folders with the public sb: frontmatter routes.
 
     Hosts list skills from both directory names and SKILL.md ``name:`` fields.
-    Hyphen directories (``silver-feature``) plus colon names (``silver:feature``)
-    produce duplicate picker entries (skill vs subagent on Cursor); rename dirs
-    to the colon form only.
+    Canonical authoring names (``silver-feature``) are internal; rendered
+    Claude/Cursor routes use ``sb:feature`` and the filesystem-safe Codex
+    bundle uses ``sb-feature``.
     """
     if not root.is_dir():
         return
@@ -449,10 +452,14 @@ def rename_colon_route_skill_directories(root: pathlib.Path, *, host: str) -> No
         if not child.is_dir() or child.is_symlink():
             continue
         dirname = child.name
-        if dirname == "silver" or not dirname.startswith("silver-"):
+        if dirname == "silver":
+            target = child.parent / "sb"
+        elif dirname.startswith("silver-"):
+            route = dirname.removeprefix("silver-")
+            target_name = f"sb:{route}" if host in {"claude", "cursor"} else f"sb-{route}"
+            target = child.parent / target_name
+        else:
             continue
-        route = dirname.removeprefix("silver-")
-        target = child.parent / f"silver:{route}"
         if target.exists():
             raise SystemExit(f"{host} skill rename collision: {dirname} -> {target.name}")
         child.rename(target)
@@ -525,8 +532,10 @@ def command_stub_routes(commands_dir: pathlib.Path) -> set[str]:
         return routes
     for path in sorted(commands_dir.glob("*.md")):
         name = read_skill_frontmatter(path).get("name", "").strip() or path.stem
-        if name.startswith("silver-"):
-            name = "silver:" + name[len("silver-") :]
+        if name == "sb":
+            pass
+        elif name.startswith("sb-"):
+            name = "sb:" + name[len("sb-") :]
         if name:
             routes.add(name)
     return routes
@@ -584,13 +593,12 @@ def render_bundle(source_root: pathlib.Path, dest_root: pathlib.Path, agent: str
                 for metadata in staging.glob("*/agents/openai.yaml"):
                     metadata.unlink()
             sanitize_root(staging, agent)
-            if agent in {"claude", "cursor"}:
-                rename_colon_route_skill_directories(staging, host=agent)
-            if agent in {"cursor", "codex"}:
+            if agent in {"claude", "codex", "cursor"}:
+                rename_route_skill_directories(staging, host=agent)
+            if agent == "cursor":
                 commands_dir = source_root.parent / "plugins" / "silver-bullet" / "commands"
                 suppress_command_stub_skills_from_picker(staging, commands_dir)
-                if agent == "cursor":
-                    exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
+                exclude_command_stub_skills_from_cursor_subagent_surface(staging, commands_dir)
             _safe_rmtree(dest_root)
             staging.rename(dest_root)
         except Exception:

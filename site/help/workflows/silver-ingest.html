@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/png" href="../../favicon.png">
 <link rel="shortcut icon" href="../../favicon.ico">
-<title>/silver:ingest &mdash; External Artifact Ingestion Workflow &mdash; Silver Bullet Help</title>
+<title>/sb:ingest &mdash; External Artifact Ingestion Workflow &mdash; Silver Bullet Help</title>
 <meta name="description" content="Silver Bullet ingestion workflow for JIRA, Figma, Google Docs, Confluence, and cross-repo specs using MCP connectors and explicit missing-artifact tracking.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,18 +50,18 @@
 
 <div class="help-subnav" id="help-subnav">
   <div class="help-subnav-inner">
-    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/silver:ingest</span></nav>
+    <nav class="help-breadcrumb" aria-label="Help Center"><a href="../../">Home</a><span class="sep">/</span><a href="../">Help</a><span class="sep">/</span><a href="./">Workflows</a><span class="sep">/</span><span class="current">/sb:ingest</span></nav>
     <div class="help-subnav-extra">
       <div class="help-subnav-links"><a href="../getting-started/">Start</a><a href="../concepts/">Concepts</a><a href="../workflows/" class="active">Workflows</a><a href="../reference/">Reference</a><a href="../troubleshooting/">Troubleshoot</a></div>
       <div class="nav-search-wrap"><input type="text" class="nav-search-input" id="nav-search-input" placeholder="Search docs…" autocomplete="off"><div class="nav-search-results" id="nav-search-results"></div></div>
     </div>
   </div>
 </div>
-<div class="page-hero"><div class="container"><h1>/silver:ingest</h1><p>External artifact ingestion workflow that preserves source context and turns tickets, docs, designs, and cross-repo specs into canonical planning artifacts.</p></div></div>
+<div class="page-hero"><div class="container"><h1>/sb:ingest</h1><p>External artifact ingestion workflow that preserves source context and turns tickets, docs, designs, and cross-repo specs into canonical planning artifacts.</p></div></div>
 <div class="container-wide"><div class="doc-layout"><aside class="doc-sidebar"><ul class="sidebar-nav"><li class="sidebar-section">On This Page</li><li><a href="#overview">Overview</a></li><li><a href="#sources">Supported Sources</a></li><li><a href="#outputs">Outputs</a></li><li><a href="#steps">Workflow Steps</a></li><li><a href="#failure-handling">Failure Handling</a></li><li><a href="#handoff">Spec Handoff</a></li><li class="sidebar-section">See Also</li><li><a href="./index.html">All Workflows</a></li><li><a href="../reference/">Command Reference</a></li></ul></aside>
 <article class="doc-content">
 <h2 id="overview">Overview</h2>
-<p><code>/silver:ingest</code> supports <code>AF-SPECIFY</code> by importing external product and design context into Silver Bullet planning artifacts. It never calls APIs directly; all external data access is delegated to configured MCP connectors.</p>
+<p><code>/sb:ingest</code> supports <code>AF-SPECIFY</code> by importing external product and design context into Silver Bullet planning artifacts. It never calls APIs directly; all external data access is delegated to configured MCP connectors.</p>
 <p>The workflow is resumable through <code>.planning/INGESTION_MANIFEST.md</code>. Successful artifacts are skipped on later runs, while failed artifacts remain visible and actionable.</p>
 <div class="callout"><div class="callout-body"><strong>Core value:</strong> ingestion prevents the agent from inventing requirements when upstream context is missing. Missing or inaccessible sources are recorded explicitly at the point where their content was expected.</div></div>
 <div class="divider"></div>
@@ -97,12 +97,12 @@
 <p>That behavior keeps downstream SB planning honest: implementers can see which requirements came from source material and which areas still need human follow-up.</p>
 <div class="divider"></div>
 <h2 id="handoff">Spec Handoff</h2>
-<p>After ingestion, run <code>/silver:clarify --spec</code> (or <code>--next spec</code>) to interview, then <code>/silver:spec</code> to compile, or <code>/silver:validate</code> if plans already exist and need coverage analysis.</p>
-<div class="code-block">/silver:ingest PROJ-123
-/silver:clarify --spec Interview remaining spec domains from ingested artifacts
-/silver:spec Compile SPEC.md and REQUIREMENTS.md
-/silver:validate</div>
-<div class="page-nav-bottom"><a href="silver-spec.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/silver:spec</span></a><a href="silver-validate.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/silver:validate</span></a></div>
+<p>After ingestion, run <code>/sb:clarify --spec</code> (or <code>--next spec</code>) to interview, then <code>/sb:spec</code> to compile, or <code>/sb:validate</code> if plans already exist and need coverage analysis.</p>
+<div class="code-block">/sb:ingest PROJ-123
+/sb:clarify --spec Interview remaining spec domains from ingested artifacts
+/sb:spec Compile SPEC.md and REQUIREMENTS.md
+/sb:validate</div>
+<div class="page-nav-bottom"><a href="silver-spec.html"><span class="pnb-label">&larr; Previous</span><span class="pnb-title">/sb:spec</span></a><a href="silver-validate.html" style="text-align:right"><span class="pnb-label">Next &rarr;</span><span class="pnb-title">/sb:validate</span></a></div>
 </article></div></div>
 <footer>
   <div class="footer-inner">

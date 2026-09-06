@@ -1,6 +1,6 @@
 ---
 name: artifact-review-assessor
-title: "Silver: Artifact Review Assessor"
+title: "SB: Artifact Review Assessor"
 description: This skill should be used to triage artifact reviewer findings into MUST-FIX / NICE-TO-HAVE / DISMISS based on artifact contract -- prevents over-zealous reviews
 argument-hint: "<review-findings> <artifact-path> [--contract-source <path>]"
 user-invocable: false
@@ -54,17 +54,17 @@ The assessor is not an artifact — it produces a classified list, not a documen
 
 | Artifact | Contract defined by |
 |---|---|
-| SPEC.md | silver:spec SKILL.md step 7 template |
-| REQUIREMENTS.md | REQ-XX format rules in silver:spec SKILL.md step 8 |
-| CONTEXT.md | Locked decisions format in silver:context workflow |
-| PLAN.md | Wave structure + task format in silver:plan workflow |
-| RESEARCH.md | Evidence + confidence format in silver:deep-research workflow |
-| DESIGN.md | SB design template in silver:spec SKILL.md step 9 |
-| UI-SPEC.md | Design contract format in silver:ui-contract workflow |
-| REVIEW.md | Code quality finding format in silver:review workflow |
-| UAT.md | Criterion + Result + Evidence format in silver:verify workflow |
-| INGESTION_MANIFEST.md | Source artifact listing in silver:ingest SKILL.md step 7 |
-| SECURITY.md | Threat model format in silver:secure workflow |
+| SPEC.md | sb:spec SKILL.md step 7 template |
+| REQUIREMENTS.md | REQ-XX format rules in sb:spec SKILL.md step 8 |
+| CONTEXT.md | Locked decisions format in sb:context workflow |
+| PLAN.md | Wave structure + task format in sb:plan workflow |
+| RESEARCH.md | Evidence + confidence format in sb:deep-research workflow |
+| DESIGN.md | SB design template in sb:spec SKILL.md step 9 |
+| UI-SPEC.md | Design contract format in sb:ui-contract workflow |
+| REVIEW.md | Code quality finding format in sb:review workflow |
+| UAT.md | Criterion + Result + Evidence format in sb:verify workflow |
+| INGESTION_MANIFEST.md | Source artifact listing in sb:ingest SKILL.md step 7 |
+| SECURITY.md | Threat model format in sb:secure workflow |
 
 ## Triage Steps
 

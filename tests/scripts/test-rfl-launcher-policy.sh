@@ -190,23 +190,23 @@ fi
 
 # --- default host routing matrix (user override wins) ---
 grok_host="$(python3 "$RESOLVER" --default-host-route --model grok-4.6)"
-assert_jq_true "Grok defaults to /silver:agent-cursor" \
-  '.host == "cursor" and .route == "/silver:agent-cursor" and .family == "grok" and .preserves_host_mode == true' \
+assert_jq_true "Grok defaults to /sb:agent-cursor" \
+  '.host == "cursor" and .route == "/sb:agent-cursor" and .family == "grok" and .preserves_host_mode == true' \
   "$grok_host"
 
 composer_host="$(python3 "$RESOLVER" --default-host-route --model composer-2.5)"
-assert_jq_true "Composer defaults to /silver:agent-cursor" \
+assert_jq_true "Composer defaults to /sb:agent-cursor" \
   '.host == "cursor" and .skill == "silver-agent-cursor" and .family == "composer"' \
   "$composer_host"
 
 gpt_host="$(python3 "$RESOLVER" --default-host-route --model gpt-5.6-sol)"
 assert_jq_true "GPT defaults to Codex" \
-  '.host == "codex" and .route == "/silver:agent-codex" and .family == "gpt"' \
+  '.host == "codex" and .route == "/sb:agent-codex" and .family == "gpt"' \
   "$gpt_host"
 
 claude_host="$(python3 "$RESOLVER" --default-host-route --model opus-5)"
-assert_jq_true "Claude defaults to /silver:agent-claude" \
-  '.host == "claude" and .route == "/silver:agent-claude" and .family == "claude"' \
+assert_jq_true "Claude defaults to /sb:agent-claude" \
+  '.host == "claude" and .route == "/sb:agent-claude" and .family == "claude"' \
   "$claude_host"
 
 gemini_host="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash)"
@@ -216,15 +216,15 @@ assert_jq_true "Gemini defaults to Gemini CLI when unnamed" \
 
 gemini_no_cli="$(python3 "$RESOLVER" --default-host-route --model gemini-3.7-flash --available-hosts pi,opencode,cursor,codex,claude)"
 assert_jq_true "Gemini cascade falls to Pi when Gemini CLI absent" \
-  '.host == "pi" and .route == "/silver:agent-pi"' \
+  '.host == "pi" and .route == "/sb:agent-pi"' \
   "$gemini_no_cli"
 
 other_host="$(python3 "$RESOLVER" --default-host-route --model glm-5.2)"
 assert_jq_true "Other models default to Pi" \
-  '.host == "pi" and .family == "other" and .route == "/silver:agent-pi"' \
+  '.host == "pi" and .family == "other" and .route == "/sb:agent-pi"' \
   "$other_host"
 
-override="$(python3 "$RESOLVER" --default-host-route --model grok-4.6 --user-agent /silver:agent-pi)"
+override="$(python3 "$RESOLVER" --default-host-route --model grok-4.6 --user-agent /sb:agent-pi)"
 assert_jq_true "user override wins over Grok→Cursor default" \
   '.host == "pi" and .user_override == true and .source == "user_override"' \
   "$override"
@@ -241,7 +241,7 @@ assert_jq_true "named external agent wins for other models" \
 
 decide_grok="$(python3 "$RESOLVER" --decide-launch --model grok-4.6 --reasoning high)"
 assert_jq_true "decide-launch attaches Cursor default host without remapping GPT/Claude" \
-  '.action == "cursor_task" and .default_agent_route == "/silver:agent-cursor" and .preserves_host_mode == true' \
+  '.action == "cursor_task" and .default_agent_route == "/sb:agent-cursor" and .preserves_host_mode == true' \
   "$decide_grok"
 
 decide_gpt="$(python3 "$RESOLVER" --decide-launch --model gpt-5.6-sol --reasoning high)"
@@ -249,7 +249,7 @@ assert_jq_true "GPT decide-launch stays Codex, not Grok High" \
   '.action == "invoke_subscription" and .subscription_host == "codex" and .default_agent_host == "codex"' \
   "$decide_gpt"
 
-if grep -qF '/silver:agent-cursor' "$SKILL" \
+if grep -qF '/sb:agent-cursor' "$SKILL" \
   && grep -qF 'Do **not** smash host `--mode`' "$SKILL" \
   && grep -qF 'Do **not** remap RFL GPT/Claude rungs onto Grok High' "$SKILL" \
   && grep -qF -- '--default-host-route' "$SKILL"; then

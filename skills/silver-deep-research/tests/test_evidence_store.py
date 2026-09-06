@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Smoke tests for evidence_store.py CLI."""
 
+from __future__ import annotations
+
 import json
 import os
 import shutil

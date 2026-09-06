@@ -2,7 +2,7 @@
 
 **Profile:** `synergy_max` (see `docs/research/graphify-agentmemory-optimization.md`)  
 **Setup script:** `bash scripts/graphify-am-global-setup.sh --host <host> --apply`  
-**SB-independent:** no `/silver:init`, no `.silver-bullet.json`, no SB hooks required.
+**SB-independent:** no `/sb:init`, no `.silver-bullet.json`, no SB hooks required.
 
 ## Global install commands (no `--project`)
 
@@ -49,7 +49,7 @@
 
 ## Silver Bullet integration (optional)
 
-When SB is active in a repo, `/silver:init` Step 3f may **delegate** to global setup, then apply project-level index/gitignore:
+When SB is active in a repo, `/sb:init` Step 3f may **delegate** to global setup, then apply project-level index/gitignore:
 
 ```bash
 bash scripts/graphify-am-global-setup.sh --host claude --apply --repo .

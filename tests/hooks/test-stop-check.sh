@@ -955,10 +955,10 @@ assert_skillnorm_rc() {
 }
 
 SKILLNORM_ROOT=$(mktemp -d)
-mkdir -p "$SKILLNORM_ROOT/silver:quality-gates"
-cat > "$SKILLNORM_ROOT/silver:quality-gates/SKILL.md" <<'EOF'
+mkdir -p "$SKILLNORM_ROOT/sb:quality-gates"
+cat > "$SKILLNORM_ROOT/sb:quality-gates/SKILL.md" <<'EOF'
 ---
-name: silver:quality-gates
+name: sb:quality-gates
 description: SKILLNORM colon-path fixture
 ---
 EOF
@@ -969,7 +969,7 @@ sb_skill_is_installed "silver-quality-gates" || _rc=$?
 assert_skillnorm_rc "SKILLNORM-A: colon-on-disk matches hyphen require" 0 "$_rc"
 
 _rc=0
-sb_skill_is_installed "silver:quality-gates" || _rc=$?
+sb_skill_is_installed "sb:quality-gates" || _rc=$?
 assert_skillnorm_rc "SKILLNORM-B: colon-on-disk matches colon require" 0 "$_rc"
 
 _rc=0
@@ -980,7 +980,7 @@ SKILLNORM_ROOT2=$(mktemp -d)
 mkdir -p "$SKILLNORM_ROOT2/skills/other-dir"
 cat > "$SKILLNORM_ROOT2/skills/other-dir/SKILL.md" <<'EOF'
 ---
-name: silver:quality-gates
+name: sb:quality-gates
 description: SKILLNORM frontmatter fixture
 ---
 EOF
@@ -999,13 +999,13 @@ description: SKILLNORM hyphen-path fixture
 EOF
 export SILVER_BULLET_SKILL_ROOTS="$SKILLNORM_ROOT3"
 _rc=0
-sb_skill_is_installed "silver:quality-gates" || _rc=$?
+sb_skill_is_installed "sb:quality-gates" || _rc=$?
 assert_skillnorm_rc "SKILLNORM-E: hyphen-on-disk matches colon require" 0 "$_rc"
 
 if declare -F sb_skill_name_variants >/dev/null 2>&1; then
   variant_list=$(sb_skill_name_variants "silver-quality-gates" | tr '\n' ' ')
   if printf '%s' "$variant_list" | grep -Fq 'silver-quality-gates' \
-    && printf '%s' "$variant_list" | grep -Fq 'silver:quality-gates'; then
+    && printf '%s' "$variant_list" | grep -Fq 'sb:quality-gates'; then
     echo "  PASS: SKILLNORM-F: sb_skill_name_variants emits hyphen and colon forms"
     PASS=$((PASS + 1))
   else
@@ -1014,6 +1014,19 @@ if declare -F sb_skill_name_variants >/dev/null 2>&1; then
   fi
 else
   echo "  FAIL: SKILLNORM-F: sb_skill_name_variants is not defined"
+  FAIL=$((FAIL + 1))
+fi
+
+_rc=0
+sb_skill_is_installed "silver:quality-gates" || _rc=$?
+assert_skillnorm_rc "SKILLNORM-G: retired silver namespace is not discoverable" 1 "$_rc"
+
+legacy_canonical="$(sb_skill_canonical_name "silver:quality-gates")"
+if [[ "$legacy_canonical" == "silver:quality-gates" ]]; then
+  echo "  PASS: SKILLNORM-H: retired silver namespace is not canonicalized"
+  PASS=$((PASS + 1))
+else
+  echo "  FAIL: SKILLNORM-H: retired silver namespace was canonicalized to $legacy_canonical"
   FAIL=$((FAIL + 1))
 fi
 

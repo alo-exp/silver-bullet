@@ -127,7 +127,7 @@ You open Monday's PR queue and every merge request links to accepted spec criter
 
 | Objection | Response on page |
 |-----------|------------------|
-| "Too much process" | `silver:fast` for trivial work; full chain only when risk warrants |
+| "Too much process" | `sb:fast` for trivial work; full chain only when risk warrants |
 | "We already use Cursor/Codex" | SB is host-aware plugin, not a replacement IDE |
 | "Cheap models aren't good enough" | Process + retrieval thesis in `#operational-efficiency` |
 | "Another tool to install" | Opt-in recommended tools; core hooks work with jq only |

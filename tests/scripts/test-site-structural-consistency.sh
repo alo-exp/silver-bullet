@@ -401,14 +401,14 @@ workflow_order_surfaces = [
         HELP / "workflows" / "index.html",
         'id="composer-workflows"',
         'id="atomic-flows"',
-        ["/silver:deep-research</td>", "/silver:new-workflow</td>", "/silver:feature</td>", "agent delegation</td>", "/silver:devops</td>", "/silver:release</td>"],
+        ["/sb:deep-research</td>", "/sb:new-workflow</td>", "/sb:feature</td>", "agent delegation</td>", "/sb:devops</td>", "/sb:release</td>"],
     ),
     (
         "Help reference workflow table",
         HELP / "reference" / "index.html",
         'id="orchestration-workflows"',
         'id="complexity-triage"',
-        ["silver-deep-research.html", "silver-new-workflow.html", "silver-feature.html", "silver-agent-delegate.html", "/silver:worktree", "silver-devops.html", "silver-release.html"],
+        ["silver-deep-research.html", "silver-new-workflow.html", "silver-feature.html", "silver-agent-delegate.html", "/sb:worktree", "silver-devops.html", "silver-release.html"],
     ),
 ]
 for label, path, start, end, markers in workflow_order_surfaces:

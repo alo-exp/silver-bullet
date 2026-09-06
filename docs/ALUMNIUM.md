@@ -157,9 +157,9 @@ ALUMNIUM_CHECKS=1 ALUMNIUM_QUICK=1 bash /path/to/sidekick/.visual-audit/run-alum
 
 | Skill | Alumnium use |
 |-------|----------------|
-| `silver:clarify` | Visual mockups, browser exploration |
-| `silver:ui-review` | Layout/assertion evidence via `check` / `get` |
-| `silver:verify` | Runnable-app UAT evidence |
+| `sb:clarify` | Visual mockups, browser exploration |
+| `sb:ui-review` | Layout/assertion evidence via `check` / `get` |
+| `sb:verify` | Runnable-app UAT evidence |
 
 Fallback: host browser MCP → text-only (see `silver-bullet.md` §8.1).
 

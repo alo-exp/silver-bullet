@@ -12,7 +12,7 @@
     "contract": "apo-catalog invariants, claims-audit, generated view freshness",
     "matrix_overlay": "Enterprise E2E matrix row pass criteria",
     "tri_host_smoke": "Per-host install + sb-diagnostics + SB script invocations",
-    "five_tool_live": "Cursor /silver:agent-cursor live delegate when leanctx opted in"
+    "five_tool_live": "Cursor /sb:agent-cursor live delegate when leanctx opted in"
   },
   "claims": [
     {
@@ -44,7 +44,7 @@
     {
       "claim_id": "help-router-workflow",
       "surface": "help_center",
-      "text": "/silver router composes workflows dynamically",
+      "text": "/sb router composes workflows dynamically",
       "verification_tier": "matrix_overlay",
       "check_id": "help-page-exists-silver-router",
       "test_ids": ["enterprise-e2e-row-1"]

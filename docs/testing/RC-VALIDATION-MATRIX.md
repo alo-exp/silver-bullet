@@ -16,14 +16,14 @@ Codex and Claude live RC cells are **operator-local pre-release** requirements u
 
 ## Live wrapper and model policy (mandatory)
 
-Every live RC cell MUST be initiated through the host-specific `/silver:agent-*` wrapper
+Every live RC cell MUST be initiated through the host-specific `/sb:agent-*` wrapper
 with this fixed model mapping:
 
 | Host | Required wrapper | Required model |
 |------|------------------|----------------|
-| Codex | `/silver:agent-codex` | **GPT-5.6 Luna Low** |
-| Claude | `/silver:agent-claude` | **Haiku 4.5** |
-| Cursor | `/silver:agent-cursor` | **Composer 2.5** |
+| Codex | `/sb:agent-codex` | **GPT-5.6 Luna Low** |
+| Claude | `/sb:agent-claude` | **Haiku 4.5** |
+| Cursor | `/sb:agent-cursor` | **Composer 2.5** |
 
 Raw host CLI runs, unrecorded model substitutions, and transcripts without the wrapper do
 not satisfy a live RC cell.

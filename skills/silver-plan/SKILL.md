@@ -5,7 +5,7 @@ argument-hint: "<phase or change description>"
 version: 0.1.0
 ---
 
-# /silver:plan - Phase Plan
+# /sb:plan - Phase Plan
 
 SB-owned planning creates clear tasks, small waves, assumptions, dependencies,
 verification criteria, and explicit handoff to execution.
@@ -49,7 +49,7 @@ Use `--mvp` when the user says "MVP", "vertical slice", "feature slice", "end-to
    - implementation logic requires `tdd` before code edits;
    - docs/config/infra-only work may skip application TDD but still needs
      verification evidence.
-7. Add a verification plan that `silver:verify` can execute without inventing
+7. Add a verification plan that `sb:verify` can execute without inventing
    criteria later.
 8. Surface every assumption and unresolved question from context.
 9. In MVP mode, write `SKELETON.md` when this is phase 1 of a new project with

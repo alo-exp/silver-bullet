@@ -34,7 +34,7 @@ run_workflow_strict_gate() {
   fi
   local wf_file="$wf_dir/$id.md"
   if [[ ! -f "$wf_file" || -L "$wf_file" ]]; then
-    emit_block "$(printf '🛑 WORKFLOW GATE — No active workflow file matches SB_WORKFLOW_ID=%s\n\nLook in .planning/workflows/ for the correct id, or restart the composition with /silver:*.' "$id")"
+    emit_block "$(printf '🛑 WORKFLOW GATE — No active workflow file matches SB_WORKFLOW_ID=%s\n\nLook in .planning/workflows/ for the correct id, or restart the composition with /sb:*.' "$id")"
     exit 0
   fi
 

@@ -34,7 +34,7 @@ skill="$raw_skill"
 if declare -f sb_skill_canonical_name >/dev/null 2>&1; then
   skill="$(sb_skill_canonical_name "$raw_skill")"
 else
-  skill="${raw_skill#silver:}"
+  skill="${raw_skill#sb:}"
   skill="${skill//:/-}"
 fi
 

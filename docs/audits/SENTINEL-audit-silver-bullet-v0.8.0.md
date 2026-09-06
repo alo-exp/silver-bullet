@@ -136,7 +136,7 @@ as a user-instruction Claude should write to `.claude/settings.local.json`. This
 
 *CVSS 3.1 estimate:* AV:L/AC:L/PR:L/UI:R/S:C/C:H/I:H/A:L — **7.2 (High)**
 
-*Mitigating factors:* The user must explicitly invoke `/silver:init` and choose this option; it is opt-in. The `auto` option (recommended) is safer. The instruction is accompanied by a warning that this is only for isolated environments.
+*Mitigating factors:* The user must explicitly invoke `/sb:init` and choose this option; it is opt-in. The `auto` option (recommended) is safer. The instruction is accompanied by a warning that this is only for isolated environments.
 
 *Severity floor applied:* Tool escalation findings floor at 7.0. With mitigations, this qualifies as **High (7.2)**.
 
@@ -160,7 +160,7 @@ fi
 
 ---
 
-**FC-3-C: `silver:init` auto-bypass-permissions detection (CONFIRMED — informational)**
+**FC-3-C: `sb:init` auto-bypass-permissions detection (CONFIRMED — informational)**
 
 `docs/workflows/full-dev-cycle.md` Step 0 instructs Claude to detect "bypass-permissions mode" (where all tool calls are auto-accepted) and silently set `autonomous` mode with all defaults. This means any operator who sets the platform bypass toggle unintentionally also silently changes Claude's decision-making mode. This is a workflow design concern, not a code vulnerability.
 
@@ -419,7 +419,7 @@ CAUTION: Only use bypassPermissions in a fully isolated environment
 credentials, or sensitive files). Verify isolation BEFORE applying this setting.
 {"permissions":{"defaultMode":"bypassPermissions"}}
 ```
-Add a note in `skills/silver:init/SKILL.md` Phase 2.6: before writing `bypassPermissions`, ask the user to confirm: "Is this environment isolated (container/VM/CI runner with no access to production systems or credentials)?" and only proceed on explicit "yes".
+Add a note in `skills/sb:init/SKILL.md` Phase 2.6: before writing `bypassPermissions`, ask the user to confirm: "Is this environment isolated (container/VM/CI runner with no access to production systems or credentials)?" and only proceed on explicit "yes".
 
 ---
 
@@ -529,7 +529,7 @@ FC-2 (credentials): Exhaustive scan via grep across all hooks, skills, scripts, 
 The attack requires ability to set environment variables for the Claude Code process. In standard desktop/laptop usage, this means local user privilege (already has ${SB_RUNTIME_HOME_ROOT}/ access). In CI/CD, environment variable injection is a known attack class. Severity floor for tool escalation is ≥7.0; however FC-8 requires both HIGH attack complexity AND HIGH privilege for the impact to materialize via the plugin specifically. CVSS 6.6 (Medium) is appropriate because prerequisites are stringent. Confirmed Medium, not High. ✓
 
 **SC-7: Verify no injection pattern in the plugin files themselves that would hijack the SENTINEL audit process.**
-All SENTINEL boundary instructions are in this report file. No skill file, hook, or workflow doc contains instructions directing Claude to skip, falsify, or abbreviate a security audit. The forensics and create-release skills contain "UNTRUSTED DATA" warnings that are consistent with, not contrary to, SENTINEL's framework. The `silver:init` skill conflict detection checks for workflow override patterns. No adversarial self-modifying behavior detected. ✓
+All SENTINEL boundary instructions are in this report file. No skill file, hook, or workflow doc contains instructions directing Claude to skip, falsify, or abbreviate a security audit. The forensics and create-release skills contain "UNTRUSTED DATA" warnings that are consistent with, not contrary to, SENTINEL's framework. The `sb:init` skill conflict detection checks for workflow override patterns. No adversarial self-modifying behavior detected. ✓
 
 ---
 

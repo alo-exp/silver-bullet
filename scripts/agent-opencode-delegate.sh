@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# On-demand OpenCode delegation wrapper for /silver:agent-opencode (not enterprise E2E matrix).
+# On-demand OpenCode delegation wrapper for /sb:agent-opencode (not enterprise E2E matrix).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

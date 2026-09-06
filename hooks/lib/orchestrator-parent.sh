@@ -234,7 +234,7 @@ sb_orchestrator_state_applies_to_project() {
 }
 
 # Orchestrator-spawned workers may use Bash for delivery ops without a prior
-# skill record — parent already routed; workers cannot meaningfully invoke /silver.
+# skill record — parent already routed; workers cannot meaningfully invoke /sb.
 sb_orchestrator_worker_allows_bash() {
   local tool_name="$1"
   sb_orchestrator_is_worker_session || return 1
@@ -396,8 +396,15 @@ sb_orchestrator_parent_skill_allowed() {
   if declare -f sb_skill_canonical_name >/dev/null 2>&1; then
     canonical="$(sb_skill_canonical_name "$skill")"
   else
-    canonical="${skill#silver:}"
-    canonical="${canonical//:/-}"
+    case "$skill" in
+      sb) canonical="silver" ;;
+      sb:*) canonical="silver-${skill#sb:}" ;;
+      sb-*) canonical="silver-${skill#sb-}" ;;
+      *)
+        canonical="${skill#sb:}"
+        canonical="${canonical//:/-}"
+        ;;
+    esac
   fi
   case "$canonical" in
     silver|silver-orchestrator|silver-agent-codex|silver-agent-cursor|silver-agent-claude|silver-agent-opencode|silver-agent-pi) return 0 ;;

@@ -7,18 +7,18 @@ argument-hint: "<content scope> [--mode audit|fix|migrate|optimize|write]"
 version: 0.1.0
 ---
 
-# /silver:content - Content And Search Workflow
+# /sb:content - Content And Search Workflow
 
 SB-owned content workflow for public docs, marketing/site copy, help centers,
 blog/article drafts, search metadata, AI-citation readiness, and content
-migrations. It works with `silver:ensure-docs` for governed project docs and
-`silver:domain-audit --pack content-search` for public-facing quality.
+migrations. It works with `sb:ensure-docs` for governed project docs and
+`sb:domain-audit --pack content-search` for public-facing quality.
 
 **Pre-execution** (blocks content edits until recorded):
 
-`silver:clarify` → `silver:plan`
+`sb:clarify` → `sb:plan`
 
-**Post-execution:** `silver:execute` → `silver:verify` → `silver:ensure-docs`
+**Post-execution:** `sb:execute` → `sb:verify` → `sb:ensure-docs`
 
 Queue source: `hooks/lib/orchestrator-state.sh` (`silver-content` composer).
 
@@ -49,7 +49,7 @@ The artifact must include:
 1. Display `SILVER BULLET > CONTENT`.
 2. Determine whether the content is governed docs, public site copy, help
    center content, search metadata, migration output, or article content.
-3. Invoke or apply `silver:domain-audit --pack content-search`; add
+3. Invoke or apply `sb:domain-audit --pack content-search`; add
    `accessibility`, `performance-resource`, or `ui-system` for rendered pages.
 4. Classify edits into safety tiers:
    - safe: encoding, typo, markdown syntax, obvious link/metadata fixes;
@@ -58,7 +58,7 @@ The artifact must include:
      destructive migrations, or broad generated prose.
 5. Apply only safe or approved moderate edits automatically.
 6. Run available build, link, search metadata, or browser checks.
-7. Route governed docs changes through `silver:ensure-docs`.
+7. Route governed docs changes through `sb:ensure-docs`.
 
 ## Exit Gate
 
@@ -71,7 +71,7 @@ Use this lightweight V-loop for iterative site/help work (hooks enforce regressi
 
 ### Preconditions
 
-1. Route via `/silver` → `silver:content --mode fix` (or `audit` for read-only review).
+1. Route via `/sb` → `sb:content --mode fix` (or `audit` for read-only review).
 2. **Composer 2.5 workers only** — parent orchestrator spawns `Task` with `model=composer-2.5`; parent never edits `site/**` directly.
 3. `graphify query` before exploration; `agentmemory` save after each batch.
 
@@ -80,7 +80,7 @@ Use this lightweight V-loop for iterative site/help work (hooks enforce regressi
 | Step | Action | Evidence |
 |------|--------|----------|
 | 1 Preflight | Run site freshness tests if last edit > prior regression marker | `test-site-*-freshness.sh` output |
-| 2 Implement | Worker edits `site/**` only; parent verifies worker claims via `/silver:completion-audit` | diff + worker summary |
+| 2 Implement | Worker edits `site/**` only; parent verifies worker claims via `/sb:completion-audit` | diff + worker summary |
 | 3 Regression | `bash tests/scripts/test-site-chrome-regression.sh` (+ doc/content freshness) | hook `site-regression-gate` pass |
 | 4 Visual | 1280px light+dark screenshots (Alumnium or host browser MCP) — Wave 2 gate | `.planning/` or agentmemory |
 | 5 Publish | push `main` → wait `pages.yml` → fetch public URL → write `live-publish-evidence.json` | explicit LIVE / NOT LIVE |

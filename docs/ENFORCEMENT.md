@@ -91,7 +91,7 @@ Before any release, 4 stages must pass in the current session:
 | 3 | Public-Facing Content Refresh | All user surfaces current |
 | 4 | Security Audit (SENTINEL) | Two consecutive clean passes |
 
-Each stage requires explicit SB completion evidence through `silver:completion-audit` or `silver:verify`, as appropriate for the stage. The quality-gate file is cleared on session start — no stale markers.
+Each stage requires explicit SB completion evidence through `sb:completion-audit` or `sb:verify`, as appropriate for the stage. The quality-gate file is cleared on session start — no stale markers.
 
 For the Silver Bullet plugin repo, the release live matrix wrapper (`scripts/run-release-live-matrix.sh`) and the todo-app live E2E suite (`tests/e2e-live/run-e2e-live-tests.sh`) are additional mandatory release prerequisites. Downstream projects use the generic release profile unless their `.silver-bullet.json` opts into plugin-runtime release matrices. The stage markers and the mandatory post-gate full-suite rerun marker live in `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/quality-gate-state`. The full-suite rerun itself runs through `verify-tests`, which also writes `${SB_RUNTIME_HOME_ROOT}/.silver-bullet/verify-tests-state` so final delivery can detect stale source changes.
 

@@ -387,7 +387,7 @@ def _resolve_codex_bin() -> str:
 
 
 def run_codex_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
-    """Dispatch via /silver:agent-codex → scripts/agent-codex/invoke.sh (--use-exec)."""
+    """Dispatch via /sb:agent-codex → scripts/agent-codex/invoke.sh (--use-exec)."""
     attempt_id = new_attempt_id()
     slug = logical_model_id.replace(".", "-")
     out_file = output_dir / f"{slug}-{attempt_id}.txt"
@@ -459,7 +459,7 @@ def run_codex_worker(*, logical_model_id: str, prompt: str, output_dir: Path, ti
 
 
 def run_claude_worker(*, logical_model_id: str, prompt: str, output_dir: Path, timeout_sec: int = 600) -> WorkerResult:
-    """Dispatch via /silver:agent-claude → scripts/agent-claude/invoke.sh (--use-print)."""
+    """Dispatch via /sb:agent-claude → scripts/agent-claude/invoke.sh (--use-print)."""
     attempt_id = new_attempt_id()
     slug = logical_model_id.replace(".", "-")
     out_file = output_dir / f"{slug}-{attempt_id}.txt"

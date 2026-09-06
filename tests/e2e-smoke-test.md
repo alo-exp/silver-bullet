@@ -40,7 +40,7 @@ git init && git add -A && git commit -m "initial: enterprise test app baseline"
 In Claude Code (with CWD = `/Users/shafqat/projects/enterprise-grade-test-app`):
 
 ```
-/silver:init
+/sb:init
 ```
 
 **Verify these artifacts are created:**
@@ -61,7 +61,7 @@ Tell Claude:
 
 ## 4. WORKFLOW VALIDATION
 
-Run `/silver:feature` (or let SB route bare feature intent). As the orchestrator parent drives the composed workflow, check off each phase:
+Run `/sb:feature` (or let SB route bare feature intent). As the orchestrator parent drives the composed workflow, check off each phase:
 
 ### Orchestrator parent mode
 - [ ] Parent invokes `silver-orchestrator` / composer queue builder — does **not** implement features inline
@@ -71,19 +71,19 @@ Run `/silver:feature` (or let SB route bare feature intent). As the orchestrator
 - [ ] Task workers advance atoms; parent does not re-seed queue on worker re-read
 
 ### Pre-execution chain (FLOW 1–8 vocabulary)
-- [ ] FLOW 2 ORIENT — `silver:scan` when brownfield
+- [ ] FLOW 2 ORIENT — `sb:scan` when brownfield
 - [ ] FLOW 3 CLARIFY / FLOW 4 DECIDE — when intent is fuzzy or architectural
 - [ ] FLOW 5 SPECIFY — when `.planning/SPEC.md` absent
-- [ ] FLOW 13 QUALITY GATE (pre-plan) — `silver:quality-gates`
-- [ ] FLOW 6 PLAN — `silver:plan` + `silver:validate`
-- [ ] FLOW 8 EXECUTE — `silver:execute` (TDD before implementation)
+- [ ] FLOW 13 QUALITY GATE (pre-plan) — `sb:quality-gates`
+- [ ] FLOW 6 PLAN — `sb:plan` + `sb:validate`
+- [ ] FLOW 8 EXECUTE — `sb:execute` (TDD before implementation)
 
 ### Post-execution chain (after FLOW 8)
-- [ ] FLOW 10 REVIEW — `silver:review-request` → `silver:review` → `silver:review-triage`
-- [ ] FLOW 12 VERIFY — `silver:verify` + verify-tests freshness
-- [ ] FLOW 11 SECURE — `security` + `silver:secure`
+- [ ] FLOW 10 REVIEW — `sb:review-request` → `sb:review` → `sb:review-triage`
+- [ ] FLOW 12 VERIFY — `sb:verify` + verify-tests freshness
+- [ ] FLOW 11 SECURE — `security` + `sb:secure`
 - [ ] FLOW 13 QUALITY GATE (pre-ship)
-- [ ] FLOW 14 SHIP — `silver:branch-finish` → `silver:completion-audit` → `silver:ship`
+- [ ] FLOW 14 SHIP — `sb:branch-finish` → `sb:completion-audit` → `sb:ship`
 
 ### Admission control
 - [ ] Source edits blocked until `SB_WORKFLOW_ID` matches active `.planning/workflows/<id>.md`
@@ -175,40 +175,40 @@ After the standard smoke test, verify composer-specific behavior. Each checklist
 3. `SB_WORKFLOW_ID` admission blocks stray source edits during active workflow
 4. Worker sessions do not re-seed composer queue
 
-### silver:feature
+### sb:feature
 - [ ] Pre-chain: QUALITY GATE → CONTEXT → PLAN → VALIDATE → EXECUTE
 - [ ] Post-chain: REVIEW → VERIFY → SECURE → VALIDATE → QUALITY GATE (pre-ship) → SHIP
-- [ ] Conditional `silver:spec` when SPEC.md absent
+- [ ] Conditional `sb:spec` when SPEC.md absent
 
-### silver:ui
-- [ ] Pre-chain includes `silver:ui-contract` before EXECUTE
-- [ ] Post-chain opens with `silver:ui-review` before review triad
+### sb:ui
+- [ ] Pre-chain includes `sb:ui-contract` before EXECUTE
+- [ ] Post-chain opens with `sb:ui-review` before review triad
 
-### silver:devops
+### sb:devops
 - [ ] Pre-chain: BLAST RADIUS → DEVOPS SKILL ROUTER → devops quality gates → SECURE → … → EXECUTE
 - [ ] Post-chain uses `FLOW-DEVOPS-QUALITY-GATE-PRESHIP` before ship prep
 
-### silver:bugfix
+### sb:bugfix
 - [ ] Diagnosis-first: DEBUG → PLAN → EXECUTE (no pre-plan quality-gates/context)
 - [ ] Post-chain matches feature ship tail
 
-### silver:deep-research
-- [ ] Queue: `silver:clarify` → `silver:deep-research` → `silver:ensure-docs` → `silver:validate` (no EXECUTE atom)
+### sb:deep-research
+- [ ] Queue: `sb:clarify` → `sb:deep-research` → `sb:ensure-docs` → `sb:validate` (no EXECUTE atom)
 - [ ] Default direct research; MultAI only when user explicitly requests in current task
 - [ ] Handoff offers feature / devops / research-only paths
 
-### silver:release
+### sb:release
 - [ ] Parent-driven audits before delivery tail: `RELEASE-UAT-AUDIT.md`, `RELEASE-MILESTONE-AUDIT.md`
-- [ ] Delivery tail excludes `silver:execute`; ends with `silver:create-release`
+- [ ] Delivery tail excludes `sb:execute`; ends with `sb:create-release`
 - [ ] Gap-closure loop (max 2×) preserves release `SB_WORKFLOW_ID`
 
-### silver:fast
-- [ ] Tier 1 trivial → direct edit; Tier 3 → escalates to `silver:feature`
+### sb:fast
+- [ ] Tier 1 trivial → direct edit; Tier 3 → escalates to `sb:feature`
 - [ ] Tier 2 queue: QUALITY GATE → PLAN → VALIDATE → EXECUTE → VERIFY
 
-### silver:migrate (legacy projects)
+### sb:migrate (legacy projects)
 1. Project has `.planning/` artifacts but stale workflow tracking
-2. Run `/silver:migrate` — infers completed FLOW rows from artifacts
+2. Run `/sb:migrate` — infers completed FLOW rows from artifacts
 3. Generated `.planning/workflows/<id>.md` reflects inferred completion (not legacy `WORKFLOW.md`)
 
 ---

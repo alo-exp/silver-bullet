@@ -9,7 +9,7 @@
 sb_jq_missing_message() {
   printf '%s' '🛑 ENFORCEMENT BLOCKED — jq is required for Silver Bullet hooks.
 
-Install jq, then re-run /silver:init:
+Install jq, then re-run /sb:init:
   macOS: brew install jq
   Linux: sudo apt install jq
 
@@ -59,7 +59,7 @@ PY
 }
 
 # Block PreToolUse enforcement when jq is missing in an SB-initiated project.
-# Non-initiated projects remain fail-open (config copied without /silver:init).
+# Non-initiated projects remain fail-open (config copied without /sb:init).
 sb_jq_enforcement_block_sb_initiated() {
   local hook_name="${1:-hook}"
   local emit_fn="${2:-}"

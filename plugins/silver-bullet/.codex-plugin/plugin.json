@@ -18,7 +18,6 @@
     "deploy-gate",
     "ci-cd"
   ],
-  "commands": "./commands/",
   "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "Silver Bullet",

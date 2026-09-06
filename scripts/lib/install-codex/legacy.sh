@@ -15,6 +15,14 @@ roots_to_prune = [
     codex_home / ".tmp" / "marketplaces" / "alo-labs-codex" / "plugins" / "silver-bullet" / ".generated-skills",
 ]
 
+# Older Codex plugin installs converted every command stub into an internal
+# source-command-* skill. That migration surface is an implementation detail,
+# not a public SB skill namespace; remove it from every cached SB version.
+cache_root = codex_home / "plugins" / "cache"
+if cache_root.exists():
+    for pattern in ("*/*/.codex-plugin/migrated-command-skills", "*/*/*/.codex-plugin/migrated-command-skills"):
+        roots_to_prune.extend(cache_root.glob(pattern))
+
 backup_root = codex_home / "legacy-uppercase-backups"
 if backup_root.exists():
     for backup in backup_root.rglob("*"):
@@ -38,6 +46,7 @@ if tmp_marketplaces.exists():
                 backup / "root" / "agents" / "codex",
                 backup / "root" / "plugins" / "silver-bullet" / "skills",
                 backup / "root" / "plugins" / "silver-bullet" / ".generated-skills",
+                backup / "root" / "plugins" / "silver-bullet" / ".codex-plugin" / "migrated-command-skills",
             ]
         )
 
@@ -51,6 +60,7 @@ if tmp_root.exists():
                 temp_dir / "plugins" / "silver-bullet" / "skills",
                 temp_dir / "plugins" / "silver-bullet" / ".generated-skills",
                 temp_dir / "plugins" / "silver-bullet" / "agents",
+                temp_dir / "plugins" / "silver-bullet" / ".codex-plugin" / "migrated-command-skills",
             ]
         )
 
@@ -277,5 +287,3 @@ if text.endswith("\n"):
 path.write_text(new_text)
 PY
 }
-
-

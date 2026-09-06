@@ -28,7 +28,7 @@
 | Create | `templates/sessions/session-log.md.base` | Template for per-task session log |
 | Modify | `templates/CLAUDE.md.base` | Add Section 4 (Session Mode + Anti-stall) and Section 5 (Model Routing) |
 | Modify | `templates/workflows/full-dev-cycle.md` | Add Step 0, model routing, Agent Teams, KNOWLEDGE/CHANGELOG/session at step 15, CI gate at step 17 |
-| Modify | `skills/silver:init/SKILL.md` | Phase 3: CI setup, KNOWLEDGE.md, CHANGELOG.md, sessions/ creation |
+| Modify | `skills/sb:init/SKILL.md` | Phase 3: CI setup, KNOWLEDGE.md, CHANGELOG.md, sessions/ creation |
 | Create | `docs/KNOWLEDGE.md` | Apply KNOWLEDGE.md.base to this project |
 | Create | `docs/CHANGELOG.md` | Apply CHANGELOG-project.md.base to this project |
 | Create | `docs/sessions/.gitkeep` | Ensure directory is tracked |
@@ -925,17 +925,17 @@ EOF
 ## Task 9: Update silver-init SKILL.md (Phase 3)
 
 **Files:**
-- Modify: `skills/silver:init/SKILL.md`
+- Modify: `skills/sb:init/SKILL.md`
 
 Three additions: (a) update allowed-commands declaration, (b) CI setup step, (c) new file creation in Phase 3.
 
 - [ ] **Step 9.0: Update allowed Bash commands declaration (if present)**
 
-Read `skills/silver:init/SKILL.md`. If it contains a line declaring allowed Bash commands, update it to also permit `ls` glob patterns and `test -d` (used in CI detection). If no such declaration exists, skip this step.
+Read `skills/sb:init/SKILL.md`. If it contains a line declaring allowed Bash commands, update it to also permit `ls` glob patterns and `test -d` (used in CI detection). If no such declaration exists, skip this step.
 
 - [ ] **Step 9.1: Add CI setup step (3.2.5) after directory creation**
 
-In `skills/silver:init/SKILL.md`, after the `#### 3.2 Create directories` section, insert:
+In `skills/sb:init/SKILL.md`, after the `#### 3.2 Create directories` section, insert:
 
 ```markdown
 #### 3.2.5 CI setup
@@ -1037,14 +1037,14 @@ mkdir -p docs/sessions && touch docs/sessions/.gitkeep
 
 ```bash
 grep -c "CI setup\|verify_commands\|KNOWLEDGE.md.base\|CHANGELOG-project\|sessions/.gitkeep" \
-  /Users/shafqat/Documents/Projects/silver-bullet/skills/silver:init/SKILL.md
+  /Users/shafqat/Documents/Projects/silver-bullet/skills/sb:init/SKILL.md
 ```
 Expected: `≥ 4`
 
 - [ ] **Step 9.4: Commit**
 
 ```bash
-git add skills/silver:init/SKILL.md
+git add skills/sb:init/SKILL.md
 git commit -m "$(cat <<'EOF'
 feat: add CI setup, KNOWLEDGE.md, CHANGELOG, sessions to SB init
 

@@ -33,16 +33,16 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 | Concern | Silver Bullet | Optional extensions |
 |---|---|---|
 | `.planning/` lifecycle artifacts | **Owns** | May supply source evidence only |
-| Context and planning | **Owns** through `silver:context` and `silver:plan` | No competing phase planner |
-| Execution | **Owns** through `silver:execute` | May run domain commands under SB plan control |
-| Verification and completion audit | **Owns** through `silver:verify` and `silver:completion-audit` | May provide evidence |
-| Domain quality packs | **Owns** through `silver:domain-audit` | May provide command output, traces, screenshots, or provider-specific evidence |
-| Specialized test/refactor/content/benchmark routes | **Owns** through `silver:test`, `silver:refactor`, `silver:content`, and `silver:benchmark` | May provide tool output only |
-| Deployment, canary, incident, retro loops | **Owns** through `silver:deploy`, `silver:canary`, `silver:incident`, and `silver:retro` | May provide platform, log, metric, or provider evidence |
+| Context and planning | **Owns** through `sb:context` and `sb:plan` | No competing phase planner |
+| Execution | **Owns** through `sb:execute` | May run domain commands under SB plan control |
+| Verification and completion audit | **Owns** through `sb:verify` and `sb:completion-audit` | May provide evidence |
+| Domain quality packs | **Owns** through `sb:domain-audit` | May provide command output, traces, screenshots, or provider-specific evidence |
+| Specialized test/refactor/content/benchmark routes | **Owns** through `sb:test`, `sb:refactor`, `sb:content`, and `sb:benchmark` | May provide tool output only |
+| Deployment, canary, incident, retro loops | **Owns** through `sb:deploy`, `sb:canary`, `sb:incident`, and `sb:retro` | May provide platform, log, metric, or provider evidence |
 | TDD boundary | **Owns** through `tdd` / SB marker aliases | No direct required dependency |
-| Review framing and triage | **Owns** through `silver:review-request`, `silver:review`, `silver:review-triage` | May add findings into REVIEW.md |
-| Branch finish and phase ship | **Owns** through `silver:branch-finish` and `silver:ship` | No competing phase ship |
-| Release | **Owns** through `silver:release` and `silver:create-release` | May provide deployment or announcement evidence |
+| Review framing and triage | **Owns** through `sb:review-request`, `sb:review`, `sb:review-triage` | May add findings into REVIEW.md |
+| Branch finish and phase ship | **Owns** through `sb:branch-finish` and `sb:ship` | No competing phase ship |
+| Release | **Owns** through `sb:release` and `sb:create-release` | May provide deployment or announcement evidence |
 | Codex/Claude package surface | **Owns** | No dependency vendoring |
 
 ## Non-Redundancy Rules
@@ -58,7 +58,7 @@ Optional plugins remain useful when they add capability outside SB's lifecycle s
 - `/.planning/` and `/.codex/` are project-instance artifacts, not plugin artifacts.
 - `silver-bullet.md` is the project-side instance copy; `templates/silver-bullet.md.base` is the source template.
 - `plugins/silver-bullet/` is the curated SB-only Codex bundle, synchronized from the repo root.
-- `commands/` is the Codex command surface. It exposes `/silver:*` entry points and ships inside the Silver Bullet bundle so the default install presents one SB plugin.
+- `plugins/silver-bullet/commands/` is the Cursor command surface. It exposes `/sb:*` entry points; the Codex manifest omits `commands` and uses the native `skill-source/` mirror to avoid command-to-skill migration artifacts.
 - Third-party Codex wrappers belong in their own packages or marketplaces and should not copy upstream skills into this repository.
 
 ## Codex Marketplace Packaging
@@ -68,4 +68,4 @@ For the Codex packaging pattern used with Alo Labs plugins, see
 SB's own Codex package stays SB-only. Optional extension plugins are installed
 from their own sources when needed, and SB's slash-command layer ships inside the
 main SB bundle so the default install exposes one Silver Bullet plugin with
-`/silver:*` commands.
+`/sb:*` commands.

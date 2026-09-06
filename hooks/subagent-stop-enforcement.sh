@@ -86,9 +86,9 @@ sb_subagent_state_has_completion_audit() {
 sb_subagent_block_pending_audit() {
   sb_site_session_pending_completion_audit || return 1
   sb_subagent_state_has_completion_audit && return 1
-  emit_block "Subagent completion gate (§3c) — Task worker returned but /silver:completion-audit is not recorded.
+  emit_block "Subagent completion gate (§3c) — Task worker returned but /sb:completion-audit is not recorded.
 
-Invoke /silver:completion-audit to verify worker claims before the next edit or user-facing reply."
+Invoke /sb:completion-audit to verify worker claims before the next edit or user-facing reply."
 }
 
 if [[ "$hook_event" == "PreToolUse" ]]; then
@@ -107,7 +107,7 @@ if [[ "$hook_event" == "PreToolUse" ]]; then
     Skill)
       skill_name="$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.name // ""' 2>/dev/null || true)"
       case "$skill_name" in
-        silver-completion-audit|silver:completion-audit|completion-audit)
+        silver-completion-audit|sb:completion-audit|completion-audit)
           sb_site_session_clear_subagent_log 2>/dev/null || true
           sb_site_session_clear_pending_completion_audit 2>/dev/null || true
           ;;
@@ -125,7 +125,7 @@ if [[ "$hook_event" == "PostToolUse" ]]; then
     Skill)
       skill_name="$(printf '%s' "$input" | jq -r '.tool_input.skill // .tool_input.name // ""' 2>/dev/null || true)"
       case "$skill_name" in
-        silver-completion-audit|silver:completion-audit|completion-audit)
+        silver-completion-audit|sb:completion-audit|completion-audit)
           sb_site_session_clear_subagent_log 2>/dev/null || true
           sb_site_session_clear_pending_completion_audit 2>/dev/null || true
           ;;
@@ -137,7 +137,7 @@ if [[ "$hook_event" == "PostToolUse" ]]; then
   sb_orchestrator_is_worker_session 2>/dev/null && exit 0
   tool_preview="$(printf '%s' "$input" | jq -c '.tool_input // {}' 2>/dev/null || echo '{}')"
   sb_site_session_mark_pending_completion_audit "$tool_preview"
-  ctx=$(printf 'SB §3c: Task worker returned — invoke /silver:completion-audit before telling the user work is done.' | jq -Rs '.')
+  ctx=$(printf 'SB §3c: Task worker returned — invoke /sb:completion-audit before telling the user work is done.' | jq -Rs '.')
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":%s}}' "$ctx"
   exit 0
 fi
@@ -162,8 +162,8 @@ if sb_subagent_state_has_completion_audit; then
   exit 0
 fi
 
-emit_block "Subagent completion gate (§3c) — Task workers ran this session but /silver:completion-audit is not recorded.
+emit_block "Subagent completion gate (§3c) — Task workers ran this session but /sb:completion-audit is not recorded.
 
-Invoke /silver:completion-audit to verify worker claims before Stop.
+Invoke /sb:completion-audit to verify worker claims before Stop.
 Parent must not accept subagent \"done\" without independent verification."
 

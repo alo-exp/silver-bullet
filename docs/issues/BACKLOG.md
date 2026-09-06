@@ -66,7 +66,7 @@ Feature captured in docs/TODO.md: Skill Gap Check / Skill Portals. Involves dete
 **Source:** silver-scan (episodic memory, 2026-04-04)
 **Status:** open
 
-When a project already has a CLAUDE.md during /silver:init, the current behavior is a silent override. Users who have customized their CLAUDE.md lose those customizations without warning. /silver:init should detect conflicts, diff the sections, and offer interactive conflict resolution — choosing which sections to keep from the existing CLAUDE.md vs the SB template.
+When a project already has a CLAUDE.md during /sb:init, the current behavior is a silent override. Users who have customized their CLAUDE.md lose those customizations without warning. /sb:init should detect conflicts, diff the sections, and offer interactive conflict resolution — choosing which sections to keep from the existing CLAUDE.md vs the SB template.
 
 ---
 
@@ -88,7 +88,7 @@ User feedback from 2026-04-24: the Stop hook fires inappropriately in multiple s
 **Source:** silver-scan (episodic memory, 2026-04-08)
 **Status:** superseded by SB-owned lifecycle absorption
 
-SB should enforce a completion-audit gate after each meaningful task boundary, not only at final delivery. This is now represented by `silver:completion-audit` and the SB-owned lifecycle marker set; remaining work belongs under current hook tests rather than the retired external-helper framing.
+SB should enforce a completion-audit gate after each meaningful task boundary, not only at final delivery. This is now represented by `sb:completion-audit` and the SB-owned lifecycle marker set; remaining work belongs under current hook tests rather than the retired external-helper framing.
 
 ---
 
@@ -114,7 +114,7 @@ The homepage Installation section currently only shows a GSD + Silver Bullet pat
 
 ---
 
-### SB-B-11 — feat: PATH 9 layer parallelism in /silver composer (future optimization)
+### SB-B-11 — feat: PATH 9 layer parallelism in /sb composer (future optimization)
 
 **Type:** enhancement
 **Filed:** 2026-04-25

@@ -258,8 +258,8 @@ out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in
 unset SILVER_BULLET_RUNTIME
 assert_contains "bare work prompt: hook identifies bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
 assert_contains "bare work prompt: Claude/Cursor Skill form (#260)" "$out" 'Skill tool with skill'
-assert_contains "bare work prompt: names silver skill (#260)" "$out" 'skill \\"silver\\"'
-assert_not_contains "bare work prompt: no Codex invoke-skill on cursor" "$out" "invoke-skill silver"
+assert_contains "bare work prompt: names sb skill (#260)" "$out" 'skill \\"sb\\"'
+assert_not_contains "bare work prompt: no Codex invoke-skill on cursor" "$out" "invoke-skill sb"
 assert_not_contains "bare work prompt: no Codex adapter branding on cursor" "$out" "Codex SB adapter"
 assert_contains "bare work prompt: hook forbids direct implementation before routing" "$out" "Do not inspect, edit, run tests, or implement directly before routing"
 assert_contains "bare work prompt: original prompt included as router context" "$out" "Add a due date field to todos"
@@ -276,8 +276,8 @@ out=$(run_hook 'Add a due date field to todos. Keep it simple: accept dueDate in
 unset SILVER_BULLET_RUNTIME SB_ORCHESTRATOR_WORKER
 assert_contains "codex bare prompt: identifies interception" "$out" "BARE PROMPT INTERCEPTED"
 assert_contains "codex bare prompt: uses package-local Silver adapter path" "$out" "scripts/silver-bullet"
-assert_contains "codex bare prompt: instructs invoke-skill silver" "$out" "invoke-skill silver"
-assert_not_contains "codex bare prompt: does not rely on PATH-only adapter" "$out" "  silver-bullet invoke-skill silver"
+assert_contains "codex bare prompt: instructs invoke-skill sb" "$out" "invoke-skill sb"
+assert_not_contains "codex bare prompt: does not rely on PATH-only adapter" "$out" "  silver-bullet invoke-skill sb"
 teardown
 
 # Test 8b: Legacy config required_deploy is normalized to current gates
@@ -304,8 +304,8 @@ write_cfg
 echo "silver-quality-gates" > "$TMPSTATE"
 out=$(run_hook 'What does Silver Bullet aim to achieve?')
 assert_not_contains "explanatory question: no bare prompt interception" "$out" "BARE PROMPT INTERCEPTED"
-assert_not_contains "explanatory question: no forced Silver router invocation" "$out" "invoke-skill silver"
-assert_not_contains "explanatory question: no Skill router injection" "$out" 'Skill tool with skill "silver"'
+assert_not_contains "explanatory question: no forced SB router invocation" "$out" "invoke-skill sb"
+assert_not_contains "explanatory question: no Skill router injection" "$out" 'Skill tool with skill "sb"'
 teardown
 
 # ── Composed-workflow position tests (Pass 1: workflows/ dir) ────────────────
@@ -368,4 +368,3 @@ teardown
 echo ""
 echo "Results: $PASS passed, $FAIL failed"
 [[ $FAIL -eq 0 ]] && exit 0 || exit 1
-
