@@ -338,7 +338,7 @@ graphify query "task context plus relevant files" --graph graphify-out/graph.jso
       <div class="divider"></div>
 
       <h2 id="composable-flows-context"><code>AF-DOCUMENT</code> and the workflow tracker</h2>
-      <p>In Silver Bullet's <a href="composable-workflow.html">v0.52.0 APO architecture</a>, documentation maps to catalog atomic flows, durable project docs, and the per-instance workflow tracker:</p>
+      <p>In Silver Bullet's <a href="composable-workflow.html">v0.53.0 APO architecture</a>, documentation maps to catalog atomic flows, durable project docs, and the per-instance workflow tracker:</p>
       <ul>
         <li><strong><code>AF-DOCUMENT</code></strong> — runs when durable documentation, handoff, content, retro, or knowledge-capture evidence is required. Steps include <code>sb:ensure-docs</code>, technical debt capture when needed, SB milestone summary when needed, conversation memory capture when available, and SB session reporting when needed.</li>
         <li><strong>Per-instance workflow tracker</strong> — the real-time state tracking artifact for an active composition. Created when a composition begins, updated after every path completes. Records selected catalog atoms, completed paths, deferred improvements, dynamic insertions, V-loop/evidence status, and the full composition plan. Unlike the three-layer documentation scheme (which is project-level and durable), <code>.planning/workflows/&lt;id&gt;.md</code> is composition-level and ephemeral — it exists for the duration of the current chain. The retired single-file <code>WORKFLOW.md</code> model is legacy only.</li>

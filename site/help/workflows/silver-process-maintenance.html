@@ -132,7 +132,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="overview">Overview</h2>
       <p><code>/sb:process-maintenance</code> is the Silver Bullet specialized workflow for mutating planning state without triggering implementation. It covers phase CRUD, thread management, backlog filing, and migration of planning artifacts — the operational layer that keeps <code>.planning/</code> authoritative between delivery cycles.</p>
       <p><strong>It never treats direct edits to guarded planning files as the workflow.</strong> ROADMAP.md and other SB-managed artifacts are mutated only through catalog-backed skills; the planning-file-guard blocks bypass attempts.</p>
-      <p>Maps to <code>WF-PROCESS-MAINTENANCE</code> in the v0.52.0 APO catalog. Standard composition:</p>
+      <p>Maps to <code>WF-PROCESS-MAINTENANCE</code> in the v0.53.0 APO catalog. Standard composition:</p>
       <div class="code-block">PHASE_MANAGE → DOCUMENT → VALIDATE</div>
       <p>Catalog triggers: <code>phase</code>, <code>thread</code>, <code>backlog</code>, <code>migration</code>. Routed by <code>/sb</code> intent classification when maintenance signals match.</p>
 

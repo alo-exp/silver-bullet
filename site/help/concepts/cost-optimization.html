@@ -133,7 +133,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
     <article class="doc-content">
 
-      <h2 id="what-it-means">What Efficiency Means in v0.52.0</h2>
+      <h2 id="what-it-means">What Efficiency Means in v0.53.0</h2>
       <p>Silver Bullet is an APO — an orchestration and enforcement engine with catalog-backed lifecycle workflows. Efficiency comes from routing work to the smallest safe <code>WF-*</code> composition, keeping state in <code>.planning/workflows/&lt;id&gt;.md</code>, and applying only the <code>AF-*</code> gates the task actually needs.</p>
       <p>That matters because the expensive failure mode in agentic development is not only token cost. It is doing the wrong amount of process: under-reviewing a risky change, over-processing a typo, losing traceability between spec and PR, or discovering after implementation that the plan never covered an acceptance criterion.</p>
 
@@ -237,7 +237,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="not-claimed">What Is Not Claimed</h2>
-      <p>Silver Bullet v0.52.0 does <strong>not</strong> provide a generic automatic model-routing advantage over host-native model controls. The historical <code>ensure-model-routing.sh</code> hook is disabled and exits as a no-op. Optional external plugins may expose model profiles or model overrides in their own configuration, but that is not a core Silver Bullet benefit.</p>
+      <p>Silver Bullet v0.53.0 does <strong>not</strong> provide a generic automatic model-routing advantage over host-native model controls. The historical <code>ensure-model-routing.sh</code> hook is disabled and exits as a no-op. Optional external plugins may expose model profiles or model overrides in their own configuration, but that is not a core Silver Bullet benefit.</p>
       <p>When you need different model behavior, configure it in the active host or in an explicitly selected optional plugin. Silver Bullet's job is to select, enforce, and trace the workflow path around that execution.</p>
 
       <div class="callout callout-warn">

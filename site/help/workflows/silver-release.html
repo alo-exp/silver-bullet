@@ -128,7 +128,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
       <h2 id="overview">Overview</h2>
       <p><code>/sb:release</code> is the Silver Bullet orchestrator for milestone-level publishing. It handles versioned releases, changelogs, documentation updates, GitHub Releases, and milestone archival.</p>
       <p><strong>It never publishes directly — it orchestrates only.</strong> This workflow operates at the milestone level — it closes out a complete milestone, not a single phase.</p>
-      <p><code>sb:release</code> uses the <strong>v0.52.0 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
+      <p><code>sb:release</code> uses the <strong>v0.53.0 APO catalog</strong> — it maps to <code>WF-SILVER-RELEASE</code> and finishes with <code>AF-RELEASE</code>. Design handoff and documentation are represented through catalog atomic flows and release workflow steps when UI milestone evidence requires them. This produces the design handoff package before the release is cut. See <a href="../concepts/composable-workflow.html">Composable Flows</a> for the full catalog.</p>
 
       <div class="divider"></div>
 
@@ -222,7 +222,7 @@ bash tests/scripts/test-site-doc-freshness.sh</div>
       <div class="divider"></div>
 
       <h2 id="example">Example Invocation</h2>
-      <div class="code-block">/sb:release Cut v0.52.0</div>
+      <div class="code-block">/sb:release Cut v0.53.0</div>
       <p>Silver Bullet routes to release workflow. Pre-release quality gates → UAT audit → milestone audit → security hard gate → docs and milestone summary → cross-artifact review → deploy readiness → fresh tests → <code>sb:ship</code> → milestone archival → <code>/sb:create-release</code> → post-release items summary.</p>
 
       <!-- PAGE NAV BOTTOM -->

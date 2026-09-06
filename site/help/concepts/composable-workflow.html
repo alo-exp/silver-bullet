@@ -145,7 +145,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
     <article class="doc-content">
 
       <h2 id="overview">What Are Composable Flows?</h2>
-      <p>Silver Bullet v0.52.0 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/sb</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
+      <p>Silver Bullet v0.53.0 is an <strong>Agentic Process Orchestrator (APO)</strong>. Its hierarchy is <strong>Process → Workflow → Atomic Flow → Flow Step/Skill</strong>. <code>/sb</code> classifies the request via <code>ROUTE</code>, selects a catalog-backed workflow (for example <code>silver-feature</code> or <code>silver-fast</code>), and composes canonical atomic flow slugs from <code>docs/apo-catalog.json</code>.</p>
       <p>Teams adopt process packs (<code>PP-*</code>) to reorder workflows, mandate gates, and require opted-in tools without forking atomic-flow definitions. The catalog remains the single source of truth; generated views (<code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>) are read-only renderings checked for freshness.</p>
       <p>Each atomic flow is the natural delegated work unit: one subagent work package, declared inputs and outputs, mutation scope, dependency edges, and a local V-loop. Each flow step/skill also has a local V-loop that must roll up before the parent atomic-flow gate can pass.</p>
 
@@ -158,7 +158,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 
       <h2 id="atomic-flow-catalog">Atomic Flow Catalog</h2>
       <p>The source of truth is <code>docs/apo-catalog.json</code>. Generated views such as <code>docs/composable-flows-contracts.md</code>, <code>docs/workflow-composition-matrix.md</code>, and <code>docs/generated/atomic-flow-index.json</code> are rendered from that catalog and checked for freshness. They are not hand-maintained workflow authorities.</p>
-      <p>v0.52.0 defines <strong>29 canonical atomic flows</strong>, <strong>26 workflows</strong> (22 task-shaped plus 4 reusable components), and <strong>118 flow-step contracts</strong>. Each flow step carries a local V-loop; evidence rolls up through atomic-flow gates to workflow intent gates. Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation.</p>
+      <p>v0.53.0 defines <strong>29 canonical atomic flows</strong>, <strong>26 workflows</strong> (22 task-shaped plus 4 reusable components), and <strong>118 flow-step contracts</strong>. Each flow step carries a local V-loop; evidence rolls up through atomic-flow gates to workflow intent gates. Legacy <code>FLOW 1–18</code> labels are migration aliases only — not primary navigation.</p>
 
       <table class="ref-table">
         <thead>
