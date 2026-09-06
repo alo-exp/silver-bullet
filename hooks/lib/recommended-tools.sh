@@ -119,8 +119,11 @@ sb_recommended_tool_install_commands() {
 sb_global_toolstack_manifest_path() {
   if [[ -n "${SB_GLOBAL_TOOLSTACK_MANIFEST:-}" ]]; then
     printf '%s' "${SB_GLOBAL_TOOLSTACK_MANIFEST}"
+  elif [[ -n "${SB_GLOBAL_TOOLSTACK_HOME:-}" ]]; then
+    # Compatibility override for pre-generic SB installations and fixtures.
+    printf '%s/instances.json' "${SB_GLOBAL_TOOLSTACK_HOME}"
   else
-    printf '%s/instances.json' "${SB_GLOBAL_TOOLSTACK_HOME:-${HOME}/.silver-bullet/five-tool-stack}"
+    printf '%s/manifest.json' "${FIVE_TOOL_STACK_HOME:-${XDG_STATE_HOME:-${XDG_DATA_HOME:-${HOME}/.local/state}}/five-tool-stack}"
   fi
 }
 

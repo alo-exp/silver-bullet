@@ -533,6 +533,11 @@ for deployed in stack-compression-coordinator.sh graphify-gate.sh patch-hooks.py
     fail "installer deploys toolstack ${deployed}"
   fi
 done
+if [[ -f "${TEST_HOME}/.cursor/hooks/toolstack/lib/five_tool_runtime/runtime.py" && -f "${TEST_HOME}/.cursor/hooks/toolstack/lib/five_tool_runtime/cli.py" ]]; then
+  pass "installer deploys generic five-tool runtime"
+else
+  fail "installer deploys generic five-tool runtime"
+fi
 
 # Session id sanitization rejects path traversal in heartbeat paths
 # shellcheck source=../../scripts/lib/recommended-tools/paths.sh
