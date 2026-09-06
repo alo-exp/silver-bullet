@@ -292,7 +292,7 @@ def main() -> None:
         "Knowledge Management",
     ]
     right_x = 732
-    draw.text((right_x, 108), "v0.52.0 · 118 FLOW STEPS", font=fonts["tag"], fill=TEXT_DIM)
+    draw.text((right_x, 108), "v0.53.0 · 118 FLOW STEPS", font=fonts["tag"], fill=TEXT_DIM)
     draw.text((right_x, 150), "AGENTIC PROCESS ORCHESTRATOR", font=fonts["label"], fill=HERO_GREEN)
     for idx, feature in enumerate(features):
         draw_feature(draw, base, (right_x, 196 + idx * 42), feature, fonts["feature"])

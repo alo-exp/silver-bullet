@@ -83,8 +83,24 @@ main{padding:48px 24px 96px}
   <p class="source-link"><a href="https://github.com/alo-exp/silver-bullet/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">View full CHANGELOG on GitHub &rarr;</a></p>
  </div>
 </header>
-<main>
- <div class="container">
+ <main>
+  <div class="container">
+  <article class="release" id="v0-53-0">
+   <div class="release-header">
+    <h2>v0.53.0</h2>
+    <time class="release-date" datetime="2026-09-07">2026-09-07</time>
+   </div>
+   <p class="release-summary">Minor release: public Silver Bullet namespace migration to <code>/sb</code>, removal of the historical <code>source-command-</code> command artefact, and cross-host package mirror alignment.</p>
+   <h3>Breaking Changes</h3>
+   <ul>
+    <li>Public <code>/silver:</code> command and skill routes are now <code>/sb:</code>; no compatibility transition is provided.</li>
+    <li>The historical <code>source-command-</code> prefix is removed from the published Claude, Codex, and Cursor command/skill surfaces.</li>
+   </ul>
+   <h3>Validation exception</h3>
+   <ul>
+    <li><strong>Maintainer-approved two-host release:</strong> Claude Code and Codex release surfaces are covered by the green local suite and remote CI/Secret Scan. Cursor offline wiring and bundle checks pass, but live Composer 2.5 five-tool scenarios remain pending because the Cursor account usage limit was reached. This release does not claim live Cursor validation.</li>
+   </ul>
+  </article>
   <article class="release" id="unreleased">
    <div class="release-header">
     <h2>Unreleased — multi-AI deep research</h2>

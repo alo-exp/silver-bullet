@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.53.0] — 2026-09-07
+
+Minor release: public Silver Bullet namespace migration to `/sb`, removal of the historical `source-command-` command artefact, and cross-host package mirror alignment.
+
+## Breaking Changes
+- Public `/silver:` command and skill routes are now `/sb:` with no compatibility transition.
+- The historical `source-command-` prefix has been removed from the published command/skill surfaces across Claude, Codex, and Cursor.
+
+## Fixes
+- `fix(namespace)`: validate the renamed `/sb` Composer mirrors across host bundles (`3241adef`)
+- `fix(tests)`: make generic five-tool runtime fixtures portable and stabilize timeout counters (`3c279a24`, `7dfd5a44`)
+- `fix(runtime)`: add the SB-independent five-tool runtime (`90033dbf`)
+
+## Validation Exception
+- **Maintainer-approved two-host release:** Claude Code and Codex release surfaces are covered by the green local suite and remote CI/Secret Scan. Cursor offline wiring and bundle checks pass, but the live Composer 2.5 five-tool scenarios remain pending because the Cursor account usage limit was reached. This release does not claim live Cursor validation.
+
 ## [0.52.0] — 2026-08-08
 
 Minor release: five-tool routed compression stack, multi-AI orchestration primitive, and a batch of hook gate-integrity fixes — several gates were failing open or blocking Stop permanently.

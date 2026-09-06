@@ -130,7 +130,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/sb:ship-readiness</code> documents <code>WF-SHIP-READINESS</code>, a <strong>reusable workflow component</strong> in the v0.52.0 APO catalog. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
+      <p><code>/sb:ship-readiness</code> documents <code>WF-SHIP-READINESS</code>, a <strong>reusable workflow component</strong> in the v0.53.0 APO catalog. It is the terminal gate chain that proves a branch is ready for PR creation, merge, or deploy.</p>
       <p>Catalog slug: <code>ship-readiness</code>. Type: <code>reusable_component</code>. Allowed dynamic operations: <code>loop</code> (re-audit after fixes before ship authorization).</p>
       <div class="code-block">BRANCH_FINISH → COMPLETION_AUDIT → SHIP</div>
       <p>Individual atomic flows are invokable via <code>/sb:branch-finish</code>, <code>/sb:completion-audit</code>, and <code>/sb:ship</code>, but the ship-readiness chain only runs as an ordered composition inside parent workflows.</p>

@@ -129,7 +129,7 @@ h1,h2,h3,h4,h5,h6,.logo,.section-title,.section-label,.tagline,.btn,.tag,.nav-ct
     <article class="doc-content">
 
       <h2 id="overview">Overview</h2>
-      <p><code>/sb:review-triad</code> documents <code>WF-REVIEW-TRIAD</code>, a <strong>reusable workflow component</strong> in the v0.52.0 APO catalog. It encapsulates the three-step review chain that every delivery workflow runs after implementation completes.</p>
+      <p><code>/sb:review-triad</code> documents <code>WF-REVIEW-TRIAD</code>, a <strong>reusable workflow component</strong> in the v0.53.0 APO catalog. It encapsulates the three-step review chain that every delivery workflow runs after implementation completes.</p>
       <p>Catalog slug: <code>review-triad</code>. Type: <code>reusable_component</code>. Allowed dynamic operations: <code>loop</code> (re-run triage until findings are resolved or explicitly accepted).</p>
       <div class="code-block">REVIEW_REQUEST → REVIEW → REVIEW_TRIAGE</div>
       <p>Individual atomic flows are invokable directly via their public routes (<code>/sb:review-request</code>, <code>/sb:review</code>, <code>/sb:review-triage</code>), but the triad only runs as an ordered composition inside parent workflows.</p>

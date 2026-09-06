@@ -9,7 +9,7 @@
 <title>Core Concepts — Silver Bullet Help</title>
 <meta name="description" content="Understand Silver Bullet's core concepts: composable atomic flows, skills, hooks, lifecycle workflows, quality gates, and enforcement layers.">
 <meta property="og:title" content="Core Concepts — Silver Bullet Help">
-<meta property="og:description" content="Composable atomic flows, hook enforcement, lifecycle skills, quality gates, and spec-to-release traceability — core Silver Bullet concepts for v0.52.0.">
+<meta property="og:description" content="Composable atomic flows, hook enforcement, lifecycle skills, quality gates, and spec-to-release traceability — core Silver Bullet concepts for v0.53.0.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sb.alolabs.dev/help/concepts/">
 <meta property="og:image" content="https://sb.alolabs.dev/og-image.png">
@@ -143,7 +143,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
 <div class="page-hero">
   <div class="container">
     <h1>Core Concepts</h1>
-    <p>The mental models behind Silver Bullet v0.52.0 APO: Process → Workflow → Atomic Flow → Flow Step, lifecycle skills, hooks, quality gates, process packs, and enforced delivery evidence.</p>
+    <p>The mental models behind Silver Bullet v0.53.0 APO: Process → Workflow → Atomic Flow → Flow Step, lifecycle skills, hooks, quality gates, process packs, and enforced delivery evidence.</p>
   </div>
 </div>
 
@@ -328,7 +328,7 @@ svg.lucide{display:inline-block;vertical-align:middle;width:1em;height:1em;strok
       <div class="divider"></div>
 
       <h2 id="enforcement">Enforcement Layers</h2>
-      <p>Silver Bullet v0.52.0 layers twelve independent enforcement surfaces on top of the APO catalog. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
+      <p>Silver Bullet v0.53.0 layers twelve independent enforcement surfaces on top of the APO catalog. They overlap deliberately: if one context path misses a rule, another hook or instruction surface restates it.</p>
 
       <div class="layer-list">
         <div class="layer-card"><div class="layer-num">1</div><div><h4>Skill Recording</h4><p><code>record-skill.sh</code> records actual supported skill invocation receipts. The completion audit trusts state, not prose claims.</p></div></div>
@@ -578,7 +578,7 @@ raw/                         <span class="comment"># Optional fetched corpus for
       <div class="divider"></div>
 
       <h2 id="composable-flows">Composable Workflow Orchestration</h2>
-      <p>Silver Bullet v0.52.0 is an Agentic Process Orchestrator (APO): <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. The canonical <code>AF-*</code> catalog in <code>docs/apo-catalog.json</code> replaces fixed pipelines. When you invoke <code>/sb</code>, it classifies context, selects a <code>WF-*</code> workflow, and composes catalog-backed atoms — with the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> recording V-loop evidence and composition state in real time.</p>
+      <p>Silver Bullet v0.53.0 is an Agentic Process Orchestrator (APO): <strong>Process → Workflow → Atomic Flow → Flow Step</strong>. The canonical <code>AF-*</code> catalog in <code>docs/apo-catalog.json</code> replaces fixed pipelines. When you invoke <code>/sb</code>, it classifies context, selects a <code>WF-*</code> workflow, and composes catalog-backed atoms — with the per-instance tracker <code>.planning/workflows/&lt;id&gt;.md</code> recording V-loop evidence and composition state in real time.</p>
       <div class="concept-grid">
         <div class="concept-card">
           <div class="cc-icon"><i data-lucide="layers"></i></div>
