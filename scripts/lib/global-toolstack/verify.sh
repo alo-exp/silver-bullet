@@ -3,7 +3,13 @@ set -euo pipefail
 
 HOME_CURSOR="${HOME}/.cursor"
 TS_DIR="${HOME_CURSOR}/hooks/toolstack"
-GLOBAL_INSTANCES="${SB_GLOBAL_TOOLSTACK_HOME:-${HOME}/.silver-bullet/five-tool-stack}/instances.json"
+if [[ -n "${SB_GLOBAL_TOOLSTACK_MANIFEST:-}" ]]; then
+  GLOBAL_INSTANCES="${SB_GLOBAL_TOOLSTACK_MANIFEST}"
+elif [[ -n "${SB_GLOBAL_TOOLSTACK_HOME:-}" ]]; then
+  GLOBAL_INSTANCES="${SB_GLOBAL_TOOLSTACK_HOME}/instances.json"
+else
+  GLOBAL_INSTANCES="${FIVE_TOOL_STACK_HOME:-${XDG_STATE_HOME:-${XDG_DATA_HOME:-${HOME}/.local/state}}/five-tool-stack}/manifest.json"
+fi
 pass=0 fail=0 warn=0
 
 _check() {
@@ -31,13 +37,18 @@ done
 [[ -f "${TS_DIR}/patch-hooks.py" ]] && _check pass patch-hooks.py present || _check fail patch-hooks.py missing
 [[ -f "${TS_DIR}/patch-mcp.py" ]] && _check pass patch-mcp.py present || _check fail patch-mcp.py missing
 [[ -f "${TS_DIR}/five_tool_instances.py" ]] && _check pass five_tool_instances.py present || _check fail five_tool_instances.py missing
+[[ -f "${TS_DIR}/lib/five_tool_runtime/runtime.py" ]] && _check pass generic-runtime present || _check fail generic-runtime missing
+[[ -f "${TS_DIR}/lib/five_tool_runtime/cli.py" ]] && _check pass generic-runtime-cli present || _check fail generic-runtime-cli missing
 [[ -f "${TS_DIR}/fix-shell-compression-hook.py" ]] && _check pass fix-shell-compression-hook.py present || _check fail fix-shell-compression-hook.py missing
 
 if [[ -f "$GLOBAL_INSTANCES" ]] && jq -e '
-  .schema == "v1"
+  .schema == "five-tool-stack/v1"
   and .scope == "user-global"
   and .profile == "five_tool_routed"
   and (["graphify", "agentmemory", "context_mode", "leanctx", "rtk"] - (.tools | keys)) == []
+  and (["claude", "codex", "cursor", "opencode", "pi"] - (.hosts | keys)) == []
+  and .coordination.one_global_instance_per_tool == true
+  and .coordination.rtk_rewrite == "single"
 ' "$GLOBAL_INSTANCES" >/dev/null 2>&1; then
   _check pass global-instances "five-tool manifest present"
 else

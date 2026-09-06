@@ -7,6 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DEPLOYED="${HOME}/.cursor/hooks/toolstack/install.sh"
 SRC="${REPO_ROOT}/scripts/lib/global-toolstack"
+GENERIC_SRC="${REPO_ROOT}/scripts/lib/five_tool_runtime"
+GENERIC_DST="${HOME}/.cursor/hooks/toolstack/lib/five_tool_runtime"
 PROJECT_ROOT="${SB_RECONCILE_PROJECT_ROOT:-}"
 
 while [[ $# -gt 0 ]]; do
@@ -36,6 +38,11 @@ for f in "${SRC}"/*; do
     *.mdc) ;;
   esac
 done
+
+# Stage the SB-independent runtime beside the deployed adapter.  The adapter
+# first looks here, then falls back to the source-tree sibling for in-repo use.
+mkdir -p "$GENERIC_DST"
+cp -f "$GENERIC_SRC"/*.py "$GENERIC_DST/"
 
 chmod +x "$DEPLOYED" 2>/dev/null || true
 
