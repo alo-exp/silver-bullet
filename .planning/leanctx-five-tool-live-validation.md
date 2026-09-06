@@ -55,6 +55,27 @@ SB_FIVE_TOOL_PRERELEASE=1 SB_FIVE_TOOL_PRERELEASE_REQUIRE_LIVE=1 \
   bash tests/scripts/test-five-tool-prerelease-cursor.sh
 ```
 
+## Resumed live validation (2026-09-05)
+
+The adapter and harness fixes were validated against the real Cursor surface:
+
+- S01 completed successfully with the isolated five-tool fixture.
+- S02 completed successfully using the logical `lctx_read_ast` route mapped to
+  Cursor's current `leanctx-ctx_read` (`ctx_read`) operation, followed by the
+  Context Mode Grep route.
+- S09 completed successfully and confirmed the coordinator's
+  `sb_stack_double_compression` deny regression through `context-mode-ctx_execute`.
+- S04 and S06 completed successfully in earlier live attempts before the
+  account quota was exhausted.
+- A complete five-scenario rerun reached S01 and S02, then S04/S06/S09 returned
+  Cursor's Composer 2.5 `ActionRequiredError` usage-limit response; none of
+  those scenarios timed out. The gate remains **quota-blocked**, not green.
+
+The harness now keeps delegate logs outside the model-visible fixture, uses a
+bounded outer watchdog, isolates Cursor config/data roots, exposes the source
+checkout through `--add-dir` and `LEAN_CTX_EXTRA_ROOTS`, and cleans up orphaned
+MCP/LSP children after quota or transport errors.
+
 ## Offline coverage (CI-safe)
 
 All routing, gate, install, and policy behavior validated offline — see [BUILD-COMPLETE](leanctx-five-tool-BUILD-COMPLETE.md).

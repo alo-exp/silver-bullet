@@ -21,6 +21,35 @@ import re
 import shutil
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+
+from five_tool_instances import (  # noqa: E402
+    ensure_global_instances,
+    mcp_server_spec,
+)
+from opencode import (  # noqa: E402
+    opencode_context_mode_plugin_present,
+    opencode_ensure_context_mode_plugin,
+    opencode_existing_server_present,
+    opencode_remove_context_mode_mcp,
+    opencode_server_config,
+    opencode_upsert_server,
+)
+
+
+CM_OVERLAP_TOOLS = [
+    "ctx_execute",
+    "ctx_execute_file",
+    "ctx_batch_execute",
+    "ctx_search",
+    "ctx_index",
+    "ctx_fetch_and_index",
+    "ctx_stats",
+    "ctx_purge",
+    "ctx_doctor",
+    "ctx_upgrade",
+]
+
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
@@ -50,13 +79,17 @@ def context_mode_present_cursor(mcp_path: pathlib.Path) -> bool:
 def context_mode_present_claude(claude_json: pathlib.Path) -> bool:
     data = load_json(claude_json)
     servers = data.get("mcpServers", {})
-    return "context-mode" in servers
+    return "context-mode" in servers or "user-context-mode" in servers
 
 
 def context_mode_present_opencode(cfg_path: pathlib.Path) -> bool:
     data = load_json(cfg_path)
     mcp = data.get("mcp", {})
-    return "context-mode" in mcp
+    return (
+        opencode_context_mode_plugin_present(data)
+        or "context-mode" in mcp
+        or "user-context-mode" in mcp
+    )
 
 
 def context_mode_present_codex(config_toml: pathlib.Path) -> bool:
@@ -86,12 +119,12 @@ def leanctx_server_env(cm_active: bool) -> dict[str, str]:
     return env
 
 
-def leanctx_cursor_server(cm_active: bool) -> dict:
-    return {
-        "command": "lean-ctx",
-        "args": ["mcp"],
-        "env": leanctx_server_env(cm_active),
-    }
+def leanctx_cursor_server(cm_active: bool, manifest: dict) -> dict:
+    desired = mcp_server_spec(manifest, "leanctx")
+    desired["env"] = leanctx_server_env(cm_active)
+    if cm_active:
+        desired["disabledTools"] = list(CM_OVERLAP_TOOLS)
+    return desired
 
 
 def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
@@ -108,7 +141,7 @@ def remove_upstream_lean_ctx_duplicate(servers: dict) -> bool:
     return True
 
 
-def merge_cursor_mcp(target: pathlib.Path, dry_run: bool) -> dict:
+def merge_cursor_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_cursor(target)
     data = load_json(target, {"mcpServers": {}})
     servers = data.setdefault("mcpServers", {})
@@ -116,10 +149,15 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool) -> dict:
     if remove_upstream_lean_ctx_duplicate(servers):
         changed = True
     if "leanctx" not in servers:
-        servers["leanctx"] = leanctx_cursor_server(cm_active)
+        servers["leanctx"] = leanctx_cursor_server(cm_active, manifest)
         changed = True
     else:
         existing = servers["leanctx"]
+        desired = leanctx_cursor_server(cm_active, manifest)
+        for key in ("command", "args"):
+            if existing.get(key) != desired[key]:
+                existing[key] = desired[key]
+                changed = True
         desired_env = leanctx_server_env(cm_active)
         merged_env = dict(existing.get("env", {}))
         for key, val in desired_env.items():
@@ -129,21 +167,27 @@ def merge_cursor_mcp(target: pathlib.Path, dry_run: bool) -> dict:
         if changed:
             existing["env"] = merged_env
             servers["leanctx"] = existing
+        if cm_active:
+            disabled = list(existing.get("disabledTools", []))
+            for tool in CM_OVERLAP_TOOLS:
+                if tool not in disabled:
+                    disabled.append(tool)
+                    changed = True
+            existing["disabledTools"] = disabled
+            servers["leanctx"] = existing
     if changed:
         save_json(target, data, dry_run)
     return {"host": "cursor", "mcp_merged": changed, "cm_active": cm_active}
 
 
-def merge_claude_mcp(target: pathlib.Path, dry_run: bool) -> dict:
+def merge_claude_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_claude(target)
     data = load_json(target, {"mcpServers": {}})
     servers = data.setdefault("mcpServers", {})
     changed = False
-    desired = {
-        "command": "lean-ctx",
-        "args": ["mcp"],
-        "env": leanctx_server_env(cm_active),
-    }
+    if remove_upstream_lean_ctx_duplicate(servers):
+        changed = True
+    desired = leanctx_cursor_server(cm_active, manifest)
     if servers.get("leanctx") != desired:
         servers["leanctx"] = desired
         changed = True
@@ -152,8 +196,7 @@ def merge_claude_mcp(target: pathlib.Path, dry_run: bool) -> dict:
     return {"host": "claude", "mcp_merged": changed, "cm_active": cm_active}
 
 
-def merge_opencode_mcp(target: pathlib.Path, dry_run: bool) -> dict:
-    cm_active = context_mode_present_opencode(target)
+def merge_opencode_mcp(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     data = load_json(
         target,
         {
@@ -164,35 +207,138 @@ def merge_opencode_mcp(target: pathlib.Path, dry_run: bool) -> dict:
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
     mcp = data.setdefault("mcp", {})
+    if not isinstance(mcp, dict):
+        mcp = {}
+        data["mcp"] = mcp
     changed = False
-    desired = {
-        "type": "local",
-        "command": ["lean-ctx", "mcp"],
-        "enabled": True,
-        "environment": leanctx_server_env(cm_active),
-    }
-    if mcp.get("leanctx") != desired:
-        mcp["leanctx"] = desired
-        changed = True
+    cm_plugin_active = opencode_context_mode_plugin_present(data)
+    plugins = data.get("plugin")
+    if cm_plugin_active and isinstance(plugins, list):
+        changed = opencode_ensure_context_mode_plugin(
+            plugins, manifest, allow_add=False
+        ) or changed
+    cm_active = cm_plugin_active or opencode_existing_server_present(
+        mcp, "context-mode", ("user-context-mode",)
+    )
+    if cm_plugin_active:
+        changed = opencode_remove_context_mode_mcp(mcp) or changed
+    elif cm_active:
+        changed = opencode_upsert_server(
+            mcp,
+            "context-mode",
+            opencode_server_config(manifest, "context_mode"),
+            aliases=("user-context-mode",),
+        ) or changed
+    changed = opencode_upsert_server(
+        mcp,
+        "leanctx",
+        opencode_server_config(
+            manifest,
+            "leanctx",
+            environment=leanctx_server_env(cm_active),
+        ),
+        aliases=("lean-ctx", "lean-ctx-standalone", "user-leanctx", "user-lean-ctx"),
+    ) or changed
     if changed:
-        save_json(target, data, dry_run)
+        if dry_run:
+            print(f"DRY-RUN: would write {target}")
+        else:
+            save_json(target, data, dry_run)
     return {"host": "opencode", "mcp_merged": changed, "cm_active": cm_active}
 
 
-def merge_codex_toml(target: pathlib.Path, dry_run: bool) -> dict:
+def toml_section_bounds(text: str, header: str) -> tuple[int, int] | None:
+    match = re.search(rf"(?m)^{re.escape(header)}\s*$", text)
+    if not match:
+        return None
+    next_header = re.search(r"(?m)^\[", text[match.end() :])
+    end = match.end() + (next_header.start() if next_header else len(text[match.end() :]))
+    return match.start(), end
+
+
+def normalize_codex_root(text: str, server: str, manifest: dict) -> str:
+    spec = mcp_server_spec(manifest, "leanctx")
+    header = f"[mcp_servers.{server}]"
+    bounds = toml_section_bounds(text, header)
+    if bounds is None:
+        return text
+    start, end = bounds
+    header_end = text.find("\n", start, end)
+    if header_end < 0:
+        header_end = end
+    body = text[header_end + 1 : end]
+    for key, value in (
+        ("command", f"command = {json.dumps(spec['command'])}"),
+        ("args", f"args = {json.dumps(spec['args'])}"),
+    ):
+        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
+        if re.search(pattern, body):
+            body = re.sub(pattern, value, body, count=1)
+        else:
+            body = f"{value}\n" + body
+    return text[: header_end + 1] + body + text[end:]
+
+
+def normalize_codex_env(text: str, env: dict[str, str]) -> str:
+    header = "[mcp_servers.leanctx.env]"
+    bounds = toml_section_bounds(text, header)
+    if bounds is None:
+        if text and not text.endswith("\n"):
+            text += "\n"
+        if text:
+            text += "\n"
+        text += header + "\n"
+        text += "\n".join(f"{key} = {json.dumps(value)}" for key, value in env.items()) + "\n"
+        return text
+    start, end = bounds
+    header_end = text.find("\n", start, end)
+    if header_end < 0:
+        header_end = end
+    body = text[header_end + 1 : end]
+    for key, value in env.items():
+        line = f"{key} = {json.dumps(value)}"
+        pattern = rf"(?m)^{re.escape(key)}\s*=.*$"
+        if re.search(pattern, body):
+            body = re.sub(pattern, line, body, count=1)
+        else:
+            body = f"{line}\n" + body
+    return text[: header_end + 1] + body + text[end:]
+
+
+def merge_codex_toml(target: pathlib.Path, dry_run: bool, manifest: dict) -> dict:
     cm_active = context_mode_present_codex(target)
+    original = target.read_text(encoding="utf-8") if target.is_file() else ""
+    text = re.sub(
+        r"(?ms)^\[mcp_servers\.lean-ctx(?:\.env)?\]\n.*?(?=^\[|\Z)",
+        "",
+        original,
+    )
+    changed = text != original
     marker = "[mcp_servers.leanctx]"
     env_lines = "\n".join(
         f'{key} = "{val}"' for key, val in leanctx_server_env(cm_active).items()
     )
+    spec = mcp_server_spec(manifest, "leanctx")
     block = f"""{marker}
-command = "lean-ctx"
-args = ["mcp"]
+command = {json.dumps(spec['command'])}
+args = {json.dumps(spec['args'])}
 
 [mcp_servers.leanctx.env]
 {env_lines}
 """
-    if target.is_file() and marker in target.read_text(encoding="utf-8"):
+    if marker not in text:
+        if text and not text.endswith("\n"):
+            text += "\n"
+        if text:
+            text += "\n"
+        text += block
+        changed = True
+    else:
+        updated = normalize_codex_root(text, "leanctx", manifest)
+        updated = normalize_codex_env(updated, leanctx_server_env(cm_active))
+        changed = changed or updated != text
+        text = updated
+    if not changed:
         return {"host": "codex", "mcp_merged": False, "cm_active": cm_active}
     if dry_run:
         print(f"DRY-RUN: would append leanctx block to {target}")
@@ -200,12 +346,7 @@ args = ["mcp"]
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.is_file():
         shutil.copy2(target, target.with_suffix(target.suffix + ".bak"))
-        with target.open("a", encoding="utf-8") as handle:
-            if target.stat().st_size > 0:
-                handle.write("\n")
-            handle.write(block)
-    else:
-        target.write_text(block, encoding="utf-8")
+    target.write_text(text, encoding="utf-8")
     return {"host": "codex", "mcp_merged": True, "cm_active": cm_active}
 
 
@@ -246,21 +387,22 @@ def strip_unprefixed_leanctx_collision(mcp_path: pathlib.Path, dry_run: bool) ->
     return changed
 
 
-def optimize_host(host: str, dry_run: bool) -> dict:
+def optimize_host(host: str, dry_run: bool, manifest: dict | None = None) -> dict:
+    manifest = manifest or ensure_global_instances(dry_run=dry_run)
     home = pathlib.Path.home()
     if host == "cursor":
         mcp_path = home / ".cursor" / "mcp.json"
-        result = merge_cursor_mcp(mcp_path, dry_run)
+        result = merge_cursor_mcp(mcp_path, dry_run, manifest)
         if result.get("cm_active"):
             strip_unprefixed_leanctx_collision(mcp_path, dry_run)
         return result
     if host == "claude":
-        return merge_claude_mcp(home / ".claude.json", dry_run)
+        return merge_claude_mcp(home / ".claude.json", dry_run, manifest)
     if host == "codex":
         codex_home = pathlib.Path(os.environ.get("CODEX_HOME", home / ".codex"))
-        return merge_codex_toml(codex_home / "config.toml", dry_run)
+        return merge_codex_toml(codex_home / "config.toml", dry_run, manifest)
     if host == "opencode":
-        return merge_opencode_mcp(home / ".config" / "opencode" / "opencode.json", dry_run)
+        return merge_opencode_mcp(home / ".config" / "opencode" / "opencode.json", dry_run, manifest)
     raise ValueError(f"unsupported host: {host}")
 
 
@@ -275,12 +417,11 @@ def main() -> int:
     args = parser.parse_args()
 
     hosts = ["cursor", "codex", "claude", "opencode"] if args.host == "all" else [args.host]
-    results = [optimize_host(h, args.dry_run) for h in hosts]
+    manifest = ensure_global_instances(dry_run=args.dry_run)
+    results = [optimize_host(h, args.dry_run, manifest) for h in hosts]
     print(json.dumps({"status": "ok", "results": results}, indent=2))
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

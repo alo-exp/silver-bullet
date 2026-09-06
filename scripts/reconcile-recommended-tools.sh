@@ -32,7 +32,7 @@ RTK, Context Mode, LeanCTX, Alumnium (opt-in), and cross-tool convergence.
 
 Options:
   --project-root <path>     Canonical SB project root (required for project scope)
-  --host <cursor|...>       Target host (default: cursor; Phase A implements cursor)
+  --host <cursor|...>       Target host (default: cursor; five-tool hosts: claude|codex|cursor)
   --mode verify|plan|apply  verify/plan are read-only; apply mutates (default: verify)
   --scope project|host|packages|all
   --format text|json
@@ -85,10 +85,10 @@ rt_init_paths
 
 if ! rt_validate_host "$RT_HOST"; then
   if [[ "$RT_FORMAT" == "json" ]]; then
-    jq -n --arg err "unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|goose|hermes)" \
+    jq -n --arg err "unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" \
       '{schema:"1.0.0",ok:false,error:$err,components:[]}'
   else
-    echo "ERROR: unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|goose|hermes)" >&2
+    echo "ERROR: unknown host: ${RT_HOST} (allowed: cursor|claude|codex|opencode|pi|goose|hermes)" >&2
   fi
   exit 2
 fi

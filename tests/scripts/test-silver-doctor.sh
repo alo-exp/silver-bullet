@@ -94,7 +94,7 @@ cp "$REPO_ROOT/scripts/workflows.sh" "$FIXTURE/scripts/workflows.sh"
 chmod +x "$FIXTURE/scripts/workflows.sh"
 
 out="$(bash "$DOCTOR" "$FIXTURE" 2>&1 || true)"
-if grep -q 'FAIL: D5' <<<"$out"; then
+if [[ "$out" == *"FAIL: D5"* ]]; then
   echo "PASS: doctor FAILs D5 when sb_initiated false"
   PASS=$((PASS + 1))
 else
@@ -106,7 +106,7 @@ fi
 MOCK_HOME="$(mktemp -d)"
 MOCK_PROJ="$(mktemp -d)"
 trap 'rm -rf "$FIXTURE" "$MOCK_HOME" "$MOCK_PROJ"' EXIT
-mkdir -p "$MOCK_HOME/.cursor" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
+mkdir -p "$MOCK_HOME/.cursor" "$MOCK_HOME/.claude" "$MOCK_PROJ/docs/workflows" "$MOCK_PROJ/scripts"
 cp "$REPO_ROOT/templates/silver-bullet.config.json.default" "$MOCK_PROJ/.silver-bullet.json"
 cp "$REPO_ROOT/silver-bullet.md" "$MOCK_PROJ/silver-bullet.md"
 cp "$REPO_ROOT/scripts/workflows.sh" "$MOCK_PROJ/scripts/workflows.sh"
@@ -122,9 +122,10 @@ jq -n --arg v "0.48.7" --arg p "$MOCK_HOME/.codex/plugins/cache/alo-labs/silver-
   '{version:2,plugins:{"silver-bullet@alo-labs":[{scope:"user",version:$v,installPath:$p}]}}' \
   >"$MOCK_HOME/.codex/plugins/installed_plugins.json"
 printf '{"hooks":{}}\n' >"$MOCK_HOME/.codex/settings.json"
+printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"/mock/silver-bullet/hooks/session-start"}]}]}}\n' >"$MOCK_HOME/.claude/settings.json"
 
 claude_out="$(env HOME="$MOCK_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
-if grep -q 'D8.*N/A.*claude' <<<"$claude_out"; then
+if [[ "$claude_out" =~ D8.*N/A.*claude ]]; then
   echo "PASS: D8 N/A on Claude host"
   PASS=$((PASS + 1))
 else
@@ -132,27 +133,70 @@ else
   printf '%s\n' "$claude_out" | grep D8 || true
   FAIL=$((FAIL + 1))
 fi
-if grep -q 'FAIL: D8' <<<"$claude_out"; then
+if [[ "$claude_out" == *"FAIL: D8"* ]]; then
   echo "FAIL: D8 must not FAIL on Claude host"
   FAIL=$((FAIL + 1))
 else
   echo "PASS: D8 does not FAIL on Claude host"
   PASS=$((PASS + 1))
 fi
-if grep -q '\.claude/plugins' <<<"$claude_out"; then
+if [[ "$claude_out" == *"PASS: D4"* &&
+  "$claude_out" == *"Claude settings.json references silver-bullet hooks"* ]]; then
+  echo "PASS: D4 uses Claude settings.json on Claude host"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: D4 should use Claude settings.json on Claude host"
+  printf '%s\n' "$claude_out" | grep D4 || true
+  FAIL=$((FAIL + 1))
+fi
+if [[ "$claude_out" == *".claude/plugins"* ]]; then
   echo "PASS: Claude doctor uses .claude plugin paths"
   PASS=$((PASS + 1))
 else
   echo "FAIL: Claude doctor should reference .claude plugin paths in D2/D3"
   FAIL=$((FAIL + 1))
 fi
-if grep -q '\.cursor/plugins' <<<"$claude_out"; then
+if [[ "$claude_out" == *".cursor/plugins"* ]]; then
   echo "FAIL: Claude doctor must not reference .cursor plugin paths"
   FAIL=$((FAIL + 1))
 else
   echo "PASS: Claude doctor avoids .cursor plugin paths"
   PASS=$((PASS + 1))
 fi
+
+# Codex skills-only mode: native SB skills remain available without a second
+# Codex plugin or hook registry entry, so D2/D4 must report the intentional
+# surface as healthy rather than demanding plugin installation.
+CODEX_HOME_FIXTURE="$(mktemp -d)"
+mkdir -p \
+  "$CODEX_HOME_FIXTURE/.codex/skills/silver" \
+  "$CODEX_HOME_FIXTURE/.codex/skills/silver:agent-codex" \
+  "$CODEX_HOME_FIXTURE/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.52.0/hooks" \
+  "$CODEX_HOME_FIXTURE/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.52.0/skill-source"
+printf '# Router\n' >"$CODEX_HOME_FIXTURE/.codex/skills/silver/SKILL.md"
+printf '# Agent Codex\n' >"$CODEX_HOME_FIXTURE/.codex/skills/silver:agent-codex/SKILL.md"
+printf '{"hooks":{}}\n' >"$CODEX_HOME_FIXTURE/.codex/plugins/cache/alo-labs-codex/silver-bullet/0.52.0/hooks/hooks.json"
+ln -sfn 0.52.0 "$CODEX_HOME_FIXTURE/.codex/plugins/cache/alo-labs-codex/silver-bullet/current"
+printf '{"plugins":{"episodic-memory@episodic-memory-dev":[]}}\n' >"$CODEX_HOME_FIXTURE/.codex/plugins/installed_plugins.json"
+printf '[projects."%s"]\ntrust_level = "trusted"\n' "$MOCK_PROJ" >"$CODEX_HOME_FIXTURE/.codex/config.toml"
+codex_out="$(env HOME="$CODEX_HOME_FIXTURE" SILVER_BULLET_RUNTIME=codex bash "$DOCTOR" "$MOCK_PROJ" 2>&1 || true)"
+if [[ "$codex_out" == *"FAIL: D2"* ]]; then
+  echo "FAIL: Codex skills-only mode must not FAIL D2"
+  printf '%s\n' "$codex_out" | grep D2 || true
+  FAIL=$((FAIL + 1))
+else
+  echo "PASS: Codex skills-only mode passes D2 without plugin registry entry"
+  PASS=$((PASS + 1))
+fi
+if [[ "$codex_out" == *"PASS: D4"* && "$codex_out" == *"skills-only surface active"* ]]; then
+  echo "PASS: Codex skills-only mode reports D4 without SB hooks"
+  PASS=$((PASS + 1))
+else
+  echo "FAIL: Codex skills-only mode should report D4 without SB hooks"
+  printf '%s\n' "$codex_out" | grep D4 || true
+  FAIL=$((FAIL + 1))
+fi
+rm -rf "$CODEX_HOME_FIXTURE"
 
 assert_contains "D8 Cursor-only in doctor script" 'runtime" == "cursor"' "$DOCTOR"
 assert_contains "doctor sources runtime-paths" 'runtime-paths\.sh' "$DOCTOR"
@@ -193,11 +237,17 @@ run_d13_host_path_case() {
 
   d13_out="$(env HOME="$d13_home" SILVER_BULLET_RUNTIME="$current_host" \
     RT_SKIP_VENDOR_DOCTOR=1 bash "$DOCTOR" "$d13_proj" 2>&1 || true)"
-  first_d13="$(printf '%s\n' "$d13_out" | grep -m1 'D13' || true)"
-  if [[ "$expected" == "pass" ]] && grep -q 'PASS: D13' <<<"$first_d13"; then
+  first_d13=""
+  while IFS= read -r d13_line; do
+    if [[ "$d13_line" == *D13* ]]; then
+      first_d13="$d13_line"
+      break
+    fi
+  done <<< "$d13_out"
+  if [[ "$expected" == "pass" ]] && [[ "$first_d13" == *"PASS: D13"* ]]; then
     echo "PASS: D13 ignores ${current_host} plugin path"
     PASS=$((PASS + 1))
-  elif [[ "$expected" == "fail" ]] && grep -q 'FAIL: D13' <<<"$first_d13"; then
+  elif [[ "$expected" == "fail" ]] && [[ "$first_d13" == *"FAIL: D13"* ]]; then
     echo "PASS: D13 flags ${path_host} plugin path on ${current_host}"
     PASS=$((PASS + 1))
   else
@@ -251,7 +301,7 @@ source "$REPO_ROOT/hooks/lib/stack-compression-coordinator.sh"
 source "$REPO_ROOT/hooks/lib/agentmemory-gate.sh"
 sb_stack_record_double_compression "$RED4_FIXTURE/.silver-bullet.json" "sb_shell" "leanctx" "rtk"
 doc_before="$(bash "$DOCTOR" "$RED4_FIXTURE" 2>&1 || true)"
-if grep -q 'FAIL: D20' <<<"$doc_before"; then
+if [[ "$doc_before" == *"FAIL: D20"* ]]; then
   echo "PASS: RED-4 doctor detects dirty mutex (D20 FAIL)"
   PASS=$((PASS + 1))
 else
@@ -311,7 +361,7 @@ jq -n --arg v "0.48.7" --arg p "$D21_HOME/.cursor/plugins/cache/alo-labs/silver-
   >"$D21_HOME/.cursor/plugins/installed_plugins.json"
 
 d21_missing="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if grep -q 'FAIL: D21' <<<"$d21_missing"; then
+if [[ "$d21_missing" == *"FAIL: D21"* ]]; then
   echo "PASS: D21 FAIL when enabled agents missing"
   PASS=$((PASS + 1))
 else
@@ -327,7 +377,7 @@ if env HOME="$D21_HOME" \
   REPO_ROOT="$REPO_ROOT" bash "$REPO_ROOT/scripts/install-cursor-sb-agents.sh" \
   --global --non-interactive >/dev/null 2>&1; then
   d21_ok="$(env -u SB_RUNTIME_NAME HOME="$D21_HOME" SB_CURSOR_SB_AGENTS_CONFIG="$D21_HOME/.config/silver-bullet/cursor-sb-agents.json" SILVER_BULLET_RUNTIME=cursor bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-  if grep -q 'PASS: D21' <<<"$d21_ok"; then
+  if [[ "$d21_ok" == *"PASS: D21"* ]]; then
     echo "PASS: D21 PASS after install-cursor-sb-agents"
     PASS=$((PASS + 1))
   else
@@ -340,7 +390,7 @@ else
 fi
 
 d21_claude="$(env HOME="$D21_HOME" SILVER_BULLET_RUNTIME=claude bash "$DOCTOR" "$D21_PROJ" 2>&1 || true)"
-if grep -q 'D21.*N/A' <<<"$d21_claude"; then
+if [[ "$d21_claude" =~ D21.*N/A ]]; then
   echo "PASS: D21 N/A on Claude host"
   PASS=$((PASS + 1))
 else
@@ -426,7 +476,8 @@ alu_run_doctor() {
 }
 
 alu_na_out="$(alu_run_doctor)"
-if grep -qE 'PASS: D10-alumnium — alumnium (pending|disabled)' <<<"$alu_na_out"; then
+if [[ "$alu_na_out" == *"PASS: D10-alumnium — alumnium pending"* ||
+  "$alu_na_out" == *"PASS: D10-alumnium — alumnium disabled"* ]]; then
   echo "PASS: live D10-alumnium PASS N/A when not opted in"
   PASS=$((PASS + 1))
 else
@@ -434,7 +485,7 @@ else
   printf '%s\n' "$alu_na_out" | grep 'D10-alumnium' || true
   FAIL=$((FAIL + 1))
 fi
-if grep -qE 'FAIL: D10-alumnium' <<<"$alu_na_out"; then
+if [[ "$alu_na_out" == *"FAIL: D10-alumnium"* ]]; then
   echo "FAIL: live D10-alumnium must not FAIL the default/not-opted-in tree"
   FAIL=$((FAIL + 1))
 else
@@ -446,7 +497,7 @@ jq '.recommended_tools.alumnium.enabled_by_user = true' \
   "$ALU_PROJ/.silver-bullet.json" >"${ALU_PROJ}/.silver-bullet.json.tmp"
 mv "${ALU_PROJ}/.silver-bullet.json.tmp" "$ALU_PROJ/.silver-bullet.json"
 alu_cli_out="$(alu_run_doctor)"
-if grep -qE 'FAIL: D10-alumnium' <<<"$alu_cli_out"; then
+if [[ "$alu_cli_out" == *"FAIL: D10-alumnium"* ]]; then
   echo "PASS: live D10-alumnium FAILs when opted in and CLI missing"
   PASS=$((PASS + 1))
 else
@@ -458,7 +509,7 @@ fi
 printf '#!/usr/bin/env bash\nexit 0\n' >"${ALU_BIN}/alumnium"
 chmod +x "${ALU_BIN}/alumnium"
 alu_mcp_out="$(alu_run_doctor)"
-if grep -qE 'FAIL: D10-alumnium' <<<"$alu_mcp_out"; then
+if [[ "$alu_mcp_out" == *"FAIL: D10-alumnium"* ]]; then
   echo "PASS: live D10-alumnium FAILs when MCP server missing"
   PASS=$((PASS + 1))
 else
@@ -479,58 +530,8 @@ else
 fi
 rm -f /tmp/sb-doctor-live-$$.txt
 
-# ── D10-routes: cross_tool "unsupported" is a warning, not a failure ─────────
-# rt_host_supported() implements cross-tool convergence for cursor only, so on
-# every other host cross_tool is permanently "unsupported" and --fix=host
-# provably cannot clear it. Reporting FAIL made granting five-tool consent
-# strictly worsen the doctor result while naming an impossible remedy.
-UNSUPPORTED_ARM="$(awk '/elif \[\[ "\$cross" == "unsupported" \]\]; then/,/^    else$/' "$DOCTOR")"
-# Strip comment lines: the arm's rationale comment legitimately mentions
-# --fix=host when explaining why that remedy cannot work, and the assertions
-# below are about the emitted `record` line, not the prose.
-UNSUPPORTED_CODE="$(printf '%s\n' "$UNSUPPORTED_ARM" | grep -v '^[[:space:]]*#')"
-
-if [[ -n "$UNSUPPORTED_ARM" ]]; then
-  echo "PASS: sb-doctor.sh has a dedicated cross_tool=unsupported arm"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: sb-doctor.sh missing cross_tool=unsupported arm"
-  FAIL=$((FAIL + 1))
-fi
-
-if grep -q 'record warn D10-routes' <<<"$UNSUPPORTED_CODE"; then
-  echo "PASS: cross_tool unsupported records warn (not fail)"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: cross_tool unsupported does not record warn"
-  FAIL=$((FAIL + 1))
-fi
-
-if grep -q 'record fail' <<<"$UNSUPPORTED_CODE"; then
-  echo "FAIL: cross_tool unsupported arm still records fail"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: cross_tool unsupported arm does not record fail"
-  PASS=$((PASS + 1))
-fi
-
-if printf '%s' "$UNSUPPORTED_CODE" | grep -Fq -- '--fix=host'; then
-  echo "FAIL: cross_tool unsupported still recommends --fix=host"
-  FAIL=$((FAIL + 1))
-else
-  echo "PASS: cross_tool unsupported does not recommend --fix=host"
-  PASS=$((PASS + 1))
-fi
-
-if grep -q 'cursor' <<<"$UNSUPPORTED_CODE"; then
-  echo "PASS: cross_tool unsupported message names the cursor-only limitation"
-  PASS=$((PASS + 1))
-else
-  echo "FAIL: cross_tool unsupported message omits the platform limitation"
-  FAIL=$((FAIL + 1))
-fi
-
-# Genuinely repairable drift must still FAIL.
+# D10-routes is a supported five-tool component on every SB host; genuinely
+# repairable drift must FAIL and retain the actionable host repair.
 if grep -q 'record fail D10-routes "cross_tool \${cross}' "$DOCTOR"; then
   echo "PASS: repairable cross_tool drift still records fail"
   PASS=$((PASS + 1))
@@ -539,16 +540,18 @@ else
   FAIL=$((FAIL + 1))
 fi
 
-# rt_host_supported() must NOT have been widened to claim unimplemented support.
+# Host capability must include the three supported SB agents.
 RT_COMMON="${REPO_ROOT}/scripts/lib/recommended-tools/common.sh"
 if [[ -f "$RT_COMMON" ]]; then
-  if awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON" | grep -q 'cursor'; then
-    echo "PASS: rt_host_supported still gates on cursor"
-    PASS=$((PASS + 1))
-  else
-    echo "FAIL: rt_host_supported no longer gates on cursor"
-    FAIL=$((FAIL + 1))
-  fi
+  for supported_host in claude codex cursor; do
+    if awk '/^rt_host_supported\(\)/,/^}/' "$RT_COMMON" | grep -q "$supported_host"; then
+      echo "PASS: rt_host_supported includes ${supported_host}"
+      PASS=$((PASS + 1))
+    else
+      echo "FAIL: rt_host_supported omits ${supported_host}"
+      FAIL=$((FAIL + 1))
+    fi
+  done
 fi
 
 
@@ -680,7 +683,8 @@ sc_run_doctor() {
 }
 
 sc_na_out="$(sc_run_doctor)"
-if grep -qE 'PASS: D10-search_cli — search_cli (pending|disabled)' <<<"$sc_na_out"; then
+if [[ "$sc_na_out" == *"PASS: D10-search_cli — search_cli pending"* ||
+  "$sc_na_out" == *"PASS: D10-search_cli — search_cli disabled"* ]]; then
   echo "PASS: live D10-search_cli PASS N/A when not opted in"
   PASS=$((PASS + 1))
 else
@@ -688,7 +692,7 @@ else
   printf '%s\n' "$sc_na_out" | grep 'D10-search_cli' || true
   FAIL=$((FAIL + 1))
 fi
-if grep -qE 'FAIL: D10-search_cli' <<<"$sc_na_out"; then
+if [[ "$sc_na_out" == *"FAIL: D10-search_cli"* ]]; then
   echo "FAIL: live D10-search_cli must not FAIL the default/not-opted-in tree"
   FAIL=$((FAIL + 1))
 else
@@ -706,7 +710,7 @@ for sc_rt in cursor claude codex; do
       PATH="${SC_BIN}:${PATH}" RT_SKIP_VENDOR_DOCTOR=1 \
       bash "$DOCTOR" "$SC_PROJ" 2>&1 || true
   )"
-  if grep -qE 'FAIL: D10-search_cli' <<<"$sc_cli_out"; then
+  if [[ "$sc_cli_out" == *"FAIL: D10-search_cli"* ]]; then
     echo "PASS: live D10-search_cli FAILs when opted in and CLI missing (${sc_rt})"
     PASS=$((PASS + 1))
   else
@@ -767,7 +771,7 @@ sc_empty_out="$(
 )"
 sc_empty_err="$(cat /tmp/sb-doctor-sc-empty-err-$$.txt 2>/dev/null || true)"
 if printf '%s' "$sc_empty_out" | jq -e '.fix_applied == false' >/dev/null 2>&1 \
-  && grep -q 'reconciler-stderr-kept' <<<"$sc_empty_err"; then
+  && [[ "$sc_empty_err" == *"reconciler-stderr-kept"* ]]; then
   echo "PASS: empty/failed apply JSON does not mark DOCTOR_FIX_APPLIED"
   PASS=$((PASS + 1))
 else
@@ -848,7 +852,7 @@ else
 fi
 
 # Secrets must not appear in stdout/stderr/JSON
-if grep -qiE 'sk-live|api[_-]?key|BRAVE_API' >/dev/null <<<"$(printf '%s\n%s\n' "$sc_json_out" "$sc_na_out")"; then
+if printf '%s\n%s\n' "$sc_json_out" "$sc_na_out" | grep -iE 'sk-live|api[_-]?key|brave_api' >/dev/null; then
   echo "FAIL: doctor output must not contain secrets"
   FAIL=$((FAIL + 1))
 else
@@ -988,8 +992,8 @@ canary_out="$(
     PATH="/usr/bin:/bin" RT_SKIP_VENDOR_DOCTOR=1 \
     bash "$DOCTOR" "$CANARY_PROJ" 2>&1 || true
 )"
-if grep -qE 'FAIL: D10-graphify' <<<"$canary_out" \
-  && ! grep -qE 'PASS: D10-graphify — graphify enabled \(enforcement active\)' <<<"$canary_out"; then
+if [[ "$canary_out" == *"FAIL: D10-graphify"* ]] \
+  && [[ "$canary_out" != *"PASS: D10-graphify — graphify enabled (enforcement active)"* ]]; then
   echo "PASS: stale-loop canary (opted-in missing CLI) stays non-green"
   PASS=$((PASS + 1))
 else

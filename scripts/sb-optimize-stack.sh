@@ -22,7 +22,7 @@ Options:
   --verify    Scorecard only; exit 1 on critical gaps when opted in
   --report    Markdown summary to stdout
   --dry-run   Print actions without mutating host/project files
-  --host HOST Override runtime host (claude|codex|cursor|opencode|goose|hermes)
+  --host HOST Override runtime host (claude|codex|cursor|opencode|pi|goose|hermes)
   -h, --help  Show help
 
 Skips host-level hooks when CI=true. See docs/STACK-OPTIMIZATION.md.

@@ -51,23 +51,21 @@ npm install -g context-mode
 context-mode --version
 ```
 
-### Claude Code plugin (recommended when using Claude)
-
-```bash
-claude plugin marketplace add mksglu/context-mode
-claude plugin install context-mode@context-mode
-```
-
-**Restart Claude Code** after plugin install — hooks load on restart.
+Claude Code uses the same manifest-selected `context-mode` executable through
+`~/.claude.json`, just like Cursor and Codex. If the user-global
+`context-mode@context-mode` Claude plugin is enabled, the optimizer disables it
+before adding the shared MCP entry so Claude does not run a second Context Mode
+runtime. **Restart Claude Code** after installing or changing the shared entry.
 
 ## Platform Wiring
 
 | Host | Steps | Artifacts | Status |
 |------|-------|-----------|--------|
-| Claude Code | Plugin install (above) | `~/.codex/plugins/context-mode` | Supported |
+| Claude Code | Use the shared global MCP entry; disable the native plugin if present | `~/.claude.json` | Supported |
 | Cursor | Merge MCP + hooks per [upstream Cursor docs](https://github.com/mksglu/context-mode#cursor) | `~/.cursor/mcp.json`, `~/.cursor/hooks.json`, `~/.cursor/rules/` | Supported |
 | Codex | Merge `config.toml` + `hooks.json` blocks | `~/.codex/config.toml`, `~/.codex/hooks.json` | Supported |
-| OpenCode | Plugin + MCP in `opencode.json`; copy `AGENTS.md` | `~/.config/opencode/` | Supported |
+| OpenCode | Native `context-mode` plugin in `opencode.json`; omit legacy `mcp.context-mode`; copy `AGENTS.md` | `~/.config/opencode/` | Supported |
+| Pi | Native SB extension plus `pi-lean-ctx` MCP bridge | `~/.pi/agent/extensions/`, `settings.json` | Supported |
 | Hermes | MCP YAML merge only (no official adapter) | `~/.hermes/config.yaml` | Partial |
 | Goose | — | — | **Unsupported** |
 
@@ -79,7 +77,7 @@ SB runs `/sb:init` scaffold steps to inject the instruction fragment into `silve
 
 Without the fragment, the model defaults to `Read` and Context Mode savings drop to zero. SB gates check for the sentinel block when opted in.
 
-Tool name placeholders vary by host (Claude plugin-qualified names vs Cursor MCP names). Run `/context-mode:ctx-doctor` in Claude Code or `context-mode doctor` from terminal to confirm prefixes.
+Tool name placeholders vary by host (MCP server names and prefixes). Run `context-mode doctor` from a terminal to confirm the shared runtime and prefixes.
 
 ## Verification
 
@@ -92,13 +90,13 @@ bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)" 
 
 Run `bash scripts/optimize-rtk-context-mode.sh --host cursor --project-root "$(pwd)"` after install:
 
-| Step | Cursor | Claude | Codex | OpenCode | Hermes | Goose |
-|------|--------|--------|-------|----------|--------|-------|
-| CLI / plugin | `npm install -g context-mode` | `claude plugin install context-mode@context-mode` | `npm install -g context-mode` | plugin in `opencode.json` | MCP YAML | SKIP |
-| MCP | `~/.cursor/mcp.json` | Plugin auto-registers | `[mcp_servers.context-mode]` | `mcp.context-mode` | `mcp_servers` in yaml | — |
-| Hooks | pre/post/session/stop/afterAgentResponse | Plugin manifest | 6 events in hooks.json | TS plugin events | none official | — |
-| Rules | `~/.cursor/rules/*.mdc` | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | — | — |
-| Doctor | `CONTEXT_MODE_PLATFORM=cursor` | `/context-mode:ctx-doctor` | `=codex` | `=opencode` | SKIP | SKIP |
+| Step | Cursor | Claude | Codex | OpenCode | Pi | Hermes | Goose |
+|------|--------|--------|-------|----------|----|--------|-------|
+| CLI / plugin | `npm install -g context-mode` | `npm install -g context-mode` | `npm install -g context-mode` | plugin in `opencode.json` | native SB extension + MCP bridge | MCP YAML | SKIP |
+| MCP / plugin owner | `~/.cursor/mcp.json` | `~/.claude.json` | `[mcp_servers.context-mode]` | native `context-mode` plugin; no `mcp.context-mode` | manifest-backed extension | `mcp_servers` in yaml | — |
+| Hooks | pre/post/session/stop/afterAgentResponse | Plugin manifest | 6 events in hooks.json | TS plugin events | `tool_call` + session lifecycle | none official | — |
+| Rules | `~/.cursor/rules/*.mdc` | plugin rules | `AGENTS.md` | `~/.config/opencode/AGENTS.md` | `settings.json` + extension config | — | — |
+| Doctor | `CONTEXT_MODE_PLATFORM=cursor` | `context-mode doctor` | `=codex` | `=opencode` | SKIP | SKIP | SKIP |
 
 Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at `docs/rtk-cm/verification/<host>-verify-rtk-cm.md`.
 
@@ -115,7 +113,7 @@ Verification: [docs/rtk-cm/README.md](rtk-cm/README.md) — per-host prompts at 
 Manual (requires restarted agent):
 
 ```
-/context-mode:ctx-doctor    # Claude Code
+context-mode doctor         # Claude Code / terminal
 context-mode doctor       # terminal
 ```
 
@@ -125,7 +123,7 @@ context-mode doctor       # terminal
 - Codex PreToolUse lacks `updatedInput` — capture works; live rewrites limited
 - Goose: **no upstream RTK or Context Mode integration** — see [docs/rtk-cm/verification/goose-verify-rtk-cm.md](rtk-cm/verification/goose-verify-rtk-cm.md)
 - Hermes: Context Mode MCP merge only (partial) — see [docs/rtk-cm/verification/hermes-verify-rtk-cm.md](rtk-cm/verification/hermes-verify-rtk-cm.md)
-- Pi: RTK via `rtk init --agent pi`; CM via OpenCode-family adapters where applicable
+- Pi: RTK is handled by the native SB `tool_call` adapter and Context Mode by the manifest-backed MCP extension; restart Pi after adapter changes
 - Insight dashboard (`context-mode.com/insight`) is optional paid SaaS — out of SB scope
 
 ## Complementary Tools

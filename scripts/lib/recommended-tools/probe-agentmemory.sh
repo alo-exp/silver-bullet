@@ -6,13 +6,22 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 rt_probe_agentmemory_mcp_configured() {
   local host="${RT_HOST:-cursor}"
-  case "$host" in
-    cursor)
-      [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-      jq -e '.mcpServers.agentmemory // .mcpServers["user-agentmemory"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
-      ;;
-    *) return 1 ;;
-  esac
+  rt_host_mcp_server_configured "$host" agentmemory \
+    || {
+      case "$host" in
+        cursor|claude)
+          local path
+          path="$(rt_host_mcp_config_path "$host")"
+          [[ -f "$path" ]] || return 1
+          jq -e '.mcpServers["user-agentmemory"]' "$path" >/dev/null 2>&1
+          ;;
+        pi)
+          [[ -f "$(rt_host_mcp_config_path "$host")" ]] || return 1
+          jq -e '.servers.agentmemory.enabled == true' "$(rt_host_mcp_config_path "$host")" >/dev/null 2>&1
+          ;;
+        *) return 1 ;;
+      esac
+    }
 }
 
 rt_repair_agentmemory_mcp_config() {
@@ -24,7 +33,7 @@ rt_repair_agentmemory_mcp_config() {
     export RT_PATCH_AGENTMEMORY=0
   fi
   export RT_PATCH_GRAPHIFY=0 RT_PATCH_LEANCTX=0
-  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" python3 "$patch_py"
+  TOOLSTACK_REPO_ROOT="$RT_REPO_ROOT" RT_HOST="${RT_HOST:-cursor}" python3 "$patch_py"
   local rc=$?
   unset RT_PATCH_AGENTMEMORY RT_PATCH_GRAPHIFY RT_PATCH_LEANCTX
   return "$rc"

@@ -27,6 +27,9 @@ sb_context_mode_min_node_version() {
 }
 
 sb_context_mode_cli_path() {
+  if declare -f sb_global_tool_path >/dev/null 2>&1; then
+    sb_global_tool_path context_mode 2>/dev/null && return 0
+  fi
   if command -v context-mode >/dev/null 2>&1; then
     command -v context-mode
     return 0
@@ -69,6 +72,9 @@ sb_context_mode_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
+    opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
+    pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
+      "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     *) printf '%s/.codex/plugins/context-mode' "${HOME}" ;;
   esac
 }
@@ -93,6 +99,17 @@ sb_context_mode_platform_artifact_present() {
       [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
       grep -q 'context-mode' "$artifact" 2>/dev/null
       ;;
+    opencode)
+      artifact="$(sb_context_mode_platform_artifact_path "$project_root" "$host")"
+      [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
+      jq -e '(.plugin // [] | any(.[]?; (type == "string") and (. == "context-mode" or startswith("context-mode@") or endswith("/build/adapters/opencode/plugin.js")))) or (.mcp["context-mode"] // .mcp["user-context-mode"])' \
+        "$artifact" >/dev/null 2>&1
+      ;;
+    pi)
+      artifact="$(sb_context_mode_platform_artifact_path "$project_root" "$host")"
+      [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
+      jq -e '.servers.context_mode.enabled == true' "$artifact" >/dev/null 2>&1
+      ;;
     *)
       return 1
       ;;
@@ -114,6 +131,9 @@ sb_context_mode_hooks_present() {
     codex)
       hooks_file="${CODEX_HOME:-${HOME}/.codex}/hooks.json"
       [[ -f "$hooks_file" ]] && grep -q 'context-mode' "$hooks_file" 2>/dev/null
+      ;;
+    opencode|pi)
+      sb_context_mode_platform_artifact_present "${PWD}" "$host"
       ;;
     *)
       return 1

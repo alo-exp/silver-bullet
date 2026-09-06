@@ -10,8 +10,21 @@ rt_probe_context_mode_mcp() {
   local host="${RT_HOST:-cursor}"
   case "$host" in
     cursor)
-      [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-      jq -e '.mcpServers["context-mode"] // .mcpServers["user-context-mode"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
+      rt_host_mcp_server_configured "$host" context-mode \
+        || {
+          [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
+          jq -e '.mcpServers["user-context-mode"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
+        }
+      ;;
+    claude)
+      sb_context_mode_platform_artifact_present "${RT_PROJECT_ROOT:-}" "$host" 2>/dev/null \
+        || rt_host_mcp_server_configured "$host" context-mode
+      ;;
+    codex)
+      rt_host_mcp_server_configured "$host" context-mode
+      ;;
+    opencode|pi)
+      rt_host_mcp_server_configured "$host" context-mode
       ;;
     *) return 1 ;;
   esac
@@ -28,9 +41,11 @@ rt_probe_context_mode_vendor_doctor() {
     rt_run_vendor_doctor "${cmd[@]}"
     return $?
   fi
-  command -v context-mode >/dev/null 2>&1 || return 2
-  export CONTEXT_MODE_PLATFORM="${CONTEXT_MODE_PLATFORM:-cursor}"
-  rt_run_vendor_doctor context-mode doctor
+  local context_mode_bin
+  context_mode_bin="$(sb_context_mode_cli_path 2>/dev/null || true)"
+  [[ -n "$context_mode_bin" ]] || return 2
+  export CONTEXT_MODE_PLATFORM="${CONTEXT_MODE_PLATFORM:-${RT_HOST:-cursor}}"
+  rt_run_vendor_doctor "$context_mode_bin" doctor
 }
 
 rt_probe_context_mode() {
@@ -84,6 +99,7 @@ rt_repair_context_mode() {
   if [[ -f "$opt" ]]; then
     local -a opt_args=(--host "${RT_HOST:-cursor}" --project-root "${RT_PROJECT_ROOT:-}")
     rt_cross_tool_batch_active && opt_args+=(--skip-rtk-init)
+    rt_cross_tool_batch_active && opt_args+=(--skip-cm-doctor)
     if rt_cross_tool_batch_active; then
       TOOLSTACK_INSTALL_IN_PROGRESS=1 bash "$opt" "${opt_args[@]}" >&2 \
         && actions+=("optimize_rtk_context_mode") || failures+=("optimize_failed")

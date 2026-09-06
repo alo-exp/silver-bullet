@@ -7,7 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/vendor-doctor.sh"
 
 rt_leanctx_mcp_file() {
-  printf '%s' "${HOME}/.cursor/mcp.json"
+  rt_host_mcp_config_path "${RT_HOST:-cursor}"
 }
 
 # Duplicate leanctx + lean-ctx keys are a config FAIL when LeanCTX is opted in.
@@ -15,13 +15,22 @@ rt_probe_leanctx_duplicate_mcp() {
   local f
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" ]] || return 1
-  jq -e '.mcpServers | has("leanctx") and has("lean-ctx")' "$f" >/dev/null 2>&1
+  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
+    grep -q '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+      && grep -q '^\[mcp_servers\.lean-ctx\]$' "$f" 2>/dev/null
+  elif [[ "${RT_HOST:-cursor}" == "opencode" ]]; then
+    jq -e '.mcp | has("leanctx") and (has("lean-ctx") or has("lean-ctx-standalone") or has("user-leanctx") or has("user-lean-ctx"))' "$f" >/dev/null 2>&1
+  elif [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+    return 1
+  else
+    jq -e '.mcpServers | has("leanctx") and has("lean-ctx")' "$f" >/dev/null 2>&1
+  fi
 }
 
 rt_probe_leanctx_mcp() {
   local host="${RT_HOST:-cursor}" f
   case "$host" in
-    cursor)
+    cursor|claude)
       f="$(rt_leanctx_mcp_file)"
       [[ -f "$f" ]] || return 1
       jq -e '.mcpServers.leanctx
@@ -29,14 +38,33 @@ rt_probe_leanctx_mcp() {
         // .mcpServers["user-leanctx"]
         // .mcpServers["user-lean-ctx"]' "$f" >/dev/null 2>&1
       ;;
+    codex|opencode|pi)
+      rt_host_mcp_server_configured "$host" leanctx
+      ;;
     *) return 1 ;;
   esac
 }
 
 rt_leanctx_mcp_env() {
-  local f key="${1:-}"
+  local f key="${1:-}" host="${RT_HOST:-cursor}"
   f="$(rt_leanctx_mcp_file)"
   [[ -f "$f" && -n "$key" ]] || return 1
+  if [[ "$host" == "codex" ]]; then
+    grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+      | grep -m1 -E "^${key}[[:space:]]*=[[:space:]]*\"" \
+      | sed -E 's/^[^=]+=[[:space:]]*"([^"]*)".*$/\1/'
+    return 0
+  fi
+  if [[ "$host" == "opencode" ]]; then
+    jq -r --arg k "$key" '.mcp.leanctx.environment[$k] // ""' "$f" 2>/dev/null
+    return 0
+  fi
+  if [[ "$host" == "pi" ]]; then
+    f="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
+    [[ -f "$f" ]] || return 1
+    jq -r --arg k "$key" '.env[$k] // ""' "$f" 2>/dev/null
+    return 0
+  fi
   jq -r --arg k "$key" '
     (.mcpServers.leanctx // .mcpServers["lean-ctx"] // .mcpServers["user-leanctx"] // .mcpServers["user-lean-ctx"] // {})
     | .env[$k] // ""
@@ -50,6 +78,24 @@ rt_probe_leanctx_lctx_prefix() {
 
 rt_probe_leanctx_overlaps_disabled() {
   [[ -f "$(rt_leanctx_mcp_file)" ]] || return 1
+  if [[ "${RT_HOST:-cursor}" == "codex" ]]; then
+    local f="$(rt_leanctx_mcp_file)"
+    local key
+    for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
+      grep -A 12 '^\[mcp_servers\.leanctx\]$' "$f" 2>/dev/null \
+        | grep -qE "^${key}[[:space:]]*=[[:space:]]*\"1\"" || return 1
+    done
+    return 0
+  fi
+  if [[ "${RT_HOST:-cursor}" == "pi" ]]; then
+    local pi_f="${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/extensions/pi-lean-ctx/config.json"
+    [[ -f "$pi_f" ]] || return 1
+    for key in LEANCTX_DISABLE_SHELL_MCP LEANCTX_DISABLE_SANDBOX_MCP LEANCTX_DISABLE_FETCH_MCP LEANCTX_DISABLE_FTS; do
+      [[ "$(jq -r --arg k "$key" '.env[$k] // ""' "$pi_f" 2>/dev/null)" == "1" ]] || return 1
+    done
+    jq -e '.disableTools | index("ctx_shell") != null' "$pi_f" >/dev/null 2>&1
+    return $?
+  fi
   [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_SHELL_MCP)" == "1" ]] \
     && [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_SANDBOX_MCP)" == "1" ]] \
     && [[ "$(rt_leanctx_mcp_env LEANCTX_DISABLE_FETCH_MCP)" == "1" ]] \
@@ -74,7 +120,10 @@ rt_probe_leanctx_vendor_doctor() {
     cli=""
   fi
   bin="${cli:-lean-ctx}"
-  command -v "$bin" >/dev/null 2>&1 || return 2
+  if [[ "$bin" == "lean-ctx" ]] && declare -F sb_leanctx_cli_path >/dev/null 2>&1; then
+    bin="$(sb_leanctx_cli_path "${cfg:-}" 2>/dev/null || true)"
+  fi
+  [[ -n "$bin" ]] || return 2
   rt_vendor_doctor_subcommand_usable "$bin" || return 2
   if "$bin" doctor --help </dev/null 2>&1 | grep -qiE -- '--non-interactive'; then
     extra+=(--non-interactive)
@@ -103,7 +152,9 @@ rt_probe_leanctx_version_ok() {
   if [[ -n "$cfg" && -f "$cfg" ]]; then
     min_ver="$(jq -r '.recommended_tools.leanctx.min_version // "3.9.9"' "$cfg" 2>/dev/null || echo "3.9.9")"
   fi
-  raw="$(command -v lean-ctx >/dev/null 2>&1 && lean-ctx --version </dev/null 2>/dev/null || true)"
+  local cli_path
+  cli_path="$(sb_leanctx_cli_path "$cfg" 2>/dev/null || true)"
+  raw="$( [[ -n "$cli_path" ]] && "$cli_path" --version </dev/null 2>/dev/null || true)"
   ver="$(printf '%s' "$raw" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)"
   [[ -n "$ver" ]] || return 1
   [[ "$(rt_leanctx_version_int "$ver")" -ge "$(rt_leanctx_version_int "$min_ver")" ]]

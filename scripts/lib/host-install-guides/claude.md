@@ -22,9 +22,11 @@ Post-index: `agentmemory connect claude-code`
 
 ## Context-mode
 
-- `claude plugin marketplace add mksglu/context-mode`
-- `claude plugin install context-mode@context-mode`
-- Restart the host agent after plugin install
+- `npm install -g context-mode`
+- `bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"`
+- The optimizer disables the optional `context-mode@context-mode` Claude plugin
+  and registers the same global MCP executable used by Cursor and Codex.
+- Restart the host agent after changing MCP configuration.
 
 ## Hook merge
 

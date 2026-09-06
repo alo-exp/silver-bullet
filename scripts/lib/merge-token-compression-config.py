@@ -10,6 +10,35 @@ import pathlib
 import shutil
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "global-toolstack"))
+
+from five_tool_instances import (  # noqa: E402
+    disable_claude_native_context_mode,
+    ensure_global_instances,
+    mcp_server_spec,
+)
+from opencode import (  # noqa: E402
+    opencode_context_mode_plugin_present,
+    opencode_ensure_context_mode_plugin,
+    opencode_existing_server_present,
+    opencode_remove_context_mode_mcp,
+    opencode_server_config,
+    opencode_upsert_server,
+)
+
+
+LEANCTX_ENV_CM_ACTIVE = {
+    "LEANCTX_MCP_TOOL_PREFIX": "lctx_",
+    "LEANCTX_DISABLE_SHELL_MCP": "1",
+    "LEANCTX_DISABLE_SANDBOX_MCP": "1",
+    "LEANCTX_DISABLE_FETCH_MCP": "1",
+    "LEANCTX_DISABLE_FTS": "1",
+    "LEANCTX_PRIMARY_FTS": "context_mode",
+}
+
+
+LEANCTX_ENV_BASE = {"LEANCTX_MCP_TOOL_PREFIX": "lctx_"}
+
 
 def load_json(path: pathlib.Path, default: dict | None = None) -> dict:
     if path.is_file():
@@ -138,6 +167,36 @@ def merge_mcp_server(target: pathlib.Path, server_name: str, server_cfg: dict, d
     return True
 
 
+def merge_shared_claude_context_mode(
+    target: pathlib.Path, server_cfg: dict, dry_run: bool
+) -> bool:
+    """Keep Claude's Context Mode server canonical and manifest-backed."""
+    data = load_json(target, {"mcpServers": {}})
+    servers = data.setdefault("mcpServers", {})
+    changed = False
+    existing = servers.get("context-mode")
+    legacy = servers.get("user-context-mode")
+    if not isinstance(existing, dict) and isinstance(legacy, dict):
+        existing = legacy
+        servers["context-mode"] = existing
+        changed = True
+    if "user-context-mode" in servers:
+        del servers["user-context-mode"]
+        changed = True
+    if not isinstance(existing, dict):
+        servers["context-mode"] = dict(server_cfg)
+        changed = True
+    else:
+        for key in ("command", "args"):
+            if existing.get(key) != server_cfg.get(key):
+                existing[key] = server_cfg[key]
+                changed = True
+        servers["context-mode"] = existing
+    if changed:
+        save_json(target, data, dry_run)
+    return changed
+
+
 def merge_cli_allowlist(target: pathlib.Path, allow_entries: list[str], dry_run: bool) -> int:
     data = load_json(target, {"version": 1, "permissions": {"allow": [], "deny": []}})
     data.setdefault("version", 1)
@@ -173,6 +232,28 @@ def append_unique_plugin(plugins: list, entry: str) -> bool:
     if entry in plugins:
         return False
     plugins.append(entry)
+    return True
+
+
+def write_opencode_rtk_plugin(
+    source: pathlib.Path,
+    target: pathlib.Path,
+    command: str,
+    dry_run: bool,
+) -> bool:
+    """Materialize the RTK plugin with the manifest-selected binary path."""
+    if not source.is_file():
+        return False
+    template = source.read_text(encoding="utf-8")
+    rendered = template.replace('"__SB_RTK_COMMAND__"', json.dumps(command))
+    if target.is_file() and target.read_text(encoding="utf-8") == rendered:
+        return False
+    if dry_run:
+        print(f"DRY-RUN: would write {target}")
+        return True
+    target.parent.mkdir(parents=True, exist_ok=True)
+    backup_file(target)
+    target.write_text(rendered, encoding="utf-8")
     return True
 
 
@@ -224,15 +305,21 @@ def context_mode_extended_cursor_hooks() -> dict:
 
 def merge_codex_config_toml(target: pathlib.Path, dry_run: bool) -> bool:
     cm_pkg = context_mode_pkg_root()
+    manifest = ensure_global_instances(dry_run=dry_run)
     if not cm_pkg:
         return False
     snippet_path = cm_pkg / "configs" / "codex" / "config.toml"
     if not snippet_path.is_file():
         return False
-    snippet = snippet_path.read_text(encoding="utf-8")
     marker = "[mcp_servers.context-mode]"
     if target.is_file() and marker in target.read_text(encoding="utf-8"):
         return False
+    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
+    snippet = (
+        f"{marker}\n"
+        f"command = {json.dumps(spec['command'])}\n"
+        f"args = {json.dumps(spec['args'])}\n"
+    )
     if dry_run:
         print(f"DRY-RUN: would append context-mode block to {target}")
         return True
@@ -288,6 +375,7 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
     project_rules = repo_root / ".cursor" / "rules"
 
     cm_pkg = context_mode_pkg_root()
+    manifest = ensure_global_instances(dry_run=dry_run)
     fragments: list[dict] = []
     cm_hooks = context_mode_cursor_hooks_path(repo_root)
     if cm_hooks:
@@ -303,6 +391,8 @@ def optimize_cursor(repo_root: pathlib.Path, dry_run: bool, skip_cli_config: boo
             mcp_data = load_json(cm_mcp)
             servers = mcp_data.get("mcpServers", {})
             for name, cfg in servers.items():
+                if name in ("context-mode", "user-context-mode"):
+                    cfg = mcp_server_spec(manifest, "context_mode")
                 if merge_mcp_server(mcp_path, name, cfg, dry_run):
                     mcp_added = True
 
@@ -363,21 +453,35 @@ def optimize_codex(dry_run: bool) -> dict:
 
 
 def optimize_claude(dry_run: bool) -> dict:
-    """Merge npm-global MCP path when Claude plugin is not used."""
+    """Use the shared global Context Mode MCP entry for Claude."""
     claude_json = pathlib.Path.home() / ".claude.json"
-    mcp_added = merge_mcp_server(
+    native_plugin_disabled = disable_claude_native_context_mode(dry_run=dry_run)
+    spec = mcp_server_spec(ensure_global_instances(dry_run=dry_run), "context_mode")
+    mcp_added = merge_shared_claude_context_mode(
         claude_json,
-        "context-mode",
-        {"command": "context-mode", "args": ["mcp"]},
+        spec,
         dry_run,
     )
-    return {"host": "claude", "status": "supported", "mcp_added": mcp_added}
+    return {
+        "host": "claude",
+        "status": "supported",
+        "adapter": "manifest_mcp",
+        "mcp_added": mcp_added,
+        "native_plugin_disabled": native_plugin_disabled,
+    }
 
 
-def optimize_opencode(dry_run: bool) -> dict:
+def optimize_opencode(
+    dry_run: bool,
+    repo_root: pathlib.Path,
+    *,
+    rtk_only: bool = False,
+    context_mode_only: bool = False,
+) -> dict:
     opencode_home = pathlib.Path.home() / ".config" / "opencode"
     cfg_path = opencode_home / "opencode.json"
     cm_pkg = context_mode_pkg_root()
+    manifest = ensure_global_instances(dry_run=dry_run)
 
     data = load_json(
         cfg_path,
@@ -389,25 +493,77 @@ def optimize_opencode(dry_run: bool) -> dict:
     )
     data.setdefault("$schema", "https://opencode.ai/config.json")
     plugins = data.setdefault("plugin", [])
-    plugin_added = append_unique_plugin(plugins, "context-mode")
+    if not isinstance(plugins, list):
+        plugins = []
+        data["plugin"] = plugins
+    configure_rtk = not context_mode_only
+    configure_context_mode = not rtk_only
+    plugin_added = False
+    if configure_context_mode:
+        plugin_added = opencode_ensure_context_mode_plugin(plugins, manifest) or plugin_added
 
-    # Ensure RTK plugin path if file exists
+    # OpenCode's native Context Mode plugin owns the ctx_* namespace in
+    # process.  Its legacy MCP entry is mutually exclusive with the plugin:
+    # OpenCode suppresses all Context Mode tools when both are configured.
+    cm_plugin_active = opencode_context_mode_plugin_present(data)
+
+    # Always use the manifest-selected RTK executable in OpenCode's plugin.
     rtk_plugin = opencode_home / "plugins" / "rtk.ts"
     rtk_rel = "./plugins/rtk.ts"
-    if rtk_plugin.is_file():
+    plugin_written = False
+    if configure_rtk:
         plugin_added = append_unique_plugin(plugins, rtk_rel) or plugin_added
+        plugin_written = write_opencode_rtk_plugin(
+            repo_root / "scripts" / "lib" / "global-toolstack" / "opencode-rtk-plugin.ts",
+            rtk_plugin,
+            mcp_server_spec(manifest, "rtk")["command"],
+            dry_run,
+        )
 
     mcp = data.setdefault("mcp", {})
+    if not isinstance(mcp, dict):
+        mcp = {}
+        data["mcp"] = mcp
     mcp_added = False
-    if "context-mode" not in mcp:
-        mcp["context-mode"] = {
-            "type": "local",
-            "command": ["context-mode", "mcp"],
-            "enabled": True,
-        }
-        mcp_added = True
+    if cm_plugin_active:
+        mcp_added = opencode_remove_context_mode_mcp(mcp) or mcp_added
+    cm_active = cm_plugin_active or opencode_existing_server_present(
+        mcp, "context-mode", ("user-context-mode",)
+    )
 
-    if plugin_added or mcp_added or not cfg_path.is_file():
+    # This standalone optimizer does not opt users into Graphify, agentmemory,
+    # or LeanCTX.  It does, however, repair stale entries that are already
+    # present so an existing shared stack cannot drift back to npx/aliases.
+    if not (rtk_only or context_mode_only) and opencode_existing_server_present(mcp, "graphify"):
+        mcp_added = opencode_upsert_server(
+            mcp,
+            "graphify",
+            opencode_server_config(manifest, "graphify"),
+        ) or mcp_added
+    if not (rtk_only or context_mode_only) and opencode_existing_server_present(mcp, "agentmemory", ("user-agentmemory",)):
+        mcp_added = opencode_upsert_server(
+            mcp,
+            "agentmemory",
+            opencode_server_config(manifest, "agentmemory"),
+            aliases=("user-agentmemory",),
+        ) or mcp_added
+    if not (rtk_only or context_mode_only) and opencode_existing_server_present(
+        mcp,
+        "leanctx",
+        ("lean-ctx", "lean-ctx-standalone", "user-leanctx", "user-lean-ctx"),
+    ):
+        mcp_added = opencode_upsert_server(
+            mcp,
+            "leanctx",
+            opencode_server_config(
+                manifest,
+                "leanctx",
+                environment=LEANCTX_ENV_CM_ACTIVE if cm_active else LEANCTX_ENV_BASE,
+            ),
+            aliases=("lean-ctx", "lean-ctx-standalone", "user-leanctx", "user-lean-ctx"),
+        ) or mcp_added
+
+    if plugin_added or plugin_written or mcp_added or not cfg_path.is_file():
         save_json(cfg_path, data, dry_run)
 
     agents_copied = False
@@ -419,6 +575,7 @@ def optimize_opencode(dry_run: bool) -> dict:
         "host": "opencode",
         "status": "supported",
         "plugin_added": plugin_added,
+        "plugin_written": plugin_written,
         "mcp_added": mcp_added,
         "agents_copied": agents_copied,
     }
@@ -454,7 +611,11 @@ def main() -> int:
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--skip-cli-config", action="store_true")
+    parser.add_argument("--rtk-only", action="store_true", help="Only materialize OpenCode's RTK plugin")
+    parser.add_argument("--context-mode-only", action="store_true", help="Only materialize OpenCode Context Mode")
     args = parser.parse_args()
+    if args.rtk_only and args.context_mode_only:
+        parser.error("--rtk-only and --context-mode-only are mutually exclusive")
 
     repo_root = pathlib.Path(args.repo_root).resolve()
     results: list[dict] = []
@@ -468,7 +629,12 @@ def main() -> int:
         "cursor": lambda: optimize_cursor(repo_root, args.dry_run, args.skip_cli_config),
         "codex": lambda: optimize_codex(args.dry_run),
         "claude": lambda: optimize_claude(args.dry_run),
-        "opencode": lambda: optimize_opencode(args.dry_run),
+        "opencode": lambda: optimize_opencode(
+            args.dry_run,
+            repo_root,
+            rtk_only=args.rtk_only,
+            context_mode_only=args.context_mode_only,
+        ),
         "hermes": lambda: optimize_hermes(args.dry_run),
         "goose": optimize_goose,
     }

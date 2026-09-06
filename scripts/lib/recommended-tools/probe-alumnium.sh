@@ -18,9 +18,14 @@ rt_probe_alumnium_mcp() {
   local host="${RT_HOST:-cursor}"
   case "$host" in
     cursor)
-      [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
-      jq -e '.mcpServers.alumnium // .mcpServers["user-alumnium"]' \
-        "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
+      rt_host_mcp_server_configured "$host" alumnium \
+        || {
+          [[ -f "${HOME}/.cursor/mcp.json" ]] || return 1
+          jq -e '.mcpServers["user-alumnium"]' "${HOME}/.cursor/mcp.json" >/dev/null 2>&1
+        }
+      ;;
+    claude|codex)
+      rt_host_mcp_server_configured "$host" alumnium
       ;;
     *) return 1 ;;
   esac

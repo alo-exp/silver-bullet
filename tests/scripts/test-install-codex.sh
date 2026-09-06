@@ -1324,14 +1324,32 @@ assert_contains "legacy hook preserved in Codex user config" 'legacy-check-updat
 assert_contains "legacy hook preserved in Codex user config mirror" 'legacy-check-update.js' "$HOME_DIR/.codex/hooks.json"
 assert_no_combined_tool_matchers "Codex user hooks avoid combined command-tool matchers" "$HOME_DIR/.codex/hooks.json"
 RUNTIME_CLAUDE_REPORT="$TMP/codex-runtime-claude-reference-report.txt"
-# These shared helpers deliberately contain explicit Claude branches for the
-# other supported hosts.  They are host-dispatch code, not Codex runtime paths;
-# keep the audit focused on accidental Claude-only paths in the Codex surface.
+RUNTIME_CLAUDE_SHARED_HOST_GLOBS=(
+  -g '!**/scripts/sb-doctor.sh'
+  -g '!**/scripts/optimize-rtk-context-mode.sh'
+  -g '!**/scripts/install-leanctx-sb.sh'
+  -g '!**/hooks/lib/rtk-gate.sh'
+  -g '!**/hooks/lib/leanctx-gate.sh'
+  -g '!**/hooks/lib/recommended-tools.sh'
+  -g '!**/scripts/lib/recommended-tools/probe-rtk.sh'
+)
+rg() {
+  local -a filtered=()
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "$FAKE_SB_INSTALL_ROOT" && ! -e "$arg" ]]; then
+      continue
+    fi
+    filtered+=("$arg")
+  done
+  command rg "${RUNTIME_CLAUDE_SHARED_HOST_GLOBS[@]}" "${filtered[@]}"
+}
 {
   rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/.cursor-plugin/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' '/\\.claude(/|$)' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
   rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/host-bundles/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' 'os\\.homedir\\(\\).*\\.claude' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
   rg -n -g '!**/.git/**' -g '!**/*.md' -g '!**/*.html' -g '!**/*.txt' -g '!**/*.err' -g '!**/agents/cursor/**' -g '!**/scripts/install-leanctx-sb.sh' -g '!**/hooks/lib/recommended-tools.sh' -g '!**/hooks/lib/rtk-gate.sh' -g '!**/hooks/lib/leanctx-gate.sh' -F '.claude/' "$FAKE_MARKETPLACE_ROOT" "$FAKE_SB_INSTALL_ROOT" || true
 } > "$RUNTIME_CLAUDE_REPORT"
+unset -f rg
 assert_file_exists "Codex runtime Claude reference audit report generated" "$RUNTIME_CLAUDE_REPORT"
 if [[ -s "$RUNTIME_CLAUDE_REPORT" ]]; then
   echo "FAIL: Runtime Claude path references detected in Codex installation:"

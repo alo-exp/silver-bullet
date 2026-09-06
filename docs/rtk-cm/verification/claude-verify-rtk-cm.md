@@ -26,12 +26,12 @@ rtk gain --help >/dev/null && echo OK-rtk-ai
 
 ```bash
 node --version    # >= v22.5
-which context-mode || claude plugin list 2>/dev/null | grep -i context-mode
+which context-mode
 ```
 
-**Pass:** CLI on PATH or plugin installed.
+**Pass:** The global Context Mode CLI is on PATH.
 
-**Fail:** `npm install -g context-mode` or `claude plugin install context-mode@context-mode`
+**Fail:** `npm install -g context-mode`
 
 ---
 
@@ -49,14 +49,14 @@ test -f ~/.codex/RTK.md && echo OK-rtk-md
 
 **Fail:** `rtk init -g`
 
-### 2.2 Context Mode plugin or MCP
+### 2.2 Context Mode shared MCP
 
 ```bash
-test -d ~/.codex/plugins/context-mode && echo OK-plugin || \
-  jq '.mcpServers["context-mode"]' ~/.claude.json 2>/dev/null
+jq '.mcpServers["context-mode"]' ~/.claude.json 2>/dev/null
+test "$(jq -r '.enabledPlugins["context-mode@context-mode"] // false' ~/.claude/settings.json 2>/dev/null)" = false && echo OK-no-native-plugin
 ```
 
-**Pass:** plugin directory or MCP entry in `~/.claude.json`.
+**Pass:** Shared `context-mode` MCP entry in `~/.claude.json` and no enabled native plugin.
 
 **Fail:** `bash scripts/optimize-rtk-context-mode.sh --host claude`
 
@@ -78,7 +78,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"git status"}}' | rtk hook cla
 CONTEXT_MODE_PLATFORM=claude context-mode doctor 2>&1 | grep -E 'PASS|FAIL|WARN' | head -20
 ```
 
-Or in Claude Code: `/context-mode:ctx-doctor`
+Run the same shared executable from Claude's configured MCP entry; the terminal command above is the canonical doctor surface.
 
 **Pass:** PreToolUse / PreCompact hooks PASS.
 

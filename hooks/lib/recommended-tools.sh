@@ -85,7 +85,7 @@ sb_recommended_tool_benefits() {
   fi
   case "$tool_id" in
     graphify)
-      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, and Cursor agents.'
+      printf '%s' 'Scoped retrieval saves tokens; team-shared knowledge graph indexes code and docs; portable across Claude, Codex, Cursor, OpenCode, and Pi agents.'
       ;;
     agentmemory)
       printf '%s' 'Session capture with git-backed memory export; proactive context injection; pairs with Graphify for save-via-agentmemory, retrieve-via-Graphify synergy.'
@@ -113,6 +113,38 @@ sb_recommended_tool_install_commands() {
   jq -r --arg id "$tool_id" '.recommended_tools[$id].install_commands[]? // empty' "$config_file" 2>/dev/null || true
 }
 
+# All five-tool host adapters resolve their subprocesses through this one
+# user-global manifest.  A configured absolute path is authoritative; PATH is
+# used only when the manifest intentionally contains a command name.
+sb_global_toolstack_manifest_path() {
+  if [[ -n "${SB_GLOBAL_TOOLSTACK_MANIFEST:-}" ]]; then
+    printf '%s' "${SB_GLOBAL_TOOLSTACK_MANIFEST}"
+  else
+    printf '%s/instances.json' "${SB_GLOBAL_TOOLSTACK_HOME:-${HOME}/.silver-bullet/five-tool-stack}"
+  fi
+}
+
+sb_global_tool_command() {
+  local tool="${1:-}" manifest
+  [[ -n "$tool" ]] || return 1
+  manifest="$(sb_global_toolstack_manifest_path)"
+  [[ -f "$manifest" ]] || return 1
+  jq -er --arg tool "$tool" '.tools[$tool].command | select(type == "string" and length > 0)' \
+    "$manifest" 2>/dev/null
+}
+
+sb_global_tool_path() {
+  local tool="${1:-}" command
+  command="$(sb_global_tool_command "$tool" 2>/dev/null || true)"
+  [[ -n "$command" ]] || return 1
+  if [[ "$command" == */* ]]; then
+    [[ -x "$command" ]] || return 1
+    printf '%s' "$command"
+    return 0
+  fi
+  command -v "$command"
+}
+
 # Map SB host id → graphify upstream platform name (goose runs on Pi).
 sb_graphify_upstream_platform() {
   local host="${1:-}"
@@ -127,7 +159,7 @@ sb_graphify_upstream_platform() {
 sb_runtime_host() {
   if [[ -n "${SILVER_BULLET_RUNTIME:-}" ]]; then
     case "$SILVER_BULLET_RUNTIME" in
-      claude|codex|cursor|opencode|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
+      claude|codex|cursor|opencode|pi|goose|hermes) printf '%s' "$SILVER_BULLET_RUNTIME"; return 0 ;;
     esac
   fi
   if [[ -n "${CODEX_CI:-}" || -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_INTERNAL_ORIGINATOR_OVERRIDE:-}" ]]; then
@@ -143,6 +175,14 @@ sb_runtime_host() {
       */.codex/*) printf 'codex'; return 0 ;;
       */.cursor/*) printf 'cursor'; return 0 ;;
     esac
+  fi
+  if [[ -n "${OPENCODE:-}" || -n "${OPENCODE_PID:-}" ]]; then
+    printf 'opencode'
+    return 0
+  fi
+  if [[ -n "${PI_CODING_AGENT_DIR:-}" ]]; then
+    printf 'pi'
+    return 0
   fi
   printf 'claude'
 }
@@ -179,6 +219,7 @@ sb_recommended_tool_platform_pre_index_commands() {
       claude) printf '%s\n' 'graphify install --project' ;;
       codex) printf '%s\n' 'graphify install --project --platform codex' ;;
       opencode) printf '%s\n' 'graphify install --project --platform opencode' ;;
+      pi) printf '%s\n' 'python3 scripts/lib/global-toolstack/install-pi.py --repo-root "$(pwd)"' ;;
       goose) printf '%s\n' 'graphify install --project --platform pi' ;;
       hermes) printf '%s\n' 'graphify install --project --platform hermes' ;;
     esac
@@ -188,18 +229,23 @@ sb_recommended_tool_platform_pre_index_commands() {
         printf '%s\n' 'codex plugin marketplace add rohitg00/agentmemory'
         printf '%s\n' 'codex plugin add agentmemory@agentmemory'
         ;;
+      pi)
+        printf '%s\n' 'agentmemory connect pi (shared global agentmemory extension)'
+        ;;
     esac
   elif [[ "$tool_id" == "rtk" ]]; then
     case "$host" in
       claude) printf '%s\n' 'rtk init -g' ;;
       cursor) printf '%s\n' 'rtk init -g --agent cursor' ;;
       codex) printf '%s\n' 'rtk init -g --codex' ;;
+      opencode) printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root "$(pwd)"' ;;
+      pi) printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host pi --project-root "$(pwd)"' ;;
     esac
   elif [[ "$tool_id" == "context_mode" ]]; then
     case "$host" in
       claude)
-        printf '%s\n' 'claude plugin marketplace add mksglu/context-mode'
-        printf '%s\n' 'claude plugin install context-mode@context-mode'
+        printf '%s\n' 'npm install -g context-mode'
+        printf '%s\n' 'bash scripts/optimize-rtk-context-mode.sh --host claude --project-root "$(pwd)"'
         ;;
       cursor)
         printf '%s\n' 'Copy context-mode.mdc to .cursor/rules/; merge MCP + hooks per docs/CONTEXT-MODE.md'
@@ -207,10 +253,16 @@ sb_recommended_tool_platform_pre_index_commands() {
       codex)
         printf '%s\n' 'Merge context-mode blocks into Codex config.toml and hooks.json per docs/CONTEXT-MODE.md'
         ;;
+      opencode)
+        printf '%s\n' 'Register the global Context Mode plugin and RTK plugin in ~/.config/opencode/opencode.json; remove legacy Context Mode MCP duplicates'
+        ;;
+      pi)
+        printf '%s\n' 'python3 scripts/lib/global-toolstack/install-pi.py --repo-root "$(pwd)"'
+        ;;
     esac
   elif [[ "$tool_id" == "leanctx" ]]; then
     case "$host" in
-      cursor|claude|codex|opencode)
+      cursor|claude|codex|opencode|pi)
         printf '%s\n' "bash scripts/install-leanctx-sb.sh --host ${host} --project-root \"\$(pwd)\""
         ;;
     esac
@@ -245,13 +297,14 @@ sb_recommended_tool_platform_post_index_commands() {
       cursor) printf '%s\n' 'graphify cursor install' ;;
       claude) printf '%s\n' 'graphify claude install --project' ;;
       codex) printf '%s\n' 'graphify codex install --project' ;;
-      opencode|goose|hermes) ;;
+      opencode|pi|goose|hermes) ;;
     esac
   elif [[ "$tool_id" == "agentmemory" ]]; then
     case "$host" in
       claude) printf '%s\n' 'agentmemory connect claude-code' ;;
       codex) printf '%s\n' 'agentmemory connect codex --with-hooks' ;;
       goose) printf '%s\n' 'agentmemory connect pi' ;;
+      pi) printf '%s\n' 'agentmemory connect pi' ;;
       hermes) printf '%s\n' 'agentmemory connect hermes' ;;
       opencode)
         printf '%s\n' 'Merge agentmemory MCP into ~/.config/opencode/opencode.json (manual — see docs/AGENTMEMORY.md)'
@@ -270,7 +323,9 @@ sb_graphify_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/rules/graphify.mdc' "${project_root%/}" ;;
     codex) printf '%s/.codex/hooks.json' "${project_root%/}" ;;
-    opencode) printf '%s/.opencode/opencode.json' "${project_root%/}" ;;
+    opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
+    pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
+      "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     goose) printf '%s/.pi/agent/skills/graphify/SKILL.md' "${project_root%/}" ;;
     hermes) printf '%s/AGENTS.md' "${project_root%/}" ;;
     # `graphify claude install --project` writes project-scoped hooks into
@@ -289,7 +344,7 @@ sb_graphify_platform_artifact_present() {
   artifact="$(sb_graphify_platform_artifact_path "$project_root" "$host")"
   [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
   case "$host" in
-    cursor|codex|claude|opencode|goose|hermes) grep -q 'graphify' "$artifact" 2>/dev/null ;;
+    cursor|codex|claude|opencode|pi|goose|hermes) grep -q 'graphify' "$artifact" 2>/dev/null ;;
     *) grep -q 'graphify' "$artifact" 2>/dev/null ;;
   esac
 }
@@ -491,4 +546,3 @@ sb_stack_surface_owner() {
     *) return 1 ;;
   esac
 }
-

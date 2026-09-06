@@ -74,12 +74,12 @@ check_hooks_file() {
     fail "$label: postToolUse should have exactly one dev-cycle-check (found $post_count)"
   fi
 
-  local gate_pre
-  gate_pre="$(jq '[.hooks.preToolUse[]? | select(.command | contains("graphify-gate.sh"))] | length' "$path")"
-  if [[ "$gate_pre" -ge 1 ]]; then
-    pass "$label: preToolUse still registers graphify-gate"
+  local global_stack_hits
+  global_stack_hits="$(jq '[.hooks | to_entries[] | .value[]? | select(.command | test("(graphify-gate|agentmemory-gate|leanctx-gate|stack-compression-coordinator|context-mode-read-deny|rtk-gate|context-mode-gate|token-compression-tools-gate|record-graphify-query|record-agentmemory-usage)\\.sh"))] | length' "$path")"
+  if [[ "$global_stack_hits" -eq 0 ]]; then
+    pass "$label: plugin manifest leaves global five-tool hooks to global stack"
   else
-    fail "$label: preToolUse must retain graphify-gate"
+    fail "$label: plugin manifest must omit global five-tool hooks (found $global_stack_hits)"
   fi
 }
 

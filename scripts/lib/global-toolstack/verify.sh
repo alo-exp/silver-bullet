@@ -3,6 +3,7 @@ set -euo pipefail
 
 HOME_CURSOR="${HOME}/.cursor"
 TS_DIR="${HOME_CURSOR}/hooks/toolstack"
+GLOBAL_INSTANCES="${SB_GLOBAL_TOOLSTACK_HOME:-${HOME}/.silver-bullet/five-tool-stack}/instances.json"
 pass=0 fail=0 warn=0
 
 _check() {
@@ -29,7 +30,19 @@ done
 [[ -f "${TS_DIR}/lib/common.sh" ]] && _check pass lib/common.sh present || _check fail lib/common.sh missing
 [[ -f "${TS_DIR}/patch-hooks.py" ]] && _check pass patch-hooks.py present || _check fail patch-hooks.py missing
 [[ -f "${TS_DIR}/patch-mcp.py" ]] && _check pass patch-mcp.py present || _check fail patch-mcp.py missing
+[[ -f "${TS_DIR}/five_tool_instances.py" ]] && _check pass five_tool_instances.py present || _check fail five_tool_instances.py missing
 [[ -f "${TS_DIR}/fix-shell-compression-hook.py" ]] && _check pass fix-shell-compression-hook.py present || _check fail fix-shell-compression-hook.py missing
+
+if [[ -f "$GLOBAL_INSTANCES" ]] && jq -e '
+  .schema == "v1"
+  and .scope == "user-global"
+  and .profile == "five_tool_routed"
+  and (["graphify", "agentmemory", "context_mode", "leanctx", "rtk"] - (.tools | keys)) == []
+' "$GLOBAL_INSTANCES" >/dev/null 2>&1; then
+  _check pass global-instances "five-tool manifest present"
+else
+  _check fail global-instances "five-tool manifest missing or incomplete"
+fi
 
 for rule in graphify.mdc agentmemory.mdc leanctx.mdc context-mode.mdc token-compression-enforcement.mdc recommended-tools.mdc; do
   [[ -f "${HOME_CURSOR}/rules/${rule}" ]] && _check pass "rule:${rule}" present || _check fail "rule:${rule}" missing
@@ -54,7 +67,9 @@ fi
 
 if [[ -f "${HOME_CURSOR}/hooks.json" ]]; then
   grep -q 'toolstack/session-bootstrap' "${HOME_CURSOR}/hooks.json" && _check pass hooks:session-bootstrap wired || _check fail hooks:session-bootstrap missing
-  grep -q 'toolstack/shell-compression' "${HOME_CURSOR}/hooks.json" && _check pass hooks:shell-compression wired || _check fail hooks:shell-compression missing
+  # RTK owns the one global shell rewrite; the legacy wrapper must be absent.
+  grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json" && _check pass hooks:shell-compression wired || _check fail hooks:shell-compression missing
+  ! grep -q 'toolstack/shell-compression' "${HOME_CURSOR}/hooks.json" && _check pass hooks:legacy-shell-wrapper removed || _check fail hooks:legacy-shell-wrapper "still wired"
   grep -q 'rtk hook cursor' "${HOME_CURSOR}/hooks.json" && _check pass hooks:rtk wired || _check fail hooks:rtk missing
   grep -q 'toolstack/graphify-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:graphify-gate wired || _check fail hooks:graphify-gate missing
   grep -q 'toolstack/agentmemory-gate' "${HOME_CURSOR}/hooks.json" && _check pass hooks:agentmemory-gate wired || _check fail hooks:agentmemory-gate missing

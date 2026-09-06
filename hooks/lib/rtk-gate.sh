@@ -25,6 +25,9 @@ sb_rtk_min_version() {
 }
 
 sb_rtk_cli_path() {
+  if declare -f sb_global_tool_path >/dev/null 2>&1; then
+    sb_global_tool_path rtk 2>/dev/null && return 0
+  fi
   if command -v rtk >/dev/null 2>&1; then
     command -v rtk
     return 0
@@ -99,6 +102,9 @@ sb_rtk_platform_hook_artifact_path() {
     # rtk init -g wires Claude hooks into ~/.claude/settings.json; the codex
     # fallback pointed this check at a different host's config entirely.
     claude) printf '%s/.claude/settings.json' "${HOME}" ;;
+    opencode) printf '%s/.config/opencode/plugins/rtk.ts' "${HOME}" ;;
+    pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
+      "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     *) printf '%s/.codex/settings.json' "${HOME}" ;;
   esac
 }
@@ -115,6 +121,9 @@ sb_rtk_platform_hook_present() {
       ;;
     codex)
       grep -qiE 'rtk|rust token killer' "$artifact" 2>/dev/null
+      ;;
+    opencode|pi)
+      grep -q 'rtk' "$artifact" 2>/dev/null
       ;;
     *)
       grep -q 'rtk' "$artifact" 2>/dev/null
