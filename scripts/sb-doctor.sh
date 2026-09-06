@@ -230,6 +230,61 @@ doctor_reconciler_scope() {
   esac
 }
 
+doctor_generic_manifest_path() {
+  if [[ -n "${SB_GLOBAL_TOOLSTACK_MANIFEST:-}" ]]; then
+    printf '%s' "${SB_GLOBAL_TOOLSTACK_MANIFEST}"
+  elif [[ -n "${SB_GLOBAL_TOOLSTACK_HOME:-}" ]]; then
+    # Read/write compatibility for pre-generic SB installations and fixtures.
+    printf '%s/instances.json' "${SB_GLOBAL_TOOLSTACK_HOME}"
+  else
+    printf '%s/manifest.json' "${FIVE_TOOL_STACK_HOME:-${XDG_STATE_HOME:-${XDG_DATA_HOME:-${HOME}/.local/state}}/five-tool-stack}"
+  fi
+}
+
+doctor_record_generic_stack() {
+  local manifest_path="$(doctor_generic_manifest_path)"
+  if [[ ! -f "$manifest_path" ]]; then
+    record warn D10-generic "generic stack absent (${manifest_path}); SB integration remains separate"
+    return 0
+  fi
+  local diagnostic valid detail
+  diagnostic="$(PYTHONPATH="${REPO_ROOT}/scripts/lib" python3 - "$manifest_path" <<'PY'
+import sys
+from pathlib import Path
+from five_tool_runtime.runtime import load_manifest, validate_manifest
+
+path = Path(sys.argv[1])
+result = validate_manifest(load_manifest(path), require_commands=False)
+print("{}|{}".format("valid" if result["valid"] else "invalid", "; ".join(result["errors"] + result["warnings"])))
+PY
+  )" || diagnostic="invalid|runtime validation unavailable"
+  valid="${diagnostic%%|*}"
+  detail="${diagnostic#*|}"
+  if [[ "$valid" == "valid" ]]; then
+    record pass D10-generic "generic manifest valid (${manifest_path})${detail:+ — ${detail}}"
+  else
+    record fail D10-generic "generic manifest malformed or partial (${manifest_path})${detail:+ — ${detail}}"
+  fi
+}
+
+doctor_repair_generic_stack() {
+  [[ "$DOCTOR_FIX" -eq 1 && "$DOCTOR_DRY_RUN" -eq 0 ]] || return 0
+  case "${DOCTOR_FIX_SCOPE:-all}" in
+    local) return 0 ;;
+  esac
+  local manifest_path="$(doctor_generic_manifest_path)"
+  local legacy_path="${HOME}/.silver-bullet/five-tool-stack/instances.json"
+  local output rc=0
+  output="$(PYTHONPATH="${REPO_ROOT}/scripts/lib" python3 "${REPO_ROOT}/scripts/lib/five_tool_runtime/cli.py" repair \
+    --manifest "$manifest_path" --legacy-manifest "$legacy_path" 2>&1)" || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    record fail D10-generic "generic repair failed: ${output##*$'\n'}"
+    return 1
+  fi
+  printf '%s\n' "$output" | tail -1 >&2
+  return 0
+}
+
 doctor_run_reconciler() {
   local mode="$1"
   local reconciler="${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}"
@@ -377,6 +432,7 @@ doctor_apply_fixes() {
     record fail D10 "confirmation unobtainable; --fix not applied"
     return 0
   fi
+  doctor_repair_generic_stack || true
   if [[ -f "${SB_DOCTOR_RECONCILER:-${REPO_ROOT}/scripts/reconcile-recommended-tools.sh}" ]]; then
     printf 'sb-doctor: --fix=%s running reconciler doctor-fix apply\n' "${DOCTOR_FIX_SCOPE:-all}" >&2
     doctor_run_reconciler apply || recon_rc=$?
@@ -625,6 +681,8 @@ run_doctor_checks() {
   fi
 
   # D10 — five-tool reconciler (all components + routes)
+  # D10-generic is deliberately separate from SB hooks/enforcement readiness.
+  doctor_record_generic_stack || true
   doctor_record_reconciler_d10 || true
 
 
