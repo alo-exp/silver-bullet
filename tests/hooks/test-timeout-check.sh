@@ -142,6 +142,12 @@ cleanup_tier2() {
         "${SB_DIR}/session-start-time" "$T2_STATE_FILE"
 }
 
+# Keep fixture files newer than the session anchor even when CI crosses a
+# one-second boundary between date(1) and the subsequent seed writes.
+write_tier2_start_time() {
+  printf '%s\n' "$(( $(date +%s) - 5 ))" > "${SB_DIR}/session-start-time"
+}
+
 run_hook_tier2() {
   printf '{"tool_name":"Bash","tool_input":{"command":"git status"}}' \
     | SILVER_BULLET_STATE_FILE="$T2_STATE_FILE" bash "$HOOK"
@@ -151,7 +157,7 @@ run_hook_tier2() {
 cleanup_tmp; cleanup_tier2
 mkdir -p "$SB_DIR"
 echo "autonomous"  > "${SB_DIR}/mode"
-date +%s           > "${SB_DIR}/session-start-time"
+write_tier2_start_time
 # call_count = 29 stored; hook increments to 30; last_progress_count=0; calls_since_progress=30
 echo "29" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
@@ -170,7 +176,7 @@ fi
 cleanup_tier2
 mkdir -p "$SB_DIR"
 echo "autonomous"  > "${SB_DIR}/mode"
-date +%s           > "${SB_DIR}/session-start-time"
+write_tier2_start_time
 echo "59" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
@@ -187,7 +193,7 @@ fi
 cleanup_tier2
 mkdir -p "$SB_DIR"
 echo "autonomous"  > "${SB_DIR}/mode"
-date +%s           > "${SB_DIR}/session-start-time"
+write_tier2_start_time
 echo "99" > "${SB_DIR}/call-count"
 echo "0"  > "${SB_DIR}/last-progress-call"
 echo "0"  > "${SB_DIR}/last-state-mtime"
@@ -204,7 +210,7 @@ fi
 cleanup_tier2
 mkdir -p "$SB_DIR"
 echo "autonomous"  > "${SB_DIR}/mode"
-date +%s           > "${SB_DIR}/session-start-time"
+write_tier2_start_time
 # call_count stored=30; hook increments to 31; last_progress=0; calls_since_progress=31
 # 31 >= 30 but 31 mod 10 = 1 ≠ 0 → no message
 echo "30" > "${SB_DIR}/call-count"
