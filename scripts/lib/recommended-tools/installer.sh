@@ -34,7 +34,8 @@ rt_deploy_toolstack_scripts() {
       chmod +x "${ts_dir}/${f}" 2>/dev/null || true
     fi
   done
-  for f in patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
+  for f in five_tool_instances.py opencode.py opencode-rtk-plugin.ts install-pi.py pi-five-tool-stack.ts \
+    patch-hooks.py patch-mcp.py fix-shell-compression-hook.py parity-verify.sh verify.sh; do
     [[ -f "${src_dir}/${f}" ]] || continue
     cp -f "${src_dir}/${f}" "${ts_dir}/${f}" 2>/dev/null || true
   done

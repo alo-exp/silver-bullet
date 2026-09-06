@@ -13,6 +13,7 @@ bash scripts/optimize-rtk-context-mode.sh --host claude
 bash scripts/optimize-rtk-context-mode.sh --host codex
 bash scripts/optimize-rtk-context-mode.sh --host cursor
 bash scripts/optimize-rtk-context-mode.sh --host opencode
+bash scripts/optimize-rtk-context-mode.sh --host pi
 bash scripts/optimize-rtk-context-mode.sh --host hermes   # partial
 bash scripts/optimize-rtk-context-mode.sh --host goose    # skip (unsupported)
 
@@ -26,10 +27,11 @@ Prerequisites: `rtk-ai/rtk` on PATH (`rtk gain --help` must work), Node >= 22.5 
 
 | Agent | RTK | Context Mode | Status | Global config roots |
 |-------|-----|--------------|--------|---------------------|
-| **Claude Code** | `rtk init -g` → `~/.codex/settings.json` | Plugin `context-mode@context-mode` | **SUPPORTED** | `~/.codex/` |
+| **Claude Code** | `rtk init -g` → `~/.codex/settings.json` | Shared global MCP in `~/.claude.json` | **SUPPORTED** | `~/.claude.json`, `~/.codex/` |
 | **Codex** | `rtk init -g --codex` → `~/.codex/AGENTS.md` | MCP + `hooks.json` merge | **SUPPORTED** (RTK prompt-layer) | `~/.codex/` |
 | **Cursor** | `rtk init -g --agent cursor` + allow-list | MCP + hooks + `~/.cursor/rules/` | **SUPPORTED** | `~/.cursor/` |
-| **OpenCode** | `rtk init -g --opencode` → plugin TS | Plugin + MCP in `opencode.json` | **SUPPORTED** | `~/.config/opencode/` |
+| **OpenCode** | Manifest-backed RTK plugin TS | Native Context Mode plugin in `opencode.json`; no duplicate `mcp.context-mode` | **SUPPORTED** | `~/.config/opencode/` |
+| **Pi** | Native SB `tool_call` adapter | Native SB extension + `pi-lean-ctx` MCP bridge | **SUPPORTED** | `~/.pi/agent/` |
 | **Hermes** | `rtk init --agent hermes` → Python plugin | MCP YAML merge only | **PARTIAL** | `~/.hermes/` |
 | **Goose** | — | — | **UNSUPPORTED** | — |
 
@@ -43,6 +45,7 @@ Per-host self-verification prompts for the **RTK + Context Mode** stack (`*-veri
 | Codex | [codex-verify-rtk-cm.md](verification/codex-verify-rtk-cm.md) |
 | Cursor | [cursor-verify-rtk-cm.md](verification/cursor-verify-rtk-cm.md) |
 | OpenCode | [opencode-verify-rtk-cm.md](verification/opencode-verify-rtk-cm.md) |
+| Pi | [pi-verify-rtk-cm.md](verification/pi-verify-rtk-cm.md) |
 | Hermes | [hermes-verify-rtk-cm.md](verification/hermes-verify-rtk-cm.md) |
 | Goose | [goose-verify-rtk-cm.md](verification/goose-verify-rtk-cm.md) |
 

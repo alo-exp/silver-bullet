@@ -83,6 +83,12 @@ agent_cursor_apply_policy_env() {
   export CURSOR_AGENT_MODEL="${CURSOR_AGENT_MODEL:-composer-2.5}"
   export CURSOR_MODEL="${CURSOR_MODEL:-composer-2.5}"
 
+  # A Cursor delegation can be launched from a Claude/Claude-plugin shell.
+  # Do not leak Claude's plugin root/project identity into Cursor: the Cursor
+  # CLI treats CLAUDE_PLUGIN_ROOT as an active plugin root and may load an
+  # unrelated host-specific hook (including legacy `npx context-mode`).
+  unset CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR 2>/dev/null || true
+
   if [[ -n "${CURSOR_API_KEY:-}" ]]; then
     printf '[agent-cursor] WARNING: unsetting CURSOR_API_KEY — use Keychain login (cursor-agent login)\n' >&2
     unset CURSOR_API_KEY

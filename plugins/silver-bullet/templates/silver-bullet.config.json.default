@@ -182,6 +182,12 @@
           ],
           "post_index": []
         },
+        "pi": {
+          "pre_index": [
+            "python3 scripts/lib/global-toolstack/install-pi.py --repo-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
         "goose": {
           "pre_index": [
             "graphify install --project --platform pi"
@@ -242,6 +248,12 @@
           "pre_index": [],
           "post_index": [
             "Merge agentmemory MCP into ~/.config/opencode/opencode.json mcp section (manual — no agentmemory connect opencode; see docs/AGENTMEMORY.md)"
+          ]
+        },
+        "pi": {
+          "pre_index": [],
+          "post_index": [
+            "agentmemory connect pi (shared global agentmemory extension)"
           ]
         },
         "goose": {
@@ -334,6 +346,18 @@
             "rtk init -g --codex"
           ],
           "post_index": []
+        },
+        "opencode": {
+          "pre_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "pi": {
+          "pre_index": [
+            "python3 scripts/lib/global-toolstack/install-pi.py --repo-root \"$(pwd)\""
+          ],
+          "post_index": []
         }
       },
       "benefits_summary": "60–99% shell output savings via PreToolUse rewrite — automatic once wired (rtk-ai/rtk; not reachingforthejack/rtk)."
@@ -356,11 +380,11 @@
       "platform_install_commands": {
         "claude": {
           "pre_index": [
-            "claude plugin marketplace add mksglu/context-mode",
-            "claude plugin install context-mode@context-mode"
+            "npm install -g context-mode",
+            "bash scripts/optimize-rtk-context-mode.sh --host claude --project-root \"$(pwd)\""
           ],
           "post_index": [
-            "Restart Claude Code after plugin install (hooks load on restart)"
+            "Restart Claude Code after shared MCP configuration changes"
           ]
         },
         "cursor": {
@@ -376,6 +400,18 @@
           "pre_index": [
             "Merge context-mode blocks into ~/.codex/config.toml and hooks.json per docs/CONTEXT-MODE.md",
             "Copy configs/codex/AGENTS.md routing template to ~/.codex/AGENTS.md"
+          ],
+          "post_index": []
+        },
+        "opencode": {
+          "pre_index": [
+            "bash scripts/optimize-rtk-context-mode.sh --host opencode --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "pi": {
+          "pre_index": [
+            "python3 scripts/lib/global-toolstack/install-pi.py --repo-root \"$(pwd)\""
           ],
           "post_index": []
         }
@@ -429,6 +465,12 @@
         "opencode": {
           "pre_index": [
             "bash scripts/install-leanctx-sb.sh --host opencode --project-root \"$(pwd)\""
+          ],
+          "post_index": []
+        },
+        "pi": {
+          "pre_index": [
+            "bash scripts/install-leanctx-sb.sh --host pi --project-root \"$(pwd)\""
           ],
           "post_index": []
         }

@@ -135,64 +135,9 @@
         "matcher": "Edit|Write|MultiEdit|Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/graphify-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/agentmemory-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/alumnium-gate.sh",
         "timeout": 10,
         "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/leanctx-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/rtk-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/context-mode-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/token-compression-tools-gate.sh",
-        "timeout": 10,
-        "matcher": "Edit|Write|MultiEdit|Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh",
-        "timeout": 10,
-        "matcher": "Read|Grep"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/context-mode-read-deny.sh",
-        "timeout": 10,
-        "matcher": "Read|Grep"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh",
-        "timeout": 10,
-        "matcher": "WebFetch"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/stack-compression-coordinator.sh",
-        "timeout": 10,
-        "matcher": "CallMcpTool|MCP"
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" preToolUse ${CURSOR_PLUGIN_ROOT}/hooks/forbidden-skill-check.sh",
@@ -327,16 +272,6 @@
         "matcher": "Shell"
       },
       {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-graphify-query.sh",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh",
-        "timeout": 10,
-        "matcher": "Shell"
-      },
-      {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-token-compression-usage.sh",
         "timeout": 10,
         "matcher": "Shell"
@@ -363,11 +298,6 @@
       },
       {
         "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-recommended-mcp.sh",
-        "timeout": 10,
-        "matcher": "CallMcpTool|MCP"
-      },
-      {
-        "command": "\"${CURSOR_PLUGIN_ROOT}/hooks/cursor-hook-bridge.sh\" postToolUse ${CURSOR_PLUGIN_ROOT}/hooks/record-agentmemory-usage.sh",
         "timeout": 10,
         "matcher": "CallMcpTool|MCP"
       }

@@ -8,6 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MERGE_PY="${SCRIPT_DIR}/lib/merge-token-compression-config.py"
 LIB="${REPO_ROOT}/hooks/lib/rtk-cm-global.sh"
+RECOMMENDED_TOOLS_LIB="${REPO_ROOT}/hooks/lib/recommended-tools.sh"
+CONTEXT_MODE_LIB="${REPO_ROOT}/hooks/lib/context-mode-gate.sh"
+RTK_GATE_LIB="${REPO_ROOT}/hooks/lib/rtk-gate.sh"
 
 HOST=""
 DRY_RUN=0
@@ -23,7 +26,7 @@ Usage: bash scripts/optimize-rtk-context-mode.sh [options]
 Ensures optimized RTK + Context Mode wiring for AI coding hosts (global config only).
 
 Options:
-  --host <claude|codex|cursor|opencode|hermes|goose|all>
+  --host <claude|codex|cursor|opencode|pi|hermes|goose|all>
                                         Target host (required)
   --project-root <path>                 Canonical SB project root (required)
   --dry-run                             Print actions without writing files
@@ -33,7 +36,7 @@ Options:
   -h, --help                            Show this help
 
 Hosts:
-  claude, codex, cursor, opencode  — full or primary upstream integration
+  claude, codex, cursor, opencode, pi — shared/global integration
   hermes                           — partial (RTK plugin + CM MCP; no CM doctor platform)
   goose                            — unsupported (documented skip; no fake wiring)
 
@@ -43,6 +46,9 @@ EOF
 
 # shellcheck source=../hooks/lib/rtk-cm-global.sh
 source "$LIB"
+[[ -f "$RECOMMENDED_TOOLS_LIB" ]] && source "$RECOMMENDED_TOOLS_LIB"
+[[ -f "$CONTEXT_MODE_LIB" ]] && source "$CONTEXT_MODE_LIB"
+[[ -f "$RTK_GATE_LIB" ]] && source "$RTK_GATE_LIB"
 
 detect_host() {
   if [[ -n "${CURSOR_PLUGIN_ROOT:-}" ]] || [[ -d "${HOME}/.cursor" ]]; then
@@ -59,6 +65,10 @@ detect_host() {
   fi
   if [[ -d "${HOME}/.hermes" ]]; then
     printf '%s' "hermes"
+    return 0
+  fi
+  if [[ -n "${PI_CODING_AGENT_DIR:-}" ]] || [[ -d "${HOME}/.pi/agent" ]]; then
+    printf '%s' "pi"
     return 0
   fi
   if [[ -d "${HOME}/.codex" ]]; then
@@ -78,12 +88,16 @@ run_cmd() {
 }
 
 rtk_binary_ok() {
-  command -v rtk >/dev/null 2>&1 || return 1
-  rtk gain --help >/dev/null 2>&1 || return 1
-  ! rtk --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'
+  local bin="$(sb_rtk_cli_path 2>/dev/null || true)"
+  [[ -n "$bin" ]] || return 1
+  "$bin" gain --help >/dev/null 2>&1 || return 1
+  ! "$bin" --help 2>&1 | head -5 | grep -qiE 'rust type kit|rtk-check'
 }
 
 ensure_context_mode_cli() {
+  if declare -f sb_context_mode_cli_path >/dev/null 2>&1 && sb_context_mode_cli_path >/dev/null 2>&1; then
+    return 0
+  fi
   if command -v context-mode >/dev/null 2>&1; then
     return 0
   fi
@@ -92,12 +106,52 @@ ensure_context_mode_cli() {
   fi
 }
 
+claude_native_context_mode_enabled() {
+  local settings="${HOME}/.claude/settings.json"
+  if [[ -f "$settings" ]] && jq -e \
+    '.enabledPlugins["context-mode@context-mode"] == true' \
+    "$settings" >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v claude >/dev/null 2>&1; then
+    claude plugin list 2>/dev/null | \
+      grep -A3 -F 'context-mode@context-mode' | grep -q 'enabled' && return 0
+  fi
+  return 1
+}
+
+disable_claude_native_context_mode() {
+  claude_native_context_mode_enabled || return 0
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "DRY-RUN: claude plugin disable context-mode@context-mode --scope user"
+    return 0
+  fi
+  command -v claude >/dev/null 2>&1 || {
+    log "ERROR: Claude Context Mode plugin is enabled but the claude CLI is unavailable; disable context-mode@context-mode or install the global context-mode MCP manually" >&2
+    return 1
+  }
+  run_cmd claude plugin disable context-mode@context-mode --scope user
+}
+
 run_merge_py() {
   local merge_host="${1:-}"
   local merge_args=(python3 "$MERGE_PY" --host "$merge_host" --repo-root "$REPO_ROOT")
   [[ "$DRY_RUN" -eq 1 ]] && merge_args+=(--dry-run)
   [[ "$SKIP_CLI_CONFIG" -eq 1 ]] && merge_args+=(--skip-cli-config)
   run_cmd "${merge_args[@]}"
+}
+
+canonicalize_cursor_toolstack_hooks() {
+  local patch_py="${REPO_ROOT}/scripts/lib/global-toolstack/patch-hooks.py"
+  [[ -f "$patch_py" ]] || return 0
+  # `rtk init --agent cursor` can preserve an older LeanCTX rewrite hook.  Run
+  # the shared hook reconciler after vendor initialization so the manifest-
+  # backed RTK hook is the only shell rewrite owner.
+  run_cmd env \
+    RT_PATCH_RTK=1 \
+    RT_PATCH_CONTEXT_MODE=1 \
+    RT_PATCH_LEANCTX=1 \
+    python3 "$patch_py"
 }
 
 optimize_rtk_cursor() {
@@ -109,7 +163,7 @@ optimize_rtk_cursor() {
     log "WARN: rtk-ai/rtk not on PATH or wrong binary — skip rtk init"
     return 0
   fi
-  run_cmd rtk init -g --agent cursor
+  run_cmd "$(sb_rtk_cli_path)" init -g --agent cursor
   if [[ "$DRY_RUN" -eq 0 ]]; then
     if grep -q 'rtk hook cursor\|"rtk"' "${HOME}/.cursor/hooks.json" 2>/dev/null; then
       log "OK: RTK Cursor hook present"
@@ -128,7 +182,7 @@ optimize_rtk_claude() {
     log "WARN: rtk-ai/rtk not on PATH — skip rtk init"
     return 0
   fi
-  run_cmd rtk init -g
+  run_cmd "$(sb_rtk_cli_path)" init -g
 }
 
 optimize_rtk_codex() {
@@ -140,19 +194,15 @@ optimize_rtk_codex() {
     log "WARN: rtk-ai/rtk not on PATH — skip rtk init"
     return 0
   fi
-  run_cmd rtk init -g --codex
+  run_cmd "$(sb_rtk_cli_path)" init -g --codex
 }
 
 optimize_rtk_opencode() {
-  if [[ "$SKIP_RTK_INIT" -eq 1 ]]; then
-    log "SKIP: rtk init (opencode)"
-    return 0
-  fi
-  if ! rtk_binary_ok; then
-    log "WARN: rtk-ai/rtk not on PATH — skip rtk init"
-    return 0
-  fi
-  run_cmd rtk init -g --opencode
+  log "OK: OpenCode RTK is wired by the shared manifest-backed plugin"
+}
+
+optimize_rtk_pi() {
+  log "OK: Pi RTK is wired by the shared native tool_call adapter"
 }
 
 optimize_rtk_hermes() {
@@ -164,7 +214,7 @@ optimize_rtk_hermes() {
     log "WARN: rtk-ai/rtk not on PATH — skip rtk init"
     return 0
   fi
-  run_cmd rtk init --agent hermes
+  run_cmd "$(sb_rtk_cli_path)" init --agent hermes
 }
 
 optimize_rtk_goose() {
@@ -172,25 +222,15 @@ optimize_rtk_goose() {
 }
 
 optimize_context_mode_claude() {
-  if command -v claude >/dev/null 2>&1; then
-    if [[ "$DRY_RUN" -eq 1 ]]; then
-      log "DRY-RUN: claude plugin marketplace add mksglu/context-mode"
-      log "DRY-RUN: claude plugin install context-mode@context-mode"
-    else
-      claude plugin marketplace add mksglu/context-mode 2>/dev/null || true
-      claude plugin install context-mode@context-mode 2>/dev/null || true
-    fi
-    log "NOTE: Restart Claude Code after plugin install"
-  else
-    log "WARN: claude CLI not found — merge npm MCP path via merge helper"
-    ensure_context_mode_cli
-    run_merge_py claude
-  fi
+  disable_claude_native_context_mode
+  ensure_context_mode_cli
+  run_merge_py claude
 }
 
 optimize_context_mode_cursor() {
   ensure_context_mode_cli
   run_merge_py cursor
+  canonicalize_cursor_toolstack_hooks
   if [[ -z "${TOOLSTACK_INSTALL_IN_PROGRESS:-}" && -z "${SB_RT_APPLY_ACTIVE:-}" ]]; then
     run_cmd bash "${SCRIPT_DIR}/install-recommended-tools-global.sh" --host cursor --global 2>/dev/null || \
       bash "${SCRIPT_DIR}/install-recommended-tools-cursor.sh" --global 2>/dev/null || true
@@ -205,6 +245,15 @@ optimize_context_mode_codex() {
 optimize_context_mode_opencode() {
   ensure_context_mode_cli
   run_merge_py opencode
+}
+
+optimize_context_mode_pi() {
+  local installer="${REPO_ROOT}/scripts/lib/global-toolstack/install-pi.py"
+  [[ -f "$installer" ]] || {
+    log "ERROR: Pi adapter installer missing: $installer" >&2
+    return 1
+  }
+  run_cmd python3 "$installer" --repo-root "$REPO_ROOT"
 }
 
 optimize_context_mode_hermes() {
@@ -238,6 +287,10 @@ optimize_host() {
       optimize_rtk_opencode
       optimize_context_mode_opencode
       ;;
+    pi)
+      optimize_rtk_pi
+      optimize_context_mode_pi
+      ;;
     hermes)
       optimize_rtk_hermes
       optimize_context_mode_hermes
@@ -258,7 +311,9 @@ run_cm_doctor() {
     log "SKIP: context-mode doctor"
     return 0
   fi
-  if ! command -v context-mode >/dev/null 2>&1; then
+  local context_mode_bin
+  context_mode_bin="$(sb_context_mode_cli_path 2>/dev/null || true)"
+  if [[ -z "$context_mode_bin" ]]; then
     log "WARN: context-mode not on PATH — skip doctor"
     return 0
   fi
@@ -272,7 +327,7 @@ run_cm_doctor() {
     log "DRY-RUN: CONTEXT_MODE_PLATFORM=${platform} context-mode doctor"
     return 0
   fi
-  CONTEXT_MODE_PLATFORM="$platform" context-mode doctor 2>&1 | head -40 || true
+  CONTEXT_MODE_PLATFORM="$platform" "$context_mode_bin" doctor 2>&1 | head -40 || true
 }
 
 while [[ $# -gt 0 ]]; do
@@ -326,5 +381,3 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
 fi
 
 log "=== Optimization complete ==="
-
-

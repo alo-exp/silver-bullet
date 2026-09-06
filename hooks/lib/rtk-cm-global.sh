@@ -2,9 +2,9 @@
 # RTK + Context Mode global setup — SB-independent apply/verify helpers.
 # Sourced by: scripts/optimize-rtk-context-mode.sh, scripts/install-recommended-tools-global.sh
 
-RTCM_ALL_HOSTS="claude codex cursor opencode hermes goose"
+RTCM_ALL_HOSTS="claude codex cursor opencode pi hermes goose"
 # shellcheck disable=SC2034  # consumed by install-recommended-tools-global.sh
-RTCM_SUPPORTED_HOSTS="claude codex cursor opencode hermes"
+RTCM_SUPPORTED_HOSTS="claude codex cursor opencode pi hermes"
 # shellcheck disable=SC2034  # consumed by install-recommended-tools-global.sh
 RTCM_UNSUPPORTED_HOSTS="goose"
 
@@ -46,6 +46,7 @@ rtcm_host_config_present() {
     codex) [[ -f "${HOME}/.codex/config.toml" ]] || [[ -d "${HOME}/.codex" ]] ;;
     cursor) [[ -d "${HOME}/.cursor" ]] ;;
     opencode) [[ -f "${HOME}/.config/opencode/opencode.json" ]] || [[ -d "${HOME}/.config/opencode" ]] ;;
+    pi) [[ -f "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}/settings.json" ]] || [[ -d "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ]] ;;
     hermes) [[ -f "${HOME}/.hermes/config.yaml" ]] || [[ -d "${HOME}/.hermes" ]] ;;
     goose) [[ -f "${HOME}/.config/goose/config.yaml" ]] || [[ -d "${HOME}/.pi/agent" ]] ;;
     *) return 1 ;;
@@ -63,6 +64,7 @@ rtcm_doctor_platform() {
   local host="${1:-}"
   case "$host" in
     claude|codex|cursor|opencode) printf '%s' "$host" ;;
+    pi) printf '%s' "" ;;
     hermes|goose) printf '%s' "" ;;
     *) printf '%s' "cursor" ;;
   esac

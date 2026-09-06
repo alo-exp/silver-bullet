@@ -29,6 +29,9 @@ sb_leanctx_cli_path() {
   local config_file="${1:-}"
   local cli
   cli="$(sb_leanctx_cli_command "$config_file")"
+  if [[ "$cli" == "lean-ctx" ]] && declare -f sb_global_tool_path >/dev/null 2>&1; then
+    sb_global_tool_path leanctx 2>/dev/null && return 0
+  fi
   if command -v "$cli" >/dev/null 2>&1; then
     command -v "$cli"
     return 0
@@ -54,7 +57,9 @@ sb_leanctx_platform_artifact_path() {
   case "$host" in
     cursor) printf '%s/.cursor/mcp.json' "${HOME}" ;;
     codex) printf '%s/.codex/config.toml' "${CODEX_HOME:-${HOME}/.codex}" ;;
-    opencode) printf '%s/.config/opencode/mcp.json' "${HOME}" ;;
+    opencode) printf '%s/.config/opencode/opencode.json' "${HOME}" ;;
+    pi) printf '%s/extensions/silver-bullet-five-tool-stack/config.json' \
+      "${PI_CODING_AGENT_DIR:-${HOME}/.pi/agent}" ;;
     claude) printf '%s/.claude/settings.json' "${HOME}" ;;
     *) printf '%s/.codex/settings.json' "${HOME}" ;;
   esac
@@ -86,6 +91,10 @@ sb_leanctx_hooks_present() {
       # Claude wires lean-ctx through settings.json (hooks + MCP server entry)
       # rather than a standalone hooks.json.
       hooks_file="${HOME}/.claude/settings.json"
+      [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
+      ;;
+    opencode|pi)
+      hooks_file="$(sb_leanctx_platform_artifact_path "${PWD}" "$host")"
       [[ -f "$hooks_file" ]] && grep -qE 'leanctx|lean-ctx' "$hooks_file" 2>/dev/null
       ;;
     *)

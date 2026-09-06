@@ -26,11 +26,7 @@ if [[ ! -f "$CANONICAL" ]]; then
 fi
 
 mkdir -p "$(dirname "$SITE_COPY")"
-# On case-insensitive filesystems, test redirects can make paths that differ
-# only by case resolve to the same inode; cp treats that as an error.
-if [[ -e "$SITE_COPY" && "$CANONICAL" -ef "$SITE_COPY" ]]; then
-  :
-else
+if [[ ! -e "$SITE_COPY" || ! "$CANONICAL" -ef "$SITE_COPY" ]]; then
   cp -f "$CANONICAL" "$SITE_COPY"
 fi
 
@@ -40,6 +36,8 @@ if command -v jq >/dev/null 2>&1; then
   echo "    canonical: ${CANONICAL#${SB_ROOT}/}"
   echo "    site copy: ${SITE_COPY#${SB_ROOT}/}"
 else
-  cp -f "$CANONICAL" "$SITE_COPY"
+  if [[ ! -e "$SITE_COPY" || ! "$CANONICAL" -ef "$SITE_COPY" ]]; then
+    cp -f "$CANONICAL" "$SITE_COPY"
+  fi
   echo "OK: copied certification status to site/help/data/ (jq not installed — skipped validation)"
 fi
