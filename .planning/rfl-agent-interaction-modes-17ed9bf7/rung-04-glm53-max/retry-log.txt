@@ -1,8 +1,0 @@
-2026-08-23T21:10:15Z
-starting launch-retry.py timeout=720s
-
-===== retry complete 2026-08-23T21:21:48Z =====
-INVOKE_EXIT=0 MODEL=opencode-go/glm-5.3 VARIANT=max
-review.md bytes=15347
-probe: retry-20260823T2108Z/probe.out = PONG
-full: retry-20260823T2108Z/invoke-end.txt

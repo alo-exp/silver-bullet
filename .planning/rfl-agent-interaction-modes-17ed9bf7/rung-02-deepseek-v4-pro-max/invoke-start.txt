@@ -1,6 +1,0 @@
-ISO8601_UTC=2026-08-23T16:26:13Z
-METHOD=/silver:agent-opencode
-HARNESS=scripts/agent-opencode/invoke.sh
-HARNESS_PRESENT=false
-NOTE=sparse checkout: invoke.sh and SKILL.md absent on disk and in HEAD; graphify/lean-ctx still index the full repo
-NATIVE_FALLBACK=opencode run -m opencode-go/deepseek-v4-pro --variant max --auto

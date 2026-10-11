@@ -1,9 +1,0 @@
-2026-08-23T21:52:48Z
-OPENCODE=/Users/shafqat/.opencode/bin/opencode
-HOME=/Users/shafqat
-MODEL=opencode-go/kimi-k3
-VARIANT=max
-TIMEOUT_SEC=900
-NO_FILE_FLAG=1
-RETRY=1
-SUBDIR=attempt3

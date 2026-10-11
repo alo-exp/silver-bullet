@@ -1,5 +1,0 @@
-=== preflight ===
-OK: Codex CLI codex-cli 0.149.0-alpha.4.1
-OK: hook-trust seeded
-ERROR: validate-host-install-surface codex failed — run install-codex.sh
-OK: matrix env cleared for delegation
